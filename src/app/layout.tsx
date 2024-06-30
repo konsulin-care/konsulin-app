@@ -5,10 +5,10 @@ import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
-const APP_NAME = 'Next PWA'
-const APP_DEFAULT_TITLE = 'Next.js PWA Starter Kit'
-const APP_TITLE_TEMPLATE = '%s - PWA App'
-const APP_DESCRIPTION = 'Build your PWA easier'
+const APP_NAME = 'Konsulin'
+const APP_DEFAULT_TITLE = 'Konsulin'
+const APP_TITLE_TEMPLATE = '%s - Konsulin'
+const APP_DESCRIPTION = 'Psychological kit in your pocket'
 
 export const metadata: Metadata = {
   applicationName: APP_NAME,
