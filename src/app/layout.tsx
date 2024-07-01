@@ -1,7 +1,8 @@
-import SiteFooter from '@/components/site-footer'
+import '@/styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
-import './globals.css'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -59,8 +60,10 @@ export default function RootLayout({
     <html lang='en'>
       <body className={inter.className}>
         <div className='mx-auto flex min-h-screen flex-col'>
-          <main className='flex grow flex-col'>{children}</main>
-          <SiteFooter />
+          <ToastContainer />
+          <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col md:shadow'>
+            {children}
+          </main>
         </div>
       </body>
     </html>
