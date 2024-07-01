@@ -1,5 +1,7 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import { useEffect, useState } from 'react'
@@ -26,19 +28,17 @@ export default function Login() {
 
   return (
     <div className='flex flex-col gap-2 p-2'>
-      <input
-        className='border'
+      <Input
         onChange={e => setusername(e.target.value)}
         type='text'
+        placeholder='username'
       />
-      <input
-        className='border'
+      <Input
         onChange={e => setPassword(e.target.value)}
         type='password'
+        placeholder='Password'
       />
-      <button className='border' onClick={login} type='submit'>
-        login
-      </button>
+      <Button onClick={login}>Button</Button>
     </div>
   )
 }
