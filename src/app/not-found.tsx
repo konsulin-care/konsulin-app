@@ -7,8 +7,6 @@ import { useRouter } from 'next/navigation'
 export default function Notfound() {
   const router = useRouter()
 
-  console.log({ env: process.env.NODE_ENV })
-
   return (
     <div className='container flex flex-col items-center'>
       <Image

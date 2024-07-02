@@ -17,17 +17,7 @@ export default function LoginPage() {
   }
 
   function handleLoginWith(via: string) {
-    switch (via) {
-      case 'username':
-        router.push(`/login?role=${role}&with=${via}`)
-        break
-      case 'whatsapp':
-        // TODO: Login via whatsapp
-        break
-      case 'google':
-        // TODO: Login via google
-        break
-    }
+    router.push(`/login?role=${role}&with=${via}`)
   }
 
   useEffect(() => {
