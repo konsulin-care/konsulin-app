@@ -4,7 +4,7 @@ import withAuth from '@/hooks/useAuth'
 import Link from 'next/link'
 import { useState } from 'react'
 
-const Profile: React.FC<{ userRole: string }> = ({ userRole }) => {
+const Profile: React.FC<{ userRole: any }> = ({ userRole }) => {
   const [profile, setProfile] = useState<any>()
 
   /**

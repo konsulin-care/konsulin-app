@@ -1,44 +1,82 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-
 import { useEffect, useState } from 'react'
+import LoginMedia from '../../../components/login/media'
+import LoginFormInputPage from './loginForm'
 
-export default function Login() {
+export default function LoginPage() {
+  const [title, setTitle] = useState('')
   const router = useRouter()
-  const searchParams = useSearchParams()
-
-  const [username, setusername] = useState('')
-  const [password, setPassword] = useState('')
+  const params = useSearchParams()
+  const role = params.get('role')
+  const withUsername = params.get('with')
 
   useEffect(() => {
-    if (localStorage.getItem('token')) {
-      router.push('/')
+    if (role) {
+      setTitle(role === 'patient' ? 'Pasien' : 'Clinician')
+    } else {
+      setTitle('')
     }
-  }, [])
-
-  const login = () => {
-    const redirect = searchParams.get('redirect')
-    router.push(redirect || '/')
-    localStorage.setItem('token', `fake_token_${username}_${password}`)
-    localStorage.setItem('userRole', 'patient')
-  }
+  }, [role])
 
   return (
-    <div className='flex flex-col gap-2 p-2'>
-      <Input
-        onChange={e => setusername(e.target.value)}
-        type='text'
-        placeholder='username'
-      />
-      <Input
-        onChange={e => setPassword(e.target.value)}
-        type='password'
-        placeholder='Password'
-      />
-      <Button onClick={login}>Button</Button>
-    </div>
+    <>
+      {!role && (
+        <div
+          className={
+            'flex h-1/2 w-full flex-col items-center justify-end space-y-4 pb-4 md:w-96'
+          }
+        >
+          <p className='text-xl font-semibold capitalize text-primary'>
+            Selamat Datang
+          </p>
+          <button className='text-md border-1 mt-20 w-full rounded-full border border-primary bg-primary p-4 capitalize text-primary text-white'>
+            <Link href={{ pathname: '/login', query: { role: 'patient' } }}>
+              Login Sebagai Pasien
+            </Link>
+          </button>
+          <button className='text-md border-1 mt-20 w-full rounded-full border border-primary bg-white p-4 capitalize text-primary'>
+            <Link href={{ pathname: '/login', query: { role: 'clinician' } }}>
+              Login Sebagai Clinician
+            </Link>
+          </button>
+        </div>
+      )}
+      {role && !withUsername && (
+        <div className='flex w-full flex-col items-center justify-center md:w-96'>
+          <div className='flex h-1/2 w-full flex-col items-center justify-end space-y-4 pb-4 md:w-96'>
+            <p className='text-xl font-semibold capitalize text-primary'>
+              Login Akun {title}
+            </p>
+            <button className='text-md border-1 w-full rounded-full border-primary bg-primary p-4 capitalize text-white'>
+              <Link
+                href={{
+                  pathname: '/login',
+                  query: {
+                    role: role,
+                    with: 'username'
+                  }
+                }}
+              >
+                Masuk Dengan Username
+              </Link>
+            </button>
+            <LoginMedia />
+          </div>
+          <p className='mb-12 w-full text-center text-sm md:w-96'>
+            Belum punya akun?
+            <span
+              className='cursor-pointer text-[#13C2C2]'
+              onClick={() => router.push('/register')}
+            >
+              &nbsp;Daftar Sekarang
+            </span>
+          </p>
+        </div>
+      )}
+      {role && withUsername && <LoginFormInputPage role={role} />}
+    </>
   )
 }
