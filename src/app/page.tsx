@@ -134,7 +134,7 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
             </div>
 
             {/* Record Summary */}
-            <div className='mt-4 p-4'>
+            <div className='p-4'>
               <div className='flex justify-between text-muted'>
                 <span className='mb-2 text-[14px] font-bold'>
                   Previous Record Summary
@@ -145,6 +145,7 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
                 <div className='flex'>
                   <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
                     <Image
+                      className='h-[24px] w-[24px] object-cover'
                       src={'/images/note.svg'}
                       width={24}
                       height={24}
