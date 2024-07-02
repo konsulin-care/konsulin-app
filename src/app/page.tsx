@@ -1,6 +1,7 @@
 'use client'
 
 import Header from '@/components/header'
+import NavigationBar from '@/components/navigation-bar'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import withAuth from '@/hooks/useAuth'
@@ -48,7 +49,13 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
   const renderHomeContent = () => {
     switch (userRole) {
       case 'guest':
-        return <p>Welcome, guest! You have limited access to the dashboard.</p>
+        return (
+          <div className='p-4'>
+            <p className='text-center'>
+              Welcome, guest! You have limited access to the dashboard.
+            </p>
+          </div>
+        )
       case 'patient':
         return (
           <div className='mt-[-24px] rounded-[16px] bg-white'>
@@ -199,42 +206,53 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
           </div>
         )
       case 'clinician':
-        return <p>Halo clinician, ini tampilan khusus untuk clinician.</p>
-      default:
-        return <p>Welcome! Please login to access more features.</p>
+        return (
+          <div className='p-4'>
+            <p className='text-center'>
+              Halo clinician, ini tampilan khusus untuk clinician.
+            </p>
+          </div>
+        )
     }
   }
 
   return (
     <div className='flex min-h-screen flex-col'>
       {!isAuthenticated ? (
-        <Link href='/login'>
-          <Button className='bg-secondary text-white'>Login</Button>
-        </Link>
+        <div className='p-4'>
+          <Link href='/login'>
+            <Button className='w-full bg-secondary text-white'>Login</Button>
+          </Link>
+          {renderHomeContent()}
+        </div>
       ) : (
-        <Header>
-          <div className='flex'>
-            <Image
-              className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-              width={32}
-              height={32}
-              alt='offline'
-              src={'/images/avatar.jpg'}
-            />
-            <div className='flex flex-col'>
-              <div className='text-[10px] font-normal text-white'>
-                Selamat Datang di Dashboard anda
+        <>
+          <NavigationBar>
+            <Header>
+              <div className='flex'>
+                <Image
+                  className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
+                  width={32}
+                  height={32}
+                  alt='offline'
+                  src={'/images/avatar.jpg'}
+                />
+                <div className='flex flex-col'>
+                  <div className='text-[10px] font-normal text-white'>
+                    Selamat Datang di Dashboard anda
+                  </div>
+                  <div className='text-[14px] font-bold text-white'>
+                    Aji Si {localStorage.getItem('userRole')}
+                  </div>
+                </div>
               </div>
-              <div className='text-[14px] font-bold text-white'>
-                Aji Si Patient
-              </div>
-            </div>
-          </div>
-        </Header>
+            </Header>
+            {renderHomeContent()}
+          </NavigationBar>
+        </>
       )}
 
       {/* RENDER CONTENT */}
-      {renderHomeContent()}
     </div>
   )
 }

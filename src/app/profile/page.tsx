@@ -1,5 +1,8 @@
 'use client'
 
+import Header from '@/components/header'
+import NavigationBar from '@/components/navigation-bar'
+import { Button } from '@/components/ui/button'
 import withAuth from '@/hooks/useAuth'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -18,23 +21,37 @@ const Profile: React.FC<{ userRole: any }> = ({ userRole }) => {
   //   })
   // }, [])
 
+  const renderHomeContent = () => {
+    return (
+      <div className='mt-[-24px] rounded-[16px] bg-white p-4'>
+        <Link href='/logout'>
+          <Button className='w-full bg-secondary text-white'>logout</Button>
+        </Link>
+
+        <div className='mt-2 text-center'>
+          {userRole === 'patient' && (
+            <div>
+              <p>Halo patient, ini tampilan khusus untuk patient.</p>
+            </div>
+          )}
+          {userRole === 'clinician' && (
+            <div>
+              <p>Halo clinician, ini tampilan khusus untuk clinician.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div>
-      <h1>Profile Page</h1>
-      <Link href='/logout'>
-        <button>logout</button>
-      </Link>
-
-      {userRole === 'patient' && (
-        <div>
-          <p>Halo patient, ini tampilan khusus untuk patient.</p>
-        </div>
-      )}
-      {userRole === 'clinician' && (
-        <div>
-          <p>Halo clinician, ini tampilan khusus untuk clinician.</p>
-        </div>
-      )}
+      <NavigationBar>
+        <Header>
+          <div className='text-[14px] font-bold text-white'>My Profile</div>
+        </Header>
+        {renderHomeContent()}
+      </NavigationBar>
     </div>
   )
 }

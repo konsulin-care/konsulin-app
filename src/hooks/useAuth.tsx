@@ -13,25 +13,30 @@ const withAuth = (
 ) => {
   const Wrapper: React.FC = props => {
     const [isVerified, setIsVerified] = useState(false)
+    const [userRole, setuserRole] = useState(localStorage.getItem('userRole'))
     const router = useRouter()
     const pathname = usePathname()
 
     useEffect(() => {
       const token = localStorage.getItem('token')
-      const userRole = localStorage.getItem('userRole')
+      const role = userRole
 
-      if (!token || !userRole) {
+      if (!token || !role) {
+        console.log('!token || !userRole')
+
         if (allowGuestMode) {
+          console.log('allowGuestMode')
+          setuserRole('guest')
           setIsVerified(true)
         } else {
           router.push(`/login?redirect=${pathname}`)
         }
-      } else if (userRole && !allowedRoles.includes(userRole)) {
+      } else if (role && !allowedRoles.includes(role)) {
         router.push(`/unauthorized`)
       } else {
         setIsVerified(true)
       }
-    }, [allowGuestMode, allowedRoles, pathname, router])
+    }, [])
 
     if (!isVerified) {
       return <div>Loading...</div>
@@ -40,7 +45,7 @@ const withAuth = (
     return (
       <WrappedComponent
         {...props}
-        userRole={localStorage.getItem('userRole') || ''}
+        userRole={userRole || ''}
         isAuthenticated={!!localStorage.getItem('token')}
       />
     )
