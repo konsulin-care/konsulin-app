@@ -59,9 +59,9 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={inter.className}>
-        <div className='mx-auto flex min-h-screen flex-col'>
+        <div className='flex min-h-screen flex-col'>
           <ToastContainer />
-          <main className='relative mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col md:shadow'>
+          <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow'>
             {children}
           </main>
         </div>
