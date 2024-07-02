@@ -22,10 +22,7 @@ const withAuth = (
       const role = userRole
 
       if (!token || !role) {
-        console.log('!token || !userRole')
-
         if (allowGuestMode) {
-          console.log('allowGuestMode')
           setuserRole('guest')
           setIsVerified(true)
         } else {
