@@ -1,48 +1,90 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import LoginFormInputPage from './form'
-import LoginWithPage from './loginWith'
-import OnBoardingPage from './onboard'
+import LoginMedia from '../../../components/login/media'
+import LoginFormPage from './loginForm'
 
-export default function Login() {
-  const [userData, setUserData] = useState({
-    role: '',
-    title: ''
-  })
-  const [isLoginByUsername, setIsLoginByUsername] = useState(false)
-
+export default function LoginPage() {
+  const [title, setTitle] = useState('')
   const router = useRouter()
+  const params = useSearchParams()
+  const role = params.get('role')
+  const withUsername = params.get('with')
 
-  function handleLoginUserRole(role: string) {
-    const updateTitle = role === 'patient' ? 'Pasien' : 'Clinician'
-    setUserData(prevUser => ({
-      ...prevUser,
-      role: role,
-      title: updateTitle
-    }))
+  function handleUserRole(role: string) {
+    router.push(`/login?role=${role}`)
   }
 
-  function handleLoginByUsername() {
-    setIsLoginByUsername(true)
+  function handleLoginWith(via: string) {
+    switch (via) {
+      case 'username':
+        router.push(`/login?role=${role}&with=${via}`)
+        break
+      case 'whatsapp':
+        // TODO: Login via whatsapp
+        break
+      case 'google':
+        // TODO: Login via google
+        break
+    }
   }
 
   useEffect(() => {
-    if (localStorage.getItem('token')) {
-      router.push('/')
+    if (role) {
+      setTitle(role === 'patient' ? 'Pasien' : 'Clinician')
+    } else {
+      setTitle('')
     }
-  }, [])
+  }, [role])
 
   return (
     <>
-      {!userData.role && (
-        <OnBoardingPage title='Selamat Datang' onClick={handleLoginUserRole} />
+      {!role && (
+        <div className='flex h-1/2 w-full flex-col items-center justify-end space-y-4 pb-4'>
+          <p className='text-xl font-bold capitalize text-secondary'>
+            Selamat Datang
+          </p>
+          <button
+            className='text-md border-1 mt-20 w-full rounded-full bg-secondary p-4 font-semibold capitalize text-primary text-white'
+            onClick={() => handleUserRole('patient')}
+          >
+            Login Sebagai Pasien
+          </button>
+          <button
+            className='text-md border-1 mt-20 w-full rounded-full border border-[#EFEFEF] bg-white p-4 font-semibold capitalize text-secondary'
+            onClick={() => handleUserRole('clinician')}
+          >
+            Login Sebagai Clinician
+          </button>
+        </div>
       )}
-      {userData.role && !isLoginByUsername && (
-        <LoginWithPage title={userData.title} onClick={handleLoginByUsername} />
+      {role && !withUsername && (
+        <div className='flex w-full flex-col items-center justify-center'>
+          <div className='flex h-1/2 w-full flex-col items-center justify-end space-y-4 pb-4'>
+            <p className='text-xl font-bold capitalize text-secondary'>
+              Login Akun {title}
+            </p>
+            <button
+              onClick={() => handleLoginWith('username')}
+              className='text-md border-1 w-full rounded-full border-primary bg-secondary p-4 font-semibold capitalize text-white'
+            >
+              Masuk Dengan Username
+            </button>
+            <LoginMedia />
+          </div>
+          <p className='mb-12 w-full text-center text-sm'>
+            Belum punya akun?
+            <span
+              className='cursor-pointer text-[#13C2C2]'
+              onClick={() => router.push('/register')}
+            >
+              &nbsp;Daftar Sekarang
+            </span>
+          </p>
+        </div>
       )}
-      {isLoginByUsername && <LoginFormInputPage role={userData.role} />}
+      {role && withUsername && <LoginFormPage role={role} />}
     </>
   )
 }

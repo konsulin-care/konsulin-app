@@ -1,7 +1,7 @@
 import Image from 'next/image'
 
 export default function LoginMedia() {
-  function handleLoginBy(type) {
+  function handleLoginBy(type: string) {
     switch (type) {
       case 'whatsapp':
         console.log('Login via whatsapp') // TODO(harynp): integration for auth via whatsapp

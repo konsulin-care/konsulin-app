@@ -11,15 +11,15 @@ export default function Input({
   return (
     <div className={className}>
       {prefixIcon && (
-        <Image width={24} height={24} src={prefixIcon} alt='prefix-icon' />
+        <Image width={16} height={18} src={prefixIcon} alt='prefix-icon' />
       )}
       <input
-        className={outline ? 'w-full' : 'w-full outline-none'}
+        className={outline ? 'w-full' : 'w-full text-sm outline-none'}
         {...props}
       />
       {suffixIcon && (
         <button type='button' className='focus:outline-none' onClick={onShow}>
-          <Image width={24} height={24} src={suffixIcon} alt='suffix-icon' />
+          <Image width={19} height={14} src={suffixIcon} alt='suffix-icon' />
         </button>
       )}
     </div>
