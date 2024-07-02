@@ -209,7 +209,7 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
     <div className='flex min-h-screen flex-col'>
       {!isAuthenticated ? (
         <Link href='/login'>
-          <Button>Login</Button>
+          <Button className='bg-secondary text-white'>Login</Button>
         </Link>
       ) : (
         <Header>

@@ -7,12 +7,12 @@ export default function LoginWithPage({ title, onClick }) {
   return (
     <div className='flex w-full flex-col items-center justify-center md:w-96'>
       <div className='flex h-1/2 w-full flex-col items-center justify-end space-y-4 pb-4 md:w-96'>
-        <p className='text-xl font-semibold capitalize text-primary'>
+        <p className='text-xl font-semibold capitalize text-secondary'>
           Login Akun {title}
         </p>
         <button
           onClick={onClick}
-          className='text-md border-1 w-full rounded-full border-primary bg-primary p-4 capitalize text-white'
+          className='text-md border-1 w-full rounded-full border-primary bg-secondary p-4 capitalize text-white'
         >
           Masuk Dengan Username
         </button>

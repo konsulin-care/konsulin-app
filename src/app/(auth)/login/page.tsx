@@ -30,7 +30,7 @@ export default function Login() {
 
   useEffect(() => {
     if (localStorage.getItem('token')) {
-      router.push('/register')
+      router.push('/')
     }
   }, [])
 

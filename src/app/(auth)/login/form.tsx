@@ -30,7 +30,7 @@ export default function LoginFormInputPage({ role }) {
     localStorage.setItem('token', `fake_token_${username}_${password}`)
     localStorage.setItem('userRole', role)
     const redirect = searchParams.get('redirect')
-    router.push(redirect || '/login')
+    router.push(redirect || '/')
   }
 
   return (
@@ -66,7 +66,7 @@ export default function LoginFormInputPage({ role }) {
         </p>
 
         <button
-          className='text-md border-1 mb-4 w-full rounded-full border-primary bg-primary p-4 text-white'
+          className='text-md border-1 mb-4 w-full rounded-full border-primary bg-secondary p-4 text-white'
           type='submit'
           onClick={handleLoginSubmit}
         >
