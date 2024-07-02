@@ -1,6 +1,7 @@
 'use client'
 
 import Header from '@/components/header'
+import NavigationBar from '@/components/navigation-bar'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import withAuth from '@/hooks/useAuth'
@@ -48,7 +49,13 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
   const renderHomeContent = () => {
     switch (userRole) {
       case 'guest':
-        return <p>Welcome, guest! You have limited access to the dashboard.</p>
+        return (
+          <div className='p-4'>
+            <p className='text-center'>
+              Welcome, guest! You have limited access to the dashboard.
+            </p>
+          </div>
+        )
       case 'patient':
         return (
           <div className='mt-[-24px] rounded-[16px] bg-white'>
@@ -68,7 +75,7 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
             </div>
 
             <div className='flex gap-4 p-4'>
-              <div className='card flex w-full'>
+              <Link href={'/'} className='card flex w-full'>
                 <Image
                   src={'/images/mental-health.svg'}
                   width={40}
@@ -83,8 +90,8 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
                     Relax for Better Mental Health
                   </span>
                 </div>
-              </div>
-              <div className='card flex w-full'>
+              </Link>
+              <Link href={'/'} className='card flex w-full'>
                 <Image
                   src={'/images/writing.svg'}
                   width={40}
@@ -99,7 +106,7 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
                     Express your current feelings
                   </span>
                 </div>
-              </div>
+              </Link>
             </div>
 
             {/* Popular Assesment */}
@@ -112,7 +119,10 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
               </div>
               <div>
                 <ScrollArea>
-                  <div className='card flex w-fit items-center gap-2 bg-white'>
+                  <Link
+                    href={'/'}
+                    className='card flex w-fit items-center gap-2 bg-white'
+                  >
                     <Image
                       width={40}
                       height={40}
@@ -128,7 +138,7 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
                       </span>
                     </div>
                     <ChevronRightIcon className='text-muted' />
-                  </div>
+                  </Link>
                 </ScrollArea>
               </div>
             </div>
@@ -141,7 +151,7 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
                 </span>
                 <span className='text-[12px]'>See All</span>
               </div>
-              <div className='card mt-4 flex flex-col gap-2 p-4'>
+              <Link href={'/'} className='card mt-4 flex flex-col gap-2 p-4'>
                 <div className='flex'>
                   <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
                     <Image
@@ -175,7 +185,7 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
                   <div className='mr-auto text-[12px]'>Dr.Fitra Gunawan</div>
                   <div className='text-[10px]'>12/12/2025</div>
                 </div>
-              </div>
+              </Link>
             </div>
 
             <div className='p-4'>
@@ -199,42 +209,53 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
           </div>
         )
       case 'clinician':
-        return <p>Halo clinician, ini tampilan khusus untuk clinician.</p>
-      default:
-        return <p>Welcome! Please login to access more features.</p>
+        return (
+          <div className='p-4'>
+            <p className='text-center'>
+              Halo clinician, ini tampilan khusus untuk clinician.
+            </p>
+          </div>
+        )
     }
   }
 
   return (
     <div className='flex min-h-screen flex-col'>
       {!isAuthenticated ? (
-        <Link href='/login'>
-          <Button className='bg-secondary text-white'>Login</Button>
-        </Link>
+        <div className='p-4'>
+          <Link href='/login'>
+            <Button className='w-full bg-secondary text-white'>Login</Button>
+          </Link>
+          {renderHomeContent()}
+        </div>
       ) : (
-        <Header>
-          <div className='flex'>
-            <Image
-              className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-              width={32}
-              height={32}
-              alt='offline'
-              src={'/images/avatar.jpg'}
-            />
-            <div className='flex flex-col'>
-              <div className='text-[10px] font-normal text-white'>
-                Selamat Datang di Dashboard anda
+        <>
+          <NavigationBar>
+            <Header>
+              <div className='flex'>
+                <Image
+                  className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
+                  width={32}
+                  height={32}
+                  alt='offline'
+                  src={'/images/avatar.jpg'}
+                />
+                <div className='flex flex-col'>
+                  <div className='text-[10px] font-normal text-white'>
+                    Selamat Datang di Dashboard anda
+                  </div>
+                  <div className='text-[14px] font-bold text-white'>
+                    Aji Si {localStorage.getItem('userRole')}
+                  </div>
+                </div>
               </div>
-              <div className='text-[14px] font-bold text-white'>
-                Aji Si Patient
-              </div>
-            </div>
-          </div>
-        </Header>
+            </Header>
+            {renderHomeContent()}
+          </NavigationBar>
+        </>
       )}
 
       {/* RENDER CONTENT */}
-      {renderHomeContent()}
     </div>
   )
 }

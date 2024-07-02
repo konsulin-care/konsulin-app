@@ -1,0 +1,5 @@
+export { default as ExceriseIcon } from './excerise-icon'
+export { default as HouseIcon } from './house-icon'
+export { default as LiteratureIcon } from './literature-icon'
+export { default as OfficeIcon } from './office-icon'
+export { default as UserIcon } from './user-icon'

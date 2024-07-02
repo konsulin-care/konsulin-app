@@ -1,0 +1,65 @@
+import * as React from 'react'
+
+export default function UserIcon(props: React.SVGProps<SVGSVGElement>) {
+  const { fill = '#000000', width = 24, height = 24 } = props
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox='0 0 25 25'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
+    >
+      <g clip-path='url(#clip0_6506_5007)'>
+        <mask
+          id='mask0_6506_5007'
+          maskUnits='userSpaceOnUse'
+          x='0'
+          y='0'
+          width={width}
+          height={height}
+        >
+          <path
+            d='M24.1019 24.002V1.00196H1.10193V24.002H24.1019Z'
+            fill='white'
+            stroke='white'
+          />
+        </mask>
+        <g mask='url(#mask0_6506_5007)'>
+          <path
+            d='M1.53943 12.5024C1.53943 18.6121 6.49229 23.5649 12.6019 23.5649C18.7116 23.5649 23.6644 18.6121 23.6644 12.5024C23.6644 6.3928 18.7116 1.43994 12.6019 1.43994C6.49229 1.43994 1.53943 6.3928 1.53943 12.5024Z'
+            stroke={fill}
+            stroke-miterlimit='10'
+            stroke-linecap='round'
+            stroke-linejoin='round'
+          />
+          <path
+            d='M16.1176 8.89307C16.1176 10.8606 14.5226 12.4556 12.5551 12.4556C10.5875 12.4556 8.99255 10.8606 8.99255 8.89307C8.99255 6.92554 10.5875 5.33057 12.5551 5.33057C14.5226 5.33057 16.1176 6.92554 16.1176 8.89307Z'
+            stroke={fill}
+            stroke-miterlimit='10'
+            stroke-linecap='round'
+            stroke-linejoin='round'
+          />
+          <path
+            d='M17.9005 18.1274C16.799 16.7826 15.1256 15.9243 13.2517 15.9243H12.1394C10.2655 15.9243 8.59212 16.7826 7.4906 18.1274'
+            stroke={fill}
+            stroke-miterlimit='10'
+            stroke-linecap='round'
+            stroke-linejoin='round'
+          />
+        </g>
+      </g>
+      <defs>
+        <clipPath id='clip0_6506_5007'>
+          <rect
+            width={width}
+            height={height}
+            fill='white'
+            transform='translate(0.599976 0.5)'
+          />
+        </clipPath>
+      </defs>
+    </svg>
+  )
+}
