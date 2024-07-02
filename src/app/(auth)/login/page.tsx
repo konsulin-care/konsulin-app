@@ -1,17 +1,32 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { useRouter, useSearchParams } from 'next/navigation'
-
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import LoginFormInputPage from './form'
+import LoginWithPage from './loginWith'
+import OnBoardingPage from './onboard'
 
 export default function Login() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const [userData, setUserData] = useState({
+    role: '',
+    title: ''
+  })
+  const [isLoginByUsername, setIsLoginByUsername] = useState(false)
 
-  const [username, setusername] = useState('')
-  const [password, setPassword] = useState('')
+  const router = useRouter()
+
+  function handleLoginUserRole(role: string) {
+    const updateTitle = role === 'patient' ? 'Pasien' : 'Clinician'
+    setUserData(prevUser => ({
+      ...prevUser,
+      role: role,
+      title: updateTitle
+    }))
+  }
+
+  function handleLoginByUsername() {
+    setIsLoginByUsername(true)
+  }
 
   useEffect(() => {
     if (localStorage.getItem('token')) {
@@ -19,26 +34,15 @@ export default function Login() {
     }
   }, [])
 
-  const login = () => {
-    const redirect = searchParams.get('redirect')
-    router.push(redirect || '/')
-    localStorage.setItem('token', `fake_token_${username}_${password}`)
-    localStorage.setItem('userRole', 'patient')
-  }
-
   return (
-    <div className='flex flex-col gap-2 p-2'>
-      <Input
-        onChange={e => setusername(e.target.value)}
-        type='text'
-        placeholder='username'
-      />
-      <Input
-        onChange={e => setPassword(e.target.value)}
-        type='password'
-        placeholder='Password'
-      />
-      <Button onClick={login}>Button</Button>
-    </div>
+    <>
+      {!userData.role && (
+        <OnBoardingPage title='Selamat Datang' onClick={handleLoginUserRole} />
+      )}
+      {userData.role && !isLoginByUsername && (
+        <LoginWithPage title={userData.title} onClick={handleLoginByUsername} />
+      )}
+      {isLoginByUsername && <LoginFormInputPage role={userData.role} />}
+    </>
   )
 }
