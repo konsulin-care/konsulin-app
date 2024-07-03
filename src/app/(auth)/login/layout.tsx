@@ -1,6 +1,6 @@
 import KonsulinLogo from '@/components/login/logo'
 
-export default function LayoutLogin({ children }) {
+export default function Layout({ children }) {
   return (
     <div className='flex h-screen w-full flex-col items-center justify-between p-4'>
       <KonsulinLogo

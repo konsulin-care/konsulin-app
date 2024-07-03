@@ -3,9 +3,9 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import LoginMedia from '../../../components/login/media'
-import LoginFormPage from './loginForm'
+import LoginForm from './loginForm'
 
-export default function LoginPage() {
+export default function Login() {
   const [title, setTitle] = useState('')
   const router = useRouter()
   const params = useSearchParams()
@@ -74,7 +74,7 @@ export default function LoginPage() {
           </p>
         </div>
       )}
-      {role && withUsername && <LoginFormPage role={role} />}
+      {role && withUsername && <LoginForm role={role} />}
     </>
   )
 }

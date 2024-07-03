@@ -2,7 +2,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import Input from '../../../components/login/input'
 
-export default function LoginFormPage({ role }) {
+export default function LoginForm({ role }) {
   const [userData, setUserData] = useState({
     username: '',
     password: ''
