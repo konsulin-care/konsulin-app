@@ -1,11 +1,11 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import LoginMedia from '../../../components/login/media'
 import LoginForm from './loginForm'
 
-export default function Login() {
+function LoginContent() {
   const [title, setTitle] = useState('')
   const router = useRouter()
   const params = useSearchParams()
@@ -76,5 +76,13 @@ export default function Login() {
       )}
       {role && withUsername && <LoginForm role={role} />}
     </>
+  )
+}
+
+export default function Login() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   )
 }

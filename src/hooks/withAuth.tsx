@@ -1,24 +1,25 @@
+import { getFromLocalStorage } from '@/lib/utils'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-interface WithAuthProps {
-  userRole: string
+export interface IWithAuth {
+  userRole?: string
   isAuthenticated: boolean
 }
 
 const withAuth = (
-  WrappedComponent: React.ComponentType<WithAuthProps>,
+  WrappedComponent: React.ComponentType<IWithAuth>,
   allowedRoles: string[] = [],
   allowGuestMode: boolean = false
 ) => {
   const Wrapper: React.FC = props => {
     const [isVerified, setIsVerified] = useState(false)
-    const [userRole, setuserRole] = useState(localStorage.getItem('userRole'))
+    const [userRole, setuserRole] = useState(getFromLocalStorage('userRole'))
     const router = useRouter()
     const pathname = usePathname()
 
     useEffect(() => {
-      const token = localStorage.getItem('token')
+      const token = getFromLocalStorage('token')
       const role = userRole
 
       if (!token || !role) {
@@ -42,8 +43,8 @@ const withAuth = (
     return (
       <WrappedComponent
         {...props}
-        userRole={userRole || ''}
-        isAuthenticated={!!localStorage.getItem('token')}
+        userRole={userRole}
+        isAuthenticated={!!getFromLocalStorage('token')}
       />
     )
   }

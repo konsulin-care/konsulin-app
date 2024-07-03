@@ -4,28 +4,20 @@ import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import withAuth from '@/hooks/withAuth'
-import { Pie } from '@ant-design/plots'
+import withAuth, { IWithAuth } from '@/hooks/withAuth'
+
 import { ChevronRightIcon } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
 
-const COLORS = [
-  '#87E8DE',
-  '#36CFC9',
-  '#13C2C2',
-  '#08979C',
-  '#006D75',
-  '#00474F'
-]
+const Pie = dynamic(
+  () => import('@ant-design/plots').then(mod => mod.Pie) as any,
+  { ssr: false }
+)
 
-interface HomeProps {
-  userRole: string
-  isAuthenticated: boolean
-}
-
-const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
-  const config = {
+const Home: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
+  const config: any = {
     data: [
       { type: 'Depress', value: 27 },
       { type: 'Anxiety', value: 25 },
@@ -48,14 +40,6 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
 
   const renderHomeContent = () => {
     switch (userRole) {
-      case 'guest':
-        return (
-          <div className='p-4'>
-            <p className='text-center'>
-              Welcome, guest! You have limited access to the dashboard.
-            </p>
-          </div>
-        )
       case 'patient':
         return (
           <div className='mt-[-24px] rounded-[16px] bg-white'>
@@ -216,6 +200,14 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
             </p>
           </div>
         )
+      default: // guest
+        return (
+          <div className='p-4'>
+            <p className='text-center'>
+              Welcome, guest! You have limited access to the dashboard.
+            </p>
+          </div>
+        )
     }
   }
 
@@ -245,7 +237,7 @@ const Home: React.FC<HomeProps> = ({ userRole, isAuthenticated }) => {
                     Selamat Datang di Dashboard anda
                   </div>
                   <div className='text-[14px] font-bold text-white'>
-                    Aji Si {localStorage.getItem('userRole')}
+                    Aji Si {userRole}
                   </div>
                 </div>
               </div>

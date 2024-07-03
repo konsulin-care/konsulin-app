@@ -1,8 +1,8 @@
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Input from '../../../components/login/input'
 
-export default function LoginForm({ role }) {
+function LoginFormContent({ role }) {
   const [userData, setUserData] = useState({
     username: '',
     password: ''
@@ -88,5 +88,13 @@ export default function LoginForm({ role }) {
         </p>
       </div>
     </>
+  )
+}
+
+export default function LoginForm({ role }) {
+  return (
+    <Suspense>
+      <LoginFormContent role={role} />
+    </Suspense>
   )
 }

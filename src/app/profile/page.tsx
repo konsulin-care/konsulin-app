@@ -3,16 +3,14 @@
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { Button } from '@/components/ui/button'
-import withAuth from '@/hooks/withAuth'
+import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import Link from 'next/link'
-import { useState } from 'react'
 
-const Profile: React.FC<{ userRole: any }> = ({ userRole }) => {
-  const [profile, setProfile] = useState<any>()
-
+const Profile: React.FC<IWithAuth> = ({ userRole }) => {
   /**
    * FETCH DATA
    */
+  // const [profile, setProfile] = useState<any>()
   // useEffect(() => {
   //   API.get('/profile').then((res: any) => {
   //     if (res.code === 200) {
