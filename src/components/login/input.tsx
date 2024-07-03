@@ -14,7 +14,11 @@ export default function Input({
         <Image width={16} height={18} src={prefixIcon} alt='prefix-icon' />
       )}
       <input
-        className={outline ? 'w-full' : 'w-full text-sm outline-none'}
+        className={
+          outline
+            ? 'w-full'
+            : 'w-full text-sm font-normal text-[#2C2F35] opacity-40 outline-none placeholder:text-[#2C2F35]'
+        }
         {...props}
       />
       {suffixIcon && (

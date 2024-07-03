@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useState } from 'react'
 import Input from '../../../components/login/input'
@@ -66,7 +67,7 @@ function LoginFormContent({ role }) {
           onShow={handleShowPassword}
         />
         <p className='flex w-full cursor-pointer justify-end text-right text-xs font-semibold text-secondary'>
-          Lupa Password
+          <Link href='/forget-password'>Lupa Password</Link>
         </p>
 
         <button
