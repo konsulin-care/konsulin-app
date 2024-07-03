@@ -3,7 +3,7 @@
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { Button } from '@/components/ui/button'
-import withAuth from '@/hooks/useAuth'
+import withAuth from '@/hooks/withAuth'
 import Link from 'next/link'
 import { useState } from 'react'
 
