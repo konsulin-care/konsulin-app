@@ -3,10 +3,10 @@
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
-
 import { ChevronRightIcon } from 'lucide-react'
+
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -102,27 +102,35 @@ const Home: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
                 <span className='text-[12px]'>See All</span>
               </div>
               <div>
-                <ScrollArea>
-                  <Link
-                    href={'/'}
-                    className='card flex w-fit items-center gap-2 bg-white'
-                  >
-                    <Image
-                      width={40}
-                      height={40}
-                      alt='excerise'
-                      src={'/images/exercise.svg'}
-                    />
-                    <div className='flex flex-col'>
-                      <span className='text-[12px] font-bold'>
-                        BIG 5 Personality Test
-                      </span>
-                      <span className='text-[10px] text-muted'>
-                        Know yourself in 5 aspects of traits
-                      </span>
-                    </div>
-                    <ChevronRightIcon className='text-muted' />
-                  </Link>
+                <ScrollArea className='w-full whitespace-nowrap rounded-md border'>
+                  <div className='flex w-max space-x-4 p-4'>
+                    {Array(5)
+                      .fill(undefined)
+                      .map((_, index: number) => (
+                        <Link
+                          key={index}
+                          href={'/'}
+                          className='card flex w-fit shrink-0 items-center gap-2 bg-white'
+                        >
+                          <Image
+                            width={40}
+                            height={40}
+                            alt='excerise'
+                            src={'/images/exercise.svg'}
+                          />
+                          <div className='flex flex-col'>
+                            <span className='text-[12px] font-bold'>
+                              BIG 5 Personality Test
+                            </span>
+                            <span className='text-[10px] text-muted'>
+                              Know yourself in 5 aspects of traits
+                            </span>
+                          </div>
+                          <ChevronRightIcon className='text-muted' />
+                        </Link>
+                      ))}
+                  </div>
+                  <ScrollBar orientation='horizontal' />
                 </ScrollArea>
               </div>
             </div>
