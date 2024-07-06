@@ -1,8 +1,8 @@
 'use client'
 
+import LoginMedia from '@/components/login/media'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
-import LoginMedia from '../../../components/login/media'
 import LoginForm from './loginForm'
 
 function LoginContent() {

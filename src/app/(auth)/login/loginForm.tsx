@@ -1,7 +1,7 @@
+import Input from '@/components/login/input'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useState } from 'react'
-import Input from '../../../components/login/input'
 
 function LoginFormContent({ role }) {
   const [userData, setUserData] = useState({
