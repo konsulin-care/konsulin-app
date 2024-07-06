@@ -2,10 +2,11 @@
 
 import InformationDetail from '@/components/profile/information-detail'
 import Schedule from '@/components/profile/schedule'
-import Settings from '@/components/profile/settings'
-import { ChevronRightIcon } from 'lucide-react'
+import Tags from '@/components/profile/tags'
+import { ChevronRight } from 'lucide-react'
 import Image from 'next/image'
 import MedalCollection from '../../components/profile/medal-collection'
+import Settings from '../../components/profile/settings'
 
 const settingMenus = [
   { name: 'Pengaturan', link: '/settings' },
@@ -46,10 +47,12 @@ const medalLists = [
   }
 ]
 
+const tagsSchedule = ['19 Mei 2024', '20 Mei 2024']
+
 const generalDetails = [
   {
-    key: 'Age',
-    value: '40'
+    key: 'Birth(Age)',
+    value: '12-12-1993(40)'
   },
   {
     key: 'Sex',
@@ -60,48 +63,46 @@ const generalDetails = [
     value: '08034840384'
   },
   {
+    key: 'Email',
+    value: 'Aji Danuarta'
+  },
+  {
     key: 'Education',
     value: 'Bachelor of Lorem Ipsum'
   }
 ]
 
-export default function Patient() {
+const praticeDetails = [
+  {
+    key: 'Affiliation',
+    value: 'Konsulin'
+  },
+  {
+    key: 'Experience',
+    value: '2 Year'
+  },
+  {
+    key: 'Fee',
+    value: '250.000/Session'
+  },
+  {
+    key: 'Specialty',
+    value: [
+      'Anxiety',
+      'Depression',
+      'Personality',
+      'Self Improvement',
+      'Workplace',
+      'Social Interaction',
+      'Relationship'
+    ]
+  }
+]
+
+export default function Clinician() {
   return (
     <>
-      <div className='flex justify-between rounded-lg bg-secondary p-4'>
-        <Image
-          width={48}
-          height={48}
-          src={'/icons/diamond.svg'}
-          alt='membership-premium-logo'
-        />
-        <div className='flex w-full flex-col items-start justify-start pl-2'>
-          <div className='flex flex-grow items-start pb-[2px]'>
-            <p className='mb-1 text-left text-sm font-bold text-white'>
-              Membership Premium
-            </p>
-            <div className='ml-4 flex h-6 w-[100px] flex-grow items-center justify-center space-x-1 rounded-full bg-white py-2'>
-              <Image
-                width={12}
-                height={9}
-                src={'/icons/diamond-small.svg'}
-                alt='membership-premium-logo'
-              />
-              <p className='text-black-100 whitespace-nowrap pl-1 text-[10px] font-semibold'>
-                150 Points
-              </p>
-            </div>
-          </div>
-          <div className='w-full'>
-            <p className='text-left text-[10px] text-white opacity-75'>
-              Tergabung Sejak 2019
-            </p>
-          </div>
-        </div>
-        <div className='flex items-start justify-center'>
-          <ChevronRightIcon color='white' width={24} height={24} />
-        </div>
-      </div>
+      <Schedule name='Mrs Clinician Name' time='15:00' date='23/12/2030' />
       <InformationDetail
         isRadiusIcon
         iconUrl='/images/sample-foto.svg'
@@ -110,8 +111,31 @@ export default function Patient() {
         buttonText='Edit Profile'
         details={generalDetails}
       />
+      <InformationDetail
+        isRadiusIcon={false}
+        iconUrl='/icons/hospital.svg'
+        title='Practice Information'
+        buttonText='Edit Detail'
+        details={praticeDetails}
+      />
+      <div className='flex flex-col items-center p-4'>
+        <div className='flex w-full items-center justify-between'>
+          <Image
+            src={'/icons/calendar-profile.svg'}
+            width={30}
+            height={30}
+            alt='calendar-icon'
+            className='pr-[10px]'
+          />
+          <p className='text-black-100 flex-grow text-start text-xs font-bold'>
+            Edit Availbility Schedule
+          </p>
+          <ChevronRight color='#13C2C2' width={18} height={18} />
+        </div>
+
+        {tagsSchedule.length > 0 && <Tags tags={tagsSchedule} />}
+      </div>
       <MedalCollection medals={medalLists} />
-      <Schedule name='Mrs Clinician Name' time='15:00' date='23/12/2030' />
       <Settings menus={settingMenus} />
     </>
   )
