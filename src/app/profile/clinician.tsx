@@ -7,6 +7,7 @@ import { ChevronRight } from 'lucide-react'
 import Image from 'next/image'
 import MedalCollection from '../../components/profile/medal-collection'
 import Settings from '../../components/profile/settings'
+import { useRouter } from 'next/navigation'
 
 const settingMenus = [
   { name: 'Pengaturan', link: '/settings' },
@@ -100,6 +101,8 @@ const praticeDetails = [
 ]
 
 export default function Clinician() {
+  const router = useRouter();
+
   return (
     <>
       <Schedule name='Mrs Clinician Name' time='15:00' date='23/12/2030' />
@@ -110,6 +113,7 @@ export default function Clinician() {
         subTitle='Aji Danuarta'
         buttonText='Edit Profile'
         details={generalDetails}
+        onEdit={() => router.push('profile/edit-profile')}
       />
       <InformationDetail
         isRadiusIcon={false}
@@ -117,6 +121,7 @@ export default function Clinician() {
         title='Practice Information'
         buttonText='Edit Detail'
         details={praticeDetails}
+        onEdit={() => router.push('profile/edit-pratice')}
       />
       <div className='flex flex-col items-center p-4'>
         <div className='flex w-full items-center justify-between'>

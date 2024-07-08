@@ -6,6 +6,7 @@ import Settings from '@/components/profile/settings'
 import { ChevronRightIcon } from 'lucide-react'
 import Image from 'next/image'
 import MedalCollection from '../../components/profile/medal-collection'
+import { useRouter } from 'next/navigation';
 
 const settingMenus = [
   { name: 'Pengaturan', link: '/settings' },
@@ -66,6 +67,8 @@ const generalDetails = [
 ]
 
 export default function Patient() {
+  const router = useRouter();
+
   return (
     <>
       <div className='flex justify-between rounded-lg bg-secondary p-4'>
@@ -109,6 +112,7 @@ export default function Patient() {
         subTitle='Aji Danuarta'
         buttonText='Edit Profile'
         details={generalDetails}
+        onEdit={() => router.push('profile/edit-profile')}
       />
       <MedalCollection medals={medalLists} />
       <Schedule name='Mrs Clinician Name' time='15:00' date='23/12/2030' />

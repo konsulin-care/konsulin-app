@@ -7,9 +7,9 @@ export default function InformationDetail({
   title,
   subTitle = '',
   buttonText,
-  details
+  details,
+  onEdit
 }) {
-  function handleEdit() {}
 
   return (
     <div className='flex w-full flex-col items-center justify-center px-4 pb-4'>
@@ -32,7 +32,7 @@ export default function InformationDetail({
           </div>
         </div>
         <div className='flex w-1/2 items-center justify-end'>
-          <button onClick={handleEdit}>
+          <button onClick={onEdit}>
             <div className='w-[100px] rounded-full bg-secondary p-[7px]'>
               <p className='text-[10px] text-white'>{buttonText}</p>
             </div>
