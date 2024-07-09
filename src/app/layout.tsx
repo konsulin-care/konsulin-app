@@ -61,6 +61,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <div className='flex min-h-screen flex-col'>
           <ToastContainer />
+          <div id='modal' />
           <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
             {children}
           </main>
