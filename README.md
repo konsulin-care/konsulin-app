@@ -19,7 +19,7 @@ Make sure you have the following installed:
 1. Clone this repository:
 
    ```sh
-   git git@github.com:konsulin-id/fe-konsuin.git
+   git clone git@github.com:konsulin-id/fe-konsuin.git
    cd fe-konsuin
    ```
 
