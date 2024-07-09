@@ -1,7 +1,3 @@
-# Next.js PWA Starter Kit
-
-Welcome to the Next.js PWA Starter Kit! This starter kit provides a foundation for building Progressive Web Apps (PWAs) using Next.js and the `Serwist` plugin.
-
 ## Features
 
 - **Next.js**: The React framework for production.
@@ -10,10 +6,6 @@ Welcome to the Next.js PWA Starter Kit! This starter kit provides a foundation f
 - **TypeScript**: Optional, strongly typed language that builds on JavaScript.
 - **ESLint**: Linting for JavaScript and TypeScript.
 - **Prettier**: Code formatter to ensure consistent code style.
-
-## Getting Started
-
-To get started with this starter kit, follow these steps:
 
 ### Prerequisites
 
@@ -27,8 +19,8 @@ Make sure you have the following installed:
 1. Clone this repository:
 
    ```sh
-   git clone https://github.com/your-username/nextjs-pwa-starter-kit.git
-   cd nextjs-pwa-starter-kit
+   git git@github.com:konsulin-id/fe-konsuin.git
+   cd fe-konsuin
    ```
 
 2. Install the dependencies:
