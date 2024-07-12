@@ -51,6 +51,7 @@
     "dayjs": "^1.11.11",
     "embla-carousel-react": "^8.1.5",
     "input-otp": "^1.2.4",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.394.0",
     "next": "14.2.3",
     "next-themes": "^0.3.0",

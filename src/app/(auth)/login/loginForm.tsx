@@ -1,4 +1,5 @@
 import Input from '@/components/login/input'
+import { useAuth } from '@/context/auth/authContext'
 import { apiRequest } from '@/services/api'
 import {
   alphaNumeric,
@@ -7,6 +8,7 @@ import {
   upperCaseOneCharacter
 } from '@/utils/validation'
 import { useMutation } from '@tanstack/react-query'
+
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useState } from 'react'
@@ -23,6 +25,8 @@ interface LoginResponse {
 }
 
 function LoginFormContent({ role }) {
+  const { dispatch } = useAuth()
+
   const [userData, setUserData] = useState({
     username: '',
     password: ''
@@ -66,8 +70,16 @@ function LoginFormContent({ role }) {
         : response.data.practitioner_id
           ? 'clinician'
           : 'guest'
-      localStorage.setItem('token', response.data.token)
-      localStorage.setItem('userRole', userType)
+
+      dispatch({
+        type: 'login',
+        // payload below is temporary, fix this after BE sends proper response 
+        payload: {
+          token: response.data.token,
+          role_name: userType,
+          name: `username of ${userType}`
+        }
+      })
       const redirect = searchParams.get('redirect')
       router.push(redirect || '/')
     }

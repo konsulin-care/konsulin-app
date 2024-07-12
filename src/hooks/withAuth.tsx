@@ -1,4 +1,4 @@
-import { getFromLocalStorage } from '@/lib/utils'
+import { useAuth } from '@/context/auth/authContext'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -13,18 +13,17 @@ const withAuth = (
   allowGuestMode: boolean = false
 ) => {
   const Wrapper: React.FC = props => {
-    const [isVerified, setIsVerified] = useState(false)
-    const [userRole, setuserRole] = useState(getFromLocalStorage('userRole'))
     const router = useRouter()
+    const { state: authState } = useAuth()
+    const [isVerified, setIsVerified] = useState(false)
+
+    const token = authState.token
+    const role = authState.role_name
     const pathname = usePathname()
 
     useEffect(() => {
-      const token = getFromLocalStorage('token')
-      const role = userRole
-
       if (!token || !role) {
         if (allowGuestMode) {
-          setuserRole('guest')
           setIsVerified(true)
         } else {
           router.push(`/login?redirect=${pathname}`)
@@ -34,7 +33,7 @@ const withAuth = (
       } else {
         setIsVerified(true)
       }
-    }, [])
+    }, [token, role, pathname, router])
 
     if (!isVerified) {
       return <div>Loading...</div>
@@ -43,8 +42,8 @@ const withAuth = (
     return (
       <WrappedComponent
         {...props}
-        userRole={userRole}
-        isAuthenticated={!!getFromLocalStorage('token')}
+        userRole={allowGuestMode && !role ? 'guest' : role}
+        isAuthenticated={!!authState.token}
       />
     )
   }
