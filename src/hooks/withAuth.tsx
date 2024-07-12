@@ -1,7 +1,8 @@
+import { LoadingSpinnerIcon } from '@/components/icons'
 import { useAuth } from '@/context/auth/authContext'
+
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-
 export interface IWithAuth {
   userRole?: string
   isAuthenticated: boolean
@@ -36,7 +37,15 @@ const withAuth = (
     }, [token, role, pathname, router])
 
     if (!isVerified) {
-      return <div>Loading...</div>
+      return (
+        <div className='flex min-h-screen min-w-full items-center justify-start'>
+          <LoadingSpinnerIcon
+            width={56}
+            height={56}
+            className='w-full animate-spin'
+          />
+        </div>
+      )
     }
 
     return (
