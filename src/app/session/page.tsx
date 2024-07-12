@@ -4,10 +4,8 @@ import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { InputWithIcon } from '@/components/ui/input-with-icon'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import dayjs from 'dayjs'
-import { SearchIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -65,11 +63,11 @@ const Session: React.FC<IWithAuth> = ({ userRole }) => {
         <div className='p-4'>
           {/* <div>filter</div> */}
           <div className='flex'>
-            <InputWithIcon
-              className='mr-4 h-[50px] border-0 bg-[#F9F9F9] text-primary'
+            {/* <InputWithIcon
+              className='w-full mr-4 h-[50px] border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
-            />
-            <div className='h-[50px] w-[50px] rounded-lg bg-[#F9F9F9]'>x</div>
+            /> */}
+            {/* <div className='h-[50px] w-[50px] rounded-lg bg-[#F9F9F9]'>x</div> */}
           </div>
           <div className='mt-4 grid grid-cols-2 gap-4'>
             {Array(12)
