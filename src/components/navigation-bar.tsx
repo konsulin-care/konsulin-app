@@ -35,9 +35,7 @@ export default function NavigationBar({ children }) {
             pathname?.startsWith('/session') ? activePathStyle : pathStyle
           )}
         >
-          <OfficeIcon
-            fill={pathname === '/assessment' ? '#13C2C2' : '#ADB6C7'}
-          />
+          <OfficeIcon fill={pathname === '/session' ? '#13C2C2' : '#ADB6C7'} />
 
           <span className='mt-[5px] text-[12px]'>Sesi Temu</span>
         </Link>
