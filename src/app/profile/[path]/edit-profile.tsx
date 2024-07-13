@@ -3,8 +3,19 @@ import Dropdown from '@/components/profile/dropdown'
 import Image from 'next/image'
 import { useRef, useState } from 'react'
 
-export default function EditProfile({ userRole }) {
-  const [updateUser, setUpdateUser] = useState({
+const educationOptions: any[] = [
+  { value: 'diploma', label: 'Diploma' },
+  { value: 'bachelor_degree', label: 'Bachelor Degree' },
+  { value: 'master_degree', label: 'Master Degree' },
+  { value: 'doctoral_degree', label: 'Doctoral Degree' }
+]
+
+export default function EditProfile({
+  userRole
+}: {
+  userRole: 'patient' | 'clinician'
+}) {
+  const [updateUser, setUpdateUser] = useState<any>({
     username: '',
     email: '',
     birthdate: '',
@@ -14,15 +25,15 @@ export default function EditProfile({ userRole }) {
     education: ['']
   })
 
-  const [userPhoto, setUserPhoto] = useState('/images/sample-foto.svg') // TODO: still use base64 format, will make sure with BE later
-  const fileInputRef = useRef(null)
+  const [userPhoto, setUserPhoto] = useState<any>('/images/sample-foto.svg')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   function handleButtonClick() {
-    fileInputRef.current.click()
+    fileInputRef.current?.click()
   }
 
-  function handleFileChange(event) {
-    const file = event.target.files[0]
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
     if (file) {
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -32,7 +43,7 @@ export default function EditProfile({ userRole }) {
     }
   }
 
-  function handleChangeInput(label, value) {
+  function handleChangeInput(label: any, value: any) {
     setUpdateUser(prevState => ({
       ...prevState,
       [label]: value
@@ -46,13 +57,12 @@ export default function EditProfile({ userRole }) {
     }))
   }
 
-  function handleEducationChange(index, value) {
-    const updatedEducation = updateUser.education.map((edu, i) =>
-      i === index ? value : edu
-    )
+  function handleEducationChange(index: number, value: string) {
     setUpdateUser(prevState => ({
       ...prevState,
-      education: updatedEducation
+      education: prevState.education.map((edu: any, i: number) =>
+        i === index ? value : edu
+      )
     }))
   }
 
@@ -66,7 +76,6 @@ export default function EditProfile({ userRole }) {
 
   return (
     <div className='mt-[-24px] rounded-[16px] bg-white p-4'>
-      {/* Ganti Photo */}
       <div className='flex flex-col items-center justify-center p-4'>
         <div className='pb-2'>
           <Image
@@ -99,7 +108,6 @@ export default function EditProfile({ userRole }) {
           accept='image/*'
         />
       </div>
-      {/* Form Edit Profile */}
       <div className='flex flex-col space-y-4 py-4'>
         <Input
           width={24}
@@ -174,20 +182,17 @@ export default function EditProfile({ userRole }) {
                 { value: 'female', label: 'Female' }
               ]}
               placeholder='Select Sex'
+              value={updateUser.sex}
               onChange={value => handleChangeInput('sex', value)}
               className='flex w-1/2 items-center space-x-[10px] rounded-lg'
             />
-            {updateUser.education.map((edu, index) => (
+
+            {updateUser.education.map((edu: string, index) => (
               <Dropdown
                 key={index}
-                options={[
-                  { value: 'diploma', label: 'Diploma' },
-                  { value: 'bachelor_degree', label: 'Bachelor Degree' },
-                  { value: 'master_degree', label: 'Master Degree' },
-                  { value: 'doctoral_degree', label: 'Doctoral Degree' }
-                ]}
-                value={edu}
                 placeholder='Select Education'
+                options={educationOptions}
+                value={edu}
                 onChange={value => handleEducationChange(index, value)}
                 className='flex w-1/2 items-center space-x-[10px] rounded-lg'
               />

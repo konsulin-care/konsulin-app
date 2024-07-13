@@ -1,12 +1,12 @@
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 
-export default function CustomDropdown({
+export default function Dropdown({
   options,
   placeholder,
   onChange,
   className
-}) {
+}: any) {
   const [selectedOption, setSelectedOption] = useState({
     label: '',
     value: ''
