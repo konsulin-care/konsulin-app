@@ -1,9 +1,15 @@
+import { QueryClient } from '@tanstack/react-query'
 import axios, { AxiosError } from 'axios'
 import { toast } from 'react-toastify'
 
 export const API = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
 })
+
+export const queryClient = new QueryClient()
 
 API.interceptors.response.use(
   response => response,
@@ -23,3 +29,24 @@ API.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+export async function apiRequest<T>(
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+  endpoint: string,
+  data?: any,
+  params?: any
+): Promise<T> {
+  const config = {
+    method,
+    url: endpoint,
+    data: data,
+    params: params
+  }
+
+  try {
+    const response = await API(config)
+    return response.data as T
+  } catch (error) {
+    throw error
+  }
+}
