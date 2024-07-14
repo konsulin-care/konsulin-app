@@ -1,5 +1,7 @@
 import Input from '@/components/general/input'
+import DobCalendar from '@/components/profile/dob-calendar'
 import Dropdown from '@/components/profile/dropdown'
+import { format } from 'date-fns'
 import Image from 'next/image'
 import { useRef, useState } from 'react'
 
@@ -10,15 +12,11 @@ const educationOptions: any[] = [
   { value: 'doctoral_degree', label: 'Doctoral Degree' }
 ]
 
-export default function EditProfile({
-  userRole
-}: {
-  userRole: 'patient' | 'clinician'
-}) {
+export default function EditProfile({ userRole }) {
   const [updateUser, setUpdateUser] = useState<any>({
     username: '',
     email: '',
-    birthdate: '',
+    birthdate: undefined,
     whatsapp: '',
     sex: '',
     address: '',
@@ -67,11 +65,19 @@ export default function EditProfile({
   }
 
   function handleEditSave() {
+    updateUser.birthdate = format(updateUser.birthdate, 'yyyy-MM-dd')
     const updateUserData = {
       photo: userPhoto,
       ...updateUser
     }
     console.log('Saving updated user profile:', updateUserData)
+  }
+
+  function handleDOBChange(value) {
+    setUpdateUser(prevState => ({
+      ...prevState,
+      birthdate: value
+    }))
   }
 
   return (
@@ -135,19 +141,7 @@ export default function EditProfile({
           outline={false}
           className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
         />
-        <Input
-          width={24}
-          height={24}
-          prefixIcon={'/icons/calendar-edit.png'}
-          placeholder='Masukan Tanggal lahir'
-          name='birthdate'
-          id='birthdate'
-          type='text'
-          opacity={false}
-          onChange={event => handleChangeInput('birthdate', event.target.value)}
-          outline={false}
-          className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-        />
+        <DobCalendar value={updateUser.birthdate} onChange={handleDOBChange} />
         <Input
           width={24}
           height={24}
