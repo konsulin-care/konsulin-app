@@ -67,7 +67,7 @@ function LoginContent() {
             Belum punya akun?
             <span
               className='cursor-pointer text-[#13C2C2]'
-              onClick={() => router.push('/register')}
+              onClick={() => router.push(`/register?role=${role}`)}
             >
               &nbsp;Daftar Sekarang
             </span>
