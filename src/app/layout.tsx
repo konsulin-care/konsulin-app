@@ -1,4 +1,5 @@
 import QueryProvider from '@/components/general/query-provider'
+import { AuthProvider } from '@/context/auth/authContext'
 import '@/styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
@@ -60,6 +61,7 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={inter.className}>
+        <AuthProvider>
         <QueryProvider>
           <div className='flex min-h-screen flex-col'>
             <ToastContainer />
@@ -69,6 +71,7 @@ export default function RootLayout({
             </main>
           </div>
         </QueryProvider>
+        </AuthProvider>
       </body>
     </html>
   )

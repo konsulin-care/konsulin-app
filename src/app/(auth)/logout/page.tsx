@@ -1,12 +1,11 @@
 'use client'
 
+import { useAuth } from '@/context/auth/authContext'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 
 export default function Logout() {
+  const { dispatch } = useAuth()
   const router = useRouter()
-  useEffect(() => {
-    localStorage.clear()
-    router.push('/')
-  }, [])
+  dispatch({ type: 'logout' })
+  router.push('/')
 }
