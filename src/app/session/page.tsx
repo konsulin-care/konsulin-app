@@ -106,4 +106,4 @@ const Session: React.FC<IWithAuth> = ({ userRole }) => {
     </NavigationBar>
   )
 }
-export default withAuth(Session, ['patient', 'clinician'])
+export default withAuth(Session, ['patient', 'clinician'], true)
