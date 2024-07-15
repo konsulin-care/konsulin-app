@@ -9,6 +9,8 @@ const withSerwist = withSerwistInit({
     disable : process.env.NODE_ENV === 'development'
 });
 
-const nextConfig = {}
+const nextConfig = {
+    output: "standalone",
+}
 
 export default withSerwist(nextConfig)
