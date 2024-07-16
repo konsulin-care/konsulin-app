@@ -10,9 +10,8 @@ export default function InformationDetail({
   details,
   onEdit
 }) {
-
   return (
-    <div className='flex w-full flex-col items-center justify-center px-4 pb-4'>
+    <div className='flex w-full flex-col items-center justify-center px-4'>
       <div className='flex w-full justify-between pb-2 pt-4'>
         <div className='flex w-1/2'>
           <Image
@@ -40,11 +39,11 @@ export default function InformationDetail({
         </div>
       </div>
       <div className='flex w-full border-t border-[#E3E3E3]' />
-      <div className='flex w-full flex-col space-y-2 py-2'>
+      <div className='flex w-full flex-col'>
         {details.map((item: any) => {
           return (
             <div
-              className='flex justify-between font-[#2C2F35] text-xs'
+              className='flex justify-between py-2 font-[#2C2F35] text-xs'
               key={item.key}
             >
               {item.key === 'Specialty' ? (
@@ -55,8 +54,10 @@ export default function InformationDetail({
                 </div>
               ) : (
                 <>
-                  <p>{item.key}</p>
-                  <p className='font-bold'>{item.value}</p>
+                  <p className='text-xs'>{item.key}</p>
+                  <p className='w-full text-right text-xs font-bold'>
+                    {item.value}
+                  </p>
                 </>
               )}
             </div>

@@ -1,23 +1,15 @@
-import Input from '@/components/general/input'
-import { addDays, format } from 'date-fns'
-import { id } from 'date-fns/locale'
+import { addDays } from 'date-fns'
 import { useState } from 'react'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import styles from './dob-calendar.module.css'
 
 export default function DobCalendar({ value, onChange }) {
-  const [showCalendar, setShowCalendar] = useState(false)
   const [selectedDate, setSelectedDate] = useState(value)
-
-  const toggleCalendar = () => {
-    setShowCalendar(!showCalendar)
-  }
 
   const handleDateChange = (date: any) => {
     onChange(date)
     setSelectedDate(date)
-    setShowCalendar(false)
   }
 
   const tileDisabled = ({ date, view }) => {
@@ -46,39 +38,16 @@ export default function DobCalendar({ value, onChange }) {
   }
 
   return (
-    <>
-      <Input
-        width={24}
-        height={24}
-        prefixIcon={'/icons/calendar-edit.png'}
-        placeholder='Masukan Tanggal lahir'
-        name='birthdate'
-        id='birthdate'
-        outline={false}
-        type='text'
-        opacity={false}
-        value={
-          selectedDate
-            ? format(selectedDate, 'dd MMMM yyyy', { locale: id })
-            : ''
-        }
-        onChange={event => onChange(event.target.value)}
-        onFocus={toggleCalendar}
-        className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+    <div className='p-4'>
+      <Calendar
+        onChange={value => handleDateChange(value)}
+        value={selectedDate}
+        prev2Label={null}
+        next2Label={null}
+        tileDisabled={tileDisabled}
+        className={`${styles['custom-calendar']}`}
+        tileClassName={getTileClassName}
       />
-      {showCalendar && (
-        <div className='p-4'>
-          <Calendar
-            onChange={value => handleDateChange(value)}
-            value={selectedDate}
-            prev2Label={null}
-            next2Label={null}
-            tileDisabled={tileDisabled}
-            className={`${styles['custom-calendar']}`}
-            tileClassName={getTileClassName}
-          />
-        </div>
-      )}
-    </>
+    </div>
   )
 }
