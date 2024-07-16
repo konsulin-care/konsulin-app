@@ -33,12 +33,11 @@ export default function Settings({ menus }) {
   }
 
   function confirmLogout() {
-    localStorage.clear()
-    router.push('/login')
     setShowModal(prevShowModal => ({
       ...prevShowModal,
       show: false
     }))
+    router.push('/logout')
   }
 
   function closeModal() {
@@ -52,7 +51,7 @@ export default function Settings({ menus }) {
     <>
       <div className={`w-full rounded-lg bg-white pt-4`}>
         <ul>
-          {menus.map((item: any, index) => {
+          {menus.map((item: any, index: number) => {
             const isFirst = index === 0
             const isLast = index === menus.length - 1
             return (

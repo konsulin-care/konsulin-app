@@ -1,17 +1,16 @@
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function Schedule({ name, time, date }) {
-  function handleSeeAll() {}
-
   return (
     <div className='pt-4'>
       <div className='flex justify-between'>
         <p className='text-sm font-bold text-[#2C2F35] opacity-60'>
           Schedule Active
         </p>
-        <p onClick={handleSeeAll} className='text-sm text-[#2C2F35] opacity-60'>
+        <Link href='/' className='text-sm text-[#2C2F35] opacity-60'>
           See All
-        </p>
+        </Link>
       </div>
       <div className='flex items-center justify-between'>
         <div className='p-4'>
