@@ -82,15 +82,19 @@ export default function Settings() {
         <div className='rounded-lg bg-[#F9F9F9]'>
           <p className='text-xs text-black opacity-50'>Pengaturan</p>
           <ul>
-            {settingLists.map((menu, index) => {
-              const isLastItem = index === settingLists.length - 1
-              return (
-                <li
-                  className={`flex items-center justify-between ${isLastItem ? '' : 'border-b border-[#E8E8E8]'} space-y-4`}
-                  key={menu.id}
-                >
-                  <div
-                    className={`flex flex-grow items-center ${menu.iconUrl ? 'p-[11px]' : ''}`}
+            {settingLists.map((menu, index) => (
+              <li
+                key={menu.id}
+                className={`flex items-center justify-between ${
+                  index === settingLists.length - 1
+                    ? ''
+                    : 'border-b border-[#E8E8E8]'
+                } space-y-4`}
+              >
+                {menu.link ? (
+                  <Link
+                    href={menu.link}
+                    className='flex flex-grow items-center p-[11px]'
                   >
                     {menu.iconUrl && (
                       <Image
@@ -110,29 +114,49 @@ export default function Settings() {
                         </p>
                       )}
                     </div>
-                  </div>
-                  <div className='flex items-start pb-4'>
-                    {menu.iconUrl ? (
-                      <Link href={menu.link}>
-                        <ChevronRight color='#ADB6C7' width={24} height={24} />
-                      </Link>
-                    ) : (
-                      <Switch
-                        checked={
-                          menu.label === 'Session Reminder'
-                            ? sessionEnabled
-                            : newUpdatesEnabled
-                        }
-                        onCheckedChange={checked =>
-                          handleChangeSwitch(menu.label, checked)
-                        }
-                        id={menu.id}
+                  </Link>
+                ) : (
+                  <div className='flex flex-grow items-center'>
+                    {menu.iconUrl && (
+                      <Image
+                        src={menu.iconUrl}
+                        width={24}
+                        height={24}
+                        alt={`${menu.label}-icon`}
                       />
                     )}
+                    <div className={menu.desc ? 'flex flex-col' : ''}>
+                      <p className='text-black-100 px-4 text-xs font-normal'>
+                        {menu.label}
+                      </p>
+                      {menu.desc && (
+                        <p className='px-4 text-[10px] font-normal text-[#2C2F35] opacity-60'>
+                          {menu.desc}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </li>
-              )
-            })}
+                )}
+
+                <div className='flex items-start pb-4'>
+                  {menu.link ? (
+                    <ChevronRight color='#ADB6C7' width={24} height={24} />
+                  ) : (
+                    <Switch
+                      checked={
+                        menu.label === 'Session Reminder'
+                          ? sessionEnabled
+                          : newUpdatesEnabled
+                      }
+                      onCheckedChange={checked =>
+                        handleChangeSwitch(menu.label, checked)
+                      }
+                      id={menu.id}
+                    />
+                  )}
+                </div>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
