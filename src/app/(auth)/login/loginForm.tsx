@@ -18,9 +18,13 @@ interface LoginResponse {
   message: string
   data: {
     token: string
-    user_id?: string
-    practitioner_id?: string
-    user_type: string
+    user: {
+      name: string
+      email: string
+      user_id: string
+      role_id: string
+      role_name: string
+    }
   }
 }
 
@@ -52,12 +56,12 @@ function LoginFormContent({ role }) {
     unknown,
     typeof userData
   >({
-    mutationFn: async (user: typeof userData) => {
+    mutationFn: async (newUser: typeof userData) => {
       try {
         const response: LoginResponse = await apiRequest(
           'POST',
-          '/api/v1/auth/login',
-          user
+          `/api/v1/auth/login/${role}`,
+          newUser
         )
         return response
       } catch (err) {
@@ -65,19 +69,18 @@ function LoginFormContent({ role }) {
       }
     },
     onSuccess: response => {
-      const userType = response.data.user_id
-        ? 'patient'
-        : response.data.practitioner_id
-          ? 'clinician'
-          : 'guest'
-
+      const userType =
+        response.data.user.role_name === 'patient'
+          ? 'patient'
+          : response.data.user.role_name === 'practitioner'
+            ? 'clinician'
+            : 'guest'
       dispatch({
         type: 'login',
-        // payload below is temporary, fix this after BE sends proper response 
         payload: {
           token: response.data.token,
           role_name: userType,
-          name: `username of ${userType}`
+          name: response.data.user.name
         }
       })
       const redirect = searchParams.get('redirect')
