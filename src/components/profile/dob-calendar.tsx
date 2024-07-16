@@ -23,14 +23,24 @@ export default function DobCalendar({ value, onChange }) {
 
   const getTileClassName = ({ date, view }) => {
     const classes = [styles['custom-tile']]
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
     if (view === 'month') {
-      if (date.toDateString() === new Date().toDateString()) {
+      if (
+        date instanceof Date &&
+        date.toDateString() === today.toDateString()
+      ) {
         classes.push(styles['custom-today'])
       }
       if (tileDisabled({ date, view })) {
         classes.push(styles['custom-disabled'])
       }
-      if (date.toDateString() === selectedDate?.toDateString()) {
+      if (
+        selectedDate instanceof Date &&
+        date instanceof Date &&
+        date.toDateString() === selectedDate.toDateString()
+      ) {
         classes.push(styles['custom-selected'])
       }
     }
