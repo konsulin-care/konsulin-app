@@ -114,7 +114,7 @@ export default function EditProfile({ userRole }) {
   const handleDOBChange = (value: any) => {
     setUpdateUser(prevState => ({
       ...prevState,
-      birthdate: value
+      birthdate: format(value, 'yyyy-MM-dd')
     }))
     setDobDrawerOpen(false)
   }
