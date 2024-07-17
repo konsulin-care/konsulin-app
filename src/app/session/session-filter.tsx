@@ -1,9 +1,11 @@
-import { Button } from '@/components/ui/button'
+import { FilterIcon } from '@/components/icons'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { addDays, endOfWeek, format, startOfWeek } from 'date-fns'
-import Image from 'next/image'
 import { useState } from 'react'
 const CONTENT_DEFAULT = 0
 const CONTENT_CUSTOM = 1
@@ -71,6 +73,7 @@ const filterContentListTime = [
 ]
 
 export default function SessionFilter() {
+  const [isOpen, setIsOpen] = useState<boolean>(false)
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
   >(CONTENT_DEFAULT)
@@ -78,16 +81,41 @@ export default function SessionFilter() {
   const [filter, setFilter] = useState({
     startDate: undefined,
     endDate: undefined,
-    startTime: '',
-    endTime: '',
-    type: ''
+    startTime: undefined,
+    endTime: undefined,
+    type: 'all'
   })
 
-  function handleFilterChange(label: any, value: any) {
+  const isInitiaFilterState =
+    !filter.startDate && !filter.endDate && !filter.startTime && !filter.endTime
+
+  const handleCustomFilterOpen = () => {
+    if (isInitiaFilterState) {
+      handleFilterChange('startTime', '00:00')
+      handleFilterChange('endTime', '23:59')
+      handleFilterChange('startDate', new Date())
+      handleFilterChange('endDate', addDays(new Date(), 7))
+      setIsUseCustomDate(true)
+    }
+
+    setWhichContent(CONTENT_CUSTOM)
+  }
+
+  const handleFilterChange = (label: string, value: any) => {
     setFilter(prevState => ({
       ...prevState,
       [label]: value
     }))
+  }
+
+  const resetFilter = () => {
+    setFilter({
+      startDate: undefined,
+      endDate: undefined,
+      startTime: undefined,
+      endTime: undefined,
+      type: 'all'
+    })
   }
 
   const renderDrawerContent = () => {
@@ -119,7 +147,7 @@ export default function SessionFilter() {
                   </div>
                 ))}
                 <div
-                  onClick={() => setWhichContent(CONTENT_CUSTOM)}
+                  onClick={handleCustomFilterOpen}
                   className={cn(
                     'card min-w-[34px] border-0 p-4 text-[12px]',
                     isUseCustomDate
@@ -127,9 +155,11 @@ export default function SessionFilter() {
                       : 'bg-white'
                   )}
                 >
-                  Custom{' '}
+                  Custom
                   {isUseCustomDate &&
-                    `: ${format(filter.startDate, 'dd/MM/yy')} - ${format(filter.endDate, 'dd/MM/yy')}`}
+                    (filter.startDate === filter.endDate
+                      ? ''
+                      : ` : ${format(filter.startDate, 'dd MMM yy')} - ${format(filter.endDate, 'dd MMM yy')}`)}
                 </div>
               </div>
             </div>
@@ -154,11 +184,44 @@ export default function SessionFilter() {
                     {time.label}
                   </div>
                 ))}
+                {isUseCustomDate && filter.startTime && filter.endTime && (
+                  <div
+                    onClick={() => {
+                      setWhichContent(CONTENT_CUSTOM)
+                      handleFilterChange('startTime', '00:00')
+                      handleFilterChange('endTime', '23:59')
+                      handleFilterChange('startDate', new Date())
+                      handleFilterChange('endDate', addDays(new Date(), 7))
+                      setIsUseCustomDate(true)
+                    }}
+                    className={cn(
+                      'card min-w-[34px] border-0 p-4 text-[12px]',
+                      isUseCustomDate
+                        ? 'bg-secondary font-bold text-white'
+                        : 'bg-white'
+                    )}
+                  >
+                    Custom : {`${filter.startTime} - ${filter.endTime}`}
+                  </div>
+                )}
               </div>
             </div>
             <div className='card mt-4 border-0 bg-[#F9F9F9]'>
               <div className='mb-4 font-bold'>Session Type</div>
               <div className='flex flex-wrap gap-2'>
+                <div
+                  className={cn(
+                    'card border-0 p-4 text-[12px]',
+                    filter.type === 'all'
+                      ? 'bg-secondary font-bold text-white'
+                      : 'bg-white'
+                  )}
+                  onClick={() => {
+                    handleFilterChange('type', 'all')
+                  }}
+                >
+                  All
+                </div>
                 <div
                   className={cn(
                     'card border-0 p-4 text-[12px]',
@@ -187,7 +250,22 @@ export default function SessionFilter() {
                 </div>
               </div>
             </div>
-            <Button className='mt-4 rounded-xl bg-secondary text-white'>
+            {!isInitiaFilterState && (
+              <Button
+                className={cn(
+                  buttonVariants({ variant: 'outline' }),
+                  'mt-4 w-min border-0'
+                )}
+                onClick={resetFilter}
+              >
+                Reset Filter
+              </Button>
+            )}
+
+            <Button
+              className='mt-4 rounded-xl bg-secondary text-white'
+              onClick={() => setIsOpen(false)}
+            >
               Terapkan Filter
             </Button>
           </div>
@@ -196,24 +274,62 @@ export default function SessionFilter() {
         return (
           <div className='flex flex-col'>
             <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
-            <div className='mt-4 flex w-full justify-center'>
+            <div className='mt-4 flex w-full flex-col justify-center'>
               <Calendar
                 mode='range'
                 selected={{
                   from: filter.startDate,
                   to: filter.endDate
                 }}
-                onSelect={({ from, to }) => {
-                  handleFilterChange('startDate', from)
-                  handleFilterChange('endDate', to)
-                  setIsUseCustomDate(true)
+                onSelect={date => {
+                  handleFilterChange('startDate', date?.from)
+                  handleFilterChange('endDate', date?.to ? date.to : date?.from)
                 }}
-                className='w-min'
+                disabled={{ before: new Date() }}
+                className='w-full p-0'
                 classNames={{
+                  month: 'space-y-8 w-full',
+                  head_row: 'flex w-full',
+                  head_cell:
+                    'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] w-full',
+                  cell: 'w-full h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+                  day: cn(
+                    buttonVariants({ variant: 'ghost' }),
+                    'h-9 p-0 font-normal aria-selected:opacity-100 w-full'
+                  ),
                   day_selected:
-                    ' bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground focus:bg-secondary focus:text-secondary-foreground'
+                    'bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground focus:bg-secondary focus:text-secondary-foreground',
+                  day_today: 'bg-accent text-accent-foreground font-extrabold'
                 }}
               />
+
+              <div className='mt-8 flex gap-4'>
+                <div className='grid w-full max-w-sm items-center gap-1.5'>
+                  <Label htmlFor='startTime'>Start Time</Label>
+                  <Input
+                    onChange={e =>
+                      handleFilterChange('startTime', e.target.value)
+                    }
+                    value={filter.startTime}
+                    id='startTime'
+                    className='block p-4'
+                    type='time'
+                  />
+                </div>
+                <div className='grid w-full max-w-sm items-center gap-1.5'>
+                  <Label htmlFor='endTime'>End Time</Label>
+                  <Input
+                    min={filter.startTime}
+                    onChange={e =>
+                      handleFilterChange('endTime', e.target.value)
+                    }
+                    value={filter.endTime}
+                    id='endTime'
+                    className='block p-4'
+                    type='time'
+                  />
+                </div>
+              </div>
             </div>
             <Button
               type='button'
@@ -229,18 +345,28 @@ export default function SessionFilter() {
         break
     }
   }
+
   return (
-    <Drawer onClose={() => setWhichContent(CONTENT_DEFAULT)}>
+    <Drawer
+      onClose={() => {
+        setWhichContent(CONTENT_DEFAULT)
+        setIsOpen(false)
+      }}
+      open={isOpen}
+    >
       <DrawerTrigger asChild>
         <Button
+          onClick={() => setIsOpen(true)}
           variant='outline'
-          className='flex h-[50px] w-[50px] items-center justify-center rounded-lg border-0 bg-[#F9F9F9]'
+          className={cn(
+            'flex h-[50px] w-[50px] items-center justify-center rounded-lg border-0 bg-[#F9F9F9]'
+          )}
         >
-          <Image
-            alt='filter min-w-[20px] min-h-[20px] object-cover'
+          <FilterIcon
             width={20}
             height={20}
-            src={'/icons/filter.svg'}
+            className='min-h-[20px] min-w-[20px]'
+            fill={isInitiaFilterState ? '#E1E1E1' : '#13c2c2'}
           />
         </Button>
       </DrawerTrigger>
