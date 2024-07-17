@@ -72,7 +72,7 @@ const filterContentListTime = [
   }
 ]
 
-export default function SessionFilter() {
+export default function ClinicFilter() {
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM

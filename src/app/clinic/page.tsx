@@ -10,9 +10,9 @@ import dayjs from 'dayjs'
 import { SearchIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import SessionFilter from './session-filter'
+import ClinicFilter from './clinic-filter'
 
-const Session: React.FC<IWithAuth> = ({ userRole }) => {
+const Clinic: React.FC<IWithAuth> = () => {
   return (
     <NavigationBar>
       <Header>
@@ -70,7 +70,7 @@ const Session: React.FC<IWithAuth> = ({ userRole }) => {
               className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
-            <SessionFilter />
+            <ClinicFilter />
           </div>
           <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
             {Array(12)
@@ -109,4 +109,4 @@ const Session: React.FC<IWithAuth> = ({ userRole }) => {
     </NavigationBar>
   )
 }
-export default withAuth(Session, ['patient', 'clinician'], true)
+export default withAuth(Clinic, ['patient'], true)
