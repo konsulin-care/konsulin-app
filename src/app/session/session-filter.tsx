@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
 import { cn } from '@/lib/utils'
-import dayjs from 'dayjs'
+import { addDays, endOfWeek, format, startOfWeek } from 'date-fns'
 import Image from 'next/image'
 import { useState } from 'react'
-
 const CONTENT_DEFAULT = 0
 const CONTENT_CUSTOM = 1
 
@@ -12,34 +12,25 @@ const filterContentListDate = [
   {
     label: 'Today',
     value: {
-      start: dayjs().format('DDMMYYYY'),
-      end: dayjs().format('DDMMYYYY')
+      start: new Date(),
+      end: new Date()
     }
   },
   {
     label: 'This Week',
     value: {
-      start: dayjs().startOf('week').add(1, 'day').format('DDMMYYYY'),
-      end: dayjs().endOf('week').add(1, 'day').format('DDMMYYYY')
+      start: addDays(startOfWeek(new Date()), 1),
+      end: addDays(endOfWeek(new Date()), 1)
     }
   },
   {
     label: 'Next Week',
     value: {
-      start: dayjs().startOf('week').add(8, 'day').format('DDMMYYYY'),
-      end: dayjs().endOf('week').add(8, 'day').format('DDMMYYYY')
-    }
-  },
-  {
-    label: 'Custom',
-    value: {
-      start: null,
-      end: null
+      start: addDays(startOfWeek(new Date()), 8),
+      end: addDays(endOfWeek(new Date()), 8)
     }
   }
 ]
-
-console.log({ filterContentListDate })
 
 const filterContentListTime = [
   {
@@ -83,16 +74,16 @@ export default function SessionFilter() {
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
   >(CONTENT_DEFAULT)
-
+  const [isUseCustomDate, setIsUseCustomDate] = useState<boolean>(false)
   const [filter, setFilter] = useState({
-    startDate: '',
-    endDate: '',
+    startDate: undefined,
+    endDate: undefined,
     startTime: '',
     endTime: '',
     type: ''
   })
 
-  function handleChangeInput(label: any, value: any) {
+  function handleFilterChange(label: any, value: any) {
     setFilter(prevState => ({
       ...prevState,
       [label]: value
@@ -103,20 +94,21 @@ export default function SessionFilter() {
     switch (whichContent) {
       case CONTENT_DEFAULT:
         return (
-          <>
+          <div className='flex flex-col'>
             <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
             <div className='card mt-4 border-0 bg-[#F9F9F9]'>
               <div className='mb-4 font-bold'>Data</div>
-              <div className='flex flex-wrap gap-2'>
+              <div className='flex flex-wrap gap-[10px]'>
                 {filterContentListDate.map(date => (
                   <div
                     key={date.label}
                     onClick={() => {
-                      handleChangeInput('startDate', date.value.start)
-                      handleChangeInput('endDate', date.value.end)
+                      handleFilterChange('startDate', date.value.start)
+                      handleFilterChange('endDate', date.value.end)
+                      setIsUseCustomDate(false)
                     }}
                     className={cn(
-                      'card border-0 p-4 text-[12px]',
+                      'card min-w-[34px] border-0 p-4 text-[12px]',
                       filter.startDate === date.value.start &&
                         filter.endDate === date.value.end
                         ? 'bg-secondary font-bold text-white'
@@ -126,17 +118,30 @@ export default function SessionFilter() {
                     {date.label}
                   </div>
                 ))}
+                <div
+                  onClick={() => setWhichContent(CONTENT_CUSTOM)}
+                  className={cn(
+                    'card min-w-[34px] border-0 p-4 text-[12px]',
+                    isUseCustomDate
+                      ? 'bg-secondary font-bold text-white'
+                      : 'bg-white'
+                  )}
+                >
+                  Custom{' '}
+                  {isUseCustomDate &&
+                    `: ${format(filter.startDate, 'dd/MM/yy')} - ${format(filter.endDate, 'dd/MM/yy')}`}
+                </div>
               </div>
             </div>
             <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='font-bold'>Session Time</div>
-              <div className='flex flex-wrap gap-2'>
+              <div className='mb-4 font-bold'>Session Time</div>
+              <div className='flex flex-wrap gap-[10px]'>
                 {filterContentListTime.map(time => (
                   <div
                     key={time.label}
                     onClick={() => {
-                      handleChangeInput('startTime', time.value.start)
-                      handleChangeInput('endTime', time.value.end)
+                      handleFilterChange('startTime', time.value.start)
+                      handleFilterChange('endTime', time.value.end)
                     }}
                     className={cn(
                       'card border-0 p-4 text-[12px]',
@@ -162,7 +167,7 @@ export default function SessionFilter() {
                       : 'bg-white'
                   )}
                   onClick={() => {
-                    handleChangeInput('type', 'online')
+                    handleFilterChange('type', 'online')
                   }}
                 >
                   Online
@@ -175,24 +180,57 @@ export default function SessionFilter() {
                       : 'bg-white'
                   )}
                   onClick={() => {
-                    handleChangeInput('type', 'offline')
+                    handleFilterChange('type', 'offline')
                   }}
                 >
                   Offline
                 </div>
               </div>
             </div>
-          </>
+            <Button className='mt-4 rounded-xl bg-secondary text-white'>
+              Terapkan Filter
+            </Button>
+          </div>
         )
       case CONTENT_CUSTOM:
-        break
+        return (
+          <div className='flex flex-col'>
+            <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
+            <div className='mt-4 flex w-full justify-center'>
+              <Calendar
+                mode='range'
+                selected={{
+                  from: filter.startDate,
+                  to: filter.endDate
+                }}
+                onSelect={({ from, to }) => {
+                  handleFilterChange('startDate', from)
+                  handleFilterChange('endDate', to)
+                  setIsUseCustomDate(true)
+                }}
+                className='w-min'
+                classNames={{
+                  day_selected:
+                    ' bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground focus:bg-secondary focus:text-secondary-foreground'
+                }}
+              />
+            </div>
+            <Button
+              type='button'
+              onClick={() => setWhichContent(CONTENT_DEFAULT)}
+              className='mt-4 rounded-xl bg-secondary text-white'
+            >
+              Kembali
+            </Button>
+          </div>
+        )
 
       default:
         break
     }
   }
   return (
-    <Drawer>
+    <Drawer onClose={() => setWhichContent(CONTENT_DEFAULT)}>
       <DrawerTrigger asChild>
         <Button
           variant='outline'

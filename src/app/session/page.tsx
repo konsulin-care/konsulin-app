@@ -72,7 +72,7 @@ const Session: React.FC<IWithAuth> = ({ userRole }) => {
             />
             <SessionFilter />
           </div>
-          <div className='mt-4 grid grid-cols-2 gap-4'>
+          <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
             {Array(12)
               .fill(undefined)
               .map((_, index: number) => (
