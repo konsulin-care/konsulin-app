@@ -138,7 +138,9 @@ export default function Settings() {
                   </div>
                 )}
 
-                <div className='flex items-start pb-4'>
+                <div
+                  className={`flex items-start py-[11px] pb-4 ${menu.link ? undefined : 'pr-[10px]'}`}
+                >
                   {menu.link ? (
                     <ChevronRight color='#ADB6C7' width={24} height={24} />
                   ) : (
@@ -152,7 +154,18 @@ export default function Settings() {
                         handleChangeSwitch(menu.label, checked)
                       }
                       id={menu.id}
-                    />
+                      thumbColor='bg-switch-gradient-thumb'
+                      thumbShadow='shadow-switch-thumb-setting'
+                      className={`pr-[13px]${
+                        menu.label === 'Session Reminder'
+                          ? sessionEnabled
+                            ? 'data-[state=checked] h-[14px] w-[34px] border-0 bg-switch-gradient-checked-line'
+                            : 'data-[state=unchecked] h-[14px] w-[34px] border-0 bg-switch-gradient-unchecked-line'
+                          : newUpdatesEnabled
+                            ? 'data-[state=checked] h-[14px] w-[34px] border-0 bg-switch-gradient-checked-line'
+                            : 'data-[state=unchecked] h-[14px] w-[34px] border-0 bg-switch-gradient-unchecked-line'
+                      }`}
+                    ></Switch>
                   )}
                 </div>
               </li>
