@@ -11,17 +11,19 @@ export default function LayoutSettings({ children }) {
   return (
     <NavigationBar>
       <Header showChat={false}>
-        <div className='flex items-center space-x-2'>
+        <div className='flex w-full items-center justify-start space-x-2 pb-2'>
           <ChevronLeft
             onClick={() => router.back()}
             color='white'
             width={30}
             height={30}
           />
-          <p className='text-sm font-bold text-white'>Pengaturan</p>
+          <div className='text-[14px] font-bold text-white'>Pengaturan</div>
         </div>
       </Header>
-      {children}
+      <div className='mt-[-24px] rounded-[16px] bg-white'>
+        <div className='min-h-screen p-4'>{children}</div>
+      </div>
     </NavigationBar>
   )
 }

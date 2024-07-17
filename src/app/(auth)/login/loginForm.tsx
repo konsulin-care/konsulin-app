@@ -69,12 +69,10 @@ function LoginFormContent({ role }) {
       }
     },
     onSuccess: response => {
-      const userType =
-        response.data.user.role_name === 'patient'
-          ? 'patient'
-          : response.data.user.role_name === 'practitioner'
-            ? 'clinician'
-            : 'guest'
+      let userType = ''
+      if (response.data.user.role_name === 'patient') userType = 'patient'
+      if (response.data.user.role_name === 'practitioner')
+        userType = 'clinician'
       dispatch({
         type: 'login',
         payload: {

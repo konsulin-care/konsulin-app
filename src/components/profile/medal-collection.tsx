@@ -5,7 +5,7 @@ import Link from 'next/link'
 export default function MedalCollection({ medals }) {
   return (
     <>
-      <div className='flex justify-between py-4'>
+      <div className='flex items-center justify-between py-4'>
         <p className='text-sm font-bold text-[#2C2F35] opacity-60'>
           Medal Collection
         </p>

@@ -135,149 +135,143 @@ export default function EditProfile({ userRole }) {
 
   return (
     <>
-      <div className='mt-[-24px] rounded-[16px] bg-white p-4'>
-        <div className='flex flex-col items-center justify-center p-4'>
-          <div className='pb-2'>
-            <Image
-              className='rounded-full'
-              src={userPhoto}
-              width={64}
-              height={64}
-              alt='user-photo'
-            />
-          </div>
-          <div className='flex items-center justify-center space-x-2 px-4 py-2'>
-            <Image
-              src={'/icons/edit-photo.svg'}
-              width={16}
-              height={16}
-              alt='edit-photo'
-            />
-            <span
-              className='cursor-pointer text-xs font-normal text-secondary'
-              onClick={handleButtonClick}
-            >
-              Ganti Photo
-            </span>
-          </div>
-          <input
-            type='file'
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            onChange={handleFileChange}
-            accept='image/*'
+      <div className='flex flex-col items-center justify-center p-4'>
+        <div className='pb-2'>
+          <Image
+            className='rounded-full'
+            src={userPhoto}
+            width={64}
+            height={64}
+            alt='user-photo'
           />
         </div>
-        <div className='flex flex-col space-y-4 py-4'>
-          <Input
-            width={24}
-            height={24}
-            prefixIcon={'/icons/user-edit.png'}
-            placeholder='Masukan Nama Akun'
-            name='username'
-            id='username'
-            type='text'
-            opacity={false}
-            onChange={event =>
-              handleChangeInput('username', event.target.value)
-            }
-            outline={false}
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+        <div className='flex items-center justify-center space-x-2 px-4 py-2'>
+          <Image
+            src={'/icons/edit-photo.svg'}
+            width={16}
+            height={16}
+            alt='edit-photo'
           />
-          <div
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-            onClick={() => setDobDrawerOpen(true)}
+          <span
+            className='cursor-pointer text-xs font-normal text-secondary'
+            onClick={handleButtonClick}
           >
-            <Image
-              src={'/icons/calendar-edit.png'}
-              alt='calendar-icon'
-              width={24}
-              height={24}
-            />
-            <div className='flex flex-grow justify-start text-sm'>
-              {updateUser.birthdate
-                ? format(updateUser.birthdate, 'yyyy-MM-dd')
-                : 'Masukan Tanggal Lahir'}
-            </div>
+            Ganti Photo
+          </span>
+        </div>
+        <input
+          type='file'
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+          accept='image/*'
+        />
+      </div>
+      <div className='flex flex-col space-y-4 py-4'>
+        <Input
+          width={24}
+          height={24}
+          prefixIcon={'/icons/user-edit.png'}
+          placeholder='Masukan Nama Akun'
+          name='username'
+          id='username'
+          type='text'
+          opacity={false}
+          onChange={event => handleChangeInput('username', event.target.value)}
+          outline={false}
+          className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+        />
+        <div
+          className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+          onClick={() => setDobDrawerOpen(true)}
+        >
+          <Image
+            src={'/icons/calendar-edit.png'}
+            alt='calendar-icon'
+            width={24}
+            height={24}
+          />
+          <div className='flex flex-grow justify-start text-sm'>
+            {updateUser.birthdate
+              ? format(updateUser.birthdate, 'yyyy-MM-dd')
+              : 'Masukan Tanggal Lahir'}
           </div>
-          <Input
-            width={24}
-            height={24}
-            prefixIcon={'/icons/region-code.svg'}
-            placeholder='Masukan Nomor Whatsapp'
-            name='whatsapp'
-            id='whatsapp'
-            type='text'
-            opacity={false}
-            onChange={event =>
-              handleChangeInput('whatsapp', event.target.value)
-            }
-            outline={false}
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-          />
-          <Input
-            width={24}
-            height={24}
-            prefixIcon={'/icons/location.svg'}
-            placeholder='Masukan Alamat Tinggal'
-            name='address'
-            id='address'
-            type='text'
-            opacity={false}
-            onChange={event => handleChangeInput('address', event.target.value)}
-            outline={false}
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-          />
-          {userRole === 'patient' && (
-            <div className='flex w-full flex-grow justify-between space-x-2'>
+        </div>
+        <Input
+          width={24}
+          height={24}
+          prefixIcon={'/icons/region-code.svg'}
+          placeholder='Masukan Nomor Whatsapp'
+          name='whatsapp'
+          id='whatsapp'
+          type='text'
+          opacity={false}
+          onChange={event => handleChangeInput('whatsapp', event.target.value)}
+          outline={false}
+          className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+        />
+        <Input
+          width={24}
+          height={24}
+          prefixIcon={'/icons/location.svg'}
+          placeholder='Masukan Alamat Tinggal'
+          name='address'
+          id='address'
+          type='text'
+          opacity={false}
+          onChange={event => handleChangeInput('address', event.target.value)}
+          outline={false}
+          className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+        />
+        {userRole === 'patient' && (
+          <div className='flex w-full flex-grow justify-between space-x-2'>
+            <DropdownProfile
+              options={genderOptions}
+              value={genderValue}
+              onSelect={handleGenderSelect}
+              placeholder='Pilih Gender'
+            />
+            <DropdownProfile
+              options={educationOptions}
+              value={educationPatientValue}
+              onSelect={handleEducationSelect}
+              placeholder='Pilih Pendidikan'
+            />
+          </div>
+        )}
+        {userRole === 'clinician' && (
+          <>
+            <DropdownProfile
+              options={genderOptions}
+              value={genderValue}
+              onSelect={handleGenderSelect}
+              placeholder='Pilih Gender'
+            />
+            {updateUser.education.map((edu, index) => (
               <DropdownProfile
-                options={genderOptions}
-                value={genderValue}
-                onSelect={handleGenderSelect}
-                placeholder='Pilih Gender'
-              />
-              <DropdownProfile
+                key={`${edu}-${index}`}
                 options={educationOptions}
-                value={educationPatientValue}
-                onSelect={handleEducationSelect}
+                value={edu}
+                onSelect={value => handleEducationChange(index, value)}
                 placeholder='Pilih Pendidikan'
               />
-            </div>
-          )}
-          {userRole === 'clinician' && (
-            <>
-              <DropdownProfile
-                options={genderOptions}
-                value={genderValue}
-                onSelect={handleGenderSelect}
-                placeholder='Pilih Gender'
-              />
-              {updateUser.education.map((edu, index) => (
-                <DropdownProfile
-                  key={`${edu}-${index}`}
-                  options={educationOptions}
-                  value={edu}
-                  onSelect={value => handleEducationChange(index, value)}
-                  placeholder='Pilih Pendidikan'
-                />
-              ))}
-              <p
-                className='text-center text-sm font-normal'
-                onClick={handleAddEducationLevel}
-              >
-                + Add Education Level
-              </p>
-            </>
-          )}
-          <div className='py-4'></div>
-          <button
-            className='text-md border-1 w-full rounded-full border-primary bg-secondary p-4 font-semibold text-white'
-            type='submit'
-            onClick={handleEditSave}
-          >
-            Simpan
-          </button>
-        </div>
+            ))}
+            <p
+              className='text-center text-sm font-normal'
+              onClick={handleAddEducationLevel}
+            >
+              + Add Education Level
+            </p>
+          </>
+        )}
+        <div className='py-4'></div>
+        <button
+          className='text-md border-1 w-full rounded-full border-primary bg-secondary p-4 font-semibold text-white'
+          type='submit'
+          onClick={handleEditSave}
+        >
+          Simpan
+        </button>
       </div>
       <Drawer open={dobDrawerOpen} onClose={closeDrawer}>
         <DrawerTrigger asChild>

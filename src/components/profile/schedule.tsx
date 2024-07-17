@@ -4,7 +4,7 @@ import Link from 'next/link'
 export default function Schedule({ name, time, date }) {
   return (
     <div className='pt-4'>
-      <div className='flex justify-between'>
+      <div className='flex items-center justify-between'>
         <p className='text-sm font-bold text-[#2C2F35] opacity-60'>
           Schedule Active
         </p>
