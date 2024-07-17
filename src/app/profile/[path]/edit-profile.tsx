@@ -41,7 +41,10 @@ export default function EditProfile({ userRole }) {
   const [dobDrawerOpen, setDobDrawerOpen] = useState(false)
 
   const [genderValue, setGenderValue] = useState('')
-  const [educationValue, setEducationValue] = useState<string[]>([])
+  const [educationPatientValue, setEducationPatientValue] = useState<string>('')
+  const [educationClinicianValue, setEducationClinicianValue] = useState<
+    string[]
+  >([])
 
   const handleGenderSelect = (value: string) => {
     setGenderValue(value)
@@ -53,14 +56,19 @@ export default function EditProfile({ userRole }) {
       option => option.value === value
     )
     if (selectedOption) {
-      setEducationValue(prevEducation => [
-        ...prevEducation,
-        selectedOption.value
-      ])
-      handleChangeInput('education', [
-        ...updateUser.education,
-        selectedOption.value
-      ])
+      if (userRole === 'clinician') {
+        setEducationClinicianValue(prevEducation => [
+          ...prevEducation,
+          selectedOption.value
+        ])
+        handleChangeInput('education', [
+          ...updateUser.education,
+          selectedOption.value
+        ])
+      } else if (userRole === 'patient') {
+        setEducationPatientValue(selectedOption.value)
+        handleChangeInput('education', selectedOption.value)
+      }
     }
   }
 
@@ -103,7 +111,9 @@ export default function EditProfile({ userRole }) {
   }
 
   const handleEditSave = () => {
-    updateUser.birthdate = format(updateUser.birthdate, 'yyyy-MM-dd')
+    if (updateUser.birthdate !== undefined) {
+      updateUser.birthdate = format(updateUser.birthdate, 'yyyy-MM-dd')
+    }
     const updateUserData = {
       photo: userPhoto,
       ...updateUser
@@ -226,10 +236,9 @@ export default function EditProfile({ userRole }) {
                 onSelect={handleGenderSelect}
                 placeholder='Pilih Gender'
               />
-
               <DropdownProfile
                 options={educationOptions}
-                value={educationValue[0] || ''}
+                value={educationPatientValue}
                 onSelect={handleEducationSelect}
                 placeholder='Pilih Pendidikan'
               />
