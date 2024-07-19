@@ -17,16 +17,7 @@ const Clinic: React.FC<IWithAuth> = () => {
     <NavigationBar>
       <Header>
         <div className='flex w-full flex-col'>
-          <div className='flex items-center'>
-            <Image
-              className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-              width={32}
-              height={32}
-              alt='offline'
-              src={'/images/avatar.jpg'}
-            />
-            <div className='text-[14px] font-bold text-white'>Book Session</div>
-          </div>
+          <div className='text-[14px] font-bold text-white'>Book Session</div>
           <div className='mt-4 flex items-center justify-between'>
             <div className='text-[14px] font-bold text-white'>
               Schedule Active
@@ -79,12 +70,12 @@ const Clinic: React.FC<IWithAuth> = () => {
                 <div key={index} className='card flex flex-col items-center'>
                   <Image
                     className='h-[100px] w-full rounded-lg object-cover'
-                    src='/images/avatar.jpg'
+                    src='/images/clinic.jpg'
                     alt='clinic'
                     width={158}
                     height={100}
                   />
-                  <div className='mt-2 font-bold text-primary'>
+                  <div className='mt-2 text-center font-bold text-primary'>
                     Klinik Jaga Mental
                   </div>
                   <div className='mt-2 flex flex-wrap justify-center gap-1'>
@@ -98,9 +89,11 @@ const Clinic: React.FC<IWithAuth> = () => {
                       Social Interaction
                     </Badge>
                   </div>
-                  <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
-                    Check
-                  </Button>
+                  <Link href={`/clinic/${index + 1}`} className='w-full'>
+                    <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
+                      Check
+                    </Button>
+                  </Link>
                 </div>
               ))}
           </div>

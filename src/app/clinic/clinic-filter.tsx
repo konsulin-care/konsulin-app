@@ -252,9 +252,10 @@ export default function ClinicFilter() {
             </div>
             {!isInitiaFilterState && (
               <Button
+                size='sm'
                 className={cn(
                   buttonVariants({ variant: 'outline' }),
-                  'mt-4 w-min border-0'
+                  'mt-4 w-min border-0 text-[12px]'
                 )}
                 onClick={resetFilter}
               >

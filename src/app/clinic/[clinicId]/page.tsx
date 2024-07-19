@@ -1,0 +1,104 @@
+'use client'
+
+import ClinicFilter from '@/app/clinic/clinic-filter'
+import Header from '@/components/header'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { InputWithIcon } from '@/components/ui/input-with-icon'
+import withAuth, { IWithAuth } from '@/hooks/withAuth'
+import { ChevronLeftIcon, SearchIcon } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+
+const DetailClinic: React.FC<IWithAuth> = () => {
+  return (
+    <>
+      <Header>
+        <div className='flex w-full items-center'>
+          <Link href='/clinic'>
+            <ChevronLeftIcon color='white' className='mr-2 cursor-pointer' />
+          </Link>
+          <div className='text-[14px] font-bold text-white'>Detail Clinic</div>
+        </div>
+      </Header>
+      <div className='mt-[-24px] rounded-[16px] bg-white p-4'>
+        <Image
+          className='h-[124px] w-full rounded-lg object-cover'
+          src='/images/clinic.jpg'
+          width={396}
+          height={124}
+          alt='detail-clinic'
+        />
+
+        <h3 className='mt-2 text-center text-[20px] font-bold'>
+          Klinik Jaga Mental
+        </h3>
+
+        <div className='card mt-2 border-0 bg-[#F9F9F9] p-4 text-[12px]'>
+          <div className='mb-4 font-bold'>Clinic Information</div>
+          <div className='flex justify-between'>
+            <span>Affiliation</span>
+            <span className='font-bold'>Konsulin</span>
+          </div>
+          <div className='mt-2 flex flex-col'>
+            <span>Alamat</span>
+            <span className='font-bold'>
+              Jalan Pemuda Raya 21, Jakarta Selatan
+            </span>
+          </div>
+        </div>
+
+        <div className='mt-4 flex gap-4'>
+          <InputWithIcon
+            placeholder='Search'
+            className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
+            startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
+          />
+          <ClinicFilter />
+        </div>
+
+        <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+          {Array(12)
+            .fill(undefined)
+            .map((_, index: number) => (
+              <div key={index} className='card flex flex-col items-center'>
+                <div className='relative flex justify-center'>
+                  <Image
+                    className='h-[100px] w-[100px] rounded-full object-cover'
+                    src='/images/avatar.jpg'
+                    alt='clinic'
+                    width={100}
+                    height={100}
+                  />
+
+                  <Badge className='absolute bottom-0 flex h-[24px] min-w-[100px] justify-center bg-[#08979C] font-normal text-white'>
+                    Konsulin
+                  </Badge>
+                </div>
+                <div className='mt-2 text-center font-bold text-primary'>
+                  Nurul
+                </div>
+                <div className='mt-2 flex flex-wrap justify-center gap-1'>
+                  <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+                    Workplace
+                  </Badge>
+                  <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+                    Relationship
+                  </Badge>
+                  <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+                    Social Interaction
+                  </Badge>
+                </div>
+                <Link href={`/practitioner/${index + 1}`} className='w-full'>
+                  <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
+                    Check
+                  </Button>
+                </Link>
+              </div>
+            ))}
+        </div>
+      </div>
+    </>
+  )
+}
+export default withAuth(DetailClinic, ['patient'], true)

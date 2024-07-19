@@ -8,12 +8,12 @@ export interface IWithAuth {
   isAuthenticated: boolean
 }
 
-const withAuth = (
-  WrappedComponent: React.ComponentType<IWithAuth>,
+function withAuth<T>(
+  WrappedComponent: React.ComponentType<T>,
   allowedRoles: string[] = [],
   allowGuestMode: boolean = false
-) => {
-  const Wrapper: React.FC = props => {
+) {
+  const Wrapper: React.FC = (props: T) => {
     const router = useRouter()
     const { state: authState } = useAuth()
     const [isVerified, setIsVerified] = useState(false)

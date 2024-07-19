@@ -1,3 +1,4 @@
+import PageLoader from '@/components/general/page-loader'
 import QueryProvider from '@/components/general/query-provider'
 import { AuthProvider } from '@/context/auth/authContext'
 import '@/styles/globals.css'
@@ -62,15 +63,16 @@ export default function RootLayout({
     <html lang='en'>
       <body className={inter.className}>
         <AuthProvider>
-        <QueryProvider>
-          <div className='flex min-h-screen flex-col'>
-            <ToastContainer />
-            <div id='modal' />
-            <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
-              {children}
-            </main>
-          </div>
-        </QueryProvider>
+          <QueryProvider>
+            <PageLoader />
+            <div className='flex min-h-screen flex-col'>
+              <ToastContainer />
+              <div id='modal' />
+              <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
+                {children}
+              </main>
+            </div>
+          </QueryProvider>
         </AuthProvider>
       </body>
     </html>
