@@ -8,12 +8,12 @@ export default function InformationDetail({
   subTitle = '',
   buttonText,
   details,
-  onEdit
+  onEdit,
+  role
 }) {
-
   return (
-    <div className='flex w-full flex-col items-center justify-center px-4 pb-4'>
-      <div className='flex w-full justify-between pb-2 pt-4'>
+    <div className='flex w-full flex-col items-center justify-center bg-[#F9F9F9] p-4'>
+      <div className='flex w-full justify-between pb-2'>
         <div className='flex w-1/2'>
           <Image
             src={iconUrl}
@@ -23,11 +23,29 @@ export default function InformationDetail({
             className={`${isRadiusIcon ? 'rounded-full p-[2px]' : 'p-[2px]'}`}
           />
           <div className='flex flex-col items-start justify-start'>
-            <p className='text-black-40 px-2 text-[10px]'>{title}</p>
-            {subTitle && (
-              <p className='px-2 text-sm font-bold text-[#2C2F35]'>
-                {subTitle}
-              </p>
+            {role === 'patient' && (
+              <>
+                <p className='pl-2 text-sm font-bold text-[#2C2F35] opacity-100'>
+                  {title}
+                </p>
+                {subTitle && (
+                  <p className='pl-2 text-[10px] font-normal text-[#2C2F35] opacity-100'>
+                    {subTitle}
+                  </p>
+                )}
+              </>
+            )}
+            {role === 'clinician' && (
+              <>
+                <p className='pl-2 text-[10px] font-normal text-[#2C2F35] opacity-40'>
+                  {title}
+                </p>
+                {subTitle && (
+                  <p className='pl-2 text-sm font-bold text-[#2C2F35] opacity-100'>
+                    {subTitle}
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -39,8 +57,8 @@ export default function InformationDetail({
           </button>
         </div>
       </div>
-      <div className='flex w-full border-t border-[#E3E3E3]' />
-      <div className='flex w-full flex-col space-y-2 py-2'>
+      <div className='flex w-full border-t border-[#E3E3E3] pb-2' />
+      <div className='flex w-full flex-col space-y-2'>
         {details.map((item: any) => {
           return (
             <div
@@ -49,14 +67,18 @@ export default function InformationDetail({
             >
               {item.key === 'Specialty' ? (
                 <div>
-                  <p className='text-left'>{item.key}</p>
+                  <p className='text-left text-sm'>{item.key}</p>
                   <div className='mt-2 flex w-full border-t border-[#E3E3E3]' />
                   {item.value.length > 0 && <Tags tags={item.value} />}
                 </div>
               ) : (
                 <>
-                  <p>{item.key}</p>
-                  <p className='font-bold'>{item.value}</p>
+                  <p className='text-sm text-[#2C2F35] opacity-100'>
+                    {item.key}
+                  </p>
+                  <p className='text-sm font-bold text-[#2C2F35] opacity-100'>
+                    {item.value}
+                  </p>
                 </>
               )}
             </div>
