@@ -9,6 +9,8 @@ import AppClinician from './app-clinician'
 import AppGuest from './app-guest'
 import AppPatient from './app-patient'
 
+// test
+
 const App: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
   const renderHomeContent = () => {
     switch (userRole) {
