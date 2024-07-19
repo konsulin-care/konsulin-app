@@ -29,13 +29,13 @@ export default function NavigationBar({ children }) {
           <span className='mt-[5px] text-[12px]'>Beranda</span>
         </Link>
         <Link
-          href={'/session'}
+          href={'/clinic'}
           className={cn(
             `flex flex-col items-center`,
-            pathname?.startsWith('/session') ? activePathStyle : pathStyle
+            pathname?.startsWith('/clinic') ? activePathStyle : pathStyle
           )}
         >
-          <OfficeIcon fill={pathname === '/session' ? '#13C2C2' : '#ADB6C7'} />
+          <OfficeIcon fill={pathname === '/clinic' ? '#13C2C2' : '#ADB6C7'} />
 
           <span className='mt-[5px] text-[12px]'>Sesi Temu</span>
         </Link>

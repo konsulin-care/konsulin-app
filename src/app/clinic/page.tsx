@@ -4,26 +4,20 @@ import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { InputWithIcon } from '@/components/ui/input-with-icon'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import dayjs from 'dayjs'
+import { SearchIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import ClinicFilter from './clinic-filter'
 
-const Session: React.FC<IWithAuth> = ({ userRole }) => {
+const Clinic: React.FC<IWithAuth> = () => {
   return (
     <NavigationBar>
       <Header>
         <div className='flex w-full flex-col'>
-          <div className='flex items-center'>
-            <Image
-              className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-              width={32}
-              height={32}
-              alt='offline'
-              src={'/images/avatar.jpg'}
-            />
-            <div className='text-[14px] font-bold text-white'>Book Session</div>
-          </div>
+          <div className='text-[14px] font-bold text-white'>Book Session</div>
           <div className='mt-4 flex items-center justify-between'>
             <div className='text-[14px] font-bold text-white'>
               Schedule Active
@@ -61,27 +55,27 @@ const Session: React.FC<IWithAuth> = ({ userRole }) => {
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>
         <div className='p-4'>
-          {/* <div>filter</div> */}
-          <div className='flex'>
-            {/* <InputWithIcon
-              className='w-full mr-4 h-[50px] border-0 bg-[#F9F9F9] text-primary'
+          <div className='flex gap-4'>
+            <InputWithIcon
+              placeholder='Search'
+              className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
-            /> */}
-            {/* <div className='h-[50px] w-[50px] rounded-lg bg-[#F9F9F9]'>x</div> */}
+            />
+            <ClinicFilter />
           </div>
-          <div className='mt-4 grid grid-cols-2 gap-4'>
+          <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
             {Array(12)
               .fill(undefined)
               .map((_, index: number) => (
                 <div key={index} className='card flex flex-col items-center'>
                   <Image
                     className='h-[100px] w-full rounded-lg object-cover'
-                    src='/images/avatar.jpg'
+                    src='/images/clinic.jpg'
                     alt='clinic'
                     width={158}
                     height={100}
                   />
-                  <div className='mt-2 font-bold text-primary'>
+                  <div className='mt-2 text-center font-bold text-primary'>
                     Klinik Jaga Mental
                   </div>
                   <div className='mt-2 flex flex-wrap justify-center gap-1'>
@@ -95,9 +89,11 @@ const Session: React.FC<IWithAuth> = ({ userRole }) => {
                       Social Interaction
                     </Badge>
                   </div>
-                  <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
-                    Check
-                  </Button>
+                  <Link href={`/clinic/${index + 1}`} className='w-full'>
+                    <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
+                      Check
+                    </Button>
+                  </Link>
                 </div>
               ))}
           </div>
@@ -106,4 +102,4 @@ const Session: React.FC<IWithAuth> = ({ userRole }) => {
     </NavigationBar>
   )
 }
-export default withAuth(Session, ['patient', 'clinician'], true)
+export default withAuth(Clinic, ['patient'], true)
