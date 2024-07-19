@@ -62,7 +62,7 @@ export default function InformationDetail({
         {details.map((item: any) => {
           return (
             <div
-              className='flex justify-between py-2 font-[#2C2F35] text-xs'
+              className='flex justify-between font-[#2C2F35] text-xs'
               key={item.key}
             >
               {item.key === 'Specialty' ? (

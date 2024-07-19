@@ -13,7 +13,7 @@ export default function MedalCollection({ medals }) {
           See All
         </Link>
       </div>
-      <ScrollArea className='w-full whitespace-nowrap pb-4'>
+      <ScrollArea className='w-full whitespace-nowrap'>
         <div className='flex space-x-4'>
           {medals.map((medal: any, index: number) => (
             <Link
