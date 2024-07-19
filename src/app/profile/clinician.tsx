@@ -5,9 +5,9 @@ import Schedule from '@/components/profile/schedule'
 import Tags from '@/components/profile/tags'
 import { ChevronRight } from 'lucide-react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import MedalCollection from '../../components/profile/medal-collection'
 import Settings from '../../components/profile/settings'
-import { useRouter } from 'next/navigation'
 
 const settingMenus = [
   { name: 'Pengaturan', link: '/settings' },
@@ -101,11 +101,13 @@ const praticeDetails = [
 ]
 
 export default function Clinician() {
-  const router = useRouter();
+  const router = useRouter()
 
   return (
     <>
-      <Schedule name='Mrs Clinician Name' time='15:00' date='23/12/2030' />
+      <div className='mb-4'>
+        <Schedule name='Mrs Clinician Name' time='15:00' date='23/12/2030' />
+      </div>
       <InformationDetail
         isRadiusIcon
         iconUrl='/images/sample-foto.svg'
@@ -114,7 +116,9 @@ export default function Clinician() {
         buttonText='Edit Profile'
         details={generalDetails}
         onEdit={() => router.push('profile/edit-profile')}
+        role='clinician'
       />
+      <div className='my-4' />
       <InformationDetail
         isRadiusIcon={false}
         iconUrl='/icons/hospital.svg'
@@ -122,8 +126,9 @@ export default function Clinician() {
         buttonText='Edit Detail'
         details={praticeDetails}
         onEdit={() => router.push('profile/edit-pratice')}
+        role='clinician'
       />
-      <div className='flex flex-col items-center p-4'>
+      <div className='mt-4 flex flex-col items-center bg-[#F9F9F9] px-4 py-[20px]'>
         <div className='flex w-full items-center justify-between'>
           <Image
             src={'/icons/calendar-profile.svg'}
@@ -132,10 +137,10 @@ export default function Clinician() {
             alt='calendar-icon'
             className='pr-[10px]'
           />
-          <p className='text-black-100 flex-grow text-start text-xs font-bold'>
+          <p className='flex-grow text-start text-xs font-bold text-[#2C2F35] opacity-100'>
             Edit Availbility Schedule
           </p>
-          <ChevronRight color='#13C2C2' width={18} height={18} />
+          <ChevronRight color='#13C2C2' width={24} height={24} />
         </div>
 
         {tagsSchedule.length > 0 && <Tags tags={tagsSchedule} />}
