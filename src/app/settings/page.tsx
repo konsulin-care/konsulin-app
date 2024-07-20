@@ -77,65 +77,99 @@ export default function Settings() {
   }
 
   return (
-    <div className='mt-[-24px] rounded-[16px] bg-white'>
-      <div className='px-4 py-8'>
-        <div className='rounded-lg bg-[#F9F9F9]'>
-          <p className='text-xs text-black opacity-50'>Pengaturan</p>
-          <ul>
-            {settingLists.map((menu, index) => {
-              const isLastItem = index === settingLists.length - 1
-              return (
-                <li
-                  className={`flex items-center justify-between ${isLastItem ? '' : 'border-b border-[#E8E8E8]'} space-y-4`}
-                  key={menu.id}
+    <>
+      <p className='pb-2 pt-4 text-sm font-normal text-[#26282C] opacity-50'>
+        Pengaturan
+      </p>
+      <ul>
+        {settingLists.map((menu, index) => (
+          <li
+            key={menu.id}
+            className={`flex items-center justify-between ${index === settingLists.length - 1 ? 'py-2' : 'border-b-[0.5px] border-[#E8E8E8] py-2'}`}
+          >
+            {menu.link ? (
+              <Link
+                href={menu.link}
+                className='flex h-[44px] flex-grow items-center'
+              >
+                {menu.iconUrl && (
+                  <div className='px-[12px] py-[12px]'>
+                    <Image
+                      src={menu.iconUrl}
+                      width={24}
+                      height={24}
+                      alt={`${menu.label}-icon`}
+                    />
+                  </div>
+                )}
+                <div
+                  className={
+                    menu.desc
+                      ? 'flex flex-col items-start pl-4'
+                      : 'py-[11px] pl-4'
+                  }
                 >
-                  <div
-                    className={`flex flex-grow items-center ${menu.iconUrl ? 'p-[11px]' : ''}`}
-                  >
-                    {menu.iconUrl && (
-                      <Image
-                        src={menu.iconUrl}
-                        width={24}
-                        height={24}
-                        alt={`${menu.label}-icon`}
-                      />
-                    )}
-                    <div className={menu.desc ? 'flex flex-col' : ''}>
-                      <p className='text-black-100 px-4 text-xs font-normal'>
-                        {menu.label}
-                      </p>
-                      {menu.desc && (
-                        <p className='px-4 text-[10px] font-normal text-[#2C2F35] opacity-60'>
-                          {menu.desc}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className='flex items-start pb-4'>
-                    {menu.iconUrl ? (
-                      <Link href={menu.link}>
-                        <ChevronRight color='#ADB6C7' width={24} height={24} />
-                      </Link>
-                    ) : (
-                      <Switch
-                        checked={
-                          menu.label === 'Session Reminder'
-                            ? sessionEnabled
-                            : newUpdatesEnabled
-                        }
-                        onCheckedChange={checked =>
-                          handleChangeSwitch(menu.label, checked)
-                        }
-                        id={menu.id}
-                      />
-                    )}
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      </div>
-    </div>
+                  <p className='text-black-100 text-xs font-normal'>
+                    {menu.label}
+                  </p>
+                  {menu.desc && (
+                    <p className='text-[10px] font-normal text-[#2C2F35] opacity-60'>
+                      {menu.desc}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ) : (
+              <div className='flex flex-grow items-center'>
+                {menu.iconUrl && (
+                  <Image
+                    src={menu.iconUrl}
+                    width={24}
+                    height={24}
+                    alt={`${menu.label}-icon`}
+                  />
+                )}
+                <div className={menu.desc ? 'flex flex-col' : ''}>
+                  <p className='text-black-100 px-4 text-xs font-normal'>
+                    {menu.label}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div
+              className={`flex h-[44px] items-center py-[11px] ${menu.link ? undefined : 'pr-[10px]'}`}
+            >
+              {menu.link ? (
+                <ChevronRight color='#ADB6C7' width={24} height={24} />
+              ) : (
+                <Switch
+                  checked={
+                    menu.label === 'Session Reminder'
+                      ? sessionEnabled
+                      : newUpdatesEnabled
+                  }
+                  onCheckedChange={checked =>
+                    handleChangeSwitch(menu.label, checked)
+                  }
+                  id={menu.id}
+                  thumbColor='bg-switch-gradient-thumb'
+                  thumbShadow='shadow-switch-thumb-setting'
+                  className={`pr-[13px]${
+                    menu.label === 'Session Reminder'
+                      ? sessionEnabled
+                        ? 'data-[state=checked] h-[14px] w-[34px] border-0 bg-switch-gradient-checked-line'
+                        : 'data-[state=unchecked] h-[14px] w-[34px] border-0 bg-switch-gradient-unchecked-line'
+                      : newUpdatesEnabled
+                        ? 'data-[state=checked] h-[14px] w-[34px] border-0 bg-switch-gradient-checked-line'
+                        : 'data-[state=unchecked] h-[14px] w-[34px] border-0 bg-switch-gradient-unchecked-line'
+                  }`}
+                ></Switch>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
   )
 }

@@ -1,12 +1,19 @@
-import Modal from '@/components/general/modal'
+import { Button } from '@/components/ui/button'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+  DrawerTrigger
+} from '@/components/ui/drawer'
 import { ChevronRightIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 
 export default function Settings({ menus }) {
   const router = useRouter()
-  const [showModal, setShowModal] = useState({
+  const [drawerState, setDrawerState] = useState({
     title: '',
     subTitle: '',
     show: false
@@ -14,18 +21,18 @@ export default function Settings({ menus }) {
 
   function handleClick(path: string) {
     if (path === '/logout') {
-      setShowModal({
+      setDrawerState({
         title: 'Apakah Anda Yakin Untuk Keluar Akun',
         subTitle:
-          'Note that you need to login again in the future and the notification will not appears if you log out',
-        show: !showModal.show
+          'Note that you need to login again in the\nfuture and the notification will not appears if you log out',
+        show: true
       })
     } else if (path === '/remove-account') {
-      setShowModal({
+      setDrawerState({
         title: 'Apakah Anda Yakin Untuk Hapus Akun',
         subTitle:
-          'Note that you cannot retrieve any data from this account in the app if you delete your account.',
-        show: !showModal.show
+          'Note that you cannot retrieve any data from\nthis account in the app if you delete your account.',
+        show: true
       })
     } else {
       router.push(path)
@@ -33,26 +40,25 @@ export default function Settings({ menus }) {
   }
 
   function confirmLogout() {
-    localStorage.clear()
-    router.push('/login')
-    setShowModal(prevShowModal => ({
-      ...prevShowModal,
+    setDrawerState(prevState => ({
+      ...prevState,
       show: false
     }))
+    router.push('/logout')
   }
 
-  function closeModal() {
-    setShowModal(prevShowModal => ({
-      ...prevShowModal,
+  function closeDrawer() {
+    setDrawerState(prevState => ({
+      ...prevState,
       show: false
     }))
   }
 
   return (
     <>
-      <div className={`w-full rounded-lg bg-white pt-4`}>
+      <div className='w-full rounded-lg bg-white pt-4'>
         <ul>
-          {menus.map((item: any, index) => {
+          {menus.map((item: any, index: number) => {
             const isFirst = index === 0
             const isLast = index === menus.length - 1
             return (
@@ -78,30 +84,49 @@ export default function Settings({ menus }) {
           })}
         </ul>
       </div>
-      <Modal open={showModal.show} onClose={closeModal}>
-        <div className='fixed inset-0 z-50 flex w-screen items-end justify-center bg-black bg-opacity-50'>
-          <div className='w-full max-w-2xl rounded-t-lg bg-white px-4 py-8'>
-            <p className='text-center text-xl font-bold'>{showModal.title}</p>
-            <p className='pt-1 text-center text-sm text-black opacity-60'>
-              {showModal.subTitle}
-            </p>
-            <button
-              className='border-1 my-4 w-full rounded-full border-primary bg-secondary p-4 text-sm font-bold text-white'
-              type='submit'
-              onClick={closeModal}
+      <Drawer open={drawerState.show} onClose={closeDrawer}>
+        <DrawerTrigger asChild>
+          <div />
+        </DrawerTrigger>
+        <DrawerContent className='p-4'>
+          <div className='rounded-t-lg bg-white pt-4'>
+            <DrawerTitle className='text-black-100 pb-1 text-center text-xl font-bold'>
+              {drawerState.title.split('\n').map((line, index) => (
+                <Fragment key={index}>
+                  {line}
+                  <br />
+                </Fragment>
+              ))}
+            </DrawerTitle>
+            <DrawerDescription className='text-center text-sm font-normal text-black opacity-60'>
+              {drawerState.subTitle.split('\n').map((line, index) => (
+                <Fragment key={index}>
+                  {line}
+                  <br />
+                </Fragment>
+              ))}
+            </DrawerDescription>
+            <Button
+              className='my-4 h-[52px] w-full rounded-full border-primary bg-secondary'
+              type='button'
+              onClick={closeDrawer}
             >
-              No, i dont want to
-            </button>
-            <button
-              className='rounded-fullbg-white w-full rounded-full border border-[#2C2F35] border-opacity-20 p-4 text-sm font-bold'
-              type='submit'
+              <span className='text-sm font-bold text-white'>
+                No, I don't want to
+              </span>
+            </Button>
+            <Button
+              className='mb-4 h-[52px] w-full rounded-full border border-[#2C2F35] border-opacity-20 bg-white text-sm font-bold'
+              type='button'
               onClick={confirmLogout}
             >
-              Yes, log me out
-            </button>
+              <span className='text-sm font-bold text-[#2C2F35]'>
+                Yes, log me out
+              </span>
+            </Button>
           </div>
-        </div>
-      </Modal>
+        </DrawerContent>
+      </Drawer>
     </>
   )
 }

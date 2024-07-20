@@ -18,6 +18,18 @@ const config = {
       }
     },
     extend: {
+      boxShadow: {
+        'switch-thumb-setting':
+          '1px 2px 4px 0px #0000001A, 0px 2px 2px 0px #0000001A, 1px 1px 2px 0px #0000001A'
+      },
+      backgroundImage: {
+        'switch-gradient-checked-line':
+          'linear-gradient(127deg, #77D0CF 0%, #5E81AC 100%)',
+        'switch-gradient-unchecked-line':
+          'linear-gradient(180deg, #B8B8B8 0%, #DCDCDC 100%)',
+        'switch-gradient-thumb':
+          'linear-gradient(180deg, #FFFFFF 0%, #F7F7F7 100%)'
+      },
       colors: {
         border: 'var(--border)',
         input: 'hsl(var(--input))',

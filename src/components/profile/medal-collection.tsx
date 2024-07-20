@@ -3,25 +3,23 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 export default function MedalCollection({ medals }) {
-  function handleSeeAll() {}
-
   return (
     <>
-      <div className='flex justify-between py-4'>
+      <div className='flex items-center justify-between py-4'>
         <p className='text-sm font-bold text-[#2C2F35] opacity-60'>
           Medal Collection
         </p>
-        <p onClick={handleSeeAll} className='text-sm text-[#2C2F35] opacity-60'>
+        <Link href='/' className='text-xs text-[#2C2F35] opacity-60'>
           See All
-        </p>
+        </Link>
       </div>
-      <ScrollArea className='w-full whitespace-nowrap rounded-md'>
-        <div className='flex'>
+      <ScrollArea className='w-full whitespace-nowrap'>
+        <div className='flex space-x-4'>
           {medals.map((medal: any, index: number) => (
             <Link
               key={index}
               href={'/'}
-              className='card mr-4 flex w-[250px] items-center text-wrap bg-white text-justify'
+              className='card flex w-[250px] shrink-0 items-center gap-2 text-wrap bg-white'
             >
               <Image
                 src={'/icons/survivor.svg'}
@@ -29,13 +27,13 @@ export default function MedalCollection({ medals }) {
                 width={48}
                 height={48}
               />
-              <div className='flex flex-col items-start justify-start pl-2'>
-                <p className='py-1 text-xs font-bold text-secondary'>
+              <div className='flex flex-col'>
+                <span className='text-left text-[12px] font-bold'>
                   {medal.title}
-                </p>
-                <p className='text-black-100 text-start text-[10px]'>
+                </span>
+                <span className='text-left text-[10px] text-muted'>
                   {medal.description}
-                </p>
+                </span>
               </div>
             </Link>
           ))}

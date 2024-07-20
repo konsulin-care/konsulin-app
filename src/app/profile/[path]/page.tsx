@@ -1,15 +1,17 @@
 'use client'
 
+import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
-import Header from '@/components/profile/header'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
-import { useParams } from 'next/navigation'
+import { ChevronLeft } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import EditPratice from './edit-pratice'
 import EditProfile from './edit-profile'
 
-const PathProfile: React.FC<IWithAuth> = ({ userRole }) => {
+const PathProfile: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
   const params = useParams()
+  const router = useRouter()
   const path = params.path
   const [title, setTitle] = useState('')
 
@@ -34,8 +36,28 @@ const PathProfile: React.FC<IWithAuth> = ({ userRole }) => {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <NavigationBar>
-        <Header title={title} />
-        {component}
+        <Header showChat={false} showNotification={false}>
+          {!isAuthenticated ? (
+            <div className='mt-5'></div>
+          ) : (
+            <div className='flex w-full items-center justify-between'>
+              <ChevronLeft
+                width={24}
+                height={24}
+                onClick={() => router.back()}
+                color='white'
+              />
+              <div className='my-2 flex flex-grow'>
+                <span className='w-full pr-4 text-center text-[14px] font-bold text-white'>
+                  {title}
+                </span>
+              </div>
+            </div>
+          )}
+        </Header>
+        <div className='mt-[-24px] rounded-[16px] bg-white'>
+          <div className='min-h-screen p-4'>{component}</div>
+        </div>
       </NavigationBar>
     </Suspense>
   )
