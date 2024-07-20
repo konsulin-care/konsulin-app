@@ -4,10 +4,13 @@ import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { InputWithIcon } from '@/components/ui/input-with-icon'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import dayjs from 'dayjs'
+import { SearchIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import SessionFilter from './session-filter'
 
 const Session: React.FC<IWithAuth> = ({ userRole }) => {
   return (
@@ -61,13 +64,13 @@ const Session: React.FC<IWithAuth> = ({ userRole }) => {
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>
         <div className='p-4'>
-          {/* <div>filter</div> */}
-          <div className='flex'>
-            {/* <InputWithIcon
-              className='w-full mr-4 h-[50px] border-0 bg-[#F9F9F9] text-primary'
+          <div className='flex gap-4'>
+            <InputWithIcon
+              placeholder='Search'
+              className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
-            /> */}
-            {/* <div className='h-[50px] w-[50px] rounded-lg bg-[#F9F9F9]'>x</div> */}
+            />
+            <SessionFilter />
           </div>
           <div className='mt-4 grid grid-cols-2 gap-4'>
             {Array(12)
