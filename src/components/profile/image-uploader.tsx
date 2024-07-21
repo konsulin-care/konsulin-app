@@ -1,0 +1,66 @@
+import Image from 'next/image'
+import { useRef } from 'react'
+
+interface ImageUploaderProps {
+  userPhoto: string
+  onPhotoChange: (photo: string) => void
+}
+
+export default function ImageUploader({
+  userPhoto,
+  onPhotoChange
+}: ImageUploaderProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function handleButtonClick() {
+    fileInputRef.current?.click()
+  }
+
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        onPhotoChange(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  return (
+    <div className='mb-4 flex flex-col items-center px-4 pb-4'>
+      <div className='pb-2'>
+        <Image
+          className='rounded-full'
+          src={userPhoto}
+          width={64}
+          height={64}
+          alt='user-photo'
+        />
+      </div>
+      <div className='flex items-center justify-center bg-[#F6F6F6]'>
+        <div className='pb-2 pl-4 pr-2 pt-2'>
+          <Image
+            src={'/icons/edit-photo.svg'}
+            width={12}
+            height={12}
+            alt='edit-photo'
+          />
+        </div>
+        <span
+          className='cursor-pointer pr-4 text-center text-xs font-semibold text-[#18AAA1] text-secondary'
+          onClick={handleButtonClick}
+        >
+          Ganti Photo
+        </span>
+      </div>
+      <input
+        type='file'
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+        accept='image/*'
+      />
+    </div>
+  )
+}
