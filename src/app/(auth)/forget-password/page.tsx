@@ -1,31 +1,56 @@
 'use client'
 
 import Input from '@/components/login/input'
+import { validateEmail } from '@/utils/validation'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function ForgetPassword() {
   const [userEmail, setUserEmail] = useState('')
   const [errors, setErrors] = useState({ email: '' })
   const router = useRouter()
+  const [countdown, setCountdown] = useState('09:00')
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false)
+
+  useEffect(() => {
+    let interval: any
+
+    if (isButtonDisabled) {
+      const countDownDate = new Date().getTime() + 9 * 60 * 1000
+      interval = setInterval(() => {
+        const now = new Date().getTime()
+        const distance = countDownDate - now
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000)
+        const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+
+        setCountdown(formattedTime)
+
+        if (distance < 0) {
+          clearInterval(interval)
+          setCountdown('00:00')
+          setIsButtonDisabled(false)
+        }
+      }, 1000)
+    }
+
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [isButtonDisabled])
 
   function handleChangeInput(mail: string) {
     setUserEmail(mail)
     setErrors({ email: '' })
   }
 
-  function validateEmail(email: string) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
-
-  function handleLoginSubmit() {
+  function handleSendMail() {
     if (!validateEmail(userEmail)) {
       setErrors({ email: 'Please enter a valid email address' })
       return
     }
-    router.push('/reset-password')
+    setIsButtonDisabled(true)
   }
 
   return (
@@ -78,12 +103,17 @@ export default function ForgetPassword() {
       </div>
       <div className='flex w-full flex-grow flex-col items-center justify-end'>
         <button
-          className='text-md border-1 w-full rounded-full border-primary bg-secondary p-4 font-semibold text-white'
+          className={`text-md border-1 w-full rounded-full border-primary ${isButtonDisabled ? 'bg-[#2C2F35] opacity-60' : 'bg-secondary'} p-4 font-semibold text-white`}
           type='submit'
-          onClick={handleLoginSubmit}
+          onClick={handleSendMail}
+          disabled={isButtonDisabled}
         >
           Kirim Kode
         </button>
+        <p className='w-full py-4 text-center text-sm'>
+          Belum Menerima Kode?
+          <span className='text-secondary'>&nbsp;{countdown}</span>
+        </p>
       </div>
     </div>
   )
