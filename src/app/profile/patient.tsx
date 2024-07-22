@@ -3,6 +3,8 @@
 import InformationDetail from '@/components/profile/information-detail'
 import Schedule from '@/components/profile/schedule'
 import Settings from '@/components/profile/settings'
+import { useProfile } from '@/context/profile/profileContext'
+import { formatLabel } from '@/utils/validation'
 import { ChevronRightIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -47,27 +49,29 @@ const medalLists = [
   }
 ]
 
-const generalDetails = [
-  {
-    key: 'Age',
-    value: '40'
-  },
-  {
-    key: 'Sex',
-    value: 'Male'
-  },
-  {
-    key: 'Whatsapp',
-    value: '08034840384'
-  },
-  {
-    key: 'Education',
-    value: 'Bachelor of Lorem Ipsum'
-  }
-]
-
 export default function Patient() {
   const router = useRouter()
+  const { state } = useProfile()
+
+  /* Manipulation objects from response {} to array */
+  const profileArray = Object.entries(state.profile)
+    .map(([key, value]) => {
+      const renderValue = (value: any) => {
+        if (value === null || value === undefined || value === '') {
+          return null
+        }
+        if (typeof value === 'object') {
+          return JSON.stringify(value)
+        }
+        return value
+      }
+
+      const formattedValue = renderValue(value)
+      return formattedValue !== null
+        ? { key: formatLabel(key), value: formattedValue }
+        : null
+    })
+    .filter(item => item !== null)
 
   return (
     <>
@@ -108,10 +112,10 @@ export default function Patient() {
       <InformationDetail
         isRadiusIcon
         iconUrl='/images/sample-foto.svg'
-        title='Aji Danuarta'
-        subTitle='Aji.dannuarta@gmail.com'
+        title={state.profile.fullname}
+        subTitle={state.profile.email}
         buttonText='Edit Profile'
-        details={generalDetails}
+        details={profileArray}
         onEdit={() => router.push('profile/edit-profile')}
         role='patient'
       />

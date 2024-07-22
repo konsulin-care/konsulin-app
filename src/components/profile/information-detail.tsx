@@ -11,6 +11,7 @@ export default function InformationDetail({
   onEdit,
   role
 }) {
+  console.log('---ISI DETAIL', details)
   return (
     <div className='flex w-full flex-col items-center justify-center bg-[#F9F9F9] p-4'>
       <div className='flex w-full justify-between pb-2'>

@@ -17,10 +17,10 @@ import {
   subtitle_success_updated
 } from '@/constants/profile'
 import { useProfile } from '@/context/profile/profileContext'
-import { StateProfile } from '@/context/profile/profileTypes'
 import { apiRequest } from '@/services/api'
+import { ResponseProfile, fetchProfile } from '@/services/profile'
 import { validateEmail } from '@/utils/validation'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import Image from 'next/image'
 import { Fragment, useEffect, useState } from 'react'
@@ -32,29 +32,30 @@ type UpdateUser = {
   whatsapp_number: string
   gender: string
   address: string
-  education: string | string[]
+  education: string[] | string
 }
 
 export default function EditProfile({ userRole }) {
   const { state, dispatch } = useProfile()
-  const [userData, setUserData] = useState<UpdateUser>({
+  const [updateUser, setUpdateUser] = useState<UpdateUser>({
     fullname: '',
     email: '',
-    birth_date: undefined,
+    birth_date: '',
     whatsapp_number: '',
     gender: '',
     address: '',
-    education: '' || []
+    education: []
   })
   const [userPhoto, setUserPhoto] = useState('/images/sample-foto.svg')
   const [drawerState, setDrawerState] = useState(DRAWER_STATE.NONE)
-
-  const [genderValue, setGenderValue] = useState('')
-  const [educationPatientValue, setEducationPatientValue] = useState<string>('')
-  const [educationClinicianValue, setEducationClinicianValue] = useState<
-    string[]
-  >([])
+  const isPatient = userRole === 'patient'
+  const isClinician = userRole === 'clinician'
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+
+  const { data: editProfile } = useQuery<ResponseProfile>({
+    queryKey: ['edit-profile'],
+    queryFn: () => fetchProfile(state, dispatch)
+  })
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (updateUser: UpdateUser) => {
@@ -70,102 +71,81 @@ export default function EditProfile({ userRole }) {
       }
     },
     onSuccess: ({ updateUser }) => {
-      dispatch({ type: 'updated', payload: updateUser })
+      dispatch({ type: 'updated', payload: { profile: updateUser } })
       setDrawerState(DRAWER_STATE.SUCCESS)
     }
   })
 
   useEffect(() => {
-    setUserData(prevUserState => ({
-      ...prevUserState,
-      ...state
-    }))
-
-    if (state.gender) {
-      setGenderValue(state.gender)
+    if (editProfile) {
+      const {
+        fullname,
+        email,
+        birth_date,
+        whatsapp_number,
+        address,
+        sex, // Need confirmation to BE for change key from sex to gender
+        education
+      } = editProfile.data
+      setUpdateUser({
+        fullname: fullname || '',
+        email: email || '',
+        birth_date: birth_date || '',
+        whatsapp_number: whatsapp_number || '',
+        gender: sex || '',
+        address: address || '',
+        education: [education]
+      })
     }
-
-    if (userRole === 'patient' && typeof state.education === 'string') {
-      console.log(state.education, 'patient ===')
-      setEducationPatientValue(state.education)
-    } else if (userRole === 'clinician' && Array.isArray(state.education)) {
-      console.log(state.education)
-      setEducationClinicianValue(state.education)
-    }
-  }, [state, userRole])
-
-  function handleGenderSelect(value: string) {
-    setGenderValue(value)
-    dispatch({ type: 'updated', payload: { ...state, gender: value } })
-  }
+  }, [editProfile])
 
   function handleEducationSelect(value: string) {
     const selectedOption = educationLists.find(option => option.value === value)
-    if (selectedOption) {
-      if (userRole === 'clinician') {
-        setEducationClinicianValue(prevEducation => [
-          ...prevEducation,
-          selectedOption.value
-        ])
-        dispatch({
-          type: 'updated',
-          payload: {
-            ...state,
-            education: [...(state.education as string[]), selectedOption.value]
-          }
-        })
-      } else if (userRole === 'patient') {
-        setEducationPatientValue(selectedOption.value)
-        dispatch({
-          type: 'updated',
-          payload: {
-            ...state,
-            education: selectedOption.value
-          }
-        })
-      }
+    if (selectedOption && isPatient) {
+      setUpdateUser(prev => ({
+        ...prev,
+        education: [selectedOption.value]
+      }))
+    }
+    if (selectedOption && isClinician) {
+      setUpdateUser(prev => ({
+        ...prev,
+        education: Array.isArray(prev.education)
+          ? [...prev.education, selectedOption.value]
+          : [selectedOption.value]
+      }))
     }
   }
 
   function handleChangeInput(label: string, value: any) {
-    dispatch({ type: 'updated', payload: { ...state, [label]: value } })
+    setUpdateUser(prevState => ({ ...prevState, [label]: value }))
   }
 
   function handleAddEducationLevel() {
-    const newEducation = Array.isArray(state.education)
-      ? [...state.education, '']
+    const newEducation = Array.isArray(updateUser.education)
+      ? [...updateUser.education, '']
       : ['']
-    dispatch({
-      type: 'updated',
-      payload: {
-        ...state,
-        education: newEducation
-      }
-    })
+    setUpdateUser(prevState => ({ ...prevState, education: newEducation }))
   }
 
   function handleEducationChange(index: number, value: string) {
-    if (Array.isArray(state.education)) {
-      dispatch({
-        type: 'updated',
-        payload: {
-          ...state,
-          education: state.education.map((edu, i) =>
-            i === index ? value : edu
-          )
-        }
-      })
-    }
+    setUpdateUser(prevState => ({
+      ...prevState,
+      education: Array.isArray(prevState.education)
+        ? prevState.education.map((edu, i) => (i === index ? value : edu))
+        : [value]
+    }))
   }
 
   function handleEditSave() {
-    const validationErrors = validateForm(state)
+    const validationErrors = validateForm(updateUser)
 
     if (Object.keys(validationErrors).length === 0) {
       const updatedProfile = {
-        ...state,
-        birth_date: state.birth_date
-          ? format(state.birth_date, 'yyyy-MM-dd')
+        ...updateUser,
+        education: isPatient ? updateUser.education[0] : updateUser.education,
+        birth_date: updateUser.birth_date
+          ? format(new Date(updateUser.birth_date), 'yyyy-MM-dd')
           : undefined
       }
       mutate(updatedProfile)
@@ -175,7 +155,10 @@ export default function EditProfile({ userRole }) {
   }
 
   function handleDOBChange(value: any) {
-    dispatch({ type: 'updated', payload: { ...state, birth_date: value } })
+    setUpdateUser(prevState => ({
+      ...prevState,
+      birth_date: value
+    }))
     setDrawerState(DRAWER_STATE.NONE)
   }
 
@@ -183,41 +166,58 @@ export default function EditProfile({ userRole }) {
     setDrawerState(DRAWER_STATE.NONE)
   }
 
-  function validateForm(user: StateProfile) {
+  function validateForm(user: UpdateUser) {
     const errors: { [key: string]: string } = {}
-    if (!user.fullname) {
+    const {
+      fullname,
+      email,
+      whatsapp_number,
+      address,
+      birth_date,
+      gender,
+      education
+    } = user
+
+    if (!fullname) {
       errors.fullname = 'Username is required'
     }
 
-    if (!user.email) {
+    if (!email) {
       errors.email = 'Email is required'
-    } else if (!validateEmail(user.email)) {
+    } else if (!validateEmail(email)) {
       errors.email = 'Valid email is required'
     }
 
-    if (!user.whatsapp_number) {
+    if (!whatsapp_number) {
       errors.whatsapp_number = 'Whatsapp number is required'
     }
 
-    if (!user.address) {
+    if (!address) {
       errors.address = 'Address is required'
     }
 
-    if (!user.birth_date) {
+    if (!birth_date) {
       errors.birth_date = 'Birthdate is required'
     }
 
-    if (!user.gender) {
+    if (!gender) {
       errors.gender = 'Gender is required'
     }
 
-    if (typeof user.education === 'string' && user.education.trim() === '') {
+    if (typeof education === 'string' && education.trim() === '') {
       errors.education = 'Education is required'
-    } else if (Array.isArray(user.education) && user.education.length === 0) {
+    } else if (Array.isArray(education) && education.length === 0) {
       errors.education = 'At least one education level is required'
     }
 
     return errors
+  }
+
+  function handleGenderSelect(value: string) {
+    setUpdateUser(prevState => ({
+      ...prevState,
+      gender: value
+    }))
   }
 
   return (
@@ -234,8 +234,8 @@ export default function EditProfile({ userRole }) {
             id='fullname'
             type='text'
             opacity={false}
-            value={userData.fullname}
-            onChange={event =>
+            value={updateUser.fullname}
+            onChange={(event: any) =>
               handleChangeInput('fullname', event.target.value)
             }
             outline={false}
@@ -253,8 +253,10 @@ export default function EditProfile({ userRole }) {
             id='email'
             type='email'
             opacity={false}
-            value={userData.email}
-            onChange={event => handleChangeInput('email', event.target.value)}
+            value={updateUser.email}
+            onChange={(event: any) =>
+              handleChangeInput('email', event.target.value)
+            }
             outline={false}
             className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
           />
@@ -262,7 +264,7 @@ export default function EditProfile({ userRole }) {
             <p className='px-4 text-xs text-red-500'>{errors.email}</p>
           )}
           <div
-            className='flex w-full cursor-pointer items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
             onClick={() => setDrawerState(DRAWER_STATE.DOB)}
           >
             <Image
@@ -272,25 +274,22 @@ export default function EditProfile({ userRole }) {
               height={24}
             />
             <div className='flex flex-grow justify-start text-sm'>
-              {state.birth_date
-                ? format(state.birth_date, 'yyyy-MM-dd')
+              {updateUser.birth_date
+                ? format(updateUser.birth_date, 'yyyy-MM-dd')
                 : 'Masukan Tanggal Lahir'}
             </div>
           </div>
-          {errors.birth_date && (
-            <p className='px-4 text-xs text-red-500'>{errors.birth_date}</p>
-          )}
           <Input
             width={24}
             height={24}
             prefixIcon={'/icons/country-code.svg'}
-            placeholder='Masukan Nomor Whatsapp'
+            placeholder='Masukan Whatsapp Number'
             name='whatsapp_number'
             id='whatsapp_number'
             type='text'
-            value={userData.whatsapp_number}
             opacity={false}
-            onChange={event =>
+            value={updateUser.whatsapp_number}
+            onChange={(event: any) =>
               handleChangeInput('whatsapp_number', event.target.value)
             }
             outline={false}
@@ -305,25 +304,27 @@ export default function EditProfile({ userRole }) {
             width={24}
             height={24}
             prefixIcon={'/icons/location.svg'}
-            placeholder='Masukan Alamat Tinggal'
+            placeholder='Masukan Alamat'
             name='address'
             id='address'
             type='text'
             opacity={false}
-            value={userData.address}
-            onChange={event => handleChangeInput('address', event.target.value)}
+            value={updateUser.address}
+            onChange={(event: any) =>
+              handleChangeInput('address', event.target.value)
+            }
             outline={false}
             className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
           />
           {errors.address && (
             <p className='px-4 text-xs text-red-500'>{errors.address}</p>
           )}
-          {userRole === 'patient' && (
+          {isPatient && (
             <div className='flex w-full flex-grow justify-between space-x-2'>
               <div className='flex-1 flex-col'>
                 <DropdownProfile
                   options={genderOptions}
-                  value={genderValue}
+                  value={updateUser.gender}
                   onSelect={handleGenderSelect}
                   placeholder='Pilih Gender'
                 />
@@ -334,7 +335,7 @@ export default function EditProfile({ userRole }) {
               <div className='flex-1 flex-col'>
                 <DropdownProfile
                   options={educationLists}
-                  value={educationPatientValue}
+                  value={updateUser.education[0]}
                   onSelect={handleEducationSelect}
                   placeholder='Pilih Pendidikan'
                 />
@@ -344,12 +345,12 @@ export default function EditProfile({ userRole }) {
               </div>
             </div>
           )}
-          {userRole === 'clinician' && (
+          {isClinician && (
             <>
               <div className='flex flex-col'>
                 <DropdownProfile
                   options={genderOptions}
-                  value={genderValue}
+                  value={updateUser.gender}
                   onSelect={handleGenderSelect}
                   placeholder='Pilih Gender'
                 />
@@ -358,8 +359,8 @@ export default function EditProfile({ userRole }) {
                 )}
               </div>
 
-              {Array.isArray(state.education) &&
-                state.education.map((edu, index) => (
+              {Array.isArray(updateUser.education) &&
+                updateUser.education.map((edu, index) => (
                   <DropdownProfile
                     key={`${edu}-${index}`}
                     options={educationLists}
@@ -404,7 +405,10 @@ export default function EditProfile({ userRole }) {
             <DrawerTitle></DrawerTitle>
             <DrawerDescription></DrawerDescription>
           </DrawerHeader>
-          <DobCalendar value={state.birth_date} onChange={handleDOBChange} />
+          <DobCalendar
+            value={state.profile.birth_date}
+            onChange={handleDOBChange}
+          />
         </DrawerContent>
       </Drawer>
 

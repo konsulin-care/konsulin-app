@@ -1,26 +1,43 @@
 import { ActionProfile, StateProfile } from './profileTypes'
 
 export const initialState: StateProfile = {
-  fullname: '',
-  email: '',
-  birth_date: undefined,
-  whatsapp_number: '',
-  gender: '',
-  address: '',
-  education: ''
+  profile: {
+    fullname: '',
+    email: '',
+    birth_date: undefined,
+    whatsapp_number: '',
+    gender: '',
+    address: '',
+    education: ''
+  },
+  pratice: {
+    // Initialize practice state if necessary
+  }
 }
 
 export const reducer = (
-  state: StateProfile,
+  state: StateProfile = initialState,
   action: ActionProfile
 ): StateProfile => {
   switch (action.type) {
     case 'updated':
       return {
         ...state,
-        ...action.payload
+        profile: {
+          ...state.profile,
+          ...action.payload.profile
+        }
+      }
+    case 'getProfile':
+      return {
+        ...state,
+        profile: {
+          ...action.payload.profile
+        }
       }
     default:
       return state
   }
 }
+
+export default reducer

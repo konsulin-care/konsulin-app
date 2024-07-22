@@ -2,22 +2,26 @@
 
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
+import { useProfile } from '@/context/profile/profileContext'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
+import { fetchProfile, ResponseProfile } from '@/services/profile'
+import { useQuery } from '@tanstack/react-query'
 import Clinician from './clinician'
 import Patient from './patient'
 
 const Profile: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
-  /**
-   * FETCH DATA
-   */
-  // const [profile, setProfile] = useState<any>()
-  // useEffect(() => {
-  //   API.get('/profile').then((res: any) => {
-  //     if (res.code === 200) {
-  //       setProfile(res.data)
-  //     }
-  //   })
-  // }, [])
+  const { state, dispatch } = useProfile()
+  const {
+    data: profileResponse,
+    error,
+    isLoading
+  } = useQuery<ResponseProfile>({
+    queryKey: ['profileData'],
+    queryFn: () => fetchProfile(state, dispatch)
+  })
+
+  if (isLoading) return <p>Loading profile data...</p>
+  if (error) return <p>Error loading profile data: {error.message}</p>
 
   const renderHomeContent = () => {
     return (
@@ -44,7 +48,9 @@ const Profile: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
         )}
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>
-        <div className='min-h-screen p-4'>{renderHomeContent()}</div>
+        <div className='min-h-screen p-4'>
+          {profileResponse && renderHomeContent()}
+        </div>
       </div>
     </NavigationBar>
   )

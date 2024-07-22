@@ -17,3 +17,9 @@ export function specialCharacter(value: string) {
 export function capitalizeFirstLetter(str) {
   return str.replace(/^\w/, (c: string) => c.toUpperCase())
 }
+
+export function formatLabel(label: string) {
+  return label
+    .replace(/_/g, ' ') // Replace underscores with spaces
+    .replace(/\b\w/g, (char: string) => char.toUpperCase()) // Capitalize the first letter of each word
+}
