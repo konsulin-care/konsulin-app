@@ -3,7 +3,7 @@
 import Input from '@/components/login/input'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 export default function ResetPassword() {
   const [userPassword, setUserPassword] = useState({
@@ -20,31 +20,6 @@ export default function ResetPassword() {
     password: '',
     confirmPassword: ''
   })
-
-  const [countdown, setCountdown] = useState('09:00')
-
-  useEffect(() => {
-    const countDownDate = new Date().getTime() + 9 * 60 * 1000 // TODO(harynp): fix how time to this later, current 9 minutes follow figma design
-
-    const interval = setInterval(() => {
-      const now = new Date().getTime()
-      const distance = countDownDate - now
-
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000)
-
-      const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-
-      setCountdown(formattedTime)
-
-      if (distance < 0) {
-        clearInterval(interval)
-        setCountdown('00:00')
-      }
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [])
 
   const router = useRouter()
 
@@ -188,10 +163,6 @@ export default function ResetPassword() {
         >
           Reset Ulang
         </button>
-        <p className='w-full text-center text-sm'>
-          Belum Menerima Kode?
-          <span className='text-secondary'>&nbsp;{countdown}</span>
-        </p>
       </div>
     </div>
   )
