@@ -1,7 +1,9 @@
 'use client'
 
 import Input from '@/components/login/input'
+import { apiRequest } from '@/services/api'
 import { validateEmail } from '@/utils/validation'
+import { useMutation } from '@tanstack/react-query'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -12,6 +14,24 @@ export default function ForgetPassword() {
   const router = useRouter()
   const [countdown, setCountdown] = useState('09:00')
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
+
+  const sendMailMutation = useMutation({
+    mutationFn: async (email: typeof userEmail) => {
+      try {
+        const response = await apiRequest(
+          'POST',
+          '/api/v1/auth/forgot-password',
+          { email }
+        )
+        return response
+      } catch (err) {
+        throw err
+      }
+    },
+    onSuccess: () => {
+      setIsButtonDisabled(true)
+    }
+  })
 
   useEffect(() => {
     let interval: any
@@ -50,7 +70,7 @@ export default function ForgetPassword() {
       setErrors({ email: 'Please enter a valid email address' })
       return
     }
-    setIsButtonDisabled(true)
+    sendMailMutation.mutate(userEmail)
   }
 
   return (
