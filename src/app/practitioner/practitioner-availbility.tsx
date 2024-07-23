@@ -3,7 +3,6 @@ import { Calendar } from '@/components/ui/calendar'
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
 import { cn } from '@/lib/utils'
 import { addDays, format } from 'date-fns'
-import { ArrowRightIcon, CalendarDaysIcon } from 'lucide-react'
 import { useState } from 'react'
 
 const filterContentListTime = [
@@ -23,15 +22,18 @@ const filterContentListTime = [
   '16:30'
 ]
 
-export default function PractitionerFilter() {
+export default function PractitionerAvailbility({
+  children,
+  isOpen = false,
+  toggleOpen
+}: any) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const [isOpen, setIsOpen] = useState<boolean>(false)
+  // const [isOpen, setIsOpen] = useState<boolean>(false)
   const [filter, setFilter] = useState({
     date: addDays(today, 1),
-    time: undefined,
-    type: 'all'
+    time: undefined
   })
 
   const handleFilterChange = (label: string, value: any) => {
@@ -42,17 +44,8 @@ export default function PractitionerFilter() {
   }
 
   return (
-    <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
-      <DrawerTrigger asChild>
-        <div
-          onClick={() => setIsOpen(true)}
-          className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'
-        >
-          <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />
-          <span className='mr-auto'>See Availbility</span>
-          <ArrowRightIcon color='#13C2C2' />
-        </div>
-      </DrawerTrigger>
+    <Drawer onClose={() => toggleOpen(false)} open={isOpen}>
+      <DrawerTrigger asChild>{children}</DrawerTrigger>
       <DrawerContent className='mx-auto max-w-screen-sm p-4'>
         <div className='mt-4'>
           <div className='flex flex-col'>
@@ -107,11 +100,12 @@ export default function PractitionerFilter() {
 
             <Button
               className='mt-4 rounded-xl bg-secondary text-white'
-              onClick={() => setIsOpen(false)}
+              onClick={() => toggleOpen(false)}
             >
-              Terapkan Filter
+              Make an Appointment
             </Button>
             <Button
+              onClick={() => toggleOpen(false)}
               variant='outline'
               className={cn(
                 buttonVariants({ variant: 'outline' }),

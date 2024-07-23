@@ -2,7 +2,13 @@ import { cn } from '@/lib/utils'
 import * as React from 'react'
 
 export default function LoadingSpinner(props: React.SVGProps<SVGSVGElement>) {
-  const { fill = '#000000', width = 24, height = 24, className } = props
+  const {
+    fill = 'none',
+    stroke = '#13c2c2',
+    width = 24,
+    height = 24,
+    className
+  } = props
 
   return (
     <svg
@@ -10,8 +16,8 @@ export default function LoadingSpinner(props: React.SVGProps<SVGSVGElement>) {
       width={width}
       height={height}
       viewBox='0 0 24 24'
-      fill='none'
-      stroke='currentColor'
+      fill={fill}
+      stroke={stroke}
       strokeWidth='2'
       strokeLinecap='round'
       strokeLinejoin='round'

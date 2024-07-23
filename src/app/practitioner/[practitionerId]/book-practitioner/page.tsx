@@ -2,6 +2,7 @@
 
 import Header from '@/components/header'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -16,6 +17,8 @@ import withAuth from '@/hooks/withAuth'
 import { ChevronDownIcon, ChevronLeftIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import PractitionerAvailbility from '../../practitioner-availbility'
 
 export interface IBookingPractitionerProps {
   IWithAuth
@@ -26,6 +29,7 @@ const BookingPractitioner: React.FC<IBookingPractitionerProps> = ({
   params
 }) => {
   const router = useRouter()
+  const [isOpen, setIsOpen] = useState<boolean>(false)
 
   return (
     <>
@@ -72,18 +76,29 @@ const BookingPractitioner: React.FC<IBookingPractitionerProps> = ({
         <div>
           <div className='mt-4 text-[12px] font-bold'>Date & Time</div>
 
-          <div className='mt-2 flex w-full space-x-2'>
-            <div className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'>
-              <span className='mr-2 text-[12px] text-[#2C2F35]'>
-                19 Mei 2024
-              </span>
-              <ChevronDownIcon size={24} color='#2C2F35' />
+          <PractitionerAvailbility
+            isOpen={isOpen}
+            toggleOpen={e => setIsOpen(e)}
+          >
+            <div className='mt-2 flex w-full cursor-pointer space-x-2'>
+              <div
+                onClick={() => setIsOpen(true)}
+                className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'
+              >
+                <span className='mr-2 text-[12px] text-[#2C2F35]'>
+                  19 Mei 2024
+                </span>
+                <ChevronDownIcon size={24} color='#2C2F35' />
+              </div>
+              <div
+                onClick={() => setIsOpen(true)}
+                className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'
+              >
+                <span className='mr-2 text-[12px] text-[#2C2F35]'>10:00</span>
+                <ChevronDownIcon size={24} color='#2C2F35' />
+              </div>
             </div>
-            <div className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'>
-              <span className='mr-2 text-[12px] text-[#2C2F35]'>10:00</span>
-              <ChevronDownIcon size={24} color='#2C2F35' />
-            </div>
-          </div>
+          </PractitionerAvailbility>
           <div className='mt-4 text-[12px] font-bold'>Session Type</div>
           <div className='mt-2 flex space-x-4'>
             <Select>
@@ -110,6 +125,15 @@ const BookingPractitioner: React.FC<IBookingPractitionerProps> = ({
             />
           </div>
         </div>
+      </div>
+      <div className='mt-auto flex w-full items-center justify-between p-4 shadow-[hsla(0,0%,85%,0.25)_0px_-4px_24px_0px]'>
+        <div className='flex flex-col'>
+          <span className='text-[hsla(220,9%,19%,0.4)]'>Estimate Fee</span>
+          <span className='text-[20px] font-bold'>Rp.210.000</span>
+        </div>
+        <Button className='ml-2 w-min rounded-[32px] bg-secondary py-2 text-[14px] font-bold text-white'>
+          Book Session
+        </Button>
       </div>
     </>
   )

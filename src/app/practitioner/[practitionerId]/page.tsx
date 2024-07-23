@@ -4,11 +4,17 @@ import Header from '@/components/header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import withAuth from '@/hooks/withAuth'
-import { ChevronLeftIcon, HospitalIcon } from 'lucide-react'
+import {
+  ArrowRightIcon,
+  CalendarDaysIcon,
+  ChevronLeftIcon,
+  HospitalIcon
+} from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import PractitionerFilter from '../practitioner-filter'
+import { useState } from 'react'
+import PractitionerAvailbility from '../practitioner-availbility'
 
 export interface IPractitionerProps {
   IWithAuth
@@ -17,6 +23,7 @@ export interface IPractitionerProps {
 
 const Practitioner: React.FC<IPractitionerProps> = ({ params }) => {
   const router = useRouter()
+  const [isOpen, setIsOpen] = useState<boolean>(false)
 
   return (
     <>
@@ -53,12 +60,23 @@ const Practitioner: React.FC<IPractitionerProps> = ({ params }) => {
           </h3>
         </div>
 
-        <PractitionerFilter />
+        <PractitionerAvailbility isOpen={isOpen} toggleOpen={e => setIsOpen(e)}>
+          <div
+            onClick={() => setIsOpen(true)}
+            className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'
+          >
+            <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />
+            <span className='mr-auto text-[12px] font-bold'>
+              See Availbility
+            </span>
+            <ArrowRightIcon color='#13C2C2' />
+          </div>
+        </PractitionerAvailbility>
 
         <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>
           <div className='flex items-center'>
-            <HospitalIcon size={32} color='#13C2C2' className='mr-2' />
-            <span>Practice Information</span>
+            <HospitalIcon size={24} color='#13C2C2' className='mr-2' />
+            <span className='text-[12px] font-bold'>Practice Information</span>
           </div>
           <div className='mt-4 flex flex-col space-y-2'>
             <div className='flex justify-between text-[12px]'>
@@ -98,8 +116,8 @@ const Practitioner: React.FC<IPractitionerProps> = ({ params }) => {
           href={`/practitioner/${params.practitionerId}/book-practitioner`}
           className='mt-auto w-full'
         >
-          <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
-            Check
+          <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 text-[14px] font-bold text-white'>
+            Book Session
           </Button>
         </Link>
       </div>
