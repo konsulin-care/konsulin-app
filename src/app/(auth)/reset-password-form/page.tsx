@@ -1,11 +1,12 @@
 'use client'
 
 import Input from '@/components/login/input'
+import { specialCharacter, upperCaseOneCharacter } from '@/utils/validation'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-export default function ResetPassword() {
+export default function ResetPasswordForm() {
   const [userPassword, setUserPassword] = useState({
     password: '',
     confirmPassword: ''
@@ -66,19 +67,14 @@ export default function ResetPassword() {
     // Check password length
     else if (password.length < 6) {
       foundErrors.password = 'Password must be at least 6 characters'
-    }
-    // Check for at least one uppercase letter
-    else if (!/[A-Z]/.test(password)) {
+    } else if (!upperCaseOneCharacter(password)) {
       foundErrors.password =
         'Password must contain at least one uppercase letter'
-    }
-    // Check for at least one number or special character
-    else if (!/[0-9!@#$%^&*]/.test(password)) {
+    } else if (!specialCharacter(password)) {
       foundErrors.password =
         'Password must contain at least one number or special character'
     }
 
-    // Check if confirm password is empty or doesn't match the password
     if (!confirmPassword) {
       foundErrors.confirmPassword = 'Please confirm your password'
     } else if (confirmPassword !== password) {
