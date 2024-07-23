@@ -6,12 +6,14 @@ interface HeaderProps {
   showChat?: boolean
   showNotification?: boolean
   children: ReactNode
+  moreAction?: ReactNode
 }
 
 export default function Header({
   showChat = true,
   showNotification = true,
-  children
+  children,
+  moreAction
 }: HeaderProps) {
   return (
     <div
@@ -40,6 +42,7 @@ export default function Header({
               />
             </Link>
           )}
+          {moreAction}
         </div>
       </div>
     </div>

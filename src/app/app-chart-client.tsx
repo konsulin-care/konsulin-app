@@ -55,7 +55,7 @@ export default function AppChartClient({
       </div>
 
       <Link
-        href='/login'
+        href='/register'
         className={
           isBlur
             ? 'absolute m-auto flex h-full w-full flex-grow items-center justify-center text-[14px] font-bold'
@@ -63,7 +63,7 @@ export default function AppChartClient({
         }
       >
         <Button className='bg-secondary text-white shadow-md'>
-          Silakan Login untuk akses lengkap
+          Silakan Daftar atau Masuk Mengakses Fitur Ini
         </Button>
       </Link>
     </div>
