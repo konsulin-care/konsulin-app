@@ -14,7 +14,7 @@ export const queryClient = new QueryClient()
 
 API.interceptors.request.use(
   config => {
-    const auth = getFromLocalStorage('auth') // because cant use React hooks directly inside Axios, so take the token from local storage
+    const auth = getFromLocalStorage('auth')
     if (auth) {
       const { token } = JSON.parse(auth)
       if (token) {
