@@ -4,15 +4,11 @@ import Header from '@/components/header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import withAuth from '@/hooks/withAuth'
-import {
-  ArrowRightIcon,
-  CalendarDaysIcon,
-  ChevronLeftIcon,
-  HospitalIcon
-} from 'lucide-react'
+import { ChevronLeftIcon, HospitalIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import PractitionerFilter from '../practitioner-filter'
 
 export interface IPractitionerProps {
   IWithAuth
@@ -57,11 +53,7 @@ const Practitioner: React.FC<IPractitionerProps> = ({ params }) => {
           </h3>
         </div>
 
-        <div className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'>
-          <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />
-          <span className='mr-auto'>See Availbility</span>
-          <ArrowRightIcon color='#13C2C2' />
-        </div>
+        <PractitionerFilter />
 
         <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>
           <div className='flex items-center'>
@@ -103,7 +95,7 @@ const Practitioner: React.FC<IPractitionerProps> = ({ params }) => {
           </div>
         </div>
         <Link
-          href={`/practitioner/${params.practitionerId}/booking-form`}
+          href={`/practitioner/${params.practitionerId}/book-practitioner`}
           className='mt-auto w-full'
         >
           <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>

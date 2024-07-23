@@ -17,12 +17,14 @@ import { ChevronDownIcon, ChevronLeftIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
-export interface IBookingFormProps {
+export interface IBookingPractitionerProps {
   IWithAuth
   params: { practitionerId: string }
 }
 
-const BookingForm: React.FC<IBookingFormProps> = ({ params }) => {
+const BookingPractitioner: React.FC<IBookingPractitionerProps> = ({
+  params
+}) => {
   const router = useRouter()
 
   return (
@@ -113,4 +115,4 @@ const BookingForm: React.FC<IBookingFormProps> = ({ params }) => {
   )
 }
 
-export default withAuth(BookingForm, ['patient'], true)
+export default withAuth(BookingPractitioner, ['patient'], true)
