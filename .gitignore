@@ -5,6 +5,9 @@
 /.pnp
 .pnp.js
 .yarn/install-state.gz
+_data/
+!_data/.gitkeep
+.idea
 
 # testing
 /coverage
