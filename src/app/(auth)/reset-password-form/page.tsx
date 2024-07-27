@@ -1,11 +1,12 @@
 'use client'
 
 import Input from '@/components/login/input'
+import { specialCharacter, upperCaseOneCharacter } from '@/utils/validation'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
-export default function ResetPassword() {
+export default function ResetPasswordForm() {
   const [userPassword, setUserPassword] = useState({
     password: '',
     confirmPassword: ''
@@ -20,31 +21,6 @@ export default function ResetPassword() {
     password: '',
     confirmPassword: ''
   })
-
-  const [countdown, setCountdown] = useState('09:00')
-
-  useEffect(() => {
-    const countDownDate = new Date().getTime() + 9 * 60 * 1000 // TODO(harynp): fix how time to this later, current 9 minutes follow figma design
-
-    const interval = setInterval(() => {
-      const now = new Date().getTime()
-      const distance = countDownDate - now
-
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000)
-
-      const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-
-      setCountdown(formattedTime)
-
-      if (distance < 0) {
-        clearInterval(interval)
-        setCountdown('00:00')
-      }
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [])
 
   const router = useRouter()
 
@@ -91,19 +67,14 @@ export default function ResetPassword() {
     // Check password length
     else if (password.length < 6) {
       foundErrors.password = 'Password must be at least 6 characters'
-    }
-    // Check for at least one uppercase letter
-    else if (!/[A-Z]/.test(password)) {
+    } else if (!upperCaseOneCharacter(password)) {
       foundErrors.password =
         'Password must contain at least one uppercase letter'
-    }
-    // Check for at least one number or special character
-    else if (!/[0-9!@#$%^&*]/.test(password)) {
+    } else if (!specialCharacter(password)) {
       foundErrors.password =
         'Password must contain at least one number or special character'
     }
 
-    // Check if confirm password is empty or doesn't match the password
     if (!confirmPassword) {
       foundErrors.confirmPassword = 'Please confirm your password'
     } else if (confirmPassword !== password) {
@@ -188,10 +159,6 @@ export default function ResetPassword() {
         >
           Reset Ulang
         </button>
-        <p className='w-full text-center text-sm'>
-          Belum Menerima Kode?
-          <span className='text-secondary'>&nbsp;{countdown}</span>
-        </p>
       </div>
     </div>
   )
