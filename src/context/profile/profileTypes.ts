@@ -1,13 +1,14 @@
+export interface PropsProfile {
+  fullname: string
+  email: string
+  birth_date: undefined | string
+  whatsapp_number: string
+  gender: string
+  address: string
+  educations: string[]
+}
 export interface StateProfile {
-  profile: {
-    fullname: string
-    email: string
-    birth_date: undefined | string
-    whatsapp_number: string
-    gender: string
-    address: string
-    education: string | string[]
-  }
+  profile: PropsProfile
   pratice?: {}
 }
 

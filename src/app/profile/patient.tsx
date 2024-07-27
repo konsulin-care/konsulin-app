@@ -1,60 +1,22 @@
 'use client'
 
 import InformationDetail from '@/components/profile/information-detail'
+import MedalCollection from '@/components/profile/medal-collection'
 import Schedule from '@/components/profile/schedule'
 import Settings from '@/components/profile/settings'
+import { medalLists, settingMenus } from '@/constants/profile'
 import { useProfile } from '@/context/profile/profileContext'
-import { formatLabel } from '@/utils/validation'
+import { capitalizeFirstLetter, formatLabel } from '@/utils/validation'
 import { ChevronRightIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import MedalCollection from '../../components/profile/medal-collection'
-
-const settingMenus = [
-  { name: 'Pengaturan', link: '/settings' },
-  { name: 'Hapus Akun', link: '/remove-account' },
-  { name: 'Log out', link: '/logout' }
-]
-
-const medalLists = [
-  {
-    title: 'Survivor',
-    description:
-      'completing mindfulness exercises and boosting your mental wellness journey.',
-    iconUrl: '/icons/survivor.svg'
-  },
-  {
-    title: 'Survivor',
-    description:
-      'completing mindfulness exercises and boosting your mental wellness journey.',
-    iconUrl: '/icons/survivor.svg'
-  },
-  {
-    title: 'Survivor',
-    description:
-      'completing mindfulness exercises and boosting your mental wellness journey.',
-    iconUrl: '/icons/survivor.svg'
-  },
-  {
-    title: 'Survivor',
-    description:
-      'completing mindfulness exercises and boosting your mental wellness journey.',
-    iconUrl: '/icons/survivor.svg'
-  },
-  {
-    title: 'Survivor',
-    description:
-      'completing mindfulness exercises and boosting your mental wellness journey.',
-    iconUrl: '/icons/survivor.svg'
-  }
-]
 
 export default function Patient() {
   const router = useRouter()
   const { state } = useProfile()
 
   /* Manipulation objects from response {} to array */
-  const profileArray = Object.entries(state.profile)
+  const profileDetail = Object.entries(state.profile)
     .map(([key, value]) => {
       const renderValue = (value: any) => {
         if (value === null || value === undefined || value === '') {
@@ -66,7 +28,14 @@ export default function Patient() {
         return value
       }
 
-      const formattedValue = renderValue(value)
+      let formattedValue = renderValue(value)
+
+      if (key === 'gender' && formattedValue !== null) {
+        formattedValue = capitalizeFirstLetter(
+          formattedValue.replace(/[_-]/g, ' ')
+        )
+      }
+
       return formattedValue !== null
         ? { key: formatLabel(key), value: formattedValue }
         : null
@@ -115,7 +84,7 @@ export default function Patient() {
         title={state.profile.fullname}
         subTitle={state.profile.email}
         buttonText='Edit Profile'
-        details={profileArray}
+        details={profileDetail}
         onEdit={() => router.push('profile/edit-profile')}
         role='patient'
       />

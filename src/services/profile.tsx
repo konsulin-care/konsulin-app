@@ -1,20 +1,35 @@
 import { apiRequest } from './api'
 
+export type ResponseGenders = {
+  success: boolean
+  message: string
+  data: Options[]
+}
+export interface ResponseProfile {
+  success: boolean
+  message: string
+  data: ProfileData
+}
+
+export type Options = {
+  name: string
+}
+
 export interface ProfileData {
   fullname: string
   email: string
   age: number
-  sex: string
-  education: string
+  gender: string
+  educations: string[]
   whatsapp_number: string
   address: string
   birth_date: string
 }
 
-export interface ResponseProfile {
+export interface ResponseEducations {
   success: boolean
   message: string
-  data: ProfileData
+  data: Options[]
 }
 
 export const fetchProfile = async (
@@ -36,6 +51,34 @@ export const fetchProfile = async (
       })
     }
     return responseData
+  } catch (err) {
+    throw err
+  }
+}
+
+export const fetchGenders = async (): Promise<Options[]> => {
+  try {
+    const response = await apiRequest('GET', '/api/v1/genders')
+    const responseData = response as ResponseGenders
+    if (responseData.success) {
+      return responseData.data
+    } else {
+      throw new Error(responseData.message)
+    }
+  } catch (err) {
+    throw err
+  }
+}
+
+export const fetchEducations = async (): Promise<Options[]> => {
+  try {
+    const response = await apiRequest('GET', '/api/v1/education-levels')
+    const responseData = response as ResponseEducations
+    if (responseData.success) {
+      return responseData.data
+    } else {
+      throw new Error(responseData.message)
+    }
   } catch (err) {
     throw err
   }

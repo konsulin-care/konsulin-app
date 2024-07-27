@@ -1,6 +1,75 @@
 import Image from 'next/image'
 import Tags from './tags'
 
+function HeaderSection({ isRadiusIcon, iconUrl, title, subTitle, role }) {
+  const titleStyle =
+    role === 'patient'
+      ? 'text-sm font-bold opacity-100'
+      : 'text-[10px] font-normal opacity-40'
+  const subTitleStyle =
+    role === 'patient'
+      ? 'text-[10px] font-normal opacity-100'
+      : 'text-sm font-bold opacity-100'
+
+  return (
+    <div className='flex w-1/2'>
+      <Image
+        src={iconUrl}
+        width={32}
+        height={32}
+        alt='icon'
+        className={`${isRadiusIcon ? 'rounded-full p-[2px]' : 'p-[2px]'}`}
+      />
+      <div className='flex flex-col items-start justify-start'>
+        <p className={`pl-2 ${titleStyle}`}>{title}</p>
+        {subTitle && <p className={`pl-2 ${subTitleStyle}`}>{subTitle}</p>}
+      </div>
+    </div>
+  )
+}
+
+function DetailItem({ item }) {
+  const isArray = Array.isArray(item.value)
+  if (item.key === 'Specialty') {
+    return (
+      <div>
+        <p className='text-left text-sm'>{item.key}</p>
+        <div className='mt-2 flex w-full border-t border-[#E3E3E3]' />
+        {isArray && item.value.length > 0 && <Tags tags={item.value} />}
+      </div>
+    )
+  }
+
+  if (item.key === 'Educations') {
+    const educations = JSON.parse(item.value)
+    return (
+      <>
+        <p className='text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
+        <div className='flex flex-col items-end'>
+          {educations.length > 0 &&
+            educations.map((edu: string) => (
+              <p
+                key={edu}
+                className='text-sm font-bold text-[#2C2F35] opacity-100'
+              >
+                {edu}
+              </p>
+            ))}
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <p className='text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
+      <p className='text-sm font-bold text-[#2C2F35] opacity-100'>
+        {item.value}
+      </p>
+    </>
+  )
+}
+
 export default function InformationDetail({
   isRadiusIcon = true,
   iconUrl,
@@ -11,45 +80,16 @@ export default function InformationDetail({
   onEdit,
   role
 }) {
-  console.log('---ISI DETAIL', details)
   return (
     <div className='flex w-full flex-col items-center justify-center bg-[#F9F9F9] p-4'>
       <div className='flex w-full justify-between pb-2'>
-        <div className='flex w-1/2'>
-          <Image
-            src={iconUrl}
-            width={32}
-            height={32}
-            alt='sample-foto'
-            className={`${isRadiusIcon ? 'rounded-full p-[2px]' : 'p-[2px]'}`}
-          />
-          <div className='flex flex-col items-start justify-start'>
-            {role === 'patient' && (
-              <>
-                <p className='pl-2 text-sm font-bold text-[#2C2F35] opacity-100'>
-                  {title}
-                </p>
-                {subTitle && (
-                  <p className='pl-2 text-[10px] font-normal text-[#2C2F35] opacity-100'>
-                    {subTitle}
-                  </p>
-                )}
-              </>
-            )}
-            {role === 'clinician' && (
-              <>
-                <p className='pl-2 text-[10px] font-normal text-[#2C2F35] opacity-40'>
-                  {title}
-                </p>
-                {subTitle && (
-                  <p className='pl-2 text-sm font-bold text-[#2C2F35] opacity-100'>
-                    {subTitle}
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-        </div>
+        <HeaderSection
+          isRadiusIcon={isRadiusIcon}
+          iconUrl={iconUrl}
+          title={title}
+          subTitle={subTitle}
+          role={role}
+        />
         <div className='flex w-1/2 items-center justify-end'>
           <button onClick={onEdit}>
             <div className='w-[100px] rounded-full bg-secondary p-[7px]'>
@@ -60,31 +100,14 @@ export default function InformationDetail({
       </div>
       <div className='flex w-full border-t border-[#E3E3E3] pb-2' />
       <div className='flex w-full flex-col space-y-2'>
-        {details.map((item: any) => {
-          return (
-            <div
-              className='flex justify-between font-[#2C2F35] text-xs'
-              key={item.key}
-            >
-              {item.key === 'Specialty' ? (
-                <div>
-                  <p className='text-left text-sm'>{item.key}</p>
-                  <div className='mt-2 flex w-full border-t border-[#E3E3E3]' />
-                  {item.value.length > 0 && <Tags tags={item.value} />}
-                </div>
-              ) : (
-                <>
-                  <p className='text-sm text-[#2C2F35] opacity-100'>
-                    {item.key}
-                  </p>
-                  <p className='text-sm font-bold text-[#2C2F35] opacity-100'>
-                    {item.value}
-                  </p>
-                </>
-              )}
-            </div>
-          )
-        })}
+        {details.map((item: any) => (
+          <div
+            className='flex justify-between font-[#2C2F35] text-xs'
+            key={item.key}
+          >
+            <DetailItem item={item} />
+          </div>
+        ))}
       </div>
     </div>
   )

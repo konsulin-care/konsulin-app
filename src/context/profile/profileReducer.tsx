@@ -8,7 +8,7 @@ export const initialState: StateProfile = {
     whatsapp_number: '',
     gender: '',
     address: '',
-    education: ''
+    educations: []
   },
   pratice: {
     // Initialize practice state if necessary

@@ -10,41 +10,32 @@ import {
   DrawerTitle,
   DrawerTrigger
 } from '@/components/ui/drawer'
-import {
-  DRAWER_STATE,
-  educationLists,
-  genderOptions,
-  subtitle_success_updated
-} from '@/constants/profile'
+import { DRAWER_STATE, subtitle_success_updated } from '@/constants/profile'
 import { useProfile } from '@/context/profile/profileContext'
+import { PropsProfile } from '@/context/profile/profileTypes'
 import { apiRequest } from '@/services/api'
-import { ResponseProfile, fetchProfile } from '@/services/profile'
+import {
+  ResponseProfile,
+  fetchEducations,
+  fetchGenders,
+  fetchProfile
+} from '@/services/profile'
 import { validateEmail } from '@/utils/validation'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import Image from 'next/image'
 import { Fragment, useEffect, useState } from 'react'
 
-type UpdateUser = {
-  birth_date: string
-  fullname: string
-  email: string
-  whatsapp_number: string
-  gender: string
-  address: string
-  education: string[] | string
-}
-
 export default function EditProfile({ userRole }) {
   const { state, dispatch } = useProfile()
-  const [updateUser, setUpdateUser] = useState<UpdateUser>({
+  const [updateUser, setUpdateUser] = useState<PropsProfile>({
     fullname: '',
     email: '',
     birth_date: '',
     whatsapp_number: '',
     gender: '',
     address: '',
-    education: []
+    educations: ['']
   })
   const [userPhoto, setUserPhoto] = useState('/images/sample-foto.svg')
   const [drawerState, setDrawerState] = useState(DRAWER_STATE.NONE)
@@ -57,8 +48,18 @@ export default function EditProfile({ userRole }) {
     queryFn: () => fetchProfile(state, dispatch)
   })
 
+  const { data: genderOptions } = useQuery({
+    queryKey: ['genders'],
+    queryFn: fetchGenders
+  })
+
+  const { data: educationsOptions } = useQuery({
+    queryKey: ['educations'],
+    queryFn: fetchEducations
+  })
+
   const { mutate, isPending } = useMutation({
-    mutationFn: async (updateUser: UpdateUser) => {
+    mutationFn: async (updateUser: PropsProfile) => {
       try {
         const response = await apiRequest(
           'PUT',
@@ -84,35 +85,37 @@ export default function EditProfile({ userRole }) {
         birth_date,
         whatsapp_number,
         address,
-        sex, // Need confirmation to BE for change key from sex to gender
-        education
+        gender,
+        educations
       } = editProfile.data
       setUpdateUser({
-        fullname: fullname || '',
-        email: email || '',
-        birth_date: birth_date || '',
-        whatsapp_number: whatsapp_number || '',
-        gender: sex || '',
-        address: address || '',
-        education: [education]
+        fullname: fullname ?? '',
+        email: email ?? '',
+        birth_date: birth_date ?? '',
+        whatsapp_number: whatsapp_number ?? '',
+        gender: gender ?? '',
+        address: address ?? '',
+        educations: educations ?? ['']
       })
     }
   }, [editProfile])
 
   function handleEducationSelect(value: string) {
-    const selectedOption = educationLists.find(option => option.value === value)
+    const selectedOption = educationsOptions.find(
+      option => option.name === value
+    )
     if (selectedOption && isPatient) {
       setUpdateUser(prev => ({
         ...prev,
-        education: [selectedOption.value]
+        educations: [selectedOption.name]
       }))
     }
     if (selectedOption && isClinician) {
       setUpdateUser(prev => ({
         ...prev,
-        education: Array.isArray(prev.education)
-          ? [...prev.education, selectedOption.value]
-          : [selectedOption.value]
+        educations: Array.isArray(prev.educations)
+          ? [...prev.educations, selectedOption.name]
+          : [selectedOption.name]
       }))
     }
   }
@@ -122,17 +125,18 @@ export default function EditProfile({ userRole }) {
   }
 
   function handleAddEducationLevel() {
-    const newEducation = Array.isArray(updateUser.education)
-      ? [...updateUser.education, '']
+    const newEducation = updateUser.educations
+      ? [...updateUser.educations, '']
       : ['']
-    setUpdateUser(prevState => ({ ...prevState, education: newEducation }))
+    setUpdateUser(prevState => ({ ...prevState, educations: newEducation }))
   }
 
   function handleEducationChange(index: number, value: string) {
+    console.log('value', value)
     setUpdateUser(prevState => ({
       ...prevState,
-      education: Array.isArray(prevState.education)
-        ? prevState.education.map((edu, i) => (i === index ? value : edu))
+      educations: Array.isArray(prevState.educations)
+        ? prevState.educations.map((edu, i) => (i === index ? value : edu))
         : [value]
     }))
   }
@@ -143,7 +147,6 @@ export default function EditProfile({ userRole }) {
     if (Object.keys(validationErrors).length === 0) {
       const updatedProfile = {
         ...updateUser,
-        education: isPatient ? updateUser.education[0] : updateUser.education,
         birth_date: updateUser.birth_date
           ? format(new Date(updateUser.birth_date), 'yyyy-MM-dd')
           : undefined
@@ -166,7 +169,7 @@ export default function EditProfile({ userRole }) {
     setDrawerState(DRAWER_STATE.NONE)
   }
 
-  function validateForm(user: UpdateUser) {
+  function validateForm(user: PropsProfile) {
     const errors: { [key: string]: string } = {}
     const {
       fullname,
@@ -175,7 +178,7 @@ export default function EditProfile({ userRole }) {
       address,
       birth_date,
       gender,
-      education
+      educations
     } = user
 
     if (!fullname) {
@@ -204,9 +207,7 @@ export default function EditProfile({ userRole }) {
       errors.gender = 'Gender is required'
     }
 
-    if (typeof education === 'string' && education.trim() === '') {
-      errors.education = 'Education is required'
-    } else if (Array.isArray(education) && education.length === 0) {
+    if (educations && educations.length === 0) {
       errors.education = 'At least one education level is required'
     }
 
@@ -334,13 +335,15 @@ export default function EditProfile({ userRole }) {
               </div>
               <div className='flex-1 flex-col'>
                 <DropdownProfile
-                  options={educationLists}
-                  value={updateUser.education[0]}
+                  options={educationsOptions}
+                  value={updateUser.educations[0]}
                   onSelect={handleEducationSelect}
                   placeholder='Pilih Pendidikan'
                 />
-                {errors.education && (
-                  <p className='p-4 text-xs text-red-500'>{errors.education}</p>
+                {errors.educations && (
+                  <p className='p-4 text-xs text-red-500'>
+                    {errors.educations}
+                  </p>
                 )}
               </div>
             </div>
@@ -359,11 +362,11 @@ export default function EditProfile({ userRole }) {
                 )}
               </div>
 
-              {Array.isArray(updateUser.education) &&
-                updateUser.education.map((edu, index) => (
+              {Array.isArray(updateUser.educations) &&
+                updateUser.educations.map((edu, index) => (
                   <DropdownProfile
                     key={`${edu}-${index}`}
-                    options={educationLists}
+                    options={educationsOptions}
                     value={edu}
                     onSelect={value => handleEducationChange(index, value)}
                     placeholder='Pilih Pendidikan'
@@ -378,8 +381,8 @@ export default function EditProfile({ userRole }) {
                   + Add Education Level
                 </p>
               </div>
-              {errors.education && (
-                <p className='px-4 text-xs text-red-500'>{errors.education}</p>
+              {errors.educations && (
+                <p className='px-4 text-xs text-red-500'>{errors.educations}</p>
               )}
             </>
           )}
@@ -393,6 +396,7 @@ export default function EditProfile({ userRole }) {
           {isPending ? 'Loading...' : 'Simpan'}
         </button>
       </div>
+
       <Drawer
         open={drawerState === DRAWER_STATE.DOB}
         onOpenChange={open => !open && closeDrawer()}
@@ -419,10 +423,10 @@ export default function EditProfile({ userRole }) {
         <DrawerTrigger />
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle className='text-xl font-bold text-[#2C2F35] opacity-100'>
+            <DrawerTitle className='text-center text-xl font-bold text-[#2C2F35] opacity-100'>
               Changes Successful!
             </DrawerTitle>
-            <DrawerDescription className='text-sm text-[#2C2F35] opacity-60'>
+            <DrawerDescription className='text-center text-sm text-[#2C2F35] opacity-60'>
               {subtitle_success_updated.split('\n').map((line, index) => (
                 <Fragment key={index}>
                   {line}
