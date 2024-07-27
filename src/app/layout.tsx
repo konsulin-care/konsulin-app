@@ -1,5 +1,6 @@
 import QueryProvider from '@/components/general/query-provider'
 import { AuthProvider } from '@/context/auth/authContext'
+import { ProfileProvider } from '@/context/profile/profileContext'
 import '@/styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
@@ -63,16 +64,18 @@ export default function RootLayout({
     <html lang='en'>
       <body className={inter.className}>
         <AuthProvider>
-          <QueryProvider>
-            <NextTopLoader />
-            <ToastContainer />
-            <div className='flex min-h-screen flex-col'>
-              <div id='modal' />
-              <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
-                {children}
-              </main>
-            </div>
-          </QueryProvider>
+          <ProfileProvider>
+            <QueryProvider>
+              <NextTopLoader />
+              <ToastContainer />
+              <div className='flex min-h-screen flex-col'>
+                <div id='modal' />
+                <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
+                  {children}
+                </main>
+              </div>
+            </QueryProvider>
+          </ProfileProvider>
         </AuthProvider>
       </body>
     </html>
