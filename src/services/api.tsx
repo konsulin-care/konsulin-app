@@ -1,3 +1,4 @@
+import { getFromLocalStorage } from '@/lib/utils'
 import { QueryClient } from '@tanstack/react-query'
 import axios, { AxiosError } from 'axios'
 import { toast } from 'react-toastify'
@@ -10,6 +11,22 @@ export const API = axios.create({
 })
 
 export const queryClient = new QueryClient()
+
+API.interceptors.request.use(
+  config => {
+    const auth = getFromLocalStorage('auth')
+    if (auth) {
+      const { token } = JSON.parse(auth)
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    }
+    return config
+  },
+  error => {
+    return Promise.reject(error)
+  }
+)
 
 API.interceptors.response.use(
   response => response,

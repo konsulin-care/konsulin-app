@@ -9,7 +9,9 @@ import { Check, ChevronDown } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 
 type DropdownProps = {
-  options: { value: string; label: string }[]
+  options: {
+    name: string
+  }[]
   value: string
   placeholder: string
   onSelect: (value: string) => void
@@ -40,7 +42,8 @@ const DropdownProfile: React.FC<DropdownProps> = ({
             className='h-[56px] w-full justify-between bg-white'
           >
             <span className='text-sm font-normal text-[#2C2F35]'>
-              {options.find(option => option.value === value)?.label ||
+              {(options &&
+                options.find(option => option.name === value)?.name) ||
                 placeholder ||
                 'Select Option'}
             </span>
@@ -51,22 +54,23 @@ const DropdownProfile: React.FC<DropdownProps> = ({
           </Button>
         </DropdownTrigger>
         <DropdownContent style={{ minWidth: triggerWidth }}>
-          {options.map(item => (
-            <DropdownItem
-              key={item.value}
-              onSelect={() => onSelect(item.value)}
-              className={`w-full ${
-                value === item.value ? 'bg-secondary text-white' : ''
-              }`}
-            >
-              <div className='flex w-full items-center justify-between px-4 py-2'>
-                <span>{item.label}</span>
-                {value === item.value && (
-                  <Check className='text-accent-foreground ml-2 h-4 w-4 text-white' />
-                )}
-              </div>
-            </DropdownItem>
-          ))}
+          {options &&
+            options.map(item => (
+              <DropdownItem
+                key={item.name}
+                onSelect={() => onSelect(item.name)}
+                className={`w-full ${
+                  value === item.name ? 'bg-secondary text-white' : ''
+                }`}
+              >
+                <div className='flex w-full items-center justify-between px-4 py-2'>
+                  <span>{item.name}</span>
+                  {value === item.name && (
+                    <Check className='text-accent-foreground ml-2 h-4 w-4 text-white' />
+                  )}
+                </div>
+              </DropdownItem>
+            ))}
         </DropdownContent>
       </Dropdown>
     </div>

@@ -1,52 +1,14 @@
 'use client'
 
 import InformationDetail from '@/components/profile/information-detail'
+import MedalCollection from '@/components/profile/medal-collection'
 import Schedule from '@/components/profile/schedule'
+import Settings from '@/components/profile/settings'
 import Tags from '@/components/profile/tags'
+import { medalLists, settingMenus } from '@/constants/profile'
 import { ChevronRight } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import MedalCollection from '../../components/profile/medal-collection'
-import Settings from '../../components/profile/settings'
-
-const settingMenus = [
-  { name: 'Pengaturan', link: '/settings' },
-  { name: 'Hapus Akun', link: '/remove-account' },
-  { name: 'Log out', link: '/logout' }
-]
-
-const medalLists = [
-  {
-    title: 'Survivor',
-    description:
-      'completing mindfulness exercises and boosting your mental wellness journey.',
-    iconUrl: '/icons/survivor.svg'
-  },
-  {
-    title: 'Survivor',
-    description:
-      'completing mindfulness exercises and boosting your mental wellness journey.',
-    iconUrl: '/icons/survivor.svg'
-  },
-  {
-    title: 'Survivor',
-    description:
-      'completing mindfulness exercises and boosting your mental wellness journey.',
-    iconUrl: '/icons/survivor.svg'
-  },
-  {
-    title: 'Survivor',
-    description:
-      'completing mindfulness exercises and boosting your mental wellness journey.',
-    iconUrl: '/icons/survivor.svg'
-  },
-  {
-    title: 'Survivor',
-    description:
-      'completing mindfulness exercises and boosting your mental wellness journey.',
-    iconUrl: '/icons/survivor.svg'
-  }
-]
 
 const tagsSchedule = ['19 Mei 2024', '20 Mei 2024']
 

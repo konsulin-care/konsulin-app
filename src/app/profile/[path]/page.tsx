@@ -1,7 +1,6 @@
 'use client'
 
 import Header from '@/components/header'
-import NavigationBar from '@/components/navigation-bar'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import { ChevronLeft } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
@@ -35,30 +34,28 @@ const PathProfile: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <NavigationBar>
-        <Header showChat={false} showNotification={false}>
-          {!isAuthenticated ? (
-            <div className='mt-5'></div>
-          ) : (
-            <div className='flex w-full items-center justify-between'>
-              <ChevronLeft
-                width={24}
-                height={24}
-                onClick={() => router.back()}
-                color='white'
-              />
-              <div className='my-2 flex flex-grow'>
-                <span className='w-full pr-4 text-center text-[14px] font-bold text-white'>
-                  {title}
-                </span>
-              </div>
+      <Header showChat={false} showNotification={false}>
+        {!isAuthenticated ? (
+          <div className='mt-5'></div>
+        ) : (
+          <div className='flex w-full items-center justify-between'>
+            <ChevronLeft
+              width={24}
+              height={24}
+              onClick={() => router.back()}
+              color='white'
+            />
+            <div className='my-2 flex flex-grow'>
+              <span className='w-full pr-4 text-center text-[14px] font-bold text-white'>
+                {title}
+              </span>
             </div>
-          )}
-        </Header>
-        <div className='mt-[-24px] rounded-[16px] bg-white'>
-          <div className='min-h-screen p-4'>{component}</div>
-        </div>
-      </NavigationBar>
+          </div>
+        )}
+      </Header>
+      <div className='mt-[-24px] rounded-[16px] bg-white'>
+        <div className='min-h-screen p-4'>{component}</div>
+      </div>
     </Suspense>
   )
 }
