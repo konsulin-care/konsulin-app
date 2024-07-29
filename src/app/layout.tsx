@@ -66,7 +66,7 @@ export default function RootLayout({
         <AuthProvider>
           <ProfileProvider>
             <QueryProvider>
-              <NextTopLoader />
+              <NextTopLoader showSpinner={false} color='#13c2c2' />
               <ToastContainer />
               <div className='flex min-h-screen flex-col'>
                 <div id='modal' />

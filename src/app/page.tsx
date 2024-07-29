@@ -23,9 +23,11 @@ const App: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
 
   return (
     <NavigationBar>
-      <Header>
+      <Header showChat={isAuthenticated} showNotification={isAuthenticated}>
         {!isAuthenticated ? (
-          <div className='mt-5'></div>
+          <div className='flex flex-col'>
+            <div className='text-[14px] font-bold text-white'>Konsulin</div>
+          </div>
         ) : (
           <div className='flex'>
             <Image
