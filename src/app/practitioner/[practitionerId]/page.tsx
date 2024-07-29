@@ -124,4 +124,4 @@ const Practitioner: React.FC<IPractitionerProps> = ({ params }) => {
     </>
   )
 }
-export default withAuth(Practitioner, ['patient'], true)
+export default withAuth(Practitioner, ['patient'])
