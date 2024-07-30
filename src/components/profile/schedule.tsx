@@ -12,7 +12,7 @@ export default function Schedule({ name, time, date }) {
           See All
         </Link>
       </div>
-      <div className='flex items-center justify-between bg-[#F9F9F9]'>
+      <div className='flex items-center justify-between rounded-[16px] border-0 bg-[#F9F9F9]'>
         <div className='p-4'>
           <Image
             src={'icons/calendar.svg'}
@@ -22,12 +22,12 @@ export default function Schedule({ name, time, date }) {
           />
         </div>
         <div className='flex flex-grow flex-col items-start'>
-          <p className='text-xs text-[#2C2F35] opacity-60'>
+          <p className='text-xs font-normal text-[#2C2F35] opacity-60'>
             Upcoming Session With
           </p>
           <p className='text-sm font-bold text-[#10958D]'>{name}</p>
         </div>
-        <div className='pl-5 text-xs'>
+        <div className='pl-5 pr-4 text-xs'>
           <span className='font-bold'>{time} | </span> {date}
         </div>
       </div>
