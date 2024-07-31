@@ -97,14 +97,14 @@ export default function Clinician() {
         onEdit={() => router.push('profile/edit-pratice')}
         role='clinician'
       />
-      <div className='mt-4 flex flex-col items-center bg-[#F9F9F9] px-4 py-[20px]'>
+      <div className='mt-4 flex flex-col items-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
         <div className='flex w-full items-center justify-between'>
           <Image
             src={'/icons/calendar-profile.svg'}
             width={30}
             height={30}
             alt='calendar-icon'
-            className='pr-[10px]'
+            className='pr-[13px]'
           />
           <p className='flex-grow text-start text-xs font-bold text-[#2C2F35] opacity-100'>
             Edit Availbility Schedule

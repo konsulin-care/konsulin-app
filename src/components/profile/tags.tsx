@@ -1,6 +1,6 @@
 export default function Tags({ tags }) {
   return (
-    <div className='flex w-full flex-grow flex-wrap items-center gap-[10px] pt-2'>
+    <div className='flex w-full flex-grow flex-wrap items-center gap-[10px] pt-[16px]'>
       {tags &&
         tags.map((tag: any) => (
           <div
