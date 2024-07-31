@@ -4,8 +4,6 @@ on:
   push:
     branches:
     - develop
-    - test
-
 
 jobs:
   build:
@@ -23,9 +21,9 @@ jobs:
       TAG: v0.0.1
       AUTHOR: ardihikaru
       GIT_COMMIT: ${{ github.sha }}
-
     secrets:
-      PASSWORD: ${{ secrets.PASSWORD }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME}}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD}}
   deploy:
     name: Deployment
     uses: ./.github/workflows/deploy.yml
