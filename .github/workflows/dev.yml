@@ -19,7 +19,7 @@ jobs:
     with:
       USERNAME: admin
       API_URL: https://dev-app.konsulin.care
-      VERSION: develop
+      VERSION: development
       TAG: v0.0.1
       AUTHOR: ardihikaru
       GIT_COMMIT: ${{ github.sha }}
@@ -33,6 +33,7 @@ jobs:
     - docker
     with:
       ENVIRONMENT: development
+      SERVICE_NAME: dev-app
     secrets:
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_USERNAME: ${{ secrets.SSH_USERNAME }}

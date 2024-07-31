@@ -30,6 +30,7 @@ jobs:
     - docker
     with:
       ENVIRONMENT: production
+      SERVICE_NAME: app
     secrets:
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
@@ -37,3 +38,4 @@ jobs:
       SSH_PORT: ${{ secrets.SSH_PORT }}
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
