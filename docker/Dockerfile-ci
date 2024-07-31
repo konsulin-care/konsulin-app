@@ -1,0 +1,67 @@
+FROM node:iron-slim AS base
+
+WORKDIR /app
+
+# captures argument
+ARG API_URL
+# e.g. latest, development, production
+ARG VERSION
+ARG GIT_COMMIT
+ARG TAG
+ARG BUILD_TIME
+ARG AUTHOR
+
+# set environment variables
+ENV NEXT_PUBLIC_API_URL=$API_URL
+
+RUN echo "Set ARG value of [NEXT_PUBLIC_API_URL] as $API_URL"
+RUN echo "Set ARG value of [VERSION] as $VERSION"
+RUN echo "Set GIT_COMMIT value of [VERSION] as $GIT_COMMIT"
+RUN echo "Set TAG value of [TAG] as $TAG"
+RUN echo "Set BUILD_TIME value of [BUILD_TIME] as $BUILD_TIME"
+
+RUN echo "Set ENV value of [NEXT_PUBLIC_API_URL] as $NEXT_PUBLIC_API_URL"
+
+# get current commit and create build number
+ARG RELEASE_NOTE="author=${AUTHOR} \nversion=${VERSION} \ncommit=${GIT_COMMIT} \ntag=${TAG} \nbuild time=${BUILD_TIME}"
+RUN echo "${RELEASE_NOTE}" > /app/RELEASE
+
+
+# Production image, copy all the files and run next
+#FROM node:iron-slim AS runner
+FROM base AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV production
+# Uncomment the following line in case you want to disable telemetry during runtime.
+ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+
+RUN ls -la
+
+RUN pwd
+
+COPY build/public ./public
+
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+#DHANI
+COPY --chown=nextjs:nodejs build/.next/standalone ./
+COPY --chown=nextjs:nodejs build/.next/static ./.next/static
+COPY --from=base --chown=nextjs:nodejs /app/RELEASE ./RELEASE
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT 3000
+
+# server.js is created by next build from the standalone output
+# https://nextjs.org/docs/pages/api-reference/next-config-js/output
+CMD HOSTNAME="0.0.0.0" node server.js

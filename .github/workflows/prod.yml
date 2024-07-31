@@ -1,0 +1,39 @@
+name: Production
+on:
+  workflow_dispatch:
+  push:
+    tags:
+    - '*'
+jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/build.yml
+  docker:
+    name: Containerization
+    uses: ./.github/workflows/docker.yml
+    needs:
+    - build
+    with:
+      USERNAME: admin
+      API_URL: https://app.konsulin.care
+      VERSION: production
+      TAG: v0.0.1
+      AUTHOR: ardihikaru
+      GIT_COMMIT: ${{ github.sha }}
+
+    secrets:
+      PASSWORD: ${{ secrets.PASSWORD }}
+  deploy:
+    name: Deployment
+    uses: ./.github/workflows/deploy.yml
+    needs:
+    - docker
+    with:
+      ENVIRONMENT: production
+    secrets:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+      SSH_KEY: ${{ secrets.SSH_KEY }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
