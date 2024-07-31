@@ -30,7 +30,7 @@ jobs:
     - name: Get sha short
       id: tags
       run: |
-        echo ::set-output name=sha_short::$(git rev-parse --short=7 ${{ github.sha }})
+        echo "SHA_SHORT=${{ $git rev parse --short=7 ${{ github.sha }} }}" >> $GITHUB_ENV
 
     - name: Get Branch
       run: echo "BRANCH=${GITHUB_REF##*/}" >> $GITHUB_ENV
@@ -45,5 +45,5 @@ jobs:
         script: |
           cd /home/${{ secrets.SSH_USERNAME }}/infrastructure/${{ inputs.ENVIRONMENT }}/konsulin-app &&
           docker login --username=${{ secrets.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD }} repository.konsulin.care &&
-          COMMIT_HASH=sha-${{ env.BRANCH }}-${{ steps.tags.outputs.sha_short }} docker compose -f docker-compose-cd.yml pull
-          COMMIT_HASH=sha-${{ env.BRANCH }}-${{ steps.tags.outputs.sha_short }} docker compose -f docker-compose-cd.yml up -d
+          COMMIT_HASH=sha-${{ env.BRANCH }}-${{ env.SHA_SHORT }} docker compose -f docker-compose-cd.yml pull
+          COMMIT_HASH=sha-${{ env.BRANCH }}-${{ env.SHA_SHORT }} docker compose -f docker-compose-cd.yml up -d

@@ -21,9 +21,6 @@ on:
       AUTHOR:
         type: string
         required: true
-#       BUILD_TIME:
-#         type: string
-#         required: true
 
     secrets:
       PASSWORD:
@@ -56,7 +53,7 @@ jobs:
     - name: Get sha short
       id: tags
       run: |
-        echo ::set-output name=sha_short::$(git rev-parse --short=7 ${{ github.sha }})
+        echo "SHA_SHORT=${{ $git rev parse --short=7 ${{ github.sha }} }}" >> $GITHUB_ENV
 
     - name: Get Branch
       run: echo "BRANCH=${GITHUB_REF##*/}" >> $GITHUB_ENV
@@ -66,7 +63,7 @@ jobs:
       run: >-
         docker
         build
-        -t repository.konsulin.care/repository/private/fe-konsulin:sha-${{ env.BRANCH }}-${{ steps.tags.outputs.sha_short }}
+        -t repository.konsulin.care/repository/private/fe-konsulin:sha-${{ env.BRANCH }}-${env.SHA_SHORT }}
         -f docker/Dockerfile-ci
         --build-arg API_URL=${{ inputs.API_URL }}
         --build-arg VERSION=${{ inputs.VERSION }}
@@ -76,16 +73,8 @@ jobs:
         --build-arg AUTHOR=${{ inputs.AUTHOR }}
         .
 
-#       with:
-#         API_URL: ${{ inputs.API_URL }}
-#         VERSION: ${{ inputs.VERSION }}
-#         GIT_COMMIT: ${{ steps.tags.outputs.sha_short }}
-#         TAG: sha-${{ env.BRANCH }}-${{ steps.tags.outputs.sha_short }}
-#         BUILD_TIME: $(date)
-#         AUTHOR: ${{ inputs.AUTHOR }}
-
     - name: Push sha-${{ steps.tags.outputs.sha_short }}
       run: >-
         docker
         push
-        repository.konsulin.care/repository/private/fe-konsulin:sha-${{ env.BRANCH }}-${{ steps.tags.outputs.sha_short }}
+        repository.konsulin.care/repository/private/fe-konsulin:sha-${{ env.BRANCH }}-${env.SHA_SHORT }}
