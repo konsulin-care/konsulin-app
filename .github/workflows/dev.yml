@@ -1,0 +1,44 @@
+name: Development
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - develop
+    - test
+
+
+jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/build.yml
+  docker:
+    name: Containerization
+    uses: ./.github/workflows/docker.yml
+    needs:
+    - build
+    with:
+      USERNAME: admin
+      API_URL: https://dev-app.konsulin.care
+      VERSION: develop
+      TAG: v0.0.1
+      AUTHOR: ardihikaru
+      GIT_COMMIT: ${{ github.sha }}
+
+    secrets:
+      PASSWORD: ${{ secrets.PASSWORD }}
+  deploy:
+    name: Deployment
+    uses: ./.github/workflows/deploy.yml
+    needs:
+    - docker
+    with:
+      ENVIRONMENT: development
+    secrets:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+      SSH_KEY: ${{ secrets.SSH_KEY }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+

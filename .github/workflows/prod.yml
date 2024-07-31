@@ -1,0 +1,25 @@
+name: Production
+on:
+  workflow_dispatch:
+  push:
+    tags:
+    - '*'
+jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/build.yml
+  docker:
+    name: Containerization
+    uses: ./.github/workflows/docker.yml
+    needs:
+    - build
+  deploy:
+    name: Deployment
+    uses: ./.github/workflows/deploy.yml
+    needs:
+    - docker
+    with:
+      CONTEXT: bgsi-production
+      INGRESS_HOST: registry-bgsi.kemkes.go.id
+    secrets:
+      KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
