@@ -1,53 +1,14 @@
-import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
+import AppChartClient from './app-chart-client'
 import HomeMenuClinicianGuest from './app-menu-clinician-guest'
 import Community from './community'
 import PopularAssesment from './popular-assesment'
 
-const Pie = dynamic(
-  () => import('@ant-design/plots').then(mod => mod.Pie) as any,
-  { ssr: false }
-)
-
-const configPie: any = {
-  data: [
-    { type: 'Depress', value: 27 },
-    { type: 'Anxiety', value: 25 },
-    { type: 'Intrusive Thoughts', value: 18 },
-    { type: 'Paranoia', value: 15 },
-    { type: 'Insomnia', value: 10 },
-    { type: 'Emotional Exhaustion', value: 5 }
-  ],
-  angleField: 'value',
-  colorField: 'type',
-  scale: { color: { palette: 'buGn' } },
-  legend: {
-    color: {
-      title: false,
-      position: 'right',
-      rowPadding: 4
-    }
-  }
-}
-
 export default function AppPatient() {
   return (
     <div className='mt-[-24px] rounded-[16px] bg-white'>
-      <div className='p-4'>
-        <div className='rounded-lg bg-[#F9F9F9] p-[16px]'>
-          <div className='text-[14px] font-bold text-[#2C2F3599]'>
-            What’s the turbulence on your mind?
-          </div>
-          <div className=''>
-            <Pie height={180} {...configPie} />
-          </div>
-          <div className='text-[10px]'>
-            *based on your data previous record, not necessarily in recent
-            period
-          </div>
-        </div>
-      </div>
+      <AppChartClient />
 
       <div className='flex gap-4 p-4'>
         <HomeMenuClinicianGuest />

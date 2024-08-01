@@ -38,7 +38,7 @@ function withAuth<T>(
 
     if (!isVerified) {
       return (
-        <div className='flex min-h-screen min-w-full items-center justify-start'>
+        <div className='flex min-h-screen min-w-full items-center justify-center'>
           <LoadingSpinnerIcon
             width={56}
             height={56}

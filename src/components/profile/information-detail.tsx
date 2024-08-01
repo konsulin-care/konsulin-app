@@ -81,7 +81,7 @@ export default function InformationDetail({
   role
 }) {
   return (
-    <div className='flex w-full flex-col items-center justify-center bg-[#F9F9F9] p-4'>
+    <div className='flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
       <div className='flex w-full justify-between pb-2'>
         <HeaderSection
           isRadiusIcon={isRadiusIcon}

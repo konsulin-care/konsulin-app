@@ -50,12 +50,14 @@ export default function EditProfile({ userRole }) {
 
   const { data: genderOptions } = useQuery({
     queryKey: ['genders'],
-    queryFn: fetchGenders
+    queryFn: fetchGenders,
+    staleTime: 1000 * 60 * 60 // will fresh after 1 hours
   })
 
   const { data: educationsOptions } = useQuery({
     queryKey: ['educations'],
-    queryFn: fetchEducations
+    queryFn: fetchEducations,
+    staleTime: 1000 * 60 * 60 // will fresh after 1 hours
   })
 
   const { mutate, isPending } = useMutation({

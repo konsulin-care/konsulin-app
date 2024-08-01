@@ -4,7 +4,7 @@ import Link from 'next/link'
 export default function HomeMenuClinicianGuest() {
   return (
     <>
-      <Link href={'/'} className='card flex w-full'>
+      <Link href={'/exercise'} className='card flex w-full'>
         <Image
           src={'/images/mental-health.svg'}
           width={40}
@@ -18,7 +18,8 @@ export default function HomeMenuClinicianGuest() {
           </span>
         </div>
       </Link>
-      <Link href={'/'} className='card flex w-full'>
+
+      <Link href={'/assessment'} className='card flex w-full'>
         <Image
           src={'/images/writing.svg'}
           width={40}

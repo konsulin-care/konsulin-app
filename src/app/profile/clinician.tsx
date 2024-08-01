@@ -6,34 +6,13 @@ import Schedule from '@/components/profile/schedule'
 import Settings from '@/components/profile/settings'
 import Tags from '@/components/profile/tags'
 import { medalLists, settingMenus } from '@/constants/profile'
+import { useProfile } from '@/context/profile/profileContext'
+import { capitalizeFirstLetter, formatLabel } from '@/utils/validation'
 import { ChevronRight } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
 const tagsSchedule = ['19 Mei 2024', '20 Mei 2024']
-
-const generalDetails = [
-  {
-    key: 'Birth(Age)',
-    value: '12-12-1993(40)'
-  },
-  {
-    key: 'Sex',
-    value: 'Male'
-  },
-  {
-    key: 'Whatsapp',
-    value: '08034840384'
-  },
-  {
-    key: 'Email',
-    value: 'Aji Danuarta'
-  },
-  {
-    key: 'Education',
-    value: 'Bachelor of Lorem Ipsum'
-  }
-]
 
 const praticeDetails = [
   {
@@ -64,6 +43,34 @@ const praticeDetails = [
 
 export default function Clinician() {
   const router = useRouter()
+  const { state } = useProfile()
+
+  /* Manipulation objects from response {} to array */
+  const profileDetail = Object.entries(state.profile)
+    .map(([key, value]) => {
+      const renderValue = (value: any) => {
+        if (value === null || value === undefined || value === '') {
+          return null
+        }
+        if (typeof value === 'object') {
+          return JSON.stringify(value)
+        }
+        return value
+      }
+
+      let formattedValue = renderValue(value)
+
+      if (key === 'gender' && formattedValue !== null) {
+        formattedValue = capitalizeFirstLetter(
+          formattedValue.replace(/[_-]/g, ' ')
+        )
+      }
+
+      return formattedValue !== null
+        ? { key: formatLabel(key), value: formattedValue }
+        : null
+    })
+    .filter(item => item !== null)
 
   return (
     <>
@@ -74,9 +81,9 @@ export default function Clinician() {
         isRadiusIcon
         iconUrl='/images/sample-foto.svg'
         title='General Information'
-        subTitle='Aji Danuarta'
+        subTitle={state.profile.fullname}
         buttonText='Edit Profile'
-        details={generalDetails}
+        details={profileDetail}
         onEdit={() => router.push('profile/edit-profile')}
         role='clinician'
       />
@@ -90,14 +97,14 @@ export default function Clinician() {
         onEdit={() => router.push('profile/edit-pratice')}
         role='clinician'
       />
-      <div className='mt-4 flex flex-col items-center bg-[#F9F9F9] px-4 py-[20px]'>
+      <div className='mt-4 flex flex-col items-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
         <div className='flex w-full items-center justify-between'>
           <Image
             src={'/icons/calendar-profile.svg'}
             width={30}
             height={30}
             alt='calendar-icon'
-            className='pr-[10px]'
+            className='pr-[13px]'
           />
           <p className='flex-grow text-start text-xs font-bold text-[#2C2F35] opacity-100'>
             Edit Availbility Schedule

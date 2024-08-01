@@ -6,12 +6,14 @@ interface HeaderProps {
   showChat?: boolean
   showNotification?: boolean
   children: ReactNode
+  moreAction?: ReactNode
 }
 
 export default function Header({
   showChat = true,
   showNotification = true,
-  children
+  children,
+  moreAction
 }: HeaderProps) {
   return (
     <div
@@ -21,7 +23,7 @@ export default function Header({
         {children}
         <div className='absolute right-4 top-4 flex gap-[8px]'>
           {showChat && (
-            <Link href='/'>
+            <Link href='/message'>
               <Image
                 width={32}
                 height={32}
@@ -31,7 +33,7 @@ export default function Header({
             </Link>
           )}
           {showNotification && (
-            <Link href='/'>
+            <Link href='/notification'>
               <Image
                 width={32}
                 height={32}
@@ -40,6 +42,7 @@ export default function Header({
               />
             </Link>
           )}
+          {moreAction}
         </div>
       </div>
     </div>
