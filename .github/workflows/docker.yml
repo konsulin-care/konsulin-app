@@ -78,7 +78,7 @@ jobs:
         .
 
 
-    - name: Push sha-${{ env.SHORT_SHA }}
+    - name: Push sha-${{ env.BRANCH }}-${{ env.SHORT_SHA }}
       run: >-
         docker
         push
