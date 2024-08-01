@@ -8,8 +8,9 @@ ARG API_URL
 ARG VERSION
 ARG GIT_COMMIT
 ARG TAG
-ARG BUILD_TIME
 ARG AUTHOR
+ARG BUILD_TIME
+ARG RUN_NUMBER
 
 # set environment variables
 ENV NEXT_PUBLIC_API_URL=$API_URL
@@ -19,11 +20,11 @@ RUN echo "Set ARG value of [VERSION] as $VERSION"
 RUN echo "Set GIT_COMMIT value of [VERSION] as $GIT_COMMIT"
 RUN echo "Set TAG value of [TAG] as $TAG"
 RUN echo "Set BUILD_TIME value of [BUILD_TIME] as $BUILD_TIME"
-
 RUN echo "Set ENV value of [NEXT_PUBLIC_API_URL] as $NEXT_PUBLIC_API_URL"
+RUN echo "" Set ENV value of [RUN_NUMBER] as $RUN_NUMBER
 
 # get current commit and create build number
-ARG RELEASE_NOTE="author=${AUTHOR} \nversion=${VERSION} \ncommit=${GIT_COMMIT} \ntag=${TAG} \nbuild time=${BUILD_TIME}"
+ARG RELEASE_NOTE="author=${AUTHOR} \nversion=${VERSION} \ncommit=${GIT_COMMIT} \ntag=${TAG} \nbuild time=${BUILD_TIME} \nrun number=${RUN_NUMBER}"
 RUN echo "${RELEASE_NOTE}" > /app/RELEASE
 
 
@@ -40,10 +41,7 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-
-RUN ls -la
-
-RUN pwd
+RUN apt-get update && apt-get install -y bash
 
 COPY build/public ./public
 
