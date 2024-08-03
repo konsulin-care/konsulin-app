@@ -56,7 +56,7 @@ export default function Settings({ menus }) {
 
   return (
     <>
-      <div className='w-full rounded-lg bg-white pt-4'>
+      <div className='w-full rounded-lg bg-white'>
         <ul>
           {menus.map((item: any, index: number) => {
             const isFirst = index === 0
