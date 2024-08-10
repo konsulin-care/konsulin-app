@@ -1,11 +1,11 @@
 export default function Tags({ tags }) {
   return (
-    <div className='flex w-full flex-grow flex-wrap items-center gap-[10px] pt-[16px]'>
+    <div className='flex flex-wrap gap-2'>
       {tags &&
-        tags.map((tag: any) => (
+        tags.map((tag, index) => (
           <div
-            key={tag}
-            className='inline-block space-x-2 space-y-[2px] rounded-full bg-[#E1E1E1] px-2 py-[2px] text-[10px] font-normal text-black'
+            key={index}
+            className='flex items-center rounded-full bg-[#E1E1E1] px-2 py-1 text-[10px] font-normal text-black'
           >
             {tag}
           </div>
