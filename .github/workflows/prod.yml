@@ -14,7 +14,7 @@ jobs:
     needs:
     - build
     with:
-      API_URL: https://app.konsulin.care
+      API_URL: https://api.konsulin.care
       VERSION: production
       TAG: $(git describe --tags --abbrev=0)
       AUTHOR: ${{ github.actor }}
