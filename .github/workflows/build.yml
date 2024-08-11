@@ -54,7 +54,7 @@ jobs:
           else echo "Lockfile not found." && exit 1; \
           fi
         env:
-          API_URL: ${{ inputs.API_URL }}
+          NEXT_PUBLIC_API_URL: ${{ inputs.API_URL }}
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
