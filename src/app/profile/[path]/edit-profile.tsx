@@ -134,7 +134,6 @@ export default function EditProfile({ userRole }) {
   }
 
   function handleEducationChange(index: number, value: string) {
-    console.log('value', value)
     setUpdateUser(prevState => ({
       ...prevState,
       educations: Array.isArray(prevState.educations)
