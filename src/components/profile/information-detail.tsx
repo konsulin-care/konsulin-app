@@ -34,7 +34,7 @@ function DetailItem({ item }) {
     return (
       <div>
         <p className='text-left text-sm'>{item.key}</p>
-        <div className='mt-2 flex w-full border-t border-[#E3E3E3]' />
+        <div className='my-2 flex w-full border-t border-[#E3E3E3]' />
         {isArray && item.value.length > 0 && <Tags tags={item.value} />}
       </div>
     )

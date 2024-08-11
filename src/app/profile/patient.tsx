@@ -2,7 +2,6 @@
 
 import InformationDetail from '@/components/profile/information-detail'
 import MedalCollection from '@/components/profile/medal-collection'
-import Schedule from '@/components/profile/schedule'
 import Settings from '@/components/profile/settings'
 import { medalLists, settingMenus } from '@/constants/profile'
 import { useProfile } from '@/context/profile/profileContext'
@@ -89,7 +88,6 @@ export default function Patient() {
         role='patient'
       />
       <MedalCollection medals={medalLists} />
-      <Schedule name='Mrs Clinician Name' time='15:00' date='23/12/2030' />
       <Settings menus={settingMenus} />
     </>
   )
