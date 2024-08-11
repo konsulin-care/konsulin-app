@@ -1,51 +1,78 @@
 'use client'
 
+import Collapsible from '@/components/profile/collapsible'
+import DropdownProfile from '@/components/profile/dropdown-profile'
 import InformationDetail from '@/components/profile/information-detail'
 import MedalCollection from '@/components/profile/medal-collection'
-import Schedule from '@/components/profile/schedule'
 import Settings from '@/components/profile/settings'
 import Tags from '@/components/profile/tags'
+import { Button } from '@/components/ui/button'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle
+} from '@/components/ui/drawer'
 import { medalLists, settingMenus } from '@/constants/profile'
 import { useProfile } from '@/context/profile/profileContext'
 import { capitalizeFirstLetter, formatLabel } from '@/utils/validation'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Plus, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-
-const tagsSchedule = ['19 Mei 2024', '20 Mei 2024']
-
-const praticeDetails = [
-  {
-    key: 'Affiliation',
-    value: 'Konsulin'
-  },
-  {
-    key: 'Experience',
-    value: '2 Year'
-  },
-  {
-    key: 'Fee',
-    value: '250.000/Session'
-  },
-  {
-    key: 'Specialty',
-    value: [
-      'Anxiety',
-      'Depression',
-      'Personality',
-      'Self Improvement',
-      'Workplace',
-      'Social Interaction',
-      'Relationship'
-    ]
-  }
-]
+import { useState } from 'react'
+import { daysOfWeek, firms, praticeDetails } from './constants'
+import { FormsState } from './types'
+import {
+  groupByFirmAndDay,
+  handleAddForm,
+  handleCompanyChange,
+  handleRemoveTimeRange,
+  handleTimeChange,
+  validateTimeRanges
+} from './utils'
 
 export default function Clinician() {
   const router = useRouter()
   const { state } = useProfile()
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [activeDayIndex, setActiveDayIndex] = useState<number | null>(null)
+  const [formsState, setFormsState] = useState<FormsState>(
+    daysOfWeek.reduce((acc, day) => {
+      acc[day] = [{ times: [{ firm: '', fromTime: '--:--', toTime: '--:--' }] }]
+      return acc
+    }, {} as FormsState)
+  )
+  const [errorMessages, setErrorMessages] = useState<Record<string, string>>({})
+  const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState({})
 
-  /* Manipulation objects from response {} to array */
+  function handleSave() {
+    if (activeDayIndex === null) {
+      return
+    }
+
+    const day = daysOfWeek[activeDayIndex]
+    const allTimes = formsState[day].flatMap(form => form.times)
+    const errorMessage = validateTimeRanges(allTimes)
+    const hasEmptyFirm = allTimes.some(
+      time => time.firm === '' || time.firm === null
+    )
+    if (hasEmptyFirm) {
+      setErrorMessages(prev => ({
+        ...prev,
+        [day]: 'Harap isi form dengan benar'
+      }))
+      return
+    }
+    if (errorMessage) {
+      setErrorMessages(prev => ({ ...prev, [day]: errorMessage }))
+    } else {
+      setIsDrawerOpen(false)
+      const grouped = groupByFirmAndDay(formsState)
+      setGroupedByFirmAndDay(grouped)
+      setActiveDayIndex(null)
+    }
+  }
+
   const profileDetail = Object.entries(state.profile)
     .map(([key, value]) => {
       const renderValue = (value: any) => {
@@ -72,21 +99,22 @@ export default function Clinician() {
     })
     .filter(item => item !== null)
 
+  const hasData = Object.keys(groupedByFirmAndDay).length > 0
+
   return (
     <>
       <div className='mb-4'>
-        <Schedule name='Mrs Clinician Name' time='15:00' date='23/12/2030' />
+        <InformationDetail
+          isRadiusIcon
+          iconUrl='/images/sample-foto.svg'
+          title='General Information'
+          subTitle={state.profile.fullname}
+          buttonText='Edit Profile'
+          details={profileDetail}
+          onEdit={() => router.push('profile/edit-profile')}
+          role='clinician'
+        />
       </div>
-      <InformationDetail
-        isRadiusIcon
-        iconUrl='/images/sample-foto.svg'
-        title='General Information'
-        subTitle={state.profile.fullname}
-        buttonText='Edit Profile'
-        details={profileDetail}
-        onEdit={() => router.push('profile/edit-profile')}
-        role='clinician'
-      />
       <div className='my-4' />
       <InformationDetail
         isRadiusIcon={false}
@@ -97,25 +125,206 @@ export default function Clinician() {
         onEdit={() => router.push('profile/edit-pratice')}
         role='clinician'
       />
-      <div className='mt-4 flex flex-col items-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
-        <div className='flex w-full items-center justify-between'>
-          <Image
-            src={'/icons/calendar-profile.svg'}
-            width={30}
-            height={30}
-            alt='calendar-icon'
-            className='pr-[13px]'
-          />
-          <p className='flex-grow text-start text-xs font-bold text-[#2C2F35] opacity-100'>
-            Edit Availbility Schedule
-          </p>
-          <ChevronRight color='#13C2C2' width={24} height={24} />
+      <div
+        className={`mt-4 flex flex-col items-start justify-start rounded-[16px] bg-[#F0F4F9] ${hasData ? 'pt-4' : 'pt-0'}`}
+      >
+        <div className='w-full px-4'>
+          {Object.keys(groupedByFirmAndDay).map(firm => (
+            <div key={firm}>
+              <div className='mb-2 text-start font-bold'>{firm}</div>
+              {Object.keys(groupedByFirmAndDay[firm]).map(day => {
+                const tags = groupedByFirmAndDay[firm][day].map(
+                  timeRange =>
+                    `${day}: ${timeRange.fromTime} - ${timeRange.toTime}`
+                )
+
+                return (
+                  <div
+                    key={`${firm}-${day}`}
+                    className='mb-4 flex w-full flex-wrap gap-[10px]'
+                  >
+                    <Tags tags={tags} />
+                  </div>
+                )
+              })}
+            </div>
+          ))}
         </div>
 
-        {tagsSchedule.length > 0 && <Tags tags={tagsSchedule} />}
+        <div className='flex w-full flex-col justify-between rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
+          <div
+            className='flex cursor-pointer items-center justify-between'
+            onClick={() => setIsDrawerOpen(true)}
+          >
+            <Image
+              src={'/icons/calendar-profile.svg'}
+              width={30}
+              height={30}
+              alt='calendar-icon'
+              className='pr-[13px]'
+            />
+            <p className='flex-grow text-start text-xs font-bold text-[#2C2F35]'>
+              Edit Availability Schedule
+            </p>
+            <ChevronRight color='#13C2C2' width={24} height={24} />
+          </div>
+        </div>
       </div>
+
       <MedalCollection medals={medalLists} />
       <Settings menus={settingMenus} />
+      <Drawer onClose={() => setIsDrawerOpen(false)} open={isDrawerOpen}>
+        <div className='max-h-screen'>
+          <DrawerContent className='mx-auto flex max-h-screen flex-col overflow-y-hidden px-4 py-1'>
+            <DrawerTitle></DrawerTitle>
+            <DrawerDescription className='my-2 flex-grow overflow-y-auto'>
+              {daysOfWeek.map((day, dayIndex) => {
+                const checkSchedule = formsState[day].some(form =>
+                  form.times.some(
+                    time => time.fromTime !== '--:--' && time.toTime !== '--:--'
+                  )
+                )
+                return (
+                  <Collapsible
+                    key={day}
+                    day={day}
+                    isOpen={activeDayIndex === dayIndex}
+                    onToggle={() =>
+                      setActiveDayIndex(
+                        activeDayIndex === dayIndex ? null : dayIndex
+                      )
+                    }
+                    hasSchedules={checkSchedule}
+                  >
+                    {formsState[day].map((form, formIndex) => (
+                      <div key={formIndex}>
+                        {form.times.map((time, timeIndex) => (
+                          <div
+                            key={timeIndex}
+                            className='flex w-full items-start justify-between py-2'
+                          >
+                            <div className='flex flex-grow flex-col items-center'>
+                              <DropdownProfile
+                                options={firms}
+                                value={time.firm}
+                                onSelect={value =>
+                                  handleCompanyChange(
+                                    formsState,
+                                    day,
+                                    formIndex,
+                                    timeIndex,
+                                    value,
+                                    setFormsState,
+                                    setErrorMessages
+                                  )
+                                }
+                                placeholder='Choose your firm'
+                              />
+                              <div className='flex w-full items-center justify-between'>
+                                <div className='flex items-center justify-center pl-1'>
+                                  <span className='text-sm font-medium'>
+                                    From
+                                  </span>
+                                  <input
+                                    type='time'
+                                    className='block w-full rounded-lg bg-gray-50 p-2.5 text-sm text-gray-900 focus:outline-none dark:bg-gray-700 dark:text-white'
+                                    value={time.fromTime}
+                                    onChange={e =>
+                                      handleTimeChange(
+                                        day,
+                                        formIndex,
+                                        timeIndex,
+                                        'from',
+                                        e.target.value,
+                                        formsState,
+                                        setFormsState,
+                                        setErrorMessages
+                                      )
+                                    }
+                                    required
+                                  />
+                                </div>
+                                <div className='flex w-3 flex-grow' />
+                                <div className='flex items-center justify-end'>
+                                  <span className='text-sm font-medium'>
+                                    To
+                                  </span>
+
+                                  <input
+                                    type='time'
+                                    className='block w-full rounded-lg bg-gray-50 p-2.5 text-sm text-gray-900 focus:outline-none dark:bg-gray-700 dark:text-white'
+                                    value={time.toTime}
+                                    onChange={e =>
+                                      handleTimeChange(
+                                        day,
+                                        formIndex,
+                                        timeIndex,
+                                        'to',
+                                        e.target.value,
+                                        formsState,
+                                        setFormsState,
+                                        setErrorMessages
+                                      )
+                                    }
+                                    required
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <div className='flex flex-col items-center pl-4 pt-4'>
+                              <Trash2
+                                size={20}
+                                onClick={() =>
+                                  handleRemoveTimeRange(
+                                    day,
+                                    formIndex,
+                                    timeIndex,
+                                    formsState,
+                                    setFormsState,
+                                    setErrorMessages
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                    <div className='flex w-full items-center justify-end'>
+                      {errorMessages[day] && (
+                        <div className='px-2 text-sm text-red-500'>
+                          {errorMessages[day]}
+                        </div>
+                      )}
+                      <div className='m-4 mx-2 h-[30px] w-[30px] rounded-2xl bg-secondary'>
+                        <Plus
+                          color='white'
+                          size={30}
+                          onClick={() =>
+                            handleAddForm(
+                              day,
+                              formsState,
+                              setFormsState,
+                              setErrorMessages
+                            )
+                          }
+                        />
+                      </div>
+
+                      <Button
+                        className='bg-[#E1E1E1] font-bold text-[#2C2F35]'
+                        onClick={handleSave}
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  </Collapsible>
+                )
+              })}
+            </DrawerDescription>
+          </DrawerContent>
+        </div>
+      </Drawer>
     </>
   )
 }

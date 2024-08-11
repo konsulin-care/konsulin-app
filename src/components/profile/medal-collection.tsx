@@ -5,16 +5,14 @@ import Link from 'next/link'
 export default function MedalCollection({ medals }) {
   return (
     <>
-      <div className='flex items-center justify-between py-4'>
-        <p className='text-sm font-bold text-[#2C2F35] opacity-60'>
-          Medal Collection
-        </p>
-        <Link href='/' className='text-xs text-[#2C2F35] opacity-60'>
+      <div className='flex justify-between py-4 text-muted'>
+        <span className='text-[14px] font-bold'> Medal Collection</span>
+        <Link className='text-[12px]' href={'/'}>
           See All
         </Link>
       </div>
-      <ScrollArea className='w-full whitespace-nowrap'>
-        <div className='flex space-x-4'>
+      <ScrollArea className='w-full whitespace-nowrap pb-4'>
+        <div className='flex w-max space-x-4'>
           {medals.map((medal: any, index: number) => (
             <Link
               key={index}
