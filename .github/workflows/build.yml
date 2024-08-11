@@ -1,6 +1,10 @@
 name: Build
 on:
   workflow_call:
+    inputs:
+      API_URL:
+        type: string
+        required: true
 jobs:
   #---------------------------------------------------------------------------------------------------------------------
   # Build
@@ -49,6 +53,8 @@ jobs:
           elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
           else echo "Lockfile not found." && exit 1; \
           fi
+        env:
+          API_URL: ${{ inputs.API_URL }}
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3

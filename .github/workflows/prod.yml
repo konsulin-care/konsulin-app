@@ -8,6 +8,8 @@ jobs:
   build:
     name: Build
     uses: ./.github/workflows/build.yml
+    with:
+      API_URL: https://api.konsulin.care
   docker:
     name: Containerization
     uses: ./.github/workflows/docker.yml
