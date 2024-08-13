@@ -73,6 +73,9 @@
     "vaul": "^0.9.1",
     "zod": "^3.23.8"
   },
+  "optionalDependencies": {
+    "smart-forms": "^1.0.0"
+    },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
