@@ -7,6 +7,7 @@ export default function Input({
   className,
   width = 16,
   height = 18,
+  backgroundColor = '[#FFFFFF]',
   opacity = true,
   onShow = () => {},
   ...props
@@ -25,7 +26,7 @@ export default function Input({
         className={
           outline
             ? 'w-full'
-            : `w-full text-sm font-normal text-[#2C2F35] ${opacity ? 'opacity-40' : undefined} outline-none placeholder:text-[#2C2F35]`
+            : `w-full text-sm font-normal text-[#2C2F35] ${opacity ? 'opacity-40' : undefined} outline-none placeholder:text-[#2C2F35] bg-${backgroundColor}`
         }
         {...props}
       />
