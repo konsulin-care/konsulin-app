@@ -1,10 +1,5 @@
 import { apiRequest } from './api'
 
-export type ResponseGenders = {
-  success: boolean
-  message: string
-  data: Options[]
-}
 export interface ResponseProfile {
   success: boolean
   message: string
@@ -14,7 +9,6 @@ export interface ResponseProfile {
 export type Options = {
   name: string
 }
-
 export interface ProfileData {
   fullname: string
   email: string
@@ -25,11 +19,41 @@ export interface ProfileData {
   address: string
   birth_date: string
 }
-
-export interface ResponseEducations {
+export interface ResponseOptions {
   success: boolean
   message: string
   data: Options[]
+}
+
+export interface Clinic {
+  clinic_id: string
+  clinic_name: string
+  tags?: string[]
+}
+
+export interface Pagination {
+  total: number
+  page: number
+  page_size: number
+  next_url: string
+}
+
+export interface ResponseListClinics {
+  success: boolean
+  message: string
+  data: Clinic[]
+  pagination: Pagination
+}
+
+export interface AvailableTime {
+  days_of_week: string[]
+  available_start_time: string
+  available_end_time: string
+}
+
+export interface RequestAvailableTime {
+  clinic_ids: string[]
+  available_times: Record<string, AvailableTime[]>
 }
 
 export const fetchProfile = async (
@@ -59,7 +83,7 @@ export const fetchProfile = async (
 export const fetchGenders = async (): Promise<Options[]> => {
   try {
     const response = await apiRequest('GET', '/api/v1/genders')
-    const responseData = response as ResponseGenders
+    const responseData = response as ResponseOptions
     if (responseData.success) {
       return responseData.data
     } else {
@@ -73,8 +97,23 @@ export const fetchGenders = async (): Promise<Options[]> => {
 export const fetchEducations = async (): Promise<Options[]> => {
   try {
     const response = await apiRequest('GET', '/api/v1/education-levels')
-    const responseData = response as ResponseEducations
+    const responseData = response as ResponseOptions
     if (responseData.success) {
+      return responseData.data
+    } else {
+      throw new Error(responseData.message)
+    }
+  } catch (err) {
+    throw err
+  }
+}
+
+export const fetchListClinic = async (): Promise<Clinic[]> => {
+  try {
+    const response = await apiRequest('GET', '/api/v1/clinics?&type=all')
+    const responseData = response as ResponseListClinics
+    if (responseData.success) {
+      console.log('responseData.data', responseData.data)
       return responseData.data
     } else {
       throw new Error(responseData.message)

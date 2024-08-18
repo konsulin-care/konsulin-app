@@ -1,3 +1,4 @@
+import { Clinic } from '@/services/profile'
 import { FormsState, TimeRange } from '../types'
 
 export function groupByFirmAndDay(formsState: FormsState): any {
@@ -22,7 +23,6 @@ export function groupByFirmAndDay(formsState: FormsState): any {
       })
     })
   })
-
   return grouped
 }
 
@@ -125,4 +125,56 @@ export function validateTimeRanges(times: TimeRange[]) {
   }
 
   return errorMessages
+}
+
+export function handlePayloadSend(clinics: Clinic[], formsState: FormsState) {
+  let payload = {}
+  const dayMapping = {
+    Monday: 'mon',
+    Tuesday: 'tue',
+    Wednesday: 'wed',
+    Thursday: 'thu',
+    Friday: 'fri',
+    Saturday: 'sat',
+    Sunday: 'sun'
+  }
+
+  Object.keys(formsState).forEach(day => {
+    formsState[day].forEach(schedule => {
+      const { times } = schedule
+      times.forEach(time => {
+        if (time.fromTime !== '--:--' && time.toTime !== '--:--' && time.firm) {
+          const firmKey = time.firm
+          if (!payload[firmKey]) {
+            payload[firmKey] = []
+          }
+          payload[firmKey].push({
+            days_of_week: [dayMapping[day]],
+            available_start_time: time.fromTime + ':00',
+            available_end_time: time.toTime + ':00'
+          })
+        }
+      })
+    })
+  })
+
+  const clinicIdMap = clinics.reduce((map, clinic) => {
+    map[clinic.clinic_name] = clinic.clinic_id
+    return map
+  }, {})
+
+  const updatedPayload = Object.keys(payload).reduce((acc, clinicName) => {
+    const clinicId = clinicIdMap[clinicName]
+    if (clinicId) {
+      acc[clinicId] = payload[clinicName]
+    }
+    return acc
+  }, {})
+
+  const clinicIds = Object.keys(updatedPayload)
+  const finalPayload = {
+    ...updatedPayload,
+    clinic_ids: clinicIds
+  }
+  return finalPayload
 }

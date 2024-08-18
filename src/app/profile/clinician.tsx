@@ -15,17 +15,21 @@ import {
 } from '@/components/ui/drawer'
 import { medalLists, settingMenus } from '@/constants/profile'
 import { useProfile } from '@/context/profile/profileContext'
+import { apiRequest } from '@/services/api'
+import { RequestAvailableTime, fetchListClinic } from '@/services/profile'
 import { capitalizeFirstLetter, formatLabel } from '@/utils/validation'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { ChevronRight, Plus, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { daysOfWeek, firms, praticeDetails } from './constants'
+import { daysOfWeek, praticeDetails } from './constants'
 import { FormsState } from './types'
 import {
   groupByFirmAndDay,
   handleAddForm,
   handleCompanyChange,
+  handlePayloadSend,
   handleRemoveTimeRange,
   handleTimeChange,
   validateTimeRanges
@@ -45,11 +49,39 @@ export default function Clinician() {
   const [errorMessages, setErrorMessages] = useState<Record<string, string>>({})
   const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState({})
 
+  const { data } = useQuery({
+    queryKey: ['clinician'],
+    queryFn: () => fetchListClinic(),
+    staleTime: 1000 * 60 * 60
+  })
+  const clinics = data && Array.isArray(data) ? data : []
+  const firms = clinics.map(clinic => ({ name: clinic.clinic_name }))
+
+  const { mutate } = useMutation({
+    mutationFn: async (scheduleAvailable: RequestAvailableTime) => {
+      try {
+        const response = await apiRequest(
+          'POST',
+          '/api/v1/clinicians/clinics/availability',
+          scheduleAvailable
+        )
+        return response
+      } catch (err) {
+        throw err
+      }
+    },
+    onSuccess: () => {
+      setIsDrawerOpen(false)
+      const grouped = groupByFirmAndDay(formsState)
+      setGroupedByFirmAndDay(grouped)
+      setActiveDayIndex(null)
+    }
+  })
+
   function handleSave() {
     if (activeDayIndex === null) {
       return
     }
-
     const day = daysOfWeek[activeDayIndex]
     const allTimes = formsState[day].flatMap(form => form.times)
     const errorMessage = validateTimeRanges(allTimes)
@@ -66,10 +98,8 @@ export default function Clinician() {
     if (errorMessage) {
       setErrorMessages(prev => ({ ...prev, [day]: errorMessage }))
     } else {
-      setIsDrawerOpen(false)
-      const grouped = groupByFirmAndDay(formsState)
-      setGroupedByFirmAndDay(grouped)
-      setActiveDayIndex(null)
+      const payload = handlePayloadSend(clinics, formsState)
+      mutate(payload as RequestAvailableTime)
     }
   }
 
