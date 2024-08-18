@@ -1,16 +1,47 @@
 'use client'
 
 import ClinicFilter from '@/app/clinic/clinic-filter'
+import CardLoader from '@/components/general/card-loader'
 import Header from '@/components/header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { InputWithIcon } from '@/components/ui/input-with-icon'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
+import withAuth from '@/hooks/withAuth'
+import {
+  IUseClinicParams,
+  useClinicFindAll,
+  useClinicFindByID
+} from '@/services/clinic'
 import { ChevronLeftIcon, SearchIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useState } from 'react'
 
-const DetailClinic: React.FC<IWithAuth> = () => {
+export interface IDetailClinic {
+  IWithAuth
+  params: { clinicId: string }
+}
+
+const DetailClinic: React.FC<IDetailClinic> = ({ params }) => {
+  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({
+    name: ''
+  })
+
+  function handleSetClinicFilter(key: string, value: string) {
+    setClinicFilter(prevState => ({
+      ...prevState,
+      [key]: value
+    }))
+  }
+
+  const { data: clinicians, isLoading: isCliniciansLoading } = useClinicFindAll(
+    clinicFilter,
+    params.clinicId
+  )
+
+  const { data: detaillClinic, isLoading: isDetaillClinicLoading } =
+    useClinicFindByID(params.clinicId)
+
   return (
     <>
       <Header>
@@ -31,7 +62,7 @@ const DetailClinic: React.FC<IWithAuth> = () => {
         />
 
         <h3 className='mt-2 text-center text-[20px] font-bold'>
-          Klinik Jaga Mental
+          {detaillClinic?.data?.clinic_name}
         </h3>
 
         <div className='card mt-2 border-0 bg-[#F9F9F9] p-4 text-[12px]'>
@@ -42,61 +73,75 @@ const DetailClinic: React.FC<IWithAuth> = () => {
           </div>
           <div className='mt-2 flex flex-col'>
             <span>Alamat</span>
-            <span className='font-bold'>
-              Jalan Pemuda Raya 21, Jakarta Selatan
-            </span>
+            <span className='font-bold'>{detaillClinic?.data?.address}</span>
           </div>
         </div>
 
         <div className='mt-4 flex gap-4'>
           <InputWithIcon
+            value={clinicFilter.name}
+            onChange={event =>
+              handleSetClinicFilter('name', event.target.value)
+            }
             placeholder='Search'
             className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
             startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
           />
           <ClinicFilter />
         </div>
+        {isCliniciansLoading ? (
+          <CardLoader />
+        ) : (
+          Array.isArray(clinicians.data) && (
+            <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+              {clinicians.data.map(clinician => (
+                <div
+                  key={clinician.practitioner_id}
+                  className='card flex flex-col items-center'
+                >
+                  <div className='relative flex justify-center'>
+                    <Image
+                      className='h-[100px] w-[100px] rounded-full object-cover'
+                      src='/images/avatar.jpg'
+                      alt='clinic'
+                      width={100}
+                      height={100}
+                    />
 
-        <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-          {Array(12)
-            .fill(undefined)
-            .map((_, index: number) => (
-              <div key={index} className='card flex flex-col items-center'>
-                <div className='relative flex justify-center'>
-                  <Image
-                    className='h-[100px] w-[100px] rounded-full object-cover'
-                    src='/images/avatar.jpg'
-                    alt='clinic'
-                    width={100}
-                    height={100}
-                  />
-
-                  <Badge className='absolute bottom-0 flex h-[24px] min-w-[100px] justify-center bg-[#08979C] font-normal text-white'>
-                    Konsulin
-                  </Badge>
+                    <Badge className='absolute bottom-0 flex h-[24px] min-w-[100px] justify-center bg-[#08979C] font-normal text-white'>
+                      Konsulin
+                    </Badge>
+                  </div>
+                  <div className='mt-2 text-center font-bold text-primary'>
+                    {clinician.name}
+                  </div>
+                  <div className='mt-2 flex flex-wrap justify-center gap-1'>
+                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+                      Workplace
+                    </Badge>
+                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+                      Relationship
+                    </Badge>
+                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+                      Social Interaction
+                    </Badge>
+                  </div>
+                  <Link
+                    href={{
+                      pathname: `/practitioner/${clinician.practitioner_id}`,
+                      query: { clinicId: params.clinicId }
+                    }}
+                    className='w-full'
+                  >
+                    <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
+                      Check
+                    </Button>
+                  </Link>
                 </div>
-                <div className='mt-2 text-center font-bold text-primary'>
-                  Nurul
-                </div>
-                <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                  <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                    Workplace
-                  </Badge>
-                  <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                    Relationship
-                  </Badge>
-                  <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                    Social Interaction
-                  </Badge>
-                </div>
-                <Link href={`/practitioner/${index + 1}`} className='w-full'>
-                  <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
-                    Check
-                  </Button>
-                </Link>
-              </div>
-            ))}
-        </div>
+              ))}
+            </div>
+          )
+        )}
       </div>
     </>
   )

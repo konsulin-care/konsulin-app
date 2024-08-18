@@ -4,6 +4,7 @@ import Header from '@/components/header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import withAuth from '@/hooks/withAuth'
+import { useDetailClinicianByClinic } from '@/services/clinic'
 import {
   ArrowRightIcon,
   CalendarDaysIcon,
@@ -12,7 +13,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import PractitionerAvailbility from '../practitioner-availbility'
 
@@ -22,8 +23,16 @@ export interface IPractitionerProps {
 }
 
 const Practitioner: React.FC<IPractitionerProps> = ({ params }) => {
+  const searchParams = useSearchParams()
+  const clinicId = searchParams.get('clinicId')
+
   const router = useRouter()
   const [isOpen, setIsOpen] = useState<boolean>(false)
+
+  const { data } = useDetailClinicianByClinic({
+    clinician_id: params.practitionerId,
+    clinic_id: clinicId
+  })
 
   return (
     <>

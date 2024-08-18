@@ -10,3 +10,15 @@ export function getFromLocalStorage(key: string): string | null {
 
   return null
 }
+
+export function toQueryString(obj: Record<string, any>): string {
+  const filteredParams = Object.entries(obj)
+    .filter(([_, value]) => value !== '' && value != null)
+    .map(
+      ([key, value]) =>
+        `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+    )
+    .join('&')
+
+  return filteredParams
+}

@@ -1,5 +1,4 @@
 import { getFromLocalStorage } from '@/lib/utils'
-import { QueryClient } from '@tanstack/react-query'
 import axios, { AxiosError } from 'axios'
 import { toast } from 'react-toastify'
 
@@ -9,8 +8,6 @@ export const API = axios.create({
     'Content-Type': 'application/json'
   }
 })
-
-export const queryClient = new QueryClient()
 
 API.interceptors.request.use(
   config => {
@@ -29,7 +26,7 @@ API.interceptors.request.use(
 )
 
 API.interceptors.response.use(
-  response => response,
+  response => response.data,
   (error: AxiosError) => {
     console.log('Logging the error', error)
     console.log('Logging message', error?.message)
@@ -62,7 +59,7 @@ export async function apiRequest<T>(
 
   try {
     const response = await API(config)
-    return response.data as T
+    return response as T
   } catch (error) {
     throw error
   }
