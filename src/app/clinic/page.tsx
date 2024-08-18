@@ -1,18 +1,42 @@
 'use client'
 
+import CardLoader from '@/components/general/card-loader'
+import EmptyState from '@/components/general/empty-state'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { InputWithIcon } from '@/components/ui/input-with-icon'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
+import { IUseClinicParams, useClinicFindAll } from '@/services/clinic'
 import dayjs from 'dayjs'
 import { SearchIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import ClinicFilter from './clinic-filter'
 
 const Clinic: React.FC<IWithAuth> = () => {
+  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({
+    name: ''
+  })
+  function handleSetClinicFilter(key: string, value: string) {
+    setClinicFilter(prevState => ({
+      ...prevState,
+      [key]: value
+    }))
+  }
+
+  const {
+    data: clinics,
+    isLoading: isClinicsLoading,
+    error
+  } = useClinicFindAll(clinicFilter)
+
+  useEffect(() => {
+    console.log(clinics)
+  }, [clinics])
+
   return (
     <NavigationBar>
       <Header>
@@ -54,49 +78,66 @@ const Clinic: React.FC<IWithAuth> = () => {
         </div>
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>
-        <div className='p-4'>
+        <div className='w-full p-4'>
           <div className='flex gap-4'>
             <InputWithIcon
+              value={clinicFilter.name}
+              onChange={event =>
+                handleSetClinicFilter('name', event.target.value)
+              }
               placeholder='Search'
               className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
             <ClinicFilter />
           </div>
-          <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-            {Array(12)
-              .fill(undefined)
-              .map((_, index: number) => (
-                <div key={index} className='card flex flex-col items-center'>
-                  <Image
-                    className='h-[100px] w-full rounded-lg object-cover'
-                    src='/images/clinic.jpg'
-                    alt='clinic'
-                    width={158}
-                    height={100}
-                  />
-                  <div className='mt-2 text-center font-bold text-primary'>
-                    Klinik Jaga Mental
+          {isClinicsLoading ? (
+            <CardLoader />
+          ) : (
+            Array.isArray(clinics?.data) &&
+            (!clinics.data.length ? (
+              <EmptyState />
+            ) : (
+              <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+                {clinics.data.map(clinic => (
+                  <div
+                    key={clinic.clinic_id}
+                    className='card flex flex-col items-center'
+                  >
+                    <Image
+                      className='h-[100px] w-full rounded-lg object-cover'
+                      src='/images/clinic.jpg'
+                      alt='clinic'
+                      width={158}
+                      height={100}
+                    />
+                    <div className='mt-2 text-center font-bold text-primary'>
+                      {clinic.clinic_name}
+                    </div>
+                    <div className='mt-2 flex flex-wrap justify-center gap-1'>
+                      <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+                        Workplace
+                      </Badge>
+                      <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+                        Relationship
+                      </Badge>
+                      <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+                        Social Interaction
+                      </Badge>
+                    </div>
+                    <Link
+                      href={`/clinic/${clinic.clinic_id}`}
+                      className='w-full'
+                    >
+                      <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
+                        Check
+                      </Button>
+                    </Link>
                   </div>
-                  <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                      Workplace
-                    </Badge>
-                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                      Relationship
-                    </Badge>
-                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                      Social Interaction
-                    </Badge>
-                  </div>
-                  <Link href={`/clinic/${index + 1}`} className='w-full'>
-                    <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
-                      Check
-                    </Button>
-                  </Link>
-                </div>
-              ))}
-          </div>
+                ))}
+              </div>
+            ))
+          )}
         </div>
       </div>
     </NavigationBar>
