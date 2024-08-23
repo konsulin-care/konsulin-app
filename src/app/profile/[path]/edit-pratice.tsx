@@ -1,42 +1,108 @@
 import Input from '@/components/general/input'
+import { useAuth } from '@/context/auth/authContext'
+import withAuth from '@/hooks/withAuth'
+import { apiRequest } from '@/services/api'
+import { useMutation } from '@tanstack/react-query'
 import { XCircle } from 'lucide-react'
 import Image from 'next/image'
-import { useState } from 'react'
+import { SetStateAction, useEffect, useState } from 'react'
 
-export default function EditPractice() {
+type FormattedClinic = {
+  clinic_id: string
+  nameFirm: string
+  price_per_session: { value: string; currency: string }
+  specialties: string[]
+}
+
+const EditPractice = () => {
   const [searchInput, setSearchInput] = useState('')
-  const [tagInput, setTagInput] = useState('')
-  const [firms, setFirms] = useState(['Firm 1', 'Firm 2', 'Firm 3', 'Firm 4'])
+  const [tagInputs, setTagInputs] = useState([])
+  const [firmData, setFirmData] = useState([])
+  const { state: authState } = useAuth()
   const [openCollapsibles, setOpenCollapsibles] = useState({})
 
-  const [firmData, setFirmData] = useState(
-    firms.map(firm => ({
-      nameFirm: firm,
-      data: {
-        fee: '',
-        specialties: []
-      }
-    }))
-  )
+  const { mutate: searchClinics } = useMutation({
+    mutationFn: async (searchTerm: SetStateAction<string>) => {
+      const response = await apiRequest(
+        'GET',
+        `/api/v1/clinicians/${authState.id}/clinics?name=${searchTerm}`
+      )
+      return response
+    },
+    onSuccess: ({ data }: any) => {
+      if (Array.isArray(data)) {
+        const formattedFirmData: FormattedClinic[] = data.map(clinic => ({
+          clinic_id: clinic.clinic_id,
+          nameFirm: clinic.clinic_name,
+          price_per_session: {
+            value: formatCurrency(`${clinic.price_per_session.value}`),
+            currency: clinic.price_per_session.currency
+          },
+          specialties: Array.isArray(clinic.specialties)
+            ? clinic.specialties
+            : []
+        }))
 
-  const handleToggle = (index: any) => {
+        setFirmData(formattedFirmData)
+        setTagInputs(new Array(formattedFirmData.length).fill(''))
+      } else {
+        console.error('Data is not an array:', data)
+      }
+    },
+    onError: error => {
+      console.error('Error searching clinics:', error)
+    }
+  })
+
+  const { mutate: saveFirms, isPending } = useMutation({
+    mutationFn: async (updateFirms: any[]) => {
+      try {
+        const response = await apiRequest(
+          'POST',
+          '/api/v1/clinicians/clinics/practice-information',
+          {
+            practice_informations: updateFirms
+          }
+        )
+        return response
+      } catch (err) {
+        throw err
+      }
+    },
+    onSuccess: () => {
+      setOpenCollapsibles({})
+    }
+  })
+
+  useEffect(() => {
+    searchClinics('')
+  }, [searchClinics])
+
+  function handleToggle(index: any) {
     setOpenCollapsibles(prevState => ({
       ...prevState,
       [index]: !prevState[index]
     }))
   }
 
-  function handleAddTag(index, e) {
-    if (e.key === 'Enter' && tagInput.trim() !== '') {
+  function handleAddTag(
+    index: string | number,
+    e: { key: string; preventDefault: () => void }
+  ) {
+    if (e.key === 'Enter' && tagInputs[index].trim() !== '') {
       e.preventDefault()
       setFirmData(prevData => {
         const updatedData = [...prevData]
-        if (!updatedData[index].data.specialties.includes(tagInput.trim())) {
-          updatedData[index].data.specialties.push(tagInput.trim())
+        if (!updatedData[index].specialties.includes(tagInputs[index].trim())) {
+          updatedData[index].specialties.push(tagInputs[index].trim())
         }
         return updatedData
       })
-      setTagInput('')
+      setTagInputs(prevTags => {
+        const updatedTags = [...prevTags]
+        updatedTags[index] = ''
+        return updatedTags
+      })
     }
   }
 
@@ -52,29 +118,52 @@ export default function EditPractice() {
     }).format(numberValue)
   }
 
-  function convertCurrencyStringToNumber(currencyString) {
+  function convertCurrencyStringToNumber(currencyString: string) {
     const numberString = currencyString.replace(/[^0-9]/g, '')
     return parseInt(numberString, 10)
   }
 
-  function handleChangeFee(index, e) {
+  function handleChangeFee(
+    index: string | number,
+    e: { target: { value: any } }
+  ) {
     const formattedValue = formatCurrency(e.target.value)
     setFirmData(prevData => {
       const updatedData = [...prevData]
-      updatedData[index].data.fee = formattedValue
+      updatedData[index].price_per_session.value = formattedValue
       return updatedData
     })
   }
 
   function handleSubmit() {
-    const updatedFirmsData = firmData.map(firm => ({
-      ...firm,
-      data: {
-        ...firm.data,
-        fee: convertCurrencyStringToNumber(firm.data.fee)
+    const updatedFirmsData = firmData.map(({ nameFirm, ...rest }) => ({
+      ...rest,
+      price_per_session: {
+        ...rest.price_per_session,
+        value: convertCurrencyStringToNumber(rest.price_per_session.value)
       }
     }))
-    console.log(updatedFirmsData)
+    saveFirms(updatedFirmsData)
+  }
+
+  function searchClinicByName(value: SetStateAction<string>) {
+    setSearchInput(value)
+    searchClinics(value)
+  }
+
+  function handleRemoveTag(index: string | number, tagIndex: any) {
+    setFirmData(prevData => {
+      const updatedData = [...prevData]
+
+      updatedData[index] = {
+        ...updatedData[index],
+        specialties: updatedData[index].specialties.filter(
+          (_: any, i: any) => i !== tagIndex
+        )
+      }
+
+      return updatedData
+    })
   }
 
   return (
@@ -86,7 +175,7 @@ export default function EditPractice() {
         <p className='text-[14px] font-bold text-[#2C2F35]'>Konsulin</p>
       </div>
 
-      <div className='my-4 flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
+      <div className='mt-4 flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
         <Input
           className='flex h-[50px] w-[85%] items-center space-x-2 rounded-lg border-none bg-[#F9F9F9] p-4'
           width={12}
@@ -99,7 +188,9 @@ export default function EditPractice() {
           backgroundColor='[#F9F9F9]'
           value={searchInput}
           opacity={false}
-          onChange={event => setSearchInput(event.target.value)}
+          onChange={(event: { target: { value: any } }) =>
+            searchClinicByName(event.target.value)
+          }
           outline={false}
         />
         <div className='ml-2 flex h-[50px] items-center justify-center rounded-lg bg-[#F9F9F9] p-4'>
@@ -114,89 +205,18 @@ export default function EditPractice() {
 
       <div className='max-h-[calc(100vh-200px)] overflow-y-auto pb-[100px]'>
         {firmData.map((firm, index) => (
-          <Collapsible
+          <CollapsibleItem
             key={index}
+            index={index}
+            firm={firm}
             isOpen={!!openCollapsibles[index]}
-            onToggle={() => handleToggle(index)}
-            data={firm.nameFirm}
-          >
-            <div className='flex flex-col space-y-2'>
-              <div className='flex w-full items-center justify-between'>
-                <label
-                  htmlFor={`fee-${index}`}
-                  className='text-sm font-medium text-gray-700'
-                >
-                  Fee
-                </label>
-                <input
-                  id={`fee-${index}`}
-                  type='text'
-                  className='w-3/4 rounded-lg border px-3 py-2 text-gray-900'
-                  value={firm.data.fee}
-                  onChange={e => handleChangeFee(index, e)}
-                  placeholder='Rp 250.000'
-                />
-              </div>
-
-              <div className='mt-2 flex w-full items-center'>
-                <div className='w-1/4'>
-                  <label
-                    htmlFor={`specialty-${index}`}
-                    className='text-sm font-medium text-gray-700'
-                  >
-                    Specialties
-                  </label>
-                </div>
-                <div className='relative w-3/4 rounded-lg border bg-white px-3 py-2 text-gray-900'>
-                  <div className='mb-2 flex flex-wrap gap-2'>
-                    {firm.data.specialties.map((tag, tagIndex) => (
-                      <div
-                        key={tagIndex}
-                        className='flex items-center space-x-1 rounded-full bg-[#F9F9F9] px-2 py-1 text-gray-700'
-                      >
-                        <span>{tag}</span>
-                        <button
-                          type='button'
-                          onClick={() =>
-                            setFirmData(prevData => {
-                              const updatedData = [...prevData]
-                              updatedData[index].data.specialties = updatedData[
-                                index
-                              ].data.specialties.filter(
-                                (_, i) => i !== tagIndex
-                              )
-                              return updatedData
-                            })
-                          }
-                          className='focus:outline-none'
-                          aria-label='Remove tag'
-                        >
-                          <XCircle color='#FF6B6B' size={16} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <textarea
-                    id={`specialty-${index}`}
-                    value={tagInput}
-                    onChange={e => setTagInput(e.target.value)}
-                    onKeyDown={e => handleAddTag(index, e)}
-                    placeholder='Type and press Enter to add specialties'
-                    className='w-full resize-none border-none bg-white text-sm focus:outline-none'
-                    rows={1}
-                  />
-                </div>
-              </div>
-              <div className='mt-4'>
-                <button
-                  onClick={() => handleToggle(index)}
-                  className='w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </Collapsible>
+            onToggle={handleToggle}
+            tagInputs={tagInputs}
+            handleChangeFee={handleChangeFee}
+            handleAddTag={handleAddTag}
+            handleRemoveTag={handleRemoveTag}
+            setTagInputs={setTagInputs}
+          />
         ))}
       </div>
 
@@ -205,8 +225,9 @@ export default function EditPractice() {
           <button
             onClick={handleSubmit}
             className='w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
+            disabled={isPending}
           >
-            Simpan
+            {isPending ? 'Saving...' : 'Simpan'}
           </button>
         </div>
       </div>
@@ -214,7 +235,72 @@ export default function EditPractice() {
   )
 }
 
-function Collapsible({ isOpen, onToggle, children, data }) {
+const FeeInput = ({ id, value, onChange }) => {
+  return (
+    <div className='flex w-full items-center justify-between'>
+      <label htmlFor={id} className='text-sm font-medium text-gray-700'>
+        Fee
+      </label>
+      <input
+        id={id}
+        type='text'
+        className='w-3/4 rounded-lg border px-3 py-2 text-gray-900'
+        value={value}
+        onChange={onChange}
+        placeholder='Rp 250.000'
+      />
+    </div>
+  )
+}
+
+const SpecialtiesSection = ({
+  id,
+  specialties,
+  tagInput,
+  onTagChange,
+  onTagAdd,
+  onTagRemove
+}) => {
+  return (
+    <div className='mt-2 flex w-full items-center'>
+      <div className='w-1/4'>
+        <label htmlFor={id} className='text-sm font-medium text-gray-700'>
+          Specialties
+        </label>
+      </div>
+      <div className='relative w-3/4 rounded-lg border bg-white px-3 py-2 text-gray-900'>
+        <div className='mb-2 flex flex-wrap gap-2'>
+          {specialties.map((tag, tagIndex) => (
+            <div
+              key={tagIndex}
+              className='text-md flex items-center space-x-1 rounded-full bg-[#F9F9F9] px-2 py-1 text-gray-700'
+            >
+              <span>{tag}</span>
+              <button
+                type='button'
+                onClick={() => onTagRemove(tagIndex)}
+                className='focus:outline-none'
+                aria-label='Remove tag'
+              >
+                <XCircle color='#FF6B6B' size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <textarea
+          id={id}
+          value={tagInput}
+          onChange={onTagChange}
+          onKeyDown={onTagAdd}
+          className='w-full rounded-lg border p-2 text-sm text-gray-900'
+          placeholder='Add a new specialty and press Enter'
+        />
+      </div>
+    </div>
+  )
+}
+
+const Collapsible = ({ isOpen, onToggle, children, data }) => {
   return (
     <div className='collapsible my-4 rounded-[25px] border bg-gray-50'>
       <button
@@ -253,3 +339,56 @@ function Collapsible({ isOpen, onToggle, children, data }) {
     </div>
   )
 }
+
+const CollapsibleItem = ({
+  index,
+  firm,
+  isOpen,
+  onToggle,
+  tagInputs,
+  handleChangeFee,
+  handleAddTag,
+  handleRemoveTag,
+  setTagInputs
+}) => {
+  return (
+    <Collapsible
+      key={index}
+      isOpen={isOpen}
+      onToggle={() => onToggle(index)}
+      data={firm.nameFirm}
+    >
+      <div className='flex flex-col space-y-2'>
+        <FeeInput
+          id={`fee-${index}`}
+          value={firm.price_per_session.value}
+          onChange={(e: any) => handleChangeFee(index, e)}
+        />
+        <SpecialtiesSection
+          id={`specialty-${index}`}
+          specialties={firm.specialties}
+          tagInput={tagInputs[index] || ''}
+          onTagChange={(e: { target: { value: any } }) =>
+            setTagInputs((prevTags: any) => {
+              const updatedTags = [...prevTags]
+              updatedTags[index] = e.target.value
+              return updatedTags
+            })
+          }
+          onTagAdd={(e: any) => handleAddTag(index, e)}
+          onTagRemove={(tagIndex: any) => handleRemoveTag(index, tagIndex)}
+        />
+        <div className='mt-4'>
+          <button
+            onClick={() => onToggle(index)}
+            className='w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </Collapsible>
+  )
+}
+
+export default withAuth(EditPractice, ['clinician'], true)

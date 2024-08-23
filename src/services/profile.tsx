@@ -62,7 +62,7 @@ export const fetchProfile = async (
 ): Promise<ResponseProfile> => {
   try {
     const response = await apiRequest('GET', '/api/v1/users/profile')
-    const responseData = response as ResponseProfile
+    const responseData: ResponseProfile = response as ResponseProfile
     if (responseData.success) {
       dispatch({
         type: 'getProfile',
@@ -110,10 +110,9 @@ export const fetchEducations = async (): Promise<Options[]> => {
 
 export const fetchListClinic = async (): Promise<Clinic[]> => {
   try {
-    const response = await apiRequest('GET', '/api/v1/clinics?&type=all')
+    const response = await apiRequest('GET', '/api/v1/clinics')
     const responseData = response as ResponseListClinics
     if (responseData.success) {
-      console.log('responseData.data', responseData.data)
       return responseData.data
     } else {
       throw new Error(responseData.message)
