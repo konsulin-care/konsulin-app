@@ -1,8 +1,17 @@
-// types.ts
 export interface IStateAuth {
-  token: string
-  role_name: string
-  name: string
+  token: string | null
+  role_name: string | null
+  name: string | null
+  id: string | null
 }
 
-export type IActionAuth = { type: 'login'; payload: IStateAuth } | { type: 'logout' }
+export interface IActionAuth {
+  type: 'login' | 'logout'
+  payload?: {
+    token: string
+    name: string
+    role_name: string
+    practitioner_id?: string
+    patient_id?: string
+  }
+}

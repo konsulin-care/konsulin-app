@@ -24,6 +24,8 @@ interface LoginResponse {
       user_id: string
       role_id: string
       role_name: string
+      practitioner_id?: string
+      patient_id?: string
     }
   }
 }
@@ -73,12 +75,15 @@ function LoginFormContent({ role }) {
       if (response.data.user.role_name === 'patient') userType = 'patient'
       if (response.data.user.role_name === 'practitioner')
         userType = 'clinician'
+      const { name, practitioner_id, patient_id } = response.data.user
       dispatch({
         type: 'login',
         payload: {
           token: response.data.token,
           role_name: userType,
-          name: response.data.user.name
+          name: name,
+          practitioner_id,
+          patient_id
         }
       })
       const redirect = searchParams.get('redirect')
