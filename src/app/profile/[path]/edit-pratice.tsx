@@ -173,60 +173,63 @@ const EditPractice = () => {
 
   return (
     <>
-      <div className='mt-2 flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
-        <Input
-          className='flex h-[50px] w-[85%] items-center space-x-2 rounded-lg border-none bg-[#F9F9F9] p-4'
-          width={12}
-          height={12}
-          prefixIcon='/icons/search-cyan.svg'
-          placeholder='Search Firm'
-          name='searchInput'
-          id='searchInput'
-          type='text'
-          backgroundColor='[#F9F9F9]'
-          value={searchInput}
-          opacity={false}
-          onChange={(event: { target: { value: any } }) =>
-            searchClinicByName(event.target.value)
-          }
-          outline={false}
-        />
-        <div className='ml-2 flex h-[50px] items-center justify-center rounded-lg bg-[#F9F9F9] p-4'>
-          <Image
-            width={20}
-            height={20}
-            src={'/icons/filter.svg'}
-            alt='filter-icon'
+      <div className='flex h-screen flex-col'>
+        <div className='mt-2 flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
+          <Input
+            className='flex h-[50px] w-[85%] items-center space-x-2 rounded-lg border-none bg-[#F9F9F9] p-4'
+            width={12}
+            height={12}
+            prefixIcon='/icons/search-cyan.svg'
+            placeholder='Search Firm'
+            name='searchInput'
+            id='searchInput'
+            type='text'
+            backgroundColor='[#F9F9F9]'
+            value={searchInput}
+            opacity={false}
+            onChange={(event: { target: { value: any } }) =>
+              searchClinicByName(event.target.value)
+            }
+            outline={false}
           />
+          <div className='ml-2 flex h-[50px] items-center justify-center rounded-lg bg-[#F9F9F9] p-4'>
+            <Image
+              width={20}
+              height={20}
+              src={'/icons/filter.svg'}
+              alt='filter-icon'
+            />
+          </div>
         </div>
-      </div>
 
-      <div className='max-h-[calc(100vh-200px)] overflow-y-auto pb-[100px]'>
-        {firmData.map((firm, index) => (
-          <CollapsibleItem
-            key={index}
-            index={index}
-            firm={firm}
-            isOpen={!!openCollapsibles[index]}
-            onToggle={handleToggle}
-            tagInputs={tagInputs}
-            handleChangeFee={handleChangeFee}
-            handleAddTag={handleAddTag}
-            handleRemoveTag={handleRemoveTag}
-            setTagInputs={setTagInputs}
-          />
-        ))}
-      </div>
+        <div className='min-h-[calc(100vh-230px)] flex-1 overflow-y-auto pb-[15px]'>
+          {firmData.map((firm, index) => (
+            <CollapsibleItem
+              key={index}
+              index={index}
+              firm={firm}
+              isOpen={!!openCollapsibles[index]}
+              onToggle={handleToggle}
+              tagInputs={tagInputs}
+              handleChangeFee={handleChangeFee}
+              handleAddTag={handleAddTag}
+              handleRemoveTag={handleRemoveTag}
+              setTagInputs={setTagInputs}
+              handleSubmit={handleSubmit}
+            />
+          ))}
+        </div>
 
-      <div className='fixed bottom-0 left-0 right-0 flex justify-center border-t bg-white p-4'>
-        <div className='w-full max-w-screen-sm'>
-          <button
-            onClick={handleSubmit}
-            className='w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
-            disabled={isPending}
-          >
-            {isPending ? 'Saving...' : 'Simpan'}
-          </button>
+        <div className='flex justify-center border-t bg-white px-4 pt-4'>
+          <div className='flex w-full max-w-screen-sm items-center justify-center'>
+            <button
+              onClick={handleSubmit}
+              className='w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
+              disabled={isPending}
+            >
+              {isPending ? 'Saving...' : 'Simpan'}
+            </button>
+          </div>
         </div>
       </div>
     </>
@@ -349,7 +352,8 @@ const CollapsibleItem = ({
   handleChangeFee,
   handleAddTag,
   handleRemoveTag,
-  setTagInputs
+  setTagInputs,
+  handleSubmit
 }) => {
   return (
     <Collapsible
@@ -380,7 +384,10 @@ const CollapsibleItem = ({
         />
         <div className='mt-4'>
           <button
-            onClick={() => onToggle(index)}
+            onClick={() => {
+              onToggle(index)
+              handleSubmit()
+            }}
             className='w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
           >
             Save
