@@ -2,17 +2,14 @@ import Input from '@/components/general/input'
 import { useAuth } from '@/context/auth/authContext'
 import withAuth from '@/hooks/withAuth'
 import { apiRequest } from '@/services/api'
+import {
+  convertCurrencyStringToNumber,
+  formatCurrency
+} from '@/utils/validation'
 import { useMutation } from '@tanstack/react-query'
 import { XCircle } from 'lucide-react'
 import Image from 'next/image'
-import { SetStateAction, useEffect, useState } from 'react'
-
-type FormattedClinic = {
-  clinic_id: string
-  nameFirm: string
-  price_per_session: { value: string; currency: string }
-  specialties: string[]
-}
+import { useCallback, useEffect, useState } from 'react'
 
 const EditPractice = () => {
   const [searchInput, setSearchInput] = useState('')
@@ -21,36 +18,61 @@ const EditPractice = () => {
   const { state: authState } = useAuth()
   const [openCollapsibles, setOpenCollapsibles] = useState({})
 
-  const { mutate: searchClinics } = useMutation({
-    mutationFn: async (searchTerm: SetStateAction<string>) => {
-      const response = await apiRequest(
-        'GET',
-        `/api/v1/clinicians/${authState.id}/clinics?name=${searchTerm}`
-      )
-      return response
-    },
-    onSuccess: ({ data }: any) => {
-      if (Array.isArray(data)) {
-        const formattedFirmData: FormattedClinic[] = data.map(clinic => ({
-          clinic_id: clinic.clinic_id,
-          nameFirm: clinic.clinic_name,
-          price_per_session: {
-            value: formatCurrency(`${clinic.price_per_session.value}`),
-            currency: clinic.price_per_session.currency
-          },
-          specialties: Array.isArray(clinic.specialties)
-            ? clinic.specialties
-            : []
-        }))
+  const fetchClinicsData = async (searchTerm: string) => {
+    try {
+      const [listAllResponse, searchResponse] = await Promise.all([
+        apiRequest('GET', `/api/v1/clinics?name=${searchTerm}`),
+        apiRequest('GET', `/api/v1/clinicians/${authState.id}/clinics`)
+      ])
 
-        setFirmData(formattedFirmData)
-        setTagInputs(new Array(formattedFirmData.length).fill(''))
-      } else {
-        console.error('Data is not an array:', data)
+      return {
+        listAllData: listAllResponse['data'],
+        searchData: searchResponse['data']
       }
+    } catch (error) {
+      console.error('Error fetching clinics data:', error)
+      throw error
+    }
+  }
+
+  const { mutate: fetchAndUpdateClinics } = useMutation({
+    mutationFn: async (searchTerm: string) => {
+      const { listAllData, searchData } = await fetchClinicsData(searchTerm)
+
+      const initialFirmData = listAllData.map(clinic => ({
+        clinic_id: clinic.clinic_id,
+        nameFirm: clinic.clinic_name,
+        price_per_session: {
+          value: '',
+          currency: 'IDR'
+        },
+        specialties: Array.isArray(clinic.tags) ? clinic.tags : []
+      }))
+
+      const updatedFirmData = initialFirmData.map(clinic => {
+        const updatedClinic = searchData.find(
+          searchResult => searchResult.clinic_id === clinic.clinic_id
+        )
+        if (updatedClinic) {
+          return {
+            ...clinic,
+            price_per_session: {
+              value: formatCurrency(`${updatedClinic.price_per_session.value}`),
+              currency: updatedClinic.price_per_session.currency
+            },
+            specialties: Array.isArray(updatedClinic.specialties)
+              ? updatedClinic.specialties
+              : []
+          }
+        }
+        return clinic
+      })
+
+      setFirmData(updatedFirmData)
+      setTagInputs(new Array(updatedFirmData.length).fill(''))
     },
     onError: error => {
-      console.error('Error searching clinics:', error)
+      console.error('Error updating clinics:', error)
     }
   })
 
@@ -75,65 +97,50 @@ const EditPractice = () => {
   })
 
   useEffect(() => {
-    searchClinics('')
-  }, [searchClinics])
+    fetchAndUpdateClinics('')
+  }, [fetchAndUpdateClinics])
 
-  function handleToggle(index: any) {
+  const handleToggle = useCallback(index => {
     setOpenCollapsibles(prevState => ({
       ...prevState,
       [index]: !prevState[index]
     }))
-  }
+  }, [])
 
-  function handleAddTag(
-    index: string | number,
-    e: { key: string; preventDefault: () => void }
-  ) {
-    if (e.key === 'Enter' && tagInputs[index].trim() !== '') {
-      e.preventDefault()
-      setFirmData(prevData => {
-        const updatedData = [...prevData]
-        if (!updatedData[index].specialties.includes(tagInputs[index].trim())) {
-          updatedData[index].specialties.push(tagInputs[index].trim())
-        }
-        return updatedData
-      })
-      setTagInputs(prevTags => {
-        const updatedTags = [...prevTags]
-        updatedTags[index] = ''
-        return updatedTags
-      })
-    }
-  }
+  const handleAddTag = useCallback(
+    (
+      index: string | number,
+      e: { key: string; preventDefault: () => void }
+    ) => {
+      if (e.key === 'Enter' && tagInputs[index].trim() !== '') {
+        e.preventDefault()
+        setFirmData(prevData => {
+          const updatedData = [...prevData]
+          if (
+            !updatedData[index].specialties.includes(tagInputs[index].trim())
+          ) {
+            updatedData[index].specialties.push(tagInputs[index].trim())
+          }
+          return updatedData
+        })
+        setTagInputs(prevTags => {
+          const updatedTags = [...prevTags]
+          updatedTags[index] = ''
+          return updatedTags
+        })
+      }
+    },
+    [tagInputs]
+  )
 
-  function formatCurrency(value: any) {
-    const numberValue = parseInt(value.replace(/[^0-9]/g, ''), 10)
-    if (isNaN(numberValue)) {
-      return ''
-    }
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(numberValue)
-  }
-
-  function convertCurrencyStringToNumber(currencyString: string) {
-    const numberString = currencyString.replace(/[^0-9]/g, '')
-    return parseInt(numberString, 10)
-  }
-
-  function handleChangeFee(
-    index: string | number,
-    e: { target: { value: any } }
-  ) {
+  const handleChangeFee = useCallback((index, e) => {
     const formattedValue = formatCurrency(e.target.value)
     setFirmData(prevData => {
       const updatedData = [...prevData]
       updatedData[index].price_per_session.value = formattedValue
       return updatedData
     })
-  }
+  }, [])
 
   function handleSubmit() {
     const updatedFirmsData = firmData.map(({ nameFirm, ...rest }) => ({
@@ -146,36 +153,27 @@ const EditPractice = () => {
     saveFirms(updatedFirmsData)
   }
 
-  function searchClinicByName(value: SetStateAction<string>) {
+  const searchClinicByName = value => {
     setSearchInput(value)
-    searchClinics(value)
+    fetchAndUpdateClinics(value)
   }
 
   function handleRemoveTag(index: string | number, tagIndex: any) {
     setFirmData(prevData => {
       const updatedData = [...prevData]
-
       updatedData[index] = {
         ...updatedData[index],
         specialties: updatedData[index].specialties.filter(
           (_: any, i: any) => i !== tagIndex
         )
       }
-
       return updatedData
     })
   }
 
   return (
     <>
-      <div className='flex h-[52px] w-full items-center justify-between rounded-lg bg-[#F9F9F9] p-4'>
-        <p className='text-[10px] font-normal text-[#2C2F35] opacity-40'>
-          Current Firm
-        </p>
-        <p className='text-[14px] font-bold text-[#2C2F35]'>Konsulin</p>
-      </div>
-
-      <div className='mt-4 flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
+      <div className='mt-2 flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
         <Input
           className='flex h-[50px] w-[85%] items-center space-x-2 rounded-lg border-none bg-[#F9F9F9] p-4'
           width={12}
@@ -320,10 +318,12 @@ const Collapsible = ({ isOpen, onToggle, children, data }) => {
             width={38}
             height={38}
           />
-          <span className='pl-2 text-sm'>{data}</span>
+          <span className='pl-2 text-sm'>{data.nameFirm}</span>
         </div>
         {isOpen ? null : (
-          <div className='rounded-full bg-[#808387] p-1 px-2'>
+          <div
+            className={`rounded-full ${convertCurrencyStringToNumber(data.price_per_session.value) !== 0 ? 'bg-secondary' : 'bg-[#808387]'} p-1 px-2`}
+          >
             <p className='text-[12px] text-white'>Select</p>
           </div>
         )}
@@ -356,7 +356,7 @@ const CollapsibleItem = ({
       key={index}
       isOpen={isOpen}
       onToggle={() => onToggle(index)}
-      data={firm.nameFirm}
+      data={firm}
     >
       <div className='flex flex-col space-y-2'>
         <FeeInput
