@@ -192,14 +192,6 @@ const EditPractice = () => {
             }
             outline={false}
           />
-          <div className='ml-2 flex h-[50px] items-center justify-center rounded-lg bg-[#F9F9F9] p-4'>
-            <Image
-              width={20}
-              height={20}
-              src={'/icons/filter.svg'}
-              alt='filter-icon'
-            />
-          </div>
         </div>
 
         <div className='min-h-[calc(100vh-230px)] flex-1 overflow-y-auto pb-[15px]'>
