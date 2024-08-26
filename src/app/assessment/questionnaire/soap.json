@@ -1,0 +1,188 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "soap",
+  "status": "draft",
+  "title": "SOAP Notes",
+  "subjectType": ["Practitioner"],
+  "item": [
+    {
+      "linkId": "subjective",
+      "text": "Subjective",
+      "type": "group",
+      "repeats": true,
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-preferredTerminologyServer",
+          "valueUrl": "https://snowstorm.ihtsdotools.org/fhir"
+        },
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "gtable"
+              }
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "linkId": "complaint",
+          "text": "Clinical complain",
+          "type": "open-choice",
+          "answerValueSet": "http://snomed.info/sct/900000000000207008?fhir_vs=ecl%2F%3C%3C+404684003+MINUS+%3C%3C+64572001",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+              "valueCodeableConcept": {
+                "coding": [
+                  {
+                    "system": "http://hl7.org/fhir/questionnaire-item-control",
+                    "code": "autocomplete"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "duration",
+          "text": "Duration",
+          "type": "quantity",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unitOption",
+              "valueCoding": {
+                "system": "http://unitsofmeasure.org",
+                "code": "d",
+                "display": "Day(s)"
+              }
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unitOption",
+              "valueCoding": {
+                "system": "http://unitsofmeasure.org",
+                "code": "wk",
+                "display": "Week(s)"
+              }
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unitOption",
+              "valueCoding": {
+                "system": "http://unitsofmeasure.org",
+                "code": "mo",
+                "display": "Month(s)"
+              }
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unitOption",
+              "valueCoding": {
+                "system": "http://unitsofmeasure.org",
+                "code": "a",
+                "display": "Year(s)"
+              }
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unitOption",
+              "valueCoding": {
+                "system": "http://unitsofmeasure.org",
+                "code": "s",
+                "display": "Second(s)"
+              }
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unitOption",
+              "valueCoding": {
+                "system": "http://unitsofmeasure.org",
+                "code": "min",
+                "display": "Minute(s)"
+              }
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unitOption",
+              "valueCoding": {
+                "system": "http://unitsofmeasure.org",
+                "code": "hour",
+                "display": "Hour(s)"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "objective",
+      "text": "Objective",
+      "type": "open-choice",
+      "repeats": true,
+      "answerValueSet": "http://snomed.info/sct/900000000000207008?fhir_vs=ecl%2F%3C64572001",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-preferredTerminologyServer",
+          "valueUrl": "https://snowstorm.ihtsdotools.org/fhir"
+        },
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "autocomplete"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "linkId": "assessment",
+      "text": "Assessment (ICD-10 diagnosis)",
+      "type": "choice",
+      "repeats": true,
+      "answerValueSet": "https://clinicaltables.nlm.nih.gov/fhir/R4/ValueSet/icd10cm",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/terminology-server",
+          "valueUrl": "https://clinicaltables.nlm.nih.gov/fhir/R4"
+        },
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "autocomplete"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "linkId": "plan",
+      "text": "Plan",
+      "type": "open-choice",
+      "repeats": true,
+      "answerValueSet": "https://clinicaltables.nlm.nih.gov/fhir/R4/ValueSet/icd9cm-sg",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/terminology-server",
+          "valueUrl": "https://clinicaltables.nlm.nih.gov/fhir/R4"
+        },
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "autocomplete"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
