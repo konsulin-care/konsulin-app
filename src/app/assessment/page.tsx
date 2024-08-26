@@ -4,8 +4,11 @@ import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import Image from 'next/image'
+import YourBaseRendererWrapper from './forms-renderer'
 
 const Assesment: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
+  const questionnaire = require('./questionnaire/page-of-everything.json')
+
   return (
     <NavigationBar>
       <Header>
@@ -33,7 +36,7 @@ const Assesment: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>
         <div className='min-h-screen p-4'>
-          <h1 className=''>Assesment</h1>
+          <YourBaseRendererWrapper questionnaire={questionnaire} />
         </div>
       </div>
     </NavigationBar>

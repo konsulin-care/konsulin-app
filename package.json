@@ -42,7 +42,8 @@
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.2",
     "@serwist/next": "^9.0.3",
-    "@tanstack/react-query": "^5.51.1",
+    "@tanstack/react-query": "^4.36.1",
+    "@types/fhir": "^0.0.41",
     "axios": "^1.7.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -75,9 +76,6 @@
     "vaul": "^0.9.1",
     "zod": "^3.23.8"
   },
-  "optionalDependencies": {
-    "smart-forms": "^1.0.0"
-  },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
@@ -99,5 +97,8 @@
     "*.{json,css,scss,md,webmanifest}": [
       "prettier -w"
     ]
-  }
+  },
+  "workspaces": [
+    "smart-forms/packages/smart-forms-renderer"
+  ]
 }
