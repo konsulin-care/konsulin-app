@@ -1,5 +1,5 @@
 import { getFromLocalStorage } from '@/lib/utils'
-import axios, { AxiosError } from 'axios'
+import axios from 'axios'
 import { toast } from 'react-toastify'
 
 export const API = axios.create({
@@ -27,10 +27,13 @@ API.interceptors.request.use(
 
 API.interceptors.response.use(
   response => response.data,
-  (error: AxiosError) => {
+  error => {
     console.log('Logging the error', error)
-    console.log('Logging message', error?.message)
-    toast.error(error?.message || 'An unexpected error occured!', {
+
+    let errorMessage = error?.message || 'An unexpected error occured!'
+    if (error.response.data.message) errorMessage = error.response.data.message
+
+    toast.error(errorMessage, {
       position: 'top-right',
       autoClose: 5000,
       hideProgressBar: false,
@@ -40,6 +43,14 @@ API.interceptors.response.use(
       progress: undefined
       // theme: 'dark',
     })
+
+    // handle this letter if no refresh-token
+
+    // if (error.status === 401) {
+    //   localStorage.clear()
+    //   window.location.href = '/register';
+    // }
+
     return Promise.reject(error)
   }
 )
