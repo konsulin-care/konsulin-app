@@ -89,54 +89,55 @@ const Clinic: React.FC<IWithAuth> = () => {
               className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
-            <ClinicFilter />
+            <ClinicFilter
+              onChange={filter => {
+                setClinicFilter(prevState => ({
+                  ...prevState,
+                  ...filter
+                }))
+              }}
+            />
           </div>
           {isClinicsLoading ? (
             <CardLoader />
-          ) : (
-            Array.isArray(clinics?.data) &&
-            (!clinics.data.length ? (
-              <EmptyState />
-            ) : (
-              <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-                {clinics.data.map(clinic => (
-                  <div
-                    key={clinic.clinic_id}
-                    className='card flex flex-col items-center'
-                  >
-                    <Image
-                      className='h-[100px] w-full rounded-lg object-cover'
-                      src='/images/clinic.jpg'
-                      alt='clinic'
-                      width={158}
-                      height={100}
-                    />
-                    <div className='mt-2 text-center font-bold text-primary'>
-                      {clinic.clinic_name}
-                    </div>
-                    <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                      <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                        Workplace
-                      </Badge>
-                      <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                        Relationship
-                      </Badge>
-                      <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                        Social Interaction
-                      </Badge>
-                    </div>
-                    <Link
-                      href={`/clinic/${clinic.clinic_id}`}
-                      className='w-full'
-                    >
-                      <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
-                        Check
-                      </Button>
-                    </Link>
+          ) : Array.isArray(clinics?.data) && clinics.data.length ? (
+            <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+              {clinics.data.map(clinic => (
+                <div
+                  key={clinic.clinic_id}
+                  className='card flex flex-col items-center'
+                >
+                  <Image
+                    className='h-[100px] w-full rounded-lg object-cover'
+                    src='/images/clinic.jpg'
+                    alt='clinic'
+                    width={158}
+                    height={100}
+                  />
+                  <div className='mt-2 text-center font-bold text-primary'>
+                    {clinic.clinic_name}
                   </div>
-                ))}
-              </div>
-            ))
+                  <div className='mt-2 flex flex-wrap justify-center gap-1'>
+                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+                      Workplace
+                    </Badge>
+                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+                      Relationship
+                    </Badge>
+                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+                      Social Interaction
+                    </Badge>
+                  </div>
+                  <Link href={`/clinic/${clinic.clinic_id}`} className='w-full'>
+                    <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
+                      Check
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState />
           )}
         </div>
       </div>

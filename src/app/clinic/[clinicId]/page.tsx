@@ -2,6 +2,7 @@
 
 import ClinicFilter from '@/app/clinic/clinic-filter'
 import CardLoader from '@/components/general/card-loader'
+import EmptyState from '@/components/general/empty-state'
 import Header from '@/components/header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -87,12 +88,19 @@ const DetailClinic: React.FC<IDetailClinic> = ({ params }) => {
             className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
             startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
           />
-          <ClinicFilter />
+          <ClinicFilter
+            onChange={filter => {
+              setClinicFilter(prevState => ({
+                ...prevState,
+                ...filter
+              }))
+            }}
+          />
         </div>
-        {isCliniciansLoading ? (
+        {isCliniciansLoading || isDetaillClinicLoading? (
           <CardLoader />
         ) : (
-          Array.isArray(clinicians.data) && (
+          Array.isArray(clinicians.data) && clinicians.data.length ? (
             <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
               {clinicians.data.map(clinician => (
                 <div
@@ -140,6 +148,8 @@ const DetailClinic: React.FC<IDetailClinic> = ({ params }) => {
                 </div>
               ))}
             </div>
+          ): (
+            <EmptyState title='No Clinicians Found' subtitle='Try Another Clinic.' />
           )
         )}
       </div>
