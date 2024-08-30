@@ -6,10 +6,24 @@ export interface PropsProfile {
   gender: string
   address: string
   educations: string[]
+  practice_informations?: Clinics
+}
+
+interface Clinic {
+  clinic_id: string
+  clinic_name: string
+  affiliation: string
+  price_per_session: PricePerSession
+}
+
+type Clinics = Clinic[]
+
+interface PricePerSession {
+  value: number
+  currency: string
 }
 export interface StateProfile {
   profile: PropsProfile
-  pratice?: {}
 }
 
 export type ActionProfile =

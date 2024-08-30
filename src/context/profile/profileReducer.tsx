@@ -9,9 +9,6 @@ export const initialState: StateProfile = {
     gender: '',
     address: '',
     educations: []
-  },
-  pratice: {
-    // Initialize practice state if necessary
   }
 }
 

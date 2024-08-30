@@ -23,7 +23,7 @@ import { ChevronRight, Plus, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { daysOfWeek, praticeDetails } from './constants'
+import { daysOfWeek } from './constants'
 import { FormsState } from './types'
 import {
   groupByFirmAndDay,
@@ -106,9 +106,6 @@ export default function Clinician() {
   const profileDetail = Object.entries(state.profile)
     .map(([key, value]) => {
       const renderValue = (value: any) => {
-        if (value === null || value === undefined || value === '') {
-          return null
-        }
         if (typeof value === 'object') {
           return JSON.stringify(value)
         }
@@ -151,10 +148,12 @@ export default function Clinician() {
         iconUrl='/icons/hospital.svg'
         title='Practice Information'
         buttonText='Edit Detail'
-        details={praticeDetails}
+        details={state.profile.practice_informations ?? null}
         onEdit={() => router.push('profile/edit-pratice')}
         role='clinician'
+        isEditPratice={true}
       />
+
       <div
         className={`mt-4 flex flex-col items-start justify-start rounded-[16px] bg-[#F0F4F9] ${hasData ? 'pt-4' : 'pt-0'}`}
       >
