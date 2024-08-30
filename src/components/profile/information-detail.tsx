@@ -46,7 +46,8 @@ function DetailItem({ item }) {
       <>
         <p className='text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
         <div className='flex flex-col items-end'>
-          {educations.length > 0 &&
+          {educations &&
+            educations.length > 0 &&
             educations.map((edu: string) => (
               <p
                 key={edu}
@@ -60,13 +61,41 @@ function DetailItem({ item }) {
     )
   }
 
+  if (item.key === 'Practice Informations') {
+    return null
+  } else {
+    return (
+      <>
+        <p className='text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
+        <p className='text-sm font-bold text-[#2C2F35] opacity-100'>
+          {item.value}
+        </p>
+      </>
+    )
+  }
+}
+
+function DetailPratice({ item }) {
+  const details = [
+    { key: 'Clinic ID', value: item.clinic_id },
+    { key: 'Clinic Name', value: item.clinic_name },
+    { key: 'Affiliation', value: item.affiliation },
+    {
+      key: 'Price per Session',
+      value: `${item.price_per_session.value.toLocaleString()} ${item.price_per_session.currency} / Session`
+    }
+  ]
   return (
-    <>
-      <p className='text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
-      <p className='text-sm font-bold text-[#2C2F35] opacity-100'>
-        {item.value}
-      </p>
-    </>
+    <div className='flex w-full flex-col py-2'>
+      {details.map((detail, index) => (
+        <div key={index} className='flex w-full justify-between'>
+          <div className='text-sm text-[#2C2F35] opacity-100'>{detail.key}</div>
+          <div className='text-sm font-bold text-[#2C2F35] opacity-100'>
+            {detail.value}
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -78,11 +107,12 @@ export default function InformationDetail({
   buttonText,
   details,
   onEdit,
-  role
+  role,
+  isEditPratice = false
 }) {
   return (
     <div className='flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
-      <div className='flex w-full justify-between pb-2'>
+      <div className='flex w-full items-center justify-between'>
         <HeaderSection
           isRadiusIcon={isRadiusIcon}
           iconUrl={iconUrl}
@@ -98,16 +128,23 @@ export default function InformationDetail({
           </button>
         </div>
       </div>
-      <div className='flex w-full border-t border-[#E3E3E3] pb-2' />
-      <div className='flex w-full flex-col space-y-2'>
-        {details.map((item: any) => (
-          <div
-            className='flex justify-between font-[#2C2F35] text-xs'
-            key={item.key}
-          >
-            <DetailItem item={item} />
-          </div>
-        ))}
+      {details && <div className='flex w-full' />}
+      <div
+        className={`flex w-full flex-col ${details ? 'mt-2 space-y-2 border-t border-[#E3E3E3]' : undefined}`}
+      >
+        {details &&
+          details.map((item: any) => (
+            <div
+              className='mt-1 flex justify-between font-[#2C2F35] text-xs'
+              key={item.key}
+            >
+              {isEditPratice ? (
+                <DetailPratice item={item} />
+              ) : (
+                <DetailItem item={item} />
+              )}
+            </div>
+          ))}
       </div>
     </div>
   )
