@@ -1,3 +1,4 @@
+import { navigate } from '@/components/general/navigate'
 import { getFromLocalStorage } from '@/lib/utils'
 import axios from 'axios'
 import { toast } from 'react-toastify'
@@ -41,15 +42,12 @@ API.interceptors.response.use(
       pauseOnHover: true,
       draggable: true,
       progress: undefined
-      // theme: 'dark',
     })
 
-    // handle this letter if no refresh-token
-
-    // if (error.status === 401) {
-    //   localStorage.clear()
-    //   window.location.href = '/register';
-    // }
+    if (error.status === 401) {
+      localStorage.clear()
+      navigate('/register ')
+    }
 
     return Promise.reject(error)
   }
