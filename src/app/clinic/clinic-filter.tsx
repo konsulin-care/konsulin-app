@@ -4,32 +4,42 @@ import { Calendar } from '@/components/ui/calendar'
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { IUseClinicParams } from '@/services/clinic'
 import { addDays, endOfWeek, format, startOfWeek } from 'date-fns'
 import { useState } from 'react'
 const CONTENT_DEFAULT = 0
 const CONTENT_CUSTOM = 1
 
+const today = new Date()
+
 const filterContentListDate = [
   {
     label: 'Today',
     value: {
-      start: new Date(),
-      end: new Date()
+      start: today,
+      end: today
     }
   },
   {
     label: 'This Week',
     value: {
-      start: addDays(startOfWeek(new Date()), 1),
-      end: addDays(endOfWeek(new Date()), 1)
+      start: addDays(startOfWeek(today), 1),
+      end: addDays(endOfWeek(today), 1)
     }
   },
   {
     label: 'Next Week',
     value: {
-      start: addDays(startOfWeek(new Date()), 8),
-      end: addDays(endOfWeek(new Date()), 8)
+      start: addDays(startOfWeek(today), 8),
+      end: addDays(endOfWeek(today), 8)
     }
   }
 ]
@@ -72,30 +82,33 @@ const filterContentListTime = [
   }
 ]
 
-export default function ClinicFilter() {
+export default function ClinicFilter({ onChange }) {
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
   >(CONTENT_DEFAULT)
   const [isUseCustomDate, setIsUseCustomDate] = useState<boolean>(false)
   const [isUseCustomTime, setIsUseCustomTime] = useState<boolean>(false)
-  const [filter, setFilter] = useState({
-    startDate: undefined,
-    endDate: undefined,
-    startTime: undefined,
-    endTime: undefined,
-    type: 'all'
+  const [filter, setFilter] = useState<IUseClinicParams>({
+    start_date: undefined,
+    end_date: undefined,
+    start_time: undefined,
+    end_time: undefined,
+    location: undefined
   })
 
   const isInitiaFilterState =
-    !filter.startDate && !filter.endDate && !filter.startTime && !filter.endTime
+    !filter.start_date &&
+    !filter.end_date &&
+    !filter.start_time &&
+    !filter.end_time
 
   const handleCustomFilterOpen = () => {
     if (isInitiaFilterState) {
-      handleFilterChange('startTime', '00:00')
-      handleFilterChange('endTime', '23:59')
-      handleFilterChange('startDate', new Date())
-      handleFilterChange('endDate', addDays(new Date(), 7))
+      handleFilterChange('start_time', '00:00')
+      handleFilterChange('end_time', '23:59')
+      handleFilterChange('start_date', today)
+      handleFilterChange('end_date', addDays(today, 7))
       setIsUseCustomDate(true)
       setIsUseCustomTime(true)
     }
@@ -112,11 +125,11 @@ export default function ClinicFilter() {
 
   const resetFilter = () => {
     setFilter({
-      startDate: undefined,
-      endDate: undefined,
-      startTime: undefined,
-      endTime: undefined,
-      type: 'all'
+      start_date: undefined,
+      end_date: undefined,
+      start_time: undefined,
+      end_time: undefined,
+      location: undefined
     })
   }
 
@@ -133,15 +146,15 @@ export default function ClinicFilter() {
                   <Button
                     key={date.label}
                     onClick={() => {
-                      handleFilterChange('startDate', date.value.start)
-                      handleFilterChange('endDate', date.value.end)
+                      handleFilterChange('start_date', date.value.start)
+                      handleFilterChange('end_date', date.value.end)
                       setIsUseCustomDate(false)
                     }}
                     variant='outline'
                     className={cn(
                       'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                      filter.startDate === date.value.start &&
-                        filter.endDate === date.value.end
+                      filter.start_date === date.value.start &&
+                        filter.end_date === date.value.end
                         ? 'bg-secondary font-bold text-white hover:bg-secondary'
                         : 'bg-white font-normal'
                     )}
@@ -160,11 +173,11 @@ export default function ClinicFilter() {
                   )}
                 >
                   Custom
-                  {!isUseCustomDate || !filter.startDate || !filter.endDate
+                  {!isUseCustomDate || !filter.start_date || !filter.end_date
                     ? ''
-                    : filter.startDate === filter.endDate
-                      ? ` : ${format(filter.startDate, 'dd MMM yy')}`
-                      : ` : ${format(filter.startDate, 'dd MMM yy')} - ${format(filter.endDate, 'dd MMM yy')}`}
+                    : filter.start_date === filter.end_date
+                      ? ` : ${format(filter.start_date, 'dd MMM yy')}`
+                      : ` : ${format(filter.start_date, 'dd MMM yy')} - ${format(filter.end_date, 'dd MMM yy')}`}
                 </Button>
               </div>
             </div>
@@ -177,13 +190,13 @@ export default function ClinicFilter() {
                     key={time.label}
                     onClick={() => {
                       setIsUseCustomTime(false)
-                      handleFilterChange('startTime', time.value.start)
-                      handleFilterChange('endTime', time.value.end)
+                      handleFilterChange('start_time', time.value.start)
+                      handleFilterChange('end_time', time.value.end)
                     }}
                     className={cn(
                       'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                      filter.startTime === time.value.start &&
-                        filter.endTime === time.value.end
+                      filter.start_time === time.value.start &&
+                        filter.end_time === time.value.end
                         ? 'bg-secondary font-bold text-white hover:bg-secondary'
                         : 'bg-white font-normal'
                     )}
@@ -191,7 +204,7 @@ export default function ClinicFilter() {
                     {time.label}
                   </Button>
                 ))}
-                {isUseCustomTime && filter.startTime && filter.endTime && (
+                {isUseCustomTime && filter.start_time && filter.end_time && (
                   <Button
                     variant='outline'
                     onClick={handleCustomFilterOpen}
@@ -199,12 +212,49 @@ export default function ClinicFilter() {
                       'h-[50px] w-min items-center justify-center rounded-lg border-0 bg-secondary p-4 text-[12px] font-bold text-white hover:bg-secondary'
                     )}
                   >
-                    Custom : {`${filter.startTime} - ${filter.endTime}`}
+                    Custom : {`${filter.start_time} - ${filter.end_time}`}
                   </Button>
                 )}
               </div>
             </div>
             <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+              <div className='mb-4 font-bold'>Loation</div>
+              <div className='flex flex-wrap gap-[10px]'>
+                <Select onValueChange={e => handleFilterChange('location', e)}>
+                  <SelectTrigger className='w-full border-none'>
+                    <SelectValue placeholder='Select City' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* Later, fetch the list of cities.  */}
+                    <SelectItem value='Kota Bogor'>Kota Bogor</SelectItem>
+                    <SelectItem value='Kota Depok'>Kota Depok</SelectItem>
+                    <SelectItem value='Kota Jakatra Barat'>
+                      Kota Jakatra Barat
+                    </SelectItem>
+                    <SelectItem value='Kota Jakatra Selatan'>
+                      Kota Jakatra Selatan
+                    </SelectItem>
+                    <SelectItem value='Kota Jakatra Timur'>
+                      Kota Jakatra Timur
+                    </SelectItem>
+                    <SelectItem value='Kota Jakatra Utara'>
+                      Kota Jakatra Utara
+                    </SelectItem>
+                    <SelectItem value='Kota Tangerang'>
+                      Kota Tangerang
+                    </SelectItem>
+                    <SelectItem value='Kota Tangerang Selatan'>
+                      Kota Tangerang Selatan
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/**
+             * Session Type temporary removed
+             */}
+            {/* <div className='card mt-4 border-0 bg-[#F9F9F9]'>
               <div className='mb-4 font-bold'>Session Type</div>
               <div className='flex flex-wrap gap-2'>
                 <Button
@@ -250,7 +300,7 @@ export default function ClinicFilter() {
                   Offline
                 </Button>
               </div>
-            </div>
+            </div> */}
             {!isInitiaFilterState && (
               <Button
                 variant='outline'
@@ -267,7 +317,10 @@ export default function ClinicFilter() {
 
             <Button
               className='mt-4 rounded-xl bg-secondary text-white'
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                setIsOpen(false)
+                onChange(filter)
+              }}
             >
               Terapkan Filter
             </Button>
@@ -281,14 +334,18 @@ export default function ClinicFilter() {
               <Calendar
                 mode='range'
                 selected={{
-                  from: filter.startDate,
-                  to: filter.endDate
+                  from: filter.start_date,
+                  to: filter.end_date
                 }}
                 onSelect={date => {
-                  handleFilterChange('startDate', date?.from)
-                  handleFilterChange('endDate', date?.to ? date.to : date?.from)
+                  handleFilterChange('start_date', date?.from)
+                  handleFilterChange(
+                    'end_date',
+                    date?.to ? date.to : date?.from
+                  )
+                  setIsUseCustomDate(true)
                 }}
-                disabled={{ before: new Date() }}
+                disabled={{ before: today }}
                 className='w-full p-0'
                 classNames={{
                   month: 'space-y-8 w-full',
@@ -308,28 +365,28 @@ export default function ClinicFilter() {
 
               <div className='mt-8 flex gap-4'>
                 <div className='grid w-full max-w-sm items-center gap-1.5'>
-                  <Label htmlFor='startTime'>Start Time</Label>
+                  <Label htmlFor='start_time'>Start Time</Label>
                   <Input
                     onChange={e => {
-                      handleFilterChange('startTime', e.target.value)
+                      handleFilterChange('start_time', e.target.value)
                       setIsUseCustomTime(true)
                     }}
-                    value={filter.startTime}
-                    id='startTime'
+                    value={filter.start_time}
+                    id='start_time'
                     className='block p-4'
                     type='time'
                   />
                 </div>
                 <div className='grid w-full max-w-sm items-center gap-1.5'>
-                  <Label htmlFor='endTime'>End Time</Label>
+                  <Label htmlFor='end_time'>End Time</Label>
                   <Input
-                    min={filter.startTime}
+                    min={filter.start_time}
                     onChange={e => {
-                      handleFilterChange('endTime', e.target.value)
+                      handleFilterChange('end_time', e.target.value)
                       setIsUseCustomTime(true)
                     }}
-                    value={filter.endTime}
-                    id='endTime'
+                    value={filter.end_time}
+                    id='end_time'
                     className='block p-4'
                     type='time'
                   />
@@ -358,6 +415,7 @@ export default function ClinicFilter() {
         setIsOpen(false)
       }}
       open={isOpen}
+      modal={isOpen}
     >
       <DrawerTrigger asChild>
         <Button
@@ -375,7 +433,10 @@ export default function ClinicFilter() {
           />
         </Button>
       </DrawerTrigger>
-      <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+      <DrawerContent
+        className='mx-auto max-w-screen-sm p-4'
+        onInteractOutside={() => setIsOpen(false)}
+      >
         <div className='mt-4'>{renderDrawerContent()}</div>
       </DrawerContent>
     </Drawer>
