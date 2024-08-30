@@ -1,13 +1,26 @@
 'use client'
 
+import EmptyState from '@/components/general/empty-state'
 import FhirFormsRenderer from '@/components/general/fhir-forms-renderer'
 import Header from '@/components/header'
+import { LoadingSpinnerIcon } from '@/components/icons'
 import NavigationBar from '@/components/navigation-bar'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
+import { useQuestionnaire } from '@/services/questionnaire'
 import Image from 'next/image'
+import React from 'react'
 
-const Assesment: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
-  const questionnaire = require('./questionnaire/page-of-everything.json')
+export interface IQuestionnaire extends IWithAuth {
+  params: { questionnaireId: string }
+}
+
+const Questionnaire: React.FC<IQuestionnaire> = ({
+  params,
+  isAuthenticated,
+  userRole
+}) => {
+  const { data: questionnaire, isLoading: questionnaireIsLoading } =
+    useQuestionnaire(params.questionnaireId)
 
   return (
     <NavigationBar>
@@ -36,11 +49,23 @@ const Assesment: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>
         <div className='min-h-screen p-4'>
-          <FhirFormsRenderer questionnaire={questionnaire} />
+          {questionnaireIsLoading ? (
+            <div className='flex min-h-screen min-w-full items-center justify-center'>
+              <LoadingSpinnerIcon
+                width={56}
+                height={56}
+                className='w-full animate-spin'
+              />
+            </div>
+          ) : !questionnaire ? (
+            <EmptyState title='Questionnaire not found' subtitle='' />
+          ) : (
+            <FhirFormsRenderer questionnaire={questionnaire} />
+          )}
         </div>
       </div>
     </NavigationBar>
   )
 }
 
-export default withAuth(Assesment, ['patient', 'clinician'], true)
+export default withAuth(Questionnaire, ['patient'], true)

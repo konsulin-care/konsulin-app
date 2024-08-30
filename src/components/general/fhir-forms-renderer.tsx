@@ -12,11 +12,11 @@ import {
   useRendererQueryClient
 } from 'smart-forms/packages/smart-forms-renderer/src'
 
-interface YourBaseRendererWrapperProps {
+interface FhirFormsRendererProps {
   questionnaire: Questionnaire
 }
 
-function YourBaseRendererWrapper(props: YourBaseRendererWrapperProps) {
+function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const { questionnaire } = props
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null)
 
@@ -56,4 +56,4 @@ function YourBaseRendererWrapper(props: YourBaseRendererWrapperProps) {
   )
 }
 
-export default YourBaseRendererWrapper
+export default FhirFormsRenderer
