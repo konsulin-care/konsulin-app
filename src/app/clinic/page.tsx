@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { InputWithIcon } from '@/components/ui/input-with-icon'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import { IUseClinicParams, useClinicFindAll } from '@/services/clinic'
+import { format } from 'date-fns'
 import dayjs from 'dayjs'
 import { SearchIcon } from 'lucide-react'
 import Image from 'next/image'
@@ -98,6 +99,27 @@ const Clinic: React.FC<IWithAuth> = () => {
               }}
             />
           </div>
+
+          <div className='flex gap-4'>
+            {clinicFilter.start_date && clinicFilter.end_date && (
+              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+                {format(clinicFilter.start_date, 'dd MMM yy') +
+                  ' - ' +
+                  format(clinicFilter.end_date, 'dd MMM yy')}
+              </Badge>
+            )}
+            {clinicFilter.start_time && clinicFilter.end_time && (
+              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+                {clinicFilter.start_time + ' - ' + clinicFilter.end_time}
+              </Badge>
+            )}
+            {clinicFilter.location && (
+              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+                {clinicFilter.location}
+              </Badge>
+            )}
+          </div>
+
           {isClinicsLoading ? (
             <CardLoader />
           ) : Array.isArray(clinics?.data) && clinics.data.length ? (

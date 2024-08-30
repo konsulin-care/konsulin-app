@@ -4,9 +4,16 @@ import { Calendar } from '@/components/ui/calendar'
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { IUseClinicParams } from '@/services/clinic'
 import { addDays, endOfWeek, format, startOfWeek } from 'date-fns'
-import dayjs from 'dayjs'
 import { useState } from 'react'
 const CONTENT_DEFAULT = 0
 const CONTENT_CUSTOM = 1
@@ -17,22 +24,22 @@ const filterContentListDate = [
   {
     label: 'Today',
     value: {
-      start: dayjs(today).format('YYYYMMDD'),
-      end: dayjs(today).format('YYYYMMDD')
+      start: today,
+      end: today
     }
   },
   {
     label: 'This Week',
     value: {
-      start: dayjs(addDays(startOfWeek(today), 1)).format('YYYYMMDD'),
-      end: dayjs(addDays(endOfWeek(today), 1)).format('YYYYMMDD')
+      start: addDays(startOfWeek(today), 1),
+      end: addDays(endOfWeek(today), 1)
     }
   },
   {
     label: 'Next Week',
     value: {
-      start: dayjs(addDays(startOfWeek(today), 8)).format('YYYYMMDD'),
-      end: dayjs(addDays(endOfWeek(today), 8)).format('YYYYMMDD')
+      start: addDays(startOfWeek(today), 8),
+      end: addDays(endOfWeek(today), 8)
     }
   }
 ]
@@ -82,11 +89,12 @@ export default function ClinicFilter({ onChange }) {
   >(CONTENT_DEFAULT)
   const [isUseCustomDate, setIsUseCustomDate] = useState<boolean>(false)
   const [isUseCustomTime, setIsUseCustomTime] = useState<boolean>(false)
-  const [filter, setFilter] = useState({
+  const [filter, setFilter] = useState<IUseClinicParams>({
     start_date: undefined,
     end_date: undefined,
     start_time: undefined,
-    end_time: undefined
+    end_time: undefined,
+    location: undefined
   })
 
   const isInitiaFilterState =
@@ -120,7 +128,8 @@ export default function ClinicFilter({ onChange }) {
       start_date: undefined,
       end_date: undefined,
       start_time: undefined,
-      end_time: undefined
+      end_time: undefined,
+      location: undefined
     })
   }
 
@@ -137,14 +146,8 @@ export default function ClinicFilter({ onChange }) {
                   <Button
                     key={date.label}
                     onClick={() => {
-                      handleFilterChange(
-                        'start_date',
-                        dayjs(date.value.start).format('YYYYMMDD')
-                      )
-                      handleFilterChange(
-                        'end_date',
-                        dayjs(date.value.end).format('YYYYMMDD')
-                      )
+                      handleFilterChange('start_date', date.value.start)
+                      handleFilterChange('end_date', date.value.end)
                       setIsUseCustomDate(false)
                     }}
                     variant='outline'
@@ -214,6 +217,40 @@ export default function ClinicFilter({ onChange }) {
                 )}
               </div>
             </div>
+            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+              <div className='mb-4 font-bold'>Loation</div>
+              <div className='flex flex-wrap gap-[10px]'>
+                <Select onValueChange={e => handleFilterChange('location', e)}>
+                  <SelectTrigger className='w-full border-none'>
+                    <SelectValue placeholder='Select City' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* Later, fetch the list of cities.  */}
+                    <SelectItem value='Kota Bogor'>Kota Bogor</SelectItem>
+                    <SelectItem value='Kota Depok'>Kota Depok</SelectItem>
+                    <SelectItem value='Kota Jakatra Barat'>
+                      Kota Jakatra Barat
+                    </SelectItem>
+                    <SelectItem value='Kota Jakatra Selatan'>
+                      Kota Jakatra Selatan
+                    </SelectItem>
+                    <SelectItem value='Kota Jakatra Timur'>
+                      Kota Jakatra Timur
+                    </SelectItem>
+                    <SelectItem value='Kota Jakatra Utara'>
+                      Kota Jakatra Utara
+                    </SelectItem>
+                    <SelectItem value='Kota Tangerang'>
+                      Kota Tangerang
+                    </SelectItem>
+                    <SelectItem value='Kota Tangerang Selatan'>
+                      Kota Tangerang Selatan
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             {/**
              * Session Type temporary removed
              */}
@@ -306,6 +343,7 @@ export default function ClinicFilter({ onChange }) {
                     'end_date',
                     date?.to ? date.to : date?.from
                   )
+                  setIsUseCustomDate(true)
                 }}
                 disabled={{ before: today }}
                 className='w-full p-0'

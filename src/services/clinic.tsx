@@ -7,10 +7,11 @@ export type IUseClinicParams = {
   page?: number
   pageSize?: number
   name?: string
-  start_date?: string | number
-  end_date?: string | number
+  start_date?: Date
+  end_date?: Date
   start_time?: string
   end_time?: string
+  location?: string
 }
 
 export const useClinicFindAll = (
