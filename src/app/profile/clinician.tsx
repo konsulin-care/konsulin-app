@@ -62,7 +62,7 @@ export default function Clinician() {
       try {
         const response = await apiRequest(
           'POST',
-          '/api/v1/clinicians/clinics/availability',
+          '/api/v1/clinicians/clinics/practice-availability',
           scheduleAvailable
         )
         return response
