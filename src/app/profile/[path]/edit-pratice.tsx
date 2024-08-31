@@ -317,7 +317,7 @@ const Collapsible = ({ isOpen, onToggle, children, data }) => {
         </div>
         {isOpen ? null : (
           <div
-            className={`rounded-full ${convertCurrencyStringToNumber(data.price_per_session.value) !== 0 ? 'bg-secondary' : 'bg-[#808387]'} p-1 px-2`}
+            className={`rounded-full ${data.price_per_session.value !== '' && convertCurrencyStringToNumber(data.price_per_session.value) !== 0 ? 'bg-secondary' : 'bg-[#808387]'} p-1 px-2`}
           >
             <p className='text-[12px] text-white'>Select</p>
           </div>
