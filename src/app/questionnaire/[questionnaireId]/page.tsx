@@ -60,7 +60,10 @@ const Questionnaire: React.FC<IQuestionnaire> = ({
           ) : !questionnaire ? (
             <EmptyState title='Questionnaire not found' subtitle='' />
           ) : (
-            <FhirFormsRenderer questionnaire={questionnaire} />
+            <FhirFormsRenderer
+              questionnaire={questionnaire}
+              isAuthenticated={isAuthenticated}
+            />
           )}
         </div>
       </div>
