@@ -1,9 +1,11 @@
 import { LoadingSpinnerIcon } from '@/components/icons'
 import { Button } from '@/components/ui/button'
+import { useSubmitQuestionnaire } from '@/services/questionnaire'
 
 import { QueryClientProvider } from '@tanstack/react-query'
 import { Questionnaire, QuestionnaireResponse } from 'fhir/r4'
 import { useState } from 'react'
+import { toast } from 'react-toastify'
 import {
   BaseRenderer,
   getResponse,
@@ -14,14 +16,20 @@ import {
 
 interface FhirFormsRendererProps {
   questionnaire: Questionnaire
+  isAuthenticated: Boolean
 }
 
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
-  const { questionnaire } = props
+  const { questionnaire, isAuthenticated } = props
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null)
 
   const queryClient = useRendererQueryClient()
   const isBuilding = useBuildForm(questionnaire)
+
+  const {
+    mutate: submitQuestionnaire,
+    isLoading: submitQuestionnaireIsLoading
+  } = useSubmitQuestionnaire(response, isAuthenticated)
 
   if (isBuilding) {
     return (
@@ -42,14 +50,23 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       </QueryClientProvider>
       <div className='mt-4 px-5'>
         <Button
+          disabled={submitQuestionnaireIsLoading}
           className='w-full bg-secondary text-white'
           onClick={() => {
             const questionnaireResponse = getResponse()
             setResponse(questionnaireResponse)
-            console.log({ questionnaireResponse })
+            submitQuestionnaire(undefined, {
+              onSuccess: data => {
+                toast.success('Success')
+              }
+            })
           }}
         >
-          Submit Response
+          {submitQuestionnaireIsLoading ? (
+            <LoadingSpinnerIcon stroke='white' />
+          ) : (
+            'Submit Response'
+          )}
         </Button>
       </div>
     </RendererThemeProvider>

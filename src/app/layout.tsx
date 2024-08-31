@@ -5,7 +5,7 @@ import '@/styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import NextTopLoader from 'nextjs-toploader'
-import { ToastContainer } from 'react-toastify'
+import { ToastContainer, ToastContainerProps } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -55,6 +55,14 @@ export const viewport: Viewport = {
   themeColor: '#FFFFFF'
 }
 
+export const toastConfig: ToastContainerProps = {
+  position: 'top-right',
+  autoClose: 3000,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true
+}
+
 export default function RootLayout({
   children
 }: Readonly<{
@@ -67,7 +75,7 @@ export default function RootLayout({
           <ProfileProvider>
             <QueryProvider>
               <NextTopLoader showSpinner={false} color='#13c2c2' />
-              <ToastContainer />
+              <ToastContainer {...toastConfig} />
               <div className='flex min-h-screen flex-col'>
                 <div id='modal' />
                 <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>

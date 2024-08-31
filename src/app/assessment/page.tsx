@@ -36,7 +36,10 @@ const Assesment: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>
         <div className='min-h-screen p-4'>
-          <FhirFormsRenderer questionnaire={questionnaire} />
+          <FhirFormsRenderer
+            questionnaire={questionnaire}
+            isAuthenticated={isAuthenticated}
+          />
         </div>
       </div>
     </NavigationBar>
