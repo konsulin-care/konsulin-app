@@ -29,3 +29,4 @@ export interface StateProfile {
 export type ActionProfile =
   | { type: 'updated'; payload: StateProfile }
   | { type: 'getProfile'; payload: StateProfile }
+  | { type: 'reset' }

@@ -77,9 +77,7 @@ function DetailItem({ item }) {
 
 function DetailPratice({ item }) {
   const details = [
-    { key: 'Clinic ID', value: item.clinic_id },
     { key: 'Clinic Name', value: item.clinic_name },
-    { key: 'Affiliation', value: item.affiliation },
     {
       key: 'Price per Session',
       value: `${item.price_per_session.value.toLocaleString()} ${item.price_per_session.currency} / Session`
