@@ -8,7 +8,8 @@ export const initialState: StateProfile = {
     whatsapp_number: '',
     gender: '',
     address: '',
-    educations: []
+    educations: [],
+    practice_informations: null
   }
 }
 
@@ -31,6 +32,11 @@ export const reducer = (
         profile: {
           ...action.payload.profile
         }
+      }
+    case 'reset':
+      return {
+        ...state,
+        profile: initialState.profile
       }
     default:
       return state
