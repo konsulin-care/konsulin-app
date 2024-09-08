@@ -35,9 +35,9 @@ export default function EditProfile({ userRole }) {
     whatsapp_number: '',
     gender: '',
     address: '',
-    educations: ['']
+    educations: [''],
+    profile_picture: ''
   })
-  const [userPhoto, setUserPhoto] = useState('/images/sample-foto.svg')
   const [drawerState, setDrawerState] = useState(DRAWER_STATE.NONE)
   const isPatient = userRole === 'patient'
   const isClinician = userRole === 'clinician'
@@ -88,7 +88,8 @@ export default function EditProfile({ userRole }) {
         whatsapp_number,
         address,
         gender,
-        educations
+        educations,
+        profile_picture
       } = editProfile.data
       setUpdateUser({
         fullname: fullname ?? '',
@@ -97,7 +98,11 @@ export default function EditProfile({ userRole }) {
         whatsapp_number: whatsapp_number ?? '',
         gender: gender ?? '',
         address: address ?? '',
-        educations: educations ?? ['']
+        educations: educations ?? [''],
+        profile_picture:
+          profile_picture === undefined
+            ? '/images/sample-foto.svg'
+            : profile_picture
       })
     }
   }, [editProfile])
@@ -144,7 +149,6 @@ export default function EditProfile({ userRole }) {
 
   function handleEditSave() {
     const validationErrors = validateForm(updateUser)
-
     if (Object.keys(validationErrors).length === 0) {
       const updatedProfile = {
         ...updateUser,
@@ -222,10 +226,20 @@ export default function EditProfile({ userRole }) {
     }))
   }
 
+  function handleUserPhoto(value: string) {
+    setUpdateUser(prevState => ({
+      ...prevState,
+      profile_picture: value
+    }))
+  }
+
   return (
     <div className='flex min-h-screen flex-col'>
       <div className='flex flex-grow flex-col justify-between p-4'>
-        <ImageUploader userPhoto={userPhoto} onPhotoChange={setUserPhoto} />
+        <ImageUploader
+          userPhoto={updateUser.profile_picture}
+          onPhotoChange={handleUserPhoto}
+        />
         <div className='flex flex-grow flex-col space-y-4'>
           <Input
             width={24}

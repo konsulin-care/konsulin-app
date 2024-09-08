@@ -38,17 +38,17 @@ export default function ImageUploader({
           alt='user-photo'
         />
       </div>
-      <div className='flex items-center justify-center bg-[#F6F6F6]'>
+      <div className='flex items-center justify-center rounded-xl bg-[#F6F6F6]'>
         <div className='pb-2 pl-4 pr-2 pt-2'>
           <Image
             src={'/icons/edit-photo.svg'}
-            width={12}
-            height={12}
+            width={16}
+            height={16}
             alt='edit-photo'
           />
         </div>
         <span
-          className='cursor-pointer pr-4 text-center text-xs font-semibold text-[#18AAA1] text-secondary'
+          className='cursor-pointer pr-4 text-center text-[12px] font-semibold text-[#18AAA1] text-secondary'
           onClick={handleButtonClick}
         >
           Ganti Photo
