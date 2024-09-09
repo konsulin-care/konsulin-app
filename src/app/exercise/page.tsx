@@ -3,15 +3,14 @@
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { InputWithIcon } from '@/components/ui/input-with-icon'
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import { getExceriseList } from '@/services/api/excercise'
 import { useQuery } from '@tanstack/react-query'
-import { BookmarkIcon, ChevronLeftIcon, SearchIcon } from 'lucide-react'
+import { ChevronLeftIcon, SearchIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
   const router = useRouter()
@@ -30,20 +29,24 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
           item.description.toLowerCase().includes(keyWord.toLowerCase())
       )
 
+  useEffect(() => {
+    console.log({ excerciseData })
+  }, [excerciseData])
+
   return (
-    <NavigationBar>
+    <NavigationBar className='flex min-h-screen flex-col'>
       <Header
         showChat={false}
-        moreAction={
-          <Link href='/exercise/bookmark'>
-            <Image
-              width={32}
-              height={32}
-              alt='offline'
-              src={'/icons/bookmark.svg'}
-            />
-          </Link>
-        }
+        // moreAction={
+        //   <Link href='/exercise/bookmark'>
+        //     <Image
+        //       width={32}
+        //       height={32}
+        //       alt='offline'
+        //       src={'/icons/bookmark.svg'}
+        //     />
+        //   </Link>
+        // }
       >
         <div className='flex w-full items-center'>
           <ChevronLeftIcon
@@ -55,7 +58,7 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
           <div className='text-[14px] font-bold text-white'>Self Excercise</div>
         </div>
       </Header>
-      <div className='mt-[-24px] rounded-[16px] bg-white'>
+      <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white'>
         {/* Filter / Search */}
         <div className='p-4'>
           <InputWithIcon
@@ -68,7 +71,7 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
         </div>
 
         {/* Recommended Exercises  */}
-        <div className='bg-[#F9F9F9] p-4'>
+        {/* <div className='bg-[#F9F9F9] p-4'>
           <div className='text-[14px] font-bold text-[hsla(220,9%,19%,0.6)]'>
             Recommended Exercises
           </div>
@@ -77,7 +80,7 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
           </div>
           <ScrollArea className='mt-2 w-full whitespace-nowrap pb-4'>
             <div className='flex w-max space-x-4'>
-              {excerciseIsLoading || !excerciseData.length
+              {excerciseIsLoading || !excerciseData
                 ? null
                 : excerciseData.map(excercise => (
                     <Link
@@ -132,10 +135,10 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
             </div>
             <ScrollBar orientation='horizontal' />
           </ScrollArea>
-        </div>
+        </div> */}
 
         {/* Other */}
-        <div className='p-4'>
+        {/* <div className='p-4'>
           <div className='text-[14px] font-bold text-[hsla(220,9%,19%,0.6)]'>
             All Video
           </div>
@@ -148,7 +151,7 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
                     className='card flex flex-col items-center justify-center'
                   >
                     <Image
-                      className='h-[100px] w-full rounded-lg'
+                      className='h-[100px] w-full rounded-lg bg-cover'
                       width={158}
                       height={64}
                       alt='excerise'
@@ -181,6 +184,38 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
                       </div>
                     </div>
                   </div>
+                ))}
+          </div>
+        </div> */}
+
+        <div className='grow bg-[#F9F9F9] p-4'>
+          <div className='flex flex-col gap-y-4'>
+            {excerciseIsLoading || !excerciseData
+              ? null
+              : filteredExcerciseData.map(excercise => (
+                  <Link
+                    key={excercise.id}
+                    href={`/exercise/${excercise.id}`}
+                    className='card flex gap-4 bg-white'
+                  >
+                    <Image
+                      src={'/images/exercise.svg'}
+                      height={40}
+                      width={40}
+                      alt='exercise'
+                    />
+                    <div className='mt-2 flex flex-col'>
+                      <span className='text-[10px] text-muted'>
+                        {excercise.duration} Minutes
+                      </span>
+                      <span className='text-[12px] font-bold'>
+                        {excercise.title}
+                      </span>
+                      <span className='mt-2 max-w-[250px] overflow-hidden truncate text-ellipsis text-[10px] text-muted'>
+                        {excercise.description}
+                      </span>
+                    </div>
+                  </Link>
                 ))}
           </div>
         </div>
