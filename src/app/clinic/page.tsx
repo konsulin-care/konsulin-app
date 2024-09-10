@@ -103,9 +103,11 @@ const Clinic: React.FC<IWithAuth> = () => {
           <div className='flex gap-4'>
             {clinicFilter.start_date && clinicFilter.end_date && (
               <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-                {format(clinicFilter.start_date, 'dd MMM yy') +
-                  ' - ' +
-                  format(clinicFilter.end_date, 'dd MMM yy')}
+                {clinicFilter.start_date == clinicFilter.end_date
+                  ? format(clinicFilter.start_date, 'dd MMM yy')
+                  : format(clinicFilter.start_date, 'dd MMM yy') +
+                    ' - ' +
+                    format(clinicFilter.end_date, 'dd MMM yy')}
               </Badge>
             )}
             {clinicFilter.start_time && clinicFilter.end_time && (

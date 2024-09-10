@@ -64,6 +64,7 @@
     "react-day-picker": "^8.10.1",
     "react-dom": "^18",
     "react-hook-form": "^7.52.0",
+    "react-qr-code": "^2.0.15",
     "react-resizable-panels": "^2.0.19",
     "react-share-social": "^0.1.60",
     "react-toastify": "^10.0.5",
