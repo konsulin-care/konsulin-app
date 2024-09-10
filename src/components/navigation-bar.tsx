@@ -9,13 +9,16 @@ import {
   UserIcon
 } from './icons'
 
-export default function NavigationBar({ children }) {
+export default function NavigationBar({
+  children,
+  className
+}: React.HTMLAttributes<HTMLDivElement>) {
   const pathname = usePathname()
   const activePathStyle = 'font-bold text-secondary'
   const pathStyle = 'text-[#ADB6C7]'
 
   return (
-    <div className='pb-[100px]'>
+    <div className={cn('pb-[100px]', className)}>
       {children}
       <div className='fixed bottom-0 flex h-[90px] w-full max-w-screen-sm justify-around bg-white px-[10px] py-[21px] shadow-[0px_-5px_15.1px_0px_#D7D7D740]'>
         <Link
@@ -35,7 +38,9 @@ export default function NavigationBar({ children }) {
             pathname?.startsWith('/clinic') ? activePathStyle : pathStyle
           )}
         >
-          <OfficeIcon fill={pathname === '/clinic' ? '#13C2C2' : '#ADB6C7'} />
+          <OfficeIcon
+            fill={pathname?.startsWith('/clinic') ? '#13C2C2' : '#ADB6C7'}
+          />
 
           <span className='mt-[5px] text-[12px]'>Sesi Temu</span>
         </Link>
@@ -47,7 +52,7 @@ export default function NavigationBar({ children }) {
           )}
         >
           <LiteratureIcon
-            fill={pathname === '/assessment' ? '#13C2C2' : '#ADB6C7'}
+            fill={pathname?.startsWith('/assessment') ? '#13C2C2' : '#ADB6C7'}
           />
 
           <span className='mt-[5px] text-[12px]'>Assesment</span>
@@ -60,7 +65,7 @@ export default function NavigationBar({ children }) {
           )}
         >
           <ExceriseIcon
-            fill={pathname === '/exercise' ? '#13C2C2' : '#ADB6C7'}
+            fill={pathname?.startsWith('/exercise') ? '#13C2C2' : '#ADB6C7'}
           />
 
           <span className='mt-[5px] text-[12px]'>Exercise</span>
