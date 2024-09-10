@@ -2,8 +2,6 @@ import { FilterIcon } from '@/components/icons'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -12,7 +10,6 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import { IUseClinicParams } from '@/services/clinic'
 import { addDays, endOfWeek, format, startOfWeek } from 'date-fns'
 import { useState } from 'react'
 const CONTENT_DEFAULT = 0
@@ -44,43 +41,14 @@ const filterContentListDate = [
   }
 ]
 
-const filterContentListTime = [
-  {
-    label: '07:00 - 10:00',
-    value: {
-      start: '07:00',
-      end: '10:00'
-    }
-  },
-  {
-    label: '10:00 - 13:00',
-    value: {
-      start: '10:00',
-      end: '13:00'
-    }
-  },
-  {
-    label: '13:00 - 16:00',
-    value: {
-      start: '13:00',
-      end: '16:00'
-    }
-  },
-  {
-    label: '16:00 - 18:00',
-    value: {
-      start: '16:00',
-      end: '18:00'
-    }
-  },
-  {
-    label: '18:00 - 22:00',
-    value: {
-      start: '18:00',
-      end: '22:00'
-    }
-  }
-]
+export type IRecordParams = {
+  page?: number
+  pageSize?: number
+  name?: string
+  start_date?: Date
+  end_date?: Date
+  type?: string
+}
 
 export default function ClinicFilter({ onChange }) {
   const [isOpen, setIsOpen] = useState<boolean>(false)
@@ -88,29 +56,19 @@ export default function ClinicFilter({ onChange }) {
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
   >(CONTENT_DEFAULT)
   const [isUseCustomDate, setIsUseCustomDate] = useState<boolean>(false)
-  const [isUseCustomTime, setIsUseCustomTime] = useState<boolean>(false)
-  const [filter, setFilter] = useState<IUseClinicParams>({
+  const [filter, setFilter] = useState<IRecordParams>({
     start_date: undefined,
     end_date: undefined,
-    start_time: undefined,
-    end_time: undefined,
-    location: undefined
+    type: undefined
   })
 
-  const isInitiaFilterState =
-    !filter.start_date &&
-    !filter.end_date &&
-    !filter.start_time &&
-    !filter.end_time
+  const isInitiaFilterState = !filter.start_date && !filter.end_date
 
   const handleCustomFilterOpen = () => {
     if (isInitiaFilterState) {
-      handleFilterChange('start_time', '00:00')
-      handleFilterChange('end_time', '23:59')
       handleFilterChange('start_date', today)
       handleFilterChange('end_date', addDays(today, 7))
       setIsUseCustomDate(true)
-      setIsUseCustomTime(true)
     }
 
     setWhichContent(CONTENT_CUSTOM)
@@ -127,9 +85,7 @@ export default function ClinicFilter({ onChange }) {
     setFilter({
       start_date: undefined,
       end_date: undefined,
-      start_time: undefined,
-      end_time: undefined,
-      location: undefined
+      type: undefined
     })
   }
 
@@ -181,126 +137,24 @@ export default function ClinicFilter({ onChange }) {
                 </Button>
               </div>
             </div>
+
             <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Session Time</div>
+              <div className='mb-4 font-bold'>Show By</div>
               <div className='flex flex-wrap gap-[10px]'>
-                {filterContentListTime.map(time => (
-                  <Button
-                    variant='outline'
-                    key={time.label}
-                    onClick={() => {
-                      setIsUseCustomTime(false)
-                      handleFilterChange('start_time', time.value.start)
-                      handleFilterChange('end_time', time.value.end)
-                    }}
-                    className={cn(
-                      'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                      filter.start_time === time.value.start &&
-                        filter.end_time === time.value.end
-                        ? 'bg-secondary font-bold text-white hover:bg-secondary'
-                        : 'bg-white font-normal'
-                    )}
-                  >
-                    {time.label}
-                  </Button>
-                ))}
-                {isUseCustomTime && filter.start_time && filter.end_time && (
-                  <Button
-                    variant='outline'
-                    onClick={handleCustomFilterOpen}
-                    className={cn(
-                      'h-[50px] w-min items-center justify-center rounded-lg border-0 bg-secondary p-4 text-[12px] font-bold text-white hover:bg-secondary'
-                    )}
-                  >
-                    Custom : {`${filter.start_time} - ${filter.end_time}`}
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Loation</div>
-              <div className='flex flex-wrap gap-[10px]'>
-                <Select onValueChange={e => handleFilterChange('location', e)}>
+                <Select onValueChange={e => handleFilterChange('type', e)}>
                   <SelectTrigger className='w-full border-none'>
-                    <SelectValue placeholder='Select City' />
+                    <SelectValue placeholder='All' />
                   </SelectTrigger>
                   <SelectContent>
-                    {/* Later, fetch the list of cities.  */}
-                    <SelectItem value='Kota Bogor'>Kota Bogor</SelectItem>
-                    <SelectItem value='Kota Depok'>Kota Depok</SelectItem>
-                    <SelectItem value='Kota Jakarta Barat'>
-                      Kota Jakarta Barat
-                    </SelectItem>
-                    <SelectItem value='Kota Jakarta Selatan'>
-                      Kota Jakarta Selatan
-                    </SelectItem>
-                    <SelectItem value='Kota Jakarta Timur'>
-                      Kota Jakarta Timur
-                    </SelectItem>
-                    <SelectItem value='Kota Jakarta Utara'>
-                      Kota Jakarta Utara
-                    </SelectItem>
-                    <SelectItem value='Kota Tangerang'>
-                      Kota Tangerang
-                    </SelectItem>
-                    <SelectItem value='Kota Tangerang Selatan'>
-                      Kota Tangerang Selatan
-                    </SelectItem>
+                    <SelectItem value='All'>All</SelectItem>
+                    <SelectItem value='Jurnal'>Jurnal</SelectItem>
+                    <SelectItem value='Assesment'>Assesment</SelectItem>
+                    <SelectItem value='SOAP'>SOAP</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {/**
-             * Session Type temporary removed
-             */}
-            {/* <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Session Type</div>
-              <div className='flex flex-wrap gap-2'>
-                <Button
-                  variant='outline'
-                  className={cn(
-                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                    filter.type === 'all'
-                      ? 'bg-secondary font-bold text-white'
-                      : 'bg-white'
-                  )}
-                  onClick={() => {
-                    handleFilterChange('type', 'all')
-                  }}
-                >
-                  All
-                </Button>
-                <Button
-                  variant='outline'
-                  className={cn(
-                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                    filter.type === 'online'
-                      ? 'bg-secondary font-bold text-white'
-                      : 'bg-white'
-                  )}
-                  onClick={() => {
-                    handleFilterChange('type', 'online')
-                  }}
-                >
-                  Online
-                </Button>
-                <Button
-                  variant='outline'
-                  className={cn(
-                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                    filter.type === 'offline'
-                      ? 'bg-secondary font-bold text-white'
-                      : 'bg-white'
-                  )}
-                  onClick={() => {
-                    handleFilterChange('type', 'offline')
-                  }}
-                >
-                  Offline
-                </Button>
-              </div>
-            </div> */}
             {!isInitiaFilterState && (
               <Button
                 variant='outline'
@@ -362,36 +216,6 @@ export default function ClinicFilter({ onChange }) {
                   day_today: 'bg-accent text-accent-foreground font-extrabold'
                 }}
               />
-
-              <div className='mt-8 flex gap-4'>
-                <div className='grid w-full max-w-sm items-center gap-1.5'>
-                  <Label htmlFor='start_time'>Start Time</Label>
-                  <Input
-                    onChange={e => {
-                      handleFilterChange('start_time', e.target.value)
-                      setIsUseCustomTime(true)
-                    }}
-                    value={filter.start_time}
-                    id='start_time'
-                    className='block p-4'
-                    type='time'
-                  />
-                </div>
-                <div className='grid w-full max-w-sm items-center gap-1.5'>
-                  <Label htmlFor='end_time'>End Time</Label>
-                  <Input
-                    min={filter.start_time}
-                    onChange={e => {
-                      handleFilterChange('end_time', e.target.value)
-                      setIsUseCustomTime(true)
-                    }}
-                    value={filter.end_time}
-                    id='end_time'
-                    className='block p-4'
-                    type='time'
-                  />
-                </div>
-              </div>
             </div>
             <Button
               type='button'

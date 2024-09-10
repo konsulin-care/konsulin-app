@@ -19,7 +19,7 @@ export default function HomeMenuClinicianGuest() {
         </div>
       </Link>
 
-      <Link href={'/assessment'} className='card flex w-full'>
+      <Link href={'/assessment/journal'} className='card flex w-full'>
         <Image
           src={'/images/writing.svg'}
           width={40}

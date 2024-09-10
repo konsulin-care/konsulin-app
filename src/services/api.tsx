@@ -1,4 +1,3 @@
-import { navigate } from '@/components/general/navigate'
 import { getFromLocalStorage } from '@/lib/utils'
 import axios from 'axios'
 import { toast } from 'react-toastify'
@@ -36,7 +35,7 @@ API.interceptors.response.use(
 
     toast.error(errorMessage, {
       position: 'top-right',
-      autoClose: 5000,
+      autoClose: 2500,
       hideProgressBar: false,
       closeOnClick: true,
       pauseOnHover: true,
@@ -44,9 +43,16 @@ API.interceptors.response.use(
       progress: undefined
     })
 
-    if (error.status === 401) {
-      localStorage.clear()
-      navigate('/register ')
+    // expired token
+    if (
+      error.response.status === 401 &&
+      error.response.data.dev_message ===
+        'invalid or expired token: Token is expired'
+    ) {
+      setTimeout(() => {
+        localStorage.clear()
+        window.location.href = '/register'
+      }, 1000)
     }
 
     return Promise.reject(error)
