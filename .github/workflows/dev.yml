@@ -4,7 +4,7 @@ on:
   push:
     branches:
     - develop
-
+    - feat/cicd-*
 jobs:
   build:
     name: Build
@@ -27,20 +27,20 @@ jobs:
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME}}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD}}
-  deploy:
-    name: Deployment
-    uses: ./.github/workflows/deploy.yml
-    needs:
-    - docker
-    with:
-      ENVIRONMENT: development
-      SERVICE_NAME: dev-app
-    secrets:
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-      SSH_KEY: ${{ secrets.SSH_KEY }}
-      SSH_PORT: ${{ secrets.SSH_PORT }}
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+#   deploy:
+#     name: Deployment
+#     uses: ./.github/workflows/deploy.yml
+#     needs:
+#     - docker
+#     with:
+#       ENVIRONMENT: development
+#       SERVICE_NAME: dev-app
+#     secrets:
+#       SSH_HOST: ${{ secrets.SSH_HOST }}
+#       SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+#       SSH_KEY: ${{ secrets.SSH_KEY }}
+#       SSH_PORT: ${{ secrets.SSH_PORT }}
+#       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+#       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
 
