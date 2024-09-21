@@ -11,7 +11,7 @@ const settingLists = [
     id: 'ubah-password',
     iconUrl: '/icons/lock-setting.svg',
     label: 'Ubah Password',
-    link: '/'
+    link: '/forget-password'
   },
   {
     id: 'faq',
