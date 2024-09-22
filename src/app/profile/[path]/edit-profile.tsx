@@ -63,11 +63,13 @@ export default function EditProfile({ userRole }) {
   const { mutate, isPending } = useMutation({
     mutationFn: async (updateUser: PropsProfile) => {
       try {
+        console.log(`PAYLOAD ${JSON.stringify(updateUser)}`)
         const response = await apiRequest(
           'PUT',
           '/api/v1/users/profile',
           updateUser
         )
+        console.log(`RESPONSE ${response}`)
         return response
       } catch (err) {
         throw err
