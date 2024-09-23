@@ -1,0 +1,27 @@
+.custom-smart-form {
+  //input field
+  .css-1u1ao1q-MuiGrid-root {
+    flex-direction: column !important;
+
+    div {
+      max-width: unset;
+    }
+
+    .css-1d3z3hw-MuiOutlinedInput-notchedOutline {
+      width: 100%;
+    }
+
+    .css-9dyl2p-MuiTypography-root {
+      margin-bottom: 4px;
+    }
+  }
+
+  // duration
+  [data-test='q-item-quantity-field'] {
+    min-width: 50px !important;
+  }
+  .css-1itndrz-MuiInputAdornment-root {
+    width: 0px;
+    margin-left: 0px;
+  }
+}

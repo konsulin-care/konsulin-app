@@ -46,7 +46,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   return (
     <RendererThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <BaseRenderer />
+        <div className='custom-smart-form'>
+          <BaseRenderer />
+        </div>
       </QueryClientProvider>
       <div className='mt-4 px-5'>
         <Button

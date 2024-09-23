@@ -7,7 +7,7 @@ import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import Image from 'next/image'
 
 const Assesment: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
-  const questionnaire = require('./questionnaire/page-of-everything.json')
+  const questionnaire = require('./questionnaire/soap.json')
 
   return (
     <NavigationBar>
