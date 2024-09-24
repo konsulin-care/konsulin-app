@@ -2,17 +2,17 @@ import { LoadingSpinnerIcon } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { useSubmitQuestionnaire } from '@/services/questionnaire'
 
-import { QueryClientProvider } from '@tanstack/react-query'
-import { Questionnaire, QuestionnaireResponse } from 'fhir/r4'
-import { useState } from 'react'
-import { toast } from 'react-toastify'
 import {
   BaseRenderer,
   getResponse,
   RendererThemeProvider,
   useBuildForm,
   useRendererQueryClient
-} from 'smart-forms/packages/smart-forms-renderer/src'
+} from '@konsulin/smart-forms-renderer'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { Questionnaire, QuestionnaireResponse } from 'fhir/r4'
+import { useState } from 'react'
+import { toast } from 'react-toastify'
 
 interface FhirFormsRendererProps {
   questionnaire: Questionnaire

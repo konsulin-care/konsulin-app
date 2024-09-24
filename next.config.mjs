@@ -1,26 +1,16 @@
 /** @type {import('next').NextConfig} */
 
-import withSerwistInit from "@serwist/next";
+import withSerwistInit from '@serwist/next'
 
 const withSerwist = withSerwistInit({
-    swSrc: "src/app/sw.ts",
-    swDest: "public/sw.js",
-    reloadOnOnline: true,
-    disable: process.env.NODE_ENV === 'development'
-});
+  swSrc: 'src/app/sw.ts',
+  swDest: 'public/sw.js',
+  reloadOnOnline: true,
+  disable: process.env.NODE_ENV === 'development'
+})
 
 const nextConfig = {
-    output: "standalone",
-    images: {
-        remotePatterns: [
-            {
-                protocol: 'https',
-                hostname: 'i.ytimg.com',
-                port: '',
-                pathname: '/vi/**',
-            },
-        ],
-    },
+  output: 'standalone'
 }
 
 export default withSerwist(nextConfig)
