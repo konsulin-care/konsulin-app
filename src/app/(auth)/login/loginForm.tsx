@@ -53,7 +53,7 @@ function LoginFormContent({ role }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const { mutate, isPending } = useMutation<
+  const { mutate, isLoading } = useMutation<
     LoginResponse,
     unknown,
     typeof userData
@@ -212,9 +212,9 @@ function LoginFormContent({ role }) {
         <button
           className='text-md border-1 my-4 w-full rounded-full border-primary bg-secondary p-4 font-semibold text-white'
           type='submit'
-          disabled={isPending}
+          disabled={isLoading}
         >
-          {isPending ? 'Loading...' : 'Masuk Sekarang'}
+          {isLoading ? 'Loading...' : 'Masuk Sekarang'}
         </button>
 
         <p className='mb-[48px] w-full text-center text-sm'>
