@@ -1,48 +1,51 @@
 'use client'
 
 import Header from '@/components/header'
-import { Button } from '@/components/ui/button'
-import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
 import withAuth, { IWithAuth } from '@/hooks/withAuth'
-import {
-  ChevronLeftIcon,
-  LinkIcon,
-  NotepadTextIcon,
-  UsersIcon
-} from 'lucide-react'
+import { ChevronLeftIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import QRCode from 'react-qr-code'
+import RecordAssesment from './record-assesment'
+import RecordExercise from './record-exercise'
+import RecordJournal from './record-journal'
+import RecordSoap from './record-soap'
 
 export interface IDetailClinic extends IWithAuth {
   params: { recordId: string }
 }
 
+const RECORD_TYPE_ASSESMENT = 1
+const RECORD_TYPE_EXCERCISE = 2
+const RECORD_TYPE_SOAP = 3
+const RECORD_TYPE_JOURNAL = 4
+
 const RecordDetail: React.FC<IDetailClinic> = ({ isAuthenticated, params }) => {
   const router = useRouter()
+  const pageType = RECORD_TYPE_JOURNAL
 
-  const modalQR = () => {
-    return (
-      <Drawer>
-        <DrawerTrigger asChild>
-          <Button className='rounded-xl bg-secondary text-white'>
-            Show QR
-          </Button>
-        </DrawerTrigger>
-        <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-          <QRCode
-            size={150}
-            style={{
-              height: '290px',
-              maxWidth: '100%',
-              width: '100%',
-              margin: '32px 0'
-            }}
-            value={params.recordId}
-            viewBox={`0 0 256 256`}
-          />
-        </DrawerContent>
-      </Drawer>
-    )
+  const pageTitle = type => {
+    switch (type) {
+      case 1:
+        return 'Assessment Result'
+      case 2:
+        return 'Exercise Result'
+      case 3:
+        return 'SOAP Result Details'
+      case 4:
+        return 'Journal Detail'
+    }
+  }
+
+  const renderContent = type => {
+    switch (type) {
+      case 1:
+        return <RecordAssesment recordId={params.recordId} />
+      case 2:
+        return <RecordExercise />
+      case 3:
+        return <RecordSoap />
+      case 4:
+        return <RecordJournal />
+    }
   }
 
   return (
@@ -55,50 +58,13 @@ const RecordDetail: React.FC<IDetailClinic> = ({ isAuthenticated, params }) => {
             className='mr-2 cursor-pointer'
           />
 
-          <div className='text-[14px] font-bold text-white'>Self Excercise</div>
+          <div className='text-[14px] font-bold text-white'>
+            {pageTitle(pageType)}
+          </div>
         </div>
       </Header>
       <div className='mt-[-24px] min-h-screen rounded-[16px] bg-white p-4'>
-        <div className='mb-4'>
-          <div className='text-[14px] font-bold text-muted'>
-            Assessment Details
-          </div>
-          <div className='text-[10px] text-muted'>Assessment - User</div>
-        </div>
-        <div className='card mb-4 flex items-center'>
-          <UsersIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
-          Participant Name
-        </div>
-        <div className='card mb-4 flex items-center'>
-          <NotepadTextIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
-          BIG 5 Personality Test
-        </div>
-
-        <div className='mb-4'>
-          <div className='text-12 mb-2 text-muted'>Result Brief</div>
-          <div className='card'>
-            Vorem ipsum dolor sit amet, consectetur adipiscing elit.
-          </div>
-        </div>
-
-        <div className='mb-4'>
-          <div className='text-12 mb-2 text-muted'>Result Tables</div>
-          <div className='space-y-2 rounded-lg bg-[#F9F9F9] p-4'>
-            <div>Variable A</div>
-            <div>Variable B</div>
-            <div>Variable C</div>
-            <div>Variable D</div>
-          </div>
-        </div>
-
-        <div className='flex items-center space-x-2 rounded-lg bg-[#F9F9F9] p-4'>
-          <LinkIcon />
-          <div className='flex grow flex-col'>
-            <span className='text-[10px] text-muted'>Test Akses</span>
-            <span className='text-[14px] font-bold'>QR Code</span>
-          </div>
-          {modalQR()}
-        </div>
+        {renderContent(pageType)}
       </div>
     </div>
   )

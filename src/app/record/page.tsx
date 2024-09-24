@@ -35,7 +35,7 @@ const Record: React.FC<IWithAuth> = ({ isAuthenticated }) => {
             className='mr-2 cursor-pointer'
           />
 
-          <div className='text-[14px] font-bold text-white'>Self Excercise</div>
+          <div className='text-[14px] font-bold text-white'>Summary Record</div>
         </div>
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>

@@ -316,7 +316,7 @@ export default function ClinicFilter({ onChange }) {
             )}
 
             <Button
-              className='mt-4 rounded-xl bg-secondary text-white'
+              className='mt-4 rounded-xl bg-secondary p-4 text-white'
               onClick={() => {
                 setIsOpen(false)
                 onChange(filter)
@@ -415,7 +415,6 @@ export default function ClinicFilter({ onChange }) {
         setIsOpen(false)
       }}
       open={isOpen}
-      modal={isOpen}
     >
       <DrawerTrigger asChild>
         <Button
@@ -429,7 +428,7 @@ export default function ClinicFilter({ onChange }) {
             width={20}
             height={20}
             className='min-h-[20px] min-w-[20px]'
-            fill={isInitiaFilterState ? '#E1E1E1' : '#13c2c2'}
+            fill='#13c2c2'
           />
         </Button>
       </DrawerTrigger>
