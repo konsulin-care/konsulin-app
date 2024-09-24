@@ -22,7 +22,7 @@ export default function AppPatient() {
           <span className='mb-2 text-[14px] font-bold'>
             Previous Record Summary
           </span>
-          <Link className='text-[12px]' href={'/'}>
+          <Link className='text-[12px]' href={'/record'}>
             See All
           </Link>
         </div>
