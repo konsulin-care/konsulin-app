@@ -20,8 +20,14 @@ const Profile: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
     queryFn: () => fetchProfile(state, dispatch)
   })
 
+  if (error) {
+    if (error instanceof Error) {
+      return <p>Error loading profile data: {error.message}</p>
+    } else {
+      return <p>An unknown error occurred.</p>
+    }
+  }
   if (isLoading) return <p>Loading profile data...</p>
-  if (error) return <p>Error loading profile data: {error.message}</p>
 
   const renderHomeContent = () => {
     return (

@@ -56,7 +56,7 @@ export const viewport: Viewport = {
   themeColor: '#FFFFFF'
 }
 
-export const toastConfig: ToastContainerProps = {
+const toastConfig: ToastContainerProps = {
   position: 'top-right',
   autoClose: 3000,
   closeOnClick: true,
