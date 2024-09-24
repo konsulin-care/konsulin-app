@@ -60,7 +60,7 @@ export default function EditProfile({ userRole }) {
     staleTime: 1000 * 60 * 60 // will fresh after 1 hours
   })
 
-  const { mutate, isPending } = useMutation({
+  const { mutate, isLoading } = useMutation({
     mutationFn: async (updateUser: PropsProfile) => {
       try {
         console.log(`PAYLOAD ${JSON.stringify(updateUser)}`)
@@ -408,9 +408,9 @@ export default function EditProfile({ userRole }) {
           className='text-md border-1 mt-4 w-full rounded-full border-primary bg-secondary p-4 font-semibold text-white'
           type='submit'
           onClick={handleEditSave}
-          disabled={isPending}
+          disabled={isLoading}
         >
-          {isPending ? 'Loading...' : 'Simpan'}
+          {isLoading ? 'Loading...' : 'Simpan'}
         </button>
       </div>
 

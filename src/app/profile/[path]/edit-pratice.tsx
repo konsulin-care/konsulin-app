@@ -76,7 +76,7 @@ const EditPractice = () => {
     }
   })
 
-  const { mutate: saveFirms, isPending } = useMutation({
+  const { mutate: saveFirms, isLoading } = useMutation({
     mutationFn: async (updateFirms: any[]) => {
       try {
         const response = await apiRequest(
@@ -217,9 +217,9 @@ const EditPractice = () => {
             <button
               onClick={handleSubmit}
               className='w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
-              disabled={isPending}
+              disabled={isLoading}
             >
-              {isPending ? 'Saving...' : 'Simpan'}
+              {isLoading ? 'Saving...' : 'Simpan'}
             </button>
           </div>
         </div>

@@ -19,7 +19,7 @@ export default function Register({ searchParams }) {
   const router = useRouter()
   const userType = searchParams?.role
 
-  const { mutate, isPending } = useMutation<any, unknown, typeof userRegister>({
+  const { mutate, isLoading } = useMutation<any, unknown, typeof userRegister>({
     mutationFn: (newUser: typeof userRegister) => {
       return apiRequest('POST', `/api/v1/auth/register/${userType}`, newUser)
     },
@@ -232,9 +232,9 @@ export default function Register({ searchParams }) {
             <button
               className='text-md border-1 my-4 w-full rounded-full border-primary bg-secondary p-4 text-white'
               type='submit'
-              disabled={isPending}
+              disabled={isLoading}
             >
-              {isPending ? 'Loading...' : 'Daftar Akun'}
+              {isLoading ? 'Loading...' : 'Daftar Akun'}
             </button>
           </div>
           <LoginMedia />
