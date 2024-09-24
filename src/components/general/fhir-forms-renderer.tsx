@@ -50,7 +50,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           <BaseRenderer />
         </div>
       </QueryClientProvider>
-      <div className='mt-4 px-5'>
+      <div className='mt-4 px-2'>
         <Button
           disabled={submitQuestionnaireIsLoading}
           className='w-full bg-secondary text-white'

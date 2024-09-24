@@ -1,4 +1,7 @@
 .custom-smart-form {
+  .css-19r6kue-MuiContainer-root {
+    padding: 0 12px;
+  }
   //input field
   .css-1u1ao1q-MuiGrid-root {
     flex-direction: column !important;
@@ -20,8 +23,16 @@
   [data-test='q-item-quantity-field'] {
     min-width: 50px !important;
   }
+
   .css-1itndrz-MuiInputAdornment-root {
     width: 0px;
     margin-left: 0px;
+  }
+
+  [data-test='q-item-quantity-box'] {
+    margin-top: 14px !important;
+  }
+  .css-55bi6n-MuiTypography-root {
+    font-size: 9px;
   }
 }
