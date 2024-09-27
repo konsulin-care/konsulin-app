@@ -32,19 +32,10 @@ jobs:
           # always-auth: true
           check-latest: false
 
+
       - name: Installing Packages
-        run: npm install --no-optional
+        run: npm install
 
-      - name: Set up npm
-        run: |
-          echo "registry=https://repository.konsulin.care/repository/smart-forms/" > .npmrc
-          echo "//repository.konsulin.care/repository/smart-forms/:_authToken=${{ SECRETS.NPM_TOKEN }}" >> .npmrc
-
-      - name: Installing Smart Forms Packages
-        run: npm install --only=optional
-
-      - name: Revert npm Configuration (Optional)
-        run: echo "" > .npmrc
 
       - name: Disable Next.js telemetry
         run: |

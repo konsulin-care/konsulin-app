@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - develop
+    - feature/remove-private-npm-repository
 
 jobs:
   build:
