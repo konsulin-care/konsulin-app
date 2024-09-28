@@ -29,10 +29,14 @@
     margin-left: 0px;
   }
 
-  [data-test='q-item-quantity-box'] {
-    margin-top: 14px !important;
-  }
+  // [data-test='q-item-quantity-box'] {
+  // margin-top: 14px !important;
+  // }
   .css-55bi6n-MuiTypography-root {
     font-size: 9px;
+  }
+
+  .css-0 {
+    display: none;
   }
 }
