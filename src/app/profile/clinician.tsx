@@ -125,6 +125,11 @@ export default function Clinician() {
         : null
     })
     .filter(item => item !== null)
+    .filter(
+      item =>
+        item.key !== 'Practice Informations' &&
+        item.key !== 'Profile Picture Url'
+    )
 
   const hasData = Object.keys(groupedByFirmAndDay).length > 0
 
@@ -133,7 +138,9 @@ export default function Clinician() {
       <div className='mb-4'>
         <InformationDetail
           isRadiusIcon
-          iconUrl='/images/sample-foto.svg'
+          iconUrl={
+            state.profile.profile_picture_url || '/images/sample-foto.svg'
+          }
           title='General Information'
           subTitle={state.profile.fullname}
           buttonText='Edit Profile'

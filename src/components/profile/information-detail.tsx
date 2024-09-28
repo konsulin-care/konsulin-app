@@ -8,8 +8,8 @@ function HeaderSection({ isRadiusIcon, iconUrl, title, subTitle, role }) {
       : 'text-[10px] font-normal opacity-40'
   const subTitleStyle =
     role === 'patient'
-      ? 'text-[10px] font-normal opacity-100'
-      : 'text-sm font-bold opacity-100'
+      ? 'text-[10px] font-normal opacity-100 truncate overflow-hidden whitespace-nowrap'
+      : 'text-sm font-bold opacity-100 overflow-hidden break-words'
 
   return (
     <div className='flex w-1/2'>
@@ -18,11 +18,11 @@ function HeaderSection({ isRadiusIcon, iconUrl, title, subTitle, role }) {
         width={32}
         height={32}
         alt='icon'
-        className={`${isRadiusIcon ? 'rounded-full p-[2px]' : 'p-[2px]'}`}
+        className={`${isRadiusIcon ? 'h-[32px] w-[32px] rounded-full p-[2px]' : 'p-[2px]'}`}
       />
-      <div className='flex flex-col items-start justify-start'>
-        <p className={`pl-2 ${titleStyle}`}>{title}</p>
-        {subTitle && <p className={`pl-2 ${subTitleStyle}`}>{subTitle}</p>}
+      <div className='flex w-full flex-col items-start justify-start pl-1'>
+        <p className={titleStyle}>{title}</p>
+        {subTitle && <p className={`${subTitleStyle}`}>{subTitle}</p>}
       </div>
     </div>
   )
@@ -30,6 +30,7 @@ function HeaderSection({ isRadiusIcon, iconUrl, title, subTitle, role }) {
 
 function DetailItem({ item }) {
   const isArray = Array.isArray(item.value)
+
   if (item.key === 'Specialty') {
     return (
       <div>
@@ -61,18 +62,14 @@ function DetailItem({ item }) {
     )
   }
 
-  if (item.key === 'Practice Informations') {
-    return null
-  } else {
-    return (
-      <>
-        <p className='text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
-        <p className='text-sm font-bold text-[#2C2F35] opacity-100'>
-          {item.value}
-        </p>
-      </>
-    )
-  }
+  return (
+    <>
+      <p className='text-left text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
+      <p className='text-right text-sm font-bold text-[#2C2F35] opacity-100'>
+        {item.value}
+      </p>
+    </>
+  )
 }
 
 function DetailPratice({ item }) {
@@ -110,7 +107,7 @@ export default function InformationDetail({
 }) {
   return (
     <div className='flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
-      <div className='flex w-full items-center justify-between'>
+      <div className='flex w-full items-start justify-between'>
         <HeaderSection
           isRadiusIcon={isRadiusIcon}
           iconUrl={iconUrl}
@@ -118,7 +115,7 @@ export default function InformationDetail({
           subTitle={subTitle}
           role={role}
         />
-        <div className='flex w-1/2 items-center justify-end'>
+        <div className='flex w-1/2 items-start justify-end'>
           <button onClick={onEdit}>
             <div className='w-[100px] rounded-full bg-secondary p-[7px]'>
               <p className='text-[10px] text-white'>{buttonText}</p>
@@ -131,10 +128,10 @@ export default function InformationDetail({
         className={`flex w-full flex-col ${details ? 'mt-2 space-y-2 border-t border-[#E3E3E3]' : undefined}`}
       >
         {details &&
-          details.map((item: any) => (
+          details.map((item: any, index) => (
             <div
               className='mt-1 flex justify-between font-[#2C2F35] text-xs'
-              key={item.key}
+              key={index}
             >
               {isEditPratice ? (
                 <DetailPratice item={item} />

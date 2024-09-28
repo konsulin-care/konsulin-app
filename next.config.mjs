@@ -10,7 +10,10 @@ const withSerwist = withSerwistInit({
 })
 
 const nextConfig = {
-  output: 'standalone'
+  output: 'standalone',
+  images: {
+    domains: ['s3.konsulin.care']
+  }
 }
 
 export default withSerwist(nextConfig)
