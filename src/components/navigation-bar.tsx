@@ -18,7 +18,7 @@ export default function NavigationBar({
   const pathStyle = 'text-[#ADB6C7]'
 
   return (
-    <div className={cn('pb-[100px]', className)}>
+    <div className={cn('flex grow flex-col pb-[100px]', className)}>
       {children}
       <div className='fixed bottom-0 flex h-[90px] w-full max-w-screen-sm justify-around bg-white px-[10px] py-[21px] shadow-[0px_-5px_15.1px_0px_#D7D7D740]'>
         <Link

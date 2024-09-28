@@ -17,6 +17,8 @@ import { toast } from 'react-toastify'
 interface FhirFormsRendererProps {
   questionnaire: Questionnaire
   isAuthenticated: Boolean
+  submitText?: string
+  customObject?: JSON
 }
 
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
@@ -67,7 +69,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           {submitQuestionnaireIsLoading ? (
             <LoadingSpinnerIcon stroke='white' />
           ) : (
-            'Submit Response'
+            props.submitText || 'Submit Response'
           )}
         </Button>
       </div>
