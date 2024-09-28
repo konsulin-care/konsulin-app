@@ -63,7 +63,6 @@ export default function EditProfile({ userRole }) {
   const { mutate, isLoading } = useMutation({
     mutationFn: async (updateUser: PropsProfile) => {
       try {
-        console.log(`PAYLOAD ${JSON.stringify(updateUser)}`)
         const response = await apiRequest(
           'PUT',
           '/api/v1/users/profile',
