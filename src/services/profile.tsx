@@ -18,7 +18,7 @@ export interface ProfileData {
   whatsapp_number: string
   address: string
   birth_date: string
-  profile_picture: string
+  profile_picture_url: string
 }
 export interface ResponseOptions {
   success: boolean

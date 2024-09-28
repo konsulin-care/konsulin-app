@@ -10,7 +10,7 @@ export const initialState: StateProfile = {
     address: '',
     educations: [],
     practice_informations: null,
-    profile_picture: undefined
+    profile_picture_url: undefined
   }
 }
 
