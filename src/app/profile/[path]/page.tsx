@@ -28,8 +28,6 @@ const PathProfile: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
     component = <EditProfile userRole={userRole} />
   } else if (path === 'edit-pratice') {
     component = <EditPratice />
-  } else {
-    // Handle other paths
   }
 
   return (
