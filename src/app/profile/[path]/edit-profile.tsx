@@ -36,7 +36,7 @@ export default function EditProfile({ userRole }) {
     gender: '',
     address: '',
     educations: [''],
-    profile_picture_url: ''
+    profile_picture: ''
   })
   const [drawerState, setDrawerState] = useState(DRAWER_STATE.NONE)
   const isPatient = userRole === 'patient'
@@ -89,7 +89,7 @@ export default function EditProfile({ userRole }) {
         address,
         gender,
         educations,
-        profile_picture_url
+        profile_picture
       } = editProfile.data
       setUpdateUser({
         fullname: fullname ?? '',
@@ -99,10 +99,10 @@ export default function EditProfile({ userRole }) {
         gender: gender ?? '',
         address: address ?? '',
         educations: educations ?? [''],
-        profile_picture_url:
-          profile_picture_url === undefined
+        profile_picture:
+          profile_picture === undefined
             ? '/images/sample-foto.svg'
-            : profile_picture_url
+            : profile_picture
       })
     }
   }, [editProfile])
@@ -229,7 +229,7 @@ export default function EditProfile({ userRole }) {
   function handleUserPhoto(value: string) {
     setUpdateUser(prevState => ({
       ...prevState,
-      profile_picture_url: value
+      profile_picture: value
     }))
   }
 
@@ -237,7 +237,7 @@ export default function EditProfile({ userRole }) {
     <div className='flex min-h-screen flex-col'>
       <div className='flex flex-grow flex-col justify-between p-4'>
         <ImageUploader
-          userPhoto={updateUser.profile_picture_url}
+          userPhoto={updateUser.profile_picture}
           onPhotoChange={handleUserPhoto}
         />
         <div className='flex flex-grow flex-col space-y-4'>

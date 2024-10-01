@@ -7,7 +7,7 @@ export interface PropsProfile {
   address: string
   educations: string[]
   practice_informations?: Clinics
-  profile_picture_url: string
+  profile_picture: string
 }
 
 interface Clinic {
