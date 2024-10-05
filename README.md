@@ -11,7 +11,7 @@
 
 Make sure you have the following installed:
 
-- [Node.js](https://nodejs.org/) (>= 20.0.0)
+- [Node.js](https://nodejs.org/) (v20.x)
 - [Yarn](https://yarnpkg.com/) or [npm](https://www.npmjs.com/)
 
 ### Installation
