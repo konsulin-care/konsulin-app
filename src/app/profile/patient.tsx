@@ -5,14 +5,22 @@ import MedalCollection from '@/components/profile/medal-collection'
 import Settings from '@/components/profile/settings'
 import { medalLists, settingMenus } from '@/constants/profile'
 import { useProfile } from '@/context/profile/profileContext'
+import { fetchProfile, ResponseProfile } from '@/services/profile'
 import { capitalizeFirstLetter, formatLabel } from '@/utils/validation'
+import { useQuery } from '@tanstack/react-query'
 import { ChevronRightIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
 export default function Patient() {
   const router = useRouter()
-  const { state } = useProfile()
+  const { state, dispatch } = useProfile()
+
+  // fetch profile
+  const { data: profileResponse } = useQuery<ResponseProfile>({
+    queryKey: ['profile-patient'],
+    queryFn: () => fetchProfile(state, dispatch)
+  })
 
   /* Manipulation objects from response {} to array */
   const profileDetail = Object.entries(state.profile)

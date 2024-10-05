@@ -7,7 +7,18 @@ export interface PropsProfile {
   address: string
   educations: string[]
   practice_informations?: Clinics
-  profile_picture: string
+  practice_availabilities?: PracticeAvailability
+  profile_picture?: string
+}
+interface PracticeAvailability {
+  clinic_id: string
+  available_time: AvailableTime[]
+}
+
+interface AvailableTime {
+  days_of_Week: string[]
+  available_start_time: string
+  available_end_time: string
 }
 
 interface Clinic {

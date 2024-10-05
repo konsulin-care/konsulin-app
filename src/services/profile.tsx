@@ -18,12 +18,36 @@ export interface ProfileData {
   whatsapp_number: string
   address: string
   birth_date: string
-  profile_picture: string
+  practice_informations?: PracticeInformation[]
+  practice_availabilities?: PracticeAvailability[]
+  profile_picture?: string
+}
+
+export interface PracticeInformation {
+  clinic_id: string
+  clinic_name: string
+  affiliation: string
+  price_per_session: PricePerSession
+}
+
+export interface PricePerSession {
+  value: number
+  currency: string
+}
+
+export interface PracticeAvailability {
+  clinic_id: string
+  available_time: AvailableTime[]
 }
 export interface ResponseOptions {
   success: boolean
   message: string
   data: Options[]
+}
+export interface AvailableTime {
+  days_of_Week: string[]
+  available_start_time: string
+  available_end_time: string
 }
 
 export interface Clinic {

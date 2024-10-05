@@ -16,13 +16,18 @@ import {
 import { medalLists, settingMenus } from '@/constants/profile'
 import { useProfile } from '@/context/profile/profileContext'
 import { apiRequest } from '@/services/api'
-import { RequestAvailableTime, fetchListClinic } from '@/services/profile'
+import {
+  fetchListClinic,
+  fetchProfile,
+  RequestAvailableTime,
+  ResponseProfile
+} from '@/services/profile'
 import { capitalizeFirstLetter, formatLabel } from '@/utils/validation'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronRight, Plus, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { daysOfWeek } from './constants'
 import { FormsState } from './types'
 import {
@@ -37,18 +42,115 @@ import {
 
 export default function Clinician() {
   const router = useRouter()
-  const { state } = useProfile()
+  const { state, dispatch } = useProfile()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [activeDayIndex, setActiveDayIndex] = useState<number | null>(null)
   const [formsState, setFormsState] = useState<FormsState>(
     daysOfWeek.reduce((acc, day) => {
-      acc[day] = [{ times: [{ firm: '', fromTime: '--:--', toTime: '--:--' }] }]
+      acc[day] = []
       return acc
     }, {} as FormsState)
   )
   const [errorMessages, setErrorMessages] = useState<Record<string, string>>({})
   const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState({})
+  const queryClient = useQueryClient()
 
+  // fetch profile
+  const { data: profileResponse } = useQuery<ResponseProfile>({
+    queryKey: ['profile-clinician'],
+    queryFn: () => fetchProfile(state, dispatch)
+  })
+
+  useEffect(() => {
+    if (profileResponse && profileResponse.data) {
+      const practiceAvailabilities =
+        profileResponse.data.practice_availabilities
+      const practiceInformations = profileResponse.data.practice_informations
+
+      const newGroupedByFirmAndDay = {}
+
+      const clinicNamesMap = practiceInformations.reduce((acc, clinic) => {
+        acc[clinic.clinic_id] = clinic.clinic_name
+        return acc
+      }, {})
+
+      practiceAvailabilities.forEach(clinic => {
+        const clinicId = clinic.clinic_id
+        const clinicName = clinicNamesMap[clinicId]
+
+        clinic.available_time.forEach(timeSlot => {
+          timeSlot.days_of_Week.forEach(day => {
+            const dayKey = day.charAt(0).toUpperCase() + day.slice(1)
+            if (!newGroupedByFirmAndDay[clinicName]) {
+              newGroupedByFirmAndDay[clinicName] = {
+                availability: {}
+              }
+            }
+
+            if (!newGroupedByFirmAndDay[clinicName].availability[dayKey]) {
+              newGroupedByFirmAndDay[clinicName].availability[dayKey] = []
+            }
+
+            newGroupedByFirmAndDay[clinicName].availability[dayKey].push({
+              fromTime: timeSlot.available_start_time,
+              toTime: timeSlot.available_end_time
+            })
+          })
+        })
+      })
+
+      setGroupedByFirmAndDay(newGroupedByFirmAndDay)
+
+      const dayMapping = {
+        mon: 'Monday',
+        tue: 'Tuesday',
+        wed: 'Wednesday',
+        thu: 'Thursday',
+        fri: 'Friday',
+        sat: 'Saturday',
+        sun: 'Sunday'
+      }
+
+      const newFormsState = { ...formsState }
+
+      practiceAvailabilities.forEach(availability => {
+        availability.available_time.forEach(time => {
+          time.days_of_Week.forEach(day => {
+            const fullDayName = dayMapping[day]
+            if (newFormsState[fullDayName]) {
+              newFormsState[fullDayName].push({
+                times: [
+                  {
+                    firm: clinicNamesMap[availability.clinic_id],
+                    fromTime: time.available_start_time,
+                    toTime: time.available_end_time
+                  }
+                ]
+              })
+            }
+          })
+        })
+      })
+
+      daysOfWeek.forEach(day => {
+        if (
+          !practiceAvailabilities.some(availability =>
+            availability.available_time.some(time =>
+              time.days_of_Week.includes(day.toLowerCase().slice(0, 3))
+            )
+          )
+        ) {
+          newFormsState[day] = [
+            { times: [{ firm: '', fromTime: '--:--', toTime: '--:--' }] }
+          ]
+        }
+      })
+
+      setFormsState(newFormsState)
+    }
+  }, [profileResponse])
+
+  // fetch clinician
   const { data } = useQuery({
     queryKey: ['clinician'],
     queryFn: () => fetchListClinic(),
@@ -57,6 +159,7 @@ export default function Clinician() {
   const clinics = data && Array.isArray(data) ? data : []
   const firms = clinics.map(clinic => ({ name: clinic.clinic_name }))
 
+  // handle edit schedule availability
   const { mutate } = useMutation({
     mutationFn: async (scheduleAvailable: RequestAvailableTime) => {
       try {
@@ -75,6 +178,7 @@ export default function Clinician() {
       const grouped = groupByFirmAndDay(formsState)
       setGroupedByFirmAndDay(grouped)
       setActiveDayIndex(null)
+      queryClient.invalidateQueries(['profile-clinician'])
     }
   })
 
@@ -127,7 +231,9 @@ export default function Clinician() {
     .filter(item => item !== null)
     .filter(
       item =>
-        item.key !== 'Practice Informations' && item.key !== 'Profile Picture'
+        item.key !== 'Practice Informations' &&
+        item.key !== 'Profile Picture' &&
+        item.key !== 'Practice Availabilities'
     )
 
   const hasData = Object.keys(groupedByFirmAndDay).length > 0
@@ -162,24 +268,27 @@ export default function Clinician() {
         className={`mt-4 flex flex-col items-start justify-start rounded-[16px] bg-[#F0F4F9] ${hasData ? 'pt-4' : 'pt-0'}`}
       >
         <div className='w-full px-4'>
-          {Object.keys(groupedByFirmAndDay).map(firm => (
-            <div key={firm}>
+          {Object.keys(groupedByFirmAndDay).map((firm, index) => (
+            <div key={index}>
               <div className='mb-2 text-start font-bold'>{firm}</div>
-              {Object.keys(groupedByFirmAndDay[firm]).map(day => {
-                const tags = groupedByFirmAndDay[firm][day].map(
-                  timeRange =>
-                    `${day}: ${timeRange.fromTime} - ${timeRange.toTime}`
-                )
+              {groupedByFirmAndDay[firm].availability &&
+                Object.keys(groupedByFirmAndDay[firm].availability).map(day => {
+                  const timeRanges =
+                    groupedByFirmAndDay[firm].availability[day] || []
+                  const tags = timeRanges.map(
+                    timeRange =>
+                      `${day}: ${timeRange.fromTime} - ${timeRange.toTime}`
+                  )
 
-                return (
-                  <div
-                    key={`${firm}-${day}`}
-                    className='mb-4 flex w-full flex-wrap gap-[10px]'
-                  >
-                    <Tags tags={tags} />
-                  </div>
-                )
-              })}
+                  return (
+                    <div
+                      key={`${firm}-${day}`}
+                      className='mb-4 flex w-full flex-wrap gap-[10px]'
+                    >
+                      <Tags tags={tags} />
+                    </div>
+                  )
+                })}
             </div>
           ))}
         </div>
