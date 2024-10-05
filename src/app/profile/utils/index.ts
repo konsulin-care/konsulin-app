@@ -127,6 +127,17 @@ export function validateTimeRanges(times: TimeRange[]) {
   return errorMessages
 }
 
+export function formatTime(time) {
+  if (time && typeof time === 'string') {
+    const parts = time.split(':')
+    const hours = parts[0] || '00'
+    const minutes = parts[1] || '00'
+    const seconds = parts[2] || '00'
+    return `${hours}:${minutes}:${seconds}`
+  }
+  return time
+}
+
 export function handlePayloadSend(clinics: Clinic[], formsState: FormsState) {
   let payload = {}
   const dayMapping = {
@@ -150,8 +161,8 @@ export function handlePayloadSend(clinics: Clinic[], formsState: FormsState) {
           }
           payload[firmKey].push({
             days_of_week: [dayMapping[day]],
-            available_start_time: time.fromTime + ':00',
-            available_end_time: time.toTime + ':00'
+            available_start_time: formatTime(time.fromTime),
+            available_end_time: formatTime(time.toTime)
           })
         }
       })
@@ -173,7 +184,7 @@ export function handlePayloadSend(clinics: Clinic[], formsState: FormsState) {
 
   const clinicIds = Object.keys(updatedPayload)
   const finalPayload = {
-    ...updatedPayload,
+    available_times: { ...updatedPayload },
     clinic_ids: clinicIds
   }
   return finalPayload
