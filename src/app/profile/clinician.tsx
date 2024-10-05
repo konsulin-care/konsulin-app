@@ -204,7 +204,7 @@ export default function Clinician() {
         </div>
       </div>
 
-      <MedalCollection medals={medalLists} />
+      <MedalCollection medals={medalLists} isDisabled={true} />
       <Settings menus={settingMenus} />
       <Drawer onClose={() => setIsDrawerOpen(false)} open={isDrawerOpen}>
         <div className='max-h-screen'>
