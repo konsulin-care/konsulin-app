@@ -2,9 +2,11 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import Image from 'next/image'
 import Link from 'next/link'
 
-export default function MedalCollection({ medals }) {
+export default function MedalCollection({ medals, isDisabled = false }) {
   return (
-    <>
+    <div
+      className={`transition duration-300 ${isDisabled ? 'pointer-events-none opacity-50 blur-sm filter' : ''}`}
+    >
       <div className='flex justify-between py-4 text-muted'>
         <span className='text-[14px] font-bold'> Medal Collection</span>
         <Link className='text-[12px]' href={'/'}>
@@ -13,7 +15,7 @@ export default function MedalCollection({ medals }) {
       </div>
       <ScrollArea className='w-full whitespace-nowrap pb-4'>
         <div className='flex w-max space-x-4'>
-          {medals.map((medal: any, index: number) => (
+          {medals.map((medal, index) => (
             <Link
               key={index}
               href={'/'}
@@ -38,6 +40,6 @@ export default function MedalCollection({ medals }) {
         </div>
         <ScrollBar orientation='horizontal' />
       </ScrollArea>
-    </>
+    </div>
   )
 }

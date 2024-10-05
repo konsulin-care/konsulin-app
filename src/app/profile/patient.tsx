@@ -87,7 +87,7 @@ export default function Patient() {
         onEdit={() => router.push('profile/edit-profile')}
         role='patient'
       />
-      <MedalCollection medals={medalLists} />
+      <MedalCollection medals={medalLists} isDisabled={true} />
       <Settings menus={settingMenus} />
     </>
   )
