@@ -110,7 +110,6 @@ export default function Clinician() {
       })
 
       setFormsState(updatedFormsState)
-      console.log('Updated formsState:', updatedFormsState)
     } else {
       console.error('practice_availabilities is not an array')
     }
