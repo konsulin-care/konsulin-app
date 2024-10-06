@@ -122,6 +122,12 @@ export default function Clinician() {
       const practiceAvailabilities =
         profileResponse.data.practice_availabilities
       const practiceInformations = profileResponse.data.practice_informations
+      if (
+        !Array.isArray(practiceAvailabilities) ||
+        !Array.isArray(practiceInformations)
+      ) {
+        setGroupedByFirmAndDay({})
+      }
 
       const newGroupedByFirmAndDay = {}
 
@@ -129,35 +135,49 @@ export default function Clinician() {
         acc[clinic.clinic_id] = clinic.clinic_name
         return acc
       }, {})
+      if (practiceAvailabilities) {
+        practiceAvailabilities.forEach(clinic => {
+          const clinicId = clinic.clinic_id
+          const clinicName = clinicNamesMap[clinicId]
 
-      practiceAvailabilities.forEach(clinic => {
-        const clinicId = clinic.clinic_id
-        const clinicName = clinicNamesMap[clinicId]
+          if (clinic.available_time && Array.isArray(clinic.available_time)) {
+            clinic.available_time.forEach(timeSlot => {
+              if (
+                timeSlot.days_of_Week &&
+                Array.isArray(timeSlot.days_of_Week)
+              ) {
+                timeSlot.days_of_Week.forEach(day => {
+                  const dayKey = day.charAt(0).toUpperCase() + day.slice(1)
 
-        clinic.available_time.forEach(timeSlot => {
-          timeSlot.days_of_Week.forEach(day => {
-            const dayKey = day.charAt(0).toUpperCase() + day.slice(1)
-            if (!newGroupedByFirmAndDay[clinicName]) {
-              newGroupedByFirmAndDay[clinicName] = {
-                availability: {}
+                  if (!newGroupedByFirmAndDay[clinicName]) {
+                    newGroupedByFirmAndDay[clinicName] = {
+                      availability: {}
+                    }
+                  }
+
+                  if (
+                    !newGroupedByFirmAndDay[clinicName].availability[dayKey]
+                  ) {
+                    newGroupedByFirmAndDay[clinicName].availability[dayKey] = []
+                  }
+
+                  newGroupedByFirmAndDay[clinicName].availability[dayKey].push({
+                    fromTime: timeSlot.available_start_time,
+                    toTime: timeSlot.available_end_time
+                  })
+                })
               }
-            }
-
-            if (!newGroupedByFirmAndDay[clinicName].availability[dayKey]) {
-              newGroupedByFirmAndDay[clinicName].availability[dayKey] = []
-            }
-
-            newGroupedByFirmAndDay[clinicName].availability[dayKey].push({
-              fromTime: timeSlot.available_start_time,
-              toTime: timeSlot.available_end_time
             })
-          })
+          }
         })
-      })
-      setGroupedByFirmAndDay(prevState => ({
-        ...prevState,
-        ...newGroupedByFirmAndDay
-      }))
+
+        setGroupedByFirmAndDay(prevState => ({
+          ...prevState,
+          ...newGroupedByFirmAndDay
+        }))
+      } else {
+        setGroupedByFirmAndDay({})
+      }
     }
   }, [profileResponse])
 
