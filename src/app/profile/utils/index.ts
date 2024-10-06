@@ -77,7 +77,7 @@ export function handleAddForm(
   newFormsState[day].push({
     times: [{ firm: '', fromTime: '--:--', toTime: '--:--' }]
   })
-  setFormsState(newFormsState)
+  setFormsState(prevState => ({ ...prevState, ...newFormsState }))
   validateAll(day, newFormsState, setErrorMessages)
 }
 
