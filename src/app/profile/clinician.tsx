@@ -31,7 +31,6 @@ import { useEffect, useState } from 'react'
 import { daysOfWeek } from './constants'
 import { FormsState } from './types'
 import {
-  groupByFirmAndDay,
   handleAddForm,
   handleCompanyChange,
   handlePayloadSend,
@@ -60,6 +59,63 @@ export default function Clinician() {
     queryKey: ['profile-clinician'],
     queryFn: () => fetchProfile(state, dispatch)
   })
+
+  const handleOpenDrawer = () => {
+    const { practice_availabilities, practice_informations } = state.profile
+
+    const initialFormsState = daysOfWeek.reduce((acc, day) => {
+      acc[day] = []
+      return acc
+    }, {} as FormsState)
+
+    setFormsState(initialFormsState)
+
+    const clinicNameMapping = practice_informations.reduce(
+      (acc, clinicInfo) => {
+        acc[clinicInfo.clinic_id] = clinicInfo.clinic_name
+        return acc
+      },
+      {} as Record<string, string>
+    )
+
+    const updatedFormsState = { ...initialFormsState }
+    if (Array.isArray(practice_availabilities)) {
+      const dayMapping = {
+        mon: 'Monday',
+        tue: 'Tuesday',
+        wed: 'Wednesday',
+        thu: 'Thursday',
+        fri: 'Friday',
+        sat: 'Saturday',
+        sun: 'Sunday'
+      }
+
+      practice_availabilities.forEach(clinic => {
+        clinic.available_time.forEach(timeSlot => {
+          timeSlot.days_of_Week.forEach(shortDay => {
+            const fullDayName = dayMapping[shortDay]
+            if (fullDayName) {
+              updatedFormsState[fullDayName].push({
+                times: [
+                  {
+                    firm: clinicNameMapping[clinic.clinic_id] || '',
+                    fromTime: timeSlot.available_start_time,
+                    toTime: timeSlot.available_end_time
+                  }
+                ]
+              })
+            }
+          })
+        })
+      })
+
+      setFormsState(updatedFormsState)
+      console.log('Updated formsState:', updatedFormsState)
+    } else {
+      console.error('practice_availabilities is not an array')
+    }
+    setIsDrawerOpen(true)
+  }
 
   useEffect(() => {
     if (profileResponse && profileResponse.data) {
@@ -98,55 +154,10 @@ export default function Clinician() {
           })
         })
       })
-
-      setGroupedByFirmAndDay(newGroupedByFirmAndDay)
-
-      const dayMapping = {
-        mon: 'Monday',
-        tue: 'Tuesday',
-        wed: 'Wednesday',
-        thu: 'Thursday',
-        fri: 'Friday',
-        sat: 'Saturday',
-        sun: 'Sunday'
-      }
-
-      const newFormsState = { ...formsState }
-
-      practiceAvailabilities.forEach(availability => {
-        availability.available_time.forEach(time => {
-          time.days_of_Week.forEach(day => {
-            const fullDayName = dayMapping[day]
-            if (newFormsState[fullDayName]) {
-              newFormsState[fullDayName].push({
-                times: [
-                  {
-                    firm: clinicNamesMap[availability.clinic_id],
-                    fromTime: time.available_start_time,
-                    toTime: time.available_end_time
-                  }
-                ]
-              })
-            }
-          })
-        })
-      })
-
-      daysOfWeek.forEach(day => {
-        if (
-          !practiceAvailabilities.some(availability =>
-            availability.available_time.some(time =>
-              time.days_of_Week.includes(day.toLowerCase().slice(0, 3))
-            )
-          )
-        ) {
-          newFormsState[day] = [
-            { times: [{ firm: '', fromTime: '--:--', toTime: '--:--' }] }
-          ]
-        }
-      })
-
-      setFormsState(newFormsState)
+      setGroupedByFirmAndDay(prevState => ({
+        ...prevState,
+        ...newGroupedByFirmAndDay
+      }))
     }
   }, [profileResponse])
 
@@ -175,23 +186,21 @@ export default function Clinician() {
     },
     onSuccess: () => {
       setIsDrawerOpen(false)
-      const grouped = groupByFirmAndDay(formsState)
-      setGroupedByFirmAndDay(grouped)
-      setActiveDayIndex(null)
       queryClient.invalidateQueries(['profile-clinician'])
     }
   })
 
-  function handleSave() {
-    if (activeDayIndex === null) {
-      return
-    }
+  const handleSave = () => {
+    if (activeDayIndex === null) return
+
     const day = daysOfWeek[activeDayIndex]
     const allTimes = formsState[day].flatMap(form => form.times)
-    const errorMessage = validateTimeRanges(allTimes)
+
     const hasEmptyFirm = allTimes.some(
       time => time.firm === '' || time.firm === null
     )
+
+    const errorMessage = validateTimeRanges(allTimes)
     if (hasEmptyFirm) {
       setErrorMessages(prev => ({
         ...prev,
@@ -199,10 +208,13 @@ export default function Clinician() {
       }))
       return
     }
+
     if (errorMessage) {
       setErrorMessages(prev => ({ ...prev, [day]: errorMessage }))
     } else {
-      const payload = handlePayloadSend(clinics, formsState)
+      const clonedFormsState = JSON.parse(JSON.stringify(formsState))
+
+      const payload = handlePayloadSend(clinics, clonedFormsState)
       mutate(payload as RequestAvailableTime)
     }
   }
@@ -296,7 +308,7 @@ export default function Clinician() {
         <div className='flex w-full flex-col justify-between rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
           <div
             className='flex cursor-pointer items-center justify-between'
-            onClick={() => setIsDrawerOpen(true)}
+            onClick={handleOpenDrawer}
           >
             <Image
               src={'/icons/calendar-profile.svg'}
@@ -339,10 +351,10 @@ export default function Clinician() {
                     hasSchedules={checkSchedule}
                   >
                     {formsState[day].map((form, formIndex) => (
-                      <div key={formIndex}>
+                      <div key={`${day}-${formIndex}`}>
                         {form.times.map((time, timeIndex) => (
                           <div
-                            key={timeIndex}
+                            key={`${day}-${formIndex}-${timeIndex}`}
                             className='flex w-full items-start justify-between py-2'
                           >
                             <div className='flex flex-grow flex-col items-center'>
