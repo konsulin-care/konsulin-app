@@ -93,7 +93,6 @@ function DetailPratice({ item }) {
     </div>
   )
 }
-
 export default function InformationDetail({
   isRadiusIcon = true,
   iconUrl,
@@ -105,6 +104,10 @@ export default function InformationDetail({
   role,
   isEditPratice = false
 }) {
+  const filteredClinics = details?.filter(
+    clinic => clinic.price_per_session?.value > 0
+  )
+
   return (
     <div className='flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
       <div className='flex w-full items-start justify-between'>
@@ -123,23 +126,29 @@ export default function InformationDetail({
           </button>
         </div>
       </div>
+
       {details && <div className='flex w-full' />}
+
       <div
-        className={`flex w-full flex-col ${details ? 'mt-2 space-y-2 border-t border-[#E3E3E3]' : undefined}`}
+        className={`flex w-full flex-col ${details ? 'mt-2 space-y-2 border-t border-[#E3E3E3]' : ''}`}
       >
-        {details &&
-          details.map((item: any, index) => (
-            <div
-              className='mt-1 flex justify-between font-[#2C2F35] text-xs'
-              key={index}
-            >
-              {isEditPratice ? (
-                <DetailPratice item={item} />
-              ) : (
+        {isEditPratice
+          ? filteredClinics?.map((clinic, index) => (
+              <div
+                className='mt-1 flex justify-between font-[#2C2F35] text-xs'
+                key={index}
+              >
+                <DetailPratice item={clinic} />
+              </div>
+            ))
+          : details?.map((item, index) => (
+              <div
+                className='mt-1 flex justify-between font-[#2C2F35] text-xs'
+                key={index}
+              >
                 <DetailItem item={item} />
-              )}
-            </div>
-          ))}
+              </div>
+            ))}
       </div>
     </div>
   )
