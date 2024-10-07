@@ -52,7 +52,7 @@ const PathProfile: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
         )}
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>
-        <div className='min-h-screen p-4'>{component}</div>
+        <div className='min-h-[calc(100vh-105px)] p-4'>{component}</div>
       </div>
     </Suspense>
   )
