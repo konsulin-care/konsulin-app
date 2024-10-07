@@ -9,9 +9,11 @@ import {
 import { useMutation } from '@tanstack/react-query'
 import { XCircle } from 'lucide-react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 
 const EditPractice = () => {
+  const router = useRouter()
   const [searchInput, setSearchInput] = useState('')
   const [tagInputs, setTagInputs] = useState([])
   const [firmData, setFirmData] = useState([])
@@ -93,6 +95,7 @@ const EditPractice = () => {
     },
     onSuccess: () => {
       setOpenCollapsibles({})
+      router.push('/profile')
     }
   })
 
@@ -173,43 +176,45 @@ const EditPractice = () => {
 
   return (
     <>
-      <div className='flex h-screen flex-col'>
-        <div className='mt-2 flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
-          <Input
-            className='flex h-[50px] w-[85%] items-center space-x-2 rounded-lg border-none bg-[#F9F9F9] p-4'
-            width={12}
-            height={12}
-            prefixIcon='/icons/search-cyan.svg'
-            placeholder='Search Firm'
-            name='searchInput'
-            id='searchInput'
-            type='text'
-            backgroundColor='[#F9F9F9]'
-            value={searchInput}
-            opacity={false}
-            onChange={(event: { target: { value: any } }) =>
-              searchClinicByName(event.target.value)
-            }
-            outline={false}
-          />
-        </div>
-
-        <div className='min-h-[calc(100vh-230px)] flex-1 overflow-y-auto pb-[15px]'>
-          {firmData.map((firm, index) => (
-            <CollapsibleItem
-              key={index}
-              index={index}
-              firm={firm}
-              isOpen={!!openCollapsibles[index]}
-              onToggle={handleToggle}
-              tagInputs={tagInputs}
-              handleChangeFee={handleChangeFee}
-              handleAddTag={handleAddTag}
-              handleRemoveTag={handleRemoveTag}
-              setTagInputs={setTagInputs}
-              handleSubmit={handleSubmit}
+      <div className='flex min-h-[calc(100vh-105px)] flex-col'>
+        <div className='flex flex-1 flex-col overflow-hidden'>
+          <div className='mt-2 flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
+            <Input
+              className='flex h-[50px] w-[85%] items-center space-x-2 rounded-lg border-none bg-[#F9F9F9] p-4'
+              width={12}
+              height={12}
+              prefixIcon='/icons/search-cyan.svg'
+              placeholder='Search Firm'
+              name='searchInput'
+              id='searchInput'
+              type='text'
+              backgroundColor='[#F9F9F9]'
+              value={searchInput}
+              opacity={false}
+              onChange={(event: { target: { value: any } }) =>
+                searchClinicByName(event.target.value)
+              }
+              outline={false}
             />
-          ))}
+          </div>
+
+          <div className='flex-1 overflow-y-auto pb-[15px]'>
+            {firmData.map((firm, index) => (
+              <CollapsibleItem
+                key={index}
+                index={index}
+                firm={firm}
+                isOpen={!!openCollapsibles[index]}
+                onToggle={handleToggle}
+                tagInputs={tagInputs}
+                handleChangeFee={handleChangeFee}
+                handleAddTag={handleAddTag}
+                handleRemoveTag={handleRemoveTag}
+                setTagInputs={setTagInputs}
+                handleSubmit={handleSubmit}
+              />
+            ))}
+          </div>
         </div>
 
         <div className='flex justify-center border-t bg-white px-4 pt-4'>
