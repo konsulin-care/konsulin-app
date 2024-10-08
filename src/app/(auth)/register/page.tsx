@@ -70,6 +70,7 @@ export default function Register({ searchParams }) {
       case 'email':
         newError = validateEmail(value) ? undefined : 'Invalid email address'
         break
+
       case 'username':
         if (!value.trim()) {
           newError = 'Username is required'
@@ -79,13 +80,10 @@ export default function Register({ searchParams }) {
           newError = 'Username must contain only letters and numbers'
         }
         break
+
       case 'password':
-      case 'retype_password':
         if (!value.trim()) {
-          newError =
-            field === 'retype_password'
-              ? 'Confirm password is required'
-              : 'Password is required'
+          newError = 'Password is required'
         } else if (value.length < 8) {
           newError = 'Password must be at least 8 characters'
         } else if (!upperCaseOneCharacter(value)) {
@@ -94,6 +92,15 @@ export default function Register({ searchParams }) {
           newError = 'Password must contain at least one special character'
         }
         break
+
+      case 'retype_password':
+        if (!value.trim()) {
+          newError = 'Confirm password is required'
+        } else if (value !== userRegister.password) {
+          newError = 'Passwords do not match'
+        }
+        break
+
       default:
         newError = `${capitalizeFirstLetter(field)} is required`
     }
