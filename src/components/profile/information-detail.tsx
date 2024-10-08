@@ -129,27 +129,35 @@ export default function InformationDetail({
 
       {details && <div className='flex w-full' />}
 
-      <div
-        className={`flex w-full flex-col ${details ? 'mt-2 space-y-2 border-t border-[#E3E3E3]' : ''}`}
-      >
-        {isEditPratice
-          ? filteredClinics?.map((clinic, index) => (
-              <div
-                className='mt-1 flex justify-between font-[#2C2F35] text-xs'
-                key={index}
-              >
-                <DetailPratice item={clinic} />
-              </div>
-            ))
-          : details?.map((item, index) => (
-              <div
-                className='mt-1 flex justify-between font-[#2C2F35] text-xs'
-                key={index}
-              >
-                <DetailItem item={item} />
-              </div>
-            ))}
-      </div>
+      {isEditPratice ? (
+        <div
+          className={`flex w-full flex-col ${
+            Array.isArray(filteredClinics) && filteredClinics.length > 0
+              ? 'mt-2 space-y-2 border-t border-[#E3E3E3]'
+              : ''
+          }`}
+        >
+          {filteredClinics?.map((clinic, index) => (
+            <div
+              className='mt-1 flex justify-between font-[#2C2F35] text-xs'
+              key={index}
+            >
+              <DetailPratice item={clinic} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className='mt-2 flex w-full flex-col space-y-2 border-t border-[#E3E3E3]'>
+          {details?.map((item, index) => (
+            <div
+              className='mt-2 flex justify-between font-[#2C2F35] text-xs'
+              key={index}
+            >
+              <DetailItem item={item} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
