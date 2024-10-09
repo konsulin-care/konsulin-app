@@ -33,3 +33,17 @@ export function createUniqueRandomRange(min, max) {
     return numbers.splice(randomIndex, 1)[0]
   }
 }
+
+export function getDaysInRange(startDate, endDate) {
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+
+  const daysInRange = []
+
+  while (start <= end) {
+    daysInRange.push(start.toLocaleDateString('en-US', { weekday: 'short' }))
+    start.setDate(start.getDate() + 1)
+  }
+
+  return daysInRange.length === 0 ? null : daysInRange
+}

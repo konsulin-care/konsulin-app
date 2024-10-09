@@ -25,20 +25,12 @@ export interface IDetailClinic {
 }
 
 const DetailClinic: React.FC<IDetailClinic> = ({ params }) => {
-  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({
-    name: ''
-  })
+  const [keyword, setKeyword] = useState<string>('')
 
-  function handleSetClinicFilter(key: string, value: string) {
-    setClinicFilter(prevState => ({
-      ...prevState,
-      [key]: value
-    }))
-  }
+  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({})
 
   const { data: clinicians, isLoading: isCliniciansLoading } = useClinicFindAll(
-    clinicFilter,
-    params.clinicId
+    { keyword, filter: clinicFilter, clinicId: params.clinicId }
   )
 
   const { data: detaillClinic, isLoading: isDetaillClinicLoading } =
@@ -81,10 +73,8 @@ const DetailClinic: React.FC<IDetailClinic> = ({ params }) => {
 
         <div className='mt-4 flex gap-4'>
           <InputWithIcon
-            value={clinicFilter.name}
-            onChange={event =>
-              handleSetClinicFilter('name', event.target.value)
-            }
+            value={keyword}
+            onChange={event => setKeyword(event.target.value)}
             placeholder='Search'
             className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
             startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
