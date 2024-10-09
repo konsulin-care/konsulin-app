@@ -24,6 +24,7 @@ const Clinic: React.FC<IWithAuth> = () => {
   const {
     data: clinics,
     isLoading: isClinicsLoading,
+    isFetching: isClinicsFetching,
     error
   } = useClinicFindAll({
     keyword,
@@ -31,7 +32,7 @@ const Clinic: React.FC<IWithAuth> = () => {
   })
 
   useEffect(() => {
-    console.log(clinics)
+    console.log(clinics, isClinicsLoading)
   }, [clinics])
 
   return (
@@ -116,9 +117,11 @@ const Clinic: React.FC<IWithAuth> = () => {
             )}
           </div>
 
-          {isClinicsLoading ? (
+          {isClinicsLoading || isClinicsFetching ? (
             <CardLoader />
-          ) : Array.isArray(clinics?.data) && clinics.data.length ? (
+          ) : clinics.data &&
+            Array.isArray(clinics?.data) &&
+            clinics.data.length ? (
             <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
               {clinics.data.map(clinic => (
                 <div
@@ -136,15 +139,15 @@ const Clinic: React.FC<IWithAuth> = () => {
                     {clinic.clinic_name}
                   </div>
                   <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                      Workplace
-                    </Badge>
-                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                      Relationship
-                    </Badge>
-                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                      Social Interaction
-                    </Badge>
+                    {clinic.tags.length &&
+                      clinic.tags.map((tag, index) => (
+                        <Badge
+                          key={index}
+                          className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
                   </div>
                   <Link href={`/clinic/${clinic.clinic_id}`} className='w-full'>
                     <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
