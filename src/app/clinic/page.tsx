@@ -18,24 +18,21 @@ import { useEffect, useState } from 'react'
 import ClinicFilter from './clinic-filter'
 
 const Clinic: React.FC<IWithAuth> = () => {
-  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({
-    name: ''
-  })
-  function handleSetClinicFilter(key: string, value: string) {
-    setClinicFilter(prevState => ({
-      ...prevState,
-      [key]: value
-    }))
-  }
+  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({})
+  const [keyword, setKeyword] = useState<string>('')
 
   const {
     data: clinics,
     isLoading: isClinicsLoading,
+    isFetching: isClinicsFetching,
     error
-  } = useClinicFindAll(clinicFilter)
+  } = useClinicFindAll({
+    keyword,
+    filter: clinicFilter
+  })
 
   useEffect(() => {
-    console.log(clinics)
+    console.log(clinics, isClinicsLoading)
   }, [clinics])
 
   return (
@@ -82,10 +79,8 @@ const Clinic: React.FC<IWithAuth> = () => {
         <div className='w-full p-4'>
           <div className='flex gap-4'>
             <InputWithIcon
-              value={clinicFilter.name}
-              onChange={event =>
-                handleSetClinicFilter('name', event.target.value)
-              }
+              value={keyword}
+              onChange={event => setKeyword(event.target.value)}
               placeholder='Search'
               className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
@@ -122,9 +117,11 @@ const Clinic: React.FC<IWithAuth> = () => {
             )}
           </div>
 
-          {isClinicsLoading ? (
+          {isClinicsLoading || isClinicsFetching ? (
             <CardLoader />
-          ) : Array.isArray(clinics?.data) && clinics.data.length ? (
+          ) : clinics.data &&
+            Array.isArray(clinics?.data) &&
+            clinics.data.length ? (
             <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
               {clinics.data.map(clinic => (
                 <div
@@ -142,15 +139,15 @@ const Clinic: React.FC<IWithAuth> = () => {
                     {clinic.clinic_name}
                   </div>
                   <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                      Workplace
-                    </Badge>
-                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                      Relationship
-                    </Badge>
-                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                      Social Interaction
-                    </Badge>
+                    {clinic.tags.length &&
+                      clinic.tags.map((tag, index) => (
+                        <Badge
+                          key={index}
+                          className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
                   </div>
                   <Link href={`/clinic/${clinic.clinic_id}`} className='w-full'>
                     <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>

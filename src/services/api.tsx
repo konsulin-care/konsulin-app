@@ -45,9 +45,10 @@ API.interceptors.response.use(
 
     // expired token
     if (
-      error.response.status === 401 &&
-      error.response.data.dev_message ===
-        'invalid or expired token: Token is expired'
+      (error.response.status === 401 &&
+        error.response.data.dev_message ===
+          'invalid or expired token: Token is expired') ||
+      error.response.data.dev_message === 'token missing'
     ) {
       setTimeout(() => {
         localStorage.clear()

@@ -25,21 +25,19 @@ export interface IDetailClinic {
 }
 
 const DetailClinic: React.FC<IDetailClinic> = ({ params }) => {
-  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({
-    name: ''
+  const [keyword, setKeyword] = useState<string>('')
+
+  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({})
+
+  const {
+    data: clinicians,
+    isLoading: isCliniciansLoading,
+    isFetching: isCliniciansFetching
+  } = useClinicFindAll({
+    keyword,
+    filter: clinicFilter,
+    clinicId: params.clinicId
   })
-
-  function handleSetClinicFilter(key: string, value: string) {
-    setClinicFilter(prevState => ({
-      ...prevState,
-      [key]: value
-    }))
-  }
-
-  const { data: clinicians, isLoading: isCliniciansLoading } = useClinicFindAll(
-    clinicFilter,
-    params.clinicId
-  )
 
   const { data: detaillClinic, isLoading: isDetaillClinicLoading } =
     useClinicFindByID(params.clinicId)
@@ -81,10 +79,8 @@ const DetailClinic: React.FC<IDetailClinic> = ({ params }) => {
 
         <div className='mt-4 flex gap-4'>
           <InputWithIcon
-            value={clinicFilter.name}
-            onChange={event =>
-              handleSetClinicFilter('name', event.target.value)
-            }
+            value={keyword}
+            onChange={event => setKeyword(event.target.value)}
             placeholder='Search'
             className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
             startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
@@ -119,7 +115,7 @@ const DetailClinic: React.FC<IDetailClinic> = ({ params }) => {
           )}
         </div>
 
-        {isCliniciansLoading || isDetaillClinicLoading ? (
+        {isCliniciansLoading || isCliniciansFetching ? (
           <CardLoader />
         ) : Array.isArray(clinicians.data) && clinicians.data.length ? (
           <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
@@ -145,15 +141,15 @@ const DetailClinic: React.FC<IDetailClinic> = ({ params }) => {
                   {clinician.name}
                 </div>
                 <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                  <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                    Workplace
-                  </Badge>
-                  <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                    Relationship
-                  </Badge>
-                  <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                    Social Interaction
-                  </Badge>
+                  {clinician.specialties.length &&
+                    clinician.specialties.map((specialty, index) => (
+                      <Badge
+                        key={index}
+                        className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
+                      >
+                        {specialty}
+                      </Badge>
+                    ))}
                 </div>
                 <Link
                   href={{
