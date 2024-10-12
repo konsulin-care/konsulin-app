@@ -18,7 +18,7 @@ interface FhirFormsRendererProps {
   questionnaire: Questionnaire
   isAuthenticated: Boolean
   submitText?: string
-  customObject?: JSON
+  customObject?: Object
 }
 
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
@@ -58,7 +58,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           className='w-full bg-secondary text-white'
           onClick={() => {
             const questionnaireResponse = getResponse()
-            setResponse(questionnaireResponse)
+            setResponse({ ...questionnaireResponse, ...props.customObject })
             submitQuestionnaire(undefined, {
               onSuccess: data => {
                 toast.success('Success')
