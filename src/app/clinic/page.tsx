@@ -14,7 +14,7 @@ import dayjs from 'dayjs'
 import { SearchIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import ClinicFilter from './clinic-filter'
 
 const Clinic: React.FC<IWithAuth> = () => {
@@ -30,10 +30,6 @@ const Clinic: React.FC<IWithAuth> = () => {
     keyword,
     filter: clinicFilter
   })
-
-  useEffect(() => {
-    console.log(clinics, isClinicsLoading)
-  }, [clinics])
 
   return (
     <NavigationBar>

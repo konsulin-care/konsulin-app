@@ -15,6 +15,12 @@ const Soap: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
   const questionnaire = require('../questionnaire/soap.json')
 
   const [participant, setParticipant] = useState('Fitra Agil')
+  const [objectiveFinding, setObjectiveFinding] = useState([])
+
+  const customObjectFHIR = {
+    subject: participant,
+    author: ''
+  }
 
   return (
     <NavigationBar>
@@ -41,13 +47,19 @@ const Soap: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
             <div className='mr-auto text-[14px] font-bold'>
               Objective Finding
             </div>
-            <ObjectiveFindingModal />
+            <ObjectiveFindingModal
+              objectiveFinding={objectiveFinding}
+              onChange={objectiveFinding =>
+                setObjectiveFinding(objectiveFinding)
+              }
+            />
           </div>
 
           <FhirFormsRenderer
             questionnaire={questionnaire}
             isAuthenticated={isAuthenticated}
             submitText='Save SOAP'
+            customObject={customObjectFHIR}
           />
         </div>
       </div>

@@ -13,7 +13,7 @@ import {
   XIcon
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import CalendarJournal from './calendar-journal'
 import { questionList } from './record-journal-question'
 const today = new Date()
@@ -23,12 +23,7 @@ const Journal: React.FC<IWithAuth> = ({ isAuthenticated }) => {
   const getRandomNumber = createUniqueRandomRange(0, questionList.length)
   const [date, setDate] = useState<Date | undefined>(today)
 
-  const [response, setResponse] = useState([
-    {
-      question: 'Write anything here',
-      answer: ''
-    }
-  ])
+  const [response, setResponse] = useState([])
 
   const handleResponseChange = (index, value) => {
     const newResponse = [...response]
@@ -45,6 +40,8 @@ const Journal: React.FC<IWithAuth> = ({ isAuthenticated }) => {
       }
     ])
   }
+
+  useEffect(() => addResponse(), [addResponse])
 
   const removeResponse = index => {
     setResponse(response.filter((_, find) => find != index))
@@ -113,27 +110,34 @@ const Journal: React.FC<IWithAuth> = ({ isAuthenticated }) => {
           />
         </div>
 
-        {response.map((item, index) => (
-          <div className='mb-[4px]' key={index}>
-            <div className='flex items-center justify-between'>
-              <div className='mb-2 text-[12px] text-muted'>{item.question}</div>
-              <Button
-                onClick={() => removeResponse(index)}
-                variant='ghost'
-                className='h-fit w-fit rounded-full p-2'
-              >
-                <XIcon fill='red' size={12} color='hsla(220,9%,19%,0.4)' />
-              </Button>
-            </div>
-
-            <Textarea
-              value={item.answer}
-              onChange={e => handleResponseChange(index, e.target.value)}
-              className='rounded-lg text-[14px]'
-              placeholder='Type your message here.'
-            />
+        <div>
+          <div className='mb-1 text-[12px] font-bold text-muted'>
+            Bingung mau mulai nulis dari mana? Coba jawab pertanyaan berikut
           </div>
-        ))}
+          {response.map((item, index) => (
+            <div className='mb-3' key={index}>
+              <div className='flex items-center justify-between'>
+                <div className='mb-2 text-[12px] text-muted'>
+                  {item.question}
+                </div>
+                <Button
+                  onClick={() => removeResponse(index)}
+                  variant='ghost'
+                  className='h-fit w-fit rounded-full p-2'
+                >
+                  <XIcon fill='red' size={12} color='hsla(220,9%,19%,0.4)' />
+                </Button>
+              </div>
+
+              <Textarea
+                value={item.answer}
+                onChange={e => handleResponseChange(index, e.target.value)}
+                className='rounded-lg text-[14px]'
+                placeholder='Type your message here.'
+              />
+            </div>
+          ))}
+        </div>
 
         <div className='flex w-full justify-center'>
           <Button
