@@ -9,7 +9,7 @@ function HeaderSection({ isRadiusIcon, iconUrl, title, subTitle, role }) {
   const subTitleStyle =
     role === 'patient'
       ? 'text-[10px] font-normal opacity-100 truncate overflow-hidden whitespace-nowrap'
-      : 'text-sm font-bold opacity-100 overflow-hidden break-words'
+      : 'text-left whitespace-nowrap text-sm font-bold opacity-100 overflow-hidden break-words'
 
   return (
     <div className='flex w-1/2'>
