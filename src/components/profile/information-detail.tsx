@@ -77,7 +77,7 @@ function DetailPratice({ item }) {
     { key: 'Clinic Name', value: item.clinic_name },
     {
       key: 'Price per Session',
-      value: `${item.price_per_session.value.toLocaleString()} ${item.price_per_session.currency} / Session`
+      value: `${item.price_per_session.value.toLocaleString('id-ID')} ${item.price_per_session.currency} / Session`
     }
   ]
   return (
