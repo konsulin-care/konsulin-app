@@ -135,7 +135,8 @@ const Clinic: React.FC<IWithAuth> = () => {
                     {clinic.clinic_name}
                   </div>
                   <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                    {clinic.tags.length &&
+                    {clinic.tags &&
+                      clinic.tags.length &&
                       clinic.tags.map((tag, index) => (
                         <Badge
                           key={index}
