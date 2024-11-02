@@ -107,7 +107,7 @@ export default function AppClinician() {
       </div>
 
       <div className='flex gap-4 p-4'>
-        <Link href={'/'} className='card flex w-full'>
+        <Link href={'/exercise'} className='card flex w-full'>
           <Image
             src={'/images/mental-health.svg'}
             width={40}

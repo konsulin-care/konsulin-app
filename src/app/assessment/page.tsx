@@ -57,7 +57,7 @@ const Assesment: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
             .map((_, index: number) => (
               <Link
                 key={index}
-                href={`record/${123}`}
+                href={`assessment/${123}`}
                 className='card item flex flex-col p-2'
               >
                 <div className='flex items-center'>

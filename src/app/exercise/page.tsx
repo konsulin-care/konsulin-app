@@ -188,7 +188,7 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
           </div>
         </div> */}
 
-        <div className='grow bg-[#F9F9F9] p-4'>
+        <div className='grow p-4'>
           <div className='flex flex-col gap-y-4'>
             {excerciseIsLoading || !excerciseData
               ? null
@@ -224,4 +224,4 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
   )
 }
 
-export default withAuth(Exercise, ['patient'], true)
+export default withAuth(Exercise, ['patient', 'clinician'], true)
