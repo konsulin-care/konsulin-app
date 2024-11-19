@@ -6,6 +6,14 @@ on:
     - develop
 
 jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/build-self-hosted.yml
+    with:
+      API_URL: https://dev-api.konsulin.care
+      NODE_MODULES_CACHE_DIR: /tmp/${{ github.repository }}/develop/node_modules
+      NEXTJS_CACHE_DIR: /tmp/${{ github.repository }}/develop/.next/cache
+
   docker:
     name: Containerization
     uses: ./.github/workflows/docker-self-hosted.yml
@@ -18,7 +26,7 @@ jobs:
       RUN_NUMBER: ${{ github.run_number }}
       BUILD_TIME: $(date '+%Y-%m-%d_%H:%M:%S_%z')
       DOCKER_TAG: ${{ github.ref_name }}-${{ github.sha }}
-      DOCKERFILE: Dockerfile
+      DOCKERFILE: docker/Dockerfile.ci
 
   # deploy:
   #   name: Deployment
