@@ -6,41 +6,34 @@ on:
     - develop
 
 jobs:
-  build:
-    name: Build
-    uses: ./.github/workflows/build.yml
-    with:
-      API_URL: https://dev-api.konsulin.care
   docker:
     name: Containerization
-    uses: ./.github/workflows/docker.yml
-    needs:
-    - build
+    uses: ./.github/workflows/docker-self-hosted.yml
     with:
       API_URL: https://dev-api.konsulin.care
       VERSION: development
-      TAG: $(git describe --tags --abbrev=0)
+      RELEASE_TAG: $(git describe --tags --abbrev=0)
       AUTHOR: ${{ github.actor }}
       GIT_COMMIT: ${{ github.sha }}
       RUN_NUMBER: ${{ github.run_number }}
       BUILD_TIME: $(date '+%Y-%m-%d_%H:%M:%S_%z')
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME}}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD}}
-  deploy:
-    name: Deployment
-    uses: ./.github/workflows/deploy.yml
-    needs:
-    - docker
-    with:
-      ENVIRONMENT: development
-      SERVICE_NAME: dev-app
-    secrets:
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-      SSH_KEY: ${{ secrets.SSH_KEY }}
-      SSH_PORT: ${{ secrets.SSH_PORT }}
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      DOCKER_TAG: ${{ github.ref_name }}-${{ github.sha }}
+      DOCKERFILE: Dockerfile
+
+  # deploy:
+  #   name: Deployment
+  #   uses: ./.github/workflows/deploy.yml
+  #   needs:
+  #   - docker
+  #   with:
+  #     ENVIRONMENT: development
+  #     SERVICE_NAME: dev-app
+  #   secrets:
+  #     SSH_HOST: ${{ secrets.SSH_HOST }}
+  #     SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+  #     SSH_KEY: ${{ secrets.SSH_KEY }}
+  #     SSH_PORT: ${{ secrets.SSH_PORT }}
+  #     DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  #     DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
 
