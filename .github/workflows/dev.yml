@@ -1,4 +1,4 @@
-name: Development
+name: Build and Release Development
 on:
   workflow_dispatch:
   push:
@@ -16,6 +16,7 @@ jobs:
 
   docker:
     name: Containerization
+    needs: [build]
     uses: ./.github/workflows/docker-self-hosted.yml
     with:
       API_URL: https://dev-api.konsulin.care
