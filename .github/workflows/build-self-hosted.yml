@@ -1,0 +1,87 @@
+name: Build (self-hosted)
+
+on:
+  workflow_call:
+    inputs:
+      API_URL:
+        type: string
+        required: true
+      NODE_MODULES_CACHE_DIR:
+        type: string
+        default: "/tmp/cache/node_modules"
+      NEXTJS_CACHE_DIR:
+        type: string
+        default: "/tmp/cache/nextjs-cache"
+
+env:
+  NEXT_PUBLIC_API_URL: ${{ inputs.API_URL }}
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  build:
+    name: Build
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up Node JS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.16
+
+      - name: Copy Cache
+        run: |
+          # Copy Node Modules cache if it exists
+          if [ -d "${{ inputs.NODE_MODULES_CACHE_DIR }}" ]; then
+            echo "Copying Node Modules cache..."
+            cp -r "${{ inputs.NODE_MODULES_CACHE_DIR }}" ./node_modules || echo "Failed to copy Node Modules cache."
+          else
+            echo "Node Modules cache not found."
+          fi
+
+          # Copy Next.js cache if it exists
+          if [ -d "${{ inputs.NEXTJS_CACHE_DIR }}" ]; then
+            echo "Copying Next.js cache..."
+            mkdir -p ./.next/cache
+            cp -r "${{ inputs.NEXTJS_CACHE_DIR }}"/* ./.next/cache || echo "Failed to copy Next.js cache."
+          else
+            echo "Next.js cache not found."
+          fi
+
+      - name: Installing Packages
+        run: npm install
+
+      - name: Build Packages
+        run: |
+          if [ -f yarn.lock ]; then
+            yarn run build
+          elif [ -f package-lock.json ]; then
+            npm run build
+          elif [ -f pnpm-lock.yaml ]; then
+            corepack enable pnpm && pnpm run build
+          else
+            echo "Lockfile not found." && exit 1
+          fi
+
+      - name: Update Node Modules Cache
+        run: |
+          if [ -d "${{ inputs.NODE_MODULES_CACHE_DIR }}" ]; then
+            echo "Updating Node Modules cache..."
+            cp -r ./node_modules "${{ inputs.NODE_MODULES_CACHE_DIR }}"
+          else
+            echo "Node Modules cache directory not found. Creating directory."
+            mkdir -p "${{ inputs.NODE_MODULES_CACHE_DIR }}"
+            cp -r ./node_modules "${{ inputs.NODE_MODULES_CACHE_DIR }}"
+          fi
+
+      - name: Update Next.js Cache
+        run: |
+          if [ -d "${{ inputs.NEXTJS_CACHE_DIR }}" ]; then
+            echo "Updating Next.js cache..."
+            cp -r ./.next/cache/* "${{ inputs.NEXTJS_CACHE_DIR }}" || echo "Failed to update Next.js cache."
+          else
+            echo "Next.js cache directory not found. Creating directory."
+            mkdir -p "${{ inputs.NEXTJS_CACHE_DIR }}"
+            cp -r ./.next/cache/* "${{ inputs.NEXTJS_CACHE_DIR }}"
+          fi
