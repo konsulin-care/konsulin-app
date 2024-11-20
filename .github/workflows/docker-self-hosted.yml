@@ -109,6 +109,14 @@ jobs:
           cp -r ./.next/cache/* "${{ inputs.NEXTJS_CACHE_DIR }}"
         fi
 
+    - name: Modify .dockerignore to include .next
+      run: |
+        # Check if .dockerignore exists
+        if [ -f .dockerignore ]; then
+          # Remove any lines that match ".next" (remove or modify as needed)
+          sed -i '/^\.next$/d' .dockerignore
+        fi
+
     - name: Build Image
       env:
         DOCKER_BUILDKIT: 1
