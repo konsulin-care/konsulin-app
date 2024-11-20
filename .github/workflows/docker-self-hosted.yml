@@ -50,21 +50,27 @@ jobs:
       with:
         node-version: 20.16
 
+    - name: Generate Cache Keys
+      id: cache-keys
+      run: |
+        echo "NODE_MODULES_CACHE_KEY=node-modules-${{ hashFiles('**/package-lock.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> $GITHUB_ENV
+        echo "NEXTJS_CACHE_KEY=nextjs-cache-${{ hashFiles('next.config.js', 'next.config.mjs') }}" >> $GITHUB_ENV
+
     - name: Copy Cache
       run: |
         # Copy Node Modules cache if it exists
-        if [ -d "${{ inputs.NODE_MODULES_CACHE_DIR }}" ]; then
+        if [ -d "${{ inputs.NODE_MODULES_CACHE_DIR }}/$NODE_MODULES_CACHE_KEY" ]; then
           echo "Copying Node Modules cache..."
-          cp -r "${{ inputs.NODE_MODULES_CACHE_DIR }}" ./node_modules || echo "Failed to copy Node Modules cache."
+          cp -r "${{ inputs.NODE_MODULES_CACHE_DIR }}/$NODE_MODULES_CACHE_KEY" ./node_modules || echo "Failed to copy Node Modules cache."
         else
           echo "Node Modules cache not found."
         fi
 
         # Copy Next.js cache if it exists
-        if [ -d "${{ inputs.NEXTJS_CACHE_DIR }}" ]; then
+        if [ -d "${{ inputs.NEXTJS_CACHE_DIR }}/$NEXTJS_CACHE_KEY" ]; then
           echo "Copying Next.js cache..."
           mkdir -p ./.next/cache
-          cp -r "${{ inputs.NEXTJS_CACHE_DIR }}"/* ./.next/cache || echo "Failed to copy Next.js cache."
+          cp -r "${{ inputs.NEXTJS_CACHE_DIR }}/$NEXTJS_CACHE_KEY"/* ./.next/cache || echo "Failed to copy Next.js cache."
         else
           echo "Next.js cache not found."
         fi
@@ -86,24 +92,18 @@ jobs:
 
     - name: Update Node Modules Cache
       run: |
-        if [ -d "${{ inputs.NODE_MODULES_CACHE_DIR }}" ]; then
+        if [ -d ./node_modules ]; then
           echo "Updating Node Modules cache..."
-          cp -r ./node_modules "${{ inputs.NODE_MODULES_CACHE_DIR }}"
-        else
-          echo "Node Modules cache directory not found. Creating directory."
-          mkdir -p "${{ inputs.NODE_MODULES_CACHE_DIR }}"
-          cp -r ./node_modules "${{ inputs.NODE_MODULES_CACHE_DIR }}"
+          mkdir -p "${{ inputs.NODE_MODULES_CACHE_DIR }}/$NODE_MODULES_CACHE_KEY"
+          cp -r ./node_modules "${{ inputs.NODE_MODULES_CACHE_DIR }}/$NODE_MODULES_CACHE_KEY"
         fi
 
     - name: Update Next.js Cache
       run: |
-        if [ -d "${{ inputs.NEXTJS_CACHE_DIR }}" ]; then
+        if [ -d ./.next/cache ]; then
           echo "Updating Next.js cache..."
-          cp -r ./.next/cache/* "${{ inputs.NEXTJS_CACHE_DIR }}" || echo "Failed to update Next.js cache."
-        else
-          echo "Next.js cache directory not found. Creating directory."
-          mkdir -p "${{ inputs.NEXTJS_CACHE_DIR }}"
-          cp -r ./.next/cache/* "${{ inputs.NEXTJS_CACHE_DIR }}"
+          mkdir -p "${{ inputs.NEXTJS_CACHE_DIR }}/$NEXTJS_CACHE_KEY"
+          cp -r ./.next/cache/* "${{ inputs.NEXTJS_CACHE_DIR }}/$NEXTJS_CACHE_KEY" || echo "Failed to update Next.js cache."
         fi
 
     - name: Modify .dockerignore to include .next
