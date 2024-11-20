@@ -55,13 +55,7 @@ RUN apt-get update && apt-get install -y bash
 # COPY --from=base --chown=nextjs:nodejs /app/RELEASE ./RELEASE
 
 COPY public ./public
-
-# Ensure .next exists and set the correct permissions
-RUN mkdir -p .next && chown nextjs:nodejs .next
-
-# Copy .next contents
-COPY --chown=nextjs:nodejs .next/standalone ./
-COPY --chown=nextjs:nodejs .next/static ./.next/static
+COPY --chown=nextjs:nodejs .next/ .next/
 COPY --from=base --chown=nextjs:nodejs /app/RELEASE ./RELEASE
 
 USER nextjs
