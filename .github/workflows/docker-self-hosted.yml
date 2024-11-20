@@ -109,6 +109,12 @@ jobs:
           cp -r ./.next/cache/* "${{ inputs.NEXTJS_CACHE_DIR }}"
         fi
 
+    - name: Debug
+      run: |
+        ls -la
+        ls -la ./.next
+        ls -la public
+
     - name: Build Image
       env:
         DOCKER_BUILDKIT: 1
