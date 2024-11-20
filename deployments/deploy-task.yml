@@ -1,0 +1,20 @@
+---
+- name: Prepare directories
+  ansible.builtin.file:
+    path: "{{ deployment_path }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+  tags: prepare
+
+- name: Prepare application deployment manifest
+  ansible.builtin.template:
+    src: "templates/compose.yaml.j2"
+    dest: "{{ deployment_path }}/docker-compose.app.yaml"
+    owner: "{{ ansible_user }}"
+  tags: prepare-deployment
+
+- name: Start containers
+  ansible.builtin.command: "docker compose -f {{ deployment_path }}/docker-compose.app.yaml up -d"
+  changed_when: false
+  tags: run-deployment

@@ -22,20 +22,13 @@ jobs:
       NODE_MODULES_CACHE_DIR: /tmp/${{ github.repository }}/develop/node_modules
       NEXTJS_CACHE_DIR: /tmp/${{ github.repository }}/develop/.next/cache
 
-  # deploy:
-  #   name: Deployment
-  #   uses: ./.github/workflows/deploy.yml
-  #   needs:
-  #   - docker
-  #   with:
-  #     ENVIRONMENT: development
-  #     SERVICE_NAME: dev-app
-  #   secrets:
-  #     SSH_HOST: ${{ secrets.SSH_HOST }}
-  #     SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-  #     SSH_KEY: ${{ secrets.SSH_KEY }}
-  #     SSH_PORT: ${{ secrets.SSH_PORT }}
-  #     DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-  #     DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-
-
+  deploy:
+    name: Deployment
+    uses: ./.github/workflows/deploy-ansible.yml
+    needs: [docker]
+    with:
+      DOCKER_TAG: ${{ github.ref_name }}-${{ github.sha }}
+      ANSIBLE_PLAYBOOK: playbook-dev.yml
+      ANSIBLE_INVENTORY_HOSTS: "37.27.46.214,"
+    secrets:
+      SSH_KEY: ${{ secrets.SSH_KEY }}
