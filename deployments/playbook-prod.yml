@@ -8,7 +8,7 @@
     ansible_user: konsulin
     ansible_python_interpreter: /usr/bin/python3.12
     docker_service_name: prod-app
-    deployment_path: "/home/konsulin/infrastructure/development/konsulin-app"
+    deployment_path: "/home/konsulin/infrastructure/production/konsulin-app"
 
     image_repository: konsulin/fe-service
     image_tag: ""
