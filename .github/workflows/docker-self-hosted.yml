@@ -113,7 +113,7 @@ jobs:
       env:
         DOCKER_BUILDKIT: 1
       run: |
-        docker build -t konsulin/fe-service:${{ inputs.DOCKER_TAG }} -f ./docker/Dockerfile-ci \
+        docker build -t konsulin/fe-service:${{ inputs.DOCKER_TAG }} -f ./docker/Dockerfile-ci . \
           --build-arg API_URL=${{ inputs.API_URL }} \
           --build-arg VERSION=${{ inputs.VERSION }} \
           --build-arg GIT_COMMIT=${{ inputs.GIT_COMMIT }} \
