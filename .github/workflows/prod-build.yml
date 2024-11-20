@@ -1,4 +1,4 @@
-name: Build and Release Production
+name: Build Production
 
 on:
   release:
@@ -18,14 +18,3 @@ jobs:
       DOCKER_TAG: ${{ github.event.release.tag_name }}
       NODE_MODULES_CACHE_DIR: /tmp/${{ github.repository }}/production/node_modules
       NEXTJS_CACHE_DIR: /tmp/${{ github.repository }}/production/.next/cache
-
-  deploy:
-    name: Deployment
-    needs: [docker]
-    uses: ./.github/workflows/deploy-ansible.yml
-    with:
-      DOCKER_TAG: ${{ github.event.release.tag_name }}
-      ANSIBLE_PLAYBOOK: playbook-prod.yml
-      ANSIBLE_INVENTORY_HOSTS: "37.27.46.214,"
-    secrets:
-      SSH_KEY: ${{ secrets.SSH_KEY }}
