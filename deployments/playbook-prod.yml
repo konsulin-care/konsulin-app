@@ -10,7 +10,7 @@
     docker_service_name: prod-app
     deployment_path: "/home/konsulin/infrastructure/development/konsulin-app"
 
-    image_repository: konsulin/api-service
+    image_repository: konsulin/fe-service
     image_tag: ""
 
     logging:
