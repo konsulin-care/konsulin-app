@@ -43,15 +43,25 @@ RUN adduser --system --uid 1001 nextjs
 
 RUN apt-get update && apt-get install -y bash
 
-COPY build/public ./public
+# COPY build/public ./public
 
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
+# # Set the correct permission for prerender cache
+# RUN mkdir .next
+# RUN chown nextjs:nodejs .next
 
-#DHANI
-COPY --chown=nextjs:nodejs build/.next/standalone ./
-COPY --chown=nextjs:nodejs build/.next/static ./.next/static
+# #DHANI
+# COPY --chown=nextjs:nodejs build/.next/standalone ./
+# COPY --chown=nextjs:nodejs build/.next/static ./.next/static
+# COPY --from=base --chown=nextjs:nodejs /app/RELEASE ./RELEASE
+
+COPY public ./public
+
+# Ensure .next exists and set the correct permissions
+RUN mkdir -p .next && chown nextjs:nodejs .next
+
+# Copy .next contents
+COPY --chown=nextjs:nodejs .next/standalone ./
+COPY --chown=nextjs:nodejs .next/static ./.next/static
 COPY --from=base --chown=nextjs:nodejs /app/RELEASE ./RELEASE
 
 USER nextjs
