@@ -24,9 +24,6 @@ on:
       DOCKER_TAG:
         type: string
         required: true
-      DOCKERFILE:
-        type: string
-        required: true
       API_URL:
         type: string
         required: true
