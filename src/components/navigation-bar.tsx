@@ -1,3 +1,4 @@
+import { useAuth } from '@/context/auth/authContext'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -17,6 +18,8 @@ export default function NavigationBar({
   const activePathStyle = 'font-bold text-secondary'
   const pathStyle = 'text-[#ADB6C7]'
 
+  const { state: authState } = useAuth()
+
   return (
     <div className={cn('flex grow flex-col pb-[100px]', className)}>
       {children}
@@ -32,14 +35,21 @@ export default function NavigationBar({
           <span className='mt-[5px] text-[12px]'>Beranda</span>
         </Link>
         <Link
-          href={'/clinic'}
+          href={authState.role_name === 'clinician' ? '/schedule' : '/clinic'}
           className={cn(
             `flex flex-col items-center`,
-            pathname?.startsWith('/clinic') ? activePathStyle : pathStyle
+            pathname?.startsWith('/clinic') || pathname?.startsWith('/schedule')
+              ? activePathStyle
+              : pathStyle
           )}
         >
           <OfficeIcon
-            fill={pathname?.startsWith('/clinic') ? '#13C2C2' : '#ADB6C7'}
+            fill={
+              pathname?.startsWith('/clinic') ||
+              pathname?.startsWith('/schedule')
+                ? '#13C2C2'
+                : '#ADB6C7'
+            }
           />
 
           <span className='mt-[5px] text-[12px]'>Sesi Temu</span>

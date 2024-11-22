@@ -156,7 +156,7 @@ const DetailClinic: React.FC<IDetailClinic> = ({ params }) => {
                     pathname: `/practitioner/${clinician.practitioner_id}`,
                     query: { clinicId: params.clinicId }
                   }}
-                  className='w-full'
+                  className='mt-auto w-full'
                 >
                   <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
                     Check

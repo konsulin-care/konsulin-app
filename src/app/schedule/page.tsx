@@ -1,35 +1,20 @@
 'use client'
 
-import CardLoader from '@/components/general/card-loader'
-import EmptyState from '@/components/general/empty-state'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { InputWithIcon } from '@/components/ui/input-with-icon'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
-import { IUseClinicParams, useClinicFindAll } from '@/services/clinic'
-import { format } from 'date-fns'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { IUseClinicParams } from '@/services/clinic'
 import dayjs from 'dayjs'
 import { SearchIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
-import ClinicFilter from './clinic-filter'
+import ClinicFilter from '../clinic/clinic-filter'
 
-const Clinic: React.FC<IWithAuth> = () => {
-  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({})
+export default function Schedule() {
   const [keyword, setKeyword] = useState<string>('')
-
-  const {
-    data: clinics,
-    isLoading: isClinicsLoading,
-    isFetching: isClinicsFetching,
-    error
-  } = useClinicFindAll({
-    keyword,
-    filter: clinicFilter
-  })
+  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({})
 
   return (
     <NavigationBar>
@@ -38,7 +23,7 @@ const Clinic: React.FC<IWithAuth> = () => {
           <div className='text-[14px] font-bold text-white'>Book Session</div>
           <div className='mt-4 flex items-center justify-between'>
             <div className='text-[14px] font-bold text-white'>
-              Schedule Active
+              Scheduled Session
             </div>
             <Link href='/' className='text-[10px] text-white'>
               See All
@@ -73,7 +58,7 @@ const Clinic: React.FC<IWithAuth> = () => {
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>
         <div className='w-full p-4'>
-          <div className='flex gap-4'>
+          <div className='mb-4 flex gap-4'>
             <InputWithIcon
               value={keyword}
               onChange={event => setKeyword(event.target.value)}
@@ -91,7 +76,30 @@ const Clinic: React.FC<IWithAuth> = () => {
             />
           </div>
 
-          <div className='flex gap-4'>
+          <Tabs defaultValue='upcoming' className='w-full'>
+            <TabsList className='grid w-full grid-cols-2 bg-transparent'>
+              <TabsTrigger
+                className='rounded-none border-secondary data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:text-secondary data-[state=active]:shadow-none'
+                value='upcoming'
+              >
+                Upcoming Session
+              </TabsTrigger>
+              <TabsTrigger
+                className='rounded-none border-secondary data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:text-secondary data-[state=active]:shadow-none'
+                value='past'
+              >
+                Past Session
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value='upcoming'>
+              <UpcomingSession />
+            </TabsContent>
+            <TabsContent value='past'>
+              <PastSession />
+            </TabsContent>
+          </Tabs>
+
+          {/* <div className='flex gap-4'>
             {clinicFilter.start_date && clinicFilter.end_date && (
               <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
                 {clinicFilter.start_date == clinicFilter.end_date
@@ -111,55 +119,61 @@ const Clinic: React.FC<IWithAuth> = () => {
                 {clinicFilter.location}
               </Badge>
             )}
-          </div>
-
-          {isClinicsLoading || isClinicsFetching ? (
-            <CardLoader />
-          ) : clinics.data &&
-            Array.isArray(clinics?.data) &&
-            clinics.data.length ? (
-            <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-              {clinics.data.map(clinic => (
-                <div
-                  key={clinic.clinic_id}
-                  className='card flex flex-col items-center'
-                >
-                  <Image
-                    className='h-[100px] w-full rounded-lg object-cover'
-                    src='/images/clinic.jpg'
-                    alt='clinic'
-                    width={158}
-                    height={100}
-                  />
-                  <div className='mt-2 text-center font-bold text-primary'>
-                    {clinic.clinic_name}
-                  </div>
-                  <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                    {clinic.tags &&
-                      clinic.tags.length &&
-                      clinic.tags.map((tag, index) => (
-                        <Badge
-                          key={index}
-                          className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                  </div>
-                  <Link href={`/clinic/${clinic.clinic_id}`} className='w-full'>
-                    <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
-                      Check
-                    </Button>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState />
-          )}
+          </div> */}
         </div>
       </div>
     </NavigationBar>
   )
 }
-export default withAuth(Clinic, ['patient'], true)
+
+function UpcomingSession() {
+  return (
+    <Link href={'#'} className='card mt-4 flex flex-col gap-2 p-4'>
+      <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+        15: 00 - 12/12/2025
+      </div>
+
+      <hr className='w-full' />
+      <div className='flex items-center'>
+        <Image
+          className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
+          width={32}
+          height={32}
+          alt='offline'
+          src={'/images/avatar.jpg'}
+        />
+
+        <div className='mr-auto text-[12px] font-bold'>Fitra Agil</div>
+        <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+          Online Session
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+function PastSession() {
+  return (
+    <Link href={'#'} className='card mt-4 flex flex-col gap-2 p-4'>
+      <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+        15: 00 - 12/12/2025
+      </div>
+
+      <hr className='w-full' />
+      <div className='flex items-center'>
+        <Image
+          className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
+          width={32}
+          height={32}
+          alt='offline'
+          src={'/images/avatar.jpg'}
+        />
+
+        <div className='mr-auto text-[12px] font-bold'>Budi Sudarsono</div>
+        <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+          Online Session
+        </div>
+      </div>
+    </Link>
+  )
+}
