@@ -1,10 +1,11 @@
 'use client'
 
+import ContentWraper from '@/components/general/content-wraper'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { InputWithIcon } from '@/components/ui/input-with-icon'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
-import { getExceriseList } from '@/services/api/excercise'
+import { IWithAuth } from '@/hooks/withAuth'
+import { getExceriseList } from '@/services/api/exercise'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeftIcon, SearchIcon } from 'lucide-react'
 import Image from 'next/image'
@@ -34,7 +35,8 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
   }, [excerciseData])
 
   return (
-    <NavigationBar className='flex min-h-screen flex-col'>
+    <>
+      <NavigationBar />
       <Header
         showChat={false}
         // moreAction={
@@ -58,7 +60,8 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
           <div className='text-[14px] font-bold text-white'>Self Excercise</div>
         </div>
       </Header>
-      <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white'>
+      {/* <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white'> */}
+      <ContentWraper>
         {/* Filter / Search */}
         <div className='p-4'>
           <InputWithIcon
@@ -219,9 +222,9 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
                 ))}
           </div>
         </div>
-      </div>
-    </NavigationBar>
+      </ContentWraper>
+    </>
   )
 }
 
-export default withAuth(Exercise, ['patient', 'clinician'], true)
+export default Exercise
