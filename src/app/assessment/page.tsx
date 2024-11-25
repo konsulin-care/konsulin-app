@@ -1,44 +1,35 @@
 'use client'
 
+import ContentWraper from '@/components/general/content-wraper'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { InputWithIcon } from '@/components/ui/input-with-icon'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
-import { SearchIcon } from 'lucide-react'
+import { ChevronLeftIcon, SearchIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-const Assesment: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
+export default function Assesment() {
   const questionnaire = require('./questionnaire/soap.json')
   const [keyWord, setKeyWord] = useState('')
+  const router = useRouter()
 
   return (
-    <NavigationBar>
+    <>
+      <NavigationBar />
       <Header>
-        {!isAuthenticated ? (
-          <div className='mt-5'></div>
-        ) : (
-          <div className='flex'>
-            <Image
-              className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-              width={32}
-              height={32}
-              alt='offline'
-              src={'/images/avatar.jpg'}
-            />
-            <div className='flex flex-col'>
-              <div className='text-[10px] font-normal text-white'>
-                Selamat Datang di Dashboard anda
-              </div>
-              <div className='text-[14px] font-bold text-white'>
-                Aji Si {userRole}
-              </div>
-            </div>
-          </div>
-        )}
+        <div className='flex w-full items-center'>
+          <ChevronLeftIcon
+            onClick={() => router.back()}
+            color='white'
+            className='mr-2 cursor-pointer'
+          />
+
+          <div className='text-[14px] font-bold text-white'>Self Excercise</div>
+        </div>
       </Header>
-      <div className='mt-[-24px] min-h-screen rounded-[16px] bg-white p-4'>
+      <ContentWraper className='p-4'>
         <InputWithIcon
           value={keyWord}
           onChange={e => setKeyWord(e.target.value)}
@@ -77,9 +68,7 @@ const Assesment: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
               </Link>
             ))}
         </div>
-      </div>
-    </NavigationBar>
+      </ContentWraper>
+    </>
   )
 }
-
-export default withAuth(Assesment, ['patient', 'clinician'], true)
