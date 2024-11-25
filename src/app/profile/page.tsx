@@ -2,26 +2,30 @@
 
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
+import { useAuth } from '@/context/auth/authContext'
+import { IWithAuth } from '@/hooks/withAuth'
 import Clinician from './clinician'
 import Patient from './patient'
 
-const Profile: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
+const Profile: React.FC<IWithAuth> = () => {
+  const { state: authState } = useAuth()
+
   const renderHomeContent = () => {
     return (
       <div className='mt-[-16px] rounded-[16px] bg-white pt-4'>
         <div className='text-center'>
-          {userRole === 'patient' && <Patient />}
-          {userRole === 'clinician' && <Clinician />}
+          {authState.userInfo.role_name === 'patient' && <Patient />}
+          {authState.userInfo.role_name === 'clinician' && <Clinician />}
         </div>
       </div>
     )
   }
 
   return (
-    <NavigationBar>
+    <>
+      <NavigationBar />
       <Header>
-        {!isAuthenticated ? (
+        {!authState.isAuthenticated ? (
           <div className='mt-5'></div>
         ) : (
           <div className='flex'>
@@ -34,8 +38,8 @@ const Profile: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
       <div className='mt-[-24px] rounded-[16px] bg-white'>
         <div className='min-h-screen p-4'>{renderHomeContent()}</div>
       </div>
-    </NavigationBar>
+    </>
   )
 }
 
-export default withAuth(Profile, ['patient', 'clinician'])
+export default Profile
