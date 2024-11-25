@@ -2,9 +2,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
-import Community from './community'
+import Community from '../components/general/home/community'
 
-export default function AppClinician() {
+export default function HomeContentClinician() {
   const Column = dynamic(
     () => import('@ant-design/plots').then(mod => mod.Column) as any,
     { ssr: false }
@@ -66,7 +66,7 @@ export default function AppClinician() {
     tooltip: false
   }
   return (
-    <div className='mt-[-24px] rounded-[16px] bg-white'>
+    <>
       <div className='p-4'>
         <div className='rounded-lg bg-[#F9F9F9] p-[16px]'>
           <div className='mb-4 flex justify-between'>
@@ -172,6 +172,6 @@ export default function AppClinician() {
       <div className='p-4'>
         <Community />
       </div>
-    </div>
+    </>
   )
 }
