@@ -1,4 +1,5 @@
 import { setCookies } from '@/app/actions'
+import { deleteCookie } from 'cookies-next'
 import { IActionAuth, IStateAuth } from './authTypes'
 
 export const initialState: IStateAuth = {
@@ -31,6 +32,7 @@ export const reducer = (state: IStateAuth, action: IActionAuth): IStateAuth => {
         }
       }
     case 'logout':
+      deleteCookie('auth')
       localStorage.clear()
       return initialState
 

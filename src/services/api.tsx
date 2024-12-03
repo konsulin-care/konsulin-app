@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getCookie } from 'cookies-next'
+import { deleteCookie, getCookie } from 'cookies-next'
 import { toast } from 'react-toastify'
 
 export const API = axios.create({
@@ -48,6 +48,7 @@ API.interceptors.response.use(
       error.response.data.dev_message === 'token missing'
     ) {
       setTimeout(() => {
+        deleteCookie('auth')
         localStorage.clear()
         window.location.href = '/register'
       }, 1000)
