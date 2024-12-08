@@ -3,8 +3,8 @@ import { API } from './api'
 
 export const useQuestionnaire = (questionnaireId: number | string) => {
   return useQuery({
-    queryKey: ['questionnaire', questionnaireId],
-    queryFn: () => API.get(`/api/v1/questionnaires/${questionnaireId}`),
+    queryKey: ['assessments', questionnaireId],
+    queryFn: () => API.get(`/api/v1/assessments/${questionnaireId}`),
     select: response => {
       return response.data || null
     }
@@ -16,9 +16,9 @@ export const useSubmitQuestionnaire = (
   isAuthenticated
 ) => {
   return useMutation({
-    mutationKey: ['questionnaire-responses'],
+    mutationKey: ['assessment-responses'],
     mutationFn: async () => {
-      const response = await API.post('/api/v1/questionnaire-responses', {
+      const response = await API.post('/api/v1/assessment-responses', {
         respondent_type: isAuthenticated ? 'user' : 'guest',
         questionnaire_response: questionnaireRresponse
       })
