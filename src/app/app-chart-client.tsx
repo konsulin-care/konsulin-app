@@ -55,7 +55,7 @@ export default function AppChartClient({
       </div>
 
       <Link
-        href='/register'
+        href='/register?role=patient'
         className={
           isBlur
             ? 'absolute m-auto flex h-full w-full flex-grow items-center justify-center text-[14px] font-bold'
