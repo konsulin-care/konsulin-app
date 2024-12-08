@@ -1,20 +1,20 @@
 .custom-smart-form {
-  .css-19r6kue-MuiContainer-root {
+  .MuiContainer-root {
     padding: 0 12px !important;
   }
   //input field
-  .css-1u1ao1q-MuiGrid-root {
+  .MuiGrid-root {
     flex-direction: column !important;
 
     div {
       max-width: unset !important;
     }
 
-    .css-1d3z3hw-MuiOutlinedInput-notchedOutline {
+    .MuiOutlinedInput-notchedOutline {
       width: 100% !important;
     }
 
-    .css-9dyl2p-MuiTypography-root {
+    .MuiTypography-root {
       margin-bottom: 4px !important;
     }
   }
@@ -24,7 +24,7 @@
     min-width: 50px !important;
   }
 
-  .css-1itndrz-MuiInputAdornment-root {
+  .MuiInputAdornment-root {
     width: 0px !important;
     margin-left: 0px !important;
   }
@@ -32,11 +32,17 @@
   // [data-test='q-item-quantity-box'] {
   // margin-top: 14px !important;
   // }
-  .css-55bi6n-MuiTypography-root {
-    font-size: 9px !important;
-  }
+  // .css-55bi6n-MuiTypography-root {
+  //   font-size: 9px !important;
+  // }
 
   .css-0 {
     display: none !important;
   }
 }
+
+// MuiInputBase-input
+// MuiOutlinedInput-input
+// MuiInputBase-inputSizeSmall
+// MuiInputBase-inputAdornedEnd
+// css-1m7nww1-MuiInputBase-input-MuiOutlinedInput-input
