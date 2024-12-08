@@ -76,7 +76,7 @@ export default function ForgetPassword() {
   return (
     <div className='flex h-screen flex-col items-center justify-between px-4 py-8'>
       <div className='flex w-full flex-grow flex-col justify-start'>
-        <div className='px-5 py-4'>
+        <div className='px-5'>
           <Image
             width={8}
             height={16}
