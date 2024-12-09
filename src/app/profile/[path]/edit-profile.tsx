@@ -99,10 +99,7 @@ export default function EditProfile({ userRole }) {
         gender: gender ?? '',
         address: address ?? '',
         educations: educations ?? [''],
-        profile_picture:
-          profile_picture === undefined
-            ? '/images/sample-foto.svg'
-            : profile_picture
+        profile_picture: profile_picture
       })
     }
   }, [editProfile])
