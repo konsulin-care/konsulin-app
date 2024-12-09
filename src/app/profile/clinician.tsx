@@ -129,10 +129,12 @@ export default function Clinician() {
 
       const newGroupedByFirmAndDay = {}
 
-      const clinicNamesMap = practiceInformations.reduce((acc, clinic) => {
-        acc[clinic.clinic_id] = clinic.clinic_name
-        return acc
-      }, {})
+      const clinicNamesMap = practiceInformations
+        ? practiceInformations.reduce((acc, clinic) => {
+            acc[clinic.clinic_id] = clinic.clinic_name
+            return acc
+          }, {})
+        : {}
       if (practiceAvailabilities) {
         practiceAvailabilities.forEach(clinic => {
           const clinicId = clinic.clinic_id

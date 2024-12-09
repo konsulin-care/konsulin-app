@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 
 interface ImageUploaderProps {
   userPhoto: string
@@ -10,6 +10,7 @@ export default function ImageUploader({
   userPhoto,
   onPhotoChange
 }: ImageUploaderProps) {
+  const [isImageError, setIsImageError] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function handleButtonClick() {
@@ -22,6 +23,7 @@ export default function ImageUploader({
       const reader = new FileReader()
       reader.onloadend = () => {
         onPhotoChange(reader.result as string)
+        setIsImageError(false)
       }
       reader.readAsDataURL(file)
     }
@@ -32,10 +34,13 @@ export default function ImageUploader({
       <div className='pb-2'>
         <Image
           className='rounded-full'
-          src={userPhoto}
+          src={
+            isImageError || !userPhoto ? '/images/sample-foto.svg' : userPhoto
+          }
           width={64}
           height={64}
           alt='user-photo'
+          onError={() => setIsImageError(true)}
         />
       </div>
       <div className='flex items-center justify-center rounded-xl bg-[#F6F6F6]'>
