@@ -12,7 +12,7 @@ const withSerwist = withSerwistInit({
 const nextConfig = {
   output: 'standalone',
   images: {
-    domains: ['s3.konsulin.care']
+    domains: ['s3.konsulin.care', '37.27.46.214']
   }
 }
 
