@@ -4,16 +4,15 @@ import ContentWraper from '@/components/general/content-wraper'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { InputWithIcon } from '@/components/ui/input-with-icon'
-import { IWithAuth } from '@/hooks/withAuth'
 import { getExceriseList } from '@/services/api/exercise'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeftIcon, SearchIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
-const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
+export default function Exercise() {
   const router = useRouter()
   const [keyWord, setKeyWord] = useState('')
 
@@ -29,10 +28,6 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
           item.title.toLowerCase().includes(keyWord.toLowerCase()) ||
           item.description.toLowerCase().includes(keyWord.toLowerCase())
       )
-
-  useEffect(() => {
-    console.log({ excerciseData })
-  }, [excerciseData])
 
   return (
     <>
@@ -226,5 +221,3 @@ const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
     </>
   )
 }
-
-export default Exercise
