@@ -7,9 +7,9 @@ const patientAndClinicianRoutes = [
   '/journal',
   '/record'
 ]
-const patientRoutes = [/^\/exercise\/.*/]
+const patientRoutes = []
 // const patientRoutes = [/^\/exercise\/.*/]
-const clinicianRoutes = ['/assessment/soap']
+const clinicianRoutes = ['/assessment/soap', '/schedule']
 
 export function middleware(request: NextRequest) {
   /**
