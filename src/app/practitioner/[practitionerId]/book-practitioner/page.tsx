@@ -13,7 +13,6 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import withAuth from '@/hooks/withAuth'
 import { ChevronDownIcon, ChevronLeftIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -21,13 +20,12 @@ import { useState } from 'react'
 import PractitionerAvailbility from '../../practitioner-availbility'
 
 export interface IBookingPractitionerProps {
-  IWithAuth
   params: { practitionerId: string }
 }
 
-const BookingPractitioner: React.FC<IBookingPractitionerProps> = ({
+export default function BookingPractitioner({
   params
-}) => {
+}: IBookingPractitionerProps) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState<boolean>(false)
 
@@ -138,5 +136,3 @@ const BookingPractitioner: React.FC<IBookingPractitionerProps> = ({
     </>
   )
 }
-
-export default withAuth(BookingPractitioner, ['patient'], true)

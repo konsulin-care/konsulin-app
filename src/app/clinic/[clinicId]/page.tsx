@@ -7,7 +7,6 @@ import Header from '@/components/header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { InputWithIcon } from '@/components/ui/input-with-icon'
-import withAuth from '@/hooks/withAuth'
 import {
   IUseClinicParams,
   useClinicFindAll,
@@ -20,11 +19,10 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 export interface IDetailClinic {
-  IWithAuth
   params: { clinicId: string }
 }
 
-const DetailClinic: React.FC<IDetailClinic> = ({ params }) => {
+export default function DetailClinic({ params }: IDetailClinic) {
   const [keyword, setKeyword] = useState<string>('')
 
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({})
@@ -175,4 +173,3 @@ const DetailClinic: React.FC<IDetailClinic> = ({ params }) => {
     </>
   )
 }
-export default withAuth(DetailClinic, ['patient'], true)

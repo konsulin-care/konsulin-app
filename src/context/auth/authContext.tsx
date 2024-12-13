@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, initialState)
 
   useEffect(() => {
-    const auth = JSON.parse(decodeURI(getCookie('auth') || '[]'))
+    const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'))
 
     const payload = {
       token: auth.token,

@@ -40,7 +40,7 @@ export default function Journal() {
     ])
   }
 
-  useEffect(addResponse, [])
+  useEffect(addResponse, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const removeResponse = index => {
     setResponse(response.filter((_, find) => find != index))

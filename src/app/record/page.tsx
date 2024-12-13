@@ -4,7 +4,6 @@ import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { Badge } from '@/components/ui/badge'
 import { InputWithIcon } from '@/components/ui/input-with-icon'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import { format } from 'date-fns'
 import { ChevronLeftIcon, SearchIcon } from 'lucide-react'
 import Image from 'next/image'
@@ -13,7 +12,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import ClinicFilter from './record-filter'
 
-const Record: React.FC<IWithAuth> = ({ isAuthenticated }) => {
+export default function Record() {
   const router = useRouter()
   const [recordFilter, setRecordFilter] = useState<any>({
     name: ''
@@ -26,7 +25,8 @@ const Record: React.FC<IWithAuth> = ({ isAuthenticated }) => {
     }))
   }
   return (
-    <NavigationBar>
+    <>
+      <NavigationBar />
       <Header showChat={false}>
         <div className='flex w-full items-center'>
           <ChevronLeftIcon
@@ -81,7 +81,7 @@ const Record: React.FC<IWithAuth> = ({ isAuthenticated }) => {
 
         <div className='bg-[#F9F9F9] p-4'>
           <Link
-            href={'/assessment'}
+            href={'/journal'}
             className='card flex w-full bg-white px-4 py-6'
           >
             <Image
@@ -145,8 +145,6 @@ const Record: React.FC<IWithAuth> = ({ isAuthenticated }) => {
           </Link>
         </div>
       </div>
-    </NavigationBar>
+    </>
   )
 }
-
-export default withAuth(Record, ['patient'])

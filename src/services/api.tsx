@@ -11,7 +11,7 @@ export const API = axios.create({
 
 API.interceptors.request.use(
   config => {
-    const auth = JSON.parse(decodeURI(getCookie('auth') || '[]'))
+    const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'))
 
     if (auth.token) config.headers.Authorization = `Bearer ${auth.token}`
 
