@@ -17,7 +17,8 @@ export default function Schedule() {
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({})
 
   return (
-    <NavigationBar>
+    <>
+      <NavigationBar />
       <Header>
         <div className='flex w-full flex-col'>
           <div className='text-[14px] font-bold text-white'>Book Session</div>
@@ -122,7 +123,7 @@ export default function Schedule() {
           </div> */}
         </div>
       </div>
-    </NavigationBar>
+    </>
   )
 }
 
