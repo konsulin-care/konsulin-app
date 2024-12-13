@@ -12,5 +12,5 @@ export interface IStateUserInfo {
 
 export interface IActionAuth {
   type: 'login' | 'logout' | 'loading' | 'auth-chech'
-  payload: any
+  payload?: any
 }
