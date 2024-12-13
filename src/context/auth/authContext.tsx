@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     dispatch({
-      type: 'login',
+      type: 'auth-chech',
       payload
     })
 

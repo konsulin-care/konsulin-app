@@ -1,7 +1,7 @@
 import { type NextRequest } from 'next/server'
 
 const patientAndClinicianRoutes = ['/profile']
-const patientRoutes = ['/clinic']
+const patientRoutes = ['/clinic', '/journal']
 const clinicianRoutes = []
 
 export function middleware(request: NextRequest) {

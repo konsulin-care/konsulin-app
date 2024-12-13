@@ -25,7 +25,7 @@ export default function NavigationBar({
   return (
     <div className={cn('absolute bottom-0', className)}>
       {/* {children} */}
-      <div className='fixed bottom-0 flex h-[90px] w-full max-w-screen-sm justify-around bg-white px-[10px] py-[21px] shadow-[0px_-5px_15.1px_0px_#D7D7D740]'>
+      <div className='fixed bottom-0 z-10 flex h-[90px] w-full max-w-screen-sm justify-around bg-white px-[10px] py-[21px] shadow-[0px_-5px_15.1px_0px_#D7D7D740]'>
         <Link
           href={'/'}
           className={cn(

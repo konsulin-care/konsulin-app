@@ -3,7 +3,6 @@
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import { createUniqueRandomRange } from '@/lib/utils'
 import { addDays, subDays } from 'date-fns'
 import {
@@ -18,7 +17,7 @@ import CalendarJournal from './calendar-journal'
 import { questionList } from './record-journal-question'
 const today = new Date()
 
-const Journal: React.FC<IWithAuth> = ({ isAuthenticated }) => {
+export default function Journal() {
   const router = useRouter()
   const getRandomNumber = createUniqueRandomRange(0, questionList.length)
   const [date, setDate] = useState<Date | undefined>(today)
@@ -41,7 +40,7 @@ const Journal: React.FC<IWithAuth> = ({ isAuthenticated }) => {
     ])
   }
 
-  useEffect(() => addResponse(), [addResponse])
+  useEffect(addResponse, [])
 
   const removeResponse = index => {
     setResponse(response.filter((_, find) => find != index))
@@ -156,5 +155,3 @@ const Journal: React.FC<IWithAuth> = ({ isAuthenticated }) => {
     </>
   )
 }
-
-export default withAuth(Journal, ['patient'])

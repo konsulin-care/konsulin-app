@@ -10,6 +10,7 @@ const withSerwist = withSerwistInit({
 })
 
 const nextConfig = {
+  reactStrictMode: process.env.NODE_ENV !== 'development',
   output: 'standalone',
   images: {
     domains: ['s3.konsulin.care', '37.27.46.214']
