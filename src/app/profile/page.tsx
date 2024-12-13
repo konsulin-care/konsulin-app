@@ -3,11 +3,10 @@
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { useAuth } from '@/context/auth/authContext'
-import { IWithAuth } from '@/hooks/withAuth'
 import Clinician from './clinician'
 import Patient from './patient'
 
-const Profile: React.FC<IWithAuth> = () => {
+export default function Profile() {
   const { state: authState } = useAuth()
 
   const renderHomeContent = () => {
@@ -41,5 +40,3 @@ const Profile: React.FC<IWithAuth> = () => {
     </>
   )
 }
-
-export default Profile
