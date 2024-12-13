@@ -4,24 +4,22 @@ import Input from '@/components/login/input'
 import LogoKonsulin from '@/components/login/logo'
 import LoginMedia from '@/components/login/media'
 import { apiRequest } from '@/services/api'
+import { validateEmail } from '@/utils/validation'
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-
 interface FormValues {
   email: string
   username: string
   password: string
   retype_password: string
 }
-
 interface FormErrors {
   email?: string
   username?: string
   password?: string
   retype_password?: string
 }
-
 interface Errors {
   [key: string]: string
 }
@@ -66,15 +64,17 @@ export default function Register({ searchParams }) {
     let error = ''
     switch (name) {
       case 'email':
-        const emailRegex = /^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+$/
-        if (!value) error = 'Email tidak boleh kosong'
-        else if (!emailRegex.test(value)) error = 'Format email tidak valid'
+        if (!value) {
+          error = 'Email tidak boleh kosong'
+        } else if (!validateEmail(value)) {
+          error = 'Format email tidak valid'
+        }
         break
       case 'username':
-        const usernameRegex = /^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]+$/
-        if (!value) error = 'Username tidak boleh kosong'
+        const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_.]+$/
+        if (!value) error = 'Nama pengguna tidak boleh kosong'
         else if (!usernameRegex.test(value))
-          error = 'Username harus berupa kombinasi huruf dan angka saja'
+          error = 'Format nama pengguna tidak valid'
         break
       case 'password':
         const passwordRequirements = ''
@@ -90,7 +90,8 @@ export default function Register({ searchParams }) {
         break
       case 'retype_password':
         if (!value) error = 'Konfirmasi password tidak boleh kosong'
-        else if (value !== formValues.password) error = 'Password tidak cocok'
+        else if (value !== formValues.password)
+          error = 'Konfirmasi password tidak cocok'
         break
       default:
         break
@@ -208,7 +209,7 @@ export default function Register({ searchParams }) {
                   : 'ml-2 text-red-500'
               }
             >
-              Password minimal 1 karakter huruf besar
+              Password minimal 1 huruf besar
             </span>
           </li>
           <li className='flex items-center text-xs'>
