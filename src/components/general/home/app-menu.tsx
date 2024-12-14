@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-export default function HomeMenuClinicianGuest() {
+export default function AppMenu() {
   return (
     <>
       <Link href={'/exercise'} className='card flex w-full'>

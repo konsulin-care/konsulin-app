@@ -4,12 +4,12 @@ import { ProfileProvider } from '@/context/profile/profileContext'
 import '@/styles/globals.css'
 import '@/styles/index.scss'
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import NextTopLoader from 'nextjs-toploader'
 import { ToastContainer, ToastContainerProps } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Plus_Jakarta_Sans({ subsets: ['latin'] })
 
 const APP_NAME = 'Konsulin'
 const APP_DEFAULT_TITLE = 'Konsulin'

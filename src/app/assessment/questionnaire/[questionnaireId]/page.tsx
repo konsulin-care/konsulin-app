@@ -1,31 +1,29 @@
 'use client'
 
+import ContentWraper from '@/components/general/content-wraper'
 import EmptyState from '@/components/general/empty-state'
 import FhirFormsRenderer from '@/components/general/fhir-forms-renderer'
 import Header from '@/components/header'
 import { LoadingSpinnerIcon } from '@/components/icons'
 import NavigationBar from '@/components/navigation-bar'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
+import { useAuth } from '@/context/auth/authContext'
 import { useQuestionnaire } from '@/services/questionnaire'
 import Image from 'next/image'
-import React from 'react'
 
-export interface IQuestionnaire extends IWithAuth {
+export interface IQuestionnaire {
   params: { questionnaireId: string }
 }
 
-const Questionnaire: React.FC<IQuestionnaire> = ({
-  params,
-  isAuthenticated,
-  userRole
-}) => {
+export default function Questionnaire({ params }) {
+  const { state: authState } = useAuth()
   const { data: questionnaire, isLoading: questionnaireIsLoading } =
     useQuestionnaire(params.questionnaireId)
 
   return (
-    <NavigationBar>
+    <>
+      <NavigationBar />
       <Header>
-        {!isAuthenticated ? (
+        {!authState.isAuthenticated ? (
           <div className='mt-5'></div>
         ) : (
           <div className='flex'>
@@ -41,13 +39,13 @@ const Questionnaire: React.FC<IQuestionnaire> = ({
                 Selamat Datang di Dashboard anda
               </div>
               <div className='text-[14px] font-bold text-white'>
-                Aji Si {userRole}
+                Aji Si {authState.userInfo.role_name}
               </div>
             </div>
           </div>
         )}
       </Header>
-      <div className='mt-[-24px] rounded-[16px] bg-white'>
+      <ContentWraper>
         <div className='min-h-screen p-4'>
           {questionnaireIsLoading ? (
             <div className='flex min-h-screen min-w-full items-center justify-center'>
@@ -62,13 +60,11 @@ const Questionnaire: React.FC<IQuestionnaire> = ({
           ) : (
             <FhirFormsRenderer
               questionnaire={questionnaire}
-              isAuthenticated={isAuthenticated}
+              isAuthenticated={authState.isAuthenticated}
             />
           )}
         </div>
-      </div>
-    </NavigationBar>
+      </ContentWraper>
+    </>
   )
 }
-
-export default withAuth(Questionnaire, ['patient'], true)

@@ -1,13 +1,13 @@
 'use client'
 
 import CardLoader from '@/components/general/card-loader'
+import ContentWraper from '@/components/general/content-wraper'
 import EmptyState from '@/components/general/empty-state'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { InputWithIcon } from '@/components/ui/input-with-icon'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import { IUseClinicParams, useClinicFindAll } from '@/services/clinic'
 import { format } from 'date-fns'
 import dayjs from 'dayjs'
@@ -17,12 +17,13 @@ import Link from 'next/link'
 import { useState } from 'react'
 import ClinicFilter from './clinic-filter'
 
-const Clinic: React.FC<IWithAuth> = () => {
+export default function Clinic() {
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({})
   const [keyword, setKeyword] = useState<string>('')
 
   const {
     data: clinics,
+    isError: isClinicsError,
     isLoading: isClinicsLoading,
     isFetching: isClinicsFetching,
     error
@@ -31,8 +32,11 @@ const Clinic: React.FC<IWithAuth> = () => {
     filter: clinicFilter
   })
 
+  console.log({ error, isClinicsError })
+
   return (
-    <NavigationBar>
+    <>
+      <NavigationBar />
       <Header>
         <div className='flex w-full flex-col'>
           <div className='text-[14px] font-bold text-white'>Book Session</div>
@@ -71,7 +75,7 @@ const Clinic: React.FC<IWithAuth> = () => {
           </div>
         </div>
       </Header>
-      <div className='mt-[-24px] rounded-[16px] bg-white'>
+      <ContentWraper>
         <div className='w-full p-4'>
           <div className='flex gap-4'>
             <InputWithIcon
@@ -113,7 +117,7 @@ const Clinic: React.FC<IWithAuth> = () => {
             )}
           </div>
 
-          {isClinicsLoading || isClinicsFetching ? (
+          {isClinicsLoading || isClinicsFetching || isClinicsError ? (
             <CardLoader />
           ) : clinics.data &&
             Array.isArray(clinics?.data) &&
@@ -158,8 +162,7 @@ const Clinic: React.FC<IWithAuth> = () => {
             <EmptyState />
           )}
         </div>
-      </div>
-    </NavigationBar>
+      </ContentWraper>
+    </>
   )
 }
-export default withAuth(Clinic, ['patient'], true)

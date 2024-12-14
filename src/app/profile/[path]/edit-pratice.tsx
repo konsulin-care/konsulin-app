@@ -1,6 +1,5 @@
 import Input from '@/components/general/input'
 import { useAuth } from '@/context/auth/authContext'
-import withAuth from '@/hooks/withAuth'
 import { apiRequest } from '@/services/api'
 import {
   convertCurrencyStringToNumber,
@@ -24,7 +23,7 @@ const EditPractice = () => {
     try {
       const [listAllResponse, searchResponse] = await Promise.all([
         apiRequest('GET', `/api/v1/clinics?name=${searchTerm}`),
-        apiRequest('GET', `/api/v1/clinicians/${authState.id}/clinics`)
+        apiRequest('GET', `/api/v1/clinicians/${authState.userInfo.id}/clinics`)
       ])
 
       return {
@@ -395,4 +394,4 @@ const CollapsibleItem = ({
   )
 }
 
-export default withAuth(EditPractice, ['clinician'], true)
+export default EditPractice

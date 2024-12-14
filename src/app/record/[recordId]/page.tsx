@@ -1,7 +1,6 @@
 'use client'
 
 import Header from '@/components/header'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import RecordAssesment from './record-assesment'
@@ -9,7 +8,7 @@ import RecordExercise from './record-exercise'
 import RecordJournal from './record-journal'
 import RecordSoap from './record-soap'
 
-export interface IDetailClinic extends IWithAuth {
+export interface IDetailRecordParams {
   params: { recordId: string }
 }
 
@@ -18,7 +17,7 @@ const RECORD_TYPE_EXCERCISE = 2
 const RECORD_TYPE_SOAP = 3
 const RECORD_TYPE_JOURNAL = 4
 
-const RecordDetail: React.FC<IDetailClinic> = ({ isAuthenticated, params }) => {
+export default function RecordDetail({ params }: IDetailRecordParams) {
   const router = useRouter()
   const pageType = RECORD_TYPE_JOURNAL
 
@@ -69,5 +68,3 @@ const RecordDetail: React.FC<IDetailClinic> = ({ isAuthenticated, params }) => {
     </div>
   )
 }
-
-export default withAuth(RecordDetail, ['patient'])

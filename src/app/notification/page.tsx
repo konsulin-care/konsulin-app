@@ -2,15 +2,15 @@
 
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
-const Notification: React.FC<IWithAuth> = () => {
+export default function Notification() {
   const router = useRouter()
 
   return (
-    <NavigationBar>
+    <>
+      <NavigationBar />
       <Header showChat={false} showNotification={false}>
         <div className='flex w-full items-center'>
           <ChevronLeftIcon
@@ -27,8 +27,6 @@ const Notification: React.FC<IWithAuth> = () => {
       <div className='mt-[-24px] min-h-screen rounded-[16px] bg-white p-4'>
         <div>Notification</div>
       </div>
-    </NavigationBar>
+    </>
   )
 }
-
-export default withAuth(Notification, ['patient', 'clinician'])

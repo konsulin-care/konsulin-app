@@ -3,7 +3,6 @@
 import Header from '@/components/header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import withAuth from '@/hooks/withAuth'
 import { useDetailClinicianByClinic } from '@/services/clinic'
 import {
   ArrowRightIcon,
@@ -18,11 +17,10 @@ import { useState } from 'react'
 import PractitionerAvailbility from '../practitioner-availbility'
 
 export interface IPractitionerProps {
-  IWithAuth
   params: { practitionerId: string }
 }
 
-const Practitioner: React.FC<IPractitionerProps> = ({ params }) => {
+export default function Practitioner({ params }: IPractitionerProps) {
   const searchParams = useSearchParams()
   const clinicId = searchParams.get('clinicId')
 
@@ -133,4 +131,3 @@ const Practitioner: React.FC<IPractitionerProps> = ({ params }) => {
     </>
   )
 }
-export default withAuth(Practitioner, ['patient'])

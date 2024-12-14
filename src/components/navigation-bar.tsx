@@ -1,3 +1,5 @@
+'use client'
+
 import { useAuth } from '@/context/auth/authContext'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
@@ -21,9 +23,9 @@ export default function NavigationBar({
   const { state: authState } = useAuth()
 
   return (
-    <div className={cn('flex grow flex-col pb-[100px]', className)}>
-      {children}
-      <div className='fixed bottom-0 flex h-[90px] w-full max-w-screen-sm justify-around bg-white px-[10px] py-[21px] shadow-[0px_-5px_15.1px_0px_#D7D7D740]'>
+    <div className={cn('absolute bottom-0', className)}>
+      {/* {children} */}
+      <div className='fixed bottom-0 z-10 flex h-[90px] w-full max-w-screen-sm justify-around bg-white px-[10px] py-[21px] shadow-[0px_-5px_15.1px_0px_#D7D7D740]'>
         <Link
           href={'/'}
           className={cn(
@@ -35,7 +37,11 @@ export default function NavigationBar({
           <span className='mt-[5px] text-[12px]'>Beranda</span>
         </Link>
         <Link
-          href={authState.role_name === 'clinician' ? '/schedule' : '/clinic'}
+          href={
+            authState.userInfo.role_name === 'clinician'
+              ? '/schedule'
+              : '/clinic'
+          }
           className={cn(
             `flex flex-col items-center`,
             pathname?.startsWith('/clinic') || pathname?.startsWith('/schedule')

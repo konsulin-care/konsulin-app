@@ -1,17 +1,21 @@
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import useLoaded from '@/hooks/useLoaded'
 import { cn } from '@/lib/utils'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
+
+const Pie = dynamic(
+  () => import('@ant-design/plots').then(mod => mod.Pie) as any,
+  { ssr: false }
+)
 
 export default function AppChartClient({
   isBlur = false
 }: {
   isBlur?: boolean
 }) {
-  const Pie = dynamic(
-    () => import('@ant-design/plots').then(mod => mod.Pie) as any,
-    { ssr: false }
-  )
+  const { isLoaded } = useLoaded()
 
   const configPie: any = {
     data: [
@@ -33,9 +37,18 @@ export default function AppChartClient({
       }
     }
   }
+
+  if (!isLoaded) {
+    return (
+      <div className='p-4'>
+        <Skeleton className='h-[250px] w-full' />
+      </div>
+    )
+  }
+
   return (
     <div className='relative flex flex-col items-center justify-center p-4'>
-      <div className='p-[16px]s min-h-[150px] w-full rounded-lg bg-[#F9F9F9] p-4'>
+      <div className='p-[16px]s h-[250px] w-full rounded-lg bg-[#F9F9F9] p-4'>
         <div className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
           What’s the turbulence on your mind?
         </div>

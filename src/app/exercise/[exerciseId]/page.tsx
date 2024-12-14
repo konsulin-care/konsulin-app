@@ -1,21 +1,20 @@
 'use client'
 
+import ContentWraper from '@/components/general/content-wraper'
 import Share from '@/components/general/share'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
-import withAuth from '@/hooks/withAuth'
-import { getExceriseList } from '@/services/api/excercise'
+import { getExceriseList } from '@/services/api/exercise'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 export interface IDetailExerciserProps {
-  IWithAuth
   params: { exerciseId: string }
 }
 
-const DetailExercise: React.FC<IDetailExerciserProps> = ({ params }) => {
+export default function DetailExercise({ params }: IDetailExerciserProps) {
   const router = useRouter()
 
   const { data, isLoading: excerciseIsLoading } = useQuery({
@@ -30,7 +29,8 @@ const DetailExercise: React.FC<IDetailExerciserProps> = ({ params }) => {
   }, [data, excerciseData])
 
   return (
-    <NavigationBar>
+    <>
+      <NavigationBar />
       <Header showChat={false} showNotification={false}>
         <div className='flex w-full items-center'>
           <ChevronLeftIcon
@@ -45,7 +45,7 @@ const DetailExercise: React.FC<IDetailExerciserProps> = ({ params }) => {
         </div>
       </Header>
 
-      <div className='mt-[-24px] min-h-screen rounded-[16px] bg-white p-4'>
+      <ContentWraper className='p-4'>
         {(!excerciseIsLoading || excerciseData) && (
           <>
             <iframe
@@ -65,9 +65,7 @@ const DetailExercise: React.FC<IDetailExerciserProps> = ({ params }) => {
             </div>
           </>
         )}
-      </div>
-    </NavigationBar>
+      </ContentWraper>
+    </>
   )
 }
-
-export default withAuth(DetailExercise, ['patient'], true)

@@ -1,16 +1,19 @@
 'use client'
 
+import ContentWraper from '@/components/general/content-wraper'
 import FhirFormsRenderer from '@/components/general/fhir-forms-renderer'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
+import { useAuth } from '@/context/auth/authContext'
 import { BookHeartIcon, ChevronLeftIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import ObjectiveFindingModal from './objective-finding-modal'
 import Participant from './participant'
 
-const Soap: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
+export default function Soap() {
+  const { state: authState } = useAuth()
+
   const router = useRouter()
   const questionnaire = require('../questionnaire/soap.json')
 
@@ -23,7 +26,8 @@ const Soap: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
   }
 
   return (
-    <NavigationBar>
+    <>
+      <NavigationBar />
       <Header showChat={false}>
         <div className='flex w-full items-center'>
           <ChevronLeftIcon
@@ -35,7 +39,7 @@ const Soap: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
           <div className='text-[14px] font-bold text-white'>Summary Record</div>
         </div>
       </Header>
-      <div className='mt-[-24px] rounded-[16px] bg-white'>
+      <ContentWraper>
         <div className='min-h-screen p-4'>
           <Participant
             participant={participant}
@@ -57,14 +61,12 @@ const Soap: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
 
           <FhirFormsRenderer
             questionnaire={questionnaire}
-            isAuthenticated={isAuthenticated}
+            isAuthenticated={authState.isAuthenticated}
             submitText='Save SOAP'
             customObject={customObjectFHIR}
           />
         </div>
-      </div>
-    </NavigationBar>
+      </ContentWraper>
+    </>
   )
 }
-
-export default withAuth(Soap, ['patient', 'clinician'], true)

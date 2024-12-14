@@ -1,5 +1,5 @@
-import { getFromLocalStorage } from '@/lib/utils'
 import axios from 'axios'
+import { deleteCookie, getCookie } from 'cookies-next'
 import { toast } from 'react-toastify'
 
 export const API = axios.create({
@@ -11,13 +11,10 @@ export const API = axios.create({
 
 API.interceptors.request.use(
   config => {
-    const auth = getFromLocalStorage('auth')
-    if (auth) {
-      const { token } = JSON.parse(auth)
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`
-      }
-    }
+    const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'))
+
+    if (auth.token) config.headers.Authorization = `Bearer ${auth.token}`
+
     return config
   },
   error => {
@@ -51,6 +48,7 @@ API.interceptors.response.use(
       error.response.data.dev_message === 'token missing'
     ) {
       setTimeout(() => {
+        deleteCookie('auth')
         localStorage.clear()
         window.location.href = '/register'
       }, 1000)

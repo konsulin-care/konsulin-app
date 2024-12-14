@@ -1,11 +1,11 @@
-import AppChartClient from './app-chart-client'
-import HomeMenuClinicianGuest from './app-menu-clinician-guest'
-import Community from './community'
-import PopularAssesment from './popular-assesment'
+import AppChartClient from '../components/general/home/app-chart-client'
+import AppMenu from '../components/general/home/app-menu'
+import Community from '../components/general/home/community'
+import PopularAssesment from '../components/general/home/popular-assesment'
 
-export default function AppGuest() {
+export default function HomeContentGuest() {
   return (
-    <div className='mt-[-24px] rounded-[16px] bg-white'>
+    <>
       <AppChartClient isBlur={true} />
 
       {/* <div className='relative flex flex-col items-center justify-center p-4'>
@@ -40,7 +40,7 @@ export default function AppGuest() {
       </div> */}
 
       <div className='flex gap-4 p-4'>
-        <HomeMenuClinicianGuest />
+        <AppMenu />
       </div>
 
       <PopularAssesment />
@@ -48,6 +48,6 @@ export default function AppGuest() {
       <div className='p-4'>
         <Community />
       </div>
-    </div>
+    </>
   )
 }

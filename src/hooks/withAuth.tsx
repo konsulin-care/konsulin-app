@@ -18,8 +18,8 @@ function withAuth<T>(
     const { state: authState } = useAuth()
     const [isVerified, setIsVerified] = useState(false)
 
-    const token = authState.token
-    const role = authState.role_name
+    const token = authState.userInfo.token
+    const role = authState.userInfo.role_name
     const pathname = usePathname()
 
     useEffect(() => {
@@ -52,7 +52,7 @@ function withAuth<T>(
       <WrappedComponent
         {...props}
         userRole={allowGuestMode && !role ? 'guest' : role}
-        isAuthenticated={!!authState.token}
+        isAuthenticated={authState.isAuthenticated}
       />
     )
   }
