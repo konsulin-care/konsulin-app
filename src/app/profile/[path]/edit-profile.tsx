@@ -144,15 +144,33 @@ export default function EditProfile({ userRole }) {
     }))
   }
 
-  function handleEditSave() {
+  function isValidUrl(url: string): boolean {
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async function handleEditSave() {
     const validationErrors = validateForm(updateUser)
+
     if (Object.keys(validationErrors).length === 0) {
+      let base64ProfilePicture = updateUser.profile_picture
+
+      if (isValidUrl(updateUser.profile_picture)) {
+        base64ProfilePicture = await urlToBase64(updateUser.profile_picture)
+      }
+
       const updatedProfile = {
         ...updateUser,
+        profile_picture: base64ProfilePicture,
         birth_date: updateUser.birth_date
           ? format(new Date(updateUser.birth_date), 'yyyy-MM-dd')
           : undefined
       }
+
       mutate(updatedProfile)
     } else {
       setErrors(validationErrors)
@@ -228,6 +246,21 @@ export default function EditProfile({ userRole }) {
       ...prevState,
       profile_picture: value
     }))
+  }
+
+  async function urlToBase64(url: string): Promise<string> {
+    const response = await fetch(url)
+    const blob = await response.blob()
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        resolve(reader.result as string)
+      }
+      reader.onerror = () => {
+        reject(new Error('Failed to convert URL to Base64'))
+      }
+      reader.readAsDataURL(blob)
+    })
   }
 
   return (
