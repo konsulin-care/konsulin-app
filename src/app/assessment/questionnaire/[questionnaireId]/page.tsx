@@ -39,7 +39,7 @@ export default function Questionnaire({ params }) {
                 Selamat Datang di Dashboard anda
               </div>
               <div className='text-[14px] font-bold text-white'>
-                Aji Si {authState.userInfo.role_name}
+                {authState.userInfo.fullname}
               </div>
             </div>
           </div>
