@@ -1,14 +1,13 @@
 'use client'
 
 import ContentWraper from '@/components/general/content-wraper'
+import PageLoader from '@/components/general/page-loader'
 import Share from '@/components/general/share'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
-import { getExceriseList } from '@/services/api/exercise'
-import { useQuery } from '@tanstack/react-query'
+import { useGetExcerise } from '@/services/api/exercise'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 
 export interface IDetailExerciserProps {
   params: { exerciseId: string }
@@ -17,16 +16,10 @@ export interface IDetailExerciserProps {
 export default function DetailExercise({ params }: IDetailExerciserProps) {
   const router = useRouter()
 
-  const { data, isLoading: excerciseIsLoading } = useQuery({
-    queryKey: ['getExceriseList'],
-    queryFn: getExceriseList
-  })
+  const { data, isLoading: excerciseIsLoading } = useGetExcerise()
 
-  const excerciseData = data?.find(item => item?.id === params.exerciseId)
-
-  useEffect(() => {
-    console.log({ data, excerciseData })
-  }, [data, excerciseData])
+  const excerciseData =
+    Array.isArray(data) && data?.find(item => item?.id === params.exerciseId)
 
   return (
     <>
@@ -46,7 +39,9 @@ export default function DetailExercise({ params }: IDetailExerciserProps) {
       </Header>
 
       <ContentWraper className='p-4'>
-        {(!excerciseIsLoading || excerciseData) && (
+        {excerciseIsLoading && !excerciseData ? (
+          <PageLoader />
+        ) : (
           <>
             <iframe
               style={{ borderRadius: '12px' }}
