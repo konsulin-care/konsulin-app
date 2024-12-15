@@ -12,6 +12,7 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { useGetCities } from '@/services/api/cities'
 import { IUseClinicParams } from '@/services/clinic'
 import { addDays, endOfWeek, format, startOfWeek } from 'date-fns'
 import { useState } from 'react'
@@ -133,6 +134,8 @@ export default function ClinicFilter({ onChange }) {
     })
   }
 
+  const { data: listCities, isLoading } = useGetCities()
+
   const renderDrawerContent = () => {
     switch (whichContent) {
       case CONTENT_DEFAULT:
@@ -218,7 +221,7 @@ export default function ClinicFilter({ onChange }) {
               </div>
             </div>
             <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Loation</div>
+              <div className='mb-4 font-bold'>Location</div>
               <div className='flex flex-wrap gap-[10px]'>
                 <Select onValueChange={e => handleFilterChange('location', e)}>
                   <SelectTrigger className='w-full border-none'>
@@ -226,26 +229,13 @@ export default function ClinicFilter({ onChange }) {
                   </SelectTrigger>
                   <SelectContent>
                     {/* Later, fetch the list of cities.  */}
-                    <SelectItem value='Kota Bogor'>Kota Bogor</SelectItem>
-                    <SelectItem value='Kota Depok'>Kota Depok</SelectItem>
-                    <SelectItem value='Kota Jakarta Barat'>
-                      Kota Jakarta Barat
-                    </SelectItem>
-                    <SelectItem value='Kota Jakarta Selatan'>
-                      Kota Jakarta Selatan
-                    </SelectItem>
-                    <SelectItem value='Kota Jakarta Timur'>
-                      Kota Jakarta Timur
-                    </SelectItem>
-                    <SelectItem value='Kota Jakarta Utara'>
-                      Kota Jakarta Utara
-                    </SelectItem>
-                    <SelectItem value='Kota Tangerang'>
-                      Kota Tangerang
-                    </SelectItem>
-                    <SelectItem value='Kota Tangerang Selatan'>
-                      Kota Tangerang Selatan
-                    </SelectItem>
+                    {listCities &&
+                      !isLoading &&
+                      listCities.map(item => (
+                        <SelectItem key={item.name} value={item.name}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
