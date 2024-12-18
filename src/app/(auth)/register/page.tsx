@@ -56,8 +56,7 @@ export default function Register({ searchParams }) {
       length: password.length >= 8,
       uppercase: /[A-Z]/.test(password),
       number: /\d/.test(password),
-      // specialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-      specialChar: /[!@#$%^&*_=+;'\[\]\/`~\\(),.?":{}|<>]/.test(password)
+      specialChar: /[!@#$%^&*_=+;'\[\]\/`~\\(),.?":{}|<>-]/.test(password)
     }
   }
 
@@ -84,7 +83,7 @@ export default function Register({ searchParams }) {
           value.length < 8 ||
           !/[A-Z]/.test(value) ||
           !/[0-9]/.test(value) ||
-          !/[!@#$%^&*_=+;'\[\]\/`~\\(),.?":{}|<>]/.test(value)
+          !/[!@#$%^&*_=+;'\[\]\/`~\\(),.?":{}|<>-]/.test(value)
         ) {
           error = passwordRequirements
         }
