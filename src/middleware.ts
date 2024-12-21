@@ -29,13 +29,28 @@ export function middleware(request: NextRequest) {
     )
 
   if (
+    !auth &&
+    routeMatches(
+      [...patientRoutes, clinicianRoutes, ...patientAndClinicianRoutes],
+      pathname
+    )
+  ) {
+    return Response.redirect(new URL('/register?role=patient', request.url))
+
+  }
+
+  if (auth.token && routeMatches(['/login', '/register'], pathname)) {
+    return Response.redirect(new URL('/', request.url))
+  }
+
+  if (
     (auth.role_name !== 'patient' && routeMatches(patientRoutes, pathname)) || // patient only
     (auth.role_name !== 'cilinician' &&
       routeMatches(clinicianRoutes, pathname)) || // cliniciant only
     ((!auth.role_name || auth.role_name === 'guest') &&
       routeMatches(patientAndClinicianRoutes, pathname)) // patient and cliniciant
   ) {
-    return Response.redirect(new URL('/register?role=patient', request.url))
+    return Response.redirect(new URL('/unauthorized', request.url))
   }
 }
 
