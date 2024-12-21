@@ -61,17 +61,17 @@ export default function NavigationBar({
           <span className='mt-[5px] text-[12px]'>Sesi Temu</span>
         </Link>
         <Link
-          href={'/assessment'}
+          href={'/assessments'}
           className={cn(
             `flex flex-col items-center`,
             pathname?.startsWith('/assessment') ? activePathStyle : pathStyle
           )}
         >
           <LiteratureIcon
-            fill={pathname?.startsWith('/assessment') ? '#13C2C2' : '#ADB6C7'}
+            fill={pathname?.startsWith('/assessments') ? '#13C2C2' : '#ADB6C7'}
           />
 
-          <span className='mt-[5px] text-[12px]'>Assesment</span>
+          <span className='mt-[5px] text-[12px]'>Assesments</span>
         </Link>
         <Link
           href={'/exercise'}

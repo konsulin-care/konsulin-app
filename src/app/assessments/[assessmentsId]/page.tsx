@@ -11,13 +11,13 @@ import { useQuestionnaire } from '@/services/questionnaire'
 import Image from 'next/image'
 
 export interface IQuestionnaire {
-  params: { questionnaireId: string }
+  params: { assessmentsId: string }
 }
 
 export default function Questionnaire({ params }) {
   const { state: authState } = useAuth()
   const { data: questionnaire, isLoading: questionnaireIsLoading } =
-    useQuestionnaire(params.questionnaireId)
+    useQuestionnaire(params.assessmentsId)
 
   return (
     <>
@@ -39,7 +39,7 @@ export default function Questionnaire({ params }) {
                 Selamat Datang di Dashboard anda
               </div>
               <div className='text-[14px] font-bold text-white'>
-                {authState.userInfo.fullname}
+                Aji Si {authState.userInfo.role_name}
               </div>
             </div>
           </div>
@@ -61,6 +61,16 @@ export default function Questionnaire({ params }) {
             <FhirFormsRenderer
               questionnaire={questionnaire}
               isAuthenticated={authState.isAuthenticated}
+              customObject={{
+                subject: {
+                  reference: `https://blaze.konsulin.care/fhir/Patient/${authState.userInfo.id}`,
+                  type: 'Patient'
+                },
+                author: {
+                  reference: `https://blaze.konsulin.care/fhir/Patient/${authState.userInfo.id}`, // chage this to the clincianID for SOAP
+                  type: 'Practitioner'
+                }
+              }}
             />
           )}
         </div>

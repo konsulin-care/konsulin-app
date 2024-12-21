@@ -26,9 +26,7 @@ export default function Assesment() {
             className='mr-2 cursor-pointer'
           />
 
-          <div className='text-[14px] font-bold text-white'>
-            Assesment Centre
-          </div>
+          <div className='text-[14px] font-bold text-white'>Self Excercise</div>
         </div>
       </Header>
       <ContentWraper className='p-4'>
