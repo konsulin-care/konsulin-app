@@ -1,3 +1,4 @@
+import { setCookies } from '@/app/actions'
 import Input from '@/components/login/input'
 import { useAuth } from '@/context/auth/authContext'
 import { apiRequest } from '@/services/api'
@@ -53,6 +54,10 @@ function LoginFormContent({ role }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  const setLoginInfoToCookies = async (formData: any) => {
+    await setCookies('auth', formData)
+  }
+
   const { mutate, isLoading } = useMutation<
     LoginResponse,
     unknown,
@@ -70,7 +75,7 @@ function LoginFormContent({ role }) {
         throw err
       }
     },
-    onSuccess: response => {
+    onSuccess: async response => {
       const { fullname, practitioner_id, patient_id, email } =
         response.data.user
 
@@ -83,18 +88,22 @@ function LoginFormContent({ role }) {
       if (response.data.user.role_name === 'patient') id = patient_id
       if (response.data.user.role_name === 'practitioner') id = practitioner_id
 
-      dispatch({
+      const payload = {
+        token: response.data.token,
+        role_name: userType,
+        fullname: fullname || email,
+        email,
+        id
+      }
+
+      await setLoginInfoToCookies(JSON.stringify(payload))
+
+      await dispatch({
         type: 'login',
-        payload: {
-          token: response.data.token,
-          role_name: userType,
-          fullname: fullname || email,
-          email,
-          id
-        }
+        payload
       })
-      const redirect = searchParams.get('redirect')
-      router.push(redirect || '/')
+
+      router.push('/')
     }
   })
 
