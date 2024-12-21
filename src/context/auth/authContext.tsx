@@ -30,12 +30,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const payload = {
       token: auth.token,
       role_name: auth.role_name || 'guest',
-      name: auth.name,
-      id: auth.practitioner_id || auth.patient_id
+      fullname: auth.fullname || auth.email,
+      email: auth.email,
+      id: auth.id
     }
 
     dispatch({
-      type: 'auth-chech',
+      type: 'auth-check',
       payload
     })
 

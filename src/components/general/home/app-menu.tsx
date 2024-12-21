@@ -19,7 +19,7 @@ export default function AppMenu() {
         </div>
       </Link>
 
-      <Link href={'/assessment/journal'} className='card flex w-full'>
+      <Link href={'/journal'} className='card flex w-full'>
         <Image
           src={'/images/writing.svg'}
           width={40}

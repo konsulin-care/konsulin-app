@@ -6,9 +6,10 @@ export const initialState: IStateAuth = {
   isAuthenticated: false,
   userInfo: {
     token: null,
-    role_name: 'guest',
-    name: null,
-    id: null
+    id: null,
+    fullname: '',
+    email: '',
+    role_name: 'guest'
   }
 }
 
@@ -27,19 +28,21 @@ export const reducer = (state: IStateAuth, action: IActionAuth): IStateAuth => {
         userInfo: {
           token: action.payload.token,
           role_name: action.payload.role_name,
-          name: action.payload.name,
-          id: action.payload.practitioner_id || action.payload.patient_id
+          fullname: action.payload.fullname,
+          id: action.payload.id,
+          email: action.payload.email
         }
       }
-    case 'auth-chech':
+    case 'auth-check':
       return {
         ...state,
         isAuthenticated: !!(action.payload.token && action.payload.role_name),
         userInfo: {
           token: action.payload.token,
           role_name: action.payload.role_name,
-          name: action.payload.name,
-          id: action.payload.practitioner_id || action.payload.patient_id
+          fullname: action.payload.fullname,
+          id: action.payload.id,
+          email: action.payload.email
         }
       }
     case 'logout':

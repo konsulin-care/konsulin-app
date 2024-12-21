@@ -4,13 +4,26 @@ export interface IStateAuth {
 }
 
 export interface IStateUserInfo {
-  token: string | null
-  role_name: string | null
-  name: string | null
-  id: string | null
+  token?: string
+  role_name?: string
+  fullname?: string
+  id?: string
+  email?: string
 }
 
-export interface IActionAuth {
-  type: 'login' | 'logout' | 'loading' | 'auth-chech'
-  payload?: any
+export type IActionAuth = IActionLogin | IActionLogout
+
+export interface IActionLogin {
+  type: 'login' | 'auth-check'
+  payload: {
+    token: string
+    role_name: string
+    fullname: string
+    id: string
+    email: string
+  }
+}
+
+export interface IActionLogout {
+  type: 'logout'
 }

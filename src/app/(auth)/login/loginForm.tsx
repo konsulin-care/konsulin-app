@@ -19,7 +19,7 @@ interface LoginResponse {
   data: {
     token: string
     user: {
-      name: string
+      fullname: string
       email: string
       user_id: string
       role_id: string
@@ -71,19 +71,26 @@ function LoginFormContent({ role }) {
       }
     },
     onSuccess: response => {
+      const { fullname, practitioner_id, patient_id, email } =
+        response.data.user
+
       let userType = ''
       if (response.data.user.role_name === 'patient') userType = 'patient'
       if (response.data.user.role_name === 'practitioner')
         userType = 'clinician'
-      const { name, practitioner_id, patient_id } = response.data.user
+
+      let id = null
+      if (response.data.user.role_name === 'patient') id = patient_id
+      if (response.data.user.role_name === 'practitioner') id = practitioner_id
+
       dispatch({
         type: 'login',
         payload: {
           token: response.data.token,
           role_name: userType,
-          name: name,
-          practitioner_id,
-          patient_id
+          fullname: fullname || email,
+          email,
+          id
         }
       })
       const redirect = searchParams.get('redirect')
