@@ -48,6 +48,7 @@ export default function Patient() {
         : null
     })
     .filter(item => item !== null)
+    .filter(item => item.key !== 'Profile Picture')
 
   return (
     <>

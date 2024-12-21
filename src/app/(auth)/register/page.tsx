@@ -3,6 +3,7 @@
 import Input from '@/components/login/input'
 import LogoKonsulin from '@/components/login/logo'
 import LoginMedia from '@/components/login/media'
+import { useAuth } from '@/context/auth/authContext'
 import { apiRequest } from '@/services/api'
 import { validateEmail } from '@/utils/validation'
 import { useMutation } from '@tanstack/react-query'
@@ -24,7 +25,13 @@ interface Errors {
   [key: string]: string
 }
 
+interface LoginFormValues {
+  username: string
+  password: string
+}
+
 export default function Register({ searchParams }) {
+  const { dispatch } = useAuth()
   const router = useRouter()
   const userType = searchParams?.role
 
@@ -35,13 +42,39 @@ export default function Register({ searchParams }) {
     retype_password: ''
   })
 
-  const { mutate, isLoading } = useMutation<any, unknown, FormValues>({
+  const { mutate: loginMutate, isLoading } = useMutation<
+    any,
+    unknown,
+    LoginFormValues
+  >({
+    mutationFn: (credentials: LoginFormValues) => {
+      return apiRequest('POST', `/api/v1/auth/login/${userType}`, credentials)
+    },
+    onSuccess: response => {
+      const { role_name, practitioner_id, patient_id } = response.data.user
+
+      const userType = role_name === 'patient' ? 'patient' : 'clinician'
+      const id = userType === 'patient' ? patient_id : practitioner_id
+      dispatch({
+        type: 'login',
+        payload: {
+          token: response.data.token,
+          role_name: userType,
+          name: '',
+          id: id
+        }
+      })
+      router.push('/')
+    }
+  })
+
+  const { mutate: registerMutate } = useMutation<any, unknown, FormValues>({
     mutationFn: (newUser: FormValues) => {
       return apiRequest('POST', `/api/v1/auth/register/${userType}`, newUser)
     },
-    onSuccess: () => {
-      console.log('Registration successful!')
-      router.push('/login')
+    onSuccess: (_, variables) => {
+      const { username, password } = variables
+      loginMutate({ username, password })
     }
   })
 
@@ -72,9 +105,13 @@ export default function Register({ searchParams }) {
         break
       case 'username':
         const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_.]+$/
-        if (!value) error = 'Nama pengguna tidak boleh kosong'
-        else if (!usernameRegex.test(value))
+        if (!value) {
+          error = 'Nama pengguna tidak boleh kosong'
+        } else if (!usernameRegex.test(value)) {
           error = 'Format nama pengguna tidak valid'
+        } else if (value.length < 8) {
+          error = 'Nama pengguna minimum 8 karakter'
+        }
         break
       case 'password':
         const passwordRequirements = ''
@@ -114,7 +151,7 @@ export default function Register({ searchParams }) {
 
   const handleSubmitRegister = (event: any) => {
     event.preventDefault()
-    mutate(formValues)
+    registerMutate(formValues)
   }
 
   const passwordRequirements = validatePassword(formValues.password)

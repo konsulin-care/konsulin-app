@@ -50,7 +50,7 @@ API.interceptors.response.use(
       setTimeout(() => {
         deleteCookie('auth')
         localStorage.clear()
-        window.location.href = '/register'
+        window.location.href = '/'
       }, 1000)
     }
 
