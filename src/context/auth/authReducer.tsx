@@ -1,4 +1,3 @@
-import { setCookies } from '@/app/actions'
 import { deleteCookie } from 'cookies-next'
 import { IActionAuth, IStateAuth } from './authTypes'
 
@@ -13,15 +12,9 @@ export const initialState: IStateAuth = {
   }
 }
 
-const onLogin = async (formData: any) => {
-  await setCookies('auth', formData)
-}
-
 export const reducer = (state: IStateAuth, action: IActionAuth): IStateAuth => {
   switch (action.type) {
     case 'login':
-      // localStorage.setItem('auth', JSON.stringify(action.payload))
-      onLogin(JSON.stringify(action.payload))
       return {
         ...state,
         isAuthenticated: !!(action.payload.token && action.payload.role_name),
