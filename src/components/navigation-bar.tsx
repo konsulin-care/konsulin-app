@@ -64,7 +64,7 @@ export default function NavigationBar({
           href={'/assessments'}
           className={cn(
             `flex flex-col items-center`,
-            pathname?.startsWith('/assessment') ? activePathStyle : pathStyle
+            pathname?.startsWith('/assessments') ? activePathStyle : pathStyle
           )}
         >
           <LiteratureIcon
