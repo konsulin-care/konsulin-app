@@ -1,7 +1,7 @@
 import ModalQr from '@/components/general/modal-qr'
 import { LinkIcon, NotepadTextIcon, UsersIcon } from 'lucide-react'
 
-export default function RecordAssesment({ recordId }) {
+export default function RecordAssessment({ recordId }) {
   return (
     <>
       <div className='mb-4'>

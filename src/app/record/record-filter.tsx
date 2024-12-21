@@ -148,7 +148,7 @@ export default function ClinicFilter({ onChange }) {
                   <SelectContent>
                     <SelectItem value='All'>All</SelectItem>
                     <SelectItem value='Jurnal'>Jurnal</SelectItem>
-                    <SelectItem value='Assesment'>Assesment</SelectItem>
+                    <SelectItem value='Assessment'>Assessment</SelectItem>
                     <SelectItem value='SOAP'>SOAP</SelectItem>
                   </SelectContent>
                 </Select>

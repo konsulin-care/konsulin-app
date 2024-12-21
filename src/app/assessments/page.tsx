@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-export default function Assesment() {
+export default function Assessment() {
   const questionnaire = require('./questionnaire/soap.json')
   const [keyWord, setKeyWord] = useState('')
   const router = useRouter()

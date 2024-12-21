@@ -3,7 +3,7 @@ import Link from 'next/link'
 import AppChartClient from '../components/general/home/app-chart-client'
 import AppMenu from '../components/general/home/app-menu'
 import Community from '../components/general/home/community'
-import PopularAssesment from '../components/general/home/popular-assesment'
+import PopularAssessment from '../components/general/home/popular-assessment'
 
 export default function HomeContentPatient() {
   return (
@@ -14,7 +14,7 @@ export default function HomeContentPatient() {
         <AppMenu />
       </div>
 
-      <PopularAssesment />
+      <PopularAssessment />
 
       {/* Record Summary */}
       <div className='p-4'>

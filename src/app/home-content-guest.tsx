@@ -1,7 +1,7 @@
 import AppChartClient from '../components/general/home/app-chart-client'
 import AppMenu from '../components/general/home/app-menu'
 import Community from '../components/general/home/community'
-import PopularAssesment from '../components/general/home/popular-assesment'
+import PopularAssessment from '../components/general/home/popular-assessment'
 
 export default function HomeContentGuest() {
   return (
@@ -43,7 +43,7 @@ export default function HomeContentGuest() {
         <AppMenu />
       </div>
 
-      <PopularAssesment />
+      <PopularAssessment />
 
       <div className='p-4'>
         <Community />

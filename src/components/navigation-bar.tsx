@@ -71,7 +71,7 @@ export default function NavigationBar({
             fill={pathname?.startsWith('/assessments') ? '#13C2C2' : '#ADB6C7'}
           />
 
-          <span className='mt-[5px] text-[12px]'>Assesments</span>
+          <span className='mt-[5px] text-[12px]'>Assessments</span>
         </Link>
         <Link
           href={'/exercise'}

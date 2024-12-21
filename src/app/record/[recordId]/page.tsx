@@ -3,7 +3,7 @@
 import Header from '@/components/header'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import RecordAssesment from './record-assesment'
+import RecordAssessment from './record-assessment'
 import RecordExercise from './record-exercise'
 import RecordJournal from './record-journal'
 import RecordSoap from './record-soap'
@@ -12,7 +12,7 @@ export interface IDetailRecordParams {
   params: { recordId: string }
 }
 
-const RECORD_TYPE_ASSESMENT = 1
+const RECORD_TYPE_ASSESSMENT = 1
 const RECORD_TYPE_EXCERCISE = 2
 const RECORD_TYPE_SOAP = 3
 const RECORD_TYPE_JOURNAL = 4
@@ -37,7 +37,7 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
   const renderContent = type => {
     switch (type) {
       case 1:
-        return <RecordAssesment recordId={params.recordId} />
+        return <RecordAssessment recordId={params.recordId} />
       case 2:
         return <RecordExercise />
       case 3:
