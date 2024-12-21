@@ -35,7 +35,7 @@ export function middleware(request: NextRequest) {
     ((!auth.role_name || auth.role_name === 'guest') &&
       routeMatches(patientAndClinicianRoutes, pathname)) // patient and cliniciant
   ) {
-    return Response.redirect(new URL('/register', request.url))
+    return Response.redirect(new URL('/register?role=patient', request.url))
   }
 }
 

@@ -11,7 +11,7 @@ export default function Profile() {
 
   const renderHomeContent = () => {
     return (
-      <div className='mt-[-16px] rounded-[16px] bg-white pt-4'>
+      <div className='mt-[-16px] rounded-[16px] bg-white pb-[100px] pt-4'>
         <div className='text-center'>
           {authState.userInfo.role_name === 'patient' && <Patient />}
           {authState.userInfo.role_name === 'clinician' && <Clinician />}

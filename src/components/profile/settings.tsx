@@ -88,9 +88,9 @@ export default function Settings({ menus }) {
         <DrawerTrigger asChild>
           <div />
         </DrawerTrigger>
-        <DrawerContent className='p-4'>
-          <div className='rounded-t-lg bg-white pt-4'>
-            <DrawerTitle className='text-black-100 pb-1 text-center text-xl font-bold'>
+        <DrawerContent className='mx-auto w-full max-w-md max-w-screen-sm p-4'>
+          <div className='rounded-t-lg bg-white'>
+            <DrawerTitle className='text-black-100 py-1 text-center text-lg font-bold md:text-xl'>
               {drawerState.title.split('\n').map((line, index) => (
                 <Fragment key={index}>
                   {line}
@@ -98,7 +98,7 @@ export default function Settings({ menus }) {
                 </Fragment>
               ))}
             </DrawerTitle>
-            <DrawerDescription className='text-center text-sm font-normal text-black opacity-60'>
+            <DrawerDescription className='text-center text-xs font-normal text-black opacity-60 md:text-sm'>
               {drawerState.subTitle.split('\n').map((line, index) => (
                 <Fragment key={index}>
                   {line}
