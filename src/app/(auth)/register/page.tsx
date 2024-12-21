@@ -51,7 +51,8 @@ export default function Register({ searchParams }) {
       return apiRequest('POST', `/api/v1/auth/login/${userType}`, credentials)
     },
     onSuccess: response => {
-      const { role_name, practitioner_id, patient_id } = response.data.user
+      const { role_name, email, fullname, practitioner_id, patient_id } =
+        response.data.user
 
       const userType = role_name === 'patient' ? 'patient' : 'clinician'
       const id = userType === 'patient' ? patient_id : practitioner_id
@@ -60,8 +61,9 @@ export default function Register({ searchParams }) {
         payload: {
           token: response.data.token,
           role_name: userType,
-          name: '',
-          id: id
+          fullname: fullname || email,
+          email,
+          id
         }
       })
       router.push('/')
