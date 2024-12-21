@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-export default function Assesment() {
+export default function Assessment() {
   const questionnaire = require('./questionnaire/soap.json')
   const [keyWord, setKeyWord] = useState('')
   const router = useRouter()
@@ -26,9 +26,7 @@ export default function Assesment() {
             className='mr-2 cursor-pointer'
           />
 
-          <div className='text-[14px] font-bold text-white'>
-            Assesment Centre
-          </div>
+          <div className='text-[14px] font-bold text-white'>Self Excercise</div>
         </div>
       </Header>
       <ContentWraper className='p-4'>

@@ -3,12 +3,12 @@ import { ChevronRightIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-export default function PopularAssesment() {
+export default function PopularAssessment() {
   return (
     <div className='bg-[#F9F9F9] p-4'>
       <div className='flex justify-between text-muted'>
-        <span className='mb-2 text-[14px] font-bold'>Popular Assesment</span>
-        <Link className='text-[12px]' href={'/assessment'}>
+        <span className='mb-2 text-[14px] font-bold'>Popular Assessment</span>
+        <Link className='text-[12px]' href={'/assessments'}>
           See All
         </Link>
       </div>
