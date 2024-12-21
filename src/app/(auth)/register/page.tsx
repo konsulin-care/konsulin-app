@@ -1,5 +1,6 @@
 'use client'
 
+import { setCookies } from '@/app/actions'
 import Input from '@/components/login/input'
 import LogoKonsulin from '@/components/login/logo'
 import LoginMedia from '@/components/login/media'
@@ -42,6 +43,10 @@ export default function Register({ searchParams }) {
     retype_password: ''
   })
 
+  const setLoginInfoToCookies = async (formData: any) => {
+    await setCookies('auth', formData)
+  }
+
   const { mutate: loginMutate, isLoading } = useMutation<
     any,
     unknown,
@@ -50,22 +55,27 @@ export default function Register({ searchParams }) {
     mutationFn: (credentials: LoginFormValues) => {
       return apiRequest('POST', `/api/v1/auth/login/${userType}`, credentials)
     },
-    onSuccess: response => {
+    onSuccess: async response => {
       const { role_name, email, fullname, practitioner_id, patient_id } =
         response.data.user
 
       const userType = role_name === 'patient' ? 'patient' : 'clinician'
       const id = userType === 'patient' ? patient_id : practitioner_id
-      dispatch({
+      const payload = {
+        token: response.data.token,
+        role_name: userType,
+        fullname: fullname || email,
+        email,
+        id
+      }
+
+      await setLoginInfoToCookies(JSON.stringify(payload))
+
+      await dispatch({
         type: 'login',
-        payload: {
-          token: response.data.token,
-          role_name: userType,
-          fullname: fullname || email,
-          email,
-          id
-        }
+        payload
       })
+
       router.push('/')
     }
   })
