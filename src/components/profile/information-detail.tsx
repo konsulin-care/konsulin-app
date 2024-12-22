@@ -42,7 +42,7 @@ function DetailItem({ item }) {
   }
 
   if (item.key === 'Educations') {
-    const educations = JSON.parse(item.value)
+    const educations = item.value
     return (
       <>
         <p className='text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
@@ -107,7 +107,6 @@ export default function InformationDetail({
   const filteredClinics = details?.filter(
     clinic => clinic.price_per_session?.value > 0
   )
-
   return (
     <div className='flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
       <div className='flex w-full items-start justify-between'>
