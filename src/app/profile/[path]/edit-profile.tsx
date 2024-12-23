@@ -23,6 +23,7 @@ import {
 import { validateEmail } from '@/utils/validation'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
+import { id } from 'date-fns/locale'
 import Image from 'next/image'
 import { Fragment, useEffect, useState } from 'react'
 
@@ -126,6 +127,11 @@ export default function EditProfile({ userRole }) {
 
   function handleChangeInput(label: string, value: any) {
     setUpdateUser(prevState => ({ ...prevState, [label]: value }))
+    const errorMessage = validateInput(label, value)
+    setErrors(prev => ({
+      ...prev,
+      [label]: errorMessage
+    }))
   }
 
   function handleAddEducationLevel() {
@@ -153,28 +159,36 @@ export default function EditProfile({ userRole }) {
     }
   }
 
+  function validateForm(data: PropsProfile): boolean {
+    const errors: { [key: string]: string } = {}
+    Object.entries(data).forEach(([key, value]) => {
+      const error = validateInput(key, value as string)
+      if (error) {
+        errors[key] = error
+      }
+    })
+
+    const hasValidEducation = updateUser.educations.every(
+      edu => edu.trim() !== ''
+    )
+
+    return Object.keys(errors).length === 0 && hasValidEducation
+  }
+
   async function handleEditSave() {
-    const validationErrors = validateForm(updateUser)
-
-    if (Object.keys(validationErrors).length === 0) {
-      let base64ProfilePicture = updateUser.profile_picture
-
-      if (isValidUrl(updateUser.profile_picture)) {
-        base64ProfilePicture = await urlToBase64(updateUser.profile_picture)
-      }
-
-      const updatedProfile = {
-        ...updateUser,
-        profile_picture: base64ProfilePicture,
-        birth_date: updateUser.birth_date
-          ? format(new Date(updateUser.birth_date), 'yyyy-MM-dd')
-          : undefined
-      }
-
-      mutate(updatedProfile)
-    } else {
-      setErrors(validationErrors)
+    let base64ProfilePicture = updateUser.profile_picture
+    if (isValidUrl(updateUser.profile_picture)) {
+      base64ProfilePicture = await urlToBase64(updateUser.profile_picture)
     }
+    const updatedProfile = {
+      ...updateUser,
+      profile_picture: base64ProfilePicture,
+      birth_date: updateUser.birth_date
+        ? format(new Date(updateUser.birth_date), 'yyyy-MM-dd')
+        : undefined
+    }
+
+    mutate(updatedProfile)
   }
 
   function handleDOBChange(value: any) {
@@ -189,49 +203,56 @@ export default function EditProfile({ userRole }) {
     setDrawerState(DRAWER_STATE.NONE)
   }
 
-  function validateForm(user: PropsProfile) {
-    const errors: { [key: string]: string } = {}
-    const {
-      fullname,
-      email,
-      whatsapp_number,
-      address,
-      birth_date,
-      gender,
-      educations
-    } = user
+  function validateInput(name: string, value: string) {
+    let error = ''
 
-    if (!fullname) {
-      errors.fullname = 'Username is required'
+    switch (name) {
+      case 'fullname':
+        const usernameRegex = /^[a-zA-Z ]+$/
+        if (!value) {
+          error = 'Nama pengguna tidak boleh kosong'
+        } else if (!usernameRegex.test(value)) {
+          error = 'Format nama pengguna tidak valid'
+        } else if (value.length < 8) {
+          error = 'Nama pengguna minimum 8 karakter'
+        }
+        break
+      case 'email':
+        if (!value) {
+          error = 'Email tidak boleh kosong'
+        } else if (!validateEmail(value)) {
+          error = 'Format email tidak valid'
+        }
+        break
+      case 'whatsapp_number':
+        const phoneRegex = /^[0-9]{10,15}$/
+        if (!value.trim()) {
+          error = 'Nomor WhatsApp tidak boleh kosong'
+        } else if (!phoneRegex.test(value)) {
+          error = 'Nomor WhatsApp harus berupa angka 10-15 digit'
+        }
+        break
+
+      case 'address':
+        if (!value.trim()) {
+          error = 'Alamat tidak boleh kosong'
+        }
+        break
+      case 'birth_date':
+        if (!value) {
+          error = 'Tanggal lahir tidak boleh kosong'
+        }
+        break
+      case 'gender':
+        if (!value) {
+          error = 'Jenis kelamin tidak boleh kosong'
+        }
+        break
+      default:
+        break
     }
 
-    if (!email) {
-      errors.email = 'Email is required'
-    } else if (!validateEmail(email)) {
-      errors.email = 'Valid email is required'
-    }
-
-    if (!whatsapp_number) {
-      errors.whatsapp_number = 'Whatsapp number is required'
-    }
-
-    if (!address) {
-      errors.address = 'Address is required'
-    }
-
-    if (!birth_date) {
-      errors.birth_date = 'Birthdate is required'
-    }
-
-    if (!gender) {
-      errors.gender = 'Gender is required'
-    }
-
-    if (educations && educations.length === 0) {
-      errors.education = 'At least one education level is required'
-    }
-
-    return errors
+    return error
   }
 
   function handleGenderSelect(value: string) {
@@ -261,6 +282,19 @@ export default function EditProfile({ userRole }) {
       }
       reader.readAsDataURL(blob)
     })
+  }
+
+  function formatDate(dateObject) {
+    try {
+      if (dateObject instanceof Date) {
+        return format(dateObject, 'dd MMM yyyy', { locale: id })
+      } else {
+        return dateObject
+      }
+    } catch (error) {
+      console.error('Error formatting date:', error)
+      return 'Invalid date'
+    }
   }
 
   return (
@@ -321,7 +355,7 @@ export default function EditProfile({ userRole }) {
             />
             <div className='flex flex-grow justify-start text-sm'>
               {updateUser.birth_date
-                ? format(updateUser.birth_date, 'yyyy-MM-dd')
+                ? formatDate(updateUser.birth_date)
                 : 'Masukan Tanggal Lahir'}
             </div>
           </div>
@@ -332,7 +366,7 @@ export default function EditProfile({ userRole }) {
             placeholder='Masukan Whatsapp Number'
             name='whatsapp_number'
             id='whatsapp_number'
-            type='text'
+            type='number'
             opacity={false}
             value={updateUser.whatsapp_number}
             onChange={(event: any) =>
@@ -433,10 +467,10 @@ export default function EditProfile({ userRole }) {
           )}
         </div>
         <button
-          className='text-md border-1 mt-4 w-full rounded-full border-primary bg-secondary p-4 font-semibold text-white'
+          className={`text-md border-1 mt-6 w-full rounded-full border-primary p-4 font-semibold ${validateForm(updateUser) ? 'bg-secondary text-white' : 'cursor-not-allowed bg-gray-300 text-gray-500'}`}
           type='submit'
           onClick={handleEditSave}
-          disabled={isLoading}
+          disabled={!validateForm(updateUser)}
         >
           {isLoading ? 'Loading...' : 'Simpan'}
         </button>
