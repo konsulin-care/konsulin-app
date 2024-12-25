@@ -28,21 +28,23 @@ export function middleware(request: NextRequest) {
       route instanceof RegExp ? route.test(path) : route === path
     )
 
+  // unauthenticated user can't access private routes
   if (
-    !auth &&
+    Object.keys(auth).length === 0 &&
     routeMatches(
       [...patientRoutes, clinicianRoutes, ...patientAndClinicianRoutes],
       pathname
     )
   ) {
     return Response.redirect(new URL('/register?role=patient', request.url))
-
   }
 
+  // authenticated user can't access login and register page
   if (auth.token && routeMatches(['/login', '/register'], pathname)) {
     return Response.redirect(new URL('/', request.url))
   }
 
+  // authorization base on role
   if (
     (auth.role_name !== 'patient' && routeMatches(patientRoutes, pathname)) || // patient only
     (auth.role_name !== 'cilinician' &&
