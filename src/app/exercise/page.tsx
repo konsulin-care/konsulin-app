@@ -1,5 +1,3 @@
-'use client'
-
 import BackButton from '@/components/general/back-button'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
