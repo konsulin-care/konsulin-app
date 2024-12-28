@@ -1,5 +1,6 @@
 'use client'
 
+import BackButton from '@/components/general/back-button'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
 import { InputWithIcon } from '@/components/ui/input-with-icon'
@@ -21,14 +22,11 @@ export default function Schedule() {
       <NavigationBar />
       <Header>
         <div className='flex w-full flex-col'>
-          <div className='text-[14px] font-bold text-white'>Book Session</div>
-          <div className='mt-4 flex items-center justify-between'>
-            <div className='text-[14px] font-bold text-white'>
+          <div className='flex items-center'>
+            <BackButton />
+            <span className='text-[14px] font-bold text-white'>
               Scheduled Session
-            </div>
-            <Link href='/' className='text-[10px] text-white'>
-              See All
-            </Link>
+            </span>
           </div>
           <div className='card mt-4 flex items-center bg-[#F9F9F9]'>
             <Image
