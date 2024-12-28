@@ -1,24 +1,38 @@
 import { X } from 'lucide-react'
+import { signIn } from 'next-auth/react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function LoginMedia() {
   const [isDisabled, setIsDisabled] = useState(true)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [drawerMessage, setDrawerMessage] = useState('')
+  const router = useRouter()
 
-  function handleLoginBy(type: string) {
+  async function handleLoginBy(type: string) {
     switch (type) {
       case 'whatsapp':
         setDrawerMessage(
           'Fitur login WhatsApp sedang dalam pengembangan, silakan mendaftarkan akun menggunakan email.'
         )
         setIsDrawerOpen(true)
-        console.log('Login via whatsapp') // TODO(harynp): integration for auth via whatsapp
+        console.log('Login via WhatsApp')
         break
       case 'google':
-        console.log('Login via google') // TODO(harynp): integration for auth via google
+        try {
+          const result = await signIn('google')
+          if (result?.ok) {
+            router.push('/')
+          } else {
+            return false
+          }
+        } catch (error) {
+          return false
+        }
         break
+      default:
+        console.warn(`Login type "${type}" is not supported.`)
     }
   }
 
