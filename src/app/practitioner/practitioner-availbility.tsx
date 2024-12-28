@@ -3,7 +3,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
 import { cn } from '@/lib/utils'
 import { addDays, format } from 'date-fns'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const filterContentListTime = [
   '10:00',
@@ -25,15 +25,17 @@ const filterContentListTime = [
 export default function PractitionerAvailbility({
   children,
   isOpen = false,
-  toggleOpen
+  onClose,
+  onChange,
+  date,
+  time
 }: any) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  // const [isOpen, setIsOpen] = useState<boolean>(false)
   const [filter, setFilter] = useState({
-    date: addDays(today, 1),
-    time: undefined
+    date: date || addDays(today, 1),
+    time
   })
 
   const handleFilterChange = (label: string, value: any) => {
@@ -43,10 +45,17 @@ export default function PractitionerAvailbility({
     }))
   }
 
+  useEffect(() => {
+    onChange(filter)
+  }, [filter])
+
   return (
-    <Drawer onClose={() => toggleOpen(false)} open={isOpen}>
+    <Drawer onClose={() => onClose(false)} open={isOpen}>
       <DrawerTrigger asChild>{children}</DrawerTrigger>
-      <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+      <DrawerContent
+        onInteractOutside={() => onClose(false)}
+        className='mx-auto max-w-screen-sm p-4'
+      >
         <div className='mt-4'>
           <div className='flex flex-col'>
             <div className='mx-auto text-[20px] font-bold'>See Availbility</div>
@@ -100,12 +109,12 @@ export default function PractitionerAvailbility({
 
             <Button
               className='mt-4 rounded-xl bg-secondary text-white'
-              onClick={() => toggleOpen(false)}
+              onClick={() => onClose(false)}
             >
               Make an Appointment
             </Button>
             <Button
-              onClick={() => toggleOpen(false)}
+              onClick={() => onClose(false)}
               variant='outline'
               className={cn(
                 buttonVariants({ variant: 'outline' }),
