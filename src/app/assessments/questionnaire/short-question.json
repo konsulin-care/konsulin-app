@@ -1,0 +1,398 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "big-five-inventory",
+  "meta": {
+    "versionId": "23",
+    "lastUpdated": "2025-01-08T08:13:27.457Z"
+  },
+  "text": {},
+  "url": "https://app.konsulin.care/assessments/big-five-inventory",
+  "name": "big-five-inventory",
+  "title": "Big Five Personality Inventory",
+  "status": "active",
+  "subjectType": ["Practitioner", "Patient", "Person"],
+  "publisher": "Konsulin",
+  "contact": [
+    {
+      "name": "Aly Lamuri",
+      "telecom": [
+        {
+          "system": "email",
+          "value": "lamuri.aly8@gmail.com",
+          "use": ""
+        }
+      ]
+    }
+  ],
+  "description": "Big Five Personality Inventory (BFI) adalah instrumen yang berisi 50 pertanyaan dan dirancang untuk diisi sendiri oleh responden. Instrumen ini bertujuan mengukur lima dimensi utama kepribadian, yaitu ekstraversi, agreeableness (keramahan), conscientiousness (ketelitian), neuroticism (kestabilan emosional yang berlawanan), dan openness/intellect (keterbukaan terhadap pengalaman/intelektualitas).",
+  "copyright": "https://openpsychometrics.org/printable/big-five-personality-test.pdf",
+  "effectivePeriod": {},
+  "code": [{}],
+  "item": [
+    {
+      "linkId": "355993325274",
+      "text": "Instruksi",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "instruction",
+          "text": "Tandai seberapa setuju Anda untuk setiap pernyataan di bawah.",
+          "type": "display"
+        }
+      ]
+    },
+    {
+      "linkId": "640098260011",
+      "text": "Halaman",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "218895729592",
+          "type": "group",
+          "item": [
+            {
+              "linkId": "q1",
+              "text": "Saya adalah pusat perhatian di acara sosial",
+              "type": "choice",
+              "required": true,
+              "answerOption": [
+                {
+                  "valueCoding": {
+                    "code": "disagree",
+                    "display": "Tidak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "slightly-disagree",
+                    "display": "Agak tidak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "neutral",
+                    "display": "Netral"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "slightly-agree",
+                    "display": "Agak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "agree",
+                    "display": "Setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "linkId": "q2",
+              "text": "Saya kurang peduli terhadap orang lain.",
+              "type": "choice",
+              "required": true,
+              "answerOption": [
+                {
+                  "valueCoding": {
+                    "code": "disagree",
+                    "display": "Tidak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "slightly-disagree",
+                    "display": "Agak tidak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "neutral",
+                    "display": "Netral"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "slightly-agree",
+                    "display": "Agak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "agree",
+                    "display": "Setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "linkId": "q3",
+              "text": "Saya selalu siap",
+              "type": "choice",
+              "required": true,
+              "answerOption": [
+                {
+                  "valueCoding": {
+                    "code": "disagree",
+                    "display": "Tidak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "slightly-disagree",
+                    "display": "Agak tidak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "neutral",
+                    "display": "Netral"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "slightly-agree",
+                    "display": "Agak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "agree",
+                    "display": "Setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "linkId": "q4",
+              "text": "Saya mudah stres",
+              "type": "choice",
+              "required": true,
+              "answerOption": [
+                {
+                  "valueCoding": {
+                    "code": "disagree",
+                    "display": "Tidak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "slightly-disagree",
+                    "display": "Agak tidak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "neutral",
+                    "display": "Netral"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "slightly-agree",
+                    "display": "Agak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "agree",
+                    "display": "Setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "linkId": "q5",
+              "text": "Saya memiliki kosa kata yang kaya",
+              "type": "choice",
+              "required": true,
+              "answerOption": [
+                {
+                  "valueCoding": {
+                    "code": "disagree",
+                    "display": "Tidak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "slightly-disagree",
+                    "display": "Agak tidak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "neutral",
+                    "display": "Netral"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "slightly-agree",
+                    "display": "Agak setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "code": "agree",
+                    "display": "Setuju"
+                  },
+                  "valueReference": {
+                    "identifier": {
+                      "period": {},
+                      "type": {}
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
