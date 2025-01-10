@@ -76,7 +76,7 @@ export default function AppChartClient({
         }
       >
         <Button className='bg-secondary text-white shadow-md'>
-          Silakan Daftar atau Masuk Mengakses Fitur Ini
+          Silakan Daftar atau Masuk untuk Mengakses Fitur Ini
         </Button>
       </Link>
     </div>

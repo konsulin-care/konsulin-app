@@ -3,7 +3,8 @@
 import Header from '@/components/header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useDetailClinicianByClinic } from '@/services/clinic'
+import { useAuth } from '@/context/auth/authContext'
+import { useBooking } from '@/context/booking/bookingContext'
 import {
   ArrowRightIcon,
   CalendarDaysIcon,
@@ -21,16 +22,19 @@ export interface IPractitionerProps {
 }
 
 export default function Practitioner({ params }: IPractitionerProps) {
+  const { state: authState } = useAuth()
+  const { state: bookingState, dispatch } = useBooking()
+
   const searchParams = useSearchParams()
   const clinicId = searchParams.get('clinicId')
 
   const router = useRouter()
   const [isOpen, setIsOpen] = useState<boolean>(false)
 
-  const { data } = useDetailClinicianByClinic({
-    clinician_id: params.practitionerId,
-    clinic_id: clinicId
-  })
+  // const { data } = useDetailClinicianByClinic({
+  //   clinician_id: params.practitionerId,
+  //   clinic_id: clinicId
+  // })
 
   return (
     <>
@@ -67,7 +71,21 @@ export default function Practitioner({ params }: IPractitionerProps) {
           </h3>
         </div>
 
-        <PractitionerAvailbility isOpen={isOpen} toggleOpen={e => setIsOpen(e)}>
+        <PractitionerAvailbility
+          date={bookingState.date}
+          time={bookingState.time}
+          isOpen={isOpen}
+          onClose={e => setIsOpen(e)}
+          onChange={({ date, time }) => {
+            dispatch({
+              type: 'UPDATE_BOOKING_INFO',
+              payload: {
+                date,
+                time
+              }
+            })
+          }}
+        >
           <div
             onClick={() => setIsOpen(true)}
             className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'
@@ -119,14 +137,23 @@ export default function Practitioner({ params }: IPractitionerProps) {
             </Badge>
           </div>
         </div>
-        <Link
-          href={`/practitioner/${params.practitionerId}/book-practitioner`}
-          className='mt-auto w-full'
-        >
-          <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 text-[14px] font-bold text-white'>
-            Book Session
-          </Button>
-        </Link>
+
+        {authState.isAuthenticated ? (
+          <Link
+            href={`/practitioner/${params.practitionerId}/book-practitioner`}
+            className='mt-auto w-full'
+          >
+            <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 text-[14px] font-bold text-white'>
+              Book Session
+            </Button>
+          </Link>
+        ) : (
+          <Link href={'/register'} className='mt-auto w-full'>
+            <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 text-[14px] font-bold text-white'>
+              Silakan Daftar atau Masuk untuk Booking
+            </Button>
+          </Link>
+        )}
       </div>
     </>
   )

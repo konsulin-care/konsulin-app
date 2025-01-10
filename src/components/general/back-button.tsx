@@ -3,7 +3,7 @@
 import { ChevronLeftIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
-const BackButton = () => {
+const BackButton = ({ size = 32 }: { size?: number }) => {
   const router = useRouter()
 
   const handleBackClick = () => {
@@ -12,6 +12,7 @@ const BackButton = () => {
 
   return (
     <ChevronLeftIcon
+      size={size}
       onClick={handleBackClick}
       color='white'
       className='mr-2 cursor-pointer'
