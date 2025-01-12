@@ -19,6 +19,10 @@ export default function Questionnaire({ params }) {
   const { data: questionnaire, isLoading: questionnaireIsLoading } =
     useQuestionnaire(params.assessmentsId)
 
+  /** The code below is only for debugging purposes. Please remove it later. */
+  // const questionnaireIsLoading = false
+  // const questionnaire = require('../questionnaire/short-question.json')
+
   return (
     <>
       <NavigationBar />

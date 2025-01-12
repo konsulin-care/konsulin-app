@@ -7,11 +7,12 @@ import {
   getResponse,
   RendererThemeProvider,
   useBuildForm,
+  useQuestionnaireResponseStore,
   useRendererQueryClient
 } from '@konsulin/smart-forms-renderer'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { Questionnaire, QuestionnaireResponse } from 'fhir/r4'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 
 interface FhirFormsRendererProps {
@@ -24,6 +25,7 @@ interface FhirFormsRendererProps {
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const { questionnaire, isAuthenticated } = props
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null)
+  const [isValidated, setIsValidated] = useState<boolean | undefined>(undefined)
 
   const queryClient = useRendererQueryClient()
   const isBuilding = useBuildForm(questionnaire)
@@ -32,6 +34,26 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     mutate: submitQuestionnaire,
     isLoading: submitQuestionnaireIsLoading
   } = useSubmitQuestionnaire(response, isAuthenticated)
+
+  const invalidItems = useQuestionnaireResponseStore.use.invalidItems()
+
+  const handleValidation = () => {
+    if (Object.keys(invalidItems).length !== 0) {
+      setIsValidated(false)
+    } else {
+      const questionnaireResponse = getResponse()
+      setResponse({ ...questionnaireResponse, ...props.customObject })
+      submitQuestionnaire(undefined, {
+        onSuccess: () => {
+          toast.success('Assessments Berhasil Dikirim')
+        }
+      })
+    }
+  }
+
+  useEffect(() => {
+    if (Object.keys(invalidItems).length === 0) setIsValidated(true)
+  }, [invalidItems])
 
   if (isBuilding) {
     return (
@@ -52,24 +74,23 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           <BaseRenderer />
         </div>
       </QueryClientProvider>
-      <div className='mt-4 px-2'>
+      <div className='flex-flex-col mt-4 px-2'>
+        {isValidated === false ? (
+          <div className='mb-2 w-full text-destructive'>
+            Lengkapi assessments sesuai instruksi
+          </div>
+        ) : (
+          ''
+        )}
         <Button
-          disabled={submitQuestionnaireIsLoading}
+          disabled={submitQuestionnaireIsLoading || isValidated === false}
           className='w-full bg-secondary text-white'
-          onClick={() => {
-            const questionnaireResponse = getResponse()
-            setResponse({ ...questionnaireResponse, ...props.customObject })
-            submitQuestionnaire(undefined, {
-              onSuccess: data => {
-                toast.success('Success')
-              }
-            })
-          }}
+          onClick={handleValidation}
         >
           {submitQuestionnaireIsLoading ? (
             <LoadingSpinnerIcon stroke='white' />
           ) : (
-            props.submitText || 'Submit Response'
+            props.submitText || 'Kirim'
           )}
         </Button>
       </div>
