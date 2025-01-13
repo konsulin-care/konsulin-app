@@ -9,7 +9,7 @@ import {
   useBuildForm,
   useQuestionnaireResponseStore,
   useRendererQueryClient
-} from '@konsulin/smart-forms-renderer'
+} from '@aehrc/smart-forms-renderer'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { Questionnaire, QuestionnaireResponse } from 'fhir/r4'
 import { useEffect, useState } from 'react'
