@@ -25,7 +25,7 @@ interface FhirFormsRendererProps {
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const { questionnaire, isAuthenticated } = props
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null)
-  const [isValidated, setIsValidated] = useState<boolean | undefined>(undefined)
+  const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0)
 
   const queryClient = useRendererQueryClient()
   const isBuilding = useBuildForm(questionnaire)
@@ -37,9 +37,21 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const invalidItems = useQuestionnaireResponseStore.use.invalidItems()
 
+  const checkRequiredIsEmpty = () => {
+    const required = Object.values(invalidItems).flatMap(item =>
+      item.issue
+        .filter(issue => issue.code === 'required')
+        .map(issue => ({
+          expression: issue.expression[0],
+          message: issue.details.text
+        }))
+    )
+    setRequiredItemEmpty(required.length)
+  }
+
   const handleValidation = () => {
     if (Object.keys(invalidItems).length !== 0) {
-      setIsValidated(false)
+      checkRequiredIsEmpty()
     } else {
       const questionnaireResponse = getResponse()
       setResponse({ ...questionnaireResponse, ...props.customObject })
@@ -52,7 +64,8 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   }
 
   useEffect(() => {
-    if (Object.keys(invalidItems).length === 0) setIsValidated(true)
+    if (Object.keys(invalidItems).length === 0) setRequiredItemEmpty(0)
+    if (requiredItemEmpty > 0) checkRequiredIsEmpty()
   }, [invalidItems])
 
   if (isBuilding) {
@@ -75,15 +88,16 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         </div>
       </QueryClientProvider>
       <div className='flex-flex-col mt-4 px-2'>
-        {isValidated === false ? (
+        {requiredItemEmpty > 0 ? (
           <div className='mb-2 w-full text-destructive'>
-            Lengkapi assessments sesuai instruksi
+            Terdapat {requiredItemEmpty} pertanyaan wajib yang belum terisi, yuk
+            dilengkapi dulu!
           </div>
         ) : (
           ''
         )}
         <Button
-          disabled={submitQuestionnaireIsLoading || isValidated === false}
+          disabled={submitQuestionnaireIsLoading || requiredItemEmpty > 0}
           className='w-full bg-secondary text-white'
           onClick={handleValidation}
         >
