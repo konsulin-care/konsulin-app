@@ -1,12 +1,3 @@
-## Features
-
-- **Next.js**: The React framework for production.
-- **PWA support**: Add offline capabilities and improve the performance of your app with `Serwist`.
-- **Tailwind CSS** : A utility-first CSS framework packed with classes
-- **TypeScript**: Optional, strongly typed language that builds on JavaScript.
-- **ESLint**: Linting for JavaScript and TypeScript.
-- **Prettier**: Code formatter to ensure consistent code style.
-
 ### Prerequisites
 
 Make sure you have the following installed:
@@ -19,7 +10,8 @@ Make sure you have the following installed:
 1. Clone this repository:
 
    ```sh
-   git clone git@github.com:konsulin-id/fe-konsuin.git
+   git clone git@github.com:konsulin-care/fe-konsulin.git
+   
    cd fe-konsuin
    ```
 
