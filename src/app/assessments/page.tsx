@@ -1,54 +1,45 @@
-'use client'
-
+import BackButton from '@/components/general/back-button'
+import CardLoader from '@/components/general/card-loader'
 import ContentWraper from '@/components/general/content-wraper'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
-import { InputWithIcon } from '@/components/ui/input-with-icon'
-import { ChevronLeftIcon, SearchIcon } from 'lucide-react'
+import { useListAssessments } from '@/services/api/assessment'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
 
 export default function Assessment() {
-  const questionnaire = require('./questionnaire/soap.json')
-  const [keyWord, setKeyWord] = useState('')
-  const router = useRouter()
-
+  const { data: assessments, isLoading } = useListAssessments()
   return (
     <>
       <NavigationBar />
       <Header>
         <div className='flex w-full items-center'>
-          <ChevronLeftIcon
-            onClick={() => router.back()}
-            color='white'
-            className='mr-2 cursor-pointer'
-          />
-
+          <BackButton />
           <div className='text-[14px] font-bold text-white'>Self Excercise</div>
         </div>
       </Header>
+
       <ContentWraper className='p-4'>
-        <InputWithIcon
+        {/* <InputWithIcon
           value={keyWord}
           onChange={e => setKeyWord(e.target.value)}
           placeholder='Search Asessment'
           className='mb-4 mr-4 h-[50px] w-full rounded-[16px] border-0 bg-[#F9F9F9] text-primary'
           startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
-        />
+        /> */}
 
         <div className='text-[14px] font-bold text-[hsla(220,9%,19%,0.6)]'>
           Browse Instruments
         </div>
 
-        <div className='mt-4 grid grid-cols-1 gap-2 md:grid-cols-2'>
-          {Array(6)
-            .fill(undefined)
-            .map((_, index: number) => (
+        {isLoading ? (
+          <CardLoader />
+        ) : (
+          <div className='mt-4 grid grid-cols-1 gap-2 md:grid-cols-2'>
+            {assessments.map(item => (
               <Link
-                key={index}
-                href={`assessment/${123}`}
+                key={item.assessment_id}
+                href={`assessments/${item.assessment_id}`}
                 className='card item flex flex-col p-2'
               >
                 <div className='flex items-center'>
@@ -62,12 +53,13 @@ export default function Assessment() {
                     />
                   </div>
                   <div className='text-[12px] text-[hsla(220,9%,19%,1)]'>
-                    BIG 5 Personality Test
+                    {item.title}
                   </div>
                 </div>
               </Link>
             ))}
-        </div>
+          </div>
+        )}
       </ContentWraper>
     </>
   )
