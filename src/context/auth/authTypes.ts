@@ -9,6 +9,7 @@ export interface IStateUserInfo {
   fullname?: string
   id?: string
   email?: string
+  profile_picture?: string
 }
 
 export type IActionAuth = IActionLogin | IActionLogout

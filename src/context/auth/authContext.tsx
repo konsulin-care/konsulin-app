@@ -32,7 +32,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       role_name: auth.role_name || 'guest',
       fullname: auth.fullname || auth.email,
       email: auth.email,
-      id: auth.id
+      id: auth.id,
+      profile_picture: auth.profile_picture
     }
 
     dispatch({

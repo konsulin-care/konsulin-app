@@ -30,13 +30,25 @@ export default function HomeHeader() {
           </div>
         ) : (
           <div className='flex'>
-            <Image
-              className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-              width={32}
-              height={32}
-              alt='offline'
-              src={'/images/avatar.jpg'}
-            />
+            {!authState.userInfo.profile_picture ? (
+              <div className='mr-2 rounded-full bg-white p-[2px]'>
+                <Image
+                  className='h-[32px] w-[32px] self-center rounded-full object-cover'
+                  width={32}
+                  height={32}
+                  alt='profile_picture'
+                  src={`/favicon/favicon-32x32.png`}
+                />
+              </div>
+            ) : (
+              <Image
+                className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
+                width={32}
+                height={32}
+                alt='profile_picture'
+                src={authState.userInfo.profile_picture}
+              />
+            )}
             <div className='flex flex-col'>
               <div className='text-[10px] font-normal text-white'>
                 Selamat Datang di Dashboard anda

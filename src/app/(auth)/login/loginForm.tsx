@@ -27,6 +27,7 @@ interface LoginResponse {
       role_name: string
       practitioner_id?: string
       patient_id?: string
+      profile_picture?: string
     }
   }
 }
@@ -76,7 +77,7 @@ function LoginFormContent({ role }) {
       }
     },
     onSuccess: async response => {
-      const { fullname, practitioner_id, patient_id, email } =
+      const { fullname, practitioner_id, patient_id, email, profile_picture } =
         response.data.user
 
       let userType = ''
@@ -93,7 +94,8 @@ function LoginFormContent({ role }) {
         role_name: userType,
         fullname: fullname || email,
         email,
-        id
+        id,
+        profile_picture
       }
 
       await setLoginInfoToCookies(JSON.stringify(payload))
