@@ -483,7 +483,7 @@ export default function EditProfile({ userRole }) {
         <DrawerTrigger asChild>
           <div />
         </DrawerTrigger>
-        <DrawerContent className='p-4'>
+        <DrawerContent className='mx-auto flex w-full max-w-screen-sm flex-col p-4'>
           <DrawerHeader>
             <DrawerTitle></DrawerTitle>
             <DrawerDescription></DrawerDescription>
