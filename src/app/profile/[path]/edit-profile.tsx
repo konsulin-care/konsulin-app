@@ -500,7 +500,7 @@ export default function EditProfile({ userRole }) {
         onOpenChange={open => !open && closeDrawer()}
       >
         <DrawerTrigger />
-        <DrawerContent>
+        <DrawerContent className='mx-auto flex w-full max-w-screen-sm flex-col'>
           <DrawerHeader>
             <DrawerTitle className='text-center text-xl font-bold text-[#2C2F35] opacity-100'>
               Changes Successful!
