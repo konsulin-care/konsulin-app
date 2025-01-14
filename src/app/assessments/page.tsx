@@ -15,7 +15,9 @@ export default function Assessment() {
       <Header>
         <div className='flex w-full items-center'>
           <BackButton />
-          <div className='text-[14px] font-bold text-white'>Self Excercise</div>
+          <div className='text-[14px] font-bold text-white'>
+            Assesment Centre
+          </div>
         </div>
       </Header>
 
