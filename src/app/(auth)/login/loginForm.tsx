@@ -3,7 +3,6 @@ import Input from '@/components/login/input'
 import { useAuth } from '@/context/auth/authContext'
 import { apiRequest } from '@/services/api'
 import {
-  alphaNumeric,
   capitalizeFirstLetter,
   specialCharacter,
   upperCaseOneCharacter
@@ -136,8 +135,9 @@ function LoginFormContent({ role }) {
           newError = 'Username is required'
         } else if (value.length < 8) {
           newError = 'Username must be at least 8 characters long'
-        } else if (!alphaNumeric(value)) {
-          newError = 'Username must contain only letters and numbers'
+        } else if (!/^[a-zA-Z0-9._]+$/.test(value)) {
+          newError =
+            'Username can only contain letters, numbers, dots, and underscores'
         }
         break
       case 'password':
