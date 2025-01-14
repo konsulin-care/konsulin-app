@@ -18,25 +18,13 @@ export const reducer = (state: IStateAuth, action: IActionAuth): IStateAuth => {
       return {
         ...state,
         isAuthenticated: !!(action.payload.token && action.payload.role_name),
-        userInfo: {
-          token: action.payload.token,
-          role_name: action.payload.role_name,
-          fullname: action.payload.fullname,
-          id: action.payload.id,
-          email: action.payload.email
-        }
+        userInfo: action.payload
       }
     case 'auth-check':
       return {
         ...state,
         isAuthenticated: !!(action.payload.token && action.payload.role_name),
-        userInfo: {
-          token: action.payload.token,
-          role_name: action.payload.role_name,
-          fullname: action.payload.fullname,
-          id: action.payload.id,
-          email: action.payload.email
-        }
+        userInfo: action.payload
       }
     case 'logout':
       deleteCookie('auth')

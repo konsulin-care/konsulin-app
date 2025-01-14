@@ -1,14 +1,15 @@
 'use client'
 
+import BackButton from '@/components/general/back-button'
 import ContentWraper from '@/components/general/content-wraper'
 import EmptyState from '@/components/general/empty-state'
 import FhirFormsRenderer from '@/components/general/fhir-forms-renderer'
 import Header from '@/components/header'
 import { LoadingSpinnerIcon } from '@/components/icons'
 import NavigationBar from '@/components/navigation-bar'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/context/auth/authContext'
-import { useQuestionnaire } from '@/services/questionnaire'
-import Image from 'next/image'
+import { useQuestionnaire } from '@/services/api/assessment'
 
 export interface IQuestionnaire {
   params: { assessmentsId: string }
@@ -27,27 +28,16 @@ export default function Questionnaire({ params }) {
     <>
       <NavigationBar />
       <Header>
-        {!authState.isAuthenticated ? (
-          <div className='mt-5'></div>
-        ) : (
-          <div className='flex'>
-            <Image
-              className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-              width={32}
-              height={32}
-              alt='offline'
-              src={'/images/avatar.jpg'}
-            />
-            <div className='flex flex-col'>
-              <div className='text-[10px] font-normal text-white'>
-                Selamat Datang di Dashboard anda
-              </div>
-              <div className='text-[14px] font-bold text-white'>
-                Aji Si {authState.userInfo.role_name}
-              </div>
-            </div>
+        <div className='flex w-full items-center'>
+          <BackButton />
+          <div className='text-[14px] font-bold text-white'>
+            {questionnaireIsLoading ? (
+              <Skeleton className='h-[24px] w-[175px]' />
+            ) : (
+              questionnaire.title
+            )}
           </div>
-        )}
+        </div>
       </Header>
       <ContentWraper>
         <div className='min-h-screen p-4'>

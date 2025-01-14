@@ -1,6 +1,6 @@
 import { LoadingSpinnerIcon } from '@/components/icons'
 import { Button } from '@/components/ui/button'
-import { useSubmitQuestionnaire } from '@/services/questionnaire'
+import { useSubmitQuestionnaire } from '@/services/api/assessment'
 
 import {
   BaseRenderer,
@@ -89,7 +89,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       </QueryClientProvider>
       <div className='flex-flex-col mt-4 px-2'>
         {requiredItemEmpty > 0 ? (
-          <div className='mb-2 w-full text-destructive'>
+          <div className='mb-2 w-full text-sm text-destructive'>
             Terdapat {requiredItemEmpty} pertanyaan wajib yang belum terisi, yuk
             dilengkapi dulu!
           </div>
