@@ -1,3 +1,5 @@
+'use client'
+
 import BackButton from '@/components/general/back-button'
 import CardLoader from '@/components/general/card-loader'
 import ContentWraper from '@/components/general/content-wraper'
