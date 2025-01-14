@@ -68,7 +68,7 @@ export default function Patient() {
       </div>
       <InformationDetail
         isRadiusIcon
-        iconUrl='/images/sample-foto.svg'
+        iconUrl={state.profile.profile_picture || '/images/sample-foto.svg'}
         title={state.profile.fullname}
         subTitle={state.profile.email}
         buttonText='Edit Profile'
