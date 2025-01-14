@@ -7,7 +7,7 @@ import Header from '@/components/header'
 import { LoadingSpinnerIcon } from '@/components/icons'
 import NavigationBar from '@/components/navigation-bar'
 import { useAuth } from '@/context/auth/authContext'
-import { useQuestionnaire } from '@/services/questionnaire'
+import { useQuestionnaire } from '@/services/api/assessment'
 import Image from 'next/image'
 
 export interface IQuestionnaire {

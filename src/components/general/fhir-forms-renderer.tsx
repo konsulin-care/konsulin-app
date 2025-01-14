@@ -1,6 +1,6 @@
 import { LoadingSpinnerIcon } from '@/components/icons'
 import { Button } from '@/components/ui/button'
-import { useSubmitQuestionnaire } from '@/services/questionnaire'
+import { useSubmitQuestionnaire } from '@/services/api/assessment'
 
 import {
   BaseRenderer,
