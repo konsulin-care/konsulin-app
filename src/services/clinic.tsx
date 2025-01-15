@@ -64,6 +64,7 @@ export const useDetailClinicianByClinic = ({ clinician_id, clinic_id }) => {
   return useQuery({
     queryKey: ['detail-clinician-by-clinic', clinic_id],
     queryFn: () =>
-      API.get(`/api/v1/clinics/${clinic_id}/clinicians/${clinician_id}`)
+      API.get(`/api/v1/clinics/${clinic_id}/clinicians/${clinician_id}`),
+    select: response => response.data
   })
 }
