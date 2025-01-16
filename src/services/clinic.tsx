@@ -60,11 +60,17 @@ export const useClinicFindByID = (clinicId: number | string) => {
   })
 }
 
-export const useDetailClinicianByClinic = ({ clinician_id, clinic_id }) => {
+export const useDetailClinicianByClinic = ({
+  clinician_id,
+  clinic_id,
+  ...rest
+}) => {
   return useQuery({
     queryKey: ['detail-clinician-by-clinic', clinic_id],
     queryFn: () =>
       API.get(`/api/v1/clinics/${clinic_id}/clinicians/${clinician_id}`),
-    select: response => response.data
+    select: response => response.data,
+    enabled: rest?.enable,
+    ...rest
   })
 }

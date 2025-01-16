@@ -1,12 +1,20 @@
 export interface IStateBooking {
-  clinician_id?: string
-  schedule_id?: string
-  date?: string
+  date?: Date
   time?: string
-  session_type?: 'online' | 'offline'
-  number_of_sessions?: number
-  price_per_session?: number
-  problem_brief?: string
+
+  detailClinicianByClinicianID?: {
+    clinician_id: string
+    practice_information: {
+      affiliation: string
+      specialties: string[]
+      price_per_session: {
+        value: number
+        currency: string
+      }
+    }
+    schedule_id: string
+    practitioner_role_id: string
+  }
 }
 
 export type IActionBooking = IUpdateBookingInfo
