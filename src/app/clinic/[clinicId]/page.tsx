@@ -165,6 +165,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
           </div>
         ) : (
           <EmptyState
+            className='py-16'
             title='No Clinicians Found'
             subtitle='Try Another Clinic.'
           />
