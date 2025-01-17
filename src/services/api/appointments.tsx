@@ -1,4 +1,3 @@
-import { IStateBooking } from '@/context/booking/bookingTypes'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { API } from '../api'
 
@@ -21,6 +20,17 @@ export const useGetUpcomingAppointments = () => {
   })
 }
 
+export interface ICreateAppointmentsPayload {
+  clinician_id: string
+  schedule_id: string
+  date: string
+  time: string
+  session_type: string
+  number_of_sessions: number
+  price_per_session: number
+  problem_brief: string
+}
+
 export const useCreateAppointments = ({
   clinician_id,
   schedule_id,
@@ -30,7 +40,7 @@ export const useCreateAppointments = ({
   number_of_sessions,
   price_per_session,
   problem_brief
-}: IStateBooking) => {
+}: ICreateAppointmentsPayload) => {
   return useMutation({
     mutationKey: ['create-appointments'],
     mutationFn: async () => {

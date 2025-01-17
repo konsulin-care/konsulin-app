@@ -159,7 +159,7 @@ export default function Clinic() {
               ))}
             </div>
           ) : (
-            <EmptyState />
+            <EmptyState className='py-16' />
           )}
         </div>
       </ContentWraper>

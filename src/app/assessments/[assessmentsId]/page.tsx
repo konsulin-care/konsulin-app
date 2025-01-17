@@ -50,7 +50,11 @@ export default function Questionnaire({ params }) {
               />
             </div>
           ) : !questionnaire ? (
-            <EmptyState title='Questionnaire not found' subtitle='' />
+            <EmptyState
+              className='py-16'
+              title='Questionnaire not found'
+              subtitle=''
+            />
           ) : (
             <FhirFormsRenderer
               questionnaire={questionnaire}

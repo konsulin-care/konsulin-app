@@ -1,14 +1,13 @@
+import { addDays } from 'date-fns'
 import { IActionBooking, IStateBooking } from './bookingTypes'
 
+const today = new Date()
+today.setHours(0, 0, 0, 0)
+
 export const initialState: IStateBooking = {
-  clinician_id: null,
-  schedule_id: null,
-  date: null,
+  date: addDays(today, 1),
   time: null,
-  session_type: 'offline',
-  number_of_sessions: null,
-  price_per_session: null,
-  problem_brief: ''
+  detailClinicianByClinicianID: null
 }
 
 export const reducer = (

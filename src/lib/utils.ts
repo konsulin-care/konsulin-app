@@ -47,3 +47,12 @@ export function getDaysInRange(startDate, endDate) {
 
   return daysInRange.length === 0 ? null : daysInRange
 }
+
+const formatter = new Intl.ListFormat('id', {
+  style: 'long',
+  type: 'conjunction'
+})
+
+export function conjunction(param) {
+  if (param) return formatter.format(param)
+}
