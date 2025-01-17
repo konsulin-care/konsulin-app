@@ -15,7 +15,10 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useBooking } from '@/context/booking/bookingContext'
-import { useCreateAppointments } from '@/services/api/appointments'
+import {
+  ICreateAppointmentsPayload,
+  useCreateAppointments
+} from '@/services/api/appointments'
 import { useDetailClinicianByClinic } from '@/services/clinic'
 import { format } from 'date-fns'
 import { ChevronDownIcon, ChevronLeftIcon } from 'lucide-react'
@@ -23,6 +26,8 @@ import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import PractitionerAvailbility from '../../practitioner-availbility'
+
+import { conjunction } from '@/lib/utils'
 
 export interface IBookingPractitionerProps {
   params: { practitionerId: string }
@@ -33,10 +38,28 @@ export default function BookingPractitioner({
 }: IBookingPractitionerProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-
   const clinicId = searchParams.get('clinicId')
-
   const { state: bookingState, dispatch } = useBooking()
+
+  const [bookingForm, setBookingInformation] = useState({
+    number_of_sessions: undefined,
+    problem_brief: ''
+  })
+
+  const appointmentsPayload: ICreateAppointmentsPayload = {
+    ...bookingForm,
+    clinician_id:
+      bookingState.detailClinicianByClinicianID?.clinician_id || undefined,
+    schedule_id: bookingState.detailClinicianByClinicianID?.schedule_id,
+    price_per_session:
+      bookingState.detailClinicianByClinicianID?.practice_information
+        ?.price_per_session.value,
+    date: format(bookingState.date, 'yyyy-MM-dd'),
+    time: bookingState.time,
+    session_type: 'offline'
+  }
+
+  const [errorForm, setErrorForm] = useState(undefined)
 
   const { data: detailClinician, isLoading: isDetailClinicianLoading } =
     useDetailClinicianByClinic({
@@ -44,6 +67,8 @@ export default function BookingPractitioner({
       clinic_id: clinicId,
       enable: !bookingState.detailClinicianByClinicianID
     })
+
+  const submitAppointments = useCreateAppointments(appointmentsPayload)
 
   useEffect(() => {
     dispatch({
@@ -54,21 +79,36 @@ export default function BookingPractitioner({
     })
   }, [detailClinician])
 
-  const [bookingInformation, setBookingInformation] = useState({
-    ...bookingState,
-    number_of_sessions: null,
-    problem_brief: ''
-  })
-
-  const { mutate: submitAppointments, isLoading: submitAppointmentsIsLoading } =
-    useCreateAppointments(bookingInformation)
-
   const handleBookingInformationChange = (key: string, value: any) => {
     setBookingInformation(prevState => ({
       ...prevState,
       [key]: value
     }))
   }
+
+  const handleSubmit = () => {
+    let emptyField = Object.entries(appointmentsPayload).filter(
+      item => !item[1]
+    )
+
+    if (emptyField.length > 0) {
+      setErrorForm(emptyField.map(item => item[0]))
+    } else {
+      submitAppointments.mutate()
+    }
+  }
+
+  useEffect(() => {
+    if (errorForm) {
+      if (
+        bookingState.date &&
+        bookingState.time &&
+        bookingForm.number_of_sessions &&
+        bookingForm.problem_brief
+      )
+        setErrorForm(null)
+    }
+  }, [bookingForm, bookingState.date, bookingState.time])
 
   return (
     <>
@@ -161,10 +201,10 @@ export default function BookingPractitioner({
                   onChange={e =>
                     handleBookingInformationChange(
                       'number_of_sessions',
-                      e.target.value
+                      parseInt(e.target.value)
                     )
                   }
-                  value={bookingInformation.number_of_sessions}
+                  value={bookingForm.number_of_sessions}
                   placeholder='Number of Sessions'
                   type='number'
                   className='w-[50%] text-[12px] text-[#2C2F35]'
@@ -173,7 +213,7 @@ export default function BookingPractitioner({
               <div className='mt-4 text-[12px] font-bold'>Problem Brief</div>
               <div className='mt-2'>
                 <Textarea
-                  value={bookingInformation.problem_brief}
+                  value={bookingForm.problem_brief}
                   onChange={e =>
                     handleBookingInformationChange(
                       'problem_brief',
@@ -185,6 +225,9 @@ export default function BookingPractitioner({
                 />
               </div>
             </div>
+            {!errorForm ? null : (
+              <div className='mt-2 text-sm text-destructive'>{`Lengkapi ${conjunction(errorForm)}.`}</div>
+            )}
           </div>
 
           <div className='mt-auto flex w-full items-center justify-between p-4 shadow-[hsla(0,0%,85%,0.25)_0px_-4px_24px_0px]'>
@@ -193,7 +236,7 @@ export default function BookingPractitioner({
               <span className='text-[20px] font-bold'>Rp.210.000</span>
             </div>
 
-            {submitAppointmentsIsLoading ? (
+            {submitAppointments.isLoading ? (
               <div className='ml-2 flex w-[150px] justify-center rounded-[32px] bg-secondary'>
                 <LoadingSpinnerIcon
                   stroke='white'
@@ -204,8 +247,8 @@ export default function BookingPractitioner({
               </div>
             ) : (
               <Button
-                onClick={() => submitAppointments()}
-                disabled={submitAppointmentsIsLoading}
+                onClick={handleSubmit}
+                disabled={submitAppointments.isLoading}
                 className='ml-2 w-[150px] rounded-[32px] bg-secondary text-[14px] font-bold text-white'
               >
                 Book Session
