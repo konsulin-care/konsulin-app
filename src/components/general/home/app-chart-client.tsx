@@ -2,13 +2,9 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import useLoaded from '@/hooks/useLoaded'
 import { cn } from '@/lib/utils'
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
 
-const Pie = dynamic(
-  () => import('@ant-design/plots').then(mod => mod.Pie) as any,
-  { ssr: false }
-)
+import { Pie } from '@ant-design/plots'
 
 export default function AppChartClient({
   isBlur = false
