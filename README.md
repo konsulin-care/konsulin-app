@@ -2,7 +2,7 @@
 
 Make sure you have the following installed:
 
-- [Node.js](https://nodejs.org/) (v22.x)
+- [Node.js](https://nodejs.org/) (v20.x)
 - [Yarn](https://yarnpkg.com/) or [npm](https://www.npmjs.com/)
 
 ### Installation
@@ -11,7 +11,7 @@ Make sure you have the following installed:
 
    ```sh
    git clone git@github.com:konsulin-care/fe-konsulin.git
-   
+
    cd fe-konsuin
    ```
 

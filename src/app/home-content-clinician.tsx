@@ -1,15 +1,10 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import dynamic from 'next/dynamic'
+import { Column } from '@ant-design/plots'
 import Image from 'next/image'
 import Link from 'next/link'
 import Community from '../components/general/home/community'
 
 export default function HomeContentClinician() {
-  const Column = dynamic(
-    () => import('@ant-design/plots').then(mod => mod.Column) as any,
-    { ssr: false }
-  )
-
   const dataWeekly: any = {
     data: [
       { type: 'Mon', value: 3 },
