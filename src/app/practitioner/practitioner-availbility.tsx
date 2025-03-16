@@ -42,6 +42,14 @@ export default function PractitionerAvailbility({ children }: any) {
     })
   }
 
+  const listAvailableDate = isAvailabilityLoading
+    ? []
+    : availability.data.days
+        .filter(day => day.available_times !== null)
+        .map(item => new Date(item.date)) || []
+
+  console.log({ listAvailableDate })
+
   return (
     <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
       <DrawerTrigger asChild>
@@ -73,6 +81,10 @@ export default function PractitionerAvailbility({ children }: any) {
                   }
                 }}
                 disabled={{ before: today }}
+                modifiers={{
+                  ada: listAvailableDate
+                }}
+                modifiersClassNames={{ ada: '!text-secondary' }}
                 classNames={{
                   month: 'space-y-8 w-full',
                   head_row: 'flex w-full',
@@ -81,10 +93,10 @@ export default function PractitionerAvailbility({ children }: any) {
                   cell: 'w-full h-9 [&:has([aria-selected].day-outside)]:bg-secondary [&:has([aria-selected].day-outside)]:rounded-md [&:has([aria-selected].day-outside)]:text-accent-foreground  focus-within:z-20',
                   day: cn(
                     buttonVariants({ variant: 'ghost' }),
-                    'h-9 p-0 font-normal aria-selected:opacity-100 w-full'
+                    'h-9 p-0 font-normal aria-selected:opacity-100 w-full text-[red]'
                   ),
                   day_selected:
-                    'bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground focus:bg-secondary focus:text-secondary-foreground text-white !rounded-md',
+                    'bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground focus:bg-secondary focus:text-secondary-foreground !text-white !rounded-md',
                   day_today:
                     'text-accent-foreground font-bold border-b-2 border-secondary rounded-none'
                 }}
