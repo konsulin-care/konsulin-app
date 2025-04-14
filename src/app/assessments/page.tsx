@@ -18,21 +18,12 @@ import { IAssessmentEntry } from '@/types/assessment';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect } from 'react';
 
 export default function Assessment() {
   const { data: popularAssessments, isLoading: popularLoading } =
     usePopularAssessments();
   const { data: regularAssessments, isLoading: regularLoading } =
     useRegularAssessments();
-
-  useEffect(() => {
-    console.log('popular', popularAssessments);
-  }, [popularAssessments]);
-
-  useEffect(() => {
-    console.log('regular', regularAssessments);
-  }, [regularAssessments]);
 
   return (
     <>
@@ -68,6 +59,7 @@ export default function Assessment() {
           </Button>
         </div>
 
+        {/* TODO: add modal popup from bottom when user click one of the assessments */}
         <div className='mb-2 mt-4 px-4 text-muted'>
           <div className='text-[14px] font-bold'>On-going Research</div>
           <div className='text-[10px]'>
@@ -138,7 +130,7 @@ export default function Assessment() {
                 {popularAssessments.map((assessment: IAssessmentEntry) => (
                   <Link
                     key={assessment.resource.id}
-                    href={`#`}
+                    href={`assessments/${assessment.resource.id}`}
                     className='card flex flex-col gap-4 bg-white'
                   >
                     <div className='flex items-start justify-between'>

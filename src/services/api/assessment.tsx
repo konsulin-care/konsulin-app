@@ -4,7 +4,7 @@ import { API } from '../api';
 export const useQuestionnaire = (questionnaireId: number | string) => {
   return useQuery({
     queryKey: ['assessments', questionnaireId],
-    queryFn: () => API.get(`/api/v1/assessments/${questionnaireId}`),
+    queryFn: () => API.get(`/fhir/Questionnaire?_id=${questionnaireId}`),
     select: response => {
       return response.data || null;
     }
@@ -26,16 +26,6 @@ export const useSubmitQuestionnaire = (
     }
   });
 };
-
-// export const useListAssessments = () => {
-//   return useQuery({
-//     queryKey: ['list-assessments'],
-//     queryFn: () => API.get('/api/v1/assessments'),
-//     select: response => {
-//       return response.data || null;
-//     }
-//   });
-// };
 
 export const useRegularAssessments = () => {
   return useQuery({
