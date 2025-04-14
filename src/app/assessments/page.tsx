@@ -1,23 +1,39 @@
-'use client'
+'use client';
 
-import BackButton from '@/components/general/back-button'
-import CardLoader from '@/components/general/card-loader'
-import ContentWraper from '@/components/general/content-wraper'
-import Header from '@/components/header'
-import { FilterIcon } from '@/components/icons'
-import NavigationBar from '@/components/navigation-bar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { InputWithIcon } from '@/components/ui/input-with-icon'
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import { cn } from '@/lib/utils'
-import { useListAssessments } from '@/services/api/assessment'
-import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
+import BackButton from '@/components/general/back-button';
+import CardLoader from '@/components/general/card-loader';
+import ContentWraper from '@/components/general/content-wraper';
+import Header from '@/components/header';
+import { FilterIcon } from '@/components/icons';
+import NavigationBar from '@/components/navigation-bar';
+import { Button } from '@/components/ui/button';
+import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import {
+  usePopularAssessments,
+  useRegularAssessments
+} from '@/services/api/assessment';
+import { IAssessmentEntry } from '@/types/assessment';
+import { SearchIcon } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useEffect } from 'react';
 
 export default function Assessment() {
-  const { data: assessments, isLoading } = useListAssessments()
+  const { data: popularAssessments, isLoading: popularLoading } =
+    usePopularAssessments();
+  const { data: regularAssessments, isLoading: regularLoading } =
+    useRegularAssessments();
+
+  useEffect(() => {
+    console.log('popular', popularAssessments);
+  }, [popularAssessments]);
+
+  useEffect(() => {
+    console.log('regular', regularAssessments);
+  }, [regularAssessments]);
+
   return (
     <>
       <NavigationBar />
@@ -115,12 +131,13 @@ export default function Assessment() {
           </div>
 
           <ScrollArea className='w-full whitespace-nowrap'>
-            <div className='flex w-max space-x-4 pb-4'>
-              {Array(5)
-                .fill(undefined)
-                .map((_, index: number) => (
+            {popularLoading ? (
+              <CardLoader item={2} />
+            ) : (
+              <div className='flex w-max space-x-4 pb-4'>
+                {popularAssessments.map((assessment: IAssessmentEntry) => (
                   <Link
-                    key={index}
+                    key={assessment.resource.id}
                     href={`#`}
                     className='card flex flex-col gap-4 bg-white'
                   >
@@ -132,29 +149,33 @@ export default function Assessment() {
                         alt='exercise'
                       />
                       <div className='flex min-w-[192px] justify-end gap-2'>
-                        <Badge className='flex items-center rounded-[8px] bg-secondary px-[10px] py-[4px]'>
-                          <AwardIcon size={16} color='white' fill='white' />
-                          <div className='text-[10px] text-white'>
-                            Best Impact
-                          </div>
-                        </Badge>
-                        <Badge className='rounded-[8px] bg-secondary px-[10px] py-[4px]'>
-                          <BookmarkIcon size={16} color='white' fill='white' />
-                        </Badge>
+                        {/* NOTE: not provided by api */}
+                        {/* <Badge className='flex items-center rounded-[8px] bg-secondary px-[10px] py-[4px]'> */}
+                        {/*   <AwardIcon size={16} color='white' fill='white' /> */}
+                        {/*   <div className='text-[10px] text-white'>Best Impact</div> */}
+                        {/* </Badge> */}
+
+                        {/* NOTE: not included in MVP 1.0 */}
+                        {/* <Badge className='rounded-[8px] bg-secondary px-[10px] py-[4px]'> */}
+                        {/*   <BookmarkIcon size={16} color='white' fill='white' /> */}
+                        {/* </Badge> */}
                       </div>
                     </div>
+
                     <div className='mt-2 flex flex-col'>
-                      <span className='text-[10px] text-muted'>6 Minutes</span>
+                      {/* NOTE: not provided by api */}
+                      {/* <span className='text-[10px] text-muted'>6 Minutes</span> */}
                       <span className='text-[12px] font-bold'>
-                        BIG 5 Personality Test
+                        {assessment.resource.title}
                       </span>
                       <span className='mt-2 max-w-[250px] overflow-hidden truncate text-ellipsis text-[10px] text-muted'>
-                        Know yourself in 5 aspects of traits
+                        {assessment.resource.description}
                       </span>
                     </div>
                   </Link>
                 ))}
-            </div>
+              </div>
+            )}
             <ScrollBar orientation='horizontal' />
           </ScrollArea>
         </div>
@@ -164,14 +185,14 @@ export default function Assessment() {
             Browse Instruments
           </div>
 
-          {isLoading ? (
-            <CardLoader />
+          {regularLoading ? (
+            <CardLoader item={4} />
           ) : (
             <div className='mt-4 grid grid-cols-1 gap-2 md:grid-cols-2'>
-              {assessments.map(item => (
+              {regularAssessments.map((assessment: IAssessmentEntry) => (
                 <Link
-                  key={item.assessment_id}
-                  href={`assessments/${item.assessment_id}`}
+                  key={assessment.resource.id}
+                  href={`assessments/${assessment.resource.id}`}
                   className='card item flex flex-col p-2'
                 >
                   <div className='flex items-center'>
@@ -185,7 +206,7 @@ export default function Assessment() {
                       />
                     </div>
                     <div className='text-[12px] text-[hsla(220,9%,19%,1)]'>
-                      {item.title}
+                      {assessment.resource.title}
                     </div>
                   </div>
                 </Link>
@@ -195,5 +216,5 @@ export default function Assessment() {
         </div>
       </ContentWraper>
     </>
-  )
+  );
 }
