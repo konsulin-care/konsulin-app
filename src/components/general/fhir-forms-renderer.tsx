@@ -1,6 +1,6 @@
-import { LoadingSpinnerIcon } from '@/components/icons'
-import { Button } from '@/components/ui/button'
-import { useSubmitQuestionnaire } from '@/services/api/assessment'
+import { LoadingSpinnerIcon } from '@/components/icons';
+import { Button } from '@/components/ui/button';
+import { useSubmitQuestionnaire } from '@/services/api/assessment';
 
 import {
   BaseRenderer,
@@ -9,33 +9,33 @@ import {
   useBuildForm,
   useQuestionnaireResponseStore,
   useRendererQueryClient
-} from '@aehrc/smart-forms-renderer'
-import { QueryClientProvider } from '@tanstack/react-query'
-import { Questionnaire, QuestionnaireResponse } from 'fhir/r4'
-import { useEffect, useState } from 'react'
-import { toast } from 'react-toastify'
+} from '@aehrc/smart-forms-renderer';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
+import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
 interface FhirFormsRendererProps {
-  questionnaire: Questionnaire
-  isAuthenticated: Boolean
-  submitText?: string
-  customObject?: Object
+  questionnaire: Questionnaire;
+  isAuthenticated: Boolean;
+  submitText?: string;
+  customObject?: Object;
 }
 
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
-  const { questionnaire, isAuthenticated } = props
-  const [response, setResponse] = useState<QuestionnaireResponse | null>(null)
-  const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0)
+  const { questionnaire, isAuthenticated } = props;
+  const [response, setResponse] = useState<QuestionnaireResponse | null>(null);
+  const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0);
 
-  const queryClient = useRendererQueryClient()
-  const isBuilding = useBuildForm(questionnaire)
+  const queryClient = useRendererQueryClient();
+  const isBuilding = useBuildForm(questionnaire);
 
   const {
     mutate: submitQuestionnaire,
     isLoading: submitQuestionnaireIsLoading
-  } = useSubmitQuestionnaire(response, isAuthenticated)
+  } = useSubmitQuestionnaire(response, isAuthenticated);
 
-  const invalidItems = useQuestionnaireResponseStore.use.invalidItems()
+  const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
 
   const checkRequiredIsEmpty = () => {
     const required = Object.values(invalidItems).flatMap(item =>
@@ -45,28 +45,28 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           expression: issue.expression[0],
           message: issue.details.text
         }))
-    )
-    setRequiredItemEmpty(required.length)
-  }
+    );
+    setRequiredItemEmpty(required.length);
+  };
 
   const handleValidation = () => {
     if (Object.keys(invalidItems).length !== 0) {
-      checkRequiredIsEmpty()
+      checkRequiredIsEmpty();
     } else {
-      const questionnaireResponse = getResponse()
-      setResponse({ ...questionnaireResponse, ...props.customObject })
+      const questionnaireResponse = getResponse();
+      setResponse({ ...questionnaireResponse, ...props.customObject });
       submitQuestionnaire(undefined, {
         onSuccess: () => {
-          toast.success('Assessments Berhasil Dikirim')
+          toast.success('Assessments Berhasil Dikirim');
         }
-      })
+      });
     }
-  }
+  };
 
   useEffect(() => {
-    if (Object.keys(invalidItems).length === 0) setRequiredItemEmpty(0)
-    if (requiredItemEmpty > 0) checkRequiredIsEmpty()
-  }, [invalidItems])
+    if (Object.keys(invalidItems).length === 0) setRequiredItemEmpty(0);
+    if (requiredItemEmpty > 0) checkRequiredIsEmpty();
+  }, [invalidItems]);
 
   if (isBuilding) {
     return (
@@ -77,7 +77,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           className='w-full animate-spin'
         />
       </div>
-    )
+    );
   }
 
   return (
@@ -109,7 +109,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         </Button>
       </div>
     </RendererThemeProvider>
-  )
+  );
 }
 
-export default FhirFormsRenderer
+export default FhirFormsRenderer;
