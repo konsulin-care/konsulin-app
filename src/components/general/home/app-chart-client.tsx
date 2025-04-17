@@ -1,17 +1,17 @@
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import useLoaded from '@/hooks/useLoaded'
-import { cn } from '@/lib/utils'
-import Link from 'next/link'
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import useLoaded from '@/hooks/useLoaded';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
-import { Pie } from '@ant-design/plots'
+import { Pie } from '@ant-design/charts';
 
 export default function AppChartClient({
   isBlur = false
 }: {
-  isBlur?: boolean
+  isBlur?: boolean;
 }) {
-  const { isLoaded } = useLoaded()
+  const { isLoaded } = useLoaded();
 
   const configPie: any = {
     data: [
@@ -24,6 +24,7 @@ export default function AppChartClient({
     ],
     angleField: 'value',
     colorField: 'type',
+    innerRadius: 0.5,
     scale: { color: { palette: 'buGn' } },
     legend: {
       color: {
@@ -32,14 +33,14 @@ export default function AppChartClient({
         rowPadding: 4
       }
     }
-  }
+  };
 
   if (!isLoaded) {
     return (
       <div className='p-4'>
         <Skeleton className='h-[250px] w-full' />
       </div>
-    )
+    );
   }
 
   return (
@@ -76,5 +77,5 @@ export default function AppChartClient({
         </Button>
       </Link>
     </div>
-  )
+  );
 }

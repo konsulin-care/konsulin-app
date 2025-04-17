@@ -1,24 +1,24 @@
-'use client'
+'use client';
 
-import BackButton from '@/components/general/back-button'
-import ContentWraper from '@/components/general/content-wraper'
-import EmptyState from '@/components/general/empty-state'
-import FhirFormsRenderer from '@/components/general/fhir-forms-renderer'
-import Header from '@/components/header'
-import { LoadingSpinnerIcon } from '@/components/icons'
-import NavigationBar from '@/components/navigation-bar'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useAuth } from '@/context/auth/authContext'
-import { useQuestionnaire } from '@/services/api/assessment'
+import BackButton from '@/components/general/back-button';
+import ContentWraper from '@/components/general/content-wraper';
+import EmptyState from '@/components/general/empty-state';
+import FhirFormsRenderer from '@/components/general/fhir-forms-renderer';
+import Header from '@/components/header';
+import { LoadingSpinnerIcon } from '@/components/icons';
+import NavigationBar from '@/components/navigation-bar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth/authContext';
+import { useQuestionnaire } from '@/services/api/assessment';
 
 export interface IQuestionnaire {
-  params: { assessmentsId: string }
+  params: { assessmentsId: string };
 }
 
 export default function Questionnaire({ params }) {
-  const { state: authState } = useAuth()
+  const { state: authState } = useAuth();
   const { data: questionnaire, isLoading: questionnaireIsLoading } =
-    useQuestionnaire(params.assessmentsId)
+    useQuestionnaire(params.assessmentsId);
 
   /** The code below is only for debugging purposes. Please remove it later. */
   // const questionnaireIsLoading = false
@@ -34,7 +34,7 @@ export default function Questionnaire({ params }) {
             {questionnaireIsLoading ? (
               <Skeleton className='h-[24px] w-[175px]' />
             ) : (
-              questionnaire.title
+              questionnaire[0].resource.title
             )}
           </div>
         </div>
@@ -57,7 +57,7 @@ export default function Questionnaire({ params }) {
             />
           ) : (
             <FhirFormsRenderer
-              questionnaire={questionnaire}
+              questionnaire={questionnaire[0].resource}
               isAuthenticated={authState.isAuthenticated}
               customObject={{
                 subject: {
@@ -74,5 +74,5 @@ export default function Questionnaire({ params }) {
         </div>
       </ContentWraper>
     </>
-  )
+  );
 }

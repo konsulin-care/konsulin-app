@@ -1,9 +1,55 @@
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import { ChevronRightIcon } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
+import { Button } from '@/components/ui/button';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger
+} from '@/components/ui/drawer';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { usePopularAssessments } from '@/services/api/assessment';
+import { IAssessmentEntry, IAssessmentResource } from '@/types/assessment';
+import { ChevronRightIcon } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState } from 'react';
+import CardLoader from '../card-loader';
 
 export default function PopularAssessment() {
+  const { data: popularAssessments, isLoading: popularLoading } =
+    usePopularAssessments();
+
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
+
+  const renderDrawerContent = (
+    <div className='flex flex-col'>
+      <DrawerHeader className='mx-auto text-[20px] font-bold'>
+        <DrawerTitle className='text-center text-2xl'>
+          {selectedAssessment?.title}
+        </DrawerTitle>
+      </DrawerHeader>
+      <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+        <div className='font-bold'>Brief</div>
+        <hr className='my-4 border-black opacity-10' />
+        <div className='flex flex-wrap gap-[10px] text-sm'>
+          {selectedAssessment?.description}
+        </div>
+      </div>
+
+      <div className='mt-2 flex flex-col'>
+        <Link href={`assessments/${selectedAssessment?.id}`}>
+          <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
+            Start Test
+          </Button>
+        </Link>
+        <DrawerClose className='items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50'>
+          Close
+        </DrawerClose>
+      </div>
+    </div>
+  );
+
   return (
     <div className='bg-[#F9F9F9] p-4'>
       <div className='flex justify-between text-muted'>
@@ -14,36 +60,49 @@ export default function PopularAssessment() {
       </div>
       <div>
         <ScrollArea className='w-full whitespace-nowrap pb-4'>
-          <div className='flex w-max space-x-4'>
-            {Array(5)
-              .fill(undefined)
-              .map((_, index: number) => (
-                <Link
-                  key={index}
-                  href={'/'}
-                  className='card flex w-fit shrink-0 items-center gap-2 bg-white'
-                >
-                  <Image
-                    width={40}
-                    height={40}
-                    alt='excerise'
-                    src={'/images/exercise.svg'}
-                  />
-                  <div className='flex flex-col'>
-                    <span className='text-[12px] font-bold'>
-                      BIG 5 Personality Test
-                    </span>
-                    <span className='text-[10px] text-muted'>
-                      Know yourself in 5 aspects of traits
-                    </span>
-                  </div>
-                  <ChevronRightIcon className='text-muted' />
-                </Link>
-              ))}
-          </div>
+          {popularLoading ? (
+            <CardLoader item={2} />
+          ) : (
+            <div className='flex w-max space-x-4'>
+              {popularAssessments.map(
+                (
+                  assessment: IAssessmentEntry & {
+                    resource: IAssessmentResource;
+                  }
+                ) => (
+                  <Drawer key={assessment.resource.id}>
+                    <DrawerTrigger
+                      className='card flex w-fit shrink-0 items-center gap-2 bg-white'
+                      onClick={() => setSelectedAssessment(assessment.resource)}
+                    >
+                      <Image
+                        src={'/images/exercise.svg'}
+                        height={40}
+                        width={40}
+                        alt='exercise'
+                      />
+                      <div className='flex flex-col items-start'>
+                        <span className='text-[12px] font-bold'>
+                          {assessment.resource.title}
+                        </span>
+                        <span className='max-w-[200px] truncate text-ellipsis text-[10px] text-muted'>
+                          {assessment.resource.description}
+                        </span>
+                      </div>
+                      <ChevronRightIcon className='text-muted' />
+                    </DrawerTrigger>
+
+                    <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+                      <div className='mt-4'>{renderDrawerContent}</div>
+                    </DrawerContent>
+                  </Drawer>
+                )
+              )}
+            </div>
+          )}
           <ScrollBar orientation='horizontal' />
         </ScrollArea>
       </div>
     </div>
-  )
+  );
 }
