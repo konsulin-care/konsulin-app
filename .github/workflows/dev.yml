@@ -10,7 +10,7 @@ jobs:
     name: Containerization
     uses: ./.github/workflows/docker-self-hosted.yml
     with:
-      API_URL: https://dev-api.konsulin.care
+      API_URL: https://dev-blaze.konsulin.care
       VERSION: development
       RELEASE_TAG: $(git describe --tags --abbrev=0)
       AUTHOR: ${{ github.actor }}
