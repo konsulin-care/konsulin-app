@@ -34,6 +34,7 @@ import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 const dateFormat = (date: string) => {
   if (!date) return;
@@ -67,7 +68,7 @@ export default function Assessment() {
    * It matches the researchId with the part of the reference after the last '/'. */
   const findListData = (researchId: string) => {
     return research.filter(
-      (item: IAssessmentEntry & { resource: IResearchListResource }) =>
+      (item: IAssessmentEntry) =>
         item.resource.resourceType === 'List' &&
         item.resource.entry.some(
           entry => entry.item.reference.split('/').pop() === researchId
@@ -106,16 +107,18 @@ export default function Assessment() {
     return (
       <div className='flex flex-col'>
         <DrawerHeader className='mx-auto text-[20px] font-bold'>
-          {data && 'note' in data && data.note.length !== 0 && (
-            <Badge
-              style={{ justifySelf: 'center' }}
-              className='flex w-fit rounded-[8px] bg-secondary px-[10px] py-[4px]'
-            >
-              <div className='text-xs text-white'>
-                Estimated time: ~{data.note[0].text}
-              </div>
-            </Badge>
-          )}
+          {data &&
+            data.resourceType === 'ResearchStudy' &&
+            data.note.length !== 0 && (
+              <Badge
+                style={{ justifySelf: 'center' }}
+                className='flex w-fit rounded-[8px] bg-secondary px-[10px] py-[4px]'
+              >
+                <div className='text-xs text-white'>
+                  Estimated time: ~{data.note[0].text}
+                </div>
+              </Badge>
+            )}
           <DrawerTitle className='text-center text-2xl'>
             {data.title}
           </DrawerTitle>
@@ -124,11 +127,13 @@ export default function Assessment() {
           <div className='font-bold'>Brief</div>
           <hr className='my-4 border-black opacity-10' />
           <div className='flex flex-wrap gap-[10px] text-sm'>
-            {data && 'description' in data && data.description}
+            <ReactMarkdown>
+              {data && 'description' in data && data.description}
+            </ReactMarkdown>
           </div>
         </div>
 
-        {data && 'contact' in data && (
+        {data && data.resourceType === 'ResearchStudy' && (
           <div>
             <div className='mt-4 font-bold'>Researcher</div>
             {data.contact.map((item, index) => (
@@ -142,6 +147,7 @@ export default function Assessment() {
           </div>
         )}
 
+        {/* used data from relatedLists that have been merged before */}
         <DrawerFooter className='mt-2 flex flex-col'>
           {data && 'relatedLists' in data ? (
             <Link href={`assessments/${url}`}>
@@ -314,14 +320,12 @@ export default function Assessment() {
                             alt='exercise'
                           />
                           <div className='flex min-w-[192px] justify-end gap-2'>
-                            {/* NOTE: not provided by api */}
                             <Badge className='flex items-center rounded-[8px] bg-secondary px-[10px] py-[4px]'>
                               <AwardIcon size={16} color='white' fill='white' />
                               <div className='text-[10px] text-white'>
                                 Best Impact
                               </div>
                             </Badge>
-                            {/* NOTE: not included in MVP 1.0 */}
                             <Badge className='rounded-[8px] bg-secondary px-[10px] py-[4px]'>
                               <BookmarkIcon
                                 size={16}
