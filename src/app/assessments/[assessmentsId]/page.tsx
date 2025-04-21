@@ -69,6 +69,10 @@ export default function Questionnaire({ params }) {
                   type: 'Practitioner'
                 }
               }}
+              type={
+                questionnaire[0].resource.useContext[0].valueCodeableConcept
+                  .coding[0].code
+              }
             />
           )}
         </div>

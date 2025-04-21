@@ -1,51 +1,58 @@
-'use client'
+'use client';
 
-import Header from '@/components/header'
-import { ChevronLeftIcon } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import RecordAssessment from './record-assessment'
-import RecordExercise from './record-exercise'
-import RecordJournal from './record-journal'
-import RecordSoap from './record-soap'
+import Header from '@/components/header';
+import { ChevronLeftIcon } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import RecordAssessment from './record-assessment';
+import RecordExercise from './record-exercise';
+import RecordJournal from './record-journal';
+import RecordSoap from './record-soap';
 
 export interface IDetailRecordParams {
-  params: { recordId: string }
+  params: { recordId: string };
 }
 
-const RECORD_TYPE_ASSESSMENT = 1
-const RECORD_TYPE_EXCERCISE = 2
-const RECORD_TYPE_SOAP = 3
-const RECORD_TYPE_JOURNAL = 4
+const RECORD_TYPE_ASSESSMENT = 1;
+const RECORD_TYPE_EXCERCISE = 2;
+const RECORD_TYPE_SOAP = 3;
+const RECORD_TYPE_JOURNAL = 4;
 
 export default function RecordDetail({ params }: IDetailRecordParams) {
-  const router = useRouter()
-  const pageType = RECORD_TYPE_JOURNAL
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pageType = Number(searchParams.get('type'));
+  const questionnaireTitle = searchParams.get('title');
 
-  const pageTitle = type => {
+  const pageTitle = (type: number) => {
     switch (type) {
       case 1:
-        return 'Assessment Result'
+        return 'Assessment Result';
       case 2:
-        return 'Exercise Result'
+        return 'Exercise Result';
       case 3:
-        return 'SOAP Result Details'
+        return 'SOAP Result Details';
       case 4:
-        return 'Journal Detail'
+        return 'Journal Detail';
     }
-  }
+  };
 
-  const renderContent = type => {
+  const renderContent = (type: number) => {
     switch (type) {
       case 1:
-        return <RecordAssessment recordId={params.recordId} />
+        return (
+          <RecordAssessment
+            recordId={params.recordId}
+            title={questionnaireTitle}
+          />
+        );
       case 2:
-        return <RecordExercise />
+        return <RecordExercise />;
       case 3:
-        return <RecordSoap />
+        return <RecordSoap />;
       case 4:
-        return <RecordJournal />
+        return <RecordJournal />;
     }
-  }
+  };
 
   return (
     <div>
@@ -66,5 +73,5 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
         {renderContent(pageType)}
       </div>
     </div>
-  )
+  );
 }
