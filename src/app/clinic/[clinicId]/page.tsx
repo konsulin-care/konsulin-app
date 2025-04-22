@@ -167,7 +167,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
                     src={
                       practitioner.photo
                         ? practitioner.photo[0].url
-                        : '/images/Avatar.jpg'
+                        : '/images/avatar.jpg'
                     }
                     alt='practitioner'
                     width={100}
