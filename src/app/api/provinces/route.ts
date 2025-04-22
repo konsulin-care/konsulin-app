@@ -1,8 +1,7 @@
 import axios from 'axios';
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextApiRequest, res: NextApiResponse) {
+export async function GET(req: NextRequest, res: NextResponse) {
   try {
     const response = await axios.get('https://wilayah.id/api/provinces.json');
     return NextResponse.json(response.data);

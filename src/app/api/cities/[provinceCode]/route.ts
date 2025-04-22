@@ -1,8 +1,7 @@
 import axios from 'axios';
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextApiRequest, res: NextApiResponse) {
+export async function GET(req: NextRequest, res: NextResponse) {
   const url = new URL(req.url);
   const provinceCode = url.pathname.split('/').pop();
   try {
