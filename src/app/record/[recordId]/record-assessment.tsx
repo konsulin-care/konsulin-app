@@ -46,7 +46,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
           const newScore = score / ref;
 
           return {
-            name: subItem.text,
+            name: subItem.text ?? 'Score',
             score: newScore
           };
         }

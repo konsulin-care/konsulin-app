@@ -171,7 +171,13 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
             </Button>
           </Link>
         )}
-        <DrawerClose className='items-center justify-center rounded-xl border border-solid border-secondary bg-transparent p-4 text-sm font-semibold text-gray-700 text-secondary transition-all hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50'>
+        <DrawerClose
+          className={`items-center justify-center rounded-xl border border-solid p-4 text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50 ${
+            resultBrief
+              ? 'border-secondary bg-transparent text-secondary hover:bg-gray-100'
+              : 'hover:bg-secondary/90 border-transparent bg-secondary text-white'
+          }`}
+        >
           Close
         </DrawerClose>
       </DrawerFooter>
