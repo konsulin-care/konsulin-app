@@ -20,7 +20,7 @@ export const useOngoingResearch = () => {
     queryFn: () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       return API.get(
-        `/fhir/ResearchStudy?date=ge${today}&_revinclude=List:item`
+        `/fhir/ResearchStudy?date=ge${today}&status=active&_revinclude=List:item`
       );
     },
     select: response => {
