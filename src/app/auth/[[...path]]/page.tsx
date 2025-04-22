@@ -1,13 +1,13 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import { redirectToAuth } from 'supertokens-auth-react';
 import { PasswordlessPreBuiltUI } from 'supertokens-auth-react/recipe/passwordless/prebuiltui';
 import { canHandleRoute, getRoutingComponent } from 'supertokens-auth-react/ui';
 
 const PasswordlessAuthPage = () => {
-  const [uiComponent, setUiComponent] = useState<JSX.Element | null>(null);
+  const [uiComponent, setUiComponent] = useState<ReactElement | null>(null);
 
   useEffect(() => {
     if (!canHandleRoute([PasswordlessPreBuiltUI])) {

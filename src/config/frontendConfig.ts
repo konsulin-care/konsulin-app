@@ -19,13 +19,19 @@ export const frontendConfig = (): SuperTokensConfig => {
   return {
     appInfo,
     style: `
+        html, body, #__next {
+            height: 100%;
+        }
         [data-supertokens~=button] {
             background-color: #0ABDC3;
             border: 0px;
             margin: 0 auto;
         }
         [data-supertokens~=authPage] {
-          
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         [data-supertokens~=container] {
             --palette-background: 236, 239, 244;
@@ -43,7 +49,8 @@ export const frontendConfig = (): SuperTokensConfig => {
     recipeList: [
       SessionReact.init(),
       Passwordless.init({
-        contactMethod: 'EMAIL'
+        contactMethod: 'EMAIL',
+        style: ``
       })
     ],
     windowHandler: original => ({
