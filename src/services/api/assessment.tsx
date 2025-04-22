@@ -1,7 +1,18 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import { format } from 'date-fns';
-import { QuestionnaireResponse } from 'fhir/r4';
+import { QuestionnaireResponse, QuestionnaireResponseItem } from 'fhir/r4';
 import { API } from '../api';
+
+const WEBHOOK_AUTH =
+  'wK3e06gzGCucksRmt4gE2Lmprg4NTH9oYWDM7dwnQmFNLycfaauYNaEqnwaL2zfF';
+const WEBHOOK_URL = 'https://flow.konsulin.care/webhook/interpret';
+
+type IResultBriefPayload = {
+  questionnaire: string;
+  description: string;
+  item: QuestionnaireResponseItem[];
+};
 
 export const useOngoingResearch = () => {
   return useQuery({
@@ -9,7 +20,7 @@ export const useOngoingResearch = () => {
     queryFn: () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       return API.get(
-        `https://dev-blaze.konsulin.care/fhir/ResearchStudy?date=ge${today}&_revinclude=List:item`
+        `/fhir/ResearchStudy?date=ge${today}&status=active&_revinclude=List:item`
       );
     },
     select: response => {
@@ -29,25 +40,25 @@ export const useQuestionnaire = (questionnaireId: number | string) => {
 };
 
 export const useSubmitQuestionnaire = (
-  questionnaireResponse: QuestionnaireResponse,
-  isAuthenticated: Boolean
+  questionnaireId: string
+  // isAuthenticated: Boolean
 ) => {
   return useMutation({
-    mutationKey: ['assessment-responses'],
-    mutationFn: async () => {
-      const { author, item, resourceType, questionnaire, status, subject } =
+    mutationKey: ['assessment-responses', questionnaireId],
+    mutationFn: async (questionnaireResponse: QuestionnaireResponse) => {
+      const { author, item, resourceType, status, subject } =
         questionnaireResponse;
 
       const timestamp = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
 
       const response = await API.post('/fhir/QuestionnaireResponse', {
-        author: author,
-        item: item,
-        resourceType: resourceType,
-        questionnaire: questionnaire,
-        status: status,
+        author,
+        item,
+        resourceType,
+        questionnaire: `Questionnaire/${questionnaireId}`,
+        status,
         authored: timestamp,
-        subject: subject
+        subject
         // respondent_type: isAuthenticated ? 'user' : 'guest',
         // questionnaire_response: questionnaireRresponse
       });
@@ -56,12 +67,40 @@ export const useSubmitQuestionnaire = (
   });
 };
 
+export const useResultBrief = (questionnaireId: string) => {
+  return useMutation<Array<any>, Error, IResultBriefPayload>({
+    mutationKey: ['result-brief', questionnaireId],
+    mutationFn: async ({ questionnaire, description, item }) => {
+      const payload = {
+        questionnaire,
+        item,
+        description
+      };
+
+      const response = await axios.post(`${WEBHOOK_URL}`, payload, {
+        headers: {
+          Authorization: `${WEBHOOK_AUTH}`
+        }
+      });
+      return response.data;
+    }
+  });
+};
+
+export const useQuestionnaireResponse = (questionnaireId: string) => {
+  return useQuery({
+    queryKey: ['questionnaire-response', questionnaireId],
+    queryFn: () => API.get(`/fhir/QuestionnaireResponse/${questionnaireId}`),
+    select: response => response.data || null
+  });
+};
+
 export const useSearchQuestionnaire = (query: string) => {
   return useQuery({
     queryKey: ['search-result-assessment', query],
     queryFn: () =>
       API.get(
-        `https://dev-blaze.konsulin.care/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient&_text=${query}`
+        `/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient&_text=${query}`
       ),
     select: response => response.data.entry || null
   });

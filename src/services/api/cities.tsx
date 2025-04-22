@@ -1,12 +1,25 @@
-import { useQuery } from '@tanstack/react-query'
-import { API } from '../api'
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 
-export const useGetCities = () => {
+export const useGetProvince = () => {
   return useQuery({
-    queryKey: ['cities'],
-    queryFn: () => API.get(`/api/v1/cities`),
-    select: response => {
-      return response.data || null
-    }
-  })
-}
+    queryKey: ['provinces'],
+    queryFn: async () => {
+      const response = await axios.get('/api/provinces');
+      return response.data.data;
+    },
+    select: response => response || []
+  });
+};
+
+export const useGetCities = (provinceCode: number) => {
+  return useQuery({
+    queryKey: ['cities', provinceCode],
+    queryFn: async () => {
+      const response = await axios.get(`/api/cities/${provinceCode}`);
+      return response.data.data;
+    },
+    enabled: !!provinceCode,
+    select: response => response || []
+  });
+};

@@ -34,6 +34,7 @@ import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 const dateFormat = (date: string) => {
   if (!date) return;
@@ -59,15 +60,11 @@ export default function Assessment() {
   // const { data: searchResult, isLoading: searchLoading } =
   //   useSearchQuestionnaire('Five');
 
-  // useEffect(() => {
-  //   console.log('result', searchResult);
-  // }, [searchResult]);
-
   /* Filters the 'research' array to find list items that reference the given researchId.
    * It matches the researchId with the part of the reference after the last '/'. */
   const findListData = (researchId: string) => {
     return research.filter(
-      (item: IAssessmentEntry & { resource: IResearchListResource }) =>
+      (item: IAssessmentEntry) =>
         item.resource.resourceType === 'List' &&
         item.resource.entry.some(
           entry => entry.item.reference.split('/').pop() === researchId
@@ -84,11 +81,11 @@ export default function Assessment() {
     return { ...researchStudy, relatedLists };
   };
 
-  const handleResearchClick = (
-    researchId: string,
-    researchStudy: IResearchResource
-  ) => {
-    const mergedData = getMergedData(researchId, researchStudy);
+  const handleResearchClick = mergedData => {
+    // const mergedData = getMergedData(researchId, researchStudy);
+
+    // if (!mergedData.relatedLists[0]) return;
+
     const questionnaireUrl =
       mergedData.relatedLists[0].resource.entry[1].item.reference
         .split('/')
@@ -106,16 +103,18 @@ export default function Assessment() {
     return (
       <div className='flex flex-col'>
         <DrawerHeader className='mx-auto text-[20px] font-bold'>
-          {data && 'note' in data && data.note.length !== 0 && (
-            <Badge
-              style={{ justifySelf: 'center' }}
-              className='flex w-fit rounded-[8px] bg-secondary px-[10px] py-[4px]'
-            >
-              <div className='text-xs text-white'>
-                Estimated time: ~{data.note[0].text}
-              </div>
-            </Badge>
-          )}
+          {data &&
+            data.resourceType === 'ResearchStudy' &&
+            data.note.length !== 0 && (
+              <Badge
+                style={{ justifySelf: 'center' }}
+                className='flex w-fit rounded-[8px] bg-secondary px-[10px] py-[4px]'
+              >
+                <div className='text-xs text-white'>
+                  Estimated time: ~{data.note[0].text}
+                </div>
+              </Badge>
+            )}
           <DrawerTitle className='text-center text-2xl'>
             {data.title}
           </DrawerTitle>
@@ -124,11 +123,13 @@ export default function Assessment() {
           <div className='font-bold'>Brief</div>
           <hr className='my-4 border-black opacity-10' />
           <div className='flex flex-wrap gap-[10px] text-sm'>
-            {data && 'description' in data && data.description}
+            <ReactMarkdown>
+              {data && 'description' in data && data.description}
+            </ReactMarkdown>
           </div>
         </div>
 
-        {data && 'contact' in data && (
+        {data && data.resourceType === 'ResearchStudy' && (
           <div>
             <div className='mt-4 font-bold'>Researcher</div>
             {data.contact.map((item, index) => (
@@ -142,6 +143,7 @@ export default function Assessment() {
           </div>
         )}
 
+        {/* used data from relatedLists that have been merged before */}
         <DrawerFooter className='mt-2 flex flex-col'>
           {data && 'relatedLists' in data ? (
             <Link href={`assessments/${url}`}>
@@ -220,66 +222,71 @@ export default function Assessment() {
                 {filteredResearch(research).map(
                   (
                     item: IAssessmentEntry & { resource: IResearchResource }
-                  ) => (
-                    <div
-                      key={item.resource.id}
-                      className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
-                    >
-                      <div className='flex gap-2'>
-                        <Image
-                          className='h-[64px] w-[64px] rounded-[8px] object-cover'
-                          src={'/images/clinic.jpg'}
-                          // NOTE: replace with this src later on
-                          // src={item.resource.relatedArtifact[0].resource}
-                          height={64}
-                          width={64}
-                          alt='clinic'
-                        />
-                        <div className='flex flex-col text-[12px]'>
-                          <div className='text-wrap font-bold text-black'>
-                            {item.resource.title}
-                          </div>
-                          <div className='overflow-hidden text-wrap'>
-                            {item.resource.description?.length > 100
-                              ? `${item.resource.description.slice(0, 100)}...`
-                              : item.resource.description}
+                  ) => {
+                    const mergedData = getMergedData(
+                      item.resource.id,
+                      item.resource
+                    );
+                    return (
+                      <div
+                        key={item.resource.id}
+                        className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
+                      >
+                        <div className='flex gap-2'>
+                          <Image
+                            className='h-[64px] w-[64px] rounded-[8px] object-cover'
+                            src={'/images/clinic.jpg'}
+                            // NOTE: replace with this src later on
+                            // src={item.resource.relatedArtifact[0].resource}
+                            height={64}
+                            width={64}
+                            alt='clinic'
+                          />
+                          <div className='flex flex-col text-[12px]'>
+                            <div className='text-wrap font-bold text-black'>
+                              {item.resource.title}
+                            </div>
+                            <div className='overflow-hidden text-wrap'>
+                              {item.resource.description?.length > 100
+                                ? `${item.resource.description.slice(0, 100)}...`
+                                : item.resource.description}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <hr />
-                      <div className='flex items-center justify-between'>
-                        <div className='mr-4'>
-                          <div className='text-[10px]'>Pengambilan data:</div>
-                          <div className='text-[10px] font-bold text-black'>
-                            {item.resource.period &&
-                              `${dateFormat(item.resource.period.start)} -
+                        <hr />
+                        <div className='flex items-center justify-between'>
+                          <div className='mr-4'>
+                            <div className='text-[10px]'>Pengambilan data:</div>
+                            <div className='text-[10px] font-bold text-black'>
+                              {item.resource.period &&
+                                `${dateFormat(item.resource.period.start)} -
                           ${dateFormat(item.resource.period.end)}`}
+                            </div>
                           </div>
-                        </div>
 
-                        <Drawer>
-                          <DrawerTrigger>
-                            <div
-                              className='cursor-pointer rounded-[32px] bg-secondary px-4 py-2 text-sm font-bold text-white'
-                              onClick={() =>
-                                handleResearchClick(
-                                  item.resource.id,
-                                  item.resource
-                                )
-                              }
-                            >
-                              Gabung
-                            </div>
-                          </DrawerTrigger>
-                          <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-                            <div className='mt-4'>
-                              {renderDrawerContent(drawerResearchContent)}
-                            </div>
-                          </DrawerContent>
-                        </Drawer>
+                          <Drawer>
+                            <DrawerTrigger>
+                              {mergedData.relatedLists[0] && (
+                                <div
+                                  className='cursor-pointer rounded-[32px] bg-secondary px-4 py-2 text-sm font-bold text-white'
+                                  onClick={() =>
+                                    handleResearchClick(mergedData)
+                                  }
+                                >
+                                  Gabung
+                                </div>
+                              )}
+                            </DrawerTrigger>
+                            <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+                              <div className='mt-4'>
+                                {renderDrawerContent(drawerResearchContent)}
+                              </div>
+                            </DrawerContent>
+                          </Drawer>
+                        </div>
                       </div>
-                    </div>
-                  )
+                    );
+                  }
                 )}
               </div>
             )}
@@ -314,14 +321,12 @@ export default function Assessment() {
                             alt='exercise'
                           />
                           <div className='flex min-w-[192px] justify-end gap-2'>
-                            {/* NOTE: not provided by api */}
                             <Badge className='flex items-center rounded-[8px] bg-secondary px-[10px] py-[4px]'>
                               <AwardIcon size={16} color='white' fill='white' />
                               <div className='text-[10px] text-white'>
                                 Best Impact
                               </div>
                             </Badge>
-                            {/* NOTE: not included in MVP 1.0 */}
                             <Badge className='rounded-[8px] bg-secondary px-[10px] py-[4px]'>
                               <BookmarkIcon
                                 size={16}

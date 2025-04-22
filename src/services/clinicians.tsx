@@ -1,20 +1,14 @@
-import { toQueryString } from '@/lib/utils'
-import { useQuery } from '@tanstack/react-query'
-import { API } from './api'
+import { useQuery } from '@tanstack/react-query';
+import { API } from './api';
 
-export const useFindAvailability = ({
-  year,
-  month,
-  practitioner_role_id,
-  ...rest
-}) => {
+// NOTE: hardcoded dateReference
+export const useFindAvailability = ({ practitionerRoleId, dateReference }) => {
   return useQuery({
-    queryKey: ['find-availability', practitioner_role_id, month, year],
+    queryKey: ['find-availability', practitionerRoleId, dateReference],
     queryFn: () =>
       API.get(
-        `/api/v1/clinicians/availability?${toQueryString({ year, month, practitioner_role_id })}`
+        `/fhir/Slot?schedule.actor=PractitionerRole/${practitionerRoleId}&start=2025-03-24&_include=Slot:schedule`
       ),
-    enabled: rest?.enable,
-    ...rest
-  })
-}
+    select: response => response.data.entry || null
+  });
+};
