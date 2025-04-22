@@ -18,6 +18,28 @@ export function setRouter(
 export const frontendConfig = (): SuperTokensConfig => {
   return {
     appInfo,
+    style: `
+        [data-supertokens~=button] {
+            background-color: #0ABDC3;
+            border: 0px;
+            margin: 0 auto;
+        }
+        [data-supertokens~=authPage] {
+          
+        }
+        [data-supertokens~=container] {
+            --palette-background: 236, 239, 244;
+            --palette-inputBackground: 236, 239, 244;
+            --palette-inputBorder: 41, 41, 41;
+            --palette-textTitle: 22, 28, 38;
+            --palette-textLabel: 22, 28, 38;
+            --palette-textPrimary: 255, 255, 255;
+            --palette-error: 173, 46, 46;
+            --palette-textInput: 169, 169, 169;
+            --palette-textLink: 114,114,114;
+            --palette-textGray: 158, 158, 158;
+        }
+    `,
     recipeList: [
       SessionReact.init(),
       Passwordless.init({
