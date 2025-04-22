@@ -60,10 +60,6 @@ export default function Assessment() {
   // const { data: searchResult, isLoading: searchLoading } =
   //   useSearchQuestionnaire('Five');
 
-  // useEffect(() => {
-  //   console.log('result', searchResult);
-  // }, [searchResult]);
-
   /* Filters the 'research' array to find list items that reference the given researchId.
    * It matches the researchId with the part of the reference after the last '/'. */
   const findListData = (researchId: string) => {
@@ -85,11 +81,11 @@ export default function Assessment() {
     return { ...researchStudy, relatedLists };
   };
 
-  const handleResearchClick = (
-    researchId: string,
-    researchStudy: IResearchResource
-  ) => {
-    const mergedData = getMergedData(researchId, researchStudy);
+  const handleResearchClick = mergedData => {
+    // const mergedData = getMergedData(researchId, researchStudy);
+
+    // if (!mergedData.relatedLists[0]) return;
+
     const questionnaireUrl =
       mergedData.relatedLists[0].resource.entry[1].item.reference
         .split('/')
@@ -226,66 +222,71 @@ export default function Assessment() {
                 {filteredResearch(research).map(
                   (
                     item: IAssessmentEntry & { resource: IResearchResource }
-                  ) => (
-                    <div
-                      key={item.resource.id}
-                      className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
-                    >
-                      <div className='flex gap-2'>
-                        <Image
-                          className='h-[64px] w-[64px] rounded-[8px] object-cover'
-                          src={'/images/clinic.jpg'}
-                          // NOTE: replace with this src later on
-                          // src={item.resource.relatedArtifact[0].resource}
-                          height={64}
-                          width={64}
-                          alt='clinic'
-                        />
-                        <div className='flex flex-col text-[12px]'>
-                          <div className='text-wrap font-bold text-black'>
-                            {item.resource.title}
-                          </div>
-                          <div className='overflow-hidden text-wrap'>
-                            {item.resource.description?.length > 100
-                              ? `${item.resource.description.slice(0, 100)}...`
-                              : item.resource.description}
+                  ) => {
+                    const mergedData = getMergedData(
+                      item.resource.id,
+                      item.resource
+                    );
+                    return (
+                      <div
+                        key={item.resource.id}
+                        className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
+                      >
+                        <div className='flex gap-2'>
+                          <Image
+                            className='h-[64px] w-[64px] rounded-[8px] object-cover'
+                            src={'/images/clinic.jpg'}
+                            // NOTE: replace with this src later on
+                            // src={item.resource.relatedArtifact[0].resource}
+                            height={64}
+                            width={64}
+                            alt='clinic'
+                          />
+                          <div className='flex flex-col text-[12px]'>
+                            <div className='text-wrap font-bold text-black'>
+                              {item.resource.title}
+                            </div>
+                            <div className='overflow-hidden text-wrap'>
+                              {item.resource.description?.length > 100
+                                ? `${item.resource.description.slice(0, 100)}...`
+                                : item.resource.description}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <hr />
-                      <div className='flex items-center justify-between'>
-                        <div className='mr-4'>
-                          <div className='text-[10px]'>Pengambilan data:</div>
-                          <div className='text-[10px] font-bold text-black'>
-                            {item.resource.period &&
-                              `${dateFormat(item.resource.period.start)} -
+                        <hr />
+                        <div className='flex items-center justify-between'>
+                          <div className='mr-4'>
+                            <div className='text-[10px]'>Pengambilan data:</div>
+                            <div className='text-[10px] font-bold text-black'>
+                              {item.resource.period &&
+                                `${dateFormat(item.resource.period.start)} -
                           ${dateFormat(item.resource.period.end)}`}
+                            </div>
                           </div>
-                        </div>
 
-                        <Drawer>
-                          <DrawerTrigger>
-                            <div
-                              className='cursor-pointer rounded-[32px] bg-secondary px-4 py-2 text-sm font-bold text-white'
-                              onClick={() =>
-                                handleResearchClick(
-                                  item.resource.id,
-                                  item.resource
-                                )
-                              }
-                            >
-                              Gabung
-                            </div>
-                          </DrawerTrigger>
-                          <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-                            <div className='mt-4'>
-                              {renderDrawerContent(drawerResearchContent)}
-                            </div>
-                          </DrawerContent>
-                        </Drawer>
+                          <Drawer>
+                            <DrawerTrigger>
+                              {mergedData.relatedLists[0] && (
+                                <div
+                                  className='cursor-pointer rounded-[32px] bg-secondary px-4 py-2 text-sm font-bold text-white'
+                                  onClick={() =>
+                                    handleResearchClick(mergedData)
+                                  }
+                                >
+                                  Gabung
+                                </div>
+                              )}
+                            </DrawerTrigger>
+                            <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+                              <div className='mt-4'>
+                                {renderDrawerContent(drawerResearchContent)}
+                              </div>
+                            </DrawerContent>
+                          </Drawer>
+                        </div>
                       </div>
-                    </div>
-                  )
+                    );
+                  }
                 )}
               </div>
             )}
