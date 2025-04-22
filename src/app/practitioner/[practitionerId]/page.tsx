@@ -95,7 +95,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
                 src={
                   practitionerData.photo
                     ? practitionerData.photo[0].url
-                    : '/images/Avatar.jpg'
+                    : '/images/avatar.jpg'
                 }
                 alt='practitioner'
                 width={100}
