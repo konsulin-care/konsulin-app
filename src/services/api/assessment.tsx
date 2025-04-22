@@ -46,19 +46,19 @@ export const useSubmitQuestionnaire = (
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
     mutationFn: async (questionnaireResponse: QuestionnaireResponse) => {
-      const { author, item, resourceType, questionnaire, status, subject } =
+      const { author, item, resourceType, status, subject } =
         questionnaireResponse;
 
       const timestamp = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
 
       const response = await API.post('/fhir/QuestionnaireResponse', {
-        author: author,
-        item: item,
-        resourceType: resourceType,
-        questionnaire: questionnaire,
-        status: status,
+        author,
+        item,
+        resourceType,
+        questionnaire: `Questionnaire/${questionnaireId}`,
+        status,
         authored: timestamp,
-        subject: subject
+        subject
         // respondent_type: isAuthenticated ? 'user' : 'guest',
         // questionnaire_response: questionnaireRresponse
       });

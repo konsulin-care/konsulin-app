@@ -1,38 +1,41 @@
-'use client'
+'use client';
 
-import CardLoader from '@/components/general/card-loader'
-import ContentWraper from '@/components/general/content-wraper'
-import EmptyState from '@/components/general/empty-state'
-import Header from '@/components/header'
-import NavigationBar from '@/components/navigation-bar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { InputWithIcon } from '@/components/ui/input-with-icon'
-import { IUseClinicParams, useClinicFindAll } from '@/services/clinic'
-import { format } from 'date-fns'
-import dayjs from 'dayjs'
-import { SearchIcon } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useState } from 'react'
-import ClinicFilter from './clinic-filter'
+import CardLoader from '@/components/general/card-loader';
+import ContentWraper from '@/components/general/content-wraper';
+import EmptyState from '@/components/general/empty-state';
+import Header from '@/components/header';
+import NavigationBar from '@/components/navigation-bar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { IUseClinicParams, useListClinics } from '@/services/clinic';
+import { IOrganizationEntry } from '@/types/organization';
+import { format } from 'date-fns';
+import dayjs from 'dayjs';
+import { SearchIcon } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState } from 'react';
+import ClinicFilter from './clinic-filter';
 
 export default function Clinic() {
-  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({})
-  const [keyword, setKeyword] = useState<string>('')
+  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
+  const [keyword, setKeyword] = useState<string>('');
 
-  const {
-    data: clinics,
-    isError: isClinicsError,
-    isLoading: isClinicsLoading,
-    isFetching: isClinicsFetching,
-    error
-  } = useClinicFindAll({
-    keyword,
-    filter: clinicFilter
-  })
+  // const {
+  //   data: clinics,
+  //   isError: isClinicsError,
+  //   isLoading: isClinicsLoading,
+  //   isFetching: isClinicsFetching,
+  //   error
+  // } = useClinicFindAll({
+  //   keyword,
+  //   filter: clinicFilter
+  // })
+  //
+  // console.log({ error, isClinicsError })
 
-  console.log({ error, isClinicsError })
+  const { data: clinics, isLoading } = useListClinics();
 
   return (
     <>
@@ -90,7 +93,7 @@ export default function Clinic() {
                 setClinicFilter(prevState => ({
                   ...prevState,
                   ...filter
-                }))
+                }));
               }}
             />
           </div>
@@ -117,15 +120,13 @@ export default function Clinic() {
             )}
           </div>
 
-          {isClinicsLoading || isClinicsFetching || isClinicsError ? (
+          {isLoading || !clinics ? (
             <CardLoader />
-          ) : clinics.data &&
-            Array.isArray(clinics?.data) &&
-            clinics.data.length ? (
+          ) : clinics.length > 0 ? (
             <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-              {clinics.data.map(clinic => (
+              {clinics.map((clinic: IOrganizationEntry) => (
                 <div
-                  key={clinic.clinic_id}
+                  key={clinic.resource.id}
                   className='card flex flex-col items-center'
                 >
                   <Image
@@ -136,21 +137,13 @@ export default function Clinic() {
                     height={100}
                   />
                   <div className='mt-2 text-center font-bold text-primary'>
-                    {clinic.clinic_name}
+                    {clinic.resource.resourceType === 'Organization' &&
+                      clinic.resource.name}
                   </div>
-                  <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                    {clinic.tags &&
-                      clinic.tags.length &&
-                      clinic.tags.map((tag, index) => (
-                        <Badge
-                          key={index}
-                          className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                  </div>
-                  <Link href={`/clinic/${clinic.clinic_id}`} className='w-full'>
+                  <Link
+                    href={`/clinic/${clinic.resource.id}`}
+                    className='w-full'
+                  >
                     <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
                       Check
                     </Button>
@@ -164,5 +157,5 @@ export default function Clinic() {
         </div>
       </ContentWraper>
     </>
-  )
+  );
 }

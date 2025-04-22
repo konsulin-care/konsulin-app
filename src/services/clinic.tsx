@@ -1,76 +1,119 @@
-import { getDaysInRange, toQueryString } from '@/lib/utils'
-import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
-import { API } from './api'
+import { IOrganizationEntry, IPractitionerRole } from '@/types/organization';
+import { useQuery } from '@tanstack/react-query';
+import { API } from './api';
 
 export type IUseClinicParams = {
-  page?: number
-  pageSize?: number
-  start_date?: Date
-  end_date?: Date
-  start_time?: string
-  end_time?: string
-  location?: string
-  days?: String[]
-}
+  page?: number;
+  pageSize?: number;
+  start_date?: Date;
+  end_date?: Date;
+  start_time?: string;
+  end_time?: string;
+  location?: string;
+  days?: String[];
+};
 
-export const useClinicFindAll = (
-  {
-    keyword,
-    filter,
-    clinicId
-  }: { keyword?: string; filter?: IUseClinicParams; clinicId?: string },
-  delay: number = 500
-) => {
-  const [debouncedKeyword, setDebouncedKeyword] = useState<string>(keyword)
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedKeyword(keyword)
-    }, delay)
-
-    return () => {
-      clearTimeout(handler)
-    }
-  }, [keyword, delay])
-
-  const payload = {
-    name: debouncedKeyword,
-    page: filter.page,
-    pageSize: filter.pageSize,
-    start_time: filter.start_time,
-    end_time: filter.end_time,
-    location: filter.location,
-    days: getDaysInRange(filter.start_date, filter.end_date)
-  }
-
+export const useListClinics = () => {
   return useQuery({
-    queryKey: ['clinic', payload],
+    queryKey: ['list-clinics'],
+    queryFn: () => API.get('/fhir/Organization?_elements=name,address'),
+    select: response => response.data.entry || null
+  });
+};
+
+export const useClinicById = (clinicId: string) => {
+  const { data, isLoading, isError, isFetching } = useQuery({
+    queryKey: ['clinic', clinicId],
     queryFn: () =>
       API.get(
-        `/api/v1/clinics${!clinicId ? '' : `/${clinicId}/clinicians`}?${toQueryString(payload)}`
-      )
-  })
-}
+        `/fhir/PractitionerRole?active=true&organization=${clinicId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner`
+      ),
+    select: response => response.data.entry || null,
+    enabled: !!clinicId
+  });
 
-export const useClinicFindByID = (clinicId: number | string) => {
-  return useQuery({
-    queryKey: ['detail-clinic', clinicId],
-    queryFn: () => API.get(`/api/v1/clinics/${clinicId}`)
-  })
-}
+  let clinic: IOrganizationEntry | undefined;
+  let practitioners: IOrganizationEntry[] = [];
+  let practitionerRoles: IOrganizationEntry[] = [];
 
-export const useDetailClinicianByClinic = ({
-  clinician_id,
-  clinic_id,
-  ...rest
-}) => {
-  return useQuery({
-    queryKey: ['detail-clinician-by-clinic', clinic_id],
+  if (data) {
+    clinic = data.find(
+      (item: IOrganizationEntry) =>
+        item.resource.resourceType === 'Organization'
+    );
+    practitioners = data.filter(
+      (item: IOrganizationEntry) =>
+        item.resource.resourceType === 'Practitioner'
+    );
+    practitionerRoles = data.filter(
+      (item: IOrganizationEntry) =>
+        item.resource.resourceType === 'PractitionerRole'
+    );
+  }
+
+  const newPractitionerData = practitioners.map((item: IOrganizationEntry) => {
+    const practitionerId = item.resource.id;
+
+    const practitionerRoleData = practitionerRoles.find(
+      (item: IOrganizationEntry & { resource: IPractitionerRole }) =>
+        item.resource.practitioner.reference.split('/')[1] === practitionerId
+    );
+
+    return {
+      ...item.resource,
+      practitionerRole: practitionerRoleData.resource
+    };
+  });
+
+  return {
+    clinic,
+    newPractitionerData,
+    isLoading,
+    isFetching,
+    isError
+  };
+};
+
+export const useDetailPractitioner = (practitionerRoleId: string) => {
+  const { data, isLoading, isError, isFetching } = useQuery({
+    queryKey: ['practitioner-detail', practitionerRoleId],
     queryFn: () =>
-      API.get(`/api/v1/clinics/${clinic_id}/clinicians/${clinician_id}`),
-    select: response => response.data,
-    enabled: rest?.enable,
-    ...rest
-  })
-}
+      API.get(
+        `/fhir/PractitionerRole?active=true&_id=${practitionerRoleId}&_include=PractitionerRole:organization&_incude=PractitionerRole:practitioner&_revinclude=Invoice:participant`
+      ),
+    select: response => response.data.entry || null,
+    enabled: !!practitionerRoleId
+  });
+
+  let practitionerRole: IOrganizationEntry | undefined;
+  let organization: IOrganizationEntry | undefined;
+  let invoice: IOrganizationEntry | undefined;
+  let newData = undefined;
+
+  if (data) {
+    practitionerRole = data.find(
+      (item: IOrganizationEntry) =>
+        item.resource.resourceType === 'PractitionerRole'
+    );
+    organization = data.find(
+      (item: IOrganizationEntry) =>
+        item.resource.resourceType === 'Organization'
+    );
+    invoice = data.find(
+      (item: IOrganizationEntry) => item.resource.resourceType === 'Invoice'
+    );
+
+    newData = {
+      ...practitionerRole,
+      invoice: invoice?.resource,
+      organization: organization?.resource
+    };
+  }
+
+  return {
+    newData,
+    isLoading,
+    isError,
+    isFetching
+  };
+};

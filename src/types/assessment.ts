@@ -1,12 +1,3 @@
-export type IAssessment = {
-  id: string;
-  type: string;
-  entry: IAssessmentEntry[];
-  link: IAssessmentLink[];
-  total: number;
-  resourceType: string;
-};
-
 export type IAssessmentEntry = {
   fullUrl: string;
   resource: IAssessmentResource | IResearchResource | IResearchListResource;
@@ -30,13 +21,13 @@ export type IAssessmentResource = {
   id: string;
   title: string;
   description: string;
-  resourceType: string;
+  resourceType: 'Questionnaire';
 };
 
 export type IResearchResource = {
   description: string;
   meta: IMeta;
-  resourceType: string;
+  resourceType: 'ResearchStudy';
   title: string;
   note: Array<{
     text: string;
@@ -54,6 +45,7 @@ export type IResearchResource = {
   contact: Array<{
     name: string;
   }>;
+  relatedLists?: IResearchListResource[];
 };
 
 export type IResearchListResource = {
@@ -61,7 +53,7 @@ export type IResearchListResource = {
   entry: IResearchListEntry[];
   meta: IMeta;
   mode: string;
-  resourceType: string;
+  resourceType: 'List';
   status: string;
   title: string;
 };
