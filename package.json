@@ -76,6 +76,7 @@
     "react-toastify": "^10.0.5",
     "sass": "^1.79.3",
     "sonner": "^1.5.0",
+    "supertokens-auth-react": "^0.49.1",
     "swiper": "^11.1.4",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
