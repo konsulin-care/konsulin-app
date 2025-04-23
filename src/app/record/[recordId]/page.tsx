@@ -59,7 +59,7 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
       <Header showChat={false}>
         <div className='flex w-full items-center'>
           <ChevronLeftIcon
-            onClick={() => router.back()}
+            onClick={() => router.push('/assessments')}
             color='white'
             className='mr-2 cursor-pointer'
           />
