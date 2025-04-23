@@ -43,7 +43,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const queryClient = useRendererQueryClient();
-  const isBuilding = useBuildForm(questionnaire);
+  const isBuilding = useBuildForm(questionnaire, response);
 
   const {
     mutate: submitQuestionnaire,
@@ -54,6 +54,21 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     useResultBrief(questionnaire.id);
 
   const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
+
+  useEffect(() => {
+    const savedResponses = localStorage.getItem('questionnaire-responses');
+    if (savedResponses) {
+      setResponse(JSON.parse(savedResponses));
+    }
+  }, []);
+
+  const handleResponseChange = () => {
+    const questionnaireResponse = getResponse();
+    localStorage.setItem(
+      'questionnaire-responses',
+      JSON.stringify(questionnaireResponse)
+    );
+  };
 
   const checkRequiredIsEmpty = () => {
     const required = Object.values(invalidItems).flatMap(item =>
@@ -87,6 +102,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
             setIsOpen(true);
           }
         });
+        localStorage.removeItem('questionnaire-responses');
         return;
       }
 
@@ -105,6 +121,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
           submitQuestionnaire(questionnaireResponse, {
             onSuccess: result => {
+              localStorage.removeItem('questionnaire-responses');
               setResponse(result);
               setIsOpen(true);
             }
@@ -155,7 +172,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         </DrawerTitle>
       </DrawerHeader>
 
-      <DrawerFooter className='mt-2 flex flex-col gap-4'>
+      <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
         {resultBrief && response && (
           <Link
             href={{
@@ -199,7 +216,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   return (
     <RendererThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <div className='custom-smart-form'>
+        <div className='custom-smart-form' onChange={handleResponseChange}>
           <BaseRenderer />
         </div>
       </QueryClientProvider>
