@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-    - develop
+      - develop
 
 jobs:
   docker:
@@ -20,6 +20,8 @@ jobs:
       DOCKER_TAG: ${{ github.ref_name }}-${{ github.sha }}
       NODE_MODULES_CACHE_DIR: /tmp/${{ github.repository }}/develop/node_modules
       NEXTJS_CACHE_DIR: /tmp/${{ github.repository }}/develop/.next/cache
+    secrets:
+      WEBHOOK_AUTH: ${{ secrets.WEBHOOK_AUTH }}
 
   deploy:
     name: Deployment
@@ -28,6 +30,6 @@ jobs:
     with:
       DOCKER_TAG: ${{ github.ref_name }}-${{ github.sha }}
       ANSIBLE_PLAYBOOK: playbook-dev.yml
-      ANSIBLE_INVENTORY_HOSTS: "37.27.46.214,"
+      ANSIBLE_INVENTORY_HOSTS: '37.27.46.214,'
     secrets:
       SSH_KEY: ${{ secrets.SSH_KEY }}

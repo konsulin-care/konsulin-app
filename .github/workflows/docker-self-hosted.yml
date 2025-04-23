@@ -29,10 +29,10 @@ on:
         required: true
       NODE_MODULES_CACHE_DIR:
         type: string
-        default: "/tmp/cache/node_modules"
+        default: '/tmp/cache/node_modules'
       NEXTJS_CACHE_DIR:
         type: string
-        default: "/tmp/cache/nextjs-cache"
+        default: '/tmp/cache/nextjs-cache'
 
 jobs:
   docker:
@@ -40,91 +40,94 @@ jobs:
     runs-on: self-hosted
 
     steps:
-    - name: Prepare
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
+      - name: Prepare
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-    - name: Set Up Node JS
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20.16
+      - name: Set Up Node JS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.16
 
-    - name: Generate Cache Keys
-      id: cache-keys
-      run: |
-        echo "NODE_MODULES_CACHE_KEY=node-modules-${{ hashFiles('**/package-lock.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> $GITHUB_ENV
-        echo "NEXTJS_CACHE_KEY=nextjs-cache-${{ hashFiles('next.config.js', 'next.config.mjs') }}" >> $GITHUB_ENV
+      - name: Generate Cache Keys
+        id: cache-keys
+        run: |
+          echo "NODE_MODULES_CACHE_KEY=node-modules-${{ hashFiles('**/package-lock.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> $GITHUB_ENV
+          echo "NEXTJS_CACHE_KEY=nextjs-cache-${{ hashFiles('next.config.js', 'next.config.mjs') }}" >> $GITHUB_ENV
 
-    - name: Copy Cache
-      run: |
-        # Copy Node Modules cache if it exists
-        if [ -d "${{ inputs.NODE_MODULES_CACHE_DIR }}/$NODE_MODULES_CACHE_KEY" ]; then
-          echo "Copying Node Modules cache..."
-          cp -r "${{ inputs.NODE_MODULES_CACHE_DIR }}/$NODE_MODULES_CACHE_KEY" ./node_modules || echo "Failed to copy Node Modules cache."
-        else
-          echo "Node Modules cache not found."
-        fi
+      - name: Copy Cache
+        run: |
+          # Copy Node Modules cache if it exists
+          if [ -d "${{ inputs.NODE_MODULES_CACHE_DIR }}/$NODE_MODULES_CACHE_KEY" ]; then
+            echo "Copying Node Modules cache..."
+            cp -r "${{ inputs.NODE_MODULES_CACHE_DIR }}/$NODE_MODULES_CACHE_KEY" ./node_modules || echo "Failed to copy Node Modules cache."
+          else
+            echo "Node Modules cache not found."
+          fi
 
-        # Copy Next.js cache if it exists
-        if [ -d "${{ inputs.NEXTJS_CACHE_DIR }}/$NEXTJS_CACHE_KEY" ]; then
-          echo "Copying Next.js cache..."
-          mkdir -p ./.next/cache
-          cp -r "${{ inputs.NEXTJS_CACHE_DIR }}/$NEXTJS_CACHE_KEY"/* ./.next/cache || echo "Failed to copy Next.js cache."
-        else
-          echo "Next.js cache not found."
-        fi
+          # Copy Next.js cache if it exists
+          if [ -d "${{ inputs.NEXTJS_CACHE_DIR }}/$NEXTJS_CACHE_KEY" ]; then
+            echo "Copying Next.js cache..."
+            mkdir -p ./.next/cache
+            cp -r "${{ inputs.NEXTJS_CACHE_DIR }}/$NEXTJS_CACHE_KEY"/* ./.next/cache || echo "Failed to copy Next.js cache."
+          else
+            echo "Next.js cache not found."
+          fi
 
-    - name: Installing Packages
-      run: npm install
+      - name: Installing Packages
+        run: npm install
 
-    - name: Build Packages
-      env:
-        NEXT_PUBLIC_API_URL: ${{ inputs.API_URL }}
-      run: |
-        if [ -f yarn.lock ]; then
-          yarn run build
-        elif [ -f package-lock.json ]; then
-          npm run build
-        elif [ -f pnpm-lock.yaml ]; then
-          corepack enable pnpm && pnpm run build
-        else
-          echo "Lockfile not found." && exit 1
-        fi
+      - name: Build Packages
+        env:
+          NEXT_PUBLIC_API_URL: ${{ inputs.API_URL }}
+          NEXT_PUBLIC_WEBHOOK_AUTH: ${{ secrets.WEBHOOK_AUTH }}
 
-    - name: Update Node Modules Cache
-      run: |
-        if [ -d ./node_modules ]; then
-          echo "Updating Node Modules cache..."
-          mkdir -p "${{ inputs.NODE_MODULES_CACHE_DIR }}/$NODE_MODULES_CACHE_KEY"
-          cp -r ./node_modules "${{ inputs.NODE_MODULES_CACHE_DIR }}/$NODE_MODULES_CACHE_KEY"
-        fi
+        run: |
+          if [ -f yarn.lock ]; then
+            yarn run build
+          elif [ -f package-lock.json ]; then
+            npm run build
+          elif [ -f pnpm-lock.yaml ]; then
+            corepack enable pnpm && pnpm run build
+          else
+            echo "Lockfile not found." && exit 1
+          fi
 
-    - name: Update Next.js Cache
-      run: |
-        if [ -d ./.next/cache ]; then
-          echo "Updating Next.js cache..."
-          mkdir -p "${{ inputs.NEXTJS_CACHE_DIR }}/$NEXTJS_CACHE_KEY"
-          cp -r ./.next/cache/* "${{ inputs.NEXTJS_CACHE_DIR }}/$NEXTJS_CACHE_KEY" || echo "Failed to update Next.js cache."
-        fi
+      - name: Update Node Modules Cache
+        run: |
+          if [ -d ./node_modules ]; then
+            echo "Updating Node Modules cache..."
+            mkdir -p "${{ inputs.NODE_MODULES_CACHE_DIR }}/$NODE_MODULES_CACHE_KEY"
+            cp -r ./node_modules "${{ inputs.NODE_MODULES_CACHE_DIR }}/$NODE_MODULES_CACHE_KEY"
+          fi
 
-    - name: Modify .dockerignore to include .next
-      run: |
-        # Check if .dockerignore exists
-        if [ -f .dockerignore ]; then
-          # Remove any lines that match ".next" (remove or modify as needed)
-          sed -i '/^\.next$/d' .dockerignore
-        fi
+      - name: Update Next.js Cache
+        run: |
+          if [ -d ./.next/cache ]; then
+            echo "Updating Next.js cache..."
+            mkdir -p "${{ inputs.NEXTJS_CACHE_DIR }}/$NEXTJS_CACHE_KEY"
+            cp -r ./.next/cache/* "${{ inputs.NEXTJS_CACHE_DIR }}/$NEXTJS_CACHE_KEY" || echo "Failed to update Next.js cache."
+          fi
 
-    - name: Build Image
-      env:
-        DOCKER_BUILDKIT: 1
-      run: |
-        docker build -t konsulin/fe-service:${{ inputs.DOCKER_TAG }} -f ./docker/Dockerfile-ci . \
-          --build-arg API_URL=${{ inputs.API_URL }} \
-          --build-arg VERSION=${{ inputs.VERSION }} \
-          --build-arg GIT_COMMIT=${{ inputs.GIT_COMMIT }} \
-          --build-arg TAG=${{ inputs.RELEASE_TAG }} \
-          --build-arg AUTHOR=${{ inputs.AUTHOR }} \
-          --build-arg RUN_NUMBER=${{ inputs.RUN_NUMBER }} \
-          --build-arg BUILD_TIME=${{ inputs.BUILD_TIME }}
+      - name: Modify .dockerignore to include .next
+        run: |
+          # Check if .dockerignore exists
+          if [ -f .dockerignore ]; then
+            # Remove any lines that match ".next" (remove or modify as needed)
+            sed -i '/^\.next$/d' .dockerignore
+          fi
+
+      - name: Build Image
+        env:
+          DOCKER_BUILDKIT: 1
+        run: |
+          docker build -t konsulin/fe-service:${{ inputs.DOCKER_TAG }} -f ./docker/Dockerfile-ci . \
+            --build-arg API_URL=${{ inputs.API_URL }} \
+            --build-arg VERSION=${{ inputs.VERSION }} \
+            --build-arg GIT_COMMIT=${{ inputs.GIT_COMMIT }} \
+            --build-arg TAG=${{ inputs.RELEASE_TAG }} \
+            --build-arg AUTHOR=${{ inputs.AUTHOR }} \
+            --build-arg RUN_NUMBER=${{ inputs.RUN_NUMBER }} \
+            --build-arg BUILD_TIME=${{ inputs.BUILD_TIME }} \
+            --build-arg WEBHOOK_AUTH=${{ secrets.WEBHOOK_AUTH }}

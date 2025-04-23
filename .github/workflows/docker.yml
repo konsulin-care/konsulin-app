@@ -35,51 +35,50 @@ jobs:
     strategy:
       matrix:
         os:
-        - ubuntu-latest
+          - ubuntu-latest
     steps:
-    - name: Prepare
-      uses: actions/checkout@v2
+      - name: Prepare
+        uses: actions/checkout@v2
 
-    - name: Download Artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: build
-        path: build
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build
+          path: build
 
-    - name: Login to Registry
-      uses: docker/login-action@v1
-      with:
-        registry: repository.konsulin.care
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to Registry
+        uses: docker/login-action@v1
+        with:
+          registry: repository.konsulin.care
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Get sha short
-      id: tags
-      run: |
-        echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+      - name: Get sha short
+        id: tags
+        run: |
+          echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
 
-    - name: Get Branch
-      run: echo "BRANCH=${GITHUB_REF##*/}" >> $GITHUB_ENV
+      - name: Get Branch
+        run: echo "BRANCH=${GITHUB_REF##*/}" >> $GITHUB_ENV
 
+      - name: Build
+        run: >-
+          docker
+          build
+          -t repository.konsulin.care/repository/private/fe-konsulin:sha-${{ env.BRANCH }}-${{ env.SHORT_SHA }}
+          -f docker/Dockerfile-ci
+          --build-arg API_URL=${{ inputs.API_URL }}
+          --build-arg VERSION=${{ inputs.VERSION }}
+          --build-arg GIT_COMMIT=${{ inputs.GIT_COMMIT }}
+          --build-arg TAG=${{ inputs.TAG }}
+          --build-arg AUTHOR=${{ inputs.AUTHOR }}
+          --build-arg RUN_NUMBER=${{ inputs.RUN_NUMBER }}
+          --build-arg BUILD_TIME=${{ inputs.BUILD_TIME }}
+          --build-arg WEBHOOK_AUTH=${{ secrets.WEBHOOK_AUTH }}
+          .
 
-    - name: Build
-      run: >-
-        docker
-        build
-        -t repository.konsulin.care/repository/private/fe-konsulin:sha-${{ env.BRANCH }}-${{ env.SHORT_SHA }}
-        -f docker/Dockerfile-ci
-        --build-arg API_URL=${{ inputs.API_URL }}
-        --build-arg VERSION=${{ inputs.VERSION }}
-        --build-arg GIT_COMMIT=${{ inputs.GIT_COMMIT }}
-        --build-arg TAG=${{ inputs.TAG }}
-        --build-arg AUTHOR=${{ inputs.AUTHOR }}
-        --build-arg RUN_NUMBER=${{ inputs.RUN_NUMBER }}
-        --build-arg BUILD_TIME=${{ inputs.BUILD_TIME }}
-        .
-
-
-    - name: Push sha-${{ env.BRANCH }}-${{ env.SHORT_SHA }}
-      run: >-
-        docker
-        push
-        repository.konsulin.care/repository/private/fe-konsulin:sha-${{ env.BRANCH }}-${{ env.SHORT_SHA }}
+      - name: Push sha-${{ env.BRANCH }}-${{ env.SHORT_SHA }}
+        run: >-
+          docker
+          push
+          repository.konsulin.care/repository/private/fe-konsulin:sha-${{ env.BRANCH }}-${{ env.SHORT_SHA }}

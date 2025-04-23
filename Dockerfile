@@ -10,10 +10,13 @@ ARG GIT_COMMIT=43fdfd34
 ARG TAG=v0.0.1
 ARG BUILD_TIME="date-time here"
 ARG AUTHOR="CI/CD"
+ARG WEBHOOK_AUTH=""
 
 # set environment variables
 ENV NEXT_PUBLIC_API_URL=$API_URL
+ENV NEXT_PUBLIC_WEBHOOK_AUTH=$WEBHOOK_AUTH
 
+RUN echo "Set ARG value of [NEXT_PUBLIC_WEBHOOK_AUTH] as $WEBHOOK_AUTH"
 RUN echo "Set ARG value of [NEXT_PUBLIC_API_URL] as $API_URL"
 RUN echo "Set ARG value of [VERSION] as $VERSION"
 RUN echo "Set GIT_COMMIT value of [VERSION] as $GIT_COMMIT"
@@ -21,6 +24,7 @@ RUN echo "Set TAG value of [TAG] as $TAG"
 RUN echo "Set BUILD_TIME value of [BUILD_TIME] as $BUILD_TIME"
 
 RUN echo "Set ENV value of [NEXT_PUBLIC_API_URL] as $NEXT_PUBLIC_API_URL"
+RUN echo "Set ENV value of [NEXT_PUBLIC_WEBHOOK_AUTH] as $NEXT_PUBLIC_WEBHOOK_AUTH"
 
 # get current commit and create build number
 ARG RELEASE_NOTE="author=${AUTHOR} \nversion=${VERSION} \ncommit=${GIT_COMMIT} \ntag=${TAG} \nbuild time=${BUILD_TIME}"
@@ -34,11 +38,11 @@ WORKDIR /app
 # Install dependencies based on the preferred package manager
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
 RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+    if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+    elif [ -f package-lock.json ]; then npm ci; \
+    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
+    else echo "Lockfile not found." && exit 1; \
+    fi
 
 # Rebuild the source code only when needed
 FROM deps AS builder
@@ -52,11 +56,11 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN \
-  if [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+    if [ -f yarn.lock ]; then yarn run build; \
+    elif [ -f package-lock.json ]; then npm run build; \
+    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
+    else echo "Lockfile not found." && exit 1; \
+    fi
 
 # Production image, copy all the files and run next
 #FROM node:iron-slim AS runner
