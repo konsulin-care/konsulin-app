@@ -2,6 +2,7 @@
   .MuiContainer-root {
     padding: 0 12px !important;
   }
+
   //input field
   .MuiGrid-root {
     flex-direction: column !important;
@@ -27,6 +28,20 @@
   .MuiInputAdornment-root {
     width: 0px !important;
     margin-left: 0px !important;
+  }
+
+  .MuiFab-root {
+    background-color: #0abdc3 !important;
+    color: white !important;
+    border-radius: 50% !important;
+  }
+
+  .MuiFab-root:hover {
+    filter: brightness(0.9);
+  }
+
+  .MuiFab-root.Mui-disabled {
+    background-color: rgba(158, 158, 158, 0.24) !important;
   }
 
   // [data-test='q-item-quantity-box'] {
