@@ -5,11 +5,9 @@ import {
   useSubmitQuestionnaire
 } from '@/services/api/assessment';
 import Image from 'next/image';
-import Link from 'next/link';
 
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerFooter,
   DrawerHeader,
@@ -25,7 +23,9 @@ import {
 } from '@aehrc/smart-forms-renderer';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
 interface FhirFormsRendererProps {
   questionnaire: Questionnaire;
@@ -38,22 +38,39 @@ interface FhirFormsRendererProps {
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const { questionnaire, isAuthenticated } = props;
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null);
-  const [resultBrief, setResultBrief] = useState(null);
   const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0);
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const queryClient = useRendererQueryClient();
-  const isBuilding = useBuildForm(questionnaire);
+  const isBuilding = useBuildForm(questionnaire, response);
 
   const {
-    mutate: submitQuestionnaire,
+    mutateAsync: submitQuestionnaire,
     isLoading: submitQuestionnaireIsLoading
-  } = useSubmitQuestionnaire(questionnaire.id);
+  } = useSubmitQuestionnaire(questionnaire.id, isAuthenticated);
 
-  const { mutate: fetchResultBrief, isLoading: fetchResultBriefisLoading } =
-    useResultBrief(questionnaire.id);
+  const { mutateAsync: fetchResultBrief } = useResultBrief(questionnaire.id);
 
   const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
+
+  // NOTE: might add a user identifier later
+  useEffect(() => {
+    const savedResponses = localStorage.getItem(`response_${questionnaire.id}`);
+    if (savedResponses) {
+      setResponse(JSON.parse(savedResponses));
+    }
+  }, []);
+
+  const handleResponseChange = () => {
+    const questionnaireResponse = getResponse();
+    localStorage.setItem(
+      `response_${questionnaire.id}`,
+      JSON.stringify(questionnaireResponse)
+    );
+  };
 
   const checkRequiredIsEmpty = () => {
     const required = Object.values(invalidItems).flatMap(item =>
@@ -71,22 +88,51 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     if (Object.keys(invalidItems).length !== 0) {
       checkRequiredIsEmpty();
     } else {
-      const questionnaireResponse = getResponse();
+      setIsOpen(true);
+    }
+  };
 
-      /* Check if the questionnaire response contains an item with linkId = 'interpretation'.
-       * If it does, extract the item and send it to the webhook. */
-      const interpretationItem = questionnaireResponse.item.find(
-        item => item.linkId === 'interpretation'
-      );
+  const handleNavigate = (type: string, responseId?: string) => {
+    if (type === 'result') {
+      const query = new URLSearchParams({
+        type: '1',
+        title: questionnaire.title
+      }).toString();
 
+      router.push(`/record/${responseId}?${query}`);
+    } else {
+      router.push('/assessments');
+    }
+  };
+
+  const handleSubmitQuestionnaire = async (type: string) => {
+    if (type === 'close') {
+      handleNavigate(type);
+    }
+
+    setIsSubmitting(true);
+
+    const questionnaireResponse = getResponse();
+
+    /* Check if the questionnaire response contains an item with linkId = 'interpretation'.
+     * If it does, extract the item and send it to the webhook. */
+    const interpretationItem = questionnaireResponse.item.find(
+      item => item.linkId === 'interpretation'
+    );
+
+    try {
       if (!interpretationItem) {
         // setResponse({ ...questionnaireResponse, ...props.customObject });
-        submitQuestionnaire(questionnaireResponse, {
-          onSuccess: result => {
-            setResponse(result);
-            setIsOpen(true);
-          }
-        });
+
+        localStorage.setItem(
+          `response_${questionnaire.id}`,
+          JSON.stringify(questionnaireResponse)
+        );
+
+        const result = await submitQuestionnaire(questionnaireResponse);
+
+        // setResponse(result);
+        handleNavigate(type, result.id);
         return;
       }
 
@@ -96,21 +142,27 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         item: interpretationItem.item
       };
 
-      fetchResultBrief(payload, {
-        onSuccess: result => {
-          interpretationItem.item.push(result[0]);
+      const result = await fetchResultBrief(payload);
 
-          // setResponse({ ...questionnaireResponse, ...props.customObject });
-          setResultBrief(result[0]);
+      interpretationItem.item.push(result[0]);
 
-          submitQuestionnaire(questionnaireResponse, {
-            onSuccess: result => {
-              setResponse(result);
-              setIsOpen(true);
-            }
-          });
-        }
-      });
+      // setResponse({ ...questionnaireResponse, ...props.customObject });
+
+      localStorage.setItem(
+        `response_${questionnaire.id}`,
+        JSON.stringify(questionnaireResponse)
+      );
+
+      const submitResult = await submitQuestionnaire(questionnaireResponse);
+
+      // setResponse(result);
+      handleNavigate(type, submitResult.id);
+    } catch (error) {
+      console.log('Error message :', error);
+      toast.error('An error occurred while submitting the questionnaire');
+      setIsSubmitting(false);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -155,36 +207,42 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         </DrawerTitle>
       </DrawerHeader>
 
-      <DrawerFooter className='mt-2 flex flex-col gap-4'>
-        {resultBrief && response && (
-          <Link
-            href={{
-              pathname: `/record/${response.id}`,
-              query: {
-                type: 1,
-                title: questionnaire.title
-              }
-            }}
+      <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
+        {props.type !== 'research' && (
+          <Button
+            className='h-full w-full rounded-xl bg-secondary p-4 text-white'
+            onClick={() => handleSubmitQuestionnaire('result')}
+            disabled={isSubmitting}
           >
-            <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
-              See result
-            </Button>
-          </Link>
+            {isSubmitting ? (
+              <LoadingSpinnerIcon
+                width={20}
+                height={20}
+                stroke='white'
+                className='w-full animate-spin'
+              />
+            ) : (
+              'See result'
+            )}
+          </Button>
         )}
-        <DrawerClose
-          className={`items-center justify-center rounded-xl border border-solid p-4 text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50 ${
-            resultBrief
+        <Button
+          className={`h-full w-full rounded-xl border border-solid p-4 transition-all focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50 ${
+            props.type !== 'research'
               ? 'border-secondary bg-transparent text-secondary hover:bg-gray-100'
               : 'hover:bg-secondary/90 border-transparent bg-secondary text-white'
           }`}
+          onClick={() => {
+            handleSubmitQuestionnaire('close');
+          }}
         >
           Close
-        </DrawerClose>
+        </Button>
       </DrawerFooter>
     </>
   );
 
-  if (isBuilding || fetchResultBriefisLoading) {
+  if (isBuilding) {
     return (
       <div className='flex min-h-screen min-w-full items-center justify-center'>
         <LoadingSpinnerIcon
@@ -199,7 +257,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   return (
     <RendererThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <div className='custom-smart-form'>
+        <div className='custom-smart-form' onChange={handleResponseChange}>
           <BaseRenderer />
         </div>
       </QueryClientProvider>

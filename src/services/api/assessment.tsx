@@ -4,8 +4,6 @@ import { format } from 'date-fns';
 import { QuestionnaireResponse, QuestionnaireResponseItem } from 'fhir/r4';
 import { API } from '../api';
 
-const WEBHOOK_AUTH =
-  'wK3e06gzGCucksRmt4gE2Lmprg4NTH9oYWDM7dwnQmFNLycfaauYNaEqnwaL2zfF';
 const WEBHOOK_URL = 'https://flow.konsulin.care/webhook/interpret';
 
 type IResultBriefPayload = {
@@ -39,9 +37,10 @@ export const useQuestionnaire = (questionnaireId: number | string) => {
   });
 };
 
+// TODO: add patient-id to author and subject references
 export const useSubmitQuestionnaire = (
-  questionnaireId: string
-  // isAuthenticated: Boolean
+  questionnaireId: string,
+  isAuthenticated: Boolean
 ) => {
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
@@ -51,7 +50,44 @@ export const useSubmitQuestionnaire = (
 
       const timestamp = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
 
+      if (isAuthenticated) {
+        localStorage.removeItem(`response_${questionnaireId}`);
+      }
+
       const response = await API.post('/fhir/QuestionnaireResponse', {
+        author,
+        item,
+        resourceType,
+        questionnaire: `Questionnaire/${questionnaireId}`,
+        status,
+        authored: timestamp,
+        subject
+        // respondent_type: isAuthenticated ? 'user' : 'guest',
+        // questionnaire_response: questionnaireRresponse
+      });
+      return response.data;
+    }
+  });
+};
+
+// TODO: add patient-id to author and subject references
+export const useUpdateSubmitQuestionnaire = (
+  questionnaireId: string,
+  isAuthenticated: Boolean
+) => {
+  return useMutation({
+    mutationKey: ['assessment-responses', questionnaireId],
+    mutationFn: async (questionnaireResponse: QuestionnaireResponse) => {
+      const { author, item, resourceType, status, subject } =
+        questionnaireResponse;
+
+      const timestamp = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+      if (isAuthenticated) {
+        localStorage.removeItem(`response_${questionnaireId}`);
+      }
+
+      const response = await API.put('/fhir/QuestionnaireResponse', {
         author,
         item,
         resourceType,
@@ -79,7 +115,7 @@ export const useResultBrief = (questionnaireId: string) => {
 
       const response = await axios.post(`${WEBHOOK_URL}`, payload, {
         headers: {
-          Authorization: `${WEBHOOK_AUTH}`
+          Authorization: `${process.env.NEXT_PUBLIC_WEBHOOK_AUTH}`
         }
       });
       return response.data;
