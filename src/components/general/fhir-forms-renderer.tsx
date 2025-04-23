@@ -55,8 +55,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
 
+  // NOTE: might add a user identifier later
   useEffect(() => {
-    const savedResponses = localStorage.getItem('questionnaire-responses');
+    const savedResponses = localStorage.getItem(`response_${questionnaire.id}`);
     if (savedResponses) {
       setResponse(JSON.parse(savedResponses));
     }
@@ -65,7 +66,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const handleResponseChange = () => {
     const questionnaireResponse = getResponse();
     localStorage.setItem(
-      'questionnaire-responses',
+      `response_${questionnaire.id}`,
       JSON.stringify(questionnaireResponse)
     );
   };
@@ -102,7 +103,6 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
             setIsOpen(true);
           }
         });
-        localStorage.removeItem('questionnaire-responses');
         return;
       }
 
@@ -121,7 +121,6 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
           submitQuestionnaire(questionnaireResponse, {
             onSuccess: result => {
-              localStorage.removeItem('questionnaire-responses');
               setResponse(result);
               setIsOpen(true);
             }

@@ -1,6 +1,8 @@
 import ModalQr from '@/components/general/modal-qr';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth/authContext';
 import { useQuestionnaireResponse } from '@/services/api/assessment';
 import { QuestionnaireResponseItem } from 'fhir/r4';
 import { LinkIcon, NotepadTextIcon, UsersIcon } from 'lucide-react';
@@ -36,6 +38,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
   const [scoreList, setScoreList] = useState([]);
   const [currentLocation, setCurrentLocation] = useState<string>('');
   const [colorMap, setColorMap] = useState({});
+  const { state: authState } = useAuth();
 
   useEffect(() => {
     const savedColorMap = localStorage.getItem('result-table-colors');
@@ -188,13 +191,26 @@ export default function RecordAssessment({ recordId, title }: Props) {
         </div>
       </div>
 
-      <div className='flex items-center space-x-2 rounded-lg bg-[#F9F9F9] p-4'>
+      <div className='mb-4 flex items-center space-x-2 rounded-lg bg-[#F9F9F9] p-4'>
         <LinkIcon />
         <div className='flex grow flex-col'>
           <span className='text-[10px] text-muted'>Test Akses</span>
           <span className='text-[14px] font-bold'>QR Code</span>
         </div>
         <ModalQr value={currentLocation} />
+      </div>
+
+      {/* NOTE: the implementation might change once auth is done */}
+      <div className='text-m flex flex-col gap-3'>
+        {!authState.isAuthenticated && (
+          <Button className='h-full w-full rounded-xl bg-softGray p-4 text-black'>
+            Login/Register
+          </Button>
+        )}
+
+        <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
+          Request Analysis
+        </Button>
       </div>
     </>
   );
