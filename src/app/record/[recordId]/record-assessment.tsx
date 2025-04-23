@@ -4,6 +4,7 @@ import { useQuestionnaireResponse } from '@/services/api/assessment';
 import { QuestionnaireResponseItem } from 'fhir/r4';
 import { LinkIcon, NotepadTextIcon, UsersIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 type Props = {
   recordId: string;
@@ -102,7 +103,11 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
       <div className='mb-4'>
         <div className='text-12 mb-2 text-muted'>Result Brief</div>
-        <div className='card'>{questionnaireResponse && getResultBrief()}</div>
+        <div className='card'>
+          <ReactMarkdown>
+            {questionnaireResponse && getResultBrief()}
+          </ReactMarkdown>
+        </div>
       </div>
 
       <div className='mb-4'>
