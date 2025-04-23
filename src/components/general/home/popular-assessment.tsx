@@ -64,43 +64,40 @@ export default function PopularAssessment() {
             <CardLoader item={2} />
           ) : (
             <div className='flex w-max space-x-4'>
-              {popularAssessments &&
-                popularAssessments.map(
-                  (
-                    assessment: IAssessmentEntry & {
-                      resource: IAssessmentResource;
-                    }
-                  ) => (
-                    <Drawer key={assessment.resource.id}>
-                      <DrawerTrigger
-                        className='card flex w-fit shrink-0 items-center gap-2 bg-white'
-                        onClick={() =>
-                          setSelectedAssessment(assessment.resource)
-                        }
-                      >
-                        <Image
-                          src={'/images/exercise.svg'}
-                          height={40}
-                          width={40}
-                          alt='exercise'
-                        />
-                        <div className='flex flex-col items-start'>
-                          <span className='text-[12px] font-bold'>
-                            {assessment.resource.title}
-                          </span>
-                          <span className='max-w-[200px] truncate text-ellipsis text-[10px] text-muted'>
-                            {assessment.resource.description}
-                          </span>
-                        </div>
-                        <ChevronRightIcon className='text-muted' />
-                      </DrawerTrigger>
+              {popularAssessments.map(
+                (
+                  assessment: IAssessmentEntry & {
+                    resource: IAssessmentResource;
+                  }
+                ) => (
+                  <Drawer key={assessment.resource.id}>
+                    <DrawerTrigger
+                      className='card flex w-fit shrink-0 items-center gap-2 bg-white'
+                      onClick={() => setSelectedAssessment(assessment.resource)}
+                    >
+                      <Image
+                        src={'/images/exercise.svg'}
+                        height={40}
+                        width={40}
+                        alt='exercise'
+                      />
+                      <div className='flex flex-col items-start'>
+                        <span className='text-[12px] font-bold'>
+                          {assessment.resource.title}
+                        </span>
+                        <span className='max-w-[200px] truncate text-ellipsis text-[10px] text-muted'>
+                          {assessment.resource.description}
+                        </span>
+                      </div>
+                      <ChevronRightIcon className='text-muted' />
+                    </DrawerTrigger>
 
-                      <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-                        <div className='mt-4'>{renderDrawerContent}</div>
-                      </DrawerContent>
-                    </Drawer>
-                  )
-                )}
+                    <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+                      <div className='mt-4'>{renderDrawerContent}</div>
+                    </DrawerContent>
+                  </Drawer>
+                )
+              )}
             </div>
           )}
           <ScrollBar orientation='horizontal' />
