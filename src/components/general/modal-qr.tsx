@@ -1,13 +1,28 @@
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 import {
   Drawer,
   DrawerClose,
   DrawerContent,
   DrawerTrigger
-} from '@/components/ui/drawer'
-import QRCode from 'react-qr-code'
+} from '@/components/ui/drawer';
+import QRCode from 'react-qr-code';
+import { toast } from 'react-toastify';
 
 export default function ModalQr({ value }) {
+  const handleCopyToClipboard = () => {
+    if (!value) return;
+
+    navigator.clipboard
+      .writeText(value)
+      .then(() => {
+        toast.success('URL copied to clipboard');
+      })
+      .catch(err => {
+        console.error('Error copying to clipboard', err);
+        toast.error('Error copying to clipboard');
+      });
+  };
+
   return (
     <Drawer>
       <DrawerTrigger asChild>
@@ -25,10 +40,13 @@ export default function ModalQr({ value }) {
           value={value}
           viewBox={`0 0 256 256`}
         />
-        <DrawerClose className='rounded-xl border border-secondary bg-white p-4 text-[14px] text-secondary'>
+        <DrawerClose
+          onClick={handleCopyToClipboard}
+          className='rounded-xl border border-secondary bg-white p-4 text-[14px] text-secondary'
+        >
           Close
         </DrawerClose>
       </DrawerContent>
     </Drawer>
-  )
+  );
 }
