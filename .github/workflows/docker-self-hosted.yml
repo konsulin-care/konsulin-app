@@ -82,7 +82,7 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: ${{ inputs.API_URL }}
           NEXT_PUBLIC_WEBHOOK_AUTH: ${{ secrets.WEBHOOK_AUTH }}
-
+          
         run: |
           if [ -f yarn.lock ]; then
             yarn run build
