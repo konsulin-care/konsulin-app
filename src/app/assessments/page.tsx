@@ -305,58 +305,63 @@ export default function Assessment() {
               <CardLoader item={2} />
             ) : (
               <div className='flex w-max space-x-4 pb-4'>
-                {popularAssessments.map(
-                  (
-                    assessment: IAssessmentEntry & {
-                      resource: IAssessmentResource;
-                    }
-                  ) => (
-                    <Drawer key={assessment.resource.id}>
-                      <DrawerTrigger className='card flex flex-col gap-4 bg-white'>
-                        <div className='flex items-start justify-between'>
-                          <Image
-                            src={'/images/exercise.svg'}
-                            height={40}
-                            width={40}
-                            alt='exercise'
-                          />
-                          <div className='flex min-w-[192px] justify-end gap-2'>
-                            <Badge className='flex items-center rounded-[8px] bg-secondary px-[10px] py-[4px]'>
-                              <AwardIcon size={16} color='white' fill='white' />
-                              <div className='text-[10px] text-white'>
-                                Best Impact
-                              </div>
-                            </Badge>
-                            <Badge className='rounded-[8px] bg-secondary px-[10px] py-[4px]'>
-                              <BookmarkIcon
-                                size={16}
-                                color='white'
-                                fill='white'
-                              />
-                            </Badge>
+                {popularAssessments &&
+                  popularAssessments.map(
+                    (
+                      assessment: IAssessmentEntry & {
+                        resource: IAssessmentResource;
+                      }
+                    ) => (
+                      <Drawer key={assessment.resource.id}>
+                        <DrawerTrigger className='card flex flex-col gap-4 bg-white'>
+                          <div className='flex items-start justify-between'>
+                            <Image
+                              src={'/images/exercise.svg'}
+                              height={40}
+                              width={40}
+                              alt='exercise'
+                            />
+                            <div className='flex min-w-[192px] justify-end gap-2'>
+                              <Badge className='flex items-center rounded-[8px] bg-secondary px-[10px] py-[4px]'>
+                                <AwardIcon
+                                  size={16}
+                                  color='white'
+                                  fill='white'
+                                />
+                                <div className='text-[10px] text-white'>
+                                  Best Impact
+                                </div>
+                              </Badge>
+                              <Badge className='rounded-[8px] bg-secondary px-[10px] py-[4px]'>
+                                <BookmarkIcon
+                                  size={16}
+                                  color='white'
+                                  fill='white'
+                                />
+                              </Badge>
+                            </div>
                           </div>
-                        </div>
 
-                        <div className='flex flex-col items-start'>
-                          {/* NOTE: not provided by api */}
-                          {/* <span className='text-[10px] text-muted'>6 Minutes</span> */}
-                          <span className='text-[12px] font-bold'>
-                            {assessment.resource.title}
-                          </span>
-                          <span className='mt-2 max-w-[250px] overflow-hidden truncate text-ellipsis text-[10px] text-muted'>
-                            {assessment.resource.description}
-                          </span>
-                        </div>
-                      </DrawerTrigger>
+                          <div className='flex flex-col items-start'>
+                            {/* NOTE: not provided by api */}
+                            {/* <span className='text-[10px] text-muted'>6 Minutes</span> */}
+                            <span className='text-[12px] font-bold'>
+                              {assessment.resource.title}
+                            </span>
+                            <span className='mt-2 max-w-[250px] overflow-hidden truncate text-ellipsis text-[10px] text-muted'>
+                              {assessment.resource.description}
+                            </span>
+                          </div>
+                        </DrawerTrigger>
 
-                      <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-                        <div className='mt-4'>
-                          {renderDrawerContent(assessment.resource)}
-                        </div>
-                      </DrawerContent>
-                    </Drawer>
-                  )
-                )}
+                        <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+                          <div className='mt-4'>
+                            {renderDrawerContent(assessment.resource)}
+                          </div>
+                        </DrawerContent>
+                      </Drawer>
+                    )
+                  )}
               </div>
             )}
             <ScrollBar orientation='horizontal' />
