@@ -39,8 +39,8 @@ export const useQuestionnaire = (questionnaireId: number | string) => {
 
 // TODO: add patient-id to author and subject references
 export const useSubmitQuestionnaire = (
-  questionnaireId: string
-  // isAuthenticated: Boolean
+  questionnaireId: string,
+  isAuthenticated: Boolean
 ) => {
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
@@ -49,6 +49,10 @@ export const useSubmitQuestionnaire = (
         questionnaireResponse;
 
       const timestamp = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+      if (isAuthenticated) {
+        localStorage.removeItem(`response_${questionnaireId}`);
+      }
 
       const response = await API.post('/fhir/QuestionnaireResponse', {
         author,
@@ -68,8 +72,8 @@ export const useSubmitQuestionnaire = (
 
 // TODO: add patient-id to author and subject references
 export const useUpdateSubmitQuestionnaire = (
-  questionnaireId: string
-  // isAuthenticated: Boolean
+  questionnaireId: string,
+  isAuthenticated: Boolean
 ) => {
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
@@ -78,6 +82,10 @@ export const useUpdateSubmitQuestionnaire = (
         questionnaireResponse;
 
       const timestamp = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+      if (isAuthenticated) {
+        localStorage.removeItem(`response_${questionnaireId}`);
+      }
 
       const response = await API.put('/fhir/QuestionnaireResponse', {
         author,
