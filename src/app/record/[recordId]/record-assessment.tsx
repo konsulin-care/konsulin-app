@@ -18,6 +18,12 @@ type IScore = {
 export default function RecordAssessment({ recordId, title }: Props) {
   const { data: questionnaireResponse } = useQuestionnaireResponse(recordId);
   const [scoreList, setScoreList] = useState([]);
+  const [currentLocation, setCurrentLocation] = useState<string>('');
+
+  useEffect(() => {
+    const fullUrl = window.location.href;
+    setCurrentLocation(fullUrl);
+  }, []);
 
   const scoreData = () => {
     if (!questionnaireResponse) return;
@@ -118,7 +124,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
           <span className='text-[10px] text-muted'>Test Akses</span>
           <span className='text-[14px] font-bold'>QR Code</span>
         </div>
-        <ModalQr value={recordId} />
+        <ModalQr value={currentLocation} />
       </div>
     </>
   );
