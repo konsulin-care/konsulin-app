@@ -4,7 +4,14 @@ import useLoaded from '@/hooks/useLoaded';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
+import { useQuestionnaireResponse } from '@/services/api/assessment';
 import { Pie } from '@ant-design/charts';
+import { BundleEntry, QuestionnaireResponseItem } from 'fhir/r4';
+import { useEffect, useState } from 'react';
+
+// NOTE: will remove this later
+const QUESTIONNAIRE_ID = 'big-five-inventory';
+const PATIENT_ID = 'Patient-id';
 
 export default function AppChartClient({
   isBlur = false
@@ -12,20 +19,55 @@ export default function AppChartClient({
   isBlur?: boolean;
 }) {
   const { isLoaded } = useLoaded();
+  const { data: questionnaireResponse, isLoading } = useQuestionnaireResponse(
+    QUESTIONNAIRE_ID,
+    PATIENT_ID
+  );
+  const [latestResponse, setLatestResponse] = useState(null);
+
+  /* preparing data for then pie chart based on the latest response */
+  useEffect(() => {
+    if (!questionnaireResponse) return;
+
+    const sorted = questionnaireResponse.entry.sort(
+      (a: BundleEntry, b: BundleEntry) => {
+        const dateA = new Date(a.resource.meta.lastUpdated);
+        const dateB = new Date(b.resource.meta.lastUpdated);
+
+        return dateB.getTime() - dateA.getTime();
+      }
+    );
+
+    const latestData = sorted[0].resource.item;
+    const interpretationItem = latestData.find(
+      (item: QuestionnaireResponseItem) => item.linkId === 'interpretation'
+    );
+
+    const sum = interpretationItem.item[0].item
+      .filter((item: QuestionnaireResponseItem) => item.linkId !== 'reference')
+      .reduce((total: number, item: QuestionnaireResponseItem) => {
+        return total + (item.answer[0]?.valueInteger || 0);
+      }, 0);
+
+    const result = interpretationItem.item[0].item
+      .filter((item: QuestionnaireResponseItem) => item.linkId !== 'reference')
+      .map((item: QuestionnaireResponseItem) => {
+        const value = (item.answer[0]?.valueInteger / sum) * 100;
+        return {
+          type: item.text,
+          value: Math.floor(value)
+        };
+      });
+
+    setLatestResponse(result);
+  }, [questionnaireResponse]);
 
   const configPie: any = {
-    data: [
-      { type: 'Depress', value: 27 },
-      { type: 'Anxiety', value: 25 },
-      { type: 'Intrusive Thoughts', value: 18 },
-      { type: 'Paranoia', value: 15 },
-      { type: 'Insomnia', value: 10 },
-      { type: 'Emotional Exhaustion', value: 5 }
-    ],
+    data: latestResponse,
     angleField: 'value',
     colorField: 'type',
     innerRadius: 0.5,
-    scale: { color: { palette: 'buGn' } },
+    scale: { color: { palette: 'BuGn' } },
     legend: {
       color: {
         title: false,
@@ -35,7 +77,7 @@ export default function AppChartClient({
     }
   };
 
-  if (!isLoaded) {
+  if (!isLoaded || isLoading || !latestResponse) {
     return (
       <div className='p-4'>
         <Skeleton className='h-[250px] w-full' />
