@@ -1,4 +1,5 @@
 import EmptyState from '@/components/general/empty-state';
+import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -268,7 +269,13 @@ export default function PractitionerAvailbility({
                 {selectedDate && format(selectedDate, 'dd MMMM yyyy')}
               </div>
               {isLoading ? (
-                <div>loading</div>
+                <div className='flex h-[120px] items-center justify-center'>
+                  <LoadingSpinnerIcon
+                    width={50}
+                    height={50}
+                    className='w-full animate-spin'
+                  />
+                </div>
               ) : availableTimeSlots.length === 0 ? (
                 <div className='flex w-full justify-center'>
                   <EmptyState
