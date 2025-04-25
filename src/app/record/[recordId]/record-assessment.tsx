@@ -121,6 +121,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
   }, [questionnaireResponse]);
 
   const getResultBrief = () => {
+    let resultBrief = '';
     const interpretationItem = questionnaireResponse.item.find(
       (item: QuestionnaireResponseItem) => item.linkId === 'interpretation'
     );
@@ -129,7 +130,14 @@ export default function RecordAssessment({ recordId, title }: Props) {
       (subItem: QuestionnaireResponseItem) => subItem.linkId === 'result-brief'
     );
 
-    const resultBrief = resultBriefItem?.answer[0].valueString;
+    if (!resultBriefItem) {
+      resultBrief =
+        '_Contact our support and request a license key to generate the brief._';
+
+      return resultBrief;
+    }
+
+    resultBrief = resultBriefItem?.answer[0].valueString;
     return resultBrief;
   };
 

@@ -1,5 +1,6 @@
 import { IOrganizationEntry, IPractitionerRole } from '@/types/organization';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import { API } from './api';
 
 export type IUseClinicParams = {
@@ -9,14 +10,45 @@ export type IUseClinicParams = {
   end_date?: Date;
   start_time?: string;
   end_time?: string;
-  location?: string;
-  days?: String[];
+  city?: string;
+  province_code?: string;
+  // days?: String[];
 };
 
-export const useListClinics = () => {
+export const useListClinics = (
+  { searchTerm, cityFilter }: { searchTerm?: string; cityFilter?: string },
+  delay: number = 500
+) => {
+  const [debouncedSearchTerm, setDebouncedSearchTerm] =
+    useState<string>(searchTerm);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm, delay]);
+
+  const url = useMemo(() => {
+    let url = '/fhir/Organization?_elements=name,address';
+
+    if (debouncedSearchTerm) {
+      url += `&name:contains=${debouncedSearchTerm}`;
+    }
+
+    if (cityFilter) {
+      url += `&address-city:contains=${cityFilter}`;
+    }
+
+    return url;
+  }, [debouncedSearchTerm, cityFilter]);
+
   return useQuery({
-    queryKey: ['list-clinics'],
-    queryFn: () => API.get('/fhir/Organization?_elements=name,address'),
+    queryKey: ['list-clinics', url],
+    queryFn: () => API.get(url),
     select: response => response.data.entry || null
   });
 };
