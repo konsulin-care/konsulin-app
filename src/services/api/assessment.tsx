@@ -5,6 +5,8 @@ import { QuestionnaireResponse, QuestionnaireResponseItem } from 'fhir/r4';
 import { API } from '../api';
 
 const WEBHOOK_URL = 'https://flow.konsulin.care/webhook/interpret';
+const WEBHOOK_AUTH =
+  'w3e06gzGCucksRmt4gE2Lmprg4NTH9oYWDM7dwnQmFNLycfaauYNaEqnwaL2zfF';
 
 type IResultBriefPayload = {
   questionnaire: string;
@@ -115,11 +117,12 @@ export const useResultBrief = (questionnaireId: string) => {
 
       const response = await axios.post(`${WEBHOOK_URL}`, payload, {
         headers: {
-          Authorization: `${process.env.NEXT_PUBLIC_WEBHOOK_AUTH}`
+          Authorization: `${WEBHOOK_AUTH}`
         }
       });
       return response.data;
-    }
+    },
+    onError: error => error.message
   });
 };
 

@@ -52,7 +52,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     isLoading: submitQuestionnaireIsLoading
   } = useSubmitQuestionnaire(questionnaire.id, isAuthenticated);
 
-  const { mutateAsync: fetchResultBrief } = useResultBrief(questionnaire.id);
+  const { mutateAsync: fetchResultBrief, isError } = useResultBrief(
+    questionnaire.id
+  );
 
   const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
 
@@ -124,11 +126,6 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       if (!interpretationItem) {
         // setResponse({ ...questionnaireResponse, ...props.customObject });
 
-        localStorage.setItem(
-          `response_${questionnaire.id}`,
-          JSON.stringify(questionnaireResponse)
-        );
-
         const result = await submitQuestionnaire(questionnaireResponse);
 
         // setResponse(result);
@@ -142,16 +139,14 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         item: interpretationItem.item
       };
 
-      const result = await fetchResultBrief(payload);
-
-      interpretationItem.item.push(result[0]);
+      try {
+        const result = await fetchResultBrief(payload);
+        interpretationItem.item.push(result[0]);
+      } catch (error) {
+        console.error('Error when fetching result brief : ', error.message);
+      }
 
       // setResponse({ ...questionnaireResponse, ...props.customObject });
-
-      localStorage.setItem(
-        `response_${questionnaire.id}`,
-        JSON.stringify(questionnaireResponse)
-      );
 
       const submitResult = await submitQuestionnaire(questionnaireResponse);
 
