@@ -6,7 +6,7 @@ import { API } from '../api';
 
 const WEBHOOK_URL = 'https://flow.konsulin.care/webhook/interpret';
 const WEBHOOK_AUTH =
-  'w3e06gzGCucksRmt4gE2Lmprg4NTH9oYWDM7dwnQmFNLycfaauYNaEqnwaL2zfF';
+  'wK3e06gzGCucksRmt4gE2Lmprg4NTH9oYWDM7dwnQmFNLycfaauYNaEqnwaL2zfF';
 
 type IResultBriefPayload = {
   questionnaire: string;
