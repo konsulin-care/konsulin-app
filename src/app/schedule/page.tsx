@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import BackButton from '@/components/general/back-button'
-import Header from '@/components/header'
-import NavigationBar from '@/components/navigation-bar'
-import { InputWithIcon } from '@/components/ui/input-with-icon'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { IUseClinicParams } from '@/services/clinic'
-import dayjs from 'dayjs'
-import { SearchIcon } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useState } from 'react'
-import ClinicFilter from '../clinic/clinic-filter'
+import BackButton from '@/components/general/back-button';
+import Header from '@/components/header';
+import NavigationBar from '@/components/navigation-bar';
+import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { IUseClinicParams } from '@/services/clinic';
+import dayjs from 'dayjs';
+import { SearchIcon } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState } from 'react';
+import ClinicFilter from '../clinic/clinic-filter';
 
 export default function Schedule() {
-  const [keyword, setKeyword] = useState<string>('')
-  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({})
+  const [keyword, setKeyword] = useState<string>('');
+  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
 
   return (
     <>
@@ -66,12 +66,13 @@ export default function Schedule() {
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
             <ClinicFilter
-              onChange={filter => {
+              onChange={(filter: IUseClinicParams) => {
                 setClinicFilter(prevState => ({
                   ...prevState,
                   ...filter
-                }))
+                }));
               }}
+              type='clinician'
             />
           </div>
 
@@ -122,7 +123,7 @@ export default function Schedule() {
         </div>
       </div>
     </>
-  )
+  );
 }
 
 function UpcomingSession() {
@@ -148,7 +149,7 @@ function UpcomingSession() {
         </div>
       </div>
     </Link>
-  )
+  );
 }
 
 function PastSession() {
@@ -174,5 +175,5 @@ function PastSession() {
         </div>
       </div>
     </Link>
-  )
+  );
 }

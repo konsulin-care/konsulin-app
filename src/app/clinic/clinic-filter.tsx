@@ -84,8 +84,7 @@ const filterContentListTime = [
   }
 ];
 
-export default function ClinicFilter({ onChange }) {
-  const [provinceCode, setProvinceCode] = useState<number | null>(null);
+export default function ClinicFilter({ onChange, type }) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
@@ -97,14 +96,16 @@ export default function ClinicFilter({ onChange }) {
     end_date: undefined,
     start_time: undefined,
     end_time: undefined,
-    location: undefined
+    city: undefined,
+    province_code: undefined
   });
 
   const isInitiaFilterState =
     !filter.start_date &&
     !filter.end_date &&
     !filter.start_time &&
-    !filter.end_time;
+    !filter.end_time &&
+    !filter.city;
 
   const handleCustomFilterOpen = () => {
     if (isInitiaFilterState) {
@@ -126,22 +127,20 @@ export default function ClinicFilter({ onChange }) {
     }));
   };
 
-  const handleProvinceChange = (provinceCode: number) => {
-    setProvinceCode(provinceCode);
-  };
-
   const resetFilter = () => {
     setFilter({
       start_date: undefined,
       end_date: undefined,
       start_time: undefined,
       end_time: undefined,
-      location: undefined
+      city: undefined,
+      province_code: undefined
     });
   };
 
-  const { data: listCities, isLoading: cityLoading } =
-    useGetCities(provinceCode);
+  const { data: listCities, isLoading: cityLoading } = useGetCities(
+    Number(filter.province_code)
+  );
   const { data: listProvinces, isLoading: provinceLoading } = useGetProvince();
 
   const renderDrawerContent = () => {
@@ -150,132 +149,141 @@ export default function ClinicFilter({ onChange }) {
         return (
           <div className='flex flex-col'>
             <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
-            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Date</div>
-              <div className='flex flex-wrap gap-[10px]'>
-                {filterContentListDate.map(date => (
-                  <Button
-                    key={date.label}
-                    onClick={() => {
-                      handleFilterChange('start_date', date.value.start);
-                      handleFilterChange('end_date', date.value.end);
-                      setIsUseCustomDate(false);
-                    }}
-                    variant='outline'
-                    className={cn(
-                      'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                      filter.start_date === date.value.start &&
-                        filter.end_date === date.value.end
-                        ? 'bg-secondary font-bold text-white hover:bg-secondary'
-                        : 'bg-white font-normal'
-                    )}
-                  >
-                    {date.label}
-                  </Button>
-                ))}
-                <Button
-                  variant='outline'
-                  onClick={handleCustomFilterOpen}
-                  className={cn(
-                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                    isUseCustomDate
-                      ? 'bg-secondary font-bold text-white hover:bg-secondary'
-                      : 'bg-white font-normal'
-                  )}
-                >
-                  Custom
-                  {!isUseCustomDate || !filter.start_date || !filter.end_date
-                    ? ''
-                    : filter.start_date === filter.end_date
-                      ? ` : ${format(filter.start_date, 'dd MMM yy')}`
-                      : ` : ${format(filter.start_date, 'dd MMM yy')} - ${format(filter.end_date, 'dd MMM yy')}`}
-                </Button>
-              </div>
-            </div>
-            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Session Time</div>
-              <div className='flex flex-wrap gap-[10px]'>
-                {filterContentListTime.map(time => (
-                  <Button
-                    variant='outline'
-                    key={time.label}
-                    onClick={() => {
-                      setIsUseCustomTime(false);
-                      handleFilterChange('start_time', time.value.start);
-                      handleFilterChange('end_time', time.value.end);
-                    }}
-                    className={cn(
-                      'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                      filter.start_time === time.value.start &&
-                        filter.end_time === time.value.end
-                        ? 'bg-secondary font-bold text-white hover:bg-secondary'
-                        : 'bg-white font-normal'
-                    )}
-                  >
-                    {time.label}
-                  </Button>
-                ))}
-                {isUseCustomTime && filter.start_time && filter.end_time && (
-                  <Button
-                    variant='outline'
-                    onClick={handleCustomFilterOpen}
-                    className={cn(
-                      'h-[50px] w-min items-center justify-center rounded-lg border-0 bg-secondary p-4 text-[12px] font-bold text-white hover:bg-secondary'
-                    )}
-                  >
-                    Custom : {`${filter.start_time} - ${filter.end_time}`}
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4'>
-                <div className='font-bold'>Location</div>
-                <span className='text-muted-foreground text-xs opacity-50'>
-                  Please select a province first, then select a city.
-                </span>
-              </div>
-              <div className='flex flex-wrap gap-[10px]'>
-                <Select
-                  onValueChange={value => {
-                    handleProvinceChange(Number(value));
-                  }}
-                >
-                  <SelectTrigger className='w-full border-none'>
-                    <SelectValue placeholder='Select Province' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {listProvinces &&
-                      listProvinces.length > 0 &&
-                      !provinceLoading &&
-                      listProvinces.map((item: IWilayahResponse) => (
-                        <SelectItem key={item.code} value={item.code}>
-                          {item.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-
-                {provinceCode && (
+            {type === 'clinician' ? (
+              <>
+                <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+                  <div className='mb-4 font-bold'>Date</div>
+                  <div className='flex flex-wrap gap-[10px]'>
+                    {filterContentListDate.map(date => (
+                      <Button
+                        key={date.label}
+                        onClick={() => {
+                          handleFilterChange('start_date', date.value.start);
+                          handleFilterChange('end_date', date.value.end);
+                          setIsUseCustomDate(false);
+                        }}
+                        variant='outline'
+                        className={cn(
+                          'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+                          filter.start_date === date.value.start &&
+                            filter.end_date === date.value.end
+                            ? 'bg-secondary font-bold text-white hover:bg-secondary'
+                            : 'bg-white font-normal'
+                        )}
+                      >
+                        {date.label}
+                      </Button>
+                    ))}
+                    <Button
+                      variant='outline'
+                      onClick={handleCustomFilterOpen}
+                      className={cn(
+                        'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+                        isUseCustomDate
+                          ? 'bg-secondary font-bold text-white hover:bg-secondary'
+                          : 'bg-white font-normal'
+                      )}
+                    >
+                      Custom
+                      {!isUseCustomDate ||
+                      !filter.start_date ||
+                      !filter.end_date
+                        ? ''
+                        : filter.start_date === filter.end_date
+                          ? ` : ${format(filter.start_date, 'dd MMM yy')}`
+                          : ` : ${format(filter.start_date, 'dd MMM yy')} - ${format(filter.end_date, 'dd MMM yy')}`}
+                    </Button>
+                  </div>
+                </div>
+                <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+                  <div className='mb-4 font-bold'>Session Time</div>
+                  <div className='flex flex-wrap gap-[10px]'>
+                    {filterContentListTime.map(time => (
+                      <Button
+                        variant='outline'
+                        key={time.label}
+                        onClick={() => {
+                          setIsUseCustomTime(false);
+                          handleFilterChange('start_time', time.value.start);
+                          handleFilterChange('end_time', time.value.end);
+                        }}
+                        className={cn(
+                          'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+                          filter.start_time === time.value.start &&
+                            filter.end_time === time.value.end
+                            ? 'bg-secondary font-bold text-white hover:bg-secondary'
+                            : 'bg-white font-normal'
+                        )}
+                      >
+                        {time.label}
+                      </Button>
+                    ))}
+                    {isUseCustomTime &&
+                      filter.start_time &&
+                      filter.end_time && (
+                        <Button
+                          variant='outline'
+                          onClick={handleCustomFilterOpen}
+                          className={cn(
+                            'h-[50px] w-min items-center justify-center rounded-lg border-0 bg-secondary p-4 text-[12px] font-bold text-white hover:bg-secondary'
+                          )}
+                        >
+                          Custom : {`${filter.start_time} - ${filter.end_time}`}
+                        </Button>
+                      )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+                <div className='mb-4'>
+                  <div className='font-bold'>Location</div>
+                  <span className='text-muted-foreground text-xs opacity-50'>
+                    Please select a province first, then select a city.
+                  </span>
+                </div>
+                <div className='flex flex-wrap gap-[10px]'>
                   <Select
-                    onValueChange={e => handleFilterChange('location', e)}
+                    onValueChange={e => handleFilterChange('province_code', e)}
+                    value={filter.province_code}
                   >
                     <SelectTrigger className='w-full border-none'>
-                      <SelectValue placeholder='Select City' />
+                      <SelectValue placeholder='Select Province' />
                     </SelectTrigger>
                     <SelectContent>
-                      {listCities &&
-                        !cityLoading &&
-                        listCities.map((item: IWilayahResponse) => (
-                          <SelectItem key={item.name} value={item.name}>
+                      {listProvinces &&
+                        listProvinces.length > 0 &&
+                        !provinceLoading &&
+                        listProvinces.map((item: IWilayahResponse) => (
+                          <SelectItem key={item.code} value={item.code}>
                             {item.name}
                           </SelectItem>
                         ))}
                     </SelectContent>
                   </Select>
-                )}
+
+                  {filter.province_code && (
+                    <Select
+                      value={filter.city}
+                      onValueChange={e => handleFilterChange('city', e)}
+                    >
+                      <SelectTrigger className='w-full border-none'>
+                        <SelectValue placeholder='Select City' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {listCities &&
+                          !cityLoading &&
+                          listCities.map((item: IWilayahResponse) => (
+                            <SelectItem key={item.name} value={item.name}>
+                              {item.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/**
              * Session Type temporary removed

@@ -8,34 +8,64 @@ import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { IUseClinicParams, useClinicById } from '@/services/clinic';
 import { IOrganizationResource, IPractitioner } from '@/types/organization';
-import { format } from 'date-fns';
+import { format, parse, setHours, setMinutes } from 'date-fns';
 import { ChevronLeftIcon, HeartPulse, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import ClinicFilter from '../clinic-filter';
 
 export interface IDetailClinic {
   params: { clinicId: string };
 }
 
+// generates an array of 3-letter weekday abbreviations from given date range
+const generateFilterDays = (start: Date, end: Date) => {
+  const filterDays = [];
+  const currentDate = new Date(start);
+
+  while (currentDate <= new Date(end)) {
+    const weekday = currentDate
+      .toLocaleDateString('en-US', { weekday: 'short' })
+      .toLowerCase();
+    filterDays.push(weekday);
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return filterDays;
+};
+
+const isSlotAvailable = ({
+  slot,
+  filterDays,
+  filterStartTime,
+  filterEndTime,
+  practitionerStartTime,
+  practitionerEndTime
+}) => {
+  const slotDays = slot.daysOfWeek.map((day: string) => day.toLowerCase());
+  const isDayMatch = slotDays.some((day: string) => filterDays.includes(day));
+
+  if (!isDayMatch) return false;
+
+  return (
+    practitionerStartTime.getTime() <= filterEndTime.getTime() &&
+    practitionerEndTime.getTime() >= filterStartTime.getTime()
+  );
+};
+
+const parseTime = (timeStr: string, formatStr = 'HH:mm') => {
+  return parse(timeStr, formatStr, new Date());
+};
+
 export default function DetailClinic({ params }: IDetailClinic) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const [keyword, setKeyword] = useState<string>('');
 
-  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
-
-  // const {
-  //   data: clinicians,
-  //   isLoading: isCliniciansLoading,
-  //   isFetching: isCliniciansFetching
-  // } = useClinicFindAll({
-  //   keyword,
-  //   filter: clinicFilter,
-  //   clinicId: params.clinicId
-  // })
-
-  // const { data: detaillClinic, isLoading: isDetaillClinicLoading } =
-  //   useClinicFindByID(params.clinicId)
+  const [practitionerFilter, setPractitionerFilter] =
+    useState<IUseClinicParams>({});
 
   const {
     clinic,
@@ -57,15 +87,88 @@ export default function DetailClinic({ params }: IDetailClinic) {
   };
 
   const mergeNames = (practitioner: IPractitioner) => {
-    return practitioner.name.map(item => item.given.join(' '));
+    if (!practitioner.name) return;
+
+    return practitioner.name
+      .map(item => `${item.given.join(' ')} ${item.family}`)
+      .join(' ');
   };
 
   const handleClick = (practitioner: IPractitioner) => {
+    if (!practitioner) return;
+
     localStorage.setItem(
       `practitioner-${practitioner.id}`,
       JSON.stringify(practitioner)
     );
   };
+
+  const filteredPractitioner = useMemo(() => {
+    if (
+      !keyword &&
+      Object.keys(practitionerFilter).every(
+        key => practitionerFilter[key] === undefined
+      )
+    ) {
+      return practitionersData;
+    }
+
+    const lowerKeyword = keyword.trim().toLowerCase();
+    const { start_date, end_date, start_time, end_time } = practitionerFilter;
+
+    const hasDateFilter = start_date && end_date;
+    const hasTimeFilter = start_time || end_time;
+
+    const filterDays = hasDateFilter
+      ? generateFilterDays(start_date, end_date)
+      : [];
+
+    const filterStartTime = start_time
+      ? parseTime(start_time, 'HH:mm')
+      : setHours(setMinutes(new Date(), 0), 0); // default to 00:00
+
+    const filterEndTime = end_time
+      ? parseTime(end_time, 'HH:mm')
+      : setHours(setMinutes(new Date(), 59), 23); // default to 23:59
+
+    return practitionersData.filter((practitioner: IPractitioner) => {
+      // name filtering
+      const fullName = mergeNames(practitioner);
+      if (!fullName) return false;
+
+      const cleanFullName = fullName.trim().toLowerCase().replace(/\s+/g, ' ');
+      if (lowerKeyword && !cleanFullName.includes(lowerKeyword)) {
+        return false;
+      }
+
+      // availability filtering**
+      const { availableTime } = practitioner.practitionerRole;
+      if (!availableTime || availableTime.length === 0) return false;
+
+      // if no date or time filters applied, skip availability filtering
+      if (!hasDateFilter && !hasTimeFilter) return true;
+
+      return availableTime.some(slot => {
+        const practitionerStartTime = parseTime(
+          slot.availableStartTime,
+          'HH:mm:ss'
+        );
+        const practitionerEndTime = parseTime(
+          slot.availableEndTime,
+          'HH:mm:ss'
+        );
+
+        return isSlotAvailable({
+          slot,
+          filterDays,
+          filterStartTime,
+          filterEndTime,
+          practitionerStartTime,
+          practitionerEndTime
+        });
+      });
+    });
+  }, [practitionersData, practitionerFilter, keyword]);
 
   return (
     <>
@@ -123,40 +226,43 @@ export default function DetailClinic({ params }: IDetailClinic) {
             startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
           />
           <ClinicFilter
-            onChange={filter => {
-              setClinicFilter(prevState => ({
+            onChange={(filter: IUseClinicParams) => {
+              setPractitionerFilter((prevState: IUseClinicParams) => ({
                 ...prevState,
                 ...filter
               }));
             }}
+            type='clinician'
           />
         </div>
 
         <div className='flex gap-4'>
-          {clinicFilter.start_date && clinicFilter.end_date && (
+          {practitionerFilter.start_date && practitionerFilter.end_date && (
             <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-              {format(clinicFilter.start_date, 'dd MMM yy') +
+              {format(practitionerFilter.start_date, 'dd MMM yy') +
                 ' - ' +
-                format(clinicFilter.end_date, 'dd MMM yy')}
+                format(practitionerFilter.end_date, 'dd MMM yy')}
             </Badge>
           )}
-          {clinicFilter.start_time && clinicFilter.end_time && (
+          {practitionerFilter.start_time && practitionerFilter.end_time && (
             <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-              {clinicFilter.start_time + ' - ' + clinicFilter.end_time}
+              {practitionerFilter.start_time +
+                ' - ' +
+                practitionerFilter.end_time}
             </Badge>
           )}
-          {clinicFilter.location && (
-            <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-              {clinicFilter.location}
-            </Badge>
-          )}
+          {/* {practitionerFilter.city && ( */}
+          {/*   <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'> */}
+          {/*     {practitionerFilter.city} */}
+          {/*   </Badge> */}
+          {/* )} */}
         </div>
 
-        {isLoading || isFetching || !practitionersData ? (
+        {isLoading || isFetching || !filteredPractitioner ? (
           <CardLoader />
-        ) : practitionersData.length > 0 ? (
+        ) : isError || filteredPractitioner.length > 0 ? (
           <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-            {practitionersData.map((practitioner: IPractitioner) => (
+            {filteredPractitioner.map((practitioner: IPractitioner) => (
               <div
                 key={practitioner.id}
                 className='card flex flex-col items-center'

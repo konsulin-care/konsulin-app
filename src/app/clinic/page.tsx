@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { IUseClinicParams, useListClinics } from '@/services/clinic';
 import { IOrganizationEntry } from '@/types/organization';
-import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -20,22 +19,16 @@ import ClinicFilter from './clinic-filter';
 
 export default function Clinic() {
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
-  const [keyword, setKeyword] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // const {
-  //   data: clinics,
-  //   isError: isClinicsError,
-  //   isLoading: isClinicsLoading,
-  //   isFetching: isClinicsFetching,
-  //   error
-  // } = useClinicFindAll({
-  //   keyword,
-  //   filter: clinicFilter
-  // })
-  //
-  // console.log({ error, isClinicsError })
-
-  const { data: clinics, isLoading } = useListClinics();
+  const {
+    data: clinics,
+    isLoading,
+    isError
+  } = useListClinics({
+    searchTerm,
+    cityFilter: clinicFilter.city
+  });
 
   return (
     <>
@@ -82,47 +75,48 @@ export default function Clinic() {
         <div className='w-full p-4'>
           <div className='flex gap-4'>
             <InputWithIcon
-              value={keyword}
-              onChange={event => setKeyword(event.target.value)}
+              value={searchTerm}
+              onChange={event => setSearchTerm(event.target.value)}
               placeholder='Search'
               className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
             <ClinicFilter
-              onChange={filter => {
+              onChange={(filter: IUseClinicParams) => {
                 setClinicFilter(prevState => ({
                   ...prevState,
                   ...filter
                 }));
               }}
+              type='clinic'
             />
           </div>
 
           <div className='flex gap-4'>
-            {clinicFilter.start_date && clinicFilter.end_date && (
+            {/* {clinicFilter.start_date && clinicFilter.end_date && ( */}
+            {/*   <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'> */}
+            {/*     {clinicFilter.start_date == clinicFilter.end_date */}
+            {/*       ? format(clinicFilter.start_date, 'dd MMM yy') */}
+            {/*       : format(clinicFilter.start_date, 'dd MMM yy') + */}
+            {/*         ' - ' + */}
+            {/*         format(clinicFilter.end_date, 'dd MMM yy')} */}
+            {/*   </Badge> */}
+            {/* )} */}
+            {/* {clinicFilter.start_time && clinicFilter.end_time && ( */}
+            {/*   <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'> */}
+            {/*     {clinicFilter.start_time + ' - ' + clinicFilter.end_time} */}
+            {/*   </Badge> */}
+            {/* )} */}
+            {clinicFilter.city && (
               <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-                {clinicFilter.start_date == clinicFilter.end_date
-                  ? format(clinicFilter.start_date, 'dd MMM yy')
-                  : format(clinicFilter.start_date, 'dd MMM yy') +
-                    ' - ' +
-                    format(clinicFilter.end_date, 'dd MMM yy')}
-              </Badge>
-            )}
-            {clinicFilter.start_time && clinicFilter.end_time && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-                {clinicFilter.start_time + ' - ' + clinicFilter.end_time}
-              </Badge>
-            )}
-            {clinicFilter.location && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-                {clinicFilter.location}
+                {clinicFilter.city}
               </Badge>
             )}
           </div>
 
           {isLoading || !clinics ? (
             <CardLoader />
-          ) : clinics.length > 0 ? (
+          ) : isError || clinics.length > 0 ? (
             <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
               {clinics.map((clinic: IOrganizationEntry) => (
                 <div
