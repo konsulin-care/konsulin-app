@@ -17,6 +17,51 @@ import {
 import { BundleEntry, PractitionerRoleAvailableTime, Slot } from 'fhir/r4';
 import { useEffect, useMemo, useState } from 'react';
 
+/* returns all available appointment days for a given month.
+ * example:
+ * if availableTime = [{ daysOfWeek: ['mon', 'wed'] }] and month = April 2025,
+ * it will return all mondays and wednesdays in April 2025
+ */
+const getAvailableDays = (availableTime: any[], month: Date): Date[] => {
+  const availableDays: Date[] = [];
+  const daysOfWeekMap: Record<string, number> = {
+    mon: 1,
+    tue: 2,
+    wed: 3,
+    thu: 4,
+    fri: 5,
+    sat: 6,
+    sun: 0
+  };
+
+  // loop through available times and days of the week
+  availableTime.forEach(({ daysOfWeek }) => {
+    daysOfWeek.forEach((day: string) => {
+      const dayIndex = daysOfWeekMap[day];
+
+      const firstDayOfMonth = new Date(
+        month.getFullYear(),
+        month.getMonth(),
+        1
+      );
+
+      // find the first occurrence of the specified day
+      let currentDate = new Date(firstDayOfMonth);
+      while (currentDate.getDay() !== dayIndex) {
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      // add every occurrence of the specified day in the month (once a week)
+      while (currentDate.getMonth() === month.getMonth()) {
+        availableDays.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 7); // +7 to move to the next week
+      }
+    });
+  });
+
+  return availableDays;
+};
+
 export default function PractitionerAvailbility({
   children,
   practitioner
@@ -37,49 +82,9 @@ export default function PractitionerAvailbility({
     dateReference: selectedDate
   });
 
-  const getAvailableDays = (availableTime: any[], month: Date): Date[] => {
-    const availableDays: Date[] = [];
-    const daysOfWeekMap: Record<string, number> = {
-      mon: 1,
-      tue: 2,
-      wed: 3,
-      thu: 4,
-      fri: 5,
-      sat: 6,
-      sun: 0
-    };
-
-    // Loop through available times and days of the week
-    availableTime.forEach(({ daysOfWeek }) => {
-      daysOfWeek.forEach((day: string) => {
-        const dayIndex = daysOfWeekMap[day];
-
-        const firstDayOfMonth = new Date(
-          month.getFullYear(),
-          month.getMonth(),
-          1
-        );
-
-        // Find the first occurrence of the specified day
-        let currentDate = new Date(firstDayOfMonth);
-        while (currentDate.getDay() !== dayIndex) {
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-        // Add every occurrence of the specified day in the month (once a week)
-        while (currentDate.getMonth() === month.getMonth()) {
-          availableDays.push(new Date(currentDate));
-          currentDate.setDate(currentDate.getDate() + 7); // +7 to move to the next week
-        }
-      });
-    });
-
-    return availableDays;
-  };
-
   const listAvailableDate = getAvailableDays(
     practitioner.practitionerRole.availableTime,
-    today
+    selectedDate ?? today
   );
 
   const isDateAvailable = (date: Date, availableDays: Date[]): boolean => {
@@ -163,7 +168,7 @@ export default function PractitionerAvailbility({
        * and if the available slot overlaps with the busy slot by ensuring the available slot starts before the busy slot ends
        * and ends after the busy slot starts.
        * */
-      const isUnavailable = unavailableSlots.some(slot => {
+      const isUnavailable = unavailableSlots.some((slot: Slot) => {
         const busyStart = slot.start;
         const busyEnd = slot.end;
         const sameDay = isSameDay(busyStart, selectedDate);
@@ -173,9 +178,13 @@ export default function PractitionerAvailbility({
         return sameDay && beforeEnd && afterStart;
       });
 
+      // check if the slot time is in the past
+      const now = new Date();
+      const isPast = isBefore(slotStart, now);
+
       return {
         time: slotTime,
-        isUnavailable
+        isUnavailable: isUnavailable || isPast
       };
     });
   }, [
@@ -223,7 +232,15 @@ export default function PractitionerAvailbility({
                     setSelectedDate(params);
                   }
                 }}
-                disabled={date => !isDateAvailable(date, listAvailableDate)}
+                disabled={date => {
+                  return (
+                    date < today ||
+                    !listAvailableDate.some(
+                      availableDate =>
+                        availableDate.getTime() === date.getTime()
+                    )
+                  );
+                }}
                 modifiers={{
                   ada: listAvailableDate
                 }}
