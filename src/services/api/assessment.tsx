@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { QuestionnaireResponse, QuestionnaireResponseItem } from 'fhir/r4';
+import { useMemo } from 'react';
 import { API } from '../api';
 
 const WEBHOOK_URL = 'https://flow.konsulin.care/webhook/interpret';
@@ -126,10 +127,23 @@ export const useResultBrief = (questionnaireId: string) => {
   });
 };
 
-export const useQuestionnaireResponse = (questionnaireId: string) => {
+export const useQuestionnaireResponse = (
+  questionnaireId: string,
+  patientId?: string
+) => {
+  const url = useMemo(() => {
+    const baseUrl = '/fhir/QuestionnaireResponse';
+
+    if (!patientId) {
+      return `${baseUrl}/${questionnaireId}`;
+    }
+
+    return `${baseUrl}?questionnaire=Questionnaire/${questionnaireId}&patient=${patientId}&_elements=item`;
+  }, [patientId]);
+
   return useQuery({
     queryKey: ['questionnaire-response', questionnaireId],
-    queryFn: () => API.get(`/fhir/QuestionnaireResponse/${questionnaireId}`),
+    queryFn: () => API.get(url),
     select: response => response.data || null
   });
 };
