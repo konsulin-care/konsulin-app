@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import Header from '@/components/header'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useAuth } from '@/context/auth/authContext'
-import Image from 'next/image'
-import { useEffect } from 'react'
+import Header from '@/components/header';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth/authContext';
+import Image from 'next/image';
+import { useEffect } from 'react';
 
 export default function HomeHeader() {
-  const { state: authState, isLoading: isLoadingAuth } = useAuth()
+  const { state: authState, loading: isLoadingAuth } = useAuth();
 
   useEffect(() => {
-    console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL)
-  }, [])
+    console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+  }, []);
 
   return (
     <Header>
@@ -61,5 +61,5 @@ export default function HomeHeader() {
         )}
       </div>
     </Header>
-  )
+  );
 }

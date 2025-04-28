@@ -17,54 +17,56 @@ export function setRouter(
 
 export const frontendConfig = (): SuperTokensConfig => {
   return {
+    enableDebugLogs: false,
     appInfo,
+    useShadowDom: false,
     style: `
-        html, body, #__next {
-            height: 100%;
-        }
-        [data-supertokens~=button] {
-            background-color: #0ABDC3;
-            border: 0px;
-            margin: 0 auto;
-            border-radius: 9999px;
-            height: 48px;
-        }
-        [data-supertokens~=authPage] {
-            height: 100%;
+        #supertokens-root {
+            height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
-        [data-supertokens~=input] {
-            width: 100%;
-            border: 1px solid green;
+        [data-supertokens~=button] {
+            background-color: #0ABDC3;
+            border: 0px;
         }
-        
-        [data-supertokens~=container] {
-            --palette-background: 255, 255, 255;
-            --palette-inputBackground: 255, 255, 255;
-            --palette-inputBorder: 227, 227, 227;
-            --palette-textTitle: 10, 189, 195;
-            --palette-textLabel: 22, 28, 38;
-            --palette-textPrimary: 255, 255, 255;
-            --palette-error: 173, 46, 46;
-            --palette-textInput: 169, 169, 169;
-            --palette-textLink: 114,114,114;
-            --palette-textGray: 158, 158, 158;
-              width: 100%;
-              height: 100vh;
+        [data-supertokens~=headerTitle] {
+            color: #0ABDC3;
         }
     `,
     recipeList: [
-      SessionReact.init(),
       Passwordless.init({
         contactMethod: 'EMAIL',
-        style: ``,
-        onHandleEvent: event => {
-          if (event.action === 'SUCCESS') {
+        onHandleEvent: context => {
+          console.log('only context', context);
+          if (context.action === 'PASSWORDLESS_RESTART_FLOW') {
+            // TODO:
+
+            console.log('restart', context);
+          } else if (context.action === 'PASSWORDLESS_CODE_SENT') {
+            // TODO:
+            console.log('sent', context);
+          } else {
+            let { id } = context.user;
+            if (context.action === 'SUCCESS') {
+              console.log('success', context);
+              if (
+                context.isNewRecipeUser &&
+                context.user.loginMethods.length === 1
+              ) {
+                // TODO: Sign up
+
+                console.log('success sign up', context);
+              } else {
+                console.log('success sign in', context);
+                // TODO: Sign in
+              }
+            }
           }
         }
-      })
+      }),
+      SessionReact.init()
     ],
     windowHandler: original => ({
       ...original,
