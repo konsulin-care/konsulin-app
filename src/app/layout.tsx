@@ -73,11 +73,11 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={inter.className}>
-        <AuthProvider>
-          <ProfileProvider>
-            <BookingProvider>
-              <QueryProvider>
-                <SuperTokensProviders>
+        <SuperTokensProviders>
+          <AuthProvider>
+            <ProfileProvider>
+              <BookingProvider>
+                <QueryProvider>
                   <NextTopLoader showSpinner={false} color='#13c2c2' />
                   <ToastContainer {...toastConfig} />
                   <div className='flex min-h-screen flex-col'>
@@ -86,11 +86,11 @@ export default function RootLayout({
                       {children}
                     </main>
                   </div>
-                </SuperTokensProviders>
-              </QueryProvider>
-            </BookingProvider>
-          </ProfileProvider>
-        </AuthProvider>
+                </QueryProvider>
+              </BookingProvider>
+            </ProfileProvider>
+          </AuthProvider>
+        </SuperTokensProviders>
       </body>
     </html>
   );
