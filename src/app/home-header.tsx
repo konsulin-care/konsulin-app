@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { useEffect } from 'react';
 
 export default function HomeHeader() {
-  const { state: authState, loading: isLoadingAuth } = useAuth();
+  const { state: authState, isLoading: isLoadingAuth } = useAuth();
 
   useEffect(() => {
     console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
@@ -54,7 +54,7 @@ export default function HomeHeader() {
                 Selamat Datang di Dashboard anda
               </div>
               <div className='text-[14px] font-bold text-white'>
-                {authState.userInfo.fullname}
+                {authState.userInfo.fullname || authState.userInfo.email}
               </div>
             </div>
           </div>

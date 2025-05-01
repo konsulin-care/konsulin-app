@@ -61,11 +61,11 @@ export default function Questionnaire({ params }) {
               isAuthenticated={authState.isAuthenticated}
               customObject={{
                 subject: {
-                  reference: `https://blaze.konsulin.care/fhir/Patient/${authState.userInfo.id}`,
+                  reference: `Patient/${authState.userInfo?.fhirId}`,
                   type: 'Patient'
                 },
                 author: {
-                  reference: `https://blaze.konsulin.care/fhir/Patient/${authState.userInfo.id}`, // chage this to the clincianID for SOAP
+                  reference: `Patient/${authState.userInfo?.fhirId}`, // chage this to the clincianID for SOAP
                   type: 'Practitioner'
                 }
               }}

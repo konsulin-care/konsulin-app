@@ -1,7 +1,6 @@
-import Input from '@/components/general/input'
-import DobCalendar from '@/components/profile/dob-calendar'
-import DropdownProfile from '@/components/profile/dropdown-profile'
-import ImageUploader from '@/components/profile/image-uploader'
+import Input from '@/components/general/input';
+import DropdownProfile from '@/components/profile/dropdown-profile';
+import ImageUploader from '@/components/profile/image-uploader';
 import {
   Drawer,
   DrawerContent,
@@ -9,26 +8,26 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger
-} from '@/components/ui/drawer'
-import { DRAWER_STATE, subtitle_success_updated } from '@/constants/profile'
-import { useProfile } from '@/context/profile/profileContext'
-import { PropsProfile } from '@/context/profile/profileTypes'
-import { apiRequest } from '@/services/api'
+} from '@/components/ui/drawer';
+import { DRAWER_STATE, subtitle_success_updated } from '@/constants/profile';
+import { useProfile } from '@/context/profile/profileContext';
+import { PropsProfile } from '@/context/profile/profileTypes';
+import { apiRequest } from '@/services/api';
 import {
   ResponseProfile,
   fetchEducations,
   fetchGenders,
   fetchProfile
-} from '@/services/profile'
-import { validateEmail } from '@/utils/validation'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns'
-import { id } from 'date-fns/locale'
-import Image from 'next/image'
-import { Fragment, useEffect, useState } from 'react'
+} from '@/services/profile';
+import { validateEmail } from '@/utils/validation';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import Image from 'next/image';
+import { Fragment, useEffect, useState } from 'react';
 
 export default function EditProfile({ userRole }) {
-  const { state, dispatch } = useProfile()
+  const { state, dispatch } = useProfile();
   const [updateUser, setUpdateUser] = useState<PropsProfile>({
     fullname: '',
     email: '',
@@ -38,28 +37,28 @@ export default function EditProfile({ userRole }) {
     address: '',
     educations: [''],
     profile_picture: ''
-  })
-  const [drawerState, setDrawerState] = useState(DRAWER_STATE.NONE)
-  const isPatient = userRole === 'patient'
-  const isClinician = userRole === 'clinician'
-  const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  });
+  const [drawerState, setDrawerState] = useState(DRAWER_STATE.NONE);
+  const isPatient = userRole === 'patient';
+  const isClinician = userRole === 'clinician';
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const { data: editProfile } = useQuery<ResponseProfile>({
     queryKey: ['edit-profile'],
     queryFn: () => fetchProfile(state, dispatch)
-  })
+  });
 
   const { data: genderOptions } = useQuery({
     queryKey: ['genders'],
     queryFn: fetchGenders,
     staleTime: 1000 * 60 * 60 // will fresh after 1 hours
-  })
+  });
 
   const { data: educationsOptions } = useQuery({
     queryKey: ['educations'],
     queryFn: fetchEducations,
     staleTime: 1000 * 60 * 60 // will fresh after 1 hours
-  })
+  });
 
   const { mutate, isLoading } = useMutation({
     mutationFn: async (updateUser: PropsProfile) => {
@@ -68,17 +67,17 @@ export default function EditProfile({ userRole }) {
           'PUT',
           '/api/v1/users/profile',
           updateUser
-        )
-        return response
+        );
+        return response;
       } catch (err) {
-        throw err
+        throw err;
       }
-    },
-    onSuccess: ({ updateUser }) => {
-      dispatch({ type: 'updated', payload: { profile: updateUser } })
-      setDrawerState(DRAWER_STATE.SUCCESS)
     }
-  })
+    // onSuccess: ({ updateUser }) => {
+    //   dispatch({ type: 'updated', payload: { profile: updateUser } })
+    //   setDrawerState(DRAWER_STATE.SUCCESS)
+    // }
+  });
 
   useEffect(() => {
     if (editProfile) {
@@ -91,7 +90,7 @@ export default function EditProfile({ userRole }) {
         gender,
         educations,
         profile_picture
-      } = editProfile.data
+      } = editProfile.data;
       setUpdateUser({
         fullname: fullname ?? '',
         email: email ?? '',
@@ -101,19 +100,19 @@ export default function EditProfile({ userRole }) {
         address: address ?? '',
         educations: educations ?? [''],
         profile_picture: profile_picture
-      })
+      });
     }
-  }, [editProfile])
+  }, [editProfile]);
 
   function handleEducationSelect(value: string) {
     const selectedOption = educationsOptions.find(
       option => option.name === value
-    )
+    );
     if (selectedOption && isPatient) {
       setUpdateUser(prev => ({
         ...prev,
         educations: [selectedOption.name]
-      }))
+      }));
     }
     if (selectedOption && isClinician) {
       setUpdateUser(prev => ({
@@ -121,24 +120,24 @@ export default function EditProfile({ userRole }) {
         educations: Array.isArray(prev.educations)
           ? [...prev.educations, selectedOption.name]
           : [selectedOption.name]
-      }))
+      }));
     }
   }
 
   function handleChangeInput(label: string, value: any) {
-    setUpdateUser(prevState => ({ ...prevState, [label]: value }))
-    const errorMessage = validateInput(label, value)
+    setUpdateUser(prevState => ({ ...prevState, [label]: value }));
+    const errorMessage = validateInput(label, value);
     setErrors(prev => ({
       ...prev,
       [label]: errorMessage
-    }))
+    }));
   }
 
   function handleAddEducationLevel() {
     const newEducation = updateUser.educations
       ? [...updateUser.educations, '']
-      : ['']
-    setUpdateUser(prevState => ({ ...prevState, educations: newEducation }))
+      : [''];
+    setUpdateUser(prevState => ({ ...prevState, educations: newEducation }));
   }
 
   function handleEducationChange(index: number, value: string) {
@@ -147,38 +146,38 @@ export default function EditProfile({ userRole }) {
       educations: Array.isArray(prevState.educations)
         ? prevState.educations.map((edu, i) => (i === index ? value : edu))
         : [value]
-    }))
+    }));
   }
 
   function isValidUrl(url: string): boolean {
     try {
-      new URL(url)
-      return true
+      new URL(url);
+      return true;
     } catch {
-      return false
+      return false;
     }
   }
 
   function validateForm(data: PropsProfile): boolean {
-    const errors: { [key: string]: string } = {}
+    const errors: { [key: string]: string } = {};
     Object.entries(data).forEach(([key, value]) => {
-      const error = validateInput(key, value as string)
+      const error = validateInput(key, value as string);
       if (error) {
-        errors[key] = error
+        errors[key] = error;
       }
-    })
+    });
 
     const hasValidEducation = updateUser.educations.every(
       edu => edu.trim() !== ''
-    )
+    );
 
-    return Object.keys(errors).length === 0 && hasValidEducation
+    return Object.keys(errors).length === 0 && hasValidEducation;
   }
 
   async function handleEditSave() {
-    let base64ProfilePicture = updateUser.profile_picture
+    let base64ProfilePicture = updateUser.profile_picture;
     if (isValidUrl(updateUser.profile_picture)) {
-      base64ProfilePicture = await urlToBase64(updateUser.profile_picture)
+      base64ProfilePicture = await urlToBase64(updateUser.profile_picture);
     }
     const updatedProfile = {
       ...updateUser,
@@ -186,114 +185,114 @@ export default function EditProfile({ userRole }) {
       birth_date: updateUser.birth_date
         ? format(new Date(updateUser.birth_date), 'yyyy-MM-dd')
         : undefined
-    }
+    };
 
-    mutate(updatedProfile)
+    mutate(updatedProfile);
   }
 
   function handleDOBChange(value: any) {
     setUpdateUser(prevState => ({
       ...prevState,
       birth_date: value
-    }))
-    setDrawerState(DRAWER_STATE.NONE)
+    }));
+    setDrawerState(DRAWER_STATE.NONE);
   }
 
   function closeDrawer() {
-    setDrawerState(DRAWER_STATE.NONE)
+    setDrawerState(DRAWER_STATE.NONE);
   }
 
   function validateInput(name: string, value: string) {
-    let error = ''
+    let error = '';
 
     switch (name) {
       case 'fullname':
-        const usernameRegex = /^[a-zA-Z ]+$/
+        const usernameRegex = /^[a-zA-Z ]+$/;
         if (!value) {
-          error = 'Nama pengguna tidak boleh kosong'
+          error = 'Nama pengguna tidak boleh kosong';
         } else if (!usernameRegex.test(value)) {
-          error = 'Format nama pengguna tidak valid'
+          error = 'Format nama pengguna tidak valid';
         } else if (value.length < 8) {
-          error = 'Nama pengguna minimum 8 karakter'
+          error = 'Nama pengguna minimum 8 karakter';
         }
-        break
+        break;
       case 'email':
         if (!value) {
-          error = 'Email tidak boleh kosong'
+          error = 'Email tidak boleh kosong';
         } else if (!validateEmail(value)) {
-          error = 'Format email tidak valid'
+          error = 'Format email tidak valid';
         }
-        break
+        break;
       case 'whatsapp_number':
-        const phoneRegex = /^[0-9]{10,15}$/
+        const phoneRegex = /^[0-9]{10,15}$/;
         if (!value.trim()) {
-          error = 'Nomor WhatsApp tidak boleh kosong'
+          error = 'Nomor WhatsApp tidak boleh kosong';
         } else if (!phoneRegex.test(value)) {
-          error = 'Nomor WhatsApp harus berupa angka 10-15 digit'
+          error = 'Nomor WhatsApp harus berupa angka 10-15 digit';
         }
-        break
+        break;
 
       case 'address':
         if (!value.trim()) {
-          error = 'Alamat tidak boleh kosong'
+          error = 'Alamat tidak boleh kosong';
         }
-        break
+        break;
       case 'birth_date':
         if (!value) {
-          error = 'Tanggal lahir tidak boleh kosong'
+          error = 'Tanggal lahir tidak boleh kosong';
         }
-        break
+        break;
       case 'gender':
         if (!value) {
-          error = 'Jenis kelamin tidak boleh kosong'
+          error = 'Jenis kelamin tidak boleh kosong';
         }
-        break
+        break;
       default:
-        break
+        break;
     }
 
-    return error
+    return error;
   }
 
   function handleGenderSelect(value: string) {
     setUpdateUser(prevState => ({
       ...prevState,
       gender: value
-    }))
+    }));
   }
 
   function handleUserPhoto(value: string) {
     setUpdateUser(prevState => ({
       ...prevState,
       profile_picture: value
-    }))
+    }));
   }
 
   async function urlToBase64(url: string): Promise<string> {
-    const response = await fetch(url)
-    const blob = await response.blob()
+    const response = await fetch(url);
+    const blob = await response.blob();
     return new Promise((resolve, reject) => {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onloadend = () => {
-        resolve(reader.result as string)
-      }
+        resolve(reader.result as string);
+      };
       reader.onerror = () => {
-        reject(new Error('Failed to convert URL to Base64'))
-      }
-      reader.readAsDataURL(blob)
-    })
+        reject(new Error('Failed to convert URL to Base64'));
+      };
+      reader.readAsDataURL(blob);
+    });
   }
 
   function formatDate(dateObject) {
     try {
       if (dateObject instanceof Date) {
-        return format(dateObject, 'dd MMM yyyy', { locale: id })
+        return format(dateObject, 'dd MMM yyyy', { locale: id });
       } else {
-        return dateObject
+        return dateObject;
       }
     } catch (error) {
-      console.error('Error formatting date:', error)
-      return 'Invalid date'
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
     }
   }
 
@@ -488,10 +487,10 @@ export default function EditProfile({ userRole }) {
             <DrawerTitle></DrawerTitle>
             <DrawerDescription></DrawerDescription>
           </DrawerHeader>
-          <DobCalendar
-            value={state.profile.birth_date}
-            onChange={handleDOBChange}
-          />
+          {/* <DobCalendar */}
+          {/*   value={state.profile.birth_date} */}
+          {/*   onChange={handleDOBChange} */}
+          {/* /> */}
         </DrawerContent>
       </Drawer>
 
@@ -523,5 +522,5 @@ export default function EditProfile({ userRole }) {
         </DrawerContent>
       </Drawer>
     </div>
-  )
+  );
 }

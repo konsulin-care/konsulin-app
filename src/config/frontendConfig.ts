@@ -1,7 +1,12 @@
+import { setCookies } from '@/app/actions';
+import { createProfile, getProfile } from '@/services/profile';
+import { mergeNames } from '@/utils/helper';
 import { useRouter } from 'next/navigation';
 import { SuperTokensConfig } from 'supertokens-auth-react/lib/build/types';
 import Passwordless from 'supertokens-auth-react/recipe/passwordless';
-import SessionReact from 'supertokens-auth-react/recipe/session';
+import Session from 'supertokens-auth-react/recipe/session';
+import { getClaimValue } from 'supertokens-web-js/recipe/session';
+import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 import { appInfo } from './appInfo';
 
 const routerInfo: { router?: ReturnType<typeof useRouter>; pathName?: string } =
@@ -17,7 +22,6 @@ export function setRouter(
 
 export const frontendConfig = (): SuperTokensConfig => {
   return {
-    enableDebugLogs: false,
     appInfo,
     useShadowDom: false,
     style: `
@@ -34,39 +38,68 @@ export const frontendConfig = (): SuperTokensConfig => {
         [data-supertokens~=headerTitle] {
             color: #0ABDC3;
         }
+        [data-supertokens~=spinnerIcon] circle {
+            stroke: #0ABDC3 !important;
+        }
+        [data-supertokens~=sendCodeIcon] {
+            display: flex;
+            justify-content: center;
+        }
     `,
     recipeList: [
+      Session.init(),
       Passwordless.init({
         contactMethod: 'EMAIL',
-        onHandleEvent: context => {
-          console.log('only context', context);
-          if (context.action === 'PASSWORDLESS_RESTART_FLOW') {
-            // TODO:
+        onHandleEvent: async context => {
+          if (context.action === 'SUCCESS') {
+            const { id: userId, emails } = context.user;
+            const roles = await getClaimValue({ claim: UserRoleClaim });
 
-            console.log('restart', context);
-          } else if (context.action === 'PASSWORDLESS_CODE_SENT') {
-            // TODO:
-            console.log('sent', context);
-          } else {
-            let { id } = context.user;
-            if (context.action === 'SUCCESS') {
-              console.log('success', context);
-              if (
-                context.isNewRecipeUser &&
-                context.user.loginMethods.length === 1
-              ) {
-                // TODO: Sign up
+            if (
+              context.isNewRecipeUser &&
+              context.user.loginMethods.length == 1
+            ) {
+              // Create FHIR Profile for new user
+              const profile = await createProfile({
+                userId,
+                email: emails[0],
+                type: roles.includes('clinician') ? 'Practitioner' : 'Patient'
+              });
 
-                console.log('success sign up', context);
-              } else {
-                console.log('success sign in', context);
-                // TODO: Sign in
-              }
+              const cookieData = {
+                userId,
+                role_name: roles.includes('clinician')
+                  ? 'practitioner'
+                  : 'patient',
+                email: emails[0],
+                profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
+                fullname: mergeNames(profile?.name),
+                fhirId: profile?.id ?? ''
+              };
+
+              await setCookies('auth', JSON.stringify(cookieData));
+            } else {
+              const result = await getProfile({
+                userId,
+                type: roles.includes('clinician') ? 'Practitioner' : 'Patient'
+              });
+              const profile = result[0].resource;
+              const cookieData = {
+                userId,
+                role_name: roles.includes('clinician')
+                  ? 'practitioner'
+                  : 'patient',
+                email: emails[0],
+                profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
+                fullname: mergeNames(profile?.name),
+                fhirId: profile?.id ?? ''
+              };
+
+              await setCookies('auth', JSON.stringify(cookieData));
             }
           }
         }
-      }),
-      SessionReact.init()
+      })
     ],
     windowHandler: original => ({
       ...original,

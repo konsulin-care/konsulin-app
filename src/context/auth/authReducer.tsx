@@ -1,14 +1,16 @@
 import { deleteCookie } from 'cookies-next';
+import Session from 'supertokens-auth-react/recipe/session';
 import { IStateAuth } from './authTypes';
 
 export const initialState: IStateAuth = {
   isAuthenticated: false,
   userInfo: {
-    token: null,
-    id: null,
+    userId: null,
     fullname: '',
     email: '',
-    role_name: 'guest'
+    role_name: 'guest',
+    profile_picture: '',
+    fhirId: ''
   }
 };
 
@@ -17,21 +19,17 @@ export const reducer = (state: IStateAuth, action: any): IStateAuth => {
     case 'login':
       return {
         ...state,
-        // isAuthenticated: !!(action.payload.token && action.payload.role_name),
-        // userInfo: action.payload
-        isAuthenticated: action.doesSessionExist,
-        userInfo: { ...action, role_name: 'patient' }
+        isAuthenticated: !!(action.payload.userId && action.payload.role_name),
+        userInfo: action.payload
       };
     case 'auth-check':
       return {
         ...state,
-        // isAuthenticated: !!(action.payload.token && action.payload.role_name),
-        // userInfo: action.payload
-
-        isAuthenticated: action.doesSessionExist,
-        userInfo: { ...action, role_name: 'patient' }
+        isAuthenticated: !!(action.payload.userId && action.payload.role_name),
+        userInfo: action.payload
       };
     case 'logout':
+      Session.signOut();
       deleteCookie('auth');
       localStorage.clear();
       return initialState;

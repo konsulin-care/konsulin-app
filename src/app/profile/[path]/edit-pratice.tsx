@@ -1,44 +1,47 @@
-import Input from '@/components/general/input'
-import { useAuth } from '@/context/auth/authContext'
-import { apiRequest } from '@/services/api'
+import Input from '@/components/general/input';
+import { useAuth } from '@/context/auth/authContext';
+import { apiRequest } from '@/services/api';
 import {
   convertCurrencyStringToNumber,
   formatCurrency
-} from '@/utils/validation'
-import { useMutation } from '@tanstack/react-query'
-import { XCircle } from 'lucide-react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+} from '@/utils/validation';
+import { useMutation } from '@tanstack/react-query';
+import { XCircle } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 
 const EditPractice = () => {
-  const router = useRouter()
-  const [searchInput, setSearchInput] = useState('')
-  const [tagInputs, setTagInputs] = useState([])
-  const [firmData, setFirmData] = useState([])
-  const { state: authState } = useAuth()
-  const [openCollapsibles, setOpenCollapsibles] = useState({})
+  const router = useRouter();
+  const [searchInput, setSearchInput] = useState('');
+  const [tagInputs, setTagInputs] = useState([]);
+  const [firmData, setFirmData] = useState([]);
+  const { state: authState } = useAuth();
+  const [openCollapsibles, setOpenCollapsibles] = useState({});
 
   const fetchClinicsData = async (searchTerm: string) => {
     try {
       const [listAllResponse, searchResponse] = await Promise.all([
         apiRequest('GET', `/api/v1/clinics?name=${searchTerm}`),
-        apiRequest('GET', `/api/v1/clinicians/${authState.userInfo.id}/clinics`)
-      ])
+        apiRequest(
+          'GET',
+          `/api/v1/clinicians/${authState.userInfo.userId}/clinics`
+        )
+      ]);
 
       return {
         listAllData: listAllResponse['data'],
         searchData: searchResponse['data']
-      }
+      };
     } catch (error) {
-      console.error('Error fetching clinics data:', error)
-      throw error
+      console.error('Error fetching clinics data:', error);
+      throw error;
     }
-  }
+  };
 
   const { mutate: fetchAndUpdateClinics } = useMutation({
     mutationFn: async (searchTerm: string) => {
-      const { listAllData, searchData } = await fetchClinicsData(searchTerm)
+      const { listAllData, searchData } = await fetchClinicsData(searchTerm);
 
       const initialFirmData = listAllData.map(clinic => ({
         clinic_id: clinic.clinic_id,
@@ -48,12 +51,12 @@ const EditPractice = () => {
           currency: 'IDR'
         },
         specialties: Array.isArray(clinic.tags) ? clinic.tags : []
-      }))
+      }));
 
       const updatedFirmData = initialFirmData.map(clinic => {
         const updatedClinic = searchData.find(
           searchResult => searchResult.clinic_id === clinic.clinic_id
-        )
+        );
         if (updatedClinic) {
           return {
             ...clinic,
@@ -64,18 +67,18 @@ const EditPractice = () => {
             specialties: Array.isArray(updatedClinic.specialties)
               ? updatedClinic.specialties
               : []
-          }
+          };
         }
-        return clinic
-      })
+        return clinic;
+      });
 
-      setFirmData(updatedFirmData)
-      setTagInputs(new Array(updatedFirmData.length).fill(''))
+      setFirmData(updatedFirmData);
+      setTagInputs(new Array(updatedFirmData.length).fill(''));
     },
     onError: error => {
-      console.error('Error updating clinics:', error)
+      console.error('Error updating clinics:', error);
     }
-  })
+  });
 
   const { mutate: saveFirms, isLoading } = useMutation({
     mutationFn: async (updateFirms: any[]) => {
@@ -86,28 +89,28 @@ const EditPractice = () => {
           {
             practice_informations: updateFirms
           }
-        )
-        return response
+        );
+        return response;
       } catch (err) {
-        throw err
+        throw err;
       }
     },
     onSuccess: () => {
-      setOpenCollapsibles({})
-      router.push('/profile')
+      setOpenCollapsibles({});
+      router.push('/profile');
     }
-  })
+  });
 
   useEffect(() => {
-    fetchAndUpdateClinics('')
-  }, [fetchAndUpdateClinics])
+    fetchAndUpdateClinics('');
+  }, [fetchAndUpdateClinics]);
 
   const handleToggle = useCallback(index => {
     setOpenCollapsibles(prevState => ({
       ...prevState,
       [index]: !prevState[index]
-    }))
-  }, [])
+    }));
+  }, []);
 
   const handleAddTag = useCallback(
     (
@@ -115,34 +118,34 @@ const EditPractice = () => {
       e: { key: string; preventDefault: () => void }
     ) => {
       if (e.key === 'Enter' && tagInputs[index].trim() !== '') {
-        e.preventDefault()
+        e.preventDefault();
         setFirmData(prevData => {
-          const updatedData = [...prevData]
+          const updatedData = [...prevData];
           if (
             !updatedData[index].specialties.includes(tagInputs[index].trim())
           ) {
-            updatedData[index].specialties.push(tagInputs[index].trim())
+            updatedData[index].specialties.push(tagInputs[index].trim());
           }
-          return updatedData
-        })
+          return updatedData;
+        });
         setTagInputs(prevTags => {
-          const updatedTags = [...prevTags]
-          updatedTags[index] = ''
-          return updatedTags
-        })
+          const updatedTags = [...prevTags];
+          updatedTags[index] = '';
+          return updatedTags;
+        });
       }
     },
     [tagInputs]
-  )
+  );
 
   const handleChangeFee = useCallback((index, e) => {
-    const formattedValue = formatCurrency(e.target.value)
+    const formattedValue = formatCurrency(e.target.value);
     setFirmData(prevData => {
-      const updatedData = [...prevData]
-      updatedData[index].price_per_session.value = formattedValue
-      return updatedData
-    })
-  }, [])
+      const updatedData = [...prevData];
+      updatedData[index].price_per_session.value = formattedValue;
+      return updatedData;
+    });
+  }, []);
 
   function handleSubmit() {
     const updatedFirmsData = firmData.map(({ nameFirm, ...rest }) => ({
@@ -151,26 +154,26 @@ const EditPractice = () => {
         ...rest.price_per_session,
         value: convertCurrencyStringToNumber(rest.price_per_session.value)
       }
-    }))
-    saveFirms(updatedFirmsData)
+    }));
+    saveFirms(updatedFirmsData);
   }
 
   const searchClinicByName = value => {
-    setSearchInput(value)
-    fetchAndUpdateClinics(value)
-  }
+    setSearchInput(value);
+    fetchAndUpdateClinics(value);
+  };
 
   function handleRemoveTag(index: string | number, tagIndex: any) {
     setFirmData(prevData => {
-      const updatedData = [...prevData]
+      const updatedData = [...prevData];
       updatedData[index] = {
         ...updatedData[index],
         specialties: updatedData[index].specialties.filter(
           (_: any, i: any) => i !== tagIndex
         )
-      }
-      return updatedData
-    })
+      };
+      return updatedData;
+    });
   }
 
   return (
@@ -229,8 +232,8 @@ const EditPractice = () => {
         </div>
       </div>
     </>
-  )
-}
+  );
+};
 
 const FeeInput = ({ id, value, onChange }) => {
   return (
@@ -247,8 +250,8 @@ const FeeInput = ({ id, value, onChange }) => {
         placeholder='Rp 250.000'
       />
     </div>
-  )
-}
+  );
+};
 
 const SpecialtiesSection = ({
   id,
@@ -294,8 +297,8 @@ const SpecialtiesSection = ({
         />
       </div>
     </div>
-  )
-}
+  );
+};
 
 const Collapsible = ({ isOpen, onToggle, children, data }) => {
   return (
@@ -336,8 +339,8 @@ const Collapsible = ({ isOpen, onToggle, children, data }) => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
 const CollapsibleItem = ({
   index,
@@ -370,9 +373,9 @@ const CollapsibleItem = ({
           tagInput={tagInputs[index] || ''}
           onTagChange={(e: { target: { value: any } }) =>
             setTagInputs((prevTags: any) => {
-              const updatedTags = [...prevTags]
-              updatedTags[index] = e.target.value
-              return updatedTags
+              const updatedTags = [...prevTags];
+              updatedTags[index] = e.target.value;
+              return updatedTags;
             })
           }
           onTagAdd={(e: any) => handleAddTag(index, e)}
@@ -381,8 +384,8 @@ const CollapsibleItem = ({
         <div className='mt-4'>
           <button
             onClick={() => {
-              onToggle(index)
-              handleSubmit()
+              onToggle(index);
+              handleSubmit();
             }}
             className='w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
           >
@@ -391,7 +394,7 @@ const CollapsibleItem = ({
         </div>
       </div>
     </Collapsible>
-  )
-}
+  );
+};
 
-export default EditPractice
+export default EditPractice;

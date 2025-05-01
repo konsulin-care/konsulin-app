@@ -1,34 +1,33 @@
-'use client'
+'use client';
 
-import InformationDetail from '@/components/profile/information-detail'
-import MedalCollection from '@/components/profile/medal-collection'
-import Settings from '@/components/profile/settings'
-import { medalLists, settingMenus } from '@/constants/profile'
-import { useProfile } from '@/context/profile/profileContext'
-import { fetchProfile, ResponseProfile } from '@/services/profile'
-import { useQuery } from '@tanstack/react-query'
-import { ChevronRightIcon } from 'lucide-react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import MedalCollection from '@/components/profile/medal-collection';
+import Settings from '@/components/profile/settings';
+import { medalLists, settingMenus } from '@/constants/profile';
+import { useProfile } from '@/context/profile/profileContext';
+import { fetchProfile, ResponseProfile } from '@/services/profile';
+import { useQuery } from '@tanstack/react-query';
+import { ChevronRightIcon } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export default function Patient() {
-  const router = useRouter()
-  const { state, dispatch } = useProfile()
+  const router = useRouter();
+  const { state, dispatch } = useProfile();
 
   // fetch profile
   const { data: profileResponse } = useQuery<ResponseProfile>({
     queryKey: ['profile-patient'],
     queryFn: () => fetchProfile(state, dispatch)
-  })
+  });
 
-  const profileDetail = [
-    { key: 'Birth(Age)', value: state.profile.birth_date },
-    { key: 'Sex', value: state.profile.gender },
-    { key: 'Whatsapp', value: state.profile.whatsapp_number },
-    { key: 'Email', value: state.profile.email },
-    { key: 'Address', value: state.profile.address },
-    { key: 'Educations', value: state.profile.educations }
-  ]
+  // const profileDetail = [
+  //   { key: 'Birth(Age)', value: state.profile.birth_date },
+  //   { key: 'Sex', value: state.profile.gender },
+  //   { key: 'Whatsapp', value: state.profile.whatsapp_number },
+  //   { key: 'Email', value: state.profile.email },
+  //   { key: 'Address', value: state.profile.address },
+  //   { key: 'Educations', value: state.profile.educations }
+  // ]
 
   return (
     <>
@@ -66,18 +65,18 @@ export default function Patient() {
           <ChevronRightIcon color='white' width={24} height={24} />
         </div>
       </div>
-      <InformationDetail
-        isRadiusIcon
-        iconUrl={state.profile.profile_picture || '/images/sample-foto.svg'}
-        title={state.profile.fullname}
-        subTitle={state.profile.email}
-        buttonText='Edit Profile'
-        details={profileDetail}
-        onEdit={() => router.push('profile/edit-profile')}
-        role='patient'
-      />
+      {/* <InformationDetail */}
+      {/*   isRadiusIcon */}
+      {/*   iconUrl={state.profile.profile_picture || '/images/sample-foto.svg'} */}
+      {/*   title={state.profile.fullname} */}
+      {/*   subTitle={state.profile.email} */}
+      {/*   buttonText='Edit Profile' */}
+      {/*   details={profileDetail} */}
+      {/*   onEdit={() => router.push('profile/edit-profile')} */}
+      {/*   role='patient' */}
+      {/* /> */}
       <MedalCollection medals={medalLists} isDisabled={true} />
       <Settings menus={settingMenus} />
     </>
-  )
+  );
 }
