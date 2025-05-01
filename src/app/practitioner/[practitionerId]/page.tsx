@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
 import { useDetailPractitioner } from '@/services/clinic';
-import { IPractitioner } from '@/types/organization';
+import { mergeNames } from '@/utils/helper';
 import {
   ArrowRightIcon,
   CalendarDaysIcon,
@@ -58,12 +58,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
     isFetching
   } = useDetailPractitioner(practitionerRoleId);
 
-  const mergeNames = (practitioner: IPractitioner) => {
-    if (!practitioner.name || practitioner.name.length === 0) {
-      return '-';
-    }
-    return practitioner.name.map(item => item.given.join(' '));
-  };
+  const displayName = mergeNames(practitionerData.name);
 
   return (
     <>
@@ -109,7 +104,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
             </div>
             <h3 className='mt-2 text-center text-[20px] font-bold'>
               {/* {params.practitionerId} */}
-              {mergeNames(practitionerData)}
+              {displayName === '' ? '-' : displayName}
             </h3>
           </div>
 

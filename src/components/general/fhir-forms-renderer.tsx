@@ -35,6 +35,7 @@ interface FhirFormsRendererProps {
   type?: string;
 }
 
+// NOTE: modify the author and subject reference based on fhirId
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const { questionnaire, isAuthenticated } = props;
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null);

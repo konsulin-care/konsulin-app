@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { IUseClinicParams, useClinicById } from '@/services/clinic';
 import { IOrganizationResource, IPractitioner } from '@/types/organization';
+import { mergeNames } from '@/utils/helper';
 import { format, parse, setHours, setMinutes } from 'date-fns';
 import { ChevronLeftIcon, HeartPulse, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -70,8 +71,8 @@ export default function DetailClinic({ params }: IDetailClinic) {
   const {
     clinic,
     newPractitionerData: practitionersData,
-    isError,
     isFetching,
+    isError,
     isLoading
   } = useClinicById(params.clinicId);
 
@@ -84,14 +85,6 @@ export default function DetailClinic({ params }: IDetailClinic) {
     return [line[0], district, city, country, postalCode]
       .filter(Boolean)
       .join(', ');
-  };
-
-  const mergeNames = (practitioner: IPractitioner) => {
-    if (!practitioner.name) return;
-
-    return practitioner.name
-      .map(item => `${item.given.join(' ')} ${item.family}`)
-      .join(' ');
   };
 
   const handleClick = (practitioner: IPractitioner) => {
@@ -133,7 +126,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
 
     return practitionersData.filter((practitioner: IPractitioner) => {
       // name filtering
-      const fullName = mergeNames(practitioner);
+      const fullName = mergeNames(practitioner.name);
       if (!fullName) return false;
 
       const cleanFullName = fullName.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -262,38 +255,37 @@ export default function DetailClinic({ params }: IDetailClinic) {
           <CardLoader />
         ) : isError || filteredPractitioner.length > 0 ? (
           <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-            {filteredPractitioner.map((practitioner: IPractitioner) => (
-              <div
-                key={practitioner.id}
-                className='card flex flex-col items-center'
-              >
-                <div className='relative flex justify-center'>
-                  <Image
-                    className='h-[100px] w-[100px] rounded-full object-cover'
-                    src={
-                      practitioner.photo
-                        ? practitioner.photo[0].url
-                        : '/images/avatar.jpg'
-                    }
-                    alt='practitioner'
-                    width={100}
-                    height={100}
-                    unoptimized
-                  />
+            {practitionersData.map((practitioner: IPractitioner) => {
+              const displayName = mergeNames(practitioner.name);
 
-                  {/* TODO: change affiliation into clinic's name. do the same in practitioner card */}
-                  <Badge className='absolute bottom-0 flex h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
-                    <HeartPulse size={16} color='#08979C' fill='white' />
-                    <span>Konsulin</span>
-                  </Badge>
-                </div>
-                <div className='mt-2 text-center font-bold text-primary'>
-                  {practitioner.name && mergeNames(practitioner)}
-                </div>
-                <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                  {practitioner.practitionerRole.specialty &&
-                    practitioner.practitionerRole.specialty.length &&
-                    practitioner.practitionerRole.specialty.map(
+              return (
+                <div
+                  key={practitioner.id}
+                  className='card flex flex-col items-center'
+                >
+                  <div className='relative flex justify-center'>
+                    <Image
+                      className='h-[100px] w-[100px] rounded-full object-cover'
+                      src={
+                        practitioner.photo
+                          ? practitioner.photo[0].url
+                          : '/images/avatar.jpg'
+                      }
+                      alt='practitioner'
+                      width={100}
+                      height={100}
+                      unoptimized
+                    />
+                    <Badge className='absolute bottom-0 flex h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
+                      <HeartPulse size={16} color='#08979C' fill='white' />
+                      <span>Konsulin</span>
+                    </Badge>
+                  </div>
+                  <div className='mt-2 text-center font-bold text-primary'>
+                    {displayName === '' ? '-' : displayName}
+                  </div>
+                  <div className='mt-2 flex flex-wrap justify-center gap-1'>
+                    {practitioner.practitionerRole.specialty?.map(
                       (item, index) => (
                         <Badge
                           key={index}
@@ -303,26 +295,27 @@ export default function DetailClinic({ params }: IDetailClinic) {
                         </Badge>
                       )
                     )}
-                </div>
-                <Link
-                  href={{
-                    pathname: `/practitioner/${practitioner.id}`,
-                    query: {
-                      practitionerRoleId: practitioner.practitionerRole.id,
-                      clinicId: params.clinicId
-                    }
-                  }}
-                  className='mt-auto w-full'
-                >
-                  <Button
-                    className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
-                    onClick={() => handleClick(practitioner)}
+                  </div>
+                  <Link
+                    href={{
+                      pathname: `/practitioner/${practitioner.id}`,
+                      query: {
+                        practitionerRoleId: practitioner.practitionerRole.id,
+                        clinicId: params.clinicId
+                      }
+                    }}
+                    className='mt-auto w-full'
                   >
-                    Check
-                  </Button>
-                </Link>
-              </div>
-            ))}
+                    <Button
+                      className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
+                      onClick={() => handleClick(practitioner)}
+                    >
+                      Check
+                    </Button>
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <EmptyState

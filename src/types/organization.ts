@@ -1,3 +1,5 @@
+import { Practitioner } from 'fhir/r4';
+
 export type IOrganizationResource = {
   meta: Meta;
   id: string;
@@ -28,21 +30,7 @@ export type IOrganizationDetail = {
   active: boolean;
 };
 
-export type IPractitioner = {
-  meta: Meta;
-  name: Name[];
-  birthDate: string;
-  resourceType: 'Practitioner';
-  photo: Photo[];
-  active: boolean;
-  id: string;
-  identifier: Array<{
-    system: string;
-    value: string;
-  }>;
-  qualification: Qualification[];
-  telecom: Telecom[];
-  gender: string;
+export type IPractitioner = Practitioner & {
   practitionerRole: IPractitionerRole;
 };
 

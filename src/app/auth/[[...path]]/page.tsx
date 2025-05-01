@@ -11,7 +11,7 @@ const PasswordlessAuthPage = () => {
 
   useEffect(() => {
     if (!canHandleRoute([PasswordlessPreBuiltUI])) {
-      redirectToAuth();
+      redirectToAuth({ redirectBack: false });
     } else {
       setUiComponent(getRoutingComponent([PasswordlessPreBuiltUI]));
     }
