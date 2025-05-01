@@ -97,6 +97,7 @@ export const frontendConfig = (): SuperTokensConfig => {
 
               await setCookies('auth', JSON.stringify(cookieData));
             }
+            routerInfo.router.refresh();
           }
         }
       })

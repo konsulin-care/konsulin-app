@@ -1,12 +1,9 @@
-import Session from 'supertokens-auth-react/recipe/session';
 import AppChartClient from '../components/general/home/app-chart-client';
 import AppMenu from '../components/general/home/app-menu';
 import Community from '../components/general/home/community';
 import PopularAssessment from '../components/general/home/popular-assessment';
 
 export default function HomeContentGuest() {
-  Session.signOut();
-
   return (
     <>
       <AppChartClient isBlur={true} />
