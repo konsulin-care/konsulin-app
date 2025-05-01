@@ -1,23 +1,27 @@
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 import {
   Drawer,
   DrawerContent,
   DrawerDescription,
   DrawerTitle,
   DrawerTrigger
-} from '@/components/ui/drawer'
-import { ChevronRightIcon } from 'lucide-react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { Fragment, useState } from 'react'
+} from '@/components/ui/drawer';
+import { useAuth } from '@/context/auth/authContext';
+import { useProfile } from '@/context/profile/profileContext';
+import { ChevronRightIcon } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { Fragment, useState } from 'react';
 
 export default function Settings({ menus }) {
-  const router = useRouter()
+  const router = useRouter();
   const [drawerState, setDrawerState] = useState({
     title: '',
     subTitle: '',
     show: false
-  })
+  });
+  const { dispatch } = useAuth();
+  const { dispatch: dispatchProfile } = useProfile();
 
   function handleClick(path: string) {
     if (path === '/logout') {
@@ -26,16 +30,16 @@ export default function Settings({ menus }) {
         subTitle:
           'Note that you need to login again in the\nfuture and the notification will not appears if you log out',
         show: true
-      })
+      });
     } else if (path === '/remove-account') {
       setDrawerState({
         title: 'Apakah Anda Yakin Untuk Hapus Akun',
         subTitle:
           'Note that you cannot retrieve any data from\nthis account in the app if you delete your account.',
         show: true
-      })
+      });
     } else {
-      router.push(path)
+      router.push(path);
     }
   }
 
@@ -43,15 +47,19 @@ export default function Settings({ menus }) {
     setDrawerState(prevState => ({
       ...prevState,
       show: false
-    }))
-    router.push('/logout')
+    }));
+
+    dispatch({ type: 'logout' });
+    dispatchProfile({ type: 'reset' });
+    router.push('/');
+    // router.push('/logout')
   }
 
   function closeDrawer() {
     setDrawerState(prevState => ({
       ...prevState,
       show: false
-    }))
+    }));
   }
 
   return (
@@ -59,8 +67,8 @@ export default function Settings({ menus }) {
       <div className='w-full rounded-lg bg-white'>
         <ul>
           {menus.map((item: any, index: number) => {
-            const isFirst = index === 0
-            const isLast = index === menus.length - 1
+            const isFirst = index === 0;
+            const isLast = index === menus.length - 1;
             return (
               <div key={item.name} onClick={() => handleClick(item.link)}>
                 <li
@@ -80,7 +88,7 @@ export default function Settings({ menus }) {
                   <ChevronRightIcon color='#ADB6C7' width={18} height={18} />
                 </li>
               </div>
-            )
+            );
           })}
         </ul>
       </div>
@@ -128,5 +136,5 @@ export default function Settings({ menus }) {
         </DrawerContent>
       </Drawer>
     </>
-  )
+  );
 }
