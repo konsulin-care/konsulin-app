@@ -6,14 +6,14 @@ import React, {
   createContext,
   useContext,
   useEffect,
-  useReducer
+  useReducer,
+  useState
 } from 'react';
-import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { initialState, reducer } from './authReducer';
 import { IStateAuth } from './authTypes';
 
 interface ContextProps {
-  loading: boolean;
+  isLoading: boolean;
   state: IStateAuth;
   dispatch: React.Dispatch<any>;
 }
@@ -21,39 +21,30 @@ interface ContextProps {
 const AuthContext = createContext<ContextProps | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // const [isLoading, setisLoading] = useState(true);
+  const [isLoading, setisLoading] = useState(true);
   const [state, dispatch] = useReducer(reducer, initialState);
-
-  const session = useSessionContext();
 
   useEffect(() => {
     const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
 
     const payload = {
-      token: auth.token,
       role_name: auth.role_name || 'guest',
       fullname: auth.fullname || auth.email,
       email: auth.email,
-      id: auth.id,
-      profile_picture: auth.profile_picture
+      userId: auth.userId,
+      profile_picture: auth.profile_picture,
+      fhirId: auth.fhirId
     };
 
-    if (!session.loading) {
-      console.log('session data : ', session);
-      dispatch({
-        type: 'auth-check',
-        session
-      });
-    }
-
-    // dispatch({
-    //   type: 'auth-check',
-    //   payload
-    // });
-  }, [session.loading]);
+    dispatch({
+      type: 'auth-check',
+      payload
+    });
+    setisLoading(false);
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ loading: session.loading, state, dispatch }}>
+    <AuthContext.Provider value={{ isLoading, state, dispatch }}>
       {children}
     </AuthContext.Provider>
   );

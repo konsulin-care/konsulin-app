@@ -1,4 +1,4 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest } from 'next/server';
 
 const patientAndClinicianRoutes = [
   '/message',
@@ -6,10 +6,10 @@ const patientAndClinicianRoutes = [
   '/profile',
   '/journal',
   '/record'
-]
-const patientRoutes = []
+];
+const patientRoutes = [];
 // const patientRoutes = [/^\/exercise\/.*/]
-const clinicianRoutes = ['/assessments/soap']
+const clinicianRoutes = ['/assessments/soap'];
 
 export function middleware(request: NextRequest) {
   /**
@@ -20,13 +20,14 @@ export function middleware(request: NextRequest) {
 
   //
 
-  const auth = JSON.parse(request.cookies.get('auth')?.value || '{}')
-  const { pathname } = request.nextUrl
+  const auth = JSON.parse(request.cookies.get('auth')?.value || '{}');
+  const { pathname } = request.nextUrl;
+  console.log('test', auth);
 
   const routeMatches = (routes: (string | RegExp)[], path: string) =>
     routes.some(route =>
       route instanceof RegExp ? route.test(path) : route === path
-    )
+    );
 
   // unauthenticated user can't access private routes
   if (
@@ -36,26 +37,31 @@ export function middleware(request: NextRequest) {
       pathname
     )
   ) {
-    return Response.redirect(new URL('/register?role=patient', request.url))
+    // return Response.redirect(new URL('/register?role=patient', request.url))
+    return Response.redirect(new URL('/auth', request.url));
   }
 
+  // if (auth.token && routeMatches(['/login', '/register'], pathname)) {
+  //   return Response.redirect(new URL('/', request.url))
+  // }
+
   // authenticated user can't access login and register page
-  if (auth.token && routeMatches(['/login', '/register'], pathname)) {
-    return Response.redirect(new URL('/', request.url))
+  if (auth.userId && routeMatches(['/auth'], pathname)) {
+    return Response.redirect(new URL('/', request.url));
   }
 
   // authorization base on role
   if (
     (auth.role_name !== 'patient' && routeMatches(patientRoutes, pathname)) || // patient only
-    (auth.role_name !== 'cilinician' &&
+    (auth.role_name !== 'clinician' &&
       routeMatches(clinicianRoutes, pathname)) || // cliniciant only
     ((!auth.role_name || auth.role_name === 'guest') &&
       routeMatches(patientAndClinicianRoutes, pathname)) // patient and cliniciant
   ) {
-    return Response.redirect(new URL('/unauthorized', request.url))
+    return Response.redirect(new URL('/unauthorized', request.url));
   }
 }
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)']
-}
+};

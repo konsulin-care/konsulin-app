@@ -1,30 +1,24 @@
 export interface IStateAuth {
-  isAuthenticated: boolean
-  userInfo: IStateUserInfo
+  isAuthenticated: boolean;
+  userInfo: IStateUserInfo;
 }
 
 export interface IStateUserInfo {
-  token?: string
-  role_name?: string
-  fullname?: string
-  id?: string
-  email?: string
-  profile_picture?: string
+  role_name?: string;
+  fullname?: string;
+  userId?: string;
+  email?: string;
+  profile_picture?: string;
+  fhirId?: string;
 }
 
-export type IActionAuth = IActionLogin | IActionLogout
+export type IActionAuth = IActionLogin | IActionLogout;
 
 export interface IActionLogin {
-  type: 'login' | 'auth-check'
-  payload: {
-    token: string
-    role_name: string
-    fullname: string
-    id: string
-    email: string
-  }
+  type: 'login' | 'auth-check';
+  payload: IStateUserInfo;
 }
 
 export interface IActionLogout {
-  type: 'logout'
+  type: 'logout';
 }
