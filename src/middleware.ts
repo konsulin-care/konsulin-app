@@ -22,7 +22,6 @@ export function middleware(request: NextRequest) {
 
   const auth = JSON.parse(request.cookies.get('auth')?.value || '{}');
   const { pathname } = request.nextUrl;
-  console.log('test', auth);
 
   const routeMatches = (routes: (string | RegExp)[], path: string) =>
     routes.some(route =>
