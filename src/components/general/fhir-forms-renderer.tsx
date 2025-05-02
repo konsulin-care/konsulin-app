@@ -9,6 +9,7 @@ import Image from 'next/image';
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle
@@ -59,7 +60,6 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
 
-  // NOTE: might add a user identifier later
   useEffect(() => {
     const savedResponses = localStorage.getItem(`response_${questionnaire.id}`);
     if (savedResponses) {
@@ -169,7 +169,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const renderDrawerContent = (
     <>
-      <DrawerHeader className='mx-auto flex flex-col items-center gap-4 text-[20px]'>
+      <DrawerHeader className='mx-auto flex flex-col items-center gap-4 pb-0 text-[20px]'>
         <Image
           className='rounded-[8px] object-cover'
           src={'/images/submit-questionnaire.png'}
@@ -179,29 +179,30 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         />
         <DrawerTitle className='text-center'>
           {props.type === 'research' ? (
-            <>
-              <div className='mb-2 text-2xl font-bold'>
-                Terima Kasih Karena Telah Berpatisipasi Dalam Research
-              </div>
-              <div className='text-sm opacity-50'>
-                Partisipasi Anda sangat berharga bagi kami dan akan membantu
-                kami dalam mengembangkan solusi yg lebih baik untuk kebutuhan
-                Anda.
-              </div>
-            </>
+            <div className='mb-2 text-2xl font-bold'>
+              Terima Kasih Karena Telah Berpatisipasi Dalam Research
+            </div>
           ) : (
-            <>
-              <div className='mb-2 text-2xl font-bold'>
-                Selamat Anda Menyelesaikan Test
-              </div>
-              <div className='text-sm opacity-50'>
-                Hasil test ini akan memberikan wawasan berharga tentang
-                kesehatan mental Anda
-              </div>
-            </>
+            <div className='mb-2 text-2xl font-bold'>
+              Selamat Anda Menyelesaikan Test
+            </div>
           )}
         </DrawerTitle>
       </DrawerHeader>
+
+      <DrawerDescription className='text-center'>
+        {props.type === 'research' ? (
+          <div className='text-sm opacity-50'>
+            Partisipasi Anda sangat berharga bagi kami dan akan membantu kami
+            dalam mengembangkan solusi yg lebih baik untuk kebutuhan Anda.
+          </div>
+        ) : (
+          <div className='text-sm opacity-50'>
+            Hasil test ini akan memberikan wawasan berharga tentang kesehatan
+            mental Anda
+          </div>
+        )}
+      </DrawerDescription>
 
       <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
         {props.type !== 'research' && (

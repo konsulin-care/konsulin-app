@@ -11,6 +11,7 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
@@ -95,6 +96,10 @@ export default function Assessment() {
     setUrl(questionnaireUrl);
   };
 
+  const customMarkdownComponents = {
+    p: ({ children }) => <span>{children}</span>
+  };
+
   const renderDrawerContent = (
     data: IResearchResource | IAssessmentResource | IResearchListResource
   ) => {
@@ -123,9 +128,11 @@ export default function Assessment() {
           <div className='font-bold'>Brief</div>
           <hr className='my-4 border-black opacity-10' />
           <div className='flex flex-wrap gap-[10px] text-sm'>
-            <ReactMarkdown>
-              {data && 'description' in data && data.description}
-            </ReactMarkdown>
+            <DrawerDescription>
+              <ReactMarkdown components={customMarkdownComponents}>
+                {data && 'description' in data && data.description}
+              </ReactMarkdown>
+            </DrawerDescription>
           </div>
         </div>
 
