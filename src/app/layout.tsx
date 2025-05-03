@@ -73,9 +73,9 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={inter.className}>
-        <ProfileProvider>
-          <AuthProvider>
-            <SuperTokensProviders>
+        <SuperTokensProviders>
+          <ProfileProvider>
+            <AuthProvider>
               <BookingProvider>
                 <QueryProvider>
                   <NextTopLoader showSpinner={false} color='#13c2c2' />
@@ -88,9 +88,9 @@ export default function RootLayout({
                   </div>
                 </QueryProvider>
               </BookingProvider>
-            </SuperTokensProviders>
-          </AuthProvider>
-        </ProfileProvider>
+            </AuthProvider>
+          </ProfileProvider>
+        </SuperTokensProviders>
       </body>
     </html>
   );
