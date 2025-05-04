@@ -1,4 +1,5 @@
 import QueryProvider from '@/components/general/query-provider';
+import RouteResponseCleaner from '@/components/general/route-response-cleaner';
 import { SuperTokensProviders } from '@/components/supertokensProvider';
 import { AuthProvider } from '@/context/auth/authContext';
 import { BookingProvider } from '@/context/booking/bookingContext';
@@ -78,6 +79,7 @@ export default function RootLayout({
             <AuthProvider>
               <BookingProvider>
                 <QueryProvider>
+                  <RouteResponseCleaner />
                   <NextTopLoader showSpinner={false} color='#13c2c2' />
                   <ToastContainer {...toastConfig} />
                   <div className='flex min-h-screen flex-col'>

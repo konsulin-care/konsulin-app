@@ -30,6 +30,7 @@ import {
   IResearchListResource,
   IResearchResource
 } from '@/types/assessment';
+import { customMarkdownComponents } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
 import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -94,10 +95,6 @@ export default function Assessment() {
 
     setDrawerResearchContent(mergedData);
     setUrl(questionnaireUrl);
-  };
-
-  const customMarkdownComponents = {
-    p: ({ children }) => <span>{children}</span>
   };
 
   const renderDrawerContent = (

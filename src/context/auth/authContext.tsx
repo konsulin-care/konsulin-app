@@ -38,7 +38,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
 
     const fetchSession = async () => {
-      if (!session.doesSessionExist) return;
+      if (!session.doesSessionExist) {
+        setisLoading(false);
+        return;
+      }
 
       try {
         if (
