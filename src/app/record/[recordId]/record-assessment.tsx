@@ -6,6 +6,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useQuestionnaireResponse } from '@/services/api/assessment';
 import { QuestionnaireResponseItem } from 'fhir/r4';
 import { LinkIcon, NotepadTextIcon, UsersIcon } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
@@ -150,9 +151,10 @@ export default function RecordAssessment({ recordId, title }: Props) {
         <div className='text-[10px] text-muted'>Assessment - User</div>
       </div>
       <div className='card mb-4 flex items-center'>
-        {/* TODO: implement anonymous user */}
         <UsersIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
-        Guest
+        {authState.isAuthenticated && authState.userInfo
+          ? authState.userInfo.fullname || authState.userInfo.email
+          : 'Guest'}
       </div>
       <div className='card mb-4 flex items-center'>
         <NotepadTextIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
@@ -208,12 +210,13 @@ export default function RecordAssessment({ recordId, title }: Props) {
         <ModalQr value={currentLocation} />
       </div>
 
-      {/* NOTE: the implementation might change once auth is done */}
       <div className='text-m flex flex-col gap-3'>
         {!authState.isAuthenticated && (
-          <Button className='h-full w-full rounded-xl bg-softGray p-4 text-black'>
-            Login/Register
-          </Button>
+          <Link href={'/auth'}>
+            <Button className='h-full w-full rounded-xl bg-softGray p-4 text-black'>
+              Login/Register
+            </Button>
+          </Link>
         )}
 
         <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>

@@ -54,6 +54,7 @@ export const frontendConfig = (): SuperTokensConfig => {
           if (context.action === 'SUCCESS') {
             const { id: userId, emails } = context.user;
             const roles = await getClaimValue({ claim: UserRoleClaim });
+            localStorage.setItem('skip-response-cleanup', 'true');
 
             if (
               context.isNewRecipeUser &&

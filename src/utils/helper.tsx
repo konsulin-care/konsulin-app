@@ -7,3 +7,7 @@ export const mergeNames = (data: HumanName[]) => {
 
   return data.map(item => [...item.given, item.family].join(' ')).join('');
 };
+
+export const customMarkdownComponents = {
+  p: ({ children }) => <span>{children}</span>
+};

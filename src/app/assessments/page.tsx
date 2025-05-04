@@ -11,6 +11,7 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
@@ -29,6 +30,7 @@ import {
   IResearchListResource,
   IResearchResource
 } from '@/types/assessment';
+import { customMarkdownComponents } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
 import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -123,9 +125,11 @@ export default function Assessment() {
           <div className='font-bold'>Brief</div>
           <hr className='my-4 border-black opacity-10' />
           <div className='flex flex-wrap gap-[10px] text-sm'>
-            <ReactMarkdown>
-              {data && 'description' in data && data.description}
-            </ReactMarkdown>
+            <DrawerDescription>
+              <ReactMarkdown components={customMarkdownComponents}>
+                {data && 'description' in data && data.description}
+              </ReactMarkdown>
+            </DrawerDescription>
           </div>
         </div>
 

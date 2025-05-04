@@ -1,4 +1,5 @@
 import QueryProvider from '@/components/general/query-provider';
+import RouteResponseCleaner from '@/components/general/route-response-cleaner';
 import { SuperTokensProviders } from '@/components/supertokensProvider';
 import { AuthProvider } from '@/context/auth/authContext';
 import { BookingProvider } from '@/context/booking/bookingContext';
@@ -8,6 +9,7 @@ import '@/styles/index.scss';
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
+import { Suspense } from 'react';
 import { ToastContainer, ToastContainerProps } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -73,11 +75,14 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={inter.className}>
-        <ProfileProvider>
-          <AuthProvider>
-            <SuperTokensProviders>
+        <SuperTokensProviders>
+          <ProfileProvider>
+            <AuthProvider>
               <BookingProvider>
                 <QueryProvider>
+                  <Suspense fallback={null}>
+                    <RouteResponseCleaner />
+                  </Suspense>
                   <NextTopLoader showSpinner={false} color='#13c2c2' />
                   <ToastContainer {...toastConfig} />
                   <div className='flex min-h-screen flex-col'>
@@ -88,9 +93,9 @@ export default function RootLayout({
                   </div>
                 </QueryProvider>
               </BookingProvider>
-            </SuperTokensProviders>
-          </AuthProvider>
-        </ProfileProvider>
+            </AuthProvider>
+          </ProfileProvider>
+        </SuperTokensProviders>
       </body>
     </html>
   );

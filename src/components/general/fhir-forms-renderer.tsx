@@ -9,6 +9,7 @@ import Image from 'next/image';
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle
@@ -30,14 +31,15 @@ import { toast } from 'react-toastify';
 interface FhirFormsRendererProps {
   questionnaire: Questionnaire;
   isAuthenticated: Boolean;
+  patientId?: string;
   submitText?: string;
-  customObject?: Object;
-  type?: string;
+  formType?: string;
 }
 
 // NOTE: modify the author and subject reference based on fhirId
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
-  const { questionnaire, isAuthenticated } = props;
+  const { questionnaire, isAuthenticated, patientId, submitText, formType } =
+    props;
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null);
   const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -53,13 +55,10 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     isLoading: submitQuestionnaireIsLoading
   } = useSubmitQuestionnaire(questionnaire.id, isAuthenticated);
 
-  const { mutateAsync: fetchResultBrief, isError } = useResultBrief(
-    questionnaire.id
-  );
+  const { mutateAsync: fetchResultBrief } = useResultBrief(questionnaire.id);
 
   const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
 
-  // NOTE: might add a user identifier later
   useEffect(() => {
     const savedResponses = localStorage.getItem(`response_${questionnaire.id}`);
     if (savedResponses) {
@@ -103,6 +102,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       }).toString();
 
       router.push(`/record/${responseId}?${query}`);
+      setIsSubmitting(false);
     } else {
       router.push('/assessments');
     }
@@ -116,6 +116,10 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     setIsSubmitting(true);
 
     const questionnaireResponse = getResponse();
+    const author = { reference: `Patient/${patientId}` };
+    const subject = { reference: `Patient/${patientId}` };
+
+    if (!questionnaireResponse) return;
 
     /* Check if the questionnaire response contains an item with linkId = 'interpretation'.
      * If it does, extract the item and send it to the webhook. */
@@ -125,11 +129,12 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
     try {
       if (!interpretationItem) {
-        // setResponse({ ...questionnaireResponse, ...props.customObject });
+        const result = await submitQuestionnaire({
+          ...questionnaireResponse,
+          author,
+          subject
+        });
 
-        const result = await submitQuestionnaire(questionnaireResponse);
-
-        // setResponse(result);
         handleNavigate(type, result.id);
         return;
       }
@@ -147,17 +152,24 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         console.error('Error when fetching result brief : ', error.message);
       }
 
-      // setResponse({ ...questionnaireResponse, ...props.customObject });
+      const submitResult = await submitQuestionnaire({
+        ...questionnaireResponse,
+        author,
+        subject
+      });
 
-      const submitResult = await submitQuestionnaire(questionnaireResponse);
+      /* save questionnaire response to localStorage for guest (if not closing) */
+      if (type !== 'close' && !isAuthenticated) {
+        localStorage.setItem(
+          `response_${questionnaire.id}`,
+          JSON.stringify({ ...questionnaireResponse, id: submitResult.id })
+        );
+      }
 
-      // setResponse(result);
       handleNavigate(type, submitResult.id);
     } catch (error) {
       console.log('Error message :', error);
       toast.error('An error occurred while submitting the questionnaire');
-      setIsSubmitting(false);
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -169,42 +181,44 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const renderDrawerContent = (
     <>
-      <DrawerHeader className='mx-auto flex flex-col items-center gap-4 text-[20px]'>
+      <DrawerHeader className='mx-auto flex flex-col items-center gap-4 pb-0 text-[20px]'>
         <Image
           className='rounded-[8px] object-cover'
           src={'/images/submit-questionnaire.png'}
-          height={200}
+          height={0}
           width={200}
+          style={{ width: 'auto', height: 'auto' }}
           alt='success'
         />
         <DrawerTitle className='text-center'>
-          {props.type === 'research' ? (
-            <>
-              <div className='mb-2 text-2xl font-bold'>
-                Terima Kasih Karena Telah Berpatisipasi Dalam Research
-              </div>
-              <div className='text-sm opacity-50'>
-                Partisipasi Anda sangat berharga bagi kami dan akan membantu
-                kami dalam mengembangkan solusi yg lebih baik untuk kebutuhan
-                Anda.
-              </div>
-            </>
+          {formType === 'research' ? (
+            <div className='mb-2 text-2xl font-bold'>
+              Terima Kasih Karena Telah Berpatisipasi Dalam Research
+            </div>
           ) : (
-            <>
-              <div className='mb-2 text-2xl font-bold'>
-                Selamat Anda Menyelesaikan Test
-              </div>
-              <div className='text-sm opacity-50'>
-                Hasil test ini akan memberikan wawasan berharga tentang
-                kesehatan mental Anda
-              </div>
-            </>
+            <div className='mb-2 text-2xl font-bold'>
+              Selamat Anda Menyelesaikan Test
+            </div>
           )}
         </DrawerTitle>
       </DrawerHeader>
 
+      <DrawerDescription className='text-center'>
+        {formType === 'research' ? (
+          <span className='text-sm opacity-50'>
+            Partisipasi Anda sangat berharga bagi kami dan akan membantu kami
+            dalam mengembangkan solusi yg lebih baik untuk kebutuhan Anda.
+          </span>
+        ) : (
+          <span className='text-sm opacity-50'>
+            Hasil test ini akan memberikan wawasan berharga tentang kesehatan
+            mental Anda
+          </span>
+        )}
+      </DrawerDescription>
+
       <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
-        {props.type !== 'research' && (
+        {formType !== 'research' && (
           <Button
             className='h-full w-full rounded-xl bg-secondary p-4 text-white'
             onClick={() => handleSubmitQuestionnaire('result')}
@@ -224,7 +238,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         )}
         <Button
           className={`h-full w-full rounded-xl border border-solid p-4 transition-all focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50 ${
-            props.type !== 'research'
+            formType !== 'research'
               ? 'border-secondary bg-transparent text-secondary hover:bg-gray-100'
               : 'hover:bg-secondary/90 border-transparent bg-secondary text-white'
           }`}
@@ -274,7 +288,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           {submitQuestionnaireIsLoading ? (
             <LoadingSpinnerIcon stroke='white' />
           ) : (
-            props.submitText || 'Kirim'
+            submitText || 'Kirim'
           )}
         </Button>
       </div>

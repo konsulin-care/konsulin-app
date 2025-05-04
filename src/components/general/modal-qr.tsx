@@ -3,6 +3,8 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
   DrawerTrigger
 } from '@/components/ui/drawer';
 import QRCode from 'react-qr-code';
@@ -29,6 +31,8 @@ export default function ModalQr({ value }) {
         <Button className='rounded-xl bg-secondary text-white'>Show QR</Button>
       </DrawerTrigger>
       <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+        <DrawerTitle />
+        <DrawerDescription />
         <QRCode
           size={150}
           style={{

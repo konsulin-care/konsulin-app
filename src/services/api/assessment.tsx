@@ -40,7 +40,6 @@ export const useQuestionnaire = (questionnaireId: number | string) => {
   });
 };
 
-// TODO: add patient-id to author and subject references
 export const useSubmitQuestionnaire = (
   questionnaireId: string,
   isAuthenticated: Boolean
@@ -65,23 +64,20 @@ export const useSubmitQuestionnaire = (
         status,
         authored: timestamp,
         subject
-        // respondent_type: isAuthenticated ? 'user' : 'guest',
-        // questionnaire_response: questionnaireRresponse
       });
       return response.data;
     }
   });
 };
 
-// TODO: add patient-id to author and subject references
 export const useUpdateSubmitQuestionnaire = (
   questionnaireId: string,
-  isAuthenticated: Boolean
+  isAuthenticated: boolean
 ) => {
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
     mutationFn: async (questionnaireResponse: QuestionnaireResponse) => {
-      const { author, item, resourceType, status, subject } =
+      const { author, item, resourceType, status, subject, id } =
         questionnaireResponse;
 
       const timestamp = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -90,7 +86,8 @@ export const useUpdateSubmitQuestionnaire = (
         localStorage.removeItem(`response_${questionnaireId}`);
       }
 
-      const response = await API.put('/fhir/QuestionnaireResponse', {
+      const response = await API.put(`/fhir/QuestionnaireResponse/${id}`, {
+        id,
         author,
         item,
         resourceType,
@@ -98,8 +95,6 @@ export const useUpdateSubmitQuestionnaire = (
         status,
         authored: timestamp,
         subject
-        // respondent_type: isAuthenticated ? 'user' : 'guest',
-        // questionnaire_response: questionnaireRresponse
       });
       return response.data;
     }

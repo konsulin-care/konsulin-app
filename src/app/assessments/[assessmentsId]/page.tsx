@@ -59,17 +59,8 @@ export default function Questionnaire({ params }) {
             <FhirFormsRenderer
               questionnaire={questionnaire[0].resource}
               isAuthenticated={authState.isAuthenticated}
-              customObject={{
-                subject: {
-                  reference: `Patient/${authState.userInfo?.fhirId}`,
-                  type: 'Patient'
-                },
-                author: {
-                  reference: `Patient/${authState.userInfo?.fhirId}`, // chage this to the clincianID for SOAP
-                  type: 'Practitioner'
-                }
-              }}
-              type={
+              patientId={authState.userInfo.fhirId}
+              formType={
                 questionnaire[0].resource.useContext[0].valueCodeableConcept
                   .coding[0].code
               }

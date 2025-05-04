@@ -1,29 +1,29 @@
-'use client'
+'use client';
 
-import ContentWraper from '@/components/general/content-wraper'
-import FhirFormsRenderer from '@/components/general/fhir-forms-renderer'
-import Header from '@/components/header'
-import NavigationBar from '@/components/navigation-bar'
-import { useAuth } from '@/context/auth/authContext'
-import { BookHeartIcon, ChevronLeftIcon } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import ObjectiveFindingModal from './objective-finding-modal'
-import Participant from './participant'
+import ContentWraper from '@/components/general/content-wraper';
+import FhirFormsRenderer from '@/components/general/fhir-forms-renderer';
+import Header from '@/components/header';
+import NavigationBar from '@/components/navigation-bar';
+import { useAuth } from '@/context/auth/authContext';
+import { BookHeartIcon, ChevronLeftIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import ObjectiveFindingModal from './objective-finding-modal';
+import Participant from './participant';
 
 export default function Soap() {
-  const { state: authState } = useAuth()
+  const { state: authState } = useAuth();
 
-  const router = useRouter()
-  const questionnaire = require('../questionnaire/soap.json')
+  const router = useRouter();
+  const questionnaire = require('../questionnaire/soap.json');
 
-  const [participant, setParticipant] = useState('Fitra Agil')
-  const [objectiveFinding, setObjectiveFinding] = useState([])
+  const [participant, setParticipant] = useState('Fitra Agil');
+  const [objectiveFinding, setObjectiveFinding] = useState([]);
 
   const customObjectFHIR = {
     subject: participant,
     author: ''
-  }
+  };
 
   return (
     <>
@@ -63,10 +63,10 @@ export default function Soap() {
             questionnaire={questionnaire}
             isAuthenticated={authState.isAuthenticated}
             submitText='Save SOAP'
-            customObject={customObjectFHIR}
+            // customObject={customObjectFHIR}
           />
         </div>
       </ContentWraper>
     </>
-  )
+  );
 }
