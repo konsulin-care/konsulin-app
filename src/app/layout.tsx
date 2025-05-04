@@ -9,6 +9,7 @@ import '@/styles/index.scss';
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
+import { Suspense } from 'react';
 import { ToastContainer, ToastContainerProps } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -79,7 +80,9 @@ export default function RootLayout({
             <AuthProvider>
               <BookingProvider>
                 <QueryProvider>
-                  <RouteResponseCleaner />
+                  <Suspense fallback={null}>
+                    <RouteResponseCleaner />
+                  </Suspense>
                   <NextTopLoader showSpinner={false} color='#13c2c2' />
                   <ToastContainer {...toastConfig} />
                   <div className='flex min-h-screen flex-col'>
