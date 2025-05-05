@@ -2,6 +2,7 @@
 
 import BackButton from '@/components/general/back-button';
 import ContentWraper from '@/components/general/content-wraper';
+import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
 import NoteIcon from '@/components/icons/note-icon';
 import NavigationBar from '@/components/navigation-bar';
@@ -13,23 +14,46 @@ import { useAuth } from '@/context/auth/authContext';
 import { useRecordSummary } from '@/services/api/record';
 import { IRecord } from '@/types/record';
 import { customMarkdownComponents, parseRecordBundles } from '@/utils/helper';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import ClinicFilter from './record-filter';
+import RecordFilter, { IRecordParams } from './record-filter';
 
+// NOTE: differentiate record summary for Patient and Practitioner
 export default function Record() {
-  const router = useRouter();
-  const [recordFilter, setRecordFilter] = useState<any>({
-    name: ''
+  const [recordFilter, setRecordFilter] = useState<IRecordParams>({
+    query: ''
   });
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const { mutate: getRecords, isLoading: isRecordLoading } = useRecordSummary();
   const [records, setRecords] = useState<IRecord[] | null>(null);
+
+  const filteredRecords = useMemo(() => {
+    if (!records) return [];
+
+    return records.filter(record => {
+      const { start_date, end_date, type, query } = recordFilter;
+
+      const recordDate = format(parseISO(record.lastUpdated), 'yyyy-MM-dd');
+      const startDate = start_date ? format(start_date, 'yyyy-MM-dd') : null;
+      const endDate = end_date ? format(end_date, 'yyyy-MM-dd') : null;
+
+      const matchesDateRange =
+        (!startDate || recordDate >= startDate) &&
+        (!endDate || recordDate <= endDate);
+
+      const matchesType = !type || type === 'All' || record.type === type;
+
+      const queryLower = query?.toLowerCase() || '';
+      const matchesQuery =
+        !query || record.result?.toLowerCase().includes(queryLower);
+
+      return matchesDateRange && matchesType && matchesQuery;
+    });
+  }, [records, recordFilter]);
 
   useEffect(() => {
     // NOTE: hardcoded Patient-id
@@ -60,21 +84,21 @@ export default function Record() {
       </Header>
 
       <ContentWraper className='pt-4'>
-        {/* Filter & Search */}
+        {/* Filter & Search based on result prop */}
         <div className='flex flex-col px-4 pb-4'>
           <div className='flex gap-4'>
             <InputWithIcon
-              value={recordFilter.name}
+              value={recordFilter.query}
               onChange={event =>
-                handleSetRecordFilter('name', event.target.value)
+                handleSetRecordFilter('query', event.target.value)
               }
               placeholder='Search Entry & Record'
               className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
-            <ClinicFilter
-              onChange={filter => {
-                setRecordFilter(prevState => ({
+            <RecordFilter
+              onChange={(filter: IRecordParams) => {
+                setRecordFilter((prevState: IRecordParams) => ({
                   ...prevState,
                   ...filter
                 }));
@@ -94,7 +118,7 @@ export default function Record() {
             )}
             {recordFilter.type && recordFilter.type !== 'All' && (
               <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-                {recordFilter.type}
+                {typeMappings[recordFilter.type].text}
               </Badge>
             )}
           </div>
@@ -127,18 +151,18 @@ export default function Record() {
             Previous Record Summary
           </div>
 
-          {!records ||
-          records.length === 0 ||
-          isAuthLoading ||
-          isRecordLoading ? (
-            <div className='flex flex-col gap-4'>
+          {isAuthLoading || isRecordLoading || !filteredRecords ? (
+            <div className='flex flex-col gap-2'>
               <Skeleton
                 count={4}
                 className='mt-4 h-[100px] w-full bg-[hsl(210,40%,96.1%)]'
               />
             </div>
-          ) : (
-            records.map((record: IRecord) => {
+          ) : filteredRecords.length > 0 ? (
+            filteredRecords.map((record: IRecord) => {
+              const splitTitle = record.title.split('/');
+              const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
+              const recordId = record.id.split('/')[1];
               const formattedDate = format(
                 new Date(record.lastUpdated),
                 'dd/MM/yyyy'
@@ -149,13 +173,13 @@ export default function Record() {
               );
               const queryParams = new URLSearchParams({
                 category: typeMappings[record.type]?.category,
-                title: record.title
+                title
               }).toString();
-              const url = `record/${record.id}?${queryParams}`;
+              const url = `record/${recordId}?${queryParams}`;
 
               return (
                 <Link
-                  key={record.id}
+                  key={recordId}
                   href={url}
                   className='card mt-4 flex flex-col gap-2 p-4'
                 >
@@ -170,9 +194,7 @@ export default function Record() {
                       />
                     </div>
                     <div className='flex w-0 grow flex-col'>
-                      <div className='text-[12px] font-bold'>
-                        {record.title}
-                      </div>
+                      <div className='text-[12px] font-bold'>{title}</div>
                       <div className='line-clamp-3 overflow-hidden text-ellipsis text-[10px]'>
                         <ReactMarkdown components={customMarkdownComponents}>
                           {cleanDescription}
@@ -195,6 +217,8 @@ export default function Record() {
                 </Link>
               );
             })
+          ) : (
+            <EmptyState className='py-16' title='No Records Found' />
           )}
         </div>
       </ContentWraper>

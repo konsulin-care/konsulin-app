@@ -65,7 +65,7 @@ export default function HomeContentPatient() {
         isRecordLoading ? (
           <Skeleton
             count={1}
-            className='h-[90px] w-full bg-[hsl(210,40%,96.1%)]'
+            className='h-[100px] w-full bg-[hsl(210,40%,96.1%)]'
           />
         ) : (
           <Swiper
@@ -92,6 +92,9 @@ export default function HomeContentPatient() {
             modules={[Pagination]}
           >
             {records.map((record: IRecord) => {
+              const splitTitle = record.title.split('/');
+              const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
+              const recordId = record.id.split('/')[1];
               const formattedDate = format(
                 new Date(record.lastUpdated),
                 'dd/MM/yyyy'
@@ -102,12 +105,12 @@ export default function HomeContentPatient() {
               );
               const queryParams = new URLSearchParams({
                 category: typeMappings[record.type]?.category,
-                title: record.title
+                title
               }).toString();
-              const url = `record/${record.id}?${queryParams}`;
+              const url = `record/${recordId}?${queryParams}`;
 
               return (
-                <SwiperSlide key={record.id}>
+                <SwiperSlide key={recordId}>
                   <Link
                     href={url}
                     className='card mb-4 !flex flex-col gap-2 p-4'
@@ -123,9 +126,7 @@ export default function HomeContentPatient() {
                         />
                       </div>
                       <div className='flex w-0 grow flex-col'>
-                        <div className='text-[12px] font-bold'>
-                          {record.title}
-                        </div>
+                        <div className='text-[12px] font-bold'>{title}</div>
                         <div className='overflow-hidden text-ellipsis whitespace-nowrap text-[10px]'>
                           <ReactMarkdown components={customMarkdownComponents}>
                             {cleanDescription}

@@ -25,7 +25,7 @@ export const useRecordSummary = () => {
           {
             request: {
               method: 'GET',
-              url: `/Observation?patient=${patientId}&code:not=http://loinc.org|61149-1&code:not=http://loinc.org|55752-0&code:not=http://loinc.org|51847-2&_sorted=-_lastUpdated`
+              url: `/Observation?patient=${patientId}&code=http://loinc.org|67855-7&_sorted=-_lastUpdated`
             }
           }
         ]

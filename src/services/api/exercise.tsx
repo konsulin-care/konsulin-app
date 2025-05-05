@@ -1,5 +1,5 @@
-import { API } from '@/services/api'
-import { useQuery } from '@tanstack/react-query'
+import { API } from '@/services/api';
+import { useQuery } from '@tanstack/react-query';
 
 export const useGetExcerise = () => {
   return useQuery({
@@ -7,6 +7,9 @@ export const useGetExcerise = () => {
     queryFn: () =>
       API.get(
         'https://my-json-server.typicode.com/konsulin-id/exercise/exercise'
-      )
-  })
-}
+      ),
+    select: response => {
+      return response.data || null;
+    }
+  });
+};

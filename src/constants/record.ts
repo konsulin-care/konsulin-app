@@ -8,7 +8,7 @@ export const typeMappings = {
     category: 1
   },
   'Practitioner Note': {
-    text: 'SOAP Report',
+    text: 'SOAP',
     category: 3
   }
 };

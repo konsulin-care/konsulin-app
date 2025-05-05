@@ -52,7 +52,7 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
   const route = (category: number) => {
     switch (category) {
       case 1:
-        return 'assessment';
+        return 'assessments';
       case 2:
         return 'exercise';
       case 3:

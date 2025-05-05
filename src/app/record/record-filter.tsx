@@ -1,21 +1,27 @@
-import { FilterIcon } from '@/components/icons'
-import { Button, buttonVariants } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
+import { FilterIcon } from '@/components/icons';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+  DrawerTrigger
+} from '@/components/ui/drawer';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select'
-import { cn } from '@/lib/utils'
-import { addDays, endOfWeek, format, startOfWeek } from 'date-fns'
-import { useState } from 'react'
-const CONTENT_DEFAULT = 0
-const CONTENT_CUSTOM = 1
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { addDays, endOfWeek, format, startOfWeek } from 'date-fns';
+import { useState } from 'react';
+const CONTENT_DEFAULT = 0;
+const CONTENT_CUSTOM = 1;
 
-const today = new Date()
+const today = new Date();
 
 const filterContentListDate = [
   {
@@ -39,62 +45,67 @@ const filterContentListDate = [
       end: addDays(endOfWeek(today), 8)
     }
   }
-]
+];
 
 export type IRecordParams = {
-  page?: number
-  pageSize?: number
-  name?: string
-  start_date?: Date
-  end_date?: Date
-  type?: string
-}
+  page?: number;
+  pageSize?: number;
+  query?: string;
+  start_date?: Date;
+  end_date?: Date;
+  type?: string;
+};
 
-export default function ClinicFilter({ onChange }) {
-  const [isOpen, setIsOpen] = useState<boolean>(false)
+export default function RecordFilter({ onChange }) {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
-  >(CONTENT_DEFAULT)
-  const [isUseCustomDate, setIsUseCustomDate] = useState<boolean>(false)
+  >(CONTENT_DEFAULT);
+  const [isUseCustomDate, setIsUseCustomDate] = useState<boolean>(false);
   const [filter, setFilter] = useState<IRecordParams>({
     start_date: undefined,
     end_date: undefined,
     type: undefined
-  })
+  });
 
-  const isInitiaFilterState = !filter.start_date && !filter.end_date
+  const isInitiaFilterState =
+    !filter.start_date && !filter.end_date && !filter.type;
 
   const handleCustomFilterOpen = () => {
     if (isInitiaFilterState) {
-      handleFilterChange('start_date', today)
-      handleFilterChange('end_date', addDays(today, 7))
-      setIsUseCustomDate(true)
+      handleFilterChange('start_date', today);
+      handleFilterChange('end_date', addDays(today, 7));
+      setIsUseCustomDate(true);
     }
 
-    setWhichContent(CONTENT_CUSTOM)
-  }
+    setWhichContent(CONTENT_CUSTOM);
+  };
 
   const handleFilterChange = (label: string, value: any) => {
     setFilter(prevState => ({
       ...prevState,
       [label]: value
-    }))
-  }
+    }));
+  };
 
   const resetFilter = () => {
     setFilter({
       start_date: undefined,
       end_date: undefined,
       type: undefined
-    })
-  }
+    });
+  };
 
   const renderDrawerContent = () => {
     switch (whichContent) {
       case CONTENT_DEFAULT:
         return (
           <div className='flex flex-col'>
-            <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
+            <DrawerTitle>
+              <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
+            </DrawerTitle>
+
+            <DrawerDescription />
             <div className='card mt-4 border-0 bg-[#F9F9F9]'>
               <div className='mb-4 font-bold'>Date</div>
               <div className='flex flex-wrap gap-[10px]'>
@@ -102,9 +113,9 @@ export default function ClinicFilter({ onChange }) {
                   <Button
                     key={date.label}
                     onClick={() => {
-                      handleFilterChange('start_date', date.value.start)
-                      handleFilterChange('end_date', date.value.end)
-                      setIsUseCustomDate(false)
+                      handleFilterChange('start_date', date.value.start);
+                      handleFilterChange('end_date', date.value.end);
+                      setIsUseCustomDate(false);
                     }}
                     variant='outline'
                     className={cn(
@@ -141,15 +152,32 @@ export default function ClinicFilter({ onChange }) {
             <div className='card mt-4 border-0 bg-[#F9F9F9]'>
               <div className='mb-4 font-bold'>Show By</div>
               <div className='flex flex-wrap gap-[10px]'>
-                <Select onValueChange={e => handleFilterChange('type', e)}>
+                <Select
+                  value={filter.type}
+                  onValueChange={e => handleFilterChange('type', e)}
+                >
                   <SelectTrigger className='w-full border-none'>
                     <SelectValue placeholder='All' />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='All'>All</SelectItem>
-                    <SelectItem value='Jurnal'>Jurnal</SelectItem>
-                    <SelectItem value='Assessment'>Assessment</SelectItem>
-                    <SelectItem value='SOAP'>SOAP</SelectItem>
+                    <SelectItem key='All' value='All'>
+                      All
+                    </SelectItem>
+                    <SelectItem key='Patient Note' value='Patient Note'>
+                      Journal
+                    </SelectItem>
+                    <SelectItem
+                      key='QuestionnaireResponse'
+                      value='QuestionnaireResponse'
+                    >
+                      Assessment
+                    </SelectItem>
+                    <SelectItem
+                      key='Practitioner Note'
+                      value='Practitioner Note'
+                    >
+                      SOAP
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -172,18 +200,22 @@ export default function ClinicFilter({ onChange }) {
             <Button
               className='mt-4 rounded-xl bg-secondary p-4 text-white'
               onClick={() => {
-                setIsOpen(false)
-                onChange(filter)
+                setIsOpen(false);
+                onChange(filter);
               }}
             >
               Terapkan Filter
             </Button>
           </div>
-        )
+        );
       case CONTENT_CUSTOM:
         return (
           <div className='flex flex-col'>
-            <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
+            <DrawerTitle>
+              <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
+            </DrawerTitle>
+
+            <DrawerDescription />
             <div className='mt-4 flex w-full flex-col justify-center'>
               <Calendar
                 mode='range'
@@ -192,14 +224,14 @@ export default function ClinicFilter({ onChange }) {
                   to: filter.end_date
                 }}
                 onSelect={date => {
-                  handleFilterChange('start_date', date?.from)
+                  handleFilterChange('start_date', date?.from);
                   handleFilterChange(
                     'end_date',
                     date?.to ? date.to : date?.from
-                  )
-                  setIsUseCustomDate(true)
+                  );
+                  setIsUseCustomDate(true);
                 }}
-                disabled={{ before: today }}
+                // disabled={{ before: today }}
                 className='w-full p-0'
                 classNames={{
                   month: 'space-y-8 w-full',
@@ -225,18 +257,18 @@ export default function ClinicFilter({ onChange }) {
               Kembali
             </Button>
           </div>
-        )
+        );
 
       default:
-        break
+        break;
     }
-  }
+  };
 
   return (
     <Drawer
       onClose={() => {
-        setWhichContent(CONTENT_DEFAULT)
-        setIsOpen(false)
+        setWhichContent(CONTENT_DEFAULT);
+        setIsOpen(false);
       }}
       open={isOpen}
       modal={isOpen}
@@ -259,10 +291,13 @@ export default function ClinicFilter({ onChange }) {
       </DrawerTrigger>
       <DrawerContent
         className='mx-auto max-w-screen-sm p-4'
-        onInteractOutside={() => setIsOpen(false)}
+        onInteractOutside={() => {
+          setIsOpen(false);
+          onChange(filter);
+        }}
       >
         <div className='mt-4'>{renderDrawerContent()}</div>
       </DrawerContent>
     </Drawer>
-  )
+  );
 }
