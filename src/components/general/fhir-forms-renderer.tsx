@@ -36,7 +36,6 @@ interface FhirFormsRendererProps {
   formType?: string;
 }
 
-// NOTE: modify the author and subject reference based on fhirId
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const { questionnaire, isAuthenticated, patientId, submitText, formType } =
     props;
