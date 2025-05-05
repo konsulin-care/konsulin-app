@@ -84,3 +84,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+.swiper-pagination {
+  position: relative !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  width: 100% !important;
+}
+
+.swiper-pagination-bullet-active {
+  background: #0abdc3 !important;
+  width: 24px !important;
+  height: 6px !important;
+  border-radius: 4px !important;
+}
