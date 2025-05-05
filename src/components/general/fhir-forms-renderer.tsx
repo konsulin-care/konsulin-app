@@ -94,10 +94,10 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     }
   };
 
-  const handleNavigate = (type: string, responseId?: string) => {
-    if (type === 'result') {
+  const handleNavigate = (buttonLabel: string, responseId?: string) => {
+    if (buttonLabel === 'result') {
       const query = new URLSearchParams({
-        type: '1',
+        category: '1',
         title: questionnaire.title
       }).toString();
 
@@ -108,9 +108,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     }
   };
 
-  const handleSubmitQuestionnaire = async (type: string) => {
-    if (type === 'close') {
-      handleNavigate(type);
+  const handleSubmitQuestionnaire = async (buttonLabel: string) => {
+    if (buttonLabel === 'close') {
+      handleNavigate(buttonLabel);
     }
 
     setIsSubmitting(true);
@@ -135,7 +135,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           subject
         });
 
-        handleNavigate(type, result.id);
+        handleNavigate(buttonLabel, result.id);
         return;
       }
 
@@ -159,14 +159,14 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       });
 
       /* save questionnaire response to localStorage for guest (if not closing) */
-      if (type !== 'close' && !isAuthenticated) {
+      if (buttonLabel !== 'close' && !isAuthenticated) {
         localStorage.setItem(
           `response_${questionnaire.id}`,
           JSON.stringify({ ...questionnaireResponse, id: submitResult.id })
         );
       }
 
-      handleNavigate(type, submitResult.id);
+      handleNavigate(buttonLabel, submitResult.id);
     } catch (error) {
       console.log('Error message :', error);
       toast.error('An error occurred while submitting the questionnaire');

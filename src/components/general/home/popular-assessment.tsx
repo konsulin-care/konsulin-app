@@ -61,7 +61,7 @@ export default function PopularAssessment() {
       <div>
         <ScrollArea className='w-full whitespace-nowrap pb-4'>
           {popularLoading ? (
-            <CardLoader item={2} />
+            <CardLoader item={2} height='h-[80px]' />
           ) : (
             <div className='flex w-max space-x-4'>
               {popularAssessments.map(

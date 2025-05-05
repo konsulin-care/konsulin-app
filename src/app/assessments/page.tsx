@@ -175,7 +175,7 @@ export default function Assessment() {
       <NavigationBar />
       <Header>
         <div className='flex w-full items-center'>
-          <BackButton />
+          <BackButton route='/' />
           <div className='text-[14px] font-bold text-white'>
             Assesment Centre
           </div>

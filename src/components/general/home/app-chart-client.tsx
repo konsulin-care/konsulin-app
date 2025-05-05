@@ -25,7 +25,7 @@ export default function AppChartClient({
   );
   const [latestResponse, setLatestResponse] = useState(null);
 
-  /* preparing data for then pie chart based on the latest response */
+  /* preparing data for the pie chart based on the latest response */
   useEffect(() => {
     if (!questionnaireResponse) return;
 

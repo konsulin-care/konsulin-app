@@ -12,19 +12,14 @@ export interface IDetailRecordParams {
   params: { recordId: string };
 }
 
-const RECORD_TYPE_ASSESSMENT = 1;
-const RECORD_TYPE_EXCERCISE = 2;
-const RECORD_TYPE_SOAP = 3;
-const RECORD_TYPE_JOURNAL = 4;
-
 export default function RecordDetail({ params }: IDetailRecordParams) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pageType = Number(searchParams.get('type'));
+  const category = Number(searchParams.get('category'));
   const questionnaireTitle = searchParams.get('title');
 
-  const pageTitle = (type: number) => {
-    switch (type) {
+  const pageTitle = (category: number) => {
+    switch (category) {
       case 1:
         return 'Assessment Result';
       case 2:
@@ -36,8 +31,8 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
     }
   };
 
-  const renderContent = (type: number) => {
-    switch (type) {
+  const renderContent = (category: number) => {
+    switch (category) {
       case 1:
         return (
           <RecordAssessment
@@ -54,23 +49,35 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
     }
   };
 
+  const route = (category: number) => {
+    switch (category) {
+      case 1:
+        return 'assessment';
+      case 2:
+        return 'exercise';
+      case 3:
+      case 4:
+        return 'record';
+    }
+  };
+
   return (
     <div>
       <Header showChat={false}>
         <div className='flex w-full items-center'>
           <ChevronLeftIcon
-            onClick={() => router.push('/assessments')}
+            onClick={() => router.push(`/${route(category)}`)}
             color='white'
             className='mr-2 cursor-pointer'
           />
 
           <div className='text-[14px] font-bold text-white'>
-            {pageTitle(pageType)}
+            {pageTitle(category)}
           </div>
         </div>
       </Header>
       <div className='mt-[-24px] min-h-screen rounded-[16px] bg-white p-4'>
-        {renderContent(pageType)}
+        {renderContent(category)}
       </div>
     </div>
   );

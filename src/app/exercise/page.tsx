@@ -1,7 +1,7 @@
-import BackButton from '@/components/general/back-button'
-import Header from '@/components/header'
-import NavigationBar from '@/components/navigation-bar'
-import ExcerciseList from './excercise-list'
+import BackButton from '@/components/general/back-button';
+import Header from '@/components/header';
+import NavigationBar from '@/components/navigation-bar';
+import ExcerciseList from './excercise-list';
 
 export default function Exercise() {
   return (
@@ -9,12 +9,12 @@ export default function Exercise() {
       <NavigationBar />
       <Header showChat={false}>
         <div className='flex w-full items-center'>
-          <BackButton />
+          <BackButton route='/' />
 
           <div className='text-[14px] font-bold text-white'>Self Excercise</div>
         </div>
       </Header>
       <ExcerciseList />
     </>
-  )
+  );
 }
