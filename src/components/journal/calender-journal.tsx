@@ -1,28 +1,28 @@
-import { Button, buttonVariants } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Drawer,
   DrawerClose,
   DrawerContent,
   DrawerTrigger
-} from '@/components/ui/drawer'
-import { cn } from '@/lib/utils'
-import { format } from 'date-fns'
-import { useEffect, useState } from 'react'
+} from '@/components/ui/drawer';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { useEffect, useState } from 'react';
 
-const today = new Date()
+const today = new Date();
 
 export default function CalendarJournal({ onChange, value }) {
-  const [date, setDate] = useState<Date | undefined>(value)
+  const [date, setDate] = useState<Date | undefined>(value);
 
   useEffect(() => {
-    setDate(value)
-  }, [value])
+    setDate(value);
+  }, [value]);
 
   const handeDateChange = date => {
-    setDate(date)
-    onChange(date)
-  }
+    setDate(date);
+    onChange(date);
+  };
 
   return (
     <Drawer>
@@ -70,5 +70,5 @@ export default function CalendarJournal({ onChange, value }) {
         </div>
       </DrawerContent>
     </Drawer>
-  )
+  );
 }
