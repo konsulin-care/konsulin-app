@@ -150,7 +150,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
         </div>
         <div className='text-[10px] text-muted'>Assessment - User</div>
       </div>
-      <div className='card mb-4 flex items-center'>
+      <div className='card !mt-0 mb-4 flex items-center'>
         <UsersIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
         {authState.isAuthenticated && authState.userInfo
           ? authState.userInfo.fullname || authState.userInfo.email
@@ -210,7 +210,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
         <ModalQr value={currentLocation} />
       </div>
 
-      <div className='text-m flex flex-col gap-3'>
+      <div className='text-m !mt-auto flex flex-col gap-3'>
         {!authState.isAuthenticated && (
           <Link href={'/auth'}>
             <Button className='h-full w-full rounded-xl bg-softGray p-4 text-black'>

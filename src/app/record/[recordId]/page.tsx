@@ -1,8 +1,8 @@
 'use client';
 
+import BackButton from '@/components/general/back-button';
 import Header from '@/components/header';
-import { ChevronLeftIcon } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import RecordAssessment from './record-assessment';
 import RecordExercise from './record-exercise';
 import RecordJournal from './record-journal';
@@ -13,7 +13,6 @@ export interface IDetailRecordParams {
 }
 
 export default function RecordDetail({ params }: IDetailRecordParams) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const category = Number(searchParams.get('category'));
   const questionnaireTitle = searchParams.get('title');
@@ -45,7 +44,7 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
       case 3:
         return <RecordSoap />;
       case 4:
-        return <RecordJournal />;
+        return <RecordJournal journalId={params.recordId} />;
     }
   };
 
@@ -62,23 +61,19 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
   };
 
   return (
-    <div>
+    <>
       <Header showChat={false}>
         <div className='flex w-full items-center'>
-          <ChevronLeftIcon
-            onClick={() => router.push(`/${route(category)}`)}
-            color='white'
-            className='mr-2 cursor-pointer'
-          />
+          <BackButton route={`/${route(category)}`} />
 
           <div className='text-[14px] font-bold text-white'>
             {pageTitle(category)}
           </div>
         </div>
       </Header>
-      <div className='mt-[-24px] min-h-screen rounded-[16px] bg-white p-4'>
+      <div className='mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] bg-white p-4'>
         {renderContent(category)}
       </div>
-    </div>
+    </>
   );
 }
