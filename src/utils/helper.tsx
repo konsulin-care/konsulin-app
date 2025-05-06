@@ -34,6 +34,9 @@ export const parseRecordBundles = (bundles: IBundleResponse[]) => {
       .map((n: Annotation) => n.text)
       .join('\n\n');
 
+    const practitionerRef = resource.performer?.[0]?.reference;
+    const practitionerId = practitionerRef?.split('/')[1] ?? null;
+
     if (loincCode === '51855-5') {
       return {
         type: 'Patient Note',
@@ -50,7 +53,8 @@ export const parseRecordBundles = (bundles: IBundleResponse[]) => {
         id: `${resource.resourceType}/${resource.id}`,
         title: resource.code?.coding?.[0]?.display ?? '',
         result: resource.valueString,
-        lastUpdated: resource.meta?.lastUpdated
+        lastUpdated: resource.meta?.lastUpdated,
+        practitionerId
       };
     }
 

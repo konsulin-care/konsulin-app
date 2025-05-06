@@ -43,10 +43,10 @@ export const useRecordSummary = () => {
   });
 };
 
-export const useGetJournal = (journalId: string) => {
+export const useGetSingleRecord = (id: string) => {
   return useQuery({
-    queryKey: ['get-journal', journalId],
-    queryFn: () => API.get(`/fhir/Observation/${journalId}`),
+    queryKey: ['single-record', id],
+    queryFn: () => API.get(`/fhir/Observation/${id}`),
     select: response => {
       return response.data || null;
     }

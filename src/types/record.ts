@@ -1,4 +1,4 @@
-import { Bundle, Coding } from 'fhir/r4';
+import { Bundle, Coding, Practitioner } from 'fhir/r4';
 
 export type IBundleResponse = {
   resource: Bundle;
@@ -10,6 +10,8 @@ export type IRecord = {
   title: string;
   result: string;
   lastUpdated: string;
+  practitionerId?: string;
+  practitionerProfile?: Practitioner;
 };
 
 export type IJournal = {

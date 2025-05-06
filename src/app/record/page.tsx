@@ -12,8 +12,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { typeMappings } from '@/constants/record';
 import { useAuth } from '@/context/auth/authContext';
 import { useRecordSummary } from '@/services/api/record';
+import { getProfileById } from '@/services/profile';
 import { IRecord } from '@/types/record';
-import { customMarkdownComponents, parseRecordBundles } from '@/utils/helper';
+import {
+  customMarkdownComponents,
+  mergeNames,
+  parseRecordBundles
+} from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -55,13 +60,29 @@ export default function Record() {
     });
   }, [records, recordFilter]);
 
+  /*
+   * fetch patient records. if a record is a 'Practitioner Note',
+   * also fetch the practitioner's profile to include in the result.
+   */
   useEffect(() => {
-    // NOTE: hardcoded Patient-id
     if (authState.userInfo.role_name === 'patient') {
-      getRecords('Patient-id', {
-        onSuccess: result => {
+      getRecords(authState.userInfo.fhirId, {
+        onSuccess: async result => {
           const parsed = parseRecordBundles(result);
-          setRecords(parsed);
+
+          const attachProfile = await Promise.all(
+            parsed.map(async item => {
+              if (item.type !== 'Practitioner Note') return item;
+
+              const practitionerProfile = await getProfileById(
+                item.practitionerId,
+                'Practitioner'
+              );
+              return { ...item, practitionerProfile };
+            })
+          );
+
+          setRecords(attachProfile);
         }
       });
     }
@@ -204,14 +225,33 @@ export default function Record() {
                   </div>
                   <hr className='w-full' />
                   <div className='flex items-center'>
-                    <div className='mr-auto text-[12px]'>
-                      <Badge className='flex items-center rounded-full bg-[#08979C] px-[10px] py-[4px]'>
-                        <NoteIcon fill='white' width={16} height={16} />
-                        <div className='ml-1 text-[10px] text-white'>
-                          {typeMappings[record.type].text ?? record.type}
+                    {record.type === 'Practitioner Note' ? (
+                      <>
+                        <Image
+                          className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
+                          width={32}
+                          height={32}
+                          alt='offline'
+                          src={
+                            record.practitionerProfile?.photo?.[0]?.url ||
+                            '/images/avatar.jpg'
+                          }
+                        />
+                        <div className='mr-auto text-[12px]'>
+                          {mergeNames(record.practitionerProfile?.name)}
                         </div>
-                      </Badge>
-                    </div>
+                      </>
+                    ) : (
+                      <div className='mr-auto text-[12px]'>
+                        <Badge className='flex items-center rounded-full bg-[#08979C] px-[10px] py-[4px]'>
+                          <NoteIcon fill='white' width={16} height={16} />
+                          <div className='ml-1 text-[10px] text-white'>
+                            {typeMappings[record.type]?.text ?? record.type}
+                          </div>
+                        </Badge>
+                      </div>
+                    )}
+
                     <div className='text-[10px]'>{formattedDate}</div>
                   </div>
                 </Link>
