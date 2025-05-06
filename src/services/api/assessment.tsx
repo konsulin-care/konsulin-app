@@ -51,7 +51,7 @@ export const useSubmitQuestionnaire = (
       const { author, item, resourceType, status, subject } =
         questionnaireResponse;
 
-      const timestamp = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
+      const timestamp = new Date().toISOString();
 
       if (isAuthenticated) {
         localStorage.removeItem(`response_${questionnaireId}`);
@@ -81,7 +81,7 @@ export const useUpdateSubmitQuestionnaire = (
       const { author, item, resourceType, status, subject, id } =
         questionnaireResponse;
 
-      const timestamp = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
+      const timestamp = new Date().toISOString();
 
       if (isAuthenticated) {
         localStorage.removeItem(`response_${questionnaireId}`);

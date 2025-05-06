@@ -1,6 +1,5 @@
 import { IJournal } from '@/types/record';
-import { useMutation } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { API } from '../api';
 
 export const useRecordSummary = () => {
@@ -44,11 +43,21 @@ export const useRecordSummary = () => {
   });
 };
 
+export const useGetJournal = (journalId: string) => {
+  return useQuery({
+    queryKey: ['get-journal', journalId],
+    queryFn: () => API.get(`/fhir/Observation/${journalId}`),
+    select: response => {
+      return response.data || null;
+    }
+  });
+};
+
 export const useSubmitJournal = () => {
   return useMutation({
     mutationKey: ['journal'],
     mutationFn: async (journalData: IJournal) => {
-      const timestamp = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
+      const timestamp = new Date().toISOString();
       const payload = { ...journalData, effectiveDateTime: timestamp };
 
       try {
@@ -62,4 +71,20 @@ export const useSubmitJournal = () => {
   });
 };
 
-export const useUpdateJournal = () => {};
+export const useUpdateJournal = () => {
+  return useMutation({
+    mutationKey: ['journal-update'],
+    mutationFn: async (journalData: IJournal) => {
+      try {
+        const response = await API.put(
+          `/fhir/Observation/${journalData.id}`,
+          journalData
+        );
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching record summary:', error);
+        throw error;
+      }
+    }
+  });
+};
