@@ -15,7 +15,7 @@ export interface IDetailRecordParams {
 export default function RecordDetail({ params }: IDetailRecordParams) {
   const searchParams = useSearchParams();
   const category = Number(searchParams.get('category'));
-  const questionnaireTitle = searchParams.get('title');
+  const titleParam = searchParams.get('title');
 
   const pageTitle = (category: number) => {
     switch (category) {
@@ -34,15 +34,12 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
     switch (category) {
       case 1:
         return (
-          <RecordAssessment
-            recordId={params.recordId}
-            title={questionnaireTitle}
-          />
+          <RecordAssessment recordId={params.recordId} title={titleParam} />
         );
       case 2:
         return <RecordExercise />;
       case 3:
-        return <RecordSoap />;
+        return <RecordSoap soapId={params.recordId} title={titleParam} />;
       case 4:
         return <RecordJournal journalId={params.recordId} />;
     }

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useGetJournal } from '@/services/api/record';
+import { useGetSingleRecord } from '@/services/api/record';
 import { format } from 'date-fns';
 import { FileCheckIcon, NotepadTextIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -15,7 +15,7 @@ export default function RecordJournal({ journalId }: Props) {
   const searchParams = useSearchParams();
   const titleParam = searchParams?.get('title');
   const categoryParam = searchParams?.get('category');
-  const { data: journalData, isLoading } = useGetJournal(journalId);
+  const { data: journalData, isLoading } = useGetSingleRecord(journalId);
 
   const formattedDate = (date: string) => {
     return format(new Date(date), 'dd MMMM yyyy');

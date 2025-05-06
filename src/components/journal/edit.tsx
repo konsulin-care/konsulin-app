@@ -13,7 +13,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth/authContext';
-import { useGetJournal, useUpdateJournal } from '@/services/api/record';
+import { useGetSingleRecord, useUpdateJournal } from '@/services/api/record';
 import { format } from 'date-fns';
 import { FileCheckIcon, NotepadTextIcon, XIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -34,7 +34,7 @@ export default function EditJournal({ journalId }: Props) {
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useUpdateJournal();
   const { data: journalData, isLoading: isJournalLoading } =
-    useGetJournal(journalId);
+    useGetSingleRecord(journalId);
 
   const handleResponseChange = (index: number, value: string) => {
     const newResponse = [...response];
