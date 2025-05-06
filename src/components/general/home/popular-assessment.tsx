@@ -3,6 +3,7 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger
@@ -10,10 +11,12 @@ import {
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { usePopularAssessments } from '@/services/api/assessment';
 import { IAssessmentEntry, IAssessmentResource } from '@/types/assessment';
+import { customMarkdownComponents } from '@/utils/helper';
 import { ChevronRightIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import CardLoader from '../card-loader';
 
 export default function PopularAssessment() {
@@ -33,11 +36,15 @@ export default function PopularAssessment() {
         <div className='font-bold'>Brief</div>
         <hr className='my-4 border-black opacity-10' />
         <div className='flex flex-wrap gap-[10px] text-sm'>
-          {selectedAssessment?.description}
+          <DrawerDescription>
+            <ReactMarkdown components={customMarkdownComponents}>
+              {selectedAssessment?.description}
+            </ReactMarkdown>
+          </DrawerDescription>
         </div>
       </div>
 
-      <div className='mt-2 flex flex-col'>
+      <div className='mt-2 flex flex-col gap-2 py-4'>
         <Link href={`assessments/${selectedAssessment?.id}`}>
           <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
             Start Test
@@ -61,7 +68,7 @@ export default function PopularAssessment() {
       <div>
         <ScrollArea className='w-full whitespace-nowrap pb-4'>
           {popularLoading ? (
-            <CardLoader item={2} />
+            <CardLoader item={2} height='h-[80px]' />
           ) : (
             <div className='flex w-max space-x-4'>
               {popularAssessments.map(

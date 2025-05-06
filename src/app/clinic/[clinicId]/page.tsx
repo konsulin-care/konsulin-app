@@ -72,7 +72,6 @@ export default function DetailClinic({ params }: IDetailClinic) {
     clinic,
     newPractitionerData: practitionersData,
     isFetching,
-    isError,
     isLoading
   } = useClinicById(params.clinicId);
 
@@ -96,7 +95,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
     );
   };
 
-  const filteredPractitioner = useMemo(() => {
+  const filteredPractitioners = useMemo(() => {
     if (
       !keyword &&
       Object.keys(practitionerFilter).every(
@@ -251,9 +250,9 @@ export default function DetailClinic({ params }: IDetailClinic) {
           {/* )} */}
         </div>
 
-        {isLoading || isFetching || !filteredPractitioner ? (
+        {isLoading || isFetching || !filteredPractitioners ? (
           <CardLoader />
-        ) : isError || filteredPractitioner.length > 0 ? (
+        ) : filteredPractitioners.length > 0 ? (
           <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
             {practitionersData.map((practitioner: IPractitioner) => {
               const displayName = mergeNames(practitioner.name);

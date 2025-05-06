@@ -1,7 +1,7 @@
 'use client';
 
 import { setCookies } from '@/app/actions';
-import { getProfile } from '@/services/profile';
+import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { getCookie } from 'cookies-next';
 import React, {
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const roles = await getClaimValue({ claim: UserRoleClaim });
           const userId = session.userId;
 
-          const result = await getProfile({
+          const result = await getProfileByIdentifier({
             userId,
             type: roles.includes('clinician') ? 'Practitioner' : 'Patient'
           });

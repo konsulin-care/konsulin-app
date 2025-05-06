@@ -1,14 +1,23 @@
-'use client'
+'use client';
 
-import { ChevronLeftIcon } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { ChevronLeftIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-const BackButton = ({ size = 32 }: { size?: number }) => {
-  const router = useRouter()
+type Props = {
+  size?: number;
+  route?: string;
+};
+
+const BackButton = ({ size = 32, route }: Props) => {
+  const router = useRouter();
 
   const handleBackClick = () => {
-    router.back()
-  }
+    if (route) {
+      router.push(route);
+    } else {
+      router.back();
+    }
+  };
 
   return (
     <ChevronLeftIcon
@@ -17,7 +26,7 @@ const BackButton = ({ size = 32 }: { size?: number }) => {
       color='white'
       className='mr-2 cursor-pointer'
     />
-  )
-}
+  );
+};
 
-export default BackButton
+export default BackButton;

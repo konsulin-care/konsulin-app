@@ -177,13 +177,28 @@ export const createProfile = async ({ userId, email, type }) => {
   }
 };
 
-export const getProfile = async ({ userId, type }) => {
+export const getProfileByIdentifier = async ({ userId, type }) => {
   try {
     const response = await apiRequest<AxiosResponse>(
       'GET',
       `/fhir/${type}?identifier=${userId}`
     );
     return response.data.entry;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getProfileById = async (
+  id: string,
+  type: 'Patient' | 'Practitioner'
+) => {
+  try {
+    const response = await apiRequest<AxiosResponse>(
+      'GET',
+      `/fhir/${type}/${id}`
+    );
+    return response.data;
   } catch (error) {
     throw error;
   }

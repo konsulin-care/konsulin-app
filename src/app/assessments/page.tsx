@@ -84,9 +84,7 @@ export default function Assessment() {
   };
 
   const handleResearchClick = mergedData => {
-    // const mergedData = getMergedData(researchId, researchStudy);
-
-    // if (!mergedData.relatedLists[0]) return;
+    if (!mergedData || mergedData.relatedLists.length === 0) return;
 
     const questionnaireUrl =
       mergedData.relatedLists[0].resource.entry[1].item.reference
@@ -148,7 +146,7 @@ export default function Assessment() {
         )}
 
         {/* used data from relatedLists that have been merged before */}
-        <DrawerFooter className='mt-2 flex flex-col'>
+        <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
           {data && 'relatedLists' in data ? (
             <Link href={`assessments/${url}`}>
               <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
@@ -175,7 +173,7 @@ export default function Assessment() {
       <NavigationBar />
       <Header>
         <div className='flex w-full items-center'>
-          <BackButton />
+          <BackButton route='/' />
           <div className='text-[14px] font-bold text-white'>
             Assesment Centre
           </div>

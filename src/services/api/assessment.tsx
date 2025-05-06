@@ -5,6 +5,7 @@ import { QuestionnaireResponse, QuestionnaireResponseItem } from 'fhir/r4';
 import { useMemo } from 'react';
 import { API } from '../api';
 
+// NOTE: will remove this later
 const WEBHOOK_URL = 'https://flow.konsulin.care/webhook/interpret';
 const WEBHOOK_AUTH =
   'wK3e06gzGCucksRmt4gE2Lmprg4NTH9oYWDM7dwnQmFNLycfaauYNaEqnwaL2zfF';
@@ -50,7 +51,7 @@ export const useSubmitQuestionnaire = (
       const { author, item, resourceType, status, subject } =
         questionnaireResponse;
 
-      const timestamp = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
+      const timestamp = new Date().toISOString();
 
       if (isAuthenticated) {
         localStorage.removeItem(`response_${questionnaireId}`);
@@ -80,7 +81,7 @@ export const useUpdateSubmitQuestionnaire = (
       const { author, item, resourceType, status, subject, id } =
         questionnaireResponse;
 
-      const timestamp = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
+      const timestamp = new Date().toISOString();
 
       if (isAuthenticated) {
         localStorage.removeItem(`response_${questionnaireId}`);

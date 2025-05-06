@@ -1,63 +1,128 @@
-'use client'
+'use client';
 
-import Header from '@/components/header'
-import NoteIcon from '@/components/icons/note-icon'
-import NavigationBar from '@/components/navigation-bar'
-import { Badge } from '@/components/ui/badge'
-import { InputWithIcon } from '@/components/ui/input-with-icon'
-import { format } from 'date-fns'
-import { ChevronLeftIcon, SearchIcon } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import ClinicFilter from './record-filter'
+import BackButton from '@/components/general/back-button';
+import ContentWraper from '@/components/general/content-wraper';
+import EmptyState from '@/components/general/empty-state';
+import Header from '@/components/header';
+import NoteIcon from '@/components/icons/note-icon';
+import NavigationBar from '@/components/navigation-bar';
+import { Badge } from '@/components/ui/badge';
+import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { Skeleton } from '@/components/ui/skeleton';
+import { typeMappings } from '@/constants/record';
+import { useAuth } from '@/context/auth/authContext';
+import { useRecordSummary } from '@/services/api/record';
+import { getProfileById } from '@/services/profile';
+import { IRecord } from '@/types/record';
+import {
+  customMarkdownComponents,
+  mergeNames,
+  parseRecordBundles
+} from '@/utils/helper';
+import { format, parseISO } from 'date-fns';
+import { SearchIcon } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import RecordFilter, { IRecordParams } from './record-filter';
 
+// NOTE: differentiate record summary for Patient and Practitioner
 export default function Record() {
-  const router = useRouter()
-  const [recordFilter, setRecordFilter] = useState<any>({
-    name: ''
-  })
+  const [recordFilter, setRecordFilter] = useState<IRecordParams>({
+    query: ''
+  });
+  const { state: authState, isLoading: isAuthLoading } = useAuth();
+  const { mutate: getRecords, isLoading: isRecordLoading } = useRecordSummary();
+  const [records, setRecords] = useState<IRecord[] | null>(null);
+
+  const filteredRecords = useMemo(() => {
+    if (!records) return [];
+
+    return records.filter(record => {
+      const { start_date, end_date, type, query } = recordFilter;
+
+      const recordDate = format(parseISO(record.lastUpdated), 'yyyy-MM-dd');
+      const startDate = start_date ? format(start_date, 'yyyy-MM-dd') : null;
+      const endDate = end_date ? format(end_date, 'yyyy-MM-dd') : null;
+
+      const matchesDateRange =
+        (!startDate || recordDate >= startDate) &&
+        (!endDate || recordDate <= endDate);
+
+      const matchesType = !type || type === 'All' || record.type === type;
+
+      const queryLower = query?.toLowerCase() || '';
+      const matchesQuery =
+        !query || record.result?.toLowerCase().includes(queryLower);
+
+      return matchesDateRange && matchesType && matchesQuery;
+    });
+  }, [records, recordFilter]);
+
+  /*
+   * fetch patient records. if a record is a 'Practitioner Note',
+   * also fetch the practitioner's profile to include in the result.
+   */
+  useEffect(() => {
+    if (authState.userInfo.role_name === 'patient') {
+      getRecords(authState.userInfo.fhirId, {
+        onSuccess: async result => {
+          const parsed = parseRecordBundles(result);
+
+          const attachProfile = await Promise.all(
+            parsed.map(async item => {
+              if (item.type !== 'Practitioner Note') return item;
+
+              const practitionerProfile = await getProfileById(
+                item.practitionerId,
+                'Practitioner'
+              );
+              return { ...item, practitionerProfile };
+            })
+          );
+
+          setRecords(attachProfile);
+        }
+      });
+    }
+  }, [authState]);
 
   function handleSetRecordFilter(key: string, value: string) {
     setRecordFilter(prevState => ({
       ...prevState,
       [key]: value
-    }))
+    }));
   }
   return (
     <>
       <NavigationBar />
       <Header showChat={false}>
         <div className='flex w-full items-center'>
-          <ChevronLeftIcon
-            onClick={() => router.back()}
-            color='white'
-            className='mr-2 cursor-pointer'
-          />
-
+          <BackButton route='/' />
           <div className='text-[14px] font-bold text-white'>Summary Record</div>
         </div>
       </Header>
-      <div className='mt-[-24px] rounded-[16px] bg-white'>
-        {/* Filter & Search */}
-        <div className='flex flex-col p-4'>
+
+      <ContentWraper className='pt-4'>
+        {/* Filter & Search based on result prop */}
+        <div className='flex flex-col px-4 pb-4'>
           <div className='flex gap-4'>
             <InputWithIcon
-              value={recordFilter.name}
+              value={recordFilter.query}
               onChange={event =>
-                handleSetRecordFilter('name', event.target.value)
+                handleSetRecordFilter('query', event.target.value)
               }
               placeholder='Search Entry & Record'
               className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
-            <ClinicFilter
-              onChange={filter => {
-                setRecordFilter(prevState => ({
+            <RecordFilter
+              onChange={(filter: IRecordParams) => {
+                setRecordFilter((prevState: IRecordParams) => ({
                   ...prevState,
                   ...filter
-                }))
+                }));
               }}
             />
           </div>
@@ -74,7 +139,7 @@ export default function Record() {
             )}
             {recordFilter.type && recordFilter.type !== 'All' && (
               <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-                {recordFilter.type}
+                {typeMappings[recordFilter.type].text}
               </Badge>
             )}
           </div>
@@ -107,154 +172,96 @@ export default function Record() {
             Previous Record Summary
           </div>
 
-          <Link
-            href={`record/${1}`}
-            className='card mt-4 flex flex-col gap-2 p-4'
-          >
-            <div className='flex'>
-              <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
-                <Image
-                  className='h-[24px] w-[24px] object-cover'
-                  src={'/images/note.svg'}
-                  width={24}
-                  height={24}
-                  alt='note'
-                />
-              </div>
-              <div className='flex flex-col'>
-                <div className='text-[12px] font-bold'>
-                  Tingkatkan Rasa Tenangmu
-                </div>
-                <div className='text-[10px]'>
-                  Hasil pemeriksaan menunjukkan kondisi kesejahteraan mental
-                  Anda dan memberikan arahan untuk perawatan lebih lanjut
-                </div>
-              </div>
-            </div>
-            <hr className='w-full' />
-            <div className='flex items-center'>
-              <Image
-                className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-                width={32}
-                height={32}
-                alt='offline'
-                src={'/images/avatar.jpg'}
+          {isAuthLoading || isRecordLoading || !filteredRecords ? (
+            <div className='flex flex-col gap-2'>
+              <Skeleton
+                count={4}
+                className='mt-4 h-[100px] w-full bg-[hsl(210,40%,96.1%)]'
               />
+            </div>
+          ) : filteredRecords.length > 0 ? (
+            filteredRecords.map((record: IRecord) => {
+              const splitTitle = record.title.split('/');
+              const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
+              const recordId = record.id.split('/')[1];
+              const formattedDate = format(
+                new Date(record.lastUpdated),
+                'dd/MM/yyyy'
+              );
+              const cleanDescription = (record.result || '-').replace(
+                /\n\n/g,
+                '. '
+              );
+              const queryParams = new URLSearchParams({
+                category: typeMappings[record.type]?.category,
+                title
+              }).toString();
+              const url = `record/${recordId}?${queryParams}`;
 
-              <div className='mr-auto text-[12px]'>Dr.Fitra Gunawan</div>
-              <div className='text-[10px]'>12/12/2025</div>
-            </div>
-          </Link>
-
-          <Link
-            href={`record/${2}`}
-            className='card mt-4 flex flex-col gap-2 p-4'
-          >
-            <div className='flex'>
-              <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
-                <Image
-                  className='h-[24px] w-[24px] object-cover'
-                  src={'/images/note.svg'}
-                  width={24}
-                  height={24}
-                  alt='note'
-                />
-              </div>
-              <div className='flex flex-col'>
-                <div className='text-[12px] font-bold'>
-                  BIG 5 Personality Test
-                </div>
-                <div className='text-[10px]'>
-                  Hasil pemeriksaan menunjukkan kondisi kesejahteraan mental
-                  Anda dan memberikan arahan untuk perawatan lebih lanjut
-                </div>
-              </div>
-            </div>
-            <hr className='w-full' />
-            <div className='flex items-center'>
-              <div className='mr-auto text-[12px]'>
-                <Badge className='flex items-center rounded-full bg-[#08979C] px-[10px] py-[4px]'>
-                  <NoteIcon fill='white' width={16} height={16} />
-                  <div className='ml-1 text-[10px] text-white'>Assesment</div>
-                </Badge>
-              </div>
-              <div className='text-[10px]'>12/12/2025</div>
-            </div>
-          </Link>
-          <Link
-            href={`record/${3}`}
-            className='card mt-4 flex flex-col gap-2 p-4'
-          >
-            <div className='flex'>
-              <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
-                <Image
-                  className='h-[24px] w-[24px] object-cover'
-                  src={'/images/note.svg'}
-                  width={24}
-                  height={24}
-                  alt='note'
-                />
-              </div>
-              <div className='flex flex-col'>
-                <div className='text-[12px] font-bold'>
-                  Self-Compasion/Kindness Meditation{' '}
-                </div>
-                <div className='text-[10px]'>
-                  Hasil pemeriksaan menunjukkan kondisi kesejahteraan mental
-                  Anda dan memberikan arahan untuk perawatan lebih lanjut
-                </div>
-              </div>
-            </div>
-            <hr className='w-full' />
-            <div className='flex items-center'>
-              <div className='mr-auto text-[12px]'>
-                <Badge className='flex items-center rounded-full bg-[#08979C] px-[10px] py-[4px]'>
-                  <NoteIcon fill='white' width={16} height={16} />
-                  <div className='ml-1 text-[10px] text-white'>Exercise</div>
-                </Badge>
-              </div>
-              <div className='text-[10px]'>12/12/2025</div>
-            </div>
-          </Link>
-          <Link
-            href={`record/${4}`}
-            className='card mt-4 flex flex-col gap-2 p-4'
-          >
-            <div className='flex'>
-              <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
-                <Image
-                  className='h-[24px] w-[24px] object-cover'
-                  src={'/images/note.svg'}
-                  width={24}
-                  height={24}
-                  alt='note'
-                />
-              </div>
-              <div className='flex flex-col'>
-                <div className='text-[12px] font-bold'>
-                  Tingkatkan Rasa Tenangmu
-                </div>
-                <div className='text-[10px]'>
-                  Hasil pemeriksaan menunjukkan kondisi kesejahteraan mental
-                  Anda dan memberikan arahan untuk perawatan lebih lanjut
-                </div>
-              </div>
-            </div>
-            <hr className='w-full' />
-            <div className='flex items-center'>
-              <div className='mr-auto text-[12px]'>
-                <Badge className='flex items-center rounded-full bg-[#08979C] px-[10px] py-[4px]'>
-                  <NoteIcon fill='white' width={16} height={16} />
-                  <div className='ml-1 text-[10px] text-white'>
-                    Self Journal
+              return (
+                <Link
+                  key={recordId}
+                  href={url}
+                  className='card mt-4 flex flex-col gap-2 p-4'
+                >
+                  <div className='flex'>
+                    <div className='mr-2 h-[40px] w-[40px] shrink-0 rounded-full bg-[#F8F8F8] p-2'>
+                      <Image
+                        className='h-[24px] w-[24px] object-cover'
+                        src={'/images/note.svg'}
+                        width={24}
+                        height={24}
+                        alt='note'
+                      />
+                    </div>
+                    <div className='flex w-0 grow flex-col'>
+                      <div className='text-[12px] font-bold'>{title}</div>
+                      <div className='line-clamp-3 overflow-hidden text-ellipsis text-[10px]'>
+                        <ReactMarkdown components={customMarkdownComponents}>
+                          {cleanDescription}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
                   </div>
-                </Badge>
-              </div>
-              <div className='text-[10px]'>12/12/2025</div>
-            </div>
-          </Link>
+                  <hr className='w-full' />
+                  <div className='flex items-center'>
+                    {record.type === 'Practitioner Note' ? (
+                      <>
+                        <Image
+                          className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
+                          width={32}
+                          height={32}
+                          alt='offline'
+                          src={
+                            record.practitionerProfile?.photo?.[0]?.url ||
+                            '/images/avatar.jpg'
+                          }
+                        />
+                        <div className='mr-auto text-[12px]'>
+                          {mergeNames(record.practitionerProfile?.name)}
+                        </div>
+                      </>
+                    ) : (
+                      <div className='mr-auto text-[12px]'>
+                        <Badge className='flex items-center rounded-full bg-[#08979C] px-[10px] py-[4px]'>
+                          <NoteIcon fill='white' width={16} height={16} />
+                          <div className='ml-1 text-[10px] text-white'>
+                            {typeMappings[record.type]?.text ?? record.type}
+                          </div>
+                        </Badge>
+                      </div>
+                    )}
+
+                    <div className='text-[10px]'>{formattedDate}</div>
+                  </div>
+                </Link>
+              );
+            })
+          ) : (
+            <EmptyState className='py-16' title='No Records Found' />
+          )}
         </div>
-      </div>
+      </ContentWraper>
     </>
-  )
+  );
 }
