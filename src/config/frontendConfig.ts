@@ -1,5 +1,5 @@
 import { setCookies } from '@/app/actions';
-import { createProfile, getProfile } from '@/services/profile';
+import { createProfile, getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { useRouter } from 'next/navigation';
 import { SuperTokensConfig } from 'supertokens-auth-react/lib/build/types';
@@ -80,7 +80,7 @@ export const frontendConfig = (): SuperTokensConfig => {
 
               await setCookies('auth', JSON.stringify(cookieData));
             } else {
-              const result = await getProfile({
+              const result = await getProfileByIdentifier({
                 userId,
                 type: roles.includes('clinician') ? 'Practitioner' : 'Patient'
               });
