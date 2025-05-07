@@ -10,10 +10,12 @@ import {
 
 export const mergeNames = (data: HumanName[]) => {
   if (!data || data.length === 0) {
-    return '';
+    return '-';
   }
 
-  return data.map(item => [...item.given, item.family].join(' ')).join('');
+  return data
+    .map(item => [...item.given, item.family].filter(Boolean).join(' '))
+    .join('');
 };
 
 export const customMarkdownComponents = {

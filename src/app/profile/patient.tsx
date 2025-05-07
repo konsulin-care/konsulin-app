@@ -1,33 +1,91 @@
 'use client';
 
+import InformationDetail from '@/components/profile/information-detail';
 import MedalCollection from '@/components/profile/medal-collection';
 import Settings from '@/components/profile/settings';
+import { Skeleton } from '@/components/ui/skeleton';
 import { medalLists, settingMenus } from '@/constants/profile';
 import { useProfile } from '@/context/profile/profileContext';
-import { fetchProfile, ResponseProfile } from '@/services/profile';
+import { getProfileById } from '@/services/profile';
+import { mergeNames } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
+import type { Address, ContactPoint, Patient } from 'fhir/r4';
 import { ChevronRightIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 
-export default function Patient() {
+type Props = {
+  userId: string;
+};
+
+export default function Patient({ userId }: Props) {
+  const { dispatch } = useProfile();
   const router = useRouter();
-  const { state, dispatch } = useProfile();
 
-  // fetch profile
-  const { data: profileResponse } = useQuery<ResponseProfile>({
-    queryKey: ['profile-patient'],
-    queryFn: () => fetchProfile(state, dispatch)
+  const { data: profileData, isLoading: isProfileLoading } = useQuery<Patient>({
+    queryKey: ['profile-patient', userId],
+    queryFn: () => getProfileById(userId, 'Patient'),
+    onSuccess: (result: Patient) => {
+      dispatch({ type: 'getProfile', payload: result });
+    },
+    onError: (error: Error) => {
+      console.error('Error when fetching user profile: ', error);
+      toast.error(error.message);
+    }
   });
 
-  // const profileDetail = [
-  //   { key: 'Birth(Age)', value: state.profile.birth_date },
-  //   { key: 'Sex', value: state.profile.gender },
-  //   { key: 'Whatsapp', value: state.profile.whatsapp_number },
-  //   { key: 'Email', value: state.profile.email },
-  //   { key: 'Address', value: state.profile.address },
-  //   { key: 'Educations', value: state.profile.educations }
-  // ]
+  const findTelecom = (system: string) => {
+    const found = profileData.telecom.find(
+      (item: ContactPoint) => item.system === system
+    );
+
+    if (!found) return '-';
+
+    return found.value;
+  };
+
+  const findAge = (birthDateStr: string) => {
+    const birthdate = new Date(birthDateStr);
+    const today = new Date();
+
+    if (isNaN(birthdate.getTime())) {
+      return '-';
+    }
+
+    let age = today.getFullYear() - birthdate.getFullYear();
+    const hasHadBirthdayThisYear =
+      today.getMonth() > birthdate.getMonth() ||
+      (today.getMonth() === birthdate.getMonth() &&
+        today.getDate() >= birthdate.getDate());
+
+    if (!hasHadBirthdayThisYear) {
+      age--;
+    }
+
+    return age;
+  };
+
+  function mapAddress(address: Address[]): string {
+    if (!address || address.length === 0) return '-';
+
+    const addr = address[0];
+    const parts = [addr.line[0], addr.district, addr.city, addr.postalCode];
+
+    return parts.filter(Boolean).join(', ');
+  }
+
+  const profileDetail = profileData
+    ? [
+        { key: 'Age', value: findAge(profileData.birthDate).toString() },
+        { key: 'Sex', value: profileData.gender || '-' },
+        { key: 'Whatsapp', value: findTelecom('phone') },
+        {
+          key: 'Address',
+          value: mapAddress(profileData.address)
+        }
+      ]
+    : [];
 
   return (
     <>
@@ -65,16 +123,20 @@ export default function Patient() {
           <ChevronRightIcon color='white' width={24} height={24} />
         </div>
       </div>
-      {/* <InformationDetail */}
-      {/*   isRadiusIcon */}
-      {/*   iconUrl={state.profile.profile_picture || '/images/sample-foto.svg'} */}
-      {/*   title={state.profile.fullname} */}
-      {/*   subTitle={state.profile.email} */}
-      {/*   buttonText='Edit Profile' */}
-      {/*   details={profileDetail} */}
-      {/*   onEdit={() => router.push('profile/edit-profile')} */}
-      {/*   role='patient' */}
-      {/* /> */}
+      {isProfileLoading || !profileData ? (
+        <Skeleton className='h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+      ) : (
+        <InformationDetail
+          isRadiusIcon
+          iconUrl={profileData.photo?.[0].url ?? '/images/sample-foto.svg'}
+          title={mergeNames(profileData.name)}
+          subTitle={findTelecom('email')}
+          buttonText='Edit Profile'
+          details={profileDetail}
+          onEdit={() => router.push('profile/edit-profile')}
+          role='patient'
+        />
+      )}
       <MedalCollection medals={medalLists} isDisabled={true} />
       <Settings menus={settingMenus} />
     </>

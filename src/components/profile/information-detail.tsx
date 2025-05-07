@@ -1,15 +1,15 @@
-import Image from 'next/image'
-import Tags from './tags'
+import Image from 'next/image';
+import Tags from './tags';
 
 function HeaderSection({ isRadiusIcon, iconUrl, title, subTitle, role }) {
   const titleStyle =
     role === 'patient'
       ? 'text-sm font-bold opacity-100'
-      : 'text-[10px] font-normal opacity-40'
+      : 'text-[10px] font-normal opacity-40';
   const subTitleStyle =
     role === 'patient'
       ? 'text-[10px] font-normal opacity-100 truncate overflow-hidden whitespace-nowrap'
-      : 'text-left whitespace-nowrap text-sm font-bold opacity-100 overflow-hidden break-words'
+      : 'text-left whitespace-nowrap text-sm font-bold opacity-100 overflow-hidden break-words';
 
   return (
     <div className='flex w-1/2'>
@@ -25,11 +25,11 @@ function HeaderSection({ isRadiusIcon, iconUrl, title, subTitle, role }) {
         {subTitle && <p className={`${subTitleStyle}`}>{subTitle}</p>}
       </div>
     </div>
-  )
+  );
 }
 
 function DetailItem({ item }) {
-  const isArray = Array.isArray(item.value)
+  const isArray = Array.isArray(item.value);
 
   if (item.key === 'Specialty') {
     return (
@@ -38,11 +38,11 @@ function DetailItem({ item }) {
         <div className='my-2 flex w-full border-t border-[#E3E3E3]' />
         {isArray && item.value.length > 0 && <Tags tags={item.value} />}
       </div>
-    )
+    );
   }
 
   if (item.key === 'Educations') {
-    const educations = item.value
+    const educations = item.value;
     return (
       <>
         <p className='text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
@@ -59,7 +59,7 @@ function DetailItem({ item }) {
             ))}
         </div>
       </>
-    )
+    );
   }
 
   return (
@@ -69,7 +69,7 @@ function DetailItem({ item }) {
         {item.value}
       </p>
     </>
-  )
+  );
 }
 
 function DetailPratice({ item }) {
@@ -79,7 +79,7 @@ function DetailPratice({ item }) {
       key: 'Price per Session',
       value: `${item.price_per_session.value.toLocaleString('id-ID')} ${item.price_per_session.currency} / Session`
     }
-  ]
+  ];
   return (
     <div className='flex w-full flex-col py-2'>
       {details.map((detail, index) => (
@@ -91,7 +91,7 @@ function DetailPratice({ item }) {
         </div>
       ))}
     </div>
-  )
+  );
 }
 export default function InformationDetail({
   isRadiusIcon = true,
@@ -106,7 +106,8 @@ export default function InformationDetail({
 }) {
   const filteredClinics = details?.filter(
     clinic => clinic.price_per_session?.value > 0
-  )
+  );
+
   return (
     <div className='flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
       <div className='flex w-full items-start justify-between'>
@@ -158,5 +159,5 @@ export default function InformationDetail({
         </div>
       )}
     </div>
-  )
+  );
 }
