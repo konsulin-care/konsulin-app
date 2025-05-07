@@ -84,16 +84,15 @@ export const frontendConfig = (): SuperTokensConfig => {
                 userId,
                 type: roles.includes('clinician') ? 'Practitioner' : 'Patient'
               });
-              const profile = result[0].resource;
               const cookieData = {
                 userId,
                 role_name: roles.includes('clinician')
                   ? 'practitioner'
                   : 'patient',
                 email: emails[0],
-                profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
-                fullname: mergeNames(profile?.name),
-                fhirId: profile?.id ?? ''
+                profile_picture: result?.photo ? result?.photo[0]?.url : '',
+                fullname: mergeNames(result?.name),
+                fhirId: result?.id ?? ''
               };
 
               await setCookies('auth', JSON.stringify(cookieData));
