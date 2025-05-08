@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { IUseClinicParams, useListClinics } from '@/services/clinic';
 import { IOrganizationEntry } from '@/types/organization';
+import { removeCityPrefix } from '@/utils/helper';
 import dayjs from 'dayjs';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -23,7 +24,7 @@ export default function Clinic() {
 
   const { data: clinics, isLoading } = useListClinics({
     searchTerm,
-    cityFilter: clinicFilter.city
+    cityFilter: removeCityPrefix(clinicFilter.city)
   });
 
   return (

@@ -138,3 +138,9 @@ export const parseFhirProfile = (data: Patient | Practitioner) => {
     email
   };
 };
+
+export const removeCityPrefix = (input: string): string => {
+  if (!input) return '';
+
+  return input.replace(/^(Kab\.|Kota)\s+/i, '').trim();
+};
