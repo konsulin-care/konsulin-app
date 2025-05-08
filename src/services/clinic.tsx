@@ -49,7 +49,7 @@ export const useListClinics = (
   return useQuery({
     queryKey: ['list-clinics', url],
     queryFn: () => API.get(url),
-    select: response => response.data.entry || null
+    select: response => response.data.entry || []
   });
 };
 

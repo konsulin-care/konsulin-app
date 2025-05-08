@@ -145,7 +145,7 @@ export default function ClinicFilter({ onChange, type }) {
   };
 
   const { data: listCities, isLoading: cityLoading } = useGetCities(
-    Number(filter.province_code)
+    Number(filter.province_code || 0)
   );
   const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
 

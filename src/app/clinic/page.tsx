@@ -21,11 +21,7 @@ export default function Clinic() {
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const {
-    data: clinics,
-    isLoading,
-    isError
-  } = useListClinics({
+  const { data: clinics, isLoading } = useListClinics({
     searchTerm,
     cityFilter: clinicFilter.city
   });
@@ -114,9 +110,9 @@ export default function Clinic() {
             )}
           </div>
 
-          {isLoading || !clinics ? (
+          {isLoading ? (
             <CardLoader />
-          ) : isError || clinics.length > 0 ? (
+          ) : clinics.length > 0 ? (
             <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
               {clinics.map((clinic: IOrganizationEntry) => (
                 <div
