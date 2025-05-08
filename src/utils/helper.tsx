@@ -4,6 +4,8 @@ import {
   Coding,
   HumanName,
   Observation,
+  Patient,
+  Practitioner,
   QuestionnaireItem,
   QuestionnaireResponse
 } from 'fhir/r4';
@@ -102,4 +104,37 @@ export const parseRecordBundles = (bundles: IBundleResponse[]) => {
     (a, b) =>
       new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime()
   );
+};
+
+export const parseFhirProfile = (data: Patient | Practitioner) => {
+  const phone = data.telecom?.find(t => t.system === 'phone')?.value ?? '';
+  const email = data.telecom?.find(t => t.system === 'email')?.value ?? '';
+  const name = data.name?.[0];
+  const addresses = data.address?.[0];
+  const userId =
+    data.identifier?.find(
+      id => id.system === 'https://login.konsulin.care/userid'
+    )?.value ?? '';
+
+  return {
+    fhirId: data.id,
+    resourceType: data.resourceType,
+    active: data.active,
+    birthDate: data.birthDate,
+    gender: data.gender,
+    photo: data.photo?.[0]?.url ?? '',
+    userId,
+    firstName: name ? name.given.join(' ') : '',
+    lastName: name?.family ?? '',
+    addresses: addresses?.line ?? [],
+    cityCode: '',
+    city: addresses?.city ?? '',
+    districtCode: '',
+    district: addresses?.district ?? '',
+    provinceCode: '',
+    province: '',
+    postalCode: addresses?.postalCode ?? '',
+    phone,
+    email
+  };
 };
