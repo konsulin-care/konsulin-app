@@ -1,5 +1,11 @@
+import { useMutation } from '@tanstack/react-query';
 import { AxiosResponse } from 'axios';
-import { apiRequest } from './api';
+import { Patient, Practitioner } from 'fhir/r4';
+import { API, apiRequest } from './api';
+
+type IProfileRequest = {
+  payload: Patient | Practitioner;
+};
 
 export const createProfile = async ({ userId, email, type }) => {
   const payload = {
@@ -62,4 +68,20 @@ export const getProfileById = async (
   } catch (error) {
     throw error;
   }
+};
+
+export const useUpdateProfile = () => {
+  return useMutation<Patient | Practitioner, Error, IProfileRequest>({
+    mutationKey: ['update-profile'],
+    mutationFn: async ({ payload }) => {
+      const { id, resourceType } = payload;
+      try {
+        const response = await API.put(`/fhir/${resourceType}/${id}`, payload);
+        return response.data;
+      } catch (error) {
+        console.error(`Error updating profile ${resourceType} : `, error);
+        throw error;
+      }
+    }
+  });
 };
