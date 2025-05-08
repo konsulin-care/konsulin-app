@@ -56,16 +56,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             type: roles.includes('clinician') ? 'Practitioner' : 'Patient'
           });
 
-          const profile = result[0].resource;
-          const emails = profile.telecom.find(item => item.system === 'email');
+          const emails = result.telecom.find(item => item.system === 'email');
 
           const payload = {
             userId,
             role_name: roles.includes('clinician') ? 'practitioner' : 'patient',
             email: emails?.value,
-            profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
-            fullname: mergeNames(profile?.name),
-            fhirId: profile?.id ?? ''
+            profile_picture: result?.photo ? result?.photo[0]?.url : '',
+            fullname: mergeNames(result?.name),
+            fhirId: result?.id ?? ''
           };
 
           await setCookies('auth', JSON.stringify(payload));

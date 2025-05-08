@@ -87,9 +87,13 @@
 
 .swiper-pagination {
   position: relative !important;
-  display: flex !important;
-  justify-content: flex-end !important;
-  width: 100% !important;
+  max-width: 95px !important;
+}
+
+.swiper-pagination-bullets {
+  left: auto !important;
+  transform: none !important;
+  margin-left: auto;
 }
 
 .swiper-pagination-bullet-active {

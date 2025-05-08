@@ -1,7 +1,13 @@
 import { FilterIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+  DrawerTrigger
+} from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -12,7 +18,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { useGetCities, useGetProvince } from '@/services/api/cities';
+import { useGetCities, useGetProvinces } from '@/services/api/cities';
 import { IUseClinicParams } from '@/services/clinic';
 import { IWilayahResponse } from '@/types/wilayah';
 import { addDays, endOfWeek, format, startOfWeek } from 'date-fns';
@@ -141,14 +147,16 @@ export default function ClinicFilter({ onChange, type }) {
   const { data: listCities, isLoading: cityLoading } = useGetCities(
     Number(filter.province_code)
   );
-  const { data: listProvinces, isLoading: provinceLoading } = useGetProvince();
+  const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
 
   const renderDrawerContent = () => {
     switch (whichContent) {
       case CONTENT_DEFAULT:
         return (
           <div className='flex flex-col'>
-            <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
+            <DrawerTitle className='mx-auto text-[20px] font-bold'>
+              Filter & Sort
+            </DrawerTitle>
             {type === 'clinician' ? (
               <>
                 <div className='card mt-4 border-0 bg-[#F9F9F9]'>
@@ -470,6 +478,7 @@ export default function ClinicFilter({ onChange, type }) {
         className='mx-auto max-w-screen-sm p-4'
         onInteractOutside={() => setIsOpen(false)}
       >
+        <DrawerDescription />
         <div className='mt-4'>{renderDrawerContent()}</div>
       </DrawerContent>
     </Drawer>

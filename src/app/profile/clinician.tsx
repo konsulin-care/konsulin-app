@@ -38,7 +38,11 @@
 //   validateTimeRanges
 // } from './utils'
 
-export default function Clinician() {
+type Props = {
+  fhirId: string;
+};
+
+export default function Clinician({ fhirId }: Props) {
   return null;
   // const router = useRouter()
   // const { state, dispatch } = useProfile()
