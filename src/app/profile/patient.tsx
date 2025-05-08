@@ -5,7 +5,6 @@ import MedalCollection from '@/components/profile/medal-collection';
 import Settings from '@/components/profile/settings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { medalLists, settingMenus } from '@/constants/profile';
-import { useProfile } from '@/context/profile/profileContext';
 import { getProfileById } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
@@ -16,19 +15,15 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 
 type Props = {
-  userId: string;
+  fhirId: string;
 };
 
-export default function Patient({ userId }: Props) {
-  const { dispatch } = useProfile();
+export default function Patient({ fhirId }: Props) {
   const router = useRouter();
 
   const { data: profileData, isLoading: isProfileLoading } = useQuery<Patient>({
-    queryKey: ['profile-patient', userId],
-    queryFn: () => getProfileById(userId, 'Patient'),
-    onSuccess: (result: Patient) => {
-      dispatch({ type: 'getProfile', payload: result });
-    },
+    queryKey: ['profile-data', fhirId],
+    queryFn: () => getProfileById(fhirId, 'Patient'),
     onError: (error: Error) => {
       console.error('Error when fetching user profile: ', error);
       toast.error(error.message);
@@ -128,7 +123,11 @@ export default function Patient({ userId }: Props) {
       ) : (
         <InformationDetail
           isRadiusIcon
-          iconUrl={profileData.photo?.[0].url ?? '/images/sample-foto.svg'}
+          iconUrl={
+            profileData.photo?.[0].url && profileData.photo[0].url !== ''
+              ? profileData.photo[0].url
+              : '/images/sample-foto.svg'
+          }
           title={mergeNames(profileData.name)}
           subTitle={findTelecom('email')}
           buttonText='Edit Profile'

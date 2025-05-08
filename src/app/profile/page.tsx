@@ -15,10 +15,10 @@ export default function Profile() {
       <div className='mt-[-16px] rounded-[16px] bg-white pb-[100px] pt-4'>
         <div className='text-center'>
           {authState.userInfo.role_name === 'patient' && (
-            <Patient userId={authState.userInfo.fhirId} />
+            <Patient fhirId={authState.userInfo.fhirId} />
           )}
           {authState.userInfo.role_name === 'clinician' && (
-            <Clinician userId={authState.userInfo.fhirId} />
+            <Clinician fhirId={authState.userInfo.fhirId} />
           )}
         </div>
       </div>

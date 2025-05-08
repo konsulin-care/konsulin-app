@@ -49,11 +49,11 @@ export const settingMenus = [
 export const genderList = [
   {
     name: 'Male',
-    value: 'male'
+    code: 'male'
   },
 
   {
     name: 'Female',
-    value: 'female'
+    code: 'female'
   }
 ];

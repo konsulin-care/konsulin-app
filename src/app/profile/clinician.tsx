@@ -39,10 +39,10 @@
 // } from './utils'
 
 type Props = {
-  userId: string;
+  fhirId: string;
 };
 
-export default function Clinician({ userId }: Props) {
+export default function Clinician({ fhirId }: Props) {
   return null;
   // const router = useRouter()
   // const { state, dispatch } = useProfile()
