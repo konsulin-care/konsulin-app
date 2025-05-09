@@ -1,4 +1,4 @@
-import { Practitioner } from 'fhir/r4';
+import { Practitioner, PractitionerRole } from 'fhir/r4';
 
 export type IOrganizationResource = {
   meta: Meta;
@@ -13,7 +13,7 @@ export type IOrganizationEntry = {
   resource:
     | IOrganizationResource
     | IPractitioner
-    | IPractitionerRole
+    | PractitionerRole
     | IDetailInvoice;
   search: {
     mode: string;
@@ -31,32 +31,32 @@ export type IOrganizationDetail = {
 };
 
 export type IPractitioner = Practitioner & {
-  practitionerRole: IPractitionerRole;
+  practitionerRole: PractitionerRole;
 };
 
-export type IPractitionerRole = {
-  id: string;
-  resourceType: 'PractitionerRole';
-  availableTime: AvailableTime[];
-  specialty: Specialty[];
-  practitioner: {
-    reference: string;
-    identifier: {
-      type: object;
-      period: object;
-    };
-  };
-  organization: {
-    reference: string;
-    identifier: {
-      type: object;
-      period: object;
-    };
-    display: string;
-  };
-  meta: Meta;
-  active: boolean;
-};
+// export type IPractitionerRole = {
+//   id: string;
+//   resourceType: 'PractitionerRole';
+//   availableTime: AvailableTime[];
+//   specialty: Specialty[];
+//   practitioner: {
+//     reference: string;
+//     identifier: {
+//       type: object;
+//       period: object;
+//     };
+//   };
+//   organization: {
+//     reference: string;
+//     identifier: {
+//       type: object;
+//       period: object;
+//     };
+//     display: string;
+//   };
+//   meta: Meta;
+//   active: boolean;
+// };
 
 export type IDetailPractitionerRole = {
   resourceType: 'PractitionerRole';

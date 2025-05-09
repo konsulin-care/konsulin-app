@@ -1,5 +1,6 @@
-import { IOrganizationEntry, IPractitionerRole } from '@/types/organization';
+import { IOrganizationEntry } from '@/types/organization';
 import { useQuery } from '@tanstack/react-query';
+import { PractitionerRole } from 'fhir/r4';
 import { useEffect, useMemo, useState } from 'react';
 import { API } from './api';
 
@@ -87,7 +88,7 @@ export const useClinicById = (clinicId: string) => {
     const practitionerId = item.resource.id;
 
     const practitionerRoleData = practitionerRoles.find(
-      (item: IOrganizationEntry & { resource: IPractitionerRole }) =>
+      (item: IOrganizationEntry & { resource: PractitionerRole }) =>
         item.resource.practitioner.reference.split('/')[1] === practitionerId
     );
 
