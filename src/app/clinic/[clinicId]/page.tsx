@@ -86,12 +86,17 @@ export default function DetailClinic({ params }: IDetailClinic) {
       .join(', ');
   };
 
-  const handleClick = (practitioner: IPractitioner) => {
+  const handleSelectPractitioner = (practitioner: IPractitioner) => {
     if (!practitioner) return;
 
     localStorage.setItem(
       `practitioner-${practitioner.id}`,
-      JSON.stringify(practitioner)
+      JSON.stringify({
+        roleId: practitioner.practitionerRole.id,
+        name: practitioner.name,
+        photo: practitioner.photo,
+        qualification: practitioner.qualification
+      })
     );
   };
 
@@ -243,11 +248,6 @@ export default function DetailClinic({ params }: IDetailClinic) {
                 practitionerFilter.end_time}
             </Badge>
           )}
-          {/* {practitionerFilter.city && ( */}
-          {/*   <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'> */}
-          {/*     {practitionerFilter.city} */}
-          {/*   </Badge> */}
-          {/* )} */}
         </div>
 
         {isLoading || isFetching || !filteredPractitioners ? (
@@ -285,29 +285,25 @@ export default function DetailClinic({ params }: IDetailClinic) {
                   </div>
                   <div className='mt-2 flex flex-wrap justify-center gap-1'>
                     {practitioner.practitionerRole.specialty?.map(
-                      (item, index) => (
+                      (specialty, index) => (
                         <Badge
                           key={index}
                           className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
                         >
-                          {item.text}
+                          {specialty.text}
                         </Badge>
                       )
                     )}
                   </div>
                   <Link
                     href={{
-                      pathname: `/practitioner/${practitioner.id}`,
-                      query: {
-                        practitionerRoleId: practitioner.practitionerRole.id,
-                        clinicId: params.clinicId
-                      }
+                      pathname: `/practitioner/${practitioner.id}`
                     }}
                     className='mt-auto w-full'
                   >
                     <Button
                       className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
-                      onClick={() => handleClick(practitioner)}
+                      onClick={() => handleSelectPractitioner(practitioner)}
                     >
                       Check
                     </Button>
