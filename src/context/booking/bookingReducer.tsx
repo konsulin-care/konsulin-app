@@ -1,14 +1,15 @@
-import { addDays } from 'date-fns'
-import { IActionBooking, IStateBooking } from './bookingTypes'
+import { addDays } from 'date-fns';
+import { IActionBooking, IStateBooking } from './bookingTypes';
 
-const today = new Date()
-today.setHours(0, 0, 0, 0)
+const today = new Date();
+today.setHours(0, 0, 0, 0);
 
 export const initialState: IStateBooking = {
   date: addDays(today, 1),
-  time: null,
-  detailClinicianByClinicianID: null
-}
+  startTime: null,
+  scheduleId: null,
+  hasUserChosenDate: false
+};
 
 export const reducer = (
   state: IStateBooking,
@@ -19,8 +20,8 @@ export const reducer = (
       return {
         ...state,
         ...action.payload
-      }
+      };
     default:
-      return state
+      return state;
   }
-}
+};
