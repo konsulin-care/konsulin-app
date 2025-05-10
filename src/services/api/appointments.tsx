@@ -27,7 +27,7 @@ export const useCreateAppointment = () => {
     mutationFn: async (payload: Bundle) => {
       try {
         const response = await API.post('/fhir', payload);
-        return response.data;
+        return response.data.entry;
       } catch (error) {
         console.error('Error when booking an appointment:', error);
         throw error;

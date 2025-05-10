@@ -107,12 +107,13 @@ export const useClinicById = (clinicId: string) => {
   };
 };
 
+// NOTE: hardcoded practitionerRoleId
 export const useDetailPractitioner = (practitionerRoleId: string) => {
   const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ['practitioner-detail', practitionerRoleId],
     queryFn: () =>
       API.get(
-        `/fhir/PractitionerRole?active=true&_id=${practitionerRoleId}&_include=PractitionerRole:organization&_incude=PractitionerRole:practitioner&_revinclude=Invoice:participant`
+        `/fhir/PractitionerRole?active=true&_id=PractitionerRole-id&_include=PractitionerRole:organization&_incude=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
       ),
     select: response => response.data.entry || null,
     enabled: !!practitionerRoleId
