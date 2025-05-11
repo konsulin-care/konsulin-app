@@ -31,7 +31,9 @@ export default function Profile() {
       <Header>
         <div className='flex'>
           <div className='my-2 flex flex-col'>
-            <div className='text-[14px] font-bold text-white'>My Profile</div>
+            <div className='mb-[-5px] text-[14px] font-bold text-white'>
+              My Profile
+            </div>
           </div>
         </div>
       </Header>
