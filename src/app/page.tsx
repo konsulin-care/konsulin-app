@@ -14,7 +14,7 @@ const App = () => {
       <NavigationBar />
       <HomeHeader />
       {isLoading ? (
-        <div className='flex min-h-screen min-w-full items-center justify-center'>
+        <div className='mt-[-24px] flex min-h-screen min-w-full items-center justify-center'>
           <LoadingSpinnerIcon
             width={60}
             height={60}

@@ -3,23 +3,44 @@
 import InformationDetail from '@/components/profile/information-detail';
 import MedalCollection from '@/components/profile/medal-collection';
 import Settings from '@/components/profile/settings';
+import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Skeleton } from '@/components/ui/skeleton';
 import { medalLists, settingMenus } from '@/constants/profile';
+import { useAuth } from '@/context/auth/authContext';
+import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { getProfileById } from '@/services/profile';
-import { mergeNames } from '@/utils/helper';
+import { mergeNames, parseMergedAppointments } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import type { Address, ContactPoint, Patient } from 'fhir/r4';
 import { ChevronRightIcon } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 import { toast } from 'react-toastify';
 
 type Props = {
   fhirId: string;
 };
 
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
 export default function Patient({ fhirId }: Props) {
   const router = useRouter();
+  const { state: authState } = useAuth();
+  const { data: upcomingData } = useGetUpcomingAppointments({
+    patientId: authState?.userInfo?.fhirId,
+    dateReference: format(today, 'yyyy-MM-dd')
+  });
+
+  const parsedAppointmentsData = useMemo(() => {
+    if (!upcomingData || upcomingData?.total === 0) return null;
+
+    const parsed = parseMergedAppointments(upcomingData);
+    return parsed;
+  }, [upcomingData]);
 
   const { data: profileData, isLoading: isProfileLoading } = useQuery<Patient>({
     queryKey: ['profile-data', fhirId],
@@ -136,7 +157,22 @@ export default function Patient({ fhirId }: Props) {
           role='patient'
         />
       )}
+
       <MedalCollection medals={medalLists} isDisabled={true} />
+
+      <div className='mt-4 flex items-center justify-between text-muted'>
+        <div className='text-[14px] font-bold'>Schedule Active</div>
+        <Link href='/schedule' className='text-[10px]'>
+          See All
+        </Link>
+      </div>
+
+      {parsedAppointmentsData && parsedAppointmentsData.length > 0 ? (
+        <UpcomingSession upcomingData={parsedAppointmentsData} />
+      ) : (
+        <Skeleton className='mt-4 h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+      )}
+
       <Settings menus={settingMenus} />
     </>
   );

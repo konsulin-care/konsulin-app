@@ -60,7 +60,6 @@ export default function HomeContentPatient() {
 
   return (
     <>
-      {/* TODO: add upcoming session with */}
       <AppChartClient />
 
       <div className='flex gap-4 p-4'>

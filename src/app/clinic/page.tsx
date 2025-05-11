@@ -5,27 +5,46 @@ import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
 import NavigationBar from '@/components/navigation-bar';
+import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { useAuth } from '@/context/auth/authContext';
+import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { IUseClinicParams, useListClinics } from '@/services/clinic';
 import { IOrganizationEntry } from '@/types/organization';
-import { removeCityPrefix } from '@/utils/helper';
-import dayjs from 'dayjs';
+import { parseMergedAppointments, removeCityPrefix } from '@/utils/helper';
+import { format } from 'date-fns';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import ClinicFilter from './clinic-filter';
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
 
 export default function Clinic() {
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const { data: clinics, isLoading } = useListClinics({
+  const { data: clinics, isLoading: isListClinicsLoading } = useListClinics({
     searchTerm,
     cityFilter: removeCityPrefix(clinicFilter.city)
   });
+
+  const { state: authState } = useAuth();
+  const { data: upcomingData } = useGetUpcomingAppointments({
+    patientId: authState?.userInfo?.fhirId,
+    dateReference: format(today, 'yyyy-MM-dd')
+  });
+
+  const parsedAppointmentsData = useMemo(() => {
+    if (!upcomingData || upcomingData?.total === 0) return null;
+
+    const parsed = parseMergedAppointments(upcomingData);
+    return parsed;
+  }, [upcomingData]);
 
   return (
     <>
@@ -41,31 +60,10 @@ export default function Clinic() {
               See All
             </Link>
           </div>
-          <div className='card mt-4 flex items-center bg-[#F9F9F9]'>
-            <Image
-              className='mr-[10px] min-h-[32] min-w-[32]'
-              src={'/icons/calendar.svg'}
-              width={32}
-              height={32}
-              alt='calendar'
-            />
-            <div className='mr-auto flex flex-col'>
-              <span className='text-[12px] text-muted'>
-                Upcoming Session With
-              </span>
-              <span className='text-[14px] font-bold text-secondary'>
-                Mrs Clinician Name
-              </span>
-            </div>
-            <div className='s'>
-              <span className='text-[12px] font-bold'>
-                {dayjs().format('HH:mm')} |{' '}
-              </span>
-              <span className='text-[12px]'>
-                {dayjs().format('DD/MM/YYYY')}
-              </span>
-            </div>
-          </div>
+
+          {parsedAppointmentsData && parsedAppointmentsData.length > 0 && (
+            <UpcomingSession upcomingData={parsedAppointmentsData} />
+          )}
         </div>
       </Header>
       <ContentWraper>
@@ -90,20 +88,6 @@ export default function Clinic() {
           </div>
 
           <div className='flex gap-4'>
-            {/* {clinicFilter.start_date && clinicFilter.end_date && ( */}
-            {/*   <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'> */}
-            {/*     {clinicFilter.start_date == clinicFilter.end_date */}
-            {/*       ? format(clinicFilter.start_date, 'dd MMM yy') */}
-            {/*       : format(clinicFilter.start_date, 'dd MMM yy') + */}
-            {/*         ' - ' + */}
-            {/*         format(clinicFilter.end_date, 'dd MMM yy')} */}
-            {/*   </Badge> */}
-            {/* )} */}
-            {/* {clinicFilter.start_time && clinicFilter.end_time && ( */}
-            {/*   <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'> */}
-            {/*     {clinicFilter.start_time + ' - ' + clinicFilter.end_time} */}
-            {/*   </Badge> */}
-            {/* )} */}
             {clinicFilter.city && (
               <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
                 {clinicFilter.city}
@@ -111,7 +95,7 @@ export default function Clinic() {
             )}
           </div>
 
-          {isLoading ? (
+          {isListClinicsLoading ? (
             <CardLoader />
           ) : clinics.length > 0 ? (
             <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>

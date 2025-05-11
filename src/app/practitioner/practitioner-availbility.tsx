@@ -93,6 +93,8 @@ export default function PractitionerAvailbility({
   const { data: schedule, isLoading } = useFindAvailability({
     practitionerRoleId: practitionerRole.id,
     dateReference: bookingState.date
+      ? format(bookingState.date, 'yyyy-MM-dd')
+      : null
   });
 
   const listAvailableDate = getAvailableDays(
