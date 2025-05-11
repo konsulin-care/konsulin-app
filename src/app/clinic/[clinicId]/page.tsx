@@ -130,7 +130,10 @@ export default function DetailClinic({ params }: IDetailClinic) {
 
     return practitionersData.filter((practitioner: IPractitioner) => {
       // name filtering
-      const fullName = mergeNames(practitioner.name);
+      const fullName = mergeNames(
+        practitioner.name,
+        practitioner.qualification
+      );
       if (!fullName) return false;
 
       const cleanFullName = fullName.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -255,7 +258,10 @@ export default function DetailClinic({ params }: IDetailClinic) {
         ) : filteredPractitioners.length > 0 ? (
           <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
             {practitionersData.map((practitioner: IPractitioner) => {
-              const displayName = mergeNames(practitioner.name);
+              const displayName = mergeNames(
+                practitioner.name,
+                practitioner.qualification
+              );
 
               return (
                 <div

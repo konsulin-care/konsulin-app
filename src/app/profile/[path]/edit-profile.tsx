@@ -313,7 +313,10 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     if (!isUpdateError && result) {
       const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
       auth.profile_picture = result.photo[0].url;
-      auth.fullname = mergeNames(result.name);
+      auth.fullname =
+        result.resourceType === 'Practitioner'
+          ? mergeNames(result.name, result?.qualification)
+          : mergeNames(result.name);
       await setCookies('auth', JSON.stringify(auth));
       dispatchAuth({ type: 'auth-check', payload: auth });
 

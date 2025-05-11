@@ -200,13 +200,10 @@ export default function BookingPractitioner({
   };
 
   const displayName = useMemo(() => {
-    const name = mergeNames(practitionerData?.name);
-    const qualificationCode =
-      practitionerData?.qualification?.[0]?.code?.coding?.[0]?.code;
-
-    if (name && qualificationCode) {
-      return `${name}, ${qualificationCode}`;
-    }
+    const name = mergeNames(
+      practitionerData?.name,
+      practitionerData?.qualification
+    );
 
     return name;
   }, [practitionerData]);

@@ -24,7 +24,10 @@ export default function UpcomingSession({ upcomingData }) {
         <div className='mr-auto flex flex-col'>
           <span className='text-[12px] text-muted'>Upcoming Session With</span>
           <span className='text-left text-[14px] font-bold text-secondary'>
-            {mergeNames(nextSession.practitionerName)}
+            {mergeNames(
+              nextSession.practitionerName,
+              nextSession.practitionerQualification
+            )}
           </span>
         </div>
         <div className='s'>

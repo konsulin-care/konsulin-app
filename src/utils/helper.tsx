@@ -11,19 +11,29 @@ import {
   Observation,
   Patient,
   Practitioner,
+  PractitionerQualification,
   QuestionnaireItem,
   QuestionnaireResponse,
   Slot
 } from 'fhir/r4';
 
-export const mergeNames = (data: HumanName[]) => {
-  if (!data || data.length === 0) {
+export const mergeNames = (
+  name: HumanName[],
+  qualification?: PractitionerQualification[]
+) => {
+  if (!name || name.length === 0) {
     return '-';
   }
+  const qualificationCode =
+    qualification && qualification.length > 0
+      ? qualification?.[0]?.code?.coding?.[0]?.code
+      : '';
 
-  return data
+  const fullName = name
     .map(item => [...item.given, item.family].filter(Boolean).join(' '))
     .join('');
+
+  return qualificationCode ? `${fullName}, ${qualificationCode}` : fullName;
 };
 
 export const customMarkdownComponents = {
@@ -151,7 +161,7 @@ export const removeCityPrefix = (input: string): string => {
   return input.replace(/^(Kab\.|Kota)\s+/i, '').trim();
 };
 
-type MergedAppointment = {
+export type MergedAppointment = {
   appointmentId: string;
   slotStart: string | null;
   slotEnd: string | null;
@@ -159,6 +169,7 @@ type MergedAppointment = {
   appointmentType: string | null;
   practitionerId: string | null;
   practitionerName: HumanName[] | null;
+  practitionerQualification: PractitionerQualification[] | null;
   practitionerPhoto: Attachment[] | null;
 };
 
@@ -211,6 +222,7 @@ export const parseMergedAppointments = (
       appointmentType: appointment.appointmentType?.text || null,
       practitionerId: practitionerData?.id || null,
       practitionerName: practitionerData?.name || null,
+      practitionerQualification: practitionerData?.qualification || null,
       practitionerPhoto: practitionerData?.photo || null
     });
   });
