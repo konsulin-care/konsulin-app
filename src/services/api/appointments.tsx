@@ -25,6 +25,20 @@ export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
   });
 };
 
+export const useGetAllAppointments = ({ patientId }) => {
+  return useQuery({
+    queryKey: ['appointments'],
+    queryFn: () =>
+      API.get(
+        `/fhir/Appointment?actor=Patient/${patientId}&_include=Appointment:actor:PractitionerRole&_include:iterate=PractitionerRole:practitioner&_include=Appointment:slot`
+      ),
+    select: response => {
+      return response.data || null;
+    },
+    enabled: !!patientId
+  });
+};
+
 export const useCreateAppointment = () => {
   return useMutation({
     mutationKey: ['create-appointments'],
