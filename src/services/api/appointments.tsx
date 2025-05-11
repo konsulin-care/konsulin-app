@@ -11,13 +11,17 @@ export const useGetAppointments = () => {
     }
   });
 };
-export const useGetUpcomingAppointments = () => {
+export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
   return useQuery({
     queryKey: ['appointments'],
-    queryFn: () => API.get(`/api/v1/appointments/upcoming`),
+    queryFn: () =>
+      API.get(
+        `/fhir/Appointment?actor=Patient/${patientId}&slot.start=ge${dateReference}&_include=Appointment:actor:PractitionerRole&_include:iterate=PractitionerRole:practitioner&_include=Appointment:slot`
+      ),
     select: response => {
       return response.data || null;
-    }
+    },
+    enabled: !!patientId && !!dateReference
   });
 };
 
