@@ -16,6 +16,7 @@ import { getProfileById } from '@/services/profile';
 import { IRecord } from '@/types/record';
 import {
   customMarkdownComponents,
+  formatTitle,
   mergeNames,
   parseRecordBundles
 } from '@/utils/helper';
@@ -183,6 +184,7 @@ export default function Record() {
             filteredRecords.map((record: IRecord) => {
               const splitTitle = record.title.split('/');
               const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
+              const formattedTitle = formatTitle(title);
               const recordId = record.id.split('/')[1];
               const formattedDate = format(
                 new Date(record.lastUpdated),
@@ -215,7 +217,9 @@ export default function Record() {
                       />
                     </div>
                     <div className='flex w-0 grow flex-col'>
-                      <div className='text-[12px] font-bold'>{title}</div>
+                      <div className='text-[12px] font-bold'>
+                        {formattedTitle}
+                      </div>
                       <div className='line-clamp-3 overflow-hidden text-ellipsis text-[10px]'>
                         <ReactMarkdown components={customMarkdownComponents}>
                           {cleanDescription}

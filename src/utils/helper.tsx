@@ -267,3 +267,20 @@ export const generateAvatarPlaceholder = ({ name, email }) => {
 
   return { initials, backgroundColor };
 };
+
+export const formatTitle = (raw: string) => {
+  if (!raw) return '-';
+
+  const cleaned = raw.trim().replace(/\s+/g, ' ');
+
+  if (cleaned.includes('-')) {
+    // replace hyphens with spaces, capitalize first letter of each word
+    return cleaned
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  // if no hyphen, make the whole string uppercase
+  return cleaned.toUpperCase();
+};
