@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
+import { getFromLocalStorage } from '@/lib/utils';
 import { useDetailPractitioner } from '@/services/clinic';
 import { mergeNames } from '@/utils/helper';
 import { CodeableConcept } from 'fhir/r4';
@@ -32,7 +33,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
   const { state: bookingState } = useBooking();
 
   const practitionerData = JSON.parse(
-    localStorage.getItem(`practitioner-${params.practitionerId}` || '')
+    getFromLocalStorage(`practitioner-${params.practitionerId}`)
   );
 
   const {

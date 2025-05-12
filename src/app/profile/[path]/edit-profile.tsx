@@ -1,3 +1,4 @@
+'use client';
 import { setCookies } from '@/app/actions';
 import Input from '@/components/general/input';
 import { LoadingSpinnerIcon } from '@/components/icons';

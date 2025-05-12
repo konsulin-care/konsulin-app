@@ -3,6 +3,7 @@
 import ContentWraper from '@/components/general/content-wraper';
 import QuestionnaireResubmitter from '@/components/general/questionnaire-resubmitter';
 import { useAuth } from '@/context/auth/authContext';
+import { getFromLocalStorage } from '@/lib/utils';
 import { QuestionnaireResponse } from 'fhir/r4';
 import { useEffect, useState } from 'react';
 import HomeContentClinician from './home-content-clinician';
@@ -27,7 +28,7 @@ export default function HomeContent() {
     }
 
     setQuestionnaireId(responseKey.replace('response_', ''));
-    const stored = localStorage.getItem(responseKey);
+    const stored = getFromLocalStorage(responseKey);
     if (stored) {
       setResponseData(JSON.parse(stored));
     }

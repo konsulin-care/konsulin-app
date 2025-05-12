@@ -14,6 +14,7 @@ import {
   DrawerHeader,
   DrawerTitle
 } from '@/components/ui/drawer';
+import { getFromLocalStorage } from '@/lib/utils';
 import {
   BaseRenderer,
   getResponse,
@@ -59,7 +60,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
 
   useEffect(() => {
-    const savedResponses = localStorage.getItem(`response_${questionnaire.id}`);
+    const savedResponses = getFromLocalStorage(`response_${questionnaire.id}`);
     if (savedResponses) {
       setResponse(JSON.parse(savedResponses));
     }

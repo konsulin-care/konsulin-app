@@ -1,3 +1,4 @@
+'use client';
 import Input from '@/components/general/input';
 import { useAuth } from '@/context/auth/authContext';
 import { apiRequest } from '@/services/api';

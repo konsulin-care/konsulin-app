@@ -1,3 +1,4 @@
+import { getFromLocalStorage, setToLocalStorage } from '@/lib/utils';
 import { IBundleResponse } from '@/types/record';
 import { parse } from 'date-fns';
 import {
@@ -259,10 +260,10 @@ export const generateAvatarPlaceholder = ({ name, email }) => {
 
   initials = initials.toUpperCase();
 
-  let backgroundColor = localStorage.getItem(key);
+  let backgroundColor = getFromLocalStorage(key);
   if (!backgroundColor) {
     backgroundColor = getRandomPastelColor();
-    localStorage.setItem(key, backgroundColor);
+    setToLocalStorage(key, backgroundColor);
   }
 
   return { initials, backgroundColor };
