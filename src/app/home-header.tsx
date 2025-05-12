@@ -6,26 +6,30 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { parseMergedAppointments } from '@/utils/helper';
-import { format } from 'date-fns';
+import { format, isAfter, parseISO } from 'date-fns';
 import Image from 'next/image';
 import { useMemo } from 'react';
 
-const today = new Date();
-today.setHours(0, 0, 0, 0);
+const now = new Date();
 
 export default function HomeHeader() {
   const { state: authState, isLoading: isLoadingAuth } = useAuth();
   const { data: upcomingData, isLoading: isUpcomingLoading } =
     useGetUpcomingAppointments({
       patientId: authState?.userInfo?.fhirId,
-      dateReference: format(today, 'yyyy-MM-dd')
+      dateReference: format(now, 'yyyy-MM-dd')
     });
 
   const parsedAppointmentsData = useMemo(() => {
     if (!upcomingData || upcomingData?.total === 0) return null;
 
     const parsed = parseMergedAppointments(upcomingData);
-    return parsed;
+    const filtered = parsed.filter(session => {
+      const slotStart = parseISO(session.slotStart);
+      return isAfter(slotStart, now);
+    });
+
+    return filtered;
   }, [upcomingData]);
 
   return (

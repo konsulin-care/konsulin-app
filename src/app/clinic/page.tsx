@@ -14,15 +14,14 @@ import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { IUseClinicParams, useListClinics } from '@/services/clinic';
 import { IOrganizationEntry } from '@/types/organization';
 import { parseMergedAppointments, removeCityPrefix } from '@/utils/helper';
-import { format } from 'date-fns';
+import { format, isAfter, parseISO } from 'date-fns';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import ClinicFilter from './clinic-filter';
 
-const today = new Date();
-today.setHours(0, 0, 0, 0);
+const now = new Date();
 
 export default function Clinic() {
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
@@ -36,14 +35,19 @@ export default function Clinic() {
   const { state: authState } = useAuth();
   const { data: upcomingData } = useGetUpcomingAppointments({
     patientId: authState?.userInfo?.fhirId,
-    dateReference: format(today, 'yyyy-MM-dd')
+    dateReference: format(now, 'yyyy-MM-dd')
   });
 
   const parsedAppointmentsData = useMemo(() => {
     if (!upcomingData || upcomingData?.total === 0) return null;
 
     const parsed = parseMergedAppointments(upcomingData);
-    return parsed;
+    const filtered = parsed.filter(session => {
+      const slotStart = parseISO(session.slotStart);
+      return isAfter(slotStart, now);
+    });
+
+    return filtered;
   }, [upcomingData]);
 
   return (

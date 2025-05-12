@@ -11,7 +11,7 @@ import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { getProfileById } from '@/services/profile';
 import { mergeNames, parseMergedAppointments } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { format, isAfter, parseISO } from 'date-fns';
 import type { Address, ContactPoint, Patient } from 'fhir/r4';
 import { ChevronRightIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -24,22 +24,26 @@ type Props = {
   fhirId: string;
 };
 
-const today = new Date();
-today.setHours(0, 0, 0, 0);
+const now = new Date();
 
 export default function Patient({ fhirId }: Props) {
   const router = useRouter();
   const { state: authState } = useAuth();
   const { data: upcomingData } = useGetUpcomingAppointments({
     patientId: authState?.userInfo?.fhirId,
-    dateReference: format(today, 'yyyy-MM-dd')
+    dateReference: format(now, 'yyyy-MM-dd')
   });
 
   const parsedAppointmentsData = useMemo(() => {
     if (!upcomingData || upcomingData?.total === 0) return null;
 
     const parsed = parseMergedAppointments(upcomingData);
-    return parsed;
+    const filtered = parsed.filter(session => {
+      const slotStart = parseISO(session.slotStart);
+      return isAfter(slotStart, now);
+    });
+
+    return filtered;
   }, [upcomingData]);
 
   const { data: profileData, isLoading: isProfileLoading } = useQuery<Patient>({
