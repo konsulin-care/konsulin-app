@@ -2,6 +2,7 @@
 
 import BackButton from '@/components/general/back-button';
 import Header from '@/components/header';
+import { formatTitle } from '@/utils/helper';
 import { useSearchParams } from 'next/navigation';
 import RecordAssessment from './record-assessment';
 import RecordExercise from './record-exercise';
@@ -16,6 +17,7 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
   const searchParams = useSearchParams();
   const category = Number(searchParams.get('category'));
   const titleParam = searchParams.get('title');
+  const formattedTitle = formatTitle(titleParam);
 
   const pageTitle = (category: number) => {
     switch (category) {
@@ -34,12 +36,12 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
     switch (category) {
       case 1:
         return (
-          <RecordAssessment recordId={params.recordId} title={titleParam} />
+          <RecordAssessment recordId={params.recordId} title={formattedTitle} />
         );
       case 2:
         return <RecordExercise />;
       case 3:
-        return <RecordSoap soapId={params.recordId} title={titleParam} />;
+        return <RecordSoap soapId={params.recordId} title={formattedTitle} />;
       case 4:
         return <RecordJournal journalId={params.recordId} />;
     }

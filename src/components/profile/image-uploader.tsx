@@ -1,47 +1,58 @@
-import Image from 'next/image'
-import { useRef, useState } from 'react'
+import Image from 'next/image';
+import { useRef, useState } from 'react';
 
 interface ImageUploaderProps {
-  userPhoto: string
-  onPhotoChange: (photo: string) => void
+  userPhoto: string;
+  onPhotoChange: (photo: string) => void;
+  initials: string;
+  backgroundColor: string;
 }
 
 export default function ImageUploader({
   userPhoto,
-  onPhotoChange
+  onPhotoChange,
+  initials,
+  backgroundColor
 }: ImageUploaderProps) {
-  const [isImageError, setIsImageError] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isImageError, setIsImageError] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleButtonClick() {
-    fileInputRef.current?.click()
+    fileInputRef.current?.click();
   }
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
+    const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onloadend = () => {
-        onPhotoChange(reader.result as string)
-        setIsImageError(false)
-      }
-      reader.readAsDataURL(file)
+        onPhotoChange(reader.result as string);
+        setIsImageError(false);
+      };
+      reader.readAsDataURL(file);
     }
   }
 
   return (
     <div className='mb-4 flex flex-col items-center px-4 pb-4'>
       <div className='pb-2'>
-        <Image
-          className='rounded-full'
-          src={
-            isImageError || !userPhoto ? '/images/sample-foto.svg' : userPhoto
-          }
-          width={64}
-          height={64}
-          alt='user-photo'
-          onError={() => setIsImageError(true)}
-        />
+        {isImageError || !userPhoto ? (
+          <div
+            className='mr-2 flex h-[64px] w-[64px] items-center justify-center rounded-full text-xl font-bold text-white'
+            style={{ backgroundColor }}
+          >
+            {initials}
+          </div>
+        ) : (
+          <Image
+            className='rounded-full'
+            src={userPhoto}
+            width={64}
+            height={64}
+            alt='user-photo'
+            onError={() => setIsImageError(true)}
+          />
+        )}
       </div>
       <div className='flex items-center justify-center rounded-xl bg-[#F6F6F6]'>
         <div className='pb-2 pl-4 pr-2 pt-2'>
@@ -67,5 +78,5 @@ export default function ImageUploader({
         accept='image/*'
       />
     </div>
-  )
+  );
 }

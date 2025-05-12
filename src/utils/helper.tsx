@@ -1,3 +1,4 @@
+import { getFromLocalStorage, setToLocalStorage } from '@/lib/utils';
 import { IBundleResponse } from '@/types/record';
 import { parse } from 'date-fns';
 import {
@@ -237,4 +238,50 @@ export const parseMergedAppointments = (
 
 export const parseTime = (timeStr: string, formatStr = 'HH:mm') => {
   return parse(timeStr, formatStr, new Date());
+};
+
+const getRandomPastelColor = () => {
+  const hue = Math.floor(Math.random() * 360);
+  return `hsl(${hue}, 70%, 80%)`;
+};
+
+export const generateAvatarPlaceholder = ({ name, email }) => {
+  let initials = '';
+  const key = 'avatar-color';
+
+  if (name && name.trim()) {
+    const parts = name.trim().split(' ');
+
+    // if the name has at least two parts, take the first letter of each
+    initials = parts[0][0] + parts[1][0];
+  } else if (email) {
+    initials = email.slice(0, 2);
+  }
+
+  initials = initials.toUpperCase();
+
+  let backgroundColor = getFromLocalStorage(key);
+  if (!backgroundColor) {
+    backgroundColor = getRandomPastelColor();
+    setToLocalStorage(key, backgroundColor);
+  }
+
+  return { initials, backgroundColor };
+};
+
+export const formatTitle = (raw: string) => {
+  if (!raw) return '-';
+
+  const cleaned = raw.trim().replace(/\s+/g, ' ');
+
+  if (cleaned.includes('-')) {
+    // replace hyphens with spaces, capitalize first letter of each word
+    return cleaned
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  // if no hyphen, make the whole string uppercase
+  return cleaned.toUpperCase();
 };

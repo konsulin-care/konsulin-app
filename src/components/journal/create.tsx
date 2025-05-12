@@ -61,6 +61,7 @@ export default function CreateJournal() {
         valueString: journalTitle,
         resourceType: 'Observation',
         note: response,
+        effectiveDateTime: date.toISOString(),
         status: 'final',
         code: {
           coding: [

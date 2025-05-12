@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetSingleRecord } from '@/services/api/record';
+import { formatTitle } from '@/utils/helper';
 import { format } from 'date-fns';
 import { FileCheckIcon, NotepadTextIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -58,7 +59,7 @@ export default function RecordJournal({ journalId }: Props) {
               className='mr-[10px]'
               color='hsla(220,9%,19%,0.4)'
             />
-            <div>{journalData.valueString}</div>
+            <div>{formatTitle(journalData.valueString)}</div>
           </div>
 
           {journalData.note.map((item: { text: string }, index: number) => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { getFromLocalStorage } from '@/lib/utils';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -11,7 +12,7 @@ export default function RouteResponseCleaner() {
     const keys = Object.keys(localStorage);
     const responseKey = keys.find(key => key.startsWith('response_'));
     const isSkipCleanup =
-      localStorage.getItem('skip-response-cleanup') === 'true';
+      getFromLocalStorage('skip-response-cleanup') === 'true';
 
     if (!responseKey) return;
 

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
+import { getFromLocalStorage } from '@/lib/utils';
 import { useQuestionnaireResponse } from '@/services/api/assessment';
 import { QuestionnaireResponseItem } from 'fhir/r4';
 import { LinkIcon, NotepadTextIcon, UsersIcon } from 'lucide-react';
@@ -42,7 +43,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
   const { state: authState } = useAuth();
 
   useEffect(() => {
-    const savedColorMap = localStorage.getItem('result-table-colors');
+    const savedColorMap = getFromLocalStorage('result-table-colors');
     if (savedColorMap) {
       setColorMap(JSON.parse(savedColorMap));
     }

@@ -1,3 +1,4 @@
+'use client';
 import { setCookies } from '@/app/actions';
 import Input from '@/components/general/input';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -25,7 +26,11 @@ import {
 } from '@/services/api/cities';
 import { getProfileById, useUpdateProfile } from '@/services/profile';
 import { IWilayahResponse } from '@/types/wilayah';
-import { mergeNames, parseFhirProfile } from '@/utils/helper';
+import {
+  generateAvatarPlaceholder,
+  mergeNames,
+  parseFhirProfile
+} from '@/utils/helper';
 import { validateEmail } from '@/utils/validation';
 import { useQuery } from '@tanstack/react-query';
 import { getCookie } from 'cookies-next';
@@ -67,7 +72,11 @@ type ICustomProfile = {
 
 export default function EditProfile({ userRole, fhirId }: Props) {
   const router = useRouter();
-  const { dispatch: dispatchAuth } = useAuth();
+  const {
+    state: authState,
+    dispatch: dispatchAuth,
+    isLoading: isAuthLoading
+  } = useAuth();
   const [updateUser, setUpdateUser] = useState<ICustomProfile>({
     fhirId: '',
     resourceType: null,
@@ -431,10 +440,15 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }
   };
 
+  const { initials, backgroundColor } = generateAvatarPlaceholder({
+    name: authState.userInfo?.fullname,
+    email: authState.userInfo?.email
+  });
+
   return (
     <div className='flex min-h-screen flex-col'>
       <div className='flex flex-grow flex-col justify-between p-4'>
-        {isProfileLoading ? (
+        {isProfileLoading || isAuthLoading ? (
           <div className='flex min-h-screen min-w-full items-center justify-center'>
             <LoadingSpinnerIcon
               width={56}
@@ -447,6 +461,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
             <ImageUploader
               userPhoto={updateUser.photo}
               onPhotoChange={handleUserPhoto}
+              initials={initials}
+              backgroundColor={backgroundColor}
             />
             <div className='flex flex-grow flex-col space-y-4'>
               <Input

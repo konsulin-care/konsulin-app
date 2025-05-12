@@ -25,7 +25,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
-import { conjunction } from '@/lib/utils';
+import { conjunction, getFromLocalStorage } from '@/lib/utils';
 import { useCreateAppointment } from '@/services/api/appointments';
 import { useDetailPractitioner } from '@/services/clinic';
 import { mergeNames } from '@/utils/helper';
@@ -61,7 +61,7 @@ export default function BookingPractitioner({
   } = useCreateAppointment();
 
   const practitionerData = JSON.parse(
-    localStorage.getItem(`practitioner-${params.practitionerId}` || '')
+    getFromLocalStorage(`practitioner-${params.practitionerId}`)
   );
   const patientId = authState?.userInfo?.fhirId;
   const practitionerRoleId = practitionerData?.roleId;
