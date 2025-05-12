@@ -476,7 +476,10 @@ export default function ClinicFilter({ onChange, type }) {
       </DrawerTrigger>
       <DrawerContent
         className='mx-auto max-w-screen-sm p-4'
-        onInteractOutside={() => setIsOpen(false)}
+        onInteractOutside={() => {
+          onChange(filter);
+          setIsOpen(false);
+        }}
       >
         <DrawerDescription />
         <div className='mt-4'>{renderDrawerContent()}</div>

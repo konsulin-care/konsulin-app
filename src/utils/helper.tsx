@@ -1,4 +1,5 @@
 import { IBundleResponse } from '@/types/record';
+import { parse } from 'date-fns';
 import {
   Annotation,
   Appointment,
@@ -232,4 +233,8 @@ export const parseMergedAppointments = (
     if (!a.slotStart || !b.slotStart) return 0;
     return new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime();
   });
+};
+
+export const parseTime = (timeStr: string, formatStr = 'HH:mm') => {
+  return parse(timeStr, formatStr, new Date());
 };

@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { IUseClinicParams, useClinicById } from '@/services/clinic';
 import { IOrganizationResource, IPractitioner } from '@/types/organization';
-import { mergeNames } from '@/utils/helper';
-import { format, parse, setHours, setMinutes } from 'date-fns';
+import { mergeNames, parseTime } from '@/utils/helper';
+import { format, setHours, setMinutes } from 'date-fns';
 import { ChevronLeftIcon, HeartPulse, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -53,10 +53,6 @@ const isSlotAvailable = ({
     practitionerStartTime.getTime() <= filterEndTime.getTime() &&
     practitionerEndTime.getTime() >= filterStartTime.getTime()
   );
-};
-
-const parseTime = (timeStr: string, formatStr = 'HH:mm') => {
-  return parse(timeStr, formatStr, new Date());
 };
 
 export default function DetailClinic({ params }: IDetailClinic) {
@@ -113,8 +109,8 @@ export default function DetailClinic({ params }: IDetailClinic) {
     const lowerKeyword = keyword.trim().toLowerCase();
     const { start_date, end_date, start_time, end_time } = practitionerFilter;
 
-    const hasDateFilter = start_date && end_date;
-    const hasTimeFilter = start_time || end_time;
+    const hasDateFilter = !!start_date && !!end_date;
+    const hasTimeFilter = !!start_time || !!end_time;
 
     const filterDays = hasDateFilter
       ? generateFilterDays(start_date, end_date)

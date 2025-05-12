@@ -6,6 +6,7 @@ import Header from '@/components/header';
 import NavigationBar from '@/components/navigation-bar';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetAllAppointments } from '@/services/api/appointments';
@@ -13,25 +14,42 @@ import { IUseClinicParams } from '@/services/clinic';
 import {
   MergedAppointment,
   mergeNames,
-  parseMergedAppointments
+  parseMergedAppointments,
+  parseTime
 } from '@/utils/helper';
-import { format, parseISO } from 'date-fns';
+import {
+  endOfDay,
+  format,
+  isAfter,
+  isBefore,
+  parse,
+  parseISO,
+  setHours,
+  setMinutes,
+  startOfDay
+} from 'date-fns';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
-import ClinicFilter from '../clinic/clinic-filter';
+import { useEffect, useMemo, useState } from 'react';
+import SessionFilter from './session-filter';
 
 const now = new Date();
 
 export default function Schedule() {
   const [keyword, setKeyword] = useState<string>('');
-  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
+  const [sessionsFilter, setSessionsFilter] = useState<IUseClinicParams>({});
+  const [selectedTab, setSelectedTab] = useState('upcoming');
 
   const { state: authState } = useAuth();
-  const { data: upcomingData } = useGetAllAppointments({
-    patientId: authState?.userInfo?.fhirId
-  });
+  const { data: upcomingData, isLoading: isUpcomingLoading } =
+    useGetAllAppointments({
+      patientId: authState?.userInfo?.fhirId
+    });
+
+  useEffect(() => {
+    setSessionsFilter({});
+  }, [selectedTab]);
 
   const parsedAppointmentsData = useMemo(() => {
     if (!upcomingData || upcomingData?.total === 0) return null;
@@ -40,29 +58,107 @@ export default function Schedule() {
     return parsed;
   }, [upcomingData]);
 
-  const listUpcomingSessions = useMemo(() => {
+  const unfilteredAppointmentsData = useMemo(() => {
     if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
+      return null;
+
+    const filtered = parsedAppointmentsData.filter(session => {
+      const slotStart = parseISO(session.slotStart);
+      return isAfter(slotStart, now);
+    });
+
+    return filtered;
+  }, [parsedAppointmentsData]);
+
+  // TODO: implement filtering by clinic name
+  const filteredAppointmentsData = useMemo(() => {
+    if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
+      return null;
+
+    const { start_date, end_date, start_time, end_time } = sessionsFilter;
+
+    const hasDateFilter = !!start_date && !!end_date;
+    const hasTimeFilter = !!start_time || !!end_time;
+
+    const filterStartDate = start_date;
+    const filterEndDate = end_date;
+
+    const filterStartTime = start_time
+      ? parseTime(start_time, 'HH:mm')
+      : setHours(setMinutes(new Date(), 0), 0); // 00:00
+
+    const filterEndTime = end_time
+      ? parseTime(end_time, 'HH:mm')
+      : setHours(setMinutes(new Date(), 59), 23); // 23:59
+
+    return parsedAppointmentsData.filter(session => {
+      if (!session.slotStart) return false;
+
+      // parse full datetime from slotStart
+      const sessionDate = parseISO(session.slotStart);
+
+      // filter by date range
+      if (
+        hasDateFilter &&
+        (isBefore(sessionDate, startOfDay(filterStartDate!)) ||
+          isAfter(sessionDate, endOfDay(filterEndDate!)))
+      ) {
+        return false;
+      }
+
+      // filter by time range (extract only the time part)
+      if (hasTimeFilter) {
+        const sessionTimeOnly = parse(
+          format(sessionDate, 'HH:mm'),
+          'HH:mm',
+          new Date()
+        );
+
+        if (
+          isBefore(sessionTimeOnly, filterStartTime) ||
+          isAfter(sessionTimeOnly, filterEndTime)
+        ) {
+          return false;
+        }
+      }
+
+      // filter by practitioner's name and qualification
+      const fullName = mergeNames(
+        session.practitionerName,
+        session.practitionerQualification
+      );
+
+      if (keyword && !fullName?.toLowerCase().includes(keyword.toLowerCase())) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [parsedAppointmentsData, sessionsFilter, selectedTab, keyword]);
+
+  const listUpcomingSessions = useMemo(() => {
+    if (!filteredAppointmentsData || filteredAppointmentsData.length === 0)
       return [];
 
-    return parsedAppointmentsData
+    return filteredAppointmentsData
       .filter(s => s.slotStart && new Date(s.slotStart) >= now)
       .sort(
         (a, b) =>
           new Date(a.slotStart!).getTime() - new Date(b.slotStart!).getTime() // soonest first
       );
-  }, [parsedAppointmentsData]);
+  }, [filteredAppointmentsData]);
 
   const listPastSessions = useMemo(() => {
-    if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
+    if (!filteredAppointmentsData || filteredAppointmentsData.length === 0)
       return [];
 
-    return parsedAppointmentsData
+    return filteredAppointmentsData
       .filter(s => s.slotStart && new Date(s.slotStart) < now)
       .sort(
         (a, b) =>
           new Date(b.slotStart!).getTime() - new Date(a.slotStart!).getTime() // most-recent first
       );
-  }, [parsedAppointmentsData]);
+  }, [filteredAppointmentsData]);
 
   const TabUpcomingSession = () => {
     return (
@@ -198,9 +294,10 @@ export default function Schedule() {
             </span>
           </div>
 
-          {parsedAppointmentsData && parsedAppointmentsData.length > 0 && (
-            <UpcomingSession upcomingData={parsedAppointmentsData} />
-          )}
+          {unfilteredAppointmentsData &&
+            unfilteredAppointmentsData.length > 0 && (
+              <UpcomingSession upcomingData={unfilteredAppointmentsData} />
+            )}
         </div>
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>
@@ -213,18 +310,23 @@ export default function Schedule() {
               className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
-            <ClinicFilter
+            <SessionFilter
               onChange={(filter: IUseClinicParams) => {
-                setClinicFilter(prevState => ({
+                setSessionsFilter(prevState => ({
                   ...prevState,
                   ...filter
                 }));
               }}
-              type='clinician'
+              type={selectedTab}
             />
           </div>
 
-          <Tabs defaultValue='upcoming' className='w-full'>
+          <Tabs
+            defaultValue='upcoming'
+            className='w-full'
+            value={selectedTab}
+            onValueChange={value => setSelectedTab(value)}
+          >
             <TabsList className='grid w-full grid-cols-2 bg-transparent'>
               <TabsTrigger
                 className='rounded-none border-secondary data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:text-secondary data-[state=active]:shadow-none'
@@ -239,12 +341,21 @@ export default function Schedule() {
                 Past Session
               </TabsTrigger>
             </TabsList>
-            <TabsContent value='upcoming'>
-              <TabUpcomingSession />
-            </TabsContent>
-            <TabsContent value='past'>
-              <TabPastSession />
-            </TabsContent>
+            {isUpcomingLoading ? (
+              <Skeleton
+                count={4}
+                className='mt-4 h-[100px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
+              />
+            ) : (
+              <>
+                <TabsContent value='upcoming'>
+                  <TabUpcomingSession />
+                </TabsContent>
+                <TabsContent value='past'>
+                  <TabPastSession />
+                </TabsContent>
+              </>
+            )}
           </Tabs>
         </div>
       </div>
