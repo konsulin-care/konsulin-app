@@ -1,21 +1,286 @@
 'use client';
 
 import BackButton from '@/components/general/back-button';
+import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
 import NavigationBar from '@/components/navigation-bar';
+import UpcomingSession from '@/components/schedule/upcoming-session';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/context/auth/authContext';
+import { useGetAllAppointments } from '@/services/api/appointments';
 import { IUseClinicParams } from '@/services/clinic';
-import dayjs from 'dayjs';
+import {
+  MergedAppointment,
+  mergeNames,
+  parseMergedAppointments,
+  parseTime
+} from '@/utils/helper';
+import {
+  endOfDay,
+  format,
+  isAfter,
+  isBefore,
+  parse,
+  parseISO,
+  setHours,
+  setMinutes,
+  startOfDay
+} from 'date-fns';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
-import ClinicFilter from '../clinic/clinic-filter';
+import { useEffect, useMemo, useState } from 'react';
+import SessionFilter from './session-filter';
+
+const now = new Date();
 
 export default function Schedule() {
   const [keyword, setKeyword] = useState<string>('');
-  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
+  const [sessionsFilter, setSessionsFilter] = useState<IUseClinicParams>({});
+  const [selectedTab, setSelectedTab] = useState('upcoming');
+
+  const { state: authState } = useAuth();
+  const { data: upcomingData, isLoading: isUpcomingLoading } =
+    useGetAllAppointments({
+      patientId: authState?.userInfo?.fhirId
+    });
+
+  useEffect(() => {
+    setSessionsFilter({});
+  }, [selectedTab]);
+
+  const parsedAppointmentsData = useMemo(() => {
+    if (!upcomingData || upcomingData?.total === 0) return null;
+
+    const parsed = parseMergedAppointments(upcomingData);
+    return parsed;
+  }, [upcomingData]);
+
+  const unfilteredAppointmentsData = useMemo(() => {
+    if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
+      return null;
+
+    const filtered = parsedAppointmentsData.filter(session => {
+      const slotStart = parseISO(session.slotStart);
+      return isAfter(slotStart, now);
+    });
+
+    return filtered;
+  }, [parsedAppointmentsData]);
+
+  // TODO: implement filtering by clinic name
+  const filteredAppointmentsData = useMemo(() => {
+    if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
+      return null;
+
+    const { start_date, end_date, start_time, end_time } = sessionsFilter;
+
+    const hasDateFilter = !!start_date && !!end_date;
+    const hasTimeFilter = !!start_time || !!end_time;
+
+    const filterStartDate = start_date;
+    const filterEndDate = end_date;
+
+    const filterStartTime = start_time
+      ? parseTime(start_time, 'HH:mm')
+      : setHours(setMinutes(new Date(), 0), 0); // 00:00
+
+    const filterEndTime = end_time
+      ? parseTime(end_time, 'HH:mm')
+      : setHours(setMinutes(new Date(), 59), 23); // 23:59
+
+    return parsedAppointmentsData.filter(session => {
+      if (!session.slotStart) return false;
+
+      // parse full datetime from slotStart
+      const sessionDate = parseISO(session.slotStart);
+
+      // filter by date range
+      if (
+        hasDateFilter &&
+        (isBefore(sessionDate, startOfDay(filterStartDate!)) ||
+          isAfter(sessionDate, endOfDay(filterEndDate!)))
+      ) {
+        return false;
+      }
+
+      // filter by time range (extract only the time part)
+      if (hasTimeFilter) {
+        const sessionTimeOnly = parse(
+          format(sessionDate, 'HH:mm'),
+          'HH:mm',
+          new Date()
+        );
+
+        if (
+          isBefore(sessionTimeOnly, filterStartTime) ||
+          isAfter(sessionTimeOnly, filterEndTime)
+        ) {
+          return false;
+        }
+      }
+
+      // filter by practitioner's name and qualification
+      const fullName = mergeNames(
+        session.practitionerName,
+        session.practitionerQualification
+      );
+
+      if (keyword && !fullName?.toLowerCase().includes(keyword.toLowerCase())) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [parsedAppointmentsData, sessionsFilter, selectedTab, keyword]);
+
+  const listUpcomingSessions = useMemo(() => {
+    if (!filteredAppointmentsData || filteredAppointmentsData.length === 0)
+      return [];
+
+    return filteredAppointmentsData
+      .filter(s => s.slotStart && new Date(s.slotStart) >= now)
+      .sort(
+        (a, b) =>
+          new Date(a.slotStart!).getTime() - new Date(b.slotStart!).getTime() // soonest first
+      );
+  }, [filteredAppointmentsData]);
+
+  const listPastSessions = useMemo(() => {
+    if (!filteredAppointmentsData || filteredAppointmentsData.length === 0)
+      return [];
+
+    return filteredAppointmentsData
+      .filter(s => s.slotStart && new Date(s.slotStart) < now)
+      .sort(
+        (a, b) =>
+          new Date(b.slotStart!).getTime() - new Date(a.slotStart!).getTime() // most-recent first
+      );
+  }, [filteredAppointmentsData]);
+
+  const TabUpcomingSession = () => {
+    return (
+      <>
+        {!listUpcomingSessions || listUpcomingSessions.length === 0 ? (
+          <EmptyState
+            className='py-16'
+            title='No Upcoming Sessions'
+            subtitle='You have no scheduled sessions at the moment'
+          />
+        ) : (
+          listUpcomingSessions.map((session: MergedAppointment) => {
+            const sessionStartTime = session.slotStart
+              ? format(parseISO(session.slotStart), 'HH:mm')
+              : '-:-';
+            const sessionDate = session.slotStart
+              ? format(parseISO(session.slotStart), 'dd/MM/yyyy')
+              : '-/-/-';
+            const displayName = mergeNames(
+              session.practitionerName,
+              session.practitionerQualification
+            );
+
+            return (
+              <Link
+                key={session.appointmentId}
+                href={`/schedule/${session.appointmentId}`}
+                className='card mt-4 flex flex-col gap-2 p-4'
+              >
+                <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+                  {sessionStartTime} - {sessionDate}
+                </div>
+
+                <hr className='w-full' />
+                <div className='flex items-center'>
+                  <Image
+                    className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
+                    width={32}
+                    height={32}
+                    alt='offline'
+                    src={
+                      session.practitionerPhoto
+                        ? session.practitionerPhoto[0].url
+                        : '/images/avatar.jpg'
+                    }
+                  />
+
+                  <div className='mr-auto text-[12px] font-bold'>
+                    {displayName}
+                  </div>
+                  <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+                    {session.appointmentType} session
+                  </div>
+                </div>
+              </Link>
+            );
+          })
+        )}
+      </>
+    );
+  };
+
+  const TabPastSession = () => {
+    return (
+      <>
+        {!listPastSessions || listPastSessions.length === 0 ? (
+          <EmptyState
+            className='py-16'
+            title='No Past Sessions'
+            subtitle='You haven’t completed any sessions yet'
+          />
+        ) : (
+          listPastSessions.map((session: MergedAppointment) => {
+            const sessionStartTime = session.slotStart
+              ? format(parseISO(session.slotStart), 'HH:mm')
+              : '-:-';
+            const sessionDate = session.slotStart
+              ? format(parseISO(session.slotStart), 'dd/MM/yyyy')
+              : '-/-/-';
+            const displayName = mergeNames(
+              session.practitionerName,
+              session.practitionerQualification
+            );
+
+            return (
+              <Link
+                key={session.appointmentId}
+                href={`/schedule/${session.appointmentId}`}
+                className='card mt-4 flex flex-col gap-2 p-4'
+              >
+                <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+                  {sessionStartTime} - {sessionDate}
+                </div>
+
+                <hr className='w-full' />
+                <div className='flex items-center'>
+                  <Image
+                    className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
+                    width={32}
+                    height={32}
+                    alt='offline'
+                    src={
+                      session.practitionerPhoto
+                        ? session.practitionerPhoto[0].url
+                        : '/images/avatar.jpg'
+                    }
+                  />
+
+                  <div className='mr-auto text-[12px] font-bold'>
+                    {displayName}
+                  </div>
+                  <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+                    {session.appointmentType} session
+                  </div>
+                </div>
+              </Link>
+            );
+          })
+        )}
+      </>
+    );
+  };
 
   return (
     <>
@@ -28,31 +293,11 @@ export default function Schedule() {
               Scheduled Session
             </span>
           </div>
-          <div className='card mt-4 flex items-center bg-[#F9F9F9]'>
-            <Image
-              className='mr-[10px] min-h-[32] min-w-[32]'
-              src={'/icons/calendar.svg'}
-              width={32}
-              height={32}
-              alt='calendar'
-            />
-            <div className='mr-auto flex flex-col'>
-              <span className='text-[12px] text-muted'>
-                Upcoming Session With
-              </span>
-              <span className='text-[14px] font-bold text-secondary'>
-                Mrs Clinician Name
-              </span>
-            </div>
-            <div className='s'>
-              <span className='text-[12px] font-bold'>
-                {dayjs().format('HH:mm')} |{' '}
-              </span>
-              <span className='text-[12px]'>
-                {dayjs().format('DD/MM/YYYY')}
-              </span>
-            </div>
-          </div>
+
+          {unfilteredAppointmentsData &&
+            unfilteredAppointmentsData.length > 0 && (
+              <UpcomingSession upcomingData={unfilteredAppointmentsData} />
+            )}
         </div>
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>
@@ -65,18 +310,23 @@ export default function Schedule() {
               className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
-            <ClinicFilter
+            <SessionFilter
               onChange={(filter: IUseClinicParams) => {
-                setClinicFilter(prevState => ({
+                setSessionsFilter(prevState => ({
                   ...prevState,
                   ...filter
                 }));
               }}
-              type='clinician'
+              type={selectedTab}
             />
           </div>
 
-          <Tabs defaultValue='upcoming' className='w-full'>
+          <Tabs
+            defaultValue='upcoming'
+            className='w-full'
+            value={selectedTab}
+            onValueChange={value => setSelectedTab(value)}
+          >
             <TabsList className='grid w-full grid-cols-2 bg-transparent'>
               <TabsTrigger
                 className='rounded-none border-secondary data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:text-secondary data-[state=active]:shadow-none'
@@ -91,89 +341,24 @@ export default function Schedule() {
                 Past Session
               </TabsTrigger>
             </TabsList>
-            <TabsContent value='upcoming'>
-              <UpcomingSession />
-            </TabsContent>
-            <TabsContent value='past'>
-              <PastSession />
-            </TabsContent>
+            {isUpcomingLoading ? (
+              <Skeleton
+                count={4}
+                className='mt-4 h-[100px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
+              />
+            ) : (
+              <>
+                <TabsContent value='upcoming'>
+                  <TabUpcomingSession />
+                </TabsContent>
+                <TabsContent value='past'>
+                  <TabPastSession />
+                </TabsContent>
+              </>
+            )}
           </Tabs>
-
-          {/* <div className='flex gap-4'>
-            {clinicFilter.start_date && clinicFilter.end_date && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-                {clinicFilter.start_date == clinicFilter.end_date
-                  ? format(clinicFilter.start_date, 'dd MMM yy')
-                  : format(clinicFilter.start_date, 'dd MMM yy') +
-                    ' - ' +
-                    format(clinicFilter.end_date, 'dd MMM yy')}
-              </Badge>
-            )}
-            {clinicFilter.start_time && clinicFilter.end_time && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-                {clinicFilter.start_time + ' - ' + clinicFilter.end_time}
-              </Badge>
-            )}
-            {clinicFilter.location && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-                {clinicFilter.location}
-              </Badge>
-            )}
-          </div> */}
         </div>
       </div>
     </>
-  );
-}
-
-function UpcomingSession() {
-  return (
-    <Link href={'#'} className='card mt-4 flex flex-col gap-2 p-4'>
-      <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-        15: 00 - 12/12/2025
-      </div>
-
-      <hr className='w-full' />
-      <div className='flex items-center'>
-        <Image
-          className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-          width={32}
-          height={32}
-          alt='offline'
-          src={'/images/avatar.jpg'}
-        />
-
-        <div className='mr-auto text-[12px] font-bold'>Fitra Agil</div>
-        <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-          Online Session
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function PastSession() {
-  return (
-    <Link href={'#'} className='card mt-4 flex flex-col gap-2 p-4'>
-      <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-        15: 00 - 12/12/2025
-      </div>
-
-      <hr className='w-full' />
-      <div className='flex items-center'>
-        <Image
-          className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-          width={32}
-          height={32}
-          alt='offline'
-          src={'/images/avatar.jpg'}
-        />
-
-        <div className='mr-auto text-[12px] font-bold'>Budi Sudarsono</div>
-        <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-          Online Session
-        </div>
-      </div>
-    </Link>
   );
 }

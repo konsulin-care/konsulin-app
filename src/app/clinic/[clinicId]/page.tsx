@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { IUseClinicParams, useClinicById } from '@/services/clinic';
 import { IOrganizationResource, IPractitioner } from '@/types/organization';
-import { mergeNames } from '@/utils/helper';
-import { format, parse, setHours, setMinutes } from 'date-fns';
+import { mergeNames, parseTime } from '@/utils/helper';
+import { format, setHours, setMinutes } from 'date-fns';
 import { ChevronLeftIcon, HeartPulse, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -55,10 +55,6 @@ const isSlotAvailable = ({
   );
 };
 
-const parseTime = (timeStr: string, formatStr = 'HH:mm') => {
-  return parse(timeStr, formatStr, new Date());
-};
-
 export default function DetailClinic({ params }: IDetailClinic) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -86,12 +82,17 @@ export default function DetailClinic({ params }: IDetailClinic) {
       .join(', ');
   };
 
-  const handleClick = (practitioner: IPractitioner) => {
+  const handleSelectPractitioner = (practitioner: IPractitioner) => {
     if (!practitioner) return;
 
     localStorage.setItem(
       `practitioner-${practitioner.id}`,
-      JSON.stringify(practitioner)
+      JSON.stringify({
+        roleId: practitioner.practitionerRole.id,
+        name: practitioner.name,
+        photo: practitioner.photo,
+        qualification: practitioner.qualification
+      })
     );
   };
 
@@ -108,8 +109,8 @@ export default function DetailClinic({ params }: IDetailClinic) {
     const lowerKeyword = keyword.trim().toLowerCase();
     const { start_date, end_date, start_time, end_time } = practitionerFilter;
 
-    const hasDateFilter = start_date && end_date;
-    const hasTimeFilter = start_time || end_time;
+    const hasDateFilter = !!start_date && !!end_date;
+    const hasTimeFilter = !!start_time || !!end_time;
 
     const filterDays = hasDateFilter
       ? generateFilterDays(start_date, end_date)
@@ -125,7 +126,10 @@ export default function DetailClinic({ params }: IDetailClinic) {
 
     return practitionersData.filter((practitioner: IPractitioner) => {
       // name filtering
-      const fullName = mergeNames(practitioner.name);
+      const fullName = mergeNames(
+        practitioner.name,
+        practitioner.qualification
+      );
       if (!fullName) return false;
 
       const cleanFullName = fullName.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -243,11 +247,6 @@ export default function DetailClinic({ params }: IDetailClinic) {
                 practitionerFilter.end_time}
             </Badge>
           )}
-          {/* {practitionerFilter.city && ( */}
-          {/*   <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'> */}
-          {/*     {practitionerFilter.city} */}
-          {/*   </Badge> */}
-          {/* )} */}
         </div>
 
         {isLoading || isFetching || !filteredPractitioners ? (
@@ -255,7 +254,10 @@ export default function DetailClinic({ params }: IDetailClinic) {
         ) : filteredPractitioners.length > 0 ? (
           <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
             {practitionersData.map((practitioner: IPractitioner) => {
-              const displayName = mergeNames(practitioner.name);
+              const displayName = mergeNames(
+                practitioner.name,
+                practitioner.qualification
+              );
 
               return (
                 <div
@@ -285,29 +287,25 @@ export default function DetailClinic({ params }: IDetailClinic) {
                   </div>
                   <div className='mt-2 flex flex-wrap justify-center gap-1'>
                     {practitioner.practitionerRole.specialty?.map(
-                      (item, index) => (
+                      (specialty, index) => (
                         <Badge
                           key={index}
                           className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
                         >
-                          {item.text}
+                          {specialty.text}
                         </Badge>
                       )
                     )}
                   </div>
                   <Link
                     href={{
-                      pathname: `/practitioner/${practitioner.id}`,
-                      query: {
-                        practitionerRoleId: practitioner.practitionerRole.id,
-                        clinicId: params.clinicId
-                      }
+                      pathname: `/practitioner/${practitioner.id}`
                     }}
                     className='mt-auto w-full'
                   >
                     <Button
                       className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
-                      onClick={() => handleClick(practitioner)}
+                      onClick={() => handleSelectPractitioner(practitioner)}
                     >
                       Check
                     </Button>

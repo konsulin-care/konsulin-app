@@ -91,7 +91,7 @@ export const frontendConfig = (): SuperTokensConfig => {
                   : 'patient',
                 email: emails[0],
                 profile_picture: result?.photo ? result?.photo[0]?.url : '',
-                fullname: mergeNames(result?.name),
+                fullname: mergeNames(result?.name, result?.qualification),
                 fhirId: result?.id ?? ''
               };
 

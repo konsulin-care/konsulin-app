@@ -1,23 +1,40 @@
 import { IBundleResponse } from '@/types/record';
+import { parse } from 'date-fns';
 import {
   Annotation,
+  Appointment,
+  AppointmentParticipant,
+  Attachment,
+  Bundle,
+  BundleEntry,
   Coding,
   HumanName,
   Observation,
   Patient,
   Practitioner,
+  PractitionerQualification,
   QuestionnaireItem,
-  QuestionnaireResponse
+  QuestionnaireResponse,
+  Slot
 } from 'fhir/r4';
 
-export const mergeNames = (data: HumanName[]) => {
-  if (!data || data.length === 0) {
+export const mergeNames = (
+  name: HumanName[],
+  qualification?: PractitionerQualification[]
+) => {
+  if (!name || name.length === 0) {
     return '-';
   }
+  const qualificationCode =
+    qualification && qualification.length > 0
+      ? qualification?.[0]?.code?.coding?.[0]?.code
+      : '';
 
-  return data
+  const fullName = name
     .map(item => [...item.given, item.family].filter(Boolean).join(' '))
     .join('');
+
+  return qualificationCode ? `${fullName}, ${qualificationCode}` : fullName;
 };
 
 export const customMarkdownComponents = {
@@ -137,4 +154,87 @@ export const parseFhirProfile = (data: Patient | Practitioner) => {
     phone,
     email
   };
+};
+
+export const removeCityPrefix = (input: string): string => {
+  if (!input) return '';
+
+  return input.replace(/^(Kab\.|Kota)\s+/i, '').trim();
+};
+
+export type MergedAppointment = {
+  appointmentId: string;
+  slotStart: string | null;
+  slotEnd: string | null;
+  slotStatus: string | null;
+  appointmentType: string | null;
+  practitionerId: string | null;
+  practitionerName: HumanName[] | null;
+  practitionerQualification: PractitionerQualification[] | null;
+  practitionerPhoto: Attachment[] | null;
+};
+
+export const parseMergedAppointments = (
+  bundle: Bundle
+): MergedAppointment[] => {
+  const appointments = bundle.entry
+    .filter(
+      (entry: BundleEntry) => entry.resource.resourceType === 'Appointment'
+    )
+    .map((entry: BundleEntry) => entry.resource as Appointment);
+
+  const slots = bundle.entry
+    .filter((entry: BundleEntry) => entry.resource.resourceType === 'Slot')
+    .map((entry: BundleEntry) => entry.resource as Slot);
+
+  const practitioners = bundle.entry
+    .filter(
+      (entry: BundleEntry) => entry.resource.resourceType === 'Practitioner'
+    )
+    .map((entry: BundleEntry) => entry.resource as Practitioner);
+
+  const results: MergedAppointment[] = [];
+
+  appointments.forEach((appointment: Appointment) => {
+    // extract slot id
+    const slotReference = appointment.slot && appointment.slot[0]?.reference;
+    const slotId = slotReference ? slotReference.split('/')[1] : null;
+
+    // extract practitioner reference from participants
+    const practitionerParticipant = appointment.participant.find(
+      (participant: AppointmentParticipant) =>
+        participant.actor.reference &&
+        participant.actor.reference.startsWith('Practitioner/')
+    );
+    const practitionerId = practitionerParticipant
+      ? practitionerParticipant.actor.reference.split('/')[1]
+      : null;
+
+    const slotData = slots.find((slot: Slot) => slot.id === slotId);
+    const practitionerData = practitioners.find(
+      (practitioner: Practitioner) => practitioner.id === practitionerId
+    );
+
+    results.push({
+      appointmentId: appointment.id || null,
+      slotStart: slotData?.start || null,
+      slotEnd: slotData?.end || null,
+      slotStatus: slotData?.status || null,
+      appointmentType: appointment.appointmentType?.text || null,
+      practitionerId: practitionerData?.id || null,
+      practitionerName: practitionerData?.name || null,
+      practitionerQualification: practitionerData?.qualification || null,
+      practitionerPhoto: practitionerData?.photo || null
+    });
+  });
+
+  // sort the results by slotStart in ascending order
+  return results.sort((a, b) => {
+    if (!a.slotStart || !b.slotStart) return 0;
+    return new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime();
+  });
+};
+
+export const parseTime = (timeStr: string, formatStr = 'HH:mm') => {
+  return parse(timeStr, formatStr, new Date());
 };

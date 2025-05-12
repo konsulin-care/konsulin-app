@@ -4,7 +4,7 @@ import Header from '@/components/header';
 import { useAuth } from '@/context/auth/authContext';
 import { ChevronLeft } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import EditPratice from './edit-pratice';
 import EditProfile from './edit-profile';
 
@@ -37,12 +37,12 @@ const PathProfile = () => {
   }
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <>
       <Header showChat={false} showNotification={false}>
         {!authState.isAuthenticated ? (
-          <div className='mt-5'></div>
+          <div className='mt-8'></div>
         ) : (
-          <div className='flex w-full items-center justify-between'>
+          <div className='mb-[-5px] flex w-full items-center justify-between'>
             <ChevronLeft
               width={24}
               height={24}
@@ -60,7 +60,7 @@ const PathProfile = () => {
       <div className='mt-[-24px] rounded-[16px] bg-white'>
         <div className='min-h-[calc(100vh-105px)] p-4'>{component}</div>
       </div>
-    </Suspense>
+    </>
   );
 };
 

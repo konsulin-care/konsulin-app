@@ -20,7 +20,7 @@ export const useGetCities = (provinceCode: number) => {
       const response = await axios.get(`/api/cities/${provinceCode}`);
       return response.data.data;
     },
-    enabled: !provinceCode !== undefined && provinceCode !== null,
+    enabled: provinceCode !== undefined && provinceCode !== null,
     select: response => response || null
   });
 };
@@ -33,7 +33,7 @@ export const useGetDistricts = (cityCode: number) => {
       const response = await axios.get(`/api/districts/${cityCode}`);
       return response.data.data;
     },
-    enabled: !cityCode !== undefined && cityCode !== null,
+    enabled: cityCode !== undefined && cityCode !== null,
     select: response => response || null
   });
 };

@@ -60,7 +60,6 @@ export default function HomeContentPatient() {
 
   return (
     <>
-      {/* TODO: add upcoming session with */}
       <AppChartClient />
 
       <div className='flex gap-4 p-4'>
@@ -170,7 +169,10 @@ export default function HomeContentPatient() {
                             }
                           />
                           <div className='mr-auto text-[12px]'>
-                            {mergeNames(record.practitionerProfile?.name)}
+                            {mergeNames(
+                              record.practitionerProfile?.name,
+                              record.practitionerProfile?.qualification
+                            )}
                           </div>
                         </>
                       ) : (

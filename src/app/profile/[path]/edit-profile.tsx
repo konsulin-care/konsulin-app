@@ -95,9 +95,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const fhirRole = userRole === 'patient' ? 'Patient' : 'Practitioner';
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const { data: profileData, isLoading: isProfileLoading } = useQuery<
-    Patient | Practitioner
-  >({
+  const { isLoading: isProfileLoading } = useQuery<Patient | Practitioner>({
     queryKey: ['profile-data', fhirId],
     queryFn: () => getProfileById(fhirId, fhirRole),
     onSuccess: result => {
@@ -315,7 +313,10 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     if (!isUpdateError && result) {
       const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
       auth.profile_picture = result.photo[0].url;
-      auth.fullname = mergeNames(result.name);
+      auth.fullname =
+        result.resourceType === 'Practitioner'
+          ? mergeNames(result.name, result?.qualification)
+          : mergeNames(result.name);
       await setCookies('auth', JSON.stringify(auth));
       dispatchAuth({ type: 'auth-check', payload: auth });
 
@@ -433,220 +434,236 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   return (
     <div className='flex min-h-screen flex-col'>
       <div className='flex flex-grow flex-col justify-between p-4'>
-        <ImageUploader
-          userPhoto={updateUser.photo}
-          onPhotoChange={handleUserPhoto}
-        />
-        <div className='flex flex-grow flex-col space-y-4'>
-          <Input
-            width={24}
-            height={24}
-            prefixIcon={'/icons/user-edit.svg'}
-            placeholder='Masukan Nama Depan'
-            name='firstName'
-            id='firstName'
-            type='text'
-            value={updateUser.firstName}
-            onChange={(event: any) =>
-              handleChangeInput('firstName', event.target.value)
-            }
-            opacity={false}
-            outline={false}
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-          />
-          {errors.firstName && (
-            <p className='px-4 text-xs text-red-500'>{errors.firstName}</p>
-          )}
-          <Input
-            width={24}
-            height={24}
-            prefixIcon={'/icons/user-edit.svg'}
-            placeholder='Masukan Nama Belakang'
-            name='lastName'
-            id='lastName'
-            type='text'
-            value={updateUser.lastName}
-            onChange={(event: any) =>
-              handleChangeInput('lastName', event.target.value)
-            }
-            opacity={false}
-            outline={false}
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-          />
-          {errors.lastName && (
-            <p className='px-4 text-xs text-red-500'>{errors.lastName}</p>
-          )}
-          <Input
-            width={24}
-            height={24}
-            prefixIcon={'/icons/email.svg'}
-            placeholder='Masukan Alamat Email'
-            name='email'
-            id='email'
-            type='email'
-            value={updateUser.email}
-            onChange={(event: any) =>
-              handleChangeInput('email', event.target.value)
-            }
-            opacity={false}
-            outline={false}
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-          />
-          {errors.email && (
-            <p className='px-4 text-xs text-red-500'>{errors.email}</p>
-          )}
-          <div
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-            onClick={() => setDrawerState(DRAWER_STATE.DOB)}
-          >
-            <Image
-              src={'/icons/calendar-edit.png'}
-              alt='calendar-icon'
-              width={24}
-              height={24}
+        {isProfileLoading ? (
+          <div className='flex min-h-screen min-w-full items-center justify-center'>
+            <LoadingSpinnerIcon
+              width={56}
+              height={56}
+              className='w-full animate-spin'
             />
-            <div className='flex flex-grow justify-start text-sm'>
-              {updateUser.birthDate
-                ? formatDate(updateUser.birthDate)
-                : 'Masukan Tanggal Lahir'}
-            </div>
           </div>
-          <Input
-            width={24}
-            height={24}
-            prefixIcon={'/icons/country-code.svg'}
-            placeholder='Masukan Whatsapp Number'
-            name='phone'
-            id='phone'
-            type='text'
-            value={updateUser.phone}
-            onChange={(event: any) => {
-              const onlyNumbers = event.target.value.replace(/\D/g, '');
-              handleChangeInput('phone', onlyNumbers);
-            }}
-            opacity={false}
-            outline={false}
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-          />
-          {errors.phone && (
-            <p className='px-4 text-xs text-red-500'>{errors.phone}</p>
-          )}
-
-          <DropdownProfile
-            options={genderList}
-            value={updateUser.gender}
-            onSelect={handleGenderSelect}
-            placeholder='Pilih Gender'
-          />
-          {errors.gender && (
-            <p className='p-4 text-xs text-red-500'>{errors.gender}</p>
-          )}
-
-          <DropdownProfile
-            options={listProvinces}
-            value={updateUser.provinceCode}
-            onSelect={handleProvinceSelect}
-            placeholder='Pilih Provinsi'
-            loading={provinceLoading}
-          />
-          {errors.province && (
-            <p className='p-4 text-xs text-red-500'>{errors.province}</p>
-          )}
-
-          {(updateUser.provinceCode || updateUser.city) && (
-            <>
-              <DropdownProfile
-                options={listCities}
-                value={updateUser.cityCode}
-                onSelect={handleCitySelect}
-                placeholder='Pilih Kota'
-                labelPlaceholder={updateUser.city}
-                loading={cityLoading}
-              />
-              {errors.city && (
-                <p className='p-4 text-xs text-red-500'>{errors.city}</p>
-              )}
-            </>
-          )}
-
-          {(updateUser.cityCode || updateUser.district) && (
-            <>
-              <DropdownProfile
-                options={listDistricts}
-                value={updateUser.districtCode}
-                onSelect={handleDistrictSelect}
-                placeholder='Pilih Kecamatan'
-                labelPlaceholder={updateUser.district}
-                loading={districtLoading}
-              />
-              {errors.district && (
-                <p className='p-4 text-xs text-red-500'>{errors.district}</p>
-              )}
-            </>
-          )}
-
-          {updateUser.addresses?.map((addr: string, index: number) => (
-            <div key={index} className='mb-2 flex items-center gap-2'>
+        ) : (
+          <>
+            <ImageUploader
+              userPhoto={updateUser.photo}
+              onPhotoChange={handleUserPhoto}
+            />
+            <div className='flex flex-grow flex-col space-y-4'>
               <Input
                 width={24}
                 height={24}
-                prefixIcon={'/icons/location.svg'}
-                placeholder='Masukan Alamat'
-                name={`addresses-${index}`}
-                id={`addresses-${index}`}
+                prefixIcon={'/icons/user-edit.svg'}
+                placeholder='Masukan Nama Depan'
+                name='firstName'
+                id='firstName'
                 type='text'
-                value={addr}
+                value={updateUser.firstName}
                 onChange={(event: any) =>
-                  handleAddressChange(index, event.target.value)
+                  handleChangeInput('firstName', event.target.value)
                 }
                 opacity={false}
                 outline={false}
                 className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
               />
-              <button
-                type='button'
-                onClick={() => handleRemoveAddress(index)}
-                className='px-2 text-sm text-red-500'
-              >
-                <X />
-              </button>
-            </div>
-          ))}
-
-          <div className='my-4 flex justify-center'>
-            <p
-              className='cursor-pointer text-center text-sm font-normal'
-              onClick={handleAddAddress}
-            >
-              + Add New Address
-            </p>
-          </div>
-
-          <div className='flex w-full flex-grow flex-col justify-between space-x-2'>
-            <div className='flex-1'>
+              {errors.firstName && (
+                <p className='px-4 text-xs text-red-500'>{errors.firstName}</p>
+              )}
               <Input
                 width={24}
                 height={24}
-                prefixIcon={'/icons/location.svg'}
-                placeholder='Masukan Kode pos'
-                name='postalCode'
-                id='postalCode'
+                prefixIcon={'/icons/user-edit.svg'}
+                placeholder='Masukan Nama Belakang'
+                name='lastName'
+                id='lastName'
                 type='text'
-                value={updateUser.postalCode}
+                value={updateUser.lastName}
+                onChange={(event: any) =>
+                  handleChangeInput('lastName', event.target.value)
+                }
+                opacity={false}
+                outline={false}
+                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+              />
+              {errors.lastName && (
+                <p className='px-4 text-xs text-red-500'>{errors.lastName}</p>
+              )}
+              <Input
+                width={24}
+                height={24}
+                prefixIcon={'/icons/email.svg'}
+                placeholder='Masukan Alamat Email'
+                name='email'
+                id='email'
+                type='email'
+                value={updateUser.email}
+                onChange={(event: any) =>
+                  handleChangeInput('email', event.target.value)
+                }
+                opacity={false}
+                outline={false}
+                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+              />
+              {errors.email && (
+                <p className='px-4 text-xs text-red-500'>{errors.email}</p>
+              )}
+              <div
+                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+                onClick={() => setDrawerState(DRAWER_STATE.DOB)}
+              >
+                <Image
+                  src={'/icons/calendar-edit.png'}
+                  alt='calendar-icon'
+                  width={24}
+                  height={24}
+                />
+                <div className='flex flex-grow justify-start text-sm'>
+                  {updateUser.birthDate
+                    ? formatDate(updateUser.birthDate)
+                    : 'Masukan Tanggal Lahir'}
+                </div>
+              </div>
+              <Input
+                width={24}
+                height={24}
+                prefixIcon={'/icons/country-code.svg'}
+                placeholder='Masukan Whatsapp Number'
+                name='phone'
+                id='phone'
+                type='text'
+                value={updateUser.phone}
                 onChange={(event: any) => {
                   const onlyNumbers = event.target.value.replace(/\D/g, '');
-                  handleChangeInput('postalCode', onlyNumbers);
+                  handleChangeInput('phone', onlyNumbers);
                 }}
                 opacity={false}
                 outline={false}
                 className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
               />
-              {errors.postalCode && (
-                <p className='px-4 text-xs text-red-500'>{errors.postalCode}</p>
+              {errors.phone && (
+                <p className='px-4 text-xs text-red-500'>{errors.phone}</p>
               )}
+
+              <DropdownProfile
+                options={genderList}
+                value={updateUser.gender}
+                onSelect={handleGenderSelect}
+                placeholder='Pilih Gender'
+              />
+              {errors.gender && (
+                <p className='p-4 text-xs text-red-500'>{errors.gender}</p>
+              )}
+
+              <DropdownProfile
+                options={listProvinces}
+                value={updateUser.provinceCode}
+                onSelect={handleProvinceSelect}
+                placeholder='Pilih Provinsi'
+                loading={provinceLoading}
+              />
+              {errors.province && (
+                <p className='p-4 text-xs text-red-500'>{errors.province}</p>
+              )}
+
+              {(updateUser.provinceCode || updateUser.city) && (
+                <>
+                  <DropdownProfile
+                    options={listCities}
+                    value={updateUser.cityCode}
+                    onSelect={handleCitySelect}
+                    placeholder='Pilih Kota'
+                    labelPlaceholder={updateUser.city}
+                    loading={cityLoading}
+                  />
+                  {errors.city && (
+                    <p className='p-4 text-xs text-red-500'>{errors.city}</p>
+                  )}
+                </>
+              )}
+
+              {(updateUser.cityCode || updateUser.district) && (
+                <>
+                  <DropdownProfile
+                    options={listDistricts}
+                    value={updateUser.districtCode}
+                    onSelect={handleDistrictSelect}
+                    placeholder='Pilih Kecamatan'
+                    labelPlaceholder={updateUser.district}
+                    loading={districtLoading}
+                  />
+                  {errors.district && (
+                    <p className='p-4 text-xs text-red-500'>
+                      {errors.district}
+                    </p>
+                  )}
+                </>
+              )}
+
+              {updateUser.addresses?.map((addr: string, index: number) => (
+                <div key={index} className='mb-2 flex items-center gap-2'>
+                  <Input
+                    width={24}
+                    height={24}
+                    prefixIcon={'/icons/location.svg'}
+                    placeholder='Masukan Alamat'
+                    name={`addresses-${index}`}
+                    id={`addresses-${index}`}
+                    type='text'
+                    value={addr}
+                    onChange={(event: any) =>
+                      handleAddressChange(index, event.target.value)
+                    }
+                    opacity={false}
+                    outline={false}
+                    className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+                  />
+                  <button
+                    type='button'
+                    onClick={() => handleRemoveAddress(index)}
+                    className='px-2 text-sm text-red-500'
+                  >
+                    <X />
+                  </button>
+                </div>
+              ))}
+
+              <div className='my-4 flex justify-center'>
+                <p
+                  className='cursor-pointer text-center text-sm font-normal'
+                  onClick={handleAddAddress}
+                >
+                  + Add New Address
+                </p>
+              </div>
+
+              <div className='flex w-full flex-grow flex-col justify-between space-x-2'>
+                <div className='flex-1'>
+                  <Input
+                    width={24}
+                    height={24}
+                    prefixIcon={'/icons/location.svg'}
+                    placeholder='Masukan Kode pos'
+                    name='postalCode'
+                    id='postalCode'
+                    type='text'
+                    value={updateUser.postalCode}
+                    onChange={(event: any) => {
+                      const onlyNumbers = event.target.value.replace(/\D/g, '');
+                      handleChangeInput('postalCode', onlyNumbers);
+                    }}
+                    opacity={false}
+                    outline={false}
+                    className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+                  />
+                  {errors.postalCode && (
+                    <p className='px-4 text-xs text-red-500'>
+                      {errors.postalCode}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
         <button
           className={`text-md border-1 mt-6 w-full rounded-full border-primary p-4 font-semibold ${validateForm(updateUser) && !isUpdateLoading ? 'bg-secondary text-white' : 'cursor-not-allowed bg-gray-300 text-gray-500'}`}
           type='submit'

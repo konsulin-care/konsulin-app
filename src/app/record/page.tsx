@@ -238,7 +238,10 @@ export default function Record() {
                           }
                         />
                         <div className='mr-auto text-[12px]'>
-                          {mergeNames(record.practitionerProfile?.name)}
+                          {mergeNames(
+                            record.practitionerProfile?.name,
+                            record.practitionerProfile?.qualification
+                          )}
                         </div>
                       </>
                     ) : (
