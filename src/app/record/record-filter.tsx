@@ -16,7 +16,14 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { addDays, endOfWeek, format, startOfWeek } from 'date-fns';
+import {
+  addDays,
+  endOfMonth,
+  endOfWeek,
+  format,
+  startOfMonth,
+  startOfWeek
+} from 'date-fns';
 import { useState } from 'react';
 const CONTENT_DEFAULT = 0;
 const CONTENT_CUSTOM = 1;
@@ -39,10 +46,10 @@ const filterContentListDate = [
     }
   },
   {
-    label: 'Next Week',
+    label: 'This Month',
     value: {
-      start: addDays(startOfWeek(today), 8),
-      end: addDays(endOfWeek(today), 8)
+      start: startOfMonth(today),
+      end: endOfMonth(today)
     }
   }
 ];

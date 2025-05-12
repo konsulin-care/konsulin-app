@@ -53,7 +53,12 @@ export default function HomeContentPatient() {
             })
           );
 
-          setRecords(attachProfile);
+          const sorted = attachProfile.sort(
+            (a, b) =>
+              new Date(b.lastUpdated).getTime() -
+              new Date(a.lastUpdated).getTime()
+          );
+          setRecords(sorted);
         }
       });
     }

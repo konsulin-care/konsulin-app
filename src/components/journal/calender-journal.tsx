@@ -4,6 +4,8 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
   DrawerTrigger
 } from '@/components/ui/drawer';
 import { cn } from '@/lib/utils';
@@ -19,7 +21,8 @@ export default function CalendarJournal({ onChange, value }) {
     setDate(value);
   }, [value]);
 
-  const handeDateChange = date => {
+  const handeDateChange = (date: Date) => {
+    if (!date) return;
     setDate(date);
     onChange(date);
   };
@@ -33,11 +36,17 @@ export default function CalendarJournal({ onChange, value }) {
             'flex flex-col items-center justify-center rounded-lg border-0 p-4'
           )}
         >
-          <div className='font-bold text-secondary'>{format(date, 'EEEE')}</div>
-          <div className='text-muted'>{format(date, 'dd/MM/yyyy')}</div>
+          <div className='font-bold text-secondary'>
+            {date ? format(date, 'EEEE') : '-'}
+          </div>
+          <div className='text-muted'>
+            {date ? format(date, 'dd/MM/yyyy') : '-'}
+          </div>
         </Button>
       </DrawerTrigger>
       <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+        <DrawerTitle />
+        <DrawerDescription />
         <div className='mt-4 flex flex-col'>
           <div className='mt-4 flex w-full flex-col justify-center'>
             <Calendar
@@ -62,10 +71,8 @@ export default function CalendarJournal({ onChange, value }) {
               }}
             />
           </div>
-          <DrawerClose className='flex'>
-            <Button className='mt-4 w-full rounded-xl bg-secondary p-4 text-white'>
-              Kembali
-            </Button>
+          <DrawerClose className='mt-4 w-full rounded-xl bg-secondary p-4 text-center text-white'>
+            Kembali
           </DrawerClose>
         </div>
       </DrawerContent>

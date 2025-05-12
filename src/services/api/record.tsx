@@ -57,8 +57,7 @@ export const useSubmitJournal = () => {
   return useMutation({
     mutationKey: ['journal'],
     mutationFn: async (journalData: IJournal) => {
-      const timestamp = new Date().toISOString();
-      const payload = { ...journalData, effectiveDateTime: timestamp };
+      const payload = { ...journalData };
 
       try {
         const response = await API.post('/fhir/Observation', payload);

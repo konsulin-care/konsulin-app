@@ -40,25 +40,32 @@ export default function Record() {
   const filteredRecords = useMemo(() => {
     if (!records) return [];
 
-    return records.filter(record => {
-      const { start_date, end_date, type, query } = recordFilter;
+    return records
+      .filter(record => {
+        const { start_date, end_date, type, query } = recordFilter;
 
-      const recordDate = format(parseISO(record.lastUpdated), 'yyyy-MM-dd');
-      const startDate = start_date ? format(start_date, 'yyyy-MM-dd') : null;
-      const endDate = end_date ? format(end_date, 'yyyy-MM-dd') : null;
+        const recordDate = format(parseISO(record.lastUpdated), 'yyyy-MM-dd');
+        const startDate = start_date ? format(start_date, 'yyyy-MM-dd') : null;
+        const endDate = end_date ? format(end_date, 'yyyy-MM-dd') : null;
 
-      const matchesDateRange =
-        (!startDate || recordDate >= startDate) &&
-        (!endDate || recordDate <= endDate);
+        const matchesDateRange =
+          (!startDate || recordDate >= startDate) &&
+          (!endDate || recordDate <= endDate);
 
-      const matchesType = !type || type === 'All' || record.type === type;
+        const matchesType = !type || type === 'All' || record.type === type;
 
-      const queryLower = query?.toLowerCase() || '';
-      const matchesQuery =
-        !query || record.result?.toLowerCase().includes(queryLower);
+        const queryLower = query?.toLowerCase() || '';
+        const matchesQuery =
+          !query || record.result?.toLowerCase().includes(queryLower);
 
-      return matchesDateRange && matchesType && matchesQuery;
-    });
+        return matchesDateRange && matchesType && matchesQuery;
+      })
+      .sort((a, b) => {
+        // sort by lastUpdated in descending order (latest first)
+        return (
+          new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+        );
+      });
   }, [records, recordFilter]);
 
   /*
