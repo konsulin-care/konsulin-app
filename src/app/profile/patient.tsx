@@ -9,7 +9,11 @@ import { medalLists, settingMenus } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { getProfileById } from '@/services/profile';
-import { mergeNames, parseMergedAppointments } from '@/utils/helper';
+import {
+  generateAvatarPlaceholder,
+  mergeNames,
+  parseMergedAppointments
+} from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
 import { format, isAfter, parseISO } from 'date-fns';
 import type { Address, ContactPoint, Patient } from 'fhir/r4';
@@ -28,7 +32,7 @@ const now = new Date();
 
 export default function Patient({ fhirId }: Props) {
   const router = useRouter();
-  const { state: authState } = useAuth();
+  const { state: authState, isLoading: isAuthLoading } = useAuth();
   const { data: upcomingData } = useGetUpcomingAppointments({
     patientId: authState?.userInfo?.fhirId,
     dateReference: format(now, 'yyyy-MM-dd')
@@ -107,6 +111,11 @@ export default function Patient({ fhirId }: Props) {
       ]
     : [];
 
+  const { initials, backgroundColor } = generateAvatarPlaceholder({
+    name: authState.userInfo?.fullname,
+    email: authState.userInfo?.email
+  });
+
   return (
     <>
       <div className='mb-4 flex justify-between rounded-lg bg-secondary p-4'>
@@ -143,16 +152,14 @@ export default function Patient({ fhirId }: Props) {
           <ChevronRightIcon color='white' width={24} height={24} />
         </div>
       </div>
-      {isProfileLoading || !profileData ? (
+      {isProfileLoading || isAuthLoading || !profileData ? (
         <Skeleton className='h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
       ) : (
         <InformationDetail
           isRadiusIcon
-          iconUrl={
-            profileData.photo?.[0].url && profileData.photo[0].url !== ''
-              ? profileData.photo[0].url
-              : '/images/sample-foto.svg'
-          }
+          initials={initials}
+          backgroundColor={backgroundColor}
+          iconUrl={profileData.photo?.[0].url}
           title={mergeNames(profileData.name)}
           subTitle={findTelecom('email')}
           buttonText='Edit Profile'

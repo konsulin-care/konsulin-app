@@ -1,7 +1,15 @@
 import Image from 'next/image';
 import Tags from './tags';
 
-function HeaderSection({ isRadiusIcon, iconUrl, title, subTitle, role }) {
+function HeaderSection({
+  isRadiusIcon,
+  iconUrl,
+  title,
+  subTitle,
+  role,
+  initials,
+  backgroundColor
+}) {
   const titleStyle =
     role === 'patient'
       ? 'text-sm font-bold opacity-100'
@@ -12,14 +20,23 @@ function HeaderSection({ isRadiusIcon, iconUrl, title, subTitle, role }) {
       : 'text-left whitespace-nowrap text-sm font-bold opacity-100 overflow-hidden break-words';
 
   return (
-    <div className='flex w-1/2'>
-      <Image
-        src={iconUrl}
-        width={32}
-        height={32}
-        alt='icon'
-        className={`${isRadiusIcon ? 'h-[32px] w-[32px] rounded-full p-[2px]' : 'p-[2px]'}`}
-      />
+    <div className='flex w-1/2 items-center'>
+      {!iconUrl ? (
+        <div
+          className='mr-2 flex h-[32px] w-[32px] flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white'
+          style={{ backgroundColor }}
+        >
+          {initials}
+        </div>
+      ) : (
+        <Image
+          src={iconUrl}
+          width={32}
+          height={32}
+          alt='icon'
+          className={`${isRadiusIcon ? 'h-[32px] w-[32px] rounded-full p-[2px]' : 'p-[2px]'}`}
+        />
+      )}
       <div className='flex w-full flex-col items-start justify-start pl-1'>
         <p className={titleStyle}>{title}</p>
         {subTitle && <p className={`${subTitleStyle}`}>{subTitle}</p>}
@@ -102,7 +119,9 @@ export default function InformationDetail({
   details,
   onEdit,
   role,
-  isEditPratice = false
+  isEditPratice = false,
+  initials,
+  backgroundColor
 }) {
   const filteredClinics = details?.filter(
     clinic => clinic.price_per_session?.value > 0
@@ -117,6 +136,8 @@ export default function InformationDetail({
           title={title}
           subTitle={subTitle}
           role={role}
+          initials={initials}
+          backgroundColor={backgroundColor}
         />
         <div className='flex w-1/2 items-start justify-end'>
           <button onClick={onEdit}>

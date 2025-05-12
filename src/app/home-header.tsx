@@ -5,7 +5,10 @@ import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetUpcomingAppointments } from '@/services/api/appointments';
-import { parseMergedAppointments } from '@/utils/helper';
+import {
+  generateAvatarPlaceholder,
+  parseMergedAppointments
+} from '@/utils/helper';
 import { format, isAfter, parseISO } from 'date-fns';
 import Image from 'next/image';
 import { useMemo } from 'react';
@@ -32,6 +35,11 @@ export default function HomeHeader() {
     return filtered;
   }, [upcomingData]);
 
+  const { initials, backgroundColor } = generateAvatarPlaceholder({
+    name: authState.userInfo?.fullname,
+    email: authState.userInfo?.email
+  });
+
   return (
     <>
       <Header>
@@ -51,14 +59,11 @@ export default function HomeHeader() {
           ) : (
             <div className='flex'>
               {!authState.userInfo.profile_picture ? (
-                <div className='mr-2 rounded-full bg-white p-[2px]'>
-                  <Image
-                    className='h-[32px] w-[32px] self-center rounded-full object-cover'
-                    width={32}
-                    height={32}
-                    alt='profile_picture'
-                    src={`/favicon/favicon-32x32.png`}
-                  />
+                <div
+                  className='mr-2 flex h-[32px] w-[32px] items-center justify-center rounded-full text-xs font-bold text-white'
+                  style={{ backgroundColor }}
+                >
+                  {initials}
                 </div>
               ) : (
                 <Image

@@ -283,7 +283,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
                     </Badge>
                   </div>
                   <div className='mt-2 text-center font-bold text-primary'>
-                    {displayName === '' ? '-' : displayName}
+                    {displayName}
                   </div>
                   <div className='mt-2 flex flex-wrap justify-center gap-1'>
                     {practitioner.practitionerRole.specialty?.map(

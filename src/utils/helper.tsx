@@ -238,3 +238,32 @@ export const parseMergedAppointments = (
 export const parseTime = (timeStr: string, formatStr = 'HH:mm') => {
   return parse(timeStr, formatStr, new Date());
 };
+
+const getRandomPastelColor = () => {
+  const hue = Math.floor(Math.random() * 360);
+  return `hsl(${hue}, 70%, 80%)`;
+};
+
+export const generateAvatarPlaceholder = ({ name, email }) => {
+  let initials = '';
+  const key = 'avatar-color';
+
+  if (name && name.trim()) {
+    const parts = name.trim().split(' ');
+
+    // if the name has at least two parts, take the first letter of each
+    initials = parts[0][0] + parts[1][0];
+  } else if (email) {
+    initials = email.slice(0, 2);
+  }
+
+  initials = initials.toUpperCase();
+
+  let backgroundColor = localStorage.getItem(key);
+  if (!backgroundColor) {
+    backgroundColor = getRandomPastelColor();
+    localStorage.setItem(key, backgroundColor);
+  }
+
+  return { initials, backgroundColor };
+};
