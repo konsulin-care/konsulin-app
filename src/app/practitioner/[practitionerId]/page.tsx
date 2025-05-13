@@ -196,7 +196,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
                 Book Session
               </Button>
             ) : (
-              <Link href={'/register'} className='mt-auto w-full'>
+              <Link href={'/auth'} className='mt-auto w-full'>
                 <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 text-[14px] font-bold text-white'>
                   Silakan Daftar atau Masuk untuk Booking
                 </Button>

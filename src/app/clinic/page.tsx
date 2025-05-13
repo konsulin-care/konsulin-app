@@ -60,7 +60,12 @@ export default function Clinic() {
             <div className='text-[14px] font-bold text-white'>
               Schedule Active
             </div>
-            <Link href='/schedule' className='text-[10px] text-white'>
+            <Link
+              href={
+                authState && !authState.isAuthenticated ? '/auth' : '/schedule'
+              }
+              className='text-[10px] text-white'
+            >
               See All
             </Link>
           </div>
