@@ -17,11 +17,10 @@ const now = new Date();
 
 export default function HomeHeader() {
   const { state: authState, isLoading: isLoadingAuth } = useAuth();
-  const { data: upcomingData, isLoading: isUpcomingLoading } =
-    useGetUpcomingAppointments({
-      patientId: authState?.userInfo?.fhirId,
-      dateReference: format(now, 'yyyy-MM-dd')
-    });
+  const { data: upcomingData } = useGetUpcomingAppointments({
+    patientId: authState?.userInfo?.fhirId,
+    dateReference: format(now, 'yyyy-MM-dd')
+  });
 
   const parsedAppointmentsData = useMemo(() => {
     if (!upcomingData || upcomingData?.total === 0) return null;
@@ -43,8 +42,8 @@ export default function HomeHeader() {
   return (
     <>
       <Header>
-        <div className='flex w-full flex-col'>
-          {isLoadingAuth || isUpcomingLoading ? (
+        <div className='flex h-[32px] w-full flex-col justify-center'>
+          {isLoadingAuth ? (
             <div className='flex items-center space-x-4'>
               <Skeleton className='h-[32px] w-[32px] rounded-full' />
               <div className='space-y-2'>
