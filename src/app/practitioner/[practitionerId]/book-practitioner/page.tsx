@@ -28,7 +28,7 @@ import { useBooking } from '@/context/booking/bookingContext';
 import { conjunction, getFromLocalStorage } from '@/lib/utils';
 import { useCreateAppointment } from '@/services/api/appointments';
 import { useDetailPractitioner } from '@/services/clinic';
-import { mergeNames } from '@/utils/helper';
+import { generateAvatarPlaceholder, mergeNames } from '@/utils/helper';
 import { addMinutes, format, parse } from 'date-fns';
 import { Bundle, CodeableConcept } from 'fhir/r4';
 import { ChevronDownIcon, ChevronLeftIcon } from 'lucide-react';
@@ -227,6 +227,11 @@ export default function BookingPractitioner({
     bookingState.endTime
   ]);
 
+  const { initials, backgroundColor } = generateAvatarPlaceholder({
+    name: displayName,
+    email: practitionerData.email
+  });
+
   const renderDrawerContent = (
     <>
       <DrawerHeader className='mx-auto flex flex-col items-center gap-4 pb-0 text-[20px]'>
@@ -291,18 +296,23 @@ export default function BookingPractitioner({
           <>
             <div className='card flex flex-col items-center'>
               <div className='flex flex-col items-center'>
-                <Image
-                  className='h-[100px] w-[100px] rounded-full object-cover'
-                  src={
-                    practitionerData.photo
-                      ? practitionerData.photo[0].url
-                      : '/images/avatar.jpg'
-                  }
-                  alt='practitioner'
-                  width={100}
-                  height={100}
-                  unoptimized
-                />
+                {practitionerData.photo && practitionerData.photo.length > 0 ? (
+                  <Image
+                    className='h-[100px] w-[100px] rounded-full object-cover'
+                    src={practitionerData.photo[0].url}
+                    alt='practitioner'
+                    width={100}
+                    height={100}
+                    unoptimized
+                  />
+                ) : (
+                  <div
+                    className='mr-2 flex h-[100px] w-[100px] items-center justify-center rounded-full text-2xl font-bold text-white'
+                    style={{ backgroundColor }}
+                  >
+                    {initials}
+                  </div>
+                )}
 
                 <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] bg-[#08979C] text-center font-normal text-white'>
                   {detailPractitioner?.organization?.name}

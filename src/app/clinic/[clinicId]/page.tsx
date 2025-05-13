@@ -8,7 +8,11 @@ import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { IUseClinicParams, useClinicById } from '@/services/clinic';
 import { IOrganizationResource, IPractitioner } from '@/types/organization';
-import { mergeNames, parseTime } from '@/utils/helper';
+import {
+  generateAvatarPlaceholder,
+  mergeNames,
+  parseTime
+} from '@/utils/helper';
 import { format, setHours, setMinutes } from 'date-fns';
 import { ChevronLeftIcon, HeartPulse, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -85,13 +89,16 @@ export default function DetailClinic({ params }: IDetailClinic) {
   const handleSelectPractitioner = (practitioner: IPractitioner) => {
     if (!practitioner) return;
 
+    const email = practitioner.telecom?.find(item => item.system === 'email');
+
     localStorage.setItem(
       `practitioner-${practitioner.id}`,
       JSON.stringify({
         roleId: practitioner.practitionerRole.id,
         name: practitioner.name,
         photo: practitioner.photo,
-        qualification: practitioner.qualification
+        qualification: practitioner.qualification,
+        email: email.value
       })
     );
   };
@@ -258,6 +265,13 @@ export default function DetailClinic({ params }: IDetailClinic) {
                 practitioner.name,
                 practitioner.qualification
               );
+              const email = practitioner.telecom.find(
+                item => item.system === 'email'
+              );
+              const { initials, backgroundColor } = generateAvatarPlaceholder({
+                name: displayName,
+                email: email?.value
+              });
 
               return (
                 <div
@@ -265,18 +279,23 @@ export default function DetailClinic({ params }: IDetailClinic) {
                   className='card flex flex-col items-center'
                 >
                   <div className='relative flex justify-center'>
-                    <Image
-                      className='h-[100px] w-[100px] rounded-full object-cover'
-                      src={
-                        practitioner.photo
-                          ? practitioner.photo[0].url
-                          : '/images/avatar.jpg'
-                      }
-                      alt='practitioner'
-                      width={100}
-                      height={100}
-                      unoptimized
-                    />
+                    {practitioner.photo && practitioner.photo.length > 0 ? (
+                      <Image
+                        className='h-[100px] w-[100px] rounded-full object-cover'
+                        src={practitioner.photo[0].url}
+                        alt='practitioner'
+                        width={100}
+                        height={100}
+                        unoptimized
+                      />
+                    ) : (
+                      <div
+                        className='mr-2 flex h-[100px] w-[100px] items-center justify-center rounded-full text-2xl font-bold text-white'
+                        style={{ backgroundColor }}
+                      >
+                        {initials}
+                      </div>
+                    )}
                     <Badge className='absolute bottom-0 flex h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
                       <HeartPulse size={16} color='#08979C' fill='white' />
                       <span>Konsulin</span>

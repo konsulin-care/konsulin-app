@@ -23,7 +23,12 @@ export default function HomeHeader() {
   });
 
   const parsedAppointmentsData = useMemo(() => {
-    if (!upcomingData || upcomingData?.total === 0) return null;
+    if (
+      !upcomingData ||
+      upcomingData?.total === 0 ||
+      !authState.isAuthenticated
+    )
+      return null;
 
     const parsed = parseMergedAppointments(upcomingData);
     const filtered = parsed.filter(session => {
@@ -32,7 +37,7 @@ export default function HomeHeader() {
     });
 
     return filtered;
-  }, [upcomingData]);
+  }, [upcomingData, authState]);
 
   const { initials, backgroundColor } = generateAvatarPlaceholder({
     name: authState.userInfo?.fullname,
@@ -42,7 +47,7 @@ export default function HomeHeader() {
   return (
     <>
       <Header>
-        <div className='flex h-[32px] w-full flex-col justify-center'>
+        <div className='flex w-full flex-col justify-center'>
           {isLoadingAuth ? (
             <div className='flex items-center space-x-4'>
               <Skeleton className='h-[32px] w-[32px] rounded-full' />
@@ -53,7 +58,9 @@ export default function HomeHeader() {
             </div>
           ) : !authState.isAuthenticated ? (
             <div className='flex flex-col'>
-              <div className='text-[14px] font-bold text-white'>Konsulin</div>
+              <div className='flex h-[32px] items-center text-[14px] font-bold text-white'>
+                Konsulin
+              </div>
             </div>
           ) : (
             <div className='flex'>
@@ -73,7 +80,7 @@ export default function HomeHeader() {
                   src={authState.userInfo.profile_picture}
                 />
               )}
-              <div className='flex flex-col'>
+              <div className='flex h-[32px] flex-col'>
                 <div className='text-[10px] font-normal text-white'>
                   Selamat Datang di Dashboard anda
                 </div>
