@@ -99,17 +99,26 @@ export default function Patient({ fhirId }: Props) {
     return parts.filter(Boolean).join(', ');
   }
 
-  const profileDetail = profileData
-    ? [
-        { key: 'Age', value: findAge(profileData.birthDate).toString() },
-        { key: 'Sex', value: profileData.gender || '-' },
-        { key: 'Whatsapp', value: findTelecom('phone') },
-        {
-          key: 'Address',
-          value: mapAddress(profileData.address)
-        }
-      ]
-    : [];
+  const age = profileData ? `${findAge(profileData.birthDate)} year` : '-';
+  const gender = profileData
+    ? profileData.gender.charAt(0).toUpperCase() +
+      profileData.gender.slice(1).toLowerCase()
+    : '-';
+  const phone = profileData ? findTelecom('phone') : '-';
+  const address = profileData ? mapAddress(profileData.address) : '-';
+
+  const profileDetail = [
+    {
+      key: 'Age',
+      value: age
+    },
+    { key: 'Sex', value: gender },
+    { key: 'Whatsapp', value: phone },
+    {
+      key: 'Address',
+      value: address
+    }
+  ];
 
   const { initials, backgroundColor } = generateAvatarPlaceholder({
     name: authState.userInfo?.fullname,
