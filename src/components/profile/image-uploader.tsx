@@ -38,7 +38,7 @@ export default function ImageUploader({
       <div className='pb-2'>
         {isImageError || !userPhoto ? (
           <div
-            className='mr-2 flex h-[64px] w-[64px] items-center justify-center rounded-full text-xl font-bold text-white'
+            className='flex h-[64px] w-[64px] items-center justify-center rounded-full text-xl font-bold text-white'
             style={{ backgroundColor }}
           >
             {initials}

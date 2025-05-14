@@ -18,6 +18,7 @@ import {
   parseMergedAppointments,
   parseTime
 } from '@/utils/helper';
+import { capitalizeFirstLetter } from '@/utils/validation';
 import {
   endOfDay,
   format,
@@ -220,7 +221,7 @@ export default function Schedule() {
                     {displayName}
                   </div>
                   <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-                    {session.appointmentType} session
+                    {capitalizeFirstLetter(session.appointmentType)} Session
                   </div>
                 </div>
               </Link>

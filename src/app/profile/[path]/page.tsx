@@ -44,13 +44,14 @@ const PathProfile = () => {
         ) : (
           <div className='mb-[-5px] flex w-full items-center justify-between'>
             <ChevronLeft
-              width={24}
-              height={24}
+              width={32}
+              height={32}
               onClick={() => router.back()}
               color='white'
+              className='cursor-pointer'
             />
             <div className='my-2 flex flex-grow'>
-              <span className='w-full pr-4 text-center text-[14px] font-bold text-white'>
+              <span className='w-full pr-6 text-center text-[14px] font-bold text-white'>
                 {title}
               </span>
             </div>

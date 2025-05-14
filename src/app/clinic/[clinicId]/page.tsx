@@ -290,7 +290,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
                       />
                     ) : (
                       <div
-                        className='mr-2 flex h-[100px] w-[100px] items-center justify-center rounded-full text-2xl font-bold text-white'
+                        className='flex h-[100px] w-[100px] items-center justify-center rounded-full text-2xl font-bold text-white'
                         style={{ backgroundColor }}
                       >
                         {initials}
