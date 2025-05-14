@@ -11,7 +11,7 @@ import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { typeMappings } from '@/constants/record';
 import { useAuth } from '@/context/auth/authContext';
-import { useRecordSummary } from '@/services/api/record';
+import { useFilterRecordByDate, useRecordSummary } from '@/services/api/record';
 import { getProfileById } from '@/services/profile';
 import { IRecord } from '@/types/record';
 import {
@@ -36,6 +36,8 @@ export default function Record() {
   });
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const { mutate: getRecords, isLoading: isRecordLoading } = useRecordSummary();
+  const { mutate: getFilteredRecord, isLoading: isFilteredRecordLoading } =
+    useFilterRecordByDate();
   const [records, setRecords] = useState<IRecord[] | null>(null);
 
   const filteredRecords = useMemo(() => {
@@ -74,7 +76,36 @@ export default function Record() {
    * also fetch the practitioner's profile to include in the result.
    */
   useEffect(() => {
-    if (authState.userInfo.role_name === 'patient') {
+    if (authState.userInfo.role_name !== 'patient') return;
+
+    if (recordFilter.isUseCustomDate) {
+      getFilteredRecord(
+        {
+          patientId: authState.userInfo.fhirId,
+          startDate: format(recordFilter.start_date, 'yyyy-MM-dd'),
+          endDate: format(recordFilter.end_date, 'yyyy-MM-dd')
+        },
+        {
+          onSuccess: async result => {
+            const parsed = parseRecordBundles(result);
+
+            const attachProfile = await Promise.all(
+              parsed.map(async item => {
+                if (item.type !== 'Practitioner Note') return item;
+
+                const practitionerProfile = await getProfileById(
+                  item.practitionerId,
+                  'Practitioner'
+                );
+                return { ...item, practitionerProfile };
+              })
+            );
+
+            setRecords(attachProfile);
+          }
+        }
+      );
+    } else {
       getRecords(authState.userInfo.fhirId, {
         onSuccess: async result => {
           const parsed = parseRecordBundles(result);
@@ -95,7 +126,7 @@ export default function Record() {
         }
       });
     }
-  }, [authState]);
+  }, [authState, recordFilter.isUseCustomDate]);
 
   const getPractitionerInfo = (record: IRecord) => {
     if (record.type !== 'Practitioner Note')
@@ -198,7 +229,10 @@ export default function Record() {
             Previous Record Summary
           </div>
 
-          {isAuthLoading || isRecordLoading || !filteredRecords ? (
+          {isAuthLoading ||
+          isRecordLoading ||
+          isFilteredRecordLoading ||
+          !filteredRecords ? (
             <div className='flex flex-col gap-2'>
               <Skeleton
                 count={4}

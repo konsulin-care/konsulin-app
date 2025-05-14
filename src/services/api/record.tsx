@@ -1,4 +1,4 @@
-import { IJournal } from '@/types/record';
+import { IBundleResponse, IJournal } from '@/types/record';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { API } from '../api';
 
@@ -27,6 +27,53 @@ export const useRecordSummary = () => {
             request: {
               method: 'GET',
               url: `/Observation?patient=${patientId}&code=http://loinc.org|67855-7&_sorted=-_lastUpdated`
+            }
+          }
+        ]
+      };
+
+      try {
+        const response = await API.post('/fhir', payload);
+        return response.data.entry;
+      } catch (error) {
+        console.error('Error fetching record summary:', error);
+        throw error;
+      }
+    }
+  });
+};
+
+type IFilterRecord = {
+  patientId: string;
+  startDate: string;
+  endDate: string;
+};
+
+export const useFilterRecordByDate = () => {
+  return useMutation<IBundleResponse[], Error, IFilterRecord>({
+    mutationKey: ['record-summary'],
+    mutationFn: async ({ patientId, startDate, endDate }) => {
+      const payload = {
+        type: 'batch',
+        resourceType: 'Bundle',
+        id: 'filter-record-for-patient',
+        entry: [
+          {
+            request: {
+              method: 'GET',
+              url: `/QuestionnaireResponse?patient=${patientId}&author=Patient/${patientId}&authored=le${endDate}&authored=ge${startDate}&_sorted=-_lastUpdated`
+            }
+          },
+          {
+            request: {
+              method: 'GET',
+              url: `/Observation?patient=${patientId}&code=http://loinc.org|51855-5&date=le${endDate}&date=ge${startDate}&_sorted=-_lastUpdated`
+            }
+          },
+          {
+            request: {
+              method: 'GET',
+              url: `/Observation?patient=${patientId}&code=http://loinc.org|67855-7&date=le${endDate}&date=ge${startDate}&_sorted=-_lastUpdated`
             }
           }
         ]

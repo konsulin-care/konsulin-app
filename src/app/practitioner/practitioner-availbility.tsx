@@ -9,7 +9,6 @@ import {
   DrawerTitle,
   DrawerTrigger
 } from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -110,7 +109,6 @@ export default function PractitionerAvailbility({
   const [isOpen, setIsOpen] = useState(false);
   const { state: bookingState, dispatch } = useBooking();
   const [bookingForm, setBookingInformation] = useState({
-    number_of_sessions: 1,
     session_type: 'offline',
     problem_brief: ''
   });
@@ -277,7 +275,6 @@ export default function PractitionerAvailbility({
         bookingState?.date &&
         bookingState?.startTime &&
         bookingState?.scheduleId &&
-        bookingForm.number_of_sessions &&
         bookingForm.session_type &&
         bookingForm.problem_brief
       )
@@ -298,8 +295,7 @@ export default function PractitionerAvailbility({
       'Problem Brief': bookingForm.problem_brief,
       'Tanggal Appointment': date,
       'Jam Appointment': startTime,
-      'Tipe Session': bookingForm.session_type,
-      'Jumlah Session': bookingForm.number_of_sessions
+      'Tipe Session': bookingForm.session_type
     };
 
     let emptyField = Object.entries(requiredData).filter(item => !item[1]);
@@ -532,22 +528,6 @@ export default function PractitionerAvailbility({
                       </SelectGroup>
                     </SelectContent>
                   </Select>
-                  <Input
-                    min={1}
-                    onChange={e => {
-                      const value = e.target.value;
-                      const number = Number(value);
-
-                      handleBookingInformationChange(
-                        'number_of_sessions',
-                        value === '' ? 1 : number
-                      );
-                    }}
-                    value={bookingForm.number_of_sessions}
-                    placeholder='Number of Sessions'
-                    type='number'
-                    className='w-[50%] text-[12px] text-[#2C2F35]'
-                  />
                 </div>
 
                 <div className='mt-4 text-[12px] font-bold'>Problem Brief</div>
