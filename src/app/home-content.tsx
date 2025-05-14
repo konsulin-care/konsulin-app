@@ -47,7 +47,9 @@ export default function HomeContent() {
 
       {authState.userInfo.role_name === 'guest' && <HomeContentGuest />}
       {authState.userInfo.role_name === 'patient' && <HomeContentPatient />}
-      {authState.userInfo.role_name === 'clinician' && <HomeContentClinician />}
+      {authState.userInfo.role_name === 'practitioner' && (
+        <HomeContentClinician />
+      )}
     </ContentWraper>
   );
 }

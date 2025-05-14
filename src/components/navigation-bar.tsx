@@ -1,26 +1,26 @@
-'use client'
+'use client';
 
-import { useAuth } from '@/context/auth/authContext'
-import { cn } from '@/lib/utils'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { useAuth } from '@/context/auth/authContext';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   ExceriseIcon,
   HouseIcon,
   LiteratureIcon,
   OfficeIcon,
   UserIcon
-} from './icons'
+} from './icons';
 
 export default function NavigationBar({
   children,
   className
 }: React.HTMLAttributes<HTMLDivElement>) {
-  const pathname = usePathname()
-  const activePathStyle = 'font-bold text-secondary'
-  const pathStyle = 'text-[#ADB6C7]'
+  const pathname = usePathname();
+  const activePathStyle = 'font-bold text-secondary';
+  const pathStyle = 'text-[#ADB6C7]';
 
-  const { state: authState } = useAuth()
+  const { state: authState } = useAuth();
 
   return (
     <div className={cn('absolute bottom-0', className)}>
@@ -38,7 +38,7 @@ export default function NavigationBar({
         </Link>
         <Link
           href={
-            authState.userInfo.role_name === 'clinician'
+            authState.userInfo.role_name === 'practitioner'
               ? '/schedule'
               : '/clinic'
           }
@@ -98,5 +98,5 @@ export default function NavigationBar({
         </Link>
       </div>
     </div>
-  )
+  );
 }

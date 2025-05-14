@@ -17,7 +17,7 @@ export default function Profile() {
           {authState.userInfo.role_name === 'patient' && (
             <Patient fhirId={authState.userInfo.fhirId} />
           )}
-          {authState.userInfo.role_name === 'clinician' && (
+          {authState.userInfo.role_name === 'practitioner' && (
             <Clinician fhirId={authState.userInfo.fhirId} />
           )}
         </div>

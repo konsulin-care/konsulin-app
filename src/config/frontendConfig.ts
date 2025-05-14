@@ -64,12 +64,14 @@ export const frontendConfig = (): SuperTokensConfig => {
               const profile = await createProfile({
                 userId,
                 email: emails[0],
-                type: roles.includes('clinician') ? 'Practitioner' : 'Patient'
+                type: roles.includes('practitioner')
+                  ? 'Practitioner'
+                  : 'Patient'
               });
 
               const cookieData = {
                 userId,
-                role_name: roles.includes('clinician')
+                role_name: roles.includes('practitioner')
                   ? 'practitioner'
                   : 'patient',
                 email: emails[0],
@@ -82,11 +84,13 @@ export const frontendConfig = (): SuperTokensConfig => {
             } else {
               const result = await getProfileByIdentifier({
                 userId,
-                type: roles.includes('clinician') ? 'Practitioner' : 'Patient'
+                type: roles.includes('practitioner')
+                  ? 'Practitioner'
+                  : 'Patient'
               });
               const cookieData = {
                 userId,
-                role_name: roles.includes('clinician')
+                role_name: roles.includes('practitioner')
                   ? 'practitioner'
                   : 'patient',
                 email: emails[0],

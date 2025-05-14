@@ -53,14 +53,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           const result = await getProfileByIdentifier({
             userId,
-            type: roles.includes('clinician') ? 'Practitioner' : 'Patient'
+            type: roles.includes('practitioner') ? 'Practitioner' : 'Patient'
           });
 
           const emails = result.telecom.find(item => item.system === 'email');
 
           const payload = {
             userId,
-            role_name: roles.includes('clinician') ? 'practitioner' : 'patient',
+            role_name: roles.includes('practitioner')
+              ? 'practitioner'
+              : 'patient',
             email: emails?.value,
             profile_picture: result?.photo ? result?.photo[0]?.url : '',
             fullname: mergeNames(result?.name, result?.qualification),
