@@ -52,7 +52,7 @@ export function middleware(request: NextRequest) {
   // authorization base on role
   if (
     (auth.role_name !== 'patient' && routeMatches(patientRoutes, pathname)) || // patient only
-    (auth.role_name !== 'clinician' &&
+    (auth.role_name !== 'practitioner' &&
       routeMatches(clinicianRoutes, pathname)) || // cliniciant only
     ((!auth.role_name || auth.role_name === 'guest') &&
       routeMatches(patientAndClinicianRoutes, pathname)) // patient and cliniciant

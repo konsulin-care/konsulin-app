@@ -157,7 +157,7 @@ export default function ClinicFilter({ onChange, type }) {
             <DrawerTitle className='mx-auto text-[20px] font-bold'>
               Filter & Sort
             </DrawerTitle>
-            {type === 'clinician' ? (
+            {type === 'practitioner' ? (
               <>
                 <div className='card mt-4 border-0 bg-[#F9F9F9]'>
                   <div className='mb-4 font-bold'>Date</div>

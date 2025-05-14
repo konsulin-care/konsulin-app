@@ -235,7 +235,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
                 ...filter
               }));
             }}
-            type='clinician'
+            type='practitioner'
           />
         </div>
 
@@ -336,7 +336,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
         ) : (
           <EmptyState
             className='py-16'
-            title='No Clinicians Found'
+            title='No Practitioners Found'
             subtitle='Try Another Clinic.'
           />
         )}

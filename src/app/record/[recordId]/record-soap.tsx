@@ -37,8 +37,7 @@ export default function RecordSoap({ soapId, title }: Props) {
             <div>{title}</div>
           </div>
 
-          {/* NOTE: change to 'practitioner' later */}
-          {authState.userInfo.role_name === 'clinician' && (
+          {authState.userInfo.role_name === 'practitioner' && (
             <>
               <div>
                 <div className='mb-2 text-[12px] text-muted'>
