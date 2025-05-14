@@ -149,10 +149,6 @@ export default function DetailAppointment({ params }: Props) {
                     {capitalizeFirstLetter(appointmentData.appointmentType)}
                   </span>
                 </div>
-                <div className='flex justify-between text-[12px]'>
-                  <span className='mr-2'>Total Session</span>
-                  <span className='font-bold'>1</span>
-                </div>
               </div>
             </div>
           </>
