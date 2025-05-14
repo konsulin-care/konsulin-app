@@ -9,8 +9,19 @@ import {
   DrawerTitle,
   DrawerTrigger
 } from '@/components/ui/drawer';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useBooking } from '@/context/booking/bookingContext';
-import { cn } from '@/lib/utils';
+import { cn, conjunction } from '@/lib/utils';
+import { useCreateAppointment } from '@/services/api/appointments';
 import { useFindAvailability } from '@/services/clinicians';
 import {
   addDays,
@@ -23,12 +34,15 @@ import {
   parseISO
 } from 'date-fns';
 import {
+  Bundle,
   BundleEntry,
   PractitionerRole,
   PractitionerRoleAvailableTime,
   Slot
 } from 'fhir/r4';
+import Link from 'next/link';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 /* returns all available appointment days for a given month.
  * example:
@@ -78,17 +92,40 @@ const getAvailableDays = (availableTime: any[], month: Date): Date[] => {
 type Props = {
   children: ReactNode;
   practitionerRole: PractitionerRole;
+  patientId: string;
+  practitionerId: string;
+  isAuthenticated: boolean;
 };
 
 export default function PractitionerAvailbility({
   children,
-  practitionerRole
+  practitionerRole,
+  patientId,
+  practitionerId,
+  isAuthenticated
 }: Props) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const [isOpen, setIsOpen] = useState(false);
   const { state: bookingState, dispatch } = useBooking();
+  const [bookingForm, setBookingInformation] = useState({
+    number_of_sessions: 1,
+    session_type: 'offline',
+    problem_brief: ''
+  });
+  const [errorForm, setErrorForm] = useState(undefined);
+  const {
+    mutateAsync: createAppointment,
+    isLoading: isCreateAppointmentLoading
+  } = useCreateAppointment();
+
+  const handleBookingInformationChange = (key: string, value: any) => {
+    setBookingInformation(prevState => ({
+      ...prevState,
+      [key]: value
+    }));
+  };
 
   const { data: schedule, isLoading } = useFindAvailability({
     practitionerRoleId: practitionerRole.id,
@@ -234,6 +271,144 @@ export default function PractitionerAvailbility({
     }
   }, []);
 
+  useEffect(() => {
+    if (errorForm) {
+      if (
+        bookingState?.date &&
+        bookingState?.startTime &&
+        bookingState?.scheduleId &&
+        bookingForm.number_of_sessions &&
+        bookingForm.session_type &&
+        bookingForm.problem_brief
+      )
+        setErrorForm(null);
+    }
+  }, [
+    bookingForm,
+    bookingState.date,
+    bookingState.startTime,
+    bookingState.endTime
+  ]);
+
+  const handleSubmitForm = async () => {
+    const { date, startTime, scheduleId } = bookingState;
+    const conditionRandomUUID = uuidv4();
+    const slotRandomUUID = uuidv4();
+    const requiredData = {
+      'Problem Brief': bookingForm.problem_brief,
+      'Tanggal Appointment': date,
+      'Jam Appointment': startTime,
+      'Tipe Session': bookingForm.session_type,
+      'Jumlah Session': bookingForm.number_of_sessions
+    };
+
+    let emptyField = Object.entries(requiredData).filter(item => !item[1]);
+
+    if (emptyField.length > 0) {
+      setErrorForm(emptyField.map(item => item[0]));
+    } else {
+      const formattedStartTime = parse(startTime, 'HH:mm', date).toISOString();
+      const formattedEndTime = addMinutes(formattedStartTime, 30).toISOString();
+
+      // NOTE: hardcoded practitionerRoleId
+      const appointmentPayload: Bundle = {
+        type: 'transaction',
+        resourceType: 'Bundle',
+        entry: [
+          {
+            request: {
+              method: 'PUT',
+              url: `Condition/${conditionRandomUUID}`
+            },
+            resource: {
+              evidence: [
+                {
+                  code: [
+                    {
+                      text: bookingForm.problem_brief
+                    }
+                  ]
+                }
+              ],
+              resourceType: 'Condition',
+              asserter: {
+                reference: `Patient/${patientId}`
+              },
+              id: conditionRandomUUID,
+              subject: {
+                reference: `Patient/${patientId}`
+              }
+            }
+          },
+          {
+            request: {
+              method: 'PUT',
+              url: `Slot/${slotRandomUUID}`
+            },
+            resource: {
+              schedule: {
+                reference: `Schedule/${scheduleId}`
+              },
+              start: formattedStartTime,
+              resourceType: 'Slot',
+              status: 'busy-unavailable',
+              id: slotRandomUUID,
+              end: formattedEndTime
+            }
+          },
+          {
+            request: {
+              method: 'POST',
+              url: 'Appointment'
+            },
+            resource: {
+              slot: [
+                {
+                  reference: `Slot/${slotRandomUUID}`
+                }
+              ],
+              participant: [
+                {
+                  status: 'accepted',
+                  actor: {
+                    reference: `Patient/${patientId}`
+                  }
+                },
+                {
+                  status: 'accepted',
+                  actor: {
+                    reference: `Practitioner/${practitionerId}`
+                  }
+                },
+                {
+                  status: 'accepted',
+                  actor: {
+                    reference: `PractitionerRole/PractitionerRole-id`
+                  }
+                }
+              ],
+              resourceType: 'Appointment',
+              appointmentType: {
+                text: bookingForm.session_type
+              },
+              status: 'booked',
+              reasonReference: [
+                {
+                  reference: `Condition/${conditionRandomUUID}`
+                }
+              ]
+            }
+          }
+        ]
+      };
+      const result = await createAppointment(appointmentPayload);
+      if (result && result.length > 0) {
+        handleFilterChange('isBookingSubmitted', true);
+        setIsOpen(false);
+      }
+    }
+  };
+
   return (
     <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
       <DrawerTrigger asChild>
@@ -241,9 +416,9 @@ export default function PractitionerAvailbility({
       </DrawerTrigger>
       <DrawerContent
         onInteractOutside={() => setIsOpen(false)}
-        className='mx-auto max-w-screen-sm p-4'
+        className='fixed bottom-0 left-0 right-0 mx-auto flex h-[85%] max-w-screen-sm flex-col bg-white p-4'
       >
-        <div className='mt-4'>
+        <div className='mt-4 max-h-fit overflow-y-auto px-1 scrollbar-hide'>
           <div className='flex flex-col'>
             <DrawerTitle className='mx-auto text-[20px] font-bold'>
               See Availbility
@@ -271,8 +446,7 @@ export default function PractitionerAvailbility({
                   date < today ||
                   !listAvailableDate.some(
                     availableDate => availableDate.getTime() === date.getTime()
-                  ) ||
-                  !schedule
+                  )
                 }
                 modifiers={{
                   ada: listAvailableDate
@@ -343,12 +517,88 @@ export default function PractitionerAvailbility({
               )}
             </div>
 
-            <Button
-              className='mt-4 rounded-xl bg-secondary text-white'
-              onClick={() => setIsOpen(false)}
-            >
-              Make an Appointment
-            </Button>
+            {bookingState.scheduleId && (
+              <>
+                <div className='mt-4 text-[12px] font-bold'>Session Type</div>
+                <div className='mt-2 flex space-x-4'>
+                  <Select disabled>
+                    <SelectTrigger className='w-[50%] text-[12px] text-[#2C2F35]'>
+                      <SelectValue placeholder='Offline' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup className='text-[12px] text-[#2C2F35]'>
+                        <SelectItem value='online'>Online</SelectItem>
+                        <SelectItem value='offline'>Offline</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    min={1}
+                    onChange={e => {
+                      const value = e.target.value;
+                      const number = Number(value);
+
+                      handleBookingInformationChange(
+                        'number_of_sessions',
+                        value === '' ? 1 : number
+                      );
+                    }}
+                    value={bookingForm.number_of_sessions}
+                    placeholder='Number of Sessions'
+                    type='number'
+                    className='w-[50%] text-[12px] text-[#2C2F35]'
+                  />
+                </div>
+
+                <div className='mt-4 text-[12px] font-bold'>Problem Brief</div>
+                <div className='mt-2'>
+                  <Textarea
+                    value={bookingForm.problem_brief}
+                    onChange={e =>
+                      handleBookingInformationChange(
+                        'problem_brief',
+                        e.target.value
+                      )
+                    }
+                    placeholder='Type your message here.'
+                    className='w-full resize-none text-[12px] text-[#2C2F35]'
+                  />
+                </div>
+
+                {errorForm && (
+                  <div className='mt-2 text-sm text-destructive'>
+                    {`Lengkapi ${conjunction(errorForm)}.`}
+                  </div>
+                )}
+              </>
+            )}
+
+            {isAuthenticated ? (
+              <Button
+                className='mt-4 rounded-xl bg-secondary text-white'
+                onClick={handleSubmitForm}
+                disabled={
+                  isCreateAppointmentLoading || !bookingState.scheduleId
+                }
+              >
+                {isCreateAppointmentLoading ? (
+                  <LoadingSpinnerIcon
+                    stroke='white'
+                    width={20}
+                    height={20}
+                    className='animate-spin'
+                  />
+                ) : (
+                  'Make An Appointment'
+                )}
+              </Button>
+            ) : (
+              <Link href={'/auth'} className='mt-auto w-full'>
+                <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 text-[14px] font-bold text-white'>
+                  Silakan Daftar atau Masuk untuk Booking
+                </Button>
+              </Link>
+            )}
             <Button
               onClick={() => setIsOpen(false)}
               variant='outline'
