@@ -4,6 +4,7 @@ export interface IStateBooking {
   endTime?: string;
   scheduleId?: string;
   hasUserChosenDate?: boolean;
+  isBookingSubmitted?: boolean;
 
   detailClinicianByClinicianID?: {
     clinician_id: string;
@@ -20,9 +21,13 @@ export interface IStateBooking {
   };
 }
 
-export type IActionBooking = IUpdateBookingInfo;
+export type IActionBooking = IUpdateBookingInfo | IResetBookingInfo;
 
 export interface IUpdateBookingInfo {
   type: 'UPDATE_BOOKING_INFO';
   payload: IStateBooking;
 }
+
+type IResetBookingInfo = {
+  type: 'RESET_BOOKING_INFO';
+};

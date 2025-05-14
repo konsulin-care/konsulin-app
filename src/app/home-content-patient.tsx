@@ -9,6 +9,7 @@ import { IRecord } from '@/types/record';
 import {
   customMarkdownComponents,
   formatTitle,
+  generateAvatarPlaceholder,
   mergeNames,
   parseRecordBundles
 } from '@/utils/helper';
@@ -63,6 +64,22 @@ export default function HomeContentPatient() {
       });
     }
   }, [authState]);
+
+  const getPractitionerInfo = (record: IRecord) => {
+    if (record.type !== 'Practitioner Note')
+      return { displayName: '', email: '' };
+
+    const name = mergeNames(
+      record.practitionerProfile?.name,
+      record.practitionerProfile?.qualification
+    );
+
+    const email =
+      record.practitionerProfile?.telecom.find(item => item.system === 'email')
+        ?.value || '';
+
+    return { displayName: name, email };
+  };
 
   return (
     <>
@@ -130,11 +147,18 @@ export default function HomeContentPatient() {
                 /\n\n/g,
                 '. '
               );
+
               const queryParams = new URLSearchParams({
                 category: typeMappings[record.type]?.category,
                 title
               }).toString();
               const url = `record/${recordId}?${queryParams}`;
+
+              const { displayName, email } = getPractitionerInfo(record);
+              const { initials, backgroundColor } = generateAvatarPlaceholder({
+                name: displayName,
+                email: email
+              });
 
               return (
                 <SwiperSlide key={recordId}>
@@ -167,21 +191,25 @@ export default function HomeContentPatient() {
                     <div className='flex items-center'>
                       {record.type === 'Practitioner Note' ? (
                         <>
-                          <Image
-                            className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-                            width={32}
-                            height={32}
-                            alt='offline'
-                            src={
-                              record.practitionerProfile?.photo?.[0]?.url ||
-                              '/images/avatar.jpg'
-                            }
-                          />
+                          {record.practitionerProfile.photo &&
+                          record.practitionerProfile.photo.length > 0 ? (
+                            <Image
+                              className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
+                              width={32}
+                              height={32}
+                              alt='offline'
+                              src={record.practitionerProfile?.photo?.[0]?.url}
+                            />
+                          ) : (
+                            <div
+                              className='mr-2 flex h-[32px] w-[32px] items-center justify-center rounded-full text-xs font-bold text-white'
+                              style={{ backgroundColor }}
+                            >
+                              {initials}
+                            </div>
+                          )}
                           <div className='mr-auto text-[12px]'>
-                            {mergeNames(
-                              record.practitionerProfile?.name,
-                              record.practitionerProfile?.qualification
-                            )}
+                            {displayName}
                           </div>
                         </>
                       ) : (

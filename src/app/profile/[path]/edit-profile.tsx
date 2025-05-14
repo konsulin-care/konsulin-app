@@ -72,11 +72,8 @@ type ICustomProfile = {
 
 export default function EditProfile({ userRole, fhirId }: Props) {
   const router = useRouter();
-  const {
-    state: authState,
-    dispatch: dispatchAuth,
-    isLoading: isAuthLoading
-  } = useAuth();
+  const { state: authState, dispatch: dispatchAuth } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   const [updateUser, setUpdateUser] = useState<ICustomProfile>({
     fhirId: '',
     resourceType: null,
@@ -113,10 +110,12 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       if (parsed) {
         setUpdateUser(parsed);
       }
+      setIsLoading(false);
     },
     onError: (error: Error) => {
       console.error('Error when fetching user profile: ', error);
       toast.error(error.message);
+      setIsLoading(false);
     }
   });
 
@@ -448,7 +447,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   return (
     <div className='flex min-h-screen flex-col'>
       <div className='flex flex-grow flex-col justify-between p-4'>
-        {isProfileLoading || isAuthLoading ? (
+        {isLoading || isProfileLoading ? (
           <div className='flex min-h-screen min-w-full items-center justify-center'>
             <LoadingSpinnerIcon
               width={56}

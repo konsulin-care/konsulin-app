@@ -173,6 +173,7 @@ export type MergedAppointment = {
   practitionerName: HumanName[] | null;
   practitionerQualification: PractitionerQualification[] | null;
   practitionerPhoto: Attachment[] | null;
+  practitionerEmail: string | null;
 };
 
 export const parseMergedAppointments = (
@@ -215,6 +216,9 @@ export const parseMergedAppointments = (
     const practitionerData = practitioners.find(
       (practitioner: Practitioner) => practitioner.id === practitionerId
     );
+    const practitionerEmail = practitionerData.telecom.find(
+      data => data.system === 'email'
+    );
 
     results.push({
       appointmentId: appointment.id || null,
@@ -225,7 +229,8 @@ export const parseMergedAppointments = (
       practitionerId: practitionerData?.id || null,
       practitionerName: practitionerData?.name || null,
       practitionerQualification: practitionerData?.qualification || null,
-      practitionerPhoto: practitionerData?.photo || null
+      practitionerPhoto: practitionerData?.photo || null,
+      practitionerEmail: practitionerEmail.value || null
     });
   });
 
@@ -248,19 +253,19 @@ const getRandomPastelColor = () => {
 export const generateAvatarPlaceholder = ({ name, email }) => {
   let initials = '';
   const key = 'avatar-color';
+  const isValidName = name && name.trim() && name.trim() !== '-';
+  const parts = isValidName ? name.trim().split(' ') : [];
 
-  if (name && name.trim()) {
-    const parts = name.trim().split(' ');
-
+  if (parts.length >= 2) {
     // if the name has at least two parts, take the first letter of each
     initials = parts[0][0] + parts[1][0];
-  } else if (email) {
+  } else {
     initials = email.slice(0, 2);
   }
 
   initials = initials.toUpperCase();
 
-  let backgroundColor = getFromLocalStorage(key);
+  let backgroundColor = JSON.parse(getFromLocalStorage(key));
   if (!backgroundColor) {
     backgroundColor = getRandomPastelColor();
     setToLocalStorage(key, backgroundColor);

@@ -12,11 +12,13 @@ import { useAuth } from '@/context/auth/authContext';
 import { useGetAllAppointments } from '@/services/api/appointments';
 import { IUseClinicParams } from '@/services/clinic';
 import {
+  generateAvatarPlaceholder,
   MergedAppointment,
   mergeNames,
   parseMergedAppointments,
   parseTime
 } from '@/utils/helper';
+import { capitalizeFirstLetter } from '@/utils/validation';
 import {
   endOfDay,
   format,
@@ -70,7 +72,6 @@ export default function Schedule() {
     return filtered;
   }, [parsedAppointmentsData]);
 
-  // TODO: implement filtering by clinic name
   const filteredAppointmentsData = useMemo(() => {
     if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
       return null;
@@ -181,6 +182,10 @@ export default function Schedule() {
               session.practitionerName,
               session.practitionerQualification
             );
+            const { initials, backgroundColor } = generateAvatarPlaceholder({
+              name: displayName,
+              email: session.practitionerEmail
+            });
 
             return (
               <Link
@@ -194,23 +199,29 @@ export default function Schedule() {
 
                 <hr className='w-full' />
                 <div className='flex items-center'>
-                  <Image
-                    className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-                    width={32}
-                    height={32}
-                    alt='offline'
-                    src={
-                      session.practitionerPhoto
-                        ? session.practitionerPhoto[0].url
-                        : '/images/avatar.jpg'
-                    }
-                  />
+                  {session.practitionerPhoto &&
+                  session.practitionerPhoto.length > 0 ? (
+                    <Image
+                      className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
+                      width={32}
+                      height={32}
+                      alt='offline'
+                      src={session.practitionerPhoto[0].url}
+                    />
+                  ) : (
+                    <div
+                      className='mr-2 flex h-[32px] w-[32px] items-center justify-center rounded-full text-xs font-bold text-white'
+                      style={{ backgroundColor }}
+                    >
+                      {initials}
+                    </div>
+                  )}
 
                   <div className='mr-auto text-[12px] font-bold'>
                     {displayName}
                   </div>
                   <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-                    {session.appointmentType} session
+                    {capitalizeFirstLetter(session.appointmentType)} Session
                   </div>
                 </div>
               </Link>
@@ -242,6 +253,10 @@ export default function Schedule() {
               session.practitionerName,
               session.practitionerQualification
             );
+            const { initials, backgroundColor } = generateAvatarPlaceholder({
+              name: displayName,
+              email: session.practitionerEmail
+            });
 
             return (
               <Link
@@ -255,17 +270,23 @@ export default function Schedule() {
 
                 <hr className='w-full' />
                 <div className='flex items-center'>
-                  <Image
-                    className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-                    width={32}
-                    height={32}
-                    alt='offline'
-                    src={
-                      session.practitionerPhoto
-                        ? session.practitionerPhoto[0].url
-                        : '/images/avatar.jpg'
-                    }
-                  />
+                  {session.practitionerPhoto &&
+                  session.practitionerPhoto.length > 0 ? (
+                    <Image
+                      className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
+                      width={32}
+                      height={32}
+                      alt='offline'
+                      src={session.practitionerPhoto[0].url}
+                    />
+                  ) : (
+                    <div
+                      className='mr-2 flex h-[32px] w-[32px] items-center justify-center rounded-full text-xs font-bold text-white'
+                      style={{ backgroundColor }}
+                    >
+                      {initials}
+                    </div>
+                  )}
 
                   <div className='mr-auto text-[12px] font-bold'>
                     {displayName}

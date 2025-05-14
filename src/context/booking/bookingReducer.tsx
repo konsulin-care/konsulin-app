@@ -8,7 +8,8 @@ export const initialState: IStateBooking = {
   date: addDays(today, 1),
   startTime: null,
   scheduleId: null,
-  hasUserChosenDate: false
+  hasUserChosenDate: false,
+  isBookingSubmitted: false
 };
 
 export const reducer = (
@@ -21,6 +22,8 @@ export const reducer = (
         ...state,
         ...action.payload
       };
+    case 'RESET_BOOKING_INFO':
+      return initialState;
     default:
       return state;
   }
