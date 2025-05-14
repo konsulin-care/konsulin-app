@@ -61,6 +61,7 @@ export type IRecordParams = {
   start_date?: Date;
   end_date?: Date;
   type?: string;
+  isUseCustomDate?: boolean;
 };
 
 export default function RecordFilter({ onChange }) {
@@ -76,15 +77,16 @@ export default function RecordFilter({ onChange }) {
   });
 
   const isInitiaFilterState =
-    !filter.start_date && !filter.end_date && !filter.type;
+    !filter.start_date &&
+    !filter.end_date &&
+    !filter.type &&
+    !filter.isUseCustomDate;
 
   const handleCustomFilterOpen = () => {
-    if (isInitiaFilterState) {
-      handleFilterChange('start_date', today);
-      handleFilterChange('end_date', addDays(today, 7));
-      setIsUseCustomDate(true);
-    }
-
+    handleFilterChange('start_date', today);
+    handleFilterChange('end_date', addDays(today, 7));
+    setIsUseCustomDate(true);
+    handleFilterChange('isUseCustomDate', true);
     setWhichContent(CONTENT_CUSTOM);
   };
 
@@ -122,6 +124,7 @@ export default function RecordFilter({ onChange }) {
                     onClick={() => {
                       handleFilterChange('start_date', date.value.start);
                       handleFilterChange('end_date', date.value.end);
+                      handleFilterChange('isUseCustomDate', false);
                       setIsUseCustomDate(false);
                     }}
                     variant='outline'
