@@ -1,3 +1,4 @@
+import { IQuestionnaireResponse } from '@/types/assessment';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { format } from 'date-fns';
@@ -123,10 +124,11 @@ export const useResultBrief = (questionnaireId: string) => {
   });
 };
 
-export const useQuestionnaireResponse = (
-  questionnaireId: string,
-  patientId?: string
-) => {
+export const useQuestionnaireResponse = ({
+  questionnaireId,
+  patientId,
+  enabled
+}: IQuestionnaireResponse) => {
   const url = useMemo(() => {
     const baseUrl = '/fhir/QuestionnaireResponse';
 
@@ -134,13 +136,14 @@ export const useQuestionnaireResponse = (
       return `${baseUrl}/${questionnaireId}`;
     }
 
-    return `${baseUrl}?questionnaire=Questionnaire/${questionnaireId}&patient=${patientId}&_elements=item`;
+    return `${baseUrl}?questionnaire=Questionnaire/big-five-inventory&patient=${patientId}&_elements=item&_sort=-_lastUpdated`;
   }, [patientId]);
 
   return useQuery({
     queryKey: ['questionnaire-response', questionnaireId],
     queryFn: () => API.get(url),
-    select: response => response.data || null
+    select: response => response.data || null,
+    enabled: enabled
   });
 };
 
