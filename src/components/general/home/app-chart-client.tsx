@@ -1,14 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import useLoaded from '@/hooks/useLoaded';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 import { useAuth } from '@/context/auth/authContext';
+import { cn } from '@/lib/utils';
 import { useQuestionnaireResponse } from '@/services/api/assessment';
 import { Datum, Pie } from '@ant-design/charts';
 import { BundleEntry, QuestionnaireResponseItem } from 'fhir/r4';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 
 const DUMMY_DATA = [
   {
@@ -38,19 +38,23 @@ export default function AppChartClient({
 }: {
   isBlur?: boolean;
 }) {
-  const { isLoaded } = useLoaded();
+  const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
-  const { data: questionnaireResponse } = useQuestionnaireResponse({
-    patientId: authState.userInfo.fhirId,
-    enabled: !!authState.userInfo.fhirId
-  });
+  const { data: questionnaireResponse, isInitialLoading } =
+    useQuestionnaireResponse({
+      patientId: authState.userInfo.fhirId,
+      enabled: !!authState.userInfo.fhirId
+    });
   const [latestResponse, setLatestResponse] = useState(null);
+  const latestRecordIdRef = useRef(null);
 
   const isGuest = !authState.isAuthenticated;
 
   /* preparing data for the pie chart based on the latest response */
   useEffect(() => {
-    if (!questionnaireResponse || questionnaireResponse.total === 0) return;
+    if (!questionnaireResponse || questionnaireResponse.total === 0) {
+      return;
+    }
 
     const sorted = questionnaireResponse.entry.sort(
       (a: BundleEntry, b: BundleEntry) => {
@@ -61,8 +65,12 @@ export default function AppChartClient({
       }
     );
 
-    const latestData = sorted[0].resource.item;
-    const interpretationItem = latestData.find(
+    const latestData = sorted[0].resource;
+    if (latestData && latestData.id) {
+      latestRecordIdRef.current = latestData.id;
+    }
+
+    const interpretationItem = latestData.item.find(
       (item: QuestionnaireResponseItem) => item.linkId === 'interpretation'
     );
 
@@ -117,7 +125,7 @@ export default function AppChartClient({
     }
   };
 
-  if (!isLoaded || isAuthLoading) {
+  if (isInitialLoading || isAuthLoading) {
     return (
       <div className='p-4'>
         <Skeleton className='h-[250px] w-full bg-[hsl(210,40%,96.1%)]' />
@@ -137,7 +145,19 @@ export default function AppChartClient({
           })}
         >
           <div className='min-h-[150px]'>
-            <Pie height={180} {...configPie} />
+            <Pie
+              {...configPie}
+              height={180}
+              onReady={plot => {
+                plot.chart.on('element:click', () => {
+                  if (latestRecordIdRef.current) {
+                    router.push(
+                      `/record/${latestRecordIdRef.current}?category=1&title=big-five-inventory`
+                    );
+                  }
+                });
+              }}
+            />
           </div>
           {hasRealData && (
             <div className='text-[10px]'>

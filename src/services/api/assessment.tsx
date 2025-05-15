@@ -132,15 +132,15 @@ export const useQuestionnaireResponse = ({
   const url = useMemo(() => {
     const baseUrl = '/fhir/QuestionnaireResponse';
 
-    if (!patientId) {
+    if (!patientId && questionnaireId) {
       return `${baseUrl}/${questionnaireId}`;
     }
 
     return `${baseUrl}?questionnaire=Questionnaire/big-five-inventory&patient=${patientId}&_elements=item&_sort=-_lastUpdated`;
-  }, [patientId]);
+  }, [patientId, questionnaireId]);
 
   return useQuery({
-    queryKey: ['questionnaire-response', questionnaireId],
+    queryKey: ['questionnaire-response', questionnaireId, patientId],
     queryFn: () => API.get(url),
     select: response => response.data || null,
     enabled: enabled
