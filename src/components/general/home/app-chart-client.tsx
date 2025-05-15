@@ -4,14 +4,34 @@ import useLoaded from '@/hooks/useLoaded';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
+import { useAuth } from '@/context/auth/authContext';
 import { useQuestionnaireResponse } from '@/services/api/assessment';
-import { Pie } from '@ant-design/charts';
+import { Datum, Pie } from '@ant-design/charts';
 import { BundleEntry, QuestionnaireResponseItem } from 'fhir/r4';
 import { useEffect, useState } from 'react';
 
-// NOTE: will remove this later
-const QUESTIONNAIRE_ID = 'big-five-inventory';
-const PATIENT_ID = 'Patient-id';
+const DUMMY_DATA = [
+  {
+    type: 'Openness',
+    value: 16
+  },
+  {
+    type: 'Conscientiousness',
+    value: 19
+  },
+  {
+    type: 'Extroversion',
+    value: 16
+  },
+  {
+    type: 'Agreeableness',
+    value: 20
+  },
+  {
+    type: 'Neuroticism',
+    value: 26
+  }
+];
 
 export default function AppChartClient({
   isBlur = false
@@ -19,15 +39,18 @@ export default function AppChartClient({
   isBlur?: boolean;
 }) {
   const { isLoaded } = useLoaded();
-  const { data: questionnaireResponse, isLoading } = useQuestionnaireResponse(
-    QUESTIONNAIRE_ID,
-    PATIENT_ID
-  );
+  const { state: authState, isLoading: isAuthLoading } = useAuth();
+  const { data: questionnaireResponse } = useQuestionnaireResponse({
+    patientId: authState.userInfo.fhirId,
+    enabled: !!authState.userInfo.fhirId
+  });
   const [latestResponse, setLatestResponse] = useState(null);
+
+  const isGuest = !authState.isAuthenticated;
 
   /* preparing data for the pie chart based on the latest response */
   useEffect(() => {
-    if (!questionnaireResponse) return;
+    if (!questionnaireResponse || questionnaireResponse.total === 0) return;
 
     const sorted = questionnaireResponse.entry.sort(
       (a: BundleEntry, b: BundleEntry) => {
@@ -60,10 +83,19 @@ export default function AppChartClient({
       });
 
     setLatestResponse(result);
-  }, [questionnaireResponse]);
+  }, [questionnaireResponse, authState.userInfo.fhirId]);
+
+  const hasRealData = latestResponse && latestResponse.length > 0;
+  const chartData = hasRealData ? latestResponse : DUMMY_DATA;
+
+  /* blur if it's a guest or the patient doesn't have any OCEAN records */
+  const shouldBlur = isBlur || !hasRealData;
+  const buttonText = isGuest
+    ? 'Silakan Daftar atau Masuk untuk Mengakses Fitur Ini'
+    : 'Isi Assessment Big Five Inventory';
 
   const configPie: any = {
-    data: latestResponse,
+    data: chartData,
     angleField: 'value',
     colorField: 'type',
     innerRadius: 0.5,
@@ -74,13 +106,21 @@ export default function AppChartClient({
         position: 'right',
         rowPadding: 4
       }
+    },
+    tooltip: {
+      items: [
+        (datum: Datum) => ({
+          name: datum.type,
+          value: ''
+        })
+      ]
     }
   };
 
-  if (!isLoaded || isLoading || !latestResponse) {
+  if (!isLoaded || isAuthLoading) {
     return (
       <div className='p-4'>
-        <Skeleton className='h-[250px] w-full' />
+        <Skeleton className='h-[250px] w-full bg-[hsl(210,40%,96.1%)]' />
       </div>
     );
   }
@@ -93,31 +133,31 @@ export default function AppChartClient({
         </div>
         <div
           className={cn('w-full', {
-            'blur-sm': isBlur
+            'blur-sm': shouldBlur
           })}
         >
           <div className='min-h-[150px]'>
             <Pie height={180} {...configPie} />
           </div>
-          <div className='text-[10px]'>
-            *based on your data previous record, not necessarily in recent
-            period
-          </div>
+          {hasRealData && (
+            <div className='text-[10px]'>
+              *based on your data previous record, not necessarily in recent
+              period
+            </div>
+          )}
         </div>
       </div>
 
-      <Link
-        href='/auth'
-        className={
-          isBlur
-            ? 'absolute m-auto flex h-full w-full flex-grow items-center justify-center text-[14px] font-bold'
-            : 'hidden'
-        }
-      >
-        <Button className='bg-secondary text-white shadow-md'>
-          Silakan Daftar atau Masuk untuk Mengakses Fitur Ini
-        </Button>
-      </Link>
+      {shouldBlur && (
+        <Link
+          href={isGuest ? '/auth' : '/assessments/big-five-inventory'}
+          className='absolute m-auto flex h-full w-full flex-grow items-center justify-center text-[14px] font-bold'
+        >
+          <Button className='bg-secondary text-white shadow-md'>
+            {buttonText}
+          </Button>
+        </Link>
+      )}
     </div>
   );
 }

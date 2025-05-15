@@ -306,7 +306,6 @@ export default function PractitionerAvailbility({
       const formattedStartTime = parse(startTime, 'HH:mm', date).toISOString();
       const formattedEndTime = addMinutes(formattedStartTime, 30).toISOString();
 
-      // NOTE: hardcoded practitionerRoleId
       const appointmentPayload: Bundle = {
         type: 'transaction',
         resourceType: 'Bundle',
@@ -379,7 +378,7 @@ export default function PractitionerAvailbility({
                 {
                   status: 'accepted',
                   actor: {
-                    reference: `PractitionerRole/PractitionerRole-id`
+                    reference: `PractitionerRole/${prac}`
                   }
                 }
               ],

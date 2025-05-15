@@ -36,7 +36,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
   const {
     data: questionnaireResponse,
     isLoading: questionnaireResponseIsLoading
-  } = useQuestionnaireResponse(recordId);
+  } = useQuestionnaireResponse({ questionnaireId: recordId, enabled: true });
   const [scoreList, setScoreList] = useState([]);
   const [currentLocation, setCurrentLocation] = useState<string>('');
   const [colorMap, setColorMap] = useState({});
