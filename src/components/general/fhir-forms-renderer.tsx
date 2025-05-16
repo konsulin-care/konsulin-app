@@ -187,7 +187,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           src={'/images/submit-questionnaire.png'}
           height={0}
           width={200}
-          style={{ width: 'auto', height: 'auto' }}
+          style={{ width: '200', height: 'auto' }}
           alt='success'
         />
         <DrawerTitle className='text-center'>

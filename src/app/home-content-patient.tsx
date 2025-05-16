@@ -137,7 +137,10 @@ export default function HomeContentPatient() {
             {records.map((record: IRecord) => {
               const splitTitle = record.title.split('/');
               const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
-              const formattedTitle = formatTitle(title);
+              const formattedTitle =
+                record.type === 'QuestionnaireResponse'
+                  ? formatTitle(title)
+                  : title;
               const recordId = record.id.split('/')[1];
               const formattedDate = format(
                 new Date(record.lastUpdated),
@@ -156,6 +159,7 @@ export default function HomeContentPatient() {
 
               const { displayName, email } = getPractitionerInfo(record);
               const { initials, backgroundColor } = generateAvatarPlaceholder({
+                id: record.practitionerId,
                 name: displayName,
                 email: email
               });

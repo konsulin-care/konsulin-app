@@ -68,3 +68,9 @@ type IMeta = {
   versionId: string;
   lastUpdated: string;
 };
+
+export type IQuestionnaireResponse = {
+  questionnaireId?: string;
+  patientId?: string;
+  enabled: boolean;
+};

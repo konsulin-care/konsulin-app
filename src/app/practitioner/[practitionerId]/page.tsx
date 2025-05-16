@@ -75,6 +75,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
   }, [practitionerData]);
 
   const { initials, backgroundColor } = generateAvatarPlaceholder({
+    id: params.practitionerId,
     name: displayName,
     email: practitionerData.email
   });
