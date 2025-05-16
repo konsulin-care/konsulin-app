@@ -269,6 +269,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
                 item => item.system === 'email'
               );
               const { initials, backgroundColor } = generateAvatarPlaceholder({
+                id: practitioner.id,
                 name: displayName,
                 email: email?.value
               });

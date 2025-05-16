@@ -121,6 +121,7 @@ export default function Patient({ fhirId }: Props) {
   ];
 
   const { initials, backgroundColor } = generateAvatarPlaceholder({
+    id: authState.userInfo?.fhirId,
     name: authState.userInfo?.fullname,
     email: authState.userInfo?.email
   });

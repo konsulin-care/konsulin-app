@@ -61,6 +61,7 @@ export default function DetailAppointment({ params }: Props) {
     );
 
     const avatar = generateAvatarPlaceholder({
+      id: appointmentData.practitionerId,
       name,
       email: appointmentData.practitionerEmail
     });

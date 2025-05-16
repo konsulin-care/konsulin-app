@@ -40,6 +40,7 @@ export default function HomeHeader() {
   }, [upcomingData, authState]);
 
   const { initials, backgroundColor } = generateAvatarPlaceholder({
+    id: authState.userInfo?.fhirId,
     name: authState.userInfo?.fullname,
     email: authState.userInfo?.email
   });

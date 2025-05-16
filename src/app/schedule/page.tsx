@@ -183,6 +183,7 @@ export default function Schedule() {
               session.practitionerQualification
             );
             const { initials, backgroundColor } = generateAvatarPlaceholder({
+              id: session.practitionerId,
               name: displayName,
               email: session.practitionerEmail
             });
@@ -254,6 +255,7 @@ export default function Schedule() {
               session.practitionerQualification
             );
             const { initials, backgroundColor } = generateAvatarPlaceholder({
+              id: session.practitionerId,
               name: displayName,
               email: session.practitionerEmail
             });

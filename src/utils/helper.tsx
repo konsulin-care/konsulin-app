@@ -1,4 +1,3 @@
-import { getFromLocalStorage, setToLocalStorage } from '@/lib/utils';
 import { IBundleResponse } from '@/types/record';
 import { parse } from 'date-fns';
 import {
@@ -245,14 +244,25 @@ export const parseTime = (timeStr: string, formatStr = 'HH:mm') => {
   return parse(timeStr, formatStr, new Date());
 };
 
-const getRandomPastelColor = () => {
-  const hue = Math.floor(Math.random() * 360);
-  return `hsl(${hue}, 70%, 80%)`;
+// generate a consistent color from an id
+const getColorFromId = (id: string) => {
+  if (!id) return;
+
+  const saturation = 70;
+  const lightness = 50;
+
+  let hash = 0;
+  for (const char of id) {
+    hash += char.charCodeAt(0);
+  }
+
+  const hue = hash % 360;
+
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
-export const generateAvatarPlaceholder = ({ name, email }) => {
+export const generateAvatarPlaceholder = ({ id, name, email }) => {
   let initials = '';
-  const key = 'avatar-color';
   const isValidName = name && name.trim() && name.trim() !== '-';
   const parts = isValidName ? name.trim().split(' ') : [];
 
@@ -265,11 +275,8 @@ export const generateAvatarPlaceholder = ({ name, email }) => {
 
   initials = initials.toUpperCase();
 
-  let backgroundColor = JSON.parse(getFromLocalStorage(key));
-  if (!backgroundColor) {
-    backgroundColor = getRandomPastelColor();
-    setToLocalStorage(key, backgroundColor);
-  }
+  // Get color for this unique ID
+  const backgroundColor = getColorFromId(id);
 
   return { initials, backgroundColor };
 };

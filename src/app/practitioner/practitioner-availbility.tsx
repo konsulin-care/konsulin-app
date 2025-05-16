@@ -378,7 +378,7 @@ export default function PractitionerAvailbility({
                 {
                   status: 'accepted',
                   actor: {
-                    reference: `PractitionerRole/${prac}`
+                    reference: `PractitionerRole/${practitionerRole.id}`
                   }
                 }
               ],

@@ -159,6 +159,7 @@ export default function HomeContentPatient() {
 
               const { displayName, email } = getPractitionerInfo(record);
               const { initials, backgroundColor } = generateAvatarPlaceholder({
+                id: record.practitionerId,
                 name: displayName,
                 email: email
               });
