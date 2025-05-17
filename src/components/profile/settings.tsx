@@ -6,8 +6,6 @@ import {
   DrawerTitle,
   DrawerTrigger
 } from '@/components/ui/drawer';
-import { useAuth } from '@/context/auth/authContext';
-import { useProfile } from '@/context/profile/profileContext';
 import { ChevronRightIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -20,8 +18,6 @@ export default function Settings({ menus }) {
     subTitle: '',
     show: false
   });
-  const { dispatch } = useAuth();
-  const { dispatch: dispatchProfile } = useProfile();
 
   function handleClick(path: string) {
     if (path === '/logout') {
@@ -49,10 +45,7 @@ export default function Settings({ menus }) {
       show: false
     }));
 
-    dispatch({ type: 'logout' });
-    dispatchProfile({ type: 'reset' });
-    router.push('/');
-    // router.push('/logout')
+    router.push('/logout');
   }
 
   function closeDrawer() {

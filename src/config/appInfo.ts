@@ -4,6 +4,6 @@ export const appInfo = {
   apiDomain: 'https://dev-api.konsulin.care',
   // websiteDomain: 'http://localhost:3000',
   websiteDomain: 'https://dev-app.konsulin.care',
-  apiBasePath: '/api/v1/auth',
+  apiBasePath: '/fhir/auth',
   websiteBasePath: '/auth'
 };
