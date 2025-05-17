@@ -1,13 +1,20 @@
 'use client';
 
-import { notFound } from 'next/navigation';
+import { useAuth } from '@/context/auth/authContext';
+import { useProfile } from '@/context/profile/profileContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Logout() {
-  // const { dispatch } = useAuth()
-  // const { dispatch: dispatchProfile } = useProfile()
-  // const router = useRouter()
-  // dispatch({ type: 'logout' })
-  // dispatchProfile({ type: 'reset' })
-  // router.push('/')
-  return notFound();
+  const { dispatch } = useAuth();
+  const { dispatch: dispatchProfile } = useProfile();
+  const router = useRouter();
+
+  useEffect(() => {
+    dispatch({ type: 'logout' });
+    dispatchProfile({ type: 'reset' });
+    router.push('/');
+  }, []);
+
+  return null;
 }
