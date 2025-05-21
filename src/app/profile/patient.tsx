@@ -10,13 +10,14 @@ import { useAuth } from '@/context/auth/authContext';
 import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { getProfileById } from '@/services/profile';
 import {
+  findAge,
   generateAvatarPlaceholder,
-  mergeNames,
+  mapAddress,
   parseMergedAppointments
 } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
 import { format, isAfter, parseISO } from 'date-fns';
-import type { Address, ContactPoint, Patient } from 'fhir/r4';
+import type { ContactPoint, Patient } from 'fhir/r4';
 import { ChevronRightIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -69,43 +70,23 @@ export default function Patient({ fhirId }: Props) {
     return found.value;
   };
 
-  const findAge = (birthDateStr: string) => {
-    const birthdate = new Date(birthDateStr);
-    const today = new Date();
-
-    if (isNaN(birthdate.getTime())) {
-      return '-';
-    }
-
-    let age = today.getFullYear() - birthdate.getFullYear();
-    const hasHadBirthdayThisYear =
-      today.getMonth() > birthdate.getMonth() ||
-      (today.getMonth() === birthdate.getMonth() &&
-        today.getDate() >= birthdate.getDate());
-
-    if (!hasHadBirthdayThisYear) {
-      age--;
-    }
-
-    return age;
-  };
-
-  function mapAddress(address: Address[]): string {
-    if (!address || address.length === 0) return '-';
-
-    const addr = address[0];
-    const parts = [addr.line[0], addr.district, addr.city, addr.postalCode];
-
-    return parts.filter(Boolean).join(', ');
-  }
-
-  const age = profileData ? `${findAge(profileData.birthDate)} year` : '-';
-  const gender = profileData
-    ? profileData.gender.charAt(0).toUpperCase() +
-      profileData.gender.slice(1).toLowerCase()
-    : '-';
-  const phone = profileData ? findTelecom('phone') : '-';
-  const address = profileData ? mapAddress(profileData.address) : '-';
+  const age =
+    profileData && profileData.birthDate
+      ? `${findAge(profileData.birthDate)} year`
+      : '-';
+  const gender =
+    profileData && profileData.gender
+      ? profileData.gender.charAt(0).toUpperCase() +
+        profileData.gender.slice(1).toLowerCase()
+      : '-';
+  const phone =
+    profileData && Array.isArray(profileData.telecom)
+      ? findTelecom('phone')
+      : '-';
+  const address =
+    profileData && Array.isArray(profileData.address)
+      ? mapAddress(profileData.address)
+      : '-';
 
   const profileDetail = [
     {
@@ -170,8 +151,8 @@ export default function Patient({ fhirId }: Props) {
           initials={initials}
           backgroundColor={backgroundColor}
           iconUrl={profileData.photo?.[0].url}
-          title={mergeNames(profileData.name)}
-          subTitle={findTelecom('email')}
+          title={authState.userInfo.fullname}
+          subTitle={authState.userInfo.email}
           buttonText='Edit Profile'
           details={profileDetail}
           onEdit={() => router.push('profile/edit-profile')}

@@ -34,44 +34,6 @@ export type IPractitioner = Practitioner & {
   practitionerRole: PractitionerRole;
 };
 
-// export type IPractitionerRole = {
-//   id: string;
-//   resourceType: 'PractitionerRole';
-//   availableTime: AvailableTime[];
-//   specialty: Specialty[];
-//   practitioner: {
-//     reference: string;
-//     identifier: {
-//       type: object;
-//       period: object;
-//     };
-//   };
-//   organization: {
-//     reference: string;
-//     identifier: {
-//       type: object;
-//       period: object;
-//     };
-//     display: string;
-//   };
-//   meta: Meta;
-//   active: boolean;
-// };
-
-export type IDetailPractitionerRole = {
-  resourceType: 'PractitionerRole';
-  id: string;
-  active: boolean;
-  meta: Meta;
-  practitioner: {
-    reference: string;
-  };
-  organization: {
-    reference: string;
-  };
-  availableTime: AvailableTime[];
-};
-
 export type IDetailInvoice = {
   resourceType: 'Invoice';
   id: string;
@@ -86,32 +48,6 @@ export type IDetailInvoice = {
       reference: string;
     };
   }[];
-};
-
-type Qualification = {
-  code: {
-    coding: Array<{
-      system: string;
-      code: string;
-      display: string;
-    }>;
-  };
-};
-
-type Name = {
-  use: string;
-  family: string;
-  given: string[];
-};
-
-type AvailableTime = {
-  availableStartTime: string;
-  daysOfWeek: string[];
-  availableEndTime: string;
-};
-
-type Specialty = {
-  text: string;
 };
 
 type Telecom = {
@@ -129,10 +65,6 @@ type Address = {
   city: string;
   postalCode: string;
   country: string;
-};
-
-type Photo = {
-  url: string;
 };
 
 type Meta = {

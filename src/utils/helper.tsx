@@ -1,6 +1,7 @@
 import { IBundleResponse } from '@/types/record';
 import { parse } from 'date-fns';
 import {
+  Address,
   Annotation,
   Appointment,
   AppointmentParticipant,
@@ -296,4 +297,34 @@ export const formatTitle = (raw: string) => {
 
   // if no hyphen, make the whole string uppercase
   return cleaned.toUpperCase();
+};
+
+export const mapAddress = (address: Address[]) => {
+  if (!address || address.length === 0) return '-';
+
+  const addr = address[0];
+  const parts = [addr.line[0], addr.district, addr.city, addr.postalCode];
+
+  return parts.filter(Boolean).join(', ');
+};
+
+export const findAge = (birthDateStr: string) => {
+  const birthdate = new Date(birthDateStr);
+  const today = new Date();
+
+  if (isNaN(birthdate.getTime())) {
+    return '-';
+  }
+
+  let age = today.getFullYear() - birthdate.getFullYear();
+  const hasHadBirthdayThisYear =
+    today.getMonth() > birthdate.getMonth() ||
+    (today.getMonth() === birthdate.getMonth() &&
+      today.getDate() >= birthdate.getDate());
+
+  if (!hasHadBirthdayThisYear) {
+    age--;
+  }
+
+  return age;
 };
