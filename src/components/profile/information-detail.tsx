@@ -1,3 +1,4 @@
+import { IPractitionerRoleDetail } from '@/types/practitioner';
 import Image from 'next/image';
 import Tags from './tags';
 
@@ -46,39 +47,6 @@ function HeaderSection({
 }
 
 function DetailItem({ item }) {
-  const isArray = Array.isArray(item.value);
-
-  if (item.key === 'Specialty') {
-    return (
-      <div>
-        <p className='text-left text-sm'>{item.key}</p>
-        <div className='my-2 flex w-full border-t border-[#E3E3E3]' />
-        {isArray && item.value.length > 0 && <Tags tags={item.value} />}
-      </div>
-    );
-  }
-
-  if (item.key === 'Educations') {
-    const educations = item.value;
-    return (
-      <>
-        <p className='text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
-        <div className='flex flex-col items-end'>
-          {educations &&
-            educations.length > 0 &&
-            educations.map((edu: string) => (
-              <p
-                key={edu}
-                className='text-sm font-bold text-[#2C2F35] opacity-100'
-              >
-                {edu}
-              </p>
-            ))}
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
       <p className='text-left text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
@@ -89,27 +57,60 @@ function DetailItem({ item }) {
   );
 }
 
-function DetailPratice({ item }) {
-  const details = [
-    { key: 'Clinic Name', value: item.clinic_name },
+function DetailPratice({ items }) {
+  const organizationName =
+    items && items.organizationData.name ? items.organizationData.name : '-';
+
+  const fee =
+    items && items.invoiceData?.totalNet
+      ? `${new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: items.invoiceData.totalNet.currency,
+          minimumFractionDigits: 0
+        }).format(items.invoiceData.totalNet.value)} / Session`
+      : '-';
+
+  const practiceInformationsDetail = [
     {
-      key: 'Price per Session',
-      value: `${item.price_per_session.value.toLocaleString('id-ID')} ${item.price_per_session.currency} / Session`
+      key: 'Affiliation',
+      value: organizationName
+    },
+    {
+      key: 'Fee',
+      value: fee
     }
   ];
+
+  const specialties = Array.isArray(items?.specialty)
+    ? items.specialty.map((item: { text: string }) => item.text).filter(Boolean)
+    : null;
+
   return (
-    <div className='flex w-full flex-col py-2'>
-      {details.map((detail, index) => (
-        <div key={index} className='flex w-full justify-between'>
-          <div className='text-sm text-[#2C2F35] opacity-100'>{detail.key}</div>
-          <div className='text-sm font-bold text-[#2C2F35] opacity-100'>
-            {detail.value}
-          </div>
+    <>
+      <div className='flex w-full flex-col py-2'>
+        {practiceInformationsDetail.map((item, index) => {
+          return (
+            <div key={index} className='mt-2 flex w-full justify-between'>
+              <div className='text-sm text-[#2C2F35] opacity-100'>
+                {item.key}
+              </div>
+              <div className='text-sm font-bold text-[#2C2F35] opacity-100'>
+                {item.value}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {specialties && Array.isArray(specialties) && (
+        <div className='my-2 flex w-full'>
+          <Tags tags={specialties} />
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 }
+
 export default function InformationDetail({
   isRadiusIcon = true,
   iconUrl,
@@ -123,10 +124,6 @@ export default function InformationDetail({
   initials,
   backgroundColor
 }) {
-  const filteredClinics = details?.filter(
-    clinic => clinic.price_per_session?.value > 0
-  );
-
   return (
     <div className='flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
       <div className='flex w-full items-start justify-between'>
@@ -151,25 +148,20 @@ export default function InformationDetail({
       {details && <div className='flex w-full' />}
 
       {isEditPratice ? (
-        <div
-          className={`flex w-full flex-col ${
-            Array.isArray(filteredClinics) && filteredClinics.length > 0
-              ? 'mt-2 space-y-2 border-t border-[#E3E3E3]'
-              : ''
-          }`}
-        >
-          {filteredClinics?.map((clinic, index) => (
-            <div
-              className='mt-1 flex justify-between font-[#2C2F35] text-xs'
-              key={index}
-            >
-              <DetailPratice item={clinic} />
-            </div>
-          ))}
+        <div className='mt-2 flex w-full flex-col'>
+          {Array.isArray(details) &&
+            details.map((detail, index) => (
+              <div
+                key={index}
+                className='mt-1 flex flex-col border-t border-[#E3E3E3] font-[#2C2F35] text-xs'
+              >
+                <DetailPratice items={detail.resource} />
+              </div>
+            ))}
         </div>
       ) : (
         <div className='mt-2 flex w-full flex-col space-y-2 border-t border-[#E3E3E3]'>
-          {details?.map((item, index) => (
+          {details?.map((item: IPractitionerRoleDetail, index: number) => (
             <div
               className='mt-2 flex justify-between font-[#2C2F35] text-xs'
               key={index}
