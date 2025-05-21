@@ -45,6 +45,11 @@ export default function HomeHeader() {
     email: authState.userInfo?.email
   });
 
+  const displayName =
+    !authState.userInfo.fullname || authState.userInfo.fullname.trim() === '-'
+      ? authState.userInfo.email
+      : authState.userInfo.fullname;
+
   return (
     <>
       <Header>
@@ -86,7 +91,7 @@ export default function HomeHeader() {
                   Selamat Datang di Dashboard anda
                 </div>
                 <div className='text-[14px] font-bold text-white'>
-                  {authState.userInfo.fullname || authState.userInfo.email}
+                  {displayName}
                 </div>
               </div>
             </div>
