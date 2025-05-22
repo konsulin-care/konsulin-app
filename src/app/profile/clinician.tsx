@@ -1,46 +1,50 @@
 'use client';
 
-// import Collapsible from '@/components/profile/collapsible';
-// import DropdownProfile from '@/components/profile/dropdown-profile';
+import { LoadingSpinnerIcon } from '@/components/icons';
+import Collapsible from '@/components/profile/collapsible';
+import DropdownProfile from '@/components/profile/dropdown-profile';
 import InformationDetail from '@/components/profile/information-detail';
 import MedalCollection from '@/components/profile/medal-collection';
 import Settings from '@/components/profile/settings';
 import Tags from '@/components/profile/tags';
-// import { Button } from '@/components/ui/button';
-// import {
-//   Drawer,
-//   DrawerContent,
-//   DrawerDescription,
-//   DrawerTitle
-// } from '@/components/ui/drawer';
-import { medalLists, settingMenus } from '@/constants/profile';
-// import { apiRequest } from '@/services/api';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/context/auth/authContext';
-import { useGetPractitionerRolesDetail } from '@/services/clinicians';
+import { Button } from '@/components/ui/button';
 import {
-  // fetchListClinic,
-  getProfileById
-} from '@/services/profile';
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle
+} from '@/components/ui/drawer';
+import { Skeleton } from '@/components/ui/skeleton';
+import { medalLists, settingMenus } from '@/constants/profile';
+import { useAuth } from '@/context/auth/authContext';
+import {
+  useGetPractitionerRolesDetail,
+  useUpdatePractitionerInfo
+} from '@/services/clinicians';
+import { getProfileById } from '@/services/profile';
 import { findAge, generateAvatarPlaceholder, mapAddress } from '@/utils/helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { ContactPoint, Practitioner } from 'fhir/r4';
-import { ChevronRight } from 'lucide-react';
+import {
+  ContactPoint,
+  Practitioner,
+  PractitionerRoleAvailableTime
+} from 'fhir/r4';
+import { ChevronRight, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { daysOfWeek } from './constants';
-import { FormsState } from './types';
-// import {
-//   handleAddForm,
-//   handleCompanyChange,
-//   handlePayloadSend,
-//   handleRemoveTimeRange,
-//   handleTimeChange,
-//   validateTimeRanges
-// } from './utils';
+import { FormsState, TimeRange } from './types';
+import {
+  handleAddForm,
+  handleOrganizationChange,
+  handlePayloadSend,
+  handleRemoveTimeRange,
+  handleTimeChange,
+  validateTimeRanges
+} from './utils';
 
 type Props = {
   fhirId: string;
@@ -48,8 +52,21 @@ type Props = {
 
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
-
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [activeDayIndex, setActiveDayIndex] = useState<number | null>(null);
+  const [practitionerRolesData, setPractitionerRolesData] = useState([]);
+  const [formsState, setFormsState] = useState<FormsState>(
+    daysOfWeek.reduce((acc, day) => {
+      acc[day] = [];
+      return acc;
+    }, {} as FormsState)
+  );
+  const [errorMessages, setErrorMessages] = useState<Record<string, string>>(
+    {}
+  );
+  const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState({});
   const { state: authState, isLoading: isAuthLoading } = useAuth();
+  const queryClient = useQueryClient();
 
   /* get practitioner's basic information*/
   const { data: profileData, isLoading: isProfileLoading } =
@@ -62,212 +79,188 @@ export default function Clinician({ fhirId }: Props) {
       }
     });
 
-  // NOTE: hardcoded practitionerId DFEV4QX6TWLJLOEA, Practitioner-id
   /* get list of practitioner's roles */
-  const { data: practitionerRolesData, isLoading: isPractitionerRolesLoading } =
-    useGetPractitionerRolesDetail(authState.userInfo.fhirId);
+  const { refetch, isLoading: isPractitionerRolesLoading } =
+    useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
+      onSuccess: data => {
+        const resources = data?.map(entry => entry.resource) || [];
+        setPractitionerRolesData(resources);
+      }
+    });
 
-  // const { state, dispatch } = useProfile();
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [activeDayIndex, setActiveDayIndex] = useState<number | null>(null);
-  const [formsState, setFormsState] = useState<FormsState>(
-    daysOfWeek.reduce((acc, day) => {
+  const {
+    mutateAsync: updatePractitionerInfo,
+    isLoading: isUpdatePractitionerLoading
+  } = useUpdatePractitionerInfo();
+
+  const activeFirms = practitionerRolesData?.filter(firm => firm.active);
+
+  const handleOpenDrawer = () => {
+    const initialFormsState = daysOfWeek.reduce((acc, day) => {
       acc[day] = [];
       return acc;
-    }, {} as FormsState)
-  );
-  const [errorMessages, setErrorMessages] = useState<Record<string, string>>(
-    {}
-  );
-  const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState({});
-  const queryClient = useQueryClient();
+    }, {} as FormsState);
 
+    setFormsState(initialFormsState);
+
+    const updatedFormsState = { ...initialFormsState };
+    if (Array.isArray(practitionerRolesData)) {
+      const dayMapping = {
+        mon: 'Monday',
+        tue: 'Tuesday',
+        wed: 'Wednesday',
+        thu: 'Thursday',
+        fri: 'Friday',
+        sat: 'Saturday',
+        sun: 'Sunday'
+      };
+
+      activeFirms.forEach(role => {
+        const organizationName = role?.organizationData.name || '';
+        const organizationId = role?.organizationData.id || '';
+
+        role.availableTime?.forEach(
+          (timeSlot: PractitionerRoleAvailableTime) => {
+            timeSlot.daysOfWeek.forEach(shortDay => {
+              const fullDayName = dayMapping[shortDay];
+              if (fullDayName) {
+                updatedFormsState[fullDayName].push({
+                  times: [
+                    {
+                      roleId: role.id,
+                      code: organizationId,
+                      name: organizationName,
+                      fromTime: timeSlot.availableStartTime,
+                      toTime: timeSlot.availableEndTime
+                    }
+                  ]
+                });
+              }
+            });
+          }
+        );
+      });
+      setFormsState(updatedFormsState);
+    } else {
+      console.error('activeFirms is not an array');
+    }
+    setIsDrawerOpen(true);
+  };
+
+  /* group available time slots by organization and day of week.
+   * example structure:
+   * {
+   *   "Org A": {
+   *     availability: {
+   *       Monday: [{ fromTime: "09:00", toTime: "12:00" }, ...],
+   *       Tuesday: [...],
+   *     }
+   *   },
+   *   ...
+   * }
+   */
   useEffect(() => {
-    console.log('data', practitionerRolesData);
+    if (!Array.isArray(activeFirms)) return;
+
+    const newGroupedByFirmAndDay = {};
+
+    activeFirms.forEach(role => {
+      const organizationName = role?.organizationData.name || '';
+
+      if (Array.isArray(role.availableTime)) {
+        role.availableTime.forEach(
+          (timeSlot: PractitionerRoleAvailableTime) => {
+            if (Array.isArray(timeSlot.daysOfWeek)) {
+              timeSlot.daysOfWeek.forEach((day: string) => {
+                const dayKey = day.charAt(0).toUpperCase() + day.slice(1);
+
+                if (!newGroupedByFirmAndDay[organizationName]) {
+                  newGroupedByFirmAndDay[organizationName] = {
+                    availability: {}
+                  };
+                }
+
+                if (
+                  !newGroupedByFirmAndDay[organizationName].availability[dayKey]
+                ) {
+                  newGroupedByFirmAndDay[organizationName].availability[
+                    dayKey
+                  ] = [];
+                }
+
+                newGroupedByFirmAndDay[organizationName].availability[
+                  dayKey
+                ].push({
+                  fromTime: timeSlot.availableStartTime,
+                  toTime: timeSlot.availableEndTime
+                });
+              });
+            }
+          }
+        );
+      }
+    });
+
+    setGroupedByFirmAndDay(prevState => ({
+      ...prevState,
+      ...newGroupedByFirmAndDay
+    }));
   }, [practitionerRolesData]);
 
-  // const handleOpenDrawer = () => {
-  //   const initialFormsState = daysOfWeek.reduce((acc, day) => {
-  //     acc[day] = [];
-  //     return acc;
-  //   }, {} as FormsState);
-  //
-  //   setFormsState(initialFormsState);
-  //
-  //   const clinicNameMapping = practice_informations.reduce(
-  //     (acc, clinicInfo) => {
-  //       acc[clinicInfo.clinic_id] = clinicInfo.clinic_name;
-  //       return acc;
-  //     },
-  //     {} as Record<string, string>
-  //   );
-  //
-  //   const updatedFormsState = { ...initialFormsState };
-  //   if (Array.isArray(practice_availabilities)) {
-  //     const dayMapping = {
-  //       mon: 'Monday',
-  //       tue: 'Tuesday',
-  //       wed: 'Wednesday',
-  //       thu: 'Thursday',
-  //       fri: 'Friday',
-  //       sat: 'Saturday',
-  //       sun: 'Sunday'
-  //     };
-  //
-  //     practice_availabilities.forEach(clinic => {
-  //       clinic.available_time.forEach(timeSlot => {
-  //         timeSlot.days_of_Week.forEach(shortDay => {
-  //           const fullDayName = dayMapping[shortDay];
-  //           if (fullDayName) {
-  //             updatedFormsState[fullDayName].push({
-  //               times: [
-  //                 {
-  //                   firm: clinicNameMapping[clinic.clinic_id] || '',
-  //                   fromTime: timeSlot.available_start_time,
-  //                   toTime: timeSlot.available_end_time
-  //                 }
-  //               ]
-  //             });
-  //           }
-  //         });
-  //       });
-  //     });
-  //     setFormsState(updatedFormsState);
-  //   } else {
-  //     console.error('practice_availabilities is not an array');
-  //   }
-  //   setIsDrawerOpen(true);
-  // };
-  //
-  // useEffect(() => {
-  //   if (profileResponse && profileResponse.data) {
-  //     const practiceAvailabilities =
-  //       profileResponse.data.practice_availabilities;
-  //     const practiceInformations = profileResponse.data.practice_informations;
-  //     if (
-  //       !Array.isArray(practiceAvailabilities) ||
-  //       !Array.isArray(practiceInformations)
-  //     ) {
-  //       setGroupedByFirmAndDay({});
-  //     }
-  //
-  //     const newGroupedByFirmAndDay = {};
-  //
-  //     const clinicNamesMap = practiceInformations
-  //       ? practiceInformations.reduce((acc, clinic) => {
-  //           acc[clinic.clinic_id] = clinic.clinic_name;
-  //           return acc;
-  //         }, {})
-  //       : {};
-  //     if (practiceAvailabilities) {
-  //       practiceAvailabilities.forEach(clinic => {
-  //         const clinicId = clinic.clinic_id;
-  //         const clinicName = clinicNamesMap[clinicId];
-  //
-  //         if (clinic.available_time && Array.isArray(clinic.available_time)) {
-  //           clinic.available_time.forEach(timeSlot => {
-  //             if (
-  //               timeSlot.days_of_Week &&
-  //               Array.isArray(timeSlot.days_of_Week)
-  //             ) {
-  //               timeSlot.days_of_Week.forEach(day => {
-  //                 const dayKey = day.charAt(0).toUpperCase() + day.slice(1);
-  //
-  //                 if (!newGroupedByFirmAndDay[clinicName]) {
-  //                   newGroupedByFirmAndDay[clinicName] = {
-  //                     availability: {}
-  //                   };
-  //                 }
-  //
-  //                 if (
-  //                   !newGroupedByFirmAndDay[clinicName].availability[dayKey]
-  //                 ) {
-  //                   newGroupedByFirmAndDay[clinicName].availability[dayKey] =
-  //                     [];
-  //                 }
-  //
-  //                 newGroupedByFirmAndDay[clinicName].availability[dayKey].push({
-  //                   fromTime: timeSlot.available_start_time,
-  //                   toTime: timeSlot.available_end_time
-  //                 });
-  //               });
-  //             }
-  //           });
-  //         }
-  //       });
-  //
-  //       setGroupedByFirmAndDay(prevState => ({
-  //         ...prevState,
-  //         ...newGroupedByFirmAndDay
-  //       }));
-  //     } else {
-  //       setGroupedByFirmAndDay({});
-  //     }
-  //   }
-  // }, [profileResponse]);
-  //
-  // // fetch clinician
-  // const { data } = useQuery({
-  //   queryKey: ['clinician'],
-  //   queryFn: () => fetchListClinic(),
-  //   staleTime: 1000 * 60 * 60
-  // });
-  // const clinics = data && Array.isArray(data) ? data : [];
-  // const clinicsWithPrice =
-  //   state.profile.practice_informations !== null
-  //     ? state.profile.practice_informations.filter(
-  //         clinic => clinic.price_per_session.value > 0
-  //       )
-  //     : [];
-  //
-  // const firms = clinicsWithPrice.map(clinic => ({ name: clinic.clinic_name }));
-  // const { mutate } = useMutation({
-  //   mutationFn: async (scheduleAvailable: RequestAvailableTime) => {
-  //     try {
-  //       const response = await apiRequest(
-  //         'POST',
-  //         '/api/v1/clinicians/clinics/practice-availability',
-  //         scheduleAvailable
-  //       );
-  //       return response;
-  //     } catch (err) {
-  //       throw err;
-  //     }
-  //   },
-  //   onSuccess: () => {
-  //     setIsDrawerOpen(false);
-  //     queryClient.invalidateQueries(['profile-clinician']);
-  //   }
-  // });
-  //
-  // const handleSave = () => {
-  //   if (activeDayIndex === null) return;
-  //
-  //   const day = daysOfWeek[activeDayIndex];
-  //   const allTimes = formsState[day].flatMap(form => form.times);
-  //
-  //   const hasEmptyFirm = allTimes.some(
-  //     time => time.firm === '' || time.firm === null
-  //   );
-  //
-  //   const errorMessage = validateTimeRanges(allTimes);
-  //   if (hasEmptyFirm) {
-  //     setErrorMessages(prev => ({
-  //       ...prev,
-  //       [day]: 'Harap isi form dengan benar'
-  //     }));
-  //     return;
-  //   }
-  //
-  //   if (errorMessage) {
-  //     setErrorMessages(prev => ({ ...prev, [day]: errorMessage }));
-  //   } else {
-  //     const clonedFormsState = JSON.parse(JSON.stringify(formsState));
-  //
-  //     const payload = handlePayloadSend(clinics, clonedFormsState);
-  //     mutate(payload as RequestAvailableTime);
-  //   }
-  // };
+  const organizationWithPrice = Array.isArray(activeFirms)
+    ? activeFirms.filter(role => {
+        return (
+          role.invoiceData?.totalNet &&
+          typeof role.invoiceData.totalNet.value === 'number' &&
+          role.invoiceData.totalNet.value > 0
+        );
+      })
+    : [];
+
+  const firms = organizationWithPrice.map(item => ({
+    roleId: item.id,
+    code: item.organizationData.id,
+    name: item.organizationData.name
+  }));
+
+  const handleSave = async () => {
+    if (activeDayIndex === null) return;
+
+    const day = daysOfWeek[activeDayIndex];
+    const allTimes = formsState[day].flatMap(form => form.times);
+
+    const hasEmptyFirm = allTimes.some(
+      time => time.code === '' || time.code === null
+    );
+
+    const errorMessage = validateTimeRanges(allTimes);
+    if (hasEmptyFirm) {
+      setErrorMessages(prev => ({
+        ...prev,
+        [day]: 'Harap isi form dengan benar'
+      }));
+      return;
+    }
+
+    if (errorMessage) {
+      setErrorMessages(prev => ({ ...prev, [day]: errorMessage }));
+      return;
+    }
+
+    const payloads = handlePayloadSend(practitionerRolesData, formsState);
+
+    try {
+      await Promise.all(
+        payloads.map(payload => updatePractitionerInfo(payload))
+      );
+      toast.success('Jadwal berhasil disimpan');
+      setIsDrawerOpen(false);
+      await refetch();
+    } catch (error) {
+      toast.error('Gagal menyimpan jadwal');
+      console.log('Error when updating availability schedules : ', error);
+    }
+  };
 
   const findTelecom = (system: string) => {
     const found = profileData.telecom.find(
@@ -359,15 +352,16 @@ export default function Clinician({ fhirId }: Props) {
           iconUrl='/icons/hospital.svg'
           title='Practice Information'
           buttonText='Edit Detail'
-          details={practitionerRolesData}
+          details={activeFirms}
           onEdit={() => router.push('profile/edit-pratice')}
           role='clinician'
           isEditPratice={true}
         />
       )}
 
+      {/* display practitioner's availability schedules */}
       <div
-        className={`mt-4 flex flex-col items-start justify-start rounded-[16px] bg-[#F0F4F9] ${hasData ? 'pt-4' : 'pt-0'}`}
+        className={`mt-4 flex flex-col items-start justify-start rounded-[16px] bg-[#F9F9F9] ${hasData ? 'pt-4' : 'pt-0'}`}
       >
         <div className='w-full px-4'>
           {Object.keys(groupedByFirmAndDay).map((firm, index) => (
@@ -378,7 +372,7 @@ export default function Clinician({ fhirId }: Props) {
                   const timeRanges =
                     groupedByFirmAndDay[firm].availability[day] || [];
                   const tags = timeRanges.map(
-                    timeRange =>
+                    (timeRange: TimeRange) =>
                       `${day}: ${timeRange.fromTime} - ${timeRange.toTime}`
                   );
 
@@ -398,7 +392,7 @@ export default function Clinician({ fhirId }: Props) {
         <div className='flex w-full flex-col justify-between rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
           <div
             className='flex cursor-pointer items-center justify-between'
-            // onClick={handleOpenDrawer}
+            onClick={handleOpenDrawer}
           >
             <Image
               src={'/icons/calendar-profile.svg'}
@@ -416,167 +410,181 @@ export default function Clinician({ fhirId }: Props) {
       </div>
       <MedalCollection medals={medalLists} isDisabled={true} />
       <Settings menus={settingMenus} />
-      {/* <Drawer onClose={() => setIsDrawerOpen(false)} open={isDrawerOpen}> */}
-      {/*   <div className='max-h-screen'> */}
-      {/*     <DrawerContent className='mx-auto flex max-h-screen flex-col overflow-y-hidden px-4 py-1'> */}
-      {/*       <DrawerTitle></DrawerTitle> */}
-      {/*       <DrawerDescription className='my-2 flex-grow overflow-y-auto'> */}
-      {/*         {daysOfWeek.map((day, dayIndex) => { */}
-      {/*           const checkSchedule = formsState[day]?.some(form => */}
-      {/*             form.times.some( */}
-      {/*               time => time.fromTime !== '--:--' && time.toTime !== '--:--' */}
-      {/*             ) */}
-      {/*           ); */}
-      {/**/}
-      {/*           const hasFirms = firms.length > 0; */}
-      {/**/}
-      {/*           return ( */}
-      {/*             <Collapsible */}
-      {/*               key={day} */}
-      {/*               day={day} */}
-      {/*               isOpen={activeDayIndex === dayIndex} */}
-      {/*               onToggle={() => */}
-      {/*                 setActiveDayIndex( */}
-      {/*                   activeDayIndex === dayIndex ? null : dayIndex */}
-      {/*                 ) */}
-      {/*               } */}
-      {/*               hasSchedules={checkSchedule && hasFirms} */}
-      {/*             > */}
-      {/*               {hasFirms && formsState[day]?.length > 0 ? ( */}
-      {/*                 formsState[day].map((form, formIndex) => ( */}
-      {/*                   <div key={`${day}-${formIndex}`}> */}
-      {/*                     {form.times.map((time, timeIndex) => ( */}
-      {/*                       <div */}
-      {/*                         key={`${day}-${formIndex}-${timeIndex}`} */}
-      {/*                         className='flex w-full items-start justify-between py-2' */}
-      {/*                       > */}
-      {/*                         <div className='flex flex-grow flex-col items-center'> */}
-      {/*                           <DropdownProfile */}
-      {/*                             options={firms} */}
-      {/*                             value={time.firm} */}
-      {/*                             onSelect={value => */}
-      {/*                               handleCompanyChange( */}
-      {/*                                 formsState, */}
-      {/*                                 day, */}
-      {/*                                 formIndex, */}
-      {/*                                 timeIndex, */}
-      {/*                                 value, */}
-      {/*                                 setFormsState, */}
-      {/*                                 setErrorMessages */}
-      {/*                               ) */}
-      {/*                             } */}
-      {/*                             placeholder='Choose your firm' */}
-      {/*                           /> */}
-      {/*                           <div className='flex w-full items-center justify-between'> */}
-      {/*                             <div className='flex items-center justify-center pl-1'> */}
-      {/*                               <span className='text-sm font-medium'> */}
-      {/*                                 From */}
-      {/*                               </span> */}
-      {/*                               <input */}
-      {/*                                 type='time' */}
-      {/*                                 className='block w-full rounded-lg bg-gray-50 p-2.5 text-sm text-gray-900 focus:outline-none dark:bg-gray-700 dark:text-white' */}
-      {/*                                 value={time.fromTime} */}
-      {/*                                 onChange={e => */}
-      {/*                                   handleTimeChange( */}
-      {/*                                     day, */}
-      {/*                                     formIndex, */}
-      {/*                                     timeIndex, */}
-      {/*                                     'from', */}
-      {/*                                     e.target.value, */}
-      {/*                                     formsState, */}
-      {/*                                     setFormsState, */}
-      {/*                                     setErrorMessages */}
-      {/*                                   ) */}
-      {/*                                 } */}
-      {/*                                 required */}
-      {/*                               /> */}
-      {/*                             </div> */}
-      {/*                             <div className='flex w-3 flex-grow' /> */}
-      {/*                             <div className='flex items-center justify-end'> */}
-      {/*                               <span className='text-sm font-medium'> */}
-      {/*                                 To */}
-      {/*                               </span> */}
-      {/*                               <input */}
-      {/*                                 type='time' */}
-      {/*                                 className='block w-full rounded-lg bg-gray-50 p-2.5 text-sm text-gray-900 focus:outline-none dark:bg-gray-700 dark:text-white' */}
-      {/*                                 value={time.toTime} */}
-      {/*                                 onChange={e => */}
-      {/*                                   handleTimeChange( */}
-      {/*                                     day, */}
-      {/*                                     formIndex, */}
-      {/*                                     timeIndex, */}
-      {/*                                     'to', */}
-      {/*                                     e.target.value, */}
-      {/*                                     formsState, */}
-      {/*                                     setFormsState, */}
-      {/*                                     setErrorMessages */}
-      {/*                                   ) */}
-      {/*                                 } */}
-      {/*                                 required */}
-      {/*                               /> */}
-      {/*                             </div> */}
-      {/*                           </div> */}
-      {/*                         </div> */}
-      {/*                         <div className='flex flex-col items-center pl-4 pt-4'> */}
-      {/*                           <Trash2 */}
-      {/*                             size={20} */}
-      {/*                             onClick={() => */}
-      {/*                               handleRemoveTimeRange( */}
-      {/*                                 day, */}
-      {/*                                 formIndex, */}
-      {/*                                 timeIndex, */}
-      {/*                                 formsState, */}
-      {/*                                 setFormsState, */}
-      {/*                                 setErrorMessages */}
-      {/*                               ) */}
-      {/*                             } */}
-      {/*                           /> */}
-      {/*                         </div> */}
-      {/*                       </div> */}
-      {/*                     ))} */}
-      {/*                   </div> */}
-      {/*                 )) */}
-      {/*               ) : ( */}
-      {/*                 <div className='flex w-full items-center justify-center py-2 text-gray-500'> */}
-      {/*                   {hasFirms */}
-      {/*                     ? `No schedules available for ${day}.` */}
-      {/*                     : `No firms available for ${day}.`} */}
-      {/*                 </div> */}
-      {/*               )} */}
-      {/*               <div className='flex w-full items-center justify-end'> */}
-      {/*                 {errorMessages[day] && ( */}
-      {/*                   <div className='px-2 text-sm text-red-500'> */}
-      {/*                     {errorMessages[day]} */}
-      {/*                   </div> */}
-      {/*                 )} */}
-      {/*                 <div className='m-4 mx-2 h-[30px] w-[30px] rounded-2xl bg-secondary'> */}
-      {/*                   <Plus */}
-      {/*                     color='white' */}
-      {/*                     size={30} */}
-      {/*                     onClick={() => */}
-      {/*                       handleAddForm( */}
-      {/*                         day, */}
-      {/*                         formsState, */}
-      {/*                         setFormsState, */}
-      {/*                         setErrorMessages */}
-      {/*                       ) */}
-      {/*                     } */}
-      {/*                   /> */}
-      {/*                 </div> */}
-      {/*                 <Button */}
-      {/*                   className='bg-[#E1E1E1] font-bold text-[#2C2F35]' */}
-      {/*                   onClick={handleSave} */}
-      {/*                 > */}
-      {/*                   Save */}
-      {/*                 </Button> */}
-      {/*               </div> */}
-      {/*             </Collapsible> */}
-      {/*           ); */}
-      {/*         })} */}
-      {/*       </DrawerDescription> */}
-      {/*     </DrawerContent> */}
-      {/*   </div> */}
-      {/* </Drawer> */}
+
+      <Drawer onClose={() => setIsDrawerOpen(false)} open={isDrawerOpen}>
+        <div className='max-h-screen'>
+          <DrawerContent className='mx-auto flex max-h-screen max-w-screen-sm flex-col overflow-y-hidden px-4 py-1'>
+            <DrawerTitle />
+            <DrawerDescription />
+            <div className='my-2 flex-grow overflow-y-auto'>
+              {daysOfWeek.map((day, dayIndex) => {
+                const checkSchedule = formsState[day]?.some(form =>
+                  form.times.some(
+                    time => time.fromTime !== '--:--' && time.toTime !== '--:--'
+                  )
+                );
+
+                const hasFirms = firms.length > 0;
+
+                return (
+                  <Collapsible
+                    key={day}
+                    day={day}
+                    isOpen={activeDayIndex === dayIndex}
+                    onToggle={() =>
+                      setActiveDayIndex(
+                        activeDayIndex === dayIndex ? null : dayIndex
+                      )
+                    }
+                    hasSchedules={checkSchedule && hasFirms}
+                  >
+                    {hasFirms && formsState[day]?.length > 0 ? (
+                      formsState[day].map((form, formIndex) => (
+                        <div key={`${day}-${formIndex}`}>
+                          {form.times.map((time, timeIndex) => (
+                            <div
+                              key={`${day}-${formIndex}-${timeIndex}`}
+                              className='flex w-full items-start justify-between py-2'
+                            >
+                              <div className='flex flex-grow flex-col items-center'>
+                                <DropdownProfile
+                                  options={firms}
+                                  value={time.code}
+                                  onSelect={value => {
+                                    handleOrganizationChange(
+                                      formsState,
+                                      day,
+                                      formIndex,
+                                      timeIndex,
+                                      value,
+                                      setFormsState,
+                                      setErrorMessages
+                                    );
+                                  }}
+                                  placeholder='Choose your firm'
+                                />
+                                <div className='flex w-full items-center justify-between'>
+                                  <div className='flex items-center justify-center pl-1'>
+                                    <span className='text-sm font-medium'>
+                                      From
+                                    </span>
+                                    <input
+                                      type='time'
+                                      className='block w-full rounded-lg bg-gray-50 p-2.5 text-sm text-gray-900 focus:outline-none dark:bg-gray-700 dark:text-white'
+                                      value={time.fromTime.slice(0, 5)} // display hh:mm instead of hh:mm:ss
+                                      onChange={e =>
+                                        handleTimeChange(
+                                          day,
+                                          formIndex,
+                                          timeIndex,
+                                          'from',
+                                          e.target.value,
+                                          formsState,
+                                          setFormsState,
+                                          setErrorMessages
+                                        )
+                                      }
+                                      required
+                                    />
+                                  </div>
+                                  <div className='flex w-3 flex-grow' />
+                                  <div className='flex items-center justify-end'>
+                                    <span className='text-sm font-medium'>
+                                      To
+                                    </span>
+                                    <input
+                                      type='time'
+                                      className='block w-full rounded-lg bg-gray-50 p-2.5 text-sm text-gray-900 focus:outline-none dark:bg-gray-700 dark:text-white'
+                                      value={time.toTime.slice(0, 5)}
+                                      onChange={e =>
+                                        handleTimeChange(
+                                          day,
+                                          formIndex,
+                                          timeIndex,
+                                          'to',
+                                          e.target.value,
+                                          formsState,
+                                          setFormsState,
+                                          setErrorMessages
+                                        )
+                                      }
+                                      required
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className='flex flex-col items-center pl-4 pt-4'>
+                                <Trash2
+                                  size={20}
+                                  className='cursor-pointer'
+                                  onClick={() =>
+                                    handleRemoveTimeRange(
+                                      day,
+                                      formIndex,
+                                      timeIndex,
+                                      formsState,
+                                      setFormsState,
+                                      setErrorMessages
+                                    )
+                                  }
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ))
+                    ) : (
+                      <div className='flex w-full items-center justify-center py-2 text-gray-500'>
+                        {hasFirms
+                          ? `No schedules available for ${day}.`
+                          : `No firms available for ${day}.`}
+                      </div>
+                    )}
+                    <div className='flex w-full items-center justify-end'>
+                      {errorMessages[day] && (
+                        <div className='px-2 text-sm text-red-500'>
+                          {errorMessages[day]}
+                        </div>
+                      )}
+                      <div className='m-4 mx-2 h-[30px] w-[30px] rounded-2xl bg-secondary'>
+                        <Plus
+                          color='white'
+                          size={30}
+                          className='cursor-pointer'
+                          onClick={() =>
+                            handleAddForm(
+                              day,
+                              formsState,
+                              setFormsState,
+                              setErrorMessages
+                            )
+                          }
+                        />
+                      </div>
+                      <Button
+                        className='w-[80px] bg-[#E1E1E1] font-bold text-[#2C2F35]'
+                        onClick={handleSave}
+                        disabled={isUpdatePractitionerLoading}
+                      >
+                        {isUpdatePractitionerLoading ? (
+                          <LoadingSpinnerIcon
+                            width={20}
+                            height={20}
+                            stroke='white'
+                            className='w-full animate-spin'
+                          />
+                        ) : (
+                          'Save'
+                        )}
+                      </Button>
+                    </div>
+                  </Collapsible>
+                );
+              })}
+            </div>
+          </DrawerContent>
+        </div>
+      </Drawer>
     </>
   );
 }
