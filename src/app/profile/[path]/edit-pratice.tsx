@@ -1,5 +1,6 @@
 'use client';
 
+import EmptyState from '@/components/general/empty-state';
 import Input from '@/components/general/input';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
@@ -21,13 +22,16 @@ import {
   useUpdatePractitionerInfo
 } from '@/services/clinicians';
 import { IPractitionerRoleDetail } from '@/types/practitioner';
-import { mapAddress, removeCityPrefix } from '@/utils/helper';
+import { mapAddress } from '@/utils/helper';
 import { BundleEntry, CodeableConcept } from 'fhir/r4';
 import { XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
+import 'swiper/css';
+import { Autoplay } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import FirmFilter, { IFirmFilter } from './firm-filter';
 
 const EditPractice = () => {
@@ -47,7 +51,6 @@ const EditPractice = () => {
   } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
     onSuccess: data => {
       const resources = data?.map(entry => entry.resource) || [];
-      console.log('before map', resources);
 
       /* separate invoice data from the main data
        * because they use different endpoints */
@@ -91,11 +94,6 @@ const EditPractice = () => {
   const { mutateAsync: updateInvoice, isLoading: isUpdateInvoiceLoading } =
     useUpdateInvoice();
 
-  useEffect(() => {
-    console.log('firm data', firmData);
-    console.log('invoice data', invoiceData);
-  }, [firmData, invoiceData]);
-
   const isDataLoading =
     isCreateInvoiceLoading ||
     isUpdatePractitionerLoading ||
@@ -115,7 +113,7 @@ const EditPractice = () => {
 
       const nameMatches =
         !lowerKeyword || organizationName.includes(lowerKeyword);
-      const cityMatches = !city || removeCityPrefix(city) === organizationCity;
+      const cityMatches = !city || city === organizationCity;
 
       return nameMatches && cityMatches;
     });
@@ -262,12 +260,59 @@ const EditPractice = () => {
     });
   }
 
+  const activeFirms = filteredFirmData?.filter(firm => firm.active);
+
   return (
-    // TODO: add carousel (auto 5s) for current firm
     <>
       <div className='flex min-h-[calc(100vh-105px)] flex-col'>
         <div className='flex flex-1 flex-col overflow-hidden'>
-          <div className='flex items-center gap-4'>
+          {isPractitionerRolesLoading || isPractitionerRolesFetching ? (
+            <Skeleton
+              count={1}
+              className='h-[50px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
+            />
+          ) : (
+            <div className='rounded-lg bg-[#F9F9F9] p-4'>
+              {activeFirms.length >= 2 ? (
+                <Swiper
+                  slidesPerView={1}
+                  spaceBetween={10}
+                  loop={true}
+                  autoplay={{
+                    delay: 5000,
+                    disableOnInteraction: false
+                  }}
+                  modules={[Autoplay]}
+                >
+                  {filteredFirmData
+                    .filter(firm => firm.active)
+                    .map(firm => {
+                      return (
+                        <SwiperSlide key={firm.id}>
+                          <div className='flex justify-between'>
+                            <div className='text-sm opacity-40'>
+                              Current Firm
+                            </div>
+                            <div className='text-m font-bold'>
+                              {firm.organizationData.name}
+                            </div>
+                          </div>
+                        </SwiperSlide>
+                      );
+                    })}
+                </Swiper>
+              ) : (
+                <div className='flex justify-between'>
+                  <div className='text-sm opacity-40'>Current Firm</div>
+                  <div className='text-m font-bold'>
+                    {activeFirms[0]?.organizationData.name || 'No active firms'}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className='mt-4 flex items-center gap-4'>
             <div className='flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
               <Input
                 className='flex h-[50px] w-[85%] items-center space-x-2 rounded-lg border-none bg-[#F9F9F9] p-4'
@@ -298,7 +343,7 @@ const EditPractice = () => {
             />
           </div>
 
-          <div className='flex gap-4'>
+          <div>
             {firmFilter.city && (
               <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
                 {firmFilter.city}
@@ -312,7 +357,7 @@ const EditPractice = () => {
                 count={4}
                 className='mt-4 h-[60px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
               />
-            ) : (
+            ) : filteredFirmData && filteredFirmData.length > 0 ? (
               filteredFirmData.map(
                 (firm: BundleEntry<IPractitionerRoleDetail>, index: number) => (
                   <CollapsibleItem
@@ -333,6 +378,12 @@ const EditPractice = () => {
                   />
                 )
               )
+            ) : (
+              <EmptyState
+                className='py-16'
+                title='No Firms Found'
+                subtitle='You have no firms registered at the moment'
+              />
             )}
           </div>
         </div>

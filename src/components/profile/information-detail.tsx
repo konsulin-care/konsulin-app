@@ -155,7 +155,7 @@ export default function InformationDetail({
                 key={index}
                 className='mt-1 flex flex-col border-t border-[#E3E3E3] font-[#2C2F35] text-xs'
               >
-                <DetailPratice items={detail.resource} />
+                <DetailPratice items={detail} />
               </div>
             ))}
         </div>
