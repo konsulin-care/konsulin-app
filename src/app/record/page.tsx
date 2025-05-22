@@ -1,5 +1,6 @@
 'use client';
 
+import Avatar from '@/components/general/avatar';
 import BackButton from '@/components/general/back-button';
 import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
@@ -268,6 +269,7 @@ export default function Record() {
                 name: displayName,
                 email: email
               });
+              const photoUrl = record.practitionerProfile?.photo?.[0]?.url;
 
               return (
                 <Link
@@ -300,23 +302,15 @@ export default function Record() {
                   <div className='flex items-center'>
                     {record.type === 'Practitioner Note' ? (
                       <>
-                        {record.practitionerProfile.photo &&
-                        record.practitionerProfile.photo.length > 0 ? (
-                          <Image
-                            className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-                            width={32}
-                            height={32}
-                            alt='offline'
-                            src={record.practitionerProfile?.photo?.[0]?.url}
-                          />
-                        ) : (
-                          <div
-                            className='mr-2 flex h-[32px] w-[32px] items-center justify-center rounded-full text-xs font-bold text-white'
-                            style={{ backgroundColor }}
-                          >
-                            {initials}
-                          </div>
-                        )}
+                        <Avatar
+                          initials={initials}
+                          backgroundColor={backgroundColor}
+                          photoUrl={photoUrl}
+                          height={32}
+                          width={32}
+                          className='mr-2 text-xs'
+                          imageClassName='mr-2 self-center'
+                        />
                         <div className='mr-auto text-[12px]'>{displayName}</div>
                       </>
                     ) : (

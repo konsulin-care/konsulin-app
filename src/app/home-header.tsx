@@ -1,5 +1,6 @@
 'use client';
 
+import Avatar from '@/components/general/avatar';
 import Header from '@/components/header';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,7 +11,6 @@ import {
   parseMergedAppointments
 } from '@/utils/helper';
 import { format, isAfter, parseISO } from 'date-fns';
-import Image from 'next/image';
 import { useMemo } from 'react';
 
 const now = new Date();
@@ -70,22 +70,15 @@ export default function HomeHeader() {
             </div>
           ) : (
             <div className='flex'>
-              {!authState.userInfo.profile_picture ? (
-                <div
-                  className='mr-2 flex h-[32px] w-[32px] items-center justify-center rounded-full text-xs font-bold text-white'
-                  style={{ backgroundColor }}
-                >
-                  {initials}
-                </div>
-              ) : (
-                <Image
-                  className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-                  width={32}
-                  height={32}
-                  alt='profile_picture'
-                  src={authState.userInfo.profile_picture}
-                />
-              )}
+              <Avatar
+                initials={initials}
+                backgroundColor={backgroundColor}
+                photoUrl={authState.userInfo.profile_picture}
+                height={32}
+                width={32}
+                className='mr-2 text-xs'
+                imageClassName='mr-2 self-center'
+              />
               <div className='flex h-[32px] flex-col'>
                 <div className='text-[10px] font-normal text-white'>
                   Selamat Datang di Dashboard anda

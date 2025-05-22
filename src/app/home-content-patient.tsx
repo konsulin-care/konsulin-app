@@ -1,3 +1,4 @@
+import Avatar from '@/components/general/avatar';
 import NoteIcon from '@/components/icons/note-icon';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -163,6 +164,7 @@ export default function HomeContentPatient() {
                 name: displayName,
                 email: email
               });
+              const photoUrl = record.practitionerProfile?.photo?.[0]?.url;
 
               return (
                 <SwiperSlide key={recordId}>
@@ -195,23 +197,15 @@ export default function HomeContentPatient() {
                     <div className='flex items-center'>
                       {record.type === 'Practitioner Note' ? (
                         <>
-                          {record.practitionerProfile.photo &&
-                          record.practitionerProfile.photo.length > 0 ? (
-                            <Image
-                              className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-                              width={32}
-                              height={32}
-                              alt='offline'
-                              src={record.practitionerProfile?.photo?.[0]?.url}
-                            />
-                          ) : (
-                            <div
-                              className='mr-2 flex h-[32px] w-[32px] items-center justify-center rounded-full text-xs font-bold text-white'
-                              style={{ backgroundColor }}
-                            >
-                              {initials}
-                            </div>
-                          )}
+                          <Avatar
+                            initials={initials}
+                            backgroundColor={backgroundColor}
+                            photoUrl={photoUrl}
+                            className='mr-2 text-xs'
+                            imageClassName='mr-2 self-center'
+                            height={32}
+                            width={32}
+                          />
                           <div className='mr-auto text-[12px]'>
                             {displayName}
                           </div>
