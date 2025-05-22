@@ -13,7 +13,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { IUseClinicParams, useListClinics } from '@/services/clinic';
 import { IOrganizationEntry } from '@/types/organization';
-import { parseMergedAppointments, removeCityPrefix } from '@/utils/helper';
+import { parseMergedAppointments } from '@/utils/helper';
 import { format, isAfter, parseISO } from 'date-fns';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -29,7 +29,7 @@ export default function Clinic() {
 
   const { data: clinics, isLoading: isListClinicsLoading } = useListClinics({
     searchTerm,
-    cityFilter: removeCityPrefix(clinicFilter.city)
+    cityFilter: clinicFilter.city
   });
 
   const { state: authState } = useAuth();

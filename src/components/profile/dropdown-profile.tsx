@@ -9,16 +9,19 @@ import { Check, ChevronDown } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { LoadingSpinnerIcon } from '../icons';
 
+type DropdownOption = {
+  code: string;
+  name: string;
+  roleId?: string;
+};
+
 type DropdownProps = {
-  options: {
-    code: string;
-    name: string;
-  }[];
+  options: DropdownOption[];
   value: string;
   placeholder: string;
   labelPlaceholder?: string;
   loading?: boolean;
-  onSelect: (value: { code: string; name: string }) => void;
+  onSelect: (value: DropdownOption) => void;
 };
 
 const DropdownProfile: React.FC<DropdownProps> = ({

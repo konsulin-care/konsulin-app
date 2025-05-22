@@ -1,13 +1,17 @@
 export type TimeRange = {
-  firm: string
-  fromTime: string
-  toTime: string
-}
+  roleId: string;
+  code: string;
+  name: string;
+  fromTime: string;
+  toTime: string;
+};
 
 export type FormData = {
-  times: TimeRange[]
-}
+  times: TimeRange[];
+};
 
 export type FormsState = {
-  [key: string]: FormData[]
-}
+  [key: string]: FormData[];
+};
+
+export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
