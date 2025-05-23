@@ -1,5 +1,4 @@
 import { deleteCookie } from 'cookies-next';
-import Session from 'supertokens-auth-react/recipe/session';
 import { IStateAuth } from './authTypes';
 
 export const initialState: IStateAuth = {
@@ -29,7 +28,6 @@ export const reducer = (state: IStateAuth, action: any): IStateAuth => {
         userInfo: action.payload
       };
     case 'logout':
-      Session.signOut();
       deleteCookie('auth');
       localStorage.clear();
       return initialState;
