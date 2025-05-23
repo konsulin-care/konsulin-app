@@ -1,5 +1,6 @@
 'use client';
 
+import Avatar from '@/components/general/avatar';
 import BackButton from '@/components/general/back-button';
 import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
@@ -15,7 +16,6 @@ import {
 import { capitalizeFirstLetter } from '@/utils/validation';
 import { format } from 'date-fns';
 import { HospitalIcon } from 'lucide-react';
-import Image from 'next/image';
 import { useMemo } from 'react';
 
 type Props = {
@@ -78,6 +78,8 @@ export default function DetailAppointment({ params }: Props) {
     };
   }, [appointmentData]);
 
+  const photoUrl = appointmentData?.practitionerPhoto?.[0]?.url;
+
   return (
     <>
       <Header>
@@ -106,24 +108,12 @@ export default function DetailAppointment({ params }: Props) {
           <>
             <div className='flex flex-col items-center'>
               <div className='flex flex-col items-center'>
-                {appointmentData.practitionerPhoto &&
-                appointmentData.practitionerPhoto[0].url ? (
-                  <Image
-                    className='h-[100px] w-[100px] rounded-full object-cover'
-                    src={appointmentData.practitionerPhoto[0].url}
-                    alt='practitioner'
-                    width={100}
-                    height={100}
-                    unoptimized
-                  />
-                ) : (
-                  <div
-                    className='flex h-[100px] w-[100px] items-center justify-center rounded-full text-2xl font-bold text-white'
-                    style={{ backgroundColor }}
-                  >
-                    {initials}
-                  </div>
-                )}
+                <Avatar
+                  initials={initials}
+                  backgroundColor={backgroundColor}
+                  photoUrl={photoUrl}
+                  className='text-2xl'
+                />
               </div>
               <h3 className='mt-2 text-center text-[20px] font-bold'>
                 {displayName}

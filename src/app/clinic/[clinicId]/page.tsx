@@ -1,5 +1,6 @@
 'use client';
 
+import Avatar from '@/components/general/avatar';
 import CardLoader from '@/components/general/card-loader';
 import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
@@ -64,6 +65,9 @@ export default function DetailClinic({ params }: IDetailClinic) {
   today.setHours(0, 0, 0, 0);
 
   const [keyword, setKeyword] = useState<string>('');
+  const [imageStatusMap, setImageStatusMap] = useState<Record<string, boolean>>(
+    {}
+  );
 
   const [practitionerFilter, setPractitionerFilter] =
     useState<IUseClinicParams>({});
@@ -273,6 +277,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
                 name: displayName,
                 email: email?.value
               });
+              const photoUrl = practitioner.photo?.[0]?.url;
 
               return (
                 <div
@@ -280,23 +285,12 @@ export default function DetailClinic({ params }: IDetailClinic) {
                   className='card flex flex-col items-center'
                 >
                   <div className='relative flex justify-center'>
-                    {practitioner.photo && practitioner.photo.length > 0 ? (
-                      <Image
-                        className='h-[100px] w-[100px] rounded-full object-cover'
-                        src={practitioner.photo[0].url}
-                        alt='practitioner'
-                        width={100}
-                        height={100}
-                        unoptimized
-                      />
-                    ) : (
-                      <div
-                        className='flex h-[100px] w-[100px] items-center justify-center rounded-full text-2xl font-bold text-white'
-                        style={{ backgroundColor }}
-                      >
-                        {initials}
-                      </div>
-                    )}
+                    <Avatar
+                      initials={initials}
+                      backgroundColor={backgroundColor}
+                      photoUrl={photoUrl}
+                      className='text-2xl'
+                    />
                     <Badge className='absolute bottom-0 flex h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
                       <HeartPulse size={16} color='#08979C' fill='white' />
                       <span>Konsulin</span>

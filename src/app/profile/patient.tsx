@@ -34,10 +34,11 @@ const now = new Date();
 export default function Patient({ fhirId }: Props) {
   const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
-  const { data: upcomingData } = useGetUpcomingAppointments({
-    patientId: authState?.userInfo?.fhirId,
-    dateReference: format(now, 'yyyy-MM-dd')
-  });
+  const { data: upcomingData, isLoading: isUpcomingDataLoading } =
+    useGetUpcomingAppointments({
+      patientId: authState?.userInfo?.fhirId,
+      dateReference: format(now, 'yyyy-MM-dd')
+    });
 
   const parsedAppointmentsData = useMemo(() => {
     if (!upcomingData || upcomingData?.total === 0) return null;
@@ -169,11 +170,11 @@ export default function Patient({ fhirId }: Props) {
         </Link>
       </div>
 
-      {parsedAppointmentsData && parsedAppointmentsData.length > 0 ? (
-        <UpcomingSession upcomingData={parsedAppointmentsData} />
-      ) : (
+      {isUpcomingDataLoading ? (
         <Skeleton className='mt-4 h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
-      )}
+      ) : parsedAppointmentsData && parsedAppointmentsData.length > 0 ? (
+        <UpcomingSession upcomingData={parsedAppointmentsData} />
+      ) : null}
 
       <Settings menus={settingMenus} />
     </>

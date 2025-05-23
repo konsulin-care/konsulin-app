@@ -1,20 +1,33 @@
 'use client';
 
+import { LoadingSpinnerIcon } from '@/components/icons';
 import { useAuth } from '@/context/auth/authContext';
 import { useProfile } from '@/context/profile/profileContext';
 import { useEffect } from 'react';
+import Session from 'supertokens-auth-react/recipe/session';
 
 export default function Logout() {
   const { dispatch } = useAuth();
   const { dispatch: dispatchProfile } = useProfile();
 
   useEffect(() => {
-    dispatch({ type: 'logout' });
-    dispatchProfile({ type: 'reset' });
+    const handleLogout = async () => {
+      await Session.signOut();
+      dispatch({ type: 'logout' });
+      dispatchProfile({ type: 'reset' });
+      window.location.href = '/';
+    };
 
-    // redirect to dashboard and reload the page after logout
-    window.location.href = '/';
+    handleLogout();
   }, []);
 
-  return null;
+  return (
+    <div className='flex min-h-screen min-w-full items-center justify-center'>
+      <LoadingSpinnerIcon
+        width={56}
+        height={56}
+        className='w-full animate-spin'
+      />
+    </div>
+  );
 }

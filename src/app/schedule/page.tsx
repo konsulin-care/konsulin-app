@@ -1,5 +1,6 @@
 'use client';
 
+import Avatar from '@/components/general/avatar';
 import BackButton from '@/components/general/back-button';
 import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
@@ -31,7 +32,6 @@ import {
   startOfDay
 } from 'date-fns';
 import { SearchIcon } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import SessionFilter from './session-filter';
@@ -187,6 +187,7 @@ export default function Schedule() {
               name: displayName,
               email: session.practitionerEmail
             });
+            const photoUrl = session.practitionerPhoto?.[0]?.url;
 
             return (
               <Link
@@ -200,24 +201,15 @@ export default function Schedule() {
 
                 <hr className='w-full' />
                 <div className='flex items-center'>
-                  {session.practitionerPhoto &&
-                  session.practitionerPhoto.length > 0 ? (
-                    <Image
-                      className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-                      width={32}
-                      height={32}
-                      alt='offline'
-                      src={session.practitionerPhoto[0].url}
-                    />
-                  ) : (
-                    <div
-                      className='mr-2 flex h-[32px] w-[32px] items-center justify-center rounded-full text-xs font-bold text-white'
-                      style={{ backgroundColor }}
-                    >
-                      {initials}
-                    </div>
-                  )}
-
+                  <Avatar
+                    initials={initials}
+                    backgroundColor={backgroundColor}
+                    photoUrl={photoUrl}
+                    className='mr-2 text-xs'
+                    imageClassName='mr-2 self-center'
+                    height={32}
+                    width={32}
+                  />
                   <div className='mr-auto text-[12px] font-bold'>
                     {displayName}
                   </div>
@@ -260,6 +252,8 @@ export default function Schedule() {
               email: session.practitionerEmail
             });
 
+            const photoUrl = session.practitionerPhoto?.[0]?.url;
+
             return (
               <Link
                 key={session.appointmentId}
@@ -272,23 +266,15 @@ export default function Schedule() {
 
                 <hr className='w-full' />
                 <div className='flex items-center'>
-                  {session.practitionerPhoto &&
-                  session.practitionerPhoto.length > 0 ? (
-                    <Image
-                      className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-                      width={32}
-                      height={32}
-                      alt='offline'
-                      src={session.practitionerPhoto[0].url}
-                    />
-                  ) : (
-                    <div
-                      className='mr-2 flex h-[32px] w-[32px] items-center justify-center rounded-full text-xs font-bold text-white'
-                      style={{ backgroundColor }}
-                    >
-                      {initials}
-                    </div>
-                  )}
+                  <Avatar
+                    initials={initials}
+                    backgroundColor={backgroundColor}
+                    photoUrl={photoUrl}
+                    className='mr-2 text-xs'
+                    imageClassName='mr-2 self-center'
+                    height={32}
+                    width={32}
+                  />
 
                   <div className='mr-auto text-[12px] font-bold'>
                     {displayName}

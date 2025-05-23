@@ -1,5 +1,6 @@
 'use client';
 
+import Avatar from '@/components/general/avatar';
 import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -80,6 +81,8 @@ export default function Practitioner({ params }: IPractitionerProps) {
     email: practitionerData.email
   });
 
+  const photoUrl = practitionerData?.photo?.[0]?.url;
+
   const renderDrawerContent = (
     <>
       <DrawerHeader className='mx-auto flex flex-col items-center gap-4 pb-0 text-[20px]'>
@@ -156,23 +159,12 @@ export default function Practitioner({ params }: IPractitionerProps) {
           <>
             <div className='flex flex-col items-center'>
               <div className='flex flex-col items-center'>
-                {practitionerData.photo && practitionerData.photo[0].url ? (
-                  <Image
-                    className='h-[100px] w-[100px] rounded-full object-cover'
-                    src={practitionerData.photo[0].url}
-                    alt='practitioner'
-                    width={100}
-                    height={100}
-                    unoptimized
-                  />
-                ) : (
-                  <div
-                    className='flex h-[100px] w-[100px] items-center justify-center rounded-full text-2xl font-bold text-white'
-                    style={{ backgroundColor }}
-                  >
-                    {initials}
-                  </div>
-                )}
+                <Avatar
+                  initials={initials}
+                  backgroundColor={backgroundColor}
+                  photoUrl={photoUrl}
+                  className='text-2xl'
+                />
 
                 <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] bg-[#08979C] text-center font-normal text-white'>
                   {detailPractitioner.organization.name}

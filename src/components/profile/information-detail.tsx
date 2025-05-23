@@ -1,5 +1,5 @@
 import { IPractitionerRoleDetail } from '@/types/practitioner';
-import Image from 'next/image';
+import Avatar from '../general/avatar';
 import Tags from './tags';
 
 function HeaderSection({
@@ -22,22 +22,16 @@ function HeaderSection({
 
   return (
     <div className='flex w-1/2 items-center'>
-      {!iconUrl ? (
-        <div
-          className='mr-2 flex h-[32px] w-[32px] flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white'
-          style={{ backgroundColor }}
-        >
-          {initials}
-        </div>
-      ) : (
-        <Image
-          src={iconUrl}
-          width={32}
-          height={32}
-          alt='icon'
-          className={`${isRadiusIcon ? 'h-[32px] w-[32px] rounded-full p-[2px]' : 'p-[2px]'}`}
-        />
-      )}
+      <Avatar
+        initials={initials}
+        backgroundColor={backgroundColor}
+        photoUrl={iconUrl}
+        className='mr-2 flex-shrink-0 text-xs'
+        imageClassName='p-[2px]'
+        height={32}
+        width={32}
+        isRadiusIcon={isRadiusIcon}
+      />
       <div className='flex w-full flex-col items-start justify-start pl-1'>
         <p className={titleStyle}>{title}</p>
         {subTitle && <p className={`${subTitleStyle}`}>{subTitle}</p>}
