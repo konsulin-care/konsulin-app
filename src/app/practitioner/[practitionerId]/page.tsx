@@ -208,6 +208,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
               patientId={authState?.userInfo?.fhirId}
               practitionerId={params.practitionerId}
               isAuthenticated={authState.isAuthenticated}
+              scheduleId={detailPractitioner?.schedule?.id}
             >
               <div className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'>
                 <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />

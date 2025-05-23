@@ -94,6 +94,7 @@ type Props = {
   patientId: string;
   practitionerId: string;
   isAuthenticated: boolean;
+  scheduleId: string;
 };
 
 export default function PractitionerAvailbility({
@@ -101,7 +102,8 @@ export default function PractitionerAvailbility({
   practitionerRole,
   patientId,
   practitionerId,
-  isAuthenticated
+  isAuthenticated,
+  scheduleId
 }: Props) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -181,12 +183,6 @@ export default function PractitionerAvailbility({
 
     return slots;
   };
-
-  const findSchedule = schedule?.find(
-    (item: BundleEntry) => item.resource.resourceType === 'Schedule'
-  );
-
-  const scheduleId = findSchedule ? findSchedule.resource.id : null;
 
   const unavailableSlots = useMemo(() => {
     if (!schedule) return [];
@@ -274,7 +270,6 @@ export default function PractitionerAvailbility({
       if (
         bookingState?.date &&
         bookingState?.startTime &&
-        bookingState?.scheduleId &&
         bookingForm.session_type &&
         bookingForm.problem_brief
       )
@@ -288,7 +283,7 @@ export default function PractitionerAvailbility({
   ]);
 
   const handleSubmitForm = async () => {
-    const { date, startTime, scheduleId } = bookingState;
+    const { date, startTime } = bookingState;
     const conditionRandomUUID = uuidv4();
     const slotRandomUUID = uuidv4();
     const requiredData = {
@@ -427,7 +422,6 @@ export default function PractitionerAvailbility({
                 onSelect={date => {
                   if (!date) return;
                   handleFilterChange('date', date);
-                  handleFilterChange('scheduleId', null);
                   handleFilterChange('startTime', null);
                   handleFilterChange('hasUserChosenDate', true);
                 }}
@@ -494,10 +488,9 @@ export default function PractitionerAvailbility({
                       <Button
                         variant='outline'
                         key={index}
-                        disabled={isUnavailable || !schedule}
+                        disabled={isUnavailable || !scheduleId}
                         onClick={() => {
                           handleFilterChange('startTime', startTime);
-                          handleFilterChange('scheduleId', scheduleId);
                         }}
                         className={cn(
                           'w-full items-center justify-center rounded-md border-0 px-4 py-2 text-[12px]',
@@ -514,7 +507,7 @@ export default function PractitionerAvailbility({
               )}
             </div>
 
-            {bookingState.scheduleId && (
+            {bookingState.startTime && (
               <>
                 <div className='mt-4 text-[12px] font-bold'>Session Type</div>
                 <div className='mt-2 flex space-x-4'>
@@ -559,7 +552,10 @@ export default function PractitionerAvailbility({
                 className='mt-4 rounded-xl bg-secondary text-white'
                 onClick={handleSubmitForm}
                 disabled={
-                  isCreateAppointmentLoading || !bookingState.scheduleId
+                  isCreateAppointmentLoading ||
+                  !bookingState.startTime ||
+                  !bookingState.hasUserChosenDate ||
+                  !bookingForm.problem_brief
                 }
               >
                 {isCreateAppointmentLoading ? (

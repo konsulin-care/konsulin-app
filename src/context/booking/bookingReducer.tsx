@@ -7,7 +7,6 @@ today.setHours(0, 0, 0, 0);
 export const initialState: IStateBooking = {
   date: addDays(today, 1),
   startTime: null,
-  scheduleId: null,
   hasUserChosenDate: false,
   isBookingSubmitted: false
 };

@@ -2,7 +2,6 @@ export interface IStateBooking {
   date?: Date;
   startTime?: string;
   endTime?: string;
-  scheduleId?: string;
   hasUserChosenDate?: boolean;
   isBookingSubmitted?: boolean;
 

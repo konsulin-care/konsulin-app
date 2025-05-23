@@ -12,9 +12,9 @@ import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { IUseClinicParams, useListClinics } from '@/services/clinic';
-import { IOrganizationEntry } from '@/types/organization';
 import { parseMergedAppointments } from '@/utils/helper';
 import { format, isAfter, parseISO } from 'date-fns';
+import { BundleEntry } from 'fhir/r4';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -108,7 +108,7 @@ export default function Clinic() {
             <CardLoader />
           ) : clinics.length > 0 ? (
             <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-              {clinics.map((clinic: IOrganizationEntry) => (
+              {clinics.map((clinic: BundleEntry) => (
                 <div
                   key={clinic.resource.id}
                   className='card flex flex-col items-center'
