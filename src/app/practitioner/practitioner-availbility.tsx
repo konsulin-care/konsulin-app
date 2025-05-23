@@ -425,12 +425,14 @@ export default function PractitionerAvailbility({
                 mode='single'
                 selected={bookingState.date}
                 onSelect={date => {
+                  if (!date) return;
                   handleFilterChange('date', date);
                   handleFilterChange('scheduleId', null);
                   handleFilterChange('startTime', null);
                   handleFilterChange('hasUserChosenDate', true);
                 }}
                 onMonthChange={params => {
+                  if (!params) return;
                   if (params.getMonth() === today.getMonth()) {
                     handleFilterChange('date', addDays(today, 1));
                   } else {
