@@ -8,18 +8,6 @@ export type IOrganizationResource = {
   resourceType: 'Organization';
 };
 
-export type IOrganizationEntry = {
-  fullUrl: string;
-  resource:
-    | IOrganizationResource
-    | IPractitioner
-    | PractitionerRole
-    | IDetailInvoice;
-  search: {
-    mode: string;
-  };
-};
-
 export type IOrganizationDetail = {
   id: string;
   name: string;

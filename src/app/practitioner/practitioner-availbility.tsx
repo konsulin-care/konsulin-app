@@ -18,6 +18,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
 import { cn, conjunction } from '@/lib/utils';
 import { useCreateAppointment } from '@/services/api/appointments';
@@ -39,7 +40,7 @@ import {
   PractitionerRoleAvailableTime,
   Slot
 } from 'fhir/r4';
-import Link from 'next/link';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -91,23 +92,25 @@ const getAvailableDays = (availableTime: any[], month: Date): Date[] => {
 type Props = {
   children: ReactNode;
   practitionerRole: PractitionerRole;
-  patientId: string;
-  practitionerId: string;
-  isAuthenticated: boolean;
+  scheduleId: string;
 };
 
 export default function PractitionerAvailbility({
   children,
   practitionerRole,
-  patientId,
-  practitionerId,
-  isAuthenticated
+  scheduleId
 }: Props) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const router = useRouter();
+  const params = useParams();
+  const practitionerId = params.practitionerId;
+  const searchParams = useSearchParams();
+  const isOpenParam = searchParams.get('isOpen');
 
   const [isOpen, setIsOpen] = useState(false);
   const { state: bookingState, dispatch } = useBooking();
+  const { state: authState } = useAuth();
   const [bookingForm, setBookingInformation] = useState({
     session_type: 'offline',
     problem_brief: ''
@@ -117,6 +120,41 @@ export default function PractitionerAvailbility({
     mutateAsync: createAppointment,
     isLoading: isCreateAppointmentLoading
   } = useCreateAppointment();
+
+  const patientId = authState?.userInfo?.fhirId;
+  const isAuthenticated = authState?.isAuthenticated;
+
+  /* when the modal is opened via the "isOpen=true" URL param,
+   * load temporary booking data from localStorage (if any),
+   * apply it to the booking form and global state,
+   * and remove the temporary data afterward. */
+  useEffect(() => {
+    if (isOpenParam === 'true') {
+      setIsOpen(true);
+
+      const tempData = localStorage.getItem('temp-booking');
+      if (tempData) {
+        try {
+          const parsed = JSON.parse(tempData);
+          setBookingInformation(() => ({
+            schedule_id: parsed.scheduleId,
+            session_type: parsed.sessionType,
+            problem_brief: parsed.problemBrief,
+            practitioner_role_id: parsed.practitionerRoleId,
+            practitioner_available_time: parsed.practitionerAvailableTime
+          }));
+
+          handleFilterChange('date', new Date(parsed.date));
+          handleFilterChange('startTime', parsed.startTime);
+          handleFilterChange('hasUserChosenDate', parsed.hasUserChosenDate);
+
+          localStorage.removeItem('temp-booking');
+        } catch (e) {
+          console.error('Invalid localStorage data');
+        }
+      }
+    }
+  }, [isOpenParam]);
 
   const handleBookingInformationChange = (key: string, value: any) => {
     setBookingInformation(prevState => ({
@@ -169,6 +207,8 @@ export default function PractitionerAvailbility({
     return date;
   };
 
+  /* generate time slots at 30-minute intervals
+   * based on the practitioner's start and end times */
   const getTimeSlots = (startTime: string, endTime: string) => {
     const slots: string[] = [];
     let start = parse(startTime, 'HH:mm:ss', new Date());
@@ -181,12 +221,6 @@ export default function PractitionerAvailbility({
 
     return slots;
   };
-
-  const findSchedule = schedule?.find(
-    (item: BundleEntry) => item.resource.resourceType === 'Schedule'
-  );
-
-  const scheduleId = findSchedule ? findSchedule.resource.id : null;
 
   const unavailableSlots = useMemo(() => {
     if (!schedule) return [];
@@ -255,8 +289,9 @@ export default function PractitionerAvailbility({
     });
   }, [bookingState.date, practitionerRole.availableTime, unavailableSlots]);
 
-  /* set the initial date to the next available date if today’s date is not available. */
   useEffect(() => {
+    if (isOpenParam === 'true') return;
+
     const initialDate = isDateAvailable(today, listAvailableDate)
       ? today
       : getNextAvailableDate(today, listAvailableDate);
@@ -274,21 +309,61 @@ export default function PractitionerAvailbility({
       if (
         bookingState?.date &&
         bookingState?.startTime &&
-        bookingState?.scheduleId &&
         bookingForm.session_type &&
         bookingForm.problem_brief
       )
         setErrorForm(null);
     }
+  }, [bookingForm, bookingState.date, bookingState.startTime]);
+
+  /* validate the selected date and time:
+   * if the selected date is unavailable, set the next available date and reset the time.
+   * if the selected time is unavailable, set the next available time after the current selection.
+   * if no time is available, move to the next valid date and reset the time.
+   * dependencies: re-run when selected date/time, available time slots, or valid date list changes. */
+  useEffect(() => {
+    if (!availableTimeSlots.length) return;
+    if (isOpenParam !== 'true') return;
+
+    const isValidDate = isDateAvailable(bookingState.date, listAvailableDate);
+    const validTimeSlots = availableTimeSlots
+      .filter(slot => !slot.isUnavailable)
+      .map(slot => slot.startTime);
+
+    const isValidTime = validTimeSlots.includes(bookingState.startTime);
+
+    if (!isValidDate) {
+      const nextValidDate = getNextAvailableDate(
+        bookingState.date,
+        listAvailableDate
+      );
+      handleFilterChange('date', nextValidDate);
+      handleFilterChange('startTime', null);
+    } else if (!isValidTime) {
+      const nextAvailableTime = validTimeSlots.find(
+        time => time > bookingState.startTime
+      );
+
+      if (nextAvailableTime) {
+        handleFilterChange('startTime', nextAvailableTime);
+      } else {
+        const nextValidDate = getNextAvailableDate(
+          addDays(bookingState.date, 1),
+          listAvailableDate
+        );
+        handleFilterChange('date', nextValidDate);
+        handleFilterChange('startTime', null); // re-trigger the logic
+      }
+    }
   }, [
-    bookingForm,
     bookingState.date,
     bookingState.startTime,
-    bookingState.endTime
+    availableTimeSlots,
+    listAvailableDate
   ]);
 
   const handleSubmitForm = async () => {
-    const { date, startTime, scheduleId } = bookingState;
+    const { date, startTime } = bookingState;
     const conditionRandomUUID = uuidv4();
     const slotRandomUUID = uuidv4();
     const requiredData = {
@@ -413,8 +488,8 @@ export default function PractitionerAvailbility({
         onInteractOutside={() => setIsOpen(false)}
         className='fixed bottom-0 left-0 right-0 mx-auto flex h-[85%] max-w-screen-sm flex-col bg-white p-4'
       >
-        <div className='mt-4 max-h-fit overflow-y-auto px-1 scrollbar-hide'>
-          <div className='flex flex-col'>
+        <div className='mt-4 h-full overflow-y-auto px-1 scrollbar-hide'>
+          <div className='flex h-full flex-col'>
             <DrawerTitle className='mx-auto text-[20px] font-bold'>
               See Availbility
             </DrawerTitle>
@@ -425,12 +500,13 @@ export default function PractitionerAvailbility({
                 mode='single'
                 selected={bookingState.date}
                 onSelect={date => {
+                  if (!date) return;
                   handleFilterChange('date', date);
-                  handleFilterChange('scheduleId', null);
                   handleFilterChange('startTime', null);
                   handleFilterChange('hasUserChosenDate', true);
                 }}
                 onMonthChange={params => {
+                  if (!params) return;
                   if (params.getMonth() === today.getMonth()) {
                     handleFilterChange('date', addDays(today, 1));
                   } else {
@@ -492,10 +568,9 @@ export default function PractitionerAvailbility({
                       <Button
                         variant='outline'
                         key={index}
-                        disabled={isUnavailable || !schedule}
+                        disabled={isUnavailable || !scheduleId}
                         onClick={() => {
                           handleFilterChange('startTime', startTime);
-                          handleFilterChange('scheduleId', scheduleId);
                         }}
                         className={cn(
                           'w-full items-center justify-center rounded-md border-0 px-4 py-2 text-[12px]',
@@ -512,7 +587,7 @@ export default function PractitionerAvailbility({
               )}
             </div>
 
-            {bookingState.scheduleId && (
+            {bookingState.startTime && (
               <>
                 <div className='mt-4 text-[12px] font-bold'>Session Type</div>
                 <div className='mt-2 flex space-x-4'>
@@ -530,7 +605,7 @@ export default function PractitionerAvailbility({
                 </div>
 
                 <div className='mt-4 text-[12px] font-bold'>Problem Brief</div>
-                <div className='mt-2'>
+                <div className='mb-4 mt-2'>
                   <Textarea
                     value={bookingForm.problem_brief}
                     onChange={e =>
@@ -554,10 +629,10 @@ export default function PractitionerAvailbility({
 
             {isAuthenticated ? (
               <Button
-                className='mt-4 rounded-xl bg-secondary text-white'
+                className='mt-auto rounded-xl bg-secondary text-white'
                 onClick={handleSubmitForm}
                 disabled={
-                  isCreateAppointmentLoading || !bookingState.scheduleId
+                  isCreateAppointmentLoading || errorForm || !scheduleId
                 }
               >
                 {isCreateAppointmentLoading ? (
@@ -572,11 +647,31 @@ export default function PractitionerAvailbility({
                 )}
               </Button>
             ) : (
-              <Link href={'/auth'} className='mt-auto w-full'>
-                <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 text-[14px] font-bold text-white'>
-                  Silakan Daftar atau Masuk untuk Booking
-                </Button>
-              </Link>
+              <Button
+                className='mt-auto w-full rounded-[32px] bg-secondary py-2 text-[14px] font-bold text-white'
+                onClick={() => {
+                  localStorage.setItem(
+                    'temp-booking',
+                    JSON.stringify({
+                      date: bookingState.date,
+                      startTime: bookingState.startTime,
+                      sessionType: bookingForm.session_type,
+                      problemBrief: bookingForm.problem_brief,
+                      hasUserChosenDate: bookingState.hasUserChosenDate
+                    })
+                  );
+                  localStorage.setItem(
+                    'redirect',
+                    encodeURIComponent(
+                      `/practitioner/${practitionerId}?isOpen=true`
+                    )
+                  );
+
+                  router.push('/auth');
+                }}
+              >
+                Silakan Daftar atau Masuk untuk Booking
+              </Button>
             )}
             <Button
               onClick={() => setIsOpen(false)}

@@ -15,6 +15,7 @@ export default function HomeContent() {
   const [questionnaireId, setQuestionnaireId] = useState<string | null>(null);
   const [responseData, setResponseData] =
     useState<QuestionnaireResponse | null>(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
     const keys = Object.keys(localStorage);
@@ -34,17 +35,29 @@ export default function HomeContent() {
     }
   }, []);
 
+  const handleDone = () => {
+    setResponseData(null);
+    setHasSubmitted(true);
+  };
+
+  if (
+    responseData &&
+    authState.userInfo.role_name !== 'guest' &&
+    !hasSubmitted
+  ) {
+    return (
+      <QuestionnaireResubmitter
+        isAuthenticated={authState.isAuthenticated}
+        patientId={authState.userInfo.fhirId}
+        questionnaireId={questionnaireId}
+        questionnaireResponse={responseData}
+        onDone={handleDone}
+      />
+    );
+  }
+
   return (
     <ContentWraper>
-      {responseData && authState.userInfo.role_name !== 'guest' && (
-        <QuestionnaireResubmitter
-          isAuthenticated={authState.isAuthenticated}
-          patientId={authState.userInfo.fhirId}
-          questionnaireId={questionnaireId}
-          questionnaireResponse={responseData}
-        />
-      )}
-
       {authState.userInfo.role_name === 'guest' && <HomeContentGuest />}
       {authState.userInfo.role_name === 'patient' && <HomeContentPatient />}
       {authState.userInfo.role_name === 'practitioner' && (

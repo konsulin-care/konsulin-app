@@ -263,6 +263,8 @@ const getColorFromId = (id: string) => {
 };
 
 export const generateAvatarPlaceholder = ({ id, name, email }) => {
+  if (!id || !email || !name) return { initials: null, backgroundColor: null };
+
   let initials = '';
   const isValidName = name && name.trim() && name.trim() !== '-';
   const parts = isValidName ? name.trim().split(' ') : [];

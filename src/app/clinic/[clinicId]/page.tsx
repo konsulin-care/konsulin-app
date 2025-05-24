@@ -65,9 +65,6 @@ export default function DetailClinic({ params }: IDetailClinic) {
   today.setHours(0, 0, 0, 0);
 
   const [keyword, setKeyword] = useState<string>('');
-  const [imageStatusMap, setImageStatusMap] = useState<Record<string, boolean>>(
-    {}
-  );
 
   const [practitionerFilter, setPractitionerFilter] =
     useState<IUseClinicParams>({});

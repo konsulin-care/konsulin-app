@@ -14,12 +14,16 @@ import {
   DrawerHeader,
   DrawerTitle
 } from '@/components/ui/drawer';
-import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
 import { getFromLocalStorage } from '@/lib/utils';
 import { useDetailPractitioner } from '@/services/clinic';
 import { generateAvatarPlaceholder, mergeNames } from '@/utils/helper';
-import { CodeableConcept } from 'fhir/r4';
+import {
+  Attachment,
+  CodeableConcept,
+  HumanName,
+  PractitionerQualification
+} from 'fhir/r4';
 import {
   ArrowRightIcon,
   CalendarDaysIcon,
@@ -35,16 +39,38 @@ export interface IPractitionerProps {
   params: { practitionerId: string };
 }
 
+type IPractitionerLocalStorage = {
+  roleId: string;
+  name: HumanName[];
+  photo: Attachment[];
+  qualification: PractitionerQualification[];
+  email: string;
+};
+
 export default function Practitioner({ params }: IPractitionerProps) {
-  const { state: authState } = useAuth();
   const router = useRouter();
   const { state: bookingState, dispatch } = useBooking();
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [practitionerData, setPractitionerData] =
+    useState<IPractitionerLocalStorage>();
+  const [practitionerDataLoading, setPractitionerDataLoading] = useState(false);
 
-  const practitionerData = JSON.parse(
-    getFromLocalStorage(`practitioner-${params.practitionerId}`)
-  );
+  useEffect(() => {
+    const fetchPractitionerData = () => {
+      if (!params.practitionerId) return;
+
+      setPractitionerDataLoading(true);
+
+      const raw = getFromLocalStorage(`practitioner-${params.practitionerId}`);
+      const parsed = raw ? JSON.parse(raw) : null;
+
+      setPractitionerData(parsed);
+      setPractitionerDataLoading(false);
+    };
+
+    fetchPractitionerData();
+  }, [params.practitionerId]);
 
   useEffect(() => {
     if (bookingState.isBookingSubmitted) {
@@ -78,7 +104,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
   const { initials, backgroundColor } = generateAvatarPlaceholder({
     id: params.practitionerId,
     name: displayName,
-    email: practitionerData.email
+    email: practitionerData?.email
   });
 
   const photoUrl = practitionerData?.photo?.[0]?.url;
@@ -141,13 +167,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
       </Header>
 
       <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
-        {!practitionerData || isError ? (
-          <EmptyState
-            className='py-16'
-            title='Practitioner Not Found'
-            subtitle='Please return to the clinic page and select a practitioner.'
-          />
-        ) : isLoading || isFetching ? (
+        {isLoading || isFetching || practitionerDataLoading ? (
           <div className='flex min-h-screen min-w-full items-center justify-center'>
             <LoadingSpinnerIcon
               width={56}
@@ -155,6 +175,12 @@ export default function Practitioner({ params }: IPractitionerProps) {
               className='w-full animate-spin'
             />
           </div>
+        ) : !practitionerData || isError ? (
+          <EmptyState
+            className='py-16'
+            title='Practitioner Not Found'
+            subtitle='Please return to the clinic page and select a practitioner.'
+          />
         ) : (
           <>
             <div className='flex flex-col items-center'>
@@ -177,9 +203,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
 
             <PractitionerAvailbility
               practitionerRole={detailPractitioner.resource}
-              patientId={authState?.userInfo?.fhirId}
-              practitionerId={params.practitionerId}
-              isAuthenticated={authState.isAuthenticated}
+              scheduleId={detailPractitioner?.schedule?.id}
             >
               <div className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'>
                 <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />

@@ -65,7 +65,7 @@ export default function Settings({ menus }) {
             return (
               <div key={item.name} onClick={() => handleClick(item.link)}>
                 <li
-                  className={`flex items-center justify-between py-4 ${
+                  className={`flex cursor-pointer items-center justify-between py-4 ${
                     !isFirst && !isLast ? 'border-b border-[#E8E8E8]' : ''
                   } ${isFirst || isLast ? 'border-none' : 'border-t border-[#E8E8E8]'}`}
                 >

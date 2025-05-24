@@ -23,7 +23,7 @@ import {
 } from '@/services/clinicians';
 import { getProfileById } from '@/services/profile';
 import { findAge, generateAvatarPlaceholder, mapAddress } from '@/utils/helper';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {
   ContactPoint,
@@ -66,7 +66,6 @@ export default function Clinician({ fhirId }: Props) {
   );
   const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState({});
   const { state: authState, isLoading: isAuthLoading } = useAuth();
-  const queryClient = useQueryClient();
 
   /* get practitioner's basic information*/
   const { data: profileData, isLoading: isProfileLoading } =
@@ -416,7 +415,7 @@ export default function Clinician({ fhirId }: Props) {
           <DrawerContent className='mx-auto flex max-h-screen max-w-screen-sm flex-col overflow-y-hidden px-4 py-1'>
             <DrawerTitle />
             <DrawerDescription />
-            <div className='my-2 flex-grow overflow-y-auto'>
+            <div className='my-2 flex-grow overflow-y-auto scrollbar-hide'>
               {daysOfWeek.map((day, dayIndex) => {
                 const checkSchedule = formsState[day]?.some(form =>
                   form.times.some(
@@ -446,7 +445,7 @@ export default function Clinician({ fhirId }: Props) {
                               key={`${day}-${formIndex}-${timeIndex}`}
                               className='flex w-full items-start justify-between py-2'
                             >
-                              <div className='flex flex-grow flex-col items-center'>
+                              <div className='flex flex-grow flex-col items-center gap-1'>
                                 <DropdownProfile
                                   options={firms}
                                   value={time.code}
@@ -464,13 +463,13 @@ export default function Clinician({ fhirId }: Props) {
                                   placeholder='Choose your firm'
                                 />
                                 <div className='flex w-full items-center justify-between'>
-                                  <div className='flex items-center justify-center pl-1'>
+                                  <div className='flex items-center justify-center gap-2 pl-1'>
                                     <span className='text-sm font-medium'>
                                       From
                                     </span>
                                     <input
                                       type='time'
-                                      className='block w-full rounded-lg bg-gray-50 p-2.5 text-sm text-gray-900 focus:outline-none dark:bg-gray-700 dark:text-white'
+                                      className='block cursor-pointer rounded-md border-2 p-2 text-sm'
                                       value={time.fromTime.slice(0, 5)} // display hh:mm instead of hh:mm:ss
                                       onChange={e =>
                                         handleTimeChange(
@@ -488,13 +487,13 @@ export default function Clinician({ fhirId }: Props) {
                                     />
                                   </div>
                                   <div className='flex w-3 flex-grow' />
-                                  <div className='flex items-center justify-end'>
+                                  <div className='flex items-center justify-end gap-2'>
                                     <span className='text-sm font-medium'>
                                       To
                                     </span>
                                     <input
                                       type='time'
-                                      className='block w-full rounded-lg bg-gray-50 p-2.5 text-sm text-gray-900 focus:outline-none dark:bg-gray-700 dark:text-white'
+                                      className='block cursor-pointer rounded-md border-2 p-2 text-sm'
                                       value={time.toTime.slice(0, 5)}
                                       onChange={e =>
                                         handleTimeChange(
@@ -542,7 +541,7 @@ export default function Clinician({ fhirId }: Props) {
                     )}
                     <div className='flex w-full items-center justify-end'>
                       {errorMessages[day] && (
-                        <div className='px-2 text-sm text-red-500'>
+                        <div className='w-full whitespace-pre-line px-2 text-sm text-red-500'>
                           {errorMessages[day]}
                         </div>
                       )}
@@ -562,9 +561,12 @@ export default function Clinician({ fhirId }: Props) {
                         />
                       </div>
                       <Button
-                        className='w-[80px] bg-[#E1E1E1] font-bold text-[#2C2F35]'
+                        className='w-[80px] bg-secondary font-bold text-white'
                         onClick={handleSave}
-                        disabled={isUpdatePractitionerLoading}
+                        disabled={
+                          isUpdatePractitionerLoading ||
+                          Object.values(errorMessages).some(msg => msg)
+                        }
                       >
                         {isUpdatePractitionerLoading ? (
                           <LoadingSpinnerIcon

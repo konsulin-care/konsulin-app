@@ -79,7 +79,7 @@ export function handleTimeChange(
 }
 
 export function validateTimeRanges(times: TimeRange[]) {
-  let errorMessages = '';
+  let messages: string[] = [];
 
   const sortedTimes = times
     .map((time, index) => ({ ...time, index }))
@@ -91,21 +91,33 @@ export function validateTimeRanges(times: TimeRange[]) {
       return timeToMinutes(a.fromTime) - timeToMinutes(b.fromTime);
     });
 
+  let hasInvalidOrder = false;
+  let hasOverlap = false;
+
   for (let i = 0; i < sortedTimes.length; i++) {
     const current = sortedTimes[i];
     if (current.fromTime >= current.toTime) {
-      errorMessages += `Jam tidak boleh kurang atau sama dari jadwal klinik lain`;
+      hasInvalidOrder = true;
     }
 
     for (let j = i + 1; j < sortedTimes.length; j++) {
       const next = sortedTimes[j];
-      if (current.fromTime < next.toTime && current.toTime >= next.fromTime) {
-        errorMessages += `Waktu kamu sama dengan klinik lain, silahkan sesuaikan kembali`;
+      if (current.fromTime < next.toTime && current.toTime > next.fromTime) {
+        hasOverlap = true;
       }
     }
   }
 
-  return errorMessages;
+  if (hasInvalidOrder) {
+    messages.push('Jam tidak boleh kurang atau sama dari jadwal klinik lain.');
+  }
+
+  if (hasOverlap) {
+    messages.push(
+      'Waktu kamu sama dengan klinik lain, silahkan sesuaikan kembali.'
+    );
+  }
+  return messages.join('\n');
 }
 
 // export function formatTime(time: string) {
