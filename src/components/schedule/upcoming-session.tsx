@@ -1,9 +1,14 @@
+import { MergedAppointment, MergedSession } from '@/types/appointment';
 import { mergeNames } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
 
-export default function UpcomingSession({ upcomingData }) {
-  const nextSession = upcomingData[0];
+type Props = {
+  data: MergedAppointment[] | MergedSession[];
+  role: string;
+};
+export default function UpcomingSession({ data, role }: Props) {
+  const nextSession = data[0];
   const sessionStartTime = nextSession.slotStart
     ? format(parseISO(nextSession.slotStart), 'HH:mm')
     : '-:-';
@@ -24,10 +29,13 @@ export default function UpcomingSession({ upcomingData }) {
         <div className='mr-auto flex flex-col'>
           <span className='text-[12px] text-muted'>Upcoming Session With</span>
           <span className='text-left text-[14px] font-bold text-secondary'>
-            {mergeNames(
-              nextSession.practitionerName,
-              nextSession.practitionerQualification
-            )}
+            {role === 'patient'
+              ? mergeNames(
+                  (nextSession as MergedAppointment).practitionerName,
+                  (nextSession as MergedAppointment).practitionerQualification
+                ) || (nextSession as MergedAppointment).practitionerEmail
+              : mergeNames((nextSession as MergedSession).patientName) ||
+                (nextSession as MergedSession).patientEmail}
           </span>
         </div>
         <div className='s'>

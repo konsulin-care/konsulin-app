@@ -5,10 +5,14 @@ import Header from '@/components/header';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
-import { useGetUpcomingAppointments } from '@/services/api/appointments';
+import {
+  useGetUpcomingAppointments,
+  useGetUpcomingSessions
+} from '@/services/api/appointments';
 import {
   generateAvatarPlaceholder,
-  parseMergedAppointments
+  parseMergedAppointments,
+  parseMergedSessions
 } from '@/utils/helper';
 import { format, isAfter, parseISO } from 'date-fns';
 import { useMemo } from 'react';
@@ -17,27 +21,53 @@ const now = new Date();
 
 export default function HomeHeader() {
   const { state: authState, isLoading: isLoadingAuth } = useAuth();
-  const { data: upcomingData } = useGetUpcomingAppointments({
-    patientId: authState?.userInfo?.fhirId,
+
+  const role = authState?.userInfo?.role_name;
+  const fhirId = authState?.userInfo?.fhirId;
+  const isPatient = role === 'patient';
+  const isPractitioner = role === 'practitioner';
+
+  const { data: appointmentData } = useGetUpcomingAppointments({
+    patientId: isPatient ? fhirId : undefined,
+    dateReference: format(now, 'yyyy-MM-dd')
+  });
+
+  const { data: sessionData } = useGetUpcomingSessions({
+    practitionerId: isPractitioner ? fhirId : undefined,
     dateReference: format(now, 'yyyy-MM-dd')
   });
 
   const parsedAppointmentsData = useMemo(() => {
     if (
-      !upcomingData ||
-      upcomingData?.total === 0 ||
+      !appointmentData ||
+      appointmentData?.total === 0 ||
       !authState.isAuthenticated
     )
       return null;
 
-    const parsed = parseMergedAppointments(upcomingData);
+    const parsed = parseMergedAppointments(appointmentData);
     const filtered = parsed.filter(session => {
       const slotStart = parseISO(session.slotStart);
       return isAfter(slotStart, now);
     });
 
     return filtered;
-  }, [upcomingData, authState]);
+  }, [appointmentData, authState]);
+
+  const parsedSessionsData = useMemo(() => {
+    if (!sessionData || sessionData?.total === 0 || !authState.isAuthenticated)
+      return null;
+
+    const parsed = parseMergedSessions(sessionData);
+    const filtered = parsed.filter(session => {
+      const slotStart = parseISO(session.slotStart);
+      return isAfter(slotStart, now);
+    });
+
+    return filtered;
+  }, [sessionData, authState]);
+
+  const data = isPatient ? parsedAppointmentsData : parsedSessionsData;
 
   const { initials, backgroundColor } = generateAvatarPlaceholder({
     id: authState.userInfo?.fhirId,
@@ -90,8 +120,8 @@ export default function HomeHeader() {
             </div>
           )}
 
-          {parsedAppointmentsData && parsedAppointmentsData.length > 0 && (
-            <UpcomingSession upcomingData={parsedAppointmentsData} />
+          {data && data.length > 0 && (
+            <UpcomingSession data={data} role={role} />
           )}
         </div>
       </Header>
