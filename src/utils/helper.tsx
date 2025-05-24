@@ -1,3 +1,4 @@
+import { MergedAppointment, MergedSession } from '@/types/appointment';
 import { IBundleResponse } from '@/types/record';
 import { parse } from 'date-fns';
 import {
@@ -5,7 +6,6 @@ import {
   Annotation,
   Appointment,
   AppointmentParticipant,
-  Attachment,
   Bundle,
   BundleEntry,
   Coding,
@@ -161,19 +161,6 @@ export const removeCityPrefix = (input: string): string => {
   if (!input) return '';
 
   return input.replace(/^(Kab\.|Kota)\s+/i, '').trim();
-};
-
-export type MergedAppointment = {
-  appointmentId: string;
-  slotStart: string | null;
-  slotEnd: string | null;
-  slotStatus: string | null;
-  appointmentType: string | null;
-  practitionerId: string | null;
-  practitionerName: HumanName[] | null;
-  practitionerQualification: PractitionerQualification[] | null;
-  practitionerPhoto: Attachment[] | null;
-  practitionerEmail: string | null;
 };
 
 export const parseMergedAppointments = (
@@ -342,4 +329,59 @@ export const getUtcDayRange = (localDate: Date) => {
   const utcEnd = end.toISOString();
 
   return { utcStart, utcEnd };
+};
+
+export const parseMergedSessions = (bundle: Bundle): MergedSession[] => {
+  const appointments = bundle.entry
+    .filter(entry => entry.resource.resourceType === 'Appointment')
+    .map(entry => entry.resource as Appointment);
+
+  const slots = bundle.entry
+    .filter(entry => entry.resource.resourceType === 'Slot')
+    .map(entry => entry.resource as Slot);
+
+  const patients = bundle.entry
+    .filter(entry => entry.resource.resourceType === 'Patient')
+    .map(entry => entry.resource as Patient);
+
+  const results: MergedSession[] = [];
+
+  appointments.forEach(appointment => {
+    const slotReference = appointment.slot?.[0]?.reference;
+    const slotId = slotReference ? slotReference.split('/')[1] : null;
+
+    const patientParticipant = appointment.participant.find(
+      (participant: AppointmentParticipant) =>
+        participant.actor.reference &&
+        participant.actor.reference.startsWith('Patient/')
+    );
+
+    const patientId = patientParticipant
+      ? patientParticipant.actor.reference.split('/')[1]
+      : null;
+
+    const slotData = slots.find(slot => slot.id === slotId);
+    const patientData = patients.find(patient => patient.id === patientId);
+
+    const patientEmail = patientData.telecom.find(
+      data => data.system === 'email'
+    );
+
+    results.push({
+      appointmentId: appointment.id || null,
+      slotStart: slotData?.start || null,
+      slotEnd: slotData?.end || null,
+      slotStatus: slotData?.status || null,
+      appointmentType: appointment.appointmentType?.text || null,
+      patientId: patientData?.id || null,
+      patientName: patientData.name || null,
+      patientPhoto: patientData?.photo || null,
+      patientEmail: patientEmail.value || null
+    });
+  });
+
+  return results.sort((a, b) => {
+    if (!a.slotStart || !b.slotStart) return 0;
+    return new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime();
+  });
 };
