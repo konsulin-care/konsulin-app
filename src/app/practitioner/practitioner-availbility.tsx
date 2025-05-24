@@ -479,6 +479,12 @@ export default function PractitionerAvailbility({
     }
   };
 
+  const resetData = () => {
+    handleFilterChange('startTime', null);
+    handleBookingInformationChange('problem_brief', '');
+    setErrorForm(null);
+  };
+
   return (
     <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
       <DrawerTrigger asChild>
@@ -502,8 +508,8 @@ export default function PractitionerAvailbility({
                 onSelect={date => {
                   if (!date) return;
                   handleFilterChange('date', date);
-                  handleFilterChange('startTime', null);
                   handleFilterChange('hasUserChosenDate', true);
+                  resetData();
                 }}
                 onMonthChange={params => {
                   if (!params) return;
@@ -512,6 +518,7 @@ export default function PractitionerAvailbility({
                   } else {
                     handleFilterChange('date', params);
                   }
+                  resetData();
                 }}
                 disabled={date =>
                   date < today ||
@@ -541,7 +548,7 @@ export default function PractitionerAvailbility({
               />
             </div>
 
-            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+            <div className='card my-4 border-0 bg-[#F9F9F9]'>
               <div className='mb-4 font-bold'>
                 {bookingState.date && format(bookingState.date, 'dd MMMM yyyy')}
               </div>
@@ -589,7 +596,7 @@ export default function PractitionerAvailbility({
 
             {bookingState.startTime && (
               <>
-                <div className='mt-4 text-[12px] font-bold'>Session Type</div>
+                <div className='text-[12px] font-bold'>Session Type</div>
                 <div className='mt-2 flex space-x-4'>
                   <Select disabled>
                     <SelectTrigger className='w-[50%] text-[12px] text-[#2C2F35]'>
@@ -620,7 +627,7 @@ export default function PractitionerAvailbility({
                 </div>
 
                 {errorForm && (
-                  <div className='mt-2 text-sm text-destructive'>
+                  <div className='mb-4 text-sm text-destructive'>
                     {`Lengkapi ${conjunction(errorForm)}.`}
                   </div>
                 )}
@@ -631,9 +638,7 @@ export default function PractitionerAvailbility({
               <Button
                 className='mt-auto rounded-xl bg-secondary text-white'
                 onClick={handleSubmitForm}
-                disabled={
-                  isCreateAppointmentLoading || errorForm || !scheduleId
-                }
+                disabled={isCreateAppointmentLoading || !scheduleId}
               >
                 {isCreateAppointmentLoading ? (
                   <LoadingSpinnerIcon
