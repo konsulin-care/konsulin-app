@@ -19,7 +19,7 @@ export default function RouteResponseCleaner() {
     const segments = pathname.split('/');
     const isRecordPage = segments[1] === 'record';
     const recordId = isRecordPage ? segments[2] : null;
-    const typeParam = searchParams.get('type');
+    const categoryParam = searchParams.get('category');
     const questionnaireId = responseKey.replace('response_', '');
 
     const isOnQuestionnairePage = pathname.includes(
@@ -27,7 +27,7 @@ export default function RouteResponseCleaner() {
     );
     const isOnAuthPage = pathname.includes('/auth');
     const isOnResultPage =
-      pathname.includes(`/record/${recordId}`) && typeParam === '1';
+      pathname.includes(`/record/${recordId}`) && categoryParam === '1';
 
     /*
      * make sure the user is on one of these 3 routes.
