@@ -1,22 +1,16 @@
+import { getUtcDayRange } from '@/utils/helper';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Bundle } from 'fhir/r4';
 import { API } from '../api';
 
-export const useGetAppointments = () => {
-  return useQuery({
-    queryKey: ['appointments'],
-    queryFn: () => API.get(`/api/v1/appointments`),
-    select: response => {
-      return response.data || null;
-    }
-  });
-};
 export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
+  const { utcStart } = getUtcDayRange(new Date(dateReference));
+
   return useQuery({
-    queryKey: ['appointments'],
+    queryKey: ['appointments', dateReference],
     queryFn: () =>
       API.get(
-        `/fhir/Appointment?actor=Patient/${patientId}&slot.start=ge${dateReference}&_include=Appointment:actor:PractitionerRole&_include:iterate=PractitionerRole:practitioner&_include=Appointment:slot`
+        `/fhir/Appointment?actor=Patient/${patientId}&slot.start=ge${utcStart}&_include=Appointment:actor:PractitionerRole&_include:iterate=PractitionerRole:practitioner&_include=Appointment:slot`
       ),
     select: response => {
       return response.data || null;

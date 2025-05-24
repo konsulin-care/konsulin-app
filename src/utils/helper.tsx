@@ -330,3 +330,16 @@ export const findAge = (birthDateStr: string) => {
 
   return age;
 };
+
+export const getUtcDayRange = (localDate: Date) => {
+  const start = new Date(localDate);
+  start.setHours(0, 0, 0, 0); // 00:00:00 local time
+
+  const end = new Date(localDate);
+  end.setHours(23, 59, 59, 999); // 23:59:59 local time
+
+  const utcStart = start.toISOString();
+  const utcEnd = end.toISOString();
+
+  return { utcStart, utcEnd };
+};

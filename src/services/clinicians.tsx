@@ -1,4 +1,5 @@
 import { IPractitionerRoleDetail } from '@/types/practitioner';
+import { getUtcDayRange } from '@/utils/helper';
 import { useMutation, useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { AxiosResponse } from 'axios';
 import {
@@ -11,11 +12,13 @@ import {
 import { API } from './api';
 
 export const useFindAvailability = ({ practitionerRoleId, dateReference }) => {
+  const { utcStart, utcEnd } = getUtcDayRange(new Date(dateReference));
+
   return useQuery({
     queryKey: ['find-availability', practitionerRoleId, dateReference],
     queryFn: () =>
       API.get(
-        `/fhir/Slot?schedule.actor=PractitionerRole/${practitionerRoleId}&start=${dateReference}&_include=Slot:schedule`
+        `/fhir/Slot?schedule.actor=PractitionerRole/${practitionerRoleId}&start=ge${utcStart}&le=${utcEnd}&_include=Slot:schedule`
       ),
     select: response => response.data.entry || null,
     enabled: !!dateReference && !!practitionerRoleId
