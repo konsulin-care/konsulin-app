@@ -31,6 +31,7 @@ import PopularAssessment from '../components/general/home/popular-assessment';
 export default function HomeContentPatient() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const { mutate: getRecords, isLoading: isRecordLoading } = useRecordSummary();
+  const [isPageLoading, setIsPageLoading] = useState(false);
   const [records, setRecords] = useState<IRecord[] | null>(null);
 
   /*
@@ -41,6 +42,7 @@ export default function HomeContentPatient() {
     if (authState.userInfo.role_name === 'patient') {
       getRecords(authState.userInfo.fhirId, {
         onSuccess: async result => {
+          setIsPageLoading(true);
           const parsed = parseRecordBundles(result);
 
           const attachProfile = await Promise.all(
@@ -61,6 +63,7 @@ export default function HomeContentPatient() {
               new Date(a.lastUpdated).getTime()
           );
           setRecords(sorted);
+          setIsPageLoading(false);
         }
       });
     }
@@ -103,10 +106,7 @@ export default function HomeContentPatient() {
           </Link>
         </div>
 
-        {!records ||
-        records.length === 0 ||
-        isAuthLoading ||
-        isRecordLoading ? (
+        {isAuthLoading || isRecordLoading || isPageLoading ? (
           <Skeleton
             count={1}
             className='h-[100px] w-full bg-[hsl(210,40%,96.1%)]'
@@ -135,98 +135,104 @@ export default function HomeContentPatient() {
             spaceBetween={10}
             modules={[Pagination]}
           >
-            {records.map((record: IRecord) => {
-              const splitTitle = record.title.split('/');
-              const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
-              const formattedTitle =
-                record.type === 'QuestionnaireResponse'
-                  ? formatTitle(title)
-                  : title;
-              const recordId = record.id.split('/')[1];
-              const formattedDate = format(
-                new Date(record.lastUpdated),
-                'dd/MM/yyyy'
-              );
-              const cleanDescription = (record.result || '-').replace(
-                /\n\n/g,
-                '. '
-              );
+            {records &&
+              records.length > 0 &&
+              records.map((record: IRecord) => {
+                const splitTitle = record.title.split('/');
+                const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
+                const formattedTitle =
+                  record.type === 'QuestionnaireResponse'
+                    ? formatTitle(title)
+                    : title;
+                const recordId = record.id.split('/')[1];
+                const formattedDate = format(
+                  new Date(record.lastUpdated),
+                  'dd/MM/yyyy'
+                );
+                const cleanDescription = (record.result || '-').replace(
+                  /\n\n/g,
+                  '. '
+                );
 
-              const queryParams = new URLSearchParams({
-                category: typeMappings[record.type]?.category,
-                title
-              }).toString();
-              const url = `record/${recordId}?${queryParams}`;
+                const queryParams = new URLSearchParams({
+                  category: typeMappings[record.type]?.category,
+                  title
+                }).toString();
+                const url = `record/${recordId}?${queryParams}`;
 
-              const { displayName, email } = getPractitionerInfo(record);
-              const { initials, backgroundColor } = generateAvatarPlaceholder({
-                id: record.practitionerId,
-                name: displayName,
-                email: email
-              });
-              const photoUrl = record.practitionerProfile?.photo?.[0]?.url;
+                const { displayName, email } = getPractitionerInfo(record);
+                const { initials, backgroundColor } = generateAvatarPlaceholder(
+                  {
+                    id: record.practitionerId,
+                    name: displayName,
+                    email: email
+                  }
+                );
+                const photoUrl = record.practitionerProfile?.photo?.[0]?.url;
 
-              return (
-                <SwiperSlide key={recordId}>
-                  <Link
-                    href={url}
-                    className='card mb-4 !flex flex-col gap-2 p-4'
-                  >
-                    <div className='flex'>
-                      <div className='mr-2 h-[40px] w-[40px] shrink-0 rounded-full bg-[#F8F8F8] p-2'>
-                        <Image
-                          className='h-[24px] w-[24px] object-cover'
-                          src={'/images/note.svg'}
-                          width={24}
-                          height={24}
-                          alt='note'
-                        />
-                      </div>
-                      <div className='flex w-0 grow flex-col'>
-                        <div className='text-[12px] font-bold'>
-                          {formattedTitle}
-                        </div>
-                        <div className='overflow-hidden text-ellipsis whitespace-nowrap text-[10px]'>
-                          <ReactMarkdown components={customMarkdownComponents}>
-                            {cleanDescription}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                    </div>
-                    <hr className='w-full' />
-                    <div className='flex items-center'>
-                      {record.type === 'Practitioner Note' ? (
-                        <>
-                          <Avatar
-                            initials={initials}
-                            backgroundColor={backgroundColor}
-                            photoUrl={photoUrl}
-                            className='mr-2 text-xs'
-                            imageClassName='mr-2 self-center'
-                            height={32}
-                            width={32}
+                return (
+                  <SwiperSlide key={recordId}>
+                    <Link
+                      href={url}
+                      className='card mb-4 !flex flex-col gap-2 p-4'
+                    >
+                      <div className='flex'>
+                        <div className='mr-2 h-[40px] w-[40px] shrink-0 rounded-full bg-[#F8F8F8] p-2'>
+                          <Image
+                            className='h-[24px] w-[24px] object-cover'
+                            src={'/images/note.svg'}
+                            width={24}
+                            height={24}
+                            alt='note'
                           />
-                          <div className='mr-auto text-[12px]'>
-                            {displayName}
-                          </div>
-                        </>
-                      ) : (
-                        <div className='mr-auto text-[12px]'>
-                          <Badge className='flex items-center rounded-full bg-[#08979C] px-[10px] py-[4px]'>
-                            <NoteIcon fill='white' width={16} height={16} />
-                            <div className='ml-1 text-[10px] text-white'>
-                              {typeMappings[record.type]?.text ?? record.type}
-                            </div>
-                          </Badge>
                         </div>
-                      )}
+                        <div className='flex w-0 grow flex-col'>
+                          <div className='text-[12px] font-bold'>
+                            {formattedTitle}
+                          </div>
+                          <div className='overflow-hidden text-ellipsis whitespace-nowrap text-[10px]'>
+                            <ReactMarkdown
+                              components={customMarkdownComponents}
+                            >
+                              {cleanDescription}
+                            </ReactMarkdown>
+                          </div>
+                        </div>
+                      </div>
+                      <hr className='w-full' />
+                      <div className='flex items-center'>
+                        {record.type === 'Practitioner Note' ? (
+                          <>
+                            <Avatar
+                              initials={initials}
+                              backgroundColor={backgroundColor}
+                              photoUrl={photoUrl}
+                              className='mr-2 text-xs'
+                              imageClassName='mr-2 self-center'
+                              height={32}
+                              width={32}
+                            />
+                            <div className='mr-auto text-[12px]'>
+                              {displayName}
+                            </div>
+                          </>
+                        ) : (
+                          <div className='mr-auto text-[12px]'>
+                            <Badge className='flex items-center rounded-full bg-[#08979C] px-[10px] py-[4px]'>
+                              <NoteIcon fill='white' width={16} height={16} />
+                              <div className='ml-1 text-[10px] text-white'>
+                                {typeMappings[record.type]?.text ?? record.type}
+                              </div>
+                            </Badge>
+                          </div>
+                        )}
 
-                      <div className='text-[10px]'>{formattedDate}</div>
-                    </div>
-                  </Link>
-                </SwiperSlide>
-              );
-            })}
+                        <div className='text-[10px]'>{formattedDate}</div>
+                      </div>
+                    </Link>
+                  </SwiperSlide>
+                );
+              })}
           </Swiper>
         )}
       </div>

@@ -14,7 +14,6 @@ import {
   DrawerHeader,
   DrawerTitle
 } from '@/components/ui/drawer';
-import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
 import { getFromLocalStorage } from '@/lib/utils';
 import { useDetailPractitioner } from '@/services/clinic';
@@ -49,7 +48,6 @@ type IPractitionerLocalStorage = {
 };
 
 export default function Practitioner({ params }: IPractitionerProps) {
-  const { state: authState } = useAuth();
   const router = useRouter();
   const { state: bookingState, dispatch } = useBooking();
   const [isOpen, setIsOpen] = useState(false);
@@ -205,9 +203,6 @@ export default function Practitioner({ params }: IPractitionerProps) {
 
             <PractitionerAvailbility
               practitionerRole={detailPractitioner.resource}
-              patientId={authState?.userInfo?.fhirId}
-              practitionerId={params.practitionerId}
-              isAuthenticated={authState.isAuthenticated}
               scheduleId={detailPractitioner?.schedule?.id}
             >
               <div className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'>
