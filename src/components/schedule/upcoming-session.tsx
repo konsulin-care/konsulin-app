@@ -31,7 +31,7 @@ export default function UpcomingSession({ data, role }: Props) {
     <>
       {data && nextSession && (
         <>
-          <div className='card mt-4 flex items-center bg-[#F9F9F9]'>
+          <div className='card mt-4 flex items-center border-0 bg-[#F9F9F9]'>
             <Image
               className='mr-[10px] min-h-[32] min-w-[32]'
               src={'/icons/calendar.svg'}

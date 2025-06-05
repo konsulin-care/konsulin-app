@@ -12,9 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetAllAppointments } from '@/services/api/appointments';
 import { IUseClinicParams } from '@/services/clinic';
+import { MergedAppointment } from '@/types/appointment';
 import {
   generateAvatarPlaceholder,
-  MergedAppointment,
   mergeNames,
   parseMergedAppointments,
   parseTime
@@ -303,9 +303,13 @@ export default function Schedule() {
             </span>
           </div>
 
-          {unfilteredAppointmentsData &&
+          {authState &&
+            unfilteredAppointmentsData &&
             unfilteredAppointmentsData.length > 0 && (
-              <UpcomingSession upcomingData={unfilteredAppointmentsData} />
+              <UpcomingSession
+                data={unfilteredAppointmentsData}
+                role={authState.userInfo.role_name}
+              />
             )}
         </div>
       </Header>

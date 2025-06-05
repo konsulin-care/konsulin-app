@@ -70,9 +70,14 @@ export default function Clinic() {
             </Link>
           </div>
 
-          {parsedAppointmentsData && parsedAppointmentsData.length > 0 && (
-            <UpcomingSession upcomingData={parsedAppointmentsData} />
-          )}
+          {authState &&
+            parsedAppointmentsData &&
+            parsedAppointmentsData.length > 0 && (
+              <UpcomingSession
+                data={parsedAppointmentsData}
+                role={authState.userInfo.role_name}
+              />
+            )}
         </div>
       </Header>
       <ContentWraper>

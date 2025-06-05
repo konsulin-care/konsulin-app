@@ -172,8 +172,13 @@ export default function Patient({ fhirId }: Props) {
 
       {isUpcomingDataLoading ? (
         <Skeleton className='mt-4 h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
-      ) : parsedAppointmentsData && parsedAppointmentsData.length > 0 ? (
-        <UpcomingSession upcomingData={parsedAppointmentsData} />
+      ) : authState &&
+        parsedAppointmentsData &&
+        parsedAppointmentsData.length > 0 ? (
+        <UpcomingSession
+          data={parsedAppointmentsData}
+          role={authState.userInfo.role_name}
+        />
       ) : null}
 
       <Settings menus={settingMenus} />

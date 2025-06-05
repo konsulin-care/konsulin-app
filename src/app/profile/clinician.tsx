@@ -7,6 +7,7 @@ import InformationDetail from '@/components/profile/information-detail';
 import MedalCollection from '@/components/profile/medal-collection';
 import Settings from '@/components/profile/settings';
 import Tags from '@/components/profile/tags';
+import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -17,14 +18,20 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { medalLists, settingMenus } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
+import { useGetUpcomingSessions } from '@/services/api/appointments';
 import {
   useGetPractitionerRolesDetail,
   useUpdatePractitionerInfo
 } from '@/services/clinicians';
 import { getProfileById } from '@/services/profile';
-import { findAge, generateAvatarPlaceholder, mapAddress } from '@/utils/helper';
+import {
+  findAge,
+  generateAvatarPlaceholder,
+  mapAddress,
+  parseMergedSessions
+} from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { format, isAfter, parseISO } from 'date-fns';
 import {
   ContactPoint,
   Practitioner,
@@ -32,8 +39,9 @@ import {
 } from 'fhir/r4';
 import { ChevronRight, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { daysOfWeek } from './constants';
 import { FormsState, TimeRange } from './types';
@@ -49,6 +57,8 @@ import {
 type Props = {
   fhirId: string;
 };
+
+const now = new Date();
 
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
@@ -66,6 +76,26 @@ export default function Clinician({ fhirId }: Props) {
   );
   const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState({});
   const { state: authState, isLoading: isAuthLoading } = useAuth();
+
+  /* get practitioner's upcoming sessions*/
+  const { data: sessionData, isLoading: isUpcomingSessionsLoading } =
+    useGetUpcomingSessions({
+      practitionerId: authState.userInfo.fhirId,
+      dateReference: format(now, 'yyyy-MM-dd')
+    });
+
+  const parsedSessionsData = useMemo(() => {
+    if (!sessionData || sessionData?.total === 0 || !authState.isAuthenticated)
+      return null;
+
+    const parsed = parseMergedSessions(sessionData);
+    const filtered = parsed.filter(session => {
+      const slotStart = parseISO(session.slotStart);
+      return isAfter(slotStart, now);
+    });
+
+    return filtered;
+  }, [sessionData, authState]);
 
   /* get practitioner's basic information*/
   const { data: profileData, isLoading: isProfileLoading } =
@@ -316,13 +346,28 @@ export default function Clinician({ fhirId }: Props) {
   const hasData = Object.keys(groupedByFirmAndDay).length > 0;
   return (
     <>
-      {/* TODO: add schedule active information here */}
+      {/* display practitioner's upcoming sessions */}
+      <div className='flex items-center justify-between text-muted'>
+        <div className='text-[14px] font-bold'>Schedule Active</div>
+        <Link href='/schedule' className='text-[10px]'>
+          See All
+        </Link>
+      </div>
+
+      {isUpcomingSessionsLoading || isAuthLoading ? (
+        <Skeleton className='mt-4 h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+      ) : authState && parsedSessionsData && parsedSessionsData.length > 0 ? (
+        <UpcomingSession
+          data={parsedSessionsData}
+          role={authState.userInfo.role_name}
+        />
+      ) : null}
 
       {/* display practitioner's basic information */}
       {isProfileLoading || isAuthLoading || !profileData ? (
-        <Skeleton className='h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+        <Skeleton className='my-4 h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
       ) : (
-        <div className='mb-4'>
+        <div className='my-4'>
           <InformationDetail
             isRadiusIcon
             initials={initials}
