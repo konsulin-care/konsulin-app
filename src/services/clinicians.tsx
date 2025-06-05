@@ -37,7 +37,7 @@ export const useGetPractitionerRolesDetail = (
     queryKey: ['practitioner-roles', practitionerId],
     queryFn: () =>
       API.get(
-        `/fhir/PractitionerRole?practitioner=${practitionerId}&_include=PractitionerRole:organization&_incude=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
+        `/fhir/PractitionerRole?practitioner=${practitionerId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
       ),
     select: response => {
       const entries = response.data.entry || [];

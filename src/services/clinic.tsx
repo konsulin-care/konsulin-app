@@ -108,7 +108,7 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
     queryKey: ['practitioner-detail', practitionerRoleId],
     queryFn: () =>
       API.get(
-        `/fhir/PractitionerRole?active=true&_id=${practitionerRoleId}&_include=PractitionerRole:organization&_incude=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
+        `/fhir/PractitionerRole?active=true&_id=${practitionerRoleId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
       ),
     select: response => response.data.entry || null,
     enabled: !!practitionerRoleId
