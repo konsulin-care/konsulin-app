@@ -21,7 +21,7 @@ export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
 
 export const useGetAllAppointments = ({ patientId }) => {
   return useQuery({
-    queryKey: ['appointments'],
+    queryKey: ['all-appointments'],
     queryFn: () =>
       API.get(
         `/fhir/Appointment?actor=Patient/${patientId}&_include=Appointment:actor:PractitionerRole&_include:iterate=PractitionerRole:practitioner&_include=Appointment:slot`
@@ -49,6 +49,20 @@ export const useGetUpcomingSessions = ({ practitionerId, dateReference }) => {
   });
 };
 
+export const useGetAllSessions = ({ practitionerId }) => {
+  return useQuery({
+    queryKey: ['all-sessions'],
+    queryFn: () =>
+      API.get(
+        `/fhir/Appointment?actor=Practitioner/${practitionerId}&_include=Appointment:actor:Patient&_include=Appointment:slot`
+      ),
+    select: response => {
+      return response.data || null;
+    },
+    enabled: !!practitionerId
+  });
+};
+
 export const useCreateAppointment = () => {
   return useMutation({
     mutationKey: ['create-appointments'],
@@ -61,5 +75,21 @@ export const useCreateAppointment = () => {
         throw error;
       }
     }
+  });
+};
+
+export const useGetPractitionerSlots = ({ practitionerId, dateReference }) => {
+  const { utcStart } = getUtcDayRange(new Date(dateReference));
+
+  return useQuery({
+    queryKey: ['slots', dateReference],
+    queryFn: () =>
+      API.get(
+        `/fhir/Slot?_has:Appointment:slot:practitioner=${practitionerId}&start=ge${utcStart}`
+      ),
+    select: response => {
+      return response.data || null;
+    },
+    enabled: !!practitionerId && !!dateReference
   });
 };
