@@ -52,9 +52,7 @@ export default function AppChartClient({
 
   /* preparing data for the pie chart based on the latest response */
   useEffect(() => {
-    if (!questionnaireResponse || questionnaireResponse.total === 0) {
-      return;
-    }
+    if (!questionnaireResponse || questionnaireResponse.total === 0) return;
 
     const sorted = questionnaireResponse.entry.sort(
       (a: BundleEntry, b: BundleEntry) => {
@@ -148,6 +146,7 @@ export default function AppChartClient({
             <Pie
               {...configPie}
               height={180}
+              style={{ cursor: 'pointer' }}
               onReady={plot => {
                 plot.chart.on('element:click', () => {
                   if (latestRecordIdRef.current) {
