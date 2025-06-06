@@ -12,6 +12,7 @@ import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { typeMappings } from '@/constants/record';
 import { useAuth } from '@/context/auth/authContext';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useFilterRecordByDate, useRecordSummary } from '@/services/api/record';
 import { getProfileById } from '@/services/profile';
 import { IRecord } from '@/types/record';
@@ -31,6 +32,7 @@ import ReactMarkdown from 'react-markdown';
 import RecordFilter, { IRecordParams } from './record-filter';
 
 // NOTE: differentiate record summary for Patient and Practitioner
+// TODO: add soap report record for both patient and practitioner
 export default function Record() {
   const [recordFilter, setRecordFilter] = useState<IRecordParams>({
     query: ''
@@ -41,12 +43,14 @@ export default function Record() {
     useFilterRecordByDate();
   const [records, setRecords] = useState<IRecord[] | null>(null);
 
+  const debouncedQuery = useDebounce(recordFilter.query, 500);
+
   const filteredRecords = useMemo(() => {
     if (!records) return [];
 
     return records
       .filter(record => {
-        const { start_date, end_date, type, query } = recordFilter;
+        const { start_date, end_date, type } = recordFilter;
 
         const recordDate = format(parseISO(record.lastUpdated), 'yyyy-MM-dd');
         const startDate = start_date ? format(start_date, 'yyyy-MM-dd') : null;
@@ -58,9 +62,9 @@ export default function Record() {
 
         const matchesType = !type || type === 'All' || record.type === type;
 
-        const queryLower = query?.toLowerCase() || '';
+        const queryLower = debouncedQuery?.toLowerCase() || '';
         const matchesQuery =
-          !query || record.result?.toLowerCase().includes(queryLower);
+          !debouncedQuery || record.result?.toLowerCase().includes(queryLower);
 
         return matchesDateRange && matchesType && matchesQuery;
       })
@@ -70,7 +74,7 @@ export default function Record() {
           new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
         );
       });
-  }, [records, recordFilter]);
+  }, [records, recordFilter, debouncedQuery]);
 
   /*
    * fetch patient records. if a record is a 'Practitioner Note',
