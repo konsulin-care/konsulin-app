@@ -19,6 +19,7 @@ import { Column, Datum } from '@ant-design/plots';
 import {
   addDays,
   addMonths,
+  endOfMonth,
   format,
   startOfMonth,
   startOfWeek
@@ -26,7 +27,8 @@ import {
 import { BundleEntry, Questionnaire, Slot } from 'fhir/r4';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Community from '../components/general/home/community';
 
@@ -43,11 +45,13 @@ const today = new Date();
 const monday = startOfWeek(today, { weekStartsOn: 1 });
 
 export default function HomeContentClinician() {
+  const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [dataWeekly, setDataWeekly] = useState<IColumn>({ data: [] });
   const [dataMonthly, setDataMonthly] = useState<IColumn>({ data: [] });
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const elementClickedRef = useRef(false);
 
   const { data: regularAssessments, isLoading: regularLoading } =
     useRegularAssessments();
@@ -244,16 +248,31 @@ export default function HomeContentClinician() {
                   Monthly
                 </TabsTrigger>
               </TabsList>
-              {/* TODO: navigate to sessions page */}
               <TabsContent value='weekly'>
                 <Column
                   height={180}
-                  style={{ cursor: 'none' }}
                   {...configColumn}
                   {...dataWeekly}
                   onReady={plot => {
                     plot.chart.on('element:click', (e: Datum) => {
-                      console.log('hihi', e.data.data);
+                      elementClickedRef.current = true;
+                      const date = e.data.data.date;
+                      router.push(
+                        `/schedule?start_date=${date}&end_date=${date}`
+                      );
+                    });
+
+                    plot.chart.on('plot:click', () => {
+                      setTimeout(() => {
+                        if (elementClickedRef.current) {
+                          elementClickedRef.current = false;
+                          return;
+                        }
+                        const formatted = format(today, 'yyyy-MM-dd');
+                        router.push(
+                          `/schedule?start_date=${formatted}&end_date=${formatted}`
+                        );
+                      }, 0); // defer until after element:click
                     });
                   }}
                 />
@@ -264,8 +283,32 @@ export default function HomeContentClinician() {
                   {...configColumn}
                   {...dataMonthly}
                   onReady={plot => {
-                    plot.chart.on('element:click', () => {
-                      console.log('haha');
+                    plot.chart.on('element:click', (e: Datum) => {
+                      elementClickedRef.current = true;
+                      const clickedDate = new Date(e.data.data.date);
+
+                      const start = format(
+                        startOfMonth(clickedDate),
+                        'yyyy-MM-dd'
+                      );
+                      const end = format(endOfMonth(clickedDate), 'yyyy-MM-dd');
+
+                      router.push(
+                        `/schedule?start_date=${start}&end_date=${end}`
+                      );
+                    });
+
+                    plot.chart.on('plot:click', () => {
+                      setTimeout(() => {
+                        if (elementClickedRef.current) {
+                          elementClickedRef.current = false;
+                          return;
+                        }
+                        const formatted = format(today, 'yyyy-MM-dd');
+                        router.push(
+                          `/schedule?start_date=${formatted}&end_date=${formatted}`
+                        );
+                      }, 0); // defer until after element:click
                     });
                   }}
                 />
