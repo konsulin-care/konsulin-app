@@ -14,8 +14,7 @@ import {
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger
+  DrawerTitle
 } from '@/components/ui/drawer';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -35,7 +34,8 @@ import { format, parseISO } from 'date-fns';
 import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 const dateFormat = (date: string) => {
@@ -50,8 +50,16 @@ const filteredResearch = (researchArr: IAssessmentEntry[]) =>
   );
 
 export default function Assessment() {
-  const [drawerResearchContent, setDrawerResearchContent] = useState(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isDrawerOpenParam = searchParams.get('isDrawerOpen') === 'true';
+  const assessmentIdParam = searchParams.get('assessmentId');
+
   const [url, setUrl] = useState('');
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [selectedAssessment, setSelectedAssessment] = useState<
+    IResearchResource | IAssessmentResource | IResearchListResource
+  >(null);
   // const [query, setQuery] = useState('');
 
   const { data: popularAssessments, isLoading: popularLoading } =
@@ -61,6 +69,32 @@ export default function Assessment() {
   const { data: research, isLoading: researchLoading } = useOngoingResearch();
   // const { data: searchResult, isLoading: searchLoading } =
   //   useSearchQuestionnaire('Five');
+
+  useEffect(() => {
+    if (isDrawerOpenParam && assessmentIdParam) {
+      const found = findAssessmentById(assessmentIdParam);
+      if (found) {
+        setSelectedAssessment(found);
+        setIsOpen(true);
+      }
+    }
+  }, [
+    isDrawerOpenParam,
+    assessmentIdParam,
+    popularAssessments,
+    regularAssessments,
+    research
+  ]);
+
+  const findAssessmentById = (id: string) => {
+    const allAssessments = [
+      ...(popularAssessments || []),
+      ...(regularAssessments || []),
+      ...(research || [])
+    ];
+
+    return allAssessments.find(item => item.resource.id === id)?.resource;
+  };
 
   /* Filters the 'research' array to find list items that reference the given researchId.
    * It matches the researchId with the part of the reference after the last '/'. */
@@ -91,50 +125,73 @@ export default function Assessment() {
         .split('/')
         .pop();
 
-    setDrawerResearchContent(mergedData);
+    const params = new URLSearchParams(window.location.search);
+    params.set('isDrawerOpen', 'true');
+    params.set('assessmentId', mergedData.id);
+
+    router.push(`?${params.toString()}`, { scroll: false });
+    setSelectedAssessment(mergedData);
     setUrl(questionnaireUrl);
   };
 
+  const handleAssessmentClick = assessment => {
+    if (!assessment) return;
+
+    const params = new URLSearchParams(window.location.search);
+    params.set('isDrawerOpen', 'true');
+    params.set('assessmentId', assessment.id);
+    router.push(`?${params.toString()}`, { scroll: false });
+    setSelectedAssessment(assessment);
+  };
+
+  const handleDrawerClose = () => {
+    setIsOpen(false);
+
+    const params = new URLSearchParams(window.location.search);
+    params.delete('isDrawerOpen');
+    params.delete('assessmentId');
+
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
   const renderDrawerContent = (
-    data: IResearchResource | IAssessmentResource | IResearchListResource
-  ) => {
-    if (!data) return;
-
-    return (
-      <div className='flex flex-col'>
-        <DrawerHeader className='mx-auto text-[20px] font-bold'>
-          {data &&
-            data.resourceType === 'ResearchStudy' &&
-            data.note.length !== 0 && (
-              <Badge
-                style={{ justifySelf: 'center' }}
-                className='flex w-fit rounded-[8px] bg-secondary px-[10px] py-[4px]'
-              >
-                <div className='text-xs text-white'>
-                  Estimated time: ~{data.note[0].text}
-                </div>
-              </Badge>
-            )}
-          <DrawerTitle className='text-center text-2xl'>
-            {data.title}
-          </DrawerTitle>
-        </DrawerHeader>
-        <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-          <div className='font-bold'>Brief</div>
-          <hr className='my-4 border-black opacity-10' />
-          <div className='flex flex-wrap gap-[10px] text-sm'>
-            <DrawerDescription>
-              <ReactMarkdown components={customMarkdownComponents}>
-                {data && 'description' in data && data.description}
-              </ReactMarkdown>
-            </DrawerDescription>
-          </div>
+    <div className='flex flex-col'>
+      <DrawerHeader className='mx-auto text-[20px] font-bold'>
+        {selectedAssessment &&
+          selectedAssessment.resourceType === 'ResearchStudy' &&
+          selectedAssessment.note.length !== 0 && (
+            <Badge
+              style={{ justifySelf: 'center' }}
+              className='flex w-fit rounded-[8px] bg-secondary px-[10px] py-[4px]'
+            >
+              <div className='text-xs text-white'>
+                Estimated time: ~{selectedAssessment.note[0].text}
+              </div>
+            </Badge>
+          )}
+        <DrawerTitle className='text-center text-2xl'>
+          {selectedAssessment && selectedAssessment.title}
+        </DrawerTitle>
+      </DrawerHeader>
+      <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+        <div className='font-bold'>Brief</div>
+        <hr className='my-4 border-black opacity-10' />
+        <div className='flex flex-wrap gap-[10px] text-sm'>
+          <DrawerDescription>
+            <ReactMarkdown components={customMarkdownComponents}>
+              {selectedAssessment &&
+                'description' in selectedAssessment &&
+                selectedAssessment.description}
+            </ReactMarkdown>
+          </DrawerDescription>
         </div>
+      </div>
 
-        {data && data.resourceType === 'ResearchStudy' && (
+      {selectedAssessment &&
+        selectedAssessment.resourceType === 'ResearchStudy' && (
           <div>
             <div className='mt-4 font-bold'>Researcher</div>
-            {data.contact.map((item, index) => (
+            {selectedAssessment.contact.map((item, index) => (
               <div
                 className='card mt-2 border-0 bg-[#F9F9F9] text-sm'
                 key={index}
@@ -145,16 +202,17 @@ export default function Assessment() {
           </div>
         )}
 
-        {/* used data from relatedLists that have been merged before */}
+      {/* used data from relatedLists that have been merged before */}
+      {selectedAssessment && (
         <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
-          {data && 'relatedLists' in data ? (
+          {'relatedLists' in selectedAssessment ? (
             <Link href={`assessments/${url}`}>
               <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
                 Mulai
               </Button>
             </Link>
           ) : (
-            <Link href={`assessments/${data.id}`}>
+            <Link href={`assessments/${selectedAssessment.id}`}>
               <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
                 Start Test
               </Button>
@@ -164,9 +222,9 @@ export default function Assessment() {
             Close
           </DrawerClose>
         </DrawerFooter>
-      </div>
-    );
-  };
+      )}
+    </div>
+  );
 
   return (
     <>
@@ -266,25 +324,17 @@ export default function Assessment() {
                             </div>
                           </div>
 
-                          <Drawer>
-                            <DrawerTrigger>
-                              {mergedData.relatedLists[0] && (
-                                <div
-                                  className='cursor-pointer rounded-[32px] bg-secondary px-4 py-2 text-sm font-bold text-white'
-                                  onClick={() =>
-                                    handleResearchClick(mergedData)
-                                  }
-                                >
-                                  Gabung
-                                </div>
-                              )}
-                            </DrawerTrigger>
-                            <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-                              <div className='mt-4'>
-                                {renderDrawerContent(drawerResearchContent)}
-                              </div>
-                            </DrawerContent>
-                          </Drawer>
+                          {mergedData.relatedLists[0] && (
+                            <div
+                              className='cursor-pointer rounded-[32px] bg-secondary px-4 py-2 text-sm font-bold text-white'
+                              onClick={() => {
+                                handleResearchClick(mergedData);
+                                setIsOpen(true);
+                              }}
+                            >
+                              Gabung
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -313,50 +363,49 @@ export default function Assessment() {
                       resource: IAssessmentResource;
                     }
                   ) => (
-                    <Drawer key={assessment.resource.id}>
-                      <DrawerTrigger className='card flex flex-col gap-4 bg-white'>
-                        <div className='flex items-start justify-between'>
-                          <Image
-                            src={'/images/exercise.svg'}
-                            height={40}
-                            width={40}
-                            alt='exercise'
-                          />
-                          <div className='flex min-w-[192px] justify-end gap-2'>
-                            <Badge className='flex items-center rounded-[8px] bg-secondary px-[10px] py-[4px]'>
-                              <AwardIcon size={16} color='white' fill='white' />
-                              <div className='text-[10px] text-white'>
-                                Best Impact
-                              </div>
-                            </Badge>
-                            <Badge className='rounded-[8px] bg-secondary px-[10px] py-[4px]'>
-                              <BookmarkIcon
-                                size={16}
-                                color='white'
-                                fill='white'
-                              />
-                            </Badge>
-                          </div>
+                    <div
+                      key={assessment.resource.id}
+                      className='card flex cursor-pointer flex-col gap-4 bg-white'
+                      onClick={() => {
+                        handleAssessmentClick(assessment.resource);
+                        setIsOpen(true);
+                      }}
+                    >
+                      <div className='flex items-start justify-between'>
+                        <Image
+                          src={'/images/exercise.svg'}
+                          height={40}
+                          width={40}
+                          alt='exercise'
+                        />
+                        <div className='flex min-w-[192px] justify-end gap-2'>
+                          <Badge className='flex items-center rounded-[8px] bg-secondary px-[10px] py-[4px]'>
+                            <AwardIcon size={16} color='white' fill='white' />
+                            <div className='text-[10px] text-white'>
+                              Best Impact
+                            </div>
+                          </Badge>
+                          <Badge className='rounded-[8px] bg-secondary px-[10px] py-[4px]'>
+                            <BookmarkIcon
+                              size={16}
+                              color='white'
+                              fill='white'
+                            />
+                          </Badge>
                         </div>
+                      </div>
 
-                        <div className='flex flex-col items-start'>
-                          {/* NOTE: not provided by api */}
-                          {/* <span className='text-[10px] text-muted'>6 Minutes</span> */}
-                          <span className='text-[12px] font-bold'>
-                            {assessment.resource.title}
-                          </span>
-                          <span className='mt-2 max-w-[250px] overflow-hidden truncate text-ellipsis text-[10px] text-muted'>
-                            {assessment.resource.description}
-                          </span>
-                        </div>
-                      </DrawerTrigger>
-
-                      <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-                        <div className='mt-4'>
-                          {renderDrawerContent(assessment.resource)}
-                        </div>
-                      </DrawerContent>
-                    </Drawer>
+                      <div className='flex flex-col items-start'>
+                        {/* NOTE: not provided by api */}
+                        {/* <span className='text-[10px] text-muted'>6 Minutes</span> */}
+                        <span className='text-[12px] font-bold'>
+                          {assessment.resource.title}
+                        </span>
+                        <span className='mt-2 max-w-[250px] overflow-hidden truncate text-ellipsis text-[10px] text-muted'>
+                          {assessment.resource.description}
+                        </span>
+                      </div>
+                    </div>
                   )
                 )}
               </div>
@@ -375,34 +424,40 @@ export default function Assessment() {
           ) : (
             <div className='mt-4 grid grid-cols-1 gap-2 md:grid-cols-2'>
               {regularAssessments.map((assessment: IAssessmentEntry) => (
-                <Drawer key={assessment.resource.id}>
-                  <DrawerTrigger className='card item flex flex-col p-2'>
-                    <div className='flex items-center'>
-                      <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
-                        <Image
-                          className='h-[24px] w-[24px] object-cover'
-                          src={'/images/note.svg'}
-                          width={24}
-                          height={24}
-                          alt='note'
-                        />
-                      </div>
-                      <div className='text-[12px] text-[hsla(220,9%,19%,1)]'>
-                        {assessment.resource.title}
-                      </div>
+                <div
+                  key={assessment.resource.id}
+                  className='card item flex cursor-pointer flex-col p-2'
+                  onClick={() => {
+                    handleAssessmentClick(assessment.resource);
+                    setIsOpen(true);
+                  }}
+                >
+                  <div className='flex items-center'>
+                    <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
+                      <Image
+                        className='h-[24px] w-[24px] object-cover'
+                        src={'/images/note.svg'}
+                        width={24}
+                        height={24}
+                        alt='note'
+                      />
                     </div>
-                  </DrawerTrigger>
-                  <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-                    <div className='mt-4'>
-                      {renderDrawerContent(assessment.resource)}
+                    <div className='text-[12px] text-[hsla(220,9%,19%,1)]'>
+                      {assessment.resource.title}
                     </div>
-                  </DrawerContent>
-                </Drawer>
+                  </div>
+                </div>
               ))}
             </div>
           )}
         </div>
       </ContentWraper>
+
+      <Drawer onClose={handleDrawerClose} open={isOpen}>
+        <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+          {renderDrawerContent}
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }
