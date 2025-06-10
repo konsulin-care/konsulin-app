@@ -2,7 +2,11 @@ import { IQuestionnaireResponse } from '@/types/assessment';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { format } from 'date-fns';
-import { QuestionnaireResponse, QuestionnaireResponseItem } from 'fhir/r4';
+import {
+  Bundle,
+  QuestionnaireResponse,
+  QuestionnaireResponseItem
+} from 'fhir/r4';
 import { useMemo } from 'react';
 import { API } from '../api';
 
@@ -42,6 +46,26 @@ export const useQuestionnaire = (questionnaireId: number | string) => {
   });
 };
 
+export const useQuestionnaireSoap = () => {
+  return useQuery({
+    queryKey: ['SOAP'],
+    queryFn: () => API.get('/fhir/Questionnaire/soap'),
+    select: response => {
+      return response.data || null;
+    }
+  });
+};
+
+export const useSubmitSoapBundle = () => {
+  return useMutation({
+    mutationKey: ['soap-response'],
+    mutationFn: async (bundle: Bundle) => {
+      const response = await API.post('/fhir', bundle);
+      return response.data;
+    }
+  });
+};
+
 export const useSubmitQuestionnaire = (
   questionnaireId: string,
   isAuthenticated: Boolean
@@ -49,8 +73,7 @@ export const useSubmitQuestionnaire = (
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
     mutationFn: async (questionnaireResponse: QuestionnaireResponse) => {
-      const { author, item, resourceType, status, subject } =
-        questionnaireResponse;
+      const { author, item, resourceType, subject } = questionnaireResponse;
 
       const timestamp = new Date().toISOString();
 
@@ -63,7 +86,7 @@ export const useSubmitQuestionnaire = (
         item,
         resourceType,
         questionnaire: `Questionnaire/${questionnaireId}`,
-        status,
+        status: 'completed',
         authored: timestamp,
         subject
       });
