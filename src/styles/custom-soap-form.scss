@@ -1,0 +1,109 @@
+.custom-soap-form {
+  [data-test='q-item-group-box'] {
+    margin: 5px 0 !important;
+  }
+
+  .MuiTable-root > caption {
+    padding: 8px 0 0 0 !important;
+  }
+
+  .MuiTableBody-root .MuiTableCell-root {
+    padding-bottom: 0px !important;
+  }
+
+  .MuiDivider-root {
+    opacity: 0;
+    margin: 5px 0 !important;
+  }
+
+  .MuiPaper-root {
+    box-shadow: none !important;
+    width: 100% !important;
+  }
+
+  .MuiTableRow-root {
+    background-color: white !important;
+  }
+
+  .MuiTableCell-root {
+    border-bottom: 0px !important;
+
+    .MuiCheckbox-root {
+      display: none !important;
+    }
+
+    &:first-child {
+      display: none !important;
+    }
+  }
+
+  //input field
+  .MuiGrid-root {
+    flex-direction: column !important;
+
+    div {
+      max-width: unset !important;
+    }
+
+    .MuiOutlinedInput-notchedOutline {
+      width: 100% !important;
+    }
+
+    .MuiTypography-root {
+      margin-bottom: 4px !important;
+    }
+  }
+
+  // duration
+  [data-test='q-item-quantity-field'] {
+    min-width: 50px !important;
+  }
+
+  .MuiInputAdornment-root {
+    width: 0px !important;
+    margin-left: 0px !important;
+  }
+
+  .MuiFab-root {
+    background-color: #0abdc3 !important;
+    color: white !important;
+    border-radius: 50% !important;
+  }
+
+  .MuiFab-root:hover {
+    filter: brightness(0.9);
+  }
+
+  .MuiFab-root.Mui-disabled {
+    background-color: rgba(158, 158, 158, 0.24) !important;
+  }
+
+  /* [data-test='q-item-quantity-box'] { */
+  /*   margin-top: 14px !important; */
+  /* } */
+
+  .MuiCard-root {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    background: 'none' !important;
+    border-radius: 0 !important;
+  }
+
+  .MuiTypography-root {
+    font-family: inherit !important;
+    color: var(--muted);
+  }
+
+  [data-test='button-add-repeat-item']:not(.Mui-disabled) {
+    background-color: #0abdc3 !important;
+  }
+
+  [data-test='button-add-repeat-item'] {
+    margin-top: 10px !important;
+  }
+
+  .css-0 {
+    display: none !important;
+  }
+}
