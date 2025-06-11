@@ -103,6 +103,8 @@ export default function RecordFilter({ onChange }) {
       end_date: undefined,
       type: undefined
     });
+    setIsUseCustomDate(false);
+    handleFilterChange('isUseCustomDate', false);
   };
 
   const renderDrawerContent = () => {
@@ -183,8 +185,8 @@ export default function RecordFilter({ onChange }) {
                       Assessment
                     </SelectItem>
                     <SelectItem
-                      key='Practitioner Note'
-                      value='Practitioner Note'
+                      key='SOAP'
+                      value='Practitioner Note, SOAP Notes'
                     >
                       SOAP
                     </SelectItem>

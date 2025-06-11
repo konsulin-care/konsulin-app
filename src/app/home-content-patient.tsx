@@ -149,7 +149,7 @@ export default function HomeContentPatient() {
                   new Date(record.lastUpdated),
                   'dd/MM/yyyy'
                 );
-                const cleanDescription = (record.result || '-').replace(
+                const cleanDescription = (record.result || '\\-').replace(
                   /\n\n/g,
                   '. '
                 );
@@ -186,7 +186,7 @@ export default function HomeContentPatient() {
                             alt='note'
                           />
                         </div>
-                        <div className='flex w-0 grow flex-col'>
+                        <div className='flex w-0 grow flex-col justify-center'>
                           <div className='text-[12px] font-bold'>
                             {formattedTitle}
                           </div>

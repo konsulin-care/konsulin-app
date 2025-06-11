@@ -47,23 +47,11 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
     }
   };
 
-  const route = (category: number) => {
-    switch (category) {
-      case 1:
-        return 'assessments';
-      case 2:
-        return 'exercise';
-      case 3:
-      case 4:
-        return 'record';
-    }
-  };
-
   return (
     <>
       <Header showChat={false}>
         <div className='flex w-full items-center'>
-          <BackButton route={`/${route(category)}`} />
+          <BackButton />
 
           <div className='text-[14px] font-bold text-white'>
             {pageTitle(category)}

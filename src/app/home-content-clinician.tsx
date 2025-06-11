@@ -337,14 +337,13 @@ export default function HomeContentClinician() {
             </span>
           </div>
         </Link>
-        <Link href={'/'} className='card flex w-full'>
+        <Link href={'/assessments/soap'} className='card flex w-full'>
           <Image
             src={'/images/writing.svg'}
             width={40}
             height={40}
             alt='writing'
           />
-          {/* TODO: SOAP Report */}
           <div className='ml-2 flex flex-col'>
             <span className='text-[12px] font-bold text-secondary'>
               SOAP Report
