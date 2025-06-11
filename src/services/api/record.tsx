@@ -1,10 +1,18 @@
 import { IBundleResponse, IJournal } from '@/types/record';
+import { getUtcDayRange } from '@/utils/helper';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { Bundle } from 'fhir/r4';
 import { API } from '../api';
+
+type IFilterRecord = {
+  patientId: string;
+  startDate: string;
+  endDate: string;
+};
 
 export const useRecordSummary = () => {
   return useMutation({
-    mutationKey: ['record-summary'],
+    mutationKey: ['record-summary-patient'],
     mutationFn: async (patientId: string) => {
       const payload = {
         type: 'batch',
@@ -43,16 +51,15 @@ export const useRecordSummary = () => {
   });
 };
 
-type IFilterRecord = {
-  patientId: string;
-  startDate: string;
-  endDate: string;
-};
-
 export const useFilterRecordByDate = () => {
   return useMutation<IBundleResponse[], Error, IFilterRecord>({
-    mutationKey: ['record-summary'],
+    mutationKey: ['filtered-record-summary-patient'],
     mutationFn: async ({ patientId, startDate, endDate }) => {
+      const { utcStart, utcEnd } = getUtcDayRange(
+        new Date(startDate),
+        new Date(endDate)
+      );
+
       const payload = {
         type: 'batch',
         resourceType: 'Bundle',
@@ -61,19 +68,19 @@ export const useFilterRecordByDate = () => {
           {
             request: {
               method: 'GET',
-              url: `/QuestionnaireResponse?patient=${patientId}&author=Patient/${patientId}&authored=le${endDate}&authored=ge${startDate}&_sorted=-_lastUpdated`
+              url: `/QuestionnaireResponse?patient=${patientId}&author=Patient/${patientId}&authored=le${utcEnd}&authored=ge${utcStart}&_sorted=-_lastUpdated`
             }
           },
           {
             request: {
               method: 'GET',
-              url: `/Observation?patient=${patientId}&code=http://loinc.org|51855-5&date=le${endDate}&date=ge${startDate}&_sorted=-_lastUpdated`
+              url: `/Observation?patient=${patientId}&code=http://loinc.org|51855-5&date=le${utcEnd}&date=ge${utcStart}&_sorted=-_lastUpdated`
             }
           },
           {
             request: {
               method: 'GET',
-              url: `/Observation?patient=${patientId}&code=http://loinc.org|67855-7&date=le${endDate}&date=ge${startDate}&_sorted=-_lastUpdated`
+              url: `/Observation?patient=${patientId}&code=http://loinc.org|67855-7&date=le${utcEnd}&date=ge${utcStart}&_sorted=-_lastUpdated`
             }
           }
         ]
@@ -82,6 +89,93 @@ export const useFilterRecordByDate = () => {
       try {
         const response = await API.post('/fhir', payload);
         return response.data.entry;
+      } catch (error) {
+        console.error('Error fetching record summary:', error);
+        throw error;
+      }
+    }
+  });
+};
+
+export const useRecordSummaryPractitioner = () => {
+  return useMutation({
+    mutationKey: ['record-summary-practitioner'],
+    mutationFn: async (patientId: string) => {
+      const payload = {
+        type: 'batch',
+        resourceType: 'Bundle',
+        id: 'search-record-for-practitioner',
+        entry: [
+          {
+            request: {
+              method: 'GET',
+              url: `/QuestionnaireResponse?patient=${patientId}&_sorted=-_lastUpdated`
+            }
+          },
+          {
+            request: {
+              method: 'GET',
+              url: `/Observation?patient=${patientId}&code=http://loinc.org|51855-5&_sorted=-_lastUpdated`
+            }
+          },
+          {
+            request: {
+              method: 'GET',
+              url: `/QuestionnaireResponse?patient=${patientId}&questionnaire=Questionnaire/soap&_sorted=-_lastUpdated`
+            }
+          }
+        ]
+      };
+
+      try {
+        const response = await API.post('/fhir', payload);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching record summary:', error);
+        throw error;
+      }
+    }
+  });
+};
+
+export const useFilterRecordPractitionerByDate = () => {
+  return useMutation<Bundle, Error, IFilterRecord>({
+    mutationKey: ['filtered-record-summary-practitioner'],
+    mutationFn: async ({ patientId, startDate, endDate }) => {
+      const { utcStart, utcEnd } = getUtcDayRange(
+        new Date(startDate),
+        new Date(endDate)
+      );
+
+      const payload = {
+        type: 'batch',
+        resourceType: 'Bundle',
+        id: 'filter-record-for-practitioner',
+        entry: [
+          {
+            request: {
+              method: 'GET',
+              url: `/QuestionnaireResponse?patient=${patientId}&authored=le${utcEnd}&authored=ge${utcStart}&_sorted=-_lastUpdated`
+            }
+          },
+          {
+            request: {
+              method: 'GET',
+              url: `/Observation?patient=${patientId}&code=http://loinc.org|51855-5&date=le${utcEnd}&date=ge${utcStart}&_sorted=-_lastUpdated`
+            }
+          },
+          {
+            request: {
+              method: 'GET',
+              url: `/QuestionnaireResponse?patient=${patientId}&questionnaire=Questionnaire/soap&authored=le${utcEnd}&date=ge${utcStart}&_sorted=-_lastUpdated`
+            }
+          }
+        ]
+      };
+
+      try {
+        const response = await API.post('/fhir', payload);
+        return response.data;
       } catch (error) {
         console.error('Error fetching record summary:', error);
         throw error;
