@@ -63,7 +63,7 @@ const SessionCard = ({ session }: { session: MergedSession }) => {
 
   return (
     <Link
-      href={`/record/${session.patientId}`}
+      href={`/record?patientId=${session.patientId}`}
       className='card mt-4 flex flex-col gap-2 p-4'
     >
       <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
@@ -90,7 +90,7 @@ const SessionCard = ({ session }: { session: MergedSession }) => {
   );
 };
 
-export default function SchedulePractitioner({ fhirId }: Props) {
+export default function PractitionerSchedule({ fhirId }: Props) {
   const searchParams = useSearchParams();
   const startDateParam = searchParams.get('start_date');
   const endDateParam = searchParams.get('end_date');

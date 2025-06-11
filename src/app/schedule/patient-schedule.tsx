@@ -98,7 +98,7 @@ const AppointmentCard = ({
   );
 };
 
-export default function SchedulePatient({ fhirId }: Props) {
+export default function PatientSchedule({ fhirId }: Props) {
   const { state: authState } = useAuth();
   const [keyword, setKeyword] = useState<string>('');
   const [sessionsFilter, setSessionsFilter] = useState<IUseClinicParams>({});

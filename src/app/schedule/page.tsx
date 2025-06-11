@@ -3,25 +3,23 @@
 import { LoadingSpinnerIcon } from '@/components/icons';
 import NavigationBar from '@/components/navigation-bar';
 import { useAuth } from '@/context/auth/authContext';
-import SchedulePatient from './schedule-patient';
-import SchedulePractitioner from './schedule-practitioner';
+import PatientSchedule from './patient-schedule';
+import PractitionerSchedule from './practitioner-schedule';
 
 export default function Schedule() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
-  const renderHomeContent = () => {
-    return (
-      <>
-        {authState.userInfo.role_name === 'patient' && (
-          <SchedulePatient fhirId={authState.userInfo.fhirId} />
-        )}
+  const renderHomeContent = (
+    <>
+      {authState.userInfo.role_name === 'patient' && (
+        <PatientSchedule fhirId={authState.userInfo.fhirId} />
+      )}
 
-        {authState.userInfo.role_name === 'practitioner' && (
-          <SchedulePractitioner fhirId={authState.userInfo.fhirId} />
-        )}
-      </>
-    );
-  };
+      {authState.userInfo.role_name === 'practitioner' && (
+        <PractitionerSchedule fhirId={authState.userInfo.fhirId} />
+      )}
+    </>
+  );
 
   return (
     <>
@@ -35,7 +33,7 @@ export default function Schedule() {
           />
         </div>
       ) : (
-        <>{renderHomeContent()}</>
+        renderHomeContent
       )}
     </>
   );
