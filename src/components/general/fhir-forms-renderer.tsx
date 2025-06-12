@@ -33,11 +33,13 @@ interface FhirFormsRendererProps {
   questionnaire: Questionnaire;
   isAuthenticated: Boolean;
   patientId?: string;
+  submitText?: string;
   formType?: string;
 }
 
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
-  const { questionnaire, isAuthenticated, patientId, formType } = props;
+  const { questionnaire, isAuthenticated, patientId, submitText, formType } =
+    props;
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null);
   const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -286,7 +288,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           {submitQuestionnaireIsLoading ? (
             <LoadingSpinnerIcon stroke='white' />
           ) : (
-            'Kirim'
+            submitText || 'Kirim'
           )}
         </Button>
       </div>
