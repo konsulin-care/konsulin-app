@@ -30,6 +30,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { toast } from 'react-toastify';
 import RecordFilter, { IRecordParams } from './record-filter';
 
 export default function PatientRecord() {
@@ -131,29 +132,40 @@ export default function PatientRecord() {
             );
 
             setRecords(attachProfile);
+          },
+          onError: error => {
+            setIsFiltering(false);
+            toast.error(error.message);
           }
         }
       );
     } else {
-      getRecords(patientId, {
-        onSuccess: async result => {
-          const parsed = parseRecordBundles(result);
+      getRecords(
+        { patientId },
+        {
+          onSuccess: async result => {
+            const parsed = parseRecordBundles(result);
 
-          const attachProfile = await Promise.all(
-            parsed.map(async item => {
-              if (item.type !== 'Practitioner Note') return item;
+            const attachProfile = await Promise.all(
+              parsed.map(async item => {
+                if (item.type !== 'Practitioner Note') return item;
 
-              const practitionerProfile = await getProfileById(
-                item.practitionerId,
-                'Practitioner'
-              );
-              return { ...item, practitionerProfile };
-            })
-          );
+                const practitionerProfile = await getProfileById(
+                  item.practitionerId,
+                  'Practitioner'
+                );
+                return { ...item, practitionerProfile };
+              })
+            );
 
-          setRecords(attachProfile);
+            setRecords(attachProfile);
+          },
+          onError: error => {
+            setIsFiltering(false);
+            toast.error(error.message);
+          }
         }
-      });
+      );
     }
   }, [authState, recordFilter.isUseCustomDate]);
 
@@ -268,7 +280,7 @@ export default function PatientRecord() {
                 className='mt-4 h-[100px] w-full bg-[hsl(210,40%,96.1%)]'
               />
             </div>
-          ) : filteredRecords.length > 0 ? (
+          ) : filteredRecords && filteredRecords.length > 0 ? (
             filteredRecords.map((record: IRecord) => {
               const splitTitle = record.title.split('/');
               const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];

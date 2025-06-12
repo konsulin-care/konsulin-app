@@ -11,9 +11,9 @@ type IFilterRecord = {
 };
 
 export const useRecordSummary = () => {
-  return useMutation({
+  return useMutation<IBundleResponse[], Error, { patientId: string }>({
     mutationKey: ['record-summary-patient'],
-    mutationFn: async (patientId: string) => {
+    mutationFn: async ({ patientId }) => {
       const payload = {
         type: 'batch',
         resourceType: 'Bundle',
@@ -98,9 +98,9 @@ export const useFilterRecordByDate = () => {
 };
 
 export const useRecordSummaryPractitioner = () => {
-  return useMutation({
+  return useMutation<Bundle, Error, { patientId: string }>({
     mutationKey: ['record-summary-practitioner'],
-    mutationFn: async (patientId: string) => {
+    mutationFn: async ({ patientId }) => {
       const payload = {
         type: 'batch',
         resourceType: 'Bundle',

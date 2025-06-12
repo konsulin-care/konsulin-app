@@ -34,11 +34,12 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { toast } from 'react-toastify';
 import RecordFilter, { IRecordParams } from './record-filter';
 
 export default function PractitionerRecord() {
   const searchParams = useSearchParams();
-  const patientIdParam = searchParams.get('patientId');
+  const patientId = searchParams.get('patientId');
   const [recordFilter, setRecordFilter] = useState<IRecordParams>({
     query: ''
   });
@@ -54,7 +55,6 @@ export default function PractitionerRecord() {
   const [isFiltering, setIsFiltering] = useState<boolean>(true);
 
   const debouncedQuery = useDebounce(recordFilter.query, 500);
-  const patientId = patientIdParam ? patientIdParam : authState.userInfo.fhirId;
 
   const filterTypeLabel = getTypeLabel(recordFilter.type);
 
@@ -125,6 +125,11 @@ export default function PractitionerRecord() {
    * also fetch the practitioner's profile to include in the result.
    */
   useEffect(() => {
+    if (!patientId) {
+      setIsFiltering(false);
+      return;
+    }
+
     if (recordFilter.isUseCustomDate) {
       getFilteredRecord(
         {
@@ -153,35 +158,46 @@ export default function PractitionerRecord() {
             );
 
             setRecords(attachProfile);
+          },
+          onError: error => {
+            toast.error(error.message);
+            setIsFiltering(false);
           }
         }
       );
     } else {
-      getRecords(patientId, {
-        onSuccess: async result => {
-          const parsed = parseRecordBundlePractitioner(result);
+      getRecords(
+        { patientId },
+        {
+          onSuccess: async result => {
+            const parsed = parseRecordBundlePractitioner(result);
 
-          const attachProfile = await Promise.all(
-            parsed.map(async item => {
-              if (
-                item.type !== 'SOAP Notes' &&
-                item.type !== 'Practitioner Note'
-              )
-                return item;
+            const attachProfile = await Promise.all(
+              parsed.map(async item => {
+                if (
+                  item.type !== 'SOAP Notes' &&
+                  item.type !== 'Practitioner Note'
+                )
+                  return item;
 
-              const practitionerProfile = await getProfileById(
-                item.practitionerId,
-                'Practitioner'
-              );
-              return { ...item, practitionerProfile };
-            })
-          );
+                const practitionerProfile = await getProfileById(
+                  item.practitionerId,
+                  'Practitioner'
+                );
+                return { ...item, practitionerProfile };
+              })
+            );
 
-          setRecords(attachProfile);
+            setRecords(attachProfile);
+          },
+          onError: error => {
+            toast.error(error.message);
+            setIsFiltering(false);
+          }
         }
-      });
+      );
     }
-  }, [authState, recordFilter.isUseCustomDate]);
+  }, [authState, recordFilter.isUseCustomDate, patientId]);
 
   const getPractitionerInfo = (record: IRecord) => {
     if (record.type !== 'SOAP Notes' && record.type !== 'Practitioner Note')
@@ -292,7 +308,7 @@ export default function PractitionerRecord() {
                 className='mt-4 h-[100px] w-full bg-[hsl(210,40%,96.1%)]'
               />
             </div>
-          ) : filteredRecords.length > 0 ? (
+          ) : filteredRecords && filteredRecords.length > 0 ? (
             filteredRecords.map((record: IRecord) => {
               const splitTitle = record.title.split('/');
               const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
@@ -400,7 +416,11 @@ export default function PractitionerRecord() {
               );
             })
           ) : (
-            <EmptyState className='py-16' title='No Records Found' />
+            <EmptyState
+              className='py-16'
+              title='No Records Found'
+              subtitle='Try different search, filter or select a patient'
+            />
           )}
         </div>
       </ContentWraper>
