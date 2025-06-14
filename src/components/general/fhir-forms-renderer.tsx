@@ -34,10 +34,19 @@ interface FhirFormsRendererProps {
   isAuthenticated: Boolean;
   patientId?: string;
   formType?: string;
+  role?: string;
+  practitionerId?: string;
 }
 
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
-  const { questionnaire, isAuthenticated, patientId, formType } = props;
+  const {
+    questionnaire,
+    isAuthenticated,
+    patientId,
+    formType,
+    role,
+    practitionerId
+  } = props;
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null);
   const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -116,8 +125,11 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
     setIsSubmitting(true);
 
+    const authorType = role === 'practitioner' ? 'Practitioner' : 'Patient';
+    const authorId = role === 'practitioner' ? practitionerId : patientId;
+
     const questionnaireResponse = getResponse();
-    const author = { reference: `Patient/${patientId}` };
+    const author = { reference: `${authorType}/${authorId}` };
     const subject = { reference: `Patient/${patientId}` };
 
     if (!questionnaireResponse) return;
@@ -282,7 +294,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           ''
         )}
         <Button
-          disabled={submitQuestionnaireIsLoading || requiredItemEmpty > 0}
+          disabled={
+            submitQuestionnaireIsLoading || requiredItemEmpty > 0 || !patientId
+          }
           className='w-full bg-secondary text-white'
           onClick={handleValidation}
         >

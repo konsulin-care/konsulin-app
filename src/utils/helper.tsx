@@ -446,6 +446,17 @@ export const formatTitle = (raw: string) => {
   return cleaned.toUpperCase();
 };
 
+export const formatQueryTitle = (raw: string) => {
+  if (!raw) return '-';
+
+  const withSpaces = raw.replace(/\+/g, ' ');
+
+  return withSpaces
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 export const mapAddress = (address: Address[]) => {
   if (!address || address.length === 0) return '-';
 
