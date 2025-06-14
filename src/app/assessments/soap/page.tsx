@@ -10,9 +10,6 @@ import { useQuestionnaireSoap } from '@/services/api/assessment';
 import { useEffect, useState } from 'react';
 import Participant from './participant';
 
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-
 export default function Soap() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [participantId, setParticipantId] = useState('');

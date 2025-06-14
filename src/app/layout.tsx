@@ -82,15 +82,15 @@ export default function RootLayout({
                 <QueryProvider>
                   <Suspense fallback={null}>
                     <RouteResponseCleaner />
+                    <NextTopLoader showSpinner={false} color='#13c2c2' />
+                    <ToastContainer {...toastConfig} />
+                    <div className='flex min-h-screen flex-col'>
+                      <div id='modal' />
+                      <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
+                        {children}
+                      </main>
+                    </div>
                   </Suspense>
-                  <NextTopLoader showSpinner={false} color='#13c2c2' />
-                  <ToastContainer {...toastConfig} />
-                  <div className='flex min-h-screen flex-col'>
-                    <div id='modal' />
-                    <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
-                      {children}
-                    </main>
-                  </div>
                 </QueryProvider>
               </BookingProvider>
             </AuthProvider>

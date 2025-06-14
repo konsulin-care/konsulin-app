@@ -18,25 +18,28 @@ import {
 } from '@/components/ui/drawer';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useAuth } from '@/context/auth/authContext';
 import {
   useOngoingResearch,
   usePopularAssessments,
   useRegularAssessments
 } from '@/services/api/assessment';
-import {
-  IAssessmentEntry,
-  IAssessmentResource,
-  IResearchListResource,
-  IResearchResource
-} from '@/types/assessment';
 import { customMarkdownComponents } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
+import {
+  BundleEntry,
+  FhirResource,
+  List,
+  Questionnaire,
+  ResearchStudy
+} from 'fhir/r4';
 import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import QRCode from 'react-qr-code';
 
 const dateFormat = (date: string) => {
   if (!date) return;
@@ -44,24 +47,28 @@ const dateFormat = (date: string) => {
   return format(parseISO(date), 'dd MMMM yyyy');
 };
 
-const filteredResearch = (researchArr: IAssessmentEntry[]) =>
+const filteredResearch = (researchArr: BundleEntry[]) =>
   researchArr.filter(
-    (item: IAssessmentEntry) => item.resource.resourceType === 'ResearchStudy'
+    (item: BundleEntry) => item.resource.resourceType === 'ResearchStudy'
   );
 
 export default function Assessment() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const isDrawerOpenParam = searchParams.get('isDrawerOpen') === 'true';
   const assessmentIdParam = searchParams.get('assessmentId');
+  const [currentLocation, setCurrentLocation] = useState<string>('');
 
   const [researchUrl, setResearchUrl] = useState('');
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [selectedAssessment, setSelectedAssessment] = useState<
-    IResearchResource | IAssessmentResource | IResearchListResource
+    Questionnaire | (ResearchStudy & { relatedLists: BundleEntry<List>[] })
   >(null);
   // const [query, setQuery] = useState('');
 
+  const { state: authState, isLoading: isAuthLoading } = useAuth();
   const { data: popularAssessments, isLoading: popularLoading } =
     usePopularAssessments();
   const { data: regularAssessments, isLoading: regularLoading } =
@@ -69,6 +76,8 @@ export default function Assessment() {
   const { data: research, isLoading: researchLoading } = useOngoingResearch();
   // const { data: searchResult, isLoading: searchLoading } =
   //   useSearchQuestionnaire('Five');
+
+  const isPractitioner = authState?.userInfo?.role_name === 'practitioner';
 
   useEffect(() => {
     if (isDrawerOpenParam && assessmentIdParam) {
@@ -100,7 +109,7 @@ export default function Assessment() {
    * It matches the researchId with the part of the reference after the last '/'. */
   const findListData = (researchId: string) => {
     return research.filter(
-      (item: IAssessmentEntry) =>
+      (item: BundleEntry) =>
         item.resource.resourceType === 'List' &&
         item.resource.entry.some(
           entry => entry.item.reference.split('/').pop() === researchId
@@ -108,16 +117,15 @@ export default function Assessment() {
     );
   };
 
-  const getMergedData = (
-    researchId: string,
-    researchStudy: IResearchResource
-  ) => {
+  const getMergedData = (researchId: string, researchStudy: FhirResource) => {
     const relatedLists = findListData(researchId);
 
     return { ...researchStudy, relatedLists };
   };
 
-  const handleResearchClick = mergedData => {
+  const handleResearchClick = (
+    mergedData: ResearchStudy & { relatedLists: BundleEntry<List>[] }
+  ) => {
     if (!mergedData || mergedData.relatedLists.length === 0) return;
 
     const questionnaireUrl =
@@ -132,9 +140,12 @@ export default function Assessment() {
     router.push(`?${params.toString()}`, { scroll: false });
     setSelectedAssessment(mergedData);
     setResearchUrl(questionnaireUrl);
+
+    const fullUrl = `${baseUrl}${pathname}?${params.toString()}`;
+    setCurrentLocation(fullUrl);
   };
 
-  const handleAssessmentClick = assessment => {
+  const handleAssessmentClick = (assessment: Questionnaire) => {
     if (!assessment) return;
 
     const params = new URLSearchParams(window.location.search);
@@ -142,6 +153,9 @@ export default function Assessment() {
     params.set('assessmentId', assessment.id);
     router.push(`?${params.toString()}`, { scroll: false });
     setSelectedAssessment(assessment);
+
+    const fullUrl = `${baseUrl}${pathname}?${params.toString()}`;
+    setCurrentLocation(fullUrl);
   };
 
   const handleDrawerClose = () => {
@@ -154,7 +168,58 @@ export default function Assessment() {
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
-  const renderDrawerContent = (
+  const renderDrawerPractitionerContent = (
+    <div className='flex flex-col'>
+      <DrawerHeader className='mx-auto text-[20px] font-bold'>
+        {selectedAssessment &&
+          selectedAssessment.resourceType === 'ResearchStudy' &&
+          selectedAssessment.note.length !== 0 && (
+            <Badge
+              style={{ justifySelf: 'center' }}
+              className='flex w-fit rounded-[8px] bg-secondary px-[10px] py-[4px]'
+            >
+              <div className='text-xs text-white'>
+                Estimated time: ~{selectedAssessment.note[0].text}
+              </div>
+            </Badge>
+          )}
+        <DrawerTitle className='text-center text-2xl'>
+          {selectedAssessment && selectedAssessment.title}
+        </DrawerTitle>
+      </DrawerHeader>
+
+      <DrawerDescription>
+        <QRCode
+          size={150}
+          style={{
+            height: '290px',
+            maxWidth: '100%',
+            width: '100%',
+            margin: '32px 0'
+          }}
+          value={currentLocation}
+          viewBox={`0 0 256 256`}
+        />
+      </DrawerDescription>
+
+      {selectedAssessment && (
+        <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
+          <Link
+            href={`assessments/${'relatedLists' in selectedAssessment ? researchUrl : selectedAssessment.id}`}
+          >
+            <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
+              Isi assessment untuk Pasien
+            </Button>
+          </Link>
+          <DrawerClose className='items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50'>
+            Close
+          </DrawerClose>
+        </DrawerFooter>
+      )}
+    </div>
+  );
+
+  const renderDrawerPatientContent = (
     <div className='flex flex-col'>
       <DrawerHeader className='mx-auto text-[20px] font-bold'>
         {selectedAssessment &&
@@ -275,18 +340,16 @@ export default function Assessment() {
             know.
           </div>
           <ScrollArea className='mt-2 w-full whitespace-nowrap'>
-            {researchLoading || !research ? (
+            {researchLoading || isAuthLoading ? (
               <CardLoader item={2} />
             ) : (
               <div className='flex w-max space-x-4 pb-4'>
                 {filteredResearch(research).map(
-                  (
-                    item: IAssessmentEntry & { resource: IResearchResource }
-                  ) => {
+                  (item: BundleEntry<ResearchStudy>) => {
                     const mergedData = getMergedData(
                       item.resource.id,
                       item.resource
-                    );
+                    ) as ResearchStudy & { relatedLists: List[] };
                     return (
                       <div
                         key={item.resource.id}
@@ -353,16 +416,12 @@ export default function Assessment() {
           </div>
 
           <ScrollArea className='w-full whitespace-nowrap'>
-            {popularLoading || !popularAssessments ? (
+            {popularLoading || isAuthLoading ? (
               <CardLoader item={2} />
             ) : (
               <div className='flex w-max space-x-4 pb-4'>
                 {popularAssessments.map(
-                  (
-                    assessment: IAssessmentEntry & {
-                      resource: IAssessmentResource;
-                    }
-                  ) => (
+                  (assessment: BundleEntry<Questionnaire>) => (
                     <div
                       key={assessment.resource.id}
                       className='card flex cursor-pointer flex-col gap-4 bg-white'
@@ -419,35 +478,37 @@ export default function Assessment() {
             Browse Instruments
           </div>
 
-          {regularLoading ? (
+          {regularLoading || isAuthLoading ? (
             <CardLoader item={4} />
           ) : (
             <div className='mt-4 grid grid-cols-1 gap-2 md:grid-cols-2'>
-              {regularAssessments.map((assessment: IAssessmentEntry) => (
-                <div
-                  key={assessment.resource.id}
-                  className='card item flex cursor-pointer flex-col p-2'
-                  onClick={() => {
-                    handleAssessmentClick(assessment.resource);
-                    setIsOpen(true);
-                  }}
-                >
-                  <div className='flex items-center'>
-                    <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
-                      <Image
-                        className='h-[24px] w-[24px] object-cover'
-                        src={'/images/note.svg'}
-                        width={24}
-                        height={24}
-                        alt='note'
-                      />
-                    </div>
-                    <div className='text-[12px] text-[hsla(220,9%,19%,1)]'>
-                      {assessment.resource.title}
+              {regularAssessments.map(
+                (assessment: BundleEntry<Questionnaire>) => (
+                  <div
+                    key={assessment.resource.id}
+                    className='card item flex cursor-pointer flex-col p-2'
+                    onClick={() => {
+                      handleAssessmentClick(assessment.resource);
+                      setIsOpen(true);
+                    }}
+                  >
+                    <div className='flex items-center'>
+                      <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
+                        <Image
+                          className='h-[24px] w-[24px] object-cover'
+                          src={'/images/note.svg'}
+                          width={24}
+                          height={24}
+                          alt='note'
+                        />
+                      </div>
+                      <div className='text-[12px] text-[hsla(220,9%,19%,1)]'>
+                        {assessment.resource.title}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              )}
             </div>
           )}
         </div>
@@ -455,7 +516,9 @@ export default function Assessment() {
 
       <Drawer onClose={handleDrawerClose} open={isOpen}>
         <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-          {renderDrawerContent}
+          {isPractitioner
+            ? renderDrawerPractitionerContent
+            : renderDrawerPatientContent}
         </DrawerContent>
       </Drawer>
     </>

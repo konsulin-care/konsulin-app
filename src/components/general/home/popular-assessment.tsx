@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/drawer';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { usePopularAssessments } from '@/services/api/assessment';
-import { IAssessmentEntry, IAssessmentResource } from '@/types/assessment';
 import { customMarkdownComponents } from '@/utils/helper';
+import { BundleEntry, Questionnaire } from 'fhir/r4';
 import { ChevronRightIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -72,11 +72,7 @@ export default function PopularAssessment() {
           ) : (
             <div className='flex w-max space-x-4'>
               {popularAssessments.map(
-                (
-                  assessment: IAssessmentEntry & {
-                    resource: IAssessmentResource;
-                  }
-                ) => (
+                (assessment: BundleEntry<Questionnaire>) => (
                   <Drawer key={assessment.resource.id}>
                     <DrawerTrigger
                       className='card flex w-fit shrink-0 items-center gap-2 bg-white'
