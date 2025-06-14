@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetSingleRecord } from '@/services/api/record';
-import { formatTitle } from '@/utils/helper';
 import { format } from 'date-fns';
 import { FileCheckIcon, NotepadTextIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -16,7 +15,10 @@ export default function RecordJournal({ journalId }: Props) {
   const searchParams = useSearchParams();
   const titleParam = searchParams?.get('title');
   const categoryParam = searchParams?.get('category');
-  const { data: journalData, isLoading } = useGetSingleRecord(journalId);
+  const { data: journalData, isLoading } = useGetSingleRecord({
+    id: journalId,
+    resourceType: 'Observation'
+  });
 
   const formattedDate = (date: string) => {
     return format(new Date(date), 'dd MMMM yyyy');
@@ -59,7 +61,7 @@ export default function RecordJournal({ journalId }: Props) {
               className='mr-[10px]'
               color='hsla(220,9%,19%,0.4)'
             />
-            <div>{formatTitle(journalData.valueString)}</div>
+            <div>{journalData.valueString}</div>
           </div>
 
           {journalData.note.map((item: { text: string }, index: number) => {
@@ -77,11 +79,13 @@ export default function RecordJournal({ journalId }: Props) {
           })}
 
           <Button
-            onClick={() =>
-              router.push(
-                `${pathname}/edit?category=${categoryParam}&title=${titleParam}`
-              )
-            }
+            onClick={() => {
+              const queryParams = new URLSearchParams({
+                category: categoryParam,
+                title: titleParam
+              }).toString();
+              router.push(`${pathname}/edit?${queryParams}`);
+            }}
             className='!mt-auto w-full rounded-full bg-secondary p-4 text-[14px] text-white'
           >
             Edit Journal

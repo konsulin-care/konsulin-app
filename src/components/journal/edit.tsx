@@ -33,8 +33,9 @@ export default function EditJournal({ journalId }: Props) {
   const [journalTitle, setJournalTitle] = useState<string>('');
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useUpdateJournal();
-  const { data: journalData, isLoading: isJournalLoading } =
-    useGetSingleRecord(journalId);
+  const { data: journalData, isLoading: isJournalLoading } = useGetSingleRecord(
+    { id: journalId, resourceType: 'Observation' }
+  );
 
   const handleResponseChange = (index: number, value: string) => {
     const newResponse = [...response];
