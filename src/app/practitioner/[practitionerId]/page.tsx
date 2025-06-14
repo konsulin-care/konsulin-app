@@ -28,6 +28,7 @@ import {
   ArrowRightIcon,
   CalendarDaysIcon,
   ChevronLeftIcon,
+  HeartPulse,
   HospitalIcon
 } from 'lucide-react';
 import Image from 'next/image';
@@ -192,8 +193,11 @@ export default function Practitioner({ params }: IPractitionerProps) {
                   className='text-2xl'
                 />
 
-                <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] bg-[#08979C] text-center font-normal text-white'>
-                  {detailPractitioner.organization.name}
+                <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
+                  <HeartPulse size={16} color='#08979C' fill='white' />
+                  <span className='whitespace-nowrap'>
+                    {detailPractitioner.organization.name}
+                  </span>
                 </Badge>
               </div>
               <h3 className='mt-2 text-center text-[20px] font-bold'>
