@@ -2,7 +2,7 @@ import { MergedAppointment, MergedSession } from '@/types/appointment';
 import { mergeNames } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type Props = {
   data: MergedAppointment[] | MergedSession[];
@@ -27,6 +27,27 @@ export default function UpcomingSession({ data, role }: Props) {
     setNextSession(data[0]);
   }, [data]);
 
+  const displayName = useMemo(() => {
+    if (!nextSession) return null;
+
+    const isPatient = role === 'patient';
+
+    const fullName = isPatient
+      ? mergeNames(
+          (nextSession as MergedAppointment).practitionerName,
+          (nextSession as MergedAppointment).practitionerQualification
+        )
+      : mergeNames((nextSession as MergedSession).patientName);
+
+    const email = isPatient
+      ? (nextSession as MergedAppointment).practitionerEmail
+      : (nextSession as MergedSession).patientEmail;
+
+    const result = fullName.trim() === '-' ? email : fullName;
+
+    return result;
+  }, [nextSession]);
+
   return (
     <>
       {data && nextSession && (
@@ -44,14 +65,7 @@ export default function UpcomingSession({ data, role }: Props) {
                 Upcoming Session With
               </span>
               <span className='text-left text-[14px] font-bold text-secondary'>
-                {role === 'patient'
-                  ? mergeNames(
-                      (nextSession as MergedAppointment).practitionerName,
-                      (nextSession as MergedAppointment)
-                        .practitionerQualification
-                    ) || (nextSession as MergedAppointment).practitionerEmail
-                  : mergeNames((nextSession as MergedSession).patientName) ||
-                    (nextSession as MergedSession).patientEmail}
+                {displayName}
               </span>
             </div>
             <div className='s'>
