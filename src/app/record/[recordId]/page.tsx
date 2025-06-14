@@ -1,5 +1,6 @@
 'use client';
 
+import Notfound from '@/app/not-found';
 import BackButton from '@/components/general/back-button';
 import Header from '@/components/header';
 import { formatTitle } from '@/utils/helper';
@@ -19,6 +20,14 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
   const titleParam = searchParams.get('title');
   const formattedTitle = formatTitle(titleParam);
 
+  const isValidCategory = [1, 2, 3, 4].includes(category);
+  const isValidTitle =
+    typeof titleParam === 'string' && titleParam.trim() !== '';
+
+  if (!isValidTitle || !isValidCategory) {
+    return <Notfound />;
+  }
+
   const pageTitle = (category: number) => {
     switch (category) {
       case 1:
@@ -26,7 +35,7 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
       case 2:
         return 'Exercise Result';
       case 3:
-        return 'SOAP Result Details';
+        return 'SOAP Detail';
       case 4:
         return 'Journal Detail';
     }
@@ -41,7 +50,7 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
       case 2:
         return <RecordExercise />;
       case 3:
-        return <RecordSoap soapId={params.recordId} title={formattedTitle} />;
+        return <RecordSoap soapId={params.recordId} title={titleParam} />;
       case 4:
         return <RecordJournal journalId={params.recordId} />;
     }

@@ -1,5 +1,7 @@
 'use client';
 
+import EditSoap from '@/app/assessments/soap/edit-soap';
+import Notfound from '@/app/not-found';
 import BackButton from '@/components/general/back-button';
 import Header from '@/components/header';
 import EditJournal from '@/components/journal/edit';
@@ -12,16 +14,27 @@ export interface IDetailRecordParams {
 export default function EditRecordDetail({ params }: IDetailRecordParams) {
   const searchParams = useSearchParams();
   const category = Number(searchParams.get('category'));
+  const titleParam = searchParams.get('title');
 
   const pageTitle = (category: number) => {
     switch (category) {
+      case 3:
+        return 'SOAP Report';
       case 4:
         return 'Journaling';
     }
   };
 
+  const isValidCategory = [1, 2, 3, 4].includes(category);
+
+  if (!isValidCategory) {
+    return <Notfound />;
+  }
+
   const renderContent = (category: number) => {
     switch (category) {
+      case 3:
+        return <EditSoap soapId={params.recordId} title={titleParam} />;
       case 4:
         return <EditJournal journalId={params.recordId} />;
     }

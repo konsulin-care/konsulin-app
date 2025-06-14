@@ -55,7 +55,7 @@ export default function Assessment() {
   const isDrawerOpenParam = searchParams.get('isDrawerOpen') === 'true';
   const assessmentIdParam = searchParams.get('assessmentId');
 
-  const [url, setUrl] = useState('');
+  const [researchUrl, setResearchUrl] = useState('');
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [selectedAssessment, setSelectedAssessment] = useState<
     IResearchResource | IAssessmentResource | IResearchListResource
@@ -131,7 +131,7 @@ export default function Assessment() {
 
     router.push(`?${params.toString()}`, { scroll: false });
     setSelectedAssessment(mergedData);
-    setUrl(questionnaireUrl);
+    setResearchUrl(questionnaireUrl);
   };
 
   const handleAssessmentClick = assessment => {
@@ -206,7 +206,7 @@ export default function Assessment() {
       {selectedAssessment && (
         <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
           {'relatedLists' in selectedAssessment ? (
-            <Link href={`assessments/${url}`}>
+            <Link href={`assessments/${researchUrl}`}>
               <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
                 Mulai
               </Button>

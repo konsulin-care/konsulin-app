@@ -29,6 +29,7 @@ type DropdownProps = {
   value: string;
   placeholder: string;
   loading?: boolean;
+  disabled?: boolean;
   onSelect: (value: DropdownOption) => void;
 };
 
@@ -37,7 +38,8 @@ export default function Participant({
   value,
   onSelect,
   placeholder,
-  loading
+  loading,
+  disabled
 }: DropdownProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [triggerWidth, setTriggerWidth] = useState<number>(0);
@@ -103,7 +105,7 @@ export default function Participant({
               ref={triggerRef}
               variant='outline'
               className='h-[56px] w-full justify-start bg-white'
-              disabled={loading}
+              disabled={loading || disabled}
             >
               <UsersIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
               <div className='flex w-full items-center justify-between'>
@@ -116,6 +118,7 @@ export default function Participant({
                     />
                   ) : (
                     (list &&
+                      list.length > 0 &&
                       list.find(option => option.patientId === value)
                         ?.patientName) ||
                     placeholder
@@ -141,7 +144,7 @@ export default function Participant({
                 Pasien Baru
               </div>
             </DropdownItem>
-            {list ? (
+            {list && list.length > 0 ? (
               list.map(item => (
                 <DropdownItem
                   key={item.patientId}
