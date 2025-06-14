@@ -27,6 +27,7 @@ import {
   mergeNames,
   parseRecordBundlePractitioner
 } from '@/utils/helper';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -43,20 +44,73 @@ export default function PractitionerRecord() {
   const [recordFilter, setRecordFilter] = useState<IRecordParams>({
     query: ''
   });
-  const { state: authState, isLoading: isAuthLoading } = useAuth();
-  const { mutate: getRecords, isLoading: isRecordLoading } =
+  const { isLoading: isAuthLoading } = useAuth();
+  const { mutateAsync: getRecords, isLoading: isRecordLoading } =
     useRecordSummaryPractitioner();
-  const { mutate: getFilteredRecord, isLoading: isFilteredRecordLoading } =
+  const { mutateAsync: getFilteredRecord, isLoading: isFilteredRecordLoading } =
     useFilterRecordPractitionerByDate();
-  const [records, setRecords] = useState<IRecord[] | null>(null);
   const [filteredRecords, setFilteredRecords] = useState<IRecord[] | null>(
     null
   );
   const [isFiltering, setIsFiltering] = useState<boolean>(true);
+  const queryClient = useQueryClient();
 
   const debouncedQuery = useDebounce(recordFilter.query, 500);
 
   const filterTypeLabel = getTypeLabel(recordFilter.type);
+
+  /*
+   * fetch patient records. if a record is a 'SOAP Notes',
+   * also fetch the practitioner's profile to include in the result.
+   */
+  const fetchRecords = async () => {
+    if (!patientId) {
+      setIsFiltering(false);
+      return;
+    }
+
+    const result = recordFilter.isUseCustomDate
+      ? await getFilteredRecord({
+          patientId,
+          startDate: format(recordFilter.start_date, 'yyyy-MM-dd'),
+          endDate: format(recordFilter.end_date, 'yyyy-MM-dd')
+        })
+      : await getRecords({ patientId });
+
+    const parsed = parseRecordBundlePractitioner(result);
+
+    const attachProfile = await Promise.all(
+      parsed.map(async item => {
+        if (item.type !== 'Practitioner Note' && item.type !== 'SOAP Notes')
+          return item;
+
+        const practitionerProfile = await queryClient.fetchQuery({
+          queryKey: ['profile-practitioner', item.practitionerId],
+          queryFn: () => getProfileById(item.practitionerId, 'Practitioner')
+        });
+
+        return { ...item, practitionerProfile };
+      })
+    );
+
+    return attachProfile;
+  };
+
+  const { data: records, isLoading: isQueryLoading } = useQuery({
+    queryKey: [
+      'practitioner-records',
+      patientId,
+      recordFilter.isUseCustomDate,
+      recordFilter.start_date,
+      recordFilter.end_date
+    ],
+    queryFn: fetchRecords,
+    enabled: !!patientId,
+    onError: (error: Error) => {
+      toast.error(error.message);
+      setIsFiltering(false);
+    }
+  });
 
   /**
    * filters and sorts patient previous records based on:
@@ -97,7 +151,7 @@ export default function PractitionerRecord() {
         if (debouncedQuery) {
           if (Array.isArray(record.result)) {
             matchesQuery = record.result.some(
-              section =>
+              (section: { label: string; value: string }) =>
                 section.label === 'Catatan Edukasi Pasien' &&
                 section.value?.toLowerCase().includes(queryLower)
             );
@@ -119,85 +173,6 @@ export default function PractitionerRecord() {
     setFilteredRecords(result);
     setIsFiltering(false);
   }, [records, recordFilter, debouncedQuery]);
-
-  /*
-   * fetch patient records. if a record is a 'SOAP Notes',
-   * also fetch the practitioner's profile to include in the result.
-   */
-  useEffect(() => {
-    if (!patientId) {
-      setIsFiltering(false);
-      return;
-    }
-
-    if (recordFilter.isUseCustomDate) {
-      getFilteredRecord(
-        {
-          patientId,
-          startDate: format(recordFilter.start_date, 'yyyy-MM-dd'),
-          endDate: format(recordFilter.end_date, 'yyyy-MM-dd')
-        },
-        {
-          onSuccess: async result => {
-            const parsed = parseRecordBundlePractitioner(result);
-
-            const attachProfile = await Promise.all(
-              parsed.map(async item => {
-                if (
-                  item.type !== 'SOAP Notes' &&
-                  item.type !== 'Practitioner Note'
-                )
-                  return item;
-
-                const practitionerProfile = await getProfileById(
-                  item.practitionerId,
-                  'Practitioner'
-                );
-                return { ...item, practitionerProfile };
-              })
-            );
-
-            setRecords(attachProfile);
-          },
-          onError: error => {
-            toast.error(error.message);
-            setIsFiltering(false);
-          }
-        }
-      );
-    } else {
-      getRecords(
-        { patientId },
-        {
-          onSuccess: async result => {
-            const parsed = parseRecordBundlePractitioner(result);
-
-            const attachProfile = await Promise.all(
-              parsed.map(async item => {
-                if (
-                  item.type !== 'SOAP Notes' &&
-                  item.type !== 'Practitioner Note'
-                )
-                  return item;
-
-                const practitionerProfile = await getProfileById(
-                  item.practitionerId,
-                  'Practitioner'
-                );
-                return { ...item, practitionerProfile };
-              })
-            );
-
-            setRecords(attachProfile);
-          },
-          onError: error => {
-            toast.error(error.message);
-            setIsFiltering(false);
-          }
-        }
-      );
-    }
-  }, [authState, recordFilter.isUseCustomDate, patientId]);
 
   const getPractitionerInfo = (record: IRecord) => {
     if (record.type !== 'SOAP Notes' && record.type !== 'Practitioner Note')
@@ -297,11 +272,17 @@ export default function PractitionerRecord() {
           <div className='text-[14px] font-bold text-[hsla(220,9%,19%,0.6)]'>
             Previous Record Summary
           </div>
-
-          {isAuthLoading ||
-          isRecordLoading ||
-          isFilteredRecordLoading ||
-          isFiltering ? (
+          {!patientId ? (
+            <EmptyState
+              className='py-16'
+              title='No Records Found'
+              subtitle='Try different search, filter or select a patient'
+            />
+          ) : isAuthLoading ||
+            isRecordLoading ||
+            isFilteredRecordLoading ||
+            isFiltering ||
+            isQueryLoading ? (
             <div className='flex flex-col gap-2'>
               <Skeleton
                 count={4}

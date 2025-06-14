@@ -364,7 +364,7 @@ export default function Clinician({ fhirId }: Props) {
       ) : null}
 
       {/* display practitioner's basic information */}
-      {isProfileLoading || isAuthLoading || !profileData ? (
+      {isProfileLoading || isAuthLoading ? (
         <Skeleton className='my-4 h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
       ) : (
         <div className='my-4'>
@@ -372,7 +372,7 @@ export default function Clinician({ fhirId }: Props) {
             isRadiusIcon
             initials={initials}
             backgroundColor={backgroundColor}
-            iconUrl={profileData.photo?.[0].url}
+            iconUrl={profileData?.photo?.[0].url}
             title='General Information'
             subTitle={displayName}
             buttonText='Edit Profile'

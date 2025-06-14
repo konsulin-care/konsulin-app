@@ -14,11 +14,12 @@ import {
   mergeNames,
   parseRecordBundles
 } from '@/utils/helper';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { toast } from 'react-toastify';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import { Pagination } from 'swiper/modules';
@@ -30,44 +31,48 @@ import PopularAssessment from '../components/general/home/popular-assessment';
 
 export default function HomeContentPatient() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
-  const { mutate: getRecords, isLoading: isRecordLoading } = useRecordSummary();
-  const [isPageLoading, setIsPageLoading] = useState(false);
-  const [records, setRecords] = useState<IRecord[] | null>(null);
+  const { mutateAsync: getRecords, isLoading: isRecordLoading } =
+    useRecordSummary();
+  const patientId = authState?.userInfo?.fhirId;
+  const queryClient = useQueryClient();
 
   /*
    * fetch patient records. if a record is a 'Practitioner Note',
    * also fetch the practitioner's profile to include in the result.
    */
-  useEffect(() => {
-    if (authState.userInfo.role_name === 'patient') {
-      getRecords(authState.userInfo.fhirId, {
-        onSuccess: async result => {
-          setIsPageLoading(true);
-          const parsed = parseRecordBundles(result);
+  const fetchRecords = async () => {
+    const result = await getRecords({ patientId });
 
-          const attachProfile = await Promise.all(
-            parsed.map(async item => {
-              if (item.type !== 'Practitioner Note') return item;
+    const parsed = parseRecordBundles(result);
 
-              const practitionerProfile = await getProfileById(
-                item.practitionerId,
-                'Practitioner'
-              );
-              return { ...item, practitionerProfile };
-            })
-          );
+    const attachProfile = await Promise.all(
+      parsed.map(async item => {
+        if (item.type !== 'Practitioner Note') return item;
 
-          const sorted = attachProfile.sort(
-            (a, b) =>
-              new Date(b.lastUpdated).getTime() -
-              new Date(a.lastUpdated).getTime()
-          );
-          setRecords(sorted);
-          setIsPageLoading(false);
-        }
-      });
+        const practitionerProfile = await queryClient.fetchQuery({
+          queryKey: ['profile-practitioner', item.practitionerId],
+          queryFn: () => getProfileById(item.practitionerId, 'Practitioner')
+        });
+
+        return { ...item, practitionerProfile };
+      })
+    );
+
+    const sorted = attachProfile.sort(
+      (a, b) =>
+        new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+    );
+
+    return sorted;
+  };
+
+  const { data: records, isLoading: isQueryLoading } = useQuery({
+    queryKey: ['patient-records', patientId],
+    queryFn: fetchRecords,
+    onError: (error: Error) => {
+      toast.error(error.message);
     }
-  }, [authState]);
+  });
 
   const getPractitionerInfo = (record: IRecord) => {
     if (record.type !== 'Practitioner Note')
@@ -106,7 +111,7 @@ export default function HomeContentPatient() {
           </Link>
         </div>
 
-        {isAuthLoading || isRecordLoading || isPageLoading ? (
+        {isAuthLoading || isRecordLoading || isQueryLoading ? (
           <Skeleton
             count={1}
             className='h-[100px] w-full bg-[hsl(210,40%,96.1%)]'
@@ -144,12 +149,15 @@ export default function HomeContentPatient() {
                   record.type === 'QuestionnaireResponse'
                     ? formatTitle(title)
                     : title;
+
                 const recordId = record.id.split('/')[1];
                 const formattedDate = format(
                   new Date(record.lastUpdated),
                   'dd/MM/yyyy'
                 );
-                const cleanDescription = (record.result || '\\-').replace(
+
+                const result = record.result as string;
+                const cleanDescription = (result || '\\-').replace(
                   /\n\n/g,
                   '. '
                 );

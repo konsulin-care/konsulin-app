@@ -144,14 +144,14 @@ export default function Patient({ fhirId }: Props) {
           <ChevronRightIcon color='white' width={24} height={24} />
         </div>
       </div>
-      {isProfileLoading || isAuthLoading || !profileData ? (
+      {isProfileLoading || isAuthLoading ? (
         <Skeleton className='h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
       ) : (
         <InformationDetail
           isRadiusIcon
           initials={initials}
           backgroundColor={backgroundColor}
-          iconUrl={profileData.photo?.[0].url}
+          iconUrl={profileData?.photo?.[0].url}
           title={authState.userInfo.fullname}
           subTitle={authState.userInfo.email}
           buttonText='Edit Profile'

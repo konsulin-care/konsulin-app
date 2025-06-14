@@ -24,6 +24,7 @@ import {
   mergeNames,
   parseRecordBundles
 } from '@/utils/helper';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -38,10 +39,10 @@ export default function PatientRecord() {
     query: ''
   });
   const { state: authState, isLoading: isAuthLoading } = useAuth();
-  const { mutate: getRecords, isLoading: isRecordLoading } = useRecordSummary();
-  const { mutate: getFilteredRecord, isLoading: isFilteredRecordLoading } =
+  const { mutateAsync: getRecords, isLoading: isRecordLoading } =
+    useRecordSummary();
+  const { mutateAsync: getFilteredRecord, isLoading: isFilteredRecordLoading } =
     useFilterRecordByDate();
-  const [records, setRecords] = useState<IRecord[] | null>(null);
   const [filteredRecords, setFilteredRecords] = useState<IRecord[] | null>(
     null
   );
@@ -49,8 +50,55 @@ export default function PatientRecord() {
 
   const debouncedQuery = useDebounce(recordFilter.query, 500);
   const patientId = authState.userInfo.fhirId;
+  const queryClient = useQueryClient();
 
   const filterTypeLabel = getTypeLabel(recordFilter.type);
+
+  /*
+   * fetch patient records. if a record is a 'Practitioner Note',
+   * also fetch the practitioner's profile to include in the result.
+   */
+  const fetchRecords = async () => {
+    const result = recordFilter.isUseCustomDate
+      ? await getFilteredRecord({
+          patientId,
+          startDate: format(recordFilter.start_date, 'yyyy-MM-dd'),
+          endDate: format(recordFilter.end_date, 'yyyy-MM-dd')
+        })
+      : await getRecords({ patientId });
+
+    const parsed = parseRecordBundles(result);
+
+    const attachProfile = await Promise.all(
+      parsed.map(async item => {
+        if (item.type !== 'Practitioner Note') return item;
+
+        const practitionerProfile = await queryClient.fetchQuery({
+          queryKey: ['profile-practitioner', item.practitionerId],
+          queryFn: () => getProfileById(item.practitionerId, 'Practitioner')
+        });
+
+        return { ...item, practitionerProfile };
+      })
+    );
+
+    return attachProfile;
+  };
+
+  const { data: records, isLoading: isQueryLoading } = useQuery({
+    queryKey: [
+      'patient-records',
+      patientId,
+      recordFilter.isUseCustomDate,
+      recordFilter.start_date,
+      recordFilter.end_date
+    ],
+    queryFn: fetchRecords,
+    onError: (error: Error) => {
+      toast.error(error.message);
+      setIsFiltering(false);
+    }
+  });
 
   /**
    * filters and sorts patient previous records based on:
@@ -102,72 +150,6 @@ export default function PatientRecord() {
     setFilteredRecords(result);
     setIsFiltering(false);
   }, [records, recordFilter, debouncedQuery]);
-
-  /*
-   * fetch patient records. if a record is a 'Practitioner Note',
-   * also fetch the practitioner's profile to include in the result.
-   */
-  useEffect(() => {
-    if (recordFilter.isUseCustomDate) {
-      getFilteredRecord(
-        {
-          patientId,
-          startDate: format(recordFilter.start_date, 'yyyy-MM-dd'),
-          endDate: format(recordFilter.end_date, 'yyyy-MM-dd')
-        },
-        {
-          onSuccess: async result => {
-            const parsed = parseRecordBundles(result);
-
-            const attachProfile = await Promise.all(
-              parsed.map(async item => {
-                if (item.type !== 'Practitioner Note') return item;
-
-                const practitionerProfile = await getProfileById(
-                  item.practitionerId,
-                  'Practitioner'
-                );
-                return { ...item, practitionerProfile };
-              })
-            );
-
-            setRecords(attachProfile);
-          },
-          onError: error => {
-            setIsFiltering(false);
-            toast.error(error.message);
-          }
-        }
-      );
-    } else {
-      getRecords(
-        { patientId },
-        {
-          onSuccess: async result => {
-            const parsed = parseRecordBundles(result);
-
-            const attachProfile = await Promise.all(
-              parsed.map(async item => {
-                if (item.type !== 'Practitioner Note') return item;
-
-                const practitionerProfile = await getProfileById(
-                  item.practitionerId,
-                  'Practitioner'
-                );
-                return { ...item, practitionerProfile };
-              })
-            );
-
-            setRecords(attachProfile);
-          },
-          onError: error => {
-            setIsFiltering(false);
-            toast.error(error.message);
-          }
-        }
-      );
-    }
-  }, [authState, recordFilter.isUseCustomDate]);
 
   const getPractitionerInfo = (record: IRecord) => {
     if (record.type !== 'Practitioner Note')
@@ -273,7 +255,8 @@ export default function PatientRecord() {
           {isAuthLoading ||
           isRecordLoading ||
           isFilteredRecordLoading ||
-          isFiltering ? (
+          isFiltering ||
+          isQueryLoading ? (
             <div className='flex flex-col gap-2'>
               <Skeleton
                 count={4}
