@@ -63,6 +63,26 @@ export const useGetAllSessions = ({ practitionerId }) => {
   });
 };
 
+export const useGetTodaySessions = ({
+  practitionerId,
+  dateReference,
+  enabled = true
+}) => {
+  const { utcStart, utcEnd } = getUtcDayRange(dateReference);
+
+  return useQuery({
+    queryKey: ['today-sessions'],
+    queryFn: () =>
+      API.get(
+        `/fhir/Appointment?_elements=appointmentType,participant,slot&practitioner=${practitionerId}&slot.start=ge${utcStart}&slot.start=le${utcEnd}&_include=Appointment:patient`
+      ),
+    select: response => {
+      return response.data || null;
+    },
+    enabled: !!dateReference && !!practitionerId && enabled
+  });
+};
+
 export const useCreateAppointment = () => {
   return useMutation({
     mutationKey: ['create-appointments'],

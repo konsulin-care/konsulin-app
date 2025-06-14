@@ -184,13 +184,20 @@ export const useFilterRecordPractitionerByDate = () => {
   });
 };
 
-export const useGetSingleRecord = (id: string) => {
+export const useGetSingleRecord = ({
+  id,
+  resourceType
+}: {
+  id: string;
+  resourceType: 'Observation' | 'QuestionnaireResponse';
+}) => {
   return useQuery({
     queryKey: ['single-record', id],
-    queryFn: () => API.get(`/fhir/Observation/${id}`),
+    queryFn: () => API.get(`/fhir/${resourceType}/${id}`),
     select: response => {
       return response.data || null;
-    }
+    },
+    enabled: !!id && !!resourceType
   });
 };
 
