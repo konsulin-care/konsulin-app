@@ -163,8 +163,6 @@ export function handlePayloadSend(
         }
       > = {};
 
-      let roleHasData = false;
-
       for (const [day, forms] of Object.entries(formsState)) {
         // convert to FHIR day format (e.g., "mon")
         const mappedDay = dayMapping[day];
@@ -179,8 +177,6 @@ export function handlePayloadSend(
               time.fromTime !== '--:--' &&
               time.toTime !== '--:--'
             ) {
-              roleHasData = true;
-
               /* group time ranges by "from-to" key to consolidate identical time blocks */
               const timeKey = `${toFullTime(time.fromTime)}-${toFullTime(time.toTime)}`;
 
@@ -204,10 +200,11 @@ export function handlePayloadSend(
         });
       }
 
-      if (!roleHasData) return null;
+      const { organizationData, invoiceData, scheduleData, ...cleanRole } =
+        role;
 
       return {
-        ...role,
+        ...cleanRole,
         availableTime: Object.values(timeGroups)
       };
     })

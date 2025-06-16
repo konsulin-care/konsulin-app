@@ -230,10 +230,7 @@ export default function Clinician({ fhirId }: Props) {
       }
     });
 
-    setGroupedByFirmAndDay(prevState => ({
-      ...prevState,
-      ...newGroupedByFirmAndDay
-    }));
+    setGroupedByFirmAndDay(newGroupedByFirmAndDay);
   }, [practitionerRolesData]);
 
   const organizationWithPrice = Array.isArray(activeFirms)
@@ -344,6 +341,7 @@ export default function Clinician({ fhirId }: Props) {
       : authState.userInfo.fullname;
 
   const hasData = Object.keys(groupedByFirmAndDay).length > 0;
+
   return (
     <>
       {/* display practitioner's upcoming sessions */}
@@ -408,13 +406,13 @@ export default function Clinician({ fhirId }: Props) {
         className={`mt-4 flex flex-col items-start justify-start rounded-[16px] bg-[#F9F9F9] ${hasData ? 'pt-4' : 'pt-0'}`}
       >
         <div className='w-full px-4'>
-          {Object.keys(groupedByFirmAndDay).map((firm, index) => (
-            <div key={index}>
-              <div className='mb-2 text-start font-bold'>{firm}</div>
-              {groupedByFirmAndDay[firm].availability &&
-                Object.keys(groupedByFirmAndDay[firm].availability).map(day => {
-                  const timeRanges =
-                    groupedByFirmAndDay[firm].availability[day] || [];
+          {Object.keys(groupedByFirmAndDay).map((firm, index) => {
+            const availability = groupedByFirmAndDay[firm].availability;
+            return (
+              <div key={index}>
+                <div className='mb-2 text-start font-bold'>{firm}</div>
+                {Object.keys(availability).map(day => {
+                  const timeRanges = availability[day] || [];
                   const tags = timeRanges.map(
                     (timeRange: TimeRange) =>
                       `${day}: ${timeRange.fromTime} - ${timeRange.toTime}`
@@ -429,8 +427,9 @@ export default function Clinician({ fhirId }: Props) {
                     </div>
                   );
                 })}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
 
         <div className='flex w-full flex-col justify-between rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
