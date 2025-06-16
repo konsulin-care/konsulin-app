@@ -299,7 +299,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         )}
         <Button
           disabled={
-            submitQuestionnaireIsLoading || requiredItemEmpty > 0 || !patientId
+            submitQuestionnaireIsLoading ||
+            requiredItemEmpty > 0 ||
+            (role === 'practitioner' && !patientId)
           }
           className='w-full bg-secondary text-white'
           onClick={handleValidation}
