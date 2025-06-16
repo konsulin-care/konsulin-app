@@ -93,7 +93,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
     const email = practitioner.telecom?.find(item => item.system === 'email');
 
     localStorage.setItem(
-      `practitioner-${practitioner.id}`,
+      'selected_practitioner',
       JSON.stringify({
         roleId: practitioner.practitionerRole.id,
         name: practitioner.name,
@@ -267,7 +267,6 @@ export default function DetailClinic({ params }: IDetailClinic) {
         ) : filteredPractitioners.length > 0 ? (
           <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
             {practitionersData.map((practitioner: IPractitioner) => {
-              console.log('practitioner', practitioner);
               const displayName = mergeNames(
                 practitioner.name,
                 practitioner.qualification
