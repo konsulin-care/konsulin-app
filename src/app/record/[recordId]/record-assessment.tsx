@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { getFromLocalStorage } from '@/lib/utils';
 import { useQuestionnaireResponse } from '@/services/api/assessment';
+import { formatQueryTitle } from '@/utils/helper';
 import { QuestionnaireResponseItem } from 'fhir/r4';
 import { LinkIcon, NotepadTextIcon, UsersIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -40,7 +41,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
   const [scoreList, setScoreList] = useState([]);
   const [currentLocation, setCurrentLocation] = useState<string>('');
   const [colorMap, setColorMap] = useState({});
-  const { state: authState } = useAuth();
+  const { state: authState, isLoading: isAuthLoading } = useAuth();
 
   useEffect(() => {
     const savedColorMap = getFromLocalStorage('result-table-colors');
@@ -151,55 +152,58 @@ export default function RecordAssessment({ recordId, title }: Props) {
         </div>
         <div className='text-[10px] text-muted'>Assessment - User</div>
       </div>
-      <div className='card !mt-0 mb-4 flex items-center'>
-        <UsersIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
-        {authState.isAuthenticated && authState.userInfo
-          ? authState.userInfo.fullname || authState.userInfo.email
-          : 'Guest'}
-      </div>
+      {isAuthLoading ? (
+        <Skeleton className='!mt-0 h-[60px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+      ) : (
+        <div className='card !mt-0 mb-4 flex items-center'>
+          <UsersIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
+          {authState.isAuthenticated && authState.userInfo
+            ? authState.userInfo.fullname || authState.userInfo.email
+            : 'Guest'}
+        </div>
+      )}
       <div className='card mb-4 flex items-center'>
         <NotepadTextIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
-        {title}
+        {formatQueryTitle(title)}
       </div>
 
       <div className='mb-4'>
         <div className='text-12 mb-2 text-muted'>Result Brief</div>
-        <div className='card'>
-          {questionnaireResponseIsLoading ? (
-            <div className='flex flex-col gap-3'>
-              <Skeleton count={3} className='h-[15px] w-full' />
-            </div>
-          ) : (
+
+        {questionnaireResponseIsLoading ? (
+          <Skeleton className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+        ) : (
+          <div className='card'>
             <ReactMarkdown>
               {questionnaireResponse && getResultBrief()}
             </ReactMarkdown>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <div className='mb-4'>
         <div className='text-12 mb-2 text-muted'>Result Tables</div>
-        <div className='space-y-2 rounded-lg bg-[#F9F9F9] p-4'>
-          {questionnaireResponseIsLoading || !scoreList ? (
-            <div className='flex flex-col gap-3'>
-              <Skeleton count={2} className='h-[15px] w-full' />
-            </div>
-          ) : (
-            scoreList.map((item: IScore) => {
-              const randomColor = getColor(item.name);
-              return (
-                <div
-                  key={item.name}
-                  className='grid grid-cols-[170px_1fr_30px] items-center gap-3'
-                >
-                  <span className='text-wrap break-words'>{item.name}</span>
-                  <Progress value={item.score} color={randomColor} />
-                  <span className='text-sm'>{item.percentage}%</span>
-                </div>
-              );
-            })
-          )}
-        </div>
+
+        {questionnaireResponseIsLoading ? (
+          <Skeleton className='h-[50px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+        ) : (
+          <div className='space-y-2 rounded-lg bg-[#F9F9F9] p-4'>
+            {scoreList &&
+              scoreList.map((item: IScore) => {
+                const randomColor = getColor(item.name);
+                return (
+                  <div
+                    key={item.name}
+                    className='grid grid-cols-[170px_1fr_30px] items-center gap-3'
+                  >
+                    <span className='text-wrap break-words'>{item.name}</span>
+                    <Progress value={item.score} color={randomColor} />
+                    <span className='text-sm'>{item.percentage}%</span>
+                  </div>
+                );
+              })}
+          </div>
+        )}
       </div>
 
       <div className='mb-4 flex items-center space-x-2 rounded-lg bg-[#F9F9F9] p-4'>

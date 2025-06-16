@@ -8,10 +8,16 @@ export type IRecord = {
   type: string;
   id: string;
   title: string;
-  result: string;
+  result: string | ISoapSection[];
   lastUpdated: string;
   practitionerId?: string;
   practitionerProfile?: Practitioner;
+};
+
+export type ISoapSection = {
+  section: string;
+  label: string;
+  value: string;
 };
 
 export type IJournal = {

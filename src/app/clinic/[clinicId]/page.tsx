@@ -93,7 +93,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
     const email = practitioner.telecom?.find(item => item.system === 'email');
 
     localStorage.setItem(
-      `practitioner-${practitioner.id}`,
+      'selected_practitioner',
       JSON.stringify({
         roleId: practitioner.practitionerRole.id,
         name: practitioner.name,
@@ -174,6 +174,13 @@ export default function DetailClinic({ params }: IDetailClinic) {
     });
   }, [practitionersData, practitionerFilter, keyword]);
 
+  const displayOrganizationName = useMemo(() => {
+    if (!clinic || clinic?.resource?.resourceType !== 'Organization')
+      return '-';
+
+    return clinic.resource?.name ?? '-';
+  }, [clinic]);
+
   return (
     <>
       <Header>
@@ -194,9 +201,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
         />
 
         <h3 className='mt-2 text-center text-[20px] font-bold'>
-          {clinic &&
-            clinic.resource.resourceType === 'Organization' &&
-            clinic.resource.name}
+          {displayOrganizationName}
         </h3>
 
         <div className='card mt-2 border-0 bg-[#F9F9F9] p-4 text-[12px]'>
@@ -290,7 +295,9 @@ export default function DetailClinic({ params }: IDetailClinic) {
                     />
                     <Badge className='absolute bottom-0 flex h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
                       <HeartPulse size={16} color='#08979C' fill='white' />
-                      <span>Konsulin</span>
+                      <span className='whitespace-nowrap'>
+                        {displayOrganizationName}
+                      </span>
                     </Badge>
                   </div>
                   <div className='mt-2 text-center font-bold text-primary'>

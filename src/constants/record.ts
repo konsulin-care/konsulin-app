@@ -10,5 +10,9 @@ export const typeMappings = {
   'Practitioner Note': {
     text: 'SOAP',
     category: 3
+  },
+  'SOAP Notes': {
+    text: 'SOAP',
+    category: 3
   }
 };

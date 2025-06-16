@@ -12,7 +12,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { IUseClinicParams } from '@/services/clinic';
-import { addDays, endOfWeek, format, startOfWeek, subDays } from 'date-fns';
+import {
+  addDays,
+  addWeeks,
+  endOfDay,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+  subDays,
+  subMonths,
+  subWeeks
+} from 'date-fns';
 import { useEffect, useState } from 'react';
 const CONTENT_DEFAULT = 0;
 const CONTENT_CUSTOM = 1;
@@ -23,22 +37,22 @@ const filterContentListUpcomingDate = [
   {
     label: 'Today',
     value: {
-      start: today,
-      end: today
+      start: startOfDay(today),
+      end: endOfDay(today)
     }
   },
   {
     label: 'This Week',
     value: {
-      start: addDays(startOfWeek(today), 1),
-      end: addDays(endOfWeek(today), 1)
+      start: startOfWeek(today, { weekStartsOn: 1 }),
+      end: endOfWeek(today, { weekStartsOn: 1 })
     }
   },
   {
     label: 'Next Week',
     value: {
-      start: addDays(today, 8),
-      end: addDays(today, 14)
+      start: startOfWeek(addWeeks(today, 1), { weekStartsOn: 1 }),
+      end: endOfWeek(addWeeks(today, 1), { weekStartsOn: 1 })
     }
   }
 ];
@@ -47,22 +61,22 @@ const filterContentListPastDate = [
   {
     label: 'Today',
     value: {
-      start: today,
-      end: today
+      start: startOfDay(today),
+      end: endOfDay(today)
     }
   },
   {
     label: 'Past Week',
     value: {
-      start: subDays(today, 7),
-      end: subDays(today, 1)
+      start: startOfWeek(subWeeks(today, 1), { weekStartsOn: 1 }),
+      end: endOfWeek(subWeeks(today, 1), { weekStartsOn: 1 })
     }
   },
   {
     label: 'Past Month',
     value: {
-      start: subDays(today, 28),
-      end: subDays(today, 1)
+      start: startOfMonth(subMonths(today, 1)),
+      end: endOfMonth(subMonths(today, 1))
     }
   }
 ];
@@ -105,7 +119,7 @@ const filterContentListTime = [
   }
 ];
 
-export default function SessionFilter({ onChange, type }) {
+export default function SessionFilter({ onChange, type, initialFilter }) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
@@ -124,6 +138,30 @@ export default function SessionFilter({ onChange, type }) {
     !filter.end_date &&
     !filter.start_time &&
     !filter.end_time;
+
+  useEffect(() => {
+    if (initialFilter.start_date && initialFilter.end_date) {
+      handleFilterChange('start_date', initialFilter.start_date);
+      handleFilterChange('end_date', initialFilter.end_date);
+
+      const allPresetDates = [
+        ...filterContentListUpcomingDate,
+        ...filterContentListPastDate
+      ];
+
+      const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
+
+      const matchedPreset = allPresetDates.some(preset => {
+        return (
+          formatDate(preset.value.start) ===
+            formatDate(initialFilter.start_date) &&
+          formatDate(preset.value.end) === formatDate(initialFilter.end_date)
+        );
+      });
+
+      setIsUseCustomDate(!matchedPreset);
+    }
+  }, [initialFilter]);
 
   const handleCustomFilterOpen = () => {
     if (isInitiaFilterState) {
@@ -191,8 +229,8 @@ export default function SessionFilter({ onChange, type }) {
                         variant='outline'
                         className={cn(
                           'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                          filter.start_date === date.value.start &&
-                            filter.end_date === date.value.end
+                          isSameDay(filter.start_date, date.value.start) &&
+                            isSameDay(filter.end_date, date.value.end)
                             ? 'bg-secondary font-bold text-white hover:bg-secondary'
                             : 'bg-white font-normal'
                         )}
@@ -211,8 +249,8 @@ export default function SessionFilter({ onChange, type }) {
                         variant='outline'
                         className={cn(
                           'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                          filter.start_date === date.value.start &&
-                            filter.end_date === date.value.end
+                          isSameDay(filter.start_date, date.value.start) &&
+                            isSameDay(filter.end_date, date.value.end)
                             ? 'bg-secondary font-bold text-white hover:bg-secondary'
                             : 'bg-white font-normal'
                         )}

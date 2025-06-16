@@ -7,9 +7,9 @@ import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetAllAppointments } from '@/services/api/appointments';
+import { MergedAppointment } from '@/types/appointment';
 import {
   generateAvatarPlaceholder,
-  MergedAppointment,
   mergeNames,
   parseMergedAppointments
 } from '@/utils/helper';

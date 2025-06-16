@@ -1,6 +1,7 @@
+import { useDebounce } from '@/hooks/useDebounce';
 import { useQuery } from '@tanstack/react-query';
 import { BundleEntry, PractitionerRole } from 'fhir/r4';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { API } from './api';
 
 export type IUseClinicParams = {
@@ -19,18 +20,7 @@ export const useListClinics = (
   { searchTerm, cityFilter }: { searchTerm?: string; cityFilter?: string },
   delay: number = 500
 ) => {
-  const [debouncedSearchTerm, setDebouncedSearchTerm] =
-    useState<string>(searchTerm);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm, delay]);
+  const debouncedSearchTerm = useDebounce(searchTerm, delay);
 
   const url = useMemo(() => {
     let url = '/fhir/Organization?_elements=name,address';
@@ -108,7 +98,7 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
     queryKey: ['practitioner-detail', practitionerRoleId],
     queryFn: () =>
       API.get(
-        `/fhir/PractitionerRole?active=true&_id=${practitionerRoleId}&_include=PractitionerRole:organization&_incude=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
+        `/fhir/PractitionerRole?active=true&_id=${practitionerRoleId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
       ),
     select: response => response.data.entry || null,
     enabled: !!practitionerRoleId

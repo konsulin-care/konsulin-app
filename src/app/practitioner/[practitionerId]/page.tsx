@@ -1,6 +1,7 @@
 'use client';
 
 import Avatar from '@/components/general/avatar';
+import BackButton from '@/components/general/back-button';
 import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -27,7 +28,7 @@ import {
 import {
   ArrowRightIcon,
   CalendarDaysIcon,
-  ChevronLeftIcon,
+  HeartPulse,
   HospitalIcon
 } from 'lucide-react';
 import Image from 'next/image';
@@ -52,17 +53,26 @@ export default function Practitioner({ params }: IPractitionerProps) {
   const { state: bookingState, dispatch } = useBooking();
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [selectedClinicId, setSelectedClinicId] = useState<string>('');
   const [practitionerData, setPractitionerData] =
     useState<IPractitionerLocalStorage>();
-  const [practitionerDataLoading, setPractitionerDataLoading] = useState(false);
+  const [practitionerDataLoading, setPractitionerDataLoading] = useState(true);
+
+  useEffect(() => {
+    const clinicId = getFromLocalStorage('selected_clinic');
+
+    if (clinicId) {
+      setSelectedClinicId(clinicId);
+    } else {
+      router.push('/clinic');
+    }
+  }, []);
 
   useEffect(() => {
     const fetchPractitionerData = () => {
       if (!params.practitionerId) return;
 
-      setPractitionerDataLoading(true);
-
-      const raw = getFromLocalStorage(`practitioner-${params.practitionerId}`);
+      const raw = getFromLocalStorage('selected_practitioner');
       const parsed = raw ? JSON.parse(raw) : null;
 
       setPractitionerData(parsed);
@@ -151,15 +161,29 @@ export default function Practitioner({ params }: IPractitionerProps) {
     </>
   );
 
+  const LoadingState = () => (
+    <div className='flex min-h-screen min-w-full items-center justify-center'>
+      <LoadingSpinnerIcon
+        width={56}
+        height={56}
+        className='w-full animate-spin'
+      />
+    </div>
+  );
+
+  const EmptyPractitionerState = () => (
+    <EmptyState
+      className='py-16'
+      title='Practitioner Not Found'
+      subtitle='Please return to the clinic page and select a practitioner.'
+    />
+  );
+
   return (
     <>
       <Header>
         <div className='flex w-full items-center'>
-          <ChevronLeftIcon
-            onClick={() => router.back()}
-            color='white'
-            className='mr-2 cursor-pointer'
-          />
+          <BackButton route={`/clinic/${selectedClinicId}`} />
           <div className='text-[14px] font-bold text-white'>
             Detail Practitioner
           </div>
@@ -167,20 +191,14 @@ export default function Practitioner({ params }: IPractitionerProps) {
       </Header>
 
       <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
-        {isLoading || isFetching || practitionerDataLoading ? (
-          <div className='flex min-h-screen min-w-full items-center justify-center'>
-            <LoadingSpinnerIcon
-              width={56}
-              height={56}
-              className='w-full animate-spin'
-            />
-          </div>
-        ) : !practitionerData || isError ? (
-          <EmptyState
-            className='py-16'
-            title='Practitioner Not Found'
-            subtitle='Please return to the clinic page and select a practitioner.'
-          />
+        {practitionerDataLoading ? (
+          <LoadingState />
+        ) : !practitionerData ? (
+          <EmptyPractitionerState />
+        ) : isLoading || isFetching ? (
+          <LoadingState />
+        ) : !detailPractitioner || isError ? (
+          <EmptyPractitionerState />
         ) : (
           <>
             <div className='flex flex-col items-center'>
@@ -192,8 +210,11 @@ export default function Practitioner({ params }: IPractitionerProps) {
                   className='text-2xl'
                 />
 
-                <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] bg-[#08979C] text-center font-normal text-white'>
-                  {detailPractitioner.organization.name}
+                <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
+                  <HeartPulse size={16} color='#08979C' fill='white' />
+                  <span className='whitespace-nowrap'>
+                    {detailPractitioner.organization.name}
+                  </span>
                 </Badge>
               </div>
               <h3 className='mt-2 text-center text-[20px] font-bold'>

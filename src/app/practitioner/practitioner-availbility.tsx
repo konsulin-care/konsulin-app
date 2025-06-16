@@ -41,7 +41,7 @@ import {
   Slot
 } from 'fhir/r4';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState, useTransition } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 /* returns all available appointment days for a given month.
@@ -108,6 +108,7 @@ export default function PractitionerAvailbility({
   const searchParams = useSearchParams();
   const isOpenParam = searchParams.get('isOpen');
 
+  const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const { state: bookingState, dispatch } = useBooking();
   const { state: authState } = useAuth();
@@ -152,6 +153,21 @@ export default function PractitionerAvailbility({
         } catch (e) {
           console.error('Invalid localStorage data');
         }
+      }
+    }
+  }, [isOpenParam]);
+
+  useEffect(() => {
+    if (isOpenParam !== 'true') {
+      const initialDate = isDateAvailable(today, listAvailableDate)
+        ? today
+        : getNextAvailableDate(today, listAvailableDate);
+
+      if (
+        bookingState.date.getTime() !== initialDate.getTime() &&
+        !bookingState.hasUserChosenDate
+      ) {
+        handleFilterChange('date', initialDate);
       }
     }
   }, [isOpenParam]);
@@ -290,21 +306,6 @@ export default function PractitionerAvailbility({
   }, [bookingState.date, practitionerRole.availableTime, unavailableSlots]);
 
   useEffect(() => {
-    if (isOpenParam === 'true') return;
-
-    const initialDate = isDateAvailable(today, listAvailableDate)
-      ? today
-      : getNextAvailableDate(today, listAvailableDate);
-
-    if (
-      bookingState.date.getTime() !== initialDate.getTime() &&
-      !bookingState.hasUserChosenDate
-    ) {
-      handleFilterChange('date', initialDate);
-    }
-  }, []);
-
-  useEffect(() => {
     if (errorForm) {
       if (
         bookingState?.date &&
@@ -320,10 +321,12 @@ export default function PractitionerAvailbility({
    * if the selected date is unavailable, set the next available date and reset the time.
    * if the selected time is unavailable, set the next available time after the current selection.
    * if no time is available, move to the next valid date and reset the time.
-   * dependencies: re-run when selected date/time, available time slots, or valid date list changes. */
+   * dependencies: re-run when selected date/time, available time slots, or valid date list changes.
+   * */
   useEffect(() => {
-    if (!availableTimeSlots.length) return;
-    if (isOpenParam !== 'true') return;
+    if (availableTimeSlots.length === 0 || isOpenParam !== 'true') return;
+
+    const params = new URLSearchParams(window.location.search);
 
     const isValidDate = isDateAvailable(bookingState.date, listAvailableDate);
     const validTimeSlots = availableTimeSlots
@@ -339,7 +342,14 @@ export default function PractitionerAvailbility({
       );
       handleFilterChange('date', nextValidDate);
       handleFilterChange('startTime', null);
-    } else if (!isValidTime) {
+
+      params.delete('isOpen');
+      router.push(`?${params.toString()}`, { scroll: false });
+
+      return;
+    }
+
+    if (!isValidTime) {
       const nextAvailableTime = validTimeSlots.find(
         time => time > bookingState.startTime
       );
@@ -352,9 +362,16 @@ export default function PractitionerAvailbility({
           listAvailableDate
         );
         handleFilterChange('date', nextValidDate);
-        handleFilterChange('startTime', null); // re-trigger the logic
+        handleFilterChange('startTime', null);
+
+        params.delete('isOpen');
+        router.push(`?${params.toString()}`, { scroll: false });
+        return;
       }
     }
+
+    params.delete('isOpen');
+    router.push(`?${params.toString()}`, { scroll: false });
   }, [
     bookingState.date,
     bookingState.startTime,
@@ -479,6 +496,12 @@ export default function PractitionerAvailbility({
     }
   };
 
+  const resetData = () => {
+    handleFilterChange('startTime', null);
+    handleBookingInformationChange('problem_brief', '');
+    setErrorForm(null);
+  };
+
   return (
     <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
       <DrawerTrigger asChild>
@@ -502,8 +525,8 @@ export default function PractitionerAvailbility({
                 onSelect={date => {
                   if (!date) return;
                   handleFilterChange('date', date);
-                  handleFilterChange('startTime', null);
                   handleFilterChange('hasUserChosenDate', true);
+                  resetData();
                 }}
                 onMonthChange={params => {
                   if (!params) return;
@@ -512,6 +535,7 @@ export default function PractitionerAvailbility({
                   } else {
                     handleFilterChange('date', params);
                   }
+                  resetData();
                 }}
                 disabled={date =>
                   date < today ||
@@ -541,7 +565,7 @@ export default function PractitionerAvailbility({
               />
             </div>
 
-            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+            <div className='card my-4 border-0 bg-[#F9F9F9]'>
               <div className='mb-4 font-bold'>
                 {bookingState.date && format(bookingState.date, 'dd MMMM yyyy')}
               </div>
@@ -589,7 +613,7 @@ export default function PractitionerAvailbility({
 
             {bookingState.startTime && (
               <>
-                <div className='mt-4 text-[12px] font-bold'>Session Type</div>
+                <div className='text-[12px] font-bold'>Session Type</div>
                 <div className='mt-2 flex space-x-4'>
                   <Select disabled>
                     <SelectTrigger className='w-[50%] text-[12px] text-[#2C2F35]'>
@@ -620,7 +644,7 @@ export default function PractitionerAvailbility({
                 </div>
 
                 {errorForm && (
-                  <div className='mt-2 text-sm text-destructive'>
+                  <div className='mb-4 text-sm text-destructive'>
                     {`Lengkapi ${conjunction(errorForm)}.`}
                   </div>
                 )}
@@ -631,9 +655,7 @@ export default function PractitionerAvailbility({
               <Button
                 className='mt-auto rounded-xl bg-secondary text-white'
                 onClick={handleSubmitForm}
-                disabled={
-                  isCreateAppointmentLoading || errorForm || !scheduleId
-                }
+                disabled={isCreateAppointmentLoading || !scheduleId}
               >
                 {isCreateAppointmentLoading ? (
                   <LoadingSpinnerIcon
@@ -649,6 +671,7 @@ export default function PractitionerAvailbility({
             ) : (
               <Button
                 className='mt-auto w-full rounded-[32px] bg-secondary py-2 text-[14px] font-bold text-white'
+                disabled={isPending}
                 onClick={() => {
                   localStorage.setItem(
                     'temp-booking',
@@ -667,10 +690,21 @@ export default function PractitionerAvailbility({
                     )
                   );
 
-                  router.push('/auth');
+                  startTransition(() => {
+                    router.push('/auth');
+                  });
                 }}
               >
-                Silakan Daftar atau Masuk untuk Booking
+                {isPending ? (
+                  <LoadingSpinnerIcon
+                    stroke='white'
+                    width={20}
+                    height={20}
+                    className='animate-spin'
+                  />
+                ) : (
+                  'Silakan Daftar atau Masuk untuk Booking'
+                )}
               </Button>
             )}
             <Button

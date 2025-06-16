@@ -1,72 +1,66 @@
 'use client';
 
-import ContentWraper from '@/components/general/content-wraper';
-import FhirFormsRenderer from '@/components/general/fhir-forms-renderer';
+import BackButton from '@/components/general/back-button';
 import Header from '@/components/header';
-import NavigationBar from '@/components/navigation-bar';
+import { LoadingSpinnerIcon } from '@/components/icons';
+import SoapForm from '@/components/soap-report/soap-form';
 import { useAuth } from '@/context/auth/authContext';
-import { BookHeartIcon, ChevronLeftIcon } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import ObjectiveFindingModal from './objective-finding-modal';
+import { useTodaySessions } from '@/hooks/useTodaySessions';
+import { useQuestionnaireSoap } from '@/services/api/assessment';
+import { useEffect, useState } from 'react';
 import Participant from './participant';
 
 export default function Soap() {
-  const { state: authState } = useAuth();
+  const { state: authState, isLoading: isAuthLoading } = useAuth();
+  const [participantId, setParticipantId] = useState('');
+  const [patientsListToday, setPatientListToday] = useState([]);
+  const { data: questionnaireData, isLoading: isQuestionnaireLoading } =
+    useQuestionnaireSoap();
+  const { data: todaySessions, isLoading: isPatientListLoading } =
+    useTodaySessions();
 
-  const router = useRouter();
-  const questionnaire = require('../questionnaire/soap.json');
+  useEffect(() => {
+    if (!todaySessions || todaySessions.length === 0) return;
 
-  const [participant, setParticipant] = useState('Fitra Agil');
-  const [objectiveFinding, setObjectiveFinding] = useState([]);
-
-  const customObjectFHIR = {
-    subject: participant,
-    author: ''
-  };
+    setPatientListToday(todaySessions);
+  }, [todaySessions]);
 
   return (
     <>
-      <NavigationBar />
       <Header showChat={false}>
         <div className='flex w-full items-center'>
-          <ChevronLeftIcon
-            onClick={() => router.back()}
-            color='white'
-            className='mr-2 cursor-pointer'
-          />
+          <BackButton />
 
-          <div className='text-[14px] font-bold text-white'>Summary Record</div>
+          <div className='text-[14px] font-bold text-white'>SOAP Report</div>
         </div>
       </Header>
-      <ContentWraper>
-        <div className='min-h-screen p-4'>
-          <Participant
-            participant={participant}
-            onChange={participant => setParticipant(participant)}
-          />
 
-          <div className='card flex items-center'>
-            <BookHeartIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
-            <div className='mr-auto text-[14px] font-bold'>
-              Objective Finding
-            </div>
-            <ObjectiveFindingModal
-              objectiveFinding={objectiveFinding}
-              onChange={objectiveFinding =>
-                setObjectiveFinding(objectiveFinding)
-              }
+      <div className='mt-[-24px] rounded-[16px] bg-white'>
+        {isQuestionnaireLoading || isAuthLoading || isPatientListLoading ? (
+          <div className='flex min-h-screen min-w-full items-center justify-center'>
+            <LoadingSpinnerIcon
+              width={56}
+              height={56}
+              className='w-full animate-spin'
             />
           </div>
-
-          <FhirFormsRenderer
-            questionnaire={questionnaire}
-            isAuthenticated={authState.isAuthenticated}
-            submitText='Save SOAP'
-            // customObject={customObjectFHIR}
-          />
-        </div>
-      </ContentWraper>
+        ) : (
+          <div className='flex min-h-screen flex-col gap-5 p-4'>
+            <Participant
+              list={patientsListToday}
+              value={participantId}
+              placeholder='Select patient'
+              onSelect={value => setParticipantId(value.patientId)}
+            />
+            <SoapForm
+              questionnaire={questionnaireData}
+              patientId={participantId}
+              practitionerId={authState.userInfo.fhirId}
+              mode='create'
+            />
+          </div>
+        )}
+      </div>
     </>
   );
 }

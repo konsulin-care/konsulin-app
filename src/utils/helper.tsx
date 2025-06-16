@@ -1,3 +1,5 @@
+import { typeMappings } from '@/constants/record';
+import { MergedAppointment, MergedSession } from '@/types/appointment';
 import { IBundleResponse } from '@/types/record';
 import { parse } from 'date-fns';
 import {
@@ -5,10 +7,10 @@ import {
   Annotation,
   Appointment,
   AppointmentParticipant,
-  Attachment,
   Bundle,
   BundleEntry,
   Coding,
+  FhirResource,
   HumanName,
   Observation,
   Patient,
@@ -16,6 +18,7 @@ import {
   PractitionerQualification,
   QuestionnaireItem,
   QuestionnaireResponse,
+  QuestionnaireResponseItem,
   Slot
 } from 'fhir/r4';
 
@@ -73,7 +76,7 @@ export const parseRecordBundles = (bundles: IBundleResponse[]) => {
       return {
         type: 'Practitioner Note',
         id: `${resource.resourceType}/${resource.id}`,
-        title: resource.code?.coding?.[0]?.display ?? '',
+        title: codeList?.[0]?.display ?? '',
         result: resource.valueString,
         lastUpdated: resource.meta?.lastUpdated,
         practitionerId
@@ -124,6 +127,167 @@ export const parseRecordBundles = (bundles: IBundleResponse[]) => {
   );
 };
 
+// extracts unique Observations and QuestionnaireResponses from a nested FHIR Bundle.
+export const parseRecordBundlePractitioner = (bundle: Bundle) => {
+  const results = [];
+
+  if (
+    !bundle ||
+    bundle.resourceType !== 'Bundle' ||
+    !Array.isArray(bundle.entry)
+  )
+    return results;
+
+  // map to store unique resources based on "resourceType/id"
+  const uniqueMap = new Map<string, FhirResource>();
+
+  // first-level: entry[].resource should be a Bundle
+  for (const outerEntry of bundle.entry) {
+    const innerBundle = outerEntry.resource;
+
+    if (
+      innerBundle?.resourceType !== 'Bundle' ||
+      !Array.isArray(innerBundle.entry)
+    )
+      continue;
+
+    // second-level: entry[].resource is actual Observation or QuestionnaireResponse
+    for (const innerEntry of innerBundle.entry) {
+      const resource = innerEntry.resource;
+      if (!resource?.resourceType || !resource.id) continue;
+
+      const key = `${resource.resourceType}/${resource.id}`;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, resource);
+      }
+    }
+  }
+
+  const extractObservation = (resource: Observation) => {
+    const codeList = resource.code?.coding ?? [];
+    const loincCode = codeList.find(
+      (c: Coding) => c.system === 'http://loinc.org'
+    )?.code;
+
+    const notes = (resource.note ?? [])
+      .map((n: Annotation) => n.text)
+      .join('\n\n');
+
+    const id = `${resource.resourceType}/${resource.id}`;
+    const lastUpdated = resource.meta?.lastUpdated;
+
+    const performerRef = resource.performer?.[0]?.reference ?? '';
+    const practitionerId = performerRef.startsWith('Practitioner/')
+      ? performerRef.split('/')[1]
+      : null;
+
+    if (loincCode === '51855-5') {
+      return {
+        type: 'Patient Note',
+        id,
+        title: resource.valueString ?? '',
+        result: notes,
+        lastUpdated
+      };
+    }
+
+    return {
+      type: 'Practitioner Note',
+      id,
+      title: codeList?.[0]?.display ?? '',
+      result: resource.valueString ?? resource.valueCodeableConcept ?? '',
+      lastUpdated,
+      practitionerId
+    };
+  };
+
+  const extractSoapQuestionnaire = (resource: QuestionnaireResponse) => {
+    const values = [];
+    const practitionerRef = resource.author?.reference;
+    const practitionerId = practitionerRef?.split('/')[1] ?? null;
+
+    for (const section of resource.item ?? []) {
+      for (const item of section.item ?? []) {
+        // recursively collect all nested items and extract answer values with type detection
+        const collect = (node: QuestionnaireResponseItem) => {
+          const children = (node.item ?? []).flatMap(collect);
+          return [node, ...children];
+        };
+
+        for (const field of collect(item)) {
+          if (!field.answer) continue;
+
+          for (const ans of field.answer) {
+            let val = null;
+
+            if ('valueString' in ans) val = ans.valueString;
+            else if ('valueBoolean' in ans) val = ans.valueBoolean;
+            else if ('valueInteger' in ans) val = ans.valueInteger;
+            else if ('valueDate' in ans) val = ans.valueDate;
+            else if ('valueQuantity' in ans)
+              val = `${ans.valueQuantity.value} ${ans.valueQuantity.unit}`;
+            else if ('valueCoding' in ans) val = ans.valueCoding.display;
+
+            if (val != null) {
+              values.push({
+                section: section.text,
+                label: field.text,
+                value: val
+              });
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      type: 'SOAP Notes',
+      id: `${resource.resourceType}/${resource.id}`,
+      title: resource.questionnaire,
+      result: values,
+      lastUpdated: resource.meta?.lastUpdated,
+      practitionerId
+    };
+  };
+
+  const extractQuestionnaire = (resource: QuestionnaireResponse) => {
+    const brief =
+      resource.item
+        ?.find(i => i.linkId === 'interpretation')
+        ?.item?.find(ii => ii.linkId === 'result-brief')?.answer?.[0]
+        ?.valueString ?? '';
+
+    return {
+      type: 'QuestionnaireResponse',
+      id: `${resource.resourceType}/${resource.id}`,
+      title: resource.questionnaire,
+      result: brief,
+      lastUpdated: resource.meta?.lastUpdated
+    };
+  };
+
+  for (const resource of Array.from(uniqueMap.values())) {
+    if (!resource?.resourceType || !resource.id) continue;
+
+    if (resource.resourceType === 'Observation') {
+      results.push(extractObservation(resource));
+    } else if (resource.resourceType === 'QuestionnaireResponse') {
+      if (resource.questionnaire === 'Questionnaire/soap') {
+        results.push(extractSoapQuestionnaire(resource));
+      } else {
+        results.push(extractQuestionnaire(resource));
+      }
+    }
+  }
+
+  // sort by lastUpdated
+  return results.sort(
+    (a, b) =>
+      new Date(b.lastUpdated || '').getTime() -
+      new Date(a.lastUpdated || '').getTime()
+  );
+};
+
 export const parseFhirProfile = (data: Patient | Practitioner) => {
   const phone = data.telecom?.find(t => t.system === 'phone')?.value ?? '';
   const email = data.telecom?.find(t => t.system === 'email')?.value ?? '';
@@ -155,25 +319,6 @@ export const parseFhirProfile = (data: Patient | Practitioner) => {
     phone,
     email
   };
-};
-
-export const removeCityPrefix = (input: string): string => {
-  if (!input) return '';
-
-  return input.replace(/^(Kab\.|Kota)\s+/i, '').trim();
-};
-
-export type MergedAppointment = {
-  appointmentId: string;
-  slotStart: string | null;
-  slotEnd: string | null;
-  slotStatus: string | null;
-  appointmentType: string | null;
-  practitionerId: string | null;
-  practitionerName: HumanName[] | null;
-  practitionerQualification: PractitionerQualification[] | null;
-  practitionerPhoto: Attachment[] | null;
-  practitionerEmail: string | null;
 };
 
 export const parseMergedAppointments = (
@@ -301,6 +446,17 @@ export const formatTitle = (raw: string) => {
   return cleaned.toUpperCase();
 };
 
+export const formatQueryTitle = (raw: string) => {
+  if (!raw) return '-';
+
+  const withSpaces = raw.replace(/\+/g, ' ');
+
+  return withSpaces
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 export const mapAddress = (address: Address[]) => {
   if (!address || address.length === 0) return '-';
 
@@ -329,4 +485,84 @@ export const findAge = (birthDateStr: string) => {
   }
 
   return age;
+};
+
+export const getUtcDayRange = (startLocalDate: Date, endLocalDate?: Date) => {
+  const start = new Date(startLocalDate);
+  start.setHours(0, 0, 0, 0); // 00:00:00 local time
+
+  const end = new Date(endLocalDate ?? startLocalDate);
+  end.setHours(23, 59, 59, 999); // 23:59:59 local time
+
+  const utcStart = start.toISOString();
+  const utcEnd = end.toISOString();
+
+  return { utcStart, utcEnd };
+};
+
+export const parseMergedSessions = (bundle: Bundle): MergedSession[] => {
+  const appointments = bundle.entry
+    .filter(entry => entry.resource.resourceType === 'Appointment')
+    .map(entry => entry.resource as Appointment);
+
+  const slots = bundle.entry
+    .filter(entry => entry.resource.resourceType === 'Slot')
+    .map(entry => entry.resource as Slot);
+
+  const patients = bundle.entry
+    .filter(entry => entry.resource.resourceType === 'Patient')
+    .map(entry => entry.resource as Patient);
+
+  const results: MergedSession[] = [];
+
+  appointments.forEach(appointment => {
+    const slotReference = appointment.slot?.[0]?.reference;
+    const slotId = slotReference ? slotReference.split('/')[1] : null;
+
+    const patientParticipant = appointment.participant.find(
+      (participant: AppointmentParticipant) =>
+        participant.actor.reference &&
+        participant.actor.reference.startsWith('Patient/')
+    );
+
+    const patientId = patientParticipant
+      ? patientParticipant.actor.reference.split('/')[1]
+      : null;
+
+    const slotData = slots.find(slot => slot.id === slotId);
+    const patientData = patients.find(patient => patient.id === patientId);
+
+    const patientEmail = patientData.telecom.find(
+      data => data.system === 'email'
+    );
+
+    results.push({
+      appointmentId: appointment.id || null,
+      slotStart: slotData?.start || null,
+      slotEnd: slotData?.end || null,
+      slotStatus: slotData?.status || null,
+      appointmentType: appointment.appointmentType?.text || null,
+      patientId: patientData?.id || null,
+      patientName: patientData.name || null,
+      patientPhoto: patientData?.photo || null,
+      patientEmail: patientEmail.value || null
+    });
+  });
+
+  return results.sort((a, b) => {
+    if (!a.slotStart || !b.slotStart) return 0;
+    return new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime();
+  });
+};
+
+export const getTypeLabel = (type: string) => {
+  if (!type || type === 'All') return null;
+
+  const types = type.split(',').map(t => t.trim());
+
+  // map each to its display label
+  const label = types.map(type => typeMappings[type]?.text).filter(Boolean);
+
+  // return the first label (they should all be the same if grouped correctly)
+  return label[0] ?? null;
 };

@@ -30,7 +30,10 @@ export default function ModalQr({ value }) {
       <DrawerTrigger asChild>
         <Button className='rounded-xl bg-secondary text-white'>Show QR</Button>
       </DrawerTrigger>
-      <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+      <DrawerContent
+        onInteractOutside={handleCopyToClipboard}
+        className='mx-auto max-w-screen-sm p-4'
+      >
         <DrawerTitle />
         <DrawerDescription />
         <QRCode

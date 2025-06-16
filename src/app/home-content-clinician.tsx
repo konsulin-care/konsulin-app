@@ -1,106 +1,325 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Column } from '@ant-design/plots'
-import Image from 'next/image'
-import Link from 'next/link'
-import Community from '../components/general/home/community'
+import CardLoader from '@/components/general/card-loader';
+import { Button } from '@/components/ui/button';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger
+} from '@/components/ui/drawer';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/context/auth/authContext';
+import { useGetPractitionerSlots } from '@/services/api/appointments';
+import { useRegularAssessments } from '@/services/api/assessment';
+import { customMarkdownComponents } from '@/utils/helper';
+import { Column, Datum } from '@ant-design/plots';
+import {
+  addDays,
+  addMonths,
+  endOfMonth,
+  format,
+  startOfMonth,
+  startOfWeek
+} from 'date-fns';
+import { BundleEntry, Questionnaire, Slot } from 'fhir/r4';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import Community from '../components/general/home/community';
+
+type IColumn = {
+  data: {
+    type: string;
+    value: number;
+    displayValue: number;
+    date: string;
+  }[];
+};
+
+const today = new Date();
+const monday = startOfWeek(today, { weekStartsOn: 1 });
 
 export default function HomeContentClinician() {
-  const dataWeekly: any = {
-    data: [
-      { type: 'Mon', value: 3 },
-      { type: 'Tue', value: 5 },
-      { type: 'Wed', value: 1 },
-      { type: 'Thu', value: 6 },
-      { type: 'Sat', value: 5 },
-      { type: 'Fri', value: 3 },
-      { type: 'Sun', value: 2 }
-    ]
-  }
+  const router = useRouter();
+  const { state: authState, isLoading: isAuthLoading } = useAuth();
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
+  const [dataWeekly, setDataWeekly] = useState<IColumn>({ data: [] });
+  const [dataMonthly, setDataMonthly] = useState<IColumn>({ data: [] });
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const elementClickedRef = useRef(false);
 
-  const dataMonthly: any = {
-    data: [
-      { type: 'Jan', value: 3 },
-      { type: 'Feb', value: 5 },
-      { type: 'Mar', value: 1 },
-      { type: 'Apr', value: 6 },
-      { type: 'May', value: 5 },
-      { type: 'Jun', value: 3 },
-      { type: 'Jul', value: 6 },
-      { type: 'Aug', value: 8 },
-      { type: 'Sep', value: 5 },
-      { type: 'Oct', value: 9 },
-      { type: 'Nov', value: 2 },
-      { type: 'Dec', value: 7 }
-    ]
-  }
+  const { data: regularAssessments, isLoading: regularLoading } =
+    useRegularAssessments();
+  const { data: practitionerSlotsData, isLoading: isPractitionerSlotsLoading } =
+    useGetPractitionerSlots({
+      practitionerId: authState?.userInfo?.fhirId,
+      dateReference: monday
+    });
+
+  useEffect(() => {
+    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const monthLabels = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+
+    const weeklyMap: Record<string, { value: number; date: string }> =
+      Object.fromEntries(
+        weekDays.map((day, i) => [
+          day,
+          {
+            value: 0,
+            date: format(addDays(monday, i), 'yyyy-MM-dd')
+          }
+        ])
+      );
+
+    const monthlyMap: Record<string, { value: number; date: string }> =
+      Object.fromEntries(
+        monthLabels.map((month, i) => [
+          month,
+          {
+            value: 0,
+            date: format(
+              startOfMonth(addMonths(new Date(today.getFullYear(), 0), i)),
+              'yyyy-MM-dd'
+            )
+          }
+        ])
+      );
+
+    if (practitionerSlotsData?.total > 0) {
+      practitionerSlotsData.entry.forEach((item: BundleEntry<Slot>) => {
+        const slot = item.resource;
+        if (slot?.start && slot?.status === 'busy-unavailable') {
+          const localDate = new Date(slot.start);
+          const day = format(localDate, 'EEE'); // mon, tue, ...
+          const month = format(localDate, 'MMM'); // jan, feb, ...
+
+          if (weeklyMap[day]) {
+            weeklyMap[day].value++;
+            if (!weeklyMap[day].date) {
+              weeklyMap[day].date = format(new Date(slot.start), 'yyyy-MM-dd');
+            }
+          }
+
+          if (monthlyMap[month]) {
+            monthlyMap[month].value++;
+            if (!monthlyMap[month].date) {
+              monthlyMap[month].date = format(
+                new Date(slot.start),
+                'yyyy-MM-dd'
+              );
+            }
+          }
+        }
+      });
+    }
+
+    const dataWeekly: IColumn = {
+      data: Object.entries(weeklyMap).map(([day, { value, date }]) => ({
+        type: day,
+        value: value === 0 ? 1 : value,
+        displayValue: value,
+        date
+      }))
+    };
+
+    const dataMonthly: IColumn = {
+      data: Object.entries(monthlyMap).map(([month, { value, date }]) => ({
+        type: month,
+        value: value === 0 ? 1 : value,
+        displayValue: value,
+        date
+      }))
+    };
+
+    setDataWeekly(dataWeekly);
+    setDataMonthly(dataMonthly);
+  }, [practitionerSlotsData, authState.userInfo.fhirId]);
 
   const configColumn: any = {
     axis: {
-      x: false,
+      x: { title: null },
       y: false
     },
     xField: 'type',
     yField: 'value',
     style: {
-      fill: ({ type }) => {
-        if (type === 'Sun') {
-          return '#13C2C2'
+      fill: ({ type, displayValue }) => {
+        if (displayValue === 0) {
+          return '#F9F9F9';
         }
-        return '#ABDCDB'
+        if (type === 'Sun') {
+          return '#13C2C2';
+        }
+        return '#ABDCDB';
       },
-      // radiusTopRight: 6,
       radius: 6,
-      paddingBottom: 10
+      paddingBottom: 10,
+      cursor: 'pointer',
+      pointerEvents: ({ displayValue }) => {
+        return displayValue === 0 ? 'none' : 'auto';
+      }
     },
     label: {
       position: 'bottom',
-      text: originData => originData.value
+      text: (originData: Datum) => originData.displayValue
     },
     legend: false,
     arrow: false,
     tooltip: false
-  }
-  return (
-    <>
-      <div className='p-4'>
-        <div className='rounded-lg bg-[#F9F9F9] p-[16px]'>
-          <div className='mb-4 flex justify-between'>
-            <div className='text-[14px] font-bold text-[#2C2F3599]'>
-              Handled Sessions
-            </div>
-            <Link className='text-[12px] text-secondary' href={'/'}>
-              Generate Report
-            </Link>
-          </div>
-          <Tabs defaultValue='weekly' className='w-full'>
-            <TabsList className='grid h-fit w-full grid-cols-2 bg-[#F4F4F4] p-2'>
-              <TabsTrigger
-                className='text-muted data-[state=active]:text-[#ABDCDB]'
-                value='weekly'
-              >
-                Weekly
-              </TabsTrigger>
-              <TabsTrigger
-                className='text-muted data-[state=active]:text-[#ABDCDB]'
-                value='monthly'
-              >
-                Monthly
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value='weekly'>
-              <Column height={180} {...configColumn} {...dataWeekly} />
-            </TabsContent>
-            <TabsContent value='monthly'>
-              <Column height={180} {...configColumn} {...dataMonthly} />
-            </TabsContent>
-          </Tabs>
-          <div className='text-[10px]'>
-            *based on your data previous record, not necessarily in recent
-            period
-          </div>
+  };
+
+  const renderDrawerContent = (
+    <div className='flex flex-col'>
+      <DrawerHeader className='mx-auto text-[20px] font-bold'>
+        <DrawerTitle className='text-center text-2xl'>
+          {selectedAssessment?.title}
+        </DrawerTitle>
+      </DrawerHeader>
+      <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+        <div className='font-bold'>Brief</div>
+        <hr className='my-4 border-black opacity-10' />
+        <div className='flex flex-wrap gap-[10px] text-sm'>
+          <DrawerDescription>
+            <ReactMarkdown components={customMarkdownComponents}>
+              {selectedAssessment?.description}
+            </ReactMarkdown>
+          </DrawerDescription>
         </div>
       </div>
 
+      <div className='mt-2 flex flex-col gap-2 py-4'>
+        <Link href={`assessments/${selectedAssessment?.id}`}>
+          <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
+            Start Test
+          </Button>
+        </Link>
+        <DrawerClose className='items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50'>
+          Close
+        </DrawerClose>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <div className='p-4'>
+        {isPractitionerSlotsLoading || isAuthLoading ? (
+          <Skeleton className='h-[250px] w-full bg-[hsl(210,40%,96.1%)]' />
+        ) : (
+          <div className='rounded-lg bg-[#F9F9F9] p-[16px]'>
+            <div className='mb-4 flex justify-between'>
+              <div className='text-[14px] font-bold text-[#2C2F3599]'>
+                Handled Sessions
+              </div>
+              <Link className='text-[12px] text-secondary' href={'/'}>
+                Generate Report
+              </Link>
+            </div>
+            <Tabs defaultValue='weekly' className='w-full'>
+              <TabsList className='grid h-fit w-full grid-cols-2 bg-[#F4F4F4] p-2'>
+                <TabsTrigger
+                  className='text-muted data-[state=active]:text-[#ABDCDB]'
+                  value='weekly'
+                >
+                  Weekly
+                </TabsTrigger>
+                <TabsTrigger
+                  className='text-muted data-[state=active]:text-[#ABDCDB]'
+                  value='monthly'
+                >
+                  Monthly
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value='weekly'>
+                <Column
+                  height={180}
+                  {...configColumn}
+                  {...dataWeekly}
+                  onReady={plot => {
+                    plot.chart.on('element:click', (e: Datum) => {
+                      elementClickedRef.current = true;
+                      const date = e.data.data.date;
+                      router.push(
+                        `/schedule?start_date=${date}&end_date=${date}`
+                      );
+                    });
+
+                    plot.chart.on('plot:click', () => {
+                      setTimeout(() => {
+                        if (elementClickedRef.current) {
+                          elementClickedRef.current = false;
+                          return;
+                        }
+                        const formatted = format(today, 'yyyy-MM-dd');
+                        router.push(
+                          `/schedule?start_date=${formatted}&end_date=${formatted}`
+                        );
+                      }, 0); // defer until after element:click
+                    });
+                  }}
+                />
+              </TabsContent>
+              <TabsContent value='monthly'>
+                <Column
+                  height={180}
+                  {...configColumn}
+                  {...dataMonthly}
+                  onReady={plot => {
+                    plot.chart.on('element:click', (e: Datum) => {
+                      elementClickedRef.current = true;
+                      const clickedDate = new Date(e.data.data.date);
+
+                      const start = format(
+                        startOfMonth(clickedDate),
+                        'yyyy-MM-dd'
+                      );
+                      const end = format(endOfMonth(clickedDate), 'yyyy-MM-dd');
+
+                      router.push(
+                        `/schedule?start_date=${start}&end_date=${end}`
+                      );
+                    });
+
+                    plot.chart.on('plot:click', () => {
+                      setTimeout(() => {
+                        if (elementClickedRef.current) {
+                          elementClickedRef.current = false;
+                          return;
+                        }
+                        const formatted = format(today, 'yyyy-MM-dd');
+                        router.push(
+                          `/schedule?start_date=${formatted}&end_date=${formatted}`
+                        );
+                      }, 0); // defer until after element:click
+                    });
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
+            <div className='text-[10px]'>
+              *based on scheduled slot data for this week/month
+            </div>
+          </div>
+        )}
+      </div>
       <div className='flex gap-4 p-4'>
         <Link href={'/exercise'} className='card flex w-full'>
           <Image
@@ -110,7 +329,7 @@ export default function HomeContentClinician() {
             alt='writing'
           />
           <div className='ml-2 flex flex-col'>
-            <span className='text-[12px] font-bold text-primary'>
+            <span className='text-[12px] font-bold text-secondary'>
               Relax Time
             </span>
             <span className='text-[10px] text-primary'>
@@ -118,7 +337,7 @@ export default function HomeContentClinician() {
             </span>
           </div>
         </Link>
-        <Link href={'/'} className='card flex w-full'>
+        <Link href={'/assessments/soap'} className='card flex w-full'>
           <Image
             src={'/images/writing.svg'}
             width={40}
@@ -126,47 +345,68 @@ export default function HomeContentClinician() {
             alt='writing'
           />
           <div className='ml-2 flex flex-col'>
-            <span className='text-[12px] font-bold text-primary'>
+            <span className='text-[12px] font-bold text-secondary'>
               SOAP Report
             </span>
             <span className='text-[10px] text-primary'>Start Writting</span>
           </div>
         </Link>
       </div>
-
       <div className='p-4'>
-        <div className='mb-4 text-[14px] font-bold text-muted'>
-          Browse Instruments
+        <div className='flex justify-between text-muted'>
+          <span className='mb-2 text-[14px] font-bold'>Browse Instruments</span>
+          <Link className='text-[12px] text-secondary' href={'/assessments'}>
+            See All
+          </Link>
         </div>
-        <div className='grid w-full grid-cols-2 gap-4'>
-          {Array(4)
-            .fill(undefined)
-            .map((_, index: number) => (
-              <Link
-                key={index}
-                href={'/'}
-                className='card flex w-full items-center p-2'
-              >
-                <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
-                  <div className='max-w[24px]'>
-                    <Image
-                      className='min-h-[24px] min-w-[24px] object-cover'
-                      src='/images/note.svg'
-                      width={24}
-                      height={24}
-                      alt='note'
-                    />
-                  </div>
-                </div>
-                <div className='text-[12px]'>BIG 5 Personality Test lanjut</div>
-              </Link>
-            ))}
-        </div>
-      </div>
 
+        {regularLoading ? (
+          <CardLoader height='h-[50px]' item={4} />
+        ) : (
+          <div className='grid w-full grid-cols-2 gap-4'>
+            {regularAssessments &&
+              regularAssessments?.map(
+                (assessment: BundleEntry<Questionnaire>) => (
+                  <div
+                    key={assessment.resource.id}
+                    className='card item flex cursor-pointer flex-col p-2'
+                    onClick={() => {
+                      setSelectedAssessment(assessment.resource);
+                      setIsOpen(true);
+                    }}
+                  >
+                    <div className='flex items-center'>
+                      <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
+                        <Image
+                          className='h-[24px] w-[24px] object-cover'
+                          src={'/images/note.svg'}
+                          width={24}
+                          height={24}
+                          alt='note'
+                        />
+                      </div>
+                      <div className='text-[12px] text-[hsla(220,9%,19%,1)]'>
+                        {assessment.resource.title}
+                      </div>
+                    </div>
+                  </div>
+                )
+              )}
+          </div>
+        )}
+      </div>
       <div className='p-4'>
         <Community />
       </div>
+
+      <Drawer open={isOpen} onClose={() => setIsOpen(false)}>
+        <DrawerTrigger asChild>
+          <div />
+        </DrawerTrigger>
+        <DrawerContent className='mx-auto w-full max-w-screen-sm p-4'>
+          {renderDrawerContent}
+        </DrawerContent>
+      </Drawer>
     </>
-  )
+  );
 }

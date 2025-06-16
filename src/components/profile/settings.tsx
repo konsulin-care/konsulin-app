@@ -89,7 +89,7 @@ export default function Settings({ menus }) {
         <DrawerTrigger asChild>
           <div />
         </DrawerTrigger>
-        <DrawerContent className='mx-auto w-full max-w-md max-w-screen-sm p-4'>
+        <DrawerContent className='mx-auto w-full max-w-screen-sm p-4'>
           <div className='rounded-t-lg bg-white'>
             <DrawerTitle className='text-black-100 py-1 text-center text-lg font-bold md:text-xl'>
               {drawerState.title.split('\n').map((line, index) => (

@@ -14,6 +14,7 @@ export default function CardLoader({
           <Skeleton
             key={index}
             className={`${height} ${width} rounded-lg bg-[hsl(210,40%,96.1%)]`}
+            {...props}
           />
         ))}
     </div>

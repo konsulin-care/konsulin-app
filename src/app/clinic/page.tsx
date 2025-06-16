@@ -18,12 +18,14 @@ import { BundleEntry } from 'fhir/r4';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import ClinicFilter from './clinic-filter';
 
 const now = new Date();
 
 export default function Clinic() {
+  const router = useRouter();
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -50,6 +52,11 @@ export default function Clinic() {
     return filtered;
   }, [upcomingData]);
 
+  const handleSelectedClinic = (clinicId: string) => {
+    localStorage.setItem('selected_clinic', clinicId);
+    router.push(`/clinic/${clinicId}`);
+  };
+
   return (
     <>
       <NavigationBar />
@@ -70,9 +77,14 @@ export default function Clinic() {
             </Link>
           </div>
 
-          {parsedAppointmentsData && parsedAppointmentsData.length > 0 && (
-            <UpcomingSession upcomingData={parsedAppointmentsData} />
-          )}
+          {authState &&
+            parsedAppointmentsData &&
+            parsedAppointmentsData.length > 0 && (
+              <UpcomingSession
+                data={parsedAppointmentsData}
+                role={authState.userInfo.role_name}
+              />
+            )}
         </div>
       </Header>
       <ContentWraper>
@@ -124,14 +136,12 @@ export default function Clinic() {
                     {clinic.resource.resourceType === 'Organization' &&
                       clinic.resource.name}
                   </div>
-                  <Link
-                    href={`/clinic/${clinic.resource.id}`}
-                    className='w-full'
+                  <Button
+                    onClick={() => handleSelectedClinic(clinic.resource.id)}
+                    className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
                   >
-                    <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
-                      Check
-                    </Button>
-                  </Link>
+                    Check
+                  </Button>
                 </div>
               ))}
             </div>
