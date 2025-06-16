@@ -4,6 +4,7 @@ import BackButton from '@/components/general/back-button';
 import CardLoader from '@/components/general/card-loader';
 import ContentWraper from '@/components/general/content-wraper';
 import Header from '@/components/header';
+import { LoadingSpinnerIcon } from '@/components/icons';
 import NavigationBar from '@/components/navigation-bar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,18 +27,11 @@ import {
 } from '@/services/api/assessment';
 import { customMarkdownComponents } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
-import {
-  BundleEntry,
-  FhirResource,
-  List,
-  Questionnaire,
-  ResearchStudy
-} from 'fhir/r4';
+import { BundleEntry, List, Questionnaire, ResearchStudy } from 'fhir/r4';
 import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import ReactMarkdown from 'react-markdown';
 import QRCode from 'react-qr-code';
 
@@ -68,6 +62,7 @@ export default function Assessment() {
   >(null);
   // const [query, setQuery] = useState('');
 
+  const [isPending, startTransition] = useTransition();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const { data: popularAssessments, isLoading: popularLoading } =
     usePopularAssessments();
@@ -80,29 +75,51 @@ export default function Assessment() {
   const isPractitioner = authState?.userInfo?.role_name === 'practitioner';
 
   useEffect(() => {
-    if (isDrawerOpenParam && assessmentIdParam) {
-      const found = findAssessmentById(assessmentIdParam);
-      if (found) {
-        setSelectedAssessment(found);
-        setIsOpen(true);
+    if (!isDrawerOpenParam || !assessmentIdParam) return;
+    const found = findAssessmentById(assessmentIdParam);
+
+    if (!found) return;
+
+    let merged = found;
+
+    if (found.resourceType === 'ResearchStudy') {
+      merged = getMergedData(found);
+
+      const questionnaireUrl =
+        merged.relatedLists[0].resource?.entry?.[1]?.item?.reference
+          ?.split('/')
+          ?.pop();
+      if (questionnaireUrl) {
+        setResearchUrl(questionnaireUrl);
       }
     }
+    setSelectedAssessment(merged);
+    setIsOpen(true);
+
+    const params = new URLSearchParams(window.location.search);
+    const fullUrl = `${baseUrl}${pathname}?${params.toString()}`;
+    setCurrentLocation(fullUrl);
   }, [
     isDrawerOpenParam,
     assessmentIdParam,
+    research,
     popularAssessments,
-    regularAssessments,
-    research
+    regularAssessments
   ]);
 
   const findAssessmentById = (id: string) => {
-    const allAssessments = [
+    const allRegular = [
       ...(popularAssessments || []),
-      ...(regularAssessments || []),
-      ...(research || [])
+      ...(regularAssessments || [])
     ];
 
-    return allAssessments.find(item => item.resource.id === id)?.resource;
+    const regularFound = allRegular.find(item => item.resource.id === id);
+    if (regularFound) return regularFound.resource;
+
+    const researchFound = research?.find(item => item.resource.id === id);
+    if (researchFound) return getMergedData(researchFound.resource);
+
+    return null;
   };
 
   /* Filters the 'research' array to find list items that reference the given researchId.
@@ -117,8 +134,10 @@ export default function Assessment() {
     );
   };
 
-  const getMergedData = (researchId: string, researchStudy: FhirResource) => {
-    const relatedLists = findListData(researchId);
+  const getMergedData = (
+    researchStudy: ResearchStudy
+  ): ResearchStudy & { relatedLists: BundleEntry<List>[] } => {
+    const relatedLists = findListData(researchStudy.id);
 
     return { ...researchStudy, relatedLists };
   };
@@ -133,16 +152,17 @@ export default function Assessment() {
         .split('/')
         .pop();
 
-    const params = new URLSearchParams(window.location.search);
-    params.set('isDrawerOpen', 'true');
-    params.set('assessmentId', mergedData.id);
-
-    router.push(`?${params.toString()}`, { scroll: false });
     setSelectedAssessment(mergedData);
     setResearchUrl(questionnaireUrl);
 
+    const params = new URLSearchParams(window.location.search);
+    params.set('isDrawerOpen', 'true');
+    params.set('assessmentId', mergedData.id);
+    setIsOpen(true);
+
     const fullUrl = `${baseUrl}${pathname}?${params.toString()}`;
     setCurrentLocation(fullUrl);
+    router.push(`?${params.toString()}`, { scroll: false });
   };
 
   const handleAssessmentClick = (assessment: Questionnaire) => {
@@ -153,6 +173,7 @@ export default function Assessment() {
     params.set('assessmentId', assessment.id);
     router.push(`?${params.toString()}`, { scroll: false });
     setSelectedAssessment(assessment);
+    setIsOpen(true);
 
     const fullUrl = `${baseUrl}${pathname}?${params.toString()}`;
     setCurrentLocation(fullUrl);
@@ -204,13 +225,28 @@ export default function Assessment() {
 
       {selectedAssessment && (
         <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
-          <Link
-            href={`assessments/${'relatedLists' in selectedAssessment ? researchUrl : selectedAssessment.id}`}
+          <Button
+            onClick={() => {
+              startTransition(() => {
+                router.push(
+                  `assessments/${'relatedLists' in selectedAssessment ? researchUrl : selectedAssessment.id}`
+                );
+              });
+            }}
+            className='h-full w-full rounded-xl bg-secondary p-4 text-white'
+            disabled={isPending}
           >
-            <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
-              Isi assessment untuk Pasien
-            </Button>
-          </Link>
+            {isPending ? (
+              <LoadingSpinnerIcon
+                width={20}
+                height={20}
+                stroke='white'
+                className='w-full animate-spin'
+              />
+            ) : (
+              'Isi assessment untuk Pasien'
+            )}
+          </Button>
           <DrawerClose className='items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50'>
             Close
           </DrawerClose>
@@ -270,19 +306,30 @@ export default function Assessment() {
       {/* used data from relatedLists that have been merged before */}
       {selectedAssessment && (
         <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
-          {'relatedLists' in selectedAssessment ? (
-            <Link href={`assessments/${researchUrl}`}>
-              <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
-                Mulai
-              </Button>
-            </Link>
-          ) : (
-            <Link href={`assessments/${selectedAssessment.id}`}>
-              <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
-                Start Test
-              </Button>
-            </Link>
-          )}
+          <Button
+            onClick={() => {
+              startTransition(() => {
+                router.push(
+                  `assessments/${'relatedLists' in selectedAssessment ? researchUrl : selectedAssessment.id}`
+                );
+              });
+            }}
+            className='h-full w-full rounded-xl bg-secondary p-4 text-white'
+            disabled={isPending}
+          >
+            {isPending ? (
+              <LoadingSpinnerIcon
+                width={20}
+                height={20}
+                stroke='white'
+                className='w-full animate-spin'
+              />
+            ) : 'relatedLists' in selectedAssessment ? (
+              'Mulai'
+            ) : (
+              'Start Test'
+            )}
+          </Button>
           <DrawerClose className='items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50'>
             Close
           </DrawerClose>
@@ -346,10 +393,7 @@ export default function Assessment() {
               <div className='flex w-max space-x-4 pb-4'>
                 {filteredResearch(research).map(
                   (item: BundleEntry<ResearchStudy>) => {
-                    const mergedData = getMergedData(
-                      item.resource.id,
-                      item.resource
-                    ) as ResearchStudy & { relatedLists: List[] };
+                    const mergedData = getMergedData(item.resource);
                     return (
                       <div
                         key={item.resource.id}
@@ -392,7 +436,6 @@ export default function Assessment() {
                               className='cursor-pointer rounded-[32px] bg-secondary px-4 py-2 text-sm font-bold text-white'
                               onClick={() => {
                                 handleResearchClick(mergedData);
-                                setIsOpen(true);
                               }}
                             >
                               Gabung
@@ -427,7 +470,6 @@ export default function Assessment() {
                       className='card flex cursor-pointer flex-col gap-4 bg-white'
                       onClick={() => {
                         handleAssessmentClick(assessment.resource);
-                        setIsOpen(true);
                       }}
                     >
                       <div className='flex items-start justify-between'>
@@ -489,7 +531,6 @@ export default function Assessment() {
                     className='card item flex cursor-pointer flex-col p-2'
                     onClick={() => {
                       handleAssessmentClick(assessment.resource);
-                      setIsOpen(true);
                     }}
                   >
                     <div className='flex items-center'>

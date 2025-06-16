@@ -60,7 +60,7 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
     <>
       <Header showChat={false}>
         <div className='flex w-full items-center'>
-          <BackButton />
+          <BackButton route='/assessments' />
 
           <div className='text-[14px] font-bold text-white'>
             {pageTitle(category)}

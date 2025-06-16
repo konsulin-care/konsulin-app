@@ -26,7 +26,7 @@ import {
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { toast } from 'react-toastify';
 
 interface FhirFormsRendererProps {
@@ -47,6 +47,8 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     role,
     practitionerId
   } = props;
+
+  const [isPending, startTransition] = useTransition();
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null);
   const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -105,17 +107,19 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   };
 
   const handleNavigate = (buttonLabel: string, responseId?: string) => {
-    if (buttonLabel === 'result') {
-      const query = new URLSearchParams({
-        category: '1',
-        title: questionnaire.title
-      }).toString();
+    startTransition(() => {
+      if (buttonLabel === 'result') {
+        const query = new URLSearchParams({
+          category: '1',
+          title: questionnaire.title
+        }).toString();
 
-      router.push(`/record/${responseId}?${query}`);
-      setIsSubmitting(false);
-    } else {
-      router.push('/assessments');
-    }
+        router.push(`/record/${responseId}?${query}`);
+        setIsSubmitting(false);
+      } else {
+        router.push('/assessments');
+      }
+    });
   };
 
   const handleSubmitQuestionnaire = async (buttonLabel: string) => {
@@ -235,9 +239,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           <Button
             className='h-full w-full rounded-xl bg-secondary p-4 text-white'
             onClick={() => handleSubmitQuestionnaire('result')}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isPending}
           >
-            {isSubmitting ? (
+            {isSubmitting || isPending ? (
               <LoadingSpinnerIcon
                 width={20}
                 height={20}
