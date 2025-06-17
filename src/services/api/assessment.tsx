@@ -102,8 +102,7 @@ export const useUpdateSubmitQuestionnaire = (
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
     mutationFn: async (questionnaireResponse: QuestionnaireResponse) => {
-      const { author, item, resourceType, status, subject, id } =
-        questionnaireResponse;
+      const { author, item, resourceType, subject, id } = questionnaireResponse;
 
       const timestamp = new Date().toISOString();
 
@@ -117,7 +116,7 @@ export const useUpdateSubmitQuestionnaire = (
         item,
         resourceType,
         questionnaire: `Questionnaire/${questionnaireId}`,
-        status,
+        status: 'completed',
         authored: timestamp,
         subject
       });

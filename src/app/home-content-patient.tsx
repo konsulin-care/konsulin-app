@@ -41,6 +41,8 @@ export default function HomeContentPatient() {
    * also fetch the practitioner's profile to include in the result.
    */
   const fetchRecords = async () => {
+    if (!patientId) return [];
+
     const result = await getRecords({ patientId });
 
     const parsed = parseRecordBundles(result);
