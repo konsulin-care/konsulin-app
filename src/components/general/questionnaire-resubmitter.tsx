@@ -1,4 +1,5 @@
 import { useUpdateSubmitQuestionnaire } from '@/services/api/assessment';
+import { useQueryClient } from '@tanstack/react-query';
 import { QuestionnaireResponse } from 'fhir/r4';
 import { useEffect } from 'react';
 import { LoadingSpinnerIcon } from '../icons';
@@ -18,6 +19,7 @@ export default function QuestionnaireResubmitter({
   questionnaireResponse,
   onDone
 }: Props) {
+  const queryClient = useQueryClient();
   const { mutateAsync: updateQuestionnaireResponse } =
     useUpdateSubmitQuestionnaire(questionnaireId, isAuthenticated);
 
@@ -29,6 +31,9 @@ export default function QuestionnaireResubmitter({
     const submitResponse = async () => {
       try {
         await updateQuestionnaireResponse(payload);
+
+        // invalidate patient records query so dashboard refetches
+        await queryClient.refetchQueries(['patient-records', patientId]);
         localStorage.removeItem('skip-response-cleanup');
       } catch (error) {
         console.error('Error when updating questionnaire response: ', error);
