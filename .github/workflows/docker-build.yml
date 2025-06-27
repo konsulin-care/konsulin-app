@@ -33,13 +33,13 @@ on:
       API_URL:
         type: string
         required: true
-      WEBHOOK_AUTH:
-        type: string
-        required: true
+      
     secrets:
       DOCKER_USERNAME:
         required: true
       DOCKER_PASSWORD:
+        required: true
+      WEBHOOK_AUTH:
         required: true
 
 jobs:
