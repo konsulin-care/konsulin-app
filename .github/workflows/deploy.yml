@@ -22,4 +22,5 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             echo "Check Konsulin API Container Status..."
+            sleep 10
             docker ps -a | grep "konsulin-app" || echo "Container not found or SSH failed"
