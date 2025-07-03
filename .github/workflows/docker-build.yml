@@ -30,7 +30,10 @@ on:
       IS_PROD:
         type: boolean
         required: true
-      API_URL:
+      API_URL_DEV:
+        type: string
+        required: true
+      API_URL_PROD:
         type: string
         required: true
       
@@ -73,7 +76,7 @@ jobs:
               -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:nightly \
               -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:dev-${{ env.SHORT_SHA }}-${{ env.TIMESTAMP }} \
               -f Dockerfile \
-              --build-arg API_URL="${{ inputs.API_URL }}" \
+              --build-arg API_URL="${{ inputs.API_URL_DEV }}" \
               --build-arg WEBHOOK_AUTH="${{ inputs.WEBHOOK_AUTH }}" \
               --build-arg VERSION="${{ inputs.VERSION }}" \
               --build-arg GIT_COMMIT="${{ inputs.GIT_COMMIT }}" \
@@ -90,7 +93,7 @@ jobs:
               -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest \
               -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ inputs.VERSION }} \
               -f Dockerfile \
-              --build-arg API_URL="${{ inputs.API_URL }}" \
+              --build-arg API_URL="${{ inputs.API_URL_PROD }}" \
               --build-arg WEBHOOK_AUTH="${{ inputs.WEBHOOK_AUTH }}" \
               --build-arg VERSION="${{ inputs.VERSION }}" \
               --build-arg GIT_COMMIT="${{ inputs.GIT_COMMIT }}" \
