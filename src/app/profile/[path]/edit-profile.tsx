@@ -1,7 +1,10 @@
-import Input from '@/components/general/input'
-import DobCalendar from '@/components/profile/dob-calendar'
-import DropdownProfile from '@/components/profile/dropdown-profile'
-import ImageUploader from '@/components/profile/image-uploader'
+'use client';
+import { setCookies } from '@/app/actions';
+import Input from '@/components/general/input';
+import { LoadingSpinnerIcon } from '@/components/icons';
+import DobCalendar from '@/components/profile/dob-calendar';
+import DropdownProfile from '@/components/profile/dropdown-profile';
+import ImageUploader from '@/components/profile/image-uploader';
 import {
   Drawer,
   DrawerContent,
@@ -9,393 +12,689 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger
-} from '@/components/ui/drawer'
-import { DRAWER_STATE, subtitle_success_updated } from '@/constants/profile'
-import { useProfile } from '@/context/profile/profileContext'
-import { PropsProfile } from '@/context/profile/profileTypes'
-import { apiRequest } from '@/services/api'
+} from '@/components/ui/drawer';
 import {
-  ResponseProfile,
-  fetchEducations,
-  fetchGenders,
-  fetchProfile
-} from '@/services/profile'
-import { validateEmail } from '@/utils/validation'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns'
-import Image from 'next/image'
-import { Fragment, useEffect, useState } from 'react'
+  DRAWER_STATE,
+  genderList,
+  subtitle_success_updated
+} from '@/constants/profile';
+import { useAuth } from '@/context/auth/authContext';
+import {
+  useGetCities,
+  useGetDistricts,
+  useGetProvinces
+} from '@/services/api/cities';
+import { getProfileById, useUpdateProfile } from '@/services/profile';
+import { IWilayahResponse } from '@/types/wilayah';
+import {
+  generateAvatarPlaceholder,
+  mergeNames,
+  parseFhirProfile
+} from '@/utils/helper';
+import { validateEmail } from '@/utils/validation';
+import { useQuery } from '@tanstack/react-query';
+import { getCookie } from 'cookies-next';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { Patient, Practitioner } from 'fhir/r4';
+import { X } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { Fragment, useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
-export default function EditProfile({ userRole }) {
-  const { state, dispatch } = useProfile()
-  const [updateUser, setUpdateUser] = useState<PropsProfile>({
-    fullname: '',
-    email: '',
-    birth_date: '',
-    whatsapp_number: '',
-    gender: '',
-    address: '',
-    educations: ['']
-  })
-  const [userPhoto, setUserPhoto] = useState('/images/sample-foto.svg')
-  const [drawerState, setDrawerState] = useState(DRAWER_STATE.NONE)
-  const isPatient = userRole === 'patient'
-  const isClinician = userRole === 'clinician'
-  const [errors, setErrors] = useState<{ [key: string]: string }>({})
+type Props = {
+  userRole: string;
+  fhirId: string;
+};
 
-  const { data: editProfile } = useQuery<ResponseProfile>({
-    queryKey: ['edit-profile'],
-    queryFn: () => fetchProfile(state, dispatch)
-  })
+type ICustomProfile = {
+  fhirId: string;
+  resourceType: 'Patient' | 'Practitioner';
+  active: boolean;
+  birthDate: string;
+  gender: 'male' | 'female' | 'other' | 'unknown';
+  photo: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  addresses: string[];
+  cityCode: string;
+  city: string;
+  district: string;
+  districtCode: string;
+  provinceCode: string;
+  province: string;
+  postalCode: string;
+  phone: string;
+  email: string;
+};
 
-  const { data: genderOptions } = useQuery({
-    queryKey: ['genders'],
-    queryFn: fetchGenders,
-    staleTime: 1000 * 60 * 60 // will fresh after 1 hours
-  })
+export default function EditProfile({ userRole, fhirId }: Props) {
+  const router = useRouter();
+  const { state: authState, dispatch: dispatchAuth } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [updateUser, setUpdateUser] = useState<ICustomProfile>({
+    fhirId: '',
+    resourceType: null,
+    active: false,
+    birthDate: '',
+    gender: null,
+    photo: '',
+    userId: '',
+    firstName: '',
+    lastName: '',
+    addresses: [],
+    cityCode: '',
+    city: '',
+    district: '',
+    districtCode: '',
+    provinceCode: '',
+    province: '',
+    postalCode: '',
+    phone: '',
+    email: ''
+  });
+  const [drawerState, setDrawerState] = useState(DRAWER_STATE.NONE);
+  // const isPatient = userRole === 'patient';
+  // const isClinician = userRole === 'clinician';
+  const fhirRole = userRole === 'patient' ? 'Patient' : 'Practitioner';
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const { data: educationsOptions } = useQuery({
-    queryKey: ['educations'],
-    queryFn: fetchEducations,
-    staleTime: 1000 * 60 * 60 // will fresh after 1 hours
-  })
+  const { isLoading: isProfileLoading } = useQuery<Patient | Practitioner>({
+    queryKey: ['profile-data', fhirId],
+    queryFn: () => getProfileById(fhirId, fhirRole),
+    onSuccess: result => {
+      const parsed = parseFhirProfile(result);
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: async (updateUser: PropsProfile) => {
-      try {
-        const response = await apiRequest(
-          'PUT',
-          '/api/v1/users/profile',
-          updateUser
-        )
-        return response
-      } catch (err) {
-        throw err
+      if (parsed) {
+        setUpdateUser(parsed);
       }
+      setIsLoading(false);
     },
-    onSuccess: ({ updateUser }) => {
-      dispatch({ type: 'updated', payload: { profile: updateUser } })
-      setDrawerState(DRAWER_STATE.SUCCESS)
+    onError: (error: Error) => {
+      console.error('Error when fetching user profile: ', error);
+      toast.error(error.message);
+      setIsLoading(false);
     }
-  })
+  });
+
+  const {
+    mutateAsync: updateProfile,
+    isLoading: isUpdateLoading,
+    isError: isUpdateError
+  } = useUpdateProfile();
+
+  const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
+  const { data: listCities, isLoading: cityLoading } = useGetCities(
+    Number(updateUser.provinceCode)
+  );
+  const { data: listDistricts, isLoading: districtLoading } = useGetDistricts(
+    Number(updateUser.cityCode)
+  );
+
+  const isValidUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   useEffect(() => {
-    if (editProfile) {
-      const {
-        fullname,
-        email,
-        birth_date,
-        whatsapp_number,
-        address,
-        gender,
-        educations
-      } = editProfile.data
-      setUpdateUser({
-        fullname: fullname ?? '',
-        email: email ?? '',
-        birth_date: birth_date ?? '',
-        whatsapp_number: whatsapp_number ?? '',
-        gender: gender ?? '',
-        address: address ?? '',
-        educations: educations ?? ['']
-      })
-    }
-  }, [editProfile])
-
-  function handleEducationSelect(value: string) {
-    const selectedOption = educationsOptions.find(
-      option => option.name === value
-    )
-    if (selectedOption && isPatient) {
+    if (!updateUser.addresses || updateUser.addresses.length === 0) {
       setUpdateUser(prev => ({
         ...prev,
-        educations: [selectedOption.name]
-      }))
+        addresses: ['']
+      }));
     }
-    if (selectedOption && isClinician) {
-      setUpdateUser(prev => ({
-        ...prev,
-        educations: Array.isArray(prev.educations)
-          ? [...prev.educations, selectedOption.name]
-          : [selectedOption.name]
-      }))
+  }, [updateUser.addresses]);
+
+  const validateInput = (name: string, value: string) => {
+    let error = '';
+    const usernameRegex = /^[a-zA-Z ]+$/;
+
+    switch (name) {
+      case 'firstName':
+        if (!value) {
+          error = 'Nama depan pengguna tidak boleh kosong';
+        } else if (!usernameRegex.test(value)) {
+          error = 'Format nama depan pengguna tidak valid';
+        } else if (value.length < 2) {
+          error = 'Nama depan pengguna minimum 2 karakter';
+        }
+        break;
+      case 'lastName':
+        if (!usernameRegex.test(value)) {
+          error = 'Format nama belakang pengguna tidak valid';
+        } else if (value.length < 2) {
+          error = 'Nama belakang pengguna minimum 2 karakter';
+        }
+        break;
+      case 'email':
+        if (!value) {
+          error = 'Email tidak boleh kosong';
+        } else if (!validateEmail(value)) {
+          error = 'Format email tidak valid';
+        }
+        break;
+      case 'phone':
+        const phoneRegex = /^[0-9]{10,15}$/;
+        if (!value.trim()) {
+          error = 'Nomor WhatsApp tidak boleh kosong';
+        } else if (!phoneRegex.test(value)) {
+          error = 'Nomor WhatsApp harus berupa angka 10-15 digit';
+        }
+        break;
+
+      case 'addresses':
+        if (
+          !Array.isArray(value) ||
+          value.length === 0 ||
+          value.every(part => !part.trim())
+        ) {
+          error = 'Alamat tidak boleh kosong';
+        }
+        break;
+      case 'city':
+        if (!value.trim()) {
+          error = 'Kota tidak boleh kosong';
+        }
+        break;
+      case 'district':
+        if (!value.trim()) {
+          error = 'Kecamatan tidak boleh kosong';
+        }
+        break;
+      case 'province':
+        if (!value.trim()) {
+          error = 'Provinsi tidak boleh kosong';
+        }
+        break;
+      case 'postalCode':
+        if (!value.trim()) {
+          error = 'Kode pos tidak boleh kosong';
+        }
+        break;
+      case 'birthDate':
+        if (!value) {
+          error = 'Tanggal lahir tidak boleh kosong';
+        }
+        break;
+      case 'gender':
+        if (!value) {
+          error = 'Jenis kelamin tidak boleh kosong';
+        }
+        break;
+      default:
+        break;
     }
-  }
 
-  function handleChangeInput(label: string, value: any) {
-    setUpdateUser(prevState => ({ ...prevState, [label]: value }))
-  }
+    return error;
+  };
 
-  function handleAddEducationLevel() {
-    const newEducation = updateUser.educations
-      ? [...updateUser.educations, '']
-      : ['']
-    setUpdateUser(prevState => ({ ...prevState, educations: newEducation }))
-  }
+  const handleChangeInput = (label: string, value: any) => {
+    setUpdateUser(prevState => ({ ...prevState, [label]: value }));
+    const errorMessage = validateInput(label, value);
+    setErrors(prev => ({
+      ...prev,
+      [label]: errorMessage
+    }));
+  };
 
-  function handleEducationChange(index: number, value: string) {
-    console.log('value', value)
-    setUpdateUser(prevState => ({
-      ...prevState,
-      educations: Array.isArray(prevState.educations)
-        ? prevState.educations.map((edu, i) => (i === index ? value : edu))
-        : [value]
-    }))
-  }
-
-  function handleEditSave() {
-    const validationErrors = validateForm(updateUser)
-
-    if (Object.keys(validationErrors).length === 0) {
-      const updatedProfile = {
-        ...updateUser,
-        birth_date: updateUser.birth_date
-          ? format(new Date(updateUser.birth_date), 'yyyy-MM-dd')
-          : undefined
+  const validateForm = (data: ICustomProfile): boolean => {
+    const errors: { [key: string]: string } = {};
+    Object.entries(data).forEach(([key, value]) => {
+      const error = validateInput(key, value as string);
+      if (error) {
+        errors[key] = error;
       }
-      mutate(updatedProfile)
-    } else {
-      setErrors(validationErrors)
-    }
-  }
+    });
 
-  function handleDOBChange(value: any) {
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleEditSave = async () => {
+    // TODO: image uploader not finished yet
+    let base64ProfilePicture = updateUser.photo;
+    if (isValidUrl(updateUser.photo)) {
+      base64ProfilePicture = await urlToBase64(updateUser.photo);
+    }
+    const updatedUser = {
+      ...updateUser,
+      photo: base64ProfilePicture
+    };
+
+    const splitName = updateUser.firstName.split(' ');
+
+    const payload: Patient | Practitioner = {
+      resourceType: updateUser.resourceType,
+      id: updateUser.fhirId,
+      active: updateUser.active,
+      birthDate: updateUser.birthDate,
+      gender: updateUser.gender,
+      photo: [
+        {
+          url: ''
+        }
+      ],
+      identifier: [
+        {
+          system: 'https://login.konsulin.care/userid',
+          value: updateUser.userId
+        }
+      ],
+      name: [
+        {
+          use: 'official',
+          given: splitName,
+          family: updateUser.lastName
+        }
+      ],
+      address: [
+        {
+          use: 'home',
+          type: 'physical',
+          line: updateUser.addresses,
+          district: updateUser.district,
+          city: updateUser.city,
+          postalCode: updateUser.postalCode,
+          country: 'ID'
+        }
+      ],
+      telecom: [
+        {
+          system: 'phone',
+          use: 'mobile',
+          value: updateUser.phone
+        },
+        {
+          system: 'email',
+          use: 'home',
+          value: updateUser.email
+        }
+      ]
+    };
+
+    const result = await updateProfile({ payload });
+    if (!isUpdateError && result) {
+      const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+      auth.profile_picture = result.photo[0].url;
+      auth.fullname =
+        result.resourceType === 'Practitioner'
+          ? mergeNames(result.name, result?.qualification)
+          : mergeNames(result.name);
+      await setCookies('auth', JSON.stringify(auth));
+      dispatchAuth({ type: 'auth-check', payload: auth });
+
+      setDrawerState(DRAWER_STATE.SUCCESS);
+    }
+  };
+
+  const handleDOBChange = (value: Date) => {
     setUpdateUser(prevState => ({
       ...prevState,
-      birth_date: value
-    }))
-    setDrawerState(DRAWER_STATE.NONE)
-  }
+      birthDate: value ? format(value, 'yyyy-MM-dd') : ''
+    }));
+    setDrawerState(DRAWER_STATE.NONE);
+  };
 
-  function closeDrawer() {
-    setDrawerState(DRAWER_STATE.NONE)
-  }
+  const closeDrawer = () => {
+    setDrawerState(DRAWER_STATE.NONE);
+  };
 
-  function validateForm(user: PropsProfile) {
-    const errors: { [key: string]: string } = {}
-    const {
-      fullname,
-      email,
-      whatsapp_number,
-      address,
-      birth_date,
-      gender,
-      educations
-    } = user
-
-    if (!fullname) {
-      errors.fullname = 'Username is required'
-    }
-
-    if (!email) {
-      errors.email = 'Email is required'
-    } else if (!validateEmail(email)) {
-      errors.email = 'Valid email is required'
-    }
-
-    if (!whatsapp_number) {
-      errors.whatsapp_number = 'Whatsapp number is required'
-    }
-
-    if (!address) {
-      errors.address = 'Address is required'
-    }
-
-    if (!birth_date) {
-      errors.birth_date = 'Birthdate is required'
-    }
-
-    if (!gender) {
-      errors.gender = 'Gender is required'
-    }
-
-    if (educations && educations.length === 0) {
-      errors.education = 'At least one education level is required'
-    }
-
-    return errors
-  }
-
-  function handleGenderSelect(value: string) {
+  const handleGenderSelect = (value: any) => {
     setUpdateUser(prevState => ({
       ...prevState,
-      gender: value
-    }))
-  }
+      gender: value.code
+    }));
+  };
+
+  const handleProvinceSelect = (value: IWilayahResponse) => {
+    setUpdateUser(prevState => ({
+      ...prevState,
+      provinceCode: value.code,
+      province: value.name,
+      cityCode: '',
+      city: ''
+    }));
+  };
+
+  const handleCitySelect = (value: IWilayahResponse) => {
+    setUpdateUser(prevState => ({
+      ...prevState,
+      cityCode: value.code,
+      city: value.name,
+      district: '',
+      districtCode: ''
+    }));
+  };
+
+  const handleDistrictSelect = (value: IWilayahResponse) => {
+    setUpdateUser(prevState => ({
+      ...prevState,
+      district: value.name,
+      districtCode: value.code
+    }));
+  };
+
+  const handleUserPhoto = (value: string) => {
+    setUpdateUser(prevState => ({
+      ...prevState,
+      photo: value
+    }));
+  };
+
+  const handleAddAddress = () => {
+    const newAddresses = Array.isArray(updateUser.addresses)
+      ? [...updateUser.addresses, '']
+      : [''];
+    setUpdateUser(prev => ({ ...prev, addresses: newAddresses }));
+  };
+
+  const handleAddressChange = (index: number, value: string) => {
+    setUpdateUser(prevState => ({
+      ...prevState,
+      addresses: Array.isArray(prevState.addresses)
+        ? prevState.addresses.map((addr, i) => (i === index ? value : addr))
+        : [value]
+    }));
+  };
+
+  const handleRemoveAddress = (index: number) => {
+    setUpdateUser(prev => ({
+      ...prev,
+      addresses: prev.addresses.filter((_, i) => i !== index)
+    }));
+  };
+
+  const urlToBase64 = async (url: string): Promise<string> => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve(reader.result as string);
+      };
+      reader.onerror = () => {
+        reject(new Error('Failed to convert URL to Base64'));
+      };
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const formatDate = (dateObject: string) => {
+    const date = new Date(dateObject);
+
+    try {
+      if (date instanceof Date) {
+        return format(date, 'dd MMM yyyy', { locale: id });
+      } else {
+        return date;
+      }
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
+  };
+
+  const { initials, backgroundColor } = generateAvatarPlaceholder({
+    id: authState.userInfo?.fhirId,
+    name: authState.userInfo?.fullname,
+    email: authState.userInfo?.email
+  });
 
   return (
     <div className='flex min-h-screen flex-col'>
       <div className='flex flex-grow flex-col justify-between p-4'>
-        <ImageUploader userPhoto={userPhoto} onPhotoChange={setUserPhoto} />
-        <div className='flex flex-grow flex-col space-y-4'>
-          <Input
-            width={24}
-            height={24}
-            prefixIcon={'/icons/user-edit.svg'}
-            placeholder='Masukan Nama Lengkap'
-            name='fullname'
-            id='fullname'
-            type='text'
-            opacity={false}
-            value={updateUser.fullname}
-            onChange={(event: any) =>
-              handleChangeInput('fullname', event.target.value)
-            }
-            outline={false}
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-          />
-          {errors.fullname && (
-            <p className='px-4 text-xs text-red-500'>{errors.fullname}</p>
-          )}
-          <Input
-            width={24}
-            height={24}
-            prefixIcon={'/icons/email.svg'}
-            placeholder='Masukan Alamat Email'
-            name='email'
-            id='email'
-            type='email'
-            opacity={false}
-            value={updateUser.email}
-            onChange={(event: any) =>
-              handleChangeInput('email', event.target.value)
-            }
-            outline={false}
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-          />
-          {errors.email && (
-            <p className='px-4 text-xs text-red-500'>{errors.email}</p>
-          )}
-          <div
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-            onClick={() => setDrawerState(DRAWER_STATE.DOB)}
-          >
-            <Image
-              src={'/icons/calendar-edit.png'}
-              alt='calendar-icon'
-              width={24}
-              height={24}
+        {isLoading || isProfileLoading ? (
+          <div className='flex min-h-screen min-w-full items-center justify-center'>
+            <LoadingSpinnerIcon
+              width={56}
+              height={56}
+              className='w-full animate-spin'
             />
-            <div className='flex flex-grow justify-start text-sm'>
-              {updateUser.birth_date
-                ? format(updateUser.birth_date, 'yyyy-MM-dd')
-                : 'Masukan Tanggal Lahir'}
-            </div>
           </div>
-          <Input
-            width={24}
-            height={24}
-            prefixIcon={'/icons/country-code.svg'}
-            placeholder='Masukan Whatsapp Number'
-            name='whatsapp_number'
-            id='whatsapp_number'
-            type='text'
-            opacity={false}
-            value={updateUser.whatsapp_number}
-            onChange={(event: any) =>
-              handleChangeInput('whatsapp_number', event.target.value)
-            }
-            outline={false}
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-          />
-          {errors.whatsapp_number && (
-            <p className='px-4 text-xs text-red-500'>
-              {errors.whatsapp_number}
-            </p>
-          )}
-          <Input
-            width={24}
-            height={24}
-            prefixIcon={'/icons/location.svg'}
-            placeholder='Masukan Alamat'
-            name='address'
-            id='address'
-            type='text'
-            opacity={false}
-            value={updateUser.address}
-            onChange={(event: any) =>
-              handleChangeInput('address', event.target.value)
-            }
-            outline={false}
-            className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-          />
-          {errors.address && (
-            <p className='px-4 text-xs text-red-500'>{errors.address}</p>
-          )}
-          {isPatient && (
-            <div className='flex w-full flex-grow justify-between space-x-2'>
-              <div className='flex-1 flex-col'>
-                <DropdownProfile
-                  options={genderOptions}
-                  value={updateUser.gender}
-                  onSelect={handleGenderSelect}
-                  placeholder='Pilih Gender'
+        ) : (
+          <>
+            <ImageUploader
+              userPhoto={updateUser.photo}
+              onPhotoChange={handleUserPhoto}
+              initials={initials}
+              backgroundColor={backgroundColor}
+            />
+            <div className='flex flex-grow flex-col space-y-4'>
+              <Input
+                width={24}
+                height={24}
+                prefixIcon={'/icons/user-edit.svg'}
+                placeholder='Masukan Nama Depan'
+                name='firstName'
+                id='firstName'
+                type='text'
+                value={updateUser.firstName}
+                onChange={(event: any) =>
+                  handleChangeInput('firstName', event.target.value)
+                }
+                opacity={false}
+                outline={false}
+                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+              />
+              {errors.firstName && (
+                <p className='px-4 text-xs text-red-500'>{errors.firstName}</p>
+              )}
+              <Input
+                width={24}
+                height={24}
+                prefixIcon={'/icons/user-edit.svg'}
+                placeholder='Masukan Nama Belakang'
+                name='lastName'
+                id='lastName'
+                type='text'
+                value={updateUser.lastName}
+                onChange={(event: any) =>
+                  handleChangeInput('lastName', event.target.value)
+                }
+                opacity={false}
+                outline={false}
+                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+              />
+              {errors.lastName && (
+                <p className='px-4 text-xs text-red-500'>{errors.lastName}</p>
+              )}
+              <Input
+                width={24}
+                height={24}
+                prefixIcon={'/icons/email.svg'}
+                placeholder='Masukan Alamat Email'
+                name='email'
+                id='email'
+                type='email'
+                value={updateUser.email}
+                onChange={(event: any) =>
+                  handleChangeInput('email', event.target.value)
+                }
+                opacity={false}
+                outline={false}
+                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+              />
+              {errors.email && (
+                <p className='px-4 text-xs text-red-500'>{errors.email}</p>
+              )}
+              <div
+                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+                onClick={() => setDrawerState(DRAWER_STATE.DOB)}
+              >
+                <Image
+                  src={'/icons/calendar-edit.png'}
+                  alt='calendar-icon'
+                  width={24}
+                  height={24}
                 />
-                {errors.gender && (
-                  <p className='p-4 text-xs text-red-500'>{errors.gender}</p>
-                )}
+                <div className='flex flex-grow justify-start text-sm'>
+                  {updateUser.birthDate
+                    ? formatDate(updateUser.birthDate)
+                    : 'Masukan Tanggal Lahir'}
+                </div>
               </div>
-              <div className='flex-1 flex-col'>
-                <DropdownProfile
-                  options={educationsOptions}
-                  value={updateUser.educations[0]}
-                  onSelect={handleEducationSelect}
-                  placeholder='Pilih Pendidikan'
-                />
-                {errors.educations && (
-                  <p className='p-4 text-xs text-red-500'>
-                    {errors.educations}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-          {isClinician && (
-            <>
-              <div className='flex flex-col'>
-                <DropdownProfile
-                  options={genderOptions}
-                  value={updateUser.gender}
-                  onSelect={handleGenderSelect}
-                  placeholder='Pilih Gender'
-                />
-                {errors.gender && (
-                  <p className='px-4 text-xs text-red-500'>{errors.gender}</p>
-                )}
-              </div>
+              <Input
+                width={24}
+                height={24}
+                prefixIcon={'/icons/country-code.svg'}
+                placeholder='Masukan Whatsapp Number'
+                name='phone'
+                id='phone'
+                type='text'
+                value={updateUser.phone}
+                onChange={(event: any) => {
+                  const onlyNumbers = event.target.value.replace(/\D/g, '');
+                  handleChangeInput('phone', onlyNumbers);
+                }}
+                opacity={false}
+                outline={false}
+                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+              />
+              {errors.phone && (
+                <p className='px-4 text-xs text-red-500'>{errors.phone}</p>
+              )}
 
-              {Array.isArray(updateUser.educations) &&
-                updateUser.educations.map((edu, index) => (
+              <DropdownProfile
+                options={genderList}
+                value={updateUser.gender}
+                onSelect={handleGenderSelect}
+                placeholder='Pilih Gender'
+              />
+              {errors.gender && (
+                <p className='p-4 text-xs text-red-500'>{errors.gender}</p>
+              )}
+
+              <DropdownProfile
+                options={listProvinces}
+                value={updateUser.provinceCode}
+                onSelect={handleProvinceSelect}
+                placeholder='Pilih Provinsi'
+                loading={provinceLoading}
+              />
+              {errors.province && (
+                <p className='p-4 text-xs text-red-500'>{errors.province}</p>
+              )}
+
+              {(updateUser.provinceCode || updateUser.city) && (
+                <>
                   <DropdownProfile
-                    key={`${edu}-${index}`}
-                    options={educationsOptions}
-                    value={edu}
-                    onSelect={value => handleEducationChange(index, value)}
-                    placeholder='Pilih Pendidikan'
+                    options={listCities}
+                    value={updateUser.cityCode}
+                    onSelect={handleCitySelect}
+                    placeholder='Pilih Kota'
+                    labelPlaceholder={updateUser.city}
+                    loading={cityLoading}
                   />
-                ))}
+                  {errors.city && (
+                    <p className='p-4 text-xs text-red-500'>{errors.city}</p>
+                  )}
+                </>
+              )}
+
+              {(updateUser.cityCode || updateUser.district) && (
+                <>
+                  <DropdownProfile
+                    options={listDistricts}
+                    value={updateUser.districtCode}
+                    onSelect={handleDistrictSelect}
+                    placeholder='Pilih Kecamatan'
+                    labelPlaceholder={updateUser.district}
+                    loading={districtLoading}
+                  />
+                  {errors.district && (
+                    <p className='p-4 text-xs text-red-500'>
+                      {errors.district}
+                    </p>
+                  )}
+                </>
+              )}
+
+              {updateUser.addresses?.map((addr: string, index: number) => (
+                <div key={index} className='mb-2 flex items-center gap-2'>
+                  <Input
+                    width={24}
+                    height={24}
+                    prefixIcon={'/icons/location.svg'}
+                    placeholder='Masukan Alamat'
+                    name={`addresses-${index}`}
+                    id={`addresses-${index}`}
+                    type='text'
+                    value={addr}
+                    onChange={(event: any) =>
+                      handleAddressChange(index, event.target.value)
+                    }
+                    opacity={false}
+                    outline={false}
+                    className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+                  />
+                  <button
+                    type='button'
+                    onClick={() => handleRemoveAddress(index)}
+                    className='px-2 text-sm text-red-500'
+                  >
+                    <X />
+                  </button>
+                </div>
+              ))}
 
               <div className='my-4 flex justify-center'>
                 <p
                   className='cursor-pointer text-center text-sm font-normal'
-                  onClick={handleAddEducationLevel}
+                  onClick={handleAddAddress}
                 >
-                  + Add Education Level
+                  + Add New Address
                 </p>
               </div>
-              {errors.educations && (
-                <p className='px-4 text-xs text-red-500'>{errors.educations}</p>
-              )}
-            </>
-          )}
-        </div>
+
+              <div className='flex w-full flex-grow flex-col justify-between space-x-2'>
+                <div className='flex-1'>
+                  <Input
+                    width={24}
+                    height={24}
+                    prefixIcon={'/icons/location.svg'}
+                    placeholder='Masukan Kode pos'
+                    name='postalCode'
+                    id='postalCode'
+                    type='text'
+                    value={updateUser.postalCode}
+                    onChange={(event: any) => {
+                      const onlyNumbers = event.target.value.replace(/\D/g, '');
+                      handleChangeInput('postalCode', onlyNumbers);
+                    }}
+                    opacity={false}
+                    outline={false}
+                    className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+                  />
+                  {errors.postalCode && (
+                    <p className='px-4 text-xs text-red-500'>
+                      {errors.postalCode}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
         <button
-          className='text-md border-1 mt-4 w-full rounded-full border-primary bg-secondary p-4 font-semibold text-white'
+          className={`text-md border-1 mt-6 w-full rounded-full border-primary p-4 font-semibold ${validateForm(updateUser) && !isUpdateLoading ? 'bg-secondary text-white' : 'cursor-not-allowed bg-gray-300 text-gray-500'}`}
           type='submit'
           onClick={handleEditSave}
-          disabled={isPending}
+          disabled={!validateForm(updateUser) || isUpdateLoading}
         >
-          {isPending ? 'Loading...' : 'Simpan'}
+          {isUpdateLoading ? (
+            <LoadingSpinnerIcon
+              width={20}
+              height={20}
+              className='w-full animate-spin'
+            />
+          ) : (
+            'Simpan'
+          )}
         </button>
       </div>
 
@@ -406,13 +705,13 @@ export default function EditProfile({ userRole }) {
         <DrawerTrigger asChild>
           <div />
         </DrawerTrigger>
-        <DrawerContent className='p-4'>
+        <DrawerContent className='mx-auto flex w-full max-w-screen-sm flex-col p-4'>
           <DrawerHeader>
             <DrawerTitle></DrawerTitle>
             <DrawerDescription></DrawerDescription>
           </DrawerHeader>
           <DobCalendar
-            value={state.profile.birth_date}
+            value={updateUser.birthDate}
             onChange={handleDOBChange}
           />
         </DrawerContent>
@@ -420,10 +719,16 @@ export default function EditProfile({ userRole }) {
 
       <Drawer
         open={drawerState === DRAWER_STATE.SUCCESS}
-        onOpenChange={open => !open && closeDrawer()}
+        onOpenChange={open => {
+          if (!open && drawerState === DRAWER_STATE.SUCCESS) {
+            router.push('/profile');
+          } else if (!open) {
+            closeDrawer();
+          }
+        }}
       >
         <DrawerTrigger />
-        <DrawerContent>
+        <DrawerContent className='mx-auto flex w-full max-w-screen-sm flex-col'>
           <DrawerHeader>
             <DrawerTitle className='text-center text-xl font-bold text-[#2C2F35] opacity-100'>
               Changes Successful!
@@ -438,7 +743,10 @@ export default function EditProfile({ userRole }) {
             </DrawerDescription>
           </DrawerHeader>
           <button
-            onClick={closeDrawer}
+            onClick={() => {
+              closeDrawer();
+              router.push('/profile');
+            }}
             className='mx-4 mb-4 rounded-full border border-[#2C2F35] border-opacity-20 bg-white py-3 text-sm font-bold text-[#2C2F35] opacity-100'
           >
             Close
@@ -446,5 +754,5 @@ export default function EditProfile({ userRole }) {
         </DrawerContent>
       </Drawer>
     </div>
-  )
+  );
 }

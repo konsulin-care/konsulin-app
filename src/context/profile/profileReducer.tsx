@@ -1,43 +1,53 @@
-import { ActionProfile, StateProfile } from './profileTypes'
+import { ActionProfile, IProfile } from './profileTypes';
 
-export const initialState: StateProfile = {
-  profile: {
-    fullname: '',
-    email: '',
-    birth_date: undefined,
-    whatsapp_number: '',
-    gender: '',
-    address: '',
-    educations: []
-  },
-  pratice: {
-    // Initialize practice state if necessary
-  }
-}
+// export const initialState: StateProfile = {
+//   profile: {
+//     fullname: '',
+//     email: '',
+//     birth_date: undefined,
+//     whatsapp_number: '',
+//     gender: '',
+//     address: '',
+//     educations: [],
+//     practice_informations: null,
+//     practice_availabilities: null,
+//     profile_picture: undefined
+//   }
+// }
+
+export const initialState = {
+  resourceType: null,
+  id: null,
+  active: null,
+  birthDate: null,
+  gender: null,
+  photo: [],
+  identifier: [],
+  name: null,
+  address: [],
+  telecom: []
+};
 
 export const reducer = (
-  state: StateProfile = initialState,
+  state = initialState,
   action: ActionProfile
-): StateProfile => {
+): IProfile => {
   switch (action.type) {
     case 'updated':
       return {
         ...state,
-        profile: {
-          ...state.profile,
-          ...action.payload.profile
-        }
-      }
+        ...action.payload
+      };
     case 'getProfile':
       return {
         ...state,
-        profile: {
-          ...action.payload.profile
-        }
-      }
+        ...action.payload
+      };
+    case 'reset':
+      return initialState;
     default:
-      return state
+      return state;
   }
-}
+};
 
-export default reducer
+export default reducer;

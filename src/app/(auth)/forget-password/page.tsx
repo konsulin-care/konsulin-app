@@ -73,10 +73,16 @@ export default function ForgetPassword() {
     sendMailMutation.mutate(userEmail)
   }
 
+  function handleKeyPress(event: React.KeyboardEvent) {
+    if (event.key === 'Enter') {
+      handleSendMail()
+    }
+  }
+
   return (
     <div className='flex h-screen flex-col items-center justify-between px-4 py-8'>
       <div className='flex w-full flex-grow flex-col justify-start'>
-        <div className='px-5 py-4'>
+        <div className='px-5'>
           <Image
             width={8}
             height={16}
@@ -108,6 +114,7 @@ export default function ForgetPassword() {
             type='email'
             onChange={(event: any) => handleChangeInput(event.target.value)}
             outline={false}
+            onKeyDown={handleKeyPress}
             className={`${errors.email ? 'mt-4' : 'my-4'} flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4`}
           />
           {errors.email && (

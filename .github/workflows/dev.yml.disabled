@@ -1,0 +1,33 @@
+name: Build and Release Development
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - develop
+
+jobs:
+  docker:
+    name: Containerization
+    uses: ./.github/workflows/docker-self-hosted.yml
+    with:
+      API_URL: https://dev-blaze.konsulin.care
+      VERSION: development
+      RELEASE_TAG: $(git describe --tags --abbrev=0)
+      AUTHOR: ${{ github.actor }}
+      GIT_COMMIT: ${{ github.sha }}
+      RUN_NUMBER: ${{ github.run_number }}
+      BUILD_TIME: $(date '+%Y-%m-%d_%H:%M:%S_%z')
+      DOCKER_TAG: ${{ github.ref_name }}-${{ github.sha }}
+      NODE_MODULES_CACHE_DIR: /tmp/${{ github.repository }}/develop/node_modules
+      NEXTJS_CACHE_DIR: /tmp/${{ github.repository }}/develop/.next/cache
+
+  deploy:
+    name: Deployment
+    uses: ./.github/workflows/deploy-ansible.yml
+    needs: [docker]
+    with:
+      DOCKER_TAG: ${{ github.ref_name }}-${{ github.sha }}
+      ANSIBLE_PLAYBOOK: playbook-dev.yml
+      ANSIBLE_INVENTORY_HOSTS: "37.27.46.214,"
+    secrets:
+      SSH_KEY: ${{ secrets.SSH_KEY }}

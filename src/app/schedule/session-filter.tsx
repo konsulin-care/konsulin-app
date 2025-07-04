@@ -1,0 +1,510 @@
+import { FilterIcon } from '@/components/icons';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+  DrawerTrigger
+} from '@/components/ui/drawer';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { IUseClinicParams } from '@/services/clinic';
+import {
+  addDays,
+  addWeeks,
+  endOfDay,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+  subDays,
+  subMonths,
+  subWeeks
+} from 'date-fns';
+import { useEffect, useState } from 'react';
+const CONTENT_DEFAULT = 0;
+const CONTENT_CUSTOM = 1;
+
+const today = new Date();
+
+const filterContentListUpcomingDate = [
+  {
+    label: 'Today',
+    value: {
+      start: startOfDay(today),
+      end: endOfDay(today)
+    }
+  },
+  {
+    label: 'This Week',
+    value: {
+      start: startOfWeek(today, { weekStartsOn: 1 }),
+      end: endOfWeek(today, { weekStartsOn: 1 })
+    }
+  },
+  {
+    label: 'Next Week',
+    value: {
+      start: startOfWeek(addWeeks(today, 1), { weekStartsOn: 1 }),
+      end: endOfWeek(addWeeks(today, 1), { weekStartsOn: 1 })
+    }
+  }
+];
+
+const filterContentListPastDate = [
+  {
+    label: 'Today',
+    value: {
+      start: startOfDay(today),
+      end: endOfDay(today)
+    }
+  },
+  {
+    label: 'Past Week',
+    value: {
+      start: startOfWeek(subWeeks(today, 1), { weekStartsOn: 1 }),
+      end: endOfWeek(subWeeks(today, 1), { weekStartsOn: 1 })
+    }
+  },
+  {
+    label: 'Past Month',
+    value: {
+      start: startOfMonth(subMonths(today, 1)),
+      end: endOfMonth(subMonths(today, 1))
+    }
+  }
+];
+
+const filterContentListTime = [
+  {
+    label: '07:00 - 10:00',
+    value: {
+      start: '07:00',
+      end: '10:00'
+    }
+  },
+  {
+    label: '10:00 - 13:00',
+    value: {
+      start: '10:00',
+      end: '13:00'
+    }
+  },
+  {
+    label: '13:00 - 16:00',
+    value: {
+      start: '13:00',
+      end: '16:00'
+    }
+  },
+  {
+    label: '16:00 - 18:00',
+    value: {
+      start: '16:00',
+      end: '18:00'
+    }
+  },
+  {
+    label: '18:00 - 22:00',
+    value: {
+      start: '18:00',
+      end: '22:00'
+    }
+  }
+];
+
+export default function SessionFilter({ onChange, type, initialFilter }) {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [whichContent, setWhichContent] = useState<
+    typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
+  >(CONTENT_DEFAULT);
+  const [isUseCustomDate, setIsUseCustomDate] = useState<boolean>(false);
+  const [isUseCustomTime, setIsUseCustomTime] = useState<boolean>(false);
+  const [filter, setFilter] = useState<IUseClinicParams>({
+    start_date: undefined,
+    end_date: undefined,
+    start_time: undefined,
+    end_time: undefined
+  });
+
+  const isInitiaFilterState =
+    !filter.start_date &&
+    !filter.end_date &&
+    !filter.start_time &&
+    !filter.end_time;
+
+  useEffect(() => {
+    if (initialFilter.start_date && initialFilter.end_date) {
+      handleFilterChange('start_date', initialFilter.start_date);
+      handleFilterChange('end_date', initialFilter.end_date);
+
+      const allPresetDates = [
+        ...filterContentListUpcomingDate,
+        ...filterContentListPastDate
+      ];
+
+      const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
+
+      const matchedPreset = allPresetDates.some(preset => {
+        return (
+          formatDate(preset.value.start) ===
+            formatDate(initialFilter.start_date) &&
+          formatDate(preset.value.end) === formatDate(initialFilter.end_date)
+        );
+      });
+
+      setIsUseCustomDate(!matchedPreset);
+    }
+  }, [initialFilter]);
+
+  const handleCustomFilterOpen = () => {
+    if (isInitiaFilterState) {
+      handleFilterChange('start_time', '00:00');
+      handleFilterChange('end_time', '23:59');
+
+      if (type === 'past') {
+        handleFilterChange('start_date', subDays(today, 7));
+        handleFilterChange('end_date', today);
+      } else {
+        handleFilterChange('start_date', today);
+        handleFilterChange('end_date', addDays(today, 7));
+      }
+      setIsUseCustomDate(true);
+      setIsUseCustomTime(true);
+    }
+
+    setWhichContent(CONTENT_CUSTOM);
+  };
+
+  const disabledDates =
+    type === 'upcoming' ? { before: today } : { after: today };
+
+  const handleFilterChange = (label: string, value: any) => {
+    setFilter(prevState => ({
+      ...prevState,
+      [label]: value
+    }));
+  };
+
+  const resetFilter = () => {
+    setFilter({
+      start_date: undefined,
+      end_date: undefined,
+      start_time: undefined,
+      end_time: undefined
+    });
+  };
+
+  useEffect(() => {
+    resetFilter();
+    onChange({});
+  }, [type]);
+
+  const renderDrawerContent = () => {
+    switch (whichContent) {
+      case CONTENT_DEFAULT:
+        return (
+          <div className='flex flex-col'>
+            <DrawerTitle className='mx-auto text-[20px] font-bold'>
+              Filter & Sort
+            </DrawerTitle>
+            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+              <div className='mb-4 font-bold'>Date</div>
+              <div className='flex flex-wrap gap-[10px]'>
+                {type === 'upcoming'
+                  ? filterContentListUpcomingDate.map(date => (
+                      <Button
+                        key={date.label}
+                        onClick={() => {
+                          handleFilterChange('start_date', date.value.start);
+                          handleFilterChange('end_date', date.value.end);
+                          setIsUseCustomDate(false);
+                        }}
+                        variant='outline'
+                        className={cn(
+                          'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+                          isSameDay(filter.start_date, date.value.start) &&
+                            isSameDay(filter.end_date, date.value.end)
+                            ? 'bg-secondary font-bold text-white hover:bg-secondary'
+                            : 'bg-white font-normal'
+                        )}
+                      >
+                        {date.label}
+                      </Button>
+                    ))
+                  : filterContentListPastDate.map(date => (
+                      <Button
+                        key={date.label}
+                        onClick={() => {
+                          handleFilterChange('start_date', date.value.start);
+                          handleFilterChange('end_date', date.value.end);
+                          setIsUseCustomDate(false);
+                        }}
+                        variant='outline'
+                        className={cn(
+                          'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+                          isSameDay(filter.start_date, date.value.start) &&
+                            isSameDay(filter.end_date, date.value.end)
+                            ? 'bg-secondary font-bold text-white hover:bg-secondary'
+                            : 'bg-white font-normal'
+                        )}
+                      >
+                        {date.label}
+                      </Button>
+                    ))}
+                <Button
+                  variant='outline'
+                  onClick={handleCustomFilterOpen}
+                  className={cn(
+                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+                    isUseCustomDate
+                      ? 'bg-secondary font-bold text-white hover:bg-secondary'
+                      : 'bg-white font-normal'
+                  )}
+                >
+                  Custom
+                  {!isUseCustomDate || !filter.start_date || !filter.end_date
+                    ? ''
+                    : filter.start_date === filter.end_date
+                      ? ` : ${format(filter.start_date, 'dd MMM yy')}`
+                      : ` : ${format(filter.start_date, 'dd MMM yy')} - ${format(filter.end_date, 'dd MMM yy')}`}
+                </Button>
+              </div>
+            </div>
+            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+              <div className='mb-4 font-bold'>Session Time</div>
+              <div className='flex flex-wrap gap-[10px]'>
+                {filterContentListTime.map(time => (
+                  <Button
+                    variant='outline'
+                    key={time.label}
+                    onClick={() => {
+                      setIsUseCustomTime(false);
+                      handleFilterChange('start_time', time.value.start);
+                      handleFilterChange('end_time', time.value.end);
+                    }}
+                    className={cn(
+                      'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+                      filter.start_time === time.value.start &&
+                        filter.end_time === time.value.end
+                        ? 'bg-secondary font-bold text-white hover:bg-secondary'
+                        : 'bg-white font-normal'
+                    )}
+                  >
+                    {time.label}
+                  </Button>
+                ))}
+                {isUseCustomTime && filter.start_time && filter.end_time && (
+                  <Button
+                    variant='outline'
+                    onClick={handleCustomFilterOpen}
+                    className={cn(
+                      'h-[50px] w-min items-center justify-center rounded-lg border-0 bg-secondary p-4 text-[12px] font-bold text-white hover:bg-secondary'
+                    )}
+                  >
+                    Custom : {`${filter.start_time} - ${filter.end_time}`}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/**
+             * Session Type temporary removed
+             */}
+            {/* <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+              <div className='mb-4 font-bold'>Session Type</div>
+              <div className='flex flex-wrap gap-2'>
+                <Button
+                  variant='outline'
+                  className={cn(
+                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+                    filter.type === 'all'
+                      ? 'bg-secondary font-bold text-white'
+                      : 'bg-white'
+                  )}
+                  onClick={() => {
+                    handleFilterChange('type', 'all')
+                  }}
+                >
+                  All
+                </Button>
+                <Button
+                  variant='outline'
+                  className={cn(
+                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+                    filter.type === 'online'
+                      ? 'bg-secondary font-bold text-white'
+                      : 'bg-white'
+                  )}
+                  onClick={() => {
+                    handleFilterChange('type', 'online')
+                  }}
+                >
+                  Online
+                </Button>
+                <Button
+                  variant='outline'
+                  className={cn(
+                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+                    filter.type === 'offline'
+                      ? 'bg-secondary font-bold text-white'
+                      : 'bg-white'
+                  )}
+                  onClick={() => {
+                    handleFilterChange('type', 'offline')
+                  }}
+                >
+                  Offline
+                </Button>
+              </div>
+            </div> */}
+            {!isInitiaFilterState && (
+              <Button
+                variant='outline'
+                size='sm'
+                className={cn(
+                  buttonVariants({ variant: 'outline' }),
+                  'mt-4 w-min border-0 text-[12px]'
+                )}
+                onClick={resetFilter}
+              >
+                Reset Filter
+              </Button>
+            )}
+
+            <Button
+              className='mt-4 rounded-xl bg-secondary p-4 text-white'
+              onClick={() => {
+                setIsOpen(false);
+                onChange(filter);
+              }}
+            >
+              Terapkan Filter
+            </Button>
+          </div>
+        );
+      case CONTENT_CUSTOM:
+        return (
+          <div className='flex flex-col'>
+            <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
+            <div className='mt-4 flex w-full flex-col justify-center'>
+              <Calendar
+                mode='range'
+                selected={{
+                  from: filter.start_date,
+                  to: filter.end_date
+                }}
+                onSelect={date => {
+                  handleFilterChange('start_date', date?.from);
+                  handleFilterChange(
+                    'end_date',
+                    date?.to ? date.to : date?.from
+                  );
+                  setIsUseCustomDate(true);
+                }}
+                disabled={disabledDates}
+                className='w-full p-0'
+                classNames={{
+                  month: 'space-y-8 w-full',
+                  head_row: 'flex w-full',
+                  head_cell:
+                    'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] w-full',
+                  cell: 'w-full h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+                  day: cn(
+                    buttonVariants({ variant: 'ghost' }),
+                    'h-9 p-0 font-normal aria-selected:opacity-100 w-full'
+                  ),
+                  day_selected:
+                    'bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground focus:bg-secondary focus:text-secondary-foreground',
+                  day_today: 'bg-accent text-accent-foreground font-extrabold'
+                }}
+              />
+
+              <div className='mt-8 flex gap-4'>
+                <div className='grid w-full max-w-sm items-center gap-1.5'>
+                  <Label htmlFor='start_time'>Start Time</Label>
+                  <Input
+                    onChange={e => {
+                      handleFilterChange('start_time', e.target.value);
+                      setIsUseCustomTime(true);
+                    }}
+                    value={filter.start_time}
+                    id='start_time'
+                    className='block p-4'
+                    type='time'
+                  />
+                </div>
+                <div className='grid w-full max-w-sm items-center gap-1.5'>
+                  <Label htmlFor='end_time'>End Time</Label>
+                  <Input
+                    min={filter.start_time}
+                    onChange={e => {
+                      handleFilterChange('end_time', e.target.value);
+                      setIsUseCustomTime(true);
+                    }}
+                    value={filter.end_time}
+                    id='end_time'
+                    className='block p-4'
+                    type='time'
+                  />
+                </div>
+              </div>
+            </div>
+            <Button
+              type='button'
+              onClick={() => setWhichContent(CONTENT_DEFAULT)}
+              className='mt-4 rounded-xl bg-secondary text-white'
+            >
+              Kembali
+            </Button>
+          </div>
+        );
+
+      default:
+        break;
+    }
+  };
+
+  return (
+    <Drawer
+      onClose={() => {
+        setWhichContent(CONTENT_DEFAULT);
+        setIsOpen(false);
+      }}
+      open={isOpen}
+    >
+      <DrawerTrigger asChild>
+        <Button
+          onClick={() => setIsOpen(true)}
+          variant='outline'
+          className={cn(
+            'flex h-[50px] w-[50px] items-center justify-center rounded-lg border-0 bg-[#F9F9F9]'
+          )}
+        >
+          <FilterIcon
+            width={20}
+            height={20}
+            className='min-h-[20px] min-w-[20px]'
+            fill='#13c2c2'
+          />
+        </Button>
+      </DrawerTrigger>
+      <DrawerContent
+        className='mx-auto max-w-screen-sm p-4'
+        onInteractOutside={() => {
+          onChange(filter);
+          setIsOpen(false);
+        }}
+      >
+        <DrawerDescription />
+        <div className='mt-4'>{renderDrawerContent()}</div>
+      </DrawerContent>
+    </Drawer>
+  );
+}

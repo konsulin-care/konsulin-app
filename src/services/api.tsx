@@ -1,51 +1,62 @@
-import { getFromLocalStorage } from '@/lib/utils'
-import { QueryClient } from '@tanstack/react-query'
-import axios, { AxiosError } from 'axios'
-import { toast } from 'react-toastify'
+import axios from 'axios';
+import { deleteCookie, getCookie } from 'cookies-next';
+import { toast } from 'react-toastify';
 
 export const API = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
     'Content-Type': 'application/json'
   }
-})
-
-export const queryClient = new QueryClient()
+});
 
 API.interceptors.request.use(
   config => {
-    const auth = getFromLocalStorage('auth')
-    if (auth) {
-      const { token } = JSON.parse(auth)
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`
-      }
-    }
-    return config
+    const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+
+    if (auth.token) config.headers.Authorization = `Bearer ${auth.token}`;
+
+    return config;
   },
   error => {
-    return Promise.reject(error)
+    return Promise.reject(error);
   }
-)
+);
 
 API.interceptors.response.use(
   response => response,
-  (error: AxiosError) => {
-    console.log('Logging the error', error)
-    console.log('Logging message', error?.message)
-    toast.error(error?.message || 'An unexpected error occured!', {
+  error => {
+    console.log('Logging the error', error);
+
+    let errorMessage = error?.message || 'An unexpected error occured!';
+    if (error.response.data.message) errorMessage = error.response.data.message;
+
+    toast.error(errorMessage, {
       position: 'top-right',
-      autoClose: 5000,
+      autoClose: 2500,
       hideProgressBar: false,
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true,
       progress: undefined
-      // theme: 'dark',
-    })
-    return Promise.reject(error)
+    });
+
+    // expired token
+    if (
+      (error.response.status === 401 &&
+        error.response.data.dev_message ===
+          'invalid or expired token: Token is expired') ||
+      error.response.data.dev_message === 'token missing'
+    ) {
+      setTimeout(() => {
+        deleteCookie('auth');
+        localStorage.clear();
+        window.location.href = '/';
+      }, 1000);
+    }
+
+    return Promise.reject(error);
   }
-)
+);
 
 export async function apiRequest<T>(
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
@@ -58,12 +69,12 @@ export async function apiRequest<T>(
     url: endpoint,
     data: data,
     params: params
-  }
+  };
 
   try {
-    const response = await API(config)
-    return response.data as T
+    const response = await API(config);
+    return response as T;
   } catch (error) {
-    throw error
+    throw error;
   }
 }

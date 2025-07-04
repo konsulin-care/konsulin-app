@@ -1,8 +1,8 @@
+import { setCookies } from '@/app/actions'
 import Input from '@/components/login/input'
 import { useAuth } from '@/context/auth/authContext'
 import { apiRequest } from '@/services/api'
 import {
-  alphaNumeric,
   capitalizeFirstLetter,
   specialCharacter,
   upperCaseOneCharacter
@@ -19,11 +19,14 @@ interface LoginResponse {
   data: {
     token: string
     user: {
-      name: string
+      fullname: string
       email: string
       user_id: string
       role_id: string
       role_name: string
+      practitioner_id?: string
+      patient_id?: string
+      profile_picture?: string
     }
   }
 }
@@ -51,7 +54,11 @@ function LoginFormContent({ role }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const { mutate, isPending } = useMutation<
+  const setLoginInfoToCookies = async (formData: any) => {
+    await setCookies('auth', formData)
+  }
+
+  const { mutate, isLoading } = useMutation<
     LoginResponse,
     unknown,
     typeof userData
@@ -68,21 +75,36 @@ function LoginFormContent({ role }) {
         throw err
       }
     },
-    onSuccess: response => {
+    onSuccess: async response => {
+      const { fullname, practitioner_id, patient_id, email, profile_picture } =
+        response.data.user
+
       let userType = ''
       if (response.data.user.role_name === 'patient') userType = 'patient'
       if (response.data.user.role_name === 'practitioner')
         userType = 'clinician'
-      dispatch({
+
+      let id = null
+      if (response.data.user.role_name === 'patient') id = patient_id
+      if (response.data.user.role_name === 'practitioner') id = practitioner_id
+
+      const payload = {
+        token: response.data.token,
+        role_name: userType,
+        fullname: fullname || email,
+        email,
+        id,
+        profile_picture
+      }
+
+      await setLoginInfoToCookies(JSON.stringify(payload))
+
+      await dispatch({
         type: 'login',
-        payload: {
-          token: response.data.token,
-          role_name: userType,
-          name: response.data.user.name
-        }
+        payload
       })
-      const redirect = searchParams.get('redirect')
-      router.push(redirect || '/')
+
+      router.push('/')
     }
   })
 
@@ -115,8 +137,9 @@ function LoginFormContent({ role }) {
           newError = 'Username is required'
         } else if (value.length < 8) {
           newError = 'Username must be at least 8 characters long'
-        } else if (!alphaNumeric(value)) {
-          newError = 'Username must contain only letters and numbers'
+        } else if (!/^[a-zA-Z0-9._]+$/.test(value)) {
+          newError =
+            'Username can only contain letters, numbers, dots, and underscores'
         }
         break
       case 'password':
@@ -207,9 +230,9 @@ function LoginFormContent({ role }) {
         <button
           className='text-md border-1 my-4 w-full rounded-full border-primary bg-secondary p-4 font-semibold text-white'
           type='submit'
-          disabled={isPending}
+          disabled={isLoading}
         >
-          {isPending ? 'Loading...' : 'Masuk Sekarang'}
+          {isLoading ? 'Loading...' : 'Masuk Sekarang'}
         </button>
 
         <p className='mb-[48px] w-full text-center text-sm'>

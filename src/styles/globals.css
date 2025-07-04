@@ -19,6 +19,8 @@
     --secondary: #13c2c2;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
+    --soft-gray: #eceff4;
+
     --muted: rgba(44, 47, 53, 60%);
     --muted-foreground: 215.4 16.3% 46.9%;
 
@@ -81,4 +83,22 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.swiper-pagination {
+  position: relative !important;
+  max-width: 95px !important;
+}
+
+.swiper-pagination-bullets {
+  left: auto !important;
+  transform: none !important;
+  margin-left: auto;
+}
+
+.swiper-pagination-bullet-active {
+  background: #0abdc3 !important;
+  width: 24px !important;
+  height: 6px !important;
+  border-radius: 4px !important;
 }

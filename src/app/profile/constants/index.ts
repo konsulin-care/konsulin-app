@@ -34,5 +34,3 @@ export const praticeDetails = [
     ]
   }
 ]
-
-export const firms = [{ name: 'Konsulin' }, { name: 'Tempat Lain' }]

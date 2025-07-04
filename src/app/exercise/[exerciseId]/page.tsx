@@ -1,21 +1,29 @@
 'use client'
 
+import ContentWraper from '@/components/general/content-wraper'
+import PageLoader from '@/components/general/page-loader'
+import Share from '@/components/general/share'
 import Header from '@/components/header'
 import NavigationBar from '@/components/navigation-bar'
-import withAuth from '@/hooks/withAuth'
+import { useGetExcerise } from '@/services/api/exercise'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export interface IDetailExerciserProps {
-  IWithAuth
   params: { exerciseId: string }
 }
 
-const DetailExercise: React.FC<IDetailExerciserProps> = ({ params }) => {
+export default function DetailExercise({ params }: IDetailExerciserProps) {
   const router = useRouter()
 
+  const { data, isLoading: excerciseIsLoading } = useGetExcerise()
+
+  const excerciseData =
+    Array.isArray(data) && data?.find(item => item?.id === params.exerciseId)
+
   return (
-    <NavigationBar>
+    <>
+      <NavigationBar />
       <Header showChat={false} showNotification={false}>
         <div className='flex w-full items-center'>
           <ChevronLeftIcon
@@ -25,16 +33,34 @@ const DetailExercise: React.FC<IDetailExerciserProps> = ({ params }) => {
           />
 
           <div className='w-full text-center text-[14px] font-bold text-white'>
-            Title Excercise - {params.exerciseId}
+            {excerciseData?.title}
           </div>
         </div>
       </Header>
-      <div className='mt-[-24px] min-h-screen rounded-[16px] bg-white p-4'>
-        {/* Filter / Search */}
-        <h1> {params.exerciseId}</h1>
-      </div>
-    </NavigationBar>
+
+      <ContentWraper className='p-4'>
+        {excerciseIsLoading && !excerciseData ? (
+          <PageLoader />
+        ) : (
+          <>
+            <iframe
+              style={{ borderRadius: '12px' }}
+              src={excerciseData.url}
+              width='100%'
+              height='352'
+              allow='autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'
+              loading='lazy'
+            />
+            <div className='mb-4 mt-4 flex w-full items-center justify-between'>
+              <span className='text-[12px] font-bold'>Excersise Brief</span>
+              <Share />
+            </div>
+            <div className='text-[12px] font-normal'>
+              {excerciseData.description}
+            </div>
+          </>
+        )}
+      </ContentWraper>
+    </>
   )
 }
-
-export default withAuth(DetailExercise, ['patient'], true)

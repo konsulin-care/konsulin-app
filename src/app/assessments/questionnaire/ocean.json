@@ -1,0 +1,65 @@
+{
+  "questionnaire": "Questionnaire/big-five-inventory",
+  "description": "Big Five Personality Inventory (BFI) adalah instrumen yang berisi 50 pertanyaan dan dirancang untuk diisi sendiri oleh responden. Instrumen ini bertujuan mengukur lima dimensi utama kepribadian, yaitu ekstraversi, agreeableness (keramahan), conscientiousness (ketelitian), neuroticism (kestabilan emosional yang berlawanan), dan openness/intellect (keterbukaan terhadap pengalaman/intelektualitas).",
+  "item": [
+    {
+      "linkId": "score-dimension",
+      "item": [
+        {
+          "linkId": "openness",
+          "text": "Openness",
+          "answer": [
+            {
+              "valueInteger": 22
+            }
+          ]
+        },
+        {
+          "linkId": "conscientiousness",
+          "text": "Conscientiousness",
+          "answer": [
+            {
+              "valueInteger": 17
+            }
+          ]
+        },
+        {
+          "linkId": "extroversion",
+          "text": "Extroversion",
+          "answer": [
+            {
+              "valueInteger": 26
+            }
+          ]
+        },
+        {
+          "linkId": "agreeableness",
+          "text": "Agreeableness",
+          "answer": [
+            {
+              "valueInteger": 20
+            }
+          ]
+        },
+        {
+          "linkId": "neuroticism",
+          "text": "Neuroticism",
+          "answer": [
+            {
+              "valueInteger": 24
+            }
+          ]
+        },
+        {
+          "linkId": "reference",
+          "text": "Referensi maksimal",
+          "answer": [
+            {
+              "valueInteger": 40
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

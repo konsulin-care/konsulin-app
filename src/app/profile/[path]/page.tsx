@@ -1,52 +1,57 @@
-'use client'
+'use client';
 
-import Header from '@/components/header'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
-import { ChevronLeft } from 'lucide-react'
-import { useParams, useRouter } from 'next/navigation'
-import { Suspense, useEffect, useState } from 'react'
-import EditPratice from './edit-pratice'
-import EditProfile from './edit-profile'
+import Header from '@/components/header';
+import { useAuth } from '@/context/auth/authContext';
+import { ChevronLeft } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import EditPratice from './edit-pratice';
+import EditProfile from './edit-profile';
 
-const PathProfile: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
-  const params = useParams()
-  const router = useRouter()
-  const path = params.path
-  const [title, setTitle] = useState('')
+const PathProfile = () => {
+  const { state: authState } = useAuth();
+  const params = useParams();
+  const router = useRouter();
+  const path = params.path;
+  const [title, setTitle] = useState('');
 
   useEffect(() => {
     if (path === 'edit-profile') {
-      setTitle('Perbarui Profile')
+      setTitle('Perbarui Profile');
     } else if (path === 'edit-pratice') {
-      setTitle('Perbarui Pratice Information')
+      setTitle('Perbarui Pratice Information');
     }
-  }, [path])
+  }, [path]);
 
-  let component = null
+  let component = null;
 
   if (path === 'edit-profile') {
-    component = <EditProfile userRole={userRole} />
+    component = (
+      <EditProfile
+        userRole={authState.userInfo.role_name}
+        fhirId={authState.userInfo.fhirId}
+      />
+    );
   } else if (path === 'edit-pratice') {
-    component = <EditPratice />
-  } else {
-    // Handle other paths
+    component = <EditPratice />;
   }
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <>
       <Header showChat={false} showNotification={false}>
-        {!isAuthenticated ? (
-          <div className='mt-5'></div>
+        {!authState.isAuthenticated ? (
+          <div className='mt-8'></div>
         ) : (
-          <div className='flex w-full items-center justify-between'>
+          <div className='mb-[-5px] flex w-full items-center justify-between'>
             <ChevronLeft
-              width={24}
-              height={24}
+              width={32}
+              height={32}
               onClick={() => router.back()}
               color='white'
+              className='cursor-pointer'
             />
             <div className='my-2 flex flex-grow'>
-              <span className='w-full pr-4 text-center text-[14px] font-bold text-white'>
+              <span className='w-full pr-6 text-center text-[14px] font-bold text-white'>
                 {title}
               </span>
             </div>
@@ -54,10 +59,10 @@ const PathProfile: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
         )}
       </Header>
       <div className='mt-[-24px] rounded-[16px] bg-white'>
-        <div className='min-h-screen p-4'>{component}</div>
+        <div className='min-h-[calc(100vh-105px)] p-4'>{component}</div>
       </div>
-    </Suspense>
-  )
-}
+    </>
+  );
+};
 
-export default withAuth(PathProfile, ['patient', 'clinician'])
+export default PathProfile;

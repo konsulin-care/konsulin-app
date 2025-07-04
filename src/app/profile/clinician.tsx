@@ -1,160 +1,441 @@
-'use client'
+'use client';
 
-import Collapsible from '@/components/profile/collapsible'
-import DropdownProfile from '@/components/profile/dropdown-profile'
-import InformationDetail from '@/components/profile/information-detail'
-import MedalCollection from '@/components/profile/medal-collection'
-import Settings from '@/components/profile/settings'
-import Tags from '@/components/profile/tags'
-import { Button } from '@/components/ui/button'
+import { LoadingSpinnerIcon } from '@/components/icons';
+import Collapsible from '@/components/profile/collapsible';
+import DropdownProfile from '@/components/profile/dropdown-profile';
+import InformationDetail from '@/components/profile/information-detail';
+import MedalCollection from '@/components/profile/medal-collection';
+import Settings from '@/components/profile/settings';
+import Tags from '@/components/profile/tags';
+import UpcomingSession from '@/components/schedule/upcoming-session';
+import { Button } from '@/components/ui/button';
 import {
   Drawer,
   DrawerContent,
   DrawerDescription,
   DrawerTitle
-} from '@/components/ui/drawer'
-import { medalLists, settingMenus } from '@/constants/profile'
-import { useProfile } from '@/context/profile/profileContext'
-import { capitalizeFirstLetter, formatLabel } from '@/utils/validation'
-import { ChevronRight, Plus, Trash2 } from 'lucide-react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { daysOfWeek, firms, praticeDetails } from './constants'
-import { FormsState } from './types'
+} from '@/components/ui/drawer';
+import { Skeleton } from '@/components/ui/skeleton';
+import { medalLists, settingMenus } from '@/constants/profile';
+import { useAuth } from '@/context/auth/authContext';
+import { useGetUpcomingSessions } from '@/services/api/appointments';
 import {
-  groupByFirmAndDay,
+  useGetPractitionerRolesDetail,
+  useUpdatePractitionerInfo
+} from '@/services/clinicians';
+import { getProfileById } from '@/services/profile';
+import {
+  findAge,
+  generateAvatarPlaceholder,
+  mapAddress,
+  parseMergedSessions
+} from '@/utils/helper';
+import { useQuery } from '@tanstack/react-query';
+import { format, isAfter, parseISO } from 'date-fns';
+import {
+  ContactPoint,
+  Practitioner,
+  PractitionerRoleAvailableTime
+} from 'fhir/r4';
+import { ChevronRight, Plus, Trash2 } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'react-toastify';
+import { daysOfWeek } from './constants';
+import { FormsState, TimeRange } from './types';
+import {
   handleAddForm,
-  handleCompanyChange,
+  handleOrganizationChange,
+  handlePayloadSend,
   handleRemoveTimeRange,
   handleTimeChange,
   validateTimeRanges
-} from './utils'
+} from './utils';
 
-export default function Clinician() {
-  const router = useRouter()
-  const { state } = useProfile()
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
-  const [activeDayIndex, setActiveDayIndex] = useState<number | null>(null)
+type Props = {
+  fhirId: string;
+};
+
+const now = new Date();
+
+export default function Clinician({ fhirId }: Props) {
+  const router = useRouter();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [activeDayIndex, setActiveDayIndex] = useState<number | null>(null);
+  const [practitionerRolesData, setPractitionerRolesData] = useState([]);
   const [formsState, setFormsState] = useState<FormsState>(
     daysOfWeek.reduce((acc, day) => {
-      acc[day] = [{ times: [{ firm: '', fromTime: '--:--', toTime: '--:--' }] }]
-      return acc
+      acc[day] = [];
+      return acc;
     }, {} as FormsState)
-  )
-  const [errorMessages, setErrorMessages] = useState<Record<string, string>>({})
-  const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState({})
+  );
+  const [errorMessages, setErrorMessages] = useState<Record<string, string>>(
+    {}
+  );
+  const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState({});
+  const { state: authState, isLoading: isAuthLoading } = useAuth();
 
-  function handleSave() {
-    if (activeDayIndex === null) {
-      return
+  /* get practitioner's upcoming sessions*/
+  const { data: sessionData, isLoading: isUpcomingSessionsLoading } =
+    useGetUpcomingSessions({
+      practitionerId: authState.userInfo.fhirId,
+      dateReference: format(now, 'yyyy-MM-dd')
+    });
+
+  const parsedSessionsData = useMemo(() => {
+    if (!sessionData || sessionData?.total === 0 || !authState.isAuthenticated)
+      return null;
+
+    const parsed = parseMergedSessions(sessionData);
+    const filtered = parsed.filter(session => {
+      const slotStart = parseISO(session.slotStart);
+      return isAfter(slotStart, now);
+    });
+
+    return filtered;
+  }, [sessionData, authState]);
+
+  /* get practitioner's basic information*/
+  const { data: profileData, isLoading: isProfileLoading } =
+    useQuery<Practitioner>({
+      queryKey: ['profile-data', fhirId],
+      queryFn: () => getProfileById(fhirId, 'Practitioner'),
+      onError: (error: Error) => {
+        console.error('Error when fetching user profile: ', error);
+        toast.error(error.message);
+      }
+    });
+
+  /* get list of practitioner's roles */
+  const { refetch, isLoading: isPractitionerRolesLoading } =
+    useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
+      onSuccess: data => {
+        const resources = data?.map(entry => entry.resource) || [];
+        setPractitionerRolesData(resources);
+      }
+    });
+
+  const {
+    mutateAsync: updatePractitionerInfo,
+    isLoading: isUpdatePractitionerLoading
+  } = useUpdatePractitionerInfo();
+
+  const activeFirms = practitionerRolesData?.filter(firm => firm.active);
+
+  const handleOpenDrawer = () => {
+    const initialFormsState = daysOfWeek.reduce((acc, day) => {
+      acc[day] = [];
+      return acc;
+    }, {} as FormsState);
+
+    setFormsState(initialFormsState);
+
+    const updatedFormsState = { ...initialFormsState };
+    if (Array.isArray(practitionerRolesData)) {
+      const dayMapping = {
+        mon: 'Monday',
+        tue: 'Tuesday',
+        wed: 'Wednesday',
+        thu: 'Thursday',
+        fri: 'Friday',
+        sat: 'Saturday',
+        sun: 'Sunday'
+      };
+
+      activeFirms.forEach(role => {
+        const organizationName = role?.organizationData.name || '';
+        const organizationId = role?.organizationData.id || '';
+
+        role.availableTime?.forEach(
+          (timeSlot: PractitionerRoleAvailableTime) => {
+            timeSlot.daysOfWeek.forEach(shortDay => {
+              const fullDayName = dayMapping[shortDay];
+              if (fullDayName) {
+                updatedFormsState[fullDayName].push({
+                  times: [
+                    {
+                      roleId: role.id,
+                      code: organizationId,
+                      name: organizationName,
+                      fromTime: timeSlot.availableStartTime,
+                      toTime: timeSlot.availableEndTime
+                    }
+                  ]
+                });
+              }
+            });
+          }
+        );
+      });
+      setFormsState(updatedFormsState);
+    } else {
+      console.error('activeFirms is not an array');
     }
+    setIsDrawerOpen(true);
+  };
 
-    const day = daysOfWeek[activeDayIndex]
-    const allTimes = formsState[day].flatMap(form => form.times)
-    const errorMessage = validateTimeRanges(allTimes)
+  /* group available time slots by organization and day of week.
+   * example structure:
+   * {
+   *   "Org A": {
+   *     availability: {
+   *       Monday: [{ fromTime: "09:00", toTime: "12:00" }, ...],
+   *       Tuesday: [...],
+   *     }
+   *   },
+   *   ...
+   * }
+   */
+  useEffect(() => {
+    if (!Array.isArray(activeFirms)) return;
+
+    const newGroupedByFirmAndDay = {};
+
+    activeFirms.forEach(role => {
+      const organizationName = role?.organizationData.name || '';
+
+      if (Array.isArray(role.availableTime)) {
+        role.availableTime.forEach(
+          (timeSlot: PractitionerRoleAvailableTime) => {
+            if (Array.isArray(timeSlot.daysOfWeek)) {
+              timeSlot.daysOfWeek.forEach((day: string) => {
+                const dayKey = day.charAt(0).toUpperCase() + day.slice(1);
+
+                if (!newGroupedByFirmAndDay[organizationName]) {
+                  newGroupedByFirmAndDay[organizationName] = {
+                    availability: {}
+                  };
+                }
+
+                if (
+                  !newGroupedByFirmAndDay[organizationName].availability[dayKey]
+                ) {
+                  newGroupedByFirmAndDay[organizationName].availability[
+                    dayKey
+                  ] = [];
+                }
+
+                newGroupedByFirmAndDay[organizationName].availability[
+                  dayKey
+                ].push({
+                  fromTime: timeSlot.availableStartTime,
+                  toTime: timeSlot.availableEndTime
+                });
+              });
+            }
+          }
+        );
+      }
+    });
+
+    setGroupedByFirmAndDay(newGroupedByFirmAndDay);
+  }, [practitionerRolesData]);
+
+  const organizationWithPrice = Array.isArray(activeFirms)
+    ? activeFirms.filter(role => {
+        return (
+          role.invoiceData?.totalNet &&
+          typeof role.invoiceData.totalNet.value === 'number' &&
+          role.invoiceData.totalNet.value > 0
+        );
+      })
+    : [];
+
+  const firms = organizationWithPrice.map(item => ({
+    roleId: item.id,
+    code: item.organizationData.id,
+    name: item.organizationData.name
+  }));
+
+  const handleSave = async () => {
+    if (activeDayIndex === null) return;
+
+    const day = daysOfWeek[activeDayIndex];
+    const allTimes = formsState[day].flatMap(form => form.times);
+
     const hasEmptyFirm = allTimes.some(
-      time => time.firm === '' || time.firm === null
-    )
+      time => time.code === '' || time.code === null
+    );
+
+    const errorMessage = validateTimeRanges(allTimes);
     if (hasEmptyFirm) {
       setErrorMessages(prev => ({
         ...prev,
         [day]: 'Harap isi form dengan benar'
-      }))
-      return
+      }));
+      return;
     }
+
     if (errorMessage) {
-      setErrorMessages(prev => ({ ...prev, [day]: errorMessage }))
-    } else {
-      setIsDrawerOpen(false)
-      const grouped = groupByFirmAndDay(formsState)
-      setGroupedByFirmAndDay(grouped)
-      setActiveDayIndex(null)
+      setErrorMessages(prev => ({ ...prev, [day]: errorMessage }));
+      return;
     }
-  }
 
-  const profileDetail = Object.entries(state.profile)
-    .map(([key, value]) => {
-      const renderValue = (value: any) => {
-        if (value === null || value === undefined || value === '') {
-          return null
-        }
-        if (typeof value === 'object') {
-          return JSON.stringify(value)
-        }
-        return value
-      }
+    const payloads = handlePayloadSend(practitionerRolesData, formsState);
 
-      let formattedValue = renderValue(value)
+    try {
+      await Promise.all(
+        payloads.map(payload => updatePractitionerInfo(payload))
+      );
+      toast.success('Jadwal berhasil disimpan');
+      setIsDrawerOpen(false);
+      await refetch();
+    } catch (error) {
+      toast.error('Gagal menyimpan jadwal');
+      console.log('Error when updating availability schedules : ', error);
+    }
+  };
 
-      if (key === 'gender' && formattedValue !== null) {
-        formattedValue = capitalizeFirstLetter(
-          formattedValue.replace(/[_-]/g, ' ')
-        )
-      }
+  const findTelecom = (system: string) => {
+    const found = profileData.telecom.find(
+      (item: ContactPoint) => item.system === system
+    );
 
-      return formattedValue !== null
-        ? { key: formatLabel(key), value: formattedValue }
-        : null
-    })
-    .filter(item => item !== null)
+    if (!found) return '-';
 
-  const hasData = Object.keys(groupedByFirmAndDay).length > 0
+    return found.value;
+  };
+
+  const age =
+    profileData && profileData.birthDate
+      ? `${format(new Date(profileData?.birthDate), 'dd-MM-yyyy')} (${findAge(profileData.birthDate)})`
+      : '-';
+  const gender =
+    profileData && profileData.gender
+      ? profileData.gender.charAt(0).toUpperCase() +
+        profileData.gender.slice(1).toLowerCase()
+      : '-';
+  const phone =
+    profileData && Array.isArray(profileData.telecom)
+      ? findTelecom('phone')
+      : '-';
+  const address =
+    profileData && Array.isArray(profileData.address)
+      ? mapAddress(profileData.address)
+      : '-';
+
+  const profileDetail = [
+    {
+      key: 'Birth(Age)',
+      value: age
+    },
+    { key: 'Sex', value: gender },
+    { key: 'Whatsapp', value: phone },
+    {
+      key: 'Address',
+      value: address
+    }
+  ];
+
+  const { initials, backgroundColor } = generateAvatarPlaceholder({
+    id: authState.userInfo?.fhirId,
+    name: authState.userInfo?.fullname,
+    email: authState.userInfo?.email
+  });
+
+  const displayName =
+    !authState.userInfo.fullname || authState.userInfo.fullname.trim() === '-'
+      ? authState.userInfo.email
+      : authState.userInfo.fullname;
+
+  const hasData = Object.keys(groupedByFirmAndDay).length > 0;
 
   return (
     <>
-      <div className='mb-4'>
-        <InformationDetail
-          isRadiusIcon
-          iconUrl='/images/sample-foto.svg'
-          title='General Information'
-          subTitle={state.profile.fullname}
-          buttonText='Edit Profile'
-          details={profileDetail}
-          onEdit={() => router.push('profile/edit-profile')}
-          role='clinician'
-        />
+      {/* display practitioner's upcoming sessions */}
+      <div className='flex items-center justify-between text-muted'>
+        <div className='text-[14px] font-bold'>Schedule Active</div>
+        <Link href='/schedule' className='text-[10px]'>
+          See All
+        </Link>
       </div>
+
+      {isUpcomingSessionsLoading || isAuthLoading ? (
+        <Skeleton className='mt-4 h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+      ) : authState && parsedSessionsData && parsedSessionsData.length > 0 ? (
+        <UpcomingSession
+          data={parsedSessionsData}
+          role={authState.userInfo.role_name}
+        />
+      ) : null}
+
+      {/* display practitioner's basic information */}
+      {isProfileLoading || isAuthLoading ? (
+        <Skeleton className='my-4 h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+      ) : (
+        <div className='my-4'>
+          <InformationDetail
+            isRadiusIcon
+            initials={initials}
+            backgroundColor={backgroundColor}
+            iconUrl={profileData?.photo?.[0].url}
+            title='General Information'
+            subTitle={displayName}
+            buttonText='Edit Profile'
+            details={profileDetail}
+            onEdit={() => router.push('profile/edit-profile')}
+            role='clinician'
+          />
+        </div>
+      )}
+
       <div className='my-4' />
-      <InformationDetail
-        isRadiusIcon={false}
-        iconUrl='/icons/hospital.svg'
-        title='Practice Information'
-        buttonText='Edit Detail'
-        details={praticeDetails}
-        onEdit={() => router.push('profile/edit-pratice')}
-        role='clinician'
-      />
+
+      {/* display practitioner's practice information */}
+      {isPractitionerRolesLoading ? (
+        <Skeleton className='h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+      ) : (
+        <InformationDetail
+          initials=''
+          backgroundColor=''
+          isRadiusIcon={false}
+          iconUrl='/icons/hospital.svg'
+          title='Practice Information'
+          buttonText='Edit Detail'
+          details={activeFirms}
+          onEdit={() => router.push('profile/edit-pratice')}
+          role='clinician'
+          isEditPratice={true}
+        />
+      )}
+
+      {/* display practitioner's availability schedules */}
       <div
-        className={`mt-4 flex flex-col items-start justify-start rounded-[16px] bg-[#F0F4F9] ${hasData ? 'pt-4' : 'pt-0'}`}
+        className={`mt-4 flex flex-col items-start justify-start rounded-[16px] bg-[#F9F9F9] ${hasData ? 'pt-4' : 'pt-0'}`}
       >
         <div className='w-full px-4'>
-          {Object.keys(groupedByFirmAndDay).map(firm => (
-            <div key={firm}>
-              <div className='mb-2 text-start font-bold'>{firm}</div>
-              {Object.keys(groupedByFirmAndDay[firm]).map(day => {
-                const tags = groupedByFirmAndDay[firm][day].map(
-                  timeRange =>
-                    `${day}: ${timeRange.fromTime} - ${timeRange.toTime}`
-                )
+          {Object.keys(groupedByFirmAndDay).map((firm, index) => {
+            const availability = groupedByFirmAndDay[firm].availability;
+            return (
+              <div key={index}>
+                <div className='mb-2 text-start font-bold'>{firm}</div>
+                {Object.keys(availability).map(day => {
+                  const timeRanges = availability[day] || [];
+                  const tags = timeRanges.map(
+                    (timeRange: TimeRange) =>
+                      `${day}: ${timeRange.fromTime} - ${timeRange.toTime}`
+                  );
 
-                return (
-                  <div
-                    key={`${firm}-${day}`}
-                    className='mb-4 flex w-full flex-wrap gap-[10px]'
-                  >
-                    <Tags tags={tags} />
-                  </div>
-                )
-              })}
-            </div>
-          ))}
+                  return (
+                    <div
+                      key={`${firm}-${day}`}
+                      className='mb-4 flex w-full flex-wrap gap-[10px]'
+                    >
+                      <Tags tags={tags} />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
 
         <div className='flex w-full flex-col justify-between rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
           <div
             className='flex cursor-pointer items-center justify-between'
-            onClick={() => setIsDrawerOpen(true)}
+            onClick={handleOpenDrawer}
           >
             <Image
               src={'/icons/calendar-profile.svg'}
@@ -170,20 +451,24 @@ export default function Clinician() {
           </div>
         </div>
       </div>
-
-      <MedalCollection medals={medalLists} />
+      <MedalCollection medals={medalLists} isDisabled={true} />
       <Settings menus={settingMenus} />
+
       <Drawer onClose={() => setIsDrawerOpen(false)} open={isDrawerOpen}>
         <div className='max-h-screen'>
-          <DrawerContent className='mx-auto flex max-h-screen flex-col overflow-y-hidden px-4 py-1'>
-            <DrawerTitle></DrawerTitle>
-            <DrawerDescription className='my-2 flex-grow overflow-y-auto'>
+          <DrawerContent className='mx-auto flex max-h-screen max-w-screen-sm flex-col overflow-y-hidden px-4 py-1'>
+            <DrawerTitle />
+            <DrawerDescription />
+            <div className='my-2 flex-grow overflow-y-auto scrollbar-hide'>
               {daysOfWeek.map((day, dayIndex) => {
-                const checkSchedule = formsState[day].some(form =>
+                const checkSchedule = formsState[day]?.some(form =>
                   form.times.some(
                     time => time.fromTime !== '--:--' && time.toTime !== '--:--'
                   )
-                )
+                );
+
+                const hasFirms = firms.length > 0;
+
                 return (
                   <Collapsible
                     key={day}
@@ -194,105 +479,113 @@ export default function Clinician() {
                         activeDayIndex === dayIndex ? null : dayIndex
                       )
                     }
-                    hasSchedules={checkSchedule}
+                    hasSchedules={checkSchedule && hasFirms}
                   >
-                    {formsState[day].map((form, formIndex) => (
-                      <div key={formIndex}>
-                        {form.times.map((time, timeIndex) => (
-                          <div
-                            key={timeIndex}
-                            className='flex w-full items-start justify-between py-2'
-                          >
-                            <div className='flex flex-grow flex-col items-center'>
-                              <DropdownProfile
-                                options={firms}
-                                value={time.firm}
-                                onSelect={value =>
-                                  handleCompanyChange(
-                                    formsState,
-                                    day,
-                                    formIndex,
-                                    timeIndex,
-                                    value,
-                                    setFormsState,
-                                    setErrorMessages
-                                  )
-                                }
-                                placeholder='Choose your firm'
-                              />
-                              <div className='flex w-full items-center justify-between'>
-                                <div className='flex items-center justify-center pl-1'>
-                                  <span className='text-sm font-medium'>
-                                    From
-                                  </span>
-                                  <input
-                                    type='time'
-                                    className='block w-full rounded-lg bg-gray-50 p-2.5 text-sm text-gray-900 focus:outline-none dark:bg-gray-700 dark:text-white'
-                                    value={time.fromTime}
-                                    onChange={e =>
-                                      handleTimeChange(
-                                        day,
-                                        formIndex,
-                                        timeIndex,
-                                        'from',
-                                        e.target.value,
-                                        formsState,
-                                        setFormsState,
-                                        setErrorMessages
-                                      )
-                                    }
-                                    required
-                                  />
-                                </div>
-                                <div className='flex w-3 flex-grow' />
-                                <div className='flex items-center justify-end'>
-                                  <span className='text-sm font-medium'>
-                                    To
-                                  </span>
-
-                                  <input
-                                    type='time'
-                                    className='block w-full rounded-lg bg-gray-50 p-2.5 text-sm text-gray-900 focus:outline-none dark:bg-gray-700 dark:text-white'
-                                    value={time.toTime}
-                                    onChange={e =>
-                                      handleTimeChange(
-                                        day,
-                                        formIndex,
-                                        timeIndex,
-                                        'to',
-                                        e.target.value,
-                                        formsState,
-                                        setFormsState,
-                                        setErrorMessages
-                                      )
-                                    }
-                                    required
-                                  />
+                    {hasFirms && formsState[day]?.length > 0 ? (
+                      formsState[day].map((form, formIndex) => (
+                        <div key={`${day}-${formIndex}`}>
+                          {form.times.map((time, timeIndex) => (
+                            <div
+                              key={`${day}-${formIndex}-${timeIndex}`}
+                              className='flex w-full items-start justify-between py-2'
+                            >
+                              <div className='flex flex-grow flex-col items-center gap-1'>
+                                <DropdownProfile
+                                  options={firms}
+                                  value={time.code}
+                                  onSelect={value => {
+                                    handleOrganizationChange(
+                                      formsState,
+                                      day,
+                                      formIndex,
+                                      timeIndex,
+                                      value,
+                                      setFormsState,
+                                      setErrorMessages
+                                    );
+                                  }}
+                                  placeholder='Choose your firm'
+                                />
+                                <div className='flex w-full items-center justify-between'>
+                                  <div className='flex items-center justify-center gap-2 pl-1'>
+                                    <span className='text-sm font-medium'>
+                                      From
+                                    </span>
+                                    <input
+                                      type='time'
+                                      className='block cursor-pointer rounded-md border-2 p-2 text-sm'
+                                      value={time.fromTime.slice(0, 5)} // display hh:mm instead of hh:mm:ss
+                                      onChange={e =>
+                                        handleTimeChange(
+                                          day,
+                                          formIndex,
+                                          timeIndex,
+                                          'from',
+                                          e.target.value,
+                                          formsState,
+                                          setFormsState,
+                                          setErrorMessages
+                                        )
+                                      }
+                                      required
+                                    />
+                                  </div>
+                                  <div className='flex w-3 flex-grow' />
+                                  <div className='flex items-center justify-end gap-2'>
+                                    <span className='text-sm font-medium'>
+                                      To
+                                    </span>
+                                    <input
+                                      type='time'
+                                      className='block cursor-pointer rounded-md border-2 p-2 text-sm'
+                                      value={time.toTime.slice(0, 5)}
+                                      onChange={e =>
+                                        handleTimeChange(
+                                          day,
+                                          formIndex,
+                                          timeIndex,
+                                          'to',
+                                          e.target.value,
+                                          formsState,
+                                          setFormsState,
+                                          setErrorMessages
+                                        )
+                                      }
+                                      required
+                                    />
+                                  </div>
                                 </div>
                               </div>
+                              <div className='flex flex-col items-center pl-4 pt-4'>
+                                <Trash2
+                                  size={20}
+                                  className='cursor-pointer'
+                                  onClick={() =>
+                                    handleRemoveTimeRange(
+                                      day,
+                                      formIndex,
+                                      timeIndex,
+                                      formsState,
+                                      setFormsState,
+                                      setErrorMessages
+                                    )
+                                  }
+                                />
+                              </div>
                             </div>
-                            <div className='flex flex-col items-center pl-4 pt-4'>
-                              <Trash2
-                                size={20}
-                                onClick={() =>
-                                  handleRemoveTimeRange(
-                                    day,
-                                    formIndex,
-                                    timeIndex,
-                                    formsState,
-                                    setFormsState,
-                                    setErrorMessages
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+                      ))
+                    ) : (
+                      <div className='flex w-full items-center justify-center py-2 text-gray-500'>
+                        {hasFirms
+                          ? `No schedules available for ${day}.`
+                          : `No firms available for ${day}.`}
                       </div>
-                    ))}
+                    )}
                     <div className='flex w-full items-center justify-end'>
                       {errorMessages[day] && (
-                        <div className='px-2 text-sm text-red-500'>
+                        <div className='w-full whitespace-pre-line px-2 text-sm text-red-500'>
                           {errorMessages[day]}
                         </div>
                       )}
@@ -300,6 +593,7 @@ export default function Clinician() {
                         <Plus
                           color='white'
                           size={30}
+                          className='cursor-pointer'
                           onClick={() =>
                             handleAddForm(
                               day,
@@ -310,21 +604,33 @@ export default function Clinician() {
                           }
                         />
                       </div>
-
                       <Button
-                        className='bg-[#E1E1E1] font-bold text-[#2C2F35]'
+                        className='w-[80px] bg-secondary font-bold text-white'
                         onClick={handleSave}
+                        disabled={
+                          isUpdatePractitionerLoading ||
+                          Object.values(errorMessages).some(msg => msg)
+                        }
                       >
-                        Save
+                        {isUpdatePractitionerLoading ? (
+                          <LoadingSpinnerIcon
+                            width={20}
+                            height={20}
+                            stroke='white'
+                            className='w-full animate-spin'
+                          />
+                        ) : (
+                          'Save'
+                        )}
                       </Button>
                     </div>
                   </Collapsible>
-                )
+                );
               })}
-            </DrawerDescription>
+            </div>
           </DrawerContent>
         </div>
       </Drawer>
     </>
-  )
+  );
 }

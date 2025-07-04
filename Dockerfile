@@ -4,6 +4,7 @@ WORKDIR /app
 
 # captures argument
 ARG API_URL="https://your-api.domain.com"
+ARG WEBHOOK_AUTH="webhook-auth"
 # e.g. latest, development, production
 ARG VERSION=latest
 ARG GIT_COMMIT=43fdfd34
@@ -13,8 +14,10 @@ ARG AUTHOR="CI/CD"
 
 # set environment variables
 ENV NEXT_PUBLIC_API_URL=$API_URL
+ENV NEXT_PUBLIC_WEBHOOK_AUTH=$WEBHOOK_AUTH
 
 RUN echo "Set ARG value of [NEXT_PUBLIC_API_URL] as $API_URL"
+RUN echo "Set ARG value of [NEXT_PUBLIC_WEBHOOK_AUTH] as $WEBHOOK_AUTH"
 RUN echo "Set ARG value of [VERSION] as $VERSION"
 RUN echo "Set GIT_COMMIT value of [VERSION] as $GIT_COMMIT"
 RUN echo "Set TAG value of [TAG] as $TAG"

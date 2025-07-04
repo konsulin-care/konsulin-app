@@ -1,85 +1,87 @@
-import { apiRequest } from './api'
+import { useMutation } from '@tanstack/react-query';
+import { AxiosResponse } from 'axios';
+import { Patient, Practitioner } from 'fhir/r4';
+import { API, apiRequest } from './api';
 
-export type ResponseGenders = {
-  success: boolean
-  message: string
-  data: Options[]
-}
-export interface ResponseProfile {
-  success: boolean
-  message: string
-  data: ProfileData
-}
+type IProfileRequest = {
+  payload: Patient | Practitioner;
+};
 
-export type Options = {
-  name: string
-}
-
-export interface ProfileData {
-  fullname: string
-  email: string
-  age: number
-  gender: string
-  educations: string[]
-  whatsapp_number: string
-  address: string
-  birth_date: string
-}
-
-export interface ResponseEducations {
-  success: boolean
-  message: string
-  data: Options[]
-}
-
-export const fetchProfile = async (
-  state: any,
-  dispatch: React.Dispatch<any>
-): Promise<ResponseProfile> => {
-  try {
-    const response = await apiRequest('GET', '/api/v1/users/profile')
-    const responseData = response as ResponseProfile
-    if (responseData.success) {
-      dispatch({
-        type: 'getProfile',
-        payload: {
-          profile: {
-            ...state.profile,
-            ...responseData.data
-          }
-        }
-      })
+export const createProfile = async ({ userId, email, type }) => {
+  const payload = {
+    resourceType: type,
+    active: true,
+    identifier: [
+      {
+        system: 'https://login.konsulin.care/userid',
+        value: userId
+      }
+    ],
+    telecom: {
+      system: 'email',
+      use: 'home',
+      value: email
     }
-    return responseData
-  } catch (err) {
-    throw err
-  }
-}
+  };
 
-export const fetchGenders = async (): Promise<Options[]> => {
   try {
-    const response = await apiRequest('GET', '/api/v1/genders')
-    const responseData = response as ResponseGenders
-    if (responseData.success) {
-      return responseData.data
-    } else {
-      throw new Error(responseData.message)
-    }
-  } catch (err) {
-    throw err
+    const response = await apiRequest<AxiosResponse>(
+      'POST',
+      `/fhir/${type}`,
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
   }
-}
+};
 
-export const fetchEducations = async (): Promise<Options[]> => {
+export const getProfileByIdentifier = async ({ userId, type }) => {
   try {
-    const response = await apiRequest('GET', '/api/v1/education-levels')
-    const responseData = response as ResponseEducations
-    if (responseData.success) {
-      return responseData.data
-    } else {
-      throw new Error(responseData.message)
+    const response = await apiRequest<AxiosResponse>(
+      'GET',
+      `/fhir/${type}?identifier=${userId}`
+    );
+
+    const entries = response?.data?.entry;
+
+    if (Array.isArray(entries) && entries.length > 0) {
+      return entries[0]?.resource;
     }
-  } catch (err) {
-    throw err
+
+    return null;
+  } catch (error) {
+    throw error;
   }
-}
+};
+
+export const getProfileById = async (
+  id: string,
+  type: 'Patient' | 'Practitioner'
+) => {
+  try {
+    const response = await apiRequest<AxiosResponse>(
+      'GET',
+      `/fhir/${type}/${id}`
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const useUpdateProfile = () => {
+  return useMutation<Patient | Practitioner, Error, IProfileRequest>({
+    mutationKey: ['update-profile'],
+    mutationFn: async ({ payload }) => {
+      const { id, resourceType } = payload;
+      try {
+        const response = await API.put(`/fhir/${resourceType}/${id}`, payload);
+        return response.data;
+      } catch (error) {
+        console.error(`Error updating profile ${resourceType} : `, error);
+        throw error;
+      }
+    }
+  });
+};

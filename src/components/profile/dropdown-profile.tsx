@@ -1,36 +1,45 @@
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu as Dropdown,
   DropdownMenuContent as DropdownContent,
   DropdownMenuItem as DropdownItem,
   DropdownMenuTrigger as DropdownTrigger
-} from '@/components/ui/dropdown-menu'
-import { Check, ChevronDown } from 'lucide-react'
-import React, { useEffect, useRef, useState } from 'react'
+} from '@/components/ui/dropdown-menu';
+import { Check, ChevronDown } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { LoadingSpinnerIcon } from '../icons';
+
+type DropdownOption = {
+  code: string;
+  name: string;
+  roleId?: string;
+};
 
 type DropdownProps = {
-  options: {
-    name: string
-  }[]
-  value: string
-  placeholder: string
-  onSelect: (value: string) => void
-}
+  options: DropdownOption[];
+  value: string;
+  placeholder: string;
+  labelPlaceholder?: string;
+  loading?: boolean;
+  onSelect: (value: DropdownOption) => void;
+};
 
 const DropdownProfile: React.FC<DropdownProps> = ({
   options,
   value,
   onSelect,
-  placeholder
+  placeholder,
+  labelPlaceholder,
+  loading
 }) => {
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const [triggerWidth, setTriggerWidth] = useState<number>(0)
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [triggerWidth, setTriggerWidth] = useState<number>(0);
 
   useEffect(() => {
     if (triggerRef.current) {
-      setTriggerWidth(triggerRef.current.offsetWidth)
+      setTriggerWidth(triggerRef.current.offsetWidth);
     }
-  }, [triggerRef.current?.offsetWidth])
+  }, [triggerRef.current?.offsetWidth]);
 
   return (
     <div className='w-full'>
@@ -40,12 +49,22 @@ const DropdownProfile: React.FC<DropdownProps> = ({
             ref={triggerRef}
             variant='outline'
             className='h-[56px] w-full justify-between bg-white'
+            disabled={loading}
           >
             <span className='text-sm font-normal text-[#2C2F35]'>
-              {(options &&
-                options.find(option => option.name === value)?.name) ||
+              {loading ? (
+                <LoadingSpinnerIcon
+                  width={20}
+                  height={20}
+                  className='w-full animate-spin'
+                />
+              ) : (
+                (options &&
+                  options.find(option => option.code === value)?.name) ||
+                (!value && labelPlaceholder) ||
                 placeholder ||
-                'Select Option'}
+                'Select Option'
+              )}
             </span>
             <ChevronDown
               className='ml-2 h-4 w-4 shrink-0 opacity-50'
@@ -53,19 +72,22 @@ const DropdownProfile: React.FC<DropdownProps> = ({
             />
           </Button>
         </DropdownTrigger>
-        <DropdownContent style={{ minWidth: triggerWidth }}>
+        <DropdownContent
+          style={{ minWidth: triggerWidth }}
+          className='max-h-60 overflow-y-auto'
+        >
           {options &&
             options.map(item => (
               <DropdownItem
-                key={item.name}
-                onSelect={() => onSelect(item.name)}
+                key={item.code}
+                onSelect={() => onSelect(item)}
                 className={`w-full ${
-                  value === item.name ? 'bg-secondary text-white' : ''
+                  value === item.code ? 'bg-secondary text-white' : ''
                 }`}
               >
                 <div className='flex w-full items-center justify-between px-4 py-2'>
                   <span>{item.name}</span>
-                  {value === item.name && (
+                  {value === item.code && (
                     <Check className='text-accent-foreground ml-2 h-4 w-4 text-white' />
                   )}
                 </div>
@@ -74,7 +96,7 @@ const DropdownProfile: React.FC<DropdownProps> = ({
         </DropdownContent>
       </Dropdown>
     </div>
-  )
-}
+  );
+};
 
-export default DropdownProfile
+export default DropdownProfile;

@@ -1,170 +1,20 @@
-'use client'
+import BackButton from '@/components/general/back-button';
+import Header from '@/components/header';
+import NavigationBar from '@/components/navigation-bar';
+import ExcerciseList from './excercise-list';
 
-import Header from '@/components/header'
-import NavigationBar from '@/components/navigation-bar'
-import { InputWithIcon } from '@/components/ui/input-with-icon'
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
-import { BookmarkIcon, ChevronLeftIcon, SearchIcon } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-
-const Exercise: React.FC<IWithAuth> = ({ isAuthenticated }) => {
-  const router = useRouter()
-
+export default function Exercise() {
   return (
-    <NavigationBar>
-      <Header
-        showChat={false}
-        moreAction={
-          <Link href='/exercise/bookmark'>
-            <Image
-              width={32}
-              height={32}
-              alt='offline'
-              src={'/icons/bookmark.svg'}
-            />
-          </Link>
-        }
-      >
+    <>
+      <NavigationBar />
+      <Header showChat={false}>
         <div className='flex w-full items-center'>
-          <ChevronLeftIcon
-            onClick={() => router.back()}
-            color='white'
-            className='mr-2 cursor-pointer'
-          />
+          <BackButton route='/' />
 
           <div className='text-[14px] font-bold text-white'>Self Excercise</div>
         </div>
       </Header>
-      <div className='mt-[-24px] rounded-[16px] bg-white'>
-        {/* Filter / Search */}
-        <div className='p-4'>
-          <InputWithIcon
-            placeholder='Search'
-            className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
-            startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
-          />
-        </div>
-
-        {/* Recommended Exercises  */}
-        <div className='bg-[#F9F9F9] p-4'>
-          <div className='text-[14px] font-bold text-[hsla(220,9%,19%,0.6)]'>
-            Recommended Exercises
-          </div>
-          <div className='text-[10px] font-normal text-[hsla(220,9%,19%,0.6)]'>
-            Based on your turbulence data
-          </div>
-          <ScrollArea className='mt-2 w-full whitespace-nowrap pb-4'>
-            <div className='flex w-max space-x-4'>
-              {Array(5)
-                .fill(undefined)
-                .map((_, index: number) => (
-                  <Link
-                    key={index}
-                    href={`/exercise/${index + 1}`}
-                    className='card flex flex-col gap-2 bg-white'
-                  >
-                    <div className='flex justify-between'>
-                      <Image
-                        className='mr-4'
-                        width={40}
-                        height={40}
-                        alt='excerise'
-                        src={'/images/exercise.svg'}
-                      />
-                      <div className='flex'>
-                        <div className='mr-2 flex h-[24px] rounded-[12px] bg-[#08979C] px-[10px] py-[4px]'>
-                          <Image
-                            src={'/icons/award.svg'}
-                            height={16}
-                            width={16}
-                            alt='award'
-                          />
-                          <span className='ml-2 text-[10px] font-normal text-white'>
-                            Best Impact
-                          </span>
-                        </div>
-                        <div className='h-[24px] rounded-[8px] bg-[#13C2C2] p-1'>
-                          <BookmarkIcon
-                            color='white'
-                            height={16}
-                            width={16}
-                            fill='white'
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className='mt-2 flex flex-col'>
-                      <span className='text-[10px] text-muted'>6 Minutes</span>
-                      <span className='text-[12px] font-bold'>
-                        BIG 5 Personality Test
-                      </span>
-                      <span className='text-[10px] text-muted'>
-                        Know yourself in 5 aspects of traits
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-            </div>
-            <ScrollBar orientation='horizontal' />
-          </ScrollArea>
-        </div>
-
-        {/* Other */}
-        <div className='p-4'>
-          <div className='text-[14px] font-bold text-[hsla(220,9%,19%,0.6)]'>
-            Other
-          </div>
-          <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-            {Array(12)
-              .fill(undefined)
-              .map((_, index: number) => (
-                <div
-                  key={index}
-                  className='card flex flex-col items-center justify-center'
-                >
-                  <Image
-                    className='h-[100px] w-full rounded-lg'
-                    width={158}
-                    height={64}
-                    alt='excerise'
-                    src={'/images/exercise.svg'}
-                  />
-                  <span className='mb-[2px] mt-2 text-[10px] text-muted'>
-                    6 Minutes
-                  </span>
-                  <div className='mt-2 text-[12px] font-bold text-primary'>
-                    BIG 5 Personality Exercise Test
-                  </div>
-                  <div className='mt-2 max-w-full overflow-hidden truncate text-ellipsis text-[12px] text-muted'>
-                    Know yourself in 5 aspects of Know yourself in 5 aspects
-                  </div>
-
-                  <div className='mt-2 flex h-[24px] w-full'>
-                    <Link
-                      href={`/exercise/${index + 1}`}
-                      className='mr-2 flex grow items-center justify-center rounded-md bg-secondary py-2 text-[10px] font-normal text-white'
-                    >
-                      Open
-                    </Link>
-                    <div className='flex w-[24px] cursor-pointer items-center justify-center rounded-md bg-[#13C2C2]'>
-                      <BookmarkIcon
-                        color='white'
-                        height={16}
-                        width={16}
-                        fill='white'
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      </div>
-    </NavigationBar>
-  )
+      <ExcerciseList />
+    </>
+  );
 }
-
-export default withAuth(Exercise, ['patient'], true)

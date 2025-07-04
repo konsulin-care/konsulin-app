@@ -1,11 +1,11 @@
-import { LoadingSpinnerIcon } from '@/components/icons'
-import { useAuth } from '@/context/auth/authContext'
+import { LoadingSpinnerIcon } from '@/components/icons';
+import { useAuth } from '@/context/auth/authContext';
 
-import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 export interface IWithAuth {
-  userRole?: string
-  isAuthenticated: boolean
+  userRole?: string;
+  isAuthenticated: boolean;
 }
 
 function withAuth<T>(
@@ -14,27 +14,28 @@ function withAuth<T>(
   allowGuestMode: boolean = false
 ) {
   const Wrapper: React.FC = (props: T) => {
-    const router = useRouter()
-    const { state: authState } = useAuth()
-    const [isVerified, setIsVerified] = useState(false)
+    const router = useRouter();
+    const { state: authState } = useAuth();
+    const [isVerified, setIsVerified] = useState(false);
 
-    const token = authState.token
-    const role = authState.role_name
-    const pathname = usePathname()
+    // const token = authState.userInfo.token
+    const userId = authState.userInfo.userId;
+    const role = authState.userInfo.role_name;
+    const pathname = usePathname();
 
     useEffect(() => {
-      if (!token || !role) {
+      if (!userId || !role) {
         if (allowGuestMode) {
-          setIsVerified(true)
+          setIsVerified(true);
         } else {
-          router.push(`/login?redirect=${pathname}`)
+          router.push(`/login?redirect=${pathname}`);
         }
       } else if (role && !allowedRoles.includes(role)) {
-        router.push(`/unauthorized`)
+        router.push(`/unauthorized`);
       } else {
-        setIsVerified(true)
+        setIsVerified(true);
       }
-    }, [token, role, pathname, router])
+    }, [userId, role, pathname, router]);
 
     if (!isVerified) {
       return (
@@ -45,19 +46,19 @@ function withAuth<T>(
             className='w-full animate-spin'
           />
         </div>
-      )
+      );
     }
 
     return (
       <WrappedComponent
         {...props}
         userRole={allowGuestMode && !role ? 'guest' : role}
-        isAuthenticated={!!authState.token}
+        isAuthenticated={authState.isAuthenticated}
       />
-    )
-  }
+    );
+  };
 
-  return Wrapper
+  return Wrapper;
 }
 
-export default withAuth
+export default withAuth;

@@ -1,7 +1,9 @@
 import { cn } from '@/lib/utils'
 import * as React from 'react'
 
-export default function LoadingSpinner(props: React.SVGProps<SVGSVGElement>) {
+export default function LoadingSpinnerIcon(
+  props: React.SVGProps<SVGSVGElement>
+) {
   const {
     fill = 'none',
     stroke = '#13c2c2',

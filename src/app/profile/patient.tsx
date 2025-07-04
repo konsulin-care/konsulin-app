@@ -1,45 +1,112 @@
-'use client'
+'use client';
 
-import InformationDetail from '@/components/profile/information-detail'
-import MedalCollection from '@/components/profile/medal-collection'
-import Settings from '@/components/profile/settings'
-import { medalLists, settingMenus } from '@/constants/profile'
-import { useProfile } from '@/context/profile/profileContext'
-import { capitalizeFirstLetter, formatLabel } from '@/utils/validation'
-import { ChevronRightIcon } from 'lucide-react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import InformationDetail from '@/components/profile/information-detail';
+import MedalCollection from '@/components/profile/medal-collection';
+import Settings from '@/components/profile/settings';
+import UpcomingSession from '@/components/schedule/upcoming-session';
+import { Skeleton } from '@/components/ui/skeleton';
+import { medalLists, settingMenus } from '@/constants/profile';
+import { useAuth } from '@/context/auth/authContext';
+import { useGetUpcomingAppointments } from '@/services/api/appointments';
+import { getProfileById } from '@/services/profile';
+import {
+  findAge,
+  generateAvatarPlaceholder,
+  mapAddress,
+  parseMergedAppointments
+} from '@/utils/helper';
+import { useQuery } from '@tanstack/react-query';
+import { format, isAfter, parseISO } from 'date-fns';
+import type { ContactPoint, Patient } from 'fhir/r4';
+import { ChevronRightIcon } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
+import { toast } from 'react-toastify';
 
-export default function Patient() {
-  const router = useRouter()
-  const { state } = useProfile()
+type Props = {
+  fhirId: string;
+};
 
-  /* Manipulation objects from response {} to array */
-  const profileDetail = Object.entries(state.profile)
-    .map(([key, value]) => {
-      const renderValue = (value: any) => {
-        if (value === null || value === undefined || value === '') {
-          return null
-        }
-        if (typeof value === 'object') {
-          return JSON.stringify(value)
-        }
-        return value
-      }
+const now = new Date();
 
-      let formattedValue = renderValue(value)
+export default function Patient({ fhirId }: Props) {
+  const router = useRouter();
+  const { state: authState, isLoading: isAuthLoading } = useAuth();
+  const { data: upcomingData, isLoading: isUpcomingDataLoading } =
+    useGetUpcomingAppointments({
+      patientId: authState?.userInfo?.fhirId,
+      dateReference: format(now, 'yyyy-MM-dd')
+    });
 
-      if (key === 'gender' && formattedValue !== null) {
-        formattedValue = capitalizeFirstLetter(
-          formattedValue.replace(/[_-]/g, ' ')
-        )
-      }
+  const parsedAppointmentsData = useMemo(() => {
+    if (!upcomingData || upcomingData?.total === 0) return null;
 
-      return formattedValue !== null
-        ? { key: formatLabel(key), value: formattedValue }
-        : null
-    })
-    .filter(item => item !== null)
+    const parsed = parseMergedAppointments(upcomingData);
+    const filtered = parsed.filter(session => {
+      const slotStart = parseISO(session.slotStart);
+      return isAfter(slotStart, now);
+    });
+
+    return filtered;
+  }, [upcomingData]);
+
+  const { data: profileData, isLoading: isProfileLoading } = useQuery<Patient>({
+    queryKey: ['profile-data', fhirId],
+    queryFn: () => getProfileById(fhirId, 'Patient'),
+    onError: (error: Error) => {
+      console.error('Error when fetching user profile: ', error);
+      toast.error(error.message);
+    }
+  });
+
+  const findTelecom = (system: string) => {
+    const found = profileData.telecom.find(
+      (item: ContactPoint) => item.system === system
+    );
+
+    if (!found) return '-';
+
+    return found.value;
+  };
+
+  const age =
+    profileData && profileData.birthDate
+      ? `${findAge(profileData.birthDate)} year`
+      : '-';
+  const gender =
+    profileData && profileData.gender
+      ? profileData.gender.charAt(0).toUpperCase() +
+        profileData.gender.slice(1).toLowerCase()
+      : '-';
+  const phone =
+    profileData && Array.isArray(profileData.telecom)
+      ? findTelecom('phone')
+      : '-';
+  const address =
+    profileData && Array.isArray(profileData.address)
+      ? mapAddress(profileData.address)
+      : '-';
+
+  const profileDetail = [
+    {
+      key: 'Age',
+      value: age
+    },
+    { key: 'Sex', value: gender },
+    { key: 'Whatsapp', value: phone },
+    {
+      key: 'Address',
+      value: address
+    }
+  ];
+
+  const { initials, backgroundColor } = generateAvatarPlaceholder({
+    id: authState.userInfo?.fhirId,
+    name: authState.userInfo?.fullname,
+    email: authState.userInfo?.email
+  });
 
   return (
     <>
@@ -77,18 +144,44 @@ export default function Patient() {
           <ChevronRightIcon color='white' width={24} height={24} />
         </div>
       </div>
-      <InformationDetail
-        isRadiusIcon
-        iconUrl='/images/sample-foto.svg'
-        title={state.profile.fullname}
-        subTitle={state.profile.email}
-        buttonText='Edit Profile'
-        details={profileDetail}
-        onEdit={() => router.push('profile/edit-profile')}
-        role='patient'
-      />
-      <MedalCollection medals={medalLists} />
+      {isProfileLoading || isAuthLoading ? (
+        <Skeleton className='h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+      ) : (
+        <InformationDetail
+          isRadiusIcon
+          initials={initials}
+          backgroundColor={backgroundColor}
+          iconUrl={profileData?.photo?.[0].url}
+          title={authState.userInfo.fullname}
+          subTitle={authState.userInfo.email}
+          buttonText='Edit Profile'
+          details={profileDetail}
+          onEdit={() => router.push('profile/edit-profile')}
+          role='patient'
+        />
+      )}
+
+      <MedalCollection medals={medalLists} isDisabled={true} />
+
+      <div className='mt-4 flex items-center justify-between text-muted'>
+        <div className='text-[14px] font-bold'>Schedule Active</div>
+        <Link href='/schedule' className='text-[10px]'>
+          See All
+        </Link>
+      </div>
+
+      {isUpcomingDataLoading ? (
+        <Skeleton className='mt-4 h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+      ) : authState &&
+        parsedAppointmentsData &&
+        parsedAppointmentsData.length > 0 ? (
+        <UpcomingSession
+          data={parsedAppointmentsData}
+          role={authState.userInfo.role_name}
+        />
+      ) : null}
+
       <Settings menus={settingMenus} />
     </>
-  )
+  );
 }

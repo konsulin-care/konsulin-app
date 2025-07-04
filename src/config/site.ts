@@ -1,5 +1,5 @@
 export const siteConfig = {
-  name: 'next-pwa-starter-kit',
+  name: 'konsulin.app',
   url: '',
   ogImage: '',
   description: '',

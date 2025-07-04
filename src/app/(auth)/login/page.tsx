@@ -1,32 +1,32 @@
-'use client'
+'use client';
 
-import LoginMedia from '@/components/login/media'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState } from 'react'
-import LoginForm from './loginForm'
+import LoginMedia from '@/components/login/media';
+import { notFound, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import LoginForm from './loginForm';
 
 function LoginContent() {
-  const [title, setTitle] = useState('')
-  const router = useRouter()
-  const params = useSearchParams()
-  const role = params.get('role')
-  const withUsername = params.get('with')
+  const [title, setTitle] = useState('');
+  const router = useRouter();
+  const params = useSearchParams();
+  const role = params.get('role');
+  const withUsername = params.get('with');
 
   function handleUserRole(role: string) {
-    router.push(`/login?role=${role}`)
+    router.push(`/login?role=${role}`);
   }
 
   function handleLoginWith(via: string) {
-    router.push(`/login?role=${role}&with=${via}`)
+    router.push(`/login?role=${role}&with=${via}`);
   }
 
   useEffect(() => {
     if (role) {
-      setTitle(role === 'patient' ? 'Pasien' : 'Clinician')
+      setTitle(role === 'patient' ? 'Pasien' : 'Clinician');
     } else {
-      setTitle('')
+      setTitle('');
     }
-  }, [role])
+  }, [role]);
 
   return (
     <>
@@ -76,13 +76,18 @@ function LoginContent() {
       )}
       {role && withUsername && <LoginForm role={role} />}
     </>
-  )
+  );
 }
 
 export default function Login() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <LoginContent />
-    </Suspense>
-  )
+  return notFound();
+  {
+    /* <Suspense fallback={<div>Loading...</div>}> */
+  }
+  {
+    /*   <LoginContent /> */
+  }
+  {
+    /* </Suspense> */
+  }
 }

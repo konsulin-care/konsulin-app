@@ -1,73 +1,108 @@
-import Image from 'next/image'
-import Tags from './tags'
+import { IPractitionerRoleDetail } from '@/types/practitioner';
+import Avatar from '../general/avatar';
+import Tags from './tags';
 
-function HeaderSection({ isRadiusIcon, iconUrl, title, subTitle, role }) {
+function HeaderSection({
+  isRadiusIcon,
+  iconUrl,
+  title,
+  subTitle,
+  role,
+  initials,
+  backgroundColor
+}) {
   const titleStyle =
     role === 'patient'
       ? 'text-sm font-bold opacity-100'
-      : 'text-[10px] font-normal opacity-40'
+      : 'text-[10px] font-normal opacity-40';
   const subTitleStyle =
     role === 'patient'
-      ? 'text-[10px] font-normal opacity-100'
-      : 'text-sm font-bold opacity-100'
+      ? 'text-[10px] font-normal opacity-100 truncate overflow-hidden whitespace-nowrap'
+      : 'text-left whitespace-nowrap text-sm font-bold opacity-100 overflow-hidden break-words';
 
   return (
-    <div className='flex w-1/2'>
-      <Image
-        src={iconUrl}
-        width={32}
+    <div className='flex w-1/2 items-center'>
+      <Avatar
+        initials={initials}
+        backgroundColor={backgroundColor}
+        photoUrl={iconUrl}
+        className='mr-2 flex-shrink-0 text-xs'
+        imageClassName='p-[2px]'
         height={32}
-        alt='icon'
-        className={`${isRadiusIcon ? 'rounded-full p-[2px]' : 'p-[2px]'}`}
+        width={32}
+        isRadiusIcon={isRadiusIcon}
       />
-      <div className='flex flex-col items-start justify-start'>
-        <p className={`pl-2 ${titleStyle}`}>{title}</p>
-        {subTitle && <p className={`pl-2 ${subTitleStyle}`}>{subTitle}</p>}
+      <div className='flex w-full flex-col items-start justify-start pl-1'>
+        <p className={titleStyle}>{title}</p>
+        {subTitle && <p className={`${subTitleStyle}`}>{subTitle}</p>}
       </div>
     </div>
-  )
+  );
 }
 
 function DetailItem({ item }) {
-  const isArray = Array.isArray(item.value)
-  if (item.key === 'Specialty') {
-    return (
-      <div>
-        <p className='text-left text-sm'>{item.key}</p>
-        <div className='my-2 flex w-full border-t border-[#E3E3E3]' />
-        {isArray && item.value.length > 0 && <Tags tags={item.value} />}
-      </div>
-    )
-  }
-
-  if (item.key === 'Educations') {
-    const educations = JSON.parse(item.value)
-    return (
-      <>
-        <p className='text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
-        <div className='flex flex-col items-end'>
-          {educations.length > 0 &&
-            educations.map((edu: string) => (
-              <p
-                key={edu}
-                className='text-sm font-bold text-[#2C2F35] opacity-100'
-              >
-                {edu}
-              </p>
-            ))}
-        </div>
-      </>
-    )
-  }
-
   return (
     <>
-      <p className='text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
-      <p className='text-sm font-bold text-[#2C2F35] opacity-100'>
+      <p className='text-left text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
+      <p className='text-right text-sm font-bold text-[#2C2F35] opacity-100'>
         {item.value}
       </p>
     </>
-  )
+  );
+}
+
+function DetailPratice({ items }) {
+  const organizationName =
+    items && items.organizationData.name ? items.organizationData.name : '-';
+
+  const fee =
+    items && items.invoiceData?.totalNet
+      ? `${new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: items.invoiceData.totalNet.currency,
+          minimumFractionDigits: 0
+        }).format(items.invoiceData.totalNet.value)} / Session`
+      : '-';
+
+  const practiceInformationsDetail = [
+    {
+      key: 'Affiliation',
+      value: organizationName
+    },
+    {
+      key: 'Fee',
+      value: fee
+    }
+  ];
+
+  const specialties = Array.isArray(items?.specialty)
+    ? items.specialty.map((item: { text: string }) => item.text).filter(Boolean)
+    : null;
+
+  return (
+    <>
+      <div className='flex w-full flex-col py-2'>
+        {practiceInformationsDetail.map((item, index) => {
+          return (
+            <div key={index} className='mt-2 flex w-full justify-between'>
+              <div className='text-sm text-[#2C2F35] opacity-100'>
+                {item.key}
+              </div>
+              <div className='text-sm font-bold text-[#2C2F35] opacity-100'>
+                {item.value}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {specialties && Array.isArray(specialties) && (
+        <div className='my-2 flex w-full'>
+          <Tags tags={specialties} />
+        </div>
+      )}
+    </>
+  );
 }
 
 export default function InformationDetail({
@@ -78,19 +113,24 @@ export default function InformationDetail({
   buttonText,
   details,
   onEdit,
-  role
+  role,
+  isEditPratice = false,
+  initials,
+  backgroundColor
 }) {
   return (
     <div className='flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
-      <div className='flex w-full justify-between pb-2'>
+      <div className='flex w-full items-start justify-between'>
         <HeaderSection
           isRadiusIcon={isRadiusIcon}
           iconUrl={iconUrl}
           title={title}
           subTitle={subTitle}
           role={role}
+          initials={initials}
+          backgroundColor={backgroundColor}
         />
-        <div className='flex w-1/2 items-center justify-end'>
+        <div className='flex w-1/2 items-start justify-end'>
           <button onClick={onEdit}>
             <div className='w-[100px] rounded-full bg-secondary p-[7px]'>
               <p className='text-[10px] text-white'>{buttonText}</p>
@@ -98,17 +138,33 @@ export default function InformationDetail({
           </button>
         </div>
       </div>
-      <div className='flex w-full border-t border-[#E3E3E3] pb-2' />
-      <div className='flex w-full flex-col space-y-2'>
-        {details.map((item: any) => (
-          <div
-            className='flex justify-between font-[#2C2F35] text-xs'
-            key={item.key}
-          >
-            <DetailItem item={item} />
-          </div>
-        ))}
-      </div>
+
+      {details && <div className='flex w-full' />}
+
+      {isEditPratice ? (
+        <div className='mt-2 flex w-full flex-col'>
+          {Array.isArray(details) &&
+            details.map((detail, index) => (
+              <div
+                key={index}
+                className='mt-1 flex flex-col border-t border-[#E3E3E3] font-[#2C2F35] text-xs'
+              >
+                <DetailPratice items={detail} />
+              </div>
+            ))}
+        </div>
+      ) : (
+        <div className='mt-2 flex w-full flex-col space-y-2 border-t border-[#E3E3E3]'>
+          {details?.map((item: IPractitionerRoleDetail, index: number) => (
+            <div
+              className='mt-2 flex justify-between font-[#2C2F35] text-xs'
+              key={index}
+            >
+              <DetailItem item={item} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
-  )
+  );
 }

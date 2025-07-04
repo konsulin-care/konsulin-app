@@ -1,0 +1,30 @@
+# code: language=ansible
+---
+- name: Deploy App Production
+  hosts: all
+  become: true
+
+  vars:
+    ansible_user: konsulin
+    ansible_python_interpreter: /usr/bin/python3.12
+    docker_service_name: prod-app
+    deployment_path: "/home/konsulin/infrastructure/production/konsulin-app"
+
+    image_repository: konsulin/fe-service
+    image_tag: ""
+
+    logging:
+      driver: "json-file"
+      options:
+        maxSize: "200k"
+        maxFile: "10"
+
+    domain:
+      virtual_host: app.konsulin.care
+      letsencrypt_host: app.konsulin.care
+      virtual_port: 3000
+      letsencrypt_email: mfardiansyah.id@gmail.com
+
+  tasks:
+    - name: Include deployment tasks
+      include_tasks: deploy-task.yml

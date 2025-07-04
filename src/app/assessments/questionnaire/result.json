@@ -1,0 +1,29 @@
+{
+  "questionnaire": "Questionnaire/phq2",
+  "description": "Pemeriksaan Patient Health Questionnaire-2 (PHQ-2) dirancang untuk menilai secara singkat tingkat keparahan gejala-gejala yang berhubungan dengan depresi. Instrumen ini mengevaluasi dua aspek utama: seberapa sering seseorang merasa sedih atau putus asa, serta kehilangan minat atau kesenangan dalam aktivitas yang biasanya mereka nikmati. Skor di atas 3 menandakan gejala klinis yang cukup mengganggu.",
+  "item": [
+    {
+      "linkId": "score-dimension",
+      "item": [
+        {
+          "linkId": "score",
+          "text": "Skor total",
+          "answer": [
+            {
+              "valueInteger": 5
+            }
+          ]
+        },
+        {
+          "linkId": "reference",
+          "text": "Referensi maksimal",
+          "answer": [
+            {
+              "valueInteger": 6
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

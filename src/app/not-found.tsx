@@ -16,7 +16,7 @@ export default function Notfound() {
         alt='offline'
         src={'/images/Fast-Internet.svg'}
       />
-      <h2 className='mt-2 text-center font-mono text-2xl font-semibold'>
+      <h2 className='mt-2 text-center text-2xl font-semibold'>
         Oops! Page Not Found
       </h2>
       <p className='text-sm opacity-50'>
@@ -29,7 +29,7 @@ export default function Notfound() {
         onClick={() => router.push('/')}
       >
         <div className='flex items-center'>
-          <span className='font-mono text-2xl font-semibold underline'>
+          <span className='text-2xl font-semibold underline'>
             Go to Home Page
           </span>
           <RotateCw className='ml-2' width={21} height={21} />

@@ -1,56 +1,49 @@
-'use client'
+'use client';
 
-import Header from '@/components/header'
-import NavigationBar from '@/components/navigation-bar'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
+import { LoadingSpinnerIcon } from '@/components/icons';
+import NavigationBar from '@/components/navigation-bar';
+import { useAuth } from '@/context/auth/authContext';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import HomeContent from './home-content';
+import HomeHeader from './home-header';
 
-import Image from 'next/image'
-import AppClinician from './app-clinician'
-import AppGuest from './app-guest'
-import AppPatient from './app-patient'
+const App = () => {
+  const { isLoading } = useAuth();
+  const router = useRouter();
+  const [isRedirecting, setIsRedirecting] = useState(true);
 
-const App: React.FC<IWithAuth> = ({ userRole, isAuthenticated }) => {
-  const renderHomeContent = () => {
-    switch (userRole) {
-      case 'patient':
-        return <AppPatient />
-      case 'clinician':
-        return <AppClinician />
-      default: // guest
-        return <AppGuest />
+  useEffect(() => {
+    if (!isLoading) {
+      const storedRedirect = localStorage.getItem('redirect');
+      if (storedRedirect) {
+        localStorage.removeItem('redirect');
+        router.push(decodeURIComponent(storedRedirect));
+        return;
+      }
+      setIsRedirecting(false);
     }
+  }, [isLoading]);
+
+  if (isLoading || isRedirecting) {
+    return (
+      <div className='mt-[-24px] flex min-h-screen min-w-full items-center justify-center rounded-[16px] bg-white pb-[100px] pt-4'>
+        <LoadingSpinnerIcon
+          width={60}
+          height={60}
+          className='w-full animate-spin'
+        />
+      </div>
+    );
   }
 
   return (
-    <NavigationBar>
-      <Header showChat={isAuthenticated} showNotification={isAuthenticated}>
-        {!isAuthenticated ? (
-          <div className='flex flex-col'>
-            <div className='text-[14px] font-bold text-white'>Konsulin</div>
-          </div>
-        ) : (
-          <div className='flex'>
-            <Image
-              className='mr-2 h-[32px] w-[32px] self-center rounded-full object-cover'
-              width={32}
-              height={32}
-              alt='offline'
-              src={'/images/avatar.jpg'}
-            />
-            <div className='flex flex-col'>
-              <div className='text-[10px] font-normal text-white'>
-                Selamat Datang di Dashboard anda
-              </div>
-              <div className='text-[14px] font-bold text-white'>
-                Aji Si {userRole}
-              </div>
-            </div>
-          </div>
-        )}
-      </Header>
-      {renderHomeContent()}
-    </NavigationBar>
-  )
-}
+    <>
+      <NavigationBar />
+      <HomeHeader />
+      <HomeContent />
+    </>
+  );
+};
 
-export default withAuth(App, ['patient', 'clinician'], true)
+export default App;

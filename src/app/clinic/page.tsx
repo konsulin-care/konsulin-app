@@ -1,20 +1,65 @@
-'use client'
+'use client';
 
-import Header from '@/components/header'
-import NavigationBar from '@/components/navigation-bar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { InputWithIcon } from '@/components/ui/input-with-icon'
-import withAuth, { IWithAuth } from '@/hooks/withAuth'
-import dayjs from 'dayjs'
-import { SearchIcon } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import ClinicFilter from './clinic-filter'
+import CardLoader from '@/components/general/card-loader';
+import ContentWraper from '@/components/general/content-wraper';
+import EmptyState from '@/components/general/empty-state';
+import Header from '@/components/header';
+import NavigationBar from '@/components/navigation-bar';
+import UpcomingSession from '@/components/schedule/upcoming-session';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { useAuth } from '@/context/auth/authContext';
+import { useGetUpcomingAppointments } from '@/services/api/appointments';
+import { IUseClinicParams, useListClinics } from '@/services/clinic';
+import { parseMergedAppointments } from '@/utils/helper';
+import { format, isAfter, parseISO } from 'date-fns';
+import { BundleEntry } from 'fhir/r4';
+import { SearchIcon } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import ClinicFilter from './clinic-filter';
 
-const Clinic: React.FC<IWithAuth> = () => {
+const now = new Date();
+
+export default function Clinic() {
+  const router = useRouter();
+  const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
+  const [searchTerm, setSearchTerm] = useState<string>('');
+
+  const { data: clinics, isLoading: isListClinicsLoading } = useListClinics({
+    searchTerm,
+    cityFilter: clinicFilter.city
+  });
+
+  const { state: authState } = useAuth();
+  const { data: upcomingData } = useGetUpcomingAppointments({
+    patientId: authState?.userInfo?.fhirId,
+    dateReference: format(now, 'yyyy-MM-dd')
+  });
+
+  const parsedAppointmentsData = useMemo(() => {
+    if (!upcomingData || upcomingData?.total === 0) return null;
+
+    const parsed = parseMergedAppointments(upcomingData);
+    const filtered = parsed.filter(session => {
+      const slotStart = parseISO(session.slotStart);
+      return isAfter(slotStart, now);
+    });
+
+    return filtered;
+  }, [upcomingData]);
+
+  const handleSelectedClinic = (clinicId: string) => {
+    localStorage.setItem('selected_clinic', clinicId);
+    router.push(`/clinic/${clinicId}`);
+  };
+
   return (
-    <NavigationBar>
+    <>
+      <NavigationBar />
       <Header>
         <div className='flex w-full flex-col'>
           <div className='text-[14px] font-bold text-white'>Book Session</div>
@@ -22,52 +67,64 @@ const Clinic: React.FC<IWithAuth> = () => {
             <div className='text-[14px] font-bold text-white'>
               Schedule Active
             </div>
-            <Link href='/' className='text-[10px] text-white'>
+            <Link
+              href={
+                authState && !authState.isAuthenticated ? '/auth' : '/schedule'
+              }
+              className='text-[10px] text-white'
+            >
               See All
             </Link>
           </div>
-          <div className='card mt-4 flex items-center bg-[#F9F9F9]'>
-            <Image
-              className='mr-[10px] min-h-[32] min-w-[32]'
-              src={'/icons/calendar.svg'}
-              width={32}
-              height={32}
-              alt='calendar'
-            />
-            <div className='mr-auto flex flex-col'>
-              <span className='text-[12px] text-muted'>
-                Upcoming Session With
-              </span>
-              <span className='text-[14px] font-bold text-secondary'>
-                Mrs Clinician Name
-              </span>
-            </div>
-            <div className='s'>
-              <span className='text-[12px] font-bold'>
-                {dayjs().format('HH:mm')} |{' '}
-              </span>
-              <span className='text-[12px]'>
-                {dayjs().format('DD/MM/YYYY')}
-              </span>
-            </div>
-          </div>
+
+          {authState &&
+            parsedAppointmentsData &&
+            parsedAppointmentsData.length > 0 && (
+              <UpcomingSession
+                data={parsedAppointmentsData}
+                role={authState.userInfo.role_name}
+              />
+            )}
         </div>
       </Header>
-      <div className='mt-[-24px] rounded-[16px] bg-white'>
-        <div className='p-4'>
+      <ContentWraper>
+        <div className='w-full p-4'>
           <div className='flex gap-4'>
             <InputWithIcon
+              value={searchTerm}
+              onChange={event => setSearchTerm(event.target.value)}
               placeholder='Search'
               className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
-            <ClinicFilter />
+            <ClinicFilter
+              onChange={(filter: IUseClinicParams) => {
+                setClinicFilter(prevState => ({
+                  ...prevState,
+                  ...filter
+                }));
+              }}
+              type='clinic'
+            />
           </div>
-          <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-            {Array(12)
-              .fill(undefined)
-              .map((_, index: number) => (
-                <div key={index} className='card flex flex-col items-center'>
+
+          <div className='flex gap-4'>
+            {clinicFilter.city && (
+              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+                {clinicFilter.city}
+              </Badge>
+            )}
+          </div>
+
+          {isListClinicsLoading ? (
+            <CardLoader />
+          ) : clinics.length > 0 ? (
+            <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+              {clinics.map((clinic: BundleEntry) => (
+                <div
+                  key={clinic.resource.id}
+                  className='card flex flex-col items-center'
+                >
                   <Image
                     className='h-[100px] w-full rounded-lg object-cover'
                     src='/images/clinic.jpg'
@@ -76,30 +133,23 @@ const Clinic: React.FC<IWithAuth> = () => {
                     height={100}
                   />
                   <div className='mt-2 text-center font-bold text-primary'>
-                    Klinik Jaga Mental
+                    {clinic.resource.resourceType === 'Organization' &&
+                      clinic.resource.name}
                   </div>
-                  <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                      Workplace
-                    </Badge>
-                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                      Relationship
-                    </Badge>
-                    <Badge className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
-                      Social Interaction
-                    </Badge>
-                  </div>
-                  <Link href={`/clinic/${index + 1}`} className='w-full'>
-                    <Button className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'>
-                      Check
-                    </Button>
-                  </Link>
+                  <Button
+                    onClick={() => handleSelectedClinic(clinic.resource.id)}
+                    className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
+                  >
+                    Check
+                  </Button>
                 </div>
               ))}
-          </div>
+            </div>
+          ) : (
+            <EmptyState className='py-16' />
+          )}
         </div>
-      </div>
-    </NavigationBar>
-  )
+      </ContentWraper>
+    </>
+  );
 }
-export default withAuth(Clinic, ['patient'], true)

@@ -1,23 +1,23 @@
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 import {
   Drawer,
   DrawerContent,
   DrawerDescription,
   DrawerTitle,
   DrawerTrigger
-} from '@/components/ui/drawer'
-import { ChevronRightIcon } from 'lucide-react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { Fragment, useState } from 'react'
+} from '@/components/ui/drawer';
+import { ChevronRightIcon } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { Fragment, useState } from 'react';
 
 export default function Settings({ menus }) {
-  const router = useRouter()
+  const router = useRouter();
   const [drawerState, setDrawerState] = useState({
     title: '',
     subTitle: '',
     show: false
-  })
+  });
 
   function handleClick(path: string) {
     if (path === '/logout') {
@@ -26,16 +26,16 @@ export default function Settings({ menus }) {
         subTitle:
           'Note that you need to login again in the\nfuture and the notification will not appears if you log out',
         show: true
-      })
+      });
     } else if (path === '/remove-account') {
       setDrawerState({
         title: 'Apakah Anda Yakin Untuk Hapus Akun',
         subTitle:
           'Note that you cannot retrieve any data from\nthis account in the app if you delete your account.',
         show: true
-      })
+      });
     } else {
-      router.push(path)
+      router.push(path);
     }
   }
 
@@ -43,28 +43,29 @@ export default function Settings({ menus }) {
     setDrawerState(prevState => ({
       ...prevState,
       show: false
-    }))
-    router.push('/logout')
+    }));
+
+    router.push('/logout');
   }
 
   function closeDrawer() {
     setDrawerState(prevState => ({
       ...prevState,
       show: false
-    }))
+    }));
   }
 
   return (
     <>
-      <div className='w-full rounded-lg bg-white'>
+      <div className='mt-4 w-full rounded-lg bg-white'>
         <ul>
           {menus.map((item: any, index: number) => {
-            const isFirst = index === 0
-            const isLast = index === menus.length - 1
+            const isFirst = index === 0;
+            const isLast = index === menus.length - 1;
             return (
               <div key={item.name} onClick={() => handleClick(item.link)}>
                 <li
-                  className={`flex items-center justify-between py-4 ${
+                  className={`flex cursor-pointer items-center justify-between py-4 ${
                     !isFirst && !isLast ? 'border-b border-[#E8E8E8]' : ''
                   } ${isFirst || isLast ? 'border-none' : 'border-t border-[#E8E8E8]'}`}
                 >
@@ -80,7 +81,7 @@ export default function Settings({ menus }) {
                   <ChevronRightIcon color='#ADB6C7' width={18} height={18} />
                 </li>
               </div>
-            )
+            );
           })}
         </ul>
       </div>
@@ -88,9 +89,9 @@ export default function Settings({ menus }) {
         <DrawerTrigger asChild>
           <div />
         </DrawerTrigger>
-        <DrawerContent className='p-4'>
-          <div className='rounded-t-lg bg-white pt-4'>
-            <DrawerTitle className='text-black-100 pb-1 text-center text-xl font-bold'>
+        <DrawerContent className='mx-auto w-full max-w-screen-sm p-4'>
+          <div className='rounded-t-lg bg-white'>
+            <DrawerTitle className='text-black-100 py-1 text-center text-lg font-bold md:text-xl'>
               {drawerState.title.split('\n').map((line, index) => (
                 <Fragment key={index}>
                   {line}
@@ -98,7 +99,7 @@ export default function Settings({ menus }) {
                 </Fragment>
               ))}
             </DrawerTitle>
-            <DrawerDescription className='text-center text-sm font-normal text-black opacity-60'>
+            <DrawerDescription className='text-center text-xs font-normal text-black opacity-60 md:text-sm'>
               {drawerState.subTitle.split('\n').map((line, index) => (
                 <Fragment key={index}>
                   {line}
@@ -128,5 +129,5 @@ export default function Settings({ menus }) {
         </DrawerContent>
       </Drawer>
     </>
-  )
+  );
 }

@@ -1,0 +1,63 @@
+.custom-smart-form {
+  .MuiContainer-root {
+    padding: 0 12px !important;
+  }
+
+  //input field
+  .MuiGrid-root {
+    flex-direction: column !important;
+
+    div {
+      max-width: unset !important;
+    }
+
+    .MuiOutlinedInput-notchedOutline {
+      width: 100% !important;
+    }
+
+    .MuiTypography-root {
+      margin-bottom: 4px !important;
+    }
+  }
+
+  // duration
+  [data-test='q-item-quantity-field'] {
+    min-width: 50px !important;
+  }
+
+  .MuiInputAdornment-root {
+    width: 0px !important;
+    margin-left: 0px !important;
+  }
+
+  .MuiFab-root {
+    background-color: #0abdc3 !important;
+    color: white !important;
+    border-radius: 50% !important;
+  }
+
+  .MuiFab-root:hover {
+    filter: brightness(0.9);
+  }
+
+  .MuiFab-root.Mui-disabled {
+    background-color: rgba(158, 158, 158, 0.24) !important;
+  }
+
+  // [data-test='q-item-quantity-box'] {
+  // margin-top: 14px !important;
+  // }
+  // .css-55bi6n-MuiTypography-root {
+  //   font-size: 9px !important;
+  // }
+
+  .css-0 {
+    display: none !important;
+  }
+}
+
+// MuiInputBase-input
+// MuiOutlinedInput-input
+// MuiInputBase-inputSizeSmall
+// MuiInputBase-inputAdornedEnd
+// css-1m7nww1-MuiInputBase-input-MuiOutlinedInput-input

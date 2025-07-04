@@ -1,17 +1,8 @@
-export interface PropsProfile {
-  fullname: string
-  email: string
-  birth_date: undefined | string
-  whatsapp_number: string
-  gender: string
-  address: string
-  educations: string[]
-}
-export interface StateProfile {
-  profile: PropsProfile
-  pratice?: {}
-}
+import { Patient, Practitioner } from 'fhir/r4';
 
 export type ActionProfile =
-  | { type: 'updated'; payload: StateProfile }
-  | { type: 'getProfile'; payload: StateProfile }
+  | { type: 'updated'; payload: IProfile }
+  | { type: 'getProfile'; payload: IProfile }
+  | { type: 'reset' };
+
+export type IProfile = Patient | Practitioner;
