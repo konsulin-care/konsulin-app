@@ -53,6 +53,26 @@ jobs:
       IMAGE_NAME: konsulin-app
 
     steps:
+      - name: Debug - Display Input Variables
+        run: |
+          echo "=== DOCKER BUILD INPUT VARIABLES ==="
+          echo "TZ_ARG: ${{ inputs.TZ_ARG }}"
+          echo "AUTHOR: ${{ inputs.AUTHOR }}"
+          echo "VERSION: ${{ inputs.VERSION }}"
+          echo "TAG: ${{ inputs.TAG }}"
+          echo "GIT_COMMIT: ${{ inputs.GIT_COMMIT }}"
+          echo "BUILD_TIME: ${{ inputs.BUILD_TIME }}"
+          echo "RUN_NUMBER: ${{ inputs.RUN_NUMBER }}"
+          echo "IS_DEV: ${{ inputs.IS_DEV }}"
+          echo "IS_PROD: ${{ inputs.IS_PROD }}"
+          echo "API_URL_DEV: ${{ inputs.API_URL_DEV }}"
+          echo "API_URL_PROD: ${{ inputs.API_URL_PROD }}"
+          echo ""
+          echo "=== SECRETS (masked) ==="
+          echo "DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}"
+          echo "DOCKER_PASSWORD: [MASKED]"
+          echo "WEBHOOK_AUTH: [MASKED]"
+
       - name: Checkout Source
         uses: actions/checkout@v4
 

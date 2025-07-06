@@ -14,6 +14,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Debug - Display Secrets
+        run: |
+          echo "=== DEPLOY SECRETS (masked) ==="
+          echo "SSH_HOST: ${{ secrets.SSH_HOST }}"
+          echo "SSH_USERNAME: ${{ secrets.SSH_USERNAME }}"
+          echo "SSH_KEY: [MASKED]"
+
       - name: SSH Check Konsulin API Container Status 1
         uses: appleboy/ssh-action@v1.0.0
         with:
