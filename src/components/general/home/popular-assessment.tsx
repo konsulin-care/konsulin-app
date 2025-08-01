@@ -23,7 +23,8 @@ export default function PopularAssessment() {
   const { data: popularAssessments, isLoading: popularLoading } =
     usePopularAssessments();
 
-  const [selectedAssessment, setSelectedAssessment] = useState(null);
+  const [selectedAssessment, setSelectedAssessment] =
+    useState<Questionnaire | null>(null);
 
   const renderDrawerContent = (
     <div className='flex flex-col'>
@@ -38,7 +39,7 @@ export default function PopularAssessment() {
         <div className='flex flex-wrap gap-[10px] text-sm'>
           <DrawerDescription>
             <ReactMarkdown components={customMarkdownComponents}>
-              {selectedAssessment?.description}
+              {selectedAssessment?.description ?? ''}
             </ReactMarkdown>
           </DrawerDescription>
         </div>
@@ -65,47 +66,50 @@ export default function PopularAssessment() {
           See All
         </Link>
       </div>
-      <div>
-        <ScrollArea className='w-full whitespace-nowrap pb-4'>
-          {popularLoading ? (
-            <CardLoader item={2} height='h-[80px]' />
-          ) : (
-            <div className='flex w-max space-x-4'>
-              {popularAssessments.map(
-                (assessment: BundleEntry<Questionnaire>) => (
-                  <Drawer key={assessment.resource.id}>
-                    <DrawerTrigger
-                      className='card flex w-fit shrink-0 items-center gap-2 bg-white'
-                      onClick={() => setSelectedAssessment(assessment.resource)}
-                    >
-                      <Image
-                        src={'/images/exercise.svg'}
-                        height={40}
-                        width={40}
-                        alt='exercise'
-                      />
-                      <div className='flex flex-col items-start'>
-                        <span className='text-[12px] font-bold'>
-                          {assessment.resource.title}
-                        </span>
-                        <span className='max-w-[200px] truncate text-ellipsis text-[10px] text-muted'>
-                          {assessment.resource.description}
-                        </span>
-                      </div>
-                      <ChevronRightIcon className='text-muted' />
-                    </DrawerTrigger>
 
-                    <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-                      <div className='mt-4'>{renderDrawerContent}</div>
-                    </DrawerContent>
-                  </Drawer>
-                )
-              )}
-            </div>
-          )}
-          <ScrollBar orientation='horizontal' />
-        </ScrollArea>
-      </div>
+      <ScrollArea className='w-full whitespace-nowrap pb-4'>
+        {popularLoading ? (
+          <CardLoader item={2} height='h-[80px]' />
+        ) : popularAssessments && popularAssessments.length > 0 ? (
+          <div className='flex w-max space-x-4'>
+            {popularAssessments.map(
+              (assessment: BundleEntry<Questionnaire>) => (
+                <Drawer key={assessment.resource.id}>
+                  <DrawerTrigger
+                    className='card flex w-fit shrink-0 items-center gap-2 bg-white'
+                    onClick={() => setSelectedAssessment(assessment.resource)}
+                  >
+                    <Image
+                      src='/images/exercise.svg'
+                      height={40}
+                      width={40}
+                      alt='exercise'
+                    />
+                    <div className='flex flex-col items-start'>
+                      <span className='text-[12px] font-bold'>
+                        {assessment.resource.title}
+                      </span>
+                      <span className='max-w-[200px] truncate text-ellipsis text-[10px] text-muted'>
+                        {assessment.resource.description}
+                      </span>
+                    </div>
+                    <ChevronRightIcon className='text-muted' />
+                  </DrawerTrigger>
+
+                  <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+                    <div className='mt-4'>{renderDrawerContent}</div>
+                  </DrawerContent>
+                </Drawer>
+              )
+            )}
+          </div>
+        ) : (
+          <div className='px-2 py-4 text-sm text-gray-500'>
+            No popular assessments available.
+          </div>
+        )}
+        <ScrollBar orientation='horizontal' />
+      </ScrollArea>
     </div>
   );
 }
