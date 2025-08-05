@@ -88,6 +88,20 @@ jobs:
       - name: Get Timestamp (for Dev Tag)
         run: echo "TIMESTAMP=$(date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
 
+      - name: Create .env file
+        run: |
+          if [ "${{ inputs.IS_DEV }}" == "true" ]; then
+            echo "Creating .env file for development"
+            echo "NEXT_PUBLIC_API_URL=${{ inputs.API_URL_DEV }}" > .env
+            echo "NEXT_PUBLIC_WEBHOOK_AUTH=${{ secrets.WEBHOOK_AUTH }}" >> .env
+          elif [ "${{ inputs.IS_PROD }}" == "true" ]; then
+            echo "Creating .env file for production"
+            echo "NEXT_PUBLIC_API_URL=${{ inputs.API_URL_PROD }}" > .env
+            echo "NEXT_PUBLIC_WEBHOOK_AUTH=${{ secrets.WEBHOOK_AUTH }}" >> .env
+          fi
+          echo ".env file created:"
+          cat .env
+
       - name: Build and Push Docker Images
         run: |
           if [ "${{ inputs.IS_DEV }}" == "true" ]; then
@@ -96,8 +110,6 @@ jobs:
               -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:nightly \
               -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:dev-${{ env.SHORT_SHA }}-${{ env.TIMESTAMP }} \
               -f Dockerfile \
-              --build-arg API_URL="${{ inputs.API_URL_DEV }}" \
-              --build-arg WEBHOOK_AUTH="${{ inputs.WEBHOOK_AUTH }}" \
               --build-arg VERSION="${{ inputs.VERSION }}" \
               --build-arg GIT_COMMIT="${{ inputs.GIT_COMMIT }}" \
               --build-arg TAG="${{ inputs.TAG }}" \
@@ -113,8 +125,6 @@ jobs:
               -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest \
               -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ inputs.VERSION }} \
               -f Dockerfile \
-              --build-arg API_URL="${{ inputs.API_URL_PROD }}" \
-              --build-arg WEBHOOK_AUTH="${{ inputs.WEBHOOK_AUTH }}" \
               --build-arg VERSION="${{ inputs.VERSION }}" \
               --build-arg GIT_COMMIT="${{ inputs.GIT_COMMIT }}" \
               --build-arg TAG="${{ inputs.TAG }}" \
