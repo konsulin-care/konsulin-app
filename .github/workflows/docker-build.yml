@@ -30,10 +30,28 @@ on:
       IS_PROD:
         type: boolean
         required: true
-      API_URL_DEV:
+      NEXT_PUBLIC_API_URL_DEV:
         type: string
         required: true
-      API_URL_PROD:
+      NEXT_PUBLIC_API_URL_PROD:
+        type: string
+        required: true
+      NEXT_PUBLIC_APP_NAME:
+        type: string
+        required: true
+      NEXT_PUBLIC_API_BASE_PATH:
+        type: string
+        required: true
+      NEXT_PUBLIC_APP_URL_DEV:
+        type: string
+        required: true
+      NEXT_PUBLIC_APP_URL_PROD:
+        type: string
+        required: true
+      NEXT_PUBLIC_APP_AUTH_PATH:
+        type: string
+        required: true
+      NEXT_PUBLIC_TERMINOLOGY_SERVER:
         type: string
         required: true
       
@@ -65,8 +83,15 @@ jobs:
           echo "RUN_NUMBER: ${{ inputs.RUN_NUMBER }}"
           echo "IS_DEV: ${{ inputs.IS_DEV }}"
           echo "IS_PROD: ${{ inputs.IS_PROD }}"
-          echo "API_URL_DEV: ${{ inputs.API_URL_DEV }}"
-          echo "API_URL_PROD: ${{ inputs.API_URL_PROD }}"
+          echo "NEXT_PUBLIC_API_URL_DEV: ${{ inputs.NEXT_PUBLIC_API_URL_DEV }}"
+          echo "NEXT_PUBLIC_API_URL_PROD: ${{ inputs.NEXT_PUBLIC_API_URL_PROD }}"
+          echo "NEXT_PUBLIC_APP_NAME: ${{ inputs.NEXT_PUBLIC_APP_NAME }}"
+          echo "NEXT_PUBLIC_API_BASE_PATH: ${{ inputs.NEXT_PUBLIC_API_BASE_PATH }}"
+          echo "NEXT_PUBLIC_APP_URL_DEV: ${{ inputs.NEXT_PUBLIC_APP_URL_DEV }}"
+          echo "NEXT_PUBLIC_APP_URL_PROD: ${{ inputs.NEXT_PUBLIC_APP_URL_PROD }}"
+          echo "NEXT_PUBLIC_APP_AUTH_PATH: ${{ inputs.NEXT_PUBLIC_APP_AUTH_PATH }}"
+          echo "NEXT_PUBLIC_TERMINOLOGY_SERVER: ${{ inputs.NEXT_PUBLIC_TERMINOLOGY_SERVER }}"
+          
           echo ""
           echo "=== SECRETS (masked) ==="
           echo "DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}"
@@ -92,11 +117,21 @@ jobs:
         run: |
           if [ "${{ inputs.IS_DEV }}" == "true" ]; then
             echo "Creating .env file for development"
-            echo "NEXT_PUBLIC_API_URL=${{ inputs.API_URL_DEV }}" > .env
+            echo "NEXT_PUBLIC_API_URL=${{ inputs.NEXT_PUBLIC_API_URL_DEV }}" > .env
+            echo "NEXT_PUBLIC_APP_NAME=${{ inputs.NEXT_PUBLIC_APP_NAME }}" >> .env
+            echo "NEXT_PUBLIC_API_BASE_PATH=${{ inputs.NEXT_PUBLIC_API_BASE_PATH }}" >> .env
+            echo "NEXT_PUBLIC_APP_URL=${{ inputs.NEXT_PUBLIC_APP_URL_DEV }}" >> .env
+            echo "NEXT_PUBLIC_APP_AUTH_PATH=${{ inputs.NEXT_PUBLIC_APP_AUTH_PATH }}" >> .env
+            echo "NEXT_PUBLIC_TERMINOLOGY_SERVER=${{ inputs.NEXT_PUBLIC_TERMINOLOGY_SERVER }}" >> .env
             echo "NEXT_PUBLIC_WEBHOOK_AUTH=${{ secrets.WEBHOOK_AUTH }}" >> .env
           elif [ "${{ inputs.IS_PROD }}" == "true" ]; then
             echo "Creating .env file for production"
-            echo "NEXT_PUBLIC_API_URL=${{ inputs.API_URL_PROD }}" > .env
+            echo "NEXT_PUBLIC_API_URL=${{ inputs.NEXT_PUBLIC_API_URL_PROD }}" > .env
+            echo "NEXT_PUBLIC_APP_NAME=${{ inputs.NEXT_PUBLIC_APP_NAME }}" >> .env
+            echo "NEXT_PUBLIC_API_BASE_PATH=${{ inputs.NEXT_PUBLIC_API_BASE_PATH }}" >> .env
+            echo "NEXT_PUBLIC_APP_URL=${{ inputs.NEXT_PUBLIC_APP_URL_PROD }}" >> .env
+            echo "NEXT_PUBLIC_APP_AUTH_PATH=${{ inputs.NEXT_PUBLIC_APP_AUTH_PATH }}" >> .env
+            echo "NEXT_PUBLIC_TERMINOLOGY_SERVER=${{ inputs.NEXT_PUBLIC_TERMINOLOGY_SERVER }}" >> .env
             echo "NEXT_PUBLIC_WEBHOOK_AUTH=${{ secrets.WEBHOOK_AUTH }}" >> .env
           fi
           echo ".env file created:"
