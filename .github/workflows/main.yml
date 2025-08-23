@@ -17,8 +17,8 @@ jobs:
         run: |
           echo "=== GITHUB VARS VARIABLES ==="
           echo "DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME }}"
-          echo "API_URL_DEV: ${{ vars.API_URL_DEV }}"
-          echo "API_URL_PROD: ${{ vars.API_URL_PROD }}"
+          echo "NEXT_PUBLIC_API_URL_DEV: ${{ vars.NEXT_PUBLIC_API_URL_DEV }}"
+          echo "NEXT_PUBLIC_API_URL_PROD: ${{ vars.NEXT_PUBLIC_API_URL_PROD }}"
           echo "NEXT_PUBLIC_APP_NAME: ${{ vars.NEXT_PUBLIC_APP_NAME }}"
           echo "NEXT_PUBLIC_API_BASE_PATH: ${{ vars.NEXT_PUBLIC_API_BASE_PATH }}"
           echo "NEXT_PUBLIC_APP_URL_DEV: ${{ vars.NEXT_PUBLIC_APP_URL_DEV }}"
