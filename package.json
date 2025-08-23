@@ -70,7 +70,7 @@
     "react-dom": "^18",
     "react-hook-form": "^7.52.0",
     "react-markdown": "^10.1.0",
-    "react-qr-code": "^2.0.15",
+    "react-qr-code": "^2.0.18",
     "react-resizable-panels": "^2.0.19",
     "react-share-social": "^0.1.60",
     "react-toastify": "^10.0.5",
