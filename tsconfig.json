@@ -28,14 +28,15 @@
       "@/*": [
         "./src/*"
       ]
-    }
+    },
+    "target": "ES2017"
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/app/api/auth/[...nextauth]",
+    "src/app/api/auth/[...nextauth]"
   ],
   "exclude": [
     "node_modules",
