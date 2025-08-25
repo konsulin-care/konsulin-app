@@ -41,12 +41,10 @@ const dateFormat = (date: string) => {
   return format(parseISO(date), 'dd MMMM yyyy');
 };
 
-const filteredResearch = (researchArr: BundleEntry[] | null | undefined) =>
-  researchArr
-    ? researchArr.filter(
-        (item: BundleEntry) => item.resource.resourceType === 'ResearchStudy'
-      )
-    : [];
+const filteredResearch = (researchArr: BundleEntry[]) =>
+  researchArr.filter(
+    (item: BundleEntry) => item.resource.resourceType === 'ResearchStudy'
+  );
 
 export default function Assessment() {
   const router = useRouter();
@@ -381,85 +379,79 @@ export default function Assessment() {
           {/* </Button> */}
         </div>
 
-        {researchLoading || isAuthLoading ? (
-          <div className='mb-2 mt-4 px-4 text-muted'>
-            <CardLoader item={2} />
+        <div className='mb-2 mt-4 px-4 text-muted'>
+          <div className='text-[14px] font-bold'>On-going Research</div>
+          <div className='text-[10px]'>
+            Your heart is valuable. Please participate in our ongoing study to
+            help us help you more. We will send you the result if you need to
+            know.
           </div>
-        ) : (
-          filteredResearch(research).length > 0 && (
-            <div className='mb-2 mt-4 px-4 text-muted'>
-              <div className='text-[14px] font-bold'>On-going Research</div>
-              <div className='text-[10px]'>
-                Your heart is valuable. Please participate in our ongoing study
-                to help us help you more. We will send you the result if you
-                need to know.
-              </div>
-              <ScrollArea className='mt-2 w-full whitespace-nowrap'>
-                <div className='flex w-max space-x-4 pb-4'>
-                  {filteredResearch(research).map(
-                    (item: BundleEntry<ResearchStudy>) => {
-                      const mergedData = getMergedData(item.resource);
-                      return (
-                        <div
-                          key={item.resource.id}
-                          className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
-                        >
-                          <div className='flex gap-2'>
-                            <Image
-                              className='h-[64px] w-[64px] rounded-[8px] object-cover'
-                              src={'/images/clinic.jpg'}
-                              // NOTE: replace with this src later on
-                              // src={item.resource.relatedArtifact[0].resource}
-                              height={64}
-                              width={64}
-                              alt='clinic'
-                            />
-                            <div className='flex flex-col text-[12px]'>
-                              <div className='text-wrap font-bold text-black'>
-                                {item.resource.title}
-                              </div>
-                              <div className='overflow-hidden text-wrap'>
-                                {item.resource.description?.length > 100
-                                  ? `${item.resource.description.slice(0, 100)}...`
-                                  : item.resource.description}
-                              </div>
+          <ScrollArea className='mt-2 w-full whitespace-nowrap'>
+            {researchLoading || isAuthLoading ? (
+              <CardLoader item={2} />
+            ) : (
+              <div className='flex w-max space-x-4 pb-4'>
+                {filteredResearch(research).map(
+                  (item: BundleEntry<ResearchStudy>) => {
+                    const mergedData = getMergedData(item.resource);
+                    return (
+                      <div
+                        key={item.resource.id}
+                        className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
+                      >
+                        <div className='flex gap-2'>
+                          <Image
+                            className='h-[64px] w-[64px] rounded-[8px] object-cover'
+                            src={'/images/clinic.jpg'}
+                            // NOTE: replace with this src later on
+                            // src={item.resource.relatedArtifact[0].resource}
+                            height={64}
+                            width={64}
+                            alt='clinic'
+                          />
+                          <div className='flex flex-col text-[12px]'>
+                            <div className='text-wrap font-bold text-black'>
+                              {item.resource.title}
                             </div>
-                          </div>
-                          <hr />
-                          <div className='flex items-center justify-between'>
-                            <div className='mr-4'>
-                              <div className='text-[10px]'>
-                                Pengambilan data:
-                              </div>
-                              <div className='text-[10px] font-bold text-black'>
-                                {item.resource.period &&
-                                  `${dateFormat(item.resource.period.start)} -
-                            ${dateFormat(item.resource.period.end)}`}
-                              </div>
+                            <div className='overflow-hidden text-wrap'>
+                              {item.resource.description?.length > 100
+                                ? `${item.resource.description.slice(0, 100)}...`
+                                : item.resource.description}
                             </div>
-
-                            {mergedData.relatedLists[0] && (
-                              <div
-                                className='cursor-pointer rounded-[32px] bg-secondary px-4 py-2 text-sm font-bold text-white'
-                                onClick={() => {
-                                  handleResearchClick(mergedData);
-                                }}
-                              >
-                                Gabung
-                              </div>
-                            )}
                           </div>
                         </div>
-                      );
-                    }
-                  )}
-                </div>
+                        <hr />
+                        <div className='flex items-center justify-between'>
+                          <div className='mr-4'>
+                            <div className='text-[10px]'>Pengambilan data:</div>
+                            <div className='text-[10px] font-bold text-black'>
+                              {item.resource.period &&
+                                `${dateFormat(item.resource.period.start)} -
+                          ${dateFormat(item.resource.period.end)}`}
+                            </div>
+                          </div>
 
-                <ScrollBar orientation='horizontal' />
-              </ScrollArea>
-            </div>
-          )
-        )}
+                          {mergedData.relatedLists[0] && (
+                            <div
+                              className='cursor-pointer rounded-[32px] bg-secondary px-4 py-2 text-sm font-bold text-white'
+                              onClick={() => {
+                                handleResearchClick(mergedData);
+                              }}
+                            >
+                              Gabung
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+            )}
+
+            <ScrollBar orientation='horizontal' />
+          </ScrollArea>
+        </div>
 
         <div className='bg-[#F9F9F9] p-4'>
           <div className='mb-2 text-[14px] font-bold text-muted'>
