@@ -41,10 +41,12 @@ const dateFormat = (date: string) => {
   return format(parseISO(date), 'dd MMMM yyyy');
 };
 
-const filteredResearch = (researchArr: BundleEntry[]) =>
-  researchArr.filter(
-    (item: BundleEntry) => item.resource.resourceType === 'ResearchStudy'
-  );
+const filteredResearch = (researchArr: BundleEntry[] | null | undefined) =>
+  researchArr
+    ? researchArr.filter(
+        (item: BundleEntry) => item.resource.resourceType === 'ResearchStudy'
+      )
+    : [];
 
 export default function Assessment() {
   const router = useRouter();
@@ -197,7 +199,7 @@ export default function Assessment() {
           selectedAssessment.note.length !== 0 && (
             <Badge
               style={{ justifySelf: 'center' }}
-              className='flex w-fit rounded-[8px] bg-secondary px-[10px] py-[4px]'
+              className='bg-secondary flex w-fit rounded-[8px] px-[10px] py-[4px]'
             >
               <div className='text-xs text-white'>
                 Estimated time: ~{selectedAssessment.note[0].text}
@@ -233,7 +235,7 @@ export default function Assessment() {
                 );
               });
             }}
-            className='h-full w-full rounded-xl bg-secondary p-4 text-white'
+            className='bg-secondary h-full w-full rounded-xl p-4 text-white'
             disabled={isPending}
           >
             {isPending ? (
@@ -247,7 +249,7 @@ export default function Assessment() {
               'Isi assessment untuk Pasien'
             )}
           </Button>
-          <DrawerClose className='items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50'>
+          <DrawerClose className='focus:ring-opacity-50 items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:ring-2 focus:ring-gray-300 focus:outline-none'>
             Close
           </DrawerClose>
         </DrawerFooter>
@@ -263,7 +265,7 @@ export default function Assessment() {
           selectedAssessment.note.length !== 0 && (
             <Badge
               style={{ justifySelf: 'center' }}
-              className='flex w-fit rounded-[8px] bg-secondary px-[10px] py-[4px]'
+              className='bg-secondary flex w-fit rounded-[8px] px-[10px] py-[4px]'
             >
               <div className='text-xs text-white'>
                 Estimated time: ~{selectedAssessment.note[0].text}
@@ -314,7 +316,7 @@ export default function Assessment() {
                 );
               });
             }}
-            className='h-full w-full rounded-xl bg-secondary p-4 text-white'
+            className='bg-secondary h-full w-full rounded-xl p-4 text-white'
             disabled={isPending}
           >
             {isPending ? (
@@ -330,7 +332,7 @@ export default function Assessment() {
               'Start Test'
             )}
           </Button>
-          <DrawerClose className='items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50'>
+          <DrawerClose className='focus:ring-opacity-50 items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:ring-2 focus:ring-gray-300 focus:outline-none'>
             Close
           </DrawerClose>
         </DrawerFooter>
@@ -355,7 +357,7 @@ export default function Assessment() {
         <div className='flex gap-4 px-4'>
           <InputWithIcon
             placeholder='Search Asessment'
-            className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
+            className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
             startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             // onInput={e => {
             //   const input = e.target as HTMLInputElement;
@@ -379,82 +381,88 @@ export default function Assessment() {
           {/* </Button> */}
         </div>
 
-        <div className='mb-2 mt-4 px-4 text-muted'>
-          <div className='text-[14px] font-bold'>On-going Research</div>
-          <div className='text-[10px]'>
-            Your heart is valuable. Please participate in our ongoing study to
-            help us help you more. We will send you the result if you need to
-            know.
+        {researchLoading || isAuthLoading ? (
+          <div className='text-muted mt-4 mb-2 px-4'>
+            <CardLoader item={2} />
           </div>
-          <ScrollArea className='mt-2 w-full whitespace-nowrap'>
-            {researchLoading || isAuthLoading ? (
-              <CardLoader item={2} />
-            ) : (
-              <div className='flex w-max space-x-4 pb-4'>
-                {filteredResearch(research).map(
-                  (item: BundleEntry<ResearchStudy>) => {
-                    const mergedData = getMergedData(item.resource);
-                    return (
-                      <div
-                        key={item.resource.id}
-                        className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
-                      >
-                        <div className='flex gap-2'>
-                          <Image
-                            className='h-[64px] w-[64px] rounded-[8px] object-cover'
-                            src={'/images/clinic.jpg'}
-                            // NOTE: replace with this src later on
-                            // src={item.resource.relatedArtifact[0].resource}
-                            height={64}
-                            width={64}
-                            alt='clinic'
-                          />
-                          <div className='flex flex-col text-[12px]'>
-                            <div className='text-wrap font-bold text-black'>
-                              {item.resource.title}
-                            </div>
-                            <div className='overflow-hidden text-wrap'>
-                              {item.resource.description?.length > 100
-                                ? `${item.resource.description.slice(0, 100)}...`
-                                : item.resource.description}
-                            </div>
-                          </div>
-                        </div>
-                        <hr />
-                        <div className='flex items-center justify-between'>
-                          <div className='mr-4'>
-                            <div className='text-[10px]'>Pengambilan data:</div>
-                            <div className='text-[10px] font-bold text-black'>
-                              {item.resource.period &&
-                                `${dateFormat(item.resource.period.start)} -
-                          ${dateFormat(item.resource.period.end)}`}
-                            </div>
-                          </div>
-
-                          {mergedData.relatedLists[0] && (
-                            <div
-                              className='cursor-pointer rounded-[32px] bg-secondary px-4 py-2 text-sm font-bold text-white'
-                              onClick={() => {
-                                handleResearchClick(mergedData);
-                              }}
-                            >
-                              Gabung
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  }
-                )}
+        ) : (
+          filteredResearch(research).length > 0 && (
+            <div className='text-muted mt-4 mb-2 px-4'>
+              <div className='text-[14px] font-bold'>On-going Research</div>
+              <div className='text-[10px]'>
+                Your heart is valuable. Please participate in our ongoing study
+                to help us help you more. We will send you the result if you
+                need to know.
               </div>
-            )}
+              <ScrollArea className='mt-2 w-full whitespace-nowrap'>
+                <div className='flex w-max space-x-4 pb-4'>
+                  {filteredResearch(research).map(
+                    (item: BundleEntry<ResearchStudy>) => {
+                      const mergedData = getMergedData(item.resource);
+                      return (
+                        <div
+                          key={item.resource.id}
+                          className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
+                        >
+                          <div className='flex gap-2'>
+                            <Image
+                              className='h-[64px] w-[64px] rounded-[8px] object-cover'
+                              src={'/images/clinic.jpg'}
+                              // NOTE: replace with this src later on
+                              // src={item.resource.relatedArtifact[0].resource}
+                              height={64}
+                              width={64}
+                              alt='clinic'
+                            />
+                            <div className='flex flex-col text-[12px]'>
+                              <div className='font-bold text-wrap text-black'>
+                                {item.resource.title}
+                              </div>
+                              <div className='overflow-hidden text-wrap'>
+                                {item.resource.description?.length > 100
+                                  ? `${item.resource.description.slice(0, 100)}...`
+                                  : item.resource.description}
+                              </div>
+                            </div>
+                          </div>
+                          <hr />
+                          <div className='flex items-center justify-between'>
+                            <div className='mr-4'>
+                              <div className='text-[10px]'>
+                                Pengambilan data:
+                              </div>
+                              <div className='text-[10px] font-bold text-black'>
+                                {item.resource.period &&
+                                  `${dateFormat(item.resource.period.start)} -
+                            ${dateFormat(item.resource.period.end)}`}
+                              </div>
+                            </div>
 
-            <ScrollBar orientation='horizontal' />
-          </ScrollArea>
-        </div>
+                            {mergedData.relatedLists[0] && (
+                              <div
+                                className='bg-secondary cursor-pointer rounded-[32px] px-4 py-2 text-sm font-bold text-white'
+                                onClick={() => {
+                                  handleResearchClick(mergedData);
+                                }}
+                              >
+                                Gabung
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+
+                <ScrollBar orientation='horizontal' />
+              </ScrollArea>
+            </div>
+          )
+        )}
 
         <div className='bg-[#F9F9F9] p-4'>
-          <div className='mb-2 text-[14px] font-bold text-muted'>
+          <div className='text-muted mb-2 text-[14px] font-bold'>
             Popular Assessment
           </div>
 
@@ -480,13 +488,13 @@ export default function Assessment() {
                           alt='exercise'
                         />
                         <div className='flex min-w-[192px] justify-end gap-2'>
-                          <Badge className='flex items-center rounded-[8px] bg-secondary px-[10px] py-[4px]'>
+                          <Badge className='bg-secondary flex items-center rounded-[8px] px-[10px] py-[4px]'>
                             <AwardIcon size={16} color='white' fill='white' />
                             <div className='text-[10px] text-white'>
                               Best Impact
                             </div>
                           </Badge>
-                          <Badge className='rounded-[8px] bg-secondary px-[10px] py-[4px]'>
+                          <Badge className='bg-secondary rounded-[8px] px-[10px] py-[4px]'>
                             <BookmarkIcon
                               size={16}
                               color='white'
@@ -502,7 +510,7 @@ export default function Assessment() {
                         <span className='text-[12px] font-bold'>
                           {assessment.resource.title}
                         </span>
-                        <span className='mt-2 max-w-[250px] overflow-hidden truncate text-ellipsis text-[10px] text-muted'>
+                        <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
                           {assessment.resource.description}
                         </span>
                       </div>
