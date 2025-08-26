@@ -1,19 +1,19 @@
-'use client'
+'use client';
 
-import CardLoader from '@/components/general/card-loader'
-import ContentWraper from '@/components/general/content-wraper'
-import { InputWithIcon } from '@/components/ui/input-with-icon'
-import { useGetExcerise } from '@/services/api/exercise'
-import { SearchIcon } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useState } from 'react'
+import CardLoader from '@/components/general/card-loader';
+import ContentWraper from '@/components/general/content-wraper';
+import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { useGetExercise } from '@/services/api/exercise';
+import { SearchIcon } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState } from 'react';
 
 export default function ExcerciseList() {
-  const [keyWord, setKeyWord] = useState('')
+  const [keyWord, setKeyWord] = useState('');
 
   const { data: excerciseData, isLoading: excerciseIsLoading } =
-    useGetExcerise()
+    useGetExercise();
 
   const filteredExcerciseData = !keyWord
     ? excerciseData
@@ -22,7 +22,7 @@ export default function ExcerciseList() {
         item =>
           item.title.toLowerCase().includes(keyWord.toLowerCase()) ||
           item.description.toLowerCase().includes(keyWord.toLowerCase())
-      )
+      );
   return (
     <ContentWraper>
       {/* Filter / Search */}
@@ -31,7 +31,7 @@ export default function ExcerciseList() {
           value={keyWord}
           onChange={e => setKeyWord(e.target.value)}
           placeholder='Search'
-          className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
+          className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
           startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
         />
       </div>
@@ -55,13 +55,13 @@ export default function ExcerciseList() {
                   alt='exercise'
                 />
                 <div className='mt-2 flex flex-col'>
-                  <span className='text-[10px] text-muted'>
+                  <span className='text-muted text-[10px]'>
                     {excercise.duration} Minutes
                   </span>
                   <span className='text-[12px] font-bold'>
                     {excercise.title}
                   </span>
-                  <span className='mt-2 max-w-[250px] overflow-hidden truncate text-ellipsis text-[10px] text-muted'>
+                  <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
                     {excercise.description}
                   </span>
                 </div>
@@ -71,5 +71,5 @@ export default function ExcerciseList() {
         </div>
       </div>
     </ContentWraper>
-  )
+  );
 }

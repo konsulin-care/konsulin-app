@@ -8,7 +8,7 @@ import {
   QuestionnaireResponseItem
 } from 'fhir/r4';
 import { useMemo } from 'react';
-import { API } from '../api';
+import { getAPI } from '../api';
 
 // NOTE: will remove this later
 const WEBHOOK_URL = 'https://flow.konsulin.care/webhook/interpret';
@@ -24,11 +24,13 @@ type IResultBriefPayload = {
 export const useOngoingResearch = () => {
   return useQuery({
     queryKey: ['research'],
-    queryFn: () => {
+    queryFn: async () => {
       const today = format(new Date(), 'yyyy-MM-dd');
-      return API.get(
+      const API = await getAPI();
+      const response = await API.get(
         `/fhir/ResearchStudy?date=ge${today}&status=active&_revinclude=List:item`
       );
+      return response;
     },
     select: response => {
       return response.data.entry || null;
@@ -39,7 +41,13 @@ export const useOngoingResearch = () => {
 export const useQuestionnaire = (questionnaireId: number | string) => {
   return useQuery({
     queryKey: ['assessments', questionnaireId],
-    queryFn: () => API.get(`/fhir/Questionnaire?_id=${questionnaireId}`),
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(
+        `/fhir/Questionnaire?_id=${questionnaireId}`
+      );
+      return response;
+    },
     select: response => {
       return response.data.entry || null;
     }
@@ -49,7 +57,11 @@ export const useQuestionnaire = (questionnaireId: number | string) => {
 export const useQuestionnaireSoap = () => {
   return useQuery({
     queryKey: ['SOAP'],
-    queryFn: () => API.get('/fhir/Questionnaire/soap'),
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get('/fhir/Questionnaire/soap');
+      return response;
+    },
     select: response => {
       return response.data || null;
     }
@@ -60,6 +72,7 @@ export const useSubmitSoapBundle = () => {
   return useMutation({
     mutationKey: ['soap-response'],
     mutationFn: async (bundle: Bundle) => {
+      const API = await getAPI();
       const response = await API.post('/fhir', bundle);
       return response.data;
     }
@@ -81,6 +94,7 @@ export const useSubmitQuestionnaire = (
         localStorage.removeItem(`response_${questionnaireId}`);
       }
 
+      const API = await getAPI();
       const response = await API.post('/fhir/QuestionnaireResponse', {
         author,
         item,
@@ -110,6 +124,7 @@ export const useUpdateSubmitQuestionnaire = (
         localStorage.removeItem(`response_${questionnaireId}`);
       }
 
+      const API = await getAPI();
       const response = await API.put(`/fhir/QuestionnaireResponse/${id}`, {
         id,
         author,
@@ -163,7 +178,11 @@ export const useQuestionnaireResponse = ({
 
   return useQuery({
     queryKey: ['questionnaire-response', questionnaireId, patientId],
-    queryFn: () => API.get(url),
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(url);
+      return response;
+    },
     select: response => response.data || null,
     enabled: enabled
   });
@@ -172,10 +191,13 @@ export const useQuestionnaireResponse = ({
 export const useSearchQuestionnaire = (query: string) => {
   return useQuery({
     queryKey: ['search-result-assessment', query],
-    queryFn: () =>
-      API.get(
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(
         `/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient&_text=${query}`
-      ),
+      );
+      return response;
+    },
     select: response => response.data.entry || null
   });
 };
@@ -183,10 +205,13 @@ export const useSearchQuestionnaire = (query: string) => {
 export const useRegularAssessments = () => {
   return useQuery({
     queryKey: ['regular-assessments'],
-    queryFn: () =>
-      API.get(
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(
         '/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient&status=active&context=regular'
-      ),
+      );
+      return response;
+    },
     select: response => response.data.entry || null
   });
 };
@@ -194,10 +219,13 @@ export const useRegularAssessments = () => {
 export const usePopularAssessments = () => {
   return useQuery({
     queryKey: ['popular-assessments'],
-    queryFn: () =>
-      API.get(
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(
         '/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient&context=popular'
-      ),
+      );
+      return response;
+    },
     select: response => response.data.entry || null
   });
 };
