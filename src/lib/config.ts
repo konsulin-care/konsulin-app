@@ -16,3 +16,17 @@ export const serverConfig: ServerConfig = {
   APP_AUTH_PATH: process.env.APP_AUTH_PATH ?? '/auth',
   TERMINOLOGY_SERVER: process.env.TERMINOLOGY_SERVER ?? ''
 };
+
+let cachedConfig: any = null;
+
+export async function getClientConfig() {
+  if (cachedConfig) return cachedConfig;
+
+  const res = await fetch('/api/config');
+  if (!res.ok) {
+    throw new Error('Failed to load client configuration');
+  }
+
+  cachedConfig = await res.json();
+  return cachedConfig;
+}

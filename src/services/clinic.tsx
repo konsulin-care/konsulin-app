@@ -2,7 +2,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useQuery } from '@tanstack/react-query';
 import { BundleEntry, PractitionerRole } from 'fhir/r4';
 import { useMemo } from 'react';
-import { API } from './api';
+import { getAPI } from './api';
 
 export type IUseClinicParams = {
   page?: number;
@@ -38,7 +38,11 @@ export const useListClinics = (
 
   return useQuery({
     queryKey: ['list-clinics', url],
-    queryFn: () => API.get(url),
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(url);
+      return response;
+    },
     select: response => response.data.entry || []
   });
 };
@@ -46,10 +50,13 @@ export const useListClinics = (
 export const useClinicById = (clinicId: string) => {
   const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ['clinic', clinicId],
-    queryFn: () =>
-      API.get(
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(
         `/fhir/PractitionerRole?active=true&organization=${clinicId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner`
-      ),
+      );
+      return response;
+    },
     select: response => response.data.entry || null,
     enabled: !!clinicId
   });
@@ -96,10 +103,13 @@ export const useClinicById = (clinicId: string) => {
 export const useDetailPractitioner = (practitionerRoleId: string) => {
   const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ['practitioner-detail', practitionerRoleId],
-    queryFn: () =>
-      API.get(
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(
         `/fhir/PractitionerRole?active=true&_id=${practitionerRoleId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
-      ),
+      );
+      return response;
+    },
     select: response => response.data.entry || null,
     enabled: !!practitionerRoleId
   });

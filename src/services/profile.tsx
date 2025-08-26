@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { AxiosResponse } from 'axios';
 import { Patient, Practitioner } from 'fhir/r4';
-import { API, apiRequest } from './api';
+import { apiRequest, getAPI } from './api';
 
 type IProfileRequest = {
   payload: Patient | Practitioner;
@@ -76,6 +76,7 @@ export const useUpdateProfile = () => {
     mutationFn: async ({ payload }) => {
       const { id, resourceType } = payload;
       try {
+        const API = await getAPI();
         const response = await API.put(`/fhir/${resourceType}/${id}`, payload);
         return response.data;
       } catch (error) {
