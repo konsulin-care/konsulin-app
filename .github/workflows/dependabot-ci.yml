@@ -17,7 +17,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [24.x]  # Specific version matching project's Node.js requirement
+        node-version: [24.x]
 
     steps:
       - name: Checkout repository
@@ -31,3 +31,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Run build
+        run: npm run build

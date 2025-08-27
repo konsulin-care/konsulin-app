@@ -177,7 +177,7 @@ export const useFilterRecordPractitionerByDate = () => {
       };
 
       try {
-        const getAPI = await getAPI();
+        const API = await getAPI();
         const response = await API.post('/fhir', payload);
         return response.data;
       } catch (error) {

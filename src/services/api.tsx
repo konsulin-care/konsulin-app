@@ -87,7 +87,7 @@ export async function apiRequest<T>(
 
   try {
     const response = await API.request<T>(config);
-    return response;
+    return response.data;
   } catch (error) {
     throw error;
   }

@@ -1,4 +1,5 @@
-@import 'tailwindcss';
-@import 'tailwindcss/utilities';
-@import './custom-smart-form.scss';
-@import './custom-soap-form.scss';
+@use 'sass:meta';
+@use 'tailwindcss';
+@use 'tailwindcss/utilities';
+@include meta.load-css('custom-smart-form.scss');
+@include meta.load-css('custom-soap-form.scss');

@@ -4,7 +4,6 @@ interface ServerConfig {
   API_BASE_PATH: string;
   APP_URL: string;
   APP_AUTH_PATH: string;
-  WEBHOOK_AUTH: string;
   TERMINOLOGY_SERVER: string;
 }
 
