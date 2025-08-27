@@ -8,8 +8,9 @@ import '@/styles/globals.css';
 import '@/styles/index.scss';
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import { headers } from 'next/headers';
 import NextTopLoader from 'nextjs-toploader';
-import { Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { ToastContainer, ToastContainerProps } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -67,14 +68,70 @@ const toastConfig: ToastContainerProps = {
   draggable: true
 };
 
-export default function RootLayout({
+function safeSerialize(obj: any) {
+  return JSON.stringify(obj)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+async function fetchRuntimeConfig() {
+  try {
+    const host =
+      headers().get('host') ??
+      process.env.NEXT_PUBLIC_SITE_ORIGIN ??
+      'localhost:3000';
+    const proto =
+      headers().get('x-forwarded-proto') ??
+      (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+    const base = `${proto}://${host}`;
+
+    const res = await fetch(`${base}/api/config`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`config fetch failed: ${res.status}`);
+
+    const raw = await res.json();
+    return {
+      appInfo: {
+        appName: raw.APP_NAME,
+        apiDomain: raw.API_URL,
+        websiteDomain: raw.APP_URL,
+        apiBasePath: raw.API_BASE_PATH,
+        websiteBasePath: raw.APP_AUTH_PATH
+      },
+      // keep other values if you want them later
+      terminologyServer: raw.TERMINOLOGY_SERVER
+    };
+  } catch (err) {
+    // fallback defaults
+    return {
+      appInfo: {
+        appName: 'Konsulin',
+        apiDomain: 'https://dev-api.konsulin.care',
+        websiteDomain: 'http://localhost:3000',
+        apiBasePath: '/api/v1/auth',
+        websiteBasePath: '/auth'
+      },
+      terminologyServer: ''
+    };
+  }
+}
+
+export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const runtimeConfig = await fetchRuntimeConfig();
+  const serialized = safeSerialize(runtimeConfig);
+
   return (
     <html lang='en'>
       <body className={inter.className}>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__RUNTIME_CONFIG__ = ${serialized};`
+          }}
+        />
         <SuperTokensProviders>
           <ProfileProvider>
             <AuthProvider>
