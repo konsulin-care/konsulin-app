@@ -1,25 +1,25 @@
-'use client'
+'use client';
 
-import ContentWraper from '@/components/general/content-wraper'
-import PageLoader from '@/components/general/page-loader'
-import Share from '@/components/general/share'
-import Header from '@/components/header'
-import NavigationBar from '@/components/navigation-bar'
-import { useGetExcerise } from '@/services/api/exercise'
-import { ChevronLeftIcon } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import ContentWraper from '@/components/general/content-wraper';
+import PageLoader from '@/components/general/page-loader';
+import Share from '@/components/general/share';
+import Header from '@/components/header';
+import NavigationBar from '@/components/navigation-bar';
+import { useGetExercise } from '@/services/api/exercise';
+import { ChevronLeftIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export interface IDetailExerciserProps {
-  params: { exerciseId: string }
+  params: { exerciseId: string };
 }
 
 export default function DetailExercise({ params }: IDetailExerciserProps) {
-  const router = useRouter()
+  const router = useRouter();
 
-  const { data, isLoading: excerciseIsLoading } = useGetExcerise()
+  const { data, isLoading: excerciseIsLoading } = useGetExercise();
 
   const excerciseData =
-    Array.isArray(data) && data?.find(item => item?.id === params.exerciseId)
+    Array.isArray(data) && data?.find(item => item?.id === params.exerciseId);
 
   return (
     <>
@@ -51,7 +51,7 @@ export default function DetailExercise({ params }: IDetailExerciserProps) {
               allow='autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'
               loading='lazy'
             />
-            <div className='mb-4 mt-4 flex w-full items-center justify-between'>
+            <div className='mt-4 mb-4 flex w-full items-center justify-between'>
               <span className='text-[12px] font-bold'>Excersise Brief</span>
               <Share />
             </div>
@@ -62,5 +62,5 @@ export default function DetailExercise({ params }: IDetailExerciserProps) {
         )}
       </ContentWraper>
     </>
-  )
+  );
 }

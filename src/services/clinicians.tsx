@@ -9,17 +9,20 @@ import {
   PractitionerRole,
   Schedule
 } from 'fhir/r4';
-import { API } from './api';
+import { getAPI } from './api';
 
 export const useFindAvailability = ({ practitionerRoleId, dateReference }) => {
   const { utcStart, utcEnd } = getUtcDayRange(new Date(dateReference));
 
   return useQuery({
     queryKey: ['find-availability', practitionerRoleId, dateReference],
-    queryFn: () =>
-      API.get(
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(
         `/fhir/Slot?schedule.actor=PractitionerRole/${practitionerRoleId}&start=ge${utcStart}&le=${utcEnd}&_include=Slot:schedule`
-      ),
+      );
+      return response;
+    },
     select: response => response.data.entry || null,
     enabled: !!dateReference && !!practitionerRoleId
   });
@@ -35,10 +38,13 @@ export const useGetPractitionerRolesDetail = (
 ) => {
   return useQuery({
     queryKey: ['practitioner-roles', practitionerId],
-    queryFn: () =>
-      API.get(
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(
         `/fhir/PractitionerRole?practitioner=${practitionerId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
-      ),
+      );
+      return response;
+    },
     select: response => {
       const entries = response.data.entry || [];
 
@@ -102,6 +108,7 @@ export const useUpdatePractitionerInfo = () => {
   return useMutation({
     mutationKey: ['update-practitioner-role'],
     mutationFn: async (payload: PractitionerRole) => {
+      const API = await getAPI();
       try {
         const response = await API.put(
           `/fhir/PractitionerRole/${payload.id}`,
@@ -120,6 +127,7 @@ export const useCreateInvoice = () => {
   return useMutation({
     mutationKey: ['create-invoice'],
     mutationFn: async (payload: Invoice) => {
+      const API = await getAPI();
       try {
         const response = await API.post(`/fhir/Invoice`, payload);
         return response.data;
@@ -135,6 +143,7 @@ export const useUpdateInvoice = () => {
   return useMutation({
     mutationKey: ['update-invoice'],
     mutationFn: async (payload: Invoice) => {
+      const API = await getAPI();
       try {
         const response = await API.put(`/fhir/Invoice/${payload.id}`, payload);
         return response.data;

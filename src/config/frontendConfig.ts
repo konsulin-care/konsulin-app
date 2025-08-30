@@ -7,7 +7,7 @@ import Passwordless from 'supertokens-auth-react/recipe/passwordless';
 import Session from 'supertokens-auth-react/recipe/session';
 import { getClaimValue } from 'supertokens-web-js/recipe/session';
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
-import { appInfo } from './appInfo';
+import { getAppInfo } from './appInfo';
 
 const routerInfo: { router?: ReturnType<typeof useRouter>; pathName?: string } =
   {};
@@ -22,7 +22,7 @@ export function setRouter(
 
 export const frontendConfig = (): SuperTokensConfig => {
   return {
-    appInfo,
+    appInfo: getAppInfo(),
     useShadowDom: false,
     style: `
         #supertokens-root {

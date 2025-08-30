@@ -2,7 +2,7 @@ import { IBundleResponse, IJournal } from '@/types/record';
 import { getUtcDayRange } from '@/utils/helper';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Bundle } from 'fhir/r4';
-import { API } from '../api';
+import { getAPI } from '../api';
 
 type IFilterRecord = {
   patientId: string;
@@ -41,6 +41,7 @@ export const useRecordSummary = () => {
       };
 
       try {
+        const API = await getAPI();
         const response = await API.post('/fhir', payload);
         return response.data.entry;
       } catch (error) {
@@ -87,6 +88,7 @@ export const useFilterRecordByDate = () => {
       };
 
       try {
+        const API = await getAPI();
         const response = await API.post('/fhir', payload);
         return response.data.entry;
       } catch (error) {
@@ -128,6 +130,7 @@ export const useRecordSummaryPractitioner = () => {
       };
 
       try {
+        const API = await getAPI();
         const response = await API.post('/fhir', payload);
         return response.data;
       } catch (error) {
@@ -174,6 +177,7 @@ export const useFilterRecordPractitionerByDate = () => {
       };
 
       try {
+        const API = await getAPI();
         const response = await API.post('/fhir', payload);
         return response.data;
       } catch (error) {
@@ -193,7 +197,11 @@ export const useGetSingleRecord = ({
 }) => {
   return useQuery({
     queryKey: ['single-record', id],
-    queryFn: () => API.get(`/fhir/${resourceType}/${id}`),
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(`/fhir/${resourceType}/${id}`);
+      return response;
+    },
     select: response => {
       return response.data || null;
     },
@@ -208,6 +216,7 @@ export const useSubmitJournal = () => {
       const payload = { ...journalData };
 
       try {
+        const API = await getAPI();
         const response = await API.post('/fhir/Observation', payload);
         return response.data;
       } catch (error) {
@@ -223,6 +232,7 @@ export const useUpdateJournal = () => {
     mutationKey: ['journal-update'],
     mutationFn: async (journalData: IJournal) => {
       try {
+        const API = await getAPI();
         const response = await API.put(
           `/fhir/Observation/${journalData.id}`,
           journalData

@@ -3,8 +3,6 @@ FROM node:iron-slim AS base
 WORKDIR /app
 
 # captures argument
-ARG API_URL="https://your-api.domain.com"
-ARG WEBHOOK_AUTH="webhook-auth"
 # e.g. latest, development, production
 ARG VERSION=latest
 ARG GIT_COMMIT=43fdfd34
@@ -12,18 +10,10 @@ ARG TAG=v0.0.1
 ARG BUILD_TIME="date-time here"
 ARG AUTHOR="CI/CD"
 
-# set environment variables
-ENV NEXT_PUBLIC_API_URL=$API_URL
-ENV NEXT_PUBLIC_WEBHOOK_AUTH=$WEBHOOK_AUTH
-
-RUN echo "Set ARG value of [NEXT_PUBLIC_API_URL] as $API_URL"
-RUN echo "Set ARG value of [NEXT_PUBLIC_WEBHOOK_AUTH] as $WEBHOOK_AUTH"
 RUN echo "Set ARG value of [VERSION] as $VERSION"
 RUN echo "Set GIT_COMMIT value of [VERSION] as $GIT_COMMIT"
 RUN echo "Set TAG value of [TAG] as $TAG"
 RUN echo "Set BUILD_TIME value of [BUILD_TIME] as $BUILD_TIME"
-
-RUN echo "Set ENV value of [NEXT_PUBLIC_API_URL] as $NEXT_PUBLIC_API_URL"
 
 # get current commit and create build number
 ARG RELEASE_NOTE="author=${AUTHOR} \nversion=${VERSION} \ncommit=${GIT_COMMIT} \ntag=${TAG} \nbuild time=${BUILD_TIME}"
@@ -48,6 +38,7 @@ FROM deps AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+COPY .env .
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
