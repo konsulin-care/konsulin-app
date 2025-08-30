@@ -106,7 +106,7 @@ async function fetchRuntimeConfig() {
     return {
       appInfo: {
         appName: 'Konsulin',
-        apiDomain: 'https://dev-api.konsulin.care',
+        apiDomain: '',
         websiteDomain: 'http://localhost:3000',
         apiBasePath: '/api/v1/auth',
         websiteBasePath: '/auth'
@@ -126,12 +126,14 @@ export default async function RootLayout({
 
   return (
     <html lang='en'>
-      <body className={inter.className}>
+      <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `window.__RUNTIME_CONFIG__ = ${serialized};`
           }}
         />
+      </head>
+      <body className={inter.className}>
         <SuperTokensProviders>
           <ProfileProvider>
             <AuthProvider>

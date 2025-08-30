@@ -11,7 +11,7 @@ export async function getAPI(): Promise<AxiosInstance> {
   const config = await getClientConfig();
 
   apiInstance = axios.create({
-    baseURL: config.API_URL,
+    baseURL: config.appInfo.apiDomain,
     headers: {
       'Content-Type': 'application/json'
     }
