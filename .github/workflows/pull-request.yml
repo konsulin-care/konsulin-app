@@ -1,19 +1,13 @@
-name: Dependabot CI
+name: Pull Request CI
 
 on:
   pull_request:
     branches:
-      - main
-    paths:
-      - '**/package.json'
-      - '**/package-lock.json'
+      - develop
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
-    # Only run on dependabot PRs
-    if: github.actor == 'dependabot[bot]'
 
     strategy:
       matrix:

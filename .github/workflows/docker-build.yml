@@ -30,10 +30,7 @@ on:
       IS_PROD:
         type: boolean
         required: true
-      API_URL_DEV:
-        type: string
-        required: true
-      API_URL_PROD:
+      APP_NAME:
         type: string
         required: true
       
@@ -65,8 +62,7 @@ jobs:
           echo "RUN_NUMBER: ${{ inputs.RUN_NUMBER }}"
           echo "IS_DEV: ${{ inputs.IS_DEV }}"
           echo "IS_PROD: ${{ inputs.IS_PROD }}"
-          echo "API_URL_DEV: ${{ inputs.API_URL_DEV }}"
-          echo "API_URL_PROD: ${{ inputs.API_URL_PROD }}"
+          echo "NEXT_PUBLIC_APP_NAME: ${{ inputs.APP_NAME }}"
           echo ""
           echo "=== SECRETS (masked) ==="
           echo "DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}"
@@ -90,15 +86,8 @@ jobs:
 
       - name: Create .env file
         run: |
-          if [ "${{ inputs.IS_DEV }}" == "true" ]; then
-            echo "Creating .env file for development"
-            echo "NEXT_PUBLIC_API_URL=${{ inputs.API_URL_DEV }}" > .env
-            echo "NEXT_PUBLIC_WEBHOOK_AUTH=${{ secrets.WEBHOOK_AUTH }}" >> .env
-          elif [ "${{ inputs.IS_PROD }}" == "true" ]; then
-            echo "Creating .env file for production"
-            echo "NEXT_PUBLIC_API_URL=${{ inputs.API_URL_PROD }}" > .env
-            echo "NEXT_PUBLIC_WEBHOOK_AUTH=${{ secrets.WEBHOOK_AUTH }}" >> .env
-          fi
+          echo "Creating .env file for development"
+          echo "NEXT_PUBLIC_APP_NAME=${{ inputs.APP_NAME }}" > .env
           echo ".env file created:"
           cat .env
 
