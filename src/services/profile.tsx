@@ -40,7 +40,7 @@ export const getProfileByIdentifier = async ({ userId, type }) => {
   try {
     const response = await apiRequest<AxiosResponse>(
       'GET',
-      `/fhir/${type}?identifier=${userId}`
+      `/fhir/${type}?identifier=https://login.konsulin.care/userid|${userId}`
     );
 
     const entries = response?.data?.entry;
