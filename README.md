@@ -1,10 +1,16 @@
-# Konsulin Frontend
+<p align="center" style="padding-top:20px">
+ <img width="100px" src="https://github.com/konsulin-care/landing-page/raw/main/assets/images/global/logo.svg" align="center" alt="GitHub Readme Stats" />
+ <h1 align="center">Konsulin App</h1>
+ <p align="center">An open source digital wellness app</p>
+</p>
 
-A comprehensive healthcare platform frontend built with Next.js, providing psychological instruments, digital interventions, and appointment management capabilities.
-
-## Overview
-
-The Konsulin frontend is a modern web application that serves as the user interface for the Konsulin healthcare platform. It integrates with FHIR standards for healthcare data management and provides a seamless experience for both patients and healthcare providers.
+<p align="center">
+  <a href="https://github.com/konsulin-care/konsulin-app/releases"><img src="https://img.shields.io/github/v/release/konsulin-care/konsulin-app?style=flat" alt="GitHub release (with filter)"></a>
+  <a href="https://github.com/konsulin-care/konsulin-app/actions"><img src="https://img.shields.io/github/actions/workflow/status/konsulin-care/konsulin-app/main.yml?style=flat" alt="GitHub Workflow Status (with event)"></a>
+  <a href="https://hl7.org/fhir/R4"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.konsulin.care%2Ffhir%2Fmetadata&query=%24.fhirVersion&label=FHIR&color=red" alt="Blaze"></a>
+  <a href="https://github.com/konsulin-care/konsulin-app/wiki"><img src="https://img.shields.io/badge/read%20the%20docs-here-blue?style=flat" alt="Docs"></a>
+  <a href="https://feedback.konsulin.care"><img src="https://img.shields.io/badge/discuss-here-0ABDC3?style=flat" alt="Static Badge"></a>
+</p>
 
 ## Architecture
 
@@ -12,7 +18,7 @@ The Konsulin frontend is a modern web application that serves as the user interf
 - **Authentication**: SuperTokens with magic link authentication
 - **Frontend Framework**: Next.js with React and TypeScript
 - **Styling**: Tailwind CSS with Radix UI components
-- **Backend Integration**: Works alongside the [Konsulin API](https://github.com/konsulin-care/konsulin-api) as the API gateway
+- **Backend Integration**: Works alongside the [Konsulin API](https://github.com/konsulin-care/konsulin-app) as the API gateway
 
 ## Features
 
@@ -35,7 +41,7 @@ Make sure you have the following installed:
 
 ### 1. Backend Service Setup
 
-This frontend application requires the [Konsulin API backend service](https://github.com/konsulin-care/konsulin-api) to be running. Please follow the backend setup instructions first to ensure the API gateway is available.
+This frontend application requires the [Konsulin API backend service](https://github.com/konsulin-care/konsulin-app) to be running. Please follow the backend setup instructions first to ensure the API gateway is available.
 
 ### 2. Frontend Setup
 
@@ -102,4 +108,4 @@ The frontend will communicate with the backend API for all data operations, auth
 
 ## License
 
-Commercial licenses are available for organizations that wish to use this software without AGPL obligations. Contact us at [hello@konsulin.care](mailto:hello@konsulin.care) to obtain a commercial license.
+Konsulin is distributed under the [AGPL-3.0 License](./LICENSE). **You may not use Konsulin's logo for other projects.** Commercial licenses are available for organizations that wish to use this software without AGPL obligations. Contact [hello@konsulin.care](mailto:hello@konsulin.care) to obtain a commercial license.
