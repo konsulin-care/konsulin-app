@@ -101,7 +101,13 @@ export const frontendConfig = (): SuperTokensConfig => {
 
               await setCookies('auth', JSON.stringify(cookieData));
             }
-            routerInfo.router.refresh();
+
+            const isAuthRoute = (routerInfo.pathName || '').startsWith('/auth');
+            if (!isAuthRoute) {
+              routerInfo.router.push('/auth');
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            window.location.href = '/';
           }
         }
       })
