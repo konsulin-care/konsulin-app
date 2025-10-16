@@ -82,21 +82,25 @@ export const frontendConfig = (): SuperTokensConfig => {
 
               await setCookies('auth', JSON.stringify(cookieData));
             } else {
-              const result = await getProfileByIdentifier({
+              const type = roles.includes('Practitioner')
+                ? 'Practitioner'
+                : 'Patient';
+              let profile = await getProfileByIdentifier({
                 userId,
-                type: roles.includes('practitioner')
-                  ? 'Practitioner'
-                  : 'Patient'
+                type
               });
+
+              // Do not auto-create profile on lookup miss; leave fhirId empty
+
               const cookieData = {
                 userId,
                 role_name: roles.includes('practitioner')
                   ? 'practitioner'
                   : 'patient',
                 email: emails[0],
-                profile_picture: result?.photo ? result?.photo[0]?.url : '',
-                fullname: mergeNames(result?.name, result?.qualification),
-                fhirId: result?.id ?? ''
+                profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
+                fullname: mergeNames(profile?.name, profile?.qualification),
+                fhirId: profile?.id ?? ''
               };
 
               await setCookies('auth', JSON.stringify(cookieData));

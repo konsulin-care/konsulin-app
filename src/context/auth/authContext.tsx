@@ -73,19 +73,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           dispatch({ type: 'login', payload });
         } else {
-          const payload = {
-            role_name: auth.role_name,
-            fullname: auth.fullname || auth.email,
-            email: auth.email,
-            userId: auth.userId,
-            profile_picture: auth.profile_picture,
-            fhirId: auth.fhirId
-          };
+          // Repair cookie when fhirId is empty/missing
+          if (!auth.fhirId) {
+            const roles = await getClaimValue({ claim: UserRoleClaim });
+            const type = roles.includes('Practitioner')
+              ? 'Practitioner'
+              : 'Patient';
+            const userId = auth.userId || session.userId;
 
-          dispatch({
-            type: 'auth-check',
-            payload
-          });
+            const result = await getProfileByIdentifier({ userId, type });
+            if (result) {
+              const emails = result?.telecom?.find(
+                (item: any) => item.system === 'email'
+              );
+              const repairedPayload = {
+                userId,
+                role_name: roles.includes('Practitioner')
+                  ? 'Practitioner'
+                  : 'Patient',
+                email: emails?.value || auth.email,
+                profile_picture: result?.photo ? result?.photo[0]?.url : '',
+                fullname: mergeNames(result?.name, result?.qualification),
+                fhirId: result?.id ?? ''
+              };
+
+              await setCookies('auth', JSON.stringify(repairedPayload));
+              dispatch({ type: 'auth-check', payload: repairedPayload });
+            } else {
+              // No profile found; keep existing cookie (fhirId stays empty)
+              const payload = {
+                role_name: auth.role_name,
+                fullname: auth.fullname || auth.email,
+                email: auth.email,
+                userId: auth.userId,
+                profile_picture: auth.profile_picture,
+                fhirId: ''
+              };
+              dispatch({ type: 'auth-check', payload });
+            }
+          } else {
+            const payload = {
+              role_name: auth.role_name,
+              fullname: auth.fullname || auth.email,
+              email: auth.email,
+              userId: auth.userId,
+              profile_picture: auth.profile_picture,
+              fhirId: auth.fhirId
+            };
+
+            dispatch({ type: 'auth-check', payload });
+          }
         }
       } catch (error) {
         console.error('Error fetching session:', error);
