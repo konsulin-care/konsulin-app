@@ -2,6 +2,7 @@ import { getClientConfig } from '@/lib/config';
 import axios, { AxiosInstance } from 'axios';
 import { deleteCookie, getCookie } from 'cookies-next';
 import { toast } from 'react-toastify';
+import { parseAxiosError } from './api-error';
 
 let apiInstance: AxiosInstance | null = null;
 
@@ -33,11 +34,8 @@ export async function getAPI(): Promise<AxiosInstance> {
   apiInstance.interceptors.response.use(
     response => response,
     error => {
-      console.log('Logging the error', error);
-
-      let errorMessage = error?.message || 'An unexpected error occured!';
-      if (error.response.data.message)
-        errorMessage = error.response.data.message;
+      const { errorMessage, isExpiredToken, isMissingToken } =
+        parseAxiosError(error);
 
       toast.error(errorMessage, {
         position: 'top-right',
@@ -49,18 +47,21 @@ export async function getAPI(): Promise<AxiosInstance> {
         progress: undefined
       });
 
-      // expired token
-      if (
-        (error.response.status === 401 &&
-          error.response.data.dev_message ===
-            'invalid or expired token: Token is expired') ||
-        error.response.data.dev_message === 'token missing'
-      ) {
+      if (isExpiredToken || isMissingToken) {
         setTimeout(() => {
           deleteCookie('auth');
-          localStorage.clear();
-          window.location.href = '/';
+          try {
+            localStorage.clear();
+          } catch {}
+          try {
+            window.location.href = '/';
+          } catch {}
         }, 1000);
+      }
+
+      if (process.env.NODE_ENV !== 'production') {
+        // eslint-disable-next-line no-console
+        console.debug('API error:', { error });
       }
 
       return Promise.reject(error);
