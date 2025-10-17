@@ -60,6 +60,7 @@ export const getProfileById = async (
   type: 'Patient' | 'Practitioner'
 ) => {
   try {
+    if (!id) throw new Error('Missing FHIR id');
     const response = await apiRequest<AxiosResponse>(
       'GET',
       `/fhir/${type}/${id}`
