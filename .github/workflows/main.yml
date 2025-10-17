@@ -17,7 +17,7 @@ jobs:
       - name: Display Vars Variables
         run: |
           echo "=== GITHUB VARS VARIABLES ==="
-          echo "DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME }}"
+          echo "DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}"
           echo "APP_NAME: ${{ vars.APP_NAME }}"
           echo ""
           echo "=== GITHUB CONTEXT VARIABLES ==="
@@ -49,7 +49,7 @@ jobs:
       IS_PROD: ${{ github.event.pull_request.merged && github.event.pull_request.base.ref == 'main' }}
       APP_NAME: ${{ vars.APP_NAME }}
     secrets:
-      DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       WEBHOOK_AUTH: ${{ secrets.WEBHOOK_AUTH }}
 
@@ -81,3 +81,4 @@ jobs:
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
       SSH_KEY: ${{ secrets.SSH_KEY }}
+
