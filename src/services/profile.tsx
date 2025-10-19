@@ -38,12 +38,12 @@ export const createProfile = async ({ userId, email, type }) => {
 
 export const getProfileByIdentifier = async ({ userId, type }) => {
   try {
-    const response = await apiRequest<AxiosResponse>(
+    const bundle = await apiRequest<Bundle>(
       'GET',
       `/fhir/${type}?identifier=https://login.konsulin.care/userid|${userId}`
     );
 
-    const entries = response?.data?.entry;
+    const entries = bundle?.entry;
 
     if (Array.isArray(entries) && entries.length > 0) {
       return entries[0]?.resource;
