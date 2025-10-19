@@ -61,11 +61,13 @@ export const getProfileById = async (
 ) => {
   try {
     if (!id) throw new Error('Missing FHIR id');
-    const response = await apiRequest<AxiosResponse>(
+
+    const response = await apiRequest<Patient | Practitioner>(
       'GET',
       `/fhir/${type}/${id}`
     );
-    return response.data;
+
+    return response;
   } catch (error) {
     throw error;
   }
