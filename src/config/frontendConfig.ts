@@ -1,6 +1,7 @@
 import { setCookies } from '@/app/actions';
 import { createProfile, getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
+import { Patient, Practitioner } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
 import { SuperTokensConfig } from 'supertokens-auth-react/lib/build/types';
 import Passwordless from 'supertokens-auth-react/recipe/passwordless';
@@ -85,10 +86,10 @@ export const frontendConfig = (): SuperTokensConfig => {
               const type = roles.includes('Practitioner')
                 ? 'Practitioner'
                 : 'Patient';
-              let profile = await getProfileByIdentifier({
+              let profile = (await getProfileByIdentifier({
                 userId,
                 type
-              });
+              })) as Patient | Practitioner;
 
               // Do not auto-create profile on lookup miss; leave fhirId empty
 

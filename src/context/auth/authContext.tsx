@@ -4,6 +4,7 @@ import { setCookies } from '@/app/actions';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { getCookie } from 'cookies-next';
+import { Patient, Practitioner } from 'fhir/r4';
 import React, {
   ReactNode,
   createContext,
@@ -51,10 +52,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const roles = await getClaimValue({ claim: UserRoleClaim });
           const userId = session.userId;
 
-          const result = await getProfileByIdentifier({
+          const result = (await getProfileByIdentifier({
             userId,
             type: roles.includes('Practitioner') ? 'Practitioner' : 'Patient'
-          });
+          })) as Patient | Practitioner;
 
           const emails = result.telecom.find(item => item.system === 'email');
 
@@ -81,7 +82,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               : 'Patient';
             const userId = auth.userId || session.userId;
 
-            const result = await getProfileByIdentifier({ userId, type });
+            const result = (await getProfileByIdentifier({ userId, type })) as
+              | Patient
+              | Practitioner;
             if (result) {
               const emails = result?.telecom?.find(
                 (item: any) => item.system === 'email'
