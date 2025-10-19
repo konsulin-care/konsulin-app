@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               : 'patient',
             email: emails?.value,
             profile_picture: result?.photo ? result?.photo[0]?.url : '',
-            fullname: mergeNames(result?.name, result?.qualification),
+            fullname: mergeNames(result?.name),
             fhirId: result?.id ?? ''
           };
 
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   : 'Patient',
                 email: emails?.value || auth.email,
                 profile_picture: result?.photo ? result?.photo[0]?.url : '',
-                fullname: mergeNames(result?.name, result?.qualification),
+                fullname: mergeNames(result?.name),
                 fhirId: result?.id ?? ''
               };
 
