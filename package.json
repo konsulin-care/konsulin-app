@@ -70,6 +70,7 @@
     "react-day-picker": "^9.9.0",
     "react-dom": "^18",
     "react-hook-form": "^7.52.0",
+    "react-international-phone": "^4.6.0",
     "react-markdown": "^10.1.0",
     "react-qr-code": "^2.0.18",
     "react-resizable-panels": "^3.0.4",
