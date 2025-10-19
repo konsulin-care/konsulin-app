@@ -512,6 +512,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 id='email'
                 type='email'
                 value={updateUser.email}
+                readOnly
                 onChange={(event: any) =>
                   handleChangeInput('email', event.target.value)
                 }
@@ -681,7 +682,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
           </>
         )}
         <button
-          className={`text-md border-1 mt-6 w-full rounded-full border-primary p-4 font-semibold ${validateForm(updateUser) && !isUpdateLoading ? 'bg-secondary text-white' : 'cursor-not-allowed bg-gray-300 text-gray-500'}`}
+          className={`text-md border-primary mt-6 w-full rounded-full border-1 p-4 font-semibold ${validateForm(updateUser) && !isUpdateLoading ? 'bg-secondary text-white' : 'cursor-not-allowed bg-gray-300 text-gray-500'}`}
           type='submit'
           onClick={handleEditSave}
           disabled={!validateForm(updateUser) || isUpdateLoading}
@@ -747,7 +748,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
               closeDrawer();
               router.push('/profile');
             }}
-            className='mx-4 mb-4 rounded-full border border-[#2C2F35] border-opacity-20 bg-white py-3 text-sm font-bold text-[#2C2F35] opacity-100'
+            className='border-opacity-20 mx-4 mb-4 rounded-full border border-[#2C2F35] bg-white py-3 text-sm font-bold text-[#2C2F35] opacity-100'
           >
             Close
           </button>
