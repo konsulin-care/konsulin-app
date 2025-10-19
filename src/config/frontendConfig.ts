@@ -1,6 +1,7 @@
 import { setCookies } from '@/app/actions';
 import { createProfile, getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
+import { Patient, Practitioner } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
 import { SuperTokensConfig } from 'supertokens-auth-react/lib/build/types';
 import Passwordless from 'supertokens-auth-react/recipe/passwordless';
@@ -61,13 +62,23 @@ export const frontendConfig = (): SuperTokensConfig => {
               context.user.loginMethods.length == 1
             ) {
               // Create FHIR Profile for new user
-              const profile = await createProfile({
+              await createProfile({
                 userId,
                 email: emails[0],
-                type: roles.includes('practitioner')
+                type: roles.includes('Practitioner')
                   ? 'Practitioner'
                   : 'Patient'
               });
+
+              // depend on getProfileByIdentifier to fill
+              // the profile data instead of response from
+              // creating profile
+              let profileData = (await getProfileByIdentifier({
+                userId,
+                type: roles.includes('Practitioner')
+                  ? 'Practitioner'
+                  : 'Patient'
+              })) as Patient | Practitioner;
 
               const cookieData = {
                 userId,
@@ -75,9 +86,11 @@ export const frontendConfig = (): SuperTokensConfig => {
                   ? 'practitioner'
                   : 'patient',
                 email: emails[0],
-                profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
-                fullname: mergeNames(profile?.name),
-                fhirId: profile?.id ?? ''
+                profile_picture: profileData?.photo
+                  ? profileData?.photo[0]?.url
+                  : '',
+                fullname: mergeNames(profileData?.name),
+                fhirId: profileData?.id ?? ''
               };
 
               await setCookies('auth', JSON.stringify(cookieData));
@@ -85,10 +98,10 @@ export const frontendConfig = (): SuperTokensConfig => {
               const type = roles.includes('Practitioner')
                 ? 'Practitioner'
                 : 'Patient';
-              let profile = await getProfileByIdentifier({
+              let profile = (await getProfileByIdentifier({
                 userId,
                 type
-              });
+              })) as Patient | Practitioner;
 
               // Do not auto-create profile on lookup miss; leave fhirId empty
 
@@ -99,7 +112,7 @@ export const frontendConfig = (): SuperTokensConfig => {
                   : 'patient',
                 email: emails[0],
                 profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
-                fullname: mergeNames(profile?.name, profile?.qualification),
+                fullname: mergeNames(profile?.name),
                 fhirId: profile?.id ?? ''
               };
 

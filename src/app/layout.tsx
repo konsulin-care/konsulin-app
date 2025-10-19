@@ -11,6 +11,7 @@ import { Plus_Jakarta_Sans } from 'next/font/google';
 import { headers } from 'next/headers';
 import NextTopLoader from 'nextjs-toploader';
 import React, { Suspense } from 'react';
+import 'react-international-phone/style.css';
 import { ToastContainer, ToastContainerProps } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 

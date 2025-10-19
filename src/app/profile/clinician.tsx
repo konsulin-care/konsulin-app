@@ -101,7 +101,8 @@ export default function Clinician({ fhirId }: Props) {
   const { data: profileData, isLoading: isProfileLoading } =
     useQuery<Practitioner>({
       queryKey: ['profile-data', fhirId],
-      queryFn: () => getProfileById(fhirId, 'Practitioner'),
+      queryFn: () =>
+        getProfileById(fhirId, 'Practitioner') as Promise<Practitioner>,
       onError: (error: Error) => {
         console.error('Error when fetching user profile: ', error);
         toast.error(error.message);
@@ -345,7 +346,7 @@ export default function Clinician({ fhirId }: Props) {
   return (
     <>
       {/* display practitioner's upcoming sessions */}
-      <div className='flex items-center justify-between text-muted'>
+      <div className='text-muted flex items-center justify-between'>
         <div className='text-[14px] font-bold'>Schedule Active</div>
         <Link href='/schedule' className='text-[10px]'>
           See All
@@ -459,7 +460,7 @@ export default function Clinician({ fhirId }: Props) {
           <DrawerContent className='mx-auto flex max-h-screen max-w-screen-sm flex-col overflow-y-hidden px-4 py-1'>
             <DrawerTitle />
             <DrawerDescription />
-            <div className='my-2 flex-grow overflow-y-auto scrollbar-hide'>
+            <div className='scrollbar-hide my-2 flex-grow overflow-y-auto'>
               {daysOfWeek.map((day, dayIndex) => {
                 const checkSchedule = formsState[day]?.some(form =>
                   form.times.some(
@@ -556,7 +557,7 @@ export default function Clinician({ fhirId }: Props) {
                                   </div>
                                 </div>
                               </div>
-                              <div className='flex flex-col items-center pl-4 pt-4'>
+                              <div className='flex flex-col items-center pt-4 pl-4'>
                                 <Trash2
                                   size={20}
                                   className='cursor-pointer'
@@ -585,11 +586,11 @@ export default function Clinician({ fhirId }: Props) {
                     )}
                     <div className='flex w-full items-center justify-end'>
                       {errorMessages[day] && (
-                        <div className='w-full whitespace-pre-line px-2 text-sm text-red-500'>
+                        <div className='w-full px-2 text-sm whitespace-pre-line text-red-500'>
                           {errorMessages[day]}
                         </div>
                       )}
-                      <div className='m-4 mx-2 h-[30px] w-[30px] rounded-2xl bg-secondary'>
+                      <div className='bg-secondary m-4 mx-2 h-[30px] w-[30px] rounded-2xl'>
                         <Plus
                           color='white'
                           size={30}
@@ -605,7 +606,7 @@ export default function Clinician({ fhirId }: Props) {
                         />
                       </div>
                       <Button
-                        className='w-[80px] bg-secondary font-bold text-white'
+                        className='bg-secondary w-[80px] font-bold text-white'
                         onClick={handleSave}
                         disabled={
                           isUpdatePractitionerLoading ||

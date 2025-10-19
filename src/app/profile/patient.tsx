@@ -54,7 +54,7 @@ export default function Patient({ fhirId }: Props) {
 
   const { data: profileData, isLoading: isProfileLoading } = useQuery<Patient>({
     queryKey: ['profile-data', fhirId],
-    queryFn: () => getProfileById(fhirId, 'Patient'),
+    queryFn: () => getProfileById(fhirId, 'Patient') as Promise<Patient>,
     enabled: !!fhirId,
     onError: (error: Error) => {
       console.error('Error when fetching user profile: ', error);
