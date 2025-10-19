@@ -41,6 +41,7 @@ import { X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Fragment, useEffect, useState } from 'react';
+import { PhoneInput } from 'react-international-phone';
 import { toast } from 'react-toastify';
 
 type Props = {
@@ -180,11 +181,11 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         }
         break;
       case 'phone':
-        const phoneRegex = /^[0-9]{10,15}$/;
+        const phoneRegex = /^\+?[0-9]{8,15}$/;
         if (!value.trim()) {
           error = 'Nomor WhatsApp tidak boleh kosong';
         } else if (!phoneRegex.test(value)) {
-          error = 'Nomor WhatsApp harus berupa angka 10-15 digit';
+          error = 'Nomor WhatsApp harus 8-15 digit dan boleh diawali +';
         }
         break;
 
@@ -253,6 +254,23 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     });
 
     return Object.keys(errors).length === 0;
+  };
+
+  const handlePhoneChange = (value: string, meta?: any) => {
+    // Normalize phone to E.164-like: keep leading '+', digits; ensure country code is applied
+    const dialCode = meta?.country?.dialCode ? `+${meta.country.dialCode}` : '';
+    let cleaned = (value || '').replace(/[^\d+]/g, '');
+
+    if (cleaned.startsWith('0') && dialCode) {
+      cleaned = `${dialCode}${cleaned.slice(1)}`;
+    } else if (!cleaned.startsWith('+') && dialCode) {
+      cleaned = `${dialCode}${cleaned}`;
+    }
+
+    // Collapse duplicate leading pluses just in case
+    cleaned = cleaned.replace(/^(\++)/, '+');
+
+    handleChangeInput('phone', cleaned);
   };
 
   const handleEditSave = async () => {
@@ -539,23 +557,14 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                     : 'Masukan Tanggal Lahir'}
                 </div>
               </div>
-              <Input
-                width={24}
-                height={24}
-                prefixIcon={'/icons/country-code.svg'}
-                placeholder='Masukan Whatsapp Number'
-                name='phone'
-                id='phone'
-                type='text'
-                value={updateUser.phone}
-                onChange={(event: any) => {
-                  const onlyNumbers = event.target.value.replace(/\D/g, '');
-                  handleChangeInput('phone', onlyNumbers);
-                }}
-                opacity={false}
-                outline={false}
-                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-              />
+              <div className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-2'>
+                <PhoneInput
+                  defaultCountry='id'
+                  value={updateUser.phone}
+                  onChange={handlePhoneChange}
+                  placeholder='Masukan Whatsapp Number'
+                />
+              </div>
               {errors.phone && (
                 <p className='px-4 text-xs text-red-500'>{errors.phone}</p>
               )}
