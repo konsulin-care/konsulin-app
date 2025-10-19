@@ -74,14 +74,14 @@ const DropdownProfile: React.FC<DropdownProps> = ({
         </DropdownTrigger>
         <DropdownContent
           style={{ minWidth: triggerWidth }}
-          className='max-h-60 overflow-y-auto'
+          className='max-h-60 overflow-y-auto bg-white'
         >
           {options &&
             options.map(item => (
               <DropdownItem
                 key={item.code}
                 onSelect={() => onSelect(item)}
-                className={`w-full ${
+                className={`w-full bg-white hover:bg-gray-50 focus:bg-gray-100 ${
                   value === item.code ? 'bg-secondary text-white' : ''
                 }`}
               >
