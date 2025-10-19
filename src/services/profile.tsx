@@ -1,6 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { AxiosResponse } from 'axios';
-import { Patient, Practitioner } from 'fhir/r4';
+import { Bundle, Patient, Practitioner } from 'fhir/r4';
 import { apiRequest, getAPI } from './api';
 
 type IProfileRequest = {
@@ -25,12 +24,12 @@ export const createProfile = async ({ userId, email, type }) => {
   };
 
   try {
-    const response = await apiRequest<AxiosResponse>(
+    const response = await apiRequest<Patient | Practitioner>(
       'POST',
       `/fhir/${type}`,
       payload
     );
-    return response.data;
+    return response;
   } catch (error) {
     throw error;
   }
