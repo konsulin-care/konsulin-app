@@ -37,19 +37,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const session = useSessionContext() as SessionContextUpdate;
 
   useEffect(() => {
-    const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
-
     const fetchSession = async () => {
+      const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
       if (!session.doesSessionExist) {
         setisLoading(false);
         return;
       }
 
       try {
-        if (
-          session.doesSessionExist &&
-          (Object.keys(auth).length === 0 || !auth.userId)
-        ) {
+        if (session.doesSessionExist) {
           const roles = await getClaimValue({ claim: UserRoleClaim });
           const userId = session.userId;
 
@@ -115,17 +111,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               };
               dispatch({ type: 'auth-check', payload });
             }
-          } else {
-            const payload = {
-              role_name: auth.role_name,
-              fullname: auth.fullname || auth.email,
-              email: auth.email,
-              userId: auth.userId,
-              profile_picture: auth.profile_picture,
-              fhirId: auth.fhirId
-            };
-
-            dispatch({ type: 'auth-check', payload });
           }
         }
       } catch (error) {
