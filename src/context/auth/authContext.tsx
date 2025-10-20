@@ -1,6 +1,7 @@
 'use client';
 
 import { setCookies } from '@/app/actions';
+import { Roles } from '@/constants/roles';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { getCookie } from 'cookies-next';
@@ -61,9 +62,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           const payload = {
             userId,
-            role_name: roles.includes('practitioner')
-              ? 'practitioner'
-              : 'patient',
+            role_name: roles.includes(Roles.Practitioner)
+              ? Roles.Practitioner
+              : Roles.Patient,
             email: emails?.value,
             profile_picture: result?.photo ? result?.photo[0]?.url : '',
             fullname: mergeNames(result?.name),
@@ -91,9 +92,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               );
               const repairedPayload = {
                 userId,
-                role_name: roles.includes('Practitioner')
-                  ? 'Practitioner'
-                  : 'Patient',
+                role_name: roles.includes(Roles.Practitioner)
+                  ? Roles.Practitioner
+                  : Roles.Patient,
                 email: emails?.value || auth.email,
                 profile_picture: result?.photo ? result?.photo[0]?.url : '',
                 fullname: mergeNames(result?.name),

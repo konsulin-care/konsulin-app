@@ -2,6 +2,7 @@
 
 import ContentWraper from '@/components/general/content-wraper';
 import QuestionnaireResubmitter from '@/components/general/questionnaire-resubmitter';
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { getFromLocalStorage } from '@/lib/utils';
 import { QuestionnaireResponse } from 'fhir/r4';
@@ -58,9 +59,9 @@ export default function HomeContent() {
 
   return (
     <ContentWraper>
-      {authState.userInfo.role_name === 'guest' && <HomeContentGuest />}
-      {authState.userInfo.role_name === 'patient' && <HomeContentPatient />}
-      {authState.userInfo.role_name === 'practitioner' && (
+      {authState.userInfo.role_name === Roles.Guest && <HomeContentGuest />}
+      {authState.userInfo.role_name === Roles.Patient && <HomeContentPatient />}
+      {authState.userInfo.role_name === Roles.Practitioner && (
         <HomeContentClinician />
       )}
     </ContentWraper>

@@ -1,3 +1,4 @@
+import { Roles } from '@/constants/roles';
 import { deleteCookie } from 'cookies-next';
 import { IStateAuth } from './authTypes';
 
@@ -7,7 +8,7 @@ export const initialState: IStateAuth = {
     userId: null,
     fullname: '',
     email: '',
-    role_name: 'guest',
+    role_name: Roles.Guest,
     profile_picture: '',
     fhirId: ''
   }
