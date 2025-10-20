@@ -18,6 +18,7 @@ import {
   genderList,
   subtitle_success_updated
 } from '@/constants/profile';
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import {
   useGetCities,
@@ -97,9 +98,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     email: ''
   });
   const [drawerState, setDrawerState] = useState(DRAWER_STATE.NONE);
-  // const isPatient = userRole === 'patient';
-  // const isClinician = userRole === 'clinician';
-  const fhirRole = userRole === 'patient' ? 'Patient' : 'Practitioner';
+  const fhirRole =
+    userRole === Roles.Patient ? Roles.Patient : Roles.Practitioner;
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const { isLoading: isProfileLoading } = useQuery<Patient | Practitioner>({
