@@ -155,7 +155,7 @@ export default function MarkUnavailabilityButton({ triggerClassName }: Props) {
         variant='ghost'
         onClick={() => setOpen(true)}
       >
-        Mark Unavailability
+        Mark Unavailable Date/Time
       </Button>
 
       <Dialog
