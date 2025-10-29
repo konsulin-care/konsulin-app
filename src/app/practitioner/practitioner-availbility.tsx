@@ -514,7 +514,7 @@ export default function PractitionerAvailbility({
         <div className='scrollbar-hide mt-4 h-full overflow-y-auto px-1'>
           <div className='flex h-full flex-col'>
             <DrawerTitle className='mx-auto text-[20px] font-bold'>
-              See Availbility
+              See Availability
             </DrawerTitle>
             <div className='mt-4 flex w-full flex-col justify-center'>
               <DrawerDescription />
