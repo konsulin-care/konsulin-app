@@ -20,8 +20,16 @@ function Calendar(props: CalendarProps) {
     <DayPicker
       {...props}
       className={`${props.className || ''} flex justify-center`}
+      style={
+        {
+          ...props.style,
+          ['--rdp-accent-color' as any]: '#0ABDC3'
+        } as React.CSSProperties
+      }
       modifiersClassNames={{
-        selected: 'bg-[#0ABDC3] text-[#ECEFF4] font-bold'
+        selected: 'bg-[#0ABDC3] text-[#ECEFF4] font-bold',
+        today: '#ECEFF4',
+        selectedToday: 'text-[#ECEFF4]'
       }}
     />
   );
