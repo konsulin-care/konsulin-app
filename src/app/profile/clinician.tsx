@@ -7,6 +7,7 @@ import InformationDetail from '@/components/profile/information-detail';
 import MedalCollection from '@/components/profile/medal-collection';
 import Settings from '@/components/profile/settings';
 import Tags from '@/components/profile/tags';
+import MarkUnavailabilityButton from '@/components/schedule/mark-unavailability';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Button } from '@/components/ui/button';
 import {
@@ -450,6 +451,10 @@ export default function Clinician({ fhirId }: Props) {
             </p>
             <ChevronRight color='#13C2C2' width={24} height={24} />
           </div>
+        </div>
+
+        <div className='mt-2 flex w-full flex-col justify-between rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
+          <MarkUnavailabilityButton />
         </div>
       </div>
       <MedalCollection medals={medalLists} isDisabled={true} />
