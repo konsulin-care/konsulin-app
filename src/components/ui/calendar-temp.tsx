@@ -20,6 +20,9 @@ function Calendar(props: CalendarProps) {
     <DayPicker
       {...props}
       className={`${props.className || ''} flex justify-center`}
+      modifiersClassNames={{
+        selected: 'bg-[#0ABDC3] text-[#ECEFF4] font-bold'
+      }}
     />
   );
 }
