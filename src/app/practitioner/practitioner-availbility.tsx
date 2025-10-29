@@ -1,7 +1,7 @@
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import { Calendar } from '@/components/ui/calendar-temp';
 import {
   Drawer,
   DrawerContent,
@@ -509,9 +509,9 @@ export default function PractitionerAvailbility({
       </DrawerTrigger>
       <DrawerContent
         onInteractOutside={() => setIsOpen(false)}
-        className='fixed bottom-0 left-0 right-0 mx-auto flex h-[85%] max-w-screen-sm flex-col bg-white p-4'
+        className='fixed right-0 bottom-0 left-0 mx-auto flex h-[85%] max-w-screen-sm flex-col bg-white p-4'
       >
-        <div className='mt-4 h-full overflow-y-auto px-1 scrollbar-hide'>
+        <div className='scrollbar-hide mt-4 h-full overflow-y-auto px-1'>
           <div className='flex h-full flex-col'>
             <DrawerTitle className='mx-auto text-[20px] font-bold'>
               See Availbility
@@ -528,12 +528,19 @@ export default function PractitionerAvailbility({
                   handleFilterChange('hasUserChosenDate', true);
                   resetData();
                 }}
-                onMonthChange={params => {
-                  if (!params) return;
-                  if (params.getMonth() === today.getMonth()) {
-                    handleFilterChange('date', addDays(today, 1));
-                  } else {
-                    handleFilterChange('date', params);
+                onMonthChange={month => {
+                  if (!month) return;
+                  // Update available dates for the new month
+                  const newAvailableDays = getAvailableDays(
+                    practitionerRole.availableTime,
+                    month
+                  );
+                  // Find the first available date in the new month
+                  const firstAvailable = newAvailableDays.find(
+                    day => day >= month
+                  );
+                  if (firstAvailable) {
+                    handleFilterChange('date', firstAvailable);
                   }
                   resetData();
                 }}
@@ -543,25 +550,6 @@ export default function PractitionerAvailbility({
                     availableDate => availableDate.getTime() === date.getTime()
                   )
                 }
-                modifiers={{
-                  ada: listAvailableDate
-                }}
-                modifiersClassNames={{ ada: '!text-secondary' }}
-                classNames={{
-                  month: 'space-y-8 w-full',
-                  head_row: 'flex w-full',
-                  head_cell:
-                    'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] w-full',
-                  cell: 'w-full h-9 [&:has([aria-selected].day-outside)]:bg-secondary [&:has([aria-selected].day-outside)]:rounded-md [&:has([aria-selected].day-outside)]:text-accent-foreground  focus-within:z-20',
-                  day: cn(
-                    buttonVariants({ variant: 'ghost' }),
-                    'h-9 p-0 font-normal aria-selected:opacity-100 w-full text-[red]'
-                  ),
-                  day_selected:
-                    'bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground focus:bg-secondary focus:text-secondary-foreground !text-white !rounded-md',
-                  day_today:
-                    'text-accent-foreground font-bold border-b-2 border-secondary rounded-none'
-                }}
               />
             </div>
 
@@ -599,7 +587,7 @@ export default function PractitionerAvailbility({
                         className={cn(
                           'w-full items-center justify-center rounded-md border-0 px-4 py-2 text-[12px]',
                           startTime === bookingState.startTime
-                            ? 'bg-secondary font-bold text-white hover:bg-secondary'
+                            ? 'bg-secondary hover:bg-secondary font-bold text-white'
                             : 'bg-white font-normal'
                         )}
                       >
@@ -629,7 +617,7 @@ export default function PractitionerAvailbility({
                 </div>
 
                 <div className='mt-4 text-[12px] font-bold'>Problem Brief</div>
-                <div className='mb-4 mt-2'>
+                <div className='mt-2 mb-4'>
                   <Textarea
                     value={bookingForm.problem_brief}
                     onChange={e =>
@@ -644,7 +632,7 @@ export default function PractitionerAvailbility({
                 </div>
 
                 {errorForm && (
-                  <div className='mb-4 text-sm text-destructive'>
+                  <div className='text-destructive mb-4 text-sm'>
                     {`Lengkapi ${conjunction(errorForm)}.`}
                   </div>
                 )}
@@ -653,7 +641,7 @@ export default function PractitionerAvailbility({
 
             {isAuthenticated ? (
               <Button
-                className='mt-auto rounded-xl bg-secondary text-white'
+                className='bg-secondary mt-auto rounded-xl text-white'
                 onClick={handleSubmitForm}
                 disabled={isCreateAppointmentLoading || !scheduleId}
               >
@@ -670,7 +658,7 @@ export default function PractitionerAvailbility({
               </Button>
             ) : (
               <Button
-                className='mt-auto w-full rounded-[32px] bg-secondary py-2 text-[14px] font-bold text-white'
+                className='bg-secondary mt-auto w-full rounded-[32px] py-2 text-[14px] font-bold text-white'
                 disabled={isPending}
                 onClick={() => {
                   localStorage.setItem(
