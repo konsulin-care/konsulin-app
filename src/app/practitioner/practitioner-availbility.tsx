@@ -247,6 +247,10 @@ export default function PractitionerAvailbility({
   ): Date => {
     let date = new Date(currentDate);
 
+    if (availableDays.length === 0) {
+      return date;
+    }
+
     // Early check: if all dates in availableDays are in the past, just return the input date
     const now = new Date();
     let allInPast = true;
