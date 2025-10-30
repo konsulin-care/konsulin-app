@@ -707,9 +707,14 @@ export default function PractitionerAvailbility({
 
             {isAuthenticated ? (
               <Button
-                className='bg-secondary mt-auto rounded-xl text-white'
+                className='bg-secondary mt-auto rounded-xl text-white disabled:opacity-50'
                 onClick={handleSubmitForm}
-                disabled={isCreateAppointmentLoading || !scheduleId}
+                disabled={
+                  isCreateAppointmentLoading ||
+                  !scheduleId ||
+                  !bookingState.startTime ||
+                  !bookingForm.problem_brief?.trim()
+                }
               >
                 {isCreateAppointmentLoading ? (
                   <LoadingSpinnerIcon
