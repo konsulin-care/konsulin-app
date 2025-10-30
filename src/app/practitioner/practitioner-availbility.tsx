@@ -723,7 +723,7 @@ export default function PractitionerAvailbility({
                 'mt-2 w-full rounded-xl border-0'
               )}
             >
-              Close
+              Batalkan
             </Button>
           </div>
         </div>
