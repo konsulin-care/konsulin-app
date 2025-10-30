@@ -23,23 +23,16 @@ import { useBooking } from '@/context/booking/bookingContext';
 import { cn, conjunction } from '@/lib/utils';
 import { useCreateAppointment } from '@/services/api/appointments';
 import { useFindAvailability } from '@/services/clinicians';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   addDays,
   addMinutes,
   format,
-  isAfter,
   isBefore,
-  isSameDay,
   parse,
   parseISO
 } from 'date-fns';
-import {
-  Bundle,
-  BundleEntry,
-  PractitionerRole,
-  PractitionerRoleAvailableTime,
-  Slot
-} from 'fhir/r4';
+import { Bundle, BundleEntry, PractitionerRole, Slot } from 'fhir/r4';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState, useTransition } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -117,6 +110,7 @@ export default function PractitionerAvailbility({
     problem_brief: ''
   });
   const [errorForm, setErrorForm] = useState(undefined);
+  const queryClient = useQueryClient();
   const {
     mutateAsync: createAppointment,
     isLoading: isCreateAppointmentLoading
@@ -179,11 +173,49 @@ export default function PractitionerAvailbility({
     }));
   };
 
-  const { data: schedule, isLoading } = useFindAvailability({
+  // Derive practitioner timezone offset from PractitionerRole.period.start (e.g., +07:00)
+  const practitionerTzOffset = useMemo(() => {
+    const iso =
+      practitionerRole?.period?.start || practitionerRole?.period?.end;
+    if (typeof iso === 'string') {
+      const match = iso.match(/([+-]\d{2}:\d{2}|Z)$/);
+      return match ? match[1] : 'Z';
+    }
+    return 'Z';
+  }, [practitionerRole?.period?.start, practitionerRole?.period?.end]);
+
+  // Build practitioner-TZ day window strings and day cache key
+  const { startFrom, startTo, dayKey } = useMemo(() => {
+    if (!bookingState.date) {
+      return {
+        startFrom: undefined,
+        startTo: undefined,
+        dayKey: undefined
+      } as {
+        startFrom?: string;
+        startTo?: string;
+        dayKey?: string;
+      };
+    }
+    const dayStr = format(bookingState.date, 'yyyy-MM-dd');
+    const start = `${dayStr}T00:00:00${practitionerTzOffset}`;
+    const end = `${dayStr}T23:59:59${practitionerTzOffset}`;
+    return {
+      startFrom: start,
+      startTo: end,
+      dayKey: `${dayStr}${practitionerTzOffset}`
+    };
+  }, [bookingState.date, practitionerTzOffset]);
+
+  const {
+    data: schedule,
+    isLoading,
+    isError
+  } = useFindAvailability({
     practitionerRoleId: practitionerRole.id,
-    dateReference: bookingState.date
-      ? format(bookingState.date, 'yyyy-MM-dd')
-      : null
+    startFrom,
+    startTo,
+    dayKey
   });
 
   const listAvailableDate = getAvailableDays(
@@ -238,72 +270,43 @@ export default function PractitionerAvailbility({
     return slots;
   };
 
-  const unavailableSlots = useMemo(() => {
-    if (!schedule) return [];
+  // Map FHIR Slots to pill items with disabled state
+  const slotPills = useMemo(() => {
+    if (!schedule || !Array.isArray(schedule))
+      return [] as Array<{
+        id: string;
+        displayLabel: string;
+        value: string; // HH:mm start time used for booking state
+        start: Date;
+        end: Date;
+        disabled: boolean;
+        status: string;
+      }>;
 
-    return schedule
-      .filter(
-        (entry: BundleEntry) =>
-          entry.resource.resourceType === 'Slot' &&
-          entry.resource.status === 'busy-unavailable'
-      )
-      .map((slot: BundleEntry<Slot>) => ({
-        start: parseISO(slot.resource.start),
-        end: parseISO(slot.resource.end)
-      }));
-  }, [schedule]);
+    const entries = schedule.filter(
+      (entry: BundleEntry) => entry.resource.resourceType === 'Slot'
+    ) as BundleEntry<Slot>[];
 
-  const availableTimeSlots = useMemo(() => {
-    if (!bookingState.date) return [];
-
-    const dayOfWeek = format(bookingState.date, 'eee')
-      .toLowerCase()
-      .substring(0, 3);
-
-    const availableTimesForDay = practitionerRole.availableTime.filter(
-      (time: PractitionerRoleAvailableTime) =>
-        time.daysOfWeek.map(day => day.toLowerCase()).includes(dayOfWeek)
-    );
-
-    let allSlots: string[] = [];
-
-    // generate available time slots in 30-minute intervals
-    availableTimesForDay.forEach((time: PractitionerRoleAvailableTime) => {
-      const startTime = time.availableStartTime;
-      const endTime = time.availableEndTime;
-
-      allSlots.push(...getTimeSlots(startTime, endTime));
-    });
-
-    // Add 30 minutes to the slot start time to get the slot's end time
-    return allSlots.map(slotTime => {
-      const slotStart = parse(slotTime, 'HH:mm', bookingState.date);
-      const slotEnd = addMinutes(slotStart, 30);
-
-      /* Check if the busy slot is on the same day as the selected date
-       * and if the available slot overlaps with the busy slot by ensuring the available slot starts before the busy slot ends
-       * and ends after the busy slot starts.
-       * */
-      const isUnavailable = unavailableSlots.some((slot: Slot) => {
-        const busyStart = slot.start;
-        const busyEnd = slot.end;
-        const sameDay = isSameDay(busyStart, bookingState.date);
-        const beforeEnd = isBefore(slotStart, busyEnd);
-        const afterStart = isAfter(slotEnd, busyStart);
-
-        return sameDay && beforeEnd && afterStart;
-      });
-
-      // check if the slot time is in the past
-      const now = new Date();
-      const isPast = isBefore(slotStart, now);
-
+    const now = new Date();
+    const mapped = entries.map(entry => {
+      const s = parseISO(entry.resource.start);
+      const e = parseISO(entry.resource.end);
+      const status = entry.resource.status;
+      const disabledByStatus = status !== 'free';
+      const disabledByPast = isBefore(s, now);
       return {
-        startTime: slotTime,
-        isUnavailable: isUnavailable || isPast
+        id: entry.resource.id,
+        displayLabel: `${format(s, 'HH:mm')}`,
+        value: `${format(s, 'HH:mm')}`,
+        start: s,
+        end: e,
+        disabled: disabledByStatus || disabledByPast,
+        status
       };
     });
-  }, [bookingState.date, practitionerRole.availableTime, unavailableSlots]);
+
+    return mapped.sort((a, b) => a.start.getTime() - b.start.getTime());
+  }, [schedule]);
 
   useEffect(() => {
     if (errorForm) {
@@ -324,14 +327,12 @@ export default function PractitionerAvailbility({
    * dependencies: re-run when selected date/time, available time slots, or valid date list changes.
    * */
   useEffect(() => {
-    if (availableTimeSlots.length === 0 || isOpenParam !== 'true') return;
+    if (slotPills.length === 0 || isOpenParam !== 'true') return;
 
     const params = new URLSearchParams(window.location.search);
 
     const isValidDate = isDateAvailable(bookingState.date, listAvailableDate);
-    const validTimeSlots = availableTimeSlots
-      .filter(slot => !slot.isUnavailable)
-      .map(slot => slot.startTime);
+    const validTimeSlots = slotPills.filter(p => !p.disabled).map(p => p.value);
 
     const isValidTime = validTimeSlots.includes(bookingState.startTime);
 
@@ -372,12 +373,7 @@ export default function PractitionerAvailbility({
 
     params.delete('isOpen');
     router.push(`?${params.toString()}`, { scroll: false });
-  }, [
-    bookingState.date,
-    bookingState.startTime,
-    availableTimeSlots,
-    listAvailableDate
-  ]);
+  }, [bookingState.date, bookingState.startTime, slotPills, listAvailableDate]);
 
   const handleSubmitForm = async () => {
     const { date, startTime } = bookingState;
@@ -490,6 +486,10 @@ export default function PractitionerAvailbility({
       };
       const result = await createAppointment(appointmentPayload);
       if (result && result.length > 0) {
+        // Invalidate availability cache to refresh slots after booking
+        queryClient.invalidateQueries({
+          queryKey: ['find-availability', practitionerRole.id]
+        });
         handleFilterChange('isBookingSubmitted', true);
         setIsOpen(false);
       }
@@ -565,7 +565,15 @@ export default function PractitionerAvailbility({
                     className='w-full animate-spin'
                   />
                 </div>
-              ) : availableTimeSlots.length === 0 ? (
+              ) : isError ? (
+                <div className='flex w-full justify-center'>
+                  <EmptyState
+                    size={42}
+                    title='Unable to load available slots'
+                    subtitle='Please try again later'
+                  />
+                </div>
+              ) : slotPills.length === 0 ? (
                 <div className='flex w-full justify-center'>
                   <EmptyState
                     size={42}
@@ -575,26 +583,25 @@ export default function PractitionerAvailbility({
                 </div>
               ) : (
                 <div className='grid grid-cols-[repeat(auto-fill,minmax(70px,1fr))] justify-center gap-x-1 gap-y-2'>
-                  {availableTimeSlots.map(
-                    ({ startTime, isUnavailable }, index) => (
-                      <Button
-                        variant='outline'
-                        key={index}
-                        disabled={isUnavailable || !scheduleId}
-                        onClick={() => {
-                          handleFilterChange('startTime', startTime);
-                        }}
-                        className={cn(
-                          'w-full items-center justify-center rounded-md border-0 px-4 py-2 text-[12px]',
-                          startTime === bookingState.startTime
-                            ? 'bg-secondary hover:bg-secondary font-bold text-white'
-                            : 'bg-white font-normal'
-                        )}
-                      >
-                        {startTime}
-                      </Button>
-                    )
-                  )}
+                  {slotPills.map(pill => (
+                    <Button
+                      variant='outline'
+                      key={pill.id}
+                      disabled={pill.disabled || !scheduleId}
+                      onClick={() => {
+                        handleFilterChange('startTime', pill.value);
+                      }}
+                      className={cn(
+                        'w-full items-center justify-center rounded-md border-0 px-4 py-2 text-[12px]',
+                        pill.value === bookingState.startTime
+                          ? 'bg-secondary hover:bg-secondary font-bold text-white'
+                          : 'bg-white font-normal'
+                      )}
+                      aria-disabled={pill.disabled}
+                    >
+                      {pill.displayLabel}
+                    </Button>
+                  ))}
                 </div>
               )}
             </div>
