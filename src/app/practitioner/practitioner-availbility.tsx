@@ -21,9 +21,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
 import { cn, conjunction } from '@/lib/utils';
+import { getAPI } from '@/services/api';
 import { useCreateAppointment } from '@/services/api/appointments';
 import { useFindAvailability } from '@/services/clinicians';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addDays,
   addMinutes,
@@ -118,6 +119,20 @@ export default function PractitionerAvailbility({
 
   const patientId = authState?.userInfo?.fhirId;
   const isAuthenticated = authState?.isAuthenticated;
+
+  // Fetch Schedule by ID with caching (only when authenticated)
+  const { data: scheduleById } = useQuery({
+    queryKey: ['schedule-by-id', scheduleId],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(`/fhir/Schedule/${scheduleId}`);
+      return response.data || null;
+    },
+    enabled: !!scheduleId && !!isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false
+  });
 
   /* when the modal is opened via the "isOpen=true" URL param,
    * load temporary booking data from localStorage (if any),
@@ -246,6 +261,23 @@ export default function PractitionerAvailbility({
     availableDays: Date[]
   ): Date => {
     let date = new Date(currentDate);
+
+    if (availableDays.length === 0) {
+      return date;
+    }
+
+    // Early check: if all dates in availableDays are in the past, just return the input date
+    const now = new Date();
+    let allInPast = true;
+    for (let i = 0; i < availableDays.length; i++) {
+      if (availableDays[i] >= now) {
+        allInPast = false;
+        break;
+      }
+    }
+    if (allInPast) {
+      return date;
+    }
 
     // loop until an available day is found
     while (!isDateAvailable(date, availableDays)) {
@@ -502,6 +534,33 @@ export default function PractitionerAvailbility({
     setErrorForm(null);
   };
 
+  // Helper function to extract slotMinutes from Schedule's comment field
+  function getSlotMinutesText(schedule: any): string {
+    if (!schedule) {
+      return '';
+    }
+    if (typeof schedule !== 'object') {
+      return '';
+    }
+    if (typeof schedule.comment !== 'string') {
+      return '';
+    }
+    try {
+      const commentObj = JSON.parse(schedule.comment);
+      if (typeof commentObj.slotMinutes === 'number') {
+        if (commentObj.slotMinutes > 0) {
+          return ` ${commentObj.slotMinutes} Menit`;
+        } else {
+          return '';
+        }
+      } else {
+        return '';
+      }
+    } catch (err) {
+      return '';
+    }
+  }
+
   return (
     <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
       <DrawerTrigger asChild>
@@ -648,9 +707,14 @@ export default function PractitionerAvailbility({
 
             {isAuthenticated ? (
               <Button
-                className='bg-secondary mt-auto rounded-xl text-white'
+                className='bg-secondary mt-auto rounded-xl text-white disabled:opacity-50'
                 onClick={handleSubmitForm}
-                disabled={isCreateAppointmentLoading || !scheduleId}
+                disabled={
+                  isCreateAppointmentLoading ||
+                  !scheduleId ||
+                  !bookingState.startTime ||
+                  !bookingForm.problem_brief?.trim()
+                }
               >
                 {isCreateAppointmentLoading ? (
                   <LoadingSpinnerIcon
@@ -660,7 +724,7 @@ export default function PractitionerAvailbility({
                     className='animate-spin'
                   />
                 ) : (
-                  'Make An Appointment'
+                  `Jadwalkan Sesi${getSlotMinutesText(scheduleById)}`
                 )}
               </Button>
             ) : (
@@ -710,7 +774,7 @@ export default function PractitionerAvailbility({
                 'mt-2 w-full rounded-xl border-0'
               )}
             >
-              Close
+              Batalkan
             </Button>
           </div>
         </div>
