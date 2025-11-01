@@ -14,7 +14,9 @@ import {
   DrawerTrigger
 } from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/context/auth/authContext';
+import { updateSchedule } from '@/services/api/schedule';
 import {
   useCreateInvoice,
   useGetPractitionerRolesDetail,
@@ -23,16 +25,68 @@ import {
 } from '@/services/clinicians';
 import { IPractitionerRoleDetail } from '@/types/practitioner';
 import { mapAddress } from '@/utils/helper';
-import { BundleEntry, CodeableConcept } from 'fhir/r4';
+import { BundleEntry, CodeableConcept, Schedule } from 'fhir/r4';
 import { XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import 'swiper/css';
 import { Autoplay } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import FirmFilter, { IFirmFilter } from './firm-filter';
+
+type SlotConfig = { slotMinutes?: number; bufferMinutes?: number };
+
+function parseScheduleComment(comment: unknown): SlotConfig {
+  try {
+    if (typeof comment !== 'string' || !comment.trim()) return {};
+    const parsed = JSON.parse(comment);
+    const sm = Number(parsed?.slotMinutes);
+    const bm = Number(parsed?.bufferMinutes);
+    const out: SlotConfig = {};
+    if (Number.isFinite(sm) && sm > 0) out.slotMinutes = sm;
+    if (Number.isFinite(bm) && bm >= 0) out.bufferMinutes = bm;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function buildScheduleComment(
+  sessionDuration: string | undefined,
+  bufferTime: string | undefined
+): string | undefined {
+  const sdNum = Number(sessionDuration);
+  const btNum = Number(bufferTime);
+
+  const sdValid = Number.isFinite(sdNum) && sdNum > 0;
+  const btValid = Number.isFinite(btNum) && btNum >= 0;
+
+  if (!sdValid && !btValid) return undefined;
+
+  const slotMinutes = sdValid ? sdNum : 0;
+  const bufferMinutes = btValid ? btNum : 0;
+  return JSON.stringify({ slotMinutes, bufferMinutes });
+}
+
+// getTheLatestEntry is a helper function to get the latest entry from an array of objects,
+// for now, the use case of this function is to consistenly use the same Schedule
+// object in case a practitioner role has multiple schedules.
+function getTheLatestEntry<T extends { meta?: { lastUpdated?: string } }>(
+  arr: T[] | undefined
+): T | undefined {
+  if (!Array.isArray(arr) || arr.length === 0) return undefined;
+  const withDates = arr
+    .map(item => ({
+      item,
+      ts: item?.meta?.lastUpdated ? Date.parse(item.meta.lastUpdated) : NaN
+    }))
+    .sort((a, b) => (isNaN(b.ts) ? -1 : b.ts) - (isNaN(a.ts) ? -1 : a.ts));
+  const first = withDates[0];
+  if (first && !isNaN(first.ts)) return first.item;
+  return arr[0];
+}
 
 const EditPractice = () => {
   const router = useRouter();
@@ -44,6 +98,9 @@ const EditPractice = () => {
   const [invoiceData, setInvoiceData] = useState([]);
   const { state: authState } = useAuth();
   const [openCollapsibles, setOpenCollapsibles] = useState({});
+  const [slotConfigs, setSlotConfigs] = useState<
+    Record<number, { sessionDuration?: string; bufferTime?: string }>
+  >({});
 
   const {
     isLoading: isPractitionerRolesLoading,
@@ -99,6 +156,30 @@ const EditPractice = () => {
     isUpdatePractitionerLoading ||
     isUpdateInvoiceLoading;
 
+  useEffect(() => {
+    setSlotConfigs(prev => {
+      const next = { ...prev } as Record<
+        number,
+        { sessionDuration?: string; bufferTime?: string }
+      >;
+      firmData.forEach((firm: any, idx: number) => {
+        const firstSchedule = getTheLatestEntry<Schedule>(
+          firm?.scheduleData as Schedule[]
+        );
+        const { slotMinutes, bufferMinutes } = parseScheduleComment(
+          firstSchedule?.comment
+        );
+        if (slotMinutes != null || bufferMinutes != null) {
+          next[idx] = {
+            sessionDuration: slotMinutes != null ? String(slotMinutes) : '',
+            bufferTime: bufferMinutes != null ? String(bufferMinutes) : ''
+          };
+        }
+      });
+      return next;
+    });
+  }, [firmData]);
+
   const filteredFirmData = useMemo(() => {
     if (!firmData || firmData.length === 0) return [];
 
@@ -151,9 +232,45 @@ const EditPractice = () => {
       if (result) {
         updatedFirm[index] = { scheduleData, organizationData, ...result };
         setFirmData(updatedFirm);
-        handleToggle(index);
         toast.success('Data berhasil disimpan');
       }
+
+      const latestSchedule = getTheLatestEntry<Schedule>(
+        scheduleData as Schedule[]
+      );
+      if (!latestSchedule) {
+        toast.info('No schedule found for this firm; skipping schedule update');
+      } else {
+        const sessionDuration = slotConfigs[index]?.sessionDuration;
+        const bufferTime = slotConfigs[index]?.bufferTime;
+        const newComment = buildScheduleComment(sessionDuration, bufferTime);
+        if (newComment !== undefined) {
+          try {
+            const updated = await updateSchedule({
+              ...latestSchedule,
+              resourceType: 'Schedule',
+              comment: newComment
+            } as Schedule);
+            setFirmData(prev => {
+              const copy = [...prev];
+              const sArr = Array.isArray(copy[index].scheduleData)
+                ? [...copy[index].scheduleData]
+                : [];
+              const replaceIdx = sArr.findIndex(
+                (s: any) => s?.id === updated?.id
+              );
+              if (replaceIdx >= 0) sArr[replaceIdx] = updated;
+              else sArr.unshift(updated);
+              copy[index] = { ...copy[index], scheduleData: sArr };
+              return copy;
+            });
+          } catch (e) {
+            toast.error('Failed to update session duration/buffer time');
+          }
+        }
+      }
+
+      handleToggle(index);
     } catch (error) {
       toast.error('Data gagal disimpan');
       console.log('Error when submitting the data: ', error);
@@ -345,7 +462,7 @@ const EditPractice = () => {
 
           <div>
             {firmFilter.city && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+              <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
                 {firmFilter.city}
               </Badge>
             )}
@@ -372,6 +489,8 @@ const EditPractice = () => {
                     handleAddTag={handleAddTag}
                     handleRemoveTag={handleRemoveTag}
                     setTagInputs={setTagInputs}
+                    slotConfigs={slotConfigs}
+                    setSlotConfigs={setSlotConfigs}
                     handleSubmitFirmDetails={handleSubmitFirmDetails}
                     handleChangeStatus={handleChangeStatus}
                     isDataLoading={isDataLoading}
@@ -392,7 +511,7 @@ const EditPractice = () => {
           <div className='flex w-full max-w-screen-sm items-center justify-center'>
             <Button
               onClick={handleSubmitFirmsStatus}
-              className='w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
+              className='bg-secondary w-full rounded-[32px] py-2 font-normal text-white'
               disabled={isUpdatePractitionerLoading}
             >
               {isUpdatePractitionerLoading ? (
@@ -426,7 +545,7 @@ const EditPractice = () => {
               setIsDrawerOpen(false);
               router.push('/profile');
             }}
-            className='mx-4 mb-4 rounded-full border border-[#2C2F35] border-opacity-20 bg-white py-3 text-sm font-bold text-[#2C2F35] opacity-100'
+            className='border-opacity-20 mx-4 mb-4 rounded-full border border-[#2C2F35] bg-white py-3 text-sm font-bold text-[#2C2F35] opacity-100'
           >
             Close
           </Button>
@@ -536,11 +655,15 @@ const Collapsible = ({ isOpen, onToggle, children, data, onStatusChange }) => {
           <div
             onClick={e => {
               e.stopPropagation();
-              onStatusChange(!data.active);
             }}
-            className={`rounded-full ${data.active ? 'bg-secondary' : 'bg-[#808387]'} p-1 px-2`}
           >
-            <p className='text-[12px] text-white'>Select</p>
+            <Switch
+              checked={data.active}
+              onCheckedChange={checked => {
+                onStatusChange(checked);
+              }}
+              className='data-[state=checked]:bg-[#0abdc3] data-[state=unchecked]:bg-[#808387]'
+            />
           </div>
         )}
       </button>
@@ -567,6 +690,8 @@ const CollapsibleItem = ({
   handleAddTag,
   handleRemoveTag,
   setTagInputs,
+  slotConfigs,
+  setSlotConfigs,
   handleSubmitFirmDetails,
   handleChangeStatus,
   isDataLoading
@@ -606,12 +731,76 @@ const CollapsibleItem = ({
           }
           onTagRemove={(tagIndex: number) => handleRemoveTag(index, tagIndex)}
         />
+        <div className='flex w-full items-center justify-between'>
+          <label
+            htmlFor={`session-duration-${index}`}
+            className='text-sm font-medium text-gray-700'
+          >
+            Session Duration
+          </label>
+          <input
+            id={`session-duration-${index}`}
+            type='text'
+            className='w-3/4 rounded-lg border px-3 py-2 text-gray-900'
+            placeholder='duration in minutes'
+            value={slotConfigs[index]?.sessionDuration ?? ''}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              const v = e.target.value;
+              if (v === '') {
+                setSlotConfigs((s: any) => ({
+                  ...s,
+                  [index]: { ...(s[index] || {}), sessionDuration: '' }
+                }));
+                return;
+              }
+              const numberOnly = /^\d+$/;
+              if (numberOnly.test(v) && Number(v) > 0) {
+                setSlotConfigs((s: any) => ({
+                  ...s,
+                  [index]: { ...(s[index] || {}), sessionDuration: v }
+                }));
+              }
+            }}
+          />
+        </div>
+        <div className='flex w-full items-center justify-between'>
+          <label
+            htmlFor={`buffer-time-${index}`}
+            className='text-sm font-medium text-gray-700'
+          >
+            Buffer Time
+          </label>
+          <input
+            id={`buffer-time-${index}`}
+            type='text'
+            className='w-3/4 rounded-lg border px-3 py-2 text-gray-900'
+            placeholder='gap between sessions (minutes)'
+            value={slotConfigs[index]?.bufferTime ?? ''}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              const v = e.target.value;
+              if (v === '') {
+                setSlotConfigs((s: any) => ({
+                  ...s,
+                  [index]: { ...(s[index] || {}), bufferTime: '' }
+                }));
+                return;
+              }
+              const numberOnly = /^\d+$/;
+              if (numberOnly.test(v)) {
+                setSlotConfigs((s: any) => ({
+                  ...s,
+                  [index]: { ...(s[index] || {}), bufferTime: v }
+                }));
+              }
+            }}
+          />
+        </div>
         <div className='mt-4'>
           <Button
             onClick={() => {
               handleSubmitFirmDetails(index);
             }}
-            className='w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
+            className='bg-secondary w-full rounded-[32px] py-2 font-normal text-white'
             disabled={isDataLoading}
           >
             {isDataLoading ? (

@@ -4,6 +4,7 @@ import {
   MarkUnavailabilityResult
 } from '@/types/schedule';
 import { useMutation } from '@tanstack/react-query';
+import { Schedule } from 'fhir/r4';
 import { getAPI } from '../api';
 
 export async function postMarkUnavailability(
@@ -21,4 +22,13 @@ export function useMarkUnavailability() {
     mutationKey: ['schedule-unavailable'],
     mutationFn: postMarkUnavailability
   });
+}
+
+export async function updateSchedule(payload: Schedule): Promise<Schedule> {
+  if (!payload?.id) {
+    throw new Error('Schedule id is required');
+  }
+  const API = await getAPI();
+  const res = await API.put(`/fhir/Schedule/${payload.id}`, payload);
+  return res.data as Schedule;
 }
