@@ -14,6 +14,7 @@ import {
   DrawerTrigger
 } from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/context/auth/authContext';
 import { updateSchedule } from '@/services/api/schedule';
 import {
@@ -654,11 +655,15 @@ const Collapsible = ({ isOpen, onToggle, children, data, onStatusChange }) => {
           <div
             onClick={e => {
               e.stopPropagation();
-              onStatusChange(!data.active);
             }}
-            className={`rounded-full ${data.active ? 'bg-secondary' : 'bg-[#808387]'} p-1 px-2`}
           >
-            <p className='text-[12px] text-white'>Select</p>
+            <Switch
+              checked={data.active}
+              onCheckedChange={checked => {
+                onStatusChange(checked);
+              }}
+              className='data-[state=checked]:bg-[#0abdc3] data-[state=unchecked]:bg-[#808387]'
+            />
           </div>
         )}
       </button>
