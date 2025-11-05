@@ -225,6 +225,16 @@ export default function Practitioner({ params }: IPractitionerProps) {
             <PractitionerAvailbility
               practitionerRole={detailPractitioner.resource}
               scheduleId={detailPractitioner?.schedule?.id}
+              invoice={detailPractitioner.invoice}
+              practitionerName={displayName}
+              practitionerOrganizationName={
+                detailPractitioner.organization.name
+              }
+              practitionerAvatar={{
+                photoUrl: photoUrl,
+                initials,
+                backgroundColor
+              }}
             >
               <div className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'>
                 <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />

@@ -22,7 +22,10 @@ import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
 import { cn, conjunction } from '@/lib/utils';
 import { getAPI } from '@/services/api';
-import { useCreateAppointment } from '@/services/api/appointments';
+import {
+  useCreateAppointment,
+  usePayAppointment
+} from '@/services/api/appointments';
 import { useFindAvailability } from '@/services/clinicians';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -33,10 +36,9 @@ import {
   parse,
   parseISO
 } from 'date-fns';
-import { Bundle, BundleEntry, PractitionerRole, Slot } from 'fhir/r4';
+import { BundleEntry, PractitionerRole, Slot } from 'fhir/r4';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState, useTransition } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 
 /* returns all available appointment days for a given month.
  * example:
@@ -87,12 +89,24 @@ type Props = {
   children: ReactNode;
   practitionerRole: PractitionerRole;
   scheduleId: string;
+  invoice?: any;
+  practitionerName?: string;
+  practitionerOrganizationName?: string;
+  practitionerAvatar?: {
+    photoUrl?: string;
+    initials?: string;
+    backgroundColor?: string;
+  };
 };
 
 export default function PractitionerAvailbility({
   children,
   practitionerRole,
-  scheduleId
+  scheduleId,
+  invoice,
+  practitionerName,
+  practitionerOrganizationName,
+  practitionerAvatar
 }: Props) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -104,6 +118,8 @@ export default function PractitionerAvailbility({
 
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const { state: bookingState, dispatch } = useBooking();
   const { state: authState } = useAuth();
   const [bookingForm, setBookingInformation] = useState({
@@ -116,6 +132,8 @@ export default function PractitionerAvailbility({
     mutateAsync: createAppointment,
     isLoading: isCreateAppointmentLoading
   } = useCreateAppointment();
+  const { mutateAsync: payAppointment, isLoading: isPaying } =
+    usePayAppointment();
 
   const patientId = authState?.userInfo?.fhirId;
   const isAuthenticated = authState?.isAuthenticated;
@@ -409,8 +427,6 @@ export default function PractitionerAvailbility({
 
   const handleSubmitForm = async () => {
     const { date, startTime } = bookingState;
-    const conditionRandomUUID = uuidv4();
-    const slotRandomUUID = uuidv4();
     const requiredData = {
       'Problem Brief': bookingForm.problem_brief,
       'Tanggal Appointment': date,
@@ -423,108 +439,8 @@ export default function PractitionerAvailbility({
     if (emptyField.length > 0) {
       setErrorForm(emptyField.map(item => item[0]));
     } else {
-      const formattedStartTime = parse(startTime, 'HH:mm', date).toISOString();
-      const formattedEndTime = addMinutes(formattedStartTime, 30).toISOString();
-
-      const appointmentPayload: Bundle = {
-        type: 'transaction',
-        resourceType: 'Bundle',
-        entry: [
-          {
-            request: {
-              method: 'PUT',
-              url: `Condition/${conditionRandomUUID}`
-            },
-            resource: {
-              evidence: [
-                {
-                  code: [
-                    {
-                      text: bookingForm.problem_brief
-                    }
-                  ]
-                }
-              ],
-              resourceType: 'Condition',
-              asserter: {
-                reference: `Patient/${patientId}`
-              },
-              id: conditionRandomUUID,
-              subject: {
-                reference: `Patient/${patientId}`
-              }
-            }
-          },
-          {
-            request: {
-              method: 'PUT',
-              url: `Slot/${slotRandomUUID}`
-            },
-            resource: {
-              schedule: {
-                reference: `Schedule/${scheduleId}`
-              },
-              start: formattedStartTime,
-              resourceType: 'Slot',
-              status: 'busy-unavailable',
-              id: slotRandomUUID,
-              end: formattedEndTime
-            }
-          },
-          {
-            request: {
-              method: 'POST',
-              url: 'Appointment'
-            },
-            resource: {
-              slot: [
-                {
-                  reference: `Slot/${slotRandomUUID}`
-                }
-              ],
-              participant: [
-                {
-                  status: 'accepted',
-                  actor: {
-                    reference: `Patient/${patientId}`
-                  }
-                },
-                {
-                  status: 'accepted',
-                  actor: {
-                    reference: `Practitioner/${practitionerId}`
-                  }
-                },
-                {
-                  status: 'accepted',
-                  actor: {
-                    reference: `PractitionerRole/${practitionerRole.id}`
-                  }
-                }
-              ],
-              resourceType: 'Appointment',
-              appointmentType: {
-                text: bookingForm.session_type
-              },
-              status: 'booked',
-              reasonReference: [
-                {
-                  reference: `Condition/${conditionRandomUUID}`
-                }
-              ]
-            }
-          }
-        ]
-      };
-      const result = await createAppointment(appointmentPayload);
-      if (result && result.length > 0) {
-        // Invalidate availability cache to refresh slots after booking
-        queryClient.invalidateQueries({
-          queryKey: ['find-availability', practitionerRole.id]
-        });
-        handleFilterChange('isBookingSubmitted', true);
-        setIsOpen(false);
-      }
+      // Open payment option modal instead of client-side FHIR bundle submit
+      setPaymentOpen(true);
     }
   };
 
@@ -562,199 +478,328 @@ export default function PractitionerAvailbility({
   }
 
   return (
-    <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
-      <DrawerTrigger asChild>
-        <div onClick={() => setIsOpen(true)}>{children}</div>
-      </DrawerTrigger>
-      <DrawerContent
-        onInteractOutside={() => setIsOpen(false)}
-        className='fixed right-0 bottom-0 left-0 mx-auto flex h-[85%] max-w-screen-sm flex-col bg-white p-4'
-      >
-        <div className='scrollbar-hide mt-4 h-full overflow-y-auto px-1'>
-          <div className='flex h-full flex-col'>
-            <DrawerTitle className='mx-auto text-[20px] font-bold'>
-              See Availability
-            </DrawerTitle>
-            <div className='mt-4 flex w-full flex-col justify-center'>
-              <DrawerDescription />
-              <Calendar
-                defaultMonth={bookingState.date}
-                mode='single'
-                selected={bookingState.date}
-                onSelect={date => {
-                  if (!date) return;
-                  handleFilterChange('date', date);
-                  handleFilterChange('hasUserChosenDate', true);
-                  resetData();
-                }}
-                onMonthChange={month => {
-                  if (!month) return;
-                  // Update available dates for the new month
-                  const newAvailableDays = getAvailableDays(
-                    practitionerRole.availableTime,
-                    month
-                  );
-                  // Find the first available date in the new month
-                  const firstAvailable = newAvailableDays.find(
-                    day => day >= month
-                  );
-                  if (firstAvailable) {
-                    handleFilterChange('date', firstAvailable);
-                  }
-                  resetData();
-                }}
-                disabled={date =>
-                  date < today ||
-                  !listAvailableDate.some(
-                    availableDate => availableDate.getTime() === date.getTime()
-                  )
-                }
-              />
-            </div>
-
-            <div className='card my-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>
-                {bookingState.date && format(bookingState.date, 'dd MMMM yyyy')}
-              </div>
-              {isLoading ? (
-                <div className='flex h-[120px] items-center justify-center'>
-                  <LoadingSpinnerIcon
-                    width={50}
-                    height={50}
-                    className='w-full animate-spin'
-                  />
-                </div>
-              ) : isError ? (
-                <div className='flex w-full justify-center'>
-                  <EmptyState
-                    size={42}
-                    title='Unable to load available slots'
-                    subtitle='Please try again later'
-                  />
-                </div>
-              ) : slotPills.length === 0 ? (
-                <div className='flex w-full justify-center'>
-                  <EmptyState
-                    size={42}
-                    title='No available time slots'
-                    subtitle='Try another date'
-                  />
-                </div>
-              ) : (
-                <div className='grid grid-cols-[repeat(auto-fill,minmax(70px,1fr))] justify-center gap-x-1 gap-y-2'>
-                  {slotPills.map(pill => (
-                    <Button
-                      variant='outline'
-                      key={pill.id}
-                      disabled={pill.disabled || !scheduleId}
-                      onClick={() => {
-                        handleFilterChange('startTime', pill.value);
-                      }}
-                      className={cn(
-                        'w-full items-center justify-center rounded-md border-0 px-4 py-2 text-[12px]',
-                        pill.value === bookingState.startTime
-                          ? 'bg-secondary hover:bg-secondary font-bold text-white'
-                          : 'bg-white font-normal'
-                      )}
-                      aria-disabled={pill.disabled}
-                    >
-                      {pill.displayLabel}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {bookingState.startTime && (
-              <>
-                <div className='text-[12px] font-bold'>Session Type</div>
-                <div className='mt-2 flex space-x-4'>
-                  <Select disabled>
-                    <SelectTrigger className='w-[50%] text-[12px] text-[#2C2F35]'>
-                      <SelectValue placeholder='Offline' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup className='text-[12px] text-[#2C2F35]'>
-                        <SelectItem value='online'>Online</SelectItem>
-                        <SelectItem value='offline'>Offline</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className='mt-4 text-[12px] font-bold'>Problem Brief</div>
-                <div className='mt-2 mb-4'>
-                  <Textarea
-                    value={bookingForm.problem_brief}
-                    onChange={e =>
-                      handleBookingInformationChange(
-                        'problem_brief',
-                        e.target.value
-                      )
+    <>
+      <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
+        <DrawerTrigger asChild>
+          <div onClick={() => setIsOpen(true)}>{children}</div>
+        </DrawerTrigger>
+        <DrawerContent
+          onInteractOutside={() => setIsOpen(false)}
+          className='fixed right-0 bottom-0 left-0 mx-auto flex h-[85%] max-w-screen-sm flex-col bg-white p-4'
+        >
+          <div className='scrollbar-hide mt-4 h-full overflow-y-auto px-1'>
+            <div className='flex h-full flex-col'>
+              <DrawerTitle className='mx-auto text-[20px] font-bold'>
+                See Availability
+              </DrawerTitle>
+              <div className='mt-4 flex w-full flex-col justify-center'>
+                <DrawerDescription />
+                <Calendar
+                  defaultMonth={bookingState.date}
+                  mode='single'
+                  selected={bookingState.date}
+                  onSelect={date => {
+                    if (!date) return;
+                    handleFilterChange('date', date);
+                    handleFilterChange('hasUserChosenDate', true);
+                    resetData();
+                  }}
+                  onMonthChange={month => {
+                    if (!month) return;
+                    // Update available dates for the new month
+                    const newAvailableDays = getAvailableDays(
+                      practitionerRole.availableTime,
+                      month
+                    );
+                    // Find the first available date in the new month
+                    const firstAvailable = newAvailableDays.find(
+                      day => day >= month
+                    );
+                    if (firstAvailable) {
+                      handleFilterChange('date', firstAvailable);
                     }
-                    placeholder='Type your message here.'
-                    className='w-full resize-none text-[12px] text-[#2C2F35]'
-                  />
-                </div>
+                    resetData();
+                  }}
+                  disabled={date =>
+                    date < today ||
+                    !listAvailableDate.some(
+                      availableDate =>
+                        availableDate.getTime() === date.getTime()
+                    )
+                  }
+                />
+              </div>
 
-                {errorForm && (
-                  <div className='text-destructive mb-4 text-sm'>
-                    {`Lengkapi ${conjunction(errorForm)}.`}
+              <div className='card my-4 border-0 bg-[#F9F9F9]'>
+                <div className='mb-4 font-bold'>
+                  {bookingState.date &&
+                    format(bookingState.date, 'dd MMMM yyyy')}
+                </div>
+                {isLoading ? (
+                  <div className='flex h-[120px] items-center justify-center'>
+                    <LoadingSpinnerIcon
+                      width={50}
+                      height={50}
+                      className='w-full animate-spin'
+                    />
+                  </div>
+                ) : isError ? (
+                  <div className='flex w-full justify-center'>
+                    <EmptyState
+                      size={42}
+                      title='Unable to load available slots'
+                      subtitle='Please try again later'
+                    />
+                  </div>
+                ) : slotPills.length === 0 ? (
+                  <div className='flex w-full justify-center'>
+                    <EmptyState
+                      size={42}
+                      title='No available time slots'
+                      subtitle='Try another date'
+                    />
+                  </div>
+                ) : (
+                  <div className='grid grid-cols-[repeat(auto-fill,minmax(70px,1fr))] justify-center gap-x-1 gap-y-2'>
+                    {slotPills.map(pill => (
+                      <Button
+                        variant='outline'
+                        key={pill.id}
+                        disabled={pill.disabled || !scheduleId}
+                        onClick={() => {
+                          handleFilterChange('startTime', pill.value);
+                          setSelectedSlotId(pill.id);
+                        }}
+                        className={cn(
+                          'w-full items-center justify-center rounded-md border-0 px-4 py-2 text-[12px]',
+                          pill.value === bookingState.startTime
+                            ? 'bg-secondary hover:bg-secondary font-bold text-white'
+                            : 'bg-white font-normal'
+                        )}
+                        aria-disabled={pill.disabled}
+                      >
+                        {pill.displayLabel}
+                      </Button>
+                    ))}
                   </div>
                 )}
-              </>
-            )}
+              </div>
 
-            {isAuthenticated ? (
+              {bookingState.startTime && (
+                <>
+                  <div className='text-[12px] font-bold'>Session Type</div>
+                  <div className='mt-2 flex space-x-4'>
+                    <Select disabled>
+                      <SelectTrigger className='w-[50%] text-[12px] text-[#2C2F35]'>
+                        <SelectValue placeholder='Offline' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup className='text-[12px] text-[#2C2F35]'>
+                          <SelectItem value='online'>Online</SelectItem>
+                          <SelectItem value='offline'>Offline</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className='mt-4 text-[12px] font-bold'>
+                    Problem Brief
+                  </div>
+                  <div className='mt-2 mb-4'>
+                    <Textarea
+                      value={bookingForm.problem_brief}
+                      onChange={e =>
+                        handleBookingInformationChange(
+                          'problem_brief',
+                          e.target.value
+                        )
+                      }
+                      placeholder='Type your message here.'
+                      className='w-full resize-none text-[12px] text-[#2C2F35]'
+                    />
+                  </div>
+
+                  {errorForm && (
+                    <div className='text-destructive mb-4 text-sm'>
+                      {`Lengkapi ${conjunction(errorForm)}.`}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {isAuthenticated ? (
+                <Button
+                  className='bg-secondary mt-auto rounded-xl text-white disabled:opacity-50'
+                  onClick={handleSubmitForm}
+                  disabled={
+                    isCreateAppointmentLoading ||
+                    isPaying ||
+                    !scheduleId ||
+                    !bookingState.startTime ||
+                    !bookingForm.problem_brief?.trim()
+                  }
+                >
+                  {isCreateAppointmentLoading || isPaying ? (
+                    <LoadingSpinnerIcon
+                      stroke='white'
+                      width={20}
+                      height={20}
+                      className='animate-spin'
+                    />
+                  ) : (
+                    `Jadwalkan Sesi${getSlotMinutesText(scheduleById)}`
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  className='bg-secondary mt-auto w-full rounded-[32px] py-2 text-[14px] font-bold text-white'
+                  disabled={isPending}
+                  onClick={() => {
+                    localStorage.setItem(
+                      'temp-booking',
+                      JSON.stringify({
+                        date: bookingState.date,
+                        startTime: bookingState.startTime,
+                        sessionType: bookingForm.session_type,
+                        problemBrief: bookingForm.problem_brief,
+                        hasUserChosenDate: bookingState.hasUserChosenDate
+                      })
+                    );
+                    localStorage.setItem(
+                      'redirect',
+                      encodeURIComponent(
+                        `/practitioner/${practitionerId}?isOpen=true`
+                      )
+                    );
+
+                    startTransition(() => {
+                      router.push('/auth');
+                    });
+                  }}
+                >
+                  {isPending ? (
+                    <LoadingSpinnerIcon
+                      stroke='white'
+                      width={20}
+                      height={20}
+                      className='animate-spin'
+                    />
+                  ) : (
+                    'Silakan Daftar atau Masuk untuk Booking'
+                  )}
+                </Button>
+              )}
               <Button
-                className='bg-secondary mt-auto rounded-xl text-white disabled:opacity-50'
-                onClick={handleSubmitForm}
+                onClick={() => setIsOpen(false)}
+                variant='outline'
+                className={cn(
+                  buttonVariants({ variant: 'outline' }),
+                  'mt-2 w-full rounded-xl border-0'
+                )}
+              >
+                Batalkan
+              </Button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Payment Option Modal */}
+      <Drawer onClose={() => setPaymentOpen(false)} open={paymentOpen}>
+        <DrawerContent
+          onInteractOutside={() => setPaymentOpen(false)}
+          className='fixed right-0 bottom-0 left-0 mx-auto flex max-w-screen-sm flex-col bg-white p-4'
+        >
+          <div className='flex flex-col gap-4'>
+            <div className='flex flex-col items-center'>
+              {practitionerAvatar?.photoUrl ? (
+                <img
+                  src={practitionerAvatar.photoUrl}
+                  alt='practitioner'
+                  className='h-[72px] w-[72px] rounded-full object-cover'
+                />
+              ) : (
+                <div
+                  className='flex h-[72px] w-[72px] items-center justify-center rounded-full text-lg font-bold text-white'
+                  style={{
+                    backgroundColor:
+                      practitionerAvatar?.backgroundColor || '#999'
+                  }}
+                >
+                  {practitionerAvatar?.initials}
+                </div>
+              )}
+              {practitionerOrganizationName && (
+                <div className='mt-2 text-[12px] font-normal'>
+                  {practitionerOrganizationName}
+                </div>
+              )}
+              <div className='mt-1 text-center text-[18px] font-bold'>
+                {practitionerName}
+              </div>
+            </div>
+
+            <div className='flex w-full items-center justify-center gap-2'>
+              <div className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'>
+                <span className='mr-2 text-[12px] text-[#2C2F35]'>
+                  {bookingState?.date
+                    ? format(bookingState.date, 'dd MMMM yyyy')
+                    : '-/-/-'}
+                </span>
+              </div>
+              <div className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'>
+                <span className='mr-2 text-[12px] text-[#2C2F35]'>
+                  {bookingState?.startTime || '-:-'}
+                </span>
+              </div>
+            </div>
+
+            <div className='mt-2 flex items-center justify-between rounded-[12px] bg-[#F9F9F9] p-3'>
+              <span className='text-[12px] text-[#666]'>Total</span>
+              <span className='text-[16px] font-bold'>
+                {invoice?.totalNet
+                  ? new Intl.NumberFormat('id-ID', {
+                      style: 'currency',
+                      currency: invoice.totalNet.currency,
+                      minimumFractionDigits: 0
+                    }).format(invoice.totalNet.value)
+                  : '-'}
+              </span>
+            </div>
+
+            <div className='mt-2 flex flex-col gap-2'>
+              <Button
+                className='bg-secondary w-full rounded-xl text-white disabled:opacity-50'
                 disabled={
-                  isCreateAppointmentLoading ||
-                  !scheduleId ||
-                  !bookingState.startTime ||
+                  isPaying ||
+                  !patientId ||
+                  !invoice?.id ||
+                  !selectedSlotId ||
                   !bookingForm.problem_brief?.trim()
                 }
-              >
-                {isCreateAppointmentLoading ? (
-                  <LoadingSpinnerIcon
-                    stroke='white'
-                    width={20}
-                    height={20}
-                    className='animate-spin'
-                  />
-                ) : (
-                  `Jadwalkan Sesi${getSlotMinutesText(scheduleById)}`
-                )}
-              </Button>
-            ) : (
-              <Button
-                className='bg-secondary mt-auto w-full rounded-[32px] py-2 text-[14px] font-bold text-white'
-                disabled={isPending}
-                onClick={() => {
-                  localStorage.setItem(
-                    'temp-booking',
-                    JSON.stringify({
-                      date: bookingState.date,
-                      startTime: bookingState.startTime,
-                      sessionType: bookingForm.session_type,
-                      problemBrief: bookingForm.problem_brief,
-                      hasUserChosenDate: bookingState.hasUserChosenDate
-                    })
-                  );
-                  localStorage.setItem(
-                    'redirect',
-                    encodeURIComponent(
-                      `/practitioner/${practitionerId}?isOpen=true`
-                    )
-                  );
-
-                  startTransition(() => {
-                    router.push('/auth');
-                  });
+                onClick={async () => {
+                  try {
+                    await payAppointment({
+                      patientId: `Patient/${patientId}`,
+                      invoiceId: `Invoice/${invoice.id}`,
+                      useOnlinePayment: true,
+                      practitionerRoleId: `PractitionerRole/${practitionerRole.id}`,
+                      slotId: `Slot/${selectedSlotId}`,
+                      condition: bookingForm.problem_brief
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ['find-availability', practitionerRole.id]
+                    });
+                    handleFilterChange('isBookingSubmitted', true);
+                    setPaymentOpen(false);
+                    setIsOpen(false);
+                  } catch (e: any) {
+                    // Errors are generally toasted by interceptor; ensure 501 is explicit
+                    // no-op here; interceptor will show message
+                  }
                 }}
               >
-                {isPending ? (
+                {isPaying ? (
                   <LoadingSpinnerIcon
                     stroke='white'
                     width={20}
@@ -762,23 +807,54 @@ export default function PractitionerAvailbility({
                     className='animate-spin'
                   />
                 ) : (
-                  'Silakan Daftar atau Masuk untuk Booking'
+                  'Bayar Sekarang'
                 )}
               </Button>
-            )}
-            <Button
-              onClick={() => setIsOpen(false)}
-              variant='outline'
-              className={cn(
-                buttonVariants({ variant: 'outline' }),
-                'mt-2 w-full rounded-xl border-0'
-              )}
-            >
-              Batalkan
-            </Button>
+              <Button
+                variant='outline'
+                className='w-full rounded-xl border-0'
+                disabled={
+                  isPaying ||
+                  !patientId ||
+                  !invoice?.id ||
+                  !selectedSlotId ||
+                  !bookingForm.problem_brief?.trim()
+                }
+                onClick={async () => {
+                  try {
+                    await payAppointment({
+                      patientId: `Patient/${patientId}`,
+                      invoiceId: `Invoice/${invoice.id}`,
+                      useOnlinePayment: false,
+                      practitionerRoleId: `PractitionerRole/${practitionerRole.id}`,
+                      slotId: `Slot/${selectedSlotId}`,
+                      condition: bookingForm.problem_brief
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ['find-availability', practitionerRole.id]
+                    });
+                    handleFilterChange('isBookingSubmitted', true);
+                    setPaymentOpen(false);
+                    setIsOpen(false);
+                  } catch (e: any) {
+                    // Errors toasted by interceptor
+                  }
+                }}
+              >
+                {isPaying ? (
+                  <LoadingSpinnerIcon
+                    width={20}
+                    height={20}
+                    className='animate-spin'
+                  />
+                ) : (
+                  'Bayar Nanti'
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
-      </DrawerContent>
-    </Drawer>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 }
