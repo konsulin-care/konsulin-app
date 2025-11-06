@@ -114,6 +114,30 @@ export const useCreateAppointment = () => {
   });
 };
 
+// New unified payment/appointment endpoint
+export const usePayAppointment = () => {
+  return useMutation({
+    mutationKey: ['pay-appointment'],
+    mutationFn: async (payload: {
+      patientId: string; // e.g., "Patient/123"
+      invoiceId: string; // e.g., "Invoice/456"
+      useOnlinePayment: boolean;
+      practitionerRoleId: string; // e.g., "PractitionerRole/789"
+      slotId: string; // e.g., "Slot/abc"
+      condition: string;
+    }) => {
+      try {
+        const API = await getAPI();
+        const response = await API.post('/api/v1/pay/appointment', payload);
+        return response.data;
+      } catch (error) {
+        console.error('Error when paying/booking an appointment:', error);
+        throw error;
+      }
+    }
+  });
+};
+
 export const useGetPractitionerSlots = ({ practitionerId, dateReference }) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
