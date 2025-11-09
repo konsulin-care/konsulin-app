@@ -779,7 +779,7 @@ export default function PractitionerAvailbility({
                 }
                 onClick={async () => {
                   try {
-                    await payAppointment({
+                    const response = await payAppointment({
                       patientId: `Patient/${patientId}`,
                       invoiceId: `Invoice/${invoice.id}`,
                       useOnlinePayment: true,
@@ -787,6 +787,12 @@ export default function PractitionerAvailbility({
                       slotId: `Slot/${selectedSlotId}`,
                       condition: bookingForm.problem_brief
                     });
+
+                    // If payment URL is returned, open it in a new tab
+                    if (response?.data?.paymentUrl) {
+                      window.open(response.data.paymentUrl, '_blank');
+                    }
+
                     queryClient.invalidateQueries({
                       queryKey: ['find-availability', practitionerRole.id]
                     });
