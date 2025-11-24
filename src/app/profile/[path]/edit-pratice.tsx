@@ -70,6 +70,133 @@ function buildScheduleComment(
   return JSON.stringify({ slotMinutes, bufferMinutes });
 }
 
+// Get browser timezone in GMT+x format
+function getBrowserTimezoneGMT(): string {
+  const offset = -new Date().getTimezoneOffset(); // Note: negative because getTimezoneOffset returns opposite
+  const hours = Math.floor(Math.abs(offset) / 60);
+  const minutes = Math.abs(offset) % 60;
+  const sign = offset >= 0 ? '+' : '-';
+
+  if (minutes === 0) {
+    return `GMT${sign}${hours}`;
+  }
+  return `GMT${sign}${hours}:${String(minutes).padStart(2, '0')}`;
+}
+
+// Extract timezone from Period (similar to practitioner-availbility.tsx)
+// Handles various ISO 8601 formats: +07:00, +07, -05:00, -05, Z
+function extractTimezoneFromPeriod(period?: {
+  start?: string;
+  end?: string;
+}): string | null {
+  const iso = period?.start || period?.end;
+
+  if (typeof iso !== 'string' || !iso.trim()) {
+    return null;
+  }
+
+  // Try multiple patterns to handle different ISO 8601 formats
+  // Pattern 1: Full format with colon: +07:00, -05:30
+  let match = iso.match(/([+-])(\d{2}):(\d{2})(?:\d{3})?$/);
+  if (match) {
+    const sign = match[1];
+    const hours = parseInt(match[2], 10);
+    const minutes = parseInt(match[3], 10);
+
+    if (minutes === 0) {
+      return `GMT${sign}${hours}`;
+    }
+    return `GMT${sign}${hours}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  // Pattern 2: Format without colon: +07, -05
+  match = iso.match(/([+-])(\d{2})(?:\d{2})?$/);
+  if (match) {
+    const sign = match[1];
+    const hours = parseInt(match[2], 10);
+
+    return `GMT${sign}${hours}`;
+  }
+
+  // Pattern 3: UTC (Z)
+  if (iso.endsWith('Z') || iso.match(/Z$/)) {
+    return 'GMT+0';
+  }
+
+  // Pattern 4: Try to extract from end of string more flexibly
+  // Look for timezone pattern at the end: +HH:MM, +HHMM, -HH:MM, -HHMM, Z
+  const tzPatterns = [
+    /([+-])(\d{2}):(\d{2})$/,
+    /([+-])(\d{4})$/,
+    /([+-])(\d{2})$/,
+    /Z$/
+  ];
+
+  for (const pattern of tzPatterns) {
+    match = iso.match(pattern);
+    if (match) {
+      if (match[0] === 'Z') {
+        return 'GMT+0';
+      }
+
+      const sign = match[1];
+      if (match[3]) {
+        // Has minutes (format with colon)
+        const hours = parseInt(match[2], 10);
+        const minutes = parseInt(match[3], 10);
+        if (minutes === 0) {
+          return `GMT${sign}${hours}`;
+        }
+        return `GMT${sign}${hours}:${String(minutes).padStart(2, '0')}`;
+      } else if (match[2]) {
+        // No minutes, just hours
+        const hoursStr = match[2];
+        if (hoursStr.length === 4) {
+          // Format: +0700 (4 digits)
+          const hours = parseInt(hoursStr.substring(0, 2), 10);
+          const minutes = parseInt(hoursStr.substring(2, 4), 10);
+          if (minutes === 0) {
+            return `GMT${sign}${hours}`;
+          }
+          return `GMT${sign}${hours}:${String(minutes).padStart(2, '0')}`;
+        } else {
+          // Format: +07 (2 digits)
+          const hours = parseInt(hoursStr, 10);
+          return `GMT${sign}${hours}`;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+// Convert GMT+x format to ISO datetime with timezone offset
+function convertGMTToISO(gmtString: string): string {
+  // Parse GMT+x or GMT+x:xx format
+  const match = gmtString.match(/GMT([+-])(\d+)(?::(\d{2}))?/);
+  if (!match) {
+    // Fallback to current time with browser timezone
+    return new Date().toISOString();
+  }
+
+  const sign = match[1];
+  const hours = parseInt(match[2], 10);
+  const minutes = match[3] ? parseInt(match[3], 10) : 0;
+  const offset = `${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+
+  // Get current date/time and format with timezone
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours24 = String(now.getHours()).padStart(2, '0');
+  const mins = String(now.getMinutes()).padStart(2, '0');
+  const secs = String(now.getSeconds()).padStart(2, '0');
+
+  return `${year}-${month}-${day}T${hours24}:${mins}:${secs}${offset}`;
+}
+
 // getTheLatestEntry is a helper function to get the latest entry from an array of objects,
 // for now, the use case of this function is to consistenly use the same Schedule
 // object in case a practitioner role has multiple schedules.
@@ -99,7 +226,10 @@ const EditPractice = () => {
   const { state: authState } = useAuth();
   const [openCollapsibles, setOpenCollapsibles] = useState({});
   const [slotConfigs, setSlotConfigs] = useState<
-    Record<number, { sessionDuration?: string; bufferTime?: string }>
+    Record<
+      number,
+      { sessionDuration?: string; bufferTime?: string; timezone?: string }
+    >
   >({});
 
   const {
@@ -160,7 +290,7 @@ const EditPractice = () => {
     setSlotConfigs(prev => {
       const next = { ...prev } as Record<
         number,
-        { sessionDuration?: string; bufferTime?: string }
+        { sessionDuration?: string; bufferTime?: string; timezone?: string }
       >;
       firmData.forEach((firm: any, idx: number) => {
         const firstSchedule = getTheLatestEntry<Schedule>(
@@ -169,16 +299,39 @@ const EditPractice = () => {
         const { slotMinutes, bufferMinutes } = parseScheduleComment(
           firstSchedule?.comment
         );
-        if (slotMinutes != null || bufferMinutes != null) {
+
+        const extractedTz = extractTimezoneFromPeriod(firm?.period);
+        const timezone = extractedTz || getBrowserTimezoneGMT();
+
+        if (slotMinutes != null || bufferMinutes != null || timezone) {
           next[idx] = {
             sessionDuration: slotMinutes != null ? String(slotMinutes) : '',
-            bufferTime: bufferMinutes != null ? String(bufferMinutes) : ''
+            bufferTime: bufferMinutes != null ? String(bufferMinutes) : '',
+            timezone: timezone
           };
         }
       });
       return next;
     });
   }, [firmData]);
+
+  // Ensure timezone is always current browser timezone
+  useEffect(() => {
+    setSlotConfigs(prev => {
+      const next = { ...prev };
+      const browserTz = getBrowserTimezoneGMT();
+      Object.keys(next).forEach(key => {
+        const idx = parseInt(key, 10);
+        if (firmData[idx]) {
+          next[idx] = {
+            ...next[idx],
+            timezone: browserTz
+          };
+        }
+      });
+      return next;
+    });
+  }, []); // Run once on mount to set initial browser timezone
 
   const filteredFirmData = useMemo(() => {
     if (!firmData || firmData.length === 0) return [];
@@ -227,6 +380,14 @@ const EditPractice = () => {
           setInvoiceData(updatedInvoice);
         }
       }
+
+      const timezone = slotConfigs[index]?.timezone || getBrowserTimezoneGMT();
+      const isoDateTime = convertGMTToISO(timezone);
+
+      firmPayload.period = {
+        start: isoDateTime,
+        end: isoDateTime
+      };
 
       const result = await updatePractitionerInfo(firmPayload);
       if (result) {
@@ -793,6 +954,23 @@ const CollapsibleItem = ({
                 }));
               }
             }}
+          />
+        </div>
+        <div className='flex w-full items-center justify-between'>
+          <label
+            htmlFor={`timezone-${index}`}
+            className='text-sm font-medium text-gray-700'
+          >
+            Time Zone
+          </label>
+          <input
+            id={`timezone-${index}`}
+            type='text'
+            className='w-3/4 cursor-not-allowed rounded-lg border bg-gray-100 px-3 py-2 text-gray-900'
+            placeholder='GMT+7'
+            value={slotConfigs[index]?.timezone || getBrowserTimezoneGMT()}
+            readOnly
+            disabled
           />
         </div>
         <div className='mt-4'>
