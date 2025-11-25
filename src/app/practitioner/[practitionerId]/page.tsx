@@ -48,6 +48,14 @@ type IPractitionerLocalStorage = {
   email: string;
 };
 
+/**
+ * Render the practitioner detail page showing practitioner information, availability controls, and a booking-success drawer.
+ *
+ * This component reads selected clinic and practitioner data from localStorage, fetches detailed practitioner data, and manages booking feedback via a confirmation drawer. It also computes avatar placeholders and formats practice information for display.
+ *
+ * @param params - Route parameters object containing `practitionerId`
+ * @returns A React element that displays practitioner details, availability interaction, and a booking confirmation drawer
+ */
 export default function Practitioner({ params }: IPractitionerProps) {
   const router = useRouter();
   const { state: bookingState, dispatch } = useBooking();

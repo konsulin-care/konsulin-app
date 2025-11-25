@@ -99,6 +99,22 @@ type Props = {
   };
 };
 
+/**
+ * Render availability UI and booking/payment flows for a practitioner's role.
+ *
+ * Renders a calendar of available dates, selectable time-slot pills, a booking drawer
+ * and a payment drawer that handle booking form state, validation, authentication redirects,
+ * and payment actions.
+ *
+ * @param children - Trigger element(s) that open the booking drawer when clicked
+ * @param practitionerRole - FHIR PractitionerRole containing availability (period, availableTime, id)
+ * @param scheduleId - Optional Schedule ID used to enable slot selection and booking actions
+ * @param invoice - Optional invoice object used to display total and perform payment actions
+ * @param practitionerName - Optional practitioner display name shown in the payment drawer
+ * @param practitionerOrganizationName - Optional organization name shown in the payment drawer
+ * @param practitionerAvatar - Optional avatar data (photoUrl, initials, backgroundColor) shown in the payment drawer
+ * @returns The component's rendered booking and payment interface (JSX)
+ */
 export default function PractitionerAvailability({
   children,
   practitionerRole,

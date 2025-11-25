@@ -40,6 +40,12 @@ function HeaderSection({
   );
 }
 
+/**
+ * Renders a two-line detail row with a left-aligned label and a right-aligned bold value.
+ *
+ * @param item - Object containing `key` (label text) and `value` (display value) to render
+ * @returns A JSX element with two paragraph elements: the label on the left and the bold value on the right
+ */
 function DetailItem({ item }) {
   return (
     <>
@@ -51,6 +57,17 @@ function DetailItem({ item }) {
   );
 }
 
+/**
+ * Renders practice information (affiliation and fee) and an optional list of specialties.
+ *
+ * Renders two labeled detail rows: "Affiliation" (organization name or `-`) and "Fee" (formatted Indonesian currency per session or `-`). If `items.specialty` is an array of objects with a `text` field, renders those texts as tags.
+ *
+ * @param items - Practice data; expected shape includes:
+ *   - organizationData.name (string | undefined)
+ *   - invoiceData.totalNet { value: number, currency: string } (optional)
+ *   - specialty: Array<{ text: string }> (optional)
+ * @returns A JSX fragment containing the practice detail rows and, when present, a Tags component for specialties.
+ */
 function DetailPractice({ items }) {
   const organizationName =
     items && items.organizationData.name ? items.organizationData.name : '-';
@@ -105,6 +122,24 @@ function DetailPractice({ items }) {
   );
 }
 
+/**
+ * Renders a rounded information card with an avatar header, an action button, and a list of detail rows or practice sections.
+ *
+ * Renders a HeaderSection with avatar/title/subtitle and a right-aligned action button. When `isEditPractice` is true, `details` is treated as an array of practice objects and each entry is rendered using DetailPractice; otherwise `details` is treated as a list of key/value items and each entry is rendered using DetailItem.
+ *
+ * @param isRadiusIcon - Whether the avatar uses a rounded icon style (default: `true`).
+ * @param iconUrl - URL of the avatar image to display.
+ * @param title - Primary title text shown next to the avatar.
+ * @param subTitle - Secondary text shown under the title (default: empty string).
+ * @param buttonText - Label for the action button displayed in the header.
+ * @param details - Array of detail entries; structure depends on `isEditPractice` (practice objects when `true`, key/value items when `false`).
+ * @param onEdit - Click handler invoked when the action button is pressed.
+ * @param role - Role used to adjust header typography and layout (affects HeaderSection rendering).
+ * @param isEditPractice - When `true`, render practice-style detail sections; when `false`, render simple key/value detail rows (default: `false`).
+ * @param initials - Initials to show in the avatar when no image URL is provided.
+ * @param backgroundColor - Background color for the avatar.
+ * @returns The React element for the information card.
+ */
 export default function InformationDetail({
   isRadiusIcon = true,
   iconUrl,
