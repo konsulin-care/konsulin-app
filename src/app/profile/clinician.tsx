@@ -397,9 +397,9 @@ export default function Clinician({ fhirId }: Props) {
           title='Practice Information'
           buttonText='Edit Detail'
           details={activeFirms}
-          onEdit={() => router.push('profile/edit-pratice')}
+          onEdit={() => router.push('profile/edit-practice')}
           role='clinician'
-          isEditPratice={true}
+          isEditPractice={true}
         />
       )}
 

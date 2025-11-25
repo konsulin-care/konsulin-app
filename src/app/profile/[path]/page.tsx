@@ -5,7 +5,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { ChevronLeft } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import EditPratice from './edit-pratice';
+import EditPractice from './edit-practice';
 import EditProfile from './edit-profile';
 
 const PathProfile = () => {
@@ -18,8 +18,8 @@ const PathProfile = () => {
   useEffect(() => {
     if (path === 'edit-profile') {
       setTitle('Perbarui Profile');
-    } else if (path === 'edit-pratice') {
-      setTitle('Perbarui Pratice Information');
+    } else if (path === 'edit-practice') {
+      setTitle('Perbarui Practice Information');
     }
   }, [path]);
 
@@ -32,8 +32,8 @@ const PathProfile = () => {
         fhirId={authState.userInfo.fhirId}
       />
     );
-  } else if (path === 'edit-pratice') {
-    component = <EditPratice />;
+  } else if (path === 'edit-practice') {
+    component = <EditPractice />;
   }
 
   return (

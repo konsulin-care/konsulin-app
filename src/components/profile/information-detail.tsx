@@ -51,7 +51,7 @@ function DetailItem({ item }) {
   );
 }
 
-function DetailPratice({ items }) {
+function DetailPractice({ items }) {
   const organizationName =
     items && items.organizationData.name ? items.organizationData.name : '-';
 
@@ -114,7 +114,7 @@ export default function InformationDetail({
   details,
   onEdit,
   role,
-  isEditPratice = false,
+  isEditPractice = false,
   initials,
   backgroundColor
 }) {
@@ -132,7 +132,7 @@ export default function InformationDetail({
         />
         <div className='flex w-1/2 items-start justify-end'>
           <button onClick={onEdit}>
-            <div className='w-[100px] rounded-full bg-secondary p-[7px]'>
+            <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
               <p className='text-[10px] text-white'>{buttonText}</p>
             </div>
           </button>
@@ -141,7 +141,7 @@ export default function InformationDetail({
 
       {details && <div className='flex w-full' />}
 
-      {isEditPratice ? (
+      {isEditPractice ? (
         <div className='mt-2 flex w-full flex-col'>
           {Array.isArray(details) &&
             details.map((detail, index) => (
@@ -149,7 +149,7 @@ export default function InformationDetail({
                 key={index}
                 className='mt-1 flex flex-col border-t border-[#E3E3E3] font-[#2C2F35] text-xs'
               >
-                <DetailPratice items={detail} />
+                <DetailPractice items={detail} />
               </div>
             ))}
         </div>

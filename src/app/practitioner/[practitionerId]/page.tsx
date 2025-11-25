@@ -34,7 +34,7 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
-import PractitionerAvailbility from '../practitioner-availbility';
+import PractitionerAvailability from '../practitioner-availability';
 
 export interface IPractitionerProps {
   params: { practitionerId: string };
@@ -222,7 +222,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
               </h3>
             </div>
 
-            <PractitionerAvailbility
+            <PractitionerAvailability
               practitionerRole={detailPractitioner.resource}
               scheduleId={detailPractitioner?.schedule?.id}
               invoice={detailPractitioner.invoice}
@@ -243,7 +243,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
                 </span>
                 <ArrowRightIcon color='#13C2C2' />
               </div>
-            </PractitionerAvailbility>
+            </PractitionerAvailability>
 
             <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>
               <div className='flex items-center'>

@@ -83,7 +83,7 @@ function getBrowserTimezoneGMT(): string {
   return `GMT${sign}${hours}:${String(minutes).padStart(2, '0')}`;
 }
 
-// Extract timezone from Period (similar to practitioner-availbility.tsx)
+// Extract timezone from Period (similar to practitioner-availability.tsx)
 // Handles various ISO 8601 formats: +07:00, +07, -05:00, -05, Z
 function extractTimezoneFromPeriod(period?: {
   start?: string;

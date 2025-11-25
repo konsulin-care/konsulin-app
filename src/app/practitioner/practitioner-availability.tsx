@@ -99,7 +99,7 @@ type Props = {
   };
 };
 
-export default function PractitionerAvailbility({
+export default function PractitionerAvailability({
   children,
   practitionerRole,
   scheduleId,
