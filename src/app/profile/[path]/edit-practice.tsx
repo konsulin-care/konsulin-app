@@ -70,7 +70,11 @@ function buildScheduleComment(
   return JSON.stringify({ slotMinutes, bufferMinutes });
 }
 
-// Get browser timezone in GMT+x format
+/**
+ * Produce the browser's timezone offset as a GMT string.
+ *
+ * @returns A string in `GMT±H` or `GMT±H:MM` format representing the local timezone offset (examples: `GMT+7`, `GMT-05:30`, `GMT+0`).
+ */
 function getBrowserTimezoneGMT(): string {
   const offset = -new Date().getTimezoneOffset(); // Note: negative because getTimezoneOffset returns opposite
   const hours = Math.floor(Math.abs(offset) / 60);
@@ -83,8 +87,15 @@ function getBrowserTimezoneGMT(): string {
   return `GMT${sign}${hours}:${String(minutes).padStart(2, '0')}`;
 }
 
-// Extract timezone from Period (similar to practitioner-availbility.tsx)
-// Handles various ISO 8601 formats: +07:00, +07, -05:00, -05, Z
+// Extract timezone from Period (similar to practitioner-availability.tsx)
+/**
+ * Extracts a GMT offset string from the `start` or `end` ISO 8601 datetime in a period object.
+ *
+ * Accepts common ISO timezone formats (e.g., `+07:00`, `+07`, `-05:30`, `-0500`, `Z`) and prefers `start` when both `start` and `end` are present.
+ *
+ * @param period - Object containing optional ISO 8601 `start` or `end` datetime strings
+ * @returns A GMT offset string such as `GMT+7`, `GMT+07:00`, `GMT-05:30`, or `GMT+0` for UTC; `null` if no timezone can be determined
+ */
 function extractTimezoneFromPeriod(period?: {
   start?: string;
   end?: string;

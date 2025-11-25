@@ -38,7 +38,7 @@ import { notFound } from 'next/navigation';
 // import { useRouter } from 'next/navigation';
 // import { useEffect, useMemo, useState } from 'react';
 // import { v4 as uuidv4 } from 'uuid';
-// import PractitionerAvailbility from '../../practitioner-availbility';
+// import PractitionerAvailability from '../../practitioner-availability';
 
 // export interface IBookingPractitionerProps {
 //   params: { practitionerId: string };
@@ -343,7 +343,7 @@ export default function BookingPractitioner() {
 //             </div>
 //             <div>
 //               <div className='mt-4 text-[12px] font-bold'>Date & Time</div>
-//               <PractitionerAvailbility
+//               <PractitionerAvailability
 //                 practitionerRole={detailPractitioner.resource}
 //                 practitionerId={params.practitionerId}
 //                 isAuthenticated={authState.isAuthenticated}
@@ -365,7 +365,7 @@ export default function BookingPractitioner() {
 //                     <ChevronDownIcon size={24} color='#2C2F35' />
 //                   </div>
 //                 </div>
-//               </PractitionerAvailbility>
+//               </PractitionerAvailability>
 //               <div className='mt-4 text-[12px] font-bold'>Session Type</div>
 //               <div className='mt-2 flex space-x-4'>
 //                 <Select disabled>

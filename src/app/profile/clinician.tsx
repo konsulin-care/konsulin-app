@@ -61,6 +61,14 @@ type Props = {
 
 const now = new Date();
 
+/**
+ * Renders the clinician profile page including upcoming sessions, general and practice information, availability overview, and an availability editor drawer.
+ *
+ * Displays practitioner's upcoming sessions, basic profile details, practice information, availability grouped by organization and day, and controls to edit availability (per-day collapsible editors with time ranges). Handles data fetching, form state for availability editing, validation, and saving changes.
+ *
+ * @param fhirId - The practitioner's FHIR resource ID used to fetch profile and role data.
+ * @returns The JSX element for the Clinician profile page.
+ */
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -397,9 +405,9 @@ export default function Clinician({ fhirId }: Props) {
           title='Practice Information'
           buttonText='Edit Detail'
           details={activeFirms}
-          onEdit={() => router.push('profile/edit-pratice')}
+          onEdit={() => router.push('profile/edit-practice')}
           role='clinician'
-          isEditPratice={true}
+          isEditPractice={true}
         />
       )}
 

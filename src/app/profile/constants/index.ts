@@ -6,9 +6,9 @@ export const daysOfWeek = [
   'Friday',
   'Saturday',
   'Sunday'
-]
+];
 
-export const praticeDetails = [
+export const practiceDetails = [
   {
     key: 'Affiliation',
     value: 'Konsulin'
@@ -33,4 +33,4 @@ export const praticeDetails = [
       'Relationship'
     ]
   }
-]
+];

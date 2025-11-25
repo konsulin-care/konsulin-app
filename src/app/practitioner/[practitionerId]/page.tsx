@@ -34,7 +34,7 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
-import PractitionerAvailbility from '../practitioner-availbility';
+import PractitionerAvailability from '../practitioner-availability';
 
 export interface IPractitionerProps {
   params: { practitionerId: string };
@@ -48,6 +48,14 @@ type IPractitionerLocalStorage = {
   email: string;
 };
 
+/**
+ * Render the practitioner detail page showing practitioner information, availability controls, and a booking-success drawer.
+ *
+ * This component reads selected clinic and practitioner data from localStorage, fetches detailed practitioner data, and manages booking feedback via a confirmation drawer. It also computes avatar placeholders and formats practice information for display.
+ *
+ * @param params - Route parameters object containing `practitionerId`
+ * @returns A React element that displays practitioner details, availability interaction, and a booking confirmation drawer
+ */
 export default function Practitioner({ params }: IPractitionerProps) {
   const router = useRouter();
   const { state: bookingState, dispatch } = useBooking();
@@ -222,7 +230,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
               </h3>
             </div>
 
-            <PractitionerAvailbility
+            <PractitionerAvailability
               practitionerRole={detailPractitioner.resource}
               scheduleId={detailPractitioner?.schedule?.id}
               invoice={detailPractitioner.invoice}
@@ -243,7 +251,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
                 </span>
                 <ArrowRightIcon color='#13C2C2' />
               </div>
-            </PractitionerAvailbility>
+            </PractitionerAvailability>
 
             <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>
               <div className='flex items-center'>
