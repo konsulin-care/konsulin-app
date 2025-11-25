@@ -54,7 +54,8 @@ export default function Patient({ fhirId }: Props) {
 
   const { data: profileData, isLoading: isProfileLoading } = useQuery<Patient>({
     queryKey: ['profile-data', fhirId],
-    queryFn: () => getProfileById(fhirId, 'Patient'),
+    queryFn: () => getProfileById(fhirId, 'Patient') as Promise<Patient>,
+    enabled: !!fhirId,
     onError: (error: Error) => {
       console.error('Error when fetching user profile: ', error);
       toast.error(error.message);
@@ -110,7 +111,7 @@ export default function Patient({ fhirId }: Props) {
 
   return (
     <>
-      <div className='mb-4 flex justify-between rounded-lg bg-secondary p-4'>
+      <div className='bg-secondary mb-4 flex justify-between rounded-lg p-4'>
         <Image
           width={48}
           height={48}
@@ -129,7 +130,7 @@ export default function Patient({ fhirId }: Props) {
                 src={'/icons/diamond-small.svg'}
                 alt='membership-premium-logo'
               />
-              <p className='text-black-100 whitespace-nowrap pl-1 text-[10px] font-semibold'>
+              <p className='text-black-100 pl-1 text-[10px] font-semibold whitespace-nowrap'>
                 150 Points
               </p>
             </div>
@@ -163,7 +164,7 @@ export default function Patient({ fhirId }: Props) {
 
       <MedalCollection medals={medalLists} isDisabled={true} />
 
-      <div className='mt-4 flex items-center justify-between text-muted'>
+      <div className='text-muted mt-4 flex items-center justify-between'>
         <div className='text-[14px] font-bold'>Schedule Active</div>
         <Link href='/schedule' className='text-[10px]'>
           See All

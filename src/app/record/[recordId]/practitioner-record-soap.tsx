@@ -42,7 +42,7 @@ export default function PractitionerRecordSoap({ soapId, title }: Props) {
   const { data: patientProfile, isLoading: isProfileLoading } =
     useQuery<Patient>({
       queryKey: ['profile-patient', patientId],
-      queryFn: () => getProfileById(patientId, 'Patient'),
+      queryFn: () => getProfileById(patientId, 'Patient') as Promise<Patient>,
       enabled: !!patientId
     });
 

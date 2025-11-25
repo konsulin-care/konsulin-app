@@ -3,6 +3,7 @@
 import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import NavigationBar from '@/components/navigation-bar';
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import Clinician from './clinician';
 import Patient from './patient';
@@ -12,12 +13,12 @@ export default function Profile() {
 
   const renderHomeContent = () => {
     return (
-      <div className='mt-[-16px] rounded-[16px] bg-white pb-[100px] pt-4'>
+      <div className='mt-[-16px] rounded-[16px] bg-white pt-4 pb-[100px]'>
         <div className='text-center'>
-          {authState.userInfo.role_name === 'patient' && (
+          {authState.userInfo.role_name === Roles.Patient && (
             <Patient fhirId={authState.userInfo.fhirId} />
           )}
-          {authState.userInfo.role_name === 'practitioner' && (
+          {authState.userInfo.role_name === Roles.Practitioner && (
             <Clinician fhirId={authState.userInfo.fhirId} />
           )}
         </div>

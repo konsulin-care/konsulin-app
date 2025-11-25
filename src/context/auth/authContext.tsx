@@ -1,9 +1,11 @@
 'use client';
 
 import { setCookies } from '@/app/actions';
+import { Roles } from '@/constants/roles';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { getCookie } from 'cookies-next';
+import { Patient, Practitioner } from 'fhir/r4';
 import React, {
   ReactNode,
   createContext,
@@ -35,37 +37,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const session = useSessionContext() as SessionContextUpdate;
 
   useEffect(() => {
-    const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
-
     const fetchSession = async () => {
+      const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
       if (!session.doesSessionExist) {
         setisLoading(false);
         return;
       }
 
       try {
-        if (
-          session.doesSessionExist &&
-          (Object.keys(auth).length === 0 || !auth.userId)
-        ) {
+        if (session.doesSessionExist) {
           const roles = await getClaimValue({ claim: UserRoleClaim });
           const userId = session.userId;
 
-          const result = await getProfileByIdentifier({
+          const result = (await getProfileByIdentifier({
             userId,
-            type: roles.includes('practitioner') ? 'Practitioner' : 'Patient'
-          });
+            type: roles.includes('Practitioner') ? 'Practitioner' : 'Patient'
+          })) as Patient | Practitioner;
 
           const emails = result.telecom.find(item => item.system === 'email');
 
           const payload = {
             userId,
-            role_name: roles.includes('practitioner')
-              ? 'practitioner'
-              : 'patient',
+            role_name: roles.includes(Roles.Practitioner)
+              ? Roles.Practitioner
+              : Roles.Patient,
             email: emails?.value,
             profile_picture: result?.photo ? result?.photo[0]?.url : '',
-            fullname: mergeNames(result?.name, result?.qualification),
+            fullname: mergeNames(result?.name),
             fhirId: result?.id ?? ''
           };
 
@@ -73,19 +71,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           dispatch({ type: 'login', payload });
         } else {
-          const payload = {
-            role_name: auth.role_name,
-            fullname: auth.fullname || auth.email,
-            email: auth.email,
-            userId: auth.userId,
-            profile_picture: auth.profile_picture,
-            fhirId: auth.fhirId
-          };
+          // Repair cookie when fhirId is empty/missing
+          if (!auth.fhirId) {
+            const roles = await getClaimValue({ claim: UserRoleClaim });
+            const type = roles.includes('Practitioner')
+              ? 'Practitioner'
+              : 'Patient';
+            const userId = auth.userId || session.userId;
 
-          dispatch({
-            type: 'auth-check',
-            payload
-          });
+            const result = (await getProfileByIdentifier({ userId, type })) as
+              | Patient
+              | Practitioner;
+            if (result) {
+              const emails = result?.telecom?.find(
+                (item: any) => item.system === 'email'
+              );
+              const repairedPayload = {
+                userId,
+                role_name: roles.includes(Roles.Practitioner)
+                  ? Roles.Practitioner
+                  : Roles.Patient,
+                email: emails?.value || auth.email,
+                profile_picture: result?.photo ? result?.photo[0]?.url : '',
+                fullname: mergeNames(result?.name),
+                fhirId: result?.id ?? ''
+              };
+
+              await setCookies('auth', JSON.stringify(repairedPayload));
+              dispatch({ type: 'auth-check', payload: repairedPayload });
+            } else {
+              // No profile found; keep existing cookie (fhirId stays empty)
+              const payload = {
+                role_name: auth.role_name,
+                fullname: auth.fullname || auth.email,
+                email: auth.email,
+                userId: auth.userId,
+                profile_picture: auth.profile_picture,
+                fhirId: ''
+              };
+              dispatch({ type: 'auth-check', payload });
+            }
+          }
         }
       } catch (error) {
         console.error('Error fetching session:', error);

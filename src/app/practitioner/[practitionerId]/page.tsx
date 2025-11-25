@@ -142,7 +142,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
 
       <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
         <Button
-          className='h-full w-full rounded-xl bg-secondary p-4 text-white'
+          className='bg-secondary h-full w-full rounded-xl p-4 text-white'
           onClick={handleClose}
           disabled={isPending}
         >
@@ -225,11 +225,21 @@ export default function Practitioner({ params }: IPractitionerProps) {
             <PractitionerAvailbility
               practitionerRole={detailPractitioner.resource}
               scheduleId={detailPractitioner?.schedule?.id}
+              invoice={detailPractitioner.invoice}
+              practitionerName={displayName}
+              practitionerOrganizationName={
+                detailPractitioner.organization.name
+              }
+              practitionerAvatar={{
+                photoUrl: photoUrl,
+                initials,
+                backgroundColor
+              }}
             >
               <div className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'>
                 <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />
                 <span className='mr-auto text-[12px] font-bold'>
-                  See Availbility
+                  See Availability
                 </span>
                 <ArrowRightIcon color='#13C2C2' />
               </div>

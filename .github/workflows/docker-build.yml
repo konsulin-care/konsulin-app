@@ -64,6 +64,7 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v5
         with:
+          ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 0
           fetch-tags: true
 
@@ -91,7 +92,7 @@ jobs:
           if [ "${{ inputs.IS_DEV }}" == "true" ]; then
             echo "Development build..."
             VERSION="dev-${{ env.SHORT_SHA }}"
-            docker build \
+            docker build --no-cache \
               -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:nightly \
               -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:${VERSION} \
               -f Dockerfile \
@@ -107,7 +108,7 @@ jobs:
           elif [ "${{ inputs.IS_PROD }}" == "true" ]; then
             echo "Production build..."
             VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "latest")
-            docker build \
+            docker build --no-cache \
               -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest \
               -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:${VERSION} \
               -f Dockerfile \

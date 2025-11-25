@@ -11,20 +11,47 @@ import {
 } from 'fhir/r4';
 import { getAPI } from './api';
 
-export const useFindAvailability = ({ practitionerRoleId, dateReference }) => {
-  const { utcStart, utcEnd } = getUtcDayRange(new Date(dateReference));
+export const useFindAvailability = ({
+  practitionerRoleId,
+  dateReference,
+  startFrom,
+  startTo,
+  dayKey
+}: {
+  practitionerRoleId: string;
+  dateReference?: string | Date | null;
+  startFrom?: string; // ISO string boundary with offset, e.g., 2025-10-13T00:00:00+07:00
+  startTo?: string; // ISO string boundary with offset, e.g., 2025-10-13T23:59:59+07:00
+  dayKey?: string; // cache scoping key for day-level caching (e.g., YYYY-MM-DD+offset)
+}) => {
+  const computed = dateReference
+    ? getUtcDayRange(new Date(dateReference))
+    : null;
+  const utcStart = computed?.utcStart;
+  const utcEnd = computed?.utcEnd;
+
+  const ge = startFrom || utcStart;
+  const le = startTo || utcEnd;
 
   return useQuery({
-    queryKey: ['find-availability', practitionerRoleId, dateReference],
+    queryKey: [
+      'find-availability',
+      practitionerRoleId,
+      dayKey || dateReference || ge
+    ],
     queryFn: async () => {
       const API = await getAPI();
+      // Encode datetimes so '+' in timezone is not interpreted as space
+      const geParam = encodeURIComponent(ge as string);
+      const leParam = encodeURIComponent(le as string);
       const response = await API.get(
-        `/fhir/Slot?schedule.actor=PractitionerRole/${practitionerRoleId}&start=ge${utcStart}&le=${utcEnd}&_include=Slot:schedule`
+        `/fhir/Slot?schedule.actor=PractitionerRole/${practitionerRoleId}&start=ge${geParam}&start=le${leParam}&_include=Slot:schedule`
       );
       return response;
     },
     select: response => response.data.entry || null,
-    enabled: !!dateReference && !!practitionerRoleId
+    enabled: !!practitionerRoleId && !!ge && !!le,
+    staleTime: 5 * 60 * 1000 // 5 minutes
   });
 };
 

@@ -1,6 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { AxiosResponse } from 'axios';
-import { Patient, Practitioner } from 'fhir/r4';
+import { Bundle, Patient, Practitioner } from 'fhir/r4';
 import { apiRequest, getAPI } from './api';
 
 type IProfileRequest = {
@@ -25,12 +24,12 @@ export const createProfile = async ({ userId, email, type }) => {
   };
 
   try {
-    const response = await apiRequest<AxiosResponse>(
+    const response = await apiRequest<Patient | Practitioner>(
       'POST',
       `/fhir/${type}`,
       payload
     );
-    return response.data;
+    return response;
   } catch (error) {
     throw error;
   }
@@ -38,12 +37,12 @@ export const createProfile = async ({ userId, email, type }) => {
 
 export const getProfileByIdentifier = async ({ userId, type }) => {
   try {
-    const response = await apiRequest<AxiosResponse>(
+    const bundle = await apiRequest<Bundle>(
       'GET',
-      `/fhir/${type}?identifier=${userId}`
+      `/fhir/${type}?identifier=https://login.konsulin.care/userid|${userId}`
     );
 
-    const entries = response?.data?.entry;
+    const entries = bundle?.entry;
 
     if (Array.isArray(entries) && entries.length > 0) {
       return entries[0]?.resource;
@@ -60,11 +59,14 @@ export const getProfileById = async (
   type: 'Patient' | 'Practitioner'
 ) => {
   try {
-    const response = await apiRequest<AxiosResponse>(
+    if (!id) throw new Error('Missing FHIR id');
+
+    const response = await apiRequest<Patient | Practitioner>(
       'GET',
       `/fhir/${type}/${id}`
     );
-    return response.data;
+
+    return response;
   } catch (error) {
     throw error;
   }
