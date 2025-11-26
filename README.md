@@ -5,6 +5,7 @@
 </p>
 
 <p align="center">
+  <a href="https://deepwiki.com/konsulin-care/konsulin-app"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
   <a href="https://github.com/konsulin-care/konsulin-app/releases"><img src="https://img.shields.io/github/v/release/konsulin-care/konsulin-app?style=flat" alt="GitHub release (with filter)"></a>
   <a href="https://github.com/konsulin-care/konsulin-app/actions"><img src="https://img.shields.io/github/actions/workflow/status/konsulin-care/konsulin-app/main.yml?style=flat" alt="GitHub Workflow Status (with event)"></a>
   <a href="https://hl7.org/fhir/R4"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.konsulin.care%2Ffhir%2Fmetadata&query=%24.fhirVersion&label=FHIR&color=red" alt="Blaze"></a>
