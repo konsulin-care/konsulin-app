@@ -82,9 +82,9 @@ export const frontendConfig = (): SuperTokensConfig => {
 
               const cookieData = {
                 userId,
-                role_name: roles.includes('practitioner')
-                  ? 'practitioner'
-                  : 'patient',
+                role_name: roles.includes('Practitioner')
+                  ? 'Practitioner'
+                  : 'Patient',
                 email: emails[0],
                 profile_picture: profileData?.photo
                   ? profileData?.photo[0]?.url
@@ -107,9 +107,9 @@ export const frontendConfig = (): SuperTokensConfig => {
 
               const cookieData = {
                 userId,
-                role_name: roles.includes('practitioner')
-                  ? 'practitioner'
-                  : 'patient',
+                role_name: roles.includes('Practitioner')
+                  ? 'Practitioner'
+                  : 'Patient',
                 email: emails[0],
                 profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
                 fullname: mergeNames(profile?.name),

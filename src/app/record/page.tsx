@@ -11,9 +11,9 @@ export default function Record() {
 
   const renderHomeContent = (
     <>
-      {authState.userInfo.role_name === 'patient' && <PatientRecord />}
+      {authState.userInfo.role_name === 'Patient' && <PatientRecord />}
 
-      {authState.userInfo.role_name === 'practitioner' && (
+      {authState.userInfo.role_name === 'Practitioner' && (
         <PractitionerRecord />
       )}
     </>
