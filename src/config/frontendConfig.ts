@@ -72,22 +72,28 @@ export const frontendConfig = (): SuperTokensConfig => {
               })) as Patient | Practitioner;
 
               if (!profileData) {
-                // Create FHIR Profile for new user
-                await createProfile({
-                  userId,
-                  email: emails[0],
-                  type: roles.includes('Practitioner')
-                    ? 'Practitioner'
-                    : 'Patient'
-                });
+                try {
+                  // Create FHIR Profile for new user
+                  await createProfile({
+                    userId,
+                    email: emails[0],
+                    type: roles.includes('Practitioner')
+                      ? 'Practitioner'
+                      : 'Patient'
+                  });
 
-                // re-fetch the profile data
-                profileData = (await getProfileByIdentifier({
-                  userId,
-                  type: roles.includes('Practitioner')
-                    ? 'Practitioner'
-                    : 'Patient'
-                })) as Patient | Practitioner;
+                  // re-fetch the profile data
+                  profileData = (await getProfileByIdentifier({
+                    userId,
+                    type: roles.includes('Practitioner')
+                      ? 'Practitioner'
+                      : 'Patient'
+                  })) as Patient | Practitioner;
+
+                  if (!profileData) throw new Error('Failed to create profile');
+                } catch (error) {
+                  throw error;
+                }
               }
 
               const cookieData = {
