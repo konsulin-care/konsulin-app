@@ -2,6 +2,7 @@
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import NavigationBar from '@/components/navigation-bar';
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import PatientRecord from './patient-record';
 import PractitionerRecord from './practitioner-record';
@@ -11,9 +12,9 @@ export default function Record() {
 
   const renderHomeContent = (
     <>
-      {authState.userInfo.role_name === 'patient' && <PatientRecord />}
+      {authState.userInfo.role_name === Roles.Patient && <PatientRecord />}
 
-      {authState.userInfo.role_name === 'practitioner' && (
+      {authState.userInfo.role_name === Roles.Practitioner && (
         <PractitionerRecord />
       )}
     </>
