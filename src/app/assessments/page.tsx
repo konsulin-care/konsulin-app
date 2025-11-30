@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/drawer';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import {
   useOngoingResearch,
@@ -74,7 +75,7 @@ export default function Assessment() {
   // const { data: searchResult, isLoading: searchLoading } =
   //   useSearchQuestionnaire('Five');
 
-  const isPractitioner = authState?.userInfo?.role_name === 'practitioner';
+  const isPractitioner = authState?.userInfo?.role_name === Roles.Practitioner;
 
   useEffect(() => {
     if (!isDrawerOpenParam || !assessmentIdParam) return;
