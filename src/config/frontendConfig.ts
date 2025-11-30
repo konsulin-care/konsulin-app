@@ -61,15 +61,6 @@ export const frontendConfig = (): SuperTokensConfig => {
               context.isNewRecipeUser &&
               context.user.loginMethods.length == 1
             ) {
-              // Create FHIR Profile for new user
-              await createProfile({
-                userId,
-                email: emails[0],
-                type: roles.includes('Practitioner')
-                  ? 'Practitioner'
-                  : 'Patient'
-              });
-
               // depend on getProfileByIdentifier to fill
               // the profile data instead of response from
               // creating profile
@@ -79,6 +70,31 @@ export const frontendConfig = (): SuperTokensConfig => {
                   ? 'Practitioner'
                   : 'Patient'
               })) as Patient | Practitioner;
+
+              if (!profileData) {
+                try {
+                  // Create FHIR Profile for new user
+                  await createProfile({
+                    userId,
+                    email: emails[0],
+                    type: roles.includes('Practitioner')
+                      ? 'Practitioner'
+                      : 'Patient'
+                  });
+
+                  // re-fetch the profile data
+                  profileData = (await getProfileByIdentifier({
+                    userId,
+                    type: roles.includes('Practitioner')
+                      ? 'Practitioner'
+                      : 'Patient'
+                  })) as Patient | Practitioner;
+
+                  if (!profileData) throw new Error('Failed to create profile');
+                } catch (error) {
+                  throw error;
+                }
+              }
 
               const cookieData = {
                 userId,
