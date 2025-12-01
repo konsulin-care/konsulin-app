@@ -22,7 +22,7 @@ jobs:
           echo "SSH_KEY: [MASKED]"
 
       - name: SSH Check Konsulin API Container Status 1
-        uses: appleboy/ssh-action@v1.2.2
+        uses: appleboy/ssh-action@v1.2.4
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
