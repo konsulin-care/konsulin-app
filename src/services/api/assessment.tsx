@@ -1,3 +1,4 @@
+import { serverConfig } from '@/lib/config';
 import { IQuestionnaireResponse } from '@/types/assessment';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
@@ -9,11 +10,6 @@ import {
 } from 'fhir/r4';
 import { useMemo } from 'react';
 import { getAPI } from '../api';
-
-// NOTE: will remove this later
-const WEBHOOK_URL = 'https://flow.konsulin.care/webhook/interpret';
-const WEBHOOK_AUTH =
-  'wK3e06gzGCucksRmt4gE2Lmprg4NTH9oYWDM7dwnQmFNLycfaauYNaEqnwaL2zfF';
 
 type IResultBriefPayload = {
   questionnaire: string;
@@ -141,7 +137,7 @@ export const useUpdateSubmitQuestionnaire = (
 };
 
 export const useResultBrief = (questionnaireId: string) => {
-  return useMutation<Array<any>, Error, IResultBriefPayload>({
+  return useMutation<any, Error, IResultBriefPayload>({
     mutationKey: ['result-brief', questionnaireId],
     mutationFn: async ({ questionnaire, description, item }) => {
       const payload = {
@@ -149,13 +145,36 @@ export const useResultBrief = (questionnaireId: string) => {
         item,
         description
       };
+      try {
+        const response = await axios.post(
+          `${serverConfig.API_URL}/api/v1/hook`,
+          payload
+        );
 
-      const response = await axios.post(`${WEBHOOK_URL}`, payload, {
-        headers: {
-          Authorization: `${WEBHOOK_AUTH}`
-        }
-      });
-      return response.data;
+        const apiResult = response.data;
+
+        const formattedResult = {
+          linkId: 'result-brief',
+          answer: [
+            {
+              valueString: apiResult?.data?.note ?? ''
+            }
+          ]
+        };
+
+        return formattedResult;
+      } catch (error) {
+        console.error('Error fetching result brief:', error);
+
+        return {
+          linkId: 'result-brief',
+          answer: [
+            {
+              valueString: 'Unable to generate result. Please try again later.'
+            }
+          ]
+        };
+      }
     },
     onError: error => error.message
   });
