@@ -1,4 +1,5 @@
 import { setCookies } from '@/app/actions';
+import { Roles } from '@/constants/roles';
 import { createProfile, getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { Patient, Practitioner } from 'fhir/r4';
@@ -61,30 +62,46 @@ export const frontendConfig = (): SuperTokensConfig => {
               context.isNewRecipeUser &&
               context.user.loginMethods.length == 1
             ) {
-              // Create FHIR Profile for new user
-              await createProfile({
-                userId,
-                email: emails[0],
-                type: roles.includes('Practitioner')
-                  ? 'Practitioner'
-                  : 'Patient'
-              });
-
               // depend on getProfileByIdentifier to fill
               // the profile data instead of response from
               // creating profile
               let profileData = (await getProfileByIdentifier({
                 userId,
-                type: roles.includes('Practitioner')
-                  ? 'Practitioner'
-                  : 'Patient'
+                type: roles.includes(Roles.Practitioner)
+                  ? Roles.Practitioner
+                  : Roles.Patient
               })) as Patient | Practitioner;
+
+              if (!profileData) {
+                try {
+                  // Create FHIR Profile for new user
+                  await createProfile({
+                    userId,
+                    email: emails[0],
+                    type: roles.includes(Roles.Practitioner)
+                      ? Roles.Practitioner
+                      : Roles.Patient
+                  });
+
+                  // re-fetch the profile data
+                  profileData = (await getProfileByIdentifier({
+                    userId,
+                    type: roles.includes(Roles.Practitioner)
+                      ? Roles.Practitioner
+                      : Roles.Patient
+                  })) as Patient | Practitioner;
+
+                  if (!profileData) throw new Error('Failed to create profile');
+                } catch (error) {
+                  throw error;
+                }
+              }
 
               const cookieData = {
                 userId,
-                role_name: roles.includes('practitioner')
-                  ? 'practitioner'
-                  : 'patient',
+                role_name: roles.includes(Roles.Practitioner)
+                  ? Roles.Practitioner
+                  : Roles.Patient,
                 email: emails[0],
                 profile_picture: profileData?.photo
                   ? profileData?.photo[0]?.url
@@ -95,9 +112,9 @@ export const frontendConfig = (): SuperTokensConfig => {
 
               await setCookies('auth', JSON.stringify(cookieData));
             } else {
-              const type = roles.includes('Practitioner')
-                ? 'Practitioner'
-                : 'Patient';
+              const type = roles.includes(Roles.Practitioner)
+                ? Roles.Practitioner
+                : Roles.Patient;
               let profile = (await getProfileByIdentifier({
                 userId,
                 type
@@ -107,9 +124,9 @@ export const frontendConfig = (): SuperTokensConfig => {
 
               const cookieData = {
                 userId,
-                role_name: roles.includes('practitioner')
-                  ? 'practitioner'
-                  : 'patient',
+                role_name: roles.includes(Roles.Practitioner)
+                  ? Roles.Practitioner
+                  : Roles.Patient,
                 email: emails[0],
                 profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
                 fullname: mergeNames(profile?.name),
