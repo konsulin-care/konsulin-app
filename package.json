@@ -51,7 +51,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "cookies-next": "^4",
+    "cookies-next": "^6",
     "date-fns": "^3.2.0",
     "dayjs": "^1.11.11",
     "embla-carousel-react": "^8.6.0",
