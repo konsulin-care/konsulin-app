@@ -140,29 +140,46 @@ export const useResultBrief = (questionnaireId: string) => {
   return useMutation<any, Error, IResultBriefPayload>({
     mutationKey: ['result-brief', questionnaireId],
     mutationFn: async ({ questionnaire, description, item }) => {
-      const payload = {
-        questionnaire,
-        item,
-        description
-      };
+      const payload = { questionnaire, description, item };
+
       try {
         const response = await axios.post(
-          `${serverConfig.API_URL}/api/v1/hook`,
+          `${serverConfig.API_URL}/api/v1/hook/interpret`,
           payload
         );
 
-        const apiResult = response.data;
+        const asyncId = response?.data?.data?.asyncServiceResultId;
 
-        const formattedResult = {
+        if (!asyncId) {
+          throw new Error('No asyncServiceResultId returned');
+        }
+
+        let resultNote = '';
+        let attempts = 0;
+
+        while (attempts < 5 && !resultNote) {
+          const serviceReq = await axios.get(
+            `${serverConfig.API_URL}/api/v1/service-request/${asyncId}/result`
+          );
+
+          resultNote = serviceReq?.data?.data?.note ?? '';
+
+          if (resultNote) break;
+
+          await new Promise(res => setTimeout(res, 1000));
+          attempts++;
+        }
+
+        return {
           linkId: 'result-brief',
           answer: [
             {
-              valueString: apiResult?.data?.note ?? ''
+              valueString:
+                resultNote ||
+                'Unable to generate result. Please try again later.'
             }
           ]
         };
-
-        return formattedResult;
       } catch (error) {
         console.error('Error fetching result brief:', error);
 
