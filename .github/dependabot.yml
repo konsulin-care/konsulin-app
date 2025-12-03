@@ -13,17 +13,19 @@ updates:
     allow:
       - dependency-type: "direct"
     groups:
-      update-types:
-        - "minor"
-        - "patch"
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
     groups:
-      update-types:
-        - "minor"
-        - "patch"
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
