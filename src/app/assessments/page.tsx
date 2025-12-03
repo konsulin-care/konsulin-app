@@ -42,6 +42,35 @@ const dateFormat = (date: string) => {
   return format(parseISO(date), 'dd MMMM yyyy');
 };
 
+const formatDateRange = (start: string, end: string) => {
+  if (!start || !end) return '';
+
+  const startDate = parseISO(start);
+  const endDate = parseISO(end);
+
+  const sameYear = startDate.getFullYear() === endDate.getFullYear();
+  const sameMonth = startDate.getMonth() === endDate.getMonth();
+
+  const dayStart = format(startDate, 'd');
+  const dayEnd = format(endDate, 'd');
+
+  const monthStart = format(startDate, 'MMM');
+  const monthEnd = format(endDate, 'MMM');
+
+  const yearStart = format(startDate, 'yyyy');
+  const yearEnd = format(endDate, 'yyyy');
+
+  if (sameYear && sameMonth) {
+    return `${dayStart} – ${dayEnd} ${monthStart} ${yearStart}`;
+  }
+
+  if (sameYear && !sameMonth) {
+    return `${dayStart} ${monthStart} – ${dayEnd} ${monthEnd} ${yearStart}`;
+  }
+
+  return `${dayStart} ${monthStart} ${yearStart} – ${dayEnd} ${monthEnd} ${yearEnd}`;
+};
+
 const filteredResearch = (researchArr: BundleEntry[] | null | undefined) =>
   researchArr
     ? researchArr.filter(
@@ -434,8 +463,10 @@ export default function Assessment() {
                               </div>
                               <div className='text-[10px] font-bold text-black'>
                                 {item.resource.period &&
-                                  `${dateFormat(item.resource.period.start)} -
-                            ${dateFormat(item.resource.period.end)}`}
+                                  formatDateRange(
+                                    item.resource.period.start,
+                                    item.resource.period.end
+                                  )}
                               </div>
                             </div>
 
