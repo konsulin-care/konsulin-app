@@ -161,7 +161,6 @@ export const useResultBrief = (questionnaireId: string) => {
           const serviceReq = await axios.get(
             `${serverConfig.API_URL}/api/v1/service-request/${asyncId}/result`
           );
-
           resultNote = serviceReq?.data?.data?.note ?? '';
 
           if (resultNote) break;
@@ -169,7 +168,6 @@ export const useResultBrief = (questionnaireId: string) => {
           await new Promise(res => setTimeout(res, 1000));
           attempts++;
         }
-
         return {
           linkId: 'result-brief',
           answer: [
