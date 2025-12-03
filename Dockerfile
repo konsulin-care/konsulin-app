@@ -1,88 +1,76 @@
-FROM node:iron-slim AS base
-
+# =========================
+# Base image with metadata
+# =========================
+FROM node:24-slim AS base
 WORKDIR /app
 
-# captures argument
-# e.g. latest, development, production
+# Build metadata arguments
 ARG VERSION=latest
-ARG GIT_COMMIT=43fdfd34
+ARG GIT_COMMIT=unknown
 ARG TAG=v0.0.1
-ARG BUILD_TIME="date-time here"
+ARG BUILD_TIME="unknown"
 ARG AUTHOR="CI/CD"
 
-RUN echo "Set ARG value of [VERSION] as $VERSION"
-RUN echo "Set GIT_COMMIT value of [VERSION] as $GIT_COMMIT"
-RUN echo "Set TAG value of [TAG] as $TAG"
-RUN echo "Set BUILD_TIME value of [BUILD_TIME] as $BUILD_TIME"
+# Capture build metadata
+RUN echo "author=${AUTHOR} \
+version=${VERSION} \
+commit=${GIT_COMMIT} \
+tag=${TAG} \
+build time=${BUILD_TIME}" > /app/RELEASE
 
-# get current commit and create build number
-ARG RELEASE_NOTE="author=${AUTHOR} \nversion=${VERSION} \ncommit=${GIT_COMMIT} \ntag=${TAG} \nbuild time=${BUILD_TIME}"
-RUN echo "${RELEASE_NOTE}" > /app/RELEASE
+# Disable Next.js telemetry globally
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Install dependencies only when needed
-FROM node:iron-slim AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+# =========================
+# Dependencies stage
+# =========================
+FROM base AS deps
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+# Copy only package manifests to leverage cache
+COPY package.json package-lock.json ./
 
-# Rebuild the source code only when needed
+# Ensure deterministic installation
+RUN npm ci
+
+# =========================
+# Builder stage
+# =========================
 FROM deps AS builder
 WORKDIR /app
+
+# Copy installed node_modules
 COPY --from=deps /app/node_modules ./node_modules
+
+# Copy source code
 COPY . .
-COPY .env .
 
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry during the build.
-ENV NEXT_TELEMETRY_DISABLED 1
+# Build the Next.js app
+RUN npm run build
 
-RUN \
-  if [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
-
-# Production image, copy all the files and run next
-#FROM node:iron-slim AS runner
+# =========================
+# Production runner
+# =========================
 FROM base AS runner
-
 WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3000
 
-ENV NODE_ENV production
-# Uncomment the following line in case you want to disable telemetry during runtime.
-ENV NEXT_TELEMETRY_DISABLED 1
+# Create unprivileged user
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser --system --uid 1001 nextjs
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
+# Copy build artifacts
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=base --chown=nextjs:nodejs /app/RELEASE ./RELEASE
 
-USER nextjs
+# Prepare prerender cache with correct permissions
+RUN mkdir -p .next
 
+USER nextjs
 EXPOSE 3000
 
-ENV PORT 3000
-
-# server.js is created by next build from the standalone output
-# https://nextjs.org/docs/pages/api-reference/next-config-js/output
-CMD HOSTNAME="0.0.0.0" node server.js
+# Recommended JSON CMD
+CMD ["node", "server.js"]
