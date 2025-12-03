@@ -10,18 +10,20 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    allow:
+      - dependency-type: "direct"
     groups:
-      all-updates:
-        patterns:
-          - "*"
+      update-types:
+        - "minor"
+        - "patch"
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
     groups:
-      all-updates:
-        patterns:
-          - "*"
+      update-types:
+        - "minor"
+        - "patch"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
