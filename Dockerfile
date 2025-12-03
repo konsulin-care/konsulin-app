@@ -61,13 +61,13 @@ RUN addgroup --system --gid 1001 nodejs \
  && adduser --system --uid 1001 nextjs
 
 # Copy build artifacts
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=base --chown=nextjs:nodejs /app/RELEASE ./RELEASE
 
 # Prepare prerender cache with correct permissions
-RUN mkdir -p .next && chown -R nextjs:nodejs .next
+RUN mkdir -p .next
 
 USER nextjs
 EXPOSE 3000
