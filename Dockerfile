@@ -1,18 +1,17 @@
 # =========================
 # Base image with metadata
 # =========================
-FROM node:iron-slim AS base
-
+FROM node:24-slim AS base
 WORKDIR /app
 
 # Build metadata arguments
 ARG VERSION=latest
-ARG GIT_COMMIT=43fdfd34
+ARG GIT_COMMIT=unknown
 ARG TAG=v0.0.1
-ARG BUILD_TIME="date-time here"
+ARG BUILD_TIME="unknown"
 ARG AUTHOR="CI/CD"
 
-# Capture metadata in RELEASE file
+# Capture build metadata
 RUN echo "author=${AUTHOR} \
 version=${VERSION} \
 commit=${GIT_COMMIT} \
@@ -23,58 +22,55 @@ build time=${BUILD_TIME}" > /app/RELEASE
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # =========================
-# Dependencies stage (cache-friendly)
+# Dependencies stage
 # =========================
-FROM node:iron-slim AS deps
+FROM base AS deps
 WORKDIR /app
 
-# Copy only package manifests to leverage Docker cache
+# Copy only package manifests to leverage cache
 COPY package.json package-lock.json ./
 
-# Install dependencies deterministically
-RUN npm ci --ignore-scripts
+# Ensure deterministic installation
+RUN npm ci
 
 # =========================
-# Build stage (incremental)
+# Builder stage
 # =========================
 FROM deps AS builder
 WORKDIR /app
 
-# Copy node_modules from deps
+# Copy installed node_modules
 COPY --from=deps /app/node_modules ./node_modules
 
-# Copy app source (excluding package.json/lockfiles to avoid overwriting deps)
+# Copy source code
 COPY . .
 
-# Build Next.js app
+# Build the Next.js app
 RUN npm run build
 
 # =========================
-# Production image (minimal)
+# Production runner
 # =========================
-FROM node:iron-slim AS runner
+FROM base AS runner
 WORKDIR /app
-
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 
 # Create unprivileged user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser --system --uid 1001 nextjs
 
-# Copy built artifacts from builder
+# Copy build artifacts
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=base --chown=nextjs:nodejs /app/RELEASE ./RELEASE
 
-# Prepare prerender cache directory with correct permissions
+# Prepare prerender cache with correct permissions
 RUN mkdir -p .next && chown -R nextjs:nodejs .next
 
 USER nextjs
-
 EXPOSE 3000
 
-# JSON-form CMD (recommended)
+# Recommended JSON CMD
 CMD ["node", "server.js"]

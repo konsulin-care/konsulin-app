@@ -89,8 +89,6 @@ jobs:
 
       - name: Build and Push Docker Images
         run: |
-          echo "Updating package-lock.json..."
-          npm install
           if [ "${{ inputs.IS_DEV }}" == "true" ]; then
             echo "Development build..."
             VERSION="dev-${{ env.SHORT_SHA }}"
