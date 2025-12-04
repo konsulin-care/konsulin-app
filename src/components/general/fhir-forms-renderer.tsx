@@ -164,7 +164,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
       try {
         const result = await fetchResultBrief(payload);
-        interpretationItem.item.push(result[0]);
+        interpretationItem.item.push(result);
       } catch (error) {
         console.error('Error when fetching result brief : ', error.message);
       }
@@ -237,7 +237,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
         {formType !== 'research' && (
           <Button
-            className='h-full w-full rounded-xl bg-secondary p-4 text-white'
+            className='bg-secondary h-full w-full rounded-xl p-4 text-white'
             onClick={() => handleSubmitQuestionnaire('result')}
             disabled={isSubmitting || isPending}
           >
@@ -254,10 +254,10 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           </Button>
         )}
         <Button
-          className={`h-full w-full rounded-xl border border-solid p-4 transition-all focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50 ${
+          className={`focus:ring-opacity-50 h-full w-full rounded-xl border border-solid p-4 transition-all focus:ring-2 focus:ring-gray-300 focus:outline-none ${
             formType !== 'research'
-              ? 'border-secondary bg-transparent text-secondary hover:bg-gray-100'
-              : 'hover:bg-secondary/90 border-transparent bg-secondary text-white'
+              ? 'border-secondary text-secondary bg-transparent hover:bg-gray-100'
+              : 'hover:bg-secondary/90 bg-secondary border-transparent text-white'
           }`}
           onClick={() => {
             handleSubmitQuestionnaire('close');
@@ -290,7 +290,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       </QueryClientProvider>
       <div className='flex-flex-col mt-4 px-2'>
         {requiredItemEmpty > 0 ? (
-          <div className='mb-2 w-full text-sm text-destructive'>
+          <div className='text-destructive mb-2 w-full text-sm'>
             Terdapat {requiredItemEmpty} pertanyaan wajib yang belum terisi, yuk
             dilengkapi dulu!
           </div>
@@ -303,7 +303,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
             requiredItemEmpty > 0 ||
             (role === 'practitioner' && !patientId)
           }
-          className='w-full bg-secondary text-white'
+          className='bg-secondary w-full text-white'
           onClick={handleValidation}
         >
           {submitQuestionnaireIsLoading ? (
