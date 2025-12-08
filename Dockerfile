@@ -1,7 +1,7 @@
 # =========================
 # Base image with metadata
 # =========================
-FROM node:24-slim AS base
+FROM node:25-slim AS base
 WORKDIR /app
 
 # Build metadata arguments
