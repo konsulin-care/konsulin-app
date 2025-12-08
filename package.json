@@ -79,7 +79,7 @@
     "sass": "^1.94.2",
     "sonner": "^2.0.7",
     "supertokens-auth-react": "^0.51.0",
-    "swiper": "^11.2.10",
+    "swiper": "^12.0.3",
     "tailwind-merge": "^3.4.0",
     "tailwind-scrollbar-hide": "^4.0.0",
     "tailwindcss-animate": "^1.0.7",
