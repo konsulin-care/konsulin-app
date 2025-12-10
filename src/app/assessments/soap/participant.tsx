@@ -92,6 +92,11 @@ export default function Participant({
     setIsSubmitting(true);
     try {
       const patient = await ensurePatientByEmail(email.trim());
+
+      if (!patient || !patient.id) {
+        throw new Error('Failed to create patient');
+      }
+
       const patientName = derivePatientName(patient, email.trim());
       const newOption = {
         patientId: patient.id,
