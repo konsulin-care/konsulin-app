@@ -64,8 +64,10 @@ const App = () => {
                 );
 
                 // remove legacy localstorage response key if exists
-                const legacyKey = `response_${existingResponse.questionnaire.split('/')[1]}`;
-                localStorage.removeItem(legacyKey);
+                if (existingResponse.questionnaire) {
+                  const legacyKey = `response_${existingResponse.questionnaire.split('/')[1]}`;
+                  localStorage.removeItem(legacyKey);
+                }
                 localStorage.removeItem('skip-response-cleanup');
 
                 clearIntent();
