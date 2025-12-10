@@ -16,6 +16,8 @@ import {
   DropdownMenuTrigger as DropdownTrigger
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { ensurePatientByEmail } from '@/services/profile';
+import { Patient } from 'fhir/r4';
 import { Check, ChevronDown, Plus, UsersIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -46,6 +48,8 @@ export default function Participant({
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [email, setEmail] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [options, setOptions] = useState<DropdownOption[]>(list);
 
   useEffect(() => {
     if (triggerRef.current) {
@@ -53,14 +57,61 @@ export default function Participant({
     }
   }, [triggerRef.current?.offsetWidth]);
 
+  useEffect(() => {
+    setOptions(list);
+  }, [list]);
+
   const handleEmailValidation = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError('Email tidak valid');
-      return;
+      return false;
     }
 
     setError('');
+    return true;
+  };
+
+  const derivePatientName = (patient: Patient, fallbackEmail: string) => {
+    const name = patient?.name?.[0];
+    if (!name) return fallbackEmail;
+
+    if (name.text && name.text.trim() !== '') return name.text;
+
+    const given = name.given?.join(' ').trim();
+    const family = name.family?.trim();
+    const combined = [given, family].filter(Boolean).join(' ').trim();
+
+    return combined || fallbackEmail;
+  };
+
+  const handleCreatePatient = async () => {
+    const isValid = handleEmailValidation();
+    if (!isValid) return;
+
+    setIsSubmitting(true);
+    try {
+      const patient = await ensurePatientByEmail(email.trim());
+      const patientName = derivePatientName(patient, email.trim());
+      const newOption = {
+        patientId: patient.id,
+        patientName
+      };
+
+      setOptions(prev => {
+        const exists = prev.some(opt => opt.patientId === newOption.patientId);
+        return exists ? prev : [...prev, newOption];
+      });
+
+      onSelect(newOption);
+      setIsOpen(false);
+      setEmail('');
+      setError('');
+    } catch (err: any) {
+      setError(err?.message || 'Gagal membuat pasien');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderDialogContent = (
@@ -76,17 +127,27 @@ export default function Participant({
             type='email'
             placeholder='Masukkan email'
             className='w-full rounded border p-2'
+            value={email}
             onChange={e => setEmail(e.target.value)}
+            disabled={isSubmitting}
           />
           {error && <div className='w-full text-sm text-red-500'>{error}</div>}
         </div>
 
-        {/* TODO: add new patient feature */}
         <Button
-          className='w-full bg-secondary text-white'
-          onClick={handleEmailValidation}
+          className='bg-secondary w-full text-white'
+          onClick={handleCreatePatient}
+          disabled={isSubmitting}
         >
-          Daftarkan Pasien
+          {isSubmitting ? (
+            <LoadingSpinnerIcon
+              width={20}
+              height={20}
+              className='w-full animate-spin'
+            />
+          ) : (
+            'Daftarkan Pasien'
+          )}
         </Button>
       </div>
 
@@ -117,9 +178,9 @@ export default function Participant({
                       className='w-full animate-spin'
                     />
                   ) : (
-                    (list &&
-                      list.length > 0 &&
-                      list.find(option => option.patientId === value)
+                    (options &&
+                      options.length > 0 &&
+                      options.find(option => option.patientId === value)
                         ?.patientName) ||
                     placeholder
                   )}
@@ -144,8 +205,8 @@ export default function Participant({
                 Pasien Baru
               </div>
             </DropdownItem>
-            {list && list.length > 0 ? (
-              list.map(item => (
+            {options && options.length > 0 ? (
+              options.map(item => (
                 <DropdownItem
                   key={item.patientId}
                   onSelect={() => onSelect(item)}
@@ -166,7 +227,7 @@ export default function Participant({
                 </DropdownItem>
               ))
             ) : (
-              <div className='px-4 py-2 text-sm text-muted'>
+              <div className='text-muted px-4 py-2 text-sm'>
                 No patient today
               </div>
             )}

@@ -72,6 +72,46 @@ export const getProfileById = async (
   }
 };
 
+export const findPatientByEmail = async (email: string) => {
+  if (!email) throw new Error('Missing email');
+
+  const encodedEmail = encodeURIComponent(email);
+
+  const bundle = await apiRequest<Bundle>(
+    'GET',
+    `/fhir/Patient?email=${encodedEmail}&_sort=-_lastUpdated`
+  );
+
+  const entries = bundle?.entry;
+
+  if (Array.isArray(entries) && entries.length > 0) {
+    return entries[0]?.resource as Patient;
+  }
+
+  return null;
+};
+
+export const signupByEmail = async (email: string) => {
+  if (!email) throw new Error('Missing email');
+
+  return apiRequest('POST', '/api/v1/auth/signinup/code', {
+    email,
+    shouldTryLinkingWithSessionUser: false
+  });
+};
+
+export const ensurePatientByEmail = async (email: string) => {
+  const existing = await findPatientByEmail(email);
+  if (existing) return existing;
+
+  await signupByEmail(email);
+
+  const patient = await findPatientByEmail(email);
+  if (!patient) throw new Error('Failed to create patient');
+
+  return patient;
+};
+
 export const useUpdateProfile = () => {
   return useMutation<Patient | Practitioner, Error, IProfileRequest>({
     mutationKey: ['update-profile'],
