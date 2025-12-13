@@ -10,12 +10,14 @@ export const createProfile = async ({ userId, email, type }) => {
   const payload = {
     resourceType: type,
     active: true,
-    identifier: [
-      {
-        system: 'https://login.konsulin.care/userid',
-        value: userId
-      }
-    ],
+    identifier: userId
+      ? [
+          {
+            system: 'https://login.konsulin.care/userid',
+            value: userId
+          }
+        ]
+      : [],
     telecom: {
       system: 'email',
       use: 'home',
@@ -70,6 +72,27 @@ export const getProfileById = async (
   } catch (error) {
     throw error;
   }
+};
+
+export const signupByEmail = async (email: string) => {
+  if (!email) throw new Error('Missing email');
+
+  return apiRequest('POST', '/api/v1/auth/signinup/code', {
+    email,
+    shouldTryLinkingWithSessionUser: false
+  });
+};
+
+export const ensurePatientByEmail = async (email: string) => {
+  const patient = (await createProfile({
+    userId: null,
+    email,
+    type: 'Patient'
+  })) as Patient;
+
+  await signupByEmail(email);
+
+  return patient;
 };
 
 export const useUpdateProfile = () => {
