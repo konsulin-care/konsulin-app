@@ -10,12 +10,14 @@ export const createProfile = async ({ userId, email, type }) => {
   const payload = {
     resourceType: type,
     active: true,
-    identifier: [
-      {
-        system: 'https://login.konsulin.care/userid',
-        value: userId
-      }
-    ],
+    identifier: userId
+      ? [
+          {
+            system: 'https://login.konsulin.care/userid',
+            value: userId
+          }
+        ]
+      : [],
     telecom: {
       system: 'email',
       use: 'home',
@@ -72,25 +74,6 @@ export const getProfileById = async (
   }
 };
 
-export const findPatientByEmail = async (email: string) => {
-  if (!email) throw new Error('Missing email');
-
-  const encodedEmail = encodeURIComponent(email);
-
-  const bundle = await apiRequest<Bundle>(
-    'GET',
-    `/fhir/Patient?email=${encodedEmail}&_sort=-_lastUpdated`
-  );
-
-  const entries = bundle?.entry;
-
-  if (Array.isArray(entries) && entries.length > 0) {
-    return entries[0]?.resource as Patient;
-  }
-
-  return null;
-};
-
 export const signupByEmail = async (email: string) => {
   if (!email) throw new Error('Missing email');
 
@@ -101,13 +84,13 @@ export const signupByEmail = async (email: string) => {
 };
 
 export const ensurePatientByEmail = async (email: string) => {
-  const existing = await findPatientByEmail(email);
-  if (existing) return existing;
+  const patient = (await createProfile({
+    userId: null,
+    email,
+    type: 'Patient'
+  })) as Patient;
 
   await signupByEmail(email);
-
-  const patient = await findPatientByEmail(email);
-  if (!patient) throw new Error('Failed to create patient');
 
   return patient;
 };
