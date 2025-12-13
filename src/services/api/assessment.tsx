@@ -27,13 +27,49 @@ export const useOngoingResearch = () => {
     queryFn: async () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       const API = await getAPI();
+
       const response = await API.get(
-        `/fhir/ResearchStudy?date=ge${today}&status=active&_revinclude=List:item`
+        `/fhir/ResearchStudy?date=ge${today}&status=active&_include=ResearchStudy:protocol`
       );
-      return response;
+
+      return response.data;
     },
-    select: response => {
-      return response.data.entry || null;
+    select: data => {
+      if (!data?.entry) return [];
+
+      const researchStudies = data.entry
+        .filter((e: any) => e.resource?.resourceType === 'ResearchStudy')
+        .map((e: any) => e.resource);
+
+      const planDefinitions = data.entry
+        .filter((e: any) => e.resource?.resourceType === 'PlanDefinition')
+        .map((e: any) => e.resource);
+
+      const planToQuestionnaires: Record<string, string[]> = {};
+
+      planDefinitions.forEach((plan: any) => {
+        const refs =
+          plan.action
+            ?.map((action: any) => action.definitionReference?.reference)
+            ?.filter(Boolean)
+            ?.map((ref: string) => ref.replace('Questionnaire/', '')) || [];
+
+        planToQuestionnaires[plan.id] = refs;
+      });
+
+      return researchStudies.map((study: any) => {
+        const protocolRefs = study.protocol || [];
+
+        const questionnaireIds = protocolRefs.flatMap((protocol: any) => {
+          const planId = protocol.reference?.replace('PlanDefinition/', '');
+          return planToQuestionnaires[planId] || [];
+        });
+
+        return {
+          researchStudy: study,
+          questionnaireIds
+        };
+      });
     }
   });
 };
