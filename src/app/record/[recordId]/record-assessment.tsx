@@ -6,9 +6,10 @@ import { useAuth } from '@/context/auth/authContext';
 import { getFromLocalStorage } from '@/lib/utils';
 import { useQuestionnaireResponse } from '@/services/api/assessment';
 import { formatQueryTitle } from '@/utils/helper';
+import { saveIntent } from '@/utils/intent-storage';
 import { QuestionnaireResponseItem } from 'fhir/r4';
 import { LinkIcon, NotepadTextIcon, UsersIcon } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
@@ -34,6 +35,7 @@ const generateRandomColor = (baseHue: number) => {
 };
 
 export default function RecordAssessment({ recordId, title }: Props) {
+  const router = useRouter();
   const {
     data: questionnaireResponse,
     isLoading: questionnaireResponseIsLoading
@@ -147,10 +149,10 @@ export default function RecordAssessment({ recordId, title }: Props) {
   return (
     <>
       <div className='mb-4'>
-        <div className='text-[14px] font-bold text-muted'>
+        <div className='text-muted text-[14px] font-bold'>
           Assessment Details
         </div>
-        <div className='text-[10px] text-muted'>Assessment - User</div>
+        <div className='text-muted text-[10px]'>Assessment - User</div>
       </div>
       {isAuthLoading ? (
         <Skeleton className='!mt-0 h-[60px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
@@ -168,7 +170,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
       </div>
 
       <div className='mb-4'>
-        <div className='text-12 mb-2 text-muted'>Result Brief</div>
+        <div className='text-12 text-muted mb-2'>Result Brief</div>
 
         {questionnaireResponseIsLoading ? (
           <Skeleton className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
@@ -182,7 +184,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
       </div>
 
       <div className='mb-4'>
-        <div className='text-12 mb-2 text-muted'>Result Tables</div>
+        <div className='text-12 text-muted mb-2'>Result Tables</div>
 
         {questionnaireResponseIsLoading ? (
           <Skeleton className='h-[50px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
@@ -209,7 +211,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
       <div className='mb-4 flex items-center space-x-2 rounded-lg bg-[#F9F9F9] p-4'>
         <LinkIcon />
         <div className='flex grow flex-col'>
-          <span className='text-[10px] text-muted'>Test Akses</span>
+          <span className='text-muted text-[10px]'>Test Akses</span>
           <span className='text-[14px] font-bold'>QR Code</span>
         </div>
         <ModalQr value={currentLocation} />
@@ -217,14 +219,21 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
       <div className='text-m !mt-auto flex flex-col gap-3'>
         {!authState.isAuthenticated && (
-          <Link href={'/auth'}>
-            <Button className='h-full w-full rounded-xl bg-softGray p-4 text-black'>
-              Login/Register
-            </Button>
-          </Link>
+          <Button
+            className='bg-softGray h-full w-full rounded-xl p-4 text-black'
+            onClick={() => {
+              saveIntent('assessmentResult', {
+                path: window.location.pathname + window.location.search,
+                responseId: recordId
+              });
+              router.push('/auth');
+            }}
+          >
+            Login/Register
+          </Button>
         )}
 
-        <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
+        <Button className='bg-secondary h-full w-full rounded-xl p-4 text-white'>
           Request Analysis
         </Button>
       </div>

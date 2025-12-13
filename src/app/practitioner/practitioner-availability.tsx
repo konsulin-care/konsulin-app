@@ -27,6 +27,7 @@ import {
   usePayAppointment
 } from '@/services/api/appointments';
 import { useFindAvailability } from '@/services/clinicians';
+import { clearIntent, getIntent, saveIntent } from '@/utils/intent-storage';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addDays,
@@ -173,6 +174,23 @@ export default function PractitionerAvailability({
    * apply it to the booking form and global state,
    * and remove the temporary data afterward. */
   useEffect(() => {
+    const intent = getIntent();
+    if (intent && intent.kind === 'appointment') {
+      if (intent.payload.path.includes(practitionerId as string)) {
+        const { slot, formData } = intent.payload;
+        setBookingInformation(formData);
+        handleFilterChange('date', new Date(slot.date));
+        handleFilterChange('startTime', slot.startTime);
+        handleFilterChange('hasUserChosenDate', true);
+        if (slot.slotId) {
+          setSelectedSlotId(slot.slotId);
+        }
+        setIsOpen(true);
+        clearIntent();
+        return;
+      }
+    }
+
     if (isOpenParam === 'true') {
       setIsOpen(true);
 
@@ -671,22 +689,15 @@ export default function PractitionerAvailability({
                   className='bg-secondary mt-auto w-full rounded-[32px] py-2 text-[14px] font-bold text-white'
                   disabled={isPending}
                   onClick={() => {
-                    localStorage.setItem(
-                      'temp-booking',
-                      JSON.stringify({
+                    saveIntent('appointment', {
+                      path: `/practitioner/${practitionerId}`,
+                      slot: {
                         date: bookingState.date,
                         startTime: bookingState.startTime,
-                        sessionType: bookingForm.session_type,
-                        problemBrief: bookingForm.problem_brief,
-                        hasUserChosenDate: bookingState.hasUserChosenDate
-                      })
-                    );
-                    localStorage.setItem(
-                      'redirect',
-                      encodeURIComponent(
-                        `/practitioner/${practitionerId}?isOpen=true`
-                      )
-                    );
+                        slotId: selectedSlotId
+                      },
+                      formData: bookingForm
+                    });
 
                     startTransition(() => {
                       router.push('/auth');
