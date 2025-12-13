@@ -37,6 +37,7 @@ export const useOngoingResearch = () => {
     select: data => {
       if (!data?.entry) return [];
 
+      // Separate resources by type
       const researchStudies = data.entry
         .filter((e: any) => e.resource?.resourceType === 'ResearchStudy')
         .map((e: any) => e.resource);
