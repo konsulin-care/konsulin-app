@@ -16,7 +16,11 @@ import {
   DropdownMenuTrigger as DropdownTrigger
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { ensurePatientByEmail } from '@/services/profile';
+import {
+  checkEmailExists,
+  createProfile,
+  signupByEmail
+} from '@/services/profile';
 import { Patient } from 'fhir/r4';
 import { Check, ChevronDown, Plus, UsersIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -72,7 +76,10 @@ export default function Participant({
     return true;
   };
 
-  const derivePatientName = (patient: Patient, fallbackEmail: string) => {
+  const derivePatientName = (
+    patient: Patient | null,
+    fallbackEmail: string
+  ) => {
     const name = patient?.name?.[0];
     if (!name) return fallbackEmail;
 
@@ -91,15 +98,32 @@ export default function Participant({
 
     setIsSubmitting(true);
     try {
-      const patient = await ensurePatientByEmail(email.trim());
+      const check = await checkEmailExists(email.trim());
+      let patientId = '';
+      let patientName = email.trim();
 
-      if (!patient || !patient.id) {
-        throw new Error('Failed to create patient');
+      if (check.exists && check.patientIds.length > 0) {
+        patientId = check.patientIds[0];
+        // If user exists, we don't fetch profile, just use email as name
+      } else {
+        // Create new patient
+        const patient = (await createProfile({
+          userId: null,
+          email: email.trim(),
+          type: 'Patient'
+        })) as Patient;
+
+        if (!patient || !patient.id) {
+          throw new Error('Failed to create patient');
+        }
+
+        await signupByEmail(email.trim());
+        patientId = patient.id;
+        patientName = derivePatientName(patient, email.trim());
       }
 
-      const patientName = derivePatientName(patient, email.trim());
       const newOption = {
-        patientId: patient.id,
+        patientId,
         patientName
       };
 

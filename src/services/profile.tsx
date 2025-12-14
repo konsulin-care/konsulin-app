@@ -6,6 +6,13 @@ type IProfileRequest = {
   payload: Patient | Practitioner;
 };
 
+type EmailExistenceResponse = {
+  exists: boolean;
+  patientIds: string[];
+  practitionerIds: string[];
+  status: string;
+};
+
 export const createProfile = async ({ userId, email, type }) => {
   const payload = {
     resourceType: type,
@@ -74,6 +81,14 @@ export const getProfileById = async (
   }
 };
 
+export const checkEmailExists = async (email: string) => {
+  const encodedEmail = encodeURIComponent(email);
+  return apiRequest<EmailExistenceResponse>(
+    'GET',
+    `/api/v1/auth/passwordless/email/exists?email=${encodedEmail}`
+  );
+};
+
 export const signupByEmail = async (email: string) => {
   if (!email) throw new Error('Missing email');
 
@@ -81,18 +96,6 @@ export const signupByEmail = async (email: string) => {
     email,
     shouldTryLinkingWithSessionUser: false
   });
-};
-
-export const ensurePatientByEmail = async (email: string) => {
-  const patient = (await createProfile({
-    userId: null,
-    email,
-    type: 'Patient'
-  })) as Patient;
-
-  await signupByEmail(email);
-
-  return patient;
 };
 
 export const useUpdateProfile = () => {
