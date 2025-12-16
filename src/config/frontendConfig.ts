@@ -11,6 +11,9 @@ import { getClaimValue } from 'supertokens-web-js/recipe/session';
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 import { getAppInfo } from './appInfo';
 
+/* -------------------------------------------------------------------------- */
+/* Router holder                                                               */
+/* -------------------------------------------------------------------------- */
 const routerInfo: { router?: ReturnType<typeof useRouter>; pathName?: string } =
   {};
 
@@ -22,31 +25,52 @@ export function setRouter(
   routerInfo.pathName = pathName;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Profile completeness helper (Issue #272)                                    */
+/* -------------------------------------------------------------------------- */
+const isProfileComplete = (
+  profile?: Patient | Practitioner,
+  email?: string
+) => {
+  const hasFullName = !!mergeNames(profile?.name);
+  const hasDOB = !!profile?.birthDate;
+  const hasEmail = !!email;
+
+  const hasWhatsapp = profile?.telecom?.some(
+    t => t.system === 'phone' && t.use === 'mobile' && !!t.value
+  );
+
+  return hasFullName && hasDOB && hasEmail && hasWhatsapp;
+};
+
+/* -------------------------------------------------------------------------- */
+/* SuperTokens frontend config                                                 */
+/* -------------------------------------------------------------------------- */
 export const frontendConfig = (): SuperTokensConfig => {
   return {
     appInfo: getAppInfo(),
     useShadowDom: false,
     style: `
-        #supertokens-root {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        [data-supertokens~=button] {
-            background-color: #0ABDC3;
-            border: 0px;
-        }
-        [data-supertokens~=headerTitle] {
-            color: #0ABDC3;
-        }
-        [data-supertokens~=spinnerIcon] circle {
-            stroke: #0ABDC3 !important;
-        }
-        [data-supertokens~=sendCodeIcon] {
-            display: flex;
-            justify-content: center;
-        }
+      #supertokens-root {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      [data-supertokens~=button] {
+        background-color: #0ABDC3;
+        border: 0px;
+      }
+      [data-supertokens~=headerTitle] {
+        color: #0ABDC3;
+      }
+      [data-supertokens~=spinnerIcon] circle {
+        stroke: #0ABDC3 !important;
+      }
+      [data-supertokens~=sendCodeIcon] {
+        display: flex;
+        justify-content: center;
+      }
     `,
     recipeList: [
       Session.init(),
@@ -56,91 +80,81 @@ export const frontendConfig = (): SuperTokensConfig => {
           if (context.action === 'SUCCESS') {
             const { id: userId, emails } = context.user;
             const roles = await getClaimValue({ claim: UserRoleClaim });
+
             localStorage.setItem('skip-response-cleanup', 'true');
 
+            const role = roles.includes(Roles.Practitioner)
+              ? Roles.Practitioner
+              : Roles.Patient;
+
+            /* ------------------------ New user flow ------------------------ */
             if (
               context.isNewRecipeUser &&
-              context.user.loginMethods.length == 1
+              context.user.loginMethods.length === 1
             ) {
-              // depend on getProfileByIdentifier to fill
-              // the profile data instead of response from
-              // creating profile
               let profileData = (await getProfileByIdentifier({
                 userId,
-                type: roles.includes(Roles.Practitioner)
-                  ? Roles.Practitioner
-                  : Roles.Patient
+                type: role
               })) as Patient | Practitioner;
 
               if (!profileData) {
-                try {
-                  // Create FHIR Profile for new user
-                  await createProfile({
-                    userId,
-                    email: emails[0],
-                    type: roles.includes(Roles.Practitioner)
-                      ? Roles.Practitioner
-                      : Roles.Patient
-                  });
+                await createProfile({
+                  userId,
+                  email: emails[0],
+                  type: role
+                });
 
-                  // re-fetch the profile data
-                  profileData = (await getProfileByIdentifier({
-                    userId,
-                    type: roles.includes(Roles.Practitioner)
-                      ? Roles.Practitioner
-                      : Roles.Patient
-                  })) as Patient | Practitioner;
+                profileData = (await getProfileByIdentifier({
+                  userId,
+                  type: role
+                })) as Patient | Practitioner;
 
-                  if (!profileData) throw new Error('Failed to create profile');
-                } catch (error) {
-                  throw error;
+                if (!profileData) {
+                  throw new Error('Failed to create profile');
                 }
               }
 
               const cookieData = {
                 userId,
-                role_name: roles.includes(Roles.Practitioner)
-                  ? Roles.Practitioner
-                  : Roles.Patient,
+                role_name: role,
                 email: emails[0],
                 profile_picture: profileData?.photo
-                  ? profileData?.photo[0]?.url
+                  ? profileData.photo[0]?.url
                   : '',
                 fullname: mergeNames(profileData?.name),
-                fhirId: profileData?.id ?? ''
+                fhirId: profileData?.id ?? '',
+                profileComplete: isProfileComplete(profileData, emails[0])
               };
 
               await setCookies('auth', JSON.stringify(cookieData));
             } else {
-              const type = roles.includes(Roles.Practitioner)
-                ? Roles.Practitioner
-                : Roles.Patient;
-              let profile = (await getProfileByIdentifier({
+              /* --------------------- Existing user flow --------------------- */
+              const profile = (await getProfileByIdentifier({
                 userId,
-                type
+                type: role
               })) as Patient | Practitioner;
-
-              // Do not auto-create profile on lookup miss; leave fhirId empty
 
               const cookieData = {
                 userId,
-                role_name: roles.includes(Roles.Practitioner)
-                  ? Roles.Practitioner
-                  : Roles.Patient,
+                role_name: role,
                 email: emails[0],
-                profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
+                profile_picture: profile?.photo ? profile.photo[0]?.url : '',
                 fullname: mergeNames(profile?.name),
-                fhirId: profile?.id ?? ''
+                fhirId: profile?.id ?? '',
+                profileComplete: isProfileComplete(profile, emails[0])
               };
 
               await setCookies('auth', JSON.stringify(cookieData));
             }
 
+            /* ------------------------ Redirect logic ------------------------ */
             const isAuthRoute = (routerInfo.pathName || '').startsWith('/auth');
+
             if (!isAuthRoute) {
-              routerInfo.router.push('/auth');
+              routerInfo.router?.push('/auth');
               await new Promise(resolve => setTimeout(resolve, 100));
             }
+
             window.location.href = '/';
           }
         }

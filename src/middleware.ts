@@ -1,67 +1,84 @@
 import { Roles } from '@/constants/roles';
 import { type NextRequest } from 'next/server';
 
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
+const isProfileComplete = (auth: any) => auth?.profileComplete === true;
+
 const patientAndClinicianRoutes = [
   '/message',
   '/notification',
-  '/profile',
   '/journal',
   '/record'
 ];
-const patientRoutes = [];
-// const patientRoutes = [/^\/exercise\/.*/]
+
 const clinicianRoutes = ['/assessments/soap'];
 
+/* -------------------------------------------------------------------------- */
+/* Middleware                                                                 */
+/* -------------------------------------------------------------------------- */
 export function middleware(request: NextRequest) {
-  /**
-   * use this for callback redirect
-   * const url = request.nextUrl.clone
-   *
-   */
-
-  //
-
-  const auth = JSON.parse(request.cookies.get('auth')?.value || '{}');
   const { pathname } = request.nextUrl;
+
+  /* ---------------------------------------------------------------------- */
+  /* Decode auth cookie safely                                               */
+  /* ---------------------------------------------------------------------- */
+  const rawAuth = request.cookies.get('auth')?.value;
+
+  let auth: any = {};
+  try {
+    auth = rawAuth ? JSON.parse(decodeURIComponent(rawAuth)) : {};
+  } catch {
+    auth = {};
+  }
 
   const routeMatches = (routes: (string | RegExp)[], path: string) =>
     routes.some(route =>
       route instanceof RegExp ? route.test(path) : route === path
     );
 
-  // unauthenticated user can't access private routes
+  /* ---------------------------------------------------------------------- */
+  /* Unauthenticated user protection                                        */
+  /* ---------------------------------------------------------------------- */
   if (
     Object.keys(auth).length === 0 &&
-    routeMatches(
-      [...patientRoutes, clinicianRoutes, ...patientAndClinicianRoutes],
-      pathname
-    )
+    routeMatches([...patientAndClinicianRoutes, ...clinicianRoutes], pathname)
   ) {
-    // return Response.redirect(new URL('/register?role=patient', request.url))
     const url = new URL('/auth', request.url);
     url.searchParams.set('returnUrl', pathname + request.nextUrl.search);
     return Response.redirect(url);
   }
 
-  // if (auth.token && routeMatches(['/login', '/register'], pathname)) {
-  //   return Response.redirect(new URL('/', request.url))
-  // }
-
-  // authenticated user can't access login and register page
+  /* ---------------------------------------------------------------------- */
+  /* Authenticated user can't access auth page                               */
+  /* ---------------------------------------------------------------------- */
   if (auth.userId && routeMatches(['/auth'], pathname)) {
     return Response.redirect(new URL('/', request.url));
   }
 
-  // authorization base on role
+  /* ---------------------------------------------------------------------- */
+  /* Role-based authorization                                                */
+  /* ---------------------------------------------------------------------- */
   if (
-    (auth.role_name !== Roles.Patient &&
-      routeMatches(patientRoutes, pathname)) || // patient only
     (auth.role_name !== Roles.Practitioner &&
-      routeMatches(clinicianRoutes, pathname)) || // cliniciant only
+      routeMatches(clinicianRoutes, pathname)) ||
     ((!auth.role_name || auth.role_name === 'guest') &&
-      routeMatches(patientAndClinicianRoutes, pathname)) // patient and cliniciant
+      routeMatches(patientAndClinicianRoutes, pathname))
   ) {
     return Response.redirect(new URL('/unauthorized', request.url));
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* 🔥 Issue #272 — Profile completeness enforcement (PATIENT ONLY)        */
+  /* ---------------------------------------------------------------------- */
+  if (
+    auth.role_name === Roles.Patient &&
+    !isProfileComplete(auth) &&
+    !pathname.startsWith('/profile') &&
+    !pathname.startsWith('/auth')
+  ) {
+    return Response.redirect(new URL('/profile', request.url));
   }
 }
 
