@@ -62,7 +62,11 @@ export default function Participant({
   }, [triggerRef.current?.offsetWidth]);
 
   useEffect(() => {
-    setOptions(list);
+    setOptions(prev => {
+      const listIds = new Set(list.map(o => o.patientId));
+      const localOnly = prev.filter(o => !listIds.has(o.patientId));
+      return [...list, ...localOnly];
+    });
   }, [list]);
 
   const handleEmailValidation = () => {
@@ -194,7 +198,7 @@ export default function Participant({
             <Button
               ref={triggerRef}
               variant='outline'
-              className='h-[56px] w-full justify-start bg-white'
+              className='bg-popover h-[56px] w-full justify-start'
               disabled={loading || disabled}
             >
               <UsersIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
