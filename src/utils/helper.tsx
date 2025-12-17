@@ -496,8 +496,9 @@ export const isValidImageUrl = async (url: string): Promise<boolean> => {
     const contentType = response.headers.get('content-type') || '';
     return contentType.startsWith('image/');
   } catch {
-    // On network/CORS errors, fall back to true to avoid breaking avatars that still load in <img>.
-    return true;
+    // the implementation will return false if the image URL is not valid
+    // and it is up to the caller to decide how to handle it
+    return false;
   }
 };
 
