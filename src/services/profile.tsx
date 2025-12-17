@@ -137,7 +137,10 @@ export const uploadAvatar = async (
   );
 
   const isOk = response?.status >= 200 && response?.status < 300;
-  const url = response?.data?.[0]?.avatar_url;
+  const url =
+    Array.isArray(response?.data) && response.data.length > 0
+      ? response.data[0]?.avatar_url
+      : null;
 
   if (!isOk || !url) {
     throw new Error('Failed to upload avatar');
