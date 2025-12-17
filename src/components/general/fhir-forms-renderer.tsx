@@ -164,9 +164,14 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
       try {
         const result = await fetchResultBrief(payload);
-        interpretationItem.item.push(result);
+        if (result) {
+          interpretationItem.item.push(result);
+        }
       } catch (error) {
-        console.error('Error when fetching result brief : ', error.message);
+        console.error(
+          'Error when fetching result brief:',
+          error instanceof Error ? error.message : error
+        );
       }
 
       const submitResult = await submitQuestionnaire({

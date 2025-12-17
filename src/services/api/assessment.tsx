@@ -1,7 +1,5 @@
-import { serverConfig } from '@/lib/config';
 import { IQuestionnaireResponse } from '@/types/assessment';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { format } from 'date-fns';
 import {
   Bundle,
@@ -136,6 +134,9 @@ export const useUpdateSubmitQuestionnaire = (
   });
 };
 
+const RESULT_BRIEF_PLACEHOLDER =
+  'The data is still being processed, kindly visit this page later.';
+
 export const useResultBrief = (questionnaireId: string) => {
   return useMutation<any, Error, IResultBriefPayload>({
     mutationKey: ['result-brief', questionnaireId],
@@ -143,49 +144,31 @@ export const useResultBrief = (questionnaireId: string) => {
       const payload = { questionnaire, description, item };
 
       try {
-        const response = await axios.post(
-          `${serverConfig.API_URL}/api/v1/hook/interpret`,
-          payload
-        );
+        const API = await getAPI();
 
-        const asyncId = response?.data?.data?.asyncServiceResultId;
+        const response = await API.post('/api/v1/hook/interpret', payload);
 
-        if (!asyncId) {
-          throw new Error('No asyncServiceResultId returned');
-        }
+        const resultNote = response?.data?.data?.note;
 
-        let resultNote = '';
-        let attempts = 0;
-
-        while (attempts < 5 && !resultNote) {
-          const serviceReq = await axios.get(
-            `${serverConfig.API_URL}/api/v1/service-request/${asyncId}/result`
-          );
-          resultNote = serviceReq?.data?.data?.note ?? '';
-
-          if (resultNote) break;
-
-          await new Promise(res => setTimeout(res, 1000));
-          attempts++;
-        }
         return {
           linkId: 'result-brief',
           answer: [
             {
-              valueString:
-                resultNote ||
-                'Unable to generate result. Please try again later.'
+              valueString: resultNote || RESULT_BRIEF_PLACEHOLDER
             }
           ]
         };
       } catch (error) {
-        console.error('Error fetching result brief:', error);
+        console.error(
+          'Error fetching result brief:',
+          error instanceof Error ? error.message : error
+        );
 
         return {
           linkId: 'result-brief',
           answer: [
             {
-              valueString: 'Unable to generate result. Please try again later.'
+              valueString: RESULT_BRIEF_PLACEHOLDER
             }
           ]
         };
