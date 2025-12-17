@@ -407,26 +407,98 @@ const getColorFromId = (id: string) => {
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
-export const generateAvatarPlaceholder = ({ id, name, email }) => {
-  if (!id || !email || !name) return { initials: null, backgroundColor: null };
+export const generateAvatarPlaceholder = ({
+  id,
+  name,
+  email,
+  userId
+}: {
+  id?: string;
+  name?: string;
+  email?: string;
+  userId?: string;
+}) => {
+  const normalizedName =
+    name?.trim() && name?.trim() !== '-' ? name.trim() : '';
+  const seed = id || userId || email || normalizedName || '';
 
   let initials = '';
-  const isValidName = name && name.trim() && name.trim() !== '-';
-  const parts = isValidName ? name.trim().split(' ') : [];
-
-  if (parts.length >= 2) {
-    // if the name has at least two parts, take the first letter of each
-    initials = parts[0][0] + parts[1][0];
-  } else {
-    initials = email.slice(0, 2);
+  if (normalizedName) {
+    const parts = normalizedName.split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      const first = parts[0][0] || '';
+      const last = parts[parts.length - 1][0] || '';
+      initials = `${first}${last}`;
+    } else {
+      initials = normalizedName.slice(0, 2);
+    }
+  } else if (email) {
+    const local = email.includes('@') ? email.split('@')[0] : email;
+    initials = local.slice(0, 2);
+  } else if (userId) {
+    initials = userId.slice(0, 2);
   }
 
   initials = initials.toUpperCase();
 
-  // Get color for this unique ID
-  const backgroundColor = getColorFromId(id);
+  const backgroundColor = seed ? getColorFromId(seed) : null;
 
-  return { initials, backgroundColor };
+  return { initials: initials || null, backgroundColor };
+};
+
+export const isDataUrl = (value: string) => {
+  return typeof value === 'string' && value.startsWith('data:image/');
+};
+
+export const dataUrlToBlob = (dataUrl: string) => {
+  const arr = dataUrl.split(',');
+  const mimeMatch = arr[0]?.match(/:(.*?);/);
+  const mime = mimeMatch?.[1] ?? 'image/png';
+  const base64String = arr[1];
+  const decode =
+    typeof atob === 'function'
+      ? atob(base64String)
+      : typeof globalThis !== 'undefined' && (globalThis as any).Buffer
+        ? (globalThis as any).Buffer.from(base64String, 'base64').toString(
+            'binary'
+          )
+        : '';
+  const bstr = decode;
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+};
+
+export const findIdentifierValue = (
+  data: Patient | Practitioner,
+  system: string
+) => {
+  return (
+    data?.identifier?.find(identifier => identifier.system === system)?.value ??
+    ''
+  );
+};
+
+export const isValidImageUrl = async (url: string): Promise<boolean> => {
+  if (!url) return false;
+  if (isDataUrl(url)) return true;
+
+  try {
+    const response = await fetch(url, { method: 'GET', mode: 'no-cors' });
+
+    // If the response is opaque due to CORS, assume OK so we don't block rendering.
+    if (response.type === 'opaque') return true;
+
+    if (!response.ok) return false;
+    const contentType = response.headers.get('content-type') || '';
+    return contentType.startsWith('image/');
+  } catch {
+    // On network/CORS errors, fall back to true to avoid breaking avatars that still load in <img>.
+    return true;
+  }
 };
 
 export const formatTitle = (raw: string) => {

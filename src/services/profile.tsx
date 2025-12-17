@@ -114,3 +114,34 @@ export const useUpdateProfile = () => {
     }
   });
 };
+
+export const uploadAvatar = async (
+  chatwootId: string,
+  file: File | Blob
+): Promise<string> => {
+  if (!chatwootId) throw new Error('Missing chatwoot_id');
+
+  const formData = new FormData();
+  formData.append('chatwoot_id', chatwootId);
+  formData.append('avatar', file);
+
+  const API = await getAPI();
+  const response = await API.post(
+    '/api/v1/hook/synchronous/update-avatar',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }
+  );
+
+  const isOk = response?.status >= 200 && response?.status < 300;
+  const url = response?.data?.[0]?.avatar_url;
+
+  if (!isOk || !url) {
+    throw new Error('Failed to upload avatar');
+  }
+
+  return url;
+};
