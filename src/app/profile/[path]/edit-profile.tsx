@@ -322,6 +322,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     } catch (error) {
       console.error('Error when refetching user profile: ', error);
       toast.error('Gagal mengambil profil terbaru');
+
+      return;
     }
 
     // only send a real URL; never send data URLs to FHIR
