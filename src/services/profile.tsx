@@ -6,16 +6,25 @@ type IProfileRequest = {
   payload: Patient | Practitioner;
 };
 
+type EmailExistenceResponse = {
+  exists: boolean;
+  patientIds: string[];
+  practitionerIds: string[];
+  status: string;
+};
+
 export const createProfile = async ({ userId, email, type }) => {
   const payload = {
     resourceType: type,
     active: true,
-    identifier: [
-      {
-        system: 'https://login.konsulin.care/userid',
-        value: userId
-      }
-    ],
+    identifier: userId
+      ? [
+          {
+            system: 'https://login.konsulin.care/userid',
+            value: userId
+          }
+        ]
+      : [],
     telecom: {
       system: 'email',
       use: 'home',
@@ -70,6 +79,23 @@ export const getProfileById = async (
   } catch (error) {
     throw error;
   }
+};
+
+export const checkEmailExists = async (email: string) => {
+  const encodedEmail = encodeURIComponent(email);
+  return apiRequest<EmailExistenceResponse>(
+    'GET',
+    `/api/v1/auth/passwordless/email/exists?email=${encodedEmail}`
+  );
+};
+
+export const signupByEmail = async (email: string) => {
+  if (!email) throw new Error('Missing email');
+
+  return apiRequest('POST', '/api/v1/auth/signinup/code', {
+    email,
+    shouldTryLinkingWithSessionUser: false
+  });
 };
 
 export const useUpdateProfile = () => {
