@@ -458,11 +458,15 @@ export const dataUrlToBlob = (dataUrl: string) => {
   const decode =
     typeof atob === 'function'
       ? atob(base64String)
-      : typeof globalThis !== 'undefined' && (globalThis as any).Buffer
+      : typeof globalThis !== 'undefined' &&
+          typeof (globalThis as any).Buffer?.from === 'function'
         ? (globalThis as any).Buffer.from(base64String, 'base64').toString(
             'binary'
           )
         : '';
+  if (!decode) {
+    throw new Error('Base64 decoding not supported in this environment');
+  }
   const bstr = decode;
   let n = bstr.length;
   const u8arr = new Uint8Array(n);
