@@ -492,8 +492,13 @@ export default function EditProfile({ userRole, fhirId }: Props) {
 
     try {
       const result = await updateProfile({ payload });
-      if (!isUpdateError && result) {
-        const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+      if (result) {
+        let auth: any = {};
+        try {
+          auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+        } catch {
+          console.warn('Failed to parse auth cookie, starting fresh');
+        }
         const updatedPhotoUrl =
           result?.photo?.[0]?.url || photoUrlForPayload || auth.profile_picture;
         auth.profile_picture = updatedPhotoUrl;
