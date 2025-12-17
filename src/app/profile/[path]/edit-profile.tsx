@@ -27,6 +27,7 @@ import {
 } from '@/services/api/cities';
 import {
   getProfileById,
+  modifyProfile,
   uploadAvatar,
   useUpdateProfile
 } from '@/services/profile';
@@ -326,12 +327,36 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     // only send a real URL; never send data URLs to FHIR
     let photoUrlForPayload = existingPhotoUrl || '';
 
-    const chatwootId = latestProfile
+    const existingChatwootId = latestProfile
       ? findIdentifierValue(
           latestProfile,
           'https://login.konsulin.care/chatwoot-id'
         )
       : '';
+
+    let chatwootId = existingChatwootId;
+
+    if (!chatwootId) {
+      try {
+        const { chatwootId: newChatwootId, email: syncedEmail } =
+          await modifyProfile({
+            email: updateUser.email,
+            name: `${updateUser.firstName} ${updateUser.lastName}`.trim()
+          });
+
+        chatwootId = newChatwootId;
+
+        if (syncedEmail && syncedEmail !== updateUser.email) {
+          setUpdateUser(prev => ({ ...prev, email: syncedEmail }));
+        }
+      } catch (error) {
+        console.error('[avatar] failed to ensure chatwoot_id', {
+          fhirId,
+          latestProfile,
+          error
+        });
+      }
+    }
 
     if (!chatwootId) {
       console.error('[avatar] missing chatwoot_id, aborting upload', {
