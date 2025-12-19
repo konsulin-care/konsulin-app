@@ -313,7 +313,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   };
 
   const handleEditSave = async () => {
-    let latestProfile: Patient | Practitioner = null;
+    let latestProfile: Patient | Practitioner | null = null;
     let existingPhotoUrl = '';
 
     try {
@@ -448,6 +448,9 @@ export default function EditProfile({ userRole, fhirId }: Props) {
               });
 
         const uploadedUrl = await uploadAvatar(finalChatwootId, fileForUpload);
+        if (!uploadedUrl) {
+          throw new Error('receive empty response from uploadAvatar');
+        }
 
         if (uploadedUrl && uploadedUrl !== existingPhotoUrl) {
           photoUrlForPayload = uploadedUrl;
@@ -459,6 +462,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
           response: (error as any)?.response?.data || error
         });
         toast.error('Gagal mengunggah foto profil');
+
+        return;
       } finally {
         setIsUploadingPhoto(false);
       }
@@ -472,7 +477,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       }
     }
 
-    const splitName = updateUser.firstName.split(' ').filter(Boolean);
+    const splitName = (updateUser.firstName || '').split(' ').filter(Boolean);
 
     const payload: Patient | Practitioner = {
       resourceType: updateUser.resourceType || fhirRole,
