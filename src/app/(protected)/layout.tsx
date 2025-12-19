@@ -9,7 +9,8 @@ import { isProfileComplete } from '@/utils/profileCompleteness';
 
 /**
  * Protected layout
- * - Verifies SuperTokens access token cryptographically
+ * - Cryptographically verifies SuperTokens access token
+ * - Restricts JWT algorithms to prevent algorithm confusion
  * - Extracts userId from JWT `sub`
  * - Fetches profile from backend (trusted source)
  * - Enforces patient profile completeness
@@ -30,7 +31,7 @@ export default async function ProtectedLayout({
   }
 
   /* -------------------------------------------------------------------------- */
-  /* Verify JWT + extract userId                                                 */
+  /* Verify JWT + extract userId (SECURE)                                        */
   /* -------------------------------------------------------------------------- */
   const jwtPublicKey = process.env.SUPERTOKENS_JWT_PUBLIC_KEY;
 
@@ -44,7 +45,9 @@ export default async function ProtectedLayout({
   let userId: string;
 
   try {
-    const decoded = jwt.verify(accessToken, jwtPublicKey) as jwt.JwtPayload;
+    const decoded = jwt.verify(accessToken, jwtPublicKey, {
+      algorithms: ['RS256'] // 🔒 Prevent algorithm confusion attacks
+    }) as jwt.JwtPayload;
 
     if (!decoded?.sub || typeof decoded.sub !== 'string') {
       throw new Error('Invalid JWT payload: missing sub');
@@ -64,7 +67,7 @@ export default async function ProtectedLayout({
   try {
     profile = await getProfileByIdentifier({
       userId,
-      type: Roles.Patient // backend decides actual role safely
+      type: Roles.Patient // backend safely decides actual role
     });
   } catch (error) {
     console.error('[ProtectedLayout] Failed to fetch profile', error);
@@ -72,7 +75,7 @@ export default async function ProtectedLayout({
   }
 
   /* -------------------------------------------------------------------------- */
-  /* 🚨 CRITICAL FIX — ensure profile exists and is Patient                      */
+  /* 🚨 Ensure profile exists and is Patient                                     */
   /* -------------------------------------------------------------------------- */
   if (!profile || profile.resourceType !== 'Patient') {
     console.error(
