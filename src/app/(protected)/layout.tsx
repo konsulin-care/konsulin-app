@@ -3,43 +3,59 @@ import { getProfileByIdentifier } from '@/services/profile';
 import { isProfileComplete } from '@/utils/profileCompleteness';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-
-type AuthCookie = {
-  userId?: string;
-  role_name?: string;
-};
+import { getClaimValue, getUserId } from 'supertokens-web-js/recipe/session';
+import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 
 export default async function ProtectedLayout({
   children
 }: {
   children: React.ReactNode;
 }) {
+  /* ---------------------------------------------------------------------- */
+  /* Session existence check (do NOT parse client auth cookie)               */
+  /* ---------------------------------------------------------------------- */
   const cookieStore = cookies();
-  const rawAuth = cookieStore.get('auth')?.value;
+  const hasSession = cookieStore.get('sAccessToken');
 
-  if (!rawAuth) {
+  if (!hasSession) {
     redirect('/auth');
   }
 
-  let auth: AuthCookie;
+  /* ---------------------------------------------------------------------- */
+  /* Role comes from SuperTokens signed claim                                 */
+  /* ---------------------------------------------------------------------- */
+  const roles = (await getClaimValue({ claim: UserRoleClaim })) ?? [];
+  const role = roles.includes(Roles.Practitioner)
+    ? Roles.Practitioner
+    : Roles.Patient;
 
-  try {
-    auth = JSON.parse(decodeURIComponent(rawAuth));
-  } catch {
+  /* ---------------------------------------------------------------------- */
+  /* Fetch profile from backend (server-trusted source)                      */
+  /* ---------------------------------------------------------------------- */
+
+  const userId = await getUserId();
+
+  if (!userId) {
     redirect('/auth');
   }
 
-  if (!auth.userId || !auth.role_name) {
-    redirect('/auth');
-  }
+  const profile = await getProfileByIdentifier({
+    userId,
+    type: role
+  });
 
-  if (auth.role_name === Roles.Patient) {
-    const profile = await getProfileByIdentifier({
-      userId: auth.userId,
-      type: Roles.Patient
-    });
+  /* ---------------------------------------------------------------------- */
+  /* Enforce profile completeness — PATIENT ONLY                             */
+  /* ---------------------------------------------------------------------- */
+  if (role === Roles.Patient) {
+    // Runtime type narrowing for FHIR safety
+    if (!profile || profile.resourceType !== 'Patient') {
+      redirect('/profile');
+    }
 
-    if (!profile || !isProfileComplete(profile)) {
+    const email = profile.telecom?.find(t => t.system === 'email')?.value ?? '';
+
+    if (!isProfileComplete(profile, email)) {
       redirect('/profile');
     }
   }
