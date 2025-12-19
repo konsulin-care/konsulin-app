@@ -1,4 +1,3 @@
-import { mergeNames } from '@/utils/helper';
 import { Patient, Practitioner } from 'fhir/r4';
 
 export function isProfileComplete(
@@ -7,7 +6,9 @@ export function isProfileComplete(
 ): boolean {
   if (!profile) return false;
 
-  const hasFullName = !!mergeNames(profile.name);
+  const name = profile.name?.[0];
+  const hasRealName = !!name?.family || !!name?.given?.some(Boolean);
+
   const hasDOB = !!profile.birthDate;
   const hasEmail = !!email;
 
@@ -15,5 +16,5 @@ export function isProfileComplete(
     t => t.system === 'phone' && t.use === 'mobile' && !!t.value
   );
 
-  return hasFullName && hasDOB && hasEmail && hasWhatsapp;
+  return hasRealName && hasDOB && hasEmail && hasWhatsapp;
 }
