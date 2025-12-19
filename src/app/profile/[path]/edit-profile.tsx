@@ -336,31 +336,78 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         )
       : '';
 
-    let chatwootId = existingChatwootId;
+    let finalChatwootId = existingChatwootId;
 
-    if (!chatwootId) {
-      try {
-        const { chatwootId: newChatwootId, email: syncedEmail } =
-          await modifyProfile({
-            email: updateUser.email,
-            name: `${updateUser.firstName} ${updateUser.lastName}`.trim()
-          });
+    try {
+      const { chatwootId: latestChatwootId, email: syncedEmail } =
+        await modifyProfile({
+          email: updateUser.email,
+          name: `${updateUser.firstName} ${updateUser.lastName}`.trim()
+        });
 
-        chatwootId = newChatwootId;
+      if (latestChatwootId && latestChatwootId !== existingChatwootId) {
+        finalChatwootId = latestChatwootId;
+      }
 
-        if (syncedEmail && syncedEmail !== updateUser.email) {
-          setUpdateUser(prev => ({ ...prev, email: syncedEmail }));
-        }
-      } catch (error) {
-        console.error('[avatar] failed to ensure chatwoot_id', {
+      if (syncedEmail && syncedEmail !== updateUser.email) {
+        setUpdateUser(prev => ({ ...prev, email: syncedEmail }));
+      }
+    } catch (error) {
+      console.error(
+        '[avatar] failed to ensure chatwoot_id exists and up to date',
+        {
           fhirId,
           latestProfile,
           error
+        }
+      );
+    }
+
+    let identifiers = Array.isArray(latestProfile?.identifier)
+      ? [...latestProfile.identifier]
+      : [];
+
+    const ensureIdentifier = (system: string, value: string) => {
+      if (!system || !value) return;
+      const exists = identifiers.find(id => id.system === system);
+      if (exists) {
+        exists.value = value;
+      } else {
+        identifiers.push({ system, value });
+      }
+    };
+
+    ensureIdentifier('https://login.konsulin.care/userid', updateUser.userId);
+    ensureIdentifier(
+      'https://login.konsulin.care/chatwoot-id',
+      finalChatwootId
+    );
+
+    const needsIdentifierSync =
+      !existingChatwootId || existingChatwootId !== finalChatwootId;
+
+    // If chatwoot_id is missing or changed, sync identifiers first so avatar upload is accepted
+    if (needsIdentifierSync) {
+      if (!latestProfile) {
+        toast.error('Gagal memperbarui profil');
+        return;
+      }
+
+      try {
+        await updateProfile({
+          payload: {
+            ...(latestProfile as Patient | Practitioner),
+            identifier: identifiers
+          }
         });
+      } catch (error) {
+        console.error('Error when syncing chatwoot identifier: ', error);
+        toast.error('Gagal memperbarui profil');
+        return;
       }
     }
 
-    if (!chatwootId) {
+    if (!finalChatwootId) {
       console.error('[avatar] missing chatwoot_id, aborting upload', {
         fhirId,
         latestProfile
@@ -400,7 +447,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 type: processed.blob.type || mime
               });
 
-        const uploadedUrl = await uploadAvatar(chatwootId, fileForUpload);
+        const uploadedUrl = await uploadAvatar(finalChatwootId, fileForUpload);
 
         if (uploadedUrl && uploadedUrl !== existingPhotoUrl) {
           photoUrlForPayload = uploadedUrl;
@@ -424,23 +471,6 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         }
       }
     }
-
-    let identifiers = Array.isArray(latestProfile?.identifier)
-      ? [...latestProfile.identifier]
-      : [];
-
-    const ensureIdentifier = (system: string, value: string) => {
-      if (!system || !value) return;
-      const exists = identifiers.find(id => id.system === system);
-      if (exists) {
-        exists.value = value;
-      } else {
-        identifiers.push({ system, value });
-      }
-    };
-
-    ensureIdentifier('https://login.konsulin.care/userid', updateUser.userId);
-    ensureIdentifier('https://login.konsulin.care/chatwoot-id', chatwootId);
 
     const splitName = updateUser.firstName.split(' ').filter(Boolean);
 
