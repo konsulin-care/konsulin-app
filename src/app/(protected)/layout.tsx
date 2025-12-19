@@ -11,6 +11,7 @@ import { isProfileComplete } from '@/utils/profileCompleteness';
  * Protected layout
  * - Cryptographically verifies SuperTokens access token
  * - Restricts JWT algorithms to prevent algorithm confusion
+ * - Normalizes PEM public key from env
  * - Extracts userId from JWT `sub`
  * - Fetches profile from backend (trusted source)
  * - Enforces patient profile completeness
@@ -31,17 +32,23 @@ export default async function ProtectedLayout({
   }
 
   /* -------------------------------------------------------------------------- */
-  /* Verify JWT + extract userId (SECURE)                                        */
+  /* Load + normalize JWT public key                                            */
   /* -------------------------------------------------------------------------- */
-  const jwtPublicKey = process.env.SUPERTOKENS_JWT_PUBLIC_KEY;
+  const rawJwtPublicKey = process.env.SUPERTOKENS_JWT_PUBLIC_KEY;
 
-  if (!jwtPublicKey) {
+  if (!rawJwtPublicKey) {
     console.error(
       '[ProtectedLayout] Missing SUPERTOKENS_JWT_PUBLIC_KEY env variable'
     );
     redirect('/auth');
   }
 
+  // 🔒 Normalize PEM key in case env contains literal "\n"
+  const jwtPublicKey = rawJwtPublicKey.replace(/\\n/g, '\n');
+
+  /* -------------------------------------------------------------------------- */
+  /* Verify JWT + extract userId (SECURE)                                        */
+  /* -------------------------------------------------------------------------- */
   let userId: string;
 
   try {
@@ -75,7 +82,7 @@ export default async function ProtectedLayout({
   }
 
   /* -------------------------------------------------------------------------- */
-  /* 🚨 Ensure profile exists and is Patient                                     */
+  /* Ensure profile exists and is Patient                                       */
   /* -------------------------------------------------------------------------- */
   if (!profile || profile.resourceType !== 'Patient') {
     console.error(
