@@ -1,87 +1,54 @@
-import { Roles } from '@/constants/roles';
-import { type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 /* -------------------------------------------------------------------------- */
-/* Helpers                                                                    */
+/* Routes                                                                      */
 /* -------------------------------------------------------------------------- */
-const isProfileComplete = (auth: any) => auth?.profileComplete === true;
-
-const patientAndClinicianRoutes = [
+const protectedRoutes = [
   '/message',
   '/notification',
   '/journal',
-  '/record'
+  '/record',
+  '/assessments/soap'
 ];
 
-const clinicianRoutes = ['/assessments/soap'];
-
 /* -------------------------------------------------------------------------- */
-/* Middleware                                                                 */
+/* Middleware                                                                  */
 /* -------------------------------------------------------------------------- */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   /* ---------------------------------------------------------------------- */
-  /* Decode auth cookie safely                                               */
+  /* Read auth cookie (DO NOT TRUST CONTENT)                                 */
   /* ---------------------------------------------------------------------- */
   const rawAuth = request.cookies.get('auth')?.value;
+  const isAuthenticated = Boolean(rawAuth);
 
-  let auth: any = {};
-  try {
-    auth = rawAuth ? JSON.parse(decodeURIComponent(rawAuth)) : {};
-  } catch {
-    auth = {};
-  }
-
-  const routeMatches = (routes: (string | RegExp)[], path: string) =>
-    routes.some(route =>
-      route instanceof RegExp ? route.test(path) : route === path
-    );
+  const isProtectedRoute = protectedRoutes.some(route =>
+    pathname.startsWith(route)
+  );
 
   /* ---------------------------------------------------------------------- */
   /* Unauthenticated user protection                                        */
   /* ---------------------------------------------------------------------- */
-  if (
-    Object.keys(auth).length === 0 &&
-    routeMatches([...patientAndClinicianRoutes, ...clinicianRoutes], pathname)
-  ) {
+  if (!isAuthenticated && isProtectedRoute) {
     const url = new URL('/auth', request.url);
-    url.searchParams.set('returnUrl', pathname + request.nextUrl.search);
-    return Response.redirect(url);
+    url.searchParams.set('returnUrl', pathname);
+    return NextResponse.redirect(url);
   }
 
   /* ---------------------------------------------------------------------- */
-  /* Authenticated user can't access auth page                               */
+  /* Authenticated users should not access /auth                            */
   /* ---------------------------------------------------------------------- */
-  if (auth.userId && routeMatches(['/auth'], pathname)) {
-    return Response.redirect(new URL('/', request.url));
+  if (isAuthenticated && pathname.startsWith('/auth')) {
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
-  /* ---------------------------------------------------------------------- */
-  /* Role-based authorization                                                */
-  /* ---------------------------------------------------------------------- */
-  if (
-    (auth.role_name !== Roles.Practitioner &&
-      routeMatches(clinicianRoutes, pathname)) ||
-    ((!auth.role_name || auth.role_name === 'guest') &&
-      routeMatches(patientAndClinicianRoutes, pathname))
-  ) {
-    return Response.redirect(new URL('/unauthorized', request.url));
-  }
-
-  /* ---------------------------------------------------------------------- */
-  /* 🔥 Issue #272 — Profile completeness enforcement (PATIENT ONLY)        */
-  /* ---------------------------------------------------------------------- */
-  if (
-    auth.role_name === Roles.Patient &&
-    !isProfileComplete(auth) &&
-    !pathname.startsWith('/profile') &&
-    !pathname.startsWith('/auth')
-  ) {
-    return Response.redirect(new URL('/profile', request.url));
-  }
+  return NextResponse.next();
 }
 
+/* -------------------------------------------------------------------------- */
+/* Matcher                                                                    */
+/* -------------------------------------------------------------------------- */
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)']
 };
