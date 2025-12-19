@@ -1,14 +1,15 @@
-import { Roles } from '@/constants/roles';
-import { getProfileByIdentifier } from '@/services/profile';
-import { isProfileComplete } from '@/utils/profileCompleteness';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import { Roles } from '@/constants/roles';
+import { getProfileByIdentifier } from '@/services/profile';
+import { isProfileComplete } from '@/utils/profileCompleteness';
+
 /**
  * Protected layout
- * - Cryptographically verifies SuperTokens access token
+ * - Verifies SuperTokens access token cryptographically
  * - Extracts userId from JWT `sub`
  * - Fetches profile from backend (trusted source)
  * - Enforces patient profile completeness
@@ -56,7 +57,7 @@ export default async function ProtectedLayout({
   }
 
   /* -------------------------------------------------------------------------- */
-  /* Fetch profile from backend (server-trusted)                                 */
+  /* Fetch profile from backend (server-trusted source)                          */
   /* -------------------------------------------------------------------------- */
   let profile;
 
@@ -71,14 +72,22 @@ export default async function ProtectedLayout({
   }
 
   /* -------------------------------------------------------------------------- */
+  /* 🚨 CRITICAL FIX — ensure profile exists and is Patient                      */
+  /* -------------------------------------------------------------------------- */
+  if (!profile || profile.resourceType !== 'Patient') {
+    console.error(
+      '[ProtectedLayout] No Patient profile found for authenticated user'
+    );
+    redirect('/auth');
+  }
+
+  /* -------------------------------------------------------------------------- */
   /* Enforce profile completeness (PATIENT ONLY)                                 */
   /* -------------------------------------------------------------------------- */
-  if (profile?.resourceType === 'Patient') {
-    const email = profile.telecom?.find(t => t.system === 'email')?.value;
+  const email = profile.telecom?.find(t => t.system === 'email')?.value;
 
-    if (!isProfileComplete(profile, email)) {
-      redirect('/profile');
-    }
+  if (!isProfileComplete(profile, email)) {
+    redirect('/profile');
   }
 
   /* -------------------------------------------------------------------------- */
