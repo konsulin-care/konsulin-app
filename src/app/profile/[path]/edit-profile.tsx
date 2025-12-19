@@ -339,18 +339,13 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     let finalChatwootId = existingChatwootId;
 
     try {
-      const { chatwootId: latestChatwootId, email: syncedEmail } =
-        await modifyProfile({
-          email: updateUser.email,
-          name: `${updateUser.firstName} ${updateUser.lastName}`.trim()
-        });
+      const { chatwootId: latestChatwootId } = await modifyProfile({
+        email: updateUser.email,
+        name: `${updateUser.firstName} ${updateUser.lastName}`.trim()
+      });
 
       if (latestChatwootId && latestChatwootId !== existingChatwootId) {
         finalChatwootId = latestChatwootId;
-      }
-
-      if (syncedEmail && syncedEmail !== updateUser.email) {
-        setUpdateUser(prev => ({ ...prev, email: syncedEmail }));
       }
     } catch (error) {
       console.error(
