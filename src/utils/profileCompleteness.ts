@@ -1,19 +1,19 @@
-export type PatientProfile = {
-  fullName?: string;
-  dateOfBirth?: string;
-  email?: string;
-  whatsappNumber?: string;
-};
+import { mergeNames } from '@/utils/helper';
+import { Patient, Practitioner } from 'fhir/r4';
 
-export const REQUIRED_PROFILE_FIELDS: (keyof PatientProfile)[] = [
-  'fullName',
-  'dateOfBirth',
-  'email',
-  'whatsappNumber'
-];
-
-export function isProfileComplete(profile?: PatientProfile): boolean {
+export function isProfileComplete(
+  profile?: Patient | Practitioner,
+  email?: string
+): boolean {
   if (!profile) return false;
 
-  return REQUIRED_PROFILE_FIELDS.every(field => Boolean(profile[field]));
+  const hasFullName = !!mergeNames(profile.name);
+  const hasDOB = !!profile.birthDate;
+  const hasEmail = !!email;
+
+  const hasWhatsapp = profile.telecom?.some(
+    t => t.system === 'phone' && t.use === 'mobile' && !!t.value
+  );
+
+  return hasFullName && hasDOB && hasEmail && hasWhatsapp;
 }
