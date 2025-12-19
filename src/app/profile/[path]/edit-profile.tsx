@@ -40,6 +40,7 @@ import {
   mergeNames,
   parseFhirProfile
 } from '@/utils/helper';
+import { processImageForAvatar } from '@/utils/image-processing';
 import { validateEmail } from '@/utils/validation';
 import { useQuery } from '@tanstack/react-query';
 import { getCookie } from 'cookies-next';
@@ -332,16 +333,57 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         )
       : '';
 
+    if (!chatwootId) {
+      console.error('[avatar] missing chatwoot_id, aborting upload', {
+        fhirId,
+        latestProfile
+      });
+      toast.error(
+        'Profil tidak memiliki chatwoot_id; tidak bisa unggah avatar'
+      );
+      setIsUploadingPhoto(false);
+      return;
+    }
+
     if (isDataUrl(updateUser.photo)) {
       try {
         setIsUploadingPhoto(true);
-        const blob = dataUrlToBlob(updateUser.photo);
-        const uploadedUrl = await uploadAvatar(chatwootId, blob);
+        const originalBlob = dataUrlToBlob(updateUser.photo);
+
+        const mime = originalBlob.type || 'image/png';
+        const ext =
+          mime === 'image/jpeg'
+            ? 'jpg'
+            : mime?.includes('/')
+              ? mime.split('/')[1]
+              : 'png';
+
+        const file = new File([originalBlob], `avatar.${ext}`, {
+          type: mime
+        });
+
+        const processed = await processImageForAvatar(file, {
+          outputType: mime
+        });
+
+        const fileForUpload =
+          processed.blob instanceof File
+            ? processed.blob
+            : new File([processed.blob], `avatar.${ext}`, {
+                type: processed.blob.type || mime
+              });
+
+        const uploadedUrl = await uploadAvatar(chatwootId, fileForUpload);
+
         if (uploadedUrl && uploadedUrl !== existingPhotoUrl) {
           photoUrlForPayload = uploadedUrl;
         }
-      } catch (error) {
-        console.error('Error uploading avatar: ', error);
+      } catch (error: any) {
+        console.error('[avatar] upload error', {
+          message: error?.message,
+          status: (error as any)?.response?.status,
+          response: (error as any)?.response?.data || error
+        });
         toast.error('Gagal mengunggah foto profil');
       } finally {
         setIsUploadingPhoto(false);

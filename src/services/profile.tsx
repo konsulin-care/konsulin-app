@@ -126,15 +126,20 @@ export const uploadAvatar = async (
   formData.append('avatar', file);
 
   const API = await getAPI();
-  const response = await API.post(
-    '/api/v1/hook/synchronous/update-avatar',
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+  let response;
+  try {
+    response = await API.post(
+      '/api/v1/hook/synchronous/update-avatar',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       }
-    }
-  );
+    );
+  } catch (error: any) {
+    throw new Error('Failed to upload avatar');
+  }
 
   const isOk = response?.status >= 200 && response?.status < 300;
   const url =
