@@ -349,12 +349,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       }
     } catch (error) {
       console.error(
-        '[avatar] failed to ensure chatwoot_id exists and up to date',
-        {
-          fhirId,
-          latestProfile,
-          error
-        }
+        '[update-chatwoot-id] failed to ensure chatwoot_id exists and up to date',
+        error
       );
     }
 
