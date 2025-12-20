@@ -136,45 +136,55 @@ export const useUpdateSubmitQuestionnaire = (
 
 const RESULT_BRIEF_PLACEHOLDER =
   'The data is still being processed, kindly visit this page later.';
+const POLL_INTERVAL_MS = 3000;
+const MAX_ATTEMPTS = 5;
 
 export const useResultBrief = (questionnaireId: string) => {
   return useMutation<any, Error, IResultBriefPayload>({
     mutationKey: ['result-brief', questionnaireId],
     mutationFn: async ({ questionnaire, description, item }) => {
-      const payload = { questionnaire, description, item };
+      const API = await getAPI();
 
-      try {
-        const API = await getAPI();
+      const triggerRes = await API.post('/api/v1/hook/interpret', {
+        questionnaire,
+        description,
+        item
+      });
 
-        const response = await API.post('/api/v1/hook/interpret', payload);
+      const asyncServiceResultId = triggerRes?.data?.data?.asyncServiceResultId;
 
-        const resultNote = response?.data?.data?.note;
-
+      if (!asyncServiceResultId) {
         return {
           linkId: 'result-brief',
-          answer: [
-            {
-              valueString: resultNote || RESULT_BRIEF_PLACEHOLDER
-            }
-          ]
-        };
-      } catch (error) {
-        console.error(
-          'Error fetching result brief:',
-          error instanceof Error ? error.message : error
-        );
-
-        return {
-          linkId: 'result-brief',
-          answer: [
-            {
-              valueString: RESULT_BRIEF_PLACEHOLDER
-            }
-          ]
+          answer: [{ valueString: RESULT_BRIEF_PLACEHOLDER }]
         };
       }
-    },
-    onError: error => error.message
+
+      let attempts = 0;
+      let note: string | undefined;
+
+      while (attempts < MAX_ATTEMPTS) {
+        const resultRes = await API.get(
+          `/api/v1/service-request/${asyncServiceResultId}/result`
+        );
+
+        note = resultRes?.data?.data?.note;
+
+        if (note) break;
+
+        attempts += 1;
+        await new Promise(res => setTimeout(res, POLL_INTERVAL_MS));
+      }
+
+      return {
+        linkId: 'result-brief',
+        answer: [
+          {
+            valueString: note || RESULT_BRIEF_PLACEHOLDER
+          }
+        ]
+      };
+    }
   });
 };
 
