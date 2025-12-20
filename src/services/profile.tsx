@@ -1,3 +1,4 @@
+import { validateEmail } from '@/utils/validation';
 import { useMutation } from '@tanstack/react-query';
 import { Bundle, Patient, Practitioner } from 'fhir/r4';
 import { apiRequest, getAPI } from './api';
@@ -11,6 +12,11 @@ type EmailExistenceResponse = {
   patientIds: string[];
   practitionerIds: string[];
   status: string;
+};
+
+type ModifyProfileResponseItem = {
+  chatwoot_id?: number | string;
+  email?: string;
 };
 
 export const createProfile = async ({ userId, email, type }) => {
@@ -113,6 +119,47 @@ export const useUpdateProfile = () => {
       }
     }
   });
+};
+
+export const modifyProfile = async ({
+  email,
+  name
+}: {
+  email: string;
+  name: string;
+}): Promise<{ chatwootId: string; email?: string }> => {
+  const trimmedEmail = (email || '').trim();
+  const trimmedName = (name || '').trim();
+
+  if (!trimmedEmail || !trimmedName) {
+    throw new Error('Missing email or name for modify-profile');
+  }
+
+  if (!validateEmail(trimmedEmail)) {
+    throw new Error('Invalid email for modify-profile');
+  }
+
+  const API = await getAPI();
+
+  const response = await API.post('/api/v1/hook/synchronous/modify-profile', {
+    email: trimmedEmail,
+    name: trimmedName
+  });
+
+  const isOk = response?.status >= 200 && response?.status < 300;
+  const data = response?.data;
+  const first: ModifyProfileResponseItem | null =
+    Array.isArray(data) && data.length > 0 ? data[0] : null;
+  const chatwootId = first?.chatwoot_id;
+
+  if (!isOk || !chatwootId) {
+    throw new Error('Invalid modify-profile response');
+  }
+
+  return {
+    chatwootId: String(chatwootId),
+    email: first?.email
+  };
 };
 
 export const uploadAvatar = async (
