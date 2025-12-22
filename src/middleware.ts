@@ -1,25 +1,84 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { Roles } from '@/constants/roles';
+import { type NextRequest } from 'next/server';
 
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
+const isProfileComplete = (auth: any) => auth?.profileComplete === true;
+
+const patientAndClinicianRoutes = [
+  '/message',
+  '/notification',
+  '/journal',
+  '/record'
+];
+
+const clinicianRoutes = ['/assessments/soap'];
+
+const routeMatches = (routes: (string | RegExp)[], path: string) =>
+  routes.some(route =>
+    route instanceof RegExp ? route.test(path) : route === path
+  );
+
+/* -------------------------------------------------------------------------- */
+/* Middleware                                                                 */
+/* -------------------------------------------------------------------------- */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const hasSession = request.cookies.get('sAccessToken');
+  /* ---------------------------------------------------------------------- */
+  /* Decode auth cookie safely (set by SuperTokens)                          */
+  /* ---------------------------------------------------------------------- */
+  const rawAuth = request.cookies.get('auth')?.value;
 
-  // Protect authenticated routes
-  if (!hasSession && pathname.startsWith('/')) {
-    if (!pathname.startsWith('/auth')) {
-      const url = new URL('/auth', request.url);
-      url.searchParams.set('returnUrl', pathname);
-      return NextResponse.redirect(url);
-    }
+  let auth: any = {};
+  try {
+    auth = rawAuth ? JSON.parse(decodeURIComponent(rawAuth)) : {};
+  } catch {
+    auth = {};
   }
 
-  // Prevent logged-in users from accessing auth pages
-  if (hasSession && pathname.startsWith('/auth')) {
-    return NextResponse.redirect(new URL('/', request.url));
+  /* ---------------------------------------------------------------------- */
+  /* Unauthenticated user protection                                        */
+  /* ---------------------------------------------------------------------- */
+  if (
+    Object.keys(auth).length === 0 &&
+    routeMatches([...patientAndClinicianRoutes, ...clinicianRoutes], pathname)
+  ) {
+    const url = new URL('/auth', request.url);
+    url.searchParams.set('returnUrl', pathname + request.nextUrl.search);
+    return Response.redirect(url);
   }
 
-  return NextResponse.next();
+  /* ---------------------------------------------------------------------- */
+  /* Authenticated users should not access auth pages                        */
+  /* ---------------------------------------------------------------------- */
+  if (auth.userId && pathname.startsWith('/auth')) {
+    return Response.redirect(new URL('/', request.url));
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Role-based authorization                                                */
+  /* ---------------------------------------------------------------------- */
+  if (
+    (auth.role_name !== Roles.Practitioner &&
+      routeMatches(clinicianRoutes, pathname)) ||
+    ((!auth.role_name || auth.role_name === 'guest') &&
+      routeMatches(patientAndClinicianRoutes, pathname))
+  ) {
+    return Response.redirect(new URL('/unauthorized', request.url));
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* 🔥 Issue #272 — Enforce profile completeness (PATIENT ONLY)            */
+  /* ---------------------------------------------------------------------- */
+  if (
+    auth.role_name === Roles.Patient &&
+    !isProfileComplete(auth) &&
+    !pathname.startsWith('/profile')
+  ) {
+    return Response.redirect(new URL('/profile', request.url));
+  }
 }
 
 export const config = {
