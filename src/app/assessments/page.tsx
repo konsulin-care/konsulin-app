@@ -26,6 +26,7 @@ import {
   usePopularAssessments,
   useRegularAssessments
 } from '@/services/api/assessment';
+import { formatDateRange } from '@/utils/dateUtils';
 import { customMarkdownComponents } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
 import { BundleEntry, List, Questionnaire, ResearchStudy } from 'fhir/r4';
@@ -40,35 +41,6 @@ const dateFormat = (date: string) => {
   if (!date) return;
 
   return format(parseISO(date), 'dd MMMM yyyy');
-};
-
-const formatDateRange = (start: string, end: string) => {
-  if (!start || !end) return '';
-
-  const startDate = parseISO(start);
-  const endDate = parseISO(end);
-
-  const sameYear = startDate.getFullYear() === endDate.getFullYear();
-  const sameMonth = startDate.getMonth() === endDate.getMonth();
-
-  const dayStart = format(startDate, 'd');
-  const dayEnd = format(endDate, 'd');
-
-  const monthStart = format(startDate, 'MMM');
-  const monthEnd = format(endDate, 'MMM');
-
-  const yearStart = format(startDate, 'yyyy');
-  const yearEnd = format(endDate, 'yyyy');
-
-  if (sameYear && sameMonth) {
-    return `${dayStart} – ${dayEnd} ${monthStart} ${yearStart}`;
-  }
-
-  if (sameYear && !sameMonth) {
-    return `${dayStart} ${monthStart} – ${dayEnd} ${monthEnd} ${yearStart}`;
-  }
-
-  return `${dayStart} ${monthStart} ${yearStart} – ${dayEnd} ${monthEnd} ${yearEnd}`;
 };
 
 const filteredResearch = (researchArr: BundleEntry[] | null | undefined) =>
