@@ -26,6 +26,7 @@ import {
   usePopularAssessments,
   useRegularAssessments
 } from '@/services/api/assessment';
+import { formatDateRange } from '@/utils/dateUtils';
 import { customMarkdownComponents } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
 import { BundleEntry, List, Questionnaire, ResearchStudy } from 'fhir/r4';
