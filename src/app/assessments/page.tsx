@@ -435,8 +435,10 @@ export default function Assessment() {
                               </div>
                               <div className='text-[10px] font-bold text-black'>
                                 {item.resource.period &&
-                                  `${dateFormat(item.resource.period.start)} -
-                            ${dateFormat(item.resource.period.end)}`}
+                                  +formatDateRange(
+                                    item.resource.period.start,
+                                    item.resource.period.end
+                                  )}
                               </div>
                             </div>
 
