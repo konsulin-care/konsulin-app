@@ -435,7 +435,7 @@ export default function Assessment() {
                               </div>
                               <div className='text-[10px] font-bold text-black'>
                                 {item.resource.period &&
-                                  +formatDateRange(
+                                  formatDateRange(
                                     item.resource.period.start,
                                     item.resource.period.end
                                   )}
