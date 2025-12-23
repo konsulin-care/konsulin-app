@@ -9,9 +9,12 @@ interface ServerConfig {
 
 export const serverConfig: ServerConfig = {
   APP_NAME: process.env.NEXT_PUBLIC_APP_NAME ?? 'Konsulin',
-  API_URL: process.env.API_URL ?? '',
+  API_URL:
+    process.env.API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'https://dev-api.konsulin.care',
   API_BASE_PATH: process.env.API_BASE_PATH ?? '/api/v1/auth',
-  APP_URL: process.env.APP_URL ?? 'http://localhost:3000',
+  APP_URL: process.env.APP_URL || 'http://localhost:3000',
   APP_AUTH_PATH: process.env.APP_AUTH_PATH ?? '/auth',
   TERMINOLOGY_SERVER: process.env.TERMINOLOGY_SERVER ?? ''
 };
