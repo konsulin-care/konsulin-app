@@ -1,6 +1,7 @@
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import {
+  usePollResultBrief,
   useResultBrief,
   useSubmitQuestionnaire
 } from '@/services/api/assessment';
@@ -55,6 +56,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [asyncServiceResultId, setAsyncServiceResultId] = useState<
+    string | undefined
+  >();
 
   const queryClient = useRendererQueryClient();
   const isBuilding = useBuildForm(questionnaire, response);
@@ -163,13 +167,18 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       };
 
       try {
-        const result = await fetchResultBrief(payload);
-        if (result) {
-          interpretationItem.item.push(result);
+        const triggerResult = await fetchResultBrief(payload);
+
+        if (triggerResult?.asyncServiceResultId) {
+          setAsyncServiceResultId(triggerResult.asyncServiceResultId);
+        }
+
+        if (triggerResult?.resultItem) {
+          interpretationItem.item.push(triggerResult.resultItem);
         }
       } catch (error) {
         console.error(
-          'Error when fetching result brief:',
+          'Error when triggering result brief:',
           error instanceof Error ? error.message : error
         );
       }
@@ -195,6 +204,24 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       setIsSubmitting(false);
     }
   };
+
+  usePollResultBrief({
+    asyncServiceResultId,
+    enabled: Boolean(asyncServiceResultId),
+    onResult: note => {
+      const currentResponse = getResponse();
+      const interpretationItem = currentResponse?.item.find(
+        item => item.linkId === 'interpretation'
+      );
+
+      if (!interpretationItem) return;
+
+      interpretationItem.item.push({
+        linkId: 'result-brief',
+        answer: [{ valueString: note }]
+      });
+    }
+  });
 
   useEffect(() => {
     if (Object.keys(invalidItems).length === 0) setRequiredItemEmpty(0);

@@ -6,7 +6,7 @@ import {
   QuestionnaireResponse,
   QuestionnaireResponseItem
 } from 'fhir/r4';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { getAPI } from '../api';
 
 type IResultBriefPayload = {
@@ -136,56 +136,121 @@ export const useUpdateSubmitQuestionnaire = (
 
 const RESULT_BRIEF_PLACEHOLDER =
   'The data is still being processed, kindly visit this page later.';
-const POLL_INTERVAL_MS = 3000;
-const MAX_ATTEMPTS = 5;
+
+type ResultBriefItem = {
+  linkId: string;
+  answer: Array<{
+    valueString: string;
+  }>;
+};
+
+type TriggerResultBriefResponse = {
+  asyncServiceResultId?: string;
+  resultItem: ResultBriefItem;
+};
 
 export const useResultBrief = (questionnaireId: string) => {
-  return useMutation<any, Error, IResultBriefPayload>({
+  return useMutation<TriggerResultBriefResponse, Error, IResultBriefPayload>({
     mutationKey: ['result-brief', questionnaireId],
     mutationFn: async ({ questionnaire, description, item }) => {
       const API = await getAPI();
 
-      const triggerRes = await API.post('/api/v1/hook/interpret', {
-        questionnaire,
-        description,
-        item
-      });
+      try {
+        const triggerRes = await API.post('/api/v1/hook/interpret', {
+          questionnaire,
+          description,
+          item
+        });
 
-      const asyncServiceResultId = triggerRes?.data?.data?.asyncServiceResultId;
+        const asyncServiceResultId =
+          triggerRes?.data?.data?.asyncServiceResultId;
 
-      if (!asyncServiceResultId) {
         return {
-          linkId: 'result-brief',
-          answer: [{ valueString: RESULT_BRIEF_PLACEHOLDER }]
+          asyncServiceResultId,
+          resultItem: {
+            linkId: 'result-brief',
+            answer: [
+              {
+                valueString: RESULT_BRIEF_PLACEHOLDER
+              }
+            ]
+          }
         };
-      }
-
-      let attempts = 0;
-      let note: string | undefined;
-
-      while (attempts < MAX_ATTEMPTS) {
-        const resultRes = await API.get(
-          `/api/v1/service-request/${asyncServiceResultId}/result`
+      } catch (error) {
+        console.error(
+          'Error triggering result brief:',
+          error instanceof Error ? error.message : error
         );
 
-        note = resultRes?.data?.data?.note;
-
-        if (note) break;
-
-        attempts += 1;
-        await new Promise(res => setTimeout(res, POLL_INTERVAL_MS));
-      }
-
-      return {
-        linkId: 'result-brief',
-        answer: [
-          {
-            valueString: note || RESULT_BRIEF_PLACEHOLDER
+        return {
+          asyncServiceResultId: undefined,
+          resultItem: {
+            linkId: 'result-brief',
+            answer: [
+              {
+                valueString: RESULT_BRIEF_PLACEHOLDER
+              }
+            ]
           }
-        ]
-      };
+        };
+      }
     }
   });
+};
+
+type PollResultParams = {
+  asyncServiceResultId?: string;
+  enabled: boolean;
+  onResult: (note: string) => void;
+};
+
+const POLL_INTERVAL_MS = 1000;
+const MAX_DURATION_MS = 3000;
+
+export const usePollResultBrief = ({
+  asyncServiceResultId,
+  enabled,
+  onResult
+}: PollResultParams) => {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!enabled || !asyncServiceResultId) return;
+
+    const API = getAPI();
+    const startTime = Date.now();
+
+    intervalRef.current = setInterval(async () => {
+      try {
+        const res = await (
+          await API
+        ).get(`/api/v1/service-request/${asyncServiceResultId}/result`);
+
+        const note = res?.data?.data?.note;
+
+        if (note) {
+          onResult(note);
+          clearInterval(intervalRef.current!);
+          clearTimeout(timeoutRef.current!);
+        }
+      } catch (error) {
+        console.error(
+          'Polling result brief failed:',
+          error instanceof Error ? error.message : error
+        );
+      }
+    }, POLL_INTERVAL_MS);
+
+    timeoutRef.current = setTimeout(() => {
+      clearInterval(intervalRef.current!);
+    }, MAX_DURATION_MS);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [asyncServiceResultId, enabled, onResult]);
 };
 
 export const useQuestionnaireResponse = ({
