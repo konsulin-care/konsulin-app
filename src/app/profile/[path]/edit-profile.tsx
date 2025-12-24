@@ -42,6 +42,7 @@ import {
   parseFhirProfile
 } from '@/utils/helper';
 import { processImageForAvatar } from '@/utils/image-processing';
+import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
 import { validateEmail } from '@/utils/validation';
 import { useQuery } from '@tanstack/react-query';
 import { getCookie } from 'cookies-next';
@@ -539,7 +540,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
             ? mergeNames(result.name, result?.qualification)
             : mergeNames(result.name);
 
-        auth.profile_complete = isProfileCompleteFromForm(updateUser);
+        auth.profile_complete = isProfileCompleteFromFHIR(result);
         await setCookies('auth', JSON.stringify(auth));
         dispatchAuth({ type: 'auth-check', payload: auth });
 

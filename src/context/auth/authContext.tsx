@@ -1,5 +1,3 @@
-'use client';
-
 import { Roles } from '@/constants/roles';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
@@ -19,6 +17,7 @@ import {
   useSessionContext
 } from 'supertokens-auth-react/recipe/session';
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
+import { isProfileCompleteFromFHIR } from '../../utils/profileCompleteness';
 import { initialState, reducer } from './authReducer';
 import { IStateAuth } from './authTypes';
 
@@ -29,26 +28,6 @@ interface ContextProps {
 }
 
 const AuthContext = createContext<ContextProps | undefined>(undefined);
-
-/**
- * Determines whether a FHIR Patient / Practitioner profile
- * satisfies the minimum required completeness criteria.
- */
-const isProfileCompleteFromFHIR = (
-  profile: Patient | Practitioner
-): boolean => {
-  const hasName = Array.isArray(profile?.name) && profile.name.length > 0;
-
-  const hasDob = Boolean(profile?.birthDate);
-
-  const hasWhatsapp =
-    Array.isArray(profile?.telecom) &&
-    profile.telecom.some(
-      item => item.system === 'phone' && typeof item.value === 'string'
-    );
-
-  return hasName && hasDob && hasWhatsapp;
-};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -92,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           userId,
           role_name: role,
           email,
-          profile_picture: result?.photo?.[0]?.url || '',
+          profile_picture: result?.photo?.[0]?.url ?? '',
           fullname: mergeNames(result?.name),
           fhirId: result?.id ?? '',
           profile_complete
@@ -101,8 +80,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         dispatch({ type: 'login', payload });
       } catch (error) {
         console.error('Error fetching session:', error);
-
-        // Fallback to existing cookie state if available
         if (auth?.userId) {
           dispatch({ type: 'auth-check', payload: auth });
         }
