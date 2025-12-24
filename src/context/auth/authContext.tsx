@@ -1,6 +1,5 @@
 'use client';
 
-import { setCookies } from '@/app/actions';
 import { Roles } from '@/constants/roles';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
@@ -31,92 +30,84 @@ interface ContextProps {
 
 const AuthContext = createContext<ContextProps | undefined>(undefined);
 
+/**
+ * Determines whether a FHIR Patient / Practitioner profile
+ * satisfies the minimum required completeness criteria.
+ */
+const isProfileCompleteFromFHIR = (
+  profile: Patient | Practitioner
+): boolean => {
+  const hasName = Array.isArray(profile?.name) && profile.name.length > 0;
+
+  const hasDob = Boolean(profile?.birthDate);
+
+  const hasWhatsapp =
+    Array.isArray(profile?.telecom) &&
+    profile.telecom.some(
+      item => item.system === 'phone' && typeof item.value === 'string'
+    );
+
+  return hasName && hasDob && hasWhatsapp;
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isLoading, setisLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [state, dispatch] = useReducer(reducer, initialState);
   const session = useSessionContext() as SessionContextUpdate;
 
   useEffect(() => {
     const fetchSession = async () => {
       const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+
       if (!session.doesSessionExist) {
-        setisLoading(false);
+        setIsLoading(false);
         return;
       }
 
       try {
-        if (session.doesSessionExist) {
-          const roles = await getClaimValue({ claim: UserRoleClaim });
-          const userId = session.userId;
+        const roles = await getClaimValue({ claim: UserRoleClaim });
+        const userId = session.userId;
 
-          const result = (await getProfileByIdentifier({
-            userId,
-            type: roles.includes('Practitioner') ? 'Practitioner' : 'Patient'
-          })) as Patient | Practitioner;
+        const role = roles.includes(Roles.Practitioner)
+          ? Roles.Practitioner
+          : Roles.Patient;
 
-          const emails = result.telecom.find(item => item.system === 'email');
+        const result = (await getProfileByIdentifier({
+          userId,
+          type: role
+        })) as Patient | Practitioner;
 
-          const payload = {
-            userId,
-            role_name: roles.includes(Roles.Practitioner)
-              ? Roles.Practitioner
-              : Roles.Patient,
-            email: emails?.value,
-            profile_picture: result?.photo ? result?.photo[0]?.url : '',
-            fullname: mergeNames(result?.name),
-            fhirId: result?.id ?? ''
-          };
-
-          await setCookies('auth', JSON.stringify(payload));
-
-          dispatch({ type: 'login', payload });
-        } else {
-          // Repair cookie when fhirId is empty/missing
-          if (!auth.fhirId) {
-            const roles = await getClaimValue({ claim: UserRoleClaim });
-            const type = roles.includes('Practitioner')
-              ? 'Practitioner'
-              : 'Patient';
-            const userId = auth.userId || session.userId;
-
-            const result = (await getProfileByIdentifier({ userId, type })) as
-              | Patient
-              | Practitioner;
-            if (result) {
-              const emails = result?.telecom?.find(
-                (item: any) => item.system === 'email'
-              );
-              const repairedPayload = {
-                userId,
-                role_name: roles.includes(Roles.Practitioner)
-                  ? Roles.Practitioner
-                  : Roles.Patient,
-                email: emails?.value || auth.email,
-                profile_picture: result?.photo ? result?.photo[0]?.url : '',
-                fullname: mergeNames(result?.name),
-                fhirId: result?.id ?? ''
-              };
-
-              await setCookies('auth', JSON.stringify(repairedPayload));
-              dispatch({ type: 'auth-check', payload: repairedPayload });
-            } else {
-              // No profile found; keep existing cookie (fhirId stays empty)
-              const payload = {
-                role_name: auth.role_name,
-                fullname: auth.fullname || auth.email,
-                email: auth.email,
-                userId: auth.userId,
-                profile_picture: auth.profile_picture,
-                fhirId: ''
-              };
-              dispatch({ type: 'auth-check', payload });
-            }
-          }
+        if (!result) {
+          setIsLoading(false);
+          return;
         }
+
+        const email = result.telecom?.find(
+          item => item.system === 'email'
+        )?.value;
+
+        const profile_complete = isProfileCompleteFromFHIR(result);
+
+        const payload = {
+          userId,
+          role_name: role,
+          email,
+          profile_picture: result?.photo?.[0]?.url || '',
+          fullname: mergeNames(result?.name),
+          fhirId: result?.id ?? '',
+          profile_complete
+        };
+
+        dispatch({ type: 'login', payload });
       } catch (error) {
         console.error('Error fetching session:', error);
+
+        // Fallback to existing cookie state if available
+        if (auth?.userId) {
+          dispatch({ type: 'auth-check', payload: auth });
+        }
       } finally {
-        setisLoading(false);
+        setIsLoading(false);
       }
     };
 
@@ -133,8 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = (): ContextProps => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within a AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-
   return context;
 };
