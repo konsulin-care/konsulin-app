@@ -1,3 +1,4 @@
+import { validateEmail } from '@/utils/validation';
 import { useMutation } from '@tanstack/react-query';
 import { Bundle, Patient, Practitioner } from 'fhir/r4';
 import { apiRequest, getAPI } from './api';
@@ -6,16 +7,30 @@ type IProfileRequest = {
   payload: Patient | Practitioner;
 };
 
+type EmailExistenceResponse = {
+  exists: boolean;
+  patientIds: string[];
+  practitionerIds: string[];
+  status: string;
+};
+
+type ModifyProfileResponseItem = {
+  chatwoot_id?: number | string;
+  email?: string;
+};
+
 export const createProfile = async ({ userId, email, type }) => {
   const payload = {
     resourceType: type,
     active: true,
-    identifier: [
-      {
-        system: 'https://login.konsulin.care/userid',
-        value: userId
-      }
-    ],
+    identifier: userId
+      ? [
+          {
+            system: 'https://login.konsulin.care/userid',
+            value: userId
+          }
+        ]
+      : [],
     telecom: {
       system: 'email',
       use: 'home',
@@ -72,6 +87,23 @@ export const getProfileById = async (
   }
 };
 
+export const checkEmailExists = async (email: string) => {
+  const encodedEmail = encodeURIComponent(email);
+  return apiRequest<EmailExistenceResponse>(
+    'GET',
+    `/api/v1/auth/passwordless/email/exists?email=${encodedEmail}`
+  );
+};
+
+export const signupByEmail = async (email: string) => {
+  if (!email) throw new Error('Missing email');
+
+  return apiRequest('POST', '/api/v1/auth/signinup/code', {
+    email,
+    shouldTryLinkingWithSessionUser: false
+  });
+};
+
 export const useUpdateProfile = () => {
   return useMutation<Patient | Practitioner, Error, IProfileRequest>({
     mutationKey: ['update-profile'],
@@ -87,4 +119,84 @@ export const useUpdateProfile = () => {
       }
     }
   });
+};
+
+export const modifyProfile = async ({
+  email,
+  name
+}: {
+  email: string;
+  name: string;
+}): Promise<{ chatwootId: string; email?: string }> => {
+  const trimmedEmail = (email || '').trim();
+  const trimmedName = (name || '').trim();
+
+  if (!trimmedEmail || !trimmedName) {
+    throw new Error('Missing email or name for modify-profile');
+  }
+
+  if (!validateEmail(trimmedEmail)) {
+    throw new Error('Invalid email for modify-profile');
+  }
+
+  const API = await getAPI();
+
+  const response = await API.post('/api/v1/hook/synchronous/modify-profile', {
+    email: trimmedEmail,
+    name: trimmedName
+  });
+
+  const isOk = response?.status >= 200 && response?.status < 300;
+  const data = response?.data;
+  const first: ModifyProfileResponseItem | null =
+    Array.isArray(data) && data.length > 0 ? data[0] : null;
+  const chatwootId = first?.chatwoot_id;
+
+  if (!isOk || !chatwootId) {
+    throw new Error('Invalid modify-profile response');
+  }
+
+  return {
+    chatwootId: String(chatwootId),
+    email: first?.email
+  };
+};
+
+export const uploadAvatar = async (
+  chatwootId: string,
+  file: File | Blob
+): Promise<string> => {
+  if (!chatwootId) throw new Error('Missing chatwoot_id');
+
+  const formData = new FormData();
+  formData.append('chatwoot_id', chatwootId);
+  formData.append('avatar', file);
+
+  const API = await getAPI();
+  let response;
+  try {
+    response = await API.post(
+      '/api/v1/hook/synchronous/update-avatar',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+  } catch (error: any) {
+    throw new Error('Failed to upload avatar');
+  }
+
+  const isOk = response?.status >= 200 && response?.status < 300;
+  const url =
+    Array.isArray(response?.data) && response.data.length > 0
+      ? response.data[0]?.avatar_url
+      : null;
+
+  if (!isOk || !url) {
+    throw new Error('Failed to upload avatar');
+  }
+
+  return url;
 };
