@@ -35,7 +35,9 @@ export const mergeNames = (
       : '';
 
   const fullName = name
-    .map(item => [...item.given, item.family].filter(Boolean).join(' '))
+    .map(item =>
+      [...(item.given || []), item.family || ''].filter(Boolean).join(' ')
+    )
     .join('');
 
   return qualificationCode ? `${fullName}, ${qualificationCode}` : fullName;
