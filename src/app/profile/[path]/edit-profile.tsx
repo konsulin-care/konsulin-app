@@ -42,6 +42,7 @@ import {
   parseFhirProfile
 } from '@/utils/helper';
 import { processImageForAvatar } from '@/utils/image-processing';
+import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
 import { validateEmail } from '@/utils/validation';
 import { useQuery } from '@tanstack/react-query';
 import { getCookie } from 'cookies-next';
@@ -54,6 +55,12 @@ import { useRouter } from 'next/navigation';
 import { Fragment, useEffect, useState } from 'react';
 import { PhoneInput } from 'react-international-phone';
 import { toast } from 'react-toastify';
+
+const isProfileCompleteFromForm = (data: ICustomProfile) => {
+  return (
+    Boolean(data.firstName) && Boolean(data.birthDate) && Boolean(data.phone)
+  );
+};
 
 type Props = {
   userRole: string;
@@ -532,6 +539,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
           result.resourceType === 'Practitioner'
             ? mergeNames(result.name, result?.qualification)
             : mergeNames(result.name);
+
+        auth.profile_complete = isProfileCompleteFromFHIR(result);
         await setCookies('auth', JSON.stringify(auth));
         dispatchAuth({ type: 'auth-check', payload: auth });
 
