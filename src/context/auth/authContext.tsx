@@ -1,3 +1,5 @@
+'use client';
+
 import { Roles } from '@/constants/roles';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';

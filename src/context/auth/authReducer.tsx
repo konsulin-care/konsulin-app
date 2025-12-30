@@ -10,7 +10,8 @@ export const initialState: IStateAuth = {
     email: '',
     role_name: Roles.Guest,
     profile_picture: '',
-    fhirId: ''
+    fhirId: '',
+    profile_complete: true
   }
 };
 
