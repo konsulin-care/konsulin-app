@@ -59,6 +59,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         })) as Patient | Practitioner;
 
         if (!result) {
+          dispatch({
+            type: 'login',
+            payload: {
+              userId,
+              role_name: role,
+              email: '',
+              fullname: '',
+              profile_picture: '',
+              fhirId: '',
+              profile_complete: false
+            }
+          });
+
           setIsLoading(false);
           return;
         }

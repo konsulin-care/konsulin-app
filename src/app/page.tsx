@@ -43,6 +43,7 @@ const App = () => {
             }
 
             if (intent.kind === 'appointment') {
+              clearIntent();
               router.push(intent.payload.path);
               return;
             }
@@ -62,7 +63,7 @@ const App = () => {
                 ...existingResponse,
                 author: { reference: authorRef },
                 subject: {
-                  reference: `Patient/${authState.userInfo.fhirId}`
+                  reference: `${authorType}/${authState.userInfo.fhirId}`
                 }
               };
 
