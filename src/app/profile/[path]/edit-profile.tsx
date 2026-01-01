@@ -25,13 +25,23 @@ import {
   useGetDistricts,
   useGetProvinces
 } from '@/services/api/cities';
-import { getProfileById, useUpdateProfile } from '@/services/profile';
+import {
+  getProfileById,
+  modifyProfile,
+  uploadAvatar,
+  useUpdateProfile
+} from '@/services/profile';
 import { IWilayahResponse } from '@/types/wilayah';
 import {
+  dataUrlToBlob,
+  findIdentifierValue,
   generateAvatarPlaceholder,
+  isDataUrl,
+  isValidImageUrl,
   mergeNames,
   parseFhirProfile
 } from '@/utils/helper';
+import { processImageForAvatar } from '@/utils/image-processing';
 import { validateEmail } from '@/utils/validation';
 import { useQuery } from '@tanstack/react-query';
 import { getCookie } from 'cookies-next';
@@ -101,10 +111,13 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const fhirRole =
     userRole === Roles.Patient ? Roles.Patient : Roles.Practitioner;
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string>('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const { isLoading: isProfileLoading } = useQuery<Patient | Practitioner>({
     queryKey: ['profile-data', fhirId],
     queryFn: () => getProfileById(fhirId, fhirRole),
+    enabled: Boolean(fhirId),
     onSuccess: result => {
       const parsed = parseFhirProfile(result);
 
@@ -151,6 +164,32 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       }));
     }
   }, [updateUser.addresses]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const validatePhoto = async () => {
+      if (!updateUser.photo) {
+        if (isActive) setResolvedPhotoUrl('');
+        return;
+      }
+
+      if (isDataUrl(updateUser.photo)) {
+        if (isActive) setResolvedPhotoUrl(updateUser.photo);
+        return;
+      }
+
+      const valid = await isValidImageUrl(updateUser.photo);
+      if (!isActive) return;
+      setResolvedPhotoUrl(valid ? updateUser.photo : '');
+    };
+
+    validatePhoto();
+
+    return () => {
+      isActive = false;
+    };
+  }, [updateUser.photo]);
 
   const validateInput = (name: string, value: string) => {
     let error = '';
@@ -274,35 +313,177 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   };
 
   const handleEditSave = async () => {
-    // TODO: image uploader not finished yet
-    let base64ProfilePicture = updateUser.photo;
-    if (isValidUrl(updateUser.photo)) {
-      base64ProfilePicture = await urlToBase64(updateUser.photo);
+    let latestProfile: Patient | Practitioner | null = null;
+    let existingPhotoUrl = '';
+
+    try {
+      latestProfile = await getProfileById(fhirId, fhirRole);
+      existingPhotoUrl = latestProfile?.photo?.[0]?.url ?? '';
+    } catch (error) {
+      console.error('Error when refetching user profile: ', error);
+      toast.error('Gagal mengambil profil terbaru');
+
+      return;
     }
-    const updatedUser = {
-      ...updateUser,
-      photo: base64ProfilePicture
+
+    // only send a real URL; never send data URLs to FHIR
+    let photoUrlForPayload = existingPhotoUrl || '';
+
+    const existingChatwootId = latestProfile
+      ? findIdentifierValue(
+          latestProfile,
+          'https://login.konsulin.care/chatwoot-id'
+        )
+      : '';
+
+    let finalChatwootId = existingChatwootId;
+
+    try {
+      const { chatwootId: latestChatwootId } = await modifyProfile({
+        email: updateUser.email,
+        name: `${updateUser.firstName} ${updateUser.lastName}`.trim()
+      });
+
+      if (latestChatwootId && latestChatwootId !== existingChatwootId) {
+        finalChatwootId = latestChatwootId;
+      }
+    } catch (error) {
+      console.error(
+        '[update-chatwoot-id] failed to ensure chatwoot_id exists and up to date',
+        error
+      );
+    }
+
+    let identifiers = Array.isArray(latestProfile?.identifier)
+      ? [...latestProfile.identifier]
+      : [];
+
+    const ensureIdentifier = (system: string, value: string) => {
+      if (!system || !value) return;
+      const exists = identifiers.find(id => id.system === system);
+      if (exists) {
+        exists.value = value;
+      } else {
+        identifiers.push({ system, value });
+      }
     };
 
-    const splitName = updateUser.firstName.split(' ');
+    ensureIdentifier('https://login.konsulin.care/userid', updateUser.userId);
+    ensureIdentifier(
+      'https://login.konsulin.care/chatwoot-id',
+      finalChatwootId
+    );
+
+    const needsIdentifierSync =
+      !existingChatwootId || existingChatwootId !== finalChatwootId;
+
+    // If chatwoot_id is missing or changed, sync identifiers first so avatar upload is accepted
+    if (needsIdentifierSync) {
+      if (!latestProfile) {
+        toast.error('Gagal memperbarui profil');
+        return;
+      }
+
+      try {
+        await updateProfile({
+          payload: {
+            ...(latestProfile as Patient | Practitioner),
+            identifier: identifiers
+          }
+        });
+      } catch (error) {
+        console.error('Error when syncing chatwoot identifier: ', error);
+        toast.error('Gagal memperbarui profil');
+        return;
+      }
+    }
+
+    if (!finalChatwootId) {
+      console.error('[avatar] missing chatwoot_id, aborting upload', {
+        fhirId,
+        latestProfile
+      });
+      toast.error(
+        'Profil tidak memiliki chatwoot_id; tidak bisa unggah avatar'
+      );
+      setIsUploadingPhoto(false);
+      return;
+    }
+
+    if (isDataUrl(updateUser.photo)) {
+      try {
+        setIsUploadingPhoto(true);
+        const originalBlob = dataUrlToBlob(updateUser.photo);
+
+        const mime = originalBlob.type || 'image/png';
+        const ext =
+          mime === 'image/jpeg'
+            ? 'jpg'
+            : mime?.includes('/')
+              ? mime.split('/')[1]
+              : 'png';
+
+        const file = new File([originalBlob], `avatar.${ext}`, {
+          type: mime
+        });
+
+        const processed = await processImageForAvatar(file, {
+          outputType: mime
+        });
+
+        const fileForUpload =
+          processed.blob instanceof File
+            ? processed.blob
+            : new File([processed.blob], `avatar.${ext}`, {
+                type: processed.blob.type || mime
+              });
+
+        const uploadedUrl = await uploadAvatar(finalChatwootId, fileForUpload);
+        if (!uploadedUrl) {
+          throw new Error('receive empty response from uploadAvatar');
+        }
+
+        if (uploadedUrl && uploadedUrl !== existingPhotoUrl) {
+          photoUrlForPayload = uploadedUrl;
+        }
+      } catch (error: any) {
+        console.error('[avatar] upload error', {
+          message: error?.message,
+          status: (error as any)?.response?.status,
+          response: (error as any)?.response?.data || error
+        });
+        toast.error('Gagal mengunggah foto profil');
+
+        return;
+      } finally {
+        setIsUploadingPhoto(false);
+      }
+    } else if (updateUser.photo && isValidUrl(updateUser.photo)) {
+      // keep only http/https (avoid data URLs slipping in)
+      const parsed = new URL(updateUser.photo);
+      if (['http:', 'https:'].includes(parsed.protocol)) {
+        if (updateUser.photo !== existingPhotoUrl) {
+          photoUrlForPayload = updateUser.photo;
+        }
+      }
+    }
+
+    const splitName = (updateUser.firstName || '').split(' ').filter(Boolean);
 
     const payload: Patient | Practitioner = {
-      resourceType: updateUser.resourceType,
+      resourceType: updateUser.resourceType || fhirRole,
       id: updateUser.fhirId,
       active: updateUser.active,
       birthDate: updateUser.birthDate,
       gender: updateUser.gender,
-      photo: [
-        {
-          url: ''
-        }
-      ],
-      identifier: [
-        {
-          system: 'https://login.konsulin.care/userid',
-          value: updateUser.userId
-        }
-      ],
+      photo: photoUrlForPayload
+        ? [
+            {
+              url: photoUrlForPayload
+            }
+          ]
+        : [],
+      identifier: identifiers,
       name: [
         {
           use: 'official',
@@ -335,18 +516,30 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       ]
     };
 
-    const result = await updateProfile({ payload });
-    if (!isUpdateError && result) {
-      const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
-      auth.profile_picture = result.photo[0].url;
-      auth.fullname =
-        result.resourceType === 'Practitioner'
-          ? mergeNames(result.name, result?.qualification)
-          : mergeNames(result.name);
-      await setCookies('auth', JSON.stringify(auth));
-      dispatchAuth({ type: 'auth-check', payload: auth });
+    try {
+      const result = await updateProfile({ payload });
+      if (result) {
+        let auth: any = {};
+        try {
+          auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+        } catch {
+          console.warn('Failed to parse auth cookie, starting fresh');
+        }
+        const updatedPhotoUrl =
+          result?.photo?.[0]?.url || photoUrlForPayload || auth.profile_picture;
+        auth.profile_picture = updatedPhotoUrl;
+        auth.fullname =
+          result.resourceType === 'Practitioner'
+            ? mergeNames(result.name, result?.qualification)
+            : mergeNames(result.name);
+        await setCookies('auth', JSON.stringify(auth));
+        dispatchAuth({ type: 'auth-check', payload: auth });
 
-      setDrawerState(DRAWER_STATE.SUCCESS);
+        setDrawerState(DRAWER_STATE.SUCCESS);
+      }
+    } catch (error) {
+      console.error('Error when updating profile: ', error);
+      toast.error('Gagal memperbarui profil');
     }
   };
 
@@ -427,21 +620,6 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }));
   };
 
-  const urlToBase64 = async (url: string): Promise<string> => {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result as string);
-      };
-      reader.onerror = () => {
-        reject(new Error('Failed to convert URL to Base64'));
-      };
-      reader.readAsDataURL(blob);
-    });
-  };
-
   const formatDate = (dateObject: string) => {
     const date = new Date(dateObject);
 
@@ -460,7 +638,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const { initials, backgroundColor } = generateAvatarPlaceholder({
     id: authState.userInfo?.fhirId,
     name: authState.userInfo?.fullname,
-    email: authState.userInfo?.email
+    email: authState.userInfo?.email,
+    userId: authState.userInfo?.userId || updateUser.userId
   });
 
   return (
@@ -477,7 +656,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         ) : (
           <>
             <ImageUploader
-              userPhoto={updateUser.photo}
+              userPhoto={resolvedPhotoUrl || updateUser.photo}
               onPhotoChange={handleUserPhoto}
               initials={initials}
               backgroundColor={backgroundColor}
@@ -691,12 +870,14 @@ export default function EditProfile({ userRole, fhirId }: Props) {
           </>
         )}
         <button
-          className={`text-md border-primary mt-6 w-full rounded-full border-1 p-4 font-semibold ${validateForm(updateUser) && !isUpdateLoading ? 'bg-secondary text-white' : 'cursor-not-allowed bg-gray-300 text-gray-500'}`}
+          className={`text-md border-primary mt-6 w-full rounded-full border-1 p-4 font-semibold ${validateForm(updateUser) && !isUpdateLoading && !isUploadingPhoto ? 'bg-secondary text-white' : 'cursor-not-allowed bg-gray-300 text-gray-500'}`}
           type='submit'
           onClick={handleEditSave}
-          disabled={!validateForm(updateUser) || isUpdateLoading}
+          disabled={
+            !validateForm(updateUser) || isUpdateLoading || isUploadingPhoto
+          }
         >
-          {isUpdateLoading ? (
+          {isUpdateLoading || isUploadingPhoto ? (
             <LoadingSpinnerIcon
               width={20}
               height={20}

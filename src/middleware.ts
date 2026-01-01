@@ -38,7 +38,9 @@ export function middleware(request: NextRequest) {
     )
   ) {
     // return Response.redirect(new URL('/register?role=patient', request.url))
-    return Response.redirect(new URL('/auth', request.url));
+    const url = new URL('/auth', request.url);
+    url.searchParams.set('returnUrl', pathname + request.nextUrl.search);
+    return Response.redirect(url);
   }
 
   // if (auth.token && routeMatches(['/login', '/register'], pathname)) {
