@@ -2,6 +2,7 @@
 
 import { setCookies } from '@/app/actions';
 import { Roles } from '@/constants/roles';
+import { getAPI } from '@/services/api';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { getCookie } from 'cookies-next';
@@ -30,6 +31,39 @@ interface ContextProps {
 }
 
 const AuthContext = createContext<ContextProps | undefined>(undefined);
+
+const persistGuestAssessments = async (patientFhirId: string) => {
+  const API = await getAPI();
+
+  const keys = Object.keys(localStorage).filter(key =>
+    key.startsWith('response_')
+  );
+
+  for (const key of keys) {
+    try {
+      const stored = localStorage.getItem(key);
+      if (!stored) continue;
+
+      const questionnaireResponse = JSON.parse(stored);
+      if (!questionnaireResponse?.id) continue;
+
+      await API.put(`/fhir/QuestionnaireResponse/${questionnaireResponse.id}`, {
+        ...questionnaireResponse,
+        subject: {
+          reference: `Patient/${patientFhirId}`
+        },
+        status: 'completed'
+      });
+
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.error(
+        `Failed to persist guest assessment for key ${key}:`,
+        error
+      );
+    }
+  }
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setisLoading] = useState(true);
@@ -70,6 +104,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           await setCookies('auth', JSON.stringify(payload));
 
           dispatch({ type: 'login', payload });
+
+          if (payload.fhirId) {
+            await persistGuestAssessments(payload.fhirId);
+          }
         } else {
           // Repair cookie when fhirId is empty/missing
           if (!auth.fhirId) {
