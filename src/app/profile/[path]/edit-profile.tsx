@@ -27,6 +27,7 @@ import {
 } from '@/services/api/cities';
 import {
   getProfileById,
+  modifyProfile,
   uploadAvatar,
   useUpdateProfile
 } from '@/services/profile';
@@ -312,7 +313,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   };
 
   const handleEditSave = async () => {
-    let latestProfile: Patient | Practitioner = null;
+    let latestProfile: Patient | Practitioner | null = null;
     let existingPhotoUrl = '';
 
     try {
@@ -321,19 +322,83 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     } catch (error) {
       console.error('Error when refetching user profile: ', error);
       toast.error('Gagal mengambil profil terbaru');
+
+      return;
     }
 
     // only send a real URL; never send data URLs to FHIR
     let photoUrlForPayload = existingPhotoUrl || '';
 
-    const chatwootId = latestProfile
+    const existingChatwootId = latestProfile
       ? findIdentifierValue(
           latestProfile,
           'https://login.konsulin.care/chatwoot-id'
         )
       : '';
 
-    if (!chatwootId) {
+    let finalChatwootId = existingChatwootId;
+
+    try {
+      const { chatwootId: latestChatwootId } = await modifyProfile({
+        email: updateUser.email,
+        name: `${updateUser.firstName} ${updateUser.lastName}`.trim()
+      });
+
+      if (latestChatwootId && latestChatwootId !== existingChatwootId) {
+        finalChatwootId = latestChatwootId;
+      }
+    } catch (error) {
+      console.error(
+        '[update-chatwoot-id] failed to ensure chatwoot_id exists and up to date',
+        error
+      );
+    }
+
+    let identifiers = Array.isArray(latestProfile?.identifier)
+      ? [...latestProfile.identifier]
+      : [];
+
+    const ensureIdentifier = (system: string, value: string) => {
+      if (!system || !value) return;
+      const exists = identifiers.find(id => id.system === system);
+      if (exists) {
+        exists.value = value;
+      } else {
+        identifiers.push({ system, value });
+      }
+    };
+
+    ensureIdentifier('https://login.konsulin.care/userid', updateUser.userId);
+    ensureIdentifier(
+      'https://login.konsulin.care/chatwoot-id',
+      finalChatwootId
+    );
+
+    const needsIdentifierSync =
+      !existingChatwootId || existingChatwootId !== finalChatwootId;
+
+    // If chatwoot_id is missing or changed, sync identifiers first so avatar upload is accepted
+    if (needsIdentifierSync) {
+      if (!latestProfile) {
+        toast.error('Gagal memperbarui profil');
+        return;
+      }
+
+      try {
+        await updateProfile({
+          payload: {
+            ...(latestProfile as Patient | Practitioner),
+            identifier: identifiers
+          }
+        });
+      } catch (error) {
+        console.error('Error when syncing chatwoot identifier: ', error);
+        toast.error('Gagal memperbarui profil');
+        return;
+      }
+    }
+
+    if (!finalChatwootId) {
       console.error('[avatar] missing chatwoot_id, aborting upload', {
         fhirId,
         latestProfile
@@ -373,7 +438,10 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 type: processed.blob.type || mime
               });
 
-        const uploadedUrl = await uploadAvatar(chatwootId, fileForUpload);
+        const uploadedUrl = await uploadAvatar(finalChatwootId, fileForUpload);
+        if (!uploadedUrl) {
+          throw new Error('receive empty response from uploadAvatar');
+        }
 
         if (uploadedUrl && uploadedUrl !== existingPhotoUrl) {
           photoUrlForPayload = uploadedUrl;
@@ -385,6 +453,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
           response: (error as any)?.response?.data || error
         });
         toast.error('Gagal mengunggah foto profil');
+
+        return;
       } finally {
         setIsUploadingPhoto(false);
       }
@@ -398,24 +468,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       }
     }
 
-    let identifiers = Array.isArray(latestProfile?.identifier)
-      ? [...latestProfile.identifier]
-      : [];
-
-    const ensureIdentifier = (system: string, value: string) => {
-      if (!system || !value) return;
-      const exists = identifiers.find(id => id.system === system);
-      if (exists) {
-        exists.value = value;
-      } else {
-        identifiers.push({ system, value });
-      }
-    };
-
-    ensureIdentifier('https://login.konsulin.care/userid', updateUser.userId);
-    ensureIdentifier('https://login.konsulin.care/chatwoot-id', chatwootId);
-
-    const splitName = updateUser.firstName.split(' ').filter(Boolean);
+    const splitName = (updateUser.firstName || '').split(' ').filter(Boolean);
 
     const payload: Patient | Practitioner = {
       resourceType: updateUser.resourceType || fhirRole,
@@ -465,8 +518,13 @@ export default function EditProfile({ userRole, fhirId }: Props) {
 
     try {
       const result = await updateProfile({ payload });
-      if (!isUpdateError && result) {
-        const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+      if (result) {
+        let auth: any = {};
+        try {
+          auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+        } catch {
+          console.warn('Failed to parse auth cookie, starting fresh');
+        }
         const updatedPhotoUrl =
           result?.photo?.[0]?.url || photoUrlForPayload || auth.profile_picture;
         auth.profile_picture = updatedPhotoUrl;
