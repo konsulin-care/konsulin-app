@@ -5,7 +5,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { getFromLocalStorage } from '@/lib/utils';
 import { getAPI } from '@/services/api';
-import { useQuestionnaireResponse } from '@/services/api/assessment';
+import {
+  RESULT_BRIEF_PLACEHOLDER,
+  useQuestionnaireResponse
+} from '@/services/api/assessment';
 import { formatQueryTitle } from '@/utils/helper';
 import { saveIntent } from '@/utils/intent-storage';
 import { QuestionnaireResponseItem } from 'fhir/r4';
@@ -143,11 +146,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
     const existingResult =
       resultBriefItem?.answer?.[0]?.valueString?.trim() ?? '';
 
-    if (
-      existingResult &&
-      existingResult !==
-        'The data is still being processed, kindly visit this page later.'
-    ) {
+    if (existingResult && existingResult !== RESULT_BRIEF_PLACEHOLDER) {
       setPolledResultBrief(existingResult);
       return;
     }
