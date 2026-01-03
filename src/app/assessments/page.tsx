@@ -88,12 +88,29 @@ export default function Assessment() {
     if (found.resourceType === 'ResearchStudy') {
       merged = getMergedData(found);
 
-      const questionnaireUrl =
-        merged.relatedLists?.[0]?.resource?.entry?.[1]?.item?.reference
-          ?.split('/')
+      let questionnaireId: string | undefined;
+
+      if (
+        Array.isArray((merged as any).questionnaireIds) &&
+        (merged as any).questionnaireIds.length > 0
+      ) {
+        questionnaireId = (merged as any).questionnaireIds[0];
+      }
+
+      if (!questionnaireId) {
+        questionnaireId = merged.relatedLists?.[0]?.resource?.entry
+          ?.find(e => e.item?.reference?.startsWith('Questionnaire/'))
+          ?.item?.reference?.split('/')
           ?.pop();
-      if (questionnaireUrl) {
-        setResearchUrl(questionnaireUrl);
+      }
+
+      if (questionnaireId) {
+        setResearchUrl(questionnaireId);
+      } else {
+        console.warn(
+          '[Assessment] Missing questionnaireId for research:',
+          merged.id
+        );
       }
     }
     setSelectedAssessment(merged);
@@ -130,10 +147,10 @@ export default function Assessment() {
   const findListData = (researchId: string) => {
     return research.filter(
       (item: BundleEntry) =>
-        item.resource?.resourceType === 'List' &&
-        Array.isArray(item.resource.entry) &&
-        item.resource.entry.some(
-          entry => entry.item?.reference?.split('/').pop() === researchId
+        item.resource?.resourceType === 'PlanDefinition' &&
+        Array.isArray((item.resource as any).action) &&
+        (item.resource as any).action.some((a: any) =>
+          a.definitionReference?.reference?.startsWith('Questionnaire/')
         )
     );
   };
@@ -149,17 +166,34 @@ export default function Assessment() {
   const handleResearchClick = (
     mergedData: ResearchStudy & { relatedLists: BundleEntry<List>[] }
   ) => {
-    if (!mergedData || mergedData.relatedLists.length === 0) return;
+    if (!mergedData) return;
 
-    const questionnaireUrl =
-      mergedData.relatedLists?.[0]?.resource?.entry?.[1]?.item?.reference
-        ?.split('/')
+    let questionnaireId: string | undefined;
+
+    if (
+      Array.isArray((mergedData as any).questionnaireIds) &&
+      (mergedData as any).questionnaireIds.length > 0
+    ) {
+      questionnaireId = (mergedData as any).questionnaireIds[0];
+    }
+
+    if (!questionnaireId) {
+      questionnaireId = mergedData.relatedLists?.[0]?.resource?.entry
+        ?.find(e => e.item?.reference?.startsWith('Questionnaire/'))
+        ?.item?.reference?.split('/')
         ?.pop();
+    }
 
-    if (!questionnaireUrl) return;
+    if (!questionnaireId) {
+      console.warn(
+        '[Assessment] No questionnaireId found for research:',
+        mergedData.id
+      );
+      return;
+    }
 
     setSelectedAssessment(mergedData);
-    setResearchUrl(questionnaireUrl);
+    setResearchUrl(questionnaireId);
 
     const params = new URLSearchParams(window.location.search);
     params.set('isDrawerOpen', 'true');
