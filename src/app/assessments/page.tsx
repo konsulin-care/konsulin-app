@@ -45,7 +45,7 @@ const dateFormat = (date: string) => {
 const filteredResearch = (researchArr: BundleEntry[] | null | undefined) =>
   researchArr
     ? researchArr.filter(
-        (item: BundleEntry) => item.resource.resourceType === 'ResearchStudy'
+        (item: BundleEntry) => item.resource?.resourceType === 'ResearchStudy'
       )
     : [];
 
@@ -89,7 +89,7 @@ export default function Assessment() {
       merged = getMergedData(found);
 
       const questionnaireUrl =
-        merged.relatedLists[0].resource?.entry?.[1]?.item?.reference
+        merged.relatedLists?.[0]?.resource?.entry?.[1]?.item?.reference
           ?.split('/')
           ?.pop();
       if (questionnaireUrl) {
@@ -130,9 +130,10 @@ export default function Assessment() {
   const findListData = (researchId: string) => {
     return research.filter(
       (item: BundleEntry) =>
-        item.resource.resourceType === 'List' &&
+        item.resource?.resourceType === 'List' &&
+        Array.isArray(item.resource.entry) &&
         item.resource.entry.some(
-          entry => entry.item.reference.split('/').pop() === researchId
+          entry => entry.item?.reference?.split('/').pop() === researchId
         )
     );
   };
@@ -151,9 +152,11 @@ export default function Assessment() {
     if (!mergedData || mergedData.relatedLists.length === 0) return;
 
     const questionnaireUrl =
-      mergedData.relatedLists[0].resource.entry[1].item.reference
-        .split('/')
-        .pop();
+      mergedData.relatedLists?.[0]?.resource?.entry?.[1]?.item?.reference
+        ?.split('/')
+        ?.pop();
+
+    if (!questionnaireUrl) return;
 
     setSelectedAssessment(mergedData);
     setResearchUrl(questionnaireUrl);
@@ -472,7 +475,7 @@ export default function Assessment() {
               <CardLoader item={2} />
             ) : (
               <div className='flex w-max space-x-4 pb-4'>
-                {popularAssessments.map(
+                {(popularAssessments ?? []).map(
                   (assessment: BundleEntry<Questionnaire>) => (
                     <div
                       key={assessment.resource.id}
@@ -533,7 +536,7 @@ export default function Assessment() {
             <CardLoader item={4} />
           ) : (
             <div className='mt-4 grid grid-cols-1 gap-2 md:grid-cols-2'>
-              {regularAssessments.map(
+              {(regularAssessments ?? []).map(
                 (assessment: BundleEntry<Questionnaire>) => (
                   <div
                     key={assessment.resource.id}
