@@ -18,6 +18,9 @@ type IResultBriefPayload = {
 export const RESULT_BRIEF_PLACEHOLDER =
   'The data is still being processed, kindly visit this page later.';
 
+export const RESULT_BRIEF_LOGIN_REQUIRED =
+  'Kindly log in to generate the result brief.';
+
 const POLL_INTERVAL_MS = 1000; // 1 request per second
 const MAX_WAIT_MS = 3000; // max 3 seconds total
 

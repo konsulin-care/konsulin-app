@@ -6,6 +6,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { getFromLocalStorage } from '@/lib/utils';
 import { getAPI } from '@/services/api';
 import {
+  RESULT_BRIEF_LOGIN_REQUIRED,
   RESULT_BRIEF_PLACEHOLDER,
   useQuestionnaireResponse
 } from '@/services/api/assessment';
@@ -134,6 +135,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
   useEffect(() => {
     if (!questionnaireResponse) return;
+    if (!authState.isAuthenticated) return;
 
     const interpretationItem = questionnaireResponse.item.find(
       item => item.linkId === 'interpretation'
@@ -169,6 +171,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
         const note = res.data?.data?.note?.trim();
 
         if (note && !cancelled) {
+          if (!authState.isAuthenticated) return;
           setPolledResultBrief(note);
 
           const updatedInterpretationItem = {
@@ -216,8 +219,15 @@ export default function RecordAssessment({ recordId, title }: Props) {
   }, [questionnaireResponse, recordId]);
 
   const getResultBrief = () => {
+    // Guest users: no webhook, no polling, no PUT
+    if (!authState.isAuthenticated) {
+      return RESULT_BRIEF_LOGIN_REQUIRED;
+    }
+
+    // If we already polled a final result, use it
     if (polledResultBrief) return polledResultBrief;
 
+    // Otherwise, check persisted QuestionnaireResponse
     const interpretationItem = questionnaireResponse?.item.find(
       item => item.linkId === 'interpretation'
     );
@@ -226,14 +236,12 @@ export default function RecordAssessment({ recordId, title }: Props) {
       subItem => subItem.linkId === 'result-brief'
     );
 
+    // No result yet → placeholder
     if (!resultBriefItem) {
-      return 'The data is still being processed, kindly visit this page later.';
+      return RESULT_BRIEF_PLACEHOLDER;
     }
 
-    return (
-      resultBriefItem.answer?.[0]?.valueString ??
-      'The data is still being processed, kindly visit this page later.'
-    );
+    return resultBriefItem.answer?.[0]?.valueString ?? RESULT_BRIEF_PLACEHOLDER;
   };
 
   return (

@@ -1,9 +1,7 @@
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
-import {
-  useResultBrief,
-  useSubmitQuestionnaire
-} from '@/services/api/assessment';
+import { getAPI } from '@/services/api';
+import { useSubmitQuestionnaire } from '@/services/api/assessment';
 import Image from 'next/image';
 
 import {
@@ -64,8 +62,6 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     isLoading: submitQuestionnaireIsLoading
   } = useSubmitQuestionnaire(questionnaire.id, isAuthenticated);
 
-  const { mutateAsync: fetchResultBrief } = useResultBrief(questionnaire.id);
-
   const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
 
   useEffect(() => {
@@ -125,18 +121,41 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const handleSubmitQuestionnaire = async (buttonLabel: string) => {
     if (buttonLabel === 'close') {
       handleNavigate(buttonLabel);
+      return;
     }
 
     setIsSubmitting(true);
 
-    const authorType = role === 'practitioner' ? 'Practitioner' : 'Patient';
-    const authorId = role === 'practitioner' ? practitionerId : patientId;
-
     const questionnaireResponse = getResponse();
-    const author = { reference: `${authorType}/${authorId}` };
-    const subject = { reference: `Patient/${patientId}` };
-
     if (!questionnaireResponse) return;
+
+    let author;
+    let subject;
+
+    // Guest
+    if (!isAuthenticated) {
+      author = { reference: 'Group/guest' };
+      subject = { reference: 'Group/guest' };
+    } else {
+      // Authenticated
+      if (role === 'practitioner') {
+        if (!practitionerId || !patientId) {
+          toast.error('Missing practitioner or patient information');
+          setIsSubmitting(false);
+          return;
+        }
+        author = { reference: `Practitioner/${practitionerId}` };
+        subject = { reference: `Patient/${patientId}` };
+      } else {
+        if (!patientId) {
+          toast.error('Missing patient information');
+          setIsSubmitting(false);
+          return;
+        }
+        author = { reference: `Patient/${patientId}` };
+        subject = { reference: `Patient/${patientId}` };
+      }
+    }
 
     /* Check if the questionnaire response contains an item with linkId = 'interpretation'.
      * If it does, extract the item and send it to the webhook. */
@@ -156,42 +175,36 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         return;
       }
 
-      const payload = {
-        questionnaire: questionnaireResponse.questionnaire,
-        description: questionnaire.description,
-        item: interpretationItem.item
-      };
-
-      let serviceRequestId: string | null = null;
-
-      try {
-        const result = await fetchResultBrief(payload);
-        const note = result.note;
-        serviceRequestId = result.serviceRequestId;
-
-        interpretationItem.item.push({
-          linkId: 'result-brief',
-          answer: [
-            {
-              valueString: note
-            }
-          ]
-        });
-      } catch (error) {
-        console.error('Error when fetching result brief:', error);
-      }
-
       const submitResult = await submitQuestionnaire({
         ...questionnaireResponse,
         author,
         subject
       });
 
-      if (serviceRequestId && submitResult?.id) {
-        localStorage.setItem(
-          `serviceRequest_${submitResult.id}`,
-          serviceRequestId
-        );
+      // Authenticated users only: trigger webhook AFTER QR is saved
+      if (
+        isAuthenticated &&
+        interpretationItem?.item?.length &&
+        submitResult?.id
+      ) {
+        const payload = {
+          questionnaire: questionnaireResponse.questionnaire,
+          description: questionnaire.description,
+          item: interpretationItem.item
+        };
+
+        const API = await getAPI();
+        const hookRes = await API.post('/api/v1/hook/interpret', payload);
+
+        const serviceRequestId =
+          hookRes?.data?.data?.asyncServiceResultId?.trim?.() ?? '';
+
+        if (serviceRequestId) {
+          localStorage.setItem(
+            `serviceRequest_${submitResult.id}`,
+            serviceRequestId
+          );
+        }
       }
 
       /* save questionnaire response to localStorage for guest (if not closing) */
