@@ -1,4 +1,3 @@
-import { useDebounce } from '@/hooks/useDebounce';
 import { useQuery } from '@tanstack/react-query';
 import { BundleEntry, PractitionerRole } from 'fhir/r4';
 import { useMemo } from 'react';
@@ -17,33 +16,32 @@ export type IUseClinicParams = {
 };
 
 export const useListClinics = (
-  { searchTerm, cityFilter }: { searchTerm?: string; cityFilter?: string },
+  { cityFilter, nameFilter }: { cityFilter?: string; nameFilter?: string },
   delay: number = 500
 ) => {
-  const debouncedSearchTerm = useDebounce(searchTerm, delay);
-
   const url = useMemo(() => {
     let url = '/fhir/Organization?_elements=name,address';
-
-    if (debouncedSearchTerm) {
-      url += `&name:contains=${debouncedSearchTerm}`;
-    }
 
     if (cityFilter) {
       url += `&address-city:contains=${cityFilter}`;
     }
 
+    if (nameFilter) {
+      url += `&name:contains=${nameFilter}`;
+    }
+
     return url;
-  }, [debouncedSearchTerm, cityFilter]);
+  }, [cityFilter, nameFilter]);
 
   return useQuery({
-    queryKey: ['list-clinics', url],
+    queryKey: ['list-clinics', cityFilter, nameFilter],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get(url);
       return response;
     },
-    select: response => response.data.entry || []
+    select: response => response.data.entry || [],
+    enabled: true
   });
 };
 
