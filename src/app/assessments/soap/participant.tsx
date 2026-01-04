@@ -150,7 +150,9 @@ export default function Participant({
   const renderDialogContent = (
     <>
       <DialogHeader>
-        <DialogTitle className='text-muted'>Buat Profil Pasien</DialogTitle>
+        <DialogTitle className='text-muted'>
+          Create a Patient Profile
+        </DialogTitle>
         <DialogDescription />
       </DialogHeader>
 

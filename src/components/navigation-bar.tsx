@@ -34,7 +34,7 @@ export default function NavigationBar({
           )}
         >
           <HouseIcon fill={pathname === '/' ? '#13C2C2' : '#ADB6C7'} />
-          <span className='mt-[5px] text-[12px]'>Beranda</span>
+          <span className='mt-[5px] text-[12px]'>Home</span>
         </Link>
         <Link
           href={
@@ -58,7 +58,7 @@ export default function NavigationBar({
             }
           />
 
-          <span className='mt-[5px] text-[12px]'>Sesi Temu</span>
+          <span className='mt-[5px] text-[12px]'>Appointment</span>
         </Link>
         <Link
           href={'/assessments'}

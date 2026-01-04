@@ -111,7 +111,7 @@ export default function HomeHeader() {
               />
               <div className='flex h-[32px] flex-col'>
                 <div className='text-[10px] font-normal text-white'>
-                  Selamat Datang di Dashboard anda
+                  Welcome to Your Dashboard
                 </div>
                 <div className='text-[14px] font-bold text-white'>
                   {displayName}

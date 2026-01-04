@@ -1,5 +1,5 @@
-import Image from 'next/image'
-import Link from 'next/link'
+import Image from 'next/image';
+import Link from 'next/link';
 
 export default function AppMenu() {
   return (
@@ -12,9 +12,11 @@ export default function AppMenu() {
           alt='writing'
         />
         <div className='ml-2 flex flex-col'>
-          <span className='text-[12px] font-bold text-primary'>Relax Time</span>
-          <span className='text-[10px] text-primary'>
-            Relax for Better Mental Health
+          <span className='text-primary text-[12px] font-bold'>
+            Meet a Counselor
+          </span>
+          <span className='text-primary text-[10px]'>
+            Let's consult your health to a certified professional
           </span>
         </div>
       </Link>
@@ -27,14 +29,14 @@ export default function AppMenu() {
           alt='writing'
         />
         <div className='ml-2 flex flex-col'>
-          <span className='text-[12px] font-bold text-primary'>
+          <span className='text-primary text-[12px] font-bold'>
             Start Writting
           </span>
-          <span className='text-[10px] text-primary'>
+          <span className='text-primary text-[10px]'>
             Express your current feelings
           </span>
         </div>
       </Link>
     </>
-  )
+  );
 }
