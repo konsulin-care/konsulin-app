@@ -98,10 +98,13 @@ export default function Assessment() {
       }
 
       if (!questionnaireId) {
-        questionnaireId = merged.relatedLists?.[0]?.resource?.entry
-          ?.find(e => e.item?.reference?.startsWith('Questionnaire/'))
-          ?.item?.reference?.split('/')
-          ?.pop();
+        const planDef = merged.relatedLists?.[0]?.resource as any;
+
+        questionnaireId = planDef?.action
+          ?.map((a: any) =>
+            a?.definitionReference?.reference?.split('/')?.pop()
+          )
+          ?.filter(Boolean)?.[0];
       }
 
       if (questionnaireId) {
@@ -149,8 +152,9 @@ export default function Assessment() {
       (item: BundleEntry) =>
         item.resource?.resourceType === 'PlanDefinition' &&
         Array.isArray((item.resource as any).action) &&
-        (item.resource as any).action.some((a: any) =>
-          a.definitionReference?.reference?.startsWith('Questionnaire/')
+        (item.resource as any).action.some(
+          (a: any) =>
+            a.definitionReference?.reference?.split('/')?.pop() === researchId
         )
     );
   };
@@ -178,10 +182,11 @@ export default function Assessment() {
     }
 
     if (!questionnaireId) {
-      questionnaireId = mergedData.relatedLists?.[0]?.resource?.entry
-        ?.find(e => e.item?.reference?.startsWith('Questionnaire/'))
-        ?.item?.reference?.split('/')
-        ?.pop();
+      const planDef = mergedData.relatedLists?.[0]?.resource as any;
+
+      questionnaireId = planDef?.action
+        ?.map((a: any) => a?.definitionReference?.reference?.split('/')?.pop())
+        ?.filter(Boolean)?.[0];
     }
 
     if (!questionnaireId) {
