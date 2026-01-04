@@ -45,7 +45,7 @@ const dateFormat = (date: string) => {
 const filteredResearch = (researchArr: BundleEntry[] | null | undefined) =>
   researchArr
     ? researchArr.filter(
-        (item: BundleEntry) => item.resource.resourceType === 'ResearchStudy'
+        (item: BundleEntry) => item.resource?.resourceType === 'ResearchStudy'
       )
     : [];
 
@@ -88,12 +88,32 @@ export default function Assessment() {
     if (found.resourceType === 'ResearchStudy') {
       merged = getMergedData(found);
 
-      const questionnaireUrl =
-        merged.relatedLists[0].resource?.entry?.[1]?.item?.reference
-          ?.split('/')
-          ?.pop();
-      if (questionnaireUrl) {
-        setResearchUrl(questionnaireUrl);
+      let questionnaireId: string | undefined;
+
+      if (
+        Array.isArray((merged as any).questionnaireIds) &&
+        (merged as any).questionnaireIds.length > 0
+      ) {
+        questionnaireId = (merged as any).questionnaireIds[0];
+      }
+
+      if (!questionnaireId) {
+        const planDef = merged.relatedLists?.[0]?.resource as any;
+
+        questionnaireId = planDef?.action
+          ?.map((a: any) =>
+            a?.definitionReference?.reference?.split('/')?.pop()
+          )
+          ?.filter(Boolean)?.[0];
+      }
+
+      if (questionnaireId) {
+        setResearchUrl(questionnaireId);
+      } else {
+        console.warn(
+          '[Assessment] Missing questionnaireId for research:',
+          merged.id
+        );
       }
     }
     setSelectedAssessment(merged);
@@ -130,9 +150,11 @@ export default function Assessment() {
   const findListData = (researchId: string) => {
     return research.filter(
       (item: BundleEntry) =>
-        item.resource.resourceType === 'List' &&
-        item.resource.entry.some(
-          entry => entry.item.reference.split('/').pop() === researchId
+        item.resource?.resourceType === 'PlanDefinition' &&
+        Array.isArray((item.resource as any).action) &&
+        (item.resource as any).action.some(
+          (a: any) =>
+            a.definitionReference?.reference?.split('/')?.pop() === researchId
         )
     );
   };
@@ -148,15 +170,35 @@ export default function Assessment() {
   const handleResearchClick = (
     mergedData: ResearchStudy & { relatedLists: BundleEntry<List>[] }
   ) => {
-    if (!mergedData || mergedData.relatedLists.length === 0) return;
+    if (!mergedData) return;
 
-    const questionnaireUrl =
-      mergedData.relatedLists[0].resource.entry[1].item.reference
-        .split('/')
-        .pop();
+    let questionnaireId: string | undefined;
+
+    if (
+      Array.isArray((mergedData as any).questionnaireIds) &&
+      (mergedData as any).questionnaireIds.length > 0
+    ) {
+      questionnaireId = (mergedData as any).questionnaireIds[0];
+    }
+
+    if (!questionnaireId) {
+      const planDef = mergedData.relatedLists?.[0]?.resource as any;
+
+      questionnaireId = planDef?.action
+        ?.map((a: any) => a?.definitionReference?.reference?.split('/')?.pop())
+        ?.filter(Boolean)?.[0];
+    }
+
+    if (!questionnaireId) {
+      console.warn(
+        '[Assessment] No questionnaireId found for research:',
+        mergedData.id
+      );
+      return;
+    }
 
     setSelectedAssessment(mergedData);
-    setResearchUrl(questionnaireUrl);
+    setResearchUrl(questionnaireId);
 
     const params = new URLSearchParams(window.location.search);
     params.set('isDrawerOpen', 'true');
@@ -472,7 +514,7 @@ export default function Assessment() {
               <CardLoader item={2} />
             ) : (
               <div className='flex w-max space-x-4 pb-4'>
-                {popularAssessments.map(
+                {(popularAssessments ?? []).map(
                   (assessment: BundleEntry<Questionnaire>) => (
                     <div
                       key={assessment.resource.id}
@@ -533,7 +575,7 @@ export default function Assessment() {
             <CardLoader item={4} />
           ) : (
             <div className='mt-4 grid grid-cols-1 gap-2 md:grid-cols-2'>
-              {regularAssessments.map(
+              {(regularAssessments ?? []).map(
                 (assessment: BundleEntry<Questionnaire>) => (
                   <div
                     key={assessment.resource.id}
