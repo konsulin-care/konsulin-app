@@ -1,7 +1,7 @@
-import * as React from 'react'
+import * as React from 'react';
 
 export default function UserIcon(props: React.SVGProps<SVGSVGElement>) {
-  const { fill = '#000000', width = 24, height = 24 } = props
+  const { fill = '#000000', width = 24, height = 24, strokeWidth = 1 } = props;
 
   return (
     <svg
@@ -30,6 +30,7 @@ export default function UserIcon(props: React.SVGProps<SVGSVGElement>) {
           <path
             d='M1.53943 12.5024C1.53943 18.6121 6.49229 23.5649 12.6019 23.5649C18.7116 23.5649 23.6644 18.6121 23.6644 12.5024C23.6644 6.3928 18.7116 1.43994 12.6019 1.43994C6.49229 1.43994 1.53943 6.3928 1.53943 12.5024Z'
             stroke={fill}
+            strokeWidth={strokeWidth}
             strokeMiterlimit='10'
             strokeLinecap='round'
             strokeLinejoin='round'
@@ -37,6 +38,7 @@ export default function UserIcon(props: React.SVGProps<SVGSVGElement>) {
           <path
             d='M16.1176 8.89307C16.1176 10.8606 14.5226 12.4556 12.5551 12.4556C10.5875 12.4556 8.99255 10.8606 8.99255 8.89307C8.99255 6.92554 10.5875 5.33057 12.5551 5.33057C14.5226 5.33057 16.1176 6.92554 16.1176 8.89307Z'
             stroke={fill}
+            strokeWidth={strokeWidth}
             strokeMiterlimit='10'
             strokeLinecap='round'
             strokeLinejoin='round'
@@ -44,6 +46,7 @@ export default function UserIcon(props: React.SVGProps<SVGSVGElement>) {
           <path
             d='M17.9005 18.1274C16.799 16.7826 15.1256 15.9243 13.2517 15.9243H12.1394C10.2655 15.9243 8.59212 16.7826 7.4906 18.1274'
             stroke={fill}
+            strokeWidth={strokeWidth}
             strokeMiterlimit='10'
             strokeLinecap='round'
             strokeLinejoin='round'
@@ -61,5 +64,5 @@ export default function UserIcon(props: React.SVGProps<SVGSVGElement>) {
         </clipPath>
       </defs>
     </svg>
-  )
+  );
 }

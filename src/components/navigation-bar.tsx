@@ -18,7 +18,7 @@ export default function NavigationBar({
 }: React.HTMLAttributes<HTMLDivElement>) {
   const pathname = usePathname();
   const activePathStyle = 'font-bold text-secondary';
-  const pathStyle = 'text-[#ADB6C7]';
+  const pathStyle = 'text-[#161C26]';
 
   const { state: authState } = useAuth();
 
@@ -33,7 +33,10 @@ export default function NavigationBar({
             pathname === '/' ? activePathStyle : pathStyle
           )}
         >
-          <HouseIcon fill={pathname === '/' ? '#13C2C2' : '#ADB6C7'} />
+          <HouseIcon
+            fill={pathname === '/' ? '#13C2C2' : '#161C26'}
+            strokeWidth={pathname === '/' ? 1.2 : 1}
+          />
           <span className='mt-[5px] text-[12px]'>Home</span>
         </Link>
         <Link
@@ -54,7 +57,13 @@ export default function NavigationBar({
               pathname?.startsWith('/clinic') ||
               pathname?.startsWith('/schedule')
                 ? '#13C2C2'
-                : '#ADB6C7'
+                : '#161C26'
+            }
+            strokeWidth={
+              pathname?.startsWith('/clinic') ||
+              pathname?.startsWith('/schedule')
+                ? 1.2
+                : 1
             }
           />
 
@@ -68,7 +77,8 @@ export default function NavigationBar({
           )}
         >
           <LiteratureIcon
-            fill={pathname?.startsWith('/assessments') ? '#13C2C2' : '#ADB6C7'}
+            fill={pathname?.startsWith('/assessments') ? '#13C2C2' : '#161C26'}
+            strokeWidth={pathname?.startsWith('/assessments') ? 1.2 : 1}
           />
 
           <span className='mt-[5px] text-[12px]'>Assessments</span>
@@ -81,7 +91,8 @@ export default function NavigationBar({
           )}
         >
           <ExceriseIcon
-            fill={pathname?.startsWith('/exercise') ? '#13C2C2' : '#ADB6C7'}
+            fill={pathname?.startsWith('/exercise') ? '#13C2C2' : '#161C26'}
+            strokeWidth={pathname?.startsWith('/exercise') ? 1.2 : 1}
           />
 
           <span className='mt-[5px] text-[12px]'>Exercise</span>
@@ -93,7 +104,10 @@ export default function NavigationBar({
             pathname?.startsWith('/profile') ? activePathStyle : pathStyle
           )}
         >
-          <UserIcon fill={pathname === '/profile' ? '#13C2C2' : '#ADB6C7'} />
+          <UserIcon
+            fill={pathname === '/profile' ? '#13C2C2' : '#161C26'}
+            strokeWidth={pathname === '/profile' ? 1.2 : 1}
+          />
           <span className='mt-[5px] text-[12px]'>Profile</span>
         </Link>
       </div>
