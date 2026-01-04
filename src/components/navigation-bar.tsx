@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  ExceriseIcon,
+  ExerciseIcon,
   HouseIcon,
   LiteratureIcon,
   OfficeIcon,
@@ -90,7 +90,7 @@ export default function NavigationBar({
             pathname?.startsWith('/exercise') ? activePathStyle : pathStyle
           )}
         >
-          <ExceriseIcon
+          <ExerciseIcon
             fill={pathname?.startsWith('/exercise') ? '#13C2C2' : '#161C26'}
             strokeWidth={pathname?.startsWith('/exercise') ? 1.2 : 1}
           />
