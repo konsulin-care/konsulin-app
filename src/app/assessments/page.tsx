@@ -26,6 +26,7 @@ import {
   usePopularAssessments,
   useRegularAssessments
 } from '@/services/api/assessment';
+import { formatDateRange } from '@/utils/dateUtils';
 import { customMarkdownComponents } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
 import { BundleEntry, List, Questionnaire, ResearchStudy } from 'fhir/r4';
@@ -476,8 +477,10 @@ export default function Assessment() {
                               </div>
                               <div className='text-[10px] font-bold text-black'>
                                 {item.resource.period &&
-                                  `${dateFormat(item.resource.period.start)} -
-                            ${dateFormat(item.resource.period.end)}`}
+                                  formatDateRange(
+                                    item.resource.period.start,
+                                    item.resource.period.end
+                                  )}
                               </div>
                             </div>
 
