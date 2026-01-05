@@ -26,7 +26,6 @@ import {
   usePopularAssessments,
   useRegularAssessments
 } from '@/services/api/assessment';
-import { formatDateRange } from '@/utils/dateUtils';
 import { customMarkdownComponents } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
 import { BundleEntry, Questionnaire, ResearchStudy } from 'fhir/r4';
@@ -47,15 +46,6 @@ type OngoingResearchItem = {
   resource: ResearchStudy;
   questionnaireIds: string[];
 };
-
-const filteredResearch = (
-  researchArr: OngoingResearchItem[] | null | undefined
-) =>
-  researchArr
-    ? researchArr.filter(
-        item => item.resource?.resourceType === 'ResearchStudy'
-      )
-    : [];
 
 export default function Assessment() {
   const router = useRouter();
@@ -79,7 +69,11 @@ export default function Assessment() {
     usePopularAssessments();
   const { data: regularAssessments, isLoading: regularLoading } =
     useRegularAssessments();
-  const { data: research, isLoading: researchLoading } = useOngoingResearch();
+  const { data: research, isLoading: researchLoading } =
+    useOngoingResearch() as {
+      data: OngoingResearchItem[] | undefined;
+      isLoading: boolean;
+    };
   // const { data: searchResult, isLoading: searchLoading } =
   //   useSearchQuestionnaire('Five');
 
@@ -383,7 +377,8 @@ export default function Assessment() {
             <CardLoader item={2} />
           </div>
         ) : (
-          filteredResearch(research).length > 0 && (
+          research &&
+          research.length > 0 && (
             <div className='text-muted mt-4 mb-2 px-4'>
               <div className='text-[14px] font-bold'>On-going Research</div>
               <div className='text-[10px]'>
@@ -393,64 +388,60 @@ export default function Assessment() {
               </div>
               <ScrollArea className='mt-2 w-full whitespace-nowrap'>
                 <div className='flex w-max space-x-4 pb-4'>
-                  {filteredResearch(research).map(
-                    (item: OngoingResearchItem) => {
-                      const study = item.resource;
-                      const hasQuestionnaire = item.questionnaireIds.length > 0;
+                  {research.map((item: OngoingResearchItem) => {
+                    const study = item.resource;
+                    const hasQuestionnaire = item.questionnaireIds.length > 0;
 
-                      return (
-                        <div
-                          key={study.id}
-                          className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
-                        >
-                          <div className='flex gap-2'>
-                            <Image
-                              className='h-[64px] w-[64px] rounded-[8px] object-cover'
-                              src={'/images/clinic.jpg'}
-                              height={64}
-                              width={64}
-                              alt='clinic'
-                            />
-                            <div className='flex flex-col text-[12px]'>
-                              <div className='font-bold text-wrap text-black'>
-                                {study.title}
-                              </div>
-                              <div className='overflow-hidden text-wrap'>
-                                {study.description?.length > 100
-                                  ? `${study.description.slice(0, 100)}...`
-                                  : study.description}
-                              </div>
+                    return (
+                      <div
+                        key={study.id}
+                        className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
+                      >
+                        <div className='flex gap-2'>
+                          <Image
+                            className='h-[64px] w-[64px] rounded-[8px] object-cover'
+                            src={'/images/clinic.jpg'}
+                            height={64}
+                            width={64}
+                            alt='clinic'
+                          />
+                          <div className='flex flex-col text-[12px]'>
+                            <div className='font-bold text-wrap text-black'>
+                              {study.title}
                             </div>
-                          </div>
-
-                          <hr />
-
-                          <div className='flex items-center justify-between'>
-                            <div className='mr-4'>
-                              <div className='text-[10px]'>
-                                Pengambilan data:
-                              </div>
-                              <div className='text-[10px] font-bold text-black'>
-                                {study.period &&
-                                  `${dateFormat(study.period.start)} - ${dateFormat(
-                                    study.period.end
-                                  )}`}
-                              </div>
+                            <div className='overflow-hidden text-wrap'>
+                              {study.description?.length > 100
+                                ? `${study.description.slice(0, 100)}...`
+                                : study.description}
                             </div>
-
-                            {hasQuestionnaire && (
-                              <div
-                                className='bg-secondary cursor-pointer rounded-[32px] px-4 py-2 text-sm font-bold text-white'
-                                onClick={() => handleResearchClick(item)}
-                              >
-                                Gabung
-                              </div>
-                            )}
                           </div>
                         </div>
-                      );
-                    }
-                  )}
+
+                        <hr />
+
+                        <div className='flex items-center justify-between'>
+                          <div className='mr-4'>
+                            <div className='text-[10px]'>Pengambilan data:</div>
+                            <div className='text-[10px] font-bold text-black'>
+                              {study.period &&
+                                `${dateFormat(study.period.start)} - ${dateFormat(
+                                  study.period.end
+                                )}`}
+                            </div>
+                          </div>
+
+                          {hasQuestionnaire && (
+                            <div
+                              className='bg-secondary cursor-pointer rounded-[32px] px-4 py-2 text-sm font-bold text-white'
+                              onClick={() => handleResearchClick(item)}
+                            >
+                              Gabung
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <ScrollBar orientation='horizontal' />

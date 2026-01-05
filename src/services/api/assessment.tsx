@@ -21,6 +21,26 @@ type IResultBriefPayload = {
   item: QuestionnaireResponseItem[];
 };
 
+function parseCanonicalOrReference(
+  ref: string | undefined,
+  expectedType: string
+): string | null {
+  if (!ref) return null;
+
+  const noVersion = ref.split('|')[0];
+
+  const parts = noVersion.split('/').filter(Boolean);
+
+  const typeIndex = parts.findIndex(p => p === expectedType);
+  if (typeIndex >= 0 && parts[typeIndex + 1]) {
+    return parts[typeIndex + 1];
+  }
+
+  if (parts.length === 1) return parts[0];
+
+  return null;
+}
+
 export const useOngoingResearch = () => {
   return useQuery({
     queryKey: ['research'],
@@ -48,25 +68,26 @@ export const useOngoingResearch = () => {
       const planToQuestionnaires: Record<string, string[]> = {};
 
       planDefinitions.forEach((plan: any) => {
-        const questionnaireIds =
+        if (!plan?.id) return;
+
+        const questionnaireIds: string[] =
           plan.action?.flatMap((action: any) => {
-            if (action.definitionReference?.reference) {
-              return [
-                action.definitionReference.reference.replace(
-                  'Questionnaire/',
-                  ''
-                )
-              ];
-            }
+            const refId = parseCanonicalOrReference(
+              action.definitionReference?.reference,
+              'Questionnaire'
+            );
 
-            if (action.definitionCanonical) {
-              return [action.definitionCanonical.split('/').pop()];
-            }
+            const canId = parseCanonicalOrReference(
+              action.definitionCanonical,
+              'Questionnaire'
+            );
 
-            return [];
+            return [refId, canId].filter(Boolean) as string[];
           }) || [];
 
-        planToQuestionnaires[plan.id] = questionnaireIds;
+        const planId: string = plan.id;
+
+        planToQuestionnaires[planId] = [...new Set(questionnaireIds)];
       });
 
       return researchStudies.map((study: any) => {
@@ -74,10 +95,17 @@ export const useOngoingResearch = () => {
           ? study.protocol
           : [study.protocol].filter(Boolean);
 
-        const questionnaireIds = protocolRefs.flatMap((protocol: any) => {
-          const planId = protocol.reference?.replace('PlanDefinition/', '');
-          return planToQuestionnaires[planId] || [];
-        });
+        const planIds = protocolRefs
+          .map((protocol: any) => {
+            const ref = protocol?.reference ?? protocol?.canonical ?? protocol;
+
+            return parseCanonicalOrReference(ref, 'PlanDefinition');
+          })
+          .filter(Boolean) as string[];
+
+        const questionnaireIds = planIds.flatMap(
+          planId => planToQuestionnaires[planId] || []
+        );
 
         return {
           resource: study,
