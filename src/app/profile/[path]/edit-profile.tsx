@@ -198,35 +198,36 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     switch (name) {
       case 'firstName':
         if (!value) {
-          error = 'Nama depan pengguna tidak boleh kosong';
+          error = 'First name cannot be empty';
         } else if (!usernameRegex.test(value)) {
-          error = 'Format nama depan pengguna tidak valid';
+          error = 'First name format is invalid';
         } else if (value.length < 2) {
-          error = 'Nama depan pengguna minimum 2 karakter';
+          error = 'First name must be at least two characters';
         }
         break;
       case 'lastName':
         if (!usernameRegex.test(value)) {
-          error = 'Format nama belakang pengguna tidak valid';
+          error = 'Last name format is invalid';
         } else if (value.length < 2) {
-          error = 'Nama belakang pengguna minimum 2 karakter';
+          error = 'Last name must be at least two characters';
         }
         break;
       case 'email':
         if (!value) {
-          error = 'Email tidak boleh kosong';
+          error = 'Email cannot be empty';
         } else if (!validateEmail(value)) {
-          error = 'Format email tidak valid';
+          error = 'Email format is invalid';
         }
         break;
-      case 'phone':
+      case 'phone': {
         const phoneRegex = /^\+?[0-9]{8,15}$/;
         if (!value.trim()) {
-          error = 'Nomor WhatsApp tidak boleh kosong';
+          error = 'WhatsApp phone number cannot be empty';
         } else if (!phoneRegex.test(value)) {
-          error = 'Nomor WhatsApp harus 8-15 digit dan boleh diawali +';
+          error = 'WhatsApp phone number must be 8-15 digits';
         }
         break;
+      }
 
       case 'addresses':
         if (
@@ -234,37 +235,37 @@ export default function EditProfile({ userRole, fhirId }: Props) {
           value.length === 0 ||
           value.every(part => !part.trim())
         ) {
-          error = 'Alamat tidak boleh kosong';
+          error = 'Address cannot be empty';
         }
         break;
       case 'city':
         if (!value.trim()) {
-          error = 'Kota tidak boleh kosong';
+          error = 'City cannot be empty';
         }
         break;
       case 'district':
         if (!value.trim()) {
-          error = 'Kecamatan tidak boleh kosong';
+          error = 'District cannot be empty';
         }
         break;
       case 'province':
         if (!value.trim()) {
-          error = 'Provinsi tidak boleh kosong';
+          error = 'Province cannot be empty';
         }
         break;
       case 'postalCode':
         if (!value.trim()) {
-          error = 'Kode pos tidak boleh kosong';
+          error = 'Postal code cannot be empty';
         }
         break;
       case 'birthDate':
         if (!value) {
-          error = 'Tanggal lahir tidak boleh kosong';
+          error = 'Birth date cannot be empty';
         }
         break;
       case 'gender':
         if (!value) {
-          error = 'Jenis kelamin tidak boleh kosong';
+          error = 'Gender cannot be empty';
         }
         break;
       default:
@@ -321,7 +322,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       existingPhotoUrl = latestProfile?.photo?.[0]?.url ?? '';
     } catch (error) {
       console.error('Error when refetching user profile: ', error);
-      toast.error('Gagal mengambil profil terbaru');
+      toast.error('Failed to fetch the latest profile');
 
       return;
     }
@@ -380,7 +381,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     // If chatwoot_id is missing or changed, sync identifiers first so avatar upload is accepted
     if (needsIdentifierSync) {
       if (!latestProfile) {
-        toast.error('Gagal memperbarui profil');
+        toast.error('Failed updating profile');
         return;
       }
 
@@ -393,7 +394,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         });
       } catch (error) {
         console.error('Error when syncing chatwoot identifier: ', error);
-        toast.error('Gagal memperbarui profil');
+        toast.error('Failed to sync profile to Konsulin Omnichannel');
         return;
       }
     }
@@ -404,7 +405,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         latestProfile
       });
       toast.error(
-        'Profil tidak memiliki chatwoot_id; tidak bisa unggah avatar'
+        'Profile does not own chatwoot_id; avatar update is cancelled'
       );
       setIsUploadingPhoto(false);
       return;
@@ -452,7 +453,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
           status: (error as any)?.response?.status,
           response: (error as any)?.response?.data || error
         });
-        toast.error('Gagal mengunggah foto profil');
+        toast.error('Failed updating the profile picture');
 
         return;
       } finally {
@@ -539,7 +540,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       }
     } catch (error) {
       console.error('Error when updating profile: ', error);
-      toast.error('Gagal memperbarui profil');
+      toast.error('Failed updating the profile');
     }
   };
 
@@ -666,7 +667,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 width={24}
                 height={24}
                 prefixIcon={'/icons/user-edit.svg'}
-                placeholder='Masukan Nama Depan'
+                placeholder='First Name'
                 name='firstName'
                 id='firstName'
                 type='text'
@@ -685,7 +686,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 width={24}
                 height={24}
                 prefixIcon={'/icons/user-edit.svg'}
-                placeholder='Masukan Nama Belakang'
+                placeholder='Last Name'
                 name='lastName'
                 id='lastName'
                 type='text'
@@ -704,7 +705,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 width={24}
                 height={24}
                 prefixIcon={'/icons/email.svg'}
-                placeholder='Masukan Alamat Email'
+                placeholder='address@domain.tld'
                 name='email'
                 id='email'
                 type='email'
@@ -733,7 +734,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 <div className='flex flex-grow justify-start text-sm'>
                   {updateUser.birthDate
                     ? formatDate(updateUser.birthDate)
-                    : 'Masukan Tanggal Lahir'}
+                    : 'Date of Birth'}
                 </div>
               </div>
               <div className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-2'>
@@ -741,7 +742,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                   defaultCountry='id'
                   value={updateUser.phone}
                   onChange={handlePhoneChange}
-                  placeholder='Masukan Whatsapp Number'
+                  placeholder='WhatsApp Number'
                 />
               </div>
               {errors.phone && (
@@ -752,7 +753,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 options={genderList}
                 value={updateUser.gender}
                 onSelect={handleGenderSelect}
-                placeholder='Pilih Gender'
+                placeholder='Input your gender'
               />
               {errors.gender && (
                 <p className='p-4 text-xs text-red-500'>{errors.gender}</p>
@@ -762,7 +763,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 options={listProvinces}
                 value={updateUser.provinceCode}
                 onSelect={handleProvinceSelect}
-                placeholder='Pilih Provinsi'
+                placeholder='Province'
                 loading={provinceLoading}
               />
               {errors.province && (
@@ -775,7 +776,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                     options={listCities}
                     value={updateUser.cityCode}
                     onSelect={handleCitySelect}
-                    placeholder='Pilih Kota'
+                    placeholder='City'
                     labelPlaceholder={updateUser.city}
                     loading={cityLoading}
                   />
@@ -791,7 +792,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                     options={listDistricts}
                     value={updateUser.districtCode}
                     onSelect={handleDistrictSelect}
-                    placeholder='Pilih Kecamatan'
+                    placeholder='District'
                     labelPlaceholder={updateUser.district}
                     loading={districtLoading}
                   />
@@ -809,7 +810,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                     width={24}
                     height={24}
                     prefixIcon={'/icons/location.svg'}
-                    placeholder='Masukan Alamat'
+                    placeholder='Address'
                     name={`addresses-${index}`}
                     id={`addresses-${index}`}
                     type='text'
@@ -846,7 +847,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                     width={24}
                     height={24}
                     prefixIcon={'/icons/location.svg'}
-                    placeholder='Masukan Kode pos'
+                    placeholder='Postal Code'
                     name='postalCode'
                     id='postalCode'
                     type='text'
