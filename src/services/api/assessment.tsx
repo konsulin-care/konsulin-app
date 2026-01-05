@@ -203,6 +203,10 @@ export const searchQuestionnaires = async (
     const API = await getAPI();
     let url = `/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient`;
 
+    if (context) {
+      url += `&context=${context}`;
+    }
+
     if (query) {
       // Try multiple search strategies for better FHIR compatibility
       const searchStrategies = [
@@ -233,10 +237,6 @@ export const searchQuestionnaires = async (
 
       // If no strategy worked, return empty array
       return [];
-    }
-
-    if (context) {
-      url += `&context=${context}`;
     }
 
     const response = await API.get(url);
