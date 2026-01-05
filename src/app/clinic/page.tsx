@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { useAuth } from '@/context/auth/authContext';
+import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
+import { getAPI } from '@/services/api';
 import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { IUseClinicParams, useListClinics } from '@/services/clinic';
 import { parseMergedAppointments } from '@/utils/helper';
@@ -20,7 +22,7 @@ import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import ClinicFilter from './clinic-filter';
 
 const now = new Date();
@@ -29,9 +31,6 @@ export default function Clinic() {
   const router = useRouter();
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [serverSearchTerm, setServerSearchTerm] = useState<string>('');
-  const [isServerSearching, setIsServerSearching] = useState<boolean>(false);
-  const [showServerResults, setShowServerResults] = useState<boolean>(false);
 
   const {
     data: clinics,
@@ -40,7 +39,7 @@ export default function Clinic() {
   } = useListClinics(
     {
       cityFilter: clinicFilter.city,
-      nameFilter: serverSearchTerm
+      nameFilter: '' // Always use empty nameFilter for base clinic list
     },
     500
   );
@@ -63,39 +62,35 @@ export default function Clinic() {
     return filtered;
   }, [upcomingData]);
 
-  const filteredClinics = useMemo(() => {
-    if (!clinics) return [];
-    if (!searchTerm) return clinics;
-
-    const regex = new RegExp(searchTerm, 'i');
-    return clinics.filter(
-      (clinic: BundleEntry) =>
-        clinic.resource.resourceType === 'Organization' &&
-        regex.test(clinic.resource.name || '')
-    );
-  }, [clinics, searchTerm]);
-
-  // Effect to handle server search fallback when local search yields no results
-  useEffect(() => {
-    if (searchTerm && filteredClinics.length === 0) {
-      setIsServerSearching(true);
-      setShowServerResults(false);
-
-      // Trigger server search after a short delay
-      const timer = setTimeout(() => {
-        setServerSearchTerm(searchTerm);
-        setShowServerResults(true);
-        setIsServerSearching(false);
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    } else if (!searchTerm) {
-      // Reset server search when search term is cleared
-      setServerSearchTerm('');
-      setShowServerResults(false);
-      setIsServerSearching(false);
+  // Memoize server search function to prevent infinite loops
+  const serverSearchFunction = useCallback(async (term: string) => {
+    try {
+      const API = await getAPI();
+      const response = await API.get(
+        `/fhir/Organization?_elements=name,address&name:contains=${term}`
+      );
+      return response.data.entry || [];
+    } catch (error) {
+      console.error('Clinic search failed:', error);
+      // Return empty array to maintain consistent behavior
+      return [];
     }
-  }, [searchTerm, filteredClinics.length]);
+  }, []);
+
+  // Always use client-side search for filtering existing data
+  const {
+    filteredData: filteredClinics,
+    isServerSearching,
+    showServerResults,
+    serverData: serverClinics,
+    serverSearchCompleted
+  } = useSearchWithFallback({
+    data: clinics,
+    searchFields: [{ path: 'resource.name' }],
+    serverSearchFunction,
+    searchTerm, // Always use the search term for client-side filtering
+    debounceDelay: 1000
+  });
 
   const handleSelectedClinic = (clinicId: string) => {
     localStorage.setItem('selected_clinic', clinicId);
@@ -164,7 +159,8 @@ export default function Clinic() {
           {isListClinicsLoading ? (
             <CardLoader />
           ) : searchTerm ? (
-            // When there's a search term, show local results first, then server results if needed
+            // When there's a search term, show filtered results first, then server results if needed
+            // Priority: Local results > Server results > Loading > No results
             filteredClinics.length > 0 ? (
               <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
                 {filteredClinics.map((clinic: BundleEntry) => (
@@ -192,18 +188,12 @@ export default function Clinic() {
                   </div>
                 ))}
               </div>
-            ) : isServerSearching || isFetchingClinics ? (
-              <div className='flex flex-col items-center justify-center py-16'>
-                <div className='flex items-center gap-2'>
-                  <LoadingSpinnerIcon />
-                  <span className='text-muted'>
-                    No results found, requesting more data to the server
-                  </span>
-                </div>
-              </div>
-            ) : showServerResults && clinics && clinics.length > 0 ? (
+            ) : showServerResults &&
+              serverClinics &&
+              serverClinics.length > 0 ? (
+              // Show server results when available and has data
               <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-                {clinics.map((clinic: BundleEntry) => (
+                {serverClinics.map((clinic: BundleEntry) => (
                   <div
                     key={clinic.resource.id}
                     className='card flex flex-col items-center'
@@ -228,11 +218,26 @@ export default function Clinic() {
                   </div>
                 ))}
               </div>
+            ) : isServerSearching ? (
+              <div className='flex flex-col items-center justify-center py-16'>
+                <div className='flex items-center gap-2'>
+                  <LoadingSpinnerIcon />
+                  <span className='text-muted'>
+                    No results found, requesting more data to the server
+                  </span>
+                </div>
+              </div>
+            ) : serverSearchCompleted ? (
+              <EmptyState
+                className='py-16'
+                title='No results found'
+                subtitle='Would you try another search term?'
+              />
             ) : (
               <EmptyState
                 className='py-16'
                 title='No clinics found'
-                subtitle='Try a different search term or filter.'
+                subtitle='Try a different search term.'
               />
             )
           ) : clinics && clinics.length > 0 ? (

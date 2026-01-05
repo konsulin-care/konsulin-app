@@ -41,6 +41,7 @@ export const useListClinics = (
       return response;
     },
     select: response => response.data.entry || [],
+    // Always run to get base clinic list, but only fetch when filters are meaningful
     enabled: true
   });
 };
