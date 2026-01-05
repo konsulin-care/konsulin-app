@@ -72,7 +72,7 @@ export default function Participant({
   const handleEmailValidation = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('Email tidak valid');
+      setError('Email address is invalid');
       return false;
     }
 
@@ -141,7 +141,7 @@ export default function Participant({
       setEmail('');
       setError('');
     } catch (err: any) {
-      setError(err?.message || 'Gagal membuat pasien');
+      setError(err?.message || 'Failed to create new patient resource');
     } finally {
       setIsSubmitting(false);
     }
@@ -160,7 +160,7 @@ export default function Participant({
         <div className='flex flex-col gap-2'>
           <Input
             type='email'
-            placeholder='Masukkan email'
+            placeholder='Enter Email Address'
             className='w-full rounded border p-2'
             value={email}
             onChange={e => setEmail(e.target.value)}
@@ -181,7 +181,7 @@ export default function Participant({
               className='w-full animate-spin'
             />
           ) : (
-            'Daftarkan Pasien'
+            'Register a Patient'
           )}
         </Button>
       </div>
@@ -237,7 +237,7 @@ export default function Participant({
             >
               <div className='flex w-full items-center justify-start p-1'>
                 <Plus color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
-                Pasien Baru
+                New Patient
               </div>
             </DropdownItem>
             {options && options.length > 0 ? (

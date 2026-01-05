@@ -30,7 +30,7 @@ export default function AppMenu() {
         />
         <div className='ml-2 flex flex-col'>
           <span className='text-primary text-[12px] font-bold'>
-            Start Writting
+            Start Writing
           </span>
           <span className='text-primary text-[10px]'>
             Express your current feelings

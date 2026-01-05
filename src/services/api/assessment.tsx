@@ -259,7 +259,7 @@ export const useSearchQuestionnaire = (query: string, context?: string) => {
     let url = `/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient`;
 
     if (query) {
-      url += `&_text=${query}`;
+      url += `&_text=${encodeURIComponent(query)}`;
     }
 
     if (context) {

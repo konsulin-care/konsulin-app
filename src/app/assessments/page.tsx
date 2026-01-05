@@ -613,7 +613,7 @@ export default function Assessment() {
                               <div className='flex items-center justify-between'>
                                 <div className='mr-4'>
                                   <div className='text-[10px]'>
-                                    Pengambilan data:
+                                    Research period:
                                   </div>
                                   <div className='text-[10px] font-bold text-black'>
                                     {item.resource.period &&
@@ -631,7 +631,7 @@ export default function Assessment() {
                                       handleResearchClick(mergedData);
                                     }}
                                   >
-                                    Gabung
+                                    Participate
                                   </div>
                                 )}
                               </div>

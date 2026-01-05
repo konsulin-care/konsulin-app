@@ -105,8 +105,8 @@ export default function NavigationBar({
           )}
         >
           <UserIcon
-            fill={pathname === '/profile' ? '#13C2C2' : '#161C26'}
-            strokeWidth={pathname === '/profile' ? 1.2 : 1}
+            fill={pathname?.startsWith('/profile') ? '#13C2C2' : '#161C26'}
+            strokeWidth={pathname?.startsWith('/profile') ? 1.2 : 1}
           />
           <span className='mt-[5px] text-[12px]'>Profile</span>
         </Link>

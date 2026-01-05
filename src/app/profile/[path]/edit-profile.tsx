@@ -219,14 +219,15 @@ export default function EditProfile({ userRole, fhirId }: Props) {
           error = 'Email format is invalid';
         }
         break;
-      case 'phone':
+      case 'phone': {
         const phoneRegex = /^\+?[0-9]{8,15}$/;
         if (!value.trim()) {
           error = 'WhatsApp phone number cannot be empty';
         } else if (!phoneRegex.test(value)) {
-          error = 'WhatsApp phone umber must be 8-16 digits';
+          error = 'WhatsApp phone number must be 8-15 digits';
         }
         break;
+      }
 
       case 'addresses':
         if (

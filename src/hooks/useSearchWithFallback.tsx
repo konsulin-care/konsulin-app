@@ -90,7 +90,7 @@ export function useSearchWithFallback<T>({
       return data || [];
     }
 
-    const searchRegex = new RegExp(searchTerm, 'i');
+    const lowerSearchTerm = searchTerm.toLowerCase();
 
     return data.filter(item => {
       // Skip null/undefined items
@@ -105,7 +105,10 @@ export function useSearchWithFallback<T>({
           // Simple field access with validation
           try {
             const value = (item as any)[field];
-            return value != null && searchRegex.test(String(value));
+            return (
+              value != null &&
+              String(value).toLowerCase().includes(lowerSearchTerm)
+            );
           } catch (error) {
             console.warn('Field access error:', field, error);
             return false;
@@ -141,7 +144,10 @@ export function useSearchWithFallback<T>({
               }
             }
 
-            return finalValue != null && searchRegex.test(String(finalValue));
+            return (
+              finalValue != null &&
+              String(finalValue).toLowerCase().includes(lowerSearchTerm)
+            );
           } catch (error) {
             console.warn('Nested path resolution error:', field.path, error);
             return false;
@@ -189,11 +195,11 @@ export function useSearchWithFallback<T>({
       }
 
       // Check condition for client-side results using ref
+      const lowerSearchTerm = searchTerm.toLowerCase();
       const clientResults =
         dataRef.current?.filter(item => {
           if (!item) return false;
 
-          const searchRegex = new RegExp(searchTerm, 'i');
           return searchFieldsRef.current.some(field => {
             if (
               typeof field === 'string' ||
@@ -202,7 +208,10 @@ export function useSearchWithFallback<T>({
             ) {
               try {
                 const value = (item as any)[field];
-                return value != null && searchRegex.test(String(value));
+                return (
+                  value != null &&
+                  String(value).toLowerCase().includes(lowerSearchTerm)
+                );
               } catch (error) {
                 return false;
               }
@@ -234,7 +243,8 @@ export function useSearchWithFallback<T>({
                 }
 
                 return (
-                  finalValue != null && searchRegex.test(String(finalValue))
+                  finalValue != null &&
+                  String(finalValue).toLowerCase().includes(lowerSearchTerm)
                 );
               } catch (error) {
                 return false;
