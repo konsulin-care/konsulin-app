@@ -37,7 +37,6 @@ export const useOngoingResearch = () => {
     select: data => {
       if (!data?.entry) return [];
 
-      // Separate resources by type
       const researchStudies = data.entry
         .filter((e: any) => e.resource?.resourceType === 'ResearchStudy')
         .map((e: any) => e.resource);
@@ -49,17 +48,31 @@ export const useOngoingResearch = () => {
       const planToQuestionnaires: Record<string, string[]> = {};
 
       planDefinitions.forEach((plan: any) => {
-        const refs =
-          plan.action
-            ?.map((action: any) => action.definitionReference?.reference)
-            ?.filter(Boolean)
-            ?.map((ref: string) => ref.replace('Questionnaire/', '')) || [];
+        const questionnaireIds =
+          plan.action?.flatMap((action: any) => {
+            if (action.definitionReference?.reference) {
+              return [
+                action.definitionReference.reference.replace(
+                  'Questionnaire/',
+                  ''
+                )
+              ];
+            }
 
-        planToQuestionnaires[plan.id] = refs;
+            if (action.definitionCanonical) {
+              return [action.definitionCanonical.split('/').pop()];
+            }
+
+            return [];
+          }) || [];
+
+        planToQuestionnaires[plan.id] = questionnaireIds;
       });
 
       return researchStudies.map((study: any) => {
-        const protocolRefs = study.protocol || [];
+        const protocolRefs = Array.isArray(study.protocol)
+          ? study.protocol
+          : [study.protocol].filter(Boolean);
 
         const questionnaireIds = protocolRefs.flatMap((protocol: any) => {
           const planId = protocol.reference?.replace('PlanDefinition/', '');
@@ -67,7 +80,7 @@ export const useOngoingResearch = () => {
         });
 
         return {
-          researchStudy: study,
+          resource: study,
           questionnaireIds
         };
       });

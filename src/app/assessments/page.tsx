@@ -29,7 +29,7 @@ import {
 import { formatDateRange } from '@/utils/dateUtils';
 import { customMarkdownComponents } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
-import { BundleEntry, List, Questionnaire, ResearchStudy } from 'fhir/r4';
+import { BundleEntry, Questionnaire, ResearchStudy } from 'fhir/r4';
 import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -43,10 +43,17 @@ const dateFormat = (date: string) => {
   return format(parseISO(date), 'dd MMMM yyyy');
 };
 
-const filteredResearch = (researchArr: BundleEntry[] | null | undefined) =>
+type OngoingResearchItem = {
+  resource: ResearchStudy;
+  questionnaireIds: string[];
+};
+
+const filteredResearch = (
+  researchArr: OngoingResearchItem[] | null | undefined
+) =>
   researchArr
     ? researchArr.filter(
-        (item: BundleEntry) => item.resource?.resourceType === 'ResearchStudy'
+        item => item.resource?.resourceType === 'ResearchStudy'
       )
     : [];
 
@@ -62,7 +69,7 @@ export default function Assessment() {
   const [researchUrl, setResearchUrl] = useState('');
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [selectedAssessment, setSelectedAssessment] = useState<
-    Questionnaire | (ResearchStudy & { relatedLists: BundleEntry<List>[] })
+    Questionnaire | ResearchStudy | null
   >(null);
   // const [query, setQuery] = useState('');
 
@@ -84,40 +91,21 @@ export default function Assessment() {
 
     if (!found) return;
 
-    let merged = found;
-
     if (found.resourceType === 'ResearchStudy') {
-      merged = getMergedData(found);
-
-      let questionnaireId: string | undefined;
-
-      if (
-        Array.isArray((merged as any).questionnaireIds) &&
-        (merged as any).questionnaireIds.length > 0
-      ) {
-        questionnaireId = (merged as any).questionnaireIds[0];
-      }
-
-      if (!questionnaireId) {
-        const planDef = merged.relatedLists?.[0]?.resource as any;
-
-        questionnaireId = planDef?.action
-          ?.map((a: any) =>
-            a?.definitionReference?.reference?.split('/')?.pop()
-          )
-          ?.filter(Boolean)?.[0];
-      }
+      const researchItem = research?.find(r => r.resource.id === found.id);
+      const questionnaireId = researchItem?.questionnaireIds?.[0];
 
       if (questionnaireId) {
         setResearchUrl(questionnaireId);
       } else {
         console.warn(
           '[Assessment] Missing questionnaireId for research:',
-          merged.id
+          found.id
         );
       }
     }
-    setSelectedAssessment(merged);
+
+    setSelectedAssessment(found);
     setIsOpen(true);
 
     const params = new URLSearchParams(window.location.search);
@@ -141,73 +129,30 @@ export default function Assessment() {
     if (regularFound) return regularFound.resource;
 
     const researchFound = research?.find(item => item.resource.id === id);
-    if (researchFound) return getMergedData(researchFound.resource);
+    if (researchFound) return researchFound.resource;
 
     return null;
   };
 
-  /* Filters the 'research' array to find list items that reference the given researchId.
-   * It matches the researchId with the part of the reference after the last '/'. */
-  const findListData = (researchId: string) => {
-    return research.filter(
-      (item: BundleEntry) =>
-        item.resource?.resourceType === 'PlanDefinition' &&
-        Array.isArray((item.resource as any).action) &&
-        (item.resource as any).action.some(
-          (a: any) =>
-            a.definitionReference?.reference?.split('/')?.pop() === researchId
-        )
-    );
-  };
-
-  const getMergedData = (
-    researchStudy: ResearchStudy
-  ): ResearchStudy & { relatedLists: BundleEntry<List>[] } => {
-    const relatedLists = findListData(researchStudy.id);
-
-    return { ...researchStudy, relatedLists };
-  };
-
-  const handleResearchClick = (
-    mergedData: ResearchStudy & { relatedLists: BundleEntry<List>[] }
-  ) => {
-    if (!mergedData) return;
-
-    let questionnaireId: string | undefined;
-
-    if (
-      Array.isArray((mergedData as any).questionnaireIds) &&
-      (mergedData as any).questionnaireIds.length > 0
-    ) {
-      questionnaireId = (mergedData as any).questionnaireIds[0];
-    }
-
-    if (!questionnaireId) {
-      const planDef = mergedData.relatedLists?.[0]?.resource as any;
-
-      questionnaireId = planDef?.action
-        ?.map((a: any) => a?.definitionReference?.reference?.split('/')?.pop())
-        ?.filter(Boolean)?.[0];
-    }
+  const handleResearchClick = (item: OngoingResearchItem) => {
+    const questionnaireId = item.questionnaireIds?.[0];
 
     if (!questionnaireId) {
       console.warn(
-        '[Assessment] No questionnaireId found for research:',
-        mergedData.id
+        '[Assessment] No questionnaireId for research:',
+        item.resource.id
       );
       return;
     }
 
-    setSelectedAssessment(mergedData);
+    setSelectedAssessment(item.resource);
     setResearchUrl(questionnaireId);
 
     const params = new URLSearchParams(window.location.search);
     params.set('isDrawerOpen', 'true');
-    params.set('assessmentId', mergedData.id);
-    setIsOpen(true);
+    params.set('assessmentId', item.resource.id);
 
-    const fullUrl = `${baseUrl}${pathname}?${params.toString()}`;
-    setCurrentLocation(fullUrl);
+    setIsOpen(true);
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
@@ -275,7 +220,11 @@ export default function Assessment() {
             onClick={() => {
               startTransition(() => {
                 router.push(
-                  `assessments/${'relatedLists' in selectedAssessment ? researchUrl : selectedAssessment.id}`
+                  `assessments/${
+                    selectedAssessment?.resourceType === 'ResearchStudy'
+                      ? researchUrl
+                      : selectedAssessment?.id
+                  }`
                 );
               });
             }}
@@ -356,7 +305,11 @@ export default function Assessment() {
             onClick={() => {
               startTransition(() => {
                 router.push(
-                  `assessments/${'relatedLists' in selectedAssessment ? researchUrl : selectedAssessment.id}`
+                  `assessments/${
+                    selectedAssessment?.resourceType === 'ResearchStudy'
+                      ? researchUrl
+                      : selectedAssessment?.id
+                  }`
                 );
               });
             }}
@@ -441,55 +394,54 @@ export default function Assessment() {
               <ScrollArea className='mt-2 w-full whitespace-nowrap'>
                 <div className='flex w-max space-x-4 pb-4'>
                   {filteredResearch(research).map(
-                    (item: BundleEntry<ResearchStudy>) => {
-                      const mergedData = getMergedData(item.resource);
+                    (item: OngoingResearchItem) => {
+                      const study = item.resource;
+                      const hasQuestionnaire = item.questionnaireIds.length > 0;
+
                       return (
                         <div
-                          key={item.resource.id}
+                          key={study.id}
                           className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
                         >
                           <div className='flex gap-2'>
                             <Image
                               className='h-[64px] w-[64px] rounded-[8px] object-cover'
                               src={'/images/clinic.jpg'}
-                              // NOTE: replace with this src later on
-                              // src={item.resource.relatedArtifact[0].resource}
                               height={64}
                               width={64}
                               alt='clinic'
                             />
                             <div className='flex flex-col text-[12px]'>
                               <div className='font-bold text-wrap text-black'>
-                                {item.resource.title}
+                                {study.title}
                               </div>
                               <div className='overflow-hidden text-wrap'>
-                                {item.resource.description?.length > 100
-                                  ? `${item.resource.description.slice(0, 100)}...`
-                                  : item.resource.description}
+                                {study.description?.length > 100
+                                  ? `${study.description.slice(0, 100)}...`
+                                  : study.description}
                               </div>
                             </div>
                           </div>
+
                           <hr />
+
                           <div className='flex items-center justify-between'>
                             <div className='mr-4'>
                               <div className='text-[10px]'>
                                 Pengambilan data:
                               </div>
                               <div className='text-[10px] font-bold text-black'>
-                                {item.resource.period &&
-                                  formatDateRange(
-                                    item.resource.period.start,
-                                    item.resource.period.end
-                                  )}
+                                {study.period &&
+                                  `${dateFormat(study.period.start)} - ${dateFormat(
+                                    study.period.end
+                                  )}`}
                               </div>
                             </div>
 
-                            {mergedData.relatedLists[0] && (
+                            {hasQuestionnaire && (
                               <div
                                 className='bg-secondary cursor-pointer rounded-[32px] px-4 py-2 text-sm font-bold text-white'
-                                onClick={() => {
-                                  handleResearchClick(mergedData);
-                                }}
+                                onClick={() => handleResearchClick(item)}
                               >
                                 Gabung
                               </div>
