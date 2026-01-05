@@ -134,8 +134,8 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
     // Guest
     if (!isAuthenticated) {
-      author = { reference: 'Group/guest' };
-      subject = { reference: 'Group/guest' };
+      author = undefined;
+      subject = undefined;
     } else {
       // Authenticated
       if (role === 'practitioner') {
@@ -145,7 +145,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           return;
         }
         author = { reference: `Practitioner/${practitionerId}` };
-        subject = { reference: `Patient/${patientId}` };
+        subject = { reference: `Practitioner/${practitionerId}` };
       } else {
         if (!patientId) {
           toast.error('Missing patient information');
