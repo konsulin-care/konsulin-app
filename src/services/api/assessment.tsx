@@ -276,7 +276,7 @@ export const useSearchQuestionnaire = (query: string, context?: string) => {
       const response = await API.get(url);
       return response;
     },
-    select: response => response.data.entry || null,
+    select: response => response.data.entry || [],
     enabled: !!query && query.length >= 3 // Only enable if query is meaningful
   });
 };
