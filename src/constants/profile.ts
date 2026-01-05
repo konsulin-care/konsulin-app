@@ -5,7 +5,7 @@ export const DRAWER_STATE = {
 };
 
 export const subtitle_success_updated =
-  'Your edit to your profile is successfully\n saved. Nice.';
+  'Your profile is updated, looking sharp!';
 
 export const medalLists = [
   {
@@ -41,8 +41,8 @@ export const medalLists = [
 ];
 
 export const settingMenus = [
-  { name: 'Pengaturan', link: '/settings' },
-  { name: 'Hapus Akun', link: '/remove-account' },
+  { name: 'Settings', link: '/settings' },
+  { name: 'Delete Account', link: '/remove-account' },
   { name: 'Log out', link: '/logout' }
 ];
 
