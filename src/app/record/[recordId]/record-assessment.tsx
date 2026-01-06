@@ -4,7 +4,12 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { getFromLocalStorage } from '@/lib/utils';
-import { useQuestionnaireResponse } from '@/services/api/assessment';
+import { getAPI } from '@/services/api';
+import {
+  RESULT_BRIEF_LOGIN_REQUIRED,
+  RESULT_BRIEF_PLACEHOLDER,
+  useQuestionnaireResponse
+} from '@/services/api/assessment';
 import { formatQueryTitle } from '@/utils/helper';
 import { saveIntent } from '@/utils/intent-storage';
 import { QuestionnaireResponseItem } from 'fhir/r4';
@@ -43,6 +48,9 @@ export default function RecordAssessment({ recordId, title }: Props) {
   const [scoreList, setScoreList] = useState([]);
   const [currentLocation, setCurrentLocation] = useState<string>('');
   const [colorMap, setColorMap] = useState({});
+  const [polledResultBrief, setPolledResultBrief] = useState<string | null>(
+    null
+  );
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
   useEffect(() => {
@@ -125,25 +133,115 @@ export default function RecordAssessment({ recordId, title }: Props) {
     }
   }, [questionnaireResponse]);
 
-  const getResultBrief = () => {
-    let resultBrief = '';
+  useEffect(() => {
+    if (!questionnaireResponse) return;
+    if (!authState.isAuthenticated) return;
+
     const interpretationItem = questionnaireResponse.item.find(
-      (item: QuestionnaireResponseItem) => item.linkId === 'interpretation'
+      item => item.linkId === 'interpretation'
     );
 
     const resultBriefItem = interpretationItem?.item.find(
-      (subItem: QuestionnaireResponseItem) => subItem.linkId === 'result-brief'
+      subItem => subItem.linkId === 'result-brief'
     );
 
-    if (!resultBriefItem) {
-      resultBrief =
-        '_Contact our support and request a license key to generate the brief._';
+    const existingResult =
+      resultBriefItem?.answer?.[0]?.valueString?.trim() ?? '';
 
-      return resultBrief;
+    if (existingResult && existingResult !== RESULT_BRIEF_PLACEHOLDER) {
+      setPolledResultBrief(existingResult);
+      return;
     }
 
-    resultBrief = resultBriefItem?.answer[0].valueString;
-    return resultBrief;
+    const serviceRequestId = localStorage.getItem(`serviceRequest_${recordId}`);
+
+    if (!serviceRequestId) return;
+
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 3;
+
+    const poll = async () => {
+      try {
+        const API = await getAPI();
+        const res = await API.get(
+          `/api/v1/service-request/${serviceRequestId}/result`
+        );
+
+        const note = res.data?.data?.note?.trim();
+
+        if (note && !cancelled) {
+          if (!authState.isAuthenticated) return;
+          setPolledResultBrief(note);
+
+          const updatedInterpretationItem = {
+            ...interpretationItem,
+            item: [
+              ...(interpretationItem?.item ?? []).filter(
+                i => i.linkId !== 'result-brief'
+              ),
+              {
+                linkId: 'result-brief',
+                answer: [{ valueString: note }]
+              }
+            ]
+          };
+
+          const updatedQR = {
+            ...questionnaireResponse,
+            item: questionnaireResponse.item.map(item =>
+              item.linkId === 'interpretation'
+                ? updatedInterpretationItem
+                : item
+            )
+          };
+
+          await API.put(`/fhir/QuestionnaireResponse/${recordId}`, updatedQR);
+
+          localStorage.removeItem(`serviceRequest_${recordId}`);
+          return;
+        }
+
+        attempts += 1;
+        if (attempts < MAX_ATTEMPTS && !cancelled) {
+          setTimeout(poll, 1000);
+        }
+      } catch (err) {
+        console.error('[record-assessment] polling error:', err);
+      }
+    };
+
+    poll();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [questionnaireResponse, recordId]);
+
+  const getResultBrief = () => {
+    // Guest users: no webhook, no polling, no PUT
+    if (!authState.isAuthenticated) {
+      return RESULT_BRIEF_LOGIN_REQUIRED;
+    }
+
+    // If we already polled a final result, use it
+    if (polledResultBrief) return polledResultBrief;
+
+    // Otherwise, check persisted QuestionnaireResponse
+    const interpretationItem = questionnaireResponse?.item.find(
+      item => item.linkId === 'interpretation'
+    );
+
+    const resultBriefItem = interpretationItem?.item.find(
+      subItem => subItem.linkId === 'result-brief'
+    );
+
+    // No result yet → placeholder
+    if (!resultBriefItem) {
+      return RESULT_BRIEF_PLACEHOLDER;
+    }
+
+    return resultBriefItem.answer?.[0]?.valueString ?? RESULT_BRIEF_PLACEHOLDER;
   };
 
   return (
@@ -211,7 +309,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
       <div className='mb-4 flex items-center space-x-2 rounded-lg bg-[#F9F9F9] p-4'>
         <LinkIcon />
         <div className='flex grow flex-col'>
-          <span className='text-muted text-[10px]'>Test Akses</span>
+          <span className='text-muted text-[10px]'>Share the Result</span>
           <span className='text-[14px] font-bold'>QR Code</span>
         </div>
         <ModalQr value={currentLocation} />
