@@ -309,7 +309,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
       <div className='mb-4 flex items-center space-x-2 rounded-lg bg-[#F9F9F9] p-4'>
         <LinkIcon />
         <div className='flex grow flex-col'>
-          <span className='text-muted text-[10px]'>Test Akses</span>
+          <span className='text-muted text-[10px]'>Share the Result</span>
           <span className='text-[14px] font-bold'>QR Code</span>
         </div>
         <ModalQr value={currentLocation} />
