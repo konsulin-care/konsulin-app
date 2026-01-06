@@ -34,7 +34,7 @@ export default function Questionnaire({ params }) {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+  }, [params.assessmentsId]);
 
   useEffect(() => {
     if (!todaySessions || todaySessions.length === 0) return;
