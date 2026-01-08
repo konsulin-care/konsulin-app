@@ -29,9 +29,10 @@ import {
   usePopularAssessments,
   useRegularAssessments
 } from '@/services/api/assessment';
+import { formatDateRange } from '@/utils/dateUtils';
 import { customMarkdownComponents } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
-import { BundleEntry, Questionnaire, ResearchStudy } from 'fhir/r4';
+import { BundleEntry, List, Questionnaire, ResearchStudy } from 'fhir/r4';
 import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -57,6 +58,13 @@ const isResearchStudy = (assessment: BundleEntry): boolean => {
 
 const isQuestionnaire = (assessment: BundleEntry): boolean => {
   return assessment.resource.resourceType === 'Questionnaire';
+};
+
+const filteredResearch = (
+  research: OngoingResearchItem[] | undefined
+): OngoingResearchItem[] => {
+  if (!research) return [];
+  return research.filter(item => item?.resource);
 };
 
 export default function Assessment() {
@@ -288,19 +296,30 @@ export default function Assessment() {
   const handleResearchClick = (
     mergedData: ResearchStudy & { relatedLists: BundleEntry<List>[] }
   ) => {
-    if (!mergedData || mergedData.relatedLists.length === 0) return;
+    if (!mergedData || !mergedData.relatedLists?.length) return;
 
-    const questionnaireUrl =
-      mergedData.relatedLists[0].resource.entry[1].item.reference
-        .split('/')
-        .pop();
+    const list = mergedData.relatedLists[0];
 
-    setSelectedAssessment(item.resource);
+    const entryRef =
+      list?.resource?.entry?.[1]?.item?.reference ??
+      list?.resource?.entry?.[0]?.item?.reference;
+
+    const questionnaireId = entryRef ? String(entryRef).split('/').pop() : null;
+
+    if (!questionnaireId) {
+      console.warn(
+        '[Assessment] Unable to determine questionnaire id from relatedLists',
+        mergedData.id
+      );
+      return;
+    }
+
+    setSelectedAssessment(mergedData);
     setResearchUrl(questionnaireId);
 
     const params = new URLSearchParams(window.location.search);
     params.set('isDrawerOpen', 'true');
-    params.set('assessmentId', item.resource.id);
+    params.set('assessmentId', mergedData.id);
 
     setIsOpen(true);
     router.push(`?${params.toString()}`, { scroll: false });
@@ -708,15 +727,6 @@ export default function Assessment() {
                               {assessment.resource.description}
                             </span>
                           </div>
-
-                          {hasQuestionnaire && (
-                            <div
-                              className='bg-secondary cursor-pointer rounded-[32px] px-4 py-2 text-sm font-bold text-white'
-                              onClick={() => handleResearchClick(item)}
-                            >
-                              Gabung
-                            </div>
-                          )}
                         </div>
                       )
                     )}

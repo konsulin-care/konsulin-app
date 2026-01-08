@@ -10,6 +10,23 @@ import {
 import { useMemo } from 'react';
 import { getAPI } from '../api';
 
+function parseCanonicalOrReference(
+  value?: string,
+  expectedType?: string
+): string | null {
+  if (!value) return null;
+
+  const withoutVersion = String(value).split('|')[0];
+
+  if (expectedType && !withoutVersion.startsWith(expectedType)) {
+    return null;
+  }
+
+  return withoutVersion.includes('/')
+    ? (withoutVersion.split('/').pop() ?? null)
+    : withoutVersion;
+}
+
 type IResultBriefPayload = {
   questionnaire: string;
   description: string;
