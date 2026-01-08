@@ -33,6 +33,10 @@ export default function Questionnaire({ params }) {
   const practitionerId = isPractitioner ? authState?.userInfo?.fhirId : null;
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [params.assessmentsId]);
+
+  useEffect(() => {
     if (!todaySessions || todaySessions.length === 0) return;
 
     setPatientListToday(todaySessions);
