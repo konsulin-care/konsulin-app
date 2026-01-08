@@ -240,6 +240,7 @@ export default function Assessment() {
           '[Assessment] Missing questionnaireId for research:',
           found.id
         );
+        return;
       }
     }
 
@@ -331,7 +332,7 @@ export default function Assessment() {
       <DrawerHeader className='mx-auto text-[20px] font-bold'>
         {selectedAssessment &&
           selectedAssessment.resourceType === 'ResearchStudy' &&
-          selectedAssessment.note?.length !== 0 && (
+          (selectedAssessment.note?.length ?? 0) > 0 && (
             <Badge
               style={{ justifySelf: 'center' }}
               className='bg-secondary flex w-fit rounded-[8px] px-[10px] py-[4px]'
@@ -364,6 +365,12 @@ export default function Assessment() {
         <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
           <Button
             onClick={() => {
+              if (
+                selectedAssessment?.resourceType === 'ResearchStudy' &&
+                !researchUrl
+              ) {
+                return;
+              }
               startTransition(() => {
                 router.push(
                   `assessments/${
@@ -375,7 +382,11 @@ export default function Assessment() {
               });
             }}
             className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-            disabled={isPending}
+            disabled={
+              isPending ||
+              (selectedAssessment?.resourceType === 'ResearchStudy' &&
+                !researchUrl)
+            }
           >
             {isPending ? (
               <LoadingSpinnerIcon
@@ -401,7 +412,7 @@ export default function Assessment() {
       <DrawerHeader className='mx-auto text-[20px] font-bold'>
         {selectedAssessment &&
           selectedAssessment.resourceType === 'ResearchStudy' &&
-          selectedAssessment.note?.length !== 0 && (
+          (selectedAssessment.note?.length ?? 0) > 0 && (
             <Badge
               style={{ justifySelf: 'center' }}
               className='bg-secondary flex w-fit rounded-[8px] px-[10px] py-[4px]'
@@ -448,6 +459,12 @@ export default function Assessment() {
         <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
           <Button
             onClick={() => {
+              if (
+                selectedAssessment?.resourceType === 'ResearchStudy' &&
+                !researchUrl
+              ) {
+                return;
+              }
               startTransition(() => {
                 router.push(
                   `assessments/${
@@ -459,7 +476,11 @@ export default function Assessment() {
               });
             }}
             className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-            disabled={isPending}
+            disabled={
+              isPending ||
+              (selectedAssessment?.resourceType === 'ResearchStudy' &&
+                !researchUrl)
+            }
           >
             {isPending ? (
               <LoadingSpinnerIcon
