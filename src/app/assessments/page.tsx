@@ -3,6 +3,7 @@
 import BackButton from '@/components/general/back-button';
 import CardLoader from '@/components/general/card-loader';
 import ContentWraper from '@/components/general/content-wraper';
+import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import NavigationBar from '@/components/navigation-bar';
@@ -21,7 +22,9 @@ import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
+import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
 import {
+  searchQuestionnaires,
   useOngoingResearch,
   usePopularAssessments,
   useRegularAssessments
@@ -32,7 +35,7 @@ import { BundleEntry, Questionnaire, ResearchStudy } from 'fhir/r4';
 import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import ReactMarkdown from 'react-markdown';
 import QRCode from 'react-qr-code';
 
@@ -45,6 +48,15 @@ const dateFormat = (date: string) => {
 type OngoingResearchItem = {
   resource: ResearchStudy;
   questionnaireIds: string[];
+};
+
+// Helper functions for assessment type detection
+const isResearchStudy = (assessment: BundleEntry): boolean => {
+  return assessment.resource.resourceType === 'ResearchStudy';
+};
+
+const isQuestionnaire = (assessment: BundleEntry): boolean => {
+  return assessment.resource.resourceType === 'Questionnaire';
 };
 
 export default function Assessment() {
@@ -61,7 +73,7 @@ export default function Assessment() {
   const [selectedAssessment, setSelectedAssessment] = useState<
     Questionnaire | ResearchStudy | null
   >(null);
-  // const [query, setQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const [isPending, startTransition] = useTransition();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
@@ -69,13 +81,158 @@ export default function Assessment() {
     usePopularAssessments();
   const { data: regularAssessments, isLoading: regularLoading } =
     useRegularAssessments();
-  const { data: research, isLoading: researchLoading } =
-    useOngoingResearch() as {
-      data: OngoingResearchItem[] | undefined;
-      isLoading: boolean;
-    };
-  // const { data: searchResult, isLoading: searchLoading } =
-  //   useSearchQuestionnaire('Five');
+  const { data: research, isLoading: researchLoading } = useOngoingResearch();
+
+  // Helper functions that need access to research data
+  const findListData = (researchId: string) => {
+    return (
+      research?.filter(
+        (item: BundleEntry) =>
+          item.resource.resourceType === 'List' &&
+          item.resource.entry.some(
+            entry => entry.item.reference.split('/').pop() === researchId
+          )
+      ) || []
+    );
+  };
+
+  const getMergedData = (
+    researchStudy: ResearchStudy
+  ): ResearchStudy & { relatedLists: BundleEntry<List>[] } => {
+    const relatedLists = findListData(researchStudy.id);
+    return { ...researchStudy, relatedLists };
+  };
+
+  // Card component for Research Study assessments (moved inside to access getMergedData)
+  const ResearchAssessmentCard = ({ assessment, onClick }) => {
+    const mergedData = getMergedData(assessment.resource);
+    return (
+      <div className='flex max-w-[280px] cursor-pointer flex-col gap-2'>
+        <div className='flex gap-2'>
+          <Image
+            className='h-[64px] w-[64px] rounded-[8px] object-cover'
+            src='/images/clinic.jpg'
+            height={64}
+            width={64}
+            alt='research'
+          />
+          <div className='flex flex-col text-[12px]'>
+            <div className='font-bold text-wrap text-black'>
+              {assessment.resource.title}
+            </div>
+            <div className='overflow-hidden text-wrap'>
+              {assessment.resource.description?.length > 100
+                ? `${assessment.resource.description.slice(0, 100)}...`
+                : assessment.resource.description}
+            </div>
+          </div>
+        </div>
+        <Button
+          onClick={() => onClick(mergedData)}
+          className='bg-secondary rounded-[32px] px-4 py-2 text-sm font-bold text-white'
+        >
+          Join
+        </Button>
+      </div>
+    );
+  };
+
+  // Card component for Questionnaire assessments
+  const QuestionnaireAssessmentCard = ({ assessment, onClick }) => {
+    return (
+      <div
+        className='flex cursor-pointer flex-col gap-4'
+        onClick={() => onClick(assessment.resource)}
+      >
+        <div className='flex items-start justify-between'>
+          <Image
+            src='/images/exercise.svg'
+            height={40}
+            width={40}
+            alt='exercise'
+          />
+        </div>
+        <div className='flex flex-col items-start'>
+          <span className='text-[12px] font-bold'>
+            {assessment.resource.title}
+          </span>
+          <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
+            {assessment.resource.description}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  // AssessmentSearchResults component for rendering search results
+  const AssessmentSearchResults = ({
+    assessments,
+    onResearchClick,
+    onAssessmentClick
+  }) => {
+    return (
+      <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+        {assessments.map((assessment: BundleEntry) => (
+          <div
+            key={assessment.resource.id}
+            className='card flex flex-col gap-2 p-4'
+          >
+            {isResearchStudy(assessment) ? (
+              <ResearchAssessmentCard
+                assessment={assessment}
+                onClick={onResearchClick}
+              />
+            ) : isQuestionnaire(assessment) ? (
+              <QuestionnaireAssessmentCard
+                assessment={assessment}
+                onClick={onAssessmentClick}
+              />
+            ) : null}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Combine all assessments for comprehensive search
+  const allAssessments = useMemo(() => {
+    return [
+      ...(popularAssessments || []),
+      ...(regularAssessments || []),
+      ...(research || [])
+    ];
+  }, [popularAssessments, regularAssessments, research]);
+
+  // Filter assessments for search (exclude research studies)
+  const searchAssessments = useMemo(() => {
+    // Only include questionnaires in search results, exclude research studies
+    return [
+      ...(popularAssessments || []),
+      ...(regularAssessments || [])
+    ].filter(
+      (assessment: BundleEntry) =>
+        assessment.resource.resourceType === 'Questionnaire'
+    );
+  }, [popularAssessments, regularAssessments]);
+
+  // Implement the search hook with proper field specifications
+  const {
+    filteredData: filteredAssessments,
+    isServerSearching,
+    showServerResults,
+    serverData: serverAssessments,
+    serverSearchCompleted
+  } = useSearchWithFallback({
+    data: searchAssessments,
+    searchFields: [
+      { path: 'resource.title' },
+      { path: 'resource.description' }
+    ],
+    serverSearchFunction: searchQuestionnaires,
+    searchTerm,
+    debounceDelay: 1000,
+    minCharsForServerSearch: 3
+  });
 
   const isPractitioner = authState?.userInfo?.role_name === Roles.Practitioner;
 
@@ -128,16 +285,15 @@ export default function Assessment() {
     return null;
   };
 
-  const handleResearchClick = (item: OngoingResearchItem) => {
-    const questionnaireId = item.questionnaireIds?.[0];
+  const handleResearchClick = (
+    mergedData: ResearchStudy & { relatedLists: BundleEntry<List>[] }
+  ) => {
+    if (!mergedData || mergedData.relatedLists.length === 0) return;
 
-    if (!questionnaireId) {
-      console.warn(
-        '[Assessment] No questionnaireId for research:',
-        item.resource.id
-      );
-      return;
-    }
+    const questionnaireUrl =
+      mergedData.relatedLists[0].resource.entry[1].item.reference
+        .split('/')
+        .pop();
 
     setSelectedAssessment(item.resource);
     setResearchUrl(questionnaireId);
@@ -347,15 +503,11 @@ export default function Assessment() {
       <ContentWraper className='pt-4'>
         <div className='flex gap-4 px-4'>
           <InputWithIcon
-            placeholder='Search Asessment'
+            value={searchTerm}
+            onChange={event => setSearchTerm(event.target.value)}
+            placeholder='Search Assessment'
             className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
             startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
-            // onInput={e => {
-            //   const input = e.target as HTMLInputElement;
-            //   // setQuery(input.value);
-            //   const { data: test } = useSearchQuestionnaire(input.value);
-            //   console.log('testtest', test);
-            // }}
           />
           {/* <Button */}
           {/*   variant='outline' */}
@@ -372,62 +524,189 @@ export default function Assessment() {
           {/* </Button> */}
         </div>
 
-        {researchLoading || isAuthLoading ? (
-          <div className='text-muted mt-4 mb-2 px-4'>
-            <CardLoader item={2} />
-          </div>
-        ) : (
-          research &&
-          research.length > 0 && (
-            <div className='text-muted mt-4 mb-2 px-4'>
-              <div className='text-[14px] font-bold'>On-going Research</div>
-              <div className='text-[10px]'>
-                Your heart is valuable. Please participate in our ongoing study
-                to help us help you more. We will send you the result if you
-                need to know.
+        {searchTerm ? (
+          // When there's a search term, show search results
+          // Priority: Local results > Server results > Loading > No results
+          filteredAssessments.length > 0 ? (
+            // Show local results
+            <AssessmentSearchResults
+              assessments={filteredAssessments}
+              onResearchClick={handleResearchClick}
+              onAssessmentClick={handleAssessmentClick}
+            />
+          ) : showServerResults && serverAssessments?.length > 0 ? (
+            // Show server results when available and has data
+            <AssessmentSearchResults
+              assessments={serverAssessments}
+              onResearchClick={handleResearchClick}
+              onAssessmentClick={handleAssessmentClick}
+            />
+          ) : isServerSearching ? (
+            // Show loading state
+            <div className='flex flex-col items-center justify-center py-16'>
+              <div className='flex items-center gap-2'>
+                <LoadingSpinnerIcon />
+                <span className='text-muted'>
+                  No results found, requesting more data to the server
+                </span>
               </div>
-              <ScrollArea className='mt-2 w-full whitespace-nowrap'>
-                <div className='flex w-max space-x-4 pb-4'>
-                  {research.map((item: OngoingResearchItem) => {
-                    const study = item.resource;
-                    const hasQuestionnaire = item.questionnaireIds.length > 0;
+            </div>
+          ) : serverSearchCompleted ? (
+            // Show no results message when server search completed but found nothing
+            <EmptyState
+              className='py-16'
+              title='No results found'
+              subtitle='Would you try another search term?'
+            />
+          ) : (
+            // Show empty state
+            <EmptyState
+              className='py-16'
+              title='No assessments found'
+              subtitle='Try a different search term.'
+            />
+          )
+        ) : (
+          // No search term, show normal content
+          <>
+            {researchLoading || isAuthLoading ? (
+              <div className='text-muted mt-4 mb-2 px-4'>
+                <CardLoader item={2} />
+              </div>
+            ) : (
+              filteredResearch(research).length > 0 && (
+                <div className='text-muted mt-4 mb-2 px-4'>
+                  <div className='text-[14px] font-bold'>On-going Research</div>
+                  <div className='text-[10px]'>
+                    Your heart is valuable. Please participate in our ongoing
+                    study to help us help you more. We will send you the result
+                    if you need to know.
+                  </div>
+                  <ScrollArea className='mt-2 w-full whitespace-nowrap'>
+                    <div className='flex w-max space-x-4 pb-4'>
+                      {filteredResearch(research).map(
+                        (item: BundleEntry<ResearchStudy>) => {
+                          const mergedData = getMergedData(item.resource);
+                          return (
+                            <div
+                              key={item.resource.id}
+                              className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
+                            >
+                              <div className='flex gap-2'>
+                                <Image
+                                  className='h-[64px] w-[64px] rounded-[8px] object-cover'
+                                  src={'/images/clinic.jpg'}
+                                  // NOTE: replace with this src later on
+                                  // src={item.resource.relatedArtifact[0].resource}
+                                  height={64}
+                                  width={64}
+                                  alt='clinic'
+                                />
+                                <div className='flex flex-col text-[12px]'>
+                                  <div className='font-bold text-wrap text-black'>
+                                    {item.resource.title}
+                                  </div>
+                                  <div className='overflow-hidden text-wrap'>
+                                    {item.resource.description?.length > 100
+                                      ? `${item.resource.description.slice(0, 100)}...`
+                                      : item.resource.description}
+                                  </div>
+                                </div>
+                              </div>
+                              <hr />
+                              <div className='flex items-center justify-between'>
+                                <div className='mr-4'>
+                                  <div className='text-[10px]'>
+                                    Research period:
+                                  </div>
+                                  <div className='text-[10px] font-bold text-black'>
+                                    {item.resource.period &&
+                                      formatDateRange(
+                                        item.resource.period.start,
+                                        item.resource.period.end
+                                      )}
+                                  </div>
+                                </div>
 
-                    return (
-                      <div
-                        key={study.id}
-                        className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
-                      >
-                        <div className='flex gap-2'>
-                          <Image
-                            className='h-[64px] w-[64px] rounded-[8px] object-cover'
-                            src={'/images/clinic.jpg'}
-                            height={64}
-                            width={64}
-                            alt='clinic'
-                          />
-                          <div className='flex flex-col text-[12px]'>
-                            <div className='font-bold text-wrap text-black'>
-                              {study.title}
+                                {mergedData.relatedLists[0] && (
+                                  <div
+                                    className='bg-secondary cursor-pointer rounded-[32px] px-4 py-2 text-sm font-bold text-white'
+                                    onClick={() => {
+                                      handleResearchClick(mergedData);
+                                    }}
+                                  >
+                                    Participate
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            <div className='overflow-hidden text-wrap'>
-                              {study.description?.length > 100
-                                ? `${study.description.slice(0, 100)}...`
-                                : study.description}
+                          );
+                        }
+                      )}
+                    </div>
+
+                    <ScrollBar orientation='horizontal' />
+                  </ScrollArea>
+                </div>
+              )
+            )}
+
+            <div className='bg-[#F9F9F9] p-4'>
+              <div className='text-muted mb-2 text-[14px] font-bold'>
+                Popular Assessment
+              </div>
+
+              <ScrollArea className='w-full whitespace-nowrap'>
+                {popularLoading || isAuthLoading ? (
+                  <CardLoader item={2} />
+                ) : (
+                  <div className='flex w-max space-x-4 pb-4'>
+                    {popularAssessments.map(
+                      (assessment: BundleEntry<Questionnaire>) => (
+                        <div
+                          key={assessment.resource.id}
+                          className='card flex cursor-pointer flex-col gap-4 bg-white'
+                          onClick={() => {
+                            handleAssessmentClick(assessment.resource);
+                          }}
+                        >
+                          <div className='flex items-start justify-between'>
+                            <Image
+                              src={'/images/exercise.svg'}
+                              height={40}
+                              width={40}
+                              alt='exercise'
+                            />
+                            <div className='flex min-w-[192px] justify-end gap-2'>
+                              <Badge className='bg-secondary flex items-center rounded-[8px] px-[10px] py-[4px]'>
+                                <AwardIcon
+                                  size={16}
+                                  color='white'
+                                  fill='white'
+                                />
+                                <div className='text-[10px] text-white'>
+                                  Best Impact
+                                </div>
+                              </Badge>
+                              <Badge className='bg-secondary rounded-[8px] px-[10px] py-[4px]'>
+                                <BookmarkIcon
+                                  size={16}
+                                  color='white'
+                                  fill='white'
+                                />
+                              </Badge>
                             </div>
                           </div>
-                        </div>
 
-                        <hr />
-
-                        <div className='flex items-center justify-between'>
-                          <div className='mr-4'>
-                            <div className='text-[10px]'>Pengambilan data:</div>
-                            <div className='text-[10px] font-bold text-black'>
-                              {study.period &&
-                                `${dateFormat(study.period.start)} - ${dateFormat(
-                                  study.period.end
-                                )}`}
-                            </div>
+                          <div className='flex flex-col items-start'>
+                            {/* NOTE: not provided by api */}
+                            {/* <span className='text-[10px] text-muted'>6 Minutes</span> */}
+                            <span className='text-[12px] font-bold'>
+                              {assessment.resource.title}
+                            </span>
+                            <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
+                              {assessment.resource.description}
+                            </span>
                           </div>
 
                           {hasQuestionnaire && (
@@ -439,117 +718,54 @@ export default function Assessment() {
                             </div>
                           )}
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
+                      )
+                    )}
+                  </div>
+                )}
                 <ScrollBar orientation='horizontal' />
               </ScrollArea>
             </div>
-          )
-        )}
 
-        <div className='bg-[#F9F9F9] p-4'>
-          <div className='text-muted mb-2 text-[14px] font-bold'>
-            Popular Assessment
-          </div>
+            <div className='p-4'>
+              <div className='text-[14px] font-bold text-[hsla(220,9%,19%,0.6)]'>
+                Browse Instruments
+              </div>
 
-          <ScrollArea className='w-full whitespace-nowrap'>
-            {popularLoading || isAuthLoading ? (
-              <CardLoader item={2} />
-            ) : (
-              <div className='flex w-max space-x-4 pb-4'>
-                {(popularAssessments ?? []).map(
-                  (assessment: BundleEntry<Questionnaire>) => (
-                    <div
-                      key={assessment.resource.id}
-                      className='card flex cursor-pointer flex-col gap-4 bg-white'
-                      onClick={() => {
-                        handleAssessmentClick(assessment.resource);
-                      }}
-                    >
-                      <div className='flex items-start justify-between'>
-                        <Image
-                          src={'/images/exercise.svg'}
-                          height={40}
-                          width={40}
-                          alt='exercise'
-                        />
-                        <div className='flex min-w-[192px] justify-end gap-2'>
-                          <Badge className='bg-secondary flex items-center rounded-[8px] px-[10px] py-[4px]'>
-                            <AwardIcon size={16} color='white' fill='white' />
-                            <div className='text-[10px] text-white'>
-                              Best Impact
-                            </div>
-                          </Badge>
-                          <Badge className='bg-secondary rounded-[8px] px-[10px] py-[4px]'>
-                            <BookmarkIcon
-                              size={16}
-                              color='white'
-                              fill='white'
+              {regularLoading || isAuthLoading ? (
+                <CardLoader item={4} />
+              ) : (
+                <div className='mt-4 grid grid-cols-1 gap-2 md:grid-cols-2'>
+                  {regularAssessments.map(
+                    (assessment: BundleEntry<Questionnaire>) => (
+                      <div
+                        key={assessment.resource.id}
+                        className='card item flex cursor-pointer flex-col p-2'
+                        onClick={() => {
+                          handleAssessmentClick(assessment.resource);
+                        }}
+                      >
+                        <div className='flex items-center'>
+                          <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
+                            <Image
+                              className='h-[24px] w-[24px] object-cover'
+                              src={'/images/note.svg'}
+                              width={24}
+                              height={24}
+                              alt='note'
                             />
-                          </Badge>
+                          </div>
+                          <div className='text-[12px] text-[hsla(220,9%,19%,1)]'>
+                            {assessment.resource.title}
+                          </div>
                         </div>
                       </div>
-
-                      <div className='flex flex-col items-start'>
-                        {/* NOTE: not provided by api */}
-                        {/* <span className='text-[10px] text-muted'>6 Minutes</span> */}
-                        <span className='text-[12px] font-bold'>
-                          {assessment.resource.title}
-                        </span>
-                        <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
-                          {assessment.resource.description}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-            <ScrollBar orientation='horizontal' />
-          </ScrollArea>
-        </div>
-
-        <div className='p-4'>
-          <div className='text-[14px] font-bold text-[hsla(220,9%,19%,0.6)]'>
-            Browse Instruments
-          </div>
-
-          {regularLoading || isAuthLoading ? (
-            <CardLoader item={4} />
-          ) : (
-            <div className='mt-4 grid grid-cols-1 gap-2 md:grid-cols-2'>
-              {(regularAssessments ?? []).map(
-                (assessment: BundleEntry<Questionnaire>) => (
-                  <div
-                    key={assessment.resource.id}
-                    className='card item flex cursor-pointer flex-col p-2'
-                    onClick={() => {
-                      handleAssessmentClick(assessment.resource);
-                    }}
-                  >
-                    <div className='flex items-center'>
-                      <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
-                        <Image
-                          className='h-[24px] w-[24px] object-cover'
-                          src={'/images/note.svg'}
-                          width={24}
-                          height={24}
-                          alt='note'
-                        />
-                      </div>
-                      <div className='text-[12px] text-[hsla(220,9%,19%,1)]'>
-                        {assessment.resource.title}
-                      </div>
-                    </div>
-                  </div>
-                )
+                    )
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </ContentWraper>
 
       <Drawer onClose={handleDrawerClose} open={isOpen}>
