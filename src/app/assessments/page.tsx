@@ -32,7 +32,7 @@ import {
 import { formatDateRange } from '@/utils/dateUtils';
 import { customMarkdownComponents } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
-import { BundleEntry, List, Questionnaire, ResearchStudy } from 'fhir/r4';
+import { BundleEntry, Questionnaire, ResearchStudy } from 'fhir/r4';
 import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -49,10 +49,6 @@ const dateFormat = (date: string) => {
 type OngoingResearchItem = {
   resource: ResearchStudy;
   questionnaireIds: string[];
-};
-
-type ResearchStudyWithLists = ResearchStudy & {
-  relatedLists: BundleEntry<List>[];
 };
 
 // Helper functions for assessment type detection
@@ -83,7 +79,7 @@ export default function Assessment() {
   const [researchUrl, setResearchUrl] = useState('');
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [selectedAssessment, setSelectedAssessment] = useState<
-    Questionnaire | ResearchStudyWithLists | null
+    Questionnaire | ResearchStudy | null
   >(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -95,29 +91,8 @@ export default function Assessment() {
     useRegularAssessments();
   const { data: research, isLoading: researchLoading } = useOngoingResearch();
 
-  // Helper functions that need access to research data
-  const findListData = (researchId: string) => {
-    return (
-      research?.filter(
-        (item: BundleEntry) =>
-          item.resource.resourceType === 'List' &&
-          item.resource.entry.some(
-            entry => entry.item.reference.split('/').pop() === researchId
-          )
-      ) || []
-    );
-  };
-
-  const getMergedData = (
-    researchStudy: ResearchStudy
-  ): ResearchStudy & { relatedLists: BundleEntry<List>[] } => {
-    const relatedLists = findListData(researchStudy.id);
-    return { ...researchStudy, relatedLists };
-  };
-
-  // Card component for Research Study assessments (moved inside to access getMergedData)
+  // Card component for Research Study assessments
   const ResearchAssessmentCard = ({ assessment, onClick }) => {
-    const mergedData = getMergedData(assessment.resource);
     return (
       <div className='flex max-w-[280px] cursor-pointer flex-col gap-2'>
         <div className='flex gap-2'>
@@ -140,7 +115,7 @@ export default function Assessment() {
           </div>
         </div>
         <Button
-          onClick={() => onClick(mergedData)}
+          onClick={() => onClick(assessment.resource)}
           className='bg-secondary rounded-[32px] px-4 py-2 text-sm font-bold text-white'
         >
           Join
@@ -298,32 +273,30 @@ export default function Assessment() {
   };
 
   const handleResearchClick = (
-    mergedData: ResearchStudy & { relatedLists: BundleEntry<List>[] }
+    study: ResearchStudy,
+    questionnaireId?: string
   ) => {
-    if (!mergedData || !mergedData.relatedLists?.length) return;
+    if (!study?.id) return;
 
-    const list = mergedData.relatedLists[0];
+    const resolvedQuestionnaireId =
+      questionnaireId ??
+      research?.find(item => item.resource.id === study.id)
+        ?.questionnaireIds?.[0];
 
-    const entryRef =
-      list?.resource?.entry?.[1]?.item?.reference ??
-      list?.resource?.entry?.[0]?.item?.reference;
-
-    const questionnaireId = entryRef ? String(entryRef).split('/').pop() : null;
-
-    if (!questionnaireId) {
+    if (!resolvedQuestionnaireId) {
       console.warn(
-        '[Assessment] Unable to determine questionnaire id from relatedLists',
-        mergedData.id
+        '[Assessment] Missing questionnaireId for research:',
+        study.id
       );
       return;
     }
 
-    setSelectedAssessment(mergedData);
-    setResearchUrl(questionnaireId);
+    setSelectedAssessment(study);
+    setResearchUrl(resolvedQuestionnaireId);
 
     const params = new URLSearchParams(window.location.search);
     params.set('isDrawerOpen', 'true');
-    params.set('assessmentId', mergedData.id);
+    params.set('assessmentId', study.id);
 
     setIsOpen(true);
     router.push(`?${params.toString()}`, { scroll: false });
@@ -471,7 +444,6 @@ export default function Assessment() {
           </div>
         )}
 
-      {/* used data from relatedLists that have been merged before */}
       {selectedAssessment && (
         <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
           <Button
@@ -496,7 +468,7 @@ export default function Assessment() {
                 stroke='white'
                 className='w-full animate-spin'
               />
-            ) : 'relatedLists' in selectedAssessment ? (
+            ) : selectedAssessment?.resourceType === 'ResearchStudy' ? (
               'Mulai'
             ) : (
               'Start Test'
@@ -608,8 +580,8 @@ export default function Assessment() {
                   <ScrollArea className='mt-2 w-full whitespace-nowrap'>
                     <div className='flex w-max space-x-4 pb-4'>
                       {filteredResearch(research).map(
-                        (item: BundleEntry<ResearchStudy>) => {
-                          const mergedData = getMergedData(item.resource);
+                        (item: OngoingResearchItem) => {
+                          const questionnaireId = item.questionnaireIds?.[0];
                           return (
                             <div
                               key={item.resource.id}
@@ -651,11 +623,14 @@ export default function Assessment() {
                                   </div>
                                 </div>
 
-                                {mergedData.relatedLists[0] && (
+                                {questionnaireId && (
                                   <div
                                     className='bg-secondary cursor-pointer rounded-[32px] px-4 py-2 text-sm font-bold text-white'
                                     onClick={() => {
-                                      handleResearchClick(mergedData);
+                                      handleResearchClick(
+                                        item.resource,
+                                        questionnaireId
+                                      );
                                     }}
                                   >
                                     Participate

@@ -18,13 +18,26 @@ function parseCanonicalOrReference(
 
   const withoutVersion = String(value).split('|')[0];
 
-  if (expectedType && !withoutVersion.startsWith(expectedType)) {
-    return null;
+  const parts = withoutVersion.split('/');
+
+  if (!expectedType) {
+    return parts.length > 1 ? parts[parts.length - 1] || null : withoutVersion;
   }
 
-  return withoutVersion.includes('/')
-    ? withoutVersion.split('/').pop() || null
-    : withoutVersion;
+  const typeIndex = parts.findIndex(part => part === expectedType);
+  if (typeIndex >= 0 && parts[typeIndex + 1]) {
+    return parts[typeIndex + 1];
+  }
+
+  if (parts.length === 2 && parts[0] === expectedType) {
+    return parts[1];
+  }
+
+  if (parts.length === 1) {
+    return parts[0];
+  }
+
+  return null;
 }
 
 type IResultBriefPayload = {
@@ -66,22 +79,49 @@ export const useOngoingResearch = () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       const API = await getAPI();
 
+      const hasResearch = (payload: any) => {
+        const entries = Array.isArray(payload?.entry)
+          ? payload.entry
+          : Array.isArray(payload)
+            ? payload
+            : [];
+        return entries.some(
+          (entry: any) =>
+            (entry?.resource ?? entry)?.resourceType === 'ResearchStudy'
+        );
+      };
+
       const response = await API.get(
         `/fhir/ResearchStudy?date=ge${today}&status=active&_include=ResearchStudy:protocol`
       );
 
+      if (!hasResearch(response.data)) {
+        const fallbackResponse = await API.get(
+          `/fhir/ResearchStudy?_include=ResearchStudy:protocol`
+        );
+        return fallbackResponse.data;
+      }
+
       return response.data;
     },
     select: data => {
-      if (!data?.entry) return [];
+      const entries = Array.isArray(data?.entry)
+        ? data.entry
+        : Array.isArray(data)
+          ? data
+          : [];
 
-      const researchStudies = data.entry
-        .filter((e: any) => e.resource?.resourceType === 'ResearchStudy')
-        .map((e: any) => e.resource);
+      const resources = entries.map((e: any) => e?.resource ?? e);
 
-      const planDefinitions = data.entry
-        .filter((e: any) => e.resource?.resourceType === 'PlanDefinition')
-        .map((e: any) => e.resource);
+      const researchStudies = resources.filter(
+        (resource: any) => resource?.resourceType === 'ResearchStudy'
+      );
+
+      const planDefinitions = resources.filter(
+        (resource: any) => resource?.resourceType === 'PlanDefinition'
+      );
+
+      if (!researchStudies.length) return [];
 
       const planToQuestionnaires: Record<string, string[]> = {};
 
