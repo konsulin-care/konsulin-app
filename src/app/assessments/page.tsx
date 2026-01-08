@@ -51,6 +51,10 @@ type OngoingResearchItem = {
   questionnaireIds: string[];
 };
 
+type ResearchStudyWithLists = ResearchStudy & {
+  relatedLists: BundleEntry<List>[];
+};
+
 // Helper functions for assessment type detection
 const isResearchStudy = (assessment: BundleEntry): boolean => {
   return assessment.resource.resourceType === 'ResearchStudy';
@@ -79,7 +83,7 @@ export default function Assessment() {
   const [researchUrl, setResearchUrl] = useState('');
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [selectedAssessment, setSelectedAssessment] = useState<
-    Questionnaire | ResearchStudy | null
+    Questionnaire | ResearchStudyWithLists | null
   >(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
 

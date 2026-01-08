@@ -23,7 +23,7 @@ function parseCanonicalOrReference(
   }
 
   return withoutVersion.includes('/')
-    ? (withoutVersion.split('/').pop() ?? null)
+    ? withoutVersion.split('/').pop() || null
     : withoutVersion;
 }
 
