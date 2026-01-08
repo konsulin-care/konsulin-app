@@ -85,9 +85,9 @@ export default function Assessment() {
 
   const [isPending, startTransition] = useTransition();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
-  const { data: popularAssessments, isLoading: popularLoading } =
+  const { data: popularAssessments = [], isLoading: popularLoading } =
     usePopularAssessments();
-  const { data: regularAssessments, isLoading: regularLoading } =
+  const { data: regularAssessments = [], isLoading: regularLoading } =
     useRegularAssessments();
   const { data: research, isLoading: researchLoading } = useOngoingResearch();
 
@@ -331,13 +331,13 @@ export default function Assessment() {
       <DrawerHeader className='mx-auto text-[20px] font-bold'>
         {selectedAssessment &&
           selectedAssessment.resourceType === 'ResearchStudy' &&
-          selectedAssessment.note.length !== 0 && (
+          selectedAssessment.note?.length !== 0 && (
             <Badge
               style={{ justifySelf: 'center' }}
               className='bg-secondary flex w-fit rounded-[8px] px-[10px] py-[4px]'
             >
               <div className='text-xs text-white'>
-                Estimated time: ~{selectedAssessment.note[0].text}
+                Estimated time: ~{selectedAssessment.note?.[0]?.text}
               </div>
             </Badge>
           )}
@@ -401,13 +401,13 @@ export default function Assessment() {
       <DrawerHeader className='mx-auto text-[20px] font-bold'>
         {selectedAssessment &&
           selectedAssessment.resourceType === 'ResearchStudy' &&
-          selectedAssessment.note.length !== 0 && (
+          selectedAssessment.note?.length !== 0 && (
             <Badge
               style={{ justifySelf: 'center' }}
               className='bg-secondary flex w-fit rounded-[8px] px-[10px] py-[4px]'
             >
               <div className='text-xs text-white'>
-                Estimated time: ~{selectedAssessment.note[0].text}
+                Estimated time: ~{selectedAssessment.note?.[0]?.text}
               </div>
             </Badge>
           )}
@@ -433,7 +433,7 @@ export default function Assessment() {
         selectedAssessment.resourceType === 'ResearchStudy' && (
           <div>
             <div className='mt-4 font-bold'>Researcher</div>
-            {selectedAssessment.contact.map((item, index) => (
+            {(selectedAssessment.contact ?? []).map((item, index) => (
               <div
                 className='card mt-2 border-0 bg-[#F9F9F9] text-sm'
                 key={index}
@@ -659,7 +659,7 @@ export default function Assessment() {
                   <CardLoader item={2} />
                 ) : (
                   <div className='flex w-max space-x-4 pb-4'>
-                    {popularAssessments.map(
+                    {(popularAssessments ?? []).map(
                       (assessment: BundleEntry<Questionnaire>) => (
                         <div
                           key={assessment.resource.id}
@@ -724,7 +724,7 @@ export default function Assessment() {
                 <CardLoader item={4} />
               ) : (
                 <div className='mt-4 grid grid-cols-1 gap-2 md:grid-cols-2'>
-                  {regularAssessments.map(
+                  {(regularAssessments ?? []).map(
                     (assessment: BundleEntry<Questionnaire>) => (
                       <div
                         key={assessment.resource.id}
