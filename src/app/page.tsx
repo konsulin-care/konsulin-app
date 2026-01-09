@@ -26,11 +26,17 @@ const App = () => {
       try {
         const decoded = decodeURIComponent(storedRedirect);
         if (decoded.startsWith('/')) {
+          if (decoded === window.location.pathname) {
+            setIsRedirecting(false);
+            return;
+          }
           router.push(decoded);
           return;
         }
       } catch (error) {
         console.error('Invalid redirect value in localStorage:', error);
+        setIsRedirecting(false);
+        return;
       }
     }
 
@@ -53,6 +59,11 @@ const App = () => {
 
             if (intent.kind === 'assessmentResult') {
               const { responseId, path } = intent.payload;
+              if (!authState.userInfo?.role_name || !authState.userInfo?.fhirId) {
+                console.error('Missing user info for assessment linking');
+                router.push(path);
+                return;
+              }
               const api = await getAPI();
 
               const { data: existingResponse } = await api.get(
@@ -75,9 +86,12 @@ const App = () => {
                 updatedResponse
               );
 
-              if (existingResponse.questionnaire) {
+              if (
+                typeof existingResponse.questionnaire === 'string' &&
+                existingResponse.questionnaire
+              ) {
                 const legacyKey = `response_${existingResponse.questionnaire.split('/')[1]}`;
-                localStorage.removeItem(legacyKey);
+                if (legacyKey) localStorage.removeItem(legacyKey);
               }
 
               localStorage.removeItem('skip-response-cleanup');
