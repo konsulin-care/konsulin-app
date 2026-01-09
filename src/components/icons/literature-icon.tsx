@@ -1,7 +1,7 @@
-import * as React from 'react'
+import * as React from 'react';
 
 export default function LiteratureIcon(props: React.SVGProps<SVGSVGElement>) {
-  const { fill = '#000000', width = 24, height = 24 } = props
+  const { fill = '#000000', width = 24, height = 24, strokeWidth = 1 } = props;
 
   return (
     <svg
@@ -22,6 +22,7 @@ export default function LiteratureIcon(props: React.SVGProps<SVGSVGElement>) {
         <path
           d='M4.68756 12.6875V3.3125C4.68756 2.27698 5.52705 1.4375 6.56256 1.4375H19.0869C21.0736 1.4375 22.8818 2.88237 23.0488 4.86205C23.1772 6.38445 22.3952 7.73722 21.1876 8.4358'
           stroke={fill}
+          strokeWidth={strokeWidth}
           strokeMiterlimit='10'
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -29,6 +30,7 @@ export default function LiteratureIcon(props: React.SVGProps<SVGSVGElement>) {
         <path
           d='M8.43756 5.1875H13.6876'
           stroke={fill}
+          strokeWidth={strokeWidth}
           strokeMiterlimit='10'
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -36,6 +38,7 @@ export default function LiteratureIcon(props: React.SVGProps<SVGSVGElement>) {
         <path
           d='M8.43756 8.9375H13.6876'
           stroke={fill}
+          strokeWidth={strokeWidth}
           strokeMiterlimit='10'
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -43,6 +46,7 @@ export default function LiteratureIcon(props: React.SVGProps<SVGSVGElement>) {
         <path
           d='M8.43756 12.6875H13.6876'
           stroke={fill}
+          strokeWidth={strokeWidth}
           strokeMiterlimit='10'
           strokeLinecap='round'
           strokeLinejoin='round'
@@ -59,5 +63,5 @@ export default function LiteratureIcon(props: React.SVGProps<SVGSVGElement>) {
         </clipPath>
       </defs>
     </svg>
-  )
+  );
 }
