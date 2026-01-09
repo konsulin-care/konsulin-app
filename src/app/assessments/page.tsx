@@ -32,7 +32,7 @@ import {
 import { formatDateRange } from '@/utils/dateUtils';
 import { customMarkdownComponents } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
-import { BundleEntry, List, Questionnaire, ResearchStudy } from 'fhir/r4';
+import { BundleEntry, Questionnaire, ResearchStudy } from 'fhir/r4';
 import { AwardIcon, BookmarkIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -46,12 +46,10 @@ const dateFormat = (date: string) => {
   return format(parseISO(date), 'dd MMMM yyyy');
 };
 
-const filteredResearch = (researchArr: BundleEntry[] | null | undefined) =>
-  researchArr
-    ? researchArr.filter(
-        (item: BundleEntry) => item.resource.resourceType === 'ResearchStudy'
-      )
-    : [];
+type OngoingResearchItem = {
+  resource: ResearchStudy;
+  questionnaireIds: string[];
+};
 
 // Helper functions for assessment type detection
 const isResearchStudy = (assessment: BundleEntry): boolean => {
@@ -60,6 +58,13 @@ const isResearchStudy = (assessment: BundleEntry): boolean => {
 
 const isQuestionnaire = (assessment: BundleEntry): boolean => {
   return assessment.resource.resourceType === 'Questionnaire';
+};
+
+const filteredResearch = (
+  research: OngoingResearchItem[] | undefined
+): OngoingResearchItem[] => {
+  if (!research) return [];
+  return research.filter(item => item?.resource);
 };
 
 export default function Assessment() {
@@ -74,41 +79,20 @@ export default function Assessment() {
   const [researchUrl, setResearchUrl] = useState('');
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [selectedAssessment, setSelectedAssessment] = useState<
-    Questionnaire | (ResearchStudy & { relatedLists: BundleEntry<List>[] })
+    Questionnaire | ResearchStudy | null
   >(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   const [isPending, startTransition] = useTransition();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
-  const { data: popularAssessments, isLoading: popularLoading } =
+  const { data: popularAssessments = [], isLoading: popularLoading } =
     usePopularAssessments();
-  const { data: regularAssessments, isLoading: regularLoading } =
+  const { data: regularAssessments = [], isLoading: regularLoading } =
     useRegularAssessments();
   const { data: research, isLoading: researchLoading } = useOngoingResearch();
 
-  // Helper functions that need access to research data
-  const findListData = (researchId: string) => {
-    return (
-      research?.filter(
-        (item: BundleEntry) =>
-          item.resource.resourceType === 'List' &&
-          item.resource.entry.some(
-            entry => entry.item.reference.split('/').pop() === researchId
-          )
-      ) || []
-    );
-  };
-
-  const getMergedData = (
-    researchStudy: ResearchStudy
-  ): ResearchStudy & { relatedLists: BundleEntry<List>[] } => {
-    const relatedLists = findListData(researchStudy.id);
-    return { ...researchStudy, relatedLists };
-  };
-
-  // Card component for Research Study assessments (moved inside to access getMergedData)
+  // Card component for Research Study assessments
   const ResearchAssessmentCard = ({ assessment, onClick }) => {
-    const mergedData = getMergedData(assessment.resource);
     return (
       <div className='flex max-w-[280px] cursor-pointer flex-col gap-2'>
         <div className='flex gap-2'>
@@ -131,7 +115,7 @@ export default function Assessment() {
           </div>
         </div>
         <Button
-          onClick={() => onClick(mergedData)}
+          onClick={() => onClick(assessment.resource)}
           className='bg-secondary rounded-[32px] px-4 py-2 text-sm font-bold text-white'
         >
           Join
@@ -245,20 +229,22 @@ export default function Assessment() {
 
     if (!found) return;
 
-    let merged = found;
-
     if (found.resourceType === 'ResearchStudy') {
-      merged = getMergedData(found);
+      const researchItem = research?.find(r => r.resource.id === found.id);
+      const questionnaireId = researchItem?.questionnaireIds?.[0];
 
-      const questionnaireUrl =
-        merged.relatedLists[0].resource?.entry?.[1]?.item?.reference
-          ?.split('/')
-          ?.pop();
-      if (questionnaireUrl) {
-        setResearchUrl(questionnaireUrl);
+      if (questionnaireId) {
+        setResearchUrl(questionnaireId);
+      } else {
+        console.warn(
+          '[Assessment] Missing questionnaireId for research:',
+          found.id
+        );
+        return;
       }
     }
-    setSelectedAssessment(merged);
+
+    setSelectedAssessment(found);
     setIsOpen(true);
 
     const params = new URLSearchParams(window.location.search);
@@ -282,31 +268,38 @@ export default function Assessment() {
     if (regularFound) return regularFound.resource;
 
     const researchFound = research?.find(item => item.resource.id === id);
-    if (researchFound) return getMergedData(researchFound.resource);
+    if (researchFound) return researchFound.resource;
 
     return null;
   };
 
   const handleResearchClick = (
-    mergedData: ResearchStudy & { relatedLists: BundleEntry<List>[] }
+    study: ResearchStudy,
+    questionnaireId?: string
   ) => {
-    if (!mergedData || mergedData.relatedLists.length === 0) return;
+    if (!study?.id) return;
 
-    const questionnaireUrl =
-      mergedData.relatedLists[0].resource.entry[1].item.reference
-        .split('/')
-        .pop();
+    const resolvedQuestionnaireId =
+      questionnaireId ??
+      research?.find(item => item.resource.id === study.id)
+        ?.questionnaireIds?.[0];
 
-    setSelectedAssessment(mergedData);
-    setResearchUrl(questionnaireUrl);
+    if (!resolvedQuestionnaireId) {
+      console.warn(
+        '[Assessment] Missing questionnaireId for research:',
+        study.id
+      );
+      return;
+    }
+
+    setSelectedAssessment(study);
+    setResearchUrl(resolvedQuestionnaireId);
 
     const params = new URLSearchParams(window.location.search);
     params.set('isDrawerOpen', 'true');
-    params.set('assessmentId', mergedData.id);
-    setIsOpen(true);
+    params.set('assessmentId', study.id);
 
-    const fullUrl = `${baseUrl}${pathname}?${params.toString()}`;
-    setCurrentLocation(fullUrl);
+    setIsOpen(true);
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
@@ -339,13 +332,13 @@ export default function Assessment() {
       <DrawerHeader className='mx-auto text-[20px] font-bold'>
         {selectedAssessment &&
           selectedAssessment.resourceType === 'ResearchStudy' &&
-          selectedAssessment.note.length !== 0 && (
+          (selectedAssessment.note?.length ?? 0) > 0 && (
             <Badge
               style={{ justifySelf: 'center' }}
               className='bg-secondary flex w-fit rounded-[8px] px-[10px] py-[4px]'
             >
               <div className='text-xs text-white'>
-                Estimated time: ~{selectedAssessment.note[0].text}
+                Estimated time: ~{selectedAssessment.note?.[0]?.text}
               </div>
             </Badge>
           )}
@@ -372,14 +365,28 @@ export default function Assessment() {
         <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
           <Button
             onClick={() => {
+              if (
+                selectedAssessment?.resourceType === 'ResearchStudy' &&
+                !researchUrl
+              ) {
+                return;
+              }
               startTransition(() => {
                 router.push(
-                  `assessments/${'relatedLists' in selectedAssessment ? researchUrl : selectedAssessment.id}`
+                  `assessments/${
+                    selectedAssessment?.resourceType === 'ResearchStudy'
+                      ? researchUrl
+                      : selectedAssessment?.id
+                  }`
                 );
               });
             }}
             className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-            disabled={isPending}
+            disabled={
+              isPending ||
+              (selectedAssessment?.resourceType === 'ResearchStudy' &&
+                !researchUrl)
+            }
           >
             {isPending ? (
               <LoadingSpinnerIcon
@@ -405,13 +412,13 @@ export default function Assessment() {
       <DrawerHeader className='mx-auto text-[20px] font-bold'>
         {selectedAssessment &&
           selectedAssessment.resourceType === 'ResearchStudy' &&
-          selectedAssessment.note.length !== 0 && (
+          (selectedAssessment.note?.length ?? 0) > 0 && (
             <Badge
               style={{ justifySelf: 'center' }}
               className='bg-secondary flex w-fit rounded-[8px] px-[10px] py-[4px]'
             >
               <div className='text-xs text-white'>
-                Estimated time: ~{selectedAssessment.note[0].text}
+                Estimated time: ~{selectedAssessment.note?.[0]?.text}
               </div>
             </Badge>
           )}
@@ -437,7 +444,7 @@ export default function Assessment() {
         selectedAssessment.resourceType === 'ResearchStudy' && (
           <div>
             <div className='mt-4 font-bold'>Researcher</div>
-            {selectedAssessment.contact.map((item, index) => (
+            {(selectedAssessment.contact ?? []).map((item, index) => (
               <div
                 className='card mt-2 border-0 bg-[#F9F9F9] text-sm'
                 key={index}
@@ -448,19 +455,32 @@ export default function Assessment() {
           </div>
         )}
 
-      {/* used data from relatedLists that have been merged before */}
       {selectedAssessment && (
         <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
           <Button
             onClick={() => {
+              if (
+                selectedAssessment?.resourceType === 'ResearchStudy' &&
+                !researchUrl
+              ) {
+                return;
+              }
               startTransition(() => {
                 router.push(
-                  `assessments/${'relatedLists' in selectedAssessment ? researchUrl : selectedAssessment.id}`
+                  `assessments/${
+                    selectedAssessment?.resourceType === 'ResearchStudy'
+                      ? researchUrl
+                      : selectedAssessment?.id
+                  }`
                 );
               });
             }}
             className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-            disabled={isPending}
+            disabled={
+              isPending ||
+              (selectedAssessment?.resourceType === 'ResearchStudy' &&
+                !researchUrl)
+            }
           >
             {isPending ? (
               <LoadingSpinnerIcon
@@ -469,7 +489,7 @@ export default function Assessment() {
                 stroke='white'
                 className='w-full animate-spin'
               />
-            ) : 'relatedLists' in selectedAssessment ? (
+            ) : selectedAssessment?.resourceType === 'ResearchStudy' ? (
               'Mulai'
             ) : (
               'Start Test'
@@ -581,14 +601,14 @@ export default function Assessment() {
                   <ScrollArea className='mt-2 w-full whitespace-nowrap'>
                     <div className='flex w-max space-x-4 pb-4'>
                       {filteredResearch(research).map(
-                        (item: BundleEntry<ResearchStudy>) => {
-                          const mergedData = getMergedData(item.resource);
+                        (item: OngoingResearchItem) => {
+                          const questionnaireId = item.questionnaireIds?.[0];
                           return (
                             <div
                               key={item.resource.id}
-                              className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
+                              className='card flex min-h-[168px] max-w-[280px] cursor-default flex-col gap-2 bg-white'
                             >
-                              <div className='flex gap-2'>
+                              <div className='flex flex-1 gap-2'>
                                 <Image
                                   className='h-[64px] w-[64px] rounded-[8px] object-cover'
                                   src={'/images/clinic.jpg'}
@@ -602,7 +622,14 @@ export default function Assessment() {
                                   <div className='font-bold text-wrap text-black'>
                                     {item.resource.title}
                                   </div>
-                                  <div className='overflow-hidden text-wrap'>
+                                  <div
+                                    className='text-wrap overflow-hidden leading-4'
+                                    style={{
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 3,
+                                      WebkitBoxOrient: 'vertical'
+                                    }}
+                                  >
                                     {item.resource.description?.length > 100
                                       ? `${item.resource.description.slice(0, 100)}...`
                                       : item.resource.description}
@@ -610,7 +637,7 @@ export default function Assessment() {
                                 </div>
                               </div>
                               <hr />
-                              <div className='flex items-center justify-between'>
+                              <div className='mt-auto flex items-center justify-between'>
                                 <div className='mr-4'>
                                   <div className='text-[10px]'>
                                     Research period:
@@ -624,11 +651,14 @@ export default function Assessment() {
                                   </div>
                                 </div>
 
-                                {mergedData.relatedLists[0] && (
+                                {questionnaireId && (
                                   <div
                                     className='bg-secondary cursor-pointer rounded-[32px] px-4 py-2 text-sm font-bold text-white'
                                     onClick={() => {
-                                      handleResearchClick(mergedData);
+                                      handleResearchClick(
+                                        item.resource,
+                                        questionnaireId
+                                      );
                                     }}
                                   >
                                     Participate
@@ -657,7 +687,7 @@ export default function Assessment() {
                   <CardLoader item={2} />
                 ) : (
                   <div className='flex w-max space-x-4 pb-4'>
-                    {popularAssessments.map(
+                    {(popularAssessments ?? []).map(
                       (assessment: BundleEntry<Questionnaire>) => (
                         <div
                           key={assessment.resource.id}
@@ -722,7 +752,7 @@ export default function Assessment() {
                 <CardLoader item={4} />
               ) : (
                 <div className='mt-4 grid grid-cols-1 gap-2 md:grid-cols-2'>
-                  {regularAssessments.map(
+                  {(regularAssessments ?? []).map(
                     (assessment: BundleEntry<Questionnaire>) => (
                       <div
                         key={assessment.resource.id}

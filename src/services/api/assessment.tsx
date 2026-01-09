@@ -10,6 +10,47 @@ import {
 import { useMemo } from 'react';
 import { getAPI } from '../api';
 
+function parseCanonicalOrReference(
+  value?: string,
+  expectedType?: string
+): string | null {
+  if (!value) return null;
+
+  const withoutVersion = String(value).split('|')[0];
+  try {
+    const url = new URL(withoutVersion);
+    if (expectedType === 'Questionnaire') {
+      const segments = url.pathname.split('/').filter(Boolean);
+      if (segments.length > 0) {
+        return segments[segments.length - 1];
+      }
+    }
+  } catch {
+    // Not a full URL; continue with reference parsing.
+  }
+
+  const parts = withoutVersion.split('/');
+
+  if (!expectedType) {
+    return parts.length > 1 ? parts[parts.length - 1] || null : withoutVersion;
+  }
+
+  const typeIndex = parts.findIndex(part => part === expectedType);
+  if (typeIndex >= 0 && parts[typeIndex + 1]) {
+    return parts[typeIndex + 1];
+  }
+
+  if (parts.length === 2 && parts[0] === expectedType) {
+    return parts[1];
+  }
+
+  if (parts.length === 1) {
+    return parts[0];
+  }
+
+  return null;
+}
+
 type IResultBriefPayload = {
   questionnaire: string;
   description: string;
@@ -48,13 +89,99 @@ export const useOngoingResearch = () => {
     queryFn: async () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       const API = await getAPI();
+
+      const hasResearch = (payload: any) => {
+        const entries = Array.isArray(payload?.entry)
+          ? payload.entry
+          : Array.isArray(payload)
+            ? payload
+            : [];
+        return entries.some(
+          (entry: any) =>
+            (entry?.resource ?? entry)?.resourceType === 'ResearchStudy'
+        );
+      };
+
       const response = await API.get(
-        `/fhir/ResearchStudy?date=ge${today}&status=active&_revinclude=List:item`
+        `/fhir/ResearchStudy?date=ge${today}&status=active&_include=ResearchStudy:protocol`
       );
-      return response;
+
+      if (!hasResearch(response.data)) {
+        const fallbackResponse = await API.get(
+          `/fhir/ResearchStudy?status=active&_include=ResearchStudy:protocol`
+        );
+        return fallbackResponse.data;
+      }
+
+      return response.data;
     },
-    select: response => {
-      return response.data.entry || null;
+    select: data => {
+      const entries = Array.isArray(data?.entry)
+        ? data.entry
+        : Array.isArray(data)
+          ? data
+          : [];
+
+      const resources = entries.map((e: any) => e?.resource ?? e);
+
+      const researchStudies = resources.filter(
+        (resource: any) => resource?.resourceType === 'ResearchStudy'
+      );
+
+      const planDefinitions = resources.filter(
+        (resource: any) => resource?.resourceType === 'PlanDefinition'
+      );
+
+      if (!researchStudies.length) return [];
+
+      const planToQuestionnaires: Record<string, string[]> = {};
+
+      planDefinitions.forEach((plan: any) => {
+        if (!plan?.id) return;
+
+        const questionnaireIds: string[] =
+          plan.action?.flatMap((action: any) => {
+            const canId = parseCanonicalOrReference(
+              action.definitionCanonical,
+              'Questionnaire'
+            );
+            if (canId) return [canId];
+
+            const refId = parseCanonicalOrReference(
+              action.definitionReference?.reference,
+              'Questionnaire'
+            );
+
+            return refId ? [refId] : [];
+          }) || [];
+
+        const planId: string = plan.id;
+
+        planToQuestionnaires[planId] = [...new Set(questionnaireIds)];
+      });
+
+      return researchStudies.map((study: any) => {
+        const protocolRefs = Array.isArray(study.protocol)
+          ? study.protocol
+          : [study.protocol].filter(Boolean);
+
+        const planIds = protocolRefs
+          .map((protocol: any) => {
+            const ref = protocol?.reference ?? protocol?.canonical ?? protocol;
+
+            return parseCanonicalOrReference(ref, 'PlanDefinition');
+          })
+          .filter(Boolean) as string[];
+
+        const questionnaireIds = planIds.flatMap(
+          planId => planToQuestionnaires[planId] || []
+        );
+
+        return {
+          resource: study,
+          questionnaireIds
+        };
+      });
     }
   });
 };
