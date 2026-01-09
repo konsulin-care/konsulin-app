@@ -109,7 +109,7 @@ export const useOngoingResearch = () => {
 
       if (!hasResearch(response.data)) {
         const fallbackResponse = await API.get(
-          `/fhir/ResearchStudy?_include=ResearchStudy:protocol`
+          `/fhir/ResearchStudy?status=active&_include=ResearchStudy:protocol`
         );
         return fallbackResponse.data;
       }
