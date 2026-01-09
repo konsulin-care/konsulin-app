@@ -17,9 +17,6 @@ const App = () => {
 
   const [isRedirecting, setIsRedirecting] = useState(true);
 
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [modalDismissed, setModalDismissed] = useState(false);
-
   useEffect(() => {
     if (isLoading) return;
 
@@ -99,13 +96,10 @@ const App = () => {
         return;
       }
 
-      if (authState.userInfo?.profile_complete === false && !modalDismissed) {
-        setShowProfileModal(true);
-      }
     }
 
     setIsRedirecting(false);
-  }, [isLoading, authState, modalDismissed, router]);
+  }, [isLoading, authState, router]);
 
   if (isLoading || isRedirecting) {
     return (
@@ -121,37 +115,9 @@ const App = () => {
 
   return (
     <>
-      {showProfileModal && (
-        <div
-          className='fixed inset-0 z-50 flex items-center justify-center bg-black/40'
-          onClick={() => {
-            setShowProfileModal(false);
-            setModalDismissed(true);
-          }}
-        >
-          <div
-            className='w-[90%] max-w-md rounded-xl bg-white p-6 text-center shadow-lg'
-            onClick={e => e.stopPropagation()}
-          >
-            <h2 className='mb-2 text-lg font-semibold'>Profil belum lengkap</h2>
-            <p className='mb-4 text-sm text-gray-600'>
-              Lengkapi profil Anda untuk mendapatkan pengalaman terbaik.
-            </p>
-            <button
-              className='bg-primary rounded-lg px-4 py-2 text-white'
-              onClick={() => router.push('/profile')}
-            >
-              Lengkapi Sekarang
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className={showProfileModal ? 'pointer-events-none blur-sm' : ''}>
-        <NavigationBar />
-        <HomeHeader />
-        <HomeContent />
-      </div>
+      <NavigationBar />
+      <HomeHeader />
+      <HomeContent />
     </>
   );
 };
