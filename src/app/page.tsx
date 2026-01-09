@@ -70,6 +70,9 @@ const App = () => {
               const { responseId, path } = intent.payload;
               if (!authState.userInfo?.role_name || !authState.userInfo?.fhirId) {
                 console.error('Missing user info for assessment linking');
+                clearIntent();
+                isHandlingIntentRef.current = false;
+                setIsRedirecting(false);
                 router.push(path);
                 return;
               }
