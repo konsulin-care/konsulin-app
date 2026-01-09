@@ -26,11 +26,16 @@ const App = () => {
       try {
         const decoded = decodeURIComponent(storedRedirect);
         if (decoded.startsWith('/')) {
-          if (decoded === window.location.pathname) {
+          const currentPath =
+            window.location.pathname +
+            window.location.search +
+            window.location.hash;
+          if (decoded === currentPath) {
             setIsRedirecting(false);
             return;
           }
           router.push(decoded);
+          setIsRedirecting(false);
           return;
         }
       } catch (error) {
