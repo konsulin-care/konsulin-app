@@ -6,7 +6,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { getAPI } from '@/services/api';
 import { clearIntent, getIntent } from '@/utils/intent-storage';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import HomeContent from './home-content';
 import HomeHeader from './home-header';
@@ -16,6 +16,7 @@ const App = () => {
   const router = useRouter();
 
   const [isRedirecting, setIsRedirecting] = useState(true);
+  const isHandlingIntentRef = useRef(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -50,15 +51,18 @@ const App = () => {
 
       if (intent) {
         const handleIntent = async () => {
-          clearIntent();
+          if (isHandlingIntentRef.current) return;
+          isHandlingIntentRef.current = true;
           try {
             if (intent.kind === 'journal') {
               router.push(intent.payload.path);
+              clearIntent();
               return;
             }
 
             if (intent.kind === 'appointment') {
               router.push(intent.payload.path);
+              clearIntent();
               return;
             }
 
@@ -95,7 +99,10 @@ const App = () => {
                 typeof existingResponse.questionnaire === 'string' &&
                 existingResponse.questionnaire
               ) {
-                const legacyKey = `response_${existingResponse.questionnaire.split('/')[1]}`;
+                const segments = existingResponse.questionnaire
+                  .split('/')
+                  .filter(Boolean);
+                const legacyKey = `response_${segments[segments.length - 1]}`;
                 if (legacyKey) localStorage.removeItem(legacyKey);
               }
 
@@ -105,12 +112,14 @@ const App = () => {
               );
 
               router.push(path);
+              clearIntent();
               return;
             }
           } catch (error) {
             console.error('Failed to restore intent:', error);
           } finally {
             setIsRedirecting(false);
+            isHandlingIntentRef.current = false;
           }
         };
 
