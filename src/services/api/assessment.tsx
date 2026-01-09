@@ -17,6 +17,18 @@ function parseCanonicalOrReference(
   if (!value) return null;
 
   const withoutVersion = String(value).split('|')[0];
+  try {
+    const url = new URL(withoutVersion);
+    if (expectedType === 'Questionnaire') {
+      const segments = url.pathname.split('/').filter(Boolean);
+      const assessmentsIndex = segments.indexOf('assessments');
+      if (assessmentsIndex >= 0 && segments[assessmentsIndex + 1]) {
+        return segments[assessmentsIndex + 1];
+      }
+    }
+  } catch {
+    // Not a full URL; continue with reference parsing.
+  }
 
   const parts = withoutVersion.split('/');
 

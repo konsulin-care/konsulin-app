@@ -606,9 +606,9 @@ export default function Assessment() {
                           return (
                             <div
                               key={item.resource.id}
-                              className='card flex max-w-[280px] cursor-default flex-col gap-2 bg-white'
+                              className='card flex min-h-[168px] max-w-[280px] cursor-default flex-col gap-2 bg-white'
                             >
-                              <div className='flex gap-2'>
+                              <div className='flex flex-1 gap-2'>
                                 <Image
                                   className='h-[64px] w-[64px] rounded-[8px] object-cover'
                                   src={'/images/clinic.jpg'}
@@ -622,7 +622,14 @@ export default function Assessment() {
                                   <div className='font-bold text-wrap text-black'>
                                     {item.resource.title}
                                   </div>
-                                  <div className='overflow-hidden text-wrap'>
+                                  <div
+                                    className='text-wrap overflow-hidden leading-4'
+                                    style={{
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 3,
+                                      WebkitBoxOrient: 'vertical'
+                                    }}
+                                  >
                                     {item.resource.description?.length > 100
                                       ? `${item.resource.description.slice(0, 100)}...`
                                       : item.resource.description}
@@ -630,7 +637,7 @@ export default function Assessment() {
                                 </div>
                               </div>
                               <hr />
-                              <div className='flex items-center justify-between'>
+                              <div className='mt-auto flex items-center justify-between'>
                                 <div className='mr-4'>
                                   <div className='text-[10px]'>
                                     Research period:
