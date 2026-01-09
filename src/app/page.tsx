@@ -23,8 +23,15 @@ const App = () => {
     const storedRedirect = localStorage.getItem('redirect');
     if (storedRedirect) {
       localStorage.removeItem('redirect');
-      router.push(decodeURIComponent(storedRedirect));
-      return;
+      try {
+        const decoded = decodeURIComponent(storedRedirect);
+        if (decoded.startsWith('/')) {
+          router.push(decoded);
+          return;
+        }
+      } catch (error) {
+        console.error('Invalid redirect value in localStorage:', error);
+      }
     }
 
     if (authState.isAuthenticated) {
@@ -32,15 +39,14 @@ const App = () => {
 
       if (intent) {
         const handleIntent = async () => {
+          clearIntent();
           try {
             if (intent.kind === 'journal') {
-              clearIntent();
               router.push(intent.payload.path);
               return;
             }
 
             if (intent.kind === 'appointment') {
-              clearIntent();
               router.push(intent.payload.path);
               return;
             }
@@ -75,8 +81,6 @@ const App = () => {
               }
 
               localStorage.removeItem('skip-response-cleanup');
-              clearIntent();
-
               toast.success(
                 'Your assessment result is now linked to your account.'
               );
@@ -86,7 +90,6 @@ const App = () => {
             }
           } catch (error) {
             console.error('Failed to restore intent:', error);
-            clearIntent();
           } finally {
             setIsRedirecting(false);
           }
