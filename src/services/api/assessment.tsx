@@ -142,17 +142,18 @@ export const useOngoingResearch = () => {
 
         const questionnaireIds: string[] =
           plan.action?.flatMap((action: any) => {
+            const canId = parseCanonicalOrReference(
+              action.definitionCanonical,
+              'Questionnaire'
+            );
+            if (canId) return [canId];
+
             const refId = parseCanonicalOrReference(
               action.definitionReference?.reference,
               'Questionnaire'
             );
 
-            const canId = parseCanonicalOrReference(
-              action.definitionCanonical,
-              'Questionnaire'
-            );
-
-            return [refId, canId].filter(Boolean) as string[];
+            return refId ? [refId] : [];
           }) || [];
 
         const planId: string = plan.id;
