@@ -89,9 +89,15 @@ const App = () => {
                 return;
               }
               const authorTypeRaw = authState.userInfo.role_name;
-              const authorType = authorTypeRaw
-                ? authorTypeRaw.charAt(0).toUpperCase() + authorTypeRaw.slice(1)
-                : authorTypeRaw;
+              const roleMap: Record<string, string> = {
+                clinician: 'Practitioner',
+                patient: 'Patient'
+              };
+              const authorType =
+                roleMap[authorTypeRaw] ??
+                (authorTypeRaw
+                  ? authorTypeRaw.charAt(0).toUpperCase() + authorTypeRaw.slice(1)
+                  : authorTypeRaw);
               const api = await getAPI();
 
               const { data: existingResponse } = await api.get(
