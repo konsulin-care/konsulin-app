@@ -36,7 +36,6 @@ const App = () => {
             return;
           }
           router.push(decoded);
-          setIsRedirecting(false);
           return;
         } else {
           console.warn('Invalid redirect path (not relative):', decoded);
@@ -80,13 +79,16 @@ const App = () => {
                 router.push(path);
                 return;
               }
+              const authorTypeRaw = authState.userInfo.role_name;
+              const authorType = authorTypeRaw
+                ? authorTypeRaw.charAt(0).toUpperCase() + authorTypeRaw.slice(1)
+                : authorTypeRaw;
               const api = await getAPI();
 
               const { data: existingResponse } = await api.get(
                 `/fhir/QuestionnaireResponse/${responseId}`
               );
 
-              const authorType = authState.userInfo.role_name;
               const authorRef = `${authorType}/${authState.userInfo.fhirId}`;
 
               const updatedResponse = {
@@ -125,6 +127,9 @@ const App = () => {
             }
           } catch (error) {
             console.error('Failed to restore intent:', error);
+            toast.error(
+              'Failed to link your assessment result. Please try again.'
+            );
           } finally {
             setIsRedirecting(false);
             isHandlingIntentRef.current = false;
