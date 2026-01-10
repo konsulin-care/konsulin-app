@@ -94,13 +94,13 @@ const ProfileCompletenessModal = () => {
           id='profile-completeness-title'
           className='mb-2 text-lg font-semibold'
         >
-          Profil belum lengkap
+          Your profile is incomplete
         </h2>
         <p
           id='profile-completeness-description'
           className='mb-4 text-sm text-gray-600'
         >
-          Lengkapi profil Anda untuk mendapatkan pengalaman terbaik.
+          Fill out your details to fully utilize Konsulin features.
         </p>
         <button
           type='button'
@@ -110,7 +110,7 @@ const ProfileCompletenessModal = () => {
             router.push('/profile');
           }}
         >
-          Lengkapi Sekarang
+          Complete profile
         </button>
       </div>
     </div>
