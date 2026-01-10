@@ -21,6 +21,9 @@ const App = () => {
   useEffect(() => {
     if (isLoading) return;
 
+    let abortController: AbortController | null = null;
+    let isMounted = true;
+
     let storedRedirect: string | null = null;
     try {
       storedRedirect = localStorage.getItem('redirect');
@@ -43,32 +46,46 @@ const App = () => {
             window.location.hash;
           if (decoded === currentPath) {
             setIsRedirecting(false);
-            return;
+            return () => {
+              isMounted = false;
+            };
           }
           try {
             router.push(decoded);
           } finally {
             setIsRedirecting(false);
           }
-          return;
+          return () => {
+            isMounted = false;
+          };
         }
         console.warn('Invalid redirect path (not relative):', decoded);
         setIsRedirecting(false);
-        return;
+        return () => {
+          isMounted = false;
+        };
       } catch (error) {
         console.error('Invalid redirect value in localStorage:', error);
         setIsRedirecting(false);
-        return;
+        return () => {
+          isMounted = false;
+        };
       }
     }
 
     if (authState.isAuthenticated) {
-      const intent = getIntent();
+      let intent: ReturnType<typeof getIntent> | null = null;
+      try {
+        intent = getIntent();
+      } catch (error) {
+        console.error('Failed to access intent in localStorage:', error);
+      }
 
       if (intent) {
         const handleIntent = async () => {
           if (isHandlingIntentRef.current) return;
           isHandlingIntentRef.current = true;
+          abortController = new AbortController();
           try {
             if (intent.kind === 'journal') {
               router.push(intent.payload.path);
@@ -84,12 +101,13 @@ const App = () => {
 
             if (intent.kind === 'assessmentResult') {
               const { responseId, path } = intent.payload;
-              if (!authState.userInfo?.role_name || !authState.userInfo?.fhirId) {
+              if (
+                !authState.userInfo?.role_name ||
+                !authState.userInfo?.fhirId
+              ) {
                 console.warn(
                   'User info incomplete, deferring assessment intent.'
                 );
-                isHandlingIntentRef.current = false;
-                setIsRedirecting(false);
                 return;
               }
               const authorTypeRaw = authState.userInfo.role_name;
@@ -100,12 +118,14 @@ const App = () => {
               const authorType =
                 roleMap[authorTypeRaw] ??
                 (authorTypeRaw
-                  ? authorTypeRaw.charAt(0).toUpperCase() + authorTypeRaw.slice(1)
+                  ? authorTypeRaw.charAt(0).toUpperCase() +
+                    authorTypeRaw.slice(1)
                   : authorTypeRaw);
               const api = await getAPI();
 
               const { data: existingResponse } = await api.get(
-                `/fhir/QuestionnaireResponse/${responseId}`
+                `/fhir/QuestionnaireResponse/${responseId}`,
+                { signal: abortController.signal }
               );
 
               const authorRef = `${authorType}/${authState.userInfo.fhirId}`;
@@ -113,57 +133,69 @@ const App = () => {
               const updatedResponse = {
                 ...existingResponse,
                 author: { reference: authorRef },
-                subject:
-                  existingResponse.subject ?? {
-                    reference: `${authorType}/${authState.userInfo.fhirId}`
-                  }
+                subject: existingResponse.subject ?? {
+                  reference: `${authorType}/${authState.userInfo.fhirId}`
+                }
               };
 
               await api.put(
                 `/fhir/QuestionnaireResponse/${responseId}`,
-                updatedResponse
+                updatedResponse,
+                { signal: abortController.signal }
               );
 
-              if (
-                typeof existingResponse.questionnaire === 'string' &&
-                existingResponse.questionnaire
-              ) {
-                const segments = existingResponse.questionnaire
-                  .split('/')
-                  .filter(Boolean);
-                const legacyKey = `response_${segments[segments.length - 1]}`;
-                if (legacyKey) localStorage.removeItem(legacyKey);
+              if (isMounted) {
+                if (
+                  typeof existingResponse.questionnaire === 'string' &&
+                  existingResponse.questionnaire
+                ) {
+                  const segments = existingResponse.questionnaire
+                    .split('/')
+                    .filter(Boolean);
+                  const legacyKey = `response_${segments[segments.length - 1]}`;
+                  if (legacyKey) localStorage.removeItem(legacyKey);
+                }
+
+                localStorage.removeItem('skip-response-cleanup');
+                toast.success(
+                  'Your assessment result is now linked to your account.'
+                );
+
+                router.push(path);
+                clearIntent();
+                return;
               }
-
-              localStorage.removeItem('skip-response-cleanup');
-              toast.success(
-                'Your assessment result is now linked to your account.'
-              );
-
-              router.push(path);
-              clearIntent();
-              return;
             }
           } catch (error) {
-            console.error('Failed to restore intent:', error);
-            toast.error(
-              'Failed to link your assessment result. Please try again.'
-            );
-            clearIntent();
+            if ((error as Error)?.name !== 'AbortError') {
+              console.error('Failed to restore intent:', error);
+              toast.error(
+                'Failed to link your assessment result. Please try again.'
+              );
+              clearIntent();
+            }
           } finally {
-            setIsRedirecting(false);
-            isHandlingIntentRef.current = false;
+            if (isMounted) {
+              setIsRedirecting(false);
+              isHandlingIntentRef.current = false;
+            }
           }
         };
 
         handleIntent();
-        return;
+        return () => {
+          isMounted = false;
+          abortController?.abort();
+        };
       }
-
     }
 
     setIsRedirecting(false);
-  }, [isLoading, authState, router]);
+    return () => {
+      isMounted = false;
+      abortController?.abort();
+    };
+  }, [isLoading, authState.isAuthenticated, authState.userInfo, router]);
 
   if (isLoading || isRedirecting) {
     return (
