@@ -1,3 +1,4 @@
+import { Roles } from '@/constants/roles';
 import { IPractitionerRoleDetail } from '@/types/practitioner';
 import Avatar from '../general/avatar';
 import Tags from './tags';
@@ -12,11 +13,11 @@ function HeaderSection({
   backgroundColor
 }) {
   const titleStyle =
-    role === 'patient'
+    role === Roles.Patient
       ? 'text-sm font-bold opacity-100'
       : 'text-[10px] font-normal opacity-40';
   const subTitleStyle =
-    role === 'patient'
+    role === Roles.Patient
       ? 'text-[10px] font-normal opacity-100 truncate overflow-hidden whitespace-nowrap'
       : 'text-left whitespace-nowrap text-sm font-bold opacity-100 overflow-hidden break-words';
 
