@@ -38,6 +38,10 @@ const App = () => {
           router.push(decoded);
           setIsRedirecting(false);
           return;
+        } else {
+          console.warn('Invalid redirect path (not relative):', decoded);
+          setIsRedirecting(false);
+          return;
         }
       } catch (error) {
         console.error('Invalid redirect value in localStorage:', error);
@@ -88,9 +92,10 @@ const App = () => {
               const updatedResponse = {
                 ...existingResponse,
                 author: { reference: authorRef },
-                subject: {
-                  reference: `${authorType}/${authState.userInfo.fhirId}`
-                }
+                subject:
+                  existingResponse.subject ?? {
+                    reference: `${authorType}/${authState.userInfo.fhirId}`
+                  }
               };
 
               await api.put(
