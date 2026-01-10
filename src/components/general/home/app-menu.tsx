@@ -4,7 +4,7 @@ import Link from 'next/link';
 export default function AppMenu() {
   return (
     <>
-      <Link href={'/exercise'} className='card flex w-full'>
+      <Link href={'/appointment'} className='card flex w-full'>
         <Image
           src={'/images/mental-health.svg'}
           width={40}
@@ -13,7 +13,7 @@ export default function AppMenu() {
         />
         <div className='ml-2 flex flex-col'>
           <span className='text-primary text-[12px] font-bold'>
-            Meet a Counselor
+            Meet a Practitioner
           </span>
           <span className='text-primary text-[10px]'>
             Let's consult your health to a certified professional
