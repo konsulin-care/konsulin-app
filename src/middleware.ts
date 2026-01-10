@@ -5,7 +5,9 @@ const patientAndClinicianRoutes = [
   '/message',
   '/notification',
   '/journal',
-  '/record'
+  '/record',
+  '/profile',
+  /^\/profile(\/.*)?$/
 ];
 
 const clinicianRoutes = ['/assessments/soap'];
