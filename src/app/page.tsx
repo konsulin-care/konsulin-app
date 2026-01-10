@@ -139,6 +139,7 @@ const App = () => {
             toast.error(
               'Failed to link your assessment result. Please try again.'
             );
+            clearIntent();
           } finally {
             setIsRedirecting(false);
             isHandlingIntentRef.current = false;
