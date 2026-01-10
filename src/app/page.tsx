@@ -21,12 +21,22 @@ const App = () => {
   useEffect(() => {
     if (isLoading) return;
 
-    const storedRedirect = localStorage.getItem('redirect');
+    let storedRedirect: string | null = null;
+    try {
+      storedRedirect = localStorage.getItem('redirect');
+      if (storedRedirect) {
+        localStorage.removeItem('redirect');
+      }
+    } catch (error) {
+      console.error('Failed to access redirect in localStorage:', error);
+      setIsRedirecting(false);
+      return;
+    }
+
     if (storedRedirect) {
-      localStorage.removeItem('redirect');
       try {
         const decoded = decodeURIComponent(storedRedirect);
-        if (decoded.startsWith('/')) {
+        if (decoded.startsWith('/') && !decoded.startsWith('//')) {
           const currentPath =
             window.location.pathname +
             window.location.search +
@@ -37,11 +47,10 @@ const App = () => {
           }
           router.push(decoded);
           return;
-        } else {
-          console.warn('Invalid redirect path (not relative):', decoded);
-          setIsRedirecting(false);
-          return;
         }
+        console.warn('Invalid redirect path (not relative):', decoded);
+        setIsRedirecting(false);
+        return;
       } catch (error) {
         console.error('Invalid redirect value in localStorage:', error);
         setIsRedirecting(false);
