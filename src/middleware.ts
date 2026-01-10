@@ -4,23 +4,15 @@ import { type NextRequest } from 'next/server';
 const patientAndClinicianRoutes = [
   '/message',
   '/notification',
-  '/profile',
   '/journal',
-  '/record'
+  '/record',
+  '/profile',
+  /^\/profile(\/.*)?$/
 ];
-const patientRoutes = [];
-// const patientRoutes = [/^\/exercise\/.*/]
+
 const clinicianRoutes = ['/assessments/soap'];
 
 export function middleware(request: NextRequest) {
-  /**
-   * use this for callback redirect
-   * const url = request.nextUrl.clone
-   *
-   */
-
-  //
-
   const auth = JSON.parse(request.cookies.get('auth')?.value || '{}');
   const { pathname } = request.nextUrl;
 
@@ -29,37 +21,27 @@ export function middleware(request: NextRequest) {
       route instanceof RegExp ? route.test(path) : route === path
     );
 
-  // unauthenticated user can't access private routes
   if (
-    Object.keys(auth).length === 0 &&
-    routeMatches(
-      [...patientRoutes, clinicianRoutes, ...patientAndClinicianRoutes],
-      pathname
-    )
+    !auth?.userId &&
+    routeMatches([...patientAndClinicianRoutes, ...clinicianRoutes], pathname)
   ) {
-    // return Response.redirect(new URL('/register?role=patient', request.url))
     const url = new URL('/auth', request.url);
     url.searchParams.set('returnUrl', pathname + request.nextUrl.search);
     return Response.redirect(url);
   }
 
-  // if (auth.token && routeMatches(['/login', '/register'], pathname)) {
-  //   return Response.redirect(new URL('/', request.url))
-  // }
-
-  // authenticated user can't access login and register page
-  if (auth.userId && routeMatches(['/auth'], pathname)) {
+  /**
+   * 2️⃣ Authenticated users → cannot access /auth
+   */
+  if (auth?.userId && routeMatches(['/auth'], pathname)) {
     return Response.redirect(new URL('/', request.url));
   }
 
-  // authorization base on role
   if (
-    (auth.role_name !== Roles.Patient &&
-      routeMatches(patientRoutes, pathname)) || // patient only
     (auth.role_name !== Roles.Practitioner &&
-      routeMatches(clinicianRoutes, pathname)) || // cliniciant only
+      routeMatches(clinicianRoutes, pathname)) ||
     ((!auth.role_name || auth.role_name === 'guest') &&
-      routeMatches(patientAndClinicianRoutes, pathname)) // patient and cliniciant
+      routeMatches(patientAndClinicianRoutes, pathname))
   ) {
     return Response.redirect(new URL('/unauthorized', request.url));
   }

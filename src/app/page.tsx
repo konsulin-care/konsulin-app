@@ -6,7 +6,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { getAPI } from '@/services/api';
 import { clearIntent, getIntent } from '@/utils/intent-storage';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import HomeContent from './home-content';
 import HomeHeader from './home-header';
@@ -14,83 +14,203 @@ import HomeHeader from './home-header';
 const App = () => {
   const { isLoading, state: authState } = useAuth();
   const router = useRouter();
+
   const [isRedirecting, setIsRedirecting] = useState(true);
+  const isHandlingIntentRef = useRef(false);
 
   useEffect(() => {
-    if (!isLoading) {
-      const storedRedirect = localStorage.getItem('redirect');
+    if (isLoading) return;
+
+    let abortController: AbortController | null = null;
+    let isMounted = true;
+
+    let storedRedirect: string | null = null;
+    try {
+      storedRedirect = localStorage.getItem('redirect');
       if (storedRedirect) {
         localStorage.removeItem('redirect');
-        router.push(decodeURIComponent(storedRedirect));
-        return;
+      }
+    } catch (error) {
+      console.error('Failed to access redirect in localStorage:', error);
+      setIsRedirecting(false);
+      return;
+    }
+
+    if (storedRedirect) {
+      try {
+        const decoded = decodeURIComponent(storedRedirect);
+        if (decoded.startsWith('/') && !decoded.startsWith('//')) {
+          const currentPath =
+            window.location.pathname +
+            window.location.search +
+            window.location.hash;
+          if (decoded === currentPath) {
+            setIsRedirecting(false);
+            return () => {
+              isMounted = false;
+            };
+          }
+          try {
+            router.push(decoded);
+          } finally {
+            setIsRedirecting(false);
+          }
+          return () => {
+            isMounted = false;
+          };
+        }
+        console.warn('Invalid redirect path (not relative):', decoded);
+        setIsRedirecting(false);
+        return () => {
+          isMounted = false;
+        };
+      } catch (error) {
+        console.error('Invalid redirect value in localStorage:', error);
+        setIsRedirecting(false);
+        return () => {
+          isMounted = false;
+        };
+      }
+    }
+
+    if (authState.isAuthenticated) {
+      let intent: ReturnType<typeof getIntent> | null = null;
+      try {
+        intent = getIntent();
+      } catch (error) {
+        console.error('Failed to access intent in localStorage:', error);
       }
 
-      if (authState.isAuthenticated) {
-        const intent = getIntent();
-        if (intent) {
-          const handleIntent = async () => {
-            try {
-              if (intent.kind === 'journal') {
-                clearIntent();
-                router.push(intent.payload.path);
+      if (intent) {
+        const handleIntent = async () => {
+          if (isHandlingIntentRef.current) return;
+          isHandlingIntentRef.current = true;
+          abortController = new AbortController();
+          try {
+            if (intent.kind === 'journal') {
+              router.push(intent.payload.path);
+              clearIntent();
+              return;
+            }
+
+            if (intent.kind === 'appointment') {
+              router.push(intent.payload.path);
+              clearIntent();
+              return;
+            }
+
+            if (intent.kind === 'assessmentResult') {
+              const { responseId, path } = intent.payload;
+              if (
+                !authState.userInfo?.role_name ||
+                !authState.userInfo?.fhirId
+              ) {
+                console.warn(
+                  'User info incomplete, deferring assessment intent.'
+                );
                 return;
               }
+              const authorTypeRaw = authState.userInfo.role_name;
+              const roleMap: Record<string, string> = {
+                clinician: 'Practitioner',
+                patient: 'Patient'
+              };
+              const authorType =
+                roleMap[authorTypeRaw] ??
+                (authorTypeRaw
+                  ? authorTypeRaw.charAt(0).toUpperCase() +
+                    authorTypeRaw.slice(1)
+                  : authorTypeRaw);
+              const api = await getAPI();
 
-              if (intent.kind === 'appointment') {
-                // Do not clear intent here, let the page handle it
-                router.push(intent.payload.path);
-                return;
-              }
+              const { data: existingResponse } = await api.get(
+                `/fhir/QuestionnaireResponse/${responseId}`,
+                { signal: abortController.signal }
+              );
 
-              if (intent.kind === 'assessmentResult') {
-                const { responseId, path } = intent.payload;
-                const api = await getAPI();
-                const { data: existingResponse } = await api.get(
-                  `/fhir/QuestionnaireResponse/${responseId}`
-                );
+              const authorRef = `${authorType}/${authState.userInfo.fhirId}`;
 
-                const authorType = authState.userInfo.role_name;
-                const authorRef = `${authorType}/${authState.userInfo.fhirId}`;
-
-                const updatedResponse = {
-                  ...existingResponse,
-                  author: { reference: authorRef },
-                  subject: { reference: `Patient/${authState.userInfo.fhirId}` }
-                };
-
-                await api.put(
-                  `/fhir/QuestionnaireResponse/${responseId}`,
-                  updatedResponse
-                );
-
-                // remove legacy localstorage response key if exists
-                if (existingResponse.questionnaire) {
-                  const legacyKey = `response_${existingResponse.questionnaire.split('/')[1]}`;
-                  localStorage.removeItem(legacyKey);
+              const updatedResponse = {
+                ...existingResponse,
+                author: { reference: authorRef },
+                subject: existingResponse.subject ?? {
+                  reference: `${authorType}/${authState.userInfo.fhirId}`
                 }
-                localStorage.removeItem('skip-response-cleanup');
+              };
 
-                clearIntent();
+              await api.put(
+                `/fhir/QuestionnaireResponse/${responseId}`,
+                updatedResponse,
+                { signal: abortController.signal }
+              );
+
+              if (isMounted) {
+                if (
+                  typeof existingResponse.questionnaire === 'string' &&
+                  existingResponse.questionnaire
+                ) {
+                  const segments = existingResponse.questionnaire
+                    .split('/')
+                    .filter(Boolean);
+                  if (segments.length > 0) {
+                    const legacyKey = `response_${segments[segments.length - 1]}`;
+                    try {
+                      localStorage.removeItem(legacyKey);
+                    } catch (error) {
+                      console.error(
+                        'Failed to remove legacy response key:',
+                        error
+                      );
+                    }
+                  }
+                }
+
+                try {
+                  localStorage.removeItem('skip-response-cleanup');
+                } catch (error) {
+                  console.error(
+                    'Failed to remove skip-response-cleanup flag:',
+                    error
+                  );
+                }
                 toast.success(
                   'Your assessment result is now linked to your account.'
                 );
+
                 router.push(path);
+                clearIntent();
                 return;
               }
-            } catch (error) {
-              console.error('Failed to restore intent:', error);
-              clearIntent();
-              setIsRedirecting(false);
             }
-          };
+          } catch (error) {
+            if ((error as Error)?.name !== 'AbortError') {
+              console.error('Failed to restore intent:', error);
+              toast.error(
+                'Failed to link your assessment result. Please try again.'
+              );
+              clearIntent();
+            }
+          } finally {
+            if (isMounted) {
+              setIsRedirecting(false);
+              isHandlingIntentRef.current = false;
+            }
+          }
+        };
 
-          handleIntent();
-          return;
-        }
+        handleIntent();
+        return () => {
+          isMounted = false;
+          abortController?.abort();
+        };
       }
-
-      setIsRedirecting(false);
     }
+
+    setIsRedirecting(false);
+    return () => {
+      isMounted = false;
+      abortController?.abort();
+    };
   }, [isLoading, authState.isAuthenticated, authState.userInfo, router]);
 
   if (isLoading || isRedirecting) {
