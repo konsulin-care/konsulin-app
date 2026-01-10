@@ -56,12 +56,6 @@ import { Fragment, useEffect, useState } from 'react';
 import { PhoneInput } from 'react-international-phone';
 import { toast } from 'react-toastify';
 
-const isProfileCompleteFromForm = (data: ICustomProfile) => {
-  return (
-    Boolean(data.firstName) && Boolean(data.birthDate) && Boolean(data.phone)
-  );
-};
-
 type Props = {
   userRole: string;
   fhirId: string;
