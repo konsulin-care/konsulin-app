@@ -45,7 +45,11 @@ const App = () => {
             setIsRedirecting(false);
             return;
           }
-          router.push(decoded);
+          try {
+            router.push(decoded);
+          } finally {
+            setIsRedirecting(false);
+          }
           return;
         }
         console.warn('Invalid redirect path (not relative):', decoded);
@@ -81,11 +85,11 @@ const App = () => {
             if (intent.kind === 'assessmentResult') {
               const { responseId, path } = intent.payload;
               if (!authState.userInfo?.role_name || !authState.userInfo?.fhirId) {
-                console.error('Missing user info for assessment linking');
-                clearIntent();
+                console.warn(
+                  'User info incomplete, deferring assessment intent.'
+                );
                 isHandlingIntentRef.current = false;
                 setIsRedirecting(false);
-                router.push(path);
                 return;
               }
               const authorTypeRaw = authState.userInfo.role_name;
