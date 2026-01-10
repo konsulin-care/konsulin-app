@@ -152,11 +152,27 @@ const App = () => {
                   const segments = existingResponse.questionnaire
                     .split('/')
                     .filter(Boolean);
-                  const legacyKey = `response_${segments[segments.length - 1]}`;
-                  if (legacyKey) localStorage.removeItem(legacyKey);
+                  if (segments.length > 0) {
+                    const legacyKey = `response_${segments[segments.length - 1]}`;
+                    try {
+                      localStorage.removeItem(legacyKey);
+                    } catch (error) {
+                      console.error(
+                        'Failed to remove legacy response key:',
+                        error
+                      );
+                    }
+                  }
                 }
 
-                localStorage.removeItem('skip-response-cleanup');
+                try {
+                  localStorage.removeItem('skip-response-cleanup');
+                } catch (error) {
+                  console.error(
+                    'Failed to remove skip-response-cleanup flag:',
+                    error
+                  );
+                }
                 toast.success(
                   'Your assessment result is now linked to your account.'
                 );
