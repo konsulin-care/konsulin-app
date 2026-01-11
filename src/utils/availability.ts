@@ -164,7 +164,7 @@ export function getInitialSelectedDay(
       return day;
     }
   }
-  return 1; // Default to Monday (1)
+  return 0; // Default to Monday (0)
 }
 
 /**

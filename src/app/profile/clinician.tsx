@@ -31,7 +31,6 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { format, isAfter, parseISO } from 'date-fns';
 import { Practitioner, PractitionerRole } from 'fhir/r4';
-import { ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -62,6 +61,7 @@ export default function Clinician({ fhirId }: Props) {
   const [selectedPractitionerRoles, setSelectedPractitionerRoles] = useState<
     PractitionerRole[]
   >([]);
+  const [showMarkUnavailable, setShowMarkUnavailable] = useState(false);
 
   /* get practitioner's upcoming sessions*/
   const { data: sessionData, isLoading: isUpcomingSessionsLoading } =
@@ -304,15 +304,39 @@ export default function Clinician({ fhirId }: Props) {
       )}
 
       {/* display practitioner's availability schedules */}
-      <div
-        className={`mt-4 flex flex-col items-start justify-start rounded-[16px] bg-[#F9F9F9] ${hasData ? 'pt-4' : 'pt-0'}`}
-      >
-        <div className='w-full px-4'>
+      <div className='mt-4 flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
+        {/* Practice Schedule section title - moved to top with styling to match other sections */}
+        <div className='flex w-full items-start justify-between'>
+          <div className='flex w-1/2 items-center'>
+            <Image
+              src={'/icons/calendar-profile.svg'}
+              width={30}
+              height={30}
+              alt='calendar-icon'
+              className='pr-[13px]'
+            />
+            <p className='flex-grow text-start text-[10px] font-normal text-[#2C2F35] opacity-40'>
+              Practice Schedule
+            </p>
+          </div>
+          <div className='flex w-1/2 items-start justify-end'>
+            <button onClick={handleOpenDrawer}>
+              <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
+                <p className='text-[10px] text-white'>Edit Schedule</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Availability content with border divider */}
+        <div className='mt-2 flex w-full flex-col border-t border-[#E3E3E3]'>
           {Object.keys(groupedByFirmAndDay).map((firm, index) => {
             const availability = groupedByFirmAndDay[firm].availability;
             return (
               <div key={index}>
-                <div className='mb-2 text-start font-bold'>{firm}</div>
+                <div className='mb-1 text-start text-[14px] font-bold'>
+                  {firm}
+                </div>
                 {Object.keys(availability).map(day => {
                   const timeRanges = availability[day] || [];
                   const tags = timeRanges.map(
@@ -323,7 +347,7 @@ export default function Clinician({ fhirId }: Props) {
                   return (
                     <div
                       key={`${firm}-${day}`}
-                      className='mb-4 flex w-full flex-wrap gap-[10px]'
+                      className='mb-1 flex w-full flex-wrap gap-[10px]'
                     >
                       <Tags tags={tags} />
                     </div>
@@ -333,12 +357,12 @@ export default function Clinician({ fhirId }: Props) {
             );
           })}
         </div>
+      </div>
 
-        <div className='flex w-full flex-col justify-between rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
-          <div
-            className='flex cursor-pointer items-center justify-between'
-            onClick={handleOpenDrawer}
-          >
+      {/* Current Unavailability section - separate section with same style as Practice Schedule */}
+      <div className='mt-4 flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
+        <div className='flex w-full items-start justify-between'>
+          <div className='flex w-1/2 items-center'>
             <Image
               src={'/icons/calendar-profile.svg'}
               width={30}
@@ -346,17 +370,36 @@ export default function Clinician({ fhirId }: Props) {
               alt='calendar-icon'
               className='pr-[13px]'
             />
-            <p className='flex-grow text-start text-xs font-bold text-[#2C2F35]'>
-              Edit Availability Schedule
+            <p className='flex-grow text-start text-[10px] font-normal text-[#2C2F35] opacity-40'>
+              Current Unavailability
             </p>
-            <ChevronRight color='#13C2C2' width={24} height={24} />
+          </div>
+          <div className='flex w-1/2 items-start justify-end'>
+            <button
+              onClick={() => setShowMarkUnavailable(true)}
+              className='cursor-pointer transition-all duration-200 hover:brightness-90'
+            >
+              <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
+                <p className='text-[10px] text-white'>Mark Away</p>
+              </div>
+            </button>
           </div>
         </div>
 
-        <div className='mt-2 flex w-full flex-col justify-between rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
-          <MarkUnavailabilityButton />
+        {/* Unavailability content with border divider */}
+        <div className='mt-2 flex w-full flex-col border-t border-[#E3E3E3]'>
+          <div className='py-2 text-center text-[14px] text-[#2C2F35]'>
+            No Unavailability
+          </div>
         </div>
       </div>
+
+      {/* Hidden MarkUnavailabilityButton that gets triggered */}
+      {showMarkUnavailable && (
+        <div className='hidden'>
+          <MarkUnavailabilityButton />
+        </div>
+      )}
       <MedalCollection medals={medalLists} isDisabled={true} />
       <Settings menus={settingMenus} />
 

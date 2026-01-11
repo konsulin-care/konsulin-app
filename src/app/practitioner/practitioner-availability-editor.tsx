@@ -58,13 +58,15 @@ export default function PractitionerAvailabilityEditor({
   const practitionerId = authState?.userInfo?.fhirId;
 
   // Convert single practitionerRole to array for backward compatibility
-  const rolesToUse =
-    practitionerRoles || (practitionerRole ? [practitionerRole] : []);
+  const memoizedRolesToUse = useMemo(
+    () => practitionerRoles || (practitionerRole ? [practitionerRole] : []),
+    [practitionerRoles, practitionerRole]
+  );
 
   // Compute stable initial weekly availability once
   const stableInitialWeeklyAvailability = useMemo(
-    () => initializeWeeklyAvailabilityFromRoles(rolesToUse),
-    [rolesToUse]
+    () => initializeWeeklyAvailabilityFromRoles(memoizedRolesToUse),
+    [memoizedRolesToUse]
   );
 
   // State for weekly availability across all organizations
@@ -150,7 +152,7 @@ export default function PractitionerAvailabilityEditor({
    * Handle saving all availability changes
    */
   const handleSave = async () => {
-    if (!rolesToUse || rolesToUse.length === 0) {
+    if (!memoizedRolesToUse || memoizedRolesToUse.length === 0) {
       console.error('At least one PractitionerRole is required');
       return;
     }
@@ -159,7 +161,7 @@ export default function PractitionerAvailabilityEditor({
 
     try {
       // Update each practitioner role with its organization-specific availability
-      for (const role of rolesToUse) {
+      for (const role of memoizedRolesToUse) {
         // Get the organization ID for this role
         const orgId = role.organization?.reference || role.id;
 
@@ -191,8 +193,8 @@ export default function PractitionerAvailabilityEditor({
     const orgs: UIOrganization[] = [];
 
     // Use the practitioner roles from props (with backward compatibility)
-    if (rolesToUse && rolesToUse.length > 0) {
-      rolesToUse.forEach(role => {
+    if (memoizedRolesToUse && memoizedRolesToUse.length > 0) {
+      memoizedRolesToUse.forEach(role => {
         // Use organizationData.name if available (IPractitionerRoleDetail)
         if (isIPractitionerRoleDetail(role) && role.organizationData?.name) {
           orgs.push({
@@ -224,7 +226,7 @@ export default function PractitionerAvailabilityEditor({
     }
 
     return orgs;
-  }, [rolesToUse]);
+  }, [memoizedRolesToUse]);
 
   // Function to normalize availability for comparison (ignoring IDs)
   const normalizeAvailability = (avail: WeeklyAvailability) => {
