@@ -67,6 +67,61 @@ export function initializeWeeklyAvailability(
 }
 
 /**
+ * Initialize weekly availability structure from multiple PractitionerRoles
+ */
+export function initializeWeeklyAvailabilityFromRoles(
+  practitionerRoles: PractitionerRole[]
+): WeeklyAvailability {
+  const availability: WeeklyAvailability = {
+    0: {},
+    1: {},
+    2: {},
+    3: {},
+    4: {},
+    5: {},
+    6: {}
+  };
+
+  if (!practitionerRoles || practitionerRoles.length === 0) {
+    return availability;
+  }
+
+  // Process each practitioner role
+  practitionerRoles.forEach(practitionerRole => {
+    if (!practitionerRole.availableTime) {
+      return;
+    }
+
+    // If the practitionerRole has an organization, we use its ID.
+    const orgId =
+      practitionerRole.organization?.reference || practitionerRole.id;
+
+    practitionerRole.availableTime.forEach(item => {
+      if (item.daysOfWeek) {
+        item.daysOfWeek.forEach(dayStr => {
+          const day = DAY_MAP[dayStr];
+          if (day !== undefined) {
+            if (!availability[day][orgId]) {
+              availability[day][orgId] = [];
+            }
+
+            if (item.availableStartTime && item.availableEndTime) {
+              availability[day][orgId].push({
+                id: generateTimeRangeId(),
+                from: item.availableStartTime.substring(0, 5),
+                to: item.availableEndTime.substring(0, 5)
+              });
+            }
+          }
+        });
+      }
+    });
+  });
+
+  return availability;
+}
+
+/**
  * Get the initial selected day based on existing availability
  * Defaults to Monday if no availability exists
  */
@@ -114,6 +169,36 @@ export function parseFhirAvailableTime(
     5: {},
     6: {}
   };
+}
+
+/**
+ * Convert internal WeeklyAvailability to FHIR availableTime format for a specific organization
+ */
+export function convertToFhirAvailableTimeForOrganization(
+  weeklyAvailability: WeeklyAvailability,
+  organizationId: string
+): any[] {
+  const result: any[] = [];
+
+  // Iterate through each day
+  for (let i = 0; i <= 6; i++) {
+    const day = i as DayOfWeek;
+    const dayAvailability = weeklyAvailability[day];
+
+    // Get time ranges only for the specific organization
+    const timeRanges = dayAvailability[organizationId];
+    if (timeRanges) {
+      timeRanges.forEach(range => {
+        result.push({
+          daysOfWeek: [DAY_NAMES[day]],
+          availableStartTime: range.from,
+          availableEndTime: range.to
+        });
+      });
+    }
+  }
+
+  return result;
 }
 
 /**

@@ -1,7 +1,6 @@
 import AvailabilityEditor from '@/components/availability/availability-editor';
 import DaySelectorNavigation from '@/components/availability/day-selector-navigation';
 import FloatingSaveButton from '@/components/availability/floating-save-button';
-import { LoadingSpinnerIcon } from '@/components/icons';
 import { useAuth } from '@/context/auth/authContext';
 import { useUpdateAvailability } from '@/services/api/schedule';
 import {
@@ -11,17 +10,17 @@ import {
   WeeklyAvailability
 } from '@/types/availability';
 import {
-  convertToFhirAvailableTime,
+  convertToFhirAvailableTimeForOrganization,
   generateTimeRangeId,
   getInitialSelectedDay,
-  initializeWeeklyAvailability
+  initializeWeeklyAvailabilityFromRoles
 } from '@/utils/availability';
-import { useQuery } from '@tanstack/react-query';
 import { PractitionerRole } from 'fhir/r4';
 import { useMemo, useState } from 'react';
 
 type Props = {
-  practitionerRole: PractitionerRole;
+  practitionerRoles?: PractitionerRole[];
+  practitionerRole?: PractitionerRole;
   onSuccess?: () => void;
   onCancel?: () => void;
 };
@@ -40,6 +39,7 @@ type Props = {
  * - Floating save button fixed at bottom right
  */
 export default function PractitionerAvailabilityEditor({
+  practitionerRoles,
   practitionerRole,
   onSuccess,
   onCancel
@@ -47,10 +47,14 @@ export default function PractitionerAvailabilityEditor({
   const { state: authState } = useAuth();
   const practitionerId = authState?.userInfo?.fhirId;
 
+  // Convert single practitionerRole to array for backward compatibility
+  const rolesToUse =
+    practitionerRoles || (practitionerRole ? [practitionerRole] : []);
+
   // State for weekly availability across all organizations
   const [weeklyAvailability, setWeeklyAvailability] =
     useState<WeeklyAvailability>(
-      initializeWeeklyAvailability(practitionerRole)
+      initializeWeeklyAvailabilityFromRoles(rolesToUse)
     );
 
   // Currently selected day (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
@@ -63,19 +67,6 @@ export default function PractitionerAvailabilityEditor({
 
   // Mutation for updating availability
   const { mutateAsync: updateAvailability } = useUpdateAvailability();
-
-  // Fetch practitioner role data to get organization references
-  const { data: practitionerRoleData, isLoading: isLoadingRole } = useQuery({
-    queryKey: ['practitioner-role', practitionerRole.id],
-    queryFn: async () => {
-      const response = await fetch(
-        `/fhir/PractitionerRole/${practitionerRole.id}`
-      );
-      return response.json() as Promise<PractitionerRole>;
-    },
-    enabled: !!practitionerRole.id,
-    staleTime: 5 * 60 * 1000
-  });
 
   /**
    * Handle adding a time range for a specific organization and day
@@ -151,22 +142,30 @@ export default function PractitionerAvailabilityEditor({
    * Handle saving all availability changes
    */
   const handleSave = async () => {
-    if (!practitionerRole.id) {
-      console.error('PractitionerRole ID is required');
+    if (!rolesToUse || rolesToUse.length === 0) {
+      console.error('At least one PractitionerRole is required');
       return;
     }
 
     setIsSaving(true);
 
     try {
-      // Convert weekly availability to FHIR availableTime format
-      const availableTime = convertToFhirAvailableTime(weeklyAvailability);
+      // Update each practitioner role with its organization-specific availability
+      for (const role of rolesToUse) {
+        // Get the organization ID for this role
+        const orgId = role.organization?.reference || role.id;
 
-      // Update the practitioner role
-      await updateAvailability({
-        practitionerRoleId: practitionerRole.id,
-        availableTime
-      });
+        // Convert weekly availability to FHIR availableTime format for this specific organization
+        const availableTime = convertToFhirAvailableTimeForOrganization(
+          weeklyAvailability,
+          orgId
+        );
+
+        await updateAvailability({
+          practitionerRoleId: role.id,
+          availableTime
+        });
+      }
 
       // Call success callback if provided
       if (onSuccess) {
@@ -179,23 +178,37 @@ export default function PractitionerAvailabilityEditor({
     }
   };
 
-  // Get organizations from practitioner role
+  // Get organizations from practitioner roles
   const organizations: UIOrganization[] = useMemo(() => {
     const orgs: UIOrganization[] = [];
 
-    if (practitionerRoleData?.organization) {
-      orgs.push({
-        id: practitionerRoleData.organization.reference || 'default',
-        name:
-          practitionerRoleData.organization.display || 'Default Organization'
+    // Use the practitioner roles from props (with backward compatibility)
+    if (rolesToUse && rolesToUse.length > 0) {
+      rolesToUse.forEach(role => {
+        // Use organizationData.name if available (IPractitionerRoleDetail)
+        if ((role as any).organizationData?.name) {
+          orgs.push({
+            id: role.organization?.reference || role.id,
+            name: (role as any).organizationData.name
+          });
+        } else if (role.organization) {
+          // Fallback to organization.display for regular PractitionerRole
+          orgs.push({
+            id: role.organization.reference || role.id,
+            name: role.organization.display || 'Unknown Organization'
+          });
+        } else {
+          // If no organization reference, use role ID as fallback
+          orgs.push({
+            id: role.id,
+            name: `Practice ${orgs.length + 1}`
+          });
+        }
       });
-    } else if (practitionerRole.organization) {
-      orgs.push({
-        id: practitionerRole.organization.reference || 'default',
-        name: practitionerRole.organization.display || 'Default Organization'
-      });
-    } else {
-      // Fallback if no organization is found
+    }
+
+    // Ensure we have at least one organization
+    if (orgs.length === 0) {
       orgs.push({
         id: 'default',
         name: 'Default Organization'
@@ -203,27 +216,20 @@ export default function PractitionerAvailabilityEditor({
     }
 
     return orgs;
-  }, [practitionerRole, practitionerRoleData]);
+  }, [rolesToUse]);
 
   // Check if there are any changes to save
   const hasChanges = useMemo(() => {
     // Compare current state with initial state
-    const initialAvailability = initializeWeeklyAvailability(practitionerRole);
+    const initialAvailability =
+      initializeWeeklyAvailabilityFromRoles(rolesToUse);
     return (
       JSON.stringify(weeklyAvailability) !== JSON.stringify(initialAvailability)
     );
-  }, [weeklyAvailability, practitionerRole]);
-
-  if (isLoadingRole) {
-    return (
-      <div className='flex h-[400px] items-center justify-center'>
-        <LoadingSpinnerIcon width={50} height={50} className='animate-spin' />
-      </div>
-    );
-  }
+  }, [weeklyAvailability, rolesToUse]);
 
   return (
-    <div className='flex h-full flex-col'>
+    <div className='flex h-full flex-col pb-24 sm:pb-28 md:pb-32'>
       {/* Header */}
       <div className='border-b border-gray-200 px-6 py-4'>
         <h2 className='text-xl font-bold text-gray-900'>Edit Availability</h2>
@@ -242,7 +248,7 @@ export default function PractitionerAvailabilityEditor({
       </div>
 
       {/* Availability Editor */}
-      <div className='flex-1 overflow-y-auto px-6 py-4'>
+      <div className='flex-1 overflow-y-auto px-6 py-4 pb-8 sm:pb-12 md:pb-16'>
         <AvailabilityEditor
           selectedDay={selectedDay}
           weeklyAvailability={weeklyAvailability}

@@ -84,7 +84,8 @@ export interface FloatingSaveButtonProps {
 
 // Main component props
 export interface PractitionerAvailabilityEditorProps {
-  practitionerRole: PractitionerRole;
+  practitionerRoles?: PractitionerRole[];
+  practitionerRole?: PractitionerRole; // For backward compatibility
   onSuccess?: () => void;
   onCancel?: () => void;
 }

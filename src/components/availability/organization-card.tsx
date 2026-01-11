@@ -15,20 +15,24 @@ export default function OrganizationCard({
 }: OrganizationCardProps) {
   return (
     <div className='rounded-lg border border-gray-200 bg-white p-4'>
-      <div className='mb-3 flex items-center justify-between'>
-        <h3 className='text-sm font-semibold text-gray-900'>
-          {organization.name}
-        </h3>
-        <Button
-          type='button'
-          variant='outline'
-          size='sm'
-          onClick={onTimeRangeAdd}
-          className='h-7 gap-1 text-xs'
-        >
-          <Plus className='h-3 w-3' />
-          Add Time
-        </Button>
+      <div className='mb-3 flex flex-col gap-2'>
+        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between'>
+          <h3 className='max-w-[200px] truncate text-sm font-semibold text-gray-900'>
+            {organization.name}
+          </h3>
+          <div className='mt-2 sm:mt-0'>
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              onClick={onTimeRangeAdd}
+              className='h-7 gap-1 text-xs whitespace-nowrap'
+            >
+              <Plus className='h-3 w-3' />
+              Add Time
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className='space-y-3'>

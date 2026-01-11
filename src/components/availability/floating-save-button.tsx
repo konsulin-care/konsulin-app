@@ -12,21 +12,10 @@ export default function FloatingSaveButton({
 }: FloatingSaveButtonProps) {
   return (
     <div className='fixed right-6 bottom-6 z-50 flex gap-2'>
-      {onCancel && (
-        <Button
-          onClick={onCancel}
-          disabled={isSaving}
-          variant='outline'
-          className='h-12 rounded-full bg-white px-6 shadow-lg'
-          size='lg'
-        >
-          Cancel
-        </Button>
-      )}
       <Button
         onClick={onSave}
         disabled={!hasChanges || isSaving}
-        className='h-12 rounded-full px-6 shadow-lg'
+        className='bg-secondary hover:bg-secondary/90 h-12 rounded-full px-6 text-white shadow-lg'
         size='lg'
       >
         {isSaving ? (
