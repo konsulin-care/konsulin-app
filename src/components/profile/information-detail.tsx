@@ -167,7 +167,10 @@ export default function InformationDetail({
           backgroundColor={backgroundColor}
         />
         <div className='flex w-1/2 items-start justify-end'>
-          <button onClick={onEdit}>
+          <button
+            onClick={onEdit}
+            className='cursor-pointer transition-all duration-200 hover:brightness-90'
+          >
             <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
               <p className='text-[10px] text-white'>{buttonText}</p>
             </div>

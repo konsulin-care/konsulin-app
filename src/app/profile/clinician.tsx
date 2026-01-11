@@ -61,7 +61,6 @@ export default function Clinician({ fhirId }: Props) {
   const [selectedPractitionerRoles, setSelectedPractitionerRoles] = useState<
     PractitionerRole[]
   >([]);
-  const [showMarkUnavailable, setShowMarkUnavailable] = useState(false);
 
   /* get practitioner's upcoming sessions*/
   const { data: sessionData, isLoading: isUpcomingSessionsLoading } =
@@ -306,7 +305,7 @@ export default function Clinician({ fhirId }: Props) {
       {/* display practitioner's availability schedules */}
       <div className='mt-4 flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
         {/* Practice Schedule section title - moved to top with styling to match other sections */}
-        <div className='flex w-full items-start justify-between'>
+        <div className='flex w-full items-center justify-between'>
           <div className='flex w-1/2 items-center'>
             <Image
               src={'/icons/calendar-profile.svg'}
@@ -319,8 +318,11 @@ export default function Clinician({ fhirId }: Props) {
               Practice Schedule
             </p>
           </div>
-          <div className='flex w-1/2 items-start justify-end'>
-            <button onClick={handleOpenDrawer}>
+          <div className='flex w-1/2 items-center justify-end'>
+            <button
+              onClick={handleOpenDrawer}
+              className='cursor-pointer transition-all duration-200 hover:brightness-90'
+            >
               <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
                 <p className='text-[10px] text-white'>Edit Schedule</p>
               </div>
@@ -361,7 +363,7 @@ export default function Clinician({ fhirId }: Props) {
 
       {/* Current Unavailability section - separate section with same style as Practice Schedule */}
       <div className='mt-4 flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
-        <div className='flex w-full items-start justify-between'>
+        <div className='flex w-full items-center justify-between'>
           <div className='flex w-1/2 items-center'>
             <Image
               src={'/icons/calendar-profile.svg'}
@@ -374,15 +376,11 @@ export default function Clinician({ fhirId }: Props) {
               Current Unavailability
             </p>
           </div>
-          <div className='flex w-1/2 items-start justify-end'>
-            <button
-              onClick={() => setShowMarkUnavailable(true)}
-              className='cursor-pointer transition-all duration-200 hover:brightness-90'
-            >
-              <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
-                <p className='text-[10px] text-white'>Mark Away</p>
-              </div>
-            </button>
+          <div className='flex w-1/2 items-center justify-end'>
+            <MarkUnavailabilityButton
+              triggerClassName='cursor-pointer hover:brightness-90 transition-all duration-200'
+              buttonText='Mark Away'
+            />
           </div>
         </div>
 
@@ -394,12 +392,6 @@ export default function Clinician({ fhirId }: Props) {
         </div>
       </div>
 
-      {/* Hidden MarkUnavailabilityButton that gets triggered */}
-      {showMarkUnavailable && (
-        <div className='hidden'>
-          <MarkUnavailabilityButton />
-        </div>
-      )}
       <MedalCollection medals={medalLists} isDisabled={true} />
       <Settings menus={settingMenus} />
 

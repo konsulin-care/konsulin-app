@@ -38,9 +38,13 @@ function toOffsetISOString(date: Date) {
 
 type Props = {
   triggerClassName?: string;
+  buttonText?: string;
 };
 
-export default function MarkUnavailabilityButton({ triggerClassName }: Props) {
+export default function MarkUnavailabilityButton({
+  triggerClassName,
+  buttonText = 'Mark Unavailable Date/Time'
+}: Props) {
   const { state: authState } = useAuth();
   const [open, setOpen] = useState(false);
   const [conflictOpen, setConflictOpen] = useState(false);
@@ -150,13 +154,17 @@ export default function MarkUnavailabilityButton({ triggerClassName }: Props) {
 
   return (
     <>
-      <Button
-        className={triggerClassName || 'bg-[#F9F9F9] font-bold text-[#2C2F35]'}
-        variant='ghost'
+      <button
+        className={
+          triggerClassName ||
+          'cursor-pointer transition-all duration-200 hover:brightness-90'
+        }
         onClick={() => setOpen(true)}
       >
-        Mark Unavailable Date/Time
-      </Button>
+        <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
+          <p className='text-[10px] text-white'>{buttonText}</p>
+        </div>
+      </button>
 
       <Dialog
         open={open}
