@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth/authContext';
+import { cn } from '@/lib/utils';
 import { useMarkUnavailability } from '@/services/api/schedule';
 import { useGetPractitionerRolesDetail } from '@/services/clinicians';
 import { format } from 'date-fns';
@@ -156,10 +157,10 @@ export default function MarkUnavailabilityButton({
     <>
       <button
         type='button'
-        className={
-          triggerClassName ||
-          'cursor-pointer transition-all duration-200 hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
-        }
+        className={cn(
+          'cursor-pointer transition-all duration-200 hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500',
+          triggerClassName
+        )}
         onClick={() => setOpen(true)}
       >
         <div className='bg-secondary min-w-[100px] rounded-full p-[7px]'>
