@@ -17,7 +17,7 @@ import {
   initializeWeeklyAvailabilityFromRoles
 } from '@/utils/availability';
 import { PractitionerRole } from 'fhir/r4';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type Props = {
   practitionerRoles?: (PractitionerRole | IPractitionerRoleDetail)[];
@@ -77,6 +77,12 @@ export default function PractitionerAvailabilityEditor({
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(
     getInitialSelectedDay(stableInitialWeeklyAvailability)
   );
+
+  // Update state when stableInitialWeeklyAvailability changes
+  useEffect(() => {
+    setWeeklyAvailability(stableInitialWeeklyAvailability);
+    setSelectedDay(getInitialSelectedDay(stableInitialWeeklyAvailability));
+  }, [stableInitialWeeklyAvailability]);
 
   // Loading state for save operation
   const [isSaving, setIsSaving] = useState(false);

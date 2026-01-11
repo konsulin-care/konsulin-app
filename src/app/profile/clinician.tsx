@@ -112,9 +112,7 @@ export default function Clinician({ fhirId }: Props) {
 
   const handleOpenDrawer = () => {
     // Set all active practitioner roles for the editor
-    if (activeFirms && activeFirms.length > 0) {
-      setSelectedPractitionerRoles(activeFirms);
-    }
+    setSelectedPractitionerRoles(activeFirms || []);
     setIsDrawerOpen(true);
   };
 
