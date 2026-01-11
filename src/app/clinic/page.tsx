@@ -183,7 +183,7 @@ export default function Clinic() {
                       onClick={() => handleSelectedClinic(clinic.resource.id)}
                       className='bg-secondary mt-2 w-full rounded-[32px] py-2 font-normal text-white'
                     >
-                      Check
+                      View Practitioners
                     </Button>
                   </div>
                 ))}
@@ -213,7 +213,7 @@ export default function Clinic() {
                       onClick={() => handleSelectedClinic(clinic.resource.id)}
                       className='bg-secondary mt-2 w-full rounded-[32px] py-2 font-normal text-white'
                     >
-                      Check
+                      View Practitioners
                     </Button>
                   </div>
                 ))}
@@ -263,7 +263,7 @@ export default function Clinic() {
                     onClick={() => handleSelectedClinic(clinic.resource.id)}
                     className='bg-secondary mt-2 w-full rounded-[32px] py-2 font-normal text-white'
                   >
-                    Check
+                    View Practitioners
                   </Button>
                 </div>
               ))}

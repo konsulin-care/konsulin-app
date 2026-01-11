@@ -1,5 +1,6 @@
 'use client';
 
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -41,7 +42,7 @@ export default function NavigationBar({
         </Link>
         <Link
           href={
-            authState.userInfo.role_name === 'practitioner'
+            authState.userInfo.role_name === Roles.Practitioner
               ? '/schedule'
               : '/clinic'
           }
