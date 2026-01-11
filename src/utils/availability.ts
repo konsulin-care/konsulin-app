@@ -1,5 +1,5 @@
 import { DayOfWeek, TimeRange, WeeklyAvailability } from '@/types/availability';
-import { Organization, PractitionerRole } from 'fhir/r4';
+import { PractitionerRole } from 'fhir/r4';
 
 const DAY_NAMES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 const DAY_MAP: Record<string, DayOfWeek> = {
@@ -151,24 +151,6 @@ export function hasAvailabilityForDay(
   return Object.values(dayAvailability).some(
     ranges => ranges && ranges.length > 0
   );
-}
-
-/**
- * Parse FHIR availableTime to internal WeeklyAvailability format
- */
-export function parseFhirAvailableTime(
-  availableTime: any[],
-  organizations: Organization[]
-): WeeklyAvailability {
-  return {
-    0: {},
-    1: {},
-    2: {},
-    3: {},
-    4: {},
-    5: {},
-    6: {}
-  };
 }
 
 /**

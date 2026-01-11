@@ -51,15 +51,19 @@ export default function PractitionerAvailabilityEditor({
   const rolesToUse =
     practitionerRoles || (practitionerRole ? [practitionerRole] : []);
 
+  // Compute stable initial weekly availability once
+  const stableInitialWeeklyAvailability = useMemo(
+    () => initializeWeeklyAvailabilityFromRoles(rolesToUse),
+    [rolesToUse]
+  );
+
   // State for weekly availability across all organizations
   const [weeklyAvailability, setWeeklyAvailability] =
-    useState<WeeklyAvailability>(
-      initializeWeeklyAvailabilityFromRoles(rolesToUse)
-    );
+    useState<WeeklyAvailability>(stableInitialWeeklyAvailability);
 
   // Currently selected day (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(
-    getInitialSelectedDay(weeklyAvailability)
+    getInitialSelectedDay(stableInitialWeeklyAvailability)
   );
 
   // Loading state for save operation
@@ -74,18 +78,15 @@ export default function PractitionerAvailabilityEditor({
   const handleAddTimeRange = (organizationId: string, day: DayOfWeek) => {
     setWeeklyAvailability(prev => {
       const newAvailability = { ...prev };
-      const dayAvailability = newAvailability[day];
+      newAvailability[day] = { ...(newAvailability[day] || {}) };
+      const orgRanges = newAvailability[day][organizationId] || [];
+      const newTimeRange: TimeRange = {
+        id: generateTimeRangeId(),
+        from: '09:00',
+        to: '17:00'
+      };
 
-      if (dayAvailability) {
-        const orgRanges = dayAvailability[organizationId] || [];
-        const newTimeRange: TimeRange = {
-          id: generateTimeRangeId(),
-          from: '09:00',
-          to: '17:00'
-        };
-
-        dayAvailability[organizationId] = [...orgRanges, newTimeRange];
-      }
+      newAvailability[day][organizationId] = [...orgRanges, newTimeRange];
 
       return newAvailability;
     });
@@ -103,14 +104,12 @@ export default function PractitionerAvailabilityEditor({
   ) => {
     setWeeklyAvailability(prev => {
       const newAvailability = { ...prev };
-      const dayAvailability = newAvailability[day];
+      newAvailability[day] = { ...(newAvailability[day] || {}) };
+      const orgRanges = newAvailability[day][organizationId] || [];
 
-      if (dayAvailability && dayAvailability[organizationId]) {
-        dayAvailability[organizationId] = dayAvailability[organizationId].map(
-          range =>
-            range.id === timeRangeId ? { ...range, [field]: value } : range
-        );
-      }
+      newAvailability[day][organizationId] = orgRanges.map(range =>
+        range.id === timeRangeId ? { ...range, [field]: value } : range
+      );
 
       return newAvailability;
     });
@@ -126,13 +125,12 @@ export default function PractitionerAvailabilityEditor({
   ) => {
     setWeeklyAvailability(prev => {
       const newAvailability = { ...prev };
-      const dayAvailability = newAvailability[day];
+      newAvailability[day] = { ...(newAvailability[day] || {}) };
+      const orgRanges = newAvailability[day][organizationId] || [];
 
-      if (dayAvailability && dayAvailability[organizationId]) {
-        dayAvailability[organizationId] = dayAvailability[
-          organizationId
-        ].filter(range => range.id !== timeRangeId);
-      }
+      newAvailability[day][organizationId] = orgRanges.filter(
+        range => range.id !== timeRangeId
+      );
 
       return newAvailability;
     });
@@ -218,15 +216,36 @@ export default function PractitionerAvailabilityEditor({
     return orgs;
   }, [rolesToUse]);
 
+  // Function to normalize availability for comparison (ignoring IDs)
+  const normalizeAvailability = (avail: WeeklyAvailability) => {
+    const normalized: Record<
+      string,
+      Record<string, { from: string; to: string }[]>
+    > = {};
+    for (const day in avail) {
+      normalized[day] = {};
+      for (const org in avail[day]) {
+        normalized[day][org] = avail[day][org]
+          .map(({ from, to }) => ({ from, to }))
+          .sort(
+            (a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to)
+          );
+      }
+    }
+    return normalized;
+  };
+
   // Check if there are any changes to save
   const hasChanges = useMemo(() => {
-    // Compare current state with initial state
-    const initialAvailability =
-      initializeWeeklyAvailabilityFromRoles(rolesToUse);
-    return (
-      JSON.stringify(weeklyAvailability) !== JSON.stringify(initialAvailability)
+    // Compare current state with initial state, ignoring generated IDs
+    const normalizedCurrent = normalizeAvailability(weeklyAvailability);
+    const normalizedInitial = normalizeAvailability(
+      stableInitialWeeklyAvailability
     );
-  }, [weeklyAvailability, rolesToUse]);
+    return (
+      JSON.stringify(normalizedCurrent) !== JSON.stringify(normalizedInitial)
+    );
+  }, [weeklyAvailability, stableInitialWeeklyAvailability]);
 
   return (
     <div className='flex h-full flex-col pb-24 sm:pb-28 md:pb-32'>

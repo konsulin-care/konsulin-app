@@ -7,6 +7,13 @@ import { useMutation } from '@tanstack/react-query';
 import { PractitionerRole, Schedule } from 'fhir/r4';
 import { getAPI } from '../api';
 
+interface AvailableTime {
+  daysOfWeek?: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[];
+  allDay?: boolean;
+  availableStartTime?: string;
+  availableEndTime?: string;
+}
+
 export async function postMarkUnavailability(
   payload: MarkUnavailabilityRequest
 ): Promise<MarkUnavailabilityResult> {
@@ -38,7 +45,7 @@ export async function updateSchedule(payload: Schedule): Promise<Schedule> {
  */
 export async function updatePractitionerRoleAvailability(
   practitionerRoleId: string,
-  availableTime: any[]
+  availableTime: AvailableTime[]
 ): Promise<PractitionerRole> {
   const API = await getAPI();
 
@@ -49,7 +56,7 @@ export async function updatePractitionerRoleAvailability(
   const currentRole = getResponse.data as PractitionerRole;
 
   // Update the availableTime
-  const updatedRole = {
+  const updatedRole: PractitionerRole = {
     ...currentRole,
     availableTime
   };
@@ -74,7 +81,7 @@ export function useUpdateAvailability() {
       availableTime
     }: {
       practitionerRoleId: string;
-      availableTime: any[];
+      availableTime: AvailableTime[];
     }) => {
       return updatePractitionerRoleAvailability(
         practitionerRoleId,
