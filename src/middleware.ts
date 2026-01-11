@@ -30,7 +30,7 @@ export function middleware(request: NextRequest) {
   try {
     auth = authCookie ? JSON.parse(authCookie) : {};
   } catch (e) {
-    console.error('Failed to parse auth cookie:', e);
+    console.error('Failed to parse auth cookie:');
     auth = {};
   }
 
