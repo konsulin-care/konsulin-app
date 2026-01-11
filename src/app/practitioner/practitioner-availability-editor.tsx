@@ -9,6 +9,7 @@ import {
   UIOrganization,
   WeeklyAvailability
 } from '@/types/availability';
+import { IPractitionerRoleDetail } from '@/types/practitioner';
 import {
   convertToFhirAvailableTimeForOrganization,
   generateTimeRangeId,
@@ -19,11 +20,20 @@ import { PractitionerRole } from 'fhir/r4';
 import { useMemo, useState } from 'react';
 
 type Props = {
-  practitionerRoles?: PractitionerRole[];
-  practitionerRole?: PractitionerRole;
+  practitionerRoles?: (PractitionerRole | IPractitionerRoleDetail)[];
+  practitionerRole?: PractitionerRole | IPractitionerRoleDetail;
   onSuccess?: () => void;
   onCancel?: () => void;
 };
+
+/**
+ * Type guard to check if a role is IPractitionerRoleDetail
+ */
+function isIPractitionerRoleDetail(
+  role: PractitionerRole | IPractitionerRoleDetail
+): role is IPractitionerRoleDetail {
+  return 'organizationData' in role;
+}
 
 /**
  * PractitionerAvailabilityEditor
@@ -184,10 +194,10 @@ export default function PractitionerAvailabilityEditor({
     if (rolesToUse && rolesToUse.length > 0) {
       rolesToUse.forEach(role => {
         // Use organizationData.name if available (IPractitionerRoleDetail)
-        if ((role as any).organizationData?.name) {
+        if (isIPractitionerRoleDetail(role) && role.organizationData?.name) {
           orgs.push({
             id: role.organization?.reference || role.id,
-            name: (role as any).organizationData.name
+            name: role.organizationData.name
           });
         } else if (role.organization) {
           // Fallback to organization.display for regular PractitionerRole

@@ -1,7 +1,16 @@
 import { DayOfWeek, TimeRange, WeeklyAvailability } from '@/types/availability';
 import { PractitionerRole } from 'fhir/r4';
 
+/**
+ * Day names array using internal DayOfWeek convention (0 = Monday, 6 = Sunday)
+ * Note: This differs from JavaScript's Date.getDay() which returns (0 = Sunday, 6 = Saturday)
+ */
 const DAY_NAMES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+
+/**
+ * Mapping from day name strings to internal DayOfWeek index (0 = Monday, 6 = Sunday)
+ * Note: This differs from JavaScript's Date.getDay() which returns (0 = Sunday, 6 = Saturday)
+ */
 const DAY_MAP: Record<string, DayOfWeek> = {
   mon: 0,
   tue: 1,
@@ -11,6 +20,26 @@ const DAY_MAP: Record<string, DayOfWeek> = {
   sat: 5,
   sun: 6
 };
+
+/**
+ * Convert JavaScript Date.getDay() index (0 = Sunday, 6 = Saturday)
+ * to internal DayOfWeek index (0 = Monday, 6 = Sunday)
+ */
+export function fromJsDayIndex(jsDayIndex: number): DayOfWeek {
+  // JavaScript: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  // Internal:   0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+  return ((jsDayIndex + 6) % 7) as DayOfWeek;
+}
+
+/**
+ * Convert internal DayOfWeek index (0 = Monday, 6 = Sunday)
+ * to JavaScript Date.getDay() index (0 = Sunday, 6 = Saturday)
+ */
+export function toJsDayIndex(dayOfWeek: DayOfWeek): number {
+  // Internal:   0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+  // JavaScript: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  return (dayOfWeek + 1) % 7;
+}
 
 /**
  * Generate a unique ID for a time range
