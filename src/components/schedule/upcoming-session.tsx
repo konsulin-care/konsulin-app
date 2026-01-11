@@ -1,3 +1,4 @@
+import { Roles } from '@/constants/roles';
 import { MergedAppointment, MergedSession } from '@/types/appointment';
 import { mergeNames } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
@@ -30,7 +31,7 @@ export default function UpcomingSession({ data, role }: Props) {
   const displayName = useMemo(() => {
     if (!nextSession) return null;
 
-    const isPatient = role === 'patient';
+    const isPatient = role === Roles.Patient;
 
     const fullName = isPatient
       ? mergeNames(
@@ -61,10 +62,10 @@ export default function UpcomingSession({ data, role }: Props) {
               alt='calendar'
             />
             <div className='mr-auto flex flex-col'>
-              <span className='text-[12px] text-muted'>
+              <span className='text-muted text-[12px]'>
                 Upcoming Session With
               </span>
-              <span className='text-left text-[14px] font-bold text-secondary'>
+              <span className='text-secondary text-left text-[14px] font-bold'>
                 {displayName}
               </span>
             </div>

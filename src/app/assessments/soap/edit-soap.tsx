@@ -4,6 +4,7 @@ import Unauthorized from '@/app/unauthorized/page';
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import SoapForm from '@/components/soap-report/soap-form';
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useQuestionnaireSoap } from '@/services/api/assessment';
 import { useGetSingleRecord } from '@/services/api/record';
@@ -30,7 +31,7 @@ export default function EditSoap({ soapId, title }: Props) {
     useQuestionnaireSoap();
 
   const role = authState?.userInfo?.role_name;
-  const isPatient = role === 'patient';
+  const isPatient = role === Roles.Patient;
 
   useEffect(() => {
     if (!soapData) return;

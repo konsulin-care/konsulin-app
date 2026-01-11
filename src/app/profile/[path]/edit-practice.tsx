@@ -14,7 +14,6 @@ import {
   DrawerTrigger
 } from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/context/auth/authContext';
 import { updateSchedule } from '@/services/api/schedule';
 import {
@@ -31,9 +30,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
-import 'swiper/css';
-import { Autoplay } from 'swiper/modules';
-import { Swiper, SwiperSlide } from 'swiper/react';
 import FirmFilter, { IFirmFilter } from './firm-filter';
 
 type SlotConfig = { slotMinutes?: number; bufferMinutes?: number };
@@ -236,6 +232,7 @@ const EditPractice = () => {
   const [invoiceData, setInvoiceData] = useState([]);
   const { state: authState } = useAuth();
   const [openCollapsibles, setOpenCollapsibles] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
   const [slotConfigs, setSlotConfigs] = useState<
     Record<
       number,
@@ -292,11 +289,6 @@ const EditPractice = () => {
   const { mutateAsync: updateInvoice, isLoading: isUpdateInvoiceLoading } =
     useUpdateInvoice();
 
-  const isDataLoading =
-    isCreateInvoiceLoading ||
-    isUpdatePractitionerLoading ||
-    isUpdateInvoiceLoading;
-
   useEffect(() => {
     setSlotConfigs(prev => {
       const next = { ...prev } as Record<
@@ -320,6 +312,21 @@ const EditPractice = () => {
             bufferTime: bufferMinutes != null ? String(bufferMinutes) : '',
             timezone: timezone
           };
+        }
+      });
+      return next;
+    });
+  }, [firmData]);
+
+  // Initialize collapsible state based on active field
+  useEffect(() => {
+    setOpenCollapsibles(prev => {
+      const next = { ...prev };
+      firmData.forEach((firm: any, idx: number) => {
+        if (firm.active) {
+          next[idx] = true;
+        } else if (next[idx] === undefined) {
+          next[idx] = false;
         }
       });
       return next;
@@ -364,115 +371,170 @@ const EditPractice = () => {
     });
   }, [firmData, firmFilter, searchInput]);
 
-  const handleSubmitFirmDetails = async (index: number) => {
-    if (index === undefined || index === null) return;
-
-    /* preserve scheduleData and organizationData for later use */
-    const { scheduleData, organizationData, ...firmPayload } = firmData[index];
-    const invoicePayload = { ...invoiceData[index] };
-
+  const handleSubmitFirmsStatus = async () => {
+    setIsSaving(true);
     const updatedInvoice = [...invoiceData];
     const updatedFirm = [...firmData];
+    let hasErrors = false;
+    let errorMessages: string[] = [];
 
     try {
-      if (invoicePayload.status === 'draft' && !invoicePayload.id) {
-        invoicePayload.status = 'final';
-        const result = await createInvoice(invoicePayload);
+      // Update all practitioner info (including active field and specialties)
+      const cleanedFirmsData = firmData.map(firm => {
+        const { scheduleData, organizationData, ...rest } = firm;
+        return rest;
+      });
 
-        if (result) {
-          updatedInvoice[index] = result;
-          setInvoiceData(updatedInvoice);
-        }
-      } else {
-        const result = await updateInvoice(invoicePayload);
-
-        if (result) {
-          updatedInvoice[index] = result;
-          setInvoiceData(updatedInvoice);
-        }
-      }
-
-      const timezone = slotConfigs[index]?.timezone || getBrowserTimezoneGMT();
-      const isoDateTime = convertGMTToISO(timezone);
-
-      firmPayload.period = {
-        start: isoDateTime,
-        end: isoDateTime
-      };
-
-      const result = await updatePractitionerInfo(firmPayload);
-      if (result) {
-        updatedFirm[index] = { scheduleData, organizationData, ...result };
-        setFirmData(updatedFirm);
-        toast.success('Data berhasil disimpan');
-      }
-
-      const latestSchedule = getTheLatestEntry<Schedule>(
-        scheduleData as Schedule[]
-      );
-      if (!latestSchedule) {
-        toast.info('No schedule found for this firm; skipping schedule update');
-      } else {
-        const sessionDuration = slotConfigs[index]?.sessionDuration;
-        const bufferTime = slotConfigs[index]?.bufferTime;
-        const newComment = buildScheduleComment(sessionDuration, bufferTime);
-        if (newComment !== undefined) {
-          try {
-            const updated = await updateSchedule({
-              ...latestSchedule,
-              resourceType: 'Schedule',
-              comment: newComment
-            } as Schedule);
-            setFirmData(prev => {
-              const copy = [...prev];
-              const sArr = Array.isArray(copy[index].scheduleData)
-                ? [...copy[index].scheduleData]
-                : [];
-              const replaceIdx = sArr.findIndex(
-                (s: any) => s?.id === updated?.id
-              );
-              if (replaceIdx >= 0) sArr[replaceIdx] = updated;
-              else sArr.unshift(updated);
-              copy[index] = { ...copy[index], scheduleData: sArr };
-              return copy;
-            });
-          } catch (e) {
-            toast.error('Failed to update session duration/buffer time');
-          }
-        }
-      }
-
-      handleToggle(index);
-    } catch (error) {
-      toast.error('Data gagal disimpan');
-      console.log('Error when submitting the data: ', error);
-    }
-  };
-
-  const handleSubmitFirmsStatus = async () => {
-    const cleanedFirmsData = firmData.map(firm => {
-      const { scheduleData, organizationData, ...rest } = firm;
-      return rest;
-    });
-
-    try {
-      await Promise.all(
+      const practitionerUpdateResults = await Promise.allSettled(
         cleanedFirmsData.map(firm => updatePractitionerInfo(firm))
       );
 
-      toast.success('Semua data berhasil disimpan');
-      setIsDrawerOpen(true);
+      practitionerUpdateResults.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value) {
+          updatedFirm[index] = {
+            scheduleData: firmData[index].scheduleData,
+            organizationData: firmData[index].organizationData,
+            ...result.value
+          };
+        } else if (result.status === 'rejected') {
+          hasErrors = true;
+          errorMessages.push(
+            `Failed to update practitioner info for firm ${index + 1}`
+          );
+          console.error(
+            `Practitioner update error for firm ${index + 1}:`,
+            result.reason
+          );
+        }
+      });
+
+      // Update all invoice data (fee)
+      const invoiceUpdateResults = await Promise.allSettled(
+        invoiceData.map((invoice, index) => {
+          const invoicePayload = { ...invoice };
+          if (invoicePayload.status === 'draft' && !invoicePayload.id) {
+            invoicePayload.status = 'final';
+            return createInvoice(invoicePayload);
+          } else {
+            return updateInvoice(invoicePayload);
+          }
+        })
+      );
+
+      invoiceUpdateResults.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value) {
+          updatedInvoice[index] = result.value;
+        } else if (result.status === 'rejected') {
+          hasErrors = true;
+          errorMessages.push(`Failed to update invoice for firm ${index + 1}`);
+          console.error(
+            `Invoice update error for firm ${index + 1}:`,
+            result.reason
+          );
+        }
+      });
+
+      // Update all schedule data (session duration and buffer time)
+      const scheduleUpdateResults = await Promise.allSettled(
+        firmData.map(async (firm, index) => {
+          const latestSchedule = getTheLatestEntry<Schedule>(
+            firm.scheduleData as Schedule[]
+          );
+          if (!latestSchedule) {
+            return { skipped: true, index };
+          }
+
+          const sessionDuration = slotConfigs[index]?.sessionDuration;
+          const bufferTime = slotConfigs[index]?.bufferTime;
+          const newComment = buildScheduleComment(sessionDuration, bufferTime);
+
+          if (newComment === undefined) {
+            return { skipped: true, index };
+          }
+
+          const updated = await updateSchedule({
+            ...latestSchedule,
+            resourceType: 'Schedule',
+            comment: newComment
+          } as Schedule);
+
+          return { updated, index };
+        })
+      );
+
+      scheduleUpdateResults.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value) {
+          if (result.value.skipped) {
+            // Schedule update was skipped (no schedule found or no changes)
+            return;
+          }
+          if (result.value.updated) {
+            const sArr = Array.isArray(updatedFirm[index].scheduleData)
+              ? [...updatedFirm[index].scheduleData]
+              : [];
+            const replaceIdx = sArr.findIndex(
+              (s: any) => s?.id === result.value.updated?.id
+            );
+            if (replaceIdx >= 0) {
+              sArr[replaceIdx] = result.value.updated;
+            } else {
+              sArr.unshift(result.value.updated);
+            }
+            updatedFirm[index] = {
+              ...updatedFirm[index],
+              scheduleData: sArr
+            };
+          }
+        } else if (result.status === 'rejected') {
+          hasErrors = true;
+          errorMessages.push(`Failed to update schedule for firm ${index + 1}`);
+          console.error(
+            `Schedule update error for firm ${index + 1}:`,
+            result.reason
+          );
+        }
+      });
+
+      // Update state with all successful changes
+      setInvoiceData(updatedInvoice);
+      setFirmData(updatedFirm);
+
+      if (hasErrors) {
+        toast.error('Some changes failed to save. Please try again.');
+        if (errorMessages.length > 0) {
+          console.error('Save errors:', errorMessages);
+        }
+      } else {
+        toast.success('All changes saved successfully');
+        setIsDrawerOpen(true);
+      }
     } catch (error) {
-      toast.error('Gagal menyimpan sebagian atau seluruh data');
-      console.log('Batch update error:', error);
+      toast.error('Failed to save changes. Please try again.');
+      console.error('Unexpected error during save:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleToggle = useCallback((index: number) => {
-    setOpenCollapsibles(prevState => ({
-      ...prevState,
-      [index]: !prevState[index]
-    }));
+    setOpenCollapsibles(prevState => {
+      const newState = !prevState[index];
+
+      // Update the active field based on the new toggle state
+      setFirmData(prevData => {
+        const updatedData = [...prevData];
+        updatedData[index] = {
+          ...updatedData[index],
+          active: newState
+        };
+        return updatedData;
+      });
+
+      return {
+        ...prevState,
+        [index]: newState
+      };
+    });
   }, []);
 
   const handleAddTag = useCallback(
@@ -525,17 +587,6 @@ const EditPractice = () => {
     });
   }, []);
 
-  const handleChangeStatus = useCallback((index: number, value: boolean) => {
-    setFirmData(prevData => {
-      const updatedData = [...prevData];
-      updatedData[index] = {
-        ...updatedData[index],
-        active: value
-      };
-      return updatedData;
-    });
-  }, []);
-
   function handleRemoveTag(index: number, tagIndex: number) {
     setFirmData(prevData => {
       const updatedData = [...prevData];
@@ -562,42 +613,12 @@ const EditPractice = () => {
             />
           ) : (
             <div className='rounded-lg bg-[#F9F9F9] p-4'>
-              {activeFirms.length >= 2 ? (
-                <Swiper
-                  slidesPerView={1}
-                  spaceBetween={10}
-                  loop={true}
-                  autoplay={{
-                    delay: 5000,
-                    disableOnInteraction: false
-                  }}
-                  modules={[Autoplay]}
-                >
-                  {filteredFirmData
-                    .filter(firm => firm.active)
-                    .map(firm => {
-                      return (
-                        <SwiperSlide key={firm.id}>
-                          <div className='flex justify-between'>
-                            <div className='text-sm opacity-40'>
-                              Current Firm
-                            </div>
-                            <div className='text-m font-bold'>
-                              {firm.organizationData.name}
-                            </div>
-                          </div>
-                        </SwiperSlide>
-                      );
-                    })}
-                </Swiper>
-              ) : (
-                <div className='flex justify-between'>
-                  <div className='text-sm opacity-40'>Current Firm</div>
-                  <div className='text-m font-bold'>
-                    {activeFirms[0]?.organizationData.name || 'No active firms'}
-                  </div>
+              <div className='flex justify-between'>
+                <div className='text-sm opacity-40'>Current Firm</div>
+                <div className='text-m font-bold'>
+                  {activeFirms[0]?.organizationData.name || 'No active firms'}
                 </div>
-              )}
+              </div>
             </div>
           )}
 
@@ -663,9 +684,6 @@ const EditPractice = () => {
                     setTagInputs={setTagInputs}
                     slotConfigs={slotConfigs}
                     setSlotConfigs={setSlotConfigs}
-                    handleSubmitFirmDetails={handleSubmitFirmDetails}
-                    handleChangeStatus={handleChangeStatus}
-                    isDataLoading={isDataLoading}
                   />
                 )
               )
@@ -684,9 +702,9 @@ const EditPractice = () => {
             <Button
               onClick={handleSubmitFirmsStatus}
               className='bg-secondary w-full rounded-[32px] py-2 font-normal text-white'
-              disabled={isUpdatePractitionerLoading}
+              disabled={isSaving}
             >
-              {isUpdatePractitionerLoading ? (
+              {isSaving ? (
                 <LoadingSpinnerIcon
                   width={20}
                   height={20}
@@ -694,7 +712,7 @@ const EditPractice = () => {
                   className='mx-auto animate-spin'
                 />
               ) : (
-                'Simpan'
+                'Save'
               )}
             </Button>
           </div>
@@ -794,7 +812,7 @@ const SpecialtiesSection = ({
   );
 };
 
-const Collapsible = ({ isOpen, onToggle, children, data, onStatusChange }) => {
+const Collapsible = ({ isOpen, onToggle, children, data }) => {
   return (
     <div className='collapsible my-4 rounded-[25px] border bg-gray-50'>
       <button
@@ -823,21 +841,31 @@ const Collapsible = ({ isOpen, onToggle, children, data, onStatusChange }) => {
             </span>
           </div>
         </div>
-        {isOpen ? null : (
+        <div className='flex items-center gap-2'>
+          {/* Active status indicator - shown when expanded */}
+          {isOpen && (
+            <span className='text-xs font-medium text-white/80'>Active</span>
+          )}
           <div
-            onClick={e => {
-              e.stopPropagation();
-            }}
+            className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           >
-            <Switch
-              checked={data.active}
-              onCheckedChange={checked => {
-                onStatusChange(checked);
-              }}
-              className='data-[state=checked]:bg-[#0abdc3] data-[state=unchecked]:bg-[#808387]'
-            />
+            <svg
+              width='20'
+              height='20'
+              viewBox='0 0 20 20'
+              fill='none'
+              xmlns='http://www.w3.org/2000/svg'
+            >
+              <path
+                d='M5 7.5L10 12.5L15 7.5'
+                stroke={isOpen ? 'white' : 'currentColor'}
+                strokeWidth='2'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+              />
+            </svg>
           </div>
-        )}
+        </div>
       </button>
       {isOpen && (
         <div
@@ -863,10 +891,7 @@ const CollapsibleItem = ({
   handleRemoveTag,
   setTagInputs,
   slotConfigs,
-  setSlotConfigs,
-  handleSubmitFirmDetails,
-  handleChangeStatus,
-  isDataLoading
+  setSlotConfigs
 }) => {
   return (
     <Collapsible
@@ -874,7 +899,6 @@ const CollapsibleItem = ({
       isOpen={isOpen}
       onToggle={() => onToggle(index)}
       data={firm}
-      onStatusChange={(status: boolean) => handleChangeStatus(index, status)}
     >
       <div className='flex flex-col space-y-2'>
         <FeeInput
@@ -983,26 +1007,6 @@ const CollapsibleItem = ({
             readOnly
             disabled
           />
-        </div>
-        <div className='mt-4'>
-          <Button
-            onClick={() => {
-              handleSubmitFirmDetails(index);
-            }}
-            className='bg-secondary w-full rounded-[32px] py-2 font-normal text-white'
-            disabled={isDataLoading}
-          >
-            {isDataLoading ? (
-              <LoadingSpinnerIcon
-                width={20}
-                height={20}
-                stroke='white'
-                className='mx-auto animate-spin'
-              />
-            ) : (
-              'Save'
-            )}
-          </Button>
         </div>
       </div>
     </Collapsible>

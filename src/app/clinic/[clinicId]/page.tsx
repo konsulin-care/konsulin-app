@@ -322,10 +322,10 @@ export default function DetailClinic({ params }: IDetailClinic) {
                     className='mt-auto w-full'
                   >
                     <Button
-                      className='bg-secondary mt-2 w-full rounded-[32px] py-2 font-normal text-white'
+                      className='btn-soft-gray mt-2 w-full rounded-[32px] py-2 font-normal'
                       onClick={() => handleSelectPractitioner(practitioner)}
                     >
-                      Check
+                      <b>View Practice Information</b>
                     </Button>
                   </Link>
                 </div>

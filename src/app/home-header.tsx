@@ -4,6 +4,7 @@ import Avatar from '@/components/general/avatar';
 import Header from '@/components/header';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import {
   useGetUpcomingAppointments,
@@ -24,8 +25,8 @@ export default function HomeHeader() {
 
   const role = authState?.userInfo?.role_name;
   const fhirId = authState?.userInfo?.fhirId;
-  const isPatient = role === 'patient';
-  const isPractitioner = role === 'practitioner';
+  const isPatient = role === Roles.Patient;
+  const isPractitioner = role === Roles.Practitioner;
 
   const { data: appointmentData } = useGetUpcomingAppointments({
     patientId: isPatient ? fhirId : undefined,

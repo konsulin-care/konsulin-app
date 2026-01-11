@@ -1,5 +1,6 @@
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import { Roles } from '@/constants/roles';
 import { getAPI } from '@/services/api';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
 import Image from 'next/image';
@@ -138,7 +139,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       subject = undefined;
     } else {
       // Authenticated
-      if (role === 'practitioner') {
+      if (role === Roles.Practitioner) {
         if (!practitionerId || !patientId) {
           toast.error('Missing practitioner or patient information');
           setIsSubmitting(false);
@@ -333,7 +334,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           disabled={
             submitQuestionnaireIsLoading ||
             requiredItemEmpty > 0 ||
-            (role === 'practitioner' && !patientId)
+            (role === Roles.Practitioner && !patientId)
           }
           className='bg-secondary w-full text-white'
           onClick={handleValidation}

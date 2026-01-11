@@ -1,31 +1,31 @@
-'use client'
+'use client';
 
-import Input from '@/components/login/input'
-import { decodeToken } from '@/utils/token'
-import { specialCharacter, upperCaseOneCharacter } from '@/utils/validation'
-import { useMutation } from '@tanstack/react-query'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { toast } from 'react-toastify'
+import Input from '@/components/login/input';
+import { decodeToken } from '@/utils/token';
+import { specialCharacter, upperCaseOneCharacter } from '@/utils/validation';
+import { useMutation } from '@tanstack/react-query';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
 export default function ResetPasswordForm() {
-  const router = useRouter()
+  const router = useRouter();
   const [userPassword, setUserPassword] = useState({
     new_password: '',
     retype_new_password: '',
     token: ''
-  })
+  });
 
   const [showPassword, setShowPassword] = useState({
     new_password: false,
     retype_new_password: false
-  })
+  });
 
   const [errors, setErrors] = useState({
     new_password: '',
     retype_new_password: ''
-  })
+  });
 
   const requestResetPassword = useMutation({
     mutationFn: async (new_password: typeof userPassword) => {
@@ -39,15 +39,15 @@ export default function ResetPasswordForm() {
             },
             body: JSON.stringify(new_password)
           }
-        )
+        );
 
         if (!response.ok) {
-          throw new Error('Failed to reset password')
+          throw new Error('Failed to reset password');
         }
 
-        return response.json()
+        return response.json();
       } catch (err) {
-        throw err
+        throw err;
       }
     },
     onSuccess: () => {
@@ -59,87 +59,87 @@ export default function ResetPasswordForm() {
         pauseOnHover: true,
         draggable: true,
         progress: undefined
-      })
+      });
       setTimeout(() => {
-        router.push('/login')
-      }, 3000)
+        router.push('/login');
+      }, 3000);
     }
-  })
+  });
 
   useEffect(() => {
-    const urlToken = new URLSearchParams(window.location.search).get('token')
+    const urlToken = new URLSearchParams(window.location.search).get('token');
     if (urlToken) {
-      const { isExpired } = decodeToken(urlToken)
+      const { isExpired } = decodeToken(urlToken);
       if (isExpired) {
-        console.log('Token is expired')
-        return
+        console.log('Token is expired');
+        return;
       } else {
         setUserPassword(prevState => ({
           ...prevState,
           token: urlToken
-        }))
+        }));
       }
     } else {
-      console.log('No token found in URL')
+      console.log('No token found in URL');
     }
-  }, [])
+  }, []);
 
   function handleChangeInput(type: string, value: string) {
     setUserPassword(prevUserPassword => ({
       ...prevUserPassword,
       [type]: value
-    }))
+    }));
     setErrors({
       ...errors,
       [type]: ''
-    })
+    });
   }
 
   function handleShowPassword(type: string) {
     setShowPassword(prevShowPassword => ({
       ...prevShowPassword,
       [type]: !showPassword[type]
-    }))
+    }));
   }
 
   function handleResetPassword() {
-    const validationErrors = validateInputs()
+    const validationErrors = validateInputs();
 
     const hasErrors = Object.values(validationErrors).some(
       error => error !== ''
-    )
+    );
     if (hasErrors) {
-      setErrors(validationErrors)
-      return
+      setErrors(validationErrors);
+      return;
     }
-    requestResetPassword.mutate(userPassword)
+    requestResetPassword.mutate(userPassword);
   }
 
   function validateInputs() {
     const foundErrors = {
       new_password: '',
       retype_new_password: ''
-    }
+    };
 
-    const { new_password, retype_new_password } = userPassword
+    const { new_password, retype_new_password } = userPassword;
     if (!new_password) {
-      foundErrors.new_password = 'Password is required'
+      foundErrors.new_password = 'Password is required';
     } else if (new_password.length < 6) {
-      foundErrors.new_password = 'Password must be at least 6 characters'
+      foundErrors.new_password = 'Password must be at least 6 characters';
     } else if (!upperCaseOneCharacter(new_password)) {
       foundErrors.new_password =
-        'Password must contain at least one uppercase letter'
+        'Password must contain at least one uppercase letter';
     } else if (!specialCharacter(new_password)) {
       foundErrors.new_password =
-        'Password must contain at least one number or special character'
+        'Password must contain at least one number or special character';
     }
 
     if (!retype_new_password) {
-      foundErrors.retype_new_password = 'Please confirm your password'
+      foundErrors.retype_new_password = 'Please confirm your password';
     } else if (retype_new_password !== new_password) {
-      foundErrors.retype_new_password = 'Passwords do not match'
+      foundErrors.retype_new_password = 'Passwords do not match';
     }
-    return foundErrors
+    return foundErrors;
   }
 
   return (
@@ -149,7 +149,7 @@ export default function ResetPasswordForm() {
           <Image
             width={8}
             height={16}
-            src={'icons/chevron-left.svg'}
+            src={'/icons/chevron-left.svg'}
             alt='chevron-left-logo'
             onClick={() => router.back()}
           />
@@ -158,10 +158,10 @@ export default function ResetPasswordForm() {
           <Image
             width={200}
             height={200}
-            src={'images/lock-forgot.svg'}
+            src={'/images/lock-forgot.svg'}
             alt='forgot-password-lock'
           />
-          <p className='pb-2 pt-4 text-xl font-bold capitalize text-secondary'>
+          <p className='text-secondary pt-4 pb-2 text-xl font-bold capitalize'>
             Reset Ulang Password
           </p>
           <p className='text-center text-xs text-[#2C2F35] opacity-60'>
@@ -212,7 +212,7 @@ export default function ResetPasswordForm() {
       </div>
       <div className='flex w-full flex-col items-center justify-end'>
         <button
-          className='text-md border-1 my-4 w-full rounded-full border-primary bg-secondary p-4 font-semibold text-white'
+          className='text-md border-primary bg-secondary my-4 w-full rounded-full border-1 p-4 font-semibold text-white'
           type='button'
           onClick={handleResetPassword}
         >
@@ -220,5 +220,5 @@ export default function ResetPasswordForm() {
         </button>
       </div>
     </div>
-  )
+  );
 }

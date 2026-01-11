@@ -39,6 +39,25 @@ body {
   .text-secondary {
     color: var(--secondary);
   }
+
+  .tab-active[data-state='active'] {
+    background-color: var(--secondary) !important;
+    color: white !important;
+  }
+
+  .btn-soft-gray {
+    background-color: var(--soft-gray);
+    color: #333;
+  }
+
+  .btn-soft-gray:hover {
+    background-color: var(--secondary);
+    color: white;
+  }
+
+  .btn-soft-gray:active {
+    background-color: #0fa8a8;
+  }
 }
 
 @layer components {
