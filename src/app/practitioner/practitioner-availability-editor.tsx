@@ -73,16 +73,28 @@ export default function PractitionerAvailabilityEditor({
   const [weeklyAvailability, setWeeklyAvailability] =
     useState<WeeklyAvailability>(stableInitialWeeklyAvailability);
 
-  // Currently selected day (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+  // Track if there are unsaved local edits
+  const [weeklyAvailabilityDirty, setWeeklyAvailabilityDirty] = useState(false);
+
+  // Currently selected day (0 = Monday, 1 = Tuesday, ..., 6 = Sunday)
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(
     getInitialSelectedDay(stableInitialWeeklyAvailability)
   );
 
   // Update state when stableInitialWeeklyAvailability changes
   useEffect(() => {
-    setWeeklyAvailability(stableInitialWeeklyAvailability);
-    setSelectedDay(getInitialSelectedDay(stableInitialWeeklyAvailability));
-  }, [stableInitialWeeklyAvailability]);
+    if (!weeklyAvailabilityDirty) {
+      setWeeklyAvailability(stableInitialWeeklyAvailability);
+      setSelectedDay(getInitialSelectedDay(stableInitialWeeklyAvailability));
+    }
+  }, [stableInitialWeeklyAvailability, weeklyAvailabilityDirty]);
+
+  // Reset dirty flag after accepting external changes
+  useEffect(() => {
+    if (weeklyAvailability === stableInitialWeeklyAvailability) {
+      setWeeklyAvailabilityDirty(false);
+    }
+  }, [weeklyAvailability, stableInitialWeeklyAvailability]);
 
   // Loading state for save operation
   const [isSaving, setIsSaving] = useState(false);
@@ -108,6 +120,7 @@ export default function PractitionerAvailabilityEditor({
 
       return newAvailability;
     });
+    setWeeklyAvailabilityDirty(true);
   };
 
   /**
@@ -131,6 +144,7 @@ export default function PractitionerAvailabilityEditor({
 
       return newAvailability;
     });
+    setWeeklyAvailabilityDirty(true);
   };
 
   /**
@@ -152,6 +166,7 @@ export default function PractitionerAvailabilityEditor({
 
       return newAvailability;
     });
+    setWeeklyAvailabilityDirty(true);
   };
 
   /**
@@ -200,23 +215,23 @@ export default function PractitionerAvailabilityEditor({
 
     // Use the practitioner roles from props (with backward compatibility)
     if (memoizedRolesToUse && memoizedRolesToUse.length > 0) {
-      memoizedRolesToUse.forEach(role => {
+      memoizedRolesToUse.forEach((role, index) => {
         // Use organizationData.name if available (IPractitionerRoleDetail)
         if (isIPractitionerRoleDetail(role) && role.organizationData?.name) {
           orgs.push({
-            id: role.organization?.reference || role.id,
+            id: role.organization?.reference || role.id || `unknown-${index}`,
             name: role.organizationData.name
           });
         } else if (role.organization) {
           // Fallback to organization.display for regular PractitionerRole
           orgs.push({
-            id: role.organization.reference || role.id,
+            id: role.organization.reference || role.id || `unknown-${index}`,
             name: role.organization.display || 'Unknown Organization'
           });
         } else {
-          // If no organization reference, use role ID as fallback
+          // If no organization reference, use role ID as fallback with deterministic fallback
           orgs.push({
-            id: role.id,
+            id: role.id || `unknown-${index}`,
             name: `Practice ${orgs.length + 1}`
           });
         }

@@ -155,13 +155,14 @@ export default function MarkUnavailabilityButton({
   return (
     <>
       <button
+        type='button'
         className={
           triggerClassName ||
-          'cursor-pointer transition-all duration-200 hover:brightness-90'
+          'cursor-pointer transition-all duration-200 hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
         }
         onClick={() => setOpen(true)}
       >
-        <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
+        <div className='bg-secondary min-w-[100px] rounded-full p-[7px]'>
           <p className='text-[10px] text-white'>{buttonText}</p>
         </div>
       </button>
