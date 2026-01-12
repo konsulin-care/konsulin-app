@@ -1,6 +1,7 @@
 'use client';
 
 import { Roles } from '@/constants/roles';
+import { restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { getCookie } from 'cookies-next';
@@ -43,6 +44,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!session.doesSessionExist) {
         setIsLoading(false);
         return;
+      }
+
+      // Check if auth cookie is missing but SuperTokens session is valid
+      // This is the condition for auto-restoration
+      const shouldRestoreAuthCookie = !auth?.userId && session.doesSessionExist;
+
+      if (shouldRestoreAuthCookie) {
+        try {
+          console.log('Attempting to restore auth cookie...');
+          const restorationSuccess = await restoreAuthCookie();
+
+          if (restorationSuccess) {
+            // After successful restoration, reload the auth cookie
+            const restoredAuth = JSON.parse(
+              decodeURI(getCookie('auth') || '{}')
+            );
+            if (restoredAuth?.userId) {
+              dispatch({ type: 'auth-check', payload: restoredAuth });
+              setIsLoading(false);
+              return;
+            }
+          }
+        } catch (restorationError) {
+          console.error('Auth cookie restoration failed:', restorationError);
+          // Continue with normal flow even if restoration fails
+        }
       }
 
       try {
