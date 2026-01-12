@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (shouldRestoreAuthCookie) {
         try {
           console.log('Attempting to restore auth cookie...');
-          const restorationSuccess = await restoreAuthCookie();
+          const restorationSuccess = await restoreAuthCookie(session);
 
           if (restorationSuccess) {
             // After successful restoration, reload the auth cookie

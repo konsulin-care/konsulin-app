@@ -3,6 +3,7 @@ import { Roles } from '@/constants/roles';
 import { mergeNames } from '@/utils/helper';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
 import { Patient, Practitioner } from 'fhir/r4';
+import { SessionContextUpdate } from 'supertokens-auth-react/lib/build/recipe/session/types';
 import { getClaimValue } from 'supertokens-auth-react/recipe/session';
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 import { getProfileByIdentifier } from './profile';
@@ -12,20 +13,11 @@ import { getProfileByIdentifier } from './profile';
  * This function fetches user data from SuperTokens session and profile service,
  * then recreates the auth cookie using the existing cookie setting mechanism
  */
-export const restoreAuthCookie = async (): Promise<boolean> => {
+export const restoreAuthCookie = async (
+  sessionContext: SessionContextUpdate
+): Promise<boolean> => {
   try {
     // Check if SuperTokens session exists
-    let sessionContext;
-    try {
-      sessionContext =
-        await import('supertokens-auth-react/recipe/session').then(mod =>
-          mod.useSessionContext()
-        );
-    } catch (sessionError) {
-      console.error('Failed to get SuperTokens session context:', sessionError);
-      return false;
-    }
-
     if (!sessionContext?.doesSessionExist) {
       console.log(
         'SuperTokens session does not exist, skipping auth cookie restoration'
