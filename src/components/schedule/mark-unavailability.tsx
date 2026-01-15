@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth/authContext';
+import { cn } from '@/lib/utils';
 import { useMarkUnavailability } from '@/services/api/schedule';
 import { useGetPractitionerRolesDetail } from '@/services/clinicians';
 import { format } from 'date-fns';
@@ -38,9 +39,13 @@ function toOffsetISOString(date: Date) {
 
 type Props = {
   triggerClassName?: string;
+  buttonText?: string;
 };
 
-export default function MarkUnavailabilityButton({ triggerClassName }: Props) {
+export default function MarkUnavailabilityButton({
+  triggerClassName,
+  buttonText = 'Mark Unavailable Date/Time'
+}: Props) {
   const { state: authState } = useAuth();
   const [open, setOpen] = useState(false);
   const [conflictOpen, setConflictOpen] = useState(false);
@@ -150,13 +155,18 @@ export default function MarkUnavailabilityButton({ triggerClassName }: Props) {
 
   return (
     <>
-      <Button
-        className={triggerClassName || 'bg-[#F9F9F9] font-bold text-[#2C2F35]'}
-        variant='ghost'
+      <button
+        type='button'
+        className={cn(
+          'cursor-pointer transition-all duration-200 hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500',
+          triggerClassName
+        )}
         onClick={() => setOpen(true)}
       >
-        Mark Unavailable Date/Time
-      </Button>
+        <div className='bg-secondary min-w-[100px] rounded-full p-[7px]'>
+          <p className='text-[10px] text-white'>{buttonText}</p>
+        </div>
+      </button>
 
       <Dialog
         open={open}

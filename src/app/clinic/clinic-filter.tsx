@@ -17,12 +17,14 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { Roles } from '@/constants/roles';
 import { cn } from '@/lib/utils';
 import { useGetCities, useGetProvinces } from '@/services/api/cities';
 import { IUseClinicParams } from '@/services/clinic';
 import { IWilayahResponse } from '@/types/wilayah';
 import { addDays, endOfWeek, format, startOfWeek } from 'date-fns';
 import { useState } from 'react';
+
 const CONTENT_DEFAULT = 0;
 const CONTENT_CUSTOM = 1;
 
@@ -157,7 +159,7 @@ export default function ClinicFilter({ onChange, type }) {
             <DrawerTitle className='mx-auto text-[20px] font-bold'>
               Filter & Sort
             </DrawerTitle>
-            {type === 'practitioner' ? (
+            {type === Roles.Practitioner ? (
               <>
                 <div className='card mt-4 border-0 bg-[#F9F9F9]'>
                   <div className='mb-4 font-bold'>Date</div>
@@ -175,7 +177,7 @@ export default function ClinicFilter({ onChange, type }) {
                           'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
                           filter.start_date === date.value.start &&
                             filter.end_date === date.value.end
-                            ? 'bg-secondary font-bold text-white hover:bg-secondary'
+                            ? 'bg-secondary hover:bg-secondary font-bold text-white'
                             : 'bg-white font-normal'
                         )}
                       >
@@ -188,7 +190,7 @@ export default function ClinicFilter({ onChange, type }) {
                       className={cn(
                         'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
                         isUseCustomDate
-                          ? 'bg-secondary font-bold text-white hover:bg-secondary'
+                          ? 'bg-secondary hover:bg-secondary font-bold text-white'
                           : 'bg-white font-normal'
                       )}
                     >
@@ -219,7 +221,7 @@ export default function ClinicFilter({ onChange, type }) {
                           'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
                           filter.start_time === time.value.start &&
                             filter.end_time === time.value.end
-                            ? 'bg-secondary font-bold text-white hover:bg-secondary'
+                            ? 'bg-secondary hover:bg-secondary font-bold text-white'
                             : 'bg-white font-normal'
                         )}
                       >
@@ -233,7 +235,7 @@ export default function ClinicFilter({ onChange, type }) {
                           variant='outline'
                           onClick={handleCustomFilterOpen}
                           className={cn(
-                            'h-[50px] w-min items-center justify-center rounded-lg border-0 bg-secondary p-4 text-[12px] font-bold text-white hover:bg-secondary'
+                            'bg-secondary hover:bg-secondary h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px] font-bold text-white'
                           )}
                         >
                           Custom : {`${filter.start_time} - ${filter.end_time}`}
@@ -358,7 +360,7 @@ export default function ClinicFilter({ onChange, type }) {
             )}
 
             <Button
-              className='mt-4 rounded-xl bg-secondary p-4 text-white'
+              className='bg-secondary mt-4 rounded-xl p-4 text-white'
               onClick={() => {
                 setIsOpen(false);
                 onChange(filter);
@@ -438,7 +440,7 @@ export default function ClinicFilter({ onChange, type }) {
             <Button
               type='button'
               onClick={() => setWhichContent(CONTENT_DEFAULT)}
-              className='mt-4 rounded-xl bg-secondary text-white'
+              className='bg-secondary mt-4 rounded-xl text-white'
             >
               Kembali
             </Button>

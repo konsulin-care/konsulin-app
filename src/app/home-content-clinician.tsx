@@ -207,11 +207,11 @@ export default function HomeContentClinician() {
 
       <div className='mt-2 flex flex-col gap-2 py-4'>
         <Link href={`assessments/${selectedAssessment?.id}`}>
-          <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
+          <Button className='bg-secondary h-full w-full rounded-xl p-4 text-white'>
             Start Test
           </Button>
         </Link>
-        <DrawerClose className='items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50'>
+        <DrawerClose className='focus:ring-opacity-50 items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:ring-2 focus:ring-gray-300 focus:outline-none'>
           Close
         </DrawerClose>
       </div>
@@ -229,22 +229,16 @@ export default function HomeContentClinician() {
               <div className='text-[14px] font-bold text-[#2C2F3599]'>
                 Handled Sessions
               </div>
-              <Link className='text-[12px] text-secondary' href={'/'}>
+              <Link className='text-secondary text-[12px]' href={'/'}>
                 Generate Report
               </Link>
             </div>
             <Tabs defaultValue='weekly' className='w-full'>
               <TabsList className='grid h-fit w-full grid-cols-2 bg-[#F4F4F4] p-2'>
-                <TabsTrigger
-                  className='text-muted data-[state=active]:text-[#ABDCDB]'
-                  value='weekly'
-                >
+                <TabsTrigger className='text-muted tab-active' value='weekly'>
                   Weekly
                 </TabsTrigger>
-                <TabsTrigger
-                  className='text-muted data-[state=active]:text-[#ABDCDB]'
-                  value='monthly'
-                >
+                <TabsTrigger className='text-muted tab-active' value='monthly'>
                   Monthly
                 </TabsTrigger>
               </TabsList>
@@ -329,11 +323,12 @@ export default function HomeContentClinician() {
             alt='writing'
           />
           <div className='ml-2 flex flex-col'>
-            <span className='text-[12px] font-bold text-secondary'>
-              Relax Time
+            <span className='text-primary text-[12px] font-bold'>
+              Health Exercise Resources
             </span>
-            <span className='text-[10px] text-primary'>
-              Relax for Better Mental Health
+            <span className='text-primary text-[10px]'>
+              Help your patient understand their health with curated exercise
+              materials by Konsulin
             </span>
           </div>
         </Link>
@@ -345,17 +340,19 @@ export default function HomeContentClinician() {
             alt='writing'
           />
           <div className='ml-2 flex flex-col'>
-            <span className='text-[12px] font-bold text-secondary'>
+            <span className='text-primary text-[12px] font-bold'>
               SOAP Report
             </span>
-            <span className='text-[10px] text-primary'>Start Writting</span>
+            <span className='text-primary text-[10px]'>
+              Record your session
+            </span>
           </div>
         </Link>
       </div>
       <div className='p-4'>
-        <div className='flex justify-between text-muted'>
+        <div className='text-muted flex justify-between'>
           <span className='mb-2 text-[14px] font-bold'>Browse Instruments</span>
-          <Link className='text-[12px] text-secondary' href={'/assessments'}>
+          <Link className='text-secondary text-[12px]' href={'/assessments'}>
             See All
           </Link>
         </div>
