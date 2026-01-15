@@ -216,7 +216,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [questionnaireResponse, recordId]);
+  }, [questionnaireResponse, recordId, authState.isAuthenticated]);
 
   const getResultBrief = () => {
     // Guest users: no webhook, no polling, no PUT
