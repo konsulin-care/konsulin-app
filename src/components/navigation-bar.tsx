@@ -1,11 +1,12 @@
 'use client';
 
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  ExceriseIcon,
+  ExerciseIcon,
   HouseIcon,
   LiteratureIcon,
   OfficeIcon,
@@ -18,7 +19,7 @@ export default function NavigationBar({
 }: React.HTMLAttributes<HTMLDivElement>) {
   const pathname = usePathname();
   const activePathStyle = 'font-bold text-secondary';
-  const pathStyle = 'text-[#ADB6C7]';
+  const pathStyle = 'text-[#161C26]';
 
   const { state: authState } = useAuth();
 
@@ -33,12 +34,15 @@ export default function NavigationBar({
             pathname === '/' ? activePathStyle : pathStyle
           )}
         >
-          <HouseIcon fill={pathname === '/' ? '#13C2C2' : '#ADB6C7'} />
-          <span className='mt-[5px] text-[12px]'>Beranda</span>
+          <HouseIcon
+            fill={pathname === '/' ? '#13C2C2' : '#161C26'}
+            strokeWidth={pathname === '/' ? 1.2 : 1}
+          />
+          <span className='mt-[5px] text-[12px]'>Home</span>
         </Link>
         <Link
           href={
-            authState.userInfo.role_name === 'practitioner'
+            authState.userInfo.role_name === Roles.Practitioner
               ? '/schedule'
               : '/clinic'
           }
@@ -54,11 +58,17 @@ export default function NavigationBar({
               pathname?.startsWith('/clinic') ||
               pathname?.startsWith('/schedule')
                 ? '#13C2C2'
-                : '#ADB6C7'
+                : '#161C26'
+            }
+            strokeWidth={
+              pathname?.startsWith('/clinic') ||
+              pathname?.startsWith('/schedule')
+                ? 1.2
+                : 1
             }
           />
 
-          <span className='mt-[5px] text-[12px]'>Sesi Temu</span>
+          <span className='mt-[5px] text-[12px]'>Appointment</span>
         </Link>
         <Link
           href={'/assessments'}
@@ -68,7 +78,8 @@ export default function NavigationBar({
           )}
         >
           <LiteratureIcon
-            fill={pathname?.startsWith('/assessments') ? '#13C2C2' : '#ADB6C7'}
+            fill={pathname?.startsWith('/assessments') ? '#13C2C2' : '#161C26'}
+            strokeWidth={pathname?.startsWith('/assessments') ? 1.2 : 1}
           />
 
           <span className='mt-[5px] text-[12px]'>Assessments</span>
@@ -80,8 +91,9 @@ export default function NavigationBar({
             pathname?.startsWith('/exercise') ? activePathStyle : pathStyle
           )}
         >
-          <ExceriseIcon
-            fill={pathname?.startsWith('/exercise') ? '#13C2C2' : '#ADB6C7'}
+          <ExerciseIcon
+            fill={pathname?.startsWith('/exercise') ? '#13C2C2' : '#161C26'}
+            strokeWidth={pathname?.startsWith('/exercise') ? 1.2 : 1}
           />
 
           <span className='mt-[5px] text-[12px]'>Exercise</span>
@@ -93,7 +105,10 @@ export default function NavigationBar({
             pathname?.startsWith('/profile') ? activePathStyle : pathStyle
           )}
         >
-          <UserIcon fill={pathname === '/profile' ? '#13C2C2' : '#ADB6C7'} />
+          <UserIcon
+            fill={pathname?.startsWith('/profile') ? '#13C2C2' : '#161C26'}
+            strokeWidth={pathname?.startsWith('/profile') ? 1.2 : 1}
+          />
           <span className='mt-[5px] text-[12px]'>Profile</span>
         </Link>
       </div>

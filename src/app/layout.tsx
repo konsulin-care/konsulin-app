@@ -1,5 +1,6 @@
 import QueryProvider from '@/components/general/query-provider';
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
+import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
 import { SuperTokensProviders } from '@/components/supertokensProvider';
 import { AuthProvider } from '@/context/auth/authContext';
 import { BookingProvider } from '@/context/booking/bookingContext';
@@ -144,6 +145,7 @@ export default async function RootLayout({
                     <RouteResponseCleaner />
                     <NextTopLoader showSpinner={false} color='#13c2c2' />
                     <ToastContainer {...toastConfig} />
+                    <ProfileCompletenessModal />
                     <div className='flex min-h-screen flex-col'>
                       <div id='modal' />
                       <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>

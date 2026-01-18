@@ -10,6 +10,7 @@ export interface IStateUserInfo {
   email?: string;
   profile_picture?: string;
   fhirId?: string;
+  profile_complete?: boolean;
 }
 
 export type IActionAuth = IActionLogin | IActionLogout;

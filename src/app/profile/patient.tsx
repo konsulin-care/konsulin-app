@@ -6,6 +6,7 @@ import Settings from '@/components/profile/settings';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Skeleton } from '@/components/ui/skeleton';
 import { medalLists, settingMenus } from '@/constants/profile';
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { getProfileById } from '@/services/profile';
@@ -158,7 +159,7 @@ export default function Patient({ fhirId }: Props) {
           buttonText='Edit Profile'
           details={profileDetail}
           onEdit={() => router.push('profile/edit-profile')}
-          role='patient'
+          role={Roles.Patient}
         />
       )}
 

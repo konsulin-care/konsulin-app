@@ -8,6 +8,7 @@ import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import NavigationBar from '@/components/navigation-bar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
 import { useQuestionnaire } from '@/services/api/assessment';
@@ -29,8 +30,12 @@ export default function Questionnaire({ params }) {
     useTodaySessions();
 
   const role = authState?.userInfo?.role_name;
-  const isPractitioner = role === 'practitioner';
+  const isPractitioner = role === Roles.Practitioner;
   const practitionerId = isPractitioner ? authState?.userInfo?.fhirId : null;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [params.assessmentsId]);
 
   useEffect(() => {
     if (!todaySessions || todaySessions.length === 0) return;

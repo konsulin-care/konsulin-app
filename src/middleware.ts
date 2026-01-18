@@ -1,27 +1,44 @@
 import { Roles } from '@/constants/roles';
 import { type NextRequest } from 'next/server';
 
+interface AuthCookie {
+  userId?: string;
+  role_name?: string;
+  email?: string;
+  fullname?: string;
+  profile_picture?: string;
+  fhirId?: string;
+  profile_complete?: boolean;
+}
+
 const patientAndClinicianRoutes = [
   '/message',
   '/notification',
-  '/profile',
   '/journal',
-  '/record'
+  '/record',
+  '/profile',
+  /^\/profile(\/.*)?$/
 ];
-const patientRoutes = [];
-// const patientRoutes = [/^\/exercise\/.*/]
+
 const clinicianRoutes = ['/assessments/soap'];
 
 export function middleware(request: NextRequest) {
-  /**
-   * use this for callback redirect
-   * const url = request.nextUrl.clone
-   *
-   */
+  const authCookie = request.cookies.get('auth')?.value;
+  let auth: AuthCookie = {};
 
-  //
+  // Try to parse cookie, but handle errors gracefully
+  try {
+    auth = authCookie ? JSON.parse(authCookie) : {};
+  } catch (e) {
+    console.error('Failed to parse auth cookie:');
+    auth = {};
+  }
 
-  const auth = JSON.parse(request.cookies.get('auth')?.value || '{}');
+  // Check for SuperTokens session tokens as fallback
+  const hasSuperTokensSession =
+    request.cookies.get('sAccessToken')?.value ||
+    request.cookies.get('sRefreshToken')?.value;
+
   const { pathname } = request.nextUrl;
 
   const routeMatches = (routes: (string | RegExp)[], path: string) =>
@@ -29,37 +46,33 @@ export function middleware(request: NextRequest) {
       route instanceof RegExp ? route.test(path) : route === path
     );
 
-  // unauthenticated user can't access private routes
   if (
-    Object.keys(auth).length === 0 &&
-    routeMatches(
-      [...patientRoutes, clinicianRoutes, ...patientAndClinicianRoutes],
-      pathname
-    )
+    !auth?.userId &&
+    routeMatches([...patientAndClinicianRoutes, ...clinicianRoutes], pathname)
   ) {
-    // return Response.redirect(new URL('/register?role=patient', request.url))
+    // If no auth cookie but SuperTokens session exists, allow access
+    // Let the client-side auth context handle the full authentication
+    if (hasSuperTokensSession) {
+      return;
+    }
+
     const url = new URL('/auth', request.url);
     url.searchParams.set('returnUrl', pathname + request.nextUrl.search);
     return Response.redirect(url);
   }
 
-  // if (auth.token && routeMatches(['/login', '/register'], pathname)) {
-  //   return Response.redirect(new URL('/', request.url))
-  // }
-
-  // authenticated user can't access login and register page
-  if (auth.userId && routeMatches(['/auth'], pathname)) {
+  /**
+   * 2️⃣ Authenticated users → cannot access /auth
+   */
+  if (auth?.userId && routeMatches(['/auth'], pathname)) {
     return Response.redirect(new URL('/', request.url));
   }
 
-  // authorization base on role
   if (
-    (auth.role_name !== Roles.Patient &&
-      routeMatches(patientRoutes, pathname)) || // patient only
     (auth.role_name !== Roles.Practitioner &&
-      routeMatches(clinicianRoutes, pathname)) || // cliniciant only
+      routeMatches(clinicianRoutes, pathname)) ||
     ((!auth.role_name || auth.role_name === 'guest') &&
-      routeMatches(patientAndClinicianRoutes, pathname)) // patient and cliniciant
+      routeMatches(patientAndClinicianRoutes, pathname))
   ) {
     return Response.redirect(new URL('/unauthorized', request.url));
   }

@@ -97,8 +97,8 @@ export default function AppChartClient({
   /* blur if it's a guest or the patient doesn't have any OCEAN records */
   const shouldBlur = isBlur || !hasRealData;
   const buttonText = isGuest
-    ? 'Silakan Daftar atau Masuk untuk Mengakses Fitur Ini'
-    : 'Isi Assessment Big Five Inventory';
+    ? 'Login to Access This Feature'
+    : 'Complete Big Five Inventory Assessment';
 
   const configPie: any = {
     data: chartData,
@@ -135,7 +135,7 @@ export default function AppChartClient({
     <div className='relative flex flex-col items-center justify-center p-4'>
       <div className='p-[16px]s h-[250px] w-full rounded-lg bg-[#F9F9F9] p-4'>
         <div className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
-          What’s the turbulence on your mind?
+          Five dimensions that make you unique
         </div>
         <div
           className={cn('w-full', {

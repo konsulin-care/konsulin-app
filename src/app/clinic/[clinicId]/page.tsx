@@ -219,7 +219,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
             <span className='font-bold'>Konsulin</span>
           </div>
           <div className='mt-2 flex flex-col'>
-            <span>Alamat</span>
+            <span>Address</span>
             <span className='font-bold'>
               {clinic && mergeAddress(clinic.resource as IOrganizationResource)}
             </span>
@@ -231,7 +231,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
             value={keyword}
             onChange={event => setKeyword(event.target.value)}
             placeholder='Search'
-            className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
+            className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
             startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
           />
           <ClinicFilter
@@ -247,14 +247,14 @@ export default function DetailClinic({ params }: IDetailClinic) {
 
         <div className='flex gap-4'>
           {practitionerFilter.start_date && practitionerFilter.end_date && (
-            <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+            <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
               {format(practitionerFilter.start_date, 'dd MMM yy') +
                 ' - ' +
                 format(practitionerFilter.end_date, 'dd MMM yy')}
             </Badge>
           )}
           {practitionerFilter.start_time && practitionerFilter.end_time && (
-            <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+            <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
               {practitionerFilter.start_time +
                 ' - ' +
                 practitionerFilter.end_time}
@@ -300,7 +300,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
                       </span>
                     </Badge>
                   </div>
-                  <div className='mt-2 text-center font-bold text-primary'>
+                  <div className='text-primary mt-2 text-center font-bold'>
                     {displayName}
                   </div>
                   <div className='mt-2 flex flex-wrap justify-center gap-1'>
@@ -322,10 +322,10 @@ export default function DetailClinic({ params }: IDetailClinic) {
                     className='mt-auto w-full'
                   >
                     <Button
-                      className='mt-2 w-full rounded-[32px] bg-secondary py-2 font-normal text-white'
+                      className='btn-soft-gray mt-2 w-full rounded-[32px] py-2 font-normal'
                       onClick={() => handleSelectPractitioner(practitioner)}
                     >
-                      Check
+                      <b>View Practice Information</b>
                     </Button>
                   </Link>
                 </div>
