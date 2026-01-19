@@ -1,0 +1,153 @@
+/* Override styles for react-international-phone to match other form fields */
+
+/* Remove double border by overriding the container styles */
+.react-international-phone-input-container {
+  border: none !important;
+  padding: 0 !important;
+  width: 100% !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Style the main input wrapper */
+.react-international-phone-input-container > div {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+/* Style the inner input area to match other form fields */
+.react-international-phone-input-container .react-international-phone-input {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+/* Style the country selector dropdown - make it wrap tightly */
+.react-international-phone-input-container
+  .react-international-phone-country-selector {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+  width: auto !important;
+  min-width: unset !important;
+  max-width: unset !important;
+}
+
+/* Style the phone input field */
+.react-international-phone-input-container
+  .react-international-phone-input-field {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  flex: 1 !important;
+  font-size: 14px !important;
+  font-weight: normal !important;
+  color: #2c2f35 !important;
+}
+
+/* Style the country selector button - wrap tightly */
+.react-international-phone-input-container
+  .react-international-phone-country-selector-button {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: #2c2f35 !important;
+  width: auto !important;
+  min-width: unset !important;
+  flex-shrink: 0 !important;
+}
+
+/* Ensure proper spacing and alignment */
+.react-international-phone-input-container
+  .react-international-phone-country-selector-button:hover {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Accessibility: Restore visible focus indicators */
+.react-international-phone-input-container:focus-within {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.react-international-phone-input-field:focus {
+  outline: 2px solid #13c2c2 !important;
+  outline-offset: 2px !important;
+  border-radius: 4px !important;
+}
+
+.react-international-phone-country-selector-button:focus-visible {
+  outline: 2px solid #13c2c2 !important;
+  outline-offset: 1px !important;
+  border-radius: 2px !important;
+}
+
+/* Make sure the entire component integrates seamlessly */
+.react-international-phone {
+  width: 100% !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Additional selectors to handle different library versions */
+.react-international-phone .react-international-phone-input-container,
+.react-international-phone-input-container {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure flex behavior for the internal container */
+.react-international-phone-input-container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+}
+
+/* Remove any default spacing between flex items */
+.react-international-phone-input-container
+  .react-international-phone-country-selector-button
+  + .react-international-phone-input-field {
+  margin-left: 0 !important;
+}
+
+/* Reduce spacing in country dropdown */
+.react-international-phone-input-container
+  .react-international-phone-country-selector-list {
+  margin: 0 !important;
+  padding: 4px !important;
+}
+
+/* Make country flag and code appear compact */
+.react-international-phone-input-container
+  .react-international-phone-country-selector-button
+  .react-international-phone-flag {
+  margin-right: 2px !important;
+}
+
+.react-international-phone-input-container
+  .react-international-phone-country-selector-button
+  .react-international-phone-dial-code {
+  font-size: 14px !important;
+  font-weight: normal !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .react-international-phone-input-container {
+    min-width: unset !important;
+  }
+}

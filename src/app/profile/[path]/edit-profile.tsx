@@ -740,12 +740,21 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                     : 'Date of Birth'}
                 </div>
               </div>
-              <div className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-2'>
+              <div className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'>
                 <PhoneInput
                   defaultCountry='id'
                   value={updateUser.phone}
                   onChange={handlePhoneChange}
                   placeholder='WhatsApp Number'
+                  className='flex-1'
+                  inputStyle={{
+                    width: '100%',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '14px',
+                    fontWeight: 'normal',
+                    color: '#2C2F35'
+                  }}
                 />
               </div>
               {errors.phone && (
