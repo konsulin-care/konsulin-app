@@ -29,17 +29,16 @@
   padding: 0 !important;
 }
 
-/* Style the country selector dropdown */
+/* Style the country selector dropdown - reduce spacing */
 .react-international-phone-input-container
   .react-international-phone-country-selector {
   border: none !important;
   background: transparent !important;
   padding: 0 !important;
-  margin: 0 !important;
-  margin-right: 8px !important;
+  margin: 0 4px 0 0 !important;
 }
 
-/* Style the phone input field */
+/* Style the phone input field - fix gap issue */
 .react-international-phone-input-container
   .react-international-phone-input-field {
   border: none !important;
@@ -53,7 +52,7 @@
   color: #2c2f35 !important;
 }
 
-/* Style the country selector button */
+/* Style the country selector button - tighter spacing */
 .react-international-phone-input-container
   .react-international-phone-country-selector-button {
   border: none !important;
@@ -89,6 +88,20 @@
 .react-international-phone-input-container {
   border: none !important;
   box-shadow: none !important;
+}
+
+/* Fix gap between country code and phone number */
+.react-international-phone-input-container
+  .react-international-phone-country-selector-button
+  + .react-international-phone-input-field {
+  margin-left: 0 !important;
+}
+
+/* Reduce spacing in country dropdown */
+.react-international-phone-input-container
+  .react-international-phone-country-selector-list {
+  margin: 0 !important;
+  padding: 4px !important;
 }
 
 /* Responsive adjustments */
