@@ -740,12 +740,19 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                     : 'Date of Birth'}
                 </div>
               </div>
-              <div className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-2'>
+              <div className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'>
+                <Image
+                  src={'/icons/whatsapp.png'}
+                  alt='whatsapp-icon'
+                  width={24}
+                  height={24}
+                />
                 <PhoneInput
                   defaultCountry='id'
                   value={updateUser.phone}
                   onChange={handlePhoneChange}
                   placeholder='WhatsApp Number'
+                  className='flex-1'
                 />
               </div>
               {errors.phone && (

@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './phone-input.css';
 
 * {
   border-color: var(--border);
