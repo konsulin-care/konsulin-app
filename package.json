@@ -10,7 +10,9 @@
     "lint": "next lint",
     "format": "prettier --check . --write \"src/**/*{js,ts,css,scss,json,tsx,jsx,mdx,md}\" \"*.{js,ts,tsx,jsx,mdx,md}\"",
     "prepare": "husky",
-    "lint-staged": "lint-staged"
+    "lint-staged": "lint-staged",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@aehrc/smart-forms-renderer": "^0.45.1",
@@ -95,6 +97,7 @@
     "@types/node": "^25",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@vitejs/plugin-react": "^4.7.0",
     "eslint": "^9",
     "eslint-config-next": "^15.5.0",
     "eslint-define-config": "^2.1.0",
