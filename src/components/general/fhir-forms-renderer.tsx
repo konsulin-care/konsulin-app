@@ -14,6 +14,7 @@ import {
   DrawerTitle
 } from '@/components/ui/drawer';
 import { getFromLocalStorage } from '@/lib/utils';
+import { addGuestAssessmentResponseId } from '@/utils/guest-assessment-storage';
 import {
   BaseRenderer,
   getResponse,
@@ -25,7 +26,7 @@ import {
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'react-toastify';
 
 interface FhirFormsRendererProps {
@@ -54,6 +55,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const responseChangeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   const queryClient = useRendererQueryClient();
   const isBuilding = useBuildForm(questionnaire, response);
@@ -72,9 +76,21 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     }
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (responseChangeTimeoutRef.current) {
+        clearTimeout(responseChangeTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // add some delay to fetch the latest response after input settles
   const handleResponseChange = () => {
-    setTimeout(() => {
+    if (responseChangeTimeoutRef.current) {
+      clearTimeout(responseChangeTimeoutRef.current);
+    }
+
+    responseChangeTimeoutRef.current = setTimeout(() => {
       const questionnaireResponse = getResponse();
       localStorage.setItem(
         `response_${questionnaire.id}`,
@@ -127,8 +143,16 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
     setIsSubmitting(true);
 
+    if (responseChangeTimeoutRef.current) {
+      clearTimeout(responseChangeTimeoutRef.current);
+      responseChangeTimeoutRef.current = null;
+    }
+
     const questionnaireResponse = getResponse();
-    if (!questionnaireResponse) return;
+    if (!questionnaireResponse) {
+      setIsSubmitting(false);
+      return;
+    }
 
     let author;
     let subject;
@@ -165,22 +189,17 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     );
 
     try {
-      if (!interpretationItem) {
-        const result = await submitQuestionnaire({
-          ...questionnaireResponse,
-          author,
-          subject
-        });
-
-        handleNavigate(buttonLabel, result.id);
-        return;
-      }
-
       const submitResult = await submitQuestionnaire({
         ...questionnaireResponse,
         author,
         subject
       });
+
+      if (!submitResult?.id) {
+        toast.error('Missing response id');
+        setIsSubmitting(false);
+        return;
+      }
 
       // Authenticated users only: trigger webhook AFTER QR is saved
       if (
@@ -208,12 +227,14 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         }
       }
 
-      /* save questionnaire response to localStorage for guest (if not closing) */
-      if (buttonLabel !== 'close' && !isAuthenticated) {
-        localStorage.setItem(
-          `response_${questionnaire.id}`,
-          JSON.stringify({ ...questionnaireResponse, id: submitResult.id })
-        );
+      /* Keep track of completed guest responses so they can be linked to a Patient after login */
+      if (buttonLabel !== 'close' && !isAuthenticated && submitResult?.id) {
+        addGuestAssessmentResponseId(submitResult.id);
+        try {
+          localStorage.removeItem(`response_${questionnaire.id}`);
+        } catch {
+          // ignore
+        }
       }
 
       handleNavigate(buttonLabel, submitResult.id);

@@ -1,8 +1,13 @@
 'use client';
 
 import { Roles } from '@/constants/roles';
+import { getAPI } from '@/services/api';
 import { restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
+import {
+  getGuestAssessmentResponseIds,
+  setGuestAssessmentResponseIds
+} from '@/utils/guest-assessment-storage';
 import { mergeNames } from '@/utils/helper';
 import { getCookie } from 'cookies-next';
 import { Patient, Practitioner } from 'fhir/r4';
@@ -12,6 +17,7 @@ import React, {
   useContext,
   useEffect,
   useReducer,
+  useRef,
   useState
 } from 'react';
 import { SessionContextUpdate } from 'supertokens-auth-react/lib/build/recipe/session/types';
@@ -36,6 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [state, dispatch] = useReducer(reducer, initialState);
   const session = useSessionContext() as SessionContextUpdate;
+  const hasLinkedGuestAssessmentsRef = useRef(false);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -132,6 +139,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     fetchSession();
   }, [session.doesSessionExist]);
+
+  useEffect(() => {
+    if (!state.isAuthenticated) {
+      hasLinkedGuestAssessmentsRef.current = false;
+      return;
+    }
+
+    if (hasLinkedGuestAssessmentsRef.current) return;
+
+    const roleName = state.userInfo?.role_name;
+    const isPatientRole = roleName === Roles.Patient || roleName === 'patient';
+    if (!isPatientRole) return;
+
+    const patientId =
+      (state.userInfo as any)?.fhirId ?? (state.userInfo as any)?.id ?? '';
+    if (!patientId) return;
+
+    const responseIds = getGuestAssessmentResponseIds();
+    if (responseIds.length === 0) {
+      hasLinkedGuestAssessmentsRef.current = true;
+      return;
+    }
+
+    hasLinkedGuestAssessmentsRef.current = true;
+
+    const linkResponses = async () => {
+      try {
+        const API = await getAPI();
+
+        const results = await Promise.allSettled(
+          responseIds.map(async responseId => {
+            const { data: existing } = await API.get(
+              `/fhir/QuestionnaireResponse/${responseId}`
+            );
+
+            const updated = {
+              ...existing,
+              author: { reference: `Patient/${patientId}` },
+              subject: { reference: `Patient/${patientId}` }
+            };
+
+            await API.put(`/fhir/QuestionnaireResponse/${responseId}`, updated);
+          })
+        );
+
+        const failedIds = results.flatMap((result, idx) =>
+          result.status === 'rejected' ? [responseIds[idx]] : []
+        );
+
+        setGuestAssessmentResponseIds(failedIds);
+      } catch (error) {
+        console.error('Failed to link guest assessment responses:', error);
+      }
+    };
+
+    linkResponses();
+  }, [
+    state.isAuthenticated,
+    state.userInfo?.fhirId,
+    state.userInfo?.role_name
+  ]);
 
   return (
     <AuthContext.Provider value={{ isLoading, state, dispatch }}>
