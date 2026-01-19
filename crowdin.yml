@@ -1,0 +1,3 @@
+files:
+  - source: /src/**/*.ts*
+    translation: /translation/%two_letters_code%/%original_file_name%
