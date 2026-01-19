@@ -742,8 +742,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
               </div>
               <div className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'>
                 <svg
-                  width='24'
-                  height='24'
+                  width='20'
+                  height='16'
                   viewBox='0 0 24 24'
                   fill='none'
                   xmlns='http://www.w3.org/2000/svg'
@@ -762,7 +762,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                   value={updateUser.phone}
                   onChange={handlePhoneChange}
                   placeholder='WhatsApp Number'
-                  className='flex-1'
+                  className='phone-input-wrapper flex-1'
                   inputStyle={{
                     width: '100%',
                     border: 'none',
