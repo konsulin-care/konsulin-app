@@ -673,7 +673,13 @@ export default function Assessment() {
                   <ScrollBar orientation='horizontal' />
                 </ScrollArea>
               </div>
-            ) : null}
+            ) : (
+              <EmptyState
+                className='mt-4 mb-2 px-4'
+                title='No ongoing research'
+                subtitle='There are currently no research studies available. Please check back later.'
+              />
+            )}
 
             <div className='bg-[#F9F9F9] p-4'>
               <div className='text-muted mb-2 text-[14px] font-bold'>

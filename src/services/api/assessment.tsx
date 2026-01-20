@@ -90,18 +90,6 @@ export const useOngoingResearch = () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       const API = await getAPI();
 
-      const hasResearch = (payload: any) => {
-        const entries = Array.isArray(payload?.entry)
-          ? payload.entry
-          : Array.isArray(payload)
-            ? payload
-            : [];
-        return entries.some(
-          (entry: any) =>
-            (entry?.resource ?? entry)?.resourceType === 'ResearchStudy'
-        );
-      };
-
       const response = await API.get(
         `/fhir/ResearchStudy?date=ge${today}&status=active&_include=ResearchStudy:protocol`
       );
