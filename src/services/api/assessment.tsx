@@ -90,29 +90,12 @@ export const useOngoingResearch = () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       const API = await getAPI();
 
-      const hasResearch = (payload: any) => {
-        const entries = Array.isArray(payload?.entry)
-          ? payload.entry
-          : Array.isArray(payload)
-            ? payload
-            : [];
-        return entries.some(
-          (entry: any) =>
-            (entry?.resource ?? entry)?.resourceType === 'ResearchStudy'
-        );
-      };
-
       const response = await API.get(
         `/fhir/ResearchStudy?date=ge${today}&status=active&_include=ResearchStudy:protocol`
       );
 
-      if (!hasResearch(response.data)) {
-        const fallbackResponse = await API.get(
-          `/fhir/ResearchStudy?status=active&_include=ResearchStudy:protocol`
-        );
-        return fallbackResponse.data;
-      }
-
+      // Return the response as-is - do not fall back to previous survey periods
+      // This ensures only current and future research studies are displayed
       return response.data;
     },
     select: data => {
