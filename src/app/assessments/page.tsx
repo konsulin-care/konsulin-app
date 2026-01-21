@@ -589,96 +589,99 @@ export default function Assessment() {
               <div className='text-muted mt-4 mb-2 px-4'>
                 <CardLoader item={2} />
               </div>
-            ) : filteredResearch(research).length > 0 ? (
-              <div className='text-muted mt-4 mb-2 px-4'>
-                <div className='text-[14px] font-bold'>On-going Research</div>
-                <div className='text-[10px]'>
-                  Your heart is valuable. Please participate in our ongoing
-                  study to help us help you more. We will send you the result if
-                  you need to know.
-                </div>
-                <ScrollArea className='mt-2 w-full whitespace-nowrap'>
-                  <div className='flex w-max space-x-4 pb-4'>
-                    {filteredResearch(research).map(
-                      (item: OngoingResearchItem) => {
-                        const questionnaireId = item.questionnaireIds?.[0];
-                        return (
-                          <div
-                            key={item.resource.id}
-                            className='card flex min-h-[168px] max-w-[280px] cursor-default flex-col gap-2 bg-white'
-                          >
-                            <div className='flex flex-1 gap-2'>
-                              <Image
-                                className='h-[64px] w-[64px] rounded-[8px] object-cover'
-                                src={'/images/clinic.jpg'}
-                                // NOTE: replace with this src later on
-                                // src={item.resource.relatedArtifact[0].resource}
-                                height={64}
-                                width={64}
-                                alt='clinic'
-                              />
-                              <div className='flex flex-col text-[12px]'>
-                                <div className='font-bold text-wrap text-black'>
-                                  {item.resource.title}
-                                </div>
-                                <div
-                                  className='overflow-hidden leading-4 text-wrap'
-                                  style={{
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 3,
-                                    WebkitBoxOrient: 'vertical'
-                                  }}
-                                >
-                                  {item.resource.description?.length > 100
-                                    ? `${item.resource.description.slice(0, 100)}...`
-                                    : item.resource.description}
-                                </div>
-                              </div>
-                            </div>
-                            <hr />
-                            <div className='mt-auto flex items-center justify-between'>
-                              <div className='mr-4'>
-                                <div className='text-[10px]'>
-                                  Research period:
-                                </div>
-                                <div className='text-[10px] font-bold text-black'>
-                                  {item.resource.period &&
-                                    formatDateRange(
-                                      item.resource.period.start,
-                                      item.resource.period.end
-                                    )}
-                                </div>
-                              </div>
-
-                              {questionnaireId && (
-                                <div
-                                  className='bg-secondary cursor-pointer rounded-[32px] px-4 py-2 text-sm font-bold text-white'
-                                  onClick={() => {
-                                    handleResearchClick(
-                                      item.resource,
-                                      questionnaireId
-                                    );
-                                  }}
-                                >
-                                  Participate
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      }
-                    )}
-                  </div>
-
-                  <ScrollBar orientation='horizontal' />
-                </ScrollArea>
-              </div>
             ) : (
-              <EmptyState
-                className='mt-4 mb-2 px-4'
-                title='No ongoing research'
-                subtitle='There are currently no research studies available. Please check back later.'
-              />
+              <div className='text-muted mt-4 mb-2 px-4'>
+                <div className='text-[14px] font-bold'>Ongoing Research</div>
+                {filteredResearch(research).length > 0 ? (
+                  <>
+                    <div className='text-[10px]'>
+                      Your heart is valuable. Please participate in our ongoing
+                      study to help us help you more. We will send you the
+                      result if you need to know.
+                    </div>
+                    <ScrollArea className='mt-2 w-full whitespace-nowrap'>
+                      <div className='flex w-max space-x-4 pb-4'>
+                        {filteredResearch(research).map(
+                          (item: OngoingResearchItem) => {
+                            const questionnaireId = item.questionnaireIds?.[0];
+                            return (
+                              <div
+                                key={item.resource.id}
+                                className='card flex min-h-[168px] max-w-[280px] cursor-default flex-col gap-2 bg-white'
+                              >
+                                <div className='flex flex-1 gap-2'>
+                                  <Image
+                                    className='h-[64px] w-[64px] rounded-[8px] object-cover'
+                                    src={'/images/clinic.jpg'}
+                                    // NOTE: replace with this src later on
+                                    // src={item.resource.relatedArtifact[0].resource}
+                                    height={64}
+                                    width={64}
+                                    alt='clinic'
+                                  />
+                                  <div className='flex flex-col text-[12px]'>
+                                    <div className='font-bold text-wrap text-black'>
+                                      {item.resource.title}
+                                    </div>
+                                    <div
+                                      className='overflow-hidden leading-4 text-wrap'
+                                      style={{
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 3,
+                                        WebkitBoxOrient: 'vertical'
+                                      }}
+                                    >
+                                      {item.resource.description?.length > 100
+                                        ? `${item.resource.description.slice(0, 100)}...`
+                                        : item.resource.description}
+                                    </div>
+                                  </div>
+                                </div>
+                                <hr />
+                                <div className='mt-auto flex items-center justify-between'>
+                                  <div className='mr-4'>
+                                    <div className='text-[10px]'>
+                                      Research period:
+                                    </div>
+                                    <div className='text-[10px] font-bold text-black'>
+                                      {item.resource.period &&
+                                        formatDateRange(
+                                          item.resource.period.start,
+                                          item.resource.period.end
+                                        )}
+                                    </div>
+                                  </div>
+
+                                  {questionnaireId && (
+                                    <div
+                                      className='bg-secondary cursor-pointer rounded-[32px] px-4 py-2 text-sm font-bold text-white'
+                                      onClick={() => {
+                                        handleResearchClick(
+                                          item.resource,
+                                          questionnaireId
+                                        );
+                                      }}
+                                    >
+                                      Participate
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+
+                      <ScrollBar orientation='horizontal' />
+                    </ScrollArea>
+                  </>
+                ) : (
+                  <EmptyState
+                    subtitle='There are currently no research studies available. Please check back later.'
+                    title='No ongoing research'
+                  />
+                )}
+              </div>
             )}
 
             <div className='bg-[#F9F9F9] p-4'>
