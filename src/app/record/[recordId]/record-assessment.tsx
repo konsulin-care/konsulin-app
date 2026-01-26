@@ -316,9 +316,9 @@ export default function RecordAssessment({ recordId, title }: Props) {
       </div>
 
       <div className='text-m !mt-auto flex flex-col gap-3'>
-        {!authState.isAuthenticated && (
+        {!authState.isAuthenticated ? (
           <Button
-            className='bg-softGray h-full w-full rounded-xl p-4 text-black'
+            className='bg-secondary h-full w-full rounded-xl p-4 text-white'
             onClick={() => {
               saveIntent('assessmentResult', {
                 path: window.location.pathname + window.location.search,
@@ -327,13 +327,13 @@ export default function RecordAssessment({ recordId, title }: Props) {
               router.push('/auth');
             }}
           >
-            Login/Register
+            Save Result
+          </Button>
+        ) : (
+          <Button className='bg-secondary h-full w-full rounded-xl p-4 text-white'>
+            Request Analysis
           </Button>
         )}
-
-        <Button className='bg-secondary h-full w-full rounded-xl p-4 text-white'>
-          Request Analysis
-        </Button>
       </div>
     </>
   );
