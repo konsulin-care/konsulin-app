@@ -4,9 +4,11 @@ import { createProfile, getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { Patient, Practitioner } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
+import React from 'react';
 import { SuperTokensConfig } from 'supertokens-auth-react/lib/build/types';
 import Passwordless from 'supertokens-auth-react/recipe/passwordless';
 import Session from 'supertokens-auth-react/recipe/session';
+import ThirdParty from 'supertokens-auth-react/recipe/thirdparty';
 import { getClaimValue } from 'supertokens-web-js/recipe/session';
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 import { getAppInfo } from './appInfo';
@@ -37,6 +39,20 @@ export const frontendConfig = (): SuperTokensConfig => {
             background-color: #0ABDC3;
             border: 0px;
         }
+        /* Make the "provider" buttons (our Email / WhatsApp choices) visually distinct */
+        [data-supertokens~=providerContainer] {
+            padding-top: 12px;
+            padding-bottom: 12px;
+        }
+        [data-supertokens~=providerButton] {
+            border-width: 2px !important;
+            border-style: solid !important;
+            border-color: rgba(19, 194, 194, 0.55) !important;
+            background-color: #ffffff !important;
+        }
+        [data-supertokens~=providerButton]:hover {
+            border-color: rgba(19, 194, 194, 0.9) !important;
+        }
         [data-supertokens~=headerTitle] {
             color: #0ABDC3;
         }
@@ -50,6 +66,34 @@ export const frontendConfig = (): SuperTokensConfig => {
     `,
     recipeList: [
       Session.init(),
+      ThirdParty.init({
+        signInAndUpFeature: {
+          // We only use this to show a prebuilt "provider picker" button for WhatsApp on /auth.
+          // The click behaviour is handled in the /auth page override (no OAuth flow).
+          providers: [
+            {
+              id: 'email',
+              name: 'Email',
+              logo: React.createElement('img', {
+                src: '/icons/email.svg',
+                alt: 'email',
+                width: 18,
+                height: 18
+              })
+            },
+            {
+              id: 'whatsapp',
+              name: 'WhatsApp',
+              logo: React.createElement('img', {
+                src: '/icons/whatsapp.png',
+                alt: 'whatsapp',
+                width: 18,
+                height: 18
+              })
+            }
+          ]
+        }
+      }),
       Passwordless.init({
         contactMethod: 'EMAIL',
         onHandleEvent: async context => {
