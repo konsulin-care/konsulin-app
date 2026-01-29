@@ -100,83 +100,17 @@ const App = () => {
             }
 
             if (intent.kind === 'assessmentResult') {
-              const { responseId, path } = intent.payload;
-              if (
-                !authState.userInfo?.role_name ||
-                !authState.userInfo?.fhirId
-              ) {
-                console.warn(
-                  'User info incomplete, deferring assessment intent.'
-                );
-                return;
-              }
-              const authorTypeRaw = authState.userInfo.role_name;
-              const roleMap: Record<string, string> = {
-                clinician: 'Practitioner',
-                patient: 'Patient'
-              };
-              const authorType =
-                roleMap[authorTypeRaw] ??
-                (authorTypeRaw
-                  ? authorTypeRaw.charAt(0).toUpperCase() +
-                    authorTypeRaw.slice(1)
-                  : authorTypeRaw);
+              const { path } = intent.payload;
               const api = await getAPI();
 
-              const { data: existingResponse } = await api.get(
-                `/fhir/QuestionnaireResponse/${responseId}`,
-                { signal: abortController.signal }
-              );
-
-              const authorRef = `${authorType}/${authState.userInfo.fhirId}`;
-
-              const updatedResponse = {
-                ...existingResponse,
-                author: { reference: authorRef },
-                subject: existingResponse.subject ?? {
-                  reference: `${authorType}/${authState.userInfo.fhirId}`
-                }
-              };
-
-              await api.put(
-                `/fhir/QuestionnaireResponse/${responseId}`,
-                updatedResponse,
-                { signal: abortController.signal }
-              );
+              await api.patch('/api/v1/auth/anonymous/claim', null, {
+                signal: abortController.signal
+              });
 
               if (isMounted) {
-                if (
-                  typeof existingResponse.questionnaire === 'string' &&
-                  existingResponse.questionnaire
-                ) {
-                  const segments = existingResponse.questionnaire
-                    .split('/')
-                    .filter(Boolean);
-                  if (segments.length > 0) {
-                    const legacyKey = `response_${segments[segments.length - 1]}`;
-                    try {
-                      localStorage.removeItem(legacyKey);
-                    } catch (error) {
-                      console.error(
-                        'Failed to remove legacy response key:',
-                        error
-                      );
-                    }
-                  }
-                }
-
-                try {
-                  localStorage.removeItem('skip-response-cleanup');
-                } catch (error) {
-                  console.error(
-                    'Failed to remove skip-response-cleanup flag:',
-                    error
-                  );
-                }
                 toast.success(
                   'Your assessment result is now linked to your account.'
                 );
-
                 router.push(path);
                 clearIntent();
                 return;
