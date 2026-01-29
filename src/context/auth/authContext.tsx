@@ -1,6 +1,7 @@
 'use client';
 
 import { Roles } from '@/constants/roles';
+import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
@@ -42,6 +43,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
 
       if (!session.doesSessionExist) {
+        try {
+          await ensureAnonymousSession();
+        } catch (error) {
+          console.error('Failed to initialize anonymous session:', error);
+        }
         setIsLoading(false);
         return;
       }

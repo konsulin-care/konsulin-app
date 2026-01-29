@@ -8,6 +8,10 @@ import {
   QuestionnaireResponseItem
 } from 'fhir/r4';
 import { useMemo } from 'react';
+import {
+  buildAnonymousIdentifier,
+  ensureAnonymousSession
+} from '../anonymous-session';
 import { getAPI } from '../api';
 
 function parseCanonicalOrReference(
@@ -226,9 +230,17 @@ export const useSubmitQuestionnaire = (
       }
 
       const API = await getAPI();
+
+      let identifier = questionnaireResponse.identifier;
+      if (!isAuthenticated) {
+        const guestId = await ensureAnonymousSession();
+        identifier = buildAnonymousIdentifier(guestId);
+      }
+
       const response = await API.post('/fhir/QuestionnaireResponse', {
         author,
         item,
+        identifier,
         resourceType,
         questionnaire: `Questionnaire/${questionnaireId}`,
         status: 'completed',
@@ -256,10 +268,18 @@ export const useUpdateSubmitQuestionnaire = (
       }
 
       const API = await getAPI();
+
+      let identifier = questionnaireResponse.identifier;
+      if (!isAuthenticated) {
+        const guestId = await ensureAnonymousSession();
+        identifier = buildAnonymousIdentifier(guestId);
+      }
+
       const response = await API.put(`/fhir/QuestionnaireResponse/${id}`, {
         id,
         author,
         item,
+        identifier,
         resourceType,
         questionnaire: `Questionnaire/${questionnaireId}`,
         status: 'completed',
