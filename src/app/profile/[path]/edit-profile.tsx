@@ -114,6 +114,21 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string>('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isPhoneBasedUser, setIsPhoneBasedUser] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+      const email = auth?.email || '';
+      const phoneNumber = auth?.phoneNumber || '';
+      // User is phone-based if phoneNumber has value and email is empty
+      setIsPhoneBasedUser(!!phoneNumber && !email);
+    } catch (error) {
+      console.error('Failed to parse auth cookie:', error);
+      // Default to email-based user if parsing fails
+      setIsPhoneBasedUser(false);
+    }
+  }, []);
 
   const { isLoading: isProfileLoading } = useQuery<Patient | Practitioner>({
     queryKey: ['profile-data', fhirId],
@@ -196,6 +211,14 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     let error = '';
     const usernameRegex = /^[a-zA-Z ]+$/;
 
+    // Skip validation for email/phone if user type doesn't allow editing them
+    if (name === 'email' && !isPhoneBasedUser) {
+      return ''; // Email-based users can't edit email, so no validation needed
+    }
+    if (name === 'phone' && isPhoneBasedUser) {
+      return ''; // Phone-based users can't edit phone, so no validation needed
+    }
+
     switch (name) {
       case 'firstName':
         if (!value) {
@@ -214,17 +237,17 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         }
         break;
       case 'email':
-        if (!value) {
-          error = 'Email cannot be empty';
-        } else if (!validateEmail(value)) {
+        // Email is optional for phone-based users (they can add email if they want), but must be valid if provided
+        // Email-based users can't edit email, so validation is skipped via early return
+        if (value && !validateEmail(value)) {
           error = 'Email format is invalid';
         }
         break;
       case 'phone': {
         const phoneRegex = /^\+?[0-9]{8,15}$/;
-        if (!value.trim()) {
-          error = 'WhatsApp phone number cannot be empty';
-        } else if (!phoneRegex.test(value)) {
+        // Phone is optional for email-based users (they can add phone if they want), but must be valid if provided
+        // Phone-based users can't edit phone, so validation is skipped via early return
+        if (value && value.trim() !== '' && !phoneRegex.test(value)) {
           error = 'WhatsApp phone number must be 8-15 digits';
         }
         break;
@@ -288,6 +311,14 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const validateForm = (data: ICustomProfile): boolean => {
     const errors: { [key: string]: string } = {};
     Object.entries(data).forEach(([key, value]) => {
+      // Skip validation for fields that shouldn't be editable based on user type
+      if (key === 'email' && !isPhoneBasedUser) {
+        return; // Email-based users can't edit email, skip validation
+      }
+      if (key === 'phone' && isPhoneBasedUser) {
+        return; // Phone-based users can't edit phone, skip validation
+      }
+
       const error = validateInput(key, value as string);
       if (error) {
         errors[key] = error;
@@ -340,20 +371,69 @@ export default function EditProfile({ userRole, fhirId }: Props) {
 
     let finalChatwootId = existingChatwootId;
 
-    try {
-      const { chatwootId: latestChatwootId } = await modifyProfile({
-        email: updateUser.email,
-        name: `${updateUser.firstName} ${updateUser.lastName}`.trim()
-      });
+    const telecom = (() => {
+      const telecomArray = [];
 
-      if (latestChatwootId && latestChatwootId !== existingChatwootId) {
-        finalChatwootId = latestChatwootId;
+      if (updateUser.phone && updateUser.phone.trim() !== '') {
+        telecomArray.push({
+          system: 'phone',
+          use: 'mobile',
+          value: updateUser.phone.trim()
+        });
       }
-    } catch (error) {
-      console.error(
-        '[update-chatwoot-id] failed to ensure chatwoot_id exists and up to date',
-        error
-      );
+
+      if (updateUser.email && updateUser.email.trim() !== '') {
+        if (validateEmail(updateUser.email)) {
+          telecomArray.push({
+            system: 'email',
+            use: 'home',
+            value: updateUser.email.trim()
+          });
+        }
+      }
+
+      return telecomArray;
+    })();
+
+    // The order of execution during user's profile update will now prioritize the
+    // especially updates to telecom field since it will be required during call
+    // to sync service modify-profile.
+    if (latestProfile) {
+      try {
+        await updateProfile({
+          payload: {
+            ...(latestProfile as Patient | Practitioner),
+            telecom
+          }
+        });
+      } catch (error) {
+        console.error(
+          'Error when updating contact information before sync service: ',
+          error
+        );
+        toast.error('Failed updating the contact information');
+        return;
+      }
+    }
+
+    const emailForModifyProfile =
+      updateUser.email || (authState.userInfo?.email as string) || '';
+    if (emailForModifyProfile && validateEmail(emailForModifyProfile)) {
+      try {
+        const { chatwootId: latestChatwootId } = await modifyProfile({
+          email: emailForModifyProfile,
+          name: `${updateUser.firstName} ${updateUser.lastName}`.trim()
+        });
+
+        if (latestChatwootId && latestChatwootId !== existingChatwootId) {
+          finalChatwootId = latestChatwootId;
+        }
+      } catch (error) {
+        console.error(
+          '[update-chatwoot-id] failed to ensure chatwoot_id exists and up to date',
+          error
+        );
+      }
     }
 
     let identifiers = Array.isArray(latestProfile?.identifier)
@@ -504,18 +584,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
           country: 'ID'
         }
       ],
-      telecom: [
-        {
-          system: 'phone',
-          use: 'mobile',
-          value: updateUser.phone
-        },
-        {
-          system: 'email',
-          use: 'home',
-          value: updateUser.email
-        }
-      ]
+      telecom
     };
 
     try {
@@ -713,7 +782,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 id='email'
                 type='email'
                 value={updateUser.email}
-                readOnly
+                readOnly={!isPhoneBasedUser}
                 onChange={(event: any) =>
                   handleChangeInput('email', event.target.value)
                 }
@@ -747,13 +816,18 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                   onChange={handlePhoneChange}
                   placeholder='WhatsApp Number'
                   className='flex-1'
+                  disabled={isPhoneBasedUser}
                   inputStyle={{
                     width: '100%',
                     border: 'none',
                     outline: 'none',
                     fontSize: '14px',
                     fontWeight: 'normal',
-                    color: '#2C2F35'
+                    color: '#2C2F35',
+                    ...(isPhoneBasedUser && {
+                      cursor: 'not-allowed',
+                      opacity: 0.6
+                    })
                   }}
                 />
               </div>
