@@ -121,7 +121,8 @@ export const frontendConfig = (): SuperTokensConfig => {
                   // Create FHIR Profile for new user
                   await createProfile({
                     userId,
-                    email: emails[0],
+                    email: emails[0] || '',
+                    phoneNumber: phoneNumbers[0] || '',
                     type: roles.includes(Roles.Practitioner)
                       ? Roles.Practitioner
                       : Roles.Patient
@@ -146,7 +147,8 @@ export const frontendConfig = (): SuperTokensConfig => {
                 role_name: roles.includes(Roles.Practitioner)
                   ? Roles.Practitioner
                   : Roles.Patient,
-                email: emails[0],
+                email: emails[0] || '',
+                phoneNumber: phoneNumbers[0] || '',
                 profile_picture: profileData?.photo
                   ? profileData?.photo[0]?.url
                   : '',
@@ -171,7 +173,8 @@ export const frontendConfig = (): SuperTokensConfig => {
                 role_name: roles.includes(Roles.Practitioner)
                   ? Roles.Practitioner
                   : Roles.Patient,
-                email: emails[0],
+                email: emails[0] || '',
+                phoneNumber: phoneNumbers[0] || '',
                 profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
                 fullname: mergeNames(profile?.name),
                 fhirId: profile?.id ?? ''

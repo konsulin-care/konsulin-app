@@ -19,7 +19,29 @@ type ModifyProfileResponseItem = {
   email?: string;
 };
 
-export const createProfile = async ({ userId, email, type }) => {
+export const createProfile = async ({ userId, email, phoneNumber, type }) => {
+  const telecom = [];
+
+  if (email && typeof email === 'string' && email.trim() !== '') {
+    telecom.push({
+      system: 'email',
+      use: 'home',
+      value: email.trim()
+    });
+  }
+
+  if (
+    phoneNumber &&
+    typeof phoneNumber === 'string' &&
+    phoneNumber.trim() !== ''
+  ) {
+    telecom.push({
+      system: 'phone',
+      use: 'mobile',
+      value: phoneNumber.trim()
+    });
+  }
+
   const payload = {
     resourceType: type,
     active: true,
@@ -31,11 +53,7 @@ export const createProfile = async ({ userId, email, type }) => {
           }
         ]
       : [],
-    telecom: {
-      system: 'email',
-      use: 'home',
-      value: email
-    }
+    ...(telecom.length > 0 && { telecom })
   };
 
   try {
