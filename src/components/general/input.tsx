@@ -27,7 +27,7 @@ export default function Input({
           outline
             ? 'w-full'
             : `w-full text-sm font-normal text-[#2C2F35] ${
-                opacity ? 'opacity-40' : undefined
+                opacity ? 'opacity-40' : ''
               } outline-none placeholder:text-[#2C2F35]/60 bg-${backgroundColor}`
         }
         {...props}
