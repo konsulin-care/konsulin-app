@@ -470,7 +470,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         await updateProfile({
           payload: {
             ...(latestProfile as Patient | Practitioner),
-            identifier: identifiers
+            identifier: identifiers,
+            telecom: telecom
           }
         });
       } catch (error) {
