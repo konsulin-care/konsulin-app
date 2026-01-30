@@ -95,10 +95,10 @@ export const frontendConfig = (): SuperTokensConfig => {
         }
       }),
       Passwordless.init({
-        contactMethod: 'EMAIL',
+        contactMethod: 'EMAIL_OR_PHONE',
         onHandleEvent: async context => {
           if (context.action === 'SUCCESS') {
-            const { id: userId, emails } = context.user;
+            const { id: userId, emails, phoneNumbers } = context.user;
             const roles = await getClaimValue({ claim: UserRoleClaim });
             localStorage.setItem('skip-response-cleanup', 'true');
 
