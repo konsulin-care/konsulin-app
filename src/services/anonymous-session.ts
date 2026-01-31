@@ -46,10 +46,16 @@ export const cacheGuestId = (guestId: string) => {
   }
 };
 
-export const ensureAnonymousSession = async (): Promise<string> => {
+export const ensureAnonymousSession = async (
+  forceNew: boolean = false
+): Promise<string> => {
   const API = await getAPI();
+  const url = '/api/v1/auth/anonymous-session';
+  const config = forceNew ? { params: { force_new: 'true' } } : undefined;
   const response = await API.post<{ data?: AnonymousSessionResponse }>(
-    '/api/v1/auth/anonymous-session'
+    url,
+    undefined,
+    config
   );
 
   const payload = response.data?.data ?? {};

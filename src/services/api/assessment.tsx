@@ -233,7 +233,7 @@ export const useSubmitQuestionnaire = (
 
       let identifier = questionnaireResponse.identifier;
       if (!isAuthenticated) {
-        const guestId = await ensureAnonymousSession();
+        const guestId = await ensureAnonymousSession(false);
         identifier = buildAnonymousIdentifier(guestId);
       }
 
@@ -271,7 +271,7 @@ export const useUpdateSubmitQuestionnaire = (
 
       let identifier = questionnaireResponse.identifier;
       if (!isAuthenticated) {
-        const guestId = await ensureAnonymousSession();
+        const guestId = await ensureAnonymousSession(false);
         identifier = buildAnonymousIdentifier(guestId);
       }
 
