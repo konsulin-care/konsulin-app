@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (!session.doesSessionExist) {
         try {
-          await ensureAnonymousSession();
+          await ensureAnonymousSession(false);
         } catch (error) {
           console.error('Failed to initialize anonymous session:', error);
         }

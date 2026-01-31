@@ -3,6 +3,7 @@
 import { LoadingSpinnerIcon } from '@/components/icons';
 import NavigationBar from '@/components/navigation-bar';
 import { useAuth } from '@/context/auth/authContext';
+import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { getAPI } from '@/services/api';
 import { clearIntent, getIntent } from '@/utils/intent-storage';
 import { useRouter } from 'next/navigation';
@@ -17,6 +18,18 @@ const App = () => {
 
   const [isRedirecting, setIsRedirecting] = useState(true);
   const isHandlingIntentRef = useRef(false);
+
+  // Refresh anonymous session on manual reload (homepage only) — new guest token
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const navEntries = performance.getEntriesByType('navigation');
+    const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
+    if (nav?.type !== 'reload') return;
+    if (window.location.pathname !== '/') return;
+    ensureAnonymousSession(true).catch(err => {
+      console.error('Failed to refresh anonymous session on reload:', err);
+    });
+  }, []);
 
   useEffect(() => {
     if (isLoading) return;
