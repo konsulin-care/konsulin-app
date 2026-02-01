@@ -28,6 +28,14 @@ export const frontendConfig = (): SuperTokensConfig => {
   return {
     appInfo: getAppInfo(),
     useShadowDom: false,
+    languageTranslations: {
+      translations: {
+        en: {
+          AUTH_PAGE_HEADER_TITLE_SIGN_IN_AND_UP: 'Wellness Starts Here',
+          PWLESS_SIGN_IN_UP_CONTINUE_BUTTON: 'Sign In'
+        }
+      }
+    },
     style: `
         #supertokens-root {
             height: 100vh;
@@ -35,7 +43,8 @@ export const frontendConfig = (): SuperTokensConfig => {
             flex-direction: column;
             justify-content: center;
         }
-        [data-supertokens~=button] {
+        /* Sign In button (primary submit) */
+        [data-supertokens~=button]:not([data-supertokens~=providerButton]) {
             background-color: #0ABDC3;
             border: 0px;
         }
@@ -43,15 +52,50 @@ export const frontendConfig = (): SuperTokensConfig => {
         [data-supertokens~=providerContainer] {
             padding-top: 12px;
             padding-bottom: 12px;
+            --logo-size: 34px;
+            --logo-horizontal-spacing: 8px;
         }
-        [data-supertokens~=providerButton] {
+        [data-supertokens~=button][data-supertokens~=providerButton] {
             border-width: 2px !important;
             border-style: solid !important;
-            border-color: rgba(19, 194, 194, 0.55) !important;
+            border-color: #161C26 !important;
             background-color: #ffffff !important;
+            min-height: 32px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            padding: 2px calc(var(--logo-size) + 2 * var(--logo-horizontal-spacing));
+            position: relative;
+            color: #000;
         }
         [data-supertokens~=providerButton]:hover {
-            border-color: rgba(19, 194, 194, 0.9) !important;
+            border-color: #161C26 !important;
+        }
+        [data-supertokens~=providerButtonLeft] {
+            width: calc(var(--logo-size));
+            position: absolute;
+            left: calc(var(--logo-horizontal-spacing));
+        }
+        [data-supertokens~=providerButtonLogo] {
+            height: 30px;
+            display: flex;
+            align-items: center;
+        }
+        [data-supertokens~=providerButtonLogoCenter] {
+            display: flex;
+            margin: auto;
+        }
+        [data-supertokens~=providerButtonText] {
+            font-weight: 400;
+            text-align: center;
+            overflow: hidden;
+            white-space: nowrap;
+            display: inline-block;
+            flex-grow: 1;
+            max-width: 100%;
+            font-size: 14px;
+            text-overflow: ellipsis;
         }
         [data-supertokens~=headerTitle] {
             color: #0ABDC3;
