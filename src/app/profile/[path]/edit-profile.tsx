@@ -486,19 +486,19 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       }
     }
 
-    if (!finalChatwootId) {
-      console.error('[avatar] missing chatwoot_id, aborting upload', {
-        fhirId,
-        latestProfile
-      });
-      toast.error(
-        'Profile does not own chatwoot_id; avatar update is cancelled'
-      );
-      setIsUploadingPhoto(false);
-      return;
-    }
-
     if (isDataUrl(updateUser.photo)) {
+      if (!finalChatwootId) {
+        console.error('[avatar] missing chatwoot_id, aborting upload', {
+          fhirId,
+          latestProfile
+        });
+        toast.error(
+          'Profile does not own chatwoot_id; avatar update is cancelled'
+        );
+        setIsUploadingPhoto(false);
+        return;
+      }
+
       try {
         setIsUploadingPhoto(true);
         const originalBlob = dataUrlToBlob(updateUser.photo);
