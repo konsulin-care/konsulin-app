@@ -114,21 +114,17 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string>('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [isPhoneBasedUser, setIsPhoneBasedUser] = useState<boolean>(false);
-
-  useEffect(() => {
+  const getInitialPhoneBasedUser = () => {
     try {
       const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
       const email = auth?.email || '';
       const phoneNumber = auth?.phoneNumber || '';
-      // User is phone-based if phoneNumber has value and email is empty
-      setIsPhoneBasedUser(!!phoneNumber && !email);
-    } catch (error) {
-      console.error('Failed to parse auth cookie:', error);
-      // Default to email-based user if parsing fails
-      setIsPhoneBasedUser(false);
+      return !!phoneNumber && !email;
+    } catch {
+      return false;
     }
-  }, []);
+  };
+  const [isPhoneBasedUser] = useState<boolean>(getInitialPhoneBasedUser);
 
   const { isLoading: isProfileLoading } = useQuery<Patient | Practitioner>({
     queryKey: ['profile-data', fhirId],
