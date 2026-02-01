@@ -230,24 +230,30 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         }
         break;
       case 'lastName':
-        if (!usernameRegex.test(value)) {
-          error = 'Last name format is invalid';
-        } else if (value.length < 2) {
-          error = 'Last name must be at least two characters';
+        if (value && value.trim() !== '') {
+          if (!usernameRegex.test(value)) {
+            error = 'Last name format is invalid';
+          } else if (value.length < 2) {
+            error = 'Last name must be at least two characters';
+          }
         }
         break;
       case 'email':
-        // Email is optional for phone-based users (they can add email if they want), but must be valid if provided
         // Email-based users can't edit email, so validation is skipped via early return
-        if (value && !validateEmail(value)) {
+        // For phone-based users: email is required, then must be valid format
+        if (!value || value.trim() === '') {
+          error = 'Email is required';
+        } else if (!validateEmail(value)) {
           error = 'Email format is invalid';
         }
         break;
       case 'phone': {
         const phoneRegex = /^\+?[0-9]{8,15}$/;
-        // Phone is optional for email-based users (they can add phone if they want), but must be valid if provided
         // Phone-based users can't edit phone, so validation is skipped via early return
-        if (value && value.trim() !== '' && !phoneRegex.test(value)) {
+        // For email-based users: phone is required, then must be valid format
+        if (!value || value.trim() === '') {
+          error = 'Phone number is required';
+        } else if (!phoneRegex.test(value)) {
           error = 'WhatsApp phone number must be 8-15 digits';
         }
         break;
@@ -422,7 +428,10 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       try {
         const { chatwootId: latestChatwootId } = await modifyProfile({
           email: emailForModifyProfile,
-          name: `${updateUser.firstName} ${updateUser.lastName}`.trim()
+          name: [updateUser.firstName, updateUser.lastName?.trim()]
+            .filter(Boolean)
+            .join(' ')
+            .trim()
         });
 
         if (latestChatwootId && latestChatwootId !== existingChatwootId) {
@@ -552,6 +561,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }
 
     const splitName = (updateUser.firstName || '').split(' ').filter(Boolean);
+    const familyName = updateUser.lastName?.trim() || undefined;
 
     const payload: Patient | Practitioner = {
       resourceType: updateUser.resourceType || fhirRole,
@@ -571,7 +581,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         {
           use: 'official',
           given: splitName,
-          family: updateUser.lastName
+          ...(familyName ? { family: familyName } : {})
         }
       ],
       address: [
