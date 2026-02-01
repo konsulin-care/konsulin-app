@@ -6,6 +6,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { getAPI } from '@/services/api';
 import { clearIntent, getIntent } from '@/utils/intent-storage';
+import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -18,18 +19,53 @@ const App = () => {
 
   const [isRedirecting, setIsRedirecting] = useState(true);
   const isHandlingIntentRef = useRef(false);
+  const hasRunReloadAnonymousRef = useRef(false);
 
-  // Refresh anonymous session on manual reload (homepage only) — new guest token
+  // Refresh anonymous session on manual reload of homepage only — not when navigating to /
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const navEntries = performance.getEntriesByType('navigation');
     const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
     if (nav?.type !== 'reload') return;
     if (window.location.pathname !== '/') return;
+    // Only run if this document load was for / (reload of homepage), not when user navigated to /
+    let initialPathname: string | null = null;
+    try {
+      initialPathname = sessionStorage.getItem('konsulin_initial_pathname');
+    } catch {
+      // ignore
+    }
+    if (initialPathname !== '/') return;
+    // Already ran this document load (e.g. user reloaded / then navigated away and back)
+    try {
+      if (sessionStorage.getItem('konsulin_reload_anonymous_done') === '1')
+        return;
+    } catch {
+      // ignore
+    }
+    if (hasRunReloadAnonymousRef.current) return;
+    if (isLoading) return;
+    if (authState.isAuthenticated) return;
+
+    // Cookie guard: avoid race where context says not signed in but cookie already set
+    let auth: { userId?: string; role_name?: string } = {};
+    try {
+      auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+    } catch {
+      // ignore parse errors
+    }
+    if (auth?.userId && auth?.role_name) return;
+
+    hasRunReloadAnonymousRef.current = true;
+    try {
+      sessionStorage.setItem('konsulin_reload_anonymous_done', '1');
+    } catch {
+      // ignore
+    }
     ensureAnonymousSession(true).catch(err => {
       console.error('Failed to refresh anonymous session on reload:', err);
     });
-  }, []);
+  }, [isLoading, authState.isAuthenticated]);
 
   useEffect(() => {
     if (isLoading) return;
