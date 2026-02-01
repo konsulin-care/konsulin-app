@@ -397,37 +397,44 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       return telecomArray;
     })();
 
-    // The order of execution during user's profile update will now prioritize the
-    // especially updates to telecom field since it will be required during call
-    // to sync service modify-profile.
-    if (latestProfile) {
-      try {
-        await updateProfile({
-          payload: {
-            ...(latestProfile as Patient | Practitioner),
-            telecom
-          }
-        });
-      } catch (error) {
-        console.error(
-          'Error when updating contact information before sync service: ',
-          error
-        );
-        toast.error('Failed updating the contact information');
-        return;
-      }
-    }
+    const trimmedName = [updateUser.firstName, updateUser.lastName?.trim()]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
 
-    const emailForModifyProfile =
-      updateUser.email || (authState.userInfo?.email as string) || '';
-    if (emailForModifyProfile && validateEmail(emailForModifyProfile)) {
+    let auth: { email?: string; phoneNumber?: string } = {};
+    try {
+      auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+    } catch {
+      // use empty auth
+    }
+    const isEmailBased = !!auth?.email?.trim();
+    const isPhoneBased = !!auth?.phoneNumber?.trim();
+    const emailForModifyProfile = (
+      updateUser.email ||
+      (authState.userInfo?.email as string) ||
+      auth?.email ||
+      ''
+    ).trim();
+    const phoneForModifyProfile = (
+      updateUser.phone ||
+      auth?.phoneNumber ||
+      ''
+    ).trim();
+
+    const shouldCallModifyProfile =
+      trimmedName &&
+      (isEmailBased
+        ? emailForModifyProfile && validateEmail(emailForModifyProfile)
+        : isPhoneBased && !!phoneForModifyProfile);
+
+    if (shouldCallModifyProfile) {
       try {
         const { chatwootId: latestChatwootId } = await modifyProfile({
-          email: emailForModifyProfile,
-          name: [updateUser.firstName, updateUser.lastName?.trim()]
-            .filter(Boolean)
-            .join(' ')
-            .trim()
+          name: trimmedName,
+          ...(isEmailBased
+            ? { email: emailForModifyProfile }
+            : { phoneNumber: phoneForModifyProfile })
         });
 
         if (latestChatwootId && latestChatwootId !== existingChatwootId) {
