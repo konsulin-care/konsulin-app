@@ -156,8 +156,12 @@ export const modifyProfile = async ({
   const trimmedName = (name || '').trim();
   const trimmedEmail = (email ?? '').trim();
   const trimmedPhone = (phoneNumber ?? '').trim();
-  // Strip leading plus sign(s) from phone so upstream receives correctly formatted value
-  const phoneForRequest = trimmedPhone.replace(/^\++/, '');
+  // Ensure phone sent upstream always has a single leading plus sign
+  const phoneForRequest = trimmedPhone
+    ? trimmedPhone.startsWith('+')
+      ? trimmedPhone.replace(/^\++/, '+')
+      : `+${trimmedPhone}`
+    : '';
 
   if (!trimmedName) {
     throw new Error('Missing name for modify-profile');
