@@ -17,9 +17,32 @@ type EmailExistenceResponse = {
 type ModifyProfileResponseItem = {
   chatwoot_id?: number | string;
   email?: string;
+  phone_number?: string;
 };
 
-export const createProfile = async ({ userId, email, type }) => {
+export const createProfile = async ({ userId, email, phoneNumber, type }) => {
+  const telecom = [];
+
+  if (email && typeof email === 'string' && email.trim() !== '') {
+    telecom.push({
+      system: 'email',
+      use: 'home',
+      value: email.trim()
+    });
+  }
+
+  if (
+    phoneNumber &&
+    typeof phoneNumber === 'string' &&
+    phoneNumber.trim() !== ''
+  ) {
+    telecom.push({
+      system: 'phone',
+      use: 'mobile',
+      value: phoneNumber.trim()
+    });
+  }
+
   const payload = {
     resourceType: type,
     active: true,
@@ -31,11 +54,7 @@ export const createProfile = async ({ userId, email, type }) => {
           }
         ]
       : [],
-    telecom: {
-      system: 'email',
-      use: 'home',
-      value: email
-    }
+    ...(telecom.length > 0 && { telecom })
   };
 
   try {
@@ -123,28 +142,51 @@ export const useUpdateProfile = () => {
 
 export const modifyProfile = async ({
   email,
+  phoneNumber,
   name
 }: {
-  email: string;
+  email?: string | null;
+  phoneNumber?: string | null;
   name: string;
-}): Promise<{ chatwootId: string; email?: string }> => {
-  const trimmedEmail = (email || '').trim();
+}): Promise<{
+  chatwootId: string;
+  email?: string;
+  phoneNumber?: string;
+}> => {
   const trimmedName = (name || '').trim();
+  const trimmedEmail = (email ?? '').trim();
+  const trimmedPhone = (phoneNumber ?? '').trim();
+  // Ensure phone sent upstream always has a single leading plus sign
+  const phoneForRequest = trimmedPhone
+    ? trimmedPhone.startsWith('+')
+      ? trimmedPhone.replace(/^\++/, '+')
+      : `+${trimmedPhone}`
+    : '';
 
-  if (!trimmedEmail || !trimmedName) {
-    throw new Error('Missing email or name for modify-profile');
+  if (!trimmedName) {
+    throw new Error('Missing name for modify-profile');
   }
 
-  if (!validateEmail(trimmedEmail)) {
+  if (!trimmedEmail && !trimmedPhone) {
+    throw new Error('Missing email or phoneNumber for modify-profile');
+  }
+
+  if (trimmedEmail && !validateEmail(trimmedEmail)) {
     throw new Error('Invalid email for modify-profile');
   }
 
+  const body: Record<string, string> = {
+    name: trimmedName
+  };
+  if (trimmedEmail) body.email = trimmedEmail;
+  if (phoneForRequest) body.phoneNumber = phoneForRequest;
+
   const API = await getAPI();
 
-  const response = await API.post('/api/v1/hook/synchronous/modify-profile', {
-    email: trimmedEmail,
-    name: trimmedName
-  });
+  const response = await API.post(
+    '/api/v1/hook/synchronous/modify-profile',
+    body
+  );
 
   const isOk = response?.status >= 200 && response?.status < 300;
   const data = response?.data;
@@ -158,7 +200,9 @@ export const modifyProfile = async ({
 
   return {
     chatwootId: String(chatwootId),
-    email: first?.email
+    ...(first?.email != null && first.email !== '' && { email: first.email }),
+    ...(first?.phone_number != null &&
+      first.phone_number !== '' && { phoneNumber: first.phone_number })
   };
 };
 
