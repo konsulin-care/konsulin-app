@@ -71,6 +71,60 @@ export async function updatePractitionerRoleAvailability(
 }
 
 /**
+ * Update practitioner role availability using FHIR Bundle transaction
+ * This ensures atomic updates across multiple PractitionerRole resources
+ */
+export async function updatePractitionerRoleAvailabilityBundle(
+  updates: Array<{
+    practitionerRoleId: string;
+    availableTime: AvailableTime[];
+  }>
+): Promise<any> {
+  const API = await getAPI();
+
+  // Fetch all current PractitionerRole resources
+  const rolePromises = updates.map(async update => {
+    const getResponse = await API.get(
+      `/fhir/PractitionerRole/${update.practitionerRoleId}`
+    );
+    return {
+      role: getResponse.data as PractitionerRole,
+      availableTime: update.availableTime
+    };
+  });
+
+  const roles = await Promise.all(rolePromises);
+
+  // Build FHIR Bundle entries
+  const bundleEntries = roles.map(({ role, availableTime }) => ({
+    request: {
+      method: 'PUT',
+      url: `PractitionerRole/${role.id}`
+    },
+    resource: {
+      ...role,
+      availableTime
+    }
+  }));
+
+  // Create FHIR Bundle transaction
+  const bundle = {
+    resourceType: 'Bundle',
+    type: 'transaction',
+    entry: bundleEntries
+  };
+
+  // Post bundle transaction to FHIR server
+  const response = await API.post('/fhir', bundle, {
+    headers: {
+      'Content-Type': 'application/fhir+json'
+    }
+  });
+
+  return response.data;
+}
+
+/**
  * Hook for updating practitioner role availability
  */
 export function useUpdateAvailability() {
@@ -87,6 +141,24 @@ export function useUpdateAvailability() {
         practitionerRoleId,
         availableTime
       );
+    }
+  });
+}
+
+/**
+ * Hook for updating practitioner role availability using FHIR Bundle
+ * Provides atomic updates across multiple PractitionerRole resources
+ */
+export function useUpdateAvailabilityBundle() {
+  return useMutation({
+    mutationKey: ['update-availability-bundle'],
+    mutationFn: async (
+      updates: Array<{
+        practitionerRoleId: string;
+        availableTime: AvailableTime[];
+      }>
+    ) => {
+      return updatePractitionerRoleAvailabilityBundle(updates);
     }
   });
 }
