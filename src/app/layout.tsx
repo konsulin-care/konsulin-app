@@ -1,6 +1,6 @@
+import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
 import QueryProvider from '@/components/general/query-provider';
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
-import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
 import { SuperTokensProviders } from '@/components/supertokensProvider';
 import { AuthProvider } from '@/context/auth/authContext';
 import { BookingProvider } from '@/context/booking/bookingContext';
@@ -132,6 +132,11 @@ export default async function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `window.__RUNTIME_CONFIG__ = ${serialized};`
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{sessionStorage.setItem("konsulin_initial_pathname",window.location.pathname);sessionStorage.removeItem("konsulin_reload_anonymous_done");}catch(e){}`
           }}
         />
       </head>

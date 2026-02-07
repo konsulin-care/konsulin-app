@@ -5,6 +5,7 @@ interface AuthCookie {
   userId?: string;
   role_name?: string;
   email?: string;
+  phoneNumber?: string;
   fullname?: string;
   profile_picture?: string;
   fhirId?: string;
