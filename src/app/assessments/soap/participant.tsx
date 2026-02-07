@@ -114,6 +114,7 @@ export default function Participant({
         const patient = (await createProfile({
           userId: null,
           email: email.trim(),
+          phoneNumber: '',
           type: 'Patient'
         })) as Patient;
 
