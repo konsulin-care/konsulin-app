@@ -1,6 +1,7 @@
 'use client';
 
 import { Roles } from '@/constants/roles';
+import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
@@ -32,16 +33,52 @@ interface ContextProps {
 
 const AuthContext = createContext<ContextProps | undefined>(undefined);
 
+const INITIAL_PATHNAME_STORAGE_KEY = 'konsulin_initial_pathname';
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [state, dispatch] = useReducer(reducer, initialState);
   const session = useSessionContext() as SessionContextUpdate;
+
+  // Record pathname at first paint (full page load) so homepage can tell "reload of /" vs "navigated to /"
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem(
+        INITIAL_PATHNAME_STORAGE_KEY,
+        window.location.pathname
+      );
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     const fetchSession = async () => {
       const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
 
       if (!session.doesSessionExist) {
+        // Don't create anonymous session if auth cookie suggests user is signed in (e.g. session not yet restored)
+        if (!auth?.userId) {
+          // Reload on homepage: let the page call ensureAnonymousSession(true) once; avoid duplicate calls
+          const navEntries =
+            typeof window !== 'undefined'
+              ? performance.getEntriesByType('navigation')
+              : [];
+          const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
+          const isReloadOnHomepage =
+            nav?.type === 'reload' &&
+            typeof window !== 'undefined' &&
+            window.location.pathname === '/';
+
+          if (!isReloadOnHomepage) {
+            try {
+              await ensureAnonymousSession(false);
+            } catch (error) {
+              console.error('Failed to initialize anonymous session:', error);
+            }
+          }
+        }
         setIsLoading(false);
         return;
       }
