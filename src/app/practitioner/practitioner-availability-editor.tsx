@@ -202,6 +202,12 @@ export default function PractitionerAvailabilityEditor({
           };
         });
 
+      // Check if there are any updates to send
+      if (updates.length === 0) {
+        console.warn('No valid PractitionerRoles to update');
+        return;
+      }
+
       // Execute all updates atomically using FHIR Bundle transaction
       await updateAvailabilityBundle(updates);
 
