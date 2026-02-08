@@ -184,21 +184,23 @@ export default function PractitionerAvailabilityEditor({
 
     try {
       // Build array of updates for FHIR Bundle transaction
-      const updates = memoizedRolesToUse.map(role => {
-        // Get the organization ID for this role
-        const orgId = role.organization?.reference || role.id;
+      const updates = memoizedRolesToUse
+        .filter(role => !!role.id)
+        .map(role => {
+          // Get the organization ID for this role
+          const orgId = role.organization?.reference || role.id;
 
-        // Convert weekly availability to FHIR availableTime format for this specific organization
-        const availableTime = convertToFhirAvailableTimeForOrganization(
-          weeklyAvailability,
-          orgId
-        );
+          // Convert weekly availability to FHIR availableTime format for this specific organization
+          const availableTime = convertToFhirAvailableTimeForOrganization(
+            weeklyAvailability,
+            orgId
+          );
 
-        return {
-          practitionerRoleId: role.id,
-          availableTime
-        };
-      });
+          return {
+            practitionerRoleId: role.id!,
+            availableTime
+          };
+        });
 
       // Execute all updates atomically using FHIR Bundle transaction
       await updateAvailabilityBundle(updates);
