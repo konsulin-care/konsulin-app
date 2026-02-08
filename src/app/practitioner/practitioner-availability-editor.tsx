@@ -204,7 +204,6 @@ export default function PractitionerAvailabilityEditor({
 
       // Execute all updates atomically using FHIR Bundle transaction
       await updateAvailabilityBundle(updates);
-      setWeeklyAvailabilityDirty(false);
 
       // Call success callback if provided
       if (onSuccess) {
