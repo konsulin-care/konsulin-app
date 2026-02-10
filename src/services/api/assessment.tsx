@@ -8,6 +8,10 @@ import {
   QuestionnaireResponseItem
 } from 'fhir/r4';
 import { useMemo } from 'react';
+import {
+  buildAnonymousIdentifier,
+  ensureAnonymousSession
+} from '../anonymous-session';
 import { getAPI } from '../api';
 
 function parseCanonicalOrReference(
@@ -90,29 +94,12 @@ export const useOngoingResearch = () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       const API = await getAPI();
 
-      const hasResearch = (payload: any) => {
-        const entries = Array.isArray(payload?.entry)
-          ? payload.entry
-          : Array.isArray(payload)
-            ? payload
-            : [];
-        return entries.some(
-          (entry: any) =>
-            (entry?.resource ?? entry)?.resourceType === 'ResearchStudy'
-        );
-      };
-
       const response = await API.get(
         `/fhir/ResearchStudy?date=ge${today}&status=active&_include=ResearchStudy:protocol`
       );
 
-      if (!hasResearch(response.data)) {
-        const fallbackResponse = await API.get(
-          `/fhir/ResearchStudy?status=active&_include=ResearchStudy:protocol`
-        );
-        return fallbackResponse.data;
-      }
-
+      // Return the response as-is - do not fall back to previous survey periods
+      // This ensures only current and future research studies are displayed
       return response.data;
     },
     select: data => {
@@ -243,9 +230,17 @@ export const useSubmitQuestionnaire = (
       }
 
       const API = await getAPI();
+
+      let identifier = questionnaireResponse.identifier;
+      if (!isAuthenticated) {
+        const guestId = await ensureAnonymousSession(false);
+        identifier = buildAnonymousIdentifier(guestId);
+      }
+
       const response = await API.post('/fhir/QuestionnaireResponse', {
         author,
         item,
+        identifier,
         resourceType,
         questionnaire: `Questionnaire/${questionnaireId}`,
         status: 'completed',
@@ -273,10 +268,18 @@ export const useUpdateSubmitQuestionnaire = (
       }
 
       const API = await getAPI();
+
+      let identifier = questionnaireResponse.identifier;
+      if (!isAuthenticated) {
+        const guestId = await ensureAnonymousSession(false);
+        identifier = buildAnonymousIdentifier(guestId);
+      }
+
       const response = await API.put(`/fhir/QuestionnaireResponse/${id}`, {
         id,
         author,
         item,
+        identifier,
         resourceType,
         questionnaire: `Questionnaire/${questionnaireId}`,
         status: 'completed',
