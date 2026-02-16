@@ -15,7 +15,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@aehrc/smart-forms-renderer": "^0.45.1",
+    "@aehrc/smart-forms-renderer": "^1.2.13",
     "@ant-design/charts": "^2.6.7",
     "@hookform/resolvers": "^5.2.2",
     "@next/font": "^14.2.15",
