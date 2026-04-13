@@ -107,7 +107,7 @@
     "postcss": "^8",
     "serwist": "^9.0.3",
     "tailwindcss": "^4.1.12",
-    "typescript": "^5",
+    "typescript": "^6",
     "vitest": "^4.1.2"
   },
   "lint-staged": {
