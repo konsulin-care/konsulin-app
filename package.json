@@ -102,7 +102,7 @@
     "eslint-config-next": "^15.5.0",
     "eslint-define-config": "^2.1.0",
     "husky": "^9.0.11",
-    "jsdom": "^28.1.0",
+    "jsdom": "^29.0.1",
     "lint-staged": "^16.4.0",
     "postcss": "^8",
     "serwist": "^9.0.3",
