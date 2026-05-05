@@ -110,3 +110,4 @@ The frontend will communicate with the backend API for all data operations, auth
 ## License
 
 Konsulin is distributed under the [AGPL-3.0 License](./LICENSE). **You may not use Konsulin's logo for other projects.** Commercial licenses are available for organizations that wish to use this software without AGPL obligations. Contact [hello@konsulin.care](mailto:hello@konsulin.care) to obtain a commercial license.
+
