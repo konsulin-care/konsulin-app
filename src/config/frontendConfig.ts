@@ -2,6 +2,7 @@ import { setCookies } from '@/app/actions';
 import { Roles } from '@/constants/roles';
 import { createProfile, getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
+import { extractSafeRedirectPath } from '@/utils/redirect-guard';
 import { Patient, Practitioner } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
 import React from 'react';
@@ -232,7 +233,21 @@ export const frontendConfig = (): SuperTokensConfig => {
               routerInfo.router.push('/auth');
               await new Promise(resolve => setTimeout(resolve, 100));
             }
-            window.location.href = '/';
+
+            const redirectToPath = extractSafeRedirectPath(
+              window.location.search
+            );
+            if (redirectToPath) {
+              console.log(
+                '[auth:redirect] redirecting to magic link target:',
+                redirectToPath
+              );
+            } else {
+              console.log(
+                '[auth:redirect] no valid redirectToPath found, defaulting to /'
+              );
+            }
+            window.location.href = redirectToPath ?? '/';
           }
         }
       })
