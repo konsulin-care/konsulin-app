@@ -229,14 +229,13 @@ export const frontendConfig = (): SuperTokensConfig => {
             }
 
             const isAuthRoute = (routerInfo.pathName || '').startsWith('/auth');
+            const redirectToPath = extractSafeRedirectPath(
+              window.location.search
+            );
             if (!isAuthRoute) {
               routerInfo.router.push('/auth');
               await new Promise(resolve => setTimeout(resolve, 100));
             }
-
-            const redirectToPath = extractSafeRedirectPath(
-              window.location.search
-            );
             if (redirectToPath) {
               console.log(
                 '[auth:redirect] redirecting to magic link target:',
