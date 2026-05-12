@@ -70,8 +70,8 @@ export function extractSafeRedirectPath(search: string): string | null {
   }
 
   try {
-    const parsed = new URL(path, window.location.origin);
-    if (parsed.origin !== window.location.origin) {
+    const parsed = new URL(path, globalThis.location.origin);
+    if (parsed.origin !== globalThis.location.origin) {
       console.warn(
         '[auth:redirect] redirectToPath rejected: cross-origin redirect is not allowed',
         path

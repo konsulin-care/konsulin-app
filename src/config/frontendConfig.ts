@@ -230,7 +230,7 @@ export const frontendConfig = (): SuperTokensConfig => {
 
             const isAuthRoute = (routerInfo.pathName || '').startsWith('/auth');
             const redirectToPath = extractSafeRedirectPath(
-              window.location.search
+              globalThis.location.search
             );
             if (!isAuthRoute) {
               routerInfo.router.push('/auth');
@@ -246,7 +246,7 @@ export const frontendConfig = (): SuperTokensConfig => {
                 '[auth:redirect] no valid redirectToPath found, defaulting to /'
               );
             }
-            window.location.href = redirectToPath ?? '/';
+            globalThis.location.href = redirectToPath ?? '/';
           }
         }
       })
