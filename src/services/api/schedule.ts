@@ -130,7 +130,7 @@ export async function updatePractitionerRoleAvailabilityBundle(
 export function useUpdateAvailability() {
   return useMutation({
     mutationKey: ['update-availability'],
-    mutationFn: async ({
+    mutationFn: ({
       practitionerRoleId,
       availableTime
     }: {
@@ -152,7 +152,7 @@ export function useUpdateAvailability() {
 export function useUpdateAvailabilityBundle() {
   return useMutation({
     mutationKey: ['update-availability-bundle'],
-    mutationFn: async (
+    mutationFn: (
       updates: Array<{
         practitionerRoleId: string;
         availableTime: AvailableTime[];

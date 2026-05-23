@@ -26,6 +26,10 @@ type Props = {
   onCancel?: () => void;
 };
 
+type PractitionerRoleWithId = (PractitionerRole | IPractitionerRoleDetail) & {
+  id: string;
+};
+
 /**
  * Type guard to check if a role is IPractitionerRoleDetail
  */
@@ -185,7 +189,10 @@ export default function PractitionerAvailabilityEditor({
     try {
       // Build array of updates for FHIR Bundle transaction
       const updates = memoizedRolesToUse
-        .filter(role => !!role.id)
+        .filter(
+          (role): role is PractitionerRoleWithId =>
+            typeof role.id === 'string' && role.id.length > 0
+        )
         .map(role => {
           // Get the organization ID for this role
           const orgId = role.organization?.reference || role.id;
@@ -197,7 +204,7 @@ export default function PractitionerAvailabilityEditor({
           );
 
           return {
-            practitionerRoleId: role.id!,
+            practitionerRoleId: role.id,
             availableTime
           };
         });
