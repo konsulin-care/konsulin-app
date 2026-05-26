@@ -43,28 +43,31 @@ jobs:
         run: echo "TIMESTAMP=$(date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
 
       - name: Build and Push Docker Images
+        env:
+          IS_DEV: ${{ inputs.IS_DEV }}
+          IS_PROD: ${{ inputs.IS_PROD }}
         run: |
-          if [ "${{ inputs.IS_DEV }}" == "true" ]; then
+          if [ "$IS_DEV" == "true" ]; then
             echo "Development build..."
-            VERSION="dev-${{ env.SHORT_SHA }}"
+            VERSION="dev-${SHORT_SHA}"
             docker build \
-              -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:nightly \
-              -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:${VERSION} \
+              -t ${IMAGE_NAMESPACE}/${IMAGE_NAME}:nightly \
+              -t ${IMAGE_NAMESPACE}/${IMAGE_NAME}:${VERSION} \
               -f Dockerfile .
 
-            docker push ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:nightly
-            docker push ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:${VERSION}
+            docker push ${IMAGE_NAMESPACE}/${IMAGE_NAME}:nightly
+            docker push ${IMAGE_NAMESPACE}/${IMAGE_NAME}:${VERSION}
 
-          elif [ "${{ inputs.IS_PROD }}" == "true" ]; then
+          elif [ "$IS_PROD" == "true" ]; then
             echo "Production build..."
             VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "latest")
             docker build \
-              -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest \
-              -t ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:${VERSION} \
+              -t ${IMAGE_NAMESPACE}/${IMAGE_NAME}:latest \
+              -t ${IMAGE_NAMESPACE}/${IMAGE_NAME}:${VERSION} \
               -f Dockerfile .
 
-            docker push ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
-            docker push ${{ env.IMAGE_NAMESPACE }}/${{ env.IMAGE_NAME }}:${VERSION}
+            docker push ${IMAGE_NAMESPACE}/${IMAGE_NAME}:latest
+            docker push ${IMAGE_NAMESPACE}/${IMAGE_NAME}:${VERSION}
           else
             echo "No valid environment specified. Needs IS_DEV or IS_PROD true."
             exit 1

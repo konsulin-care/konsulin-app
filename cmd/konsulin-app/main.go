@@ -33,6 +33,8 @@ func main() {
 		port = "8080"
 	}
 
+	// TLS is terminated at the nginx reverse proxy (deployed via Ansible playbooks).
+	// The app itself serves plain HTTP behind the proxy.
 	srv := &http.Server{
 		Addr:         ":" + port,
 		Handler:      routes(),
