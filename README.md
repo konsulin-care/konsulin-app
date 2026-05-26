@@ -15,98 +15,56 @@
 
 ## Architecture
 
-- **FHIR Integration**: Blaze FHIR server for healthcare data storage (FHIR R4 compliant)
-- **Authentication**: SuperTokens with magic link authentication
-- **Frontend Framework**: Next.js with React and TypeScript
-- **Styling**: Tailwind CSS with Radix UI components
-- **Backend Integration**: Works alongside the [Konsulin API](https://github.com/konsulin-care/konsulin-app) as the API gateway
-
-## Features
-
-- **Psychological Instruments**: Access to various psychometric tools and assessments
-- **Digital Interventions**: Evidence-based exercises for self-compassion, mindfulness, and mental health
-- **Appointment Management**: Schedule and manage appointments with psychologists
-- **Payment Gateway**: Secure payment processing for healthcare services
-- **FHIR-Compliant Health Records**: Comprehensive health record management using FHIR R4 standards
-- **Real-time Communication**: Messaging and notification system
-- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **Go SSR**: Chi router serving templ + HTMX pages (port 8080)
+- **React SPA**: Assessment page (AEHRC Smart Forms) only
+- **Styling**: Tailwind CSS v4 (PostCSS for Next.js, standalone CLI for templ)
+- **Backend**: Blaze FHIR server (FHIR R4) + SuperTokens auth
+- **Tooling**: mise manages all tool versions
 
 ## Prerequisites
 
-Make sure you have the following installed:
+- [mise](https://mise.jdx.dev/) — tool version manager
 
-- [Node.js](https://nodejs.org/) (v20.x)
-- [npm](https://www.npmjs.com/)
+## Quick Start
 
-## Local Development Setup
+```sh
+# Install tools (Go 1.26.3, Node 24, templ CLI, golangci-lint)
+mise install
 
-### 1. Backend Service Setup
+# Install JS/Go dependencies
+make deps
 
-This frontend application requires the [Konsulin API backend service](https://github.com/konsulin-care/konsulin-app) to be running. Please follow the backend setup instructions first to ensure the API gateway is available.
+# Copy environment config
+cp .env.example .env
 
-### 2. Frontend Setup
+# Start Go SSR dev server
+go run ./cmd/konsulin-app
 
-1. Clone this repository:
+# Or for Next.js frontend
+npm run dev
+```
 
-   ```sh
-   git clone git@github.com:konsulin-care/fe-konsulin.git
-   cd fe-konsulin
-   ```
-
-2. Install the dependencies:
-
-   ```sh
-   npm install
-   ```
-
-3. Set up environment variables:
-   - Copy the environment configuration file
-   - Update the API endpoints to point to your local backend service
-
-4. Start the development server:
-
-   ```sh
-   npm run dev
-   ```
-
-The application will be available at `http://localhost:3000`.
-
-### 3. Running Both Services
-
-For full local development, ensure both services are running:
-
-1. **Backend API**: Running on `http://localhost:8080` (or your configured port)
-2. **Frontend**: Running on `http://localhost:3000`
-
-The frontend will communicate with the backend API for all data operations, authentication, and FHIR resource management.
+- Go SSR: http://localhost:8080
+- Next.js: http://localhost:3000
 
 ## Available Scripts
 
-- `npm run dev` - Start the development server
-- `npm run build` - Build the application for production
-- `npm run start` - Start the production server
-- `npm run lint` - Run ESLint for code quality checks
-- `npm run format` - Format code using Prettier
+| Command | Description |
+|---|---|
+| `make test` | Run all tests (Go + JS) |
+| `make check-go` | Run all Go lint checks |
+| `make css-templ` | Generate Tailwind CSS for templ |
+| `npm run dev` | Start Next.js dev server |
+| `npm run lint` | Run ESLint |
 
-## Technology Stack
+## Stack
 
-- **Framework**: Next.js 14+ with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **UI Components**: Radix UI
-- **Authentication**: SuperTokens
-- **Data Fetching**: React Query
-- **Form Management**: React Hook Form with Zod validation
-- **Healthcare Standards**: FHIR R4 compliance
-- **Development Tools**: ESLint, Prettier, Husky
-
-## Contributing
-
-1. Ensure both frontend and backend services are running locally
-2. Follow the established coding standards and patterns
-3. Test your changes across different user roles (patient, practitioner, admin)
-4. Ensure FHIR compliance for any healthcare data operations
+- **Go SSR**: Chi, templ, HTMX, Alpine.js
+- **React**: Next.js 14 (assessment SPA only)
+- **CSS**: Tailwind CSS v4
+- **Auth**: SuperTokens
+- **FHIR**: Blaze (R4)
 
 ## License
 
-Konsulin is distributed under the [AGPL-3.0 License](./LICENSE). **You may not use Konsulin's logo for other projects.** Commercial licenses are available for organizations that wish to use this software without AGPL obligations. Contact [hello@konsulin.care](mailto:hello@konsulin.care) to obtain a commercial license.
+Konsulin is distributed under the [AGPL-3.0 License](./LICENSE). Commercial licenses available at [hello@konsulin.care](mailto:hello@konsulin.care).
