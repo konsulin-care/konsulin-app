@@ -1,40 +1,22 @@
 ---
 title: Code Standards
-description: Go, templ, HTMX, Alpine.js, Tailwind, FHIR conventions
+description: Root standards file — references focused sub-documents for each domain
 date: 2026-05-26
 ---
 
-# Go Standards
+# Overview
 
-- Use Chi router (`github.com/go-chi/chi/v5`) for all HTTP routing
-- Explicit error handling: return errors, never panic
-- Keep handlers thin (< 20 lines); delegate to service functions
-- Use Go 1.22+ `slog` for structured logging
-- Prefix interfaces with `I` only when disambiguation is needed
-- Config struct populated once at startup via `os.Getenv()`
+This file aggregates all code standards by reference.
+Each domain has a focused document under `@docs/agents/`.
 
-# Templ Standards
+# References
 
-- One component per file, named after the `.templ` file
-- Use `templ.GenerateComponent` for reusable partials
-- Keep template logic minimal — prepare data in Go handlers
-- Use `@ctx.Inject()` for CSRF tokens and flash messages
-- Prefix private templates with underscore (`_layout.templ`)
-
-# HTMX Standards
-
-- Use `hx-trigger` for lazy loading (scroll, revealed, intersect)
-- Use `hx-target` for partial DOM updates, never full page reload
-- Return HTML fragments from endpoints, not JSON
-- Use `HX-Redirect` for auth redirects
-- CSRF token in `HX-Request` header for POST/PUT/DELETE
-
-# Alpine.js Standards
-
-- Use Alpine only for client-side state that can't be server-driven
-- Prefer HTMX for data fetching; Alpine for UI toggles (x-show)
-- Keep x-data expressions under 5 lines; extract to functions
-- No AJAX calls from Alpine — use HTMX instead
+| Domain        | Document                      | Scope                                           |
+| ------------- | ----------------------------- | ----------------------------------------------- |
+| Go SSR        | `@docs/agents/go-ssr.md`      | Go, Chi, templ standards                        |
+| HTMX + Alpine | `@docs/agents/htmx-alpine.md` | HTMX patterns, Alpine.js conventions            |
+| React SPA     | `@docs/agents/react-spa.md`   | AEHRC Smart Forms embedding                     |
+| Linting       | `@docs/agents/linting.md`     | Cognitive complexity, file length, import rules |
 
 # Tailwind Standards
 
@@ -49,3 +31,5 @@ date: 2026-05-26
 - Bundle processing: paginate via `Bundle.link[rel=next]`
 - Never call backend with non-FHIR parameters
 - Cache stable resources (Practitioner, Organization) with TTL
+- Use `_include` to eager-load referenced resources and avoid N+1 queries
+- Use `_summary=count` for list endpoints when only metadata is needed
