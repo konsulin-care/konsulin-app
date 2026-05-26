@@ -1,5 +1,5 @@
 ---
-title: Agentic Documentation cmd/konsulin-fe
+title: Agentic Documentation cmd/konsulin-app
 description: Main frontend server entrypoint — startup, Chi router, middleware chain
 ---
 

@@ -7,7 +7,7 @@ date: 2026-05-26
 # Overview
 
 Flat Go project layout following standard Go conventions. The frontend
-SSR server lives in `cmd/konsulin-fe/` with shared libraries in `internal/`.
+SSR server lives in `cmd/konsulin-app/` with shared libraries in `internal/`.
 This is the target structure — the current codebase is still Next.js.
 
 # Directory Map
@@ -15,7 +15,7 @@ This is the target structure — the current codebase is still Next.js.
 ```
 .
 ├── cmd/
-│   └── konsulin-fe/          Main frontend server entrypoint
+│   └── konsulin-app/         Main frontend server entrypoint
 │       ├── main.go           Server startup, config init, router setup
 │       ├── routes.go         Chi router definition
 │       └── middleware.go     Auth guard, logging, CSRF
