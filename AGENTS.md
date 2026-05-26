@@ -29,15 +29,6 @@ Subdirectories may contain their own AGENTS.md with scope-specific instructions.
 - PRECEDENCE: The AGENTS.md closest to the file being edited takes priority
 - INHERITANCE: Nested files supplement, not replace, this root file
 
-## Step 0: Project Initialization
-
-If `@docs/agents/` is empty or missing, the project has not been
-initialized. Before any other lifecycle step:
-
-1. Read `@.agents/skills/init/SKILL.md`
-2. Follow the interactive init skill to finalize all agent documentation
-3. After completion, all `docs/agents/*.md` will be project-specific
-
 ## Architecture Decision Records (ADRs)
 
 - Before architecture changes: READ `@docs/agents/ARCHITECTURE.md` for existing decisions
