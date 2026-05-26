@@ -4,5 +4,5 @@
 # mise manages Go, templ, golangci-lint — ensure shims are on PATH
 export PATH="$HOME/.local/share/mise/shims:$PATH"
 
-make check-go && go test ./... -count=1 || exit 1
+make check-go && go test ./... -count=1 && make docker-check || exit 1
 npx --no-install lint-staged 2>/dev/null || echo "  lint-staged: not available (run npm install)"

@@ -30,24 +30,34 @@ jobs:
           echo "IS_DEV: ${{ github.ref_name == 'develop' }}"
           echo "IS_PROD: ${{ github.ref_name == 'main' }}"
 
+  # Go test and build
+  test-go:
+    name: Go Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install mise-managed tools (Go)
+        uses: jdx/mise-action@v2
+
+      - name: Run Go tests
+        run: make test-go
+
+      - name: Build Go binary
+        run: go build ./cmd/konsulin-app
+
   # Build and push Docker image
   docker:
     name: Build Docker Image
-    needs: debug-vars
+    needs: [debug-vars, test-go]
     uses: ./.github/workflows/docker-build.yml
     with:
-      TZ_ARG: Asia/Jakarta
-      AUTHOR: ${{ github.actor }}
-      GIT_COMMIT: ${{ github.sha }}
-      BUILD_TIME: ${{ github.event.head_commit.timestamp }}
-      RUN_NUMBER: ${{ github.run_number }}
       IS_DEV: ${{ github.ref_name == 'develop' }}
       IS_PROD: ${{ github.ref_name == 'main' }}
-      APP_NAME: ${{ vars.APP_NAME }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      WEBHOOK_AUTH: ${{ secrets.WEBHOOK_AUTH }}
 
   # Deploy to appropriate environment
   deploy-dev:
