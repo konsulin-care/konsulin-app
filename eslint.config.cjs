@@ -1,4 +1,5 @@
 const { defineConfig } = require('eslint-define-config')
+const sonarjs = require('eslint-plugin-sonarjs')
 
 module.exports = defineConfig({
   extends: [
@@ -7,7 +8,8 @@ module.exports = defineConfig({
     'prettier'
   ],
   plugins: {
-    '@typescript-eslint': require('@typescript-eslint/eslint-plugin')
+    '@typescript-eslint': require('@typescript-eslint/eslint-plugin'),
+    sonarjs
   },
   languageOptions: {
     parser: require.resolve('@typescript-eslint/parser'),
@@ -17,6 +19,8 @@ module.exports = defineConfig({
     }
   },
   rules: {
-    'react/no-unescaped-entities': 'off'
+    'react/no-unescaped-entities': 'off',
+    'sonarjs/cognitive-complexity': ['error', 15],
+    'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }]
   }
 })

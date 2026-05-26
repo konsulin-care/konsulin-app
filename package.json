@@ -101,6 +101,7 @@
     "eslint": "^9",
     "eslint-config-next": "^15.5.0",
     "eslint-define-config": "^2.1.0",
+    "eslint-plugin-sonarjs": "^4.0.3",
     "husky": "^9.0.11",
     "jsdom": "^29.0.2",
     "lint-staged": "^16.4.0",
@@ -109,6 +110,10 @@
     "tailwindcss": "^4.1.12",
     "typescript": "^5",
     "vitest": "^4.1.4"
+  },
+  "engines": {
+    "node": ">=24.0.0 <25",
+    "npm": ">=10.0.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

@@ -1,0 +1,5 @@
+[tools]
+go = "1.26.3"
+node = "24"
+"go:github.com/a-h/templ/cmd/templ" = "latest"
+"github:golangci/golangci-lint" = "latest"

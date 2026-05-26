@@ -1,3 +1,8 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"]
+  "extends": ["next/core-web-vitals", "next/typescript", "plugin:sonarjs/recommended-legacy"],
+  "plugins": ["sonarjs"],
+  "rules": {
+    "sonarjs/cognitive-complexity": ["warn", 15],
+    "max-lines": ["warn", { "max": 300, "skipBlankLines": true, "skipComments": true }]
+  }
 }
