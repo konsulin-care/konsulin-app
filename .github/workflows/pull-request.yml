@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install mise-managed tools (Go, Node)
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4
 
       - name: Cache Go modules
         uses: actions/cache@v4
