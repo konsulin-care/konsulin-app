@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/001-pages-routes.md for route patterns and @docs/wiki/004-state-management.md for current data fetching patterns.
+
 Migrate `/record*` routes from Next.js to Go SSR. Personal health record
 rendered as a chronological timeline with progressive loading via HTMX
 (ADR-011). Initial load shows recent items; older items load on scroll.

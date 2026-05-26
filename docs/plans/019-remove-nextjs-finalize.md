@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/010-infrastructure.md for current Docker and deployment configuration to understand what must be preserved.
+
 Complete the migration by removing all Next.js/JS code, dependencies,
 and configuration. Finalize the Go-only build pipeline, Dockerfile,
 CI/CD workflows, and documentation.

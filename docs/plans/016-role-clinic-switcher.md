@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/004-state-management.md for current auth context patterns and @docs/wiki/005-auth-session.md for session handling.
+
 Implement the role context switcher (ADR-008) and clinic context
 switcher (ADR-009) in the navigation header. Users with multiple roles
 select active role via dropdown; clinic admins select active clinic.

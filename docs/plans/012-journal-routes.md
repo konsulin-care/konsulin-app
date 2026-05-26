@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/006-data-types.md for FHIR type definitions used by journal entries.
+
 Migrate `/journal*` routes from Next.js to Go SSR. Journal entries are
 stored as FHIR Observation resources with LOINC code `51855-5` ("Patient
 Note"). CRUD with HTMX-powered forms for create, edit, and delete.

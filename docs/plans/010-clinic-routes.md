@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/001-pages-routes.md for current route patterns.
+
 Migrate `/clinic*` routes from Next.js to Go SSR. Patient-facing clinic
 listing and detail, admin-facing clinic management dashboard, and
 clinic context switcher for multi-clinic administrators (ADR-009).

@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/008-pwa-offline.md for current service worker and offline handling.
+
 Implement offline fallback page (`/~offline`), custom 404 page, and a
 plain service worker to replace Serwist (Next.js-specific PWA plugin).
 The service worker uses cache-first for static assets and network-first

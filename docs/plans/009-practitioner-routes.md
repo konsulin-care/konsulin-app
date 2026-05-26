@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/001-pages-routes.md for route patterns and @docs/wiki/006-data-types.md for FHIR type definitions.
+
 Migrate `/practitioner/*` routes from Next.js to Go SSR. Practitioner
 listing with search/filter, detailed profile with HealthcareServices,
 and availability view.

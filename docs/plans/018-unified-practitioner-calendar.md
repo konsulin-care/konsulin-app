@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/001-pages-routes.md for current route patterns and clinician dashboard layout.
+
 Implement the unified practitioner calendar (ADR-005). The calendar
 REPLACES the current practitioner dashboard (`HomeContentClinician`).
 When role is `Practitioner`, `GET /` renders the calendar as primary

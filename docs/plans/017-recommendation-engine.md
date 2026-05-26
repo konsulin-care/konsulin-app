@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/003-api-services.md for current API patterns and @docs/wiki/006-data-types.md for FHIR type definitions.
+
 Implement the recommendation-first patient UX (ADR-003, ADR-006). The
 Go SSR aggregates FHIR resources (PractitionerRole → HealthcareService →
 Location), ranks by nearest availability + proximity, and provides a

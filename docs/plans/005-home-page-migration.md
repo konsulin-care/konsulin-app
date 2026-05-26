@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/001-pages-routes.md for current route patterns and role dispatch.
+
 Migrate the root route `GET /` from Next.js to Go SSR. The home page
 displays role-aware content (guest, patient, practitioner, clinic admin)
 with an HTMX-driven role header and Alpine.js mobile nav toggle.

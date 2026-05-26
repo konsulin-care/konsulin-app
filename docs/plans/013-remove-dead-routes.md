@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/001-pages-routes.md for route inventory and @docs/wiki/002-ui-components.md for icon and navigation component references.
+
 Remove the `/message` and `/exercise` routes entirely. Message page is
 an empty stub (`<div>Message</div>`) with no conversations or API.
 Exercise page is a Media resource list with no real workout/wellness

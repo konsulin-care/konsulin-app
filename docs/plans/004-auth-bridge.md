@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/005-auth-session.md for current SuperTokens auth flow and session handling.
+
 Implement auth bridge between SuperTokens client-side SDK and Go SSR.
 Read auth cookies from requests, verify session with backend API, inject
 user context (userId, role, fhirId, profileComplete) into request context,

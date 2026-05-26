@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/010-infrastructure.md for current CI/CD and deployment context.
+
 Audit all `.github/workflows/*.yml` (active + disabled). Update
 `pull-request.yml` to check PRs against `develop` AND `beta/*` branches
 and test both Go SSR and Next.js. Archive/remove obsolete workflows.

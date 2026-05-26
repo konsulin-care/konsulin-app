@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/001-pages-routes.md for route patterns and @docs/wiki/003-api-services.md for current API service patterns.
+
 Migrate `/schedule*` routes from Next.js to Go SSR. Appointment list,
 detail view, booking form with dynamic interval computation (ADR-004),
 and HTMX partial updates for appointment status changes.

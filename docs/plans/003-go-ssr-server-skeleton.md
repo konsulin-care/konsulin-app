@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/001-pages-routes.md for current route patterns and @docs/wiki/009-styling-assets.md for current Tailwind/styling setup.
+
 Build the Go SSR server skeleton: Chi router with middleware stack, config
 loading from env vars, static file serving, reverse proxy to Next.js for
 unmigrated routes, base layout templ component, and `make dev` target.

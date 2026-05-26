@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/008-pwa-offline.md for current PWA and service worker setup.
+
 Finalize the PWA layer: enhance the service worker with full caching
 strategy, IndexedDB schema versioning and migration, offline sync queue
 for assessment submissions, and cache invalidation for updated assets.

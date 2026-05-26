@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/001-pages-routes.md for route patterns and @docs/wiki/006-data-types.md for FHIR type definitions.
+
 Migrate `/profile*` routes from Next.js to Go SSR. View profile, edit
 profile form with HTMX validation, and FHIR resource loading for
 Patient (patient role) or Practitioner (practitioner role) resources.

@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/007-aehrc-forms.md for current AEHRC Smart Forms integration and SOAP flow.
+
 Embed the AEHRC Smart Forms React SPA within the Go SSR application
 (ADR-010). Go server serves shell HTML for three assessment flows:
 (1) general assessment browse/fill at `/assessments`, (2) practitioner

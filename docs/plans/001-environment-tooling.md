@@ -6,6 +6,8 @@ date: 2026-05-26
 
 # Overview
 
+Before implementing, read @docs/wiki/010-infrastructure.md for current CI/CD and deployment context.
+
 Set up development environment with mise (Go 1.26.3, Node LTS, templ CLI),
 initialize the Go module, update pre-commit to test both stacks, configure
 Tailwind v4 standalone CLI for templ, and update Makefile/.gitignore.
