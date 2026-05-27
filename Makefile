@@ -82,11 +82,13 @@ dev: css-templ templ-gen
 	  APP_URL=http://localhost:$(GO_PORT) \
 	  API_URL=$${API_URL:-http://localhost:3200} \
 	  TX_URL=$${TX_URL:-http://localhost:3300} \
+	  NEXTJS_URL=http://localhost:$(NEXT_PORT) \
 	  go run ./cmd/konsulin-app & \
 	  npm run dev -- -p $(NEXT_PORT) & \
 	  wait
 
 dev-go: css-templ templ-gen
+	NEXTJS_URL=http://localhost:$(NEXT_PORT) \
 	PORT=$(GO_PORT) go run ./cmd/konsulin-app
 
 dev-next:

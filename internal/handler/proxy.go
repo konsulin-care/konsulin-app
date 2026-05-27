@@ -28,8 +28,14 @@ func NewReverseProxy(target *url.URL) *httputil.ReverseProxy {
 		Rewrite: func(pr *httputil.ProxyRequest) {
 			pr.SetURL(target)
 			pr.Out.Host = target.Host
-			pr.Out.Header.Set("X-Forwarded-Host", pr.Out.Host)
-			pr.Out.Header.Set("X-Forwarded-Proto", "http")
+			pr.Out.Header.Set("X-Forwarded-Host", pr.In.Host)
+			proto := "http"
+			if pr.In.TLS != nil {
+				proto = "https"
+			} else if fwd := pr.In.Header.Get("X-Forwarded-Proto"); fwd != "" {
+				proto = fwd
+			}
+			pr.Out.Header.Set("X-Forwarded-Proto", proto)
 			if orig := pr.Out.Header.Get(xForwardedFor); orig != "" {
 				pr.Out.Header.Set(xForwardedFor, orig+", "+pr.Out.RemoteAddr)
 			} else {

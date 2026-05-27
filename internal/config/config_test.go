@@ -151,7 +151,7 @@ func TestAuthFullPath(t *testing.T) {
 	}
 }
 
-func TestLoad_missingRequired(t *testing.T) {
+func TestEnvUnset_clearsRequiredVars(t *testing.T) {
 	saveEnv(t, "API_URL")
 	saveEnv(t, "APP_URL")
 	saveEnv(t, "TX_URL")
@@ -168,6 +168,17 @@ func TestLoad_missingRequired(t *testing.T) {
 	//nolint:usetesting // os.Getenv used for env var cleanup verification, not test isolation
 	if os.Getenv("API_URL") != "" || os.Getenv("APP_URL") != "" || os.Getenv("TX_URL") != "" {
 		t.Fatal("required env vars not properly unset")
+	}
+}
+
+func TestLoad_missingRequiredReturnsError(t *testing.T) {
+	saveEnv(t, "SESSION_COOKIE_SECRET")
+	if err := os.Unsetenv("SESSION_COOKIE_SECRET"); err != nil {
+		t.Fatalf("unset SESSION_COOKIE_SECRET: %v", err)
+	}
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for missing required env var, got nil")
 	}
 }
 

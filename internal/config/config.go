@@ -62,7 +62,7 @@ func Load() (*Config, error) {
 		SessionCookieNameRefresh: env("SESSION_COOKIE_NAME_REFRESH", "sRefreshToken"),
 		SessionCookieSecret:      sessionSecret,
 
-		NextjsURL:    env("NEXTJS_URL", "http://localhost:3000"),
+		NextjsURL:    env("NEXTJS_URL", "http://localhost:8080"),
 		CookieSecure: strings.HasPrefix(appURL, "https://"),
 	}
 	slog.Info("config loaded",
