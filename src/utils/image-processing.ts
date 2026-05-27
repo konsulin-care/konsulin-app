@@ -120,8 +120,6 @@ export async function processImageForAvatar(
       width: targetSizePx,
       height: targetSizePx
     };
-  } catch (error) {
-    throw error;
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
