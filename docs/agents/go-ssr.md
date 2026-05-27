@@ -18,6 +18,17 @@ date: 2026-05-26
 - Use `templ.Handler()` for static pages; use `.Render(r.Context(), w)` for dynamic data
 - Use `templ.WithStatus()` to set correct status codes on error pages
 
+# Go Testing Standards
+
+- Use `os.LookupEnv` (not `os.Getenv`) when capturing env var state in tests
+  — store both the value and a `wasSet` boolean
+- Restore env vars precisely via `t.Cleanup`: call `os.Setenv` if the var was
+  originally set, `os.Unsetenv` if it was not
+- Error-check every `os.Setenv` / `os.Unsetenv` call (both setup and cleanup)
+  with `t.Fatalf` — never ignore the returned error
+- Prefer `t.Cleanup` over `defer` for env var restoration: it runs even if
+  the test panics, and groups the restore logic with the capture
+
 # Templ Standards
 
 - One component per file, named after the `.templ` file
