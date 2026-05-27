@@ -6,6 +6,7 @@ COPY . .
 RUN CGO_ENABLED=0 go build -o /app/server ./cmd/konsulin-app
 
 FROM gcr.io/distroless/static-debian12:nonroot
+WORKDIR /app
 COPY --from=builder /app/server /app/server
 COPY web ./web
 EXPOSE 8080

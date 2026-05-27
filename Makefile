@@ -50,7 +50,11 @@ check-go: check-file-length lint-go-cognitive check-fmt-go lint-go
 
 # Dockerfile linting
 docker-check:
-	hadolint Dockerfile 2>/dev/null || echo "  hadolint not available (run mise install)"
+	if command -v hadolint >/dev/null 2>&1; then \
+	  hadolint Dockerfile; \
+	else \
+	  echo "  hadolint not available (run mise install)"; \
+	fi
 
 # Tailwind CSS for templ templates
 TAILWIND = .bin/tailwindcss

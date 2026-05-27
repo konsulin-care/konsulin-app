@@ -1,6 +1,7 @@
 [tools]
 go = "1.26.3"
 node = "24"
-"go:github.com/a-h/templ/cmd/templ" = "latest"
-"github:golangci/golangci-lint" = "latest"
-"github:hadolint/hadolint" = "latest"
+"go:github.com/a-h/templ/cmd/templ" = "0.3.1020"
+"github:golangci/golangci-lint" = "2.12.2"
+"github:hadolint/hadolint" = "2.14.0"
+"go:github.com/uudashr/gocognit/cmd/gocognit" = "1.2.1"
