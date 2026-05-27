@@ -33,7 +33,7 @@ func (d noDirFS) Open(name string) (http.File, error) {
 	}
 	if stat.IsDir() {
 		_ = f.Close()
-		return nil, os.ErrPermission
+		return nil, os.ErrNotExist
 	}
 	return f, nil
 }
