@@ -83,7 +83,7 @@ func TestReverseProxy_forwardsCookies(t *testing.T) {
 	}))
 	defer proxyServer.Close()
 
-	req, err := http.NewRequest(http.MethodGet, proxyServer.URL+"/test", nil)
+	req, err := http.NewRequest(http.MethodGet, proxyServer.URL+"/test", http.NoBody)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}

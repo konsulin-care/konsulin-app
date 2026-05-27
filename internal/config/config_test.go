@@ -23,18 +23,9 @@ func saveEnv(t *testing.T, key string) {
 
 func setRequiredEnv(t *testing.T) {
 	t.Helper()
-	saveEnv(t, "API_URL")
-	saveEnv(t, "APP_URL")
-	saveEnv(t, "TX_URL")
-	if err := os.Setenv("API_URL", "http://test:3200"); err != nil {
-		t.Fatalf("set API_URL: %v", err)
-	}
-	if err := os.Setenv("APP_URL", "http://test:3000"); err != nil {
-		t.Fatalf("set APP_URL: %v", err)
-	}
-	if err := os.Setenv("TX_URL", "http://test:3300"); err != nil {
-		t.Fatalf("set TX_URL: %v", err)
-	}
+	t.Setenv("API_URL", "http://test:3200")
+	t.Setenv("APP_URL", "http://test:3000")
+	t.Setenv("TX_URL", "http://test:3300")
 }
 
 func TestLoad_defaultPort(t *testing.T) {
@@ -54,10 +45,7 @@ func TestLoad_defaultPort(t *testing.T) {
 
 func TestLoad_customPort(t *testing.T) {
 	setRequiredEnv(t)
-	saveEnv(t, "PORT")
-	if err := os.Setenv("PORT", "9090"); err != nil {
-		t.Fatalf("set PORT=9090: %v", err)
-	}
+	t.Setenv("PORT", "9090")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load() returned error: %v", err)
@@ -84,10 +72,7 @@ func TestLoad_defaultAppName(t *testing.T) {
 
 func TestLoad_customAppName(t *testing.T) {
 	setRequiredEnv(t)
-	saveEnv(t, "APP_NAME")
-	if err := os.Setenv("APP_NAME", "TestApp"); err != nil {
-		t.Fatalf("set APP_NAME=TestApp: %v", err)
-	}
+	t.Setenv("APP_NAME", "TestApp")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load() returned error: %v", err)
@@ -114,10 +99,7 @@ func TestLoad_defaultApiBasePath(t *testing.T) {
 
 func TestLoad_customApiBasePath(t *testing.T) {
 	setRequiredEnv(t)
-	saveEnv(t, "API_BASE_PATH")
-	if err := os.Setenv("API_BASE_PATH", "/custom/v2"); err != nil {
-		t.Fatalf("set API_BASE_PATH=/custom/v2: %v", err)
-	}
+	t.Setenv("API_BASE_PATH", "/custom/v2")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load() returned error: %v", err)
@@ -144,10 +126,7 @@ func TestLoad_defaultAuthPath(t *testing.T) {
 
 func TestLoad_customAuthPath(t *testing.T) {
 	setRequiredEnv(t)
-	saveEnv(t, "AUTH_PATH")
-	if err := os.Setenv("AUTH_PATH", "/signin"); err != nil {
-		t.Fatalf("set AUTH_PATH=/signin: %v", err)
-	}
+	t.Setenv("AUTH_PATH", "/signin")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load() returned error: %v", err)
@@ -159,14 +138,8 @@ func TestLoad_customAuthPath(t *testing.T) {
 
 func TestAuthFullPath(t *testing.T) {
 	setRequiredEnv(t)
-	saveEnv(t, "API_BASE_PATH")
-	saveEnv(t, "AUTH_PATH")
-	if err := os.Setenv("API_BASE_PATH", "/api/v2"); err != nil {
-		t.Fatalf("set API_BASE_PATH=/api/v2: %v", err)
-	}
-	if err := os.Setenv("AUTH_PATH", "/login"); err != nil {
-		t.Fatalf("set AUTH_PATH=/login: %v", err)
-	}
+	t.Setenv("API_BASE_PATH", "/api/v2")
+	t.Setenv("AUTH_PATH", "/login")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load() returned error: %v", err)
@@ -197,10 +170,7 @@ func TestLoad_missingRequired(t *testing.T) {
 }
 
 func TestMustEnv_present(t *testing.T) {
-	saveEnv(t, "TEST_VAR")
-	if err := os.Setenv("TEST_VAR", "hello"); err != nil {
-		t.Fatalf("set TEST_VAR=hello: %v", err)
-	}
+	t.Setenv("TEST_VAR", "hello")
 	val, err := MustEnv("TEST_VAR")
 	if err != nil {
 		t.Fatalf("MustEnv() returned error: %v", err)

@@ -26,14 +26,27 @@ func (c *Config) AuthFullPath() string {
 }
 
 func Load() (*Config, error) {
+	apiURL, err := MustEnv("API_URL")
+	if err != nil {
+		return nil, err
+	}
+	appURL, err := MustEnv("APP_URL")
+	if err != nil {
+		return nil, err
+	}
+	txURL, err := MustEnv("TX_URL")
+	if err != nil {
+		return nil, err
+	}
+
 	cfg := &Config{
 		Port:        env("PORT", "8080"),
 		AppName:     env("APP_NAME", "Konsulin"),
-		APIURL:      mustEnv("API_URL"),
+		APIURL:      apiURL,
 		APIBasePath: env("API_BASE_PATH", "/api/v1"),
 		AuthPath:    env("AUTH_PATH", "/auth"),
-		AppURL:      mustEnv("APP_URL"),
-		TXURL:       mustEnv("TX_URL"),
+		AppURL:      appURL,
+		TXURL:       txURL,
 
 		AuthCookieName:           env("AUTH_COOKIE_NAME", "auth"),
 		SessionCookieNameAccess:  env("SESSION_COOKIE_NAME_ACCESS", "sAccessToken"),
@@ -57,15 +70,6 @@ func env(key, defaultVal string) string {
 	}
 	slog.Debug("env var not set, using default", "key", key, "default", defaultVal)
 	return defaultVal
-}
-
-func mustEnv(key string) string {
-	val, ok := os.LookupEnv(key)
-	if !ok {
-		slog.Error("required env var not set", "key", key)
-		os.Exit(1)
-	}
-	return val
 }
 
 func MustEnv(key string) (string, error) {

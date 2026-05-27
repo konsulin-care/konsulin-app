@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -20,7 +21,28 @@ import (
 // Hardcoded during migration — removed entirely post-migration.
 var proxyTarget = "http://localhost:8080"
 
-func routes(cfg *config.Config) http.Handler {
+type noDirFS struct {
+	http.Dir
+}
+
+func (d noDirFS) Open(name string) (http.File, error) {
+	f, err := d.Dir.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	stat, err := f.Stat()
+	if err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+	if stat.IsDir() {
+		_ = f.Close()
+		return nil, os.ErrPermission
+	}
+	return f, nil
+}
+
+func routes(cfg *config.Config) (http.Handler, error) {
 	r := chi.NewRouter()
 
 	r.Use(chimw.RequestID)
@@ -33,8 +55,7 @@ func routes(cfg *config.Config) http.Handler {
 
 	proxyURL, err := url.Parse(proxyTarget)
 	if err != nil {
-		slog.Error("invalid proxy target", "url", proxyTarget, "err", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("invalid proxy target %q: %w", proxyTarget, err)
 	}
 	proxy := handler.NewReverseProxy(proxyURL)
 
@@ -46,8 +67,12 @@ func routes(cfg *config.Config) http.Handler {
 		}
 	})
 
-	staticDir := filepath.Join(workingDir(), "web", "static")
-	fileServer := http.FileServer(http.Dir(staticDir))
+	wd, err := workingDir()
+	if err != nil {
+		return nil, err
+	}
+	staticDir := filepath.Join(wd, "web", "static")
+	fileServer := http.FileServer(noDirFS{http.Dir(staticDir)})
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 
 	r.Post("/auth/logout", handler.NewLogoutHandler(handler.LogoutOptions{
@@ -68,16 +93,15 @@ func routes(cfg *config.Config) http.Handler {
 	// All unmatched routes proxy to Next.js (which has its own auth guard).
 	r.NotFound(proxy.ServeHTTP)
 
-	return r
+	return r, nil
 }
 
-func workingDir() string {
+func workingDir() (string, error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		slog.Error("failed to get working directory", "err", err)
-		os.Exit(1)
+		return "", fmt.Errorf("failed to get working directory: %w", err)
 	}
-	return wd
+	return wd, nil
 }
 
 func main() {
@@ -87,9 +111,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	handler, err := routes(cfg)
+	if err != nil {
+		slog.Error("failed to set up routes", "err", err)
+		os.Exit(1)
+	}
+
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
-		Handler:      routes(cfg),
+		Handler:      handler,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

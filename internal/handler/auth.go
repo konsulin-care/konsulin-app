@@ -57,7 +57,7 @@ func tryBackendLogout(r *http.Request, backendURL string) {
 		return
 	}
 
-	req, err := http.NewRequest(http.MethodPost, signoutURL, nil)
+	req, err := http.NewRequest(http.MethodPost, signoutURL, http.NoBody)
 	if err != nil {
 		slog.Warn("logout: failed to create request", "err", err)
 		return

@@ -64,7 +64,7 @@ func assertStatus(t *testing.T, resp *http.Response, want int) {
 
 func TestProtectedRoute_redirectsWithoutAuth(t *testing.T) {
 	r := newAuthRouter()
-	r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/profile", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -108,7 +108,7 @@ func TestProtectedRoute_allowsWithValidAuth(t *testing.T) {
 	encoded := url.QueryEscape(string(authJSON))
 
 	server := newTestServer(t, r)
-	req, err := http.NewRequest(http.MethodGet, server.URL+"/profile", nil)
+	req, err := http.NewRequest(http.MethodGet, server.URL+"/profile", http.NoBody)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestAuthRoutes_notGuarded(t *testing.T) {
 	for _, p := range paths {
 		t.Run(p, func(t *testing.T) {
 			r := newAuthRouter()
-			r.Get(p, func(w http.ResponseWriter, r *http.Request) {
+			r.Get(p, func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusOK)
 			})
 
@@ -178,12 +178,12 @@ func TestLogoutHandler_clearsCookies(t *testing.T) {
 
 func TestHTMXProtectedRoute_redirectsViaHeader(t *testing.T) {
 	r := newAuthRouter()
-	r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/profile", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
 	server := newTestServer(t, r)
-	req, err := http.NewRequest(http.MethodGet, server.URL+"/profile", nil)
+	req, err := http.NewRequest(http.MethodGet, server.URL+"/profile", http.NoBody)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
