@@ -10,20 +10,14 @@ function signCookieValue(value: string, secret: string): string {
   return `${enc}.${mac}`;
 }
 
-/** Sets a signed session cookie. Falls back to unsigned with a warning if SESSION_COOKIE_SECRET is not set. */
+/** Sets a signed session cookie. Fails fast if SESSION_COOKIE_SECRET is not set. */
 export async function setCookies(
   sessionName: string,
   sessionData: string
 ): Promise<void> {
   const secret = process.env.SESSION_COOKIE_SECRET;
   if (!secret) {
-    console.warn('SESSION_COOKIE_SECRET not set; cookie will not be signed');
-    await cookies().set(sessionName, sessionData, {
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 2, // 2 hours
-      path: '/'
-    });
-    return;
+    throw new Error('SESSION_COOKIE_SECRET environment variable is required to set cookies');
   }
   const signed = signCookieValue(sessionData, secret);
   await cookies().set(sessionName, signed, {

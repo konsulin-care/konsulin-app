@@ -31,7 +31,7 @@ export default function ResetPasswordForm() {
     mutationFn: async (new_password: typeof userPassword) => {
       try {
         const response = await fetch(
-          `${process.env.API_URL}/api/v1/auth/reset-password`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/reset-password`,
           {
             method: 'POST',
             headers: {

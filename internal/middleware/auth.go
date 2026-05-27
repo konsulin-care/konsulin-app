@@ -90,7 +90,7 @@ func isSkippedPath(path string, opts AuthGuardOptions) bool {
 		return true
 	}
 	for _, skip := range opts.SkipPaths {
-		if strings.HasPrefix(path, skip) || path == skip {
+		if path == skip || strings.HasPrefix(path, skip+"/") || (strings.HasSuffix(skip, "/") && strings.HasPrefix(path, skip)) {
 			return true
 		}
 	}

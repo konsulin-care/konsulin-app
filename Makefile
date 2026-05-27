@@ -83,6 +83,7 @@ dev: css-templ templ-gen
 	  API_URL=$${API_URL:-http://localhost:3200} \
 	  TX_URL=$${TX_URL:-http://localhost:3300} \
 	  NEXTJS_URL=http://localhost:$(NEXT_PORT) \
+	  SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} \
 	  go run ./cmd/konsulin-app & \
 	  npm run dev -- -p $(NEXT_PORT) & \
 	  wait
@@ -101,13 +102,6 @@ build-go: css-templ templ-gen
 run: css-templ templ-gen
 	go run ./cmd/konsulin-app
 
-# JavaScript dependencies
-HTMX_VERSION = 2.0.9
-ALPINE_VERSION = 3.14.9
-
 update-js:
-	curl -L -o web/static/js/htmx.min.js \
-	  "https://unpkg.com/htmx.org@$(HTMX_VERSION)/dist/htmx.min.js"
-	curl -L -o web/static/js/alpine.min.js \
-	  "https://cdn.jsdelivr.net/npm/alpinejs@$(ALPINE_VERSION)/dist/cdn.min.js"
-	@echo "Updated HTMX to $(HTMX_VERSION), Alpine.js to $(ALPINE_VERSION)"
+	cp node_modules/htmx.org/dist/htmx.min.js web/static/js/htmx.min.js
+	cp node_modules/alpinejs/dist/cdn.min.js web/static/js/alpine.min.js

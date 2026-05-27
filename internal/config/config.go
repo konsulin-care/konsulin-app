@@ -2,10 +2,13 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
 	"strings"
+
+	"github.com/a-h/templ"
 )
 
 type Config struct {
@@ -28,6 +31,34 @@ type Config struct {
 
 func (c *Config) AuthFullPath() string {
 	return c.APIBasePath + c.AuthPath
+}
+
+func (c *Config) AppInfoJSON() string {
+	data := map[string]any{
+		"appInfo": map[string]any{
+			"appName":         c.AppName,
+			"apiDomain":       c.APIURL,
+			"websiteDomain":   c.AppURL,
+			"apiBasePath":     c.AuthFullPath(),
+			"websiteBasePath": c.AuthPath,
+		},
+		"terminologyServer": c.TXURL,
+	}
+	b, _ := json.Marshal(data)
+	return string(b)
+}
+
+func (c *Config) RuntimeConfigScript() templ.Component {
+	return templ.JSONScript("__RUNTIME_CONFIG__", map[string]any{
+		"appInfo": map[string]any{
+			"appName":         c.AppName,
+			"apiDomain":       c.APIURL,
+			"websiteDomain":   c.AppURL,
+			"apiBasePath":     c.AuthFullPath(),
+			"websiteBasePath": c.AuthPath,
+		},
+		"terminologyServer": c.TXURL,
+	})
 }
 
 func Load() (*Config, error) {
@@ -89,7 +120,8 @@ func env(key, defaultVal string) string {
 
 func MustEnv(key string) (string, error) {
 	val, ok := os.LookupEnv(key)
-	if !ok {
+	val = strings.TrimSpace(val)
+	if !ok || val == "" {
 		return "", fmt.Errorf("required env var %s is not set", key)
 	}
 	return val, nil

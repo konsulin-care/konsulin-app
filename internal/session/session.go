@@ -134,6 +134,15 @@ func validateRedirectFormat(path string) (string, bool) {
 	if err != nil {
 		return "", false
 	}
+	if strings.Contains(decoded, "\\") {
+		return "", false
+	}
+	if strings.ContainsAny(decoded, "\r\n\t") {
+		return "", false
+	}
+	if strings.Contains(decoded, "://") {
+		return "", false
+	}
 	if strings.HasPrefix(decoded, "//") {
 		return "", false
 	}

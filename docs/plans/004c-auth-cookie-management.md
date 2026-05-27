@@ -23,6 +23,7 @@ Required by plan 004d (auth pages need this to set the cookie after SuperTokens 
 - [ ] Create `internal/handler/auth_cookie.go`:
   - `POST /api/auth/cookie`: reads `{userId, role_name, fhirId, ...}` from body, validates fields, sets `auth` cookie with `Secure: cfg.CookieSecure`, `HttpOnly: true`, `SameSite: http.SameSiteLaxMode`
   - `DELETE /api/auth/cookie`: sets `auth` cookie with empty value and `MaxAge: -1`
+  - [ ] **POST /api/auth/cookie validation**: verify SuperTokens sAccessToken cookie is present in the incoming request; reject with 401 if missing (lightweight check matching current Next.js middleware pattern)
 - [ ] Replace HMAC signing with gorilla/securecookie:
   - `internal/session/session.go`: replace `signValue`/`verifySignedValue` helpers with `securecookie.New(hashKey, blockKey).Encode/Decode`
   - `internal/session/session.go`: keep `SignCookieValue` as public wrapper; update `ExtractFromRequest` to use `securecookie.Decode`

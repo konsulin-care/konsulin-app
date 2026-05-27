@@ -17,17 +17,9 @@ templ Base(cfg *config.Config, activeNav string, headerContent, children templ.C
 			<link rel="stylesheet" href="/static/css/output.css"/>
 			<script src="/static/js/htmx.min.js"></script>
 			<script defer src="/static/js/alpine.min.js"></script>
+			@cfg.RuntimeConfigScript()
 			<script>
-				window.__RUNTIME_CONFIG__ = {
-					appInfo: {
-						appName: cfg.AppName,
-						apiDomain: cfg.APIURL,
-						websiteDomain: cfg.AppURL,
-						apiBasePath: cfg.AuthFullPath(),
-						websiteBasePath: cfg.AuthPath
-					},
-					terminologyServer: cfg.TXURL
-				};
+				window.__RUNTIME_CONFIG__ = JSON.parse(document.getElementById('__RUNTIME_CONFIG__').textContent);
 			</script>
 			<title>{ cfg.AppName }</title>
 		</head>
