@@ -68,6 +68,8 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		return nil, err
 	}
 	staticDir := filepath.Join(wd, "web", "static")
+	// deepsource-disable-next-line GO-S1034
+	// noDirFS prevents directory listing — false positive.
 	fileServer := http.FileServer(noDirFS{http.Dir(staticDir)})
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 
