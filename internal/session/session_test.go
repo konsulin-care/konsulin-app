@@ -7,20 +7,22 @@ import (
 	"testing"
 )
 
-func cookieRaw(t *testing.T, value string) *http.Request {
+const testSecret = "test-secret-key-for-testing"
+
+func signedCookie(t *testing.T, value string) *http.Request {
 	t.Helper()
 	r := &http.Request{Header: http.Header{}}
-	// In production the cookie is URL-encoded by Next.js server action.
-	encoded := url.QueryEscape(value)
+	signed := signValue(value, testSecret)
+	encoded := url.QueryEscape(signed)
 	r.Header.Set("Cookie", "auth="+encoded)
 	return r
 }
 
 func TestExtractFromRequest_valid(t *testing.T) {
 	cookieVal := `{"userId":"u1","role_name":"Patient","fhirId":"f1","profile_complete":true,"fullname":"Alice","email":"a@b.com"}`
-	r := cookieRaw(t, cookieVal)
+	r := signedCookie(t, cookieVal)
 
-	s, err := ExtractFromRequest(r, "auth")
+	s, err := ExtractFromRequest(r, "auth", testSecret)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -43,39 +45,64 @@ func TestExtractFromRequest_valid(t *testing.T) {
 
 func TestExtractFromRequest_missingCookie(t *testing.T) {
 	r := &http.Request{Header: http.Header{}}
-	_, err := ExtractFromRequest(r, "auth")
+	_, err := ExtractFromRequest(r, "auth", testSecret)
 	if err == nil {
 		t.Fatal("expected error for missing cookie")
 	}
 }
 
 func TestExtractFromRequest_emptyCookie(t *testing.T) {
-	r := cookieRaw(t, "")
-	_, err := ExtractFromRequest(r, "auth")
+	r := signedCookie(t, "")
+	_, err := ExtractFromRequest(r, "auth", testSecret)
 	if err == nil {
 		t.Fatal("expected error for empty cookie")
 	}
 }
 
+func TestExtractFromRequest_forgedCookie(t *testing.T) {
+	// Unsigned JSON must be rejected
+	r := &http.Request{Header: http.Header{}}
+	r.Header.Set("Cookie", "auth="+url.QueryEscape(`{"userId":"u1","role_name":"Admin"}`))
+	_, err := ExtractFromRequest(r, "auth", testSecret)
+	if err == nil {
+		t.Fatal("expected error for forged unsigned cookie")
+	}
+}
+
+func TestExtractFromRequest_tamperedSignature(t *testing.T) {
+	validJSON := `{"userId":"u2","role_name":"Patient"}`
+	r := signedCookie(t, validJSON)
+	signed := r.Header.Get("Cookie") // "auth=<signed>"
+
+	// Tamper the first byte of the signed value
+	tampered := signed[:len(signed)-3] + "XXX"
+	r2 := &http.Request{Header: http.Header{}}
+	r2.Header.Set("Cookie", tampered)
+	_, err := ExtractFromRequest(r2, "auth", testSecret)
+	if err == nil {
+		t.Fatal("expected error for tampered signature")
+	}
+}
+
 func TestExtractFromRequest_malformedJSON(t *testing.T) {
-	r := cookieRaw(t, "not-json")
-	_, err := ExtractFromRequest(r, "auth")
+	r := signedCookie(t, "not-json")
+	_, err := ExtractFromRequest(r, "auth", testSecret)
 	if err == nil {
 		t.Fatal("expected error for malformed JSON")
 	}
 }
 
 func TestExtractFromRequest_missingUserID(t *testing.T) {
-	r := cookieRaw(t, `{"role_name":"Patient"}`)
-	_, err := ExtractFromRequest(r, "auth")
+	r := signedCookie(t, `{"role_name":"Patient"}`)
+	_, err := ExtractFromRequest(r, "auth", testSecret)
 	if err == nil {
 		t.Fatal("expected error for missing userId")
 	}
 }
 
 func TestExtractFromRequest_emptyRoleDefaultsToGuest(t *testing.T) {
-	r := cookieRaw(t, `{"userId":"u1"}`)
-	s, err := ExtractFromRequest(r, "auth")
+	r := signedCookie(t, `{"userId":"u1"}`)
+	s, err := ExtractFromRequest(r, "auth", testSecret)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -85,12 +112,13 @@ func TestExtractFromRequest_emptyRoleDefaultsToGuest(t *testing.T) {
 }
 
 func TestExtractFromRequest_urlEncoded(t *testing.T) {
-	// Next.js server action URL-encodes the cookie via encodeURI
-	val := `%7B%22userId%22%3A%22u1%22%2C%22role_name%22%3A%22Patient%22%7D`
+	payload := `{"userId":"u1","role_name":"Patient"}`
+	signed := signValue(payload, testSecret)
+	val := url.QueryEscape(signed)
 	r := &http.Request{Header: http.Header{}}
 	r.Header.Set("Cookie", "auth="+val)
 
-	s, err := ExtractFromRequest(r, "auth")
+	s, err := ExtractFromRequest(r, "auth", testSecret)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -118,6 +146,8 @@ func TestContextFromContext_missing(t *testing.T) {
 	}
 }
 
+const testBaseURL = "http://localhost:3000"
+
 func TestValidateRedirectPath_valid(t *testing.T) {
 	tests := []struct {
 		input string
@@ -130,7 +160,7 @@ func TestValidateRedirectPath_valid(t *testing.T) {
 		{"/path%20with%20space", "/path with space"},
 	}
 	for _, tc := range tests {
-		got, ok := ValidateRedirectPath(tc.input)
+		got, ok := ValidateRedirectPath(tc.input, testBaseURL)
 		if !ok {
 			t.Errorf("expected valid for %q", tc.input)
 			continue
@@ -151,9 +181,42 @@ func TestValidateRedirectPath_invalid(t *testing.T) {
 		"/" + string(make([]byte, 300)),
 	}
 	for _, tc := range tests {
-		_, ok := ValidateRedirectPath(tc)
+		_, ok := ValidateRedirectPath(tc, testBaseURL)
 		if ok {
 			t.Errorf("expected invalid for %q", tc)
 		}
+	}
+}
+
+func TestValidateRedirectPath_crossOrigin(t *testing.T) {
+	tests := []string{
+		"http://evil.com",
+		"https://evil.com/path",
+		"//evil.com/hello",
+	}
+	for _, tc := range tests {
+		_, ok := ValidateRedirectPath(tc, testBaseURL)
+		if ok {
+			t.Errorf("expected cross-origin rejected for %q", tc)
+		}
+	}
+}
+
+func TestValidateRedirectPath_invalidBaseURL(t *testing.T) {
+	_, ok := ValidateRedirectPath("/valid", ":not-a-url")
+	if ok {
+		t.Error("expected false for invalid base URL")
+	}
+}
+
+func TestValidateRedirectPath_wrongSecret(t *testing.T) {
+	// Verify that different secret rejects the cookie
+	payload := `{"userId":"u1","role_name":"Patient"}`
+	signed := signValue(payload, testSecret)
+	r := &http.Request{Header: http.Header{}}
+	r.Header.Set("Cookie", "auth="+url.QueryEscape(signed))
+	_, err := ExtractFromRequest(r, "auth", "different-secret")
+	if err == nil {
+		t.Fatal("expected error for wrong secret")
 	}
 }

@@ -85,8 +85,10 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	// Future Go SSR routes go here — behind AuthGuard.
 	// r.Group(func(r chi.Router) {
 	// 	r.Use(appmw.AuthGuard(appmw.AuthGuardOptions{
-	// 		AuthPath:   cfg.AuthPath,
-	// 		CookieName: cfg.AuthCookieName,
+	// 		AuthPath:     cfg.AuthPath,
+	// 		CookieName:   cfg.AuthCookieName,
+	// 		CookieSecret: cfg.SessionCookieSecret,
+	// 		AppURL:       cfg.AppURL,
 	// 	}))
 	// 	r.Get("/profile", handler.NewProfileHandler(...))
 	// })

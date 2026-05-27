@@ -20,6 +20,7 @@ type Config struct {
 	AuthCookieName           string
 	SessionCookieNameAccess  string
 	SessionCookieNameRefresh string
+	SessionCookieSecret      string
 
 	CookieSecure bool
 }
@@ -41,6 +42,10 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	sessionSecret, err := MustEnv("SESSION_COOKIE_SECRET")
+	if err != nil {
+		return nil, err
+	}
 
 	cfg := &Config{
 		Port:        env("PORT", "8080"),
@@ -54,6 +59,7 @@ func Load() (*Config, error) {
 		AuthCookieName:           env("AUTH_COOKIE_NAME", "auth"),
 		SessionCookieNameAccess:  env("SESSION_COOKIE_NAME_ACCESS", "sAccessToken"),
 		SessionCookieNameRefresh: env("SESSION_COOKIE_NAME_REFRESH", "sRefreshToken"),
+		SessionCookieSecret:      sessionSecret,
 
 		CookieSecure: strings.HasPrefix(appURL, "https://"),
 	}
@@ -66,6 +72,7 @@ func Load() (*Config, error) {
 		"app_url", cfg.AppURL,
 		"auth_cookie_name", cfg.AuthCookieName,
 		"cookie_secure", cfg.CookieSecure,
+		"session_cookie_secret_set", cfg.SessionCookieSecret != "",
 	)
 	return cfg, nil
 }

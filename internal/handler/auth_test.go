@@ -13,6 +13,8 @@ import (
 	"github.com/konsulin-care/konsulin-app/internal/session"
 )
 
+const testSecret = "handler-test-secret"
+
 var noRedirectClient = &http.Client{
 	CheckRedirect: func(*http.Request, []*http.Request) error {
 		return http.ErrUseLastResponse
@@ -22,10 +24,15 @@ var noRedirectClient = &http.Client{
 func newAuthRouter() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.AuthGuard(middleware.AuthGuardOptions{
-		AuthPath:   "/auth",
-		CookieName: "auth",
+		AuthPath:     "/auth",
+		CookieName:   "auth",
+		CookieSecret: testSecret,
 	}))
 	return r
+}
+
+func signedCookieValue(value string) string {
+	return url.QueryEscape(session.SignCookieValue(value, testSecret))
 }
 
 func newTestServer(t *testing.T, handler http.Handler) *httptest.Server {
@@ -105,14 +112,14 @@ func TestProtectedRoute_allowsWithValidAuth(t *testing.T) {
 		"userId":    "u1",
 		"role_name": "Patient",
 	})
-	encoded := url.QueryEscape(string(authJSON))
+	cookieVal := signedCookieValue(string(authJSON))
 
 	server := newTestServer(t, r)
 	req, err := http.NewRequest(http.MethodGet, server.URL+"/profile", http.NoBody)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
-	req.Header.Set("Cookie", "auth="+encoded)
+	req.Header.Set("Cookie", "auth="+cookieVal)
 
 	resp := testDo(t, req)
 

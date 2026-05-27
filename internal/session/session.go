@@ -3,6 +3,9 @@ package session
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,7 +29,39 @@ type contextKey struct{}
 
 var sessionKey contextKey
 
-func ExtractFromRequest(r *http.Request, cookieName string) (*Session, error) {
+// signValue returns base64url(value) + "." + base64url(hmac-sha256(base64url(value), secret)).
+func signValue(value, secret string) string {
+	enc := base64.RawURLEncoding.EncodeToString([]byte(value))
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(enc))
+	sig := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	return enc + "." + sig
+}
+
+// verifySignedValue splits a signed cookie value, verifies the HMAC, and returns the original value.
+func verifySignedValue(signed, secret string) (string, bool) {
+	dot := strings.LastIndex(signed, ".")
+	if dot < 0 {
+		return "", false
+	}
+	enc, sigStr := signed[:dot], signed[dot+1:]
+	if enc == "" || sigStr == "" {
+		return "", false
+	}
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(enc))
+	expected := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	if !hmac.Equal([]byte(sigStr), []byte(expected)) {
+		return "", false
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(enc)
+	if err != nil {
+		return "", false
+	}
+	return string(raw), true
+}
+
+func ExtractFromRequest(r *http.Request, cookieName, secret string) (*Session, error) {
 	c, err := r.Cookie(cookieName)
 	if err != nil {
 		return nil, fmt.Errorf("session cookie %q: %w", cookieName, err)
@@ -38,8 +73,12 @@ func ExtractFromRequest(r *http.Request, cookieName string) (*Session, error) {
 	if err != nil {
 		decoded = c.Value
 	}
+	plain, ok := verifySignedValue(decoded, secret)
+	if !ok {
+		return nil, errors.New("session cookie: forged or invalid signature")
+	}
 	var s Session
-	if err := json.Unmarshal([]byte(decoded), &s); err != nil {
+	if err := json.Unmarshal([]byte(plain), &s); err != nil {
 		return nil, fmt.Errorf("parse session cookie: %w", err)
 	}
 	if s.UserID == "" {
@@ -49,6 +88,12 @@ func ExtractFromRequest(r *http.Request, cookieName string) (*Session, error) {
 		s.Role = "Guest"
 	}
 	return &s, nil
+}
+
+// SignCookieValue signs a JSON session payload for cookie storage.
+// Used by cookie-setting endpoints (plan 004c) and the Next.js server action.
+func SignCookieValue(value, secret string) string {
+	return signValue(value, secret)
 }
 
 func ContextWithSession(ctx context.Context, s *Session) context.Context {
@@ -62,7 +107,7 @@ func SessionFromContext(ctx context.Context) (*Session, bool) {
 
 const redirectPathMaxLength = 256
 
-func ValidateRedirectPath(path string) (string, bool) {
+func validateRedirectFormat(path string) (string, bool) {
 	raw := strings.TrimSpace(path)
 	if raw == "" {
 		return "", false
@@ -90,6 +135,33 @@ func ValidateRedirectPath(path string) (string, bool) {
 		return "", false
 	}
 	if strings.HasPrefix(decoded, "//") {
+		return "", false
+	}
+	return decoded, true
+}
+
+func validateRedirectOrigin(decoded, baseURL string) bool {
+	if baseURL == "" {
+		return true
+	}
+	base, err := url.Parse(baseURL)
+	if err != nil || base.Scheme == "" || base.Host == "" {
+		return false
+	}
+	parsed, err := url.Parse(decoded)
+	if err != nil {
+		return false
+	}
+	resolved := base.ResolveReference(parsed)
+	return resolved.Scheme == base.Scheme && resolved.Host == base.Host
+}
+
+func ValidateRedirectPath(path, baseURL string) (string, bool) {
+	decoded, ok := validateRedirectFormat(path)
+	if !ok {
+		return "", false
+	}
+	if !validateRedirectOrigin(decoded, baseURL) {
 		return "", false
 	}
 	return decoded, true

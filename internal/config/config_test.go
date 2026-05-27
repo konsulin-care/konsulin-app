@@ -26,6 +26,7 @@ func setRequiredEnv(t *testing.T) {
 	t.Setenv("API_URL", "http://test:3200")
 	t.Setenv("APP_URL", "http://test:3000")
 	t.Setenv("TX_URL", "http://test:3300")
+	t.Setenv("SESSION_COOKIE_SECRET", "test-secret-value")
 }
 
 func TestLoad_defaultPort(t *testing.T) {

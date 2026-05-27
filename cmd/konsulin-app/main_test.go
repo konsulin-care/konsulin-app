@@ -13,6 +13,7 @@ func TestHealthEndpoint(t *testing.T) {
 	t.Setenv("API_URL", "http://test:3200")
 	t.Setenv("APP_URL", "http://test:3000")
 	t.Setenv("TX_URL", "http://test:3300")
+	t.Setenv("SESSION_COOKIE_SECRET", "test-secret")
 
 	cfg, err := config.Load()
 	if err != nil {
