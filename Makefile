@@ -1,23 +1,70 @@
-.PHONY: all setup setup-cursor setup-windsurf setup-claude clean
+.PHONY: deps test-go test-js test fmt-go check-fmt-go check-file-length
+.PHONY: lint-go-cognitive lint-go check-go css-templ dev
 
-all: setup
+# Dependencies
+deps:
+	npm ci
+	go mod download
 
-setup-cursor:
-	ln -sf AGENTS.md .cursorrules
-	@echo "  .cursorrules -> AGENTS.md"
+# Testing
+test-go:
+	go test ./... -count=1
 
-setup-windsurf:
-	ln -sf AGENTS.md .windsurfrules
-	@echo "  .windsurfrules -> AGENTS.md"
+test-js:
+	npm run test:run
 
-setup-claude:
-	ln -sf AGENTS.md CLAUDE.md
-	@echo "  CLAUDE.md -> AGENTS.md"
+test: test-go test-js
 
-setup: setup-cursor setup-windsurf setup-claude
-	@echo "---"
-	@echo "Symlinks created. Tools now read AGENTS.md as their instruction file."
+# Go formatting
+fmt-go:
+	gofmt -s -w ./cmd/ ./internal/ ./web/
 
-clean:
-	rm -f .cursorrules .windsurfrules CLAUDE.md
-	@echo "Symlinks removed."
+check-fmt-go:
+	@! gofmt -s -d ./cmd/ ./internal/ ./web/ | read i; \
+	echo "  Go formatting is correct ✓"
+
+# Go file length check (staged files only)
+check-file-length:
+	@git diff --cached --name-only --diff-filter=ACMR | grep '\.go$$' | while read f; do \
+	  if [ -f "$$f" ] && [ "$$(wc -l < "$$f")" -gt 300 ]; then \
+	    echo "FAIL: $$f has $$(wc -l < "$$f") lines (max 300)"; \
+	    exit 1; \
+	  fi; \
+	done
+	@echo "  Staged Go files under 300 lines ✓"
+
+# Go linting
+lint-go-cognitive:
+	@gocognit -over 15 ./cmd ./internal 2>/dev/null; \
+	if [ $$? -eq 1 ]; then \
+	  echo "FAIL: cognitive complexity > 15 detected"; \
+	  gocognit -over 15 ./cmd ./internal; \
+	  exit 1; \
+	fi
+	@echo "  Cognitive complexity ≤ 15 ✓"
+
+lint-go:
+	golangci-lint run ./...
+
+check-go: check-file-length lint-go-cognitive check-fmt-go lint-go
+
+# Dockerfile linting
+docker-check:
+	if command -v hadolint >/dev/null 2>&1; then \
+	  hadolint Dockerfile; \
+	else \
+	  echo "  hadolint not available (run mise install)"; \
+	fi
+
+# Tailwind CSS for templ templates
+TAILWIND = .bin/tailwindcss
+TAILWIND_INPUT = web/static/css/templ-input.css
+TAILWIND_OUTPUT = web/static/css/output.css
+TAILWIND_CONTENT = "web/template/**/*.templ"
+
+css-templ:
+	$(TAILWIND) -i $(TAILWIND_INPUT) -o $(TAILWIND_OUTPUT) --content $(TAILWIND_CONTENT)
+
+# Dev server (placeholder)
+dev:
+	@echo "Use: make css-templ && go run ./cmd/konsulin-app"

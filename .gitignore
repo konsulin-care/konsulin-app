@@ -58,6 +58,19 @@ CLAUDE.md
 CLAUDE.local.md
 *.local.md
 
+# Tailwind CSS build output (templ templates)
+web/static/css/*.css
+!web/static/css/templ-input.css
+
+# Go artifacts
+*.out
+*.test
+/coverage/
+/konsulin-app
+
+# local binaries
+.bin/
+
 # archive
 **/.archive/**
 !**/.archive/.gitkeep
