@@ -17,7 +17,7 @@ func TestReverseProxy_forwardsRequest(t *testing.T) {
 		if r.URL.Path != "/some-page" {
 			t.Errorf("expected path /some-page, got %s", r.URL.Path)
 		}
-		if r.Header.Get("X-Forwarded-For") == "" {
+		if r.Header.Get(xForwardedFor) == "" {
 			t.Error("expected X-Forwarded-For header to be set")
 		}
 		w.Header().Set("Set-Cookie", "session=abc123; Path=/")
