@@ -149,21 +149,14 @@ func TestAuthRoutes_notGuarded(t *testing.T) {
 	}
 }
 
-func TestLogoutHandler_clearsCookies(t *testing.T) {
-	handler := NewLogoutHandler(LogoutOptions{
-		AuthPath:     "/auth",
-		CookieName:   "auth",
-		SecureCookie: false,
-	})
-
-	server := newTestServer(t, handler)
-	resp := testGet(t, server.URL+"/logout")
+func assertLogoutResponse(t *testing.T, resp *http.Response, wantLoc string, wantKeys []string) {
+	t.Helper()
 
 	assertStatus(t, resp, http.StatusFound)
 
 	loc := resp.Header.Get("Location")
-	if loc != "/auth" {
-		t.Errorf("expected Location /auth, got %s", loc)
+	if loc != wantLoc {
+		t.Errorf("expected Location %s, got %s", wantLoc, loc)
 	}
 
 	cookies := resp.Cookies()
@@ -173,14 +166,59 @@ func TestLogoutHandler_clearsCookies(t *testing.T) {
 			cleared[c.Name] = true
 		}
 	}
-	if !cleared["auth"] {
-		t.Error("expected auth cookie to be cleared")
+	for _, key := range wantKeys {
+		if !cleared[key] {
+			t.Errorf("expected %s cookie to be cleared", key)
+		}
 	}
-	if !cleared["sAccessToken"] {
-		t.Error("expected sAccessToken cookie to be cleared")
+}
+
+func TestLogoutHandler_clearsCookies(t *testing.T) {
+	tests := []struct {
+		name     string
+		opts     LogoutOptions
+		wantLoc  string
+		wantKeys []string
+	}{
+		{
+			name: "default cookie names",
+			opts: LogoutOptions{
+				AuthPath:          "/auth",
+				CookieName:        "auth",
+				AccessCookieName:  "sAccessToken",
+				RefreshCookieName: "sRefreshToken",
+				SecureCookie:      false,
+			},
+			wantLoc: "/auth",
+			wantKeys: []string{"auth", "sAccessToken", "sRefreshToken"},
+		},
+		{
+			name: "custom cookie names",
+			opts: LogoutOptions{
+				AuthPath:          "/signin",
+				CookieName:        "myAuth",
+				AccessCookieName:  "myAccess",
+				RefreshCookieName: "myRefresh",
+				SecureCookie:      true,
+			},
+			wantLoc: "/signin",
+			wantKeys: []string{"myAuth", "myAccess", "myRefresh"},
+		},
 	}
-	if !cleared["sRefreshToken"] {
-		t.Error("expected sRefreshToken cookie to be cleared")
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := NewLogoutHandler(tt.opts)
+			server := newTestServer(t, handler)
+			resp := testGet(t, server.URL+"/logout")
+			assertLogoutResponse(t, resp, tt.wantLoc, tt.wantKeys)
+		})
+	}
+}
+
+func TestLogoutClient_hasTimeout(t *testing.T) {
+	if logoutClient.Timeout <= 0 {
+		t.Errorf("expected logout client timeout > 0, got %v", logoutClient.Timeout)
 	}
 }
 

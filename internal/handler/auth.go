@@ -4,13 +4,18 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"time"
 )
 
+var logoutClient = &http.Client{Timeout: 10 * time.Second}
+
 type LogoutOptions struct {
-	AuthPath       string
-	CookieName     string
-	BackendBaseURL string
-	SecureCookie   bool
+	AuthPath             string
+	CookieName           string
+	AccessCookieName     string
+	RefreshCookieName    string
+	BackendBaseURL       string
+	SecureCookie         bool
 }
 
 func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
@@ -32,7 +37,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 
 		//nolint:gosec // G124: same pattern, clearing access token
 		http.SetCookie(w, &http.Cookie{
-			Name:     "sAccessToken",
+			Name:     opts.AccessCookieName,
 			Value:    "",
 			Path:     "/",
 			MaxAge:   -1,
@@ -43,7 +48,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 
 		//nolint:gosec // G124: same pattern, clearing refresh token
 		http.SetCookie(w, &http.Cookie{
-			Name:     "sRefreshToken",
+			Name:     opts.RefreshCookieName,
 			Value:    "",
 			Path:     "/",
 			MaxAge:   -1,
@@ -70,7 +75,7 @@ func tryBackendLogout(r *http.Request, backendURL string) {
 	}
 	req.Header.Set("Cookie", r.Header.Get("Cookie"))
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := logoutClient.Do(req)
 	if err != nil {
 		slog.Warn("logout: backend call failed", "err", err)
 		return

@@ -17,10 +17,6 @@ import (
 	appmw "github.com/konsulin-care/konsulin-app/internal/middleware"
 )
 
-// proxyTarget is the upstream Next.js dev server.
-// Hardcoded during migration — removed entirely post-migration.
-var proxyTarget = "http://localhost:8080"
-
 type noDirFS struct {
 	http.Dir
 }
@@ -53,9 +49,9 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	// handles its own auth via src/middleware.ts.  The AuthGuard is applied
 	// only to Go SSR routes when they are added inside a route group below.
 
-	proxyURL, err := url.Parse(proxyTarget)
+	proxyURL, err := url.Parse(cfg.NextjsURL)
 	if err != nil {
-		return nil, fmt.Errorf("invalid proxy target %q: %w", proxyTarget, err)
+		return nil, fmt.Errorf("invalid proxy target %q: %w", cfg.NextjsURL, err)
 	}
 	proxy := handler.NewReverseProxy(proxyURL)
 
@@ -76,10 +72,12 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 
 	r.Post("/auth/logout", handler.NewLogoutHandler(handler.LogoutOptions{
-		AuthPath:       cfg.AuthPath,
-		CookieName:     cfg.AuthCookieName,
-		BackendBaseURL: cfg.APIURL,
-		SecureCookie:   cfg.CookieSecure,
+		AuthPath:          cfg.AuthPath,
+		CookieName:        cfg.AuthCookieName,
+		AccessCookieName:  cfg.SessionCookieNameAccess,
+		RefreshCookieName: cfg.SessionCookieNameRefresh,
+		BackendBaseURL:    cfg.APIURL,
+		SecureCookie:      cfg.CookieSecure,
 	}))
 
 	// Future Go SSR routes go here — behind AuthGuard.

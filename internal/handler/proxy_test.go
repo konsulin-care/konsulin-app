@@ -100,6 +100,30 @@ func TestReverseProxy_forwardsCookies(t *testing.T) {
 	}
 }
 
+func TestReverseProxy_hasTransportTimeout(t *testing.T) {
+	upstreamURL, err := url.Parse("http://127.0.0.1:9999")
+	if err != nil {
+		t.Fatalf("failed to parse upstream URL: %v", err)
+	}
+
+	proxy := NewReverseProxy(upstreamURL)
+
+	if proxy.Transport == nil {
+		t.Fatal("expected Transport to be set")
+	}
+
+	tr, ok := proxy.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("expected *http.Transport, got %T", proxy.Transport)
+	}
+	if tr.TLSHandshakeTimeout <= 0 {
+		t.Errorf("expected TLSHandshakeTimeout > 0, got %v", tr.TLSHandshakeTimeout)
+	}
+	if tr.IdleConnTimeout <= 0 {
+		t.Errorf("expected IdleConnTimeout > 0, got %v", tr.IdleConnTimeout)
+	}
+}
+
 func TestReverseProxy_errorHandler(t *testing.T) {
 	badURL, _ := url.Parse("http://127.0.0.1:1")
 

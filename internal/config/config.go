@@ -9,20 +9,21 @@ import (
 )
 
 type Config struct {
-	Port        string
-	AppName     string
-	APIURL      string
-	APIBasePath string
-	AuthPath    string
-	AppURL      string
-	TXURL       string
+	Port        string `json:"port"`
+	AppName     string `json:"app_name"`
+	APIURL      string `json:"api_url"`
+	APIBasePath string `json:"api_base_path"`
+	AuthPath    string `json:"auth_path"`
+	AppURL      string `json:"app_url"`
+	TXURL       string `json:"tx_url"`
 
-	AuthCookieName           string
-	SessionCookieNameAccess  string
-	SessionCookieNameRefresh string
-	SessionCookieSecret      string
+	AuthCookieName           string `json:"auth_cookie_name"`
+	SessionCookieNameAccess  string `json:"session_cookie_name_access"`
+	SessionCookieNameRefresh string `json:"session_cookie_name_refresh"`
+	SessionCookieSecret      string `json:"session_cookie_secret"`
 
-	CookieSecure bool
+	NextjsURL    string `json:"nextjs_url"`
+	CookieSecure bool   `json:"cookie_secure"`
 }
 
 func (c *Config) AuthFullPath() string {
@@ -61,6 +62,7 @@ func Load() (*Config, error) {
 		SessionCookieNameRefresh: env("SESSION_COOKIE_NAME_REFRESH", "sRefreshToken"),
 		SessionCookieSecret:      sessionSecret,
 
+		NextjsURL:    env("NEXTJS_URL", "http://localhost:3000"),
 		CookieSecure: strings.HasPrefix(appURL, "https://"),
 	}
 	slog.Info("config loaded",
