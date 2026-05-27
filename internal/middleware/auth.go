@@ -35,6 +35,7 @@ func AuthGuard(opts AuthGuardOptions) func(next http.Handler) http.Handler {
 					w.Header().Set("HX-Redirect", redirectURL)
 					w.WriteHeader(http.StatusOK)
 				} else {
+					//nolint:gosec // G710: redirect target is opts.AuthPath (config-controlled), not user input
 					http.Redirect(w, r, redirectURL, http.StatusFound)
 				}
 				return
