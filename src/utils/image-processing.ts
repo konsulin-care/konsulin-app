@@ -60,7 +60,7 @@ const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
-export async function processImageForAvatar(
+async function processImageForAvatar(
   file: File,
   options?: ProcessImageOptions
 ): Promise<ProcessedImageResult> {
@@ -124,3 +124,5 @@ export async function processImageForAvatar(
     URL.revokeObjectURL(objectUrl);
   }
 }
+
+export { processImageForAvatar };
