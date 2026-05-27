@@ -8,6 +8,7 @@ linters:
     - ineffassign
     - staticcheck
     - unused
+    - dupl
 
   settings:
     gocyclo:
@@ -17,6 +18,8 @@ linters:
     staticcheck:
       checks:
         - all
+    dupl:
+      threshold: 100
 
   exclusions:
     paths:

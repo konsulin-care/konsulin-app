@@ -13,37 +13,65 @@ import (
 	"github.com/konsulin-care/konsulin-app/internal/session"
 )
 
-func noRedirectClient() *http.Client {
-	return &http.Client{
-		CheckRedirect: func(*http.Request, []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
+var noRedirectClient = &http.Client{
+	CheckRedirect: func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
 }
 
-func TestProtectedRoute_redirectsWithoutAuth(t *testing.T) {
+func newAuthRouter() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.AuthGuard(middleware.AuthGuardOptions{
 		AuthPath:   "/auth",
 		CookieName: "auth",
 	}))
+	return r
+}
+
+func newTestServer(t *testing.T, handler http.Handler) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(handler)
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+func testGet(t *testing.T, url string) *http.Response {
+	t.Helper()
+	resp, err := noRedirectClient.Get(url)
+	if err != nil {
+		t.Fatalf("GET %s failed: %v", url, err)
+	}
+	t.Cleanup(func() { resp.Body.Close() })
+	return resp
+}
+
+func testDo(t *testing.T, req *http.Request) *http.Response {
+	t.Helper()
+	resp, err := noRedirectClient.Do(req)
+	if err != nil {
+		t.Fatalf("%s %s failed: %v", req.Method, req.URL, err)
+	}
+	t.Cleanup(func() { resp.Body.Close() })
+	return resp
+}
+
+func assertStatus(t *testing.T, resp *http.Response, want int) {
+	t.Helper()
+	if resp.StatusCode != want {
+		t.Errorf("expected status %d, got %d", want, resp.StatusCode)
+	}
+}
+
+func TestProtectedRoute_redirectsWithoutAuth(t *testing.T) {
+	r := newAuthRouter()
 	r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	server := httptest.NewServer(r)
-	defer server.Close()
+	server := newTestServer(t, r)
+	resp := testGet(t, server.URL+"/profile")
 
-	client := noRedirectClient()
-	resp, err := client.Get(server.URL + "/profile")
-	if err != nil {
-		t.Fatalf("GET /profile failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusFound {
-		t.Errorf("expected status 302, got %d", resp.StatusCode)
-	}
+	assertStatus(t, resp, http.StatusFound)
 
 	loc := resp.Header.Get("Location")
 	if loc == "" {
@@ -62,12 +90,7 @@ func TestProtectedRoute_redirectsWithoutAuth(t *testing.T) {
 }
 
 func TestProtectedRoute_allowsWithValidAuth(t *testing.T) {
-	r := chi.NewRouter()
-	r.Use(middleware.AuthGuard(middleware.AuthGuardOptions{
-		AuthPath:   "/auth",
-		CookieName: "auth",
-	}))
-
+	r := newAuthRouter()
 	var gotSession *session.Session
 	r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
 		s, ok := session.SessionFromContext(r.Context())
@@ -84,25 +107,16 @@ func TestProtectedRoute_allowsWithValidAuth(t *testing.T) {
 	})
 	encoded := url.QueryEscape(string(authJSON))
 
-	server := httptest.NewServer(r)
-	defer server.Close()
-
+	server := newTestServer(t, r)
 	req, err := http.NewRequest(http.MethodGet, server.URL+"/profile", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
 	req.Header.Set("Cookie", "auth="+encoded)
 
-	client := noRedirectClient()
-	resp, err := client.Do(req)
-	if err != nil {
-		t.Fatalf("GET /profile failed: %v", err)
-	}
-	defer resp.Body.Close()
+	resp := testDo(t, req)
 
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected status 200, got %d", resp.StatusCode)
-	}
+	assertStatus(t, resp, http.StatusOK)
 	if gotSession == nil {
 		t.Fatal("expected session to be set")
 	}
@@ -111,53 +125,20 @@ func TestProtectedRoute_allowsWithValidAuth(t *testing.T) {
 	}
 }
 
-func TestAuthRoute_notGuarded(t *testing.T) {
-	r := chi.NewRouter()
-	r.Use(middleware.AuthGuard(middleware.AuthGuardOptions{
-		AuthPath:   "/auth",
-		CookieName: "auth",
-	}))
-	r.Get("/auth", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
+func TestAuthRoutes_notGuarded(t *testing.T) {
+	paths := []string{"/auth", "/auth/login"}
+	for _, p := range paths {
+		t.Run(p, func(t *testing.T) {
+			r := newAuthRouter()
+			r.Get(p, func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
 
-	server := httptest.NewServer(r)
-	defer server.Close()
+			server := newTestServer(t, r)
+			resp := testGet(t, server.URL+p)
 
-	client := noRedirectClient()
-	resp, err := client.Get(server.URL + "/auth")
-	if err != nil {
-		t.Fatalf("GET /auth failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected status 200, got %d", resp.StatusCode)
-	}
-}
-
-func TestAuthSubRoute_notGuarded(t *testing.T) {
-	r := chi.NewRouter()
-	r.Use(middleware.AuthGuard(middleware.AuthGuardOptions{
-		AuthPath:   "/auth",
-		CookieName: "auth",
-	}))
-	r.Get("/auth/login", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-
-	server := httptest.NewServer(r)
-	defer server.Close()
-
-	client := noRedirectClient()
-	resp, err := client.Get(server.URL + "/auth/login")
-	if err != nil {
-		t.Fatalf("GET /auth/login failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected status 200, got %d", resp.StatusCode)
+			assertStatus(t, resp, http.StatusOK)
+		})
 	}
 }
 
@@ -167,19 +148,10 @@ func TestLogoutHandler_clearsCookies(t *testing.T) {
 		CookieName: "auth",
 	})
 
-	server := httptest.NewServer(handler)
-	defer server.Close()
+	server := newTestServer(t, handler)
+	resp := testGet(t, server.URL+"/logout")
 
-	client := noRedirectClient()
-	resp, err := client.Get(server.URL + "/logout")
-	if err != nil {
-		t.Fatalf("GET /logout failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusFound {
-		t.Errorf("expected status 302, got %d", resp.StatusCode)
-	}
+	assertStatus(t, resp, http.StatusFound)
 
 	loc := resp.Header.Get("Location")
 	if loc != "/auth" {
@@ -205,34 +177,21 @@ func TestLogoutHandler_clearsCookies(t *testing.T) {
 }
 
 func TestHTMXProtectedRoute_redirectsViaHeader(t *testing.T) {
-	r := chi.NewRouter()
-	r.Use(middleware.AuthGuard(middleware.AuthGuardOptions{
-		AuthPath:   "/auth",
-		CookieName: "auth",
-	}))
+	r := newAuthRouter()
 	r.Get("/profile", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	server := httptest.NewServer(r)
-	defer server.Close()
-
+	server := newTestServer(t, r)
 	req, err := http.NewRequest(http.MethodGet, server.URL+"/profile", nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
 	req.Header.Set("HX-Request", "true")
 
-	client := noRedirectClient()
-	resp, err := client.Do(req)
-	if err != nil {
-		t.Fatalf("GET /profile failed: %v", err)
-	}
-	defer resp.Body.Close()
+	resp := testDo(t, req)
 
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected status 200 (HTMX redirect via header), got %d", resp.StatusCode)
-	}
+	assertStatus(t, resp, http.StatusOK)
 
 	hxRedirect := resp.Header.Get("HX-Redirect")
 	if hxRedirect == "" {
