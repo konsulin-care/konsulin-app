@@ -10,12 +10,12 @@ import (
 var logoutClient = &http.Client{Timeout: 10 * time.Second}
 
 type LogoutOptions struct {
-	AuthPath             string
-	CookieName           string
-	AccessCookieName     string
-	RefreshCookieName    string
-	BackendBaseURL       string
-	SecureCookie         bool
+	AuthPath          string
+	CookieName        string
+	AccessCookieName  string
+	RefreshCookieName string
+	BackendBaseURL    string
+	SecureCookie      bool
 }
 
 func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {

@@ -189,7 +189,7 @@ func TestLogoutHandler_clearsCookies(t *testing.T) {
 				RefreshCookieName: "sRefreshToken",
 				SecureCookie:      false,
 			},
-			wantLoc: "/auth",
+			wantLoc:  "/auth",
 			wantKeys: []string{"auth", "sAccessToken", "sRefreshToken"},
 		},
 		{
@@ -201,7 +201,7 @@ func TestLogoutHandler_clearsCookies(t *testing.T) {
 				RefreshCookieName: "myRefresh",
 				SecureCookie:      true,
 			},
-			wantLoc: "/signin",
+			wantLoc:  "/signin",
 			wantKeys: []string{"myAuth", "myAccess", "myRefresh"},
 		},
 	}
