@@ -27,6 +27,17 @@ func routes(cfg *config.Config) http.Handler {
 	r.Use(appmw.NewLogger(slog.Default()))
 	r.Use(chimw.Recoverer)
 
+	// No global auth guard — all unmatched routes proxy to Next.js which
+	// handles its own auth via src/middleware.ts.  The AuthGuard is applied
+	// only to Go SSR routes when they are added inside a route group below.
+
+	proxyURL, err := url.Parse(proxyTarget)
+	if err != nil {
+		slog.Error("invalid proxy target", "url", proxyTarget, "err", err)
+		os.Exit(1)
+	}
+	proxy := handler.NewReverseProxy(proxyURL)
+
 	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -39,14 +50,23 @@ func routes(cfg *config.Config) http.Handler {
 	fileServer := http.FileServer(http.Dir(staticDir))
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 
-	proxyURL, err := url.Parse(proxyTarget)
-	if err != nil {
-		slog.Error("invalid proxy target", "url", proxyTarget, "err", err)
-		os.Exit(1)
-	}
-	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		handler.NewReverseProxy(proxyURL).ServeHTTP(w, r)
-	})
+	r.Post("/auth/logout", handler.NewLogoutHandler(handler.LogoutOptions{
+		AuthPath:       cfg.AuthPath,
+		CookieName:     cfg.AuthCookieName,
+		BackendBaseURL: cfg.APIURL,
+	}))
+
+	// Future Go SSR routes go here — behind AuthGuard.
+	// r.Group(func(r chi.Router) {
+	// 	r.Use(appmw.AuthGuard(appmw.AuthGuardOptions{
+	// 		AuthPath:   cfg.AuthPath,
+	// 		CookieName: cfg.AuthCookieName,
+	// 	}))
+	// 	r.Get("/profile", handler.NewProfileHandler(...))
+	// })
+
+	// All unmatched routes proxy to Next.js (which has its own auth guard).
+	r.NotFound(proxy.ServeHTTP)
 
 	return r
 }

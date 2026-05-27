@@ -15,6 +15,10 @@ type Config struct {
 	AuthPath    string
 	AppURL      string
 	TXURL       string
+
+	AuthCookieName           string
+	SessionCookieNameAccess  string
+	SessionCookieNameRefresh string
 }
 
 func (c *Config) AuthFullPath() string {
@@ -30,6 +34,10 @@ func Load() (*Config, error) {
 		AuthPath:    env("AUTH_PATH", "/auth"),
 		AppURL:      mustEnv("APP_URL"),
 		TXURL:       mustEnv("TX_URL"),
+
+		AuthCookieName:           env("AUTH_COOKIE_NAME", "auth"),
+		SessionCookieNameAccess:  env("SESSION_COOKIE_NAME_ACCESS", "sAccessToken"),
+		SessionCookieNameRefresh: env("SESSION_COOKIE_NAME_REFRESH", "sRefreshToken"),
 	}
 	slog.Info("config loaded",
 		"port", cfg.Port,
@@ -38,6 +46,7 @@ func Load() (*Config, error) {
 		"api_base_path", cfg.APIBasePath,
 		"auth_path", cfg.AuthPath,
 		"app_url", cfg.AppURL,
+		"auth_cookie_name", cfg.AuthCookieName,
 	)
 	return cfg, nil
 }
