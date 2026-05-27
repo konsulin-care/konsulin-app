@@ -84,8 +84,8 @@ func TestProtectedRoute_redirectsWithoutAuth(t *testing.T) {
 	if parsed.Path != "/auth" {
 		t.Errorf("expected redirect to /auth, got %s", parsed.Path)
 	}
-	if parsed.Query().Get("redirect") != "/profile" {
-		t.Errorf("expected redirect=/profile, got %s", parsed.Query().Get("redirect"))
+	if parsed.Query().Get("redirectToPath") != "/profile" {
+		t.Errorf("expected redirectToPath=/profile, got %s", parsed.Query().Get("redirectToPath"))
 	}
 }
 
@@ -144,8 +144,9 @@ func TestAuthRoutes_notGuarded(t *testing.T) {
 
 func TestLogoutHandler_clearsCookies(t *testing.T) {
 	handler := NewLogoutHandler(LogoutOptions{
-		AuthPath:   "/auth",
-		CookieName: "auth",
+		AuthPath:     "/auth",
+		CookieName:   "auth",
+		SecureCookie: false,
 	})
 
 	server := newTestServer(t, handler)
@@ -197,7 +198,7 @@ func TestHTMXProtectedRoute_redirectsViaHeader(t *testing.T) {
 	if hxRedirect == "" {
 		t.Fatal("expected HX-Redirect header")
 	}
-	if !strings.Contains(hxRedirect, "/auth?redirect=") {
-		t.Errorf("expected HX-Redirect to contain /auth?redirect=, got %s", hxRedirect)
+	if !strings.Contains(hxRedirect, "/auth?redirectToPath=") {
+		t.Errorf("expected HX-Redirect to contain /auth?redirectToPath=, got %s", hxRedirect)
 	}
 }

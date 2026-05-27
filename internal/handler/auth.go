@@ -10,6 +10,7 @@ type LogoutOptions struct {
 	AuthPath       string
 	CookieName     string
 	BackendBaseURL string
+	SecureCookie   bool
 }
 
 func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
@@ -18,16 +19,17 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 			go tryBackendLogout(r, opts.BackendBaseURL)
 		}
 
-		//nolint:gosec // G124: Secure=r.TLS!=nil is idiomatic; these are session-clearing cookies
+		//nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
 		http.SetCookie(w, &http.Cookie{
 			Name:     opts.CookieName,
 			Value:    "",
 			Path:     "/",
 			MaxAge:   -1,
 			HttpOnly: true,
-			Secure:   r.TLS != nil,
+			Secure:   opts.SecureCookie,
 			SameSite: http.SameSiteLaxMode,
 		})
+
 		//nolint:gosec // G124: same pattern, clearing access token
 		http.SetCookie(w, &http.Cookie{
 			Name:     "sAccessToken",
@@ -35,9 +37,10 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 			Path:     "/",
 			MaxAge:   -1,
 			HttpOnly: true,
-			Secure:   r.TLS != nil,
+			Secure:   opts.SecureCookie,
 			SameSite: http.SameSiteLaxMode,
 		})
+
 		//nolint:gosec // G124: same pattern, clearing refresh token
 		http.SetCookie(w, &http.Cookie{
 			Name:     "sRefreshToken",
@@ -45,7 +48,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 			Path:     "/",
 			MaxAge:   -1,
 			HttpOnly: true,
-			Secure:   r.TLS != nil,
+			Secure:   opts.SecureCookie,
 			SameSite: http.SameSiteLaxMode,
 		})
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -19,6 +20,8 @@ type Config struct {
 	AuthCookieName           string
 	SessionCookieNameAccess  string
 	SessionCookieNameRefresh string
+
+	CookieSecure bool
 }
 
 func (c *Config) AuthFullPath() string {
@@ -51,6 +54,8 @@ func Load() (*Config, error) {
 		AuthCookieName:           env("AUTH_COOKIE_NAME", "auth"),
 		SessionCookieNameAccess:  env("SESSION_COOKIE_NAME_ACCESS", "sAccessToken"),
 		SessionCookieNameRefresh: env("SESSION_COOKIE_NAME_REFRESH", "sRefreshToken"),
+
+		CookieSecure: strings.HasPrefix(appURL, "https://"),
 	}
 	slog.Info("config loaded",
 		"port", cfg.Port,
@@ -60,6 +65,7 @@ func Load() (*Config, error) {
 		"auth_path", cfg.AuthPath,
 		"app_url", cfg.AppURL,
 		"auth_cookie_name", cfg.AuthCookieName,
+		"cookie_secure", cfg.CookieSecure,
 	)
 	return cfg, nil
 }

@@ -79,6 +79,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		AuthPath:       cfg.AuthPath,
 		CookieName:     cfg.AuthCookieName,
 		BackendBaseURL: cfg.APIURL,
+		SecureCookie:   cfg.CookieSecure,
 	}))
 
 	// Future Go SSR routes go here — behind AuthGuard.

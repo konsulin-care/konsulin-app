@@ -28,7 +28,7 @@ function withAuth<T>(
         if (allowGuestMode) {
           setIsVerified(true);
         } else {
-          router.push(`/login?redirect=${pathname}`);
+          router.push(`/auth?redirectToPath=${pathname}`);
         }
       } else if (role && !allowedRoles.includes(role)) {
         router.push(`/unauthorized`);

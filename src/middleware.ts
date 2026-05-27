@@ -58,7 +58,7 @@ export function middleware(request: NextRequest) {
     }
 
     const url = new URL('/auth', request.url);
-    url.searchParams.set('returnUrl', pathname + request.nextUrl.search);
+    url.searchParams.set('redirectToPath', pathname + request.nextUrl.search);
     return Response.redirect(url);
   }
 

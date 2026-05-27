@@ -3,6 +3,7 @@ package middleware
 import (
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/konsulin-care/konsulin-app/internal/session"
@@ -25,19 +26,7 @@ func AuthGuard(opts AuthGuardOptions) func(next http.Handler) http.Handler {
 
 			sess, err := session.ExtractFromRequest(r, opts.CookieName)
 			if err != nil {
-				slog.Debug("auth guard: no valid session", "path", r.URL.Path, "err", err)
-				redirectURL := opts.AuthPath + "?redirect=" + r.URL.Path
-				if r.URL.RawQuery != "" {
-					redirectURL = opts.AuthPath + "?redirect=" + r.URL.Path + "%3F" + r.URL.RawQuery
-				}
-
-				if isHTMX(r) {
-					w.Header().Set("HX-Redirect", redirectURL)
-					w.WriteHeader(http.StatusOK)
-				} else {
-					//nolint:gosec // G710: redirect target is opts.AuthPath (config-controlled), not user input
-					http.Redirect(w, r, redirectURL, http.StatusFound)
-				}
+				redirectMissingSession(w, r, opts)
 				return
 			}
 
@@ -45,6 +34,27 @@ func AuthGuard(opts AuthGuardOptions) func(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func redirectMissingSession(w http.ResponseWriter, r *http.Request, opts AuthGuardOptions) {
+	slog.Debug("auth guard: no valid session", "path", r.URL.Path)
+	redirectURL := redirectURLForPath(r.URL.Path, opts.AuthPath)
+
+	if isHTMX(r) {
+		w.Header().Set("HX-Redirect", redirectURL)
+		w.WriteHeader(http.StatusOK)
+	} else {
+		//nolint:gosec // G710: redirectURL is validated by session.ValidateRedirectPath
+		http.Redirect(w, r, redirectURL, http.StatusFound)
+	}
+}
+
+func redirectURLForPath(path, authPath string) string {
+	if validated, ok := session.ValidateRedirectPath(path); ok {
+		return authPath + "?redirectToPath=" + url.QueryEscape(validated)
+	}
+	slog.Warn("auth guard: rejected invalid redirect path", "path", path)
+	return authPath
 }
 
 func RequireRole(roles ...string) func(next http.Handler) http.Handler {
