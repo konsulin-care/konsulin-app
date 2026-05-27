@@ -1,5 +1,6 @@
 .PHONY: deps test-go test-js test fmt-go check-fmt-go check-file-length
-.PHONY: lint-go-cognitive lint-go check-go css-templ dev
+.PHONY: lint-go-cognitive lint-go check-go css-templ dev dev-go dev-next
+.PHONY: build-go run update-js docker-check
 
 # Dependencies
 deps:
@@ -65,6 +66,46 @@ TAILWIND_CONTENT = "web/template/**/*.templ"
 css-templ:
 	$(TAILWIND) -i $(TAILWIND_INPUT) -o $(TAILWIND_OUTPUT) --content $(TAILWIND_CONTENT)
 
-# Dev server (placeholder)
-dev:
-	@echo "Use: make css-templ && go run ./cmd/konsulin-app"
+# Templ code generation
+templ-gen:
+	templ generate
+
+# Ports
+GO_PORT ?= 3000
+NEXT_PORT ?= 8080
+
+# Development
+dev: css-templ templ-gen
+	@echo "Go SSR on :$(GO_PORT)  |  Next.js on :$(NEXT_PORT)"
+	@trap 'kill 0' EXIT; \
+	  PORT=$(GO_PORT) \
+	  APP_URL=http://localhost:$(GO_PORT) \
+	  API_URL=$${API_URL:-http://localhost:3200} \
+	  TX_URL=$${TX_URL:-http://localhost:3300} \
+	  go run ./cmd/konsulin-app & \
+	  npm run dev -- -p $(NEXT_PORT) & \
+	  wait
+
+dev-go: css-templ templ-gen
+	PORT=$(GO_PORT) go run ./cmd/konsulin-app
+
+dev-next:
+	npm run dev -- -p $(NEXT_PORT)
+
+# Build
+build-go: css-templ templ-gen
+	go build -o konsulin-app ./cmd/konsulin-app
+
+run: css-templ templ-gen
+	go run ./cmd/konsulin-app
+
+# JavaScript dependencies
+HTMX_VERSION = 2.0.9
+ALPINE_VERSION = 3.14.9
+
+update-js:
+	curl -L -o web/static/js/htmx.min.js \
+	  "https://unpkg.com/htmx.org@$(HTMX_VERSION)/dist/htmx.min.js"
+	curl -L -o web/static/js/alpine.min.js \
+	  "https://cdn.jsdelivr.net/npm/alpinejs@$(ALPINE_VERSION)/dist/cdn.min.js"
+	@echo "Updated HTMX to $(HTMX_VERSION), Alpine.js to $(ALPINE_VERSION)"

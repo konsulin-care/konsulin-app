@@ -1,5 +1,4 @@
-// Package config provides runtime configuration from environment variables.
-// Load() is called once at startup; handlers receive the immutable Config struct via DI.
+// Package config loads and holds runtime configuration from environment variables.
 package config
 
 import (
@@ -9,14 +8,37 @@ import (
 )
 
 type Config struct {
-	Port string `env:"PORT"`
+	Port        string
+	AppName     string
+	APIURL      string
+	APIBasePath string
+	AuthPath    string
+	AppURL      string
+	TXURL       string
+}
+
+func (c *Config) AuthFullPath() string {
+	return c.APIBasePath + c.AuthPath
 }
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		Port: env("PORT", "8080"),
+		Port:        env("PORT", "8080"),
+		AppName:     env("APP_NAME", "Konsulin"),
+		APIURL:      mustEnv("API_URL"),
+		APIBasePath: env("API_BASE_PATH", "/api/v1"),
+		AuthPath:    env("AUTH_PATH", "/auth"),
+		AppURL:      mustEnv("APP_URL"),
+		TXURL:       mustEnv("TX_URL"),
 	}
-	slog.Info("config loaded", "port", cfg.Port)
+	slog.Info("config loaded",
+		"port", cfg.Port,
+		"app_name", cfg.AppName,
+		"api_url", cfg.APIURL,
+		"api_base_path", cfg.APIBasePath,
+		"auth_path", cfg.AuthPath,
+		"app_url", cfg.AppURL,
+	)
 	return cfg, nil
 }
 
@@ -26,6 +48,15 @@ func env(key, defaultVal string) string {
 	}
 	slog.Debug("env var not set, using default", "key", key, "default", defaultVal)
 	return defaultVal
+}
+
+func mustEnv(key string) string {
+	val, ok := os.LookupEnv(key)
+	if !ok {
+		slog.Error("required env var not set", "key", key)
+		os.Exit(1)
+	}
+	return val
 }
 
 func MustEnv(key string) (string, error) {

@@ -62,6 +62,9 @@ CLAUDE.local.md
 web/static/css/*.css
 !web/static/css/templ-input.css
 
+# templ generated Go code (regenerated at build time)
+web/template/**/*_templ.go
+
 # Go artifacts
 *.out
 *.test

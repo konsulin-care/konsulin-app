@@ -2,18 +2,18 @@ interface ServerConfig {
   APP_NAME: string;
   API_URL: string;
   API_BASE_PATH: string;
+  AUTH_PATH: string;
   APP_URL: string;
-  APP_AUTH_PATH: string;
-  TERMINOLOGY_SERVER: string;
+  TX_URL: string;
 }
 
 export const serverConfig: ServerConfig = {
-  APP_NAME: process.env.NEXT_PUBLIC_APP_NAME ?? 'Konsulin',
+  APP_NAME: process.env.APP_NAME ?? 'Konsulin',
   API_URL: process.env.API_URL ?? '',
-  API_BASE_PATH: process.env.API_BASE_PATH ?? '/api/v1/auth',
+  API_BASE_PATH: process.env.API_BASE_PATH ?? '/api/v1',
+  AUTH_PATH: process.env.AUTH_PATH ?? '/auth',
   APP_URL: process.env.APP_URL ?? 'http://localhost:3000',
-  APP_AUTH_PATH: process.env.APP_AUTH_PATH ?? '/auth',
-  TERMINOLOGY_SERVER: process.env.TERMINOLOGY_SERVER ?? ''
+  TX_URL: process.env.TX_URL ?? ''
 };
 
 let cachedConfig: any = null;
@@ -26,7 +26,7 @@ export async function getClientConfig() {
     return cachedConfig;
   }
 
-  // Fallback in case the env variables weren’t injected
+  // Fallback in case the env variables weren't injected
   const res = await fetch('/api/config', { cache: 'no-store' });
   if (!res.ok) {
     throw new Error('Failed to load client configuration');
@@ -38,10 +38,10 @@ export async function getClientConfig() {
       appName: raw.APP_NAME,
       apiDomain: raw.API_URL,
       websiteDomain: raw.APP_URL,
-      apiBasePath: raw.API_BASE_PATH,
-      websiteBasePath: raw.APP_AUTH_PATH
+      apiBasePath: raw.API_BASE_PATH + raw.AUTH_PATH,
+      websiteBasePath: raw.AUTH_PATH
     },
-    terminologyServer: raw.TERMINOLOGY_SERVER
+    terminologyServer: raw.TX_URL
   };
 
   return cachedConfig;

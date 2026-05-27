@@ -97,11 +97,11 @@ async function fetchRuntimeConfig() {
         appName: raw.APP_NAME,
         apiDomain: raw.API_URL,
         websiteDomain: raw.APP_URL,
-        apiBasePath: raw.API_BASE_PATH,
-        websiteBasePath: raw.APP_AUTH_PATH
+        apiBasePath: raw.API_BASE_PATH + raw.AUTH_PATH,
+        websiteBasePath: raw.AUTH_PATH
       },
       // keep other values if you want them later
-      terminologyServer: raw.TERMINOLOGY_SERVER
+      terminologyServer: raw.TX_URL
     };
   } catch (err) {
     // fallback defaults

@@ -8,9 +8,9 @@ export async function GET() {
       APP_NAME: serverConfig.APP_NAME,
       API_URL: serverConfig.API_URL,
       API_BASE_PATH: serverConfig.API_BASE_PATH,
+      AUTH_PATH: serverConfig.AUTH_PATH,
       APP_URL: serverConfig.APP_URL,
-      APP_AUTH_PATH: serverConfig.APP_AUTH_PATH,
-      TERMINOLOGY_SERVER: serverConfig.TERMINOLOGY_SERVER
+      TX_URL: serverConfig.TX_URL
     };
 
     const response = NextResponse.json(safeConfig, { status: 200 });
