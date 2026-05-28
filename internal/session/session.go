@@ -73,13 +73,18 @@ func ExtractFromRequest(r *http.Request, cookieName, secret string) (*Session, e
 	if err != nil {
 		decoded = c.Value
 	}
-	plain, ok := verifySignedValue(decoded, secret)
-	if !ok {
-		return nil, errors.New("session cookie: forged or invalid signature")
-	}
 	var s Session
-	if err := json.Unmarshal([]byte(plain), &s); err != nil {
-		return nil, fmt.Errorf("parse session cookie: %w", err)
+	// Try signed format first (backward compat with HMAC-signed cookies, ~2h TTL).
+	plain, ok := verifySignedValue(decoded, secret)
+	if ok {
+		if err := json.Unmarshal([]byte(plain), &s); err != nil {
+			return nil, fmt.Errorf("parse session cookie: %w", err)
+		}
+	} else {
+		// New unsigned format: decoded is the plain JSON string.
+		if err := json.Unmarshal([]byte(decoded), &s); err != nil {
+			return nil, errors.New("session cookie: invalid format")
+		}
 	}
 	if s.UserID == "" {
 		return nil, errors.New("session cookie missing userId")

@@ -29,7 +29,8 @@ export function middleware(request: NextRequest) {
 
   // Try to parse cookie, but handle errors gracefully
   try {
-    auth = authCookie ? JSON.parse(authCookie) : {};
+    const decoded = authCookie ? decodeURIComponent(authCookie) : '';
+    auth = decoded ? JSON.parse(decoded) : {};
   } catch (e) {
     console.error('Failed to parse auth cookie:');
     auth = {};

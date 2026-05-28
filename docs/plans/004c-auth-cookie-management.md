@@ -26,10 +26,10 @@ Required by plan 004d (auth pages need this to set the cookie after SuperTokens 
   - [ ] **POST /api/auth/cookie validation**: verify SuperTokens sAccessToken cookie is present in the incoming request; reject with 401 if missing (lightweight check matching current Next.js middleware pattern)
 - [ ] Replace HMAC signing with gorilla/securecookie:
   - `internal/session/session.go`: replace `signValue`/`verifySignedValue` helpers with `securecookie.New(hashKey, blockKey).Encode/Decode`
-  - `internal/session/session.go`: keep `SignCookieValue` as public wrapper; update `ExtractFromRequest` to use `securecookie.Decode`
+  - `internal/session/session.go`: keep `SignCookieValue` as public wrapper; update `ExtractFromRequest` to use `securecookie.Decode` first, then fall back to `verifySignedValue` (old HMAC, ~2h TTL), then fall back to `json.Unmarshal` (current raw JSON format)
   - Remove `crypto/hmac` and `crypto/sha256` imports (swap for `github.com/gorilla/securecookie`)
   - Run `go get github.com/gorilla/securecookie`
-  - Remove `src/app/actions.ts` signing logic (file removed in later step anyway)
+  - Note: `src/app/actions.ts` signing logic already removed — the file now stores raw JSON (Next.js `cookie.serialize` handles URI-encoding). File removal still pending when all callers migrate to `POST /api/auth/cookie`.
 - [ ] Register routes in `cmd/konsulin-app/main.go`: `POST /api/auth/cookie`, `DELETE /api/auth/cookie`
 - [ ] Update `src/config/frontendConfig.ts` — replace `setCookies()` call with `POST /api/auth/cookie` in `onHandleEvent('SUCCESS')`
 - [ ] Update `src/services/auth.ts` (`restoreAuthCookie`) — replace `setCookies()` with `POST /api/auth/cookie`

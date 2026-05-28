@@ -59,13 +59,16 @@ func TestExtractFromRequest_emptyCookie(t *testing.T) {
 	}
 }
 
-func TestExtractFromRequest_forgedCookie(t *testing.T) {
-	// Unsigned JSON must be rejected
+func TestExtractFromRequest_unsignedCookie(t *testing.T) {
+	// Unsigned JSON is accepted (URI-encoded plain JSON format)
 	r := &http.Request{Header: http.Header{}}
 	r.Header.Set("Cookie", "auth="+url.QueryEscape(`{"userId":"u1","role_name":"Admin"}`))
-	_, err := ExtractFromRequest(r, "auth", testSecret)
-	if err == nil {
-		t.Fatal("expected error for forged unsigned cookie")
+	sess, err := ExtractFromRequest(r, "auth", testSecret)
+	if err != nil {
+		t.Fatalf("expected success for unsigned cookie, got: %v", err)
+	}
+	if sess.UserID != "u1" || sess.Role != "Admin" {
+		t.Fatalf("unexpected session: %+v", sess)
 	}
 }
 

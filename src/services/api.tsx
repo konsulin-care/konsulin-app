@@ -20,7 +20,7 @@ export async function getAPI(): Promise<AxiosInstance> {
 
   apiInstance.interceptors.request.use(
     config => {
-      const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+      const auth = JSON.parse(getCookie('auth') || '{}');
 
       if (auth.token) config.headers.Authorization = `Bearer ${auth.token}`;
 

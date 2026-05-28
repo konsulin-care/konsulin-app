@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const fetchSession = async () => {
-      const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+      const auth = JSON.parse(getCookie('auth') || '{}');
 
       if (!session.doesSessionExist) {
         // Don't create anonymous session if auth cookie suggests user is signed in (e.g. session not yet restored)
@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (restorationSuccess) {
             // After successful restoration, reload the auth cookie
             const restoredAuth = JSON.parse(
-              decodeURI(getCookie('auth') || '{}')
+              getCookie('auth') || '{}'
             );
             if (restoredAuth?.userId) {
               dispatch({ type: 'auth-check', payload: restoredAuth });

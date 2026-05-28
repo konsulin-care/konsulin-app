@@ -116,7 +116,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const getInitialPhoneBasedUser = () => {
     try {
-      const auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+      const auth = JSON.parse(getCookie('auth') || '{}');
       const email = auth?.email || '';
       const phoneNumber = auth?.phoneNumber || '';
       return !!phoneNumber && !email;
@@ -404,7 +404,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
 
     let auth: { email?: string; phoneNumber?: string } = {};
     try {
-      auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+      auth = JSON.parse(getCookie('auth') || '{}');
     } catch {
       // use empty auth
     }
@@ -606,7 +606,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       if (result) {
         let auth: any = {};
         try {
-          auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+          auth = JSON.parse(getCookie('auth') || '{}');
         } catch {
           console.warn('Failed to parse auth cookie, starting fresh');
         }
