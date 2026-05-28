@@ -24,6 +24,7 @@ type Session struct {
 	PhoneNumber     string `json:"phoneNumber"`
 	ProfilePicture  string `json:"profile_picture"`
 	GuestID         string `json:"-"`
+	Token           string `json:"-"` // guest JWT, never serialized to cookie
 }
 
 type contextKey struct{}

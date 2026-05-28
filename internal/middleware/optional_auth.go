@@ -55,7 +55,7 @@ func OptionalAuth(opts OptionalAuthOptions) func(next http.Handler) http.Handler
 			}
 
 			setGuestSessionCookie(w, opts, result.GuestID, result.Token)
-			sess = &session.Session{GuestID: result.GuestID, Role: "Guest"}
+			sess = &session.Session{GuestID: result.GuestID, Role: "Guest", Token: result.Token}
 			ctx := session.ContextWithSession(r.Context(), sess)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -86,7 +86,7 @@ func extractGuestSession(r *http.Request, cookieName string) (*session.Session, 
 	if data.GuestID == "" {
 		return nil, errors.New("guest session cookie missing guestId")
 	}
-	return &session.Session{GuestID: data.GuestID, Role: "Guest"}, nil
+	return &session.Session{GuestID: data.GuestID, Role: "Guest", Token: data.Token}, nil
 }
 
 func setGuestSessionCookie(w http.ResponseWriter, opts OptionalAuthOptions, guestID, token string) {

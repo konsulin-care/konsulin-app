@@ -37,9 +37,12 @@ export const getCachedGuestId = (): string | null => {
     const content = meta?.getAttribute('content');
     if (content) return content;
 
-    // 2. Check guest_session cookie (set by OptionalAuth middleware)
+    // 2. Check guest session cookie (set by OptionalAuth middleware)
+    const guestCookieName =
+      meta?.getAttribute('data-cookie-name') || 'guest_session';
+    const escaped = guestCookieName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const match = document.cookie.match(
-      /(?:^|;\s*)guest_session=([^;]*)/
+      new RegExp(`(?:^|;\\s*)${escaped}=([^;]*)`)
     );
     if (match) {
       try {

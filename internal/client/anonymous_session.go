@@ -49,6 +49,10 @@ func FetchAnonymousSession(backendAPIBaseURL string) (*AnonymousSessionResult, e
 		return nil, fmt.Errorf("anonymous session read body: %w", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("anonymous session API returned HTTP %d", resp.StatusCode)
+	}
+
 	var result anonymousSessionResponse
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, fmt.Errorf("anonymous session decode: %w", err)

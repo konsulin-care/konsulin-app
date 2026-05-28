@@ -12,7 +12,7 @@ templ Base(cfg *config.Config, activeNav string, headerContent, children templ.C
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<meta name="theme-color" content="#FFFFFF"/>
-			<meta name="konsulin-guest-id" content={ guestID }/>
+			<meta name="konsulin-guest-id" content={ guestID } data-cookie-name={ cfg.GuestSessionCookieName }/>
 			<link rel="manifest" href="/static/manifest.json"/>
 			<link rel="apple-touch-icon" href="/static/favicon/apple-touch-icon.png"/>
 			<link rel="stylesheet" href="/static/css/output.css"/>

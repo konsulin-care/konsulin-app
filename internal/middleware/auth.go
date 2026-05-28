@@ -101,9 +101,9 @@ func requireRoleHandler(w http.ResponseWriter, r *http.Request, next http.Handle
 				Secure:   opts.CookieSecure,
 				SameSite: http.SameSiteLaxMode,
 			})
-			http.Redirect(w, r, opts.AuthPath, http.StatusFound)
-			return
 		}
+		redirectToAuth(w, r, opts)
+		return
 	}
 
 	for _, role := range roles {
@@ -113,6 +113,15 @@ func requireRoleHandler(w http.ResponseWriter, r *http.Request, next http.Handle
 		}
 	}
 	http.Error(w, "forbidden", http.StatusForbidden)
+}
+
+func redirectToAuth(w http.ResponseWriter, r *http.Request, opts RequireRoleOptions) {
+	if isHTMX(r) {
+		w.Header().Set("HX-Redirect", opts.AuthPath)
+		w.WriteHeader(http.StatusOK)
+	} else {
+		http.Redirect(w, r, opts.AuthPath, http.StatusFound)
+	}
 }
 
 func containsRole(roles []string, role string) bool {
