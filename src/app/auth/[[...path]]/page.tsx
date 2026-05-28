@@ -1,6 +1,6 @@
 'use client';
 
-import { saveIntent } from '@/utils/intent-storage';
+import { saveIntent } from '@/utils/redirect-intent';
 import dynamic from 'next/dynamic';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { type ComponentType, ReactElement, useEffect, useState } from 'react';

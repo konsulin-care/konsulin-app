@@ -1,4 +1,5 @@
 import { Roles } from '@/constants/roles';
+import { clearUserData } from '@/lib/indexeddb';
 import { deleteCookie } from 'cookies-next';
 import { IStateAuth } from './authTypes';
 
@@ -29,10 +30,12 @@ export const reducer = (state: IStateAuth, action: any): IStateAuth => {
         isAuthenticated: !!(action.payload.userId && action.payload.role_name),
         userInfo: action.payload
       };
-    case 'logout':
+    case 'logout': {
+      const ownerId = state.userInfo.userId || '';
       deleteCookie('auth');
-      localStorage.clear();
+      clearUserData(ownerId);
       return initialState;
+    }
 
     default:
       return state;

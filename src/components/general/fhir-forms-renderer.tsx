@@ -13,7 +13,7 @@ import {
   DrawerHeader,
   DrawerTitle
 } from '@/components/ui/drawer';
-import { getFromLocalStorage } from '@/lib/utils';
+import { STORES, dbGet, dbSet } from '@/lib/indexeddb';
 import {
   BaseRenderer,
   getResponse,
@@ -66,20 +66,26 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
 
   useEffect(() => {
-    const savedResponses = getFromLocalStorage(`response_${questionnaire.id}`);
-    if (savedResponses) {
-      setResponse(JSON.parse(savedResponses));
-    }
+    dbGet<{ response: QuestionnaireResponse }>(STORES.assessmentDrafts, [
+      '',
+      questionnaire.id
+    ]).then(saved => {
+      if (saved?.response) {
+        setResponse(saved.response);
+      }
+    });
   }, []);
 
   // add some delay to fetch the latest response after input settles
   const handleResponseChange = () => {
     setTimeout(() => {
       const questionnaireResponse = getResponse();
-      localStorage.setItem(
-        `response_${questionnaire.id}`,
-        JSON.stringify(questionnaireResponse)
-      );
+      dbSet(STORES.assessmentDrafts, {
+        ownerId: '',
+        questionnaireId: questionnaire.id,
+        response: questionnaireResponse,
+        updatedAt: Date.now()
+      });
     }, 300);
   };
 
@@ -201,19 +207,23 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           hookRes?.data?.data?.asyncServiceResultId?.trim?.() ?? '';
 
         if (serviceRequestId) {
-          localStorage.setItem(
-            `serviceRequest_${submitResult.id}`,
-            serviceRequestId
-          );
+          dbSet(STORES.serviceRequests, {
+            id: submitResult.id,
+            ownerId: '',
+            serviceRequestId,
+            updatedAt: Date.now()
+          });
         }
       }
 
-      /* save questionnaire response to localStorage for guest (if not closing) */
+      /* save questionnaire response to IndexedDB for guest (if not closing) */
       if (buttonLabel !== 'close' && !isAuthenticated) {
-        localStorage.setItem(
-          `response_${questionnaire.id}`,
-          JSON.stringify({ ...questionnaireResponse, id: submitResult.id })
-        );
+        dbSet(STORES.assessmentDrafts, {
+          ownerId: '',
+          questionnaireId: questionnaire.id,
+          response: { ...questionnaireResponse, id: submitResult.id },
+          updatedAt: Date.now()
+        });
       }
 
       handleNavigate(buttonLabel, submitResult.id);

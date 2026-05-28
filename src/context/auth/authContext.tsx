@@ -1,6 +1,7 @@
 'use client';
 
 import { Roles } from '@/constants/roles';
+import { migrateLocalStorage } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
@@ -39,6 +40,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [state, dispatch] = useReducer(reducer, initialState);
   const session = useSessionContext() as SessionContextUpdate;
+
+  // One-time migration: copy existing localStorage keys to IndexedDB
+  useEffect(() => {
+    migrateLocalStorage();
+  }, []);
 
   // Record pathname at first paint (full page load) so homepage can tell "reload of /" vs "navigated to /"
   useEffect(() => {

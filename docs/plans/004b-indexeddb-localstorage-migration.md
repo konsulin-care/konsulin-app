@@ -23,15 +23,19 @@ All 11 localStorage keys from the Next.js frontend must migrate to IndexedDB or 
 
 # Implementation Steps
 
-- [ ] Create `src/lib/indexeddb.ts` — IndexedDB schema definition (DB name: `konsulin`, version: 1):
+- [x] Create `src/lib/indexeddb.ts` — IndexedDB schema definition (DB name: `konsulin`, version: 1):
       Stores: - `guest_sessions` (keyPath: `guest_id`) - `assessment_drafts` (keyPath: `[ownerId, questionnaireId]`) - `soap_drafts` (keyPath: `[practitionerId, patientId]`) - `service_requests` (keyPath: `id`) - `temp_booking` (keyPath: `ownerId`) - `ui_preferences` (keyPath: `[ownerId, prefKey]`) - `navigation_state` (keyPath: `[ownerId, stateKey]`)
-      Export: `openDB()`, `getStore(db, name, mode)`
-- [ ] Update plan 006: its "IndexedDB helper" step becomes `openDB()` upgrade wrapper; schema definition lives here in 004b
-- [ ] Migrate `konsulin.guest_id` from localStorage to IndexedDB `guest_sessions` store (keyed by guest_id)
-- [ ] Replace `konsulin.intent` reads/writes with `redirect_intent` cookie (set by Go middleware, read by frontend JS via `document.cookie`)
-- [ ] Replace `redirect` localStorage key in `src/app/page.tsx` with `redirect_intent` cookie
-- [ ] Update `src/context/auth/authReducer.tsx` — change `localStorage.clear()` to scoped IndexedDB deletion (delete only current user's stores)
-- [ ] Update `src/services/api.tsx` (401 interceptor) — change `localStorage.clear()` to scoped IndexedDB deletion
+      Export: `openDB()`, `getStore(db, name, mode)`, CRUD helpers, `migrateLocalStorage()`, `clearUserData()`
+- [x] Merge `intent-storage.ts` into `redirect-intent.ts` — cookie-based intent with TTL; delete `intent-storage.ts`
+- [x] Migrate `konsulin.guest_id` from localStorage to IndexedDB `guest_sessions` store (keyed by guest_id)
+- [x] Replace `konsulin.intent` reads/writes with `redirect_intent` cookie
+- [x] Replace `redirect` localStorage key in `src/app/page.tsx` with cookie via `redirect-intent.ts`
+- [x] Migrate UI preferences (result-table-colors, selected_clinic, selected_practitioner, skip-response-cleanup) to IndexedDB `ui_preferences` store
+- [x] Migrate form drafts (response_{qId}, soap_{patientId}) to IndexedDB `assessment_drafts` and `soap_drafts` stores
+- [x] Migrate serviceRequest_{id} and temp-booking to IndexedDB `service_requests` and `temp_booking` stores
+- [x] Update `src/context/auth/authReducer.tsx` — change `localStorage.clear()` to scoped IndexedDB deletion via `clearUserData()`
+- [x] Update `src/services/api.tsx` (401 interceptor) — change `localStorage.clear()` to scoped `clearUserData()`
+- [x] Run `migrateLocalStorage()` once in `authContext.tsx` on mount
 
 # Reference
 

@@ -4,6 +4,7 @@ import {
   ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY,
   ANONYMOUS_SESSION_IDENTIFIER_SYSTEM
 } from '@/constants/anonymous-session';
+import { STORES, dbGet, dbSet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { Identifier } from 'fhir/r4';
 
@@ -30,14 +31,36 @@ export const decodeJwtPayload = (
   }
 };
 
-export const getCachedGuestId = (): string | null => {
-  // 1. Check meta tag injected by Go SSR base layout
+export const getCachedGuestId = async (): Promise<string | null> => {
+  // 1. Check IndexedDB guest_sessions store
+  try {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open('konsulin');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const tx = db.transaction(STORES.guestSessions, 'readonly');
+    const store = tx.objectStore(STORES.guestSessions);
+    const keysReq = store.getAllKeys();
+    const keys = await new Promise<IDBValidKey[]>((resolve, reject) => {
+      keysReq.onsuccess = () => resolve(keysReq.result);
+      keysReq.onerror = () => reject(keysReq.error);
+    });
+    if (keys.length > 0) {
+      const guestId = keys[0] as string;
+      return guestId;
+    }
+  } catch {
+    // fall through
+  }
+
+  // 2. Check meta tag injected by Go SSR base layout
   if (typeof document !== 'undefined') {
     const meta = document.querySelector('meta[name="konsulin-guest-id"]');
     const content = meta?.getAttribute('content');
     if (content) return content;
 
-    // 2. Check guest session cookie (set by OptionalAuth middleware)
+    // 3. Check guest session cookie (set by OptionalAuth middleware)
     const guestCookieName =
       meta?.getAttribute('data-cookie-name') || 'guest_session';
     const escaped = guestCookieName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -52,7 +75,7 @@ export const getCachedGuestId = (): string | null => {
     }
   }
 
-  // 3. Fall back to localStorage (legacy Next.js pages)
+  // 4. Fall back to localStorage (legacy)
   try {
     return localStorage.getItem(ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY);
   } catch {
@@ -60,7 +83,12 @@ export const getCachedGuestId = (): string | null => {
   }
 };
 
-export const cacheGuestId = (guestId: string) => {
+export const cacheGuestId = async (guestId: string) => {
+  try {
+    await dbSet(STORES.guestSessions, { guest_id: guestId });
+  } catch {
+    // ignore storage errors
+  }
   try {
     localStorage.setItem(ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY, guestId);
   } catch {

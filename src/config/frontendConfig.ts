@@ -3,8 +3,10 @@ import { Roles } from '@/constants/roles';
 import { createProfile, getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { extractSafeRedirectPath } from '@/utils/redirect-guard';
+import { STORES, dbSet } from '@/lib/indexeddb';
 import {
   clearRedirectIntent,
+  getIntent,
   getRedirectIntent
 } from '@/utils/redirect-intent';
 import { Patient, Practitioner } from 'fhir/r4';
@@ -149,7 +151,11 @@ export const frontendConfig = (): SuperTokensConfig => {
           if (context.action === 'SUCCESS') {
             const { id: userId, emails, phoneNumbers } = context.user;
             const roles = await getClaimValue({ claim: UserRoleClaim });
-            localStorage.setItem('skip-response-cleanup', 'true');
+            await dbSet(STORES.uiPreferences, {
+              ownerId: userId ?? '',
+              prefKey: 'skip-response-cleanup',
+              value: 'true'
+            });
 
             if (
               context.isNewRecipeUser &&
@@ -191,6 +197,9 @@ export const frontendConfig = (): SuperTokensConfig => {
                 }
               }
 
+              const superTokensAccessToken =
+                await Session.getAccessToken().catch(() => '');
+
               const cookieData = {
                 userId,
                 role_name: roles.includes(Roles.Practitioner)
@@ -202,7 +211,8 @@ export const frontendConfig = (): SuperTokensConfig => {
                   ? profileData?.photo[0]?.url
                   : '',
                 fullname: mergeNames(profileData?.name),
-                fhirId: profileData?.id ?? ''
+                fhirId: profileData?.id ?? '',
+                sAccessToken: superTokensAccessToken
               };
 
               await setCookies('auth', JSON.stringify(cookieData));
@@ -217,6 +227,9 @@ export const frontendConfig = (): SuperTokensConfig => {
 
               // Do not auto-create profile on lookup miss; leave fhirId empty
 
+              const superTokensAccessToken =
+                await Session.getAccessToken().catch(() => '');
+
               const cookieData = {
                 userId,
                 role_name: roles.includes(Roles.Practitioner)
@@ -226,18 +239,31 @@ export const frontendConfig = (): SuperTokensConfig => {
                 phoneNumber: phoneNumbers[0] || '',
                 profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
                 fullname: mergeNames(profile?.name),
-                fhirId: profile?.id ?? ''
+                fhirId: profile?.id ?? '',
+                sAccessToken: superTokensAccessToken
               };
 
               await setCookies('auth', JSON.stringify(cookieData));
             }
 
             const isAuthRoute = (routerInfo.pathName || '').startsWith('/auth');
-            const redirectIntent = getRedirectIntent();
-            clearRedirectIntent();
-            const redirectToPath =
-              redirectIntent ||
-              extractSafeRedirectPath(globalThis.location.search);
+            const redirectUrl = getRedirectIntent();
+            let redirectToPath: string | null = null;
+
+            if (redirectUrl) {
+              // Plain URL path in cookie — consume it
+              clearRedirectIntent();
+              redirectToPath = redirectUrl;
+            } else {
+              // Check for structured intent (appointment, assessmentResult, journal)
+              const intent = getIntent();
+              if (intent) {
+                // Keep cookie intact — page.tsx will process the full intent
+                redirectToPath = '/';
+              } else {
+                redirectToPath = extractSafeRedirectPath(globalThis.location.search);
+              }
+            }
             if (!isAuthRoute) {
               routerInfo.router.push('/auth');
               await new Promise(resolve => setTimeout(resolve, 100));

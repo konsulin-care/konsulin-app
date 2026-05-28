@@ -1,62 +1,87 @@
 'use client';
 
-import { getFromLocalStorage } from '@/lib/utils';
+import { STORES, openDB } from '@/lib/indexeddb';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+
+async function cursorDeleteWhere(
+  storeName: string,
+  predicate: (value: any, key: IDBValidKey) => boolean
+): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction(storeName, 'readwrite');
+  const store = tx.objectStore(storeName);
+  const req = store.openCursor();
+  await new Promise<void>((resolve, reject) => {
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (cursor) {
+        if (predicate(cursor.value, cursor.key)) {
+          cursor.delete();
+        }
+        cursor.continue();
+      } else {
+        resolve();
+      }
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
 
 export default function RouteResponseCleaner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isSkipCleanupRef = useRef(false);
 
   useEffect(() => {
-    const keys = Object.keys(localStorage);
-    const responseKey = keys.find(key => key.startsWith('response_'));
-    const soapKey = keys.find(key => key.startsWith('soap_'));
+    const dbRequest = indexedDB.open('konsulin');
+    dbRequest.onsuccess = () => {
+      const db = dbRequest.result;
+      const tx = db.transaction(STORES.uiPreferences, 'readonly');
+      const store = tx.objectStore(STORES.uiPreferences);
+      const req = store.get(['', 'skip-response-cleanup']);
+      req.onsuccess = () => {
+        isSkipCleanupRef.current = req.result?.value === 'true';
+      };
+    };
+  }, []);
 
-    const isSkipCleanup =
-      getFromLocalStorage('skip-response-cleanup') === 'true';
-
+  useEffect(() => {
+    const isSkipCleanup = isSkipCleanupRef.current;
     const categoryParam = searchParams.get('category');
 
-    if (responseKey) {
-      const segments = pathname.split('/');
-      const isRecordPage = segments[1] === 'record';
-      const recordId = isRecordPage ? segments[2] : null;
-      const questionnaireId = responseKey.replace('response_', '');
-      const isOnQuestionnairePage = pathname.includes(
-        `/assessments/${questionnaireId}`
-      );
-      const isOnAuthPage = pathname.includes('/auth');
-      const isOnResultPage =
-        pathname.includes(`/record/${recordId}`) && categoryParam === '1';
+    // Clean assessment_drafts where user left the questionnaire page
+    cursorDeleteWhere(
+      STORES.assessmentDrafts,
+      (value: any, key: IDBValidKey) => {
+        const questionnaireId =
+          Array.isArray(key) ? key[1] : '';
+        const segments = pathname.split('/');
+        const isRecordPage = segments[1] === 'record';
+        const recordId = isRecordPage ? segments[2] : null;
+        const isOnQuestionnairePage = pathname.includes(
+          `/assessments/${questionnaireId}`
+        );
+        const isOnAuthPage = pathname.includes('/auth');
+        const isOnResultPage =
+          pathname.includes(`/record/${recordId}`) && categoryParam === '1';
 
-      /*
-       * make sure the user is on one of these 3 routes.
-       * if not, remove the questionnaire response.
-       * */
-      if (
-        !isOnQuestionnairePage &&
-        !isOnResultPage &&
-        !isOnAuthPage &&
-        !isSkipCleanup
-      ) {
-        localStorage.removeItem(responseKey);
+        return (
+          !isOnQuestionnairePage &&
+          !isOnResultPage &&
+          !isOnAuthPage &&
+          !isSkipCleanup
+        );
       }
-    }
+    );
 
-    if (soapKey) {
-      // matches routes like '/record/:id/edit' or '/assessments/soap'
-      const isOnSoapPage =
-        /^\/record\/[^/]+\/edit/.test(pathname) ||
-        pathname.includes('/assessments/soap');
+    // Clean soap_drafts where user left the soap page
+    const isOnSoapPage =
+      /^\/record\/[^/]+\/edit/.test(pathname) ||
+      pathname.includes('/assessments/soap');
 
-      if (!isOnSoapPage) {
-        keys.forEach(key => {
-          if (key.startsWith('soap_')) {
-            localStorage.removeItem(key);
-          }
-        });
-      }
+    if (!isOnSoapPage) {
+      cursorDeleteWhere(STORES.soapDrafts, () => true);
     }
   }, [pathname, searchParams]);
 

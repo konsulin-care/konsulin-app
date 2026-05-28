@@ -16,7 +16,7 @@ import {
   DrawerTitle
 } from '@/components/ui/drawer';
 import { useBooking } from '@/context/booking/bookingContext';
-import { getFromLocalStorage } from '@/lib/utils';
+import { STORES, dbGet } from '@/lib/indexeddb';
 import { useDetailPractitioner } from '@/services/clinic';
 import { generateAvatarPlaceholder, mergeNames } from '@/utils/helper';
 import {
@@ -67,27 +67,27 @@ export default function Practitioner({ params }: IPractitionerProps) {
   const [practitionerDataLoading, setPractitionerDataLoading] = useState(true);
 
   useEffect(() => {
-    const clinicId = getFromLocalStorage('selected_clinic');
-
-    if (clinicId) {
-      setSelectedClinicId(clinicId);
-    } else {
-      router.push('/clinic');
-    }
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_clinic']).then(
+      saved => {
+        if (saved?.value) {
+          setSelectedClinicId(saved.value);
+        } else {
+          router.push('/clinic');
+        }
+      }
+    );
   }, []);
 
   useEffect(() => {
-    const fetchPractitionerData = () => {
-      if (!params.practitionerId) return;
+    if (!params.practitionerId) return;
 
-      const raw = getFromLocalStorage('selected_practitioner');
-      const parsed = raw ? JSON.parse(raw) : null;
-
-      setPractitionerData(parsed);
+    dbGet<{ value: IPractitionerLocalStorage }>(STORES.uiPreferences, [
+      '',
+      'selected_practitioner'
+    ]).then(saved => {
+      setPractitionerData(saved?.value ?? null);
       setPractitionerDataLoading(false);
-    };
-
-    fetchPractitionerData();
+    });
   }, [params.practitionerId]);
 
   useEffect(() => {

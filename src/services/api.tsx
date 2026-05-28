@@ -1,4 +1,5 @@
 import { getClientConfig } from '@/lib/config';
+import { clearUserData } from '@/lib/indexeddb';
 import axios, { AxiosInstance } from 'axios';
 import { deleteCookie, getCookie } from 'cookies-next';
 import { toast } from 'react-toastify';
@@ -20,14 +21,16 @@ export async function getAPI(): Promise<AxiosInstance> {
 
   apiInstance.interceptors.request.use(
     config => {
+      // Read Bearer token from auth cookie (set by frontendConfig on login)
       let auth: Record<string, any> = {};
       try {
         auth = JSON.parse(getCookie('auth') || '{}');
       } catch {
         auth = {};
       }
-
-      if (auth.token) config.headers.Authorization = `Bearer ${auth.token}`;
+      if (auth.sAccessToken) {
+        config.headers.Authorization = `Bearer ${auth.sAccessToken}`;
+      }
 
       return config;
     },
@@ -55,9 +58,7 @@ export async function getAPI(): Promise<AxiosInstance> {
       if (isExpiredToken || isMissingToken) {
         setTimeout(() => {
           deleteCookie('auth');
-          try {
-            localStorage.clear();
-          } catch {}
+          clearUserData('guest');
           try {
             window.location.href = '/';
           } catch {}

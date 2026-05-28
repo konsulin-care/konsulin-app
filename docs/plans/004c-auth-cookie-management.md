@@ -31,6 +31,8 @@ Required by plan 004d (auth pages need this to set the cookie after SuperTokens 
   - Run `go get github.com/gorilla/securecookie`
   - Note: `src/app/actions.ts` signing logic already removed — the file now stores raw JSON (Next.js `cookie.serialize` handles URI-encoding). File removal still pending when all callers migrate to `POST /api/auth/cookie`.
 - [ ] Register routes in `cmd/konsulin-app/main.go`: `POST /api/auth/cookie`, `DELETE /api/auth/cookie`
+- [ ] Include `superTokensAccessToken` field in the `auth` cookie payload (read from incoming `sAccessToken` cookie on the server side)
+- [ ] Update `src/services/api.tsx` — replace `getAccessToken()` call with `auth.superTokensAccessToken` read from cookie (this eliminates the SuperTokens SDK dependency from `api.tsx`)
 - [ ] Update `src/config/frontendConfig.ts` — replace `setCookies()` call with `POST /api/auth/cookie` in `onHandleEvent('SUCCESS')`
 - [ ] Update `src/services/auth.ts` (`restoreAuthCookie`) — replace `setCookies()` with `POST /api/auth/cookie`
 - [ ] Update profile edit handlers that refresh the auth cookie — use new endpoint
@@ -58,6 +60,11 @@ Required by plan 004d (auth pages need this to set the cookie after SuperTokens 
 
 - Refreshes auth cookie after profile update via `setCookies()`
 - Replace: HTTP POST to `/api/auth/cookie`
+
+@src/services/api.tsx:
+
+- Request interceptor currently calls `getAccessToken()` from `supertokens-web-js` (temporary bridge from 004b)
+- After 004c: replace with `JSON.parse(getCookie('auth')).superTokensAccessToken` to eliminate SuperTokens SDK dependency
 
 @internal/handler/auth.go (NewLogoutHandler):
 

@@ -2,7 +2,7 @@
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
-import { getFromLocalStorage } from '@/lib/utils';
+import { STORES, dbDelete, dbGet, dbSet } from '@/lib/indexeddb';
 import { useSubmitSoapBundle } from '@/services/api/assessment';
 import {
   BaseRenderer,
@@ -49,8 +49,6 @@ export default function SoapForm({
   const searchParams = useSearchParams();
   const titleParam = searchParams?.get('title');
   const categoryParam = searchParams?.get('category');
-  const localKey = `soap_${patientId}`;
-
   const queryClient = useRendererQueryClient();
 
   const { mutateAsync: submitSoapBundle, isLoading: isSubmitSoapLoading } =
@@ -68,10 +66,12 @@ export default function SoapForm({
         if (mode === 'view') {
           finalResponse = questionnaireResponse;
         } else {
-          const savedResponses = getFromLocalStorage(localKey);
-          finalResponse = savedResponses
-            ? JSON.parse(savedResponses)
-            : (questionnaireResponse ?? null);
+          const ownerId = practitionerId || '';
+          const saved = await dbGet<{ draft: QuestionnaireResponse }>(
+            STORES.soapDrafts,
+            [ownerId, patientId]
+          );
+          finalResponse = saved?.draft ?? (questionnaireResponse ?? null);
         }
 
         await buildForm(
@@ -95,7 +95,13 @@ export default function SoapForm({
   const handleResponseChange = () => {
     setTimeout(() => {
       const questionnaireResponse = getResponse();
-      localStorage.setItem(localKey, JSON.stringify(questionnaireResponse));
+      const ownerId = practitionerId || '';
+      dbSet(STORES.soapDrafts, {
+        practitionerId: ownerId,
+        patientId,
+        draft: questionnaireResponse,
+        updatedAt: Date.now()
+      });
     }, 300);
   };
 
@@ -188,7 +194,8 @@ export default function SoapForm({
         toast.success(
           `SOAP berhasil ${mode === 'create' ? 'dikirim' : 'diupdate'}`
         );
-        localStorage.removeItem(localKey);
+        const ownerId = practitionerId || '';
+        dbDelete(STORES.soapDrafts, [ownerId, patientId]);
         router.push('/');
       }
     } catch (error) {

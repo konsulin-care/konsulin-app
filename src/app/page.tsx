@@ -5,7 +5,12 @@ import NavigationBar from '@/components/navigation-bar';
 import { useAuth } from '@/context/auth/authContext';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { getAPI } from '@/services/api';
-import { clearIntent, getIntent } from '@/utils/intent-storage';
+import {
+  clearIntent,
+  clearRedirectIntent,
+  getIntent,
+  getRedirectIntent
+} from '@/utils/redirect-intent';
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -73,16 +78,9 @@ const App = () => {
     let abortController: AbortController | null = null;
     let isMounted = true;
 
-    let storedRedirect: string | null = null;
-    try {
-      storedRedirect = localStorage.getItem('redirect');
-      if (storedRedirect) {
-        localStorage.removeItem('redirect');
-      }
-    } catch (error) {
-      console.error('Failed to access redirect in localStorage:', error);
-      setIsRedirecting(false);
-      return;
+    const storedRedirect = getRedirectIntent();
+    if (storedRedirect) {
+      clearRedirectIntent();
     }
 
     if (storedRedirect) {
@@ -123,12 +121,7 @@ const App = () => {
     }
 
     if (authState.isAuthenticated) {
-      let intent: ReturnType<typeof getIntent> | null = null;
-      try {
-        intent = getIntent();
-      } catch (error) {
-        console.error('Failed to access intent in localStorage:', error);
-      }
+      const intent = getIntent();
 
       if (intent) {
         const handleIntent = async () => {

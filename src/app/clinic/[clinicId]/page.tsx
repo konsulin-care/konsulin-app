@@ -7,6 +7,7 @@ import Header from '@/components/header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { STORES, dbSet } from '@/lib/indexeddb';
 import { IUseClinicParams, useClinicById } from '@/services/clinic';
 import { IOrganizationResource, IPractitioner } from '@/types/organization';
 import {
@@ -92,16 +93,17 @@ export default function DetailClinic({ params }: IDetailClinic) {
 
     const email = practitioner.telecom?.find(item => item.system === 'email');
 
-    localStorage.setItem(
-      'selected_practitioner',
-      JSON.stringify({
+    dbSet(STORES.uiPreferences, {
+      ownerId: '',
+      prefKey: 'selected_practitioner',
+      value: {
         roleId: practitioner.practitionerRole.id,
         name: practitioner.name,
         photo: practitioner.photo,
         qualification: practitioner.qualification,
         email: email.value
-      })
-    );
+      }
+    });
   };
 
   const filteredPractitioners = useMemo(() => {
