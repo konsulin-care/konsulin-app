@@ -1,0 +1,52 @@
+package components
+
+import "fmt"
+
+templ HouseIcon(fill string, width int, height int, strokeWidth int) {
+	<svg width={ fmt.Sprintf("%d", width) } height={ fmt.Sprintf("%d", height) } viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path d="M21.6364 7.24902C22.7989 8.13571 23.4645 9.52424 23.4645 10.9863V18.874C23.4645 21.4629 21.3658 23.5615 18.777 23.5615H6.02698C3.43812 23.5615 1.33948 21.4629 1.33948 18.874V10.9863C1.33948 9.52424 2.0217 8.14584 3.18424 7.2592L9.55924 2.3969C11.2381 1.11641 13.5658 1.11641 15.2447 2.3969L18.777 5.0886V1.99902" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+		<path d="M7.99963 14H15.9996" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-linecap="round" fill="none"/>
+		<path d="M11.9996 18V10" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-linecap="round" fill="none"/>
+	</svg>
+}
+
+templ OfficeIcon(fill string, width int, height int, strokeWidth int) {
+	<svg width={ fmt.Sprintf("%d", width) } height={ fmt.Sprintf("%d", height) } viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path d="M13.8895 23.5625C13.8895 21.1931 15.8104 19.25 18.1798 19.25H18.9743C21.3437 19.25 23.2645 21.1931 23.2645 23.5625" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M21.577 12.9219C21.577 14.6046 20.2129 15.9688 18.5302 15.9688C16.8474 15.9688 15.4833 14.6046 15.4833 12.9219C15.4833 11.2392 16.8474 9.875 18.5302 9.875C20.2129 9.875 21.577 11.2392 21.577 12.9219Z" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M19.1405 6.12402C19.1405 3.53572 17.0423 1.4375 14.454 1.4375H14.453H5.82609C3.23779 1.4375 1.13953 3.53572 1.13953 6.12402V18.8759C1.13953 21.4642 3.23779 23.5625 5.82609 23.5625H10.1395" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M4.99988 7H14.9999" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-linecap="round"/>
+		<path d="M4.99988 11H10.9999" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-linecap="round"/>
+		<path d="M4.99988 15H10.9999" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-linecap="round"/>
+		<path d="M4.99988 19H10.9999" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-linecap="round"/>
+	</svg>
+}
+
+templ LiteratureIcon(fill string, width int, height int, strokeWidth int) {
+	<svg width={ fmt.Sprintf("%d", width) } height={ fmt.Sprintf("%d", height) } viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path d="M19.3126 1.4375C18.277 1.4375 17.4376 2.27698 17.4376 3.3125V20.75C17.4376 22.3033 16.1784 23.5625 14.6251 23.5625C13.0718 23.5625 11.8126 22.3033 11.8126 20.75C11.8126 20.1079 12.0278 19.516 12.39 19.0426L12.3601 19.0824C12.6046 18.7657 12.7501 18.3686 12.7501 17.9375C12.7501 16.902 11.9106 16.0625 10.8751 16.0625H4.68756C2.61648 16.0625 0.937561 17.7414 0.937561 19.8125C0.937561 21.8836 2.61648 23.5625 4.68756 23.5625H14.6251" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M4.68756 12.6875V3.3125C4.68756 2.27698 5.52705 1.4375 6.56256 1.4375H19.0869C21.0736 1.4375 22.8818 2.88237 23.0488 4.86205C23.1772 6.38445 22.3952 7.73722 21.1876 8.4358" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M8.43756 5.1875H13.6876" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M8.43756 8.9375H13.6876" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M8.43756 12.6875H13.6876" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+	</svg>
+}
+
+templ UserIcon(fill string, width int, height int, strokeWidth int) {
+	<svg width={ fmt.Sprintf("%d", width) } height={ fmt.Sprintf("%d", height) } viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path d="M1.53943 12.5024C1.53943 18.6121 6.49229 23.5649 12.6019 23.5649C18.7116 23.5649 23.6644 18.6121 23.6644 12.5024C23.6644 6.3928 18.7116 1.43994 12.6019 1.43994C6.49229 1.43994 1.53943 6.3928 1.53943 12.5024Z" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M16.1176 8.89307C16.1176 10.8606 14.5226 12.4556 12.5551 12.4556C10.5875 12.4556 8.99255 10.8606 8.99255 8.89307C8.99255 6.92554 10.5875 5.33057 12.5551 5.33057C14.5226 5.33057 16.1176 6.92554 16.1176 8.89307Z" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M17.9005 18.1274C16.799 16.7826 15.1256 15.9243 13.2517 15.9243H12.1394C10.2655 15.9243 8.59212 16.7826 7.4906 18.1274" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+	</svg>
+}
+
+templ ExerciseIcon(fill string, width int, height int, strokeWidth int) {
+	<svg width={ fmt.Sprintf("%d", width) } height={ fmt.Sprintf("%d", height) } viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path d="M9.39218 23.5625H7.07487C6.23622 23.5625 5.5564 22.8827 5.5564 22.044V14.8776C5.5564 14.039 6.23622 13.3591 7.07487 13.3591H9.39218V23.5625Z" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M5.55636 22.1714H3.25602C2.41738 22.1714 1.73755 21.4916 1.73755 20.653V16.2687C1.73755 15.4301 2.41738 14.7502 3.25602 14.7502H5.55636V22.1714Z" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M16.208 13.3592H18.5253C19.3639 13.3592 20.0438 14.039 20.0438 14.8776V22.0441C20.0438 22.8827 19.364 23.5625 18.5253 23.5625H16.208V13.3592Z" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M20.0438 14.7502H22.3442C23.1828 14.7502 23.8626 15.43 23.8626 16.2687V20.653C23.8626 21.4916 23.1828 22.1715 22.3442 22.1715H20.0438V14.7502Z" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M16.2079 16.3979H9.39209V20.5239H16.2079V16.3979Z" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M17.8988 6.40241C18.1527 5.81577 18.2506 5.2498 18.2506 4.61408C18.2506 2.56152 16.8201 1.4375 15.1938 1.4375C13.5948 1.4375 12.9876 2.45384 12.8035 2.87858C12.8024 2.87595 12.8012 2.87328 12.8001 2.87061C12.7989 2.87328 12.7977 2.87595 12.7966 2.87858C12.6125 2.45384 12.0053 1.4375 10.4063 1.4375C8.78007 1.4375 7.34949 2.56152 7.34949 4.61408C7.34949 5.44466 7.51664 6.15622 7.98066 6.95028C8.92618 8.56855 12.7964 10.603 12.7964 10.603C12.7964 10.603 12.7976 10.6022 12.8001 10.6006C12.8025 10.6022 12.8038 10.603 12.8038 10.603C12.8038 10.603 13.5613 10.2048 14.4878 9.62066" stroke={ fill } stroke-width={ fmt.Sprintf("%d", strokeWidth) } stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+	</svg>
+}

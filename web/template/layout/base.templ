@@ -1,0 +1,61 @@
+package layout
+
+import (
+	"github.com/konsulin-care/konsulin-app/internal/config"
+	"github.com/konsulin-care/konsulin-app/web/template/components"
+)
+
+templ Base(cfg *config.Config, activeNav string, headerContent, children templ.Component) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="theme-color" content="#FFFFFF"/>
+			<link rel="manifest" href="/static/manifest.json"/>
+			<link rel="apple-touch-icon" href="/static/favicon/apple-touch-icon.png"/>
+			<link rel="stylesheet" href="/static/css/output.css"/>
+			<script src="/static/js/htmx.min.js"></script>
+			<script defer src="/static/js/alpine.min.js"></script>
+			@cfg.RuntimeConfigScript()
+			<script>
+				window.__RUNTIME_CONFIG__ = JSON.parse(document.getElementById('__RUNTIME_CONFIG__').textContent);
+			</script>
+			<title>{ cfg.AppName }</title>
+		</head>
+		<body class="flex min-h-screen flex-col bg-white">
+			<div class="bg-[#08979C] bg-[url('/static/images/nav-banner.svg')] bg-right bg-no-repeat">
+				<div class="relative flex items-start justify-between p-[16px] pb-[40px]">
+					@headerContent
+				</div>
+			</div>
+			<main class="mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col">
+				@children
+			</main>
+			@navBar(activeNav)
+		</body>
+	</html>
+}
+
+templ navBar(active string) {
+	<div class="fixed bottom-0 z-10 flex h-[90px] w-full max-w-screen-sm justify-around bg-white px-[10px] py-[21px] shadow-[0px_-5px_15.1px_0px_#D7D7D740]">
+		@navTab("/", "Home", active, components.HouseIcon)
+		@navTab("/clinic", "Appointment", active, components.OfficeIcon)
+		@navTab("/assessments", "Assessments", active, components.LiteratureIcon)
+		@navTab("/profile", "Profile", active, components.UserIcon)
+	</div>
+}
+
+templ navTab(href string, label string, active string, icon func(string, int, int, int) templ.Component) {
+	if href == active {
+		<a href={ href } class="flex flex-col items-center font-bold text-secondary">
+			@icon("#13C2C2", 24, 24, 1)
+			<span class="mt-[5px] text-[12px]">{ label }</span>
+		</a>
+	} else {
+		<a href={ href } class="flex flex-col items-center text-[#161C26]">
+			@icon("#161C26", 24, 24, 1)
+			<span class="mt-[5px] text-[12px]">{ label }</span>
+		</a>
+	}
+}

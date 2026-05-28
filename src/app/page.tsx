@@ -50,7 +50,7 @@ const App = () => {
     // Cookie guard: avoid race where context says not signed in but cookie already set
     let auth: { userId?: string; role_name?: string } = {};
     try {
-      auth = JSON.parse(decodeURI(getCookie('auth') || '{}'));
+      auth = JSON.parse(getCookie('auth') || '{}');
     } catch {
       // ignore parse errors
     }

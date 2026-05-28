@@ -2,20 +2,58 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/konsulin-care/konsulin-app/internal/config"
+	"github.com/konsulin-care/konsulin-app/internal/handler"
+	appmw "github.com/konsulin-care/konsulin-app/internal/middleware"
 )
 
-func routes() http.Handler {
+type noDirFS struct {
+	http.Dir
+}
+
+func (d noDirFS) Open(name string) (http.File, error) {
+	f, err := d.Dir.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	stat, err := f.Stat()
+	if err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+	if stat.IsDir() {
+		_ = f.Close()
+		return nil, os.ErrNotExist
+	}
+	return f, nil
+}
+
+func routes(cfg *config.Config) (http.Handler, error) {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+
+	r.Use(chimw.RequestID)
+	r.Use(appmw.NewLogger(slog.Default()))
+	r.Use(chimw.Recoverer)
+
+	// No global auth guard — all unmatched routes proxy to Next.js which
+	// handles its own auth via src/middleware.ts.  The AuthGuard is applied
+	// only to Go SSR routes when they are added inside a route group below.
+
+	proxyURL, err := url.Parse(cfg.NextjsURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid proxy target %q: %w", cfg.NextjsURL, err)
+	}
+	proxy := handler.NewReverseProxy(proxyURL)
 
 	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -25,7 +63,48 @@ func routes() http.Handler {
 		}
 	})
 
-	return r
+	wd, err := workingDir()
+	if err != nil {
+		return nil, err
+	}
+	staticDir := filepath.Join(wd, "web", "static")
+	// deepsource-disable-next-line GO-S1034
+	// noDirFS prevents directory listing — false positive.
+	fileServer := http.FileServer(noDirFS{http.Dir(staticDir)})
+	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
+
+	r.Post("/auth/logout", handler.NewLogoutHandler(handler.LogoutOptions{
+		AuthPath:          cfg.AuthPath,
+		CookieName:        cfg.AuthCookieName,
+		AccessCookieName:  cfg.SessionCookieNameAccess,
+		RefreshCookieName: cfg.SessionCookieNameRefresh,
+		BackendBaseURL:    cfg.APIURL,
+		SecureCookie:      cfg.CookieSecure,
+	}))
+
+	// Future Go SSR routes go here — behind AuthGuard.
+	// r.Group(func(r chi.Router) {
+	// 	r.Use(appmw.AuthGuard(appmw.AuthGuardOptions{
+	// 		AuthPath:     cfg.AuthPath,
+	// 		CookieName:   cfg.AuthCookieName,
+	// 		CookieSecret: cfg.SessionCookieSecret,
+	// 		AppURL:       cfg.AppURL,
+	// 	}))
+	// 	r.Get("/profile", handler.NewProfileHandler(...))
+	// })
+
+	// All unmatched routes proxy to Next.js (which has its own auth guard).
+	r.NotFound(proxy.ServeHTTP)
+
+	return r, nil
+}
+
+func workingDir() (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("failed to get working directory: %w", err)
+	}
+	return wd, nil
 }
 
 func main() {
@@ -35,14 +114,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TLS is terminated at the nginx reverse proxy (deployed via Ansible playbooks).
-	// The app itself serves plain HTTP behind the proxy.
+	handler, err := routes(cfg)
+	if err != nil {
+		slog.Error("failed to set up routes", "err", err)
+		os.Exit(1)
+	}
+
 	srv := &http.Server{
-		Addr:         ":" + cfg.Port,
-		Handler:      routes(),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		Addr:              ":" + cfg.Port,
+		Handler:           handler,
+		ReadTimeout:       10 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	slog.Info("starting server", "port", cfg.Port)

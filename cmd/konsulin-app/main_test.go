@@ -5,10 +5,24 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/konsulin-care/konsulin-app/internal/config"
 )
 
 func TestHealthEndpoint(t *testing.T) {
-	handler := routes()
+	t.Setenv("API_URL", "http://test:3200")
+	t.Setenv("APP_URL", "http://test:3000")
+	t.Setenv("TX_URL", "http://test:3300")
+	t.Setenv("SESSION_COOKIE_SECRET", "test-secret")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("config.Load() failed: %v", err)
+	}
+	handler, err := routes(cfg)
+	if err != nil {
+		t.Fatalf("routes() failed: %v", err)
+	}
 	server := httptest.NewServer(handler)
 	defer server.Close()
 

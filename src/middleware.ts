@@ -29,7 +29,8 @@ export function middleware(request: NextRequest) {
 
   // Try to parse cookie, but handle errors gracefully
   try {
-    auth = authCookie ? JSON.parse(authCookie) : {};
+    const decoded = authCookie ? decodeURIComponent(authCookie) : '';
+    auth = decoded ? JSON.parse(decoded) : {};
   } catch (e) {
     console.error('Failed to parse auth cookie:');
     auth = {};
@@ -58,7 +59,7 @@ export function middleware(request: NextRequest) {
     }
 
     const url = new URL('/auth', request.url);
-    url.searchParams.set('returnUrl', pathname + request.nextUrl.search);
+    url.searchParams.set('redirectToPath', pathname + request.nextUrl.search);
     return Response.redirect(url);
   }
 

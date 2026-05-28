@@ -8,6 +8,10 @@ linters:
     - ineffassign
     - staticcheck
     - unused
+    - dupl
+    - gosec
+    - usetesting
+    - gocritic
 
   settings:
     gocyclo:
@@ -17,6 +21,14 @@ linters:
     staticcheck:
       checks:
         - all
+    dupl:
+      threshold: 100
+    gocritic:
+      disable-all: true
+      enabled-checks:
+        - httpNoBody
+        - exitAfterDefer
+        - singleCaseSwitch
 
   exclusions:
     paths:
@@ -26,3 +38,7 @@ linters:
         linters:
           - errcheck
           - gocyclo
+          - gosec
+      - linters:
+          - usetesting
+        text: "os\\.Setenv"

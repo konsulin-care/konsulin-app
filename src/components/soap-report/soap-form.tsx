@@ -78,7 +78,7 @@ export default function SoapForm({
           questionnaire,
           finalResponse,
           mode === 'view',
-          process.env.NEXT_PUBLIC_TERMINOLOGY_SERVER
+          process.env.NEXT_PUBLIC_TX_URL
         );
       } catch (err) {
         setIsBuilding(false);

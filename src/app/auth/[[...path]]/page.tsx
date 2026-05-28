@@ -74,22 +74,22 @@ const PasswordlessAuthPage = () => {
   const [uiComponent, setUiComponent] = useState<ReactElement | null>(null);
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const returnUrl = searchParams.get('returnUrl');
+  const redirectToPath = searchParams.get('redirectToPath');
   const isRootAuth = pathname === '/auth';
 
   useEffect(() => {
-    if (returnUrl) {
-      if (returnUrl.startsWith('/journal')) {
-        saveIntent('journal', { path: returnUrl });
+    if (redirectToPath) {
+      if (redirectToPath.startsWith('/journal')) {
+        saveIntent('journal', { path: redirectToPath });
       } else if (
-        returnUrl.startsWith('/assessments') ||
-        returnUrl.startsWith('/record')
+        redirectToPath.startsWith('/assessments') ||
+        redirectToPath.startsWith('/record')
       ) {
         // Just in case middleware intercepts these too, we can save generic redirect or handle specific intent
         // For now, only journal is explicitly requested to be fixed via middleware interception
       }
     }
-  }, [returnUrl]);
+  }, [redirectToPath]);
 
   useEffect(() => {
     // For Supertokens sub-routes like /auth/verify, /auth/callback/*, etc,
