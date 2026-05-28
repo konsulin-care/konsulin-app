@@ -23,6 +23,7 @@ type Session struct {
 	Email           string `json:"email"`
 	PhoneNumber     string `json:"phoneNumber"`
 	ProfilePicture  string `json:"profile_picture"`
+	GuestID         string `json:"-"`
 }
 
 type contextKey struct{}

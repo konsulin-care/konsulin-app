@@ -31,6 +31,25 @@ export const decodeJwtPayload = (
 };
 
 export const getCachedGuestId = (): string | null => {
+  // 1. Check meta tag injected by Go SSR base layout
+  if (typeof document !== 'undefined') {
+    const meta = document.querySelector('meta[name="konsulin-guest-id"]');
+    const content = meta?.getAttribute('content');
+    if (content) return content;
+
+    // 2. Check guest_session cookie (set by OptionalAuth middleware)
+    const match = document.cookie.match(
+      /(?:^|;\s*)guest_session=([^;]*)/
+    );
+    if (match) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(match[1]));
+        if (parsed.guestId) return parsed.guestId;
+      } catch {}
+    }
+  }
+
+  // 3. Fall back to localStorage (legacy Next.js pages)
   try {
     return localStorage.getItem(ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY);
   } catch {

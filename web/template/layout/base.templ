@@ -5,13 +5,14 @@ import (
 	"github.com/konsulin-care/konsulin-app/web/template/components"
 )
 
-templ Base(cfg *config.Config, activeNav string, headerContent, children templ.Component) {
+templ Base(cfg *config.Config, activeNav string, headerContent, children templ.Component, guestID string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<meta name="theme-color" content="#FFFFFF"/>
+			<meta name="konsulin-guest-id" content={ guestID }/>
 			<link rel="manifest" href="/static/manifest.json"/>
 			<link rel="apple-touch-icon" href="/static/favicon/apple-touch-icon.png"/>
 			<link rel="stylesheet" href="/static/css/output.css"/>

@@ -45,9 +45,16 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	r.Use(appmw.NewLogger(slog.Default()))
 	r.Use(chimw.Recoverer)
 
-	// No global auth guard — all unmatched routes proxy to Next.js which
-	// handles its own auth via src/middleware.ts.  The AuthGuard is applied
-	// only to Go SSR routes when they are added inside a route group below.
+	// Global soft auth — injects a session (real, guest, or new guest) for
+	// every request without ever redirecting.  The guest_session cookie is set
+	// once per guest and cached for subsequent requests.
+	r.Use(appmw.OptionalAuth(appmw.OptionalAuthOptions{
+		AuthCookieName:         cfg.AuthCookieName,
+		GuestSessionCookieName: cfg.GuestSessionCookieName,
+		CookieSecret:           cfg.SessionCookieSecret,
+		BackendAPIURL:          cfg.APIURL + cfg.APIBasePath,
+		CookieSecure:           cfg.CookieSecure,
+	}))
 
 	proxyURL, err := url.Parse(cfg.NextjsURL)
 	if err != nil {
@@ -82,14 +89,19 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		SecureCookie:      cfg.CookieSecure,
 	}))
 
-	// Future Go SSR routes go here — behind AuthGuard.
+	// Guest-allowed Go SSR routes — OptionalAuth provides the session, no
+	// RequireRole needed.  These routes are accessible to all roles.
+	// r.Get("/", handler.NewHomeHandler(...))
+
+	// Protected Go SSR routes (future migrations) — OptionalAuth runs first,
+	// then RequireRole checks the session role.
 	// r.Group(func(r chi.Router) {
-	// 	r.Use(appmw.AuthGuard(appmw.AuthGuardOptions{
-	// 		AuthPath:     cfg.AuthPath,
-	// 		CookieName:   cfg.AuthCookieName,
-	// 		CookieSecret: cfg.SessionCookieSecret,
-	// 		AppURL:       cfg.AppURL,
-	// 	}))
+	// 	r.Use(appmw.RequireRole(appmw.RequireRoleOptions{
+	// 		RedirectIntentCookieName: cfg.RedirectIntentCookieName,
+	// 		AuthPath:                 cfg.AuthPath,
+	// 		CookieSecure:             cfg.CookieSecure,
+	// 		AppURL:                   cfg.AppURL,
+	// 	}, "Patient", "Practitioner"))
 	// 	r.Get("/profile", handler.NewProfileHandler(...))
 	// })
 

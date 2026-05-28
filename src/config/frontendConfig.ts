@@ -3,6 +3,10 @@ import { Roles } from '@/constants/roles';
 import { createProfile, getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { extractSafeRedirectPath } from '@/utils/redirect-guard';
+import {
+  clearRedirectIntent,
+  getRedirectIntent
+} from '@/utils/redirect-intent';
 import { Patient, Practitioner } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
 import React from 'react';
@@ -229,21 +233,23 @@ export const frontendConfig = (): SuperTokensConfig => {
             }
 
             const isAuthRoute = (routerInfo.pathName || '').startsWith('/auth');
-            const redirectToPath = extractSafeRedirectPath(
-              globalThis.location.search
-            );
+            const redirectIntent = getRedirectIntent();
+            clearRedirectIntent();
+            const redirectToPath =
+              redirectIntent ||
+              extractSafeRedirectPath(globalThis.location.search);
             if (!isAuthRoute) {
               routerInfo.router.push('/auth');
               await new Promise(resolve => setTimeout(resolve, 100));
             }
             if (redirectToPath) {
               console.log(
-                '[auth:redirect] redirecting to magic link target:',
+                '[auth:redirect] redirecting to:',
                 redirectToPath
               );
             } else {
               console.log(
-                '[auth:redirect] no valid redirectToPath found, defaulting to /'
+                '[auth:redirect] no redirect target, defaulting to /'
               );
             }
             globalThis.location.href = redirectToPath ?? '/';

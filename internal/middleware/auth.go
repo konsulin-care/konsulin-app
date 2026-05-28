@@ -9,6 +9,14 @@ import (
 	"github.com/konsulin-care/konsulin-app/internal/session"
 )
 
+// RequireRoleOptions configures the enhanced RequireRole middleware.
+type RequireRoleOptions struct {
+	RedirectIntentCookieName string
+	AuthPath                 string
+	CookieSecure             bool
+	AppURL                   string
+}
+
 type AuthGuardOptions struct {
 	AuthPath     string
 	CookieName   string
@@ -66,23 +74,54 @@ func redirectURLForPath(path, authPath, appURL string) string {
 	return authPath
 }
 
-func RequireRole(roles ...string) func(next http.Handler) http.Handler {
+func RequireRole(opts RequireRoleOptions, roles ...string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			sess, ok := session.SessionFromContext(r.Context())
-			if !ok {
-				http.Error(w, "unauthorized", http.StatusForbidden)
-				return
-			}
-			for _, role := range roles {
-				if sess.Role == role {
-					next.ServeHTTP(w, r)
-					return
-				}
-			}
-			http.Error(w, "forbidden", http.StatusForbidden)
+			requireRoleHandler(w, r, next, opts, roles)
 		})
 	}
+}
+
+func requireRoleHandler(w http.ResponseWriter, r *http.Request, next http.Handler, opts RequireRoleOptions, roles []string) {
+	sess, ok := session.SessionFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusForbidden)
+		return
+	}
+
+	if sess.Role == "Guest" && !containsRole(roles, "Guest") {
+		if validatedPath, valid := session.ValidateRedirectPath(r.URL.Path, opts.AppURL); valid {
+			//nolint:gosec // G124: HttpOnly=false required for JS to read redirect_intent cookie
+			http.SetCookie(w, &http.Cookie{
+				Name:     opts.RedirectIntentCookieName,
+				Value:    url.QueryEscape(validatedPath),
+				Path:     "/",
+				MaxAge:   300,
+				HttpOnly: false,
+				Secure:   opts.CookieSecure,
+				SameSite: http.SameSiteLaxMode,
+			})
+			http.Redirect(w, r, opts.AuthPath, http.StatusFound)
+			return
+		}
+	}
+
+	for _, role := range roles {
+		if sess.Role == role {
+			next.ServeHTTP(w, r)
+			return
+		}
+	}
+	http.Error(w, "forbidden", http.StatusForbidden)
+}
+
+func containsRole(roles []string, role string) bool {
+	for _, r := range roles {
+		if r == role {
+			return true
+		}
+	}
+	return false
 }
 
 func isSkippedPath(path string, opts AuthGuardOptions) bool {

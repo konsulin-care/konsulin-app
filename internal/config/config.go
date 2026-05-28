@@ -25,6 +25,9 @@ type Config struct {
 	SessionCookieNameRefresh string `json:"session_cookie_name_refresh"`
 	SessionCookieSecret      string `json:"session_cookie_secret"`
 
+	GuestSessionCookieName    string `json:"guest_session_cookie_name"`
+	RedirectIntentCookieName  string `json:"redirect_intent_cookie_name"`
+
 	NextjsURL    string `json:"nextjs_url"`
 	CookieSecure bool   `json:"cookie_secure"`
 }
@@ -93,6 +96,9 @@ func Load() (*Config, error) {
 		SessionCookieNameRefresh: env("SESSION_COOKIE_NAME_REFRESH", "sRefreshToken"),
 		SessionCookieSecret:      sessionSecret,
 
+		GuestSessionCookieName:   env("GUEST_SESSION_COOKIE_NAME", "guest_session"),
+		RedirectIntentCookieName: env("REDIRECT_INTENT_COOKIE_NAME", "redirect_intent"),
+
 		NextjsURL:    env("NEXTJS_URL", "http://localhost:8080"),
 		CookieSecure: strings.HasPrefix(appURL, "https://"),
 	}
@@ -104,6 +110,8 @@ func Load() (*Config, error) {
 		"auth_path", cfg.AuthPath,
 		"app_url", cfg.AppURL,
 		"auth_cookie_name", cfg.AuthCookieName,
+		"guest_session_cookie_name", cfg.GuestSessionCookieName,
+		"redirect_intent_cookie_name", cfg.RedirectIntentCookieName,
 		"cookie_secure", cfg.CookieSecure,
 		"session_cookie_secret_set", cfg.SessionCookieSecret != "",
 	)
