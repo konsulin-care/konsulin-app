@@ -55,7 +55,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const fetchSession = async () => {
-      const auth = JSON.parse(getCookie('auth') || '{}');
+      let auth: Record<string, any> = {};
+      try {
+        auth = JSON.parse(getCookie('auth') || '{}');
+      } catch {
+        auth = {};
+      }
 
       if (!session.doesSessionExist) {
         // Don't create anonymous session if auth cookie suggests user is signed in (e.g. session not yet restored)

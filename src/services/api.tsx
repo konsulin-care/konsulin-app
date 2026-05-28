@@ -20,7 +20,12 @@ export async function getAPI(): Promise<AxiosInstance> {
 
   apiInstance.interceptors.request.use(
     config => {
-      const auth = JSON.parse(getCookie('auth') || '{}');
+      let auth: Record<string, any> = {};
+      try {
+        auth = JSON.parse(getCookie('auth') || '{}');
+      } catch {
+        auth = {};
+      }
 
       if (auth.token) config.headers.Authorization = `Bearer ${auth.token}`;
 

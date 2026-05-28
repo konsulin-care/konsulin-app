@@ -30,11 +30,17 @@ func NewReverseProxy(target *url.URL) *httputil.ReverseProxy {
 			pr.Out.Host = target.Host
 			pr.Out.Header.Set("X-Forwarded-Host", pr.In.Host)
 			proto := "http"
-			if pr.In.TLS != nil {
+			if v := pr.In.Header.Get("X-Forwarded-Proto"); v != "" {
+				proto = v
+			} else if pr.In.TLS != nil {
 				proto = "https"
 			}
 			pr.Out.Header.Set("X-Forwarded-Proto", proto)
-			pr.Out.Header.Set(xForwardedFor, pr.In.RemoteAddr)
+			if existing := pr.In.Header.Get(xForwardedFor); existing != "" {
+				pr.Out.Header.Set(xForwardedFor, existing+", "+pr.In.RemoteAddr)
+			} else {
+				pr.Out.Header.Set(xForwardedFor, pr.In.RemoteAddr)
+			}
 		},
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 			slog.Error("proxy error", "path", r.URL.Path, "err", err)
