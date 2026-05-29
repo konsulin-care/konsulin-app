@@ -109,14 +109,7 @@ func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"authenticated":` + boolStr(authenticated) + `}`))
-}
-
-func boolStr(b bool) string {
-	if b {
-		return "true"
-	}
-	return "false"
+	_ = json.NewEncoder(w).Encode(map[string]bool{"authenticated": authenticated})
 }
 
 func handleDeleteAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {

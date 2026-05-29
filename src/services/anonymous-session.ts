@@ -63,15 +63,18 @@ export const getCachedGuestId = async (): Promise<string | null> => {
     // 3. Check guest session cookie (set by OptionalAuth middleware)
     const guestCookieName =
       meta?.getAttribute('data-cookie-name') || 'guest_session';
-    const escaped = guestCookieName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const match = document.cookie.match(
-      new RegExp(`(?:^|;\\s*)${escaped}=([^;]*)`)
-    );
-    if (match) {
+    const cookiePair = document.cookie
+      .split(';')
+      .map(c => c.trim())
+      .find(c => c.startsWith(guestCookieName + '='));
+    if (cookiePair) {
+      const value = cookiePair.slice(guestCookieName.length + 1);
       try {
-        const parsed = JSON.parse(decodeURIComponent(match[1]));
+        const parsed = JSON.parse(decodeURIComponent(value));
         if (parsed.guestId) return parsed.guestId;
-      } catch { /* not a JSON cookie */ }
+      } catch {
+        /* not a JSON cookie */
+      }
     }
   }
 

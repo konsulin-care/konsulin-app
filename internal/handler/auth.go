@@ -20,7 +20,7 @@ import (
 // | redirect_intent   | false**  | Lax      | config | 300s   | RequireRole middleware     |
 // | _gorilla_csrf     | true     | Lax      | config | session| CSRF middleware            |
 //
-//   - Cleared (MaxAge=-1) by logout handler, not SuperTokens.
+//      * Cleared (MaxAge=-1) by logout handler, not SuperTokens.
 //     ** HttpOnly=false required for client JS to read the value.
 var logoutClient = &http.Client{Timeout: 10 * time.Second}
 
