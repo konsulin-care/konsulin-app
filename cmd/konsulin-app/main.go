@@ -92,7 +92,6 @@ func routes(cfg *config.Config) (http.Handler, error) {
 
 	r.HandleFunc("/auth/cookie", handler.NewAuthCookieHandler(handler.AuthCookieOptions{
 		CookieName:   cfg.AuthCookieName,
-		CookieSecret: cfg.SessionCookieSecret,
 		CookieSecure: cfg.CookieSecure,
 	}))
 

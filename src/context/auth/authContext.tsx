@@ -1,7 +1,7 @@
 'use client';
 
 import { Roles } from '@/constants/roles';
-import { dbGet, dbSet, dbDelete, migrateLocalStorage, STORES } from '@/lib/indexeddb';
+import { dbGet, dbSet, migrateLocalStorage, STORES } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';

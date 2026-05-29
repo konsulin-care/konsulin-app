@@ -12,7 +12,6 @@ import (
 
 type AuthCookieOptions struct {
 	CookieName   string
-	CookieSecret string
 	CookieSecure bool
 }
 
@@ -35,6 +34,8 @@ func NewAuthCookieHandler(opts AuthCookieOptions) http.HandlerFunc {
 		switch r.Method {
 		case http.MethodPost:
 			handleSetAuthCookie(w, r, opts)
+		case http.MethodGet:
+			handleGetAuthCookie(w, r)
 		case http.MethodDelete:
 			handleDeleteAuthCookie(w, r, opts)
 		default:
@@ -96,6 +97,23 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"ok"}`))
+}
+
+func handleGetAuthCookie(w http.ResponseWriter, r *http.Request) {
+	authenticated := false
+	if _, err := r.Cookie("sAccessToken"); err == nil {
+		authenticated = true
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"authenticated":` + boolStr(authenticated) + `}`))
+}
+
+func boolStr(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
 }
 
 func handleDeleteAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {

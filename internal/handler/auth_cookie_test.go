@@ -19,7 +19,6 @@ func newAuthCookieServer() *httptest.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth/cookie", NewAuthCookieHandler(AuthCookieOptions{
 		CookieName:   "auth",
-		CookieSecret: cookieTestSecret,
 		CookieSecure: false,
 	}))
 	return httptest.NewServer(mux)
@@ -244,7 +243,7 @@ func TestAuthCookieHandler_wrongMethod(t *testing.T) {
 	srv := newAuthCookieServer()
 	t.Cleanup(srv.Close)
 
-	req, err := http.NewRequest(http.MethodGet, srv.URL+"/auth/cookie", http.NoBody)
+	req, err := http.NewRequest(http.MethodPatch, srv.URL+"/auth/cookie", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}

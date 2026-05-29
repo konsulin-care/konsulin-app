@@ -52,16 +52,25 @@ const App = () => {
     if (isLoading) return;
     if (authState.isAuthenticated) return;
 
-    // If auth context says authenticated, no need to create anonymous session.
-    if (authState.isAuthenticated) return;
-
-    hasRunReloadAnonymousRef.current = true;
-    try {
-      sessionStorage.setItem('konsulin_reload_anonymous_done', '1');
-    } catch {
-      // ignore
-    }
-    ensureAnonymousSession(true).catch(err => {
+    // Server-side HttpOnly cookie check: avoid anonymous session creation
+    // when the browser already has a real SuperTokens session (sAccessToken).
+    const checkAuthThenAnon = async () => {
+      try {
+        const res = await fetch('/auth/cookie');
+        const data = await res.json();
+        if (data.authenticated) return;
+      } catch {
+        // if check fails, proceed with anonymous session
+      }
+      hasRunReloadAnonymousRef.current = true;
+      try {
+        sessionStorage.setItem('konsulin_reload_anonymous_done', '1');
+      } catch {
+        // ignore
+      }
+      await ensureAnonymousSession(true);
+    };
+    checkAuthThenAnon().catch(err => {
       console.error('Failed to refresh anonymous session on reload:', err);
     });
   }, [isLoading, authState.isAuthenticated]);
