@@ -54,6 +54,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 			Secure:  cfg.CookieSecure,
 			ExemptPrefixes: []string{
 				"/auth/cookie",
+				"/api/config",
 				"/proxy/",
 				"/health",
 				"/static/",
@@ -111,6 +112,15 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	r.HandleFunc("/auth/cookie", handler.NewAuthCookieHandler(handler.AuthCookieOptions{
 		CookieName:   cfg.AuthCookieName,
 		CookieSecure: cfg.CookieSecure,
+	}))
+
+	r.Get("/api/config", handler.NewClientConfigHandler(handler.ClientConfigOptions{
+		AppName:     cfg.AppName,
+		APIURL:      cfg.APIURL,
+		APIBasePath: cfg.APIBasePath,
+		AuthPath:    cfg.AuthPath,
+		AppURL:      cfg.AppURL,
+		TXURL:       cfg.TXURL,
 	}))
 
 	// /auth/* — serve Go SSR shell; redirect authenticated users to /

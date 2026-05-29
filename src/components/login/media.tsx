@@ -1,14 +1,13 @@
 import { X } from 'lucide-react'
-import { signIn } from 'next-auth/react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+// Deprecated: Google login via NextAuth (dead route). This component should be
+// replaced with SuperTokens third-party login or removed entirely.
 export default function LoginMedia() {
   const [isDisabled, setIsDisabled] = useState(true)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [drawerMessage, setDrawerMessage] = useState('')
-  const router = useRouter()
 
   async function handleLoginBy(type: string) {
     switch (type) {
@@ -20,16 +19,9 @@ export default function LoginMedia() {
         console.log('Login via WhatsApp')
         break
       case 'google':
-        try {
-          const result = await signIn('google')
-          if (result?.ok) {
-            router.push('/')
-          } else {
-            return false
-          }
-        } catch (error) {
-          return false
-        }
+        // TODO: Replace with SuperTokens third-party Google login.
+        // NextAuth route has been removed.
+        console.warn('Google login disabled — NextAuth route removed')
         break
       default:
         console.warn(`Login type "${type}" is not supported.`)
