@@ -47,6 +47,7 @@ func mockAnonymousSessionAPI(guestID string) *httptest.Server {
 }
 
 func TestOptionalAuth_noCookies_createsSession(t *testing.T) {
+	ResetAnonSessionCache()
 	apiServer := mockAnonymousSessionAPI("test-guest-abc")
 	t.Cleanup(apiServer.Close)
 	r := newOptionalAuthRouter(apiServer)
@@ -148,6 +149,7 @@ func TestOptionalAuth_guestCookie_guestSession(t *testing.T) {
 }
 
 func TestOptionalAuth_apiUnavailable_fallback(t *testing.T) {
+	ResetAnonSessionCache()
 	// Start a server that will be closed immediately — simulating unavailable API
 	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)

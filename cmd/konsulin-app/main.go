@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -47,20 +48,24 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	r.Use(chimw.Recoverer)
 
 	// CSRF protection — applies to all state-changing Go SSR routes.
-	// Exempt proxy, auth cookie API, health, and static routes.
+	// Exempt proxy, CSRF token endpoint, health, and static routes.
 	if cfg.CSRFAuthKey != "" {
-		csrfMw := appmw.NewCSRFProtection(appmw.CSRFConfig{
-			AuthKey: []byte(cfg.CSRFAuthKey),
-			Secure:  cfg.CookieSecure,
+		if len(cfg.CSRFAuthKey) != 32 {
+			slog.Error("CSRF_AUTH_KEY must be exactly 32 bytes, CSRF disabled",
+				"length", len(cfg.CSRFAuthKey))
+		} else {
+			csrfMw := appmw.NewCSRFProtection(appmw.CSRFConfig{
+				AuthKey: []byte(cfg.CSRFAuthKey),
+				Secure:  cfg.CookieSecure,
 			ExemptPrefixes: []string{
-				"/auth/cookie",
 				"/api/config",
 				"/proxy/",
 				"/health",
 				"/static/",
 			},
-		})
-		r.Use(csrfMw)
+			})
+			r.Use(csrfMw)
+		}
 	}
 
 	// Global soft auth — injects a session (real, guest, or new guest) for
@@ -112,7 +117,16 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	r.HandleFunc("/auth/cookie", handler.NewAuthCookieHandler(handler.AuthCookieOptions{
 		CookieName:   cfg.AuthCookieName,
 		CookieSecure: cfg.CookieSecure,
+		CookieSecret: cfg.SessionCookieSecret,
 	}))
+
+	// CSRF token endpoint for POST /auth/cookie. GET requests bypass
+	// CSRF validation but still set the _gorilla_csrf cookie, making
+	// csrf.Token(r) available. The frontend fetches this before POST.
+	r.Get("/auth/cookie/csrf-token", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{"token": appmw.CSRFToken(r)})
+	})
 
 	r.Get("/api/config", handler.NewClientConfigHandler(handler.ClientConfigOptions{
 		AppName:     cfg.AppName,
@@ -181,14 +195,26 @@ func workingDir() (string, error) {
 	return wd, nil
 }
 
-func main() {
-	slog.SetLogLoggerLevel(slog.LevelDebug)
+func setLogLevel(level string) {
+	switch strings.ToLower(level) {
+	case "debug":
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	case "warn":
+		slog.SetLogLoggerLevel(slog.LevelWarn)
+	case "error":
+		slog.SetLogLoggerLevel(slog.LevelError)
+	default:
+		slog.SetLogLoggerLevel(slog.LevelInfo)
+	}
+}
 
+func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Error("failed to load config", "err", err)
 		os.Exit(1)
 	}
+	setLogLevel(cfg.LogLevel)
 
 	session.InitSecureCookie(cfg.SessionCookieSecret)
 	session.AllowUnsigned = cfg.AllowUnsignedCookies

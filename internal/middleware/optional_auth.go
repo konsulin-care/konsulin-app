@@ -1,16 +1,100 @@
 package middleware
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/konsulin-care/konsulin-app/internal/client"
 	"github.com/konsulin-care/konsulin-app/internal/session"
 )
+
+// anonCacheEntry holds a cached anonymous session result with expiry.
+type anonCacheEntry struct {
+	result    *client.AnonymousSessionResult
+	expiresAt time.Time
+}
+
+// anonSessionCache is a short-lived in-memory cache for anonymous session
+// creation, keyed by client IP hash.  This prevents a burst of requests from
+// a cookieless client (e.g. crawler, privacy-mode browser) from hammering the
+// backend API on every request.  5s TTL.
+var (
+	anonSessionCache   = make(map[string]anonCacheEntry)
+	anonSessionCacheMu sync.RWMutex
+)
+
+// cacheTTL is how long a cached anonymous session is considered valid.
+const cacheTTL = 5 * time.Second
+
+// ResetAnonSessionCache clears the cache. Exported for tests.
+func ResetAnonSessionCache() {
+	anonSessionCacheMu.Lock()
+	anonSessionCache = make(map[string]anonCacheEntry)
+	anonSessionCacheMu.Unlock()
+}
+
+// clientIP extracts the real client IP from headers or the remote address.
+func clientIP(r *http.Request) string {
+	if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
+		if idx := strings.IndexByte(fwd, ','); idx > 0 {
+			return strings.TrimSpace(fwd[:idx])
+		}
+		return strings.TrimSpace(fwd)
+	}
+	if real := r.Header.Get("X-Real-IP"); real != "" {
+		return real
+	}
+	addr := r.RemoteAddr
+	if idx := strings.LastIndexByte(addr, ':'); idx > 0 {
+		return addr[:idx]
+	}
+	return addr
+}
+
+// ipHash returns a SHA-256 hex digest of the client IP for cache keying
+// without storing raw IPs.
+func ipHash(ip string) string {
+	h := sha256.Sum256([]byte(ip))
+	return fmt.Sprintf("%x", h[:8]) // 16 hex chars is enough for cache key
+}
+
+// lookupCachedSession checks the in-memory cache for a previously created
+// anonymous session from the same client IP.
+func lookupCachedSession(r *http.Request) *client.AnonymousSessionResult {
+	key := ipHash(clientIP(r))
+	anonSessionCacheMu.RLock()
+	entry, ok := anonSessionCache[key]
+	anonSessionCacheMu.RUnlock()
+	if !ok || time.Now().After(entry.expiresAt) {
+		if ok {
+			anonSessionCacheMu.Lock()
+			delete(anonSessionCache, key)
+			anonSessionCacheMu.Unlock()
+		}
+		return nil
+	}
+	return entry.result
+}
+
+// storeCachedSession stores the anonymous session result in the cache keyed
+// by client IP hash with a 5-second TTL.
+func storeCachedSession(r *http.Request, result *client.AnonymousSessionResult) {
+	key := ipHash(clientIP(r))
+	anonSessionCacheMu.Lock()
+	anonSessionCache[key] = anonCacheEntry{
+		result:    result,
+		expiresAt: time.Now().Add(cacheTTL),
+	}
+	anonSessionCacheMu.Unlock()
+}
 
 type OptionalAuthOptions struct {
 	AuthCookieName         string
@@ -44,20 +128,27 @@ func OptionalAuth(opts OptionalAuthOptions) func(next http.Handler) http.Handler
 			}
 
 			// Tier 3: Create new anonymous session via backend API
-			result, err := client.FetchAnonymousSession(opts.BackendAPIURL)
-			if err != nil {
+		// Short-lived in-memory cache per IP reduces backend pressure from
+		// cookieless clients (crawlers, privacy-mode, cookie-clearing users).
+		result := lookupCachedSession(r)
+		if result == nil {
+			var fetchErr error
+			result, fetchErr = client.FetchAnonymousSession(opts.BackendAPIURL)
+			if fetchErr != nil {
 				slog.Warn("optional auth: failed to create anonymous session, proceeding without GuestID",
-					"path", r.URL.Path, "err", err)
+					"path", r.URL.Path, "err", fetchErr)
 				sess = &session.Session{Role: "Guest"}
 				ctx := session.ContextWithSession(r.Context(), sess)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
+			storeCachedSession(r, result)
+		}
 
-			setGuestSessionCookie(w, opts, result.GuestID, result.Token)
-			sess = &session.Session{GuestID: result.GuestID, Role: "Guest", Token: result.Token}
-			ctx := session.ContextWithSession(r.Context(), sess)
-			next.ServeHTTP(w, r.WithContext(ctx))
+		setGuestSessionCookie(w, opts, result.GuestID, result.Token)
+		sess = &session.Session{GuestID: result.GuestID, Role: "Guest", Token: result.Token}
+		ctx := session.ContextWithSession(r.Context(), sess)
+		next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }

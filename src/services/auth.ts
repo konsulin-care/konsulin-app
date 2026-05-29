@@ -8,6 +8,28 @@ import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 import { getProfileByIdentifier } from './profile';
 
 /**
+ * Fetches CSRF token from the server for use in POST /auth/cookie requests.
+ * Returns the token string or null if the endpoint is unavailable.
+ */
+export async function fetchCSRFToken(): Promise<string | null> {
+  try {
+    const res = await fetch('/auth/cookie/csrf-token');
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function postAuthCookie(body: Record<string, unknown>): Promise<Response> {
+  const token = await fetchCSRFToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['X-CSRF-Token'] = token;
+  return fetch('/auth/cookie', { method: 'POST', headers, body: JSON.stringify(body) });
+}
+
+/**
  * Restores the auth cookie when SuperTokens session is valid but auth cookie is missing
  * This function fetches user data from SuperTokens session and profile service,
  * then recreates the auth cookie using the existing cookie setting mechanism
@@ -69,14 +91,9 @@ export const restoreAuthCookie = async (
       };
 
       try {
-        await fetch('/auth/cookie', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(authPayload)
-        });
-        console.log(
-          'Auth cookie restored with minimal data (profile fetch failed)'
-        );
+        const res = await postAuthCookie(authPayload as Record<string, unknown>);
+        if (!res.ok) { console.error('Failed to set auth cookie:', res.status); return false; }
+        console.log('Auth cookie restored with minimal data (profile fetch failed)');
         return true;
       } catch (cookieError) {
         console.error('Failed to set auth cookie:', cookieError);
@@ -102,11 +119,8 @@ export const restoreAuthCookie = async (
     };
 
     try {
-      await fetch('/auth/cookie', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(authPayload)
-      });
+      const res = await postAuthCookie(authPayload as Record<string, unknown>);
+      if (!res.ok) { console.error('Failed to set auth cookie:', res.status); return false; }
       console.log('Auth cookie successfully restored');
       return true;
     } catch (cookieError) {

@@ -9,6 +9,17 @@ import {
 import { extractSafeRedirectPath } from './utils/redirect-guard';
 import type { Patient, Practitioner } from 'fhir/r4';
 import type { SuperTokensConfig } from 'supertokens-auth-react/lib/build/types';
+
+async function postAuthCookie(body: Record<string, unknown>): Promise<Response> {
+  let token = '';
+  try {
+    const res = await fetch('/auth/cookie/csrf-token');
+    if (res.ok) { const d = await res.json() as { token?: string }; token = d.token ?? ''; }
+  } catch {}
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['X-CSRF-Token'] = token;
+  return fetch('/auth/cookie', { method: 'POST', headers, body: JSON.stringify(body) });
+}
 import Passwordless from 'supertokens-auth-react/recipe/passwordless';
 import Session from 'supertokens-auth-react/recipe/session';
 import ThirdParty from 'supertokens-auth-react/recipe/thirdparty';
@@ -169,11 +180,7 @@ export const frontendConfig = (): SuperTokensConfig => {
                 fhirId: profileData?.id ?? '',
               };
 
-              const cookieRes = await fetch('/auth/cookie', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(cookieData),
-              });
+              const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
               if (!cookieRes.ok) {
                 console.error('[auth:cookie] server returned', cookieRes.status);
                 return;
@@ -200,11 +207,7 @@ export const frontendConfig = (): SuperTokensConfig => {
                 fhirId: profile?.id ?? '',
               };
 
-              const cookieRes = await fetch('/auth/cookie', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(cookieData),
-              });
+              const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
               if (!cookieRes.ok) {
                 console.error('[auth:cookie] server returned', cookieRes.status);
                 return;

@@ -34,6 +34,7 @@ type Config struct {
 	AllowInsecureBackendLogout bool  `json:"allow_insecure_backend_logout"`
 	AllowUnsignedCookies       bool  `json:"allow_unsigned_cookies"`
 	CSRFAuthKey                string `json:"csrf_auth_key"`
+	LogLevel                   string `json:"log_level"`
 }
 
 func (c *Config) AuthFullPath() string {
@@ -109,6 +110,7 @@ func Load() (*Config, error) {
 		AllowInsecureBackendLogout: env("ALLOW_INSECURE_BACKEND_LOGOUT", "") != "",
 		AllowUnsignedCookies:       env("ALLOW_UNSIGNED_COOKIES", "") != "",
 		CSRFAuthKey:                env("CSRF_AUTH_KEY", ""),
+		LogLevel:                   env("LOG", "info"),
 	}
 	slog.Info("config loaded",
 		"port", cfg.Port,

@@ -157,6 +157,9 @@ export async function clearUserData(ownerId: string): Promise<void> {
       ) {
         return value.ownerId === ownerId;
       }
+      if (storeName === STORES.soapDrafts) {
+        return value.practitionerId === ownerId;
+      }
       if (storeName === STORES.tempBooking) {
         return value.ownerId === ownerId;
       }
@@ -243,27 +246,11 @@ export async function migrateLocalStorage(): Promise<void> {
   await putWithTransaction(db, STORES.assessmentDrafts, assessmentValues);
 
   // 3. soap_drafts: soap_{patientId}
-  const soapKeys = Object.keys(localStorage).filter(k =>
-    k.startsWith('soap_')
-  );
-  const soapValues: any[] = [];
-  for (const key of soapKeys) {
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const patientId = key.replace('soap_', '');
-        soapValues.push({
-          practitionerId: '',
-          patientId,
-          draft: JSON.parse(raw),
-          updatedAt: Date.now()
-        });
-      }
-    } catch {
-      // skip corrupt entries
-    }
-  }
-  await putWithTransaction(db, STORES.soapDrafts, soapValues);
+  // NOTE: soap_drafts uses composite key ['practitionerId', 'patientId'].
+  // The old localStorage keys (soap_{patientId}) don't include practitionerId.
+  // Without a known practitioner, skip migration to avoid key collisions.
+  // Legacy data remains in localStorage for the fallback path.
+  const soapKeys: string[] = [];
 
   // 4. service_requests: serviceRequest_{recordId}
   const srKeys = Object.keys(localStorage).filter(k =>

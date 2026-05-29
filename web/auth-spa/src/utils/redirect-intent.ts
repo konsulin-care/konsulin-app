@@ -7,7 +7,9 @@ export interface Intent {
 }
 
 const REDIRECT_INTENT_COOKIE = 'redirect_intent';
-const TTL_MS = 6 * 60 * 60 * 1000;
+// Keep in sync with src/utils/redirect-intent.ts and
+// RequireRole middleware MaxAge=300 (5 min).
+const TTL_MS = 5 * 60 * 1000;
 
 function readCookie(): string | null {
   const match = document.cookie.match(

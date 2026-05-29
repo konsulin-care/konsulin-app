@@ -85,8 +85,26 @@ func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL string) {
 		"prefix", truncated, "target", targetURL)
 }
 
+// hopByHopHeaders are headers that must be stripped per RFC 2616 §13.5.1
+// when forwarding responses.  Go's HTTP server sets its own Transfer-Encoding
+// and Content-Length, so we skip those to avoid conflicts.
+var hopByHopHeaders = map[string]bool{
+	"Connection":          true,
+	"Keep-Alive":          true,
+	"Transfer-Encoding":   true,
+	"TE":                  true,
+	"Trailers":            true,
+	"Upgrade":             true,
+	"Proxy-Authenticate":  true,
+	"Proxy-Authorization": true,
+	"Content-Length":      true,
+}
+
 func writeProxyResponse(w http.ResponseWriter, resp *http.Response) {
 	for k, vs := range resp.Header {
+		if hopByHopHeaders[http.CanonicalHeaderKey(k)] {
+			continue
+		}
 		for _, v := range vs {
 			w.Header().Add(k, v)
 		}

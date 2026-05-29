@@ -13,6 +13,7 @@ import (
 type AuthCookieOptions struct {
 	CookieName   string
 	CookieSecure bool
+	CookieSecret string
 }
 
 type authCookieRequest struct {
@@ -103,7 +104,7 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 
 func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {
 	authenticated := false
-	if _, err := r.Cookie(opts.CookieName); err == nil {
+	if _, err := session.ExtractFromRequest(r, opts.CookieName, opts.CookieSecret); err == nil {
 		authenticated = true
 	}
 	w.Header().Set("Content-Type", "application/json")

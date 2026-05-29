@@ -32,15 +32,28 @@ func TestGetAuthCookie_returnsAuthenticated(t *testing.T) {
 		t.Fatalf("failed to decode body: %v", err)
 	}
 	if body.Authenticated {
-		t.Error("expected authenticated=false without sAccessToken")
+		t.Error("expected authenticated=false without auth cookie")
 	}
 
 	// With auth cookie → authenticated: true
+	// First POST to create a properly signed cookie, then use it for GET.
+	postResp := mustPost(t, srv, "/auth/cookie",
+		`{"userId":"u1","role_name":"Patient"}`,
+		&http.Cookie{Name: "sAccessToken", Value: "test-token"})
+	if postResp.StatusCode != http.StatusOK {
+		t.Fatalf("POST auth/cookie failed: %d", postResp.StatusCode)
+	}
+	authCookie := findCookie(postResp, "auth")
+	if authCookie == nil {
+		t.Fatal("expected auth cookie from POST")
+	}
+	postResp.Body.Close()
+
 	req2, err := http.NewRequest(http.MethodGet, srv.URL+"/auth/cookie", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req2.AddCookie(&http.Cookie{Name: "auth", Value: "tok"})
+	req2.AddCookie(authCookie)
 	resp2, err := http.DefaultClient.Do(req2)
 	if err != nil {
 		t.Fatal(err)
@@ -55,6 +68,6 @@ func TestGetAuthCookie_returnsAuthenticated(t *testing.T) {
 		t.Fatalf("failed to decode body: %v", err)
 	}
 	if !body.Authenticated {
-		t.Error("expected authenticated=true with auth cookie")
+		t.Error("expected authenticated=true with valid auth cookie")
 	}
 }

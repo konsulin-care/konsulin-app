@@ -104,12 +104,14 @@ async function fetchRuntimeConfig() {
       terminologyServer: raw.TX_URL
     };
   } catch (err) {
-    // fallback defaults
+    // fallback defaults — empty domains force a clear error if
+    // /api/config fetch fails in production rather than silently
+    // connecting to localhost.
     return {
       appInfo: {
         appName: 'Konsulin',
-        apiDomain: 'http://localhost:3200',
-        websiteDomain: 'http://localhost:3000',
+        apiDomain: '',
+        websiteDomain: '',
         apiBasePath: '/api/v1/auth',
         websiteBasePath: '/auth'
       },

@@ -20,6 +20,7 @@ func newAuthCookieServer() *httptest.Server {
 	mux.HandleFunc("/auth/cookie", NewAuthCookieHandler(AuthCookieOptions{
 		CookieName:   "auth",
 		CookieSecure: false,
+		CookieSecret: cookieTestSecret,
 	}))
 	return httptest.NewServer(mux)
 }
