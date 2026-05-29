@@ -194,8 +194,7 @@ export default function SoapForm({
         toast.success(
           `SOAP berhasil ${mode === 'create' ? 'dikirim' : 'diupdate'}`
         );
-        const ownerId = practitionerId || '';
-        dbDelete(STORES.soapDrafts, [ownerId, patientId]).catch(err =>
+        dbDelete(STORES.soapDrafts, [practitionerId, patientId]).catch(err =>
           console.warn('[IndexedDB]', err)
         );
         router.push('/');
