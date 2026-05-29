@@ -2,7 +2,7 @@
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
-import { STORES, dbDelete, dbGet, dbSet } from '@/lib/indexeddb';
+import { dbDelete, dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import { useSubmitSoapBundle } from '@/services/api/assessment';
 import {
   BaseRenderer,
@@ -66,12 +66,12 @@ export default function SoapForm({
         if (mode === 'view') {
           finalResponse = questionnaireResponse;
         } else {
-          const ownerId = practitionerId || '';
+          const ownerId = practitionerId;
           const saved = await dbGet<{ draft: QuestionnaireResponse }>(
             STORES.soapDrafts,
             [ownerId, patientId]
           );
-          finalResponse = saved?.draft ?? (questionnaireResponse ?? null);
+          finalResponse = saved?.draft ?? questionnaireResponse ?? null;
         }
 
         await buildForm(
@@ -101,7 +101,7 @@ export default function SoapForm({
         patientId,
         draft: questionnaireResponse,
         updatedAt: Date.now()
-      }).catch((err) => console.warn('[IndexedDB]', err));
+      }).catch(err => console.warn('[IndexedDB]', err));
     }, 300);
   };
 
@@ -195,8 +195,9 @@ export default function SoapForm({
           `SOAP berhasil ${mode === 'create' ? 'dikirim' : 'diupdate'}`
         );
         const ownerId = practitionerId || '';
-        dbDelete(STORES.soapDrafts, [ownerId, patientId])
-          .catch((err) => console.warn('[IndexedDB]', err));
+        dbDelete(STORES.soapDrafts, [ownerId, patientId]).catch(err =>
+          console.warn('[IndexedDB]', err)
+        );
         router.push('/');
       }
     } catch (error) {
@@ -232,7 +233,7 @@ export default function SoapForm({
       </QueryClientProvider>
       <div className='flex-flex-col px-2'>
         {requiredItemEmpty > 0 || !patientId ? (
-          <div className='mb-2 w-full text-sm text-destructive'>
+          <div className='text-destructive mb-2 w-full text-sm'>
             Masih ada kolom wajib yang belum terisi, yuk dilengkapi dulu!
           </div>
         ) : (
@@ -241,7 +242,7 @@ export default function SoapForm({
         {mode !== 'view' && (
           <Button
             disabled={isSubmitSoapLoading || requiredItemEmpty > 0}
-            className='w-full bg-secondary text-white'
+            className='bg-secondary w-full text-white'
             onClick={() => {
               const isValid = handleValidation();
               if (isValid) {
@@ -259,7 +260,7 @@ export default function SoapForm({
 
         {mode === 'view' && (
           <Button
-            className='w-full bg-secondary text-white'
+            className='bg-secondary w-full text-white'
             disabled={!isAuthorSame}
             onClick={() => {
               const queryParams = new URLSearchParams({
