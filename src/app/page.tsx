@@ -133,19 +133,19 @@ const App = () => {
           abortController = new AbortController();
           try {
             if (intent.kind === 'journal') {
-              router.push(intent.payload.path);
+              router.push(intent.payload.path as string);
               clearIntent();
               return;
             }
 
             if (intent.kind === 'appointment') {
-              router.push(intent.payload.path);
+              router.push(intent.payload.path as string);
               clearIntent();
               return;
             }
 
             if (intent.kind === 'assessmentResult') {
-              const { path } = intent.payload;
+              const path = intent.payload.path as string;
               const api = await getAPI();
 
               await api.patch('/api/v1/auth/anonymous/claim', null, {

@@ -1,5 +1,6 @@
 import { saveIntent } from './utils/redirect-intent';
 import type { ReactElement } from 'react';
+import { createElement } from 'react';
 import { useEffect, useState } from 'react';
 import { redirectToAuth } from 'supertokens-auth-react';
 import MultiFactorAuth from 'supertokens-auth-react/recipe/multifactorauth';
@@ -91,15 +92,17 @@ export default function AuthApp() {
     }
 
     setUiComponent(
-      <PasswordlessComponentsOverrideProvider components={passwordlessOverrides}>
-        <AuthPage
-          preBuiltUIList={[ThirdPartyPreBuiltUI, PasswordlessPreBuiltUI]}
-          factors={[
+      createElement(
+        PasswordlessComponentsOverrideProvider,
+        { components: passwordlessOverrides },
+        createElement(AuthPage, {
+          preBuiltUIList: [ThirdPartyPreBuiltUI, PasswordlessPreBuiltUI],
+          factors: [
             MultiFactorAuth.FactorIds.OTP_EMAIL,
             MultiFactorAuth.FactorIds.LINK_EMAIL,
-          ]}
-        />
-      </PasswordlessComponentsOverrideProvider>,
+          ],
+        }),
+      ),
     );
   }, [isRootAuth]);
 
