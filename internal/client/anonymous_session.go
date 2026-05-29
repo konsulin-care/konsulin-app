@@ -27,9 +27,9 @@ type anonymousSessionPayload struct {
 }
 
 type anonymousSessionResponse struct {
-	Success bool                      `json:"success"`
-	Message string                    `json:"message"`
-	Data    anonymousSessionPayload   `json:"data"`
+	Success bool                    `json:"success"`
+	Message string                  `json:"message"`
+	Data    anonymousSessionPayload `json:"data"`
 }
 
 // FetchAnonymousSession POSTs to the anonymous-session endpoint and returns

@@ -57,12 +57,12 @@ func routes(cfg *config.Config) (http.Handler, error) {
 			csrfMw := appmw.NewCSRFProtection(appmw.CSRFConfig{
 				AuthKey: []byte(cfg.CSRFAuthKey),
 				Secure:  cfg.CookieSecure,
-			ExemptPrefixes: []string{
-				"/api/config",
-				"/proxy/",
-				"/health",
-				"/static/",
-			},
+				ExemptPrefixes: []string{
+					"/api/config",
+					"/proxy/",
+					"/health",
+					"/static/",
+				},
 			})
 			r.Use(csrfMw)
 		}
@@ -104,13 +104,13 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 
 	r.Post("/auth/logout", handler.NewLogoutHandler(handler.LogoutOptions{
-		AuthPath:                  cfg.AuthPath,
-		CookieName:                cfg.AuthCookieName,
-		AccessCookieName:          cfg.SessionCookieNameAccess,
-		RefreshCookieName:         cfg.SessionCookieNameRefresh,
-		IDRefreshCookieName:       cfg.SessionCookieNameIDRefresh,
-		BackendBaseURL:            cfg.APIURL,
-		SecureCookie:              cfg.CookieSecure,
+		AuthPath:                   cfg.AuthPath,
+		CookieName:                 cfg.AuthCookieName,
+		AccessCookieName:           cfg.SessionCookieNameAccess,
+		RefreshCookieName:          cfg.SessionCookieNameRefresh,
+		IDRefreshCookieName:        cfg.SessionCookieNameIDRefresh,
+		BackendBaseURL:             cfg.APIURL,
+		SecureCookie:               cfg.CookieSecure,
 		AllowInsecureBackendLogout: cfg.AllowInsecureBackendLogout,
 	}))
 

@@ -128,27 +128,27 @@ func OptionalAuth(opts OptionalAuthOptions) func(next http.Handler) http.Handler
 			}
 
 			// Tier 3: Create new anonymous session via backend API
-		// Short-lived in-memory cache per IP reduces backend pressure from
-		// cookieless clients (crawlers, privacy-mode, cookie-clearing users).
-		result := lookupCachedSession(r)
-		if result == nil {
-			var fetchErr error
-			result, fetchErr = client.FetchAnonymousSession(opts.BackendAPIURL)
-			if fetchErr != nil {
-				slog.Warn("optional auth: failed to create anonymous session, proceeding without GuestID",
-					"path", r.URL.Path, "err", fetchErr)
-				sess = &session.Session{Role: "Guest"}
-				ctx := session.ContextWithSession(r.Context(), sess)
-				next.ServeHTTP(w, r.WithContext(ctx))
-				return
+			// Short-lived in-memory cache per IP reduces backend pressure from
+			// cookieless clients (crawlers, privacy-mode, cookie-clearing users).
+			result := lookupCachedSession(r)
+			if result == nil {
+				var fetchErr error
+				result, fetchErr = client.FetchAnonymousSession(opts.BackendAPIURL)
+				if fetchErr != nil {
+					slog.Warn("optional auth: failed to create anonymous session, proceeding without GuestID",
+						"path", r.URL.Path, "err", fetchErr)
+					sess = &session.Session{Role: "Guest"}
+					ctx := session.ContextWithSession(r.Context(), sess)
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				}
+				storeCachedSession(r, result)
 			}
-			storeCachedSession(r, result)
-		}
 
-		setGuestSessionCookie(w, opts, result.GuestID, result.Token)
-		sess = &session.Session{GuestID: result.GuestID, Role: "Guest", Token: result.Token}
-		ctx := session.ContextWithSession(r.Context(), sess)
-		next.ServeHTTP(w, r.WithContext(ctx))
+			setGuestSessionCookie(w, opts, result.GuestID, result.Token)
+			sess = &session.Session{GuestID: result.GuestID, Role: "Guest", Token: result.Token}
+			ctx := session.ContextWithSession(r.Context(), sess)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }

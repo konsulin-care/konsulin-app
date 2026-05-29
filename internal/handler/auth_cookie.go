@@ -20,12 +20,12 @@ type authCookieRequest struct {
 	UserID          string   `json:"userId"`
 	Roles           []string `json:"roles"`
 	Role            string   `json:"role_name"`
-	FHIRID          string `json:"fhirId"`
-	ProfileComplete bool   `json:"profile_complete"`
-	FullName        string `json:"fullname"`
-	Email           string `json:"email"`
-	PhoneNumber     string `json:"phoneNumber"`
-	ProfilePicture  string `json:"profile_picture"`
+	FHIRID          string   `json:"fhirId"`
+	ProfileComplete bool     `json:"profile_complete"`
+	FullName        string   `json:"fullname"`
+	Email           string   `json:"email"`
+	PhoneNumber     string   `json:"phoneNumber"`
+	ProfilePicture  string   `json:"profile_picture"`
 }
 
 var errMissingUserID = errors.New("missing required field: userId")

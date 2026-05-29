@@ -19,23 +19,23 @@ import (
 )
 
 type Session struct {
-	UserID                 string   `json:"userId"`
-	Roles                  []string `json:"roles"`
-	Role                   string   `json:"role_name"`
-	FHIRID                 string `json:"fhirId"`
-	ProfileComplete        bool   `json:"profile_complete"`
-	FullName               string `json:"fullname"`
-	Email                  string `json:"email"`
-	PhoneNumber            string `json:"phoneNumber"`
-	ProfilePicture         string `json:"profile_picture"`
-	Exp                    int64  `json:"exp"`
-	GuestID                string `json:"-"`
-	Token                  string `json:"-"` // guest JWT, never serialized to cookie
+	UserID          string   `json:"userId"`
+	Roles           []string `json:"roles"`
+	Role            string   `json:"role_name"`
+	FHIRID          string   `json:"fhirId"`
+	ProfileComplete bool     `json:"profile_complete"`
+	FullName        string   `json:"fullname"`
+	Email           string   `json:"email"`
+	PhoneNumber     string   `json:"phoneNumber"`
+	ProfilePicture  string   `json:"profile_picture"`
+	Exp             int64    `json:"exp"`
+	GuestID         string   `json:"-"`
+	Token           string   `json:"-"` // guest JWT, never serialized to cookie
 }
 
 var (
-	sc           *securecookie.SecureCookie
-	scOnce       sync.Once
+	sc            *securecookie.SecureCookie
+	scOnce        sync.Once
 	AllowUnsigned bool
 )
 
