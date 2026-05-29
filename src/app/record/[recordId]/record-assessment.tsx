@@ -63,7 +63,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
       if (saved?.value) {
         setColorMap(saved.value);
       }
-    });
+    }).catch((err) => console.warn('[IndexedDB]', err));
   }, [authState.userInfo.userId]);
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
         ownerId,
         prefKey: 'result-table-colors',
         value: colorMap
-      });
+      }).catch((err) => console.warn('[IndexedDB]', err));
     }
   }, [colorMap, authState.userInfo.userId]);
 
@@ -190,7 +190,8 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
           await API.put(`/fhir/QuestionnaireResponse/${recordId}`, updatedQR);
 
-          dbDelete(STORES.serviceRequests, recordId);
+          dbDelete(STORES.serviceRequests, recordId)
+            .catch((err) => console.warn('[IndexedDB]', err));
           return;
         }
 

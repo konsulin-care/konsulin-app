@@ -75,7 +75,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
           router.push('/clinic');
         }
       }
-    );
+    ).catch((err) => console.warn('[IndexedDB]', err));
   }, []);
 
   useEffect(() => {
@@ -86,6 +86,9 @@ export default function Practitioner({ params }: IPractitionerProps) {
       'selected_practitioner'
     ]).then(saved => {
       setPractitionerData(saved?.value ?? null);
+      setPractitionerDataLoading(false);
+    }).catch((err) => {
+      console.warn('[IndexedDB]', err);
       setPractitionerDataLoading(false);
     });
   }, [params.practitionerId]);

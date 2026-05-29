@@ -11,7 +11,7 @@ import {
   getIntent,
   getRedirectIntent
 } from '@/utils/redirect-intent';
-import { getCookie } from 'cookies-next';
+
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -52,14 +52,8 @@ const App = () => {
     if (isLoading) return;
     if (authState.isAuthenticated) return;
 
-    // Cookie guard: avoid race where context says not signed in but cookie already set
-    let auth: { userId?: string; role_name?: string } = {};
-    try {
-      auth = JSON.parse(getCookie('auth') || '{}');
-    } catch {
-      // ignore parse errors
-    }
-    if (auth?.userId && auth?.role_name) return;
+    // If auth context says authenticated, no need to create anonymous session.
+    if (authState.isAuthenticated) return;
 
     hasRunReloadAnonymousRef.current = true;
     try {

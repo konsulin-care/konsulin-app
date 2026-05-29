@@ -73,7 +73,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       if (saved?.response) {
         setResponse(saved.response);
       }
-    });
+    }).catch((err) => console.warn('[IndexedDB]', err));
   }, []);
 
   // add some delay to fetch the latest response after input settles
@@ -85,7 +85,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         questionnaireId: questionnaire.id,
         response: questionnaireResponse,
         updatedAt: Date.now()
-      });
+      }).catch((err) => console.warn('[IndexedDB]', err));
     }, 300);
   };
 
@@ -212,7 +212,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
             ownerId: '',
             serviceRequestId,
             updatedAt: Date.now()
-          });
+          }).catch((err) => console.warn('[IndexedDB]', err));
         }
       }
 
@@ -223,7 +223,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           questionnaireId: questionnaire.id,
           response: { ...questionnaireResponse, id: submitResult.id },
           updatedAt: Date.now()
-        });
+        }).catch((err) => console.warn('[IndexedDB]', err));
       }
 
       handleNavigate(buttonLabel, submitResult.id);

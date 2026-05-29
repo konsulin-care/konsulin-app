@@ -108,7 +108,7 @@ async function fetchRuntimeConfig() {
     return {
       appInfo: {
         appName: 'Konsulin',
-        apiDomain: '',
+        apiDomain: 'http://localhost:3200',
         websiteDomain: 'http://localhost:3000',
         apiBasePath: '/api/v1/auth',
         websiteBasePath: '/auth'

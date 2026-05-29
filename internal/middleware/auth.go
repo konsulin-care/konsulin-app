@@ -13,17 +13,20 @@ import (
 type RequireRoleOptions struct {
 	RedirectIntentCookieName string
 	AuthPath                 string
+	UnauthorizedPath         string
 	CookieSecure             bool
 	AppURL                   string
 }
 
 type AuthGuardOptions struct {
-	AuthPath     string
-	CookieName   string
-	CookieSecret string
-	AppURL       string // base URL for origin validation in redirects
-	// SkipPaths lists path prefixes that bypass auth guard (e.g. "/health", "/static/").
-	SkipPaths []string
+	AuthPath          string
+	CookieName        string
+	CookieSecret      string
+	AccessCookieName  string // SuperTokens access token cookie (fallback)
+	RefreshCookieName string // SuperTokens refresh token cookie (fallback)
+	UnauthorizedPath  string // redirect target for role violations
+	AppURL            string // base URL for origin validation in redirects
+	SkipPaths         []string
 }
 
 func AuthGuard(opts AuthGuardOptions) func(next http.Handler) http.Handler {
@@ -34,7 +37,6 @@ func AuthGuard(opts AuthGuardOptions) func(next http.Handler) http.Handler {
 				return
 			}
 
-			// Early redirect path validation (WP3)
 			if _, ok := session.ValidateRedirectPath(r.URL.Path, opts.AppURL); !ok {
 				slog.Warn("auth guard: rejecting invalid path from request", "path", r.URL.Path)
 				http.Redirect(w, r, opts.AuthPath, http.StatusFound)
@@ -43,6 +45,12 @@ func AuthGuard(opts AuthGuardOptions) func(next http.Handler) http.Handler {
 
 			sess, err := session.ExtractFromRequest(r, opts.CookieName, opts.CookieSecret)
 			if err != nil {
+				// SuperTokens fallback: if access or refresh token exists, allow through.
+				// Client-side restoreAuthCookie will rebuild the auth cookie.
+				if hasSuperTokensSession(r, opts) {
+					next.ServeHTTP(w, r)
+					return
+				}
 				redirectMissingSession(w, r, opts)
 				return
 			}
@@ -51,6 +59,21 @@ func AuthGuard(opts AuthGuardOptions) func(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// hasSuperTokensSession checks if the request carries SuperTokens session cookies.
+func hasSuperTokensSession(r *http.Request, opts AuthGuardOptions) bool {
+	if opts.AccessCookieName != "" {
+		if c, err := r.Cookie(opts.AccessCookieName); err == nil && c.Value != "" {
+			return true
+		}
+	}
+	if opts.RefreshCookieName != "" {
+		if c, err := r.Cookie(opts.RefreshCookieName); err == nil && c.Value != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func redirectMissingSession(w http.ResponseWriter, r *http.Request, opts AuthGuardOptions) {
@@ -85,7 +108,7 @@ func RequireRole(opts RequireRoleOptions, roles ...string) func(next http.Handle
 func requireRoleHandler(w http.ResponseWriter, r *http.Request, next http.Handler, opts RequireRoleOptions, roles []string) {
 	sess, ok := session.SessionFromContext(r.Context())
 	if !ok {
-		http.Error(w, "unauthorized", http.StatusForbidden)
+		redirectToUnauthorized(w, r, opts)
 		return
 	}
 
@@ -112,7 +135,20 @@ func requireRoleHandler(w http.ResponseWriter, r *http.Request, next http.Handle
 			return
 		}
 	}
-	http.Error(w, "forbidden", http.StatusForbidden)
+	redirectToUnauthorized(w, r, opts)
+}
+
+func redirectToUnauthorized(w http.ResponseWriter, r *http.Request, opts RequireRoleOptions) {
+	unauthorizedPath := opts.UnauthorizedPath
+	if unauthorizedPath == "" {
+		unauthorizedPath = "/unauthorized"
+	}
+	if isHTMX(r) {
+		w.Header().Set("HX-Redirect", unauthorizedPath)
+		w.WriteHeader(http.StatusOK)
+	} else {
+		http.Redirect(w, r, unauthorizedPath, http.StatusFound)
+	}
 }
 
 func redirectToAuth(w http.ResponseWriter, r *http.Request, opts RequireRoleOptions) {
@@ -131,6 +167,21 @@ func containsRole(roles []string, role string) bool {
 		}
 	}
 	return false
+}
+
+// RedirectAuthenticated redirects users with a valid auth cookie away from the given path prefix.
+// Used to prevent authenticated users from accessing /auth pages.
+func RedirectAuthenticated(cookieName, cookieSecret, redirectTarget string) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			sess, err := session.ExtractFromRequest(r, cookieName, cookieSecret)
+			if err == nil && sess.UserID != "" {
+				http.Redirect(w, r, redirectTarget, http.StatusFound)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func isSkippedPath(path string, opts AuthGuardOptions) bool {

@@ -1,12 +1,11 @@
 'use client';
 
 import { Roles } from '@/constants/roles';
-import { migrateLocalStorage } from '@/lib/indexeddb';
+import { dbGet, dbSet, dbDelete, migrateLocalStorage, STORES } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
-import { getCookie } from 'cookies-next';
 import { Patient, Practitioner } from 'fhir/r4';
 import React, {
   ReactNode,
@@ -61,68 +60,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const fetchSession = async () => {
-      let auth: Record<string, any> = {};
-      try {
-        auth = JSON.parse(getCookie('auth') || '{}');
-      } catch {
-        auth = {};
-      }
-
       if (!session.doesSessionExist) {
-        // Don't create anonymous session if auth cookie suggests user is signed in (e.g. session not yet restored)
-        if (!auth?.userId) {
-          // Reload on homepage: let the page call ensureAnonymousSession(true) once; avoid duplicate calls
-          const navEntries =
-            typeof window !== 'undefined'
-              ? performance.getEntriesByType('navigation')
-              : [];
-          const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
-          const isReloadOnHomepage =
-            nav?.type === 'reload' &&
-            typeof window !== 'undefined' &&
-            window.location.pathname === '/';
+        // Reload on homepage: let the page call ensureAnonymousSession(true) once; avoid duplicate calls
+        const navEntries =
+          typeof window !== 'undefined'
+            ? performance.getEntriesByType('navigation')
+            : [];
+        const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
+        const isReloadOnHomepage =
+          nav?.type === 'reload' &&
+          typeof window !== 'undefined' &&
+          window.location.pathname === '/';
 
-          if (!isReloadOnHomepage) {
-            try {
-              await ensureAnonymousSession(false);
-            } catch (error) {
-              console.error('Failed to initialize anonymous session:', error);
-            }
+        if (!isReloadOnHomepage) {
+          try {
+            await ensureAnonymousSession(false);
+          } catch (error) {
+            console.error('Failed to initialize anonymous session:', error);
           }
         }
         setIsLoading(false);
         return;
       }
 
-      // Check if auth cookie is missing but SuperTokens session is valid
-      // This is the condition for auto-restoration
-      const shouldRestoreAuthCookie = !auth?.userId && session.doesSessionExist;
-
-      if (shouldRestoreAuthCookie) {
-        try {
-          console.log('Attempting to restore auth cookie...');
-          const restorationSuccess = await restoreAuthCookie(session);
-
-          if (restorationSuccess) {
-            // After successful restoration, reload the auth cookie
-            const restoredAuth = JSON.parse(
-              getCookie('auth') || '{}'
-            );
-            if (restoredAuth?.userId) {
-              dispatch({ type: 'auth-check', payload: restoredAuth });
-              setIsLoading(false);
-              return;
-            }
-          }
-        } catch (restorationError) {
-          console.error('Auth cookie restoration failed:', restorationError);
-          // Continue with normal flow even if restoration fails
-        }
-      }
+      // Ensure auth cookie exists for Go SSR middleware (idempotent).
+      try {
+        await restoreAuthCookie(session);
+      } catch { /* non-critical — cookie may already exist */ }
 
       try {
-        const roles = await getClaimValue({ claim: UserRoleClaim });
-        const userId = session.userId;
+        const userId = session.userId!;
+        const roles = (await getClaimValue({ claim: UserRoleClaim })) as string[];
+
+        // Try IndexedDB profile cache first.
+        const cached = await dbGet<Record<string, any>>(STORES.userProfile, userId);
+        if (cached?.userId === userId && cached?.role_name) {
+          dispatch({ type: 'login', payload: cached });
+          setIsLoading(false);
+          return;
+        }
 
         const role = roles.includes(Roles.Practitioner)
           ? Roles.Practitioner
@@ -134,19 +110,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         })) as Patient | Practitioner;
 
         if (!result) {
-          dispatch({
-            type: 'login',
-            payload: {
-              userId,
-              role_name: role,
-              email: '',
-              fullname: '',
-              profile_picture: '',
-              fhirId: '',
-              profile_complete: false
-            }
-          });
-
+          const payload = {
+            userId,
+            role_name: role,
+            email: '',
+            fullname: '',
+            profile_picture: '',
+            fhirId: '',
+            profile_complete: false
+          };
+          await dbSet(STORES.userProfile, { ...payload, roles, cachedAt: Date.now() });
+          dispatch({ type: 'login', payload });
           setIsLoading(false);
           return;
         }
@@ -167,11 +141,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           profile_complete
         };
 
+        await dbSet(STORES.userProfile, { ...payload, roles, cachedAt: Date.now() });
         dispatch({ type: 'login', payload });
       } catch (error) {
         console.error('Error fetching session:', error);
-        if (auth?.userId) {
-          dispatch({ type: 'auth-check', payload: auth });
+        // Fall back to IndexedDB cache if API fails.
+        let userId: string | undefined;
+        try { userId = session.userId!; } catch {}
+        if (userId) {
+          const cached = await dbGet<Record<string, any>>(STORES.userProfile, userId);
+          if (cached?.userId) {
+            dispatch({ type: 'auth-check', payload: cached });
+          }
         }
       } finally {
         setIsLoading(false);

@@ -1,4 +1,3 @@
-import { setCookies } from '@/app/actions';
 import { Roles } from '@/constants/roles';
 import { createProfile, getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
@@ -197,11 +196,9 @@ export const frontendConfig = (): SuperTokensConfig => {
                 }
               }
 
-              const superTokensAccessToken =
-                await Session.getAccessToken().catch(() => '');
-
               const cookieData = {
                 userId,
+                roles,
                 role_name: roles.includes(Roles.Practitioner)
                   ? Roles.Practitioner
                   : Roles.Patient,
@@ -211,11 +208,16 @@ export const frontendConfig = (): SuperTokensConfig => {
                   ? profileData?.photo[0]?.url
                   : '',
                 fullname: mergeNames(profileData?.name),
-                fhirId: profileData?.id ?? '',
-                sAccessToken: superTokensAccessToken
+                fhirId: profileData?.id ?? ''
               };
 
-              await setCookies('auth', JSON.stringify(cookieData));
+              await fetch('/auth/cookie', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cookieData)
+              }).catch(err =>
+                console.error('[auth:cookie] failed to set auth cookie', err)
+              );
             } else {
               const type = roles.includes(Roles.Practitioner)
                 ? Roles.Practitioner
@@ -227,11 +229,9 @@ export const frontendConfig = (): SuperTokensConfig => {
 
               // Do not auto-create profile on lookup miss; leave fhirId empty
 
-              const superTokensAccessToken =
-                await Session.getAccessToken().catch(() => '');
-
               const cookieData = {
                 userId,
+                roles,
                 role_name: roles.includes(Roles.Practitioner)
                   ? Roles.Practitioner
                   : Roles.Patient,
@@ -239,11 +239,16 @@ export const frontendConfig = (): SuperTokensConfig => {
                 phoneNumber: phoneNumbers[0] || '',
                 profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
                 fullname: mergeNames(profile?.name),
-                fhirId: profile?.id ?? '',
-                sAccessToken: superTokensAccessToken
+                fhirId: profile?.id ?? ''
               };
 
-              await setCookies('auth', JSON.stringify(cookieData));
+              await fetch('/auth/cookie', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cookieData)
+              }).catch(err =>
+                console.error('[auth:cookie] failed to set auth cookie', err)
+              );
             }
 
             const isAuthRoute = (routerInfo.pathName || '').startsWith('/auth');

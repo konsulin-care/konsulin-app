@@ -210,7 +210,8 @@ export default function PractitionerAvailability({
           handleFilterChange('startTime', parsed.startTime);
           handleFilterChange('hasUserChosenDate', parsed.hasUserChosenDate);
 
-          dbDelete(STORES.tempBooking, ownerId);
+          dbDelete(STORES.tempBooking, ownerId)
+            .catch((err) => console.warn('[IndexedDB]', err));
         }
       });
     }

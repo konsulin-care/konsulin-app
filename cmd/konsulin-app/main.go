@@ -15,6 +15,7 @@ import (
 	"github.com/konsulin-care/konsulin-app/internal/config"
 	"github.com/konsulin-care/konsulin-app/internal/handler"
 	appmw "github.com/konsulin-care/konsulin-app/internal/middleware"
+	"github.com/konsulin-care/konsulin-app/internal/session"
 )
 
 type noDirFS struct {
@@ -89,23 +90,56 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		SecureCookie:      cfg.CookieSecure,
 	}))
 
+	r.HandleFunc("/auth/cookie", handler.NewAuthCookieHandler(handler.AuthCookieOptions{
+		CookieName:   cfg.AuthCookieName,
+		CookieSecret: cfg.SessionCookieSecret,
+		CookieSecure: cfg.CookieSecure,
+	}))
+
+	// /auth/* — redirect authenticated users to /, proxy to Next.js for others.
+	r.Route("/auth", func(r chi.Router) {
+		r.Use(appmw.RedirectAuthenticated(cfg.AuthCookieName, cfg.SessionCookieSecret, "/"))
+		r.NotFound(proxy.ServeHTTP)
+	})
+
+	// Backend API proxy — adds Bearer token from sAccessToken cookie.
+	r.Handle("/proxy/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
+		BackendBaseURL: cfg.APIURL,
+	}))
+
 	// Guest-allowed Go SSR routes — OptionalAuth provides the session, no
 	// RequireRole needed.  These routes are accessible to all roles.
 	// r.Get("/", handler.NewHomeHandler(...))
 
-	// Protected Go SSR routes (future migrations) — OptionalAuth runs first,
-	// then RequireRole checks the session role.
-	// r.Group(func(r chi.Router) {
-	// 	r.Use(appmw.RequireRole(appmw.RequireRoleOptions{
-	// 		RedirectIntentCookieName: cfg.RedirectIntentCookieName,
-	// 		AuthPath:                 cfg.AuthPath,
-	// 		CookieSecure:             cfg.CookieSecure,
-	// 		AppURL:                   cfg.AppURL,
-	// 	}, "Patient", "Practitioner"))
-	// 	r.Get("/profile", handler.NewProfileHandler(...))
-	// })
+	// Protected Next.js pages (mirrors old middleware.ts route list).
+	authGuard := appmw.AuthGuard(appmw.AuthGuardOptions{
+		AuthPath:          cfg.AuthPath,
+		CookieName:        cfg.AuthCookieName,
+		CookieSecret:      cfg.SessionCookieSecret,
+		AccessCookieName:  cfg.SessionCookieNameAccess,
+		RefreshCookieName: cfg.SessionCookieNameRefresh,
+		UnauthorizedPath:  "/unauthorized",
+		AppURL:            cfg.AppURL,
+	})
+	protectedRoutes := []string{"/message", "/notification", "/journal", "/record", "/profile"}
+	for _, p := range protectedRoutes {
+		p := p
+		r.With(authGuard).Handle(p, proxy)
+		r.With(authGuard).Handle(p+"/*", proxy)
+	}
 
-	// All unmatched routes proxy to Next.js (which has its own auth guard).
+	// Clinician-only routes.
+	roleGuard := appmw.RequireRole(appmw.RequireRoleOptions{
+		RedirectIntentCookieName: cfg.RedirectIntentCookieName,
+		AuthPath:                 cfg.AuthPath,
+		UnauthorizedPath:         "/unauthorized",
+		CookieSecure:             cfg.CookieSecure,
+		AppURL:                   cfg.AppURL,
+	}, "Practitioner")
+	r.With(authGuard, roleGuard).Handle("/assessments/soap", proxy)
+	r.With(authGuard, roleGuard).Handle("/assessments/soap/*", proxy)
+
+	// All unmatched routes — proxy without auth (public pages, _next/static, etc.).
 	r.NotFound(proxy.ServeHTTP)
 
 	return r, nil
@@ -120,11 +154,15 @@ func workingDir() (string, error) {
 }
 
 func main() {
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Error("failed to load config", "err", err)
 		os.Exit(1)
 	}
+
+	session.InitSecureCookie(cfg.SessionCookieSecret)
 
 	handler, err := routes(cfg)
 	if err != nil {

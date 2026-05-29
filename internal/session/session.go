@@ -12,35 +12,54 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
+
+	"github.com/gorilla/securecookie"
 )
 
 type Session struct {
-	UserID          string `json:"userId"`
-	Role            string `json:"role_name"`
-	FHIRID          string `json:"fhirId"`
-	ProfileComplete bool   `json:"profile_complete"`
-	FullName        string `json:"fullname"`
-	Email           string `json:"email"`
-	PhoneNumber     string `json:"phoneNumber"`
-	ProfilePicture  string `json:"profile_picture"`
-	GuestID         string `json:"-"`
-	Token           string `json:"-"` // guest JWT, never serialized to cookie
+	UserID                 string   `json:"userId"`
+	Roles                  []string `json:"roles"`
+	Role                   string   `json:"role_name"`
+	FHIRID                 string `json:"fhirId"`
+	ProfileComplete        bool   `json:"profile_complete"`
+	FullName               string `json:"fullname"`
+	Email                  string `json:"email"`
+	PhoneNumber            string `json:"phoneNumber"`
+	ProfilePicture         string `json:"profile_picture"`
+	GuestID                string `json:"-"`
+	Token                  string `json:"-"` // guest JWT, never serialized to cookie
+}
+
+var (
+	sc     *securecookie.SecureCookie
+	scOnce sync.Once
+)
+
+// deriveKeys derives 32-byte hash and block keys from a single secret using SHA-256.
+func deriveKeys(secret string) (hashKey, blockKey []byte) {
+	h := sha256.Sum256([]byte(secret))
+	// Use first 32 bytes as hash key, next 32 bytes as block key.
+	// SHA-256 produces 32 bytes, so we derive block key by hashing again.
+	h2 := sha256.Sum256(h[:])
+	return h[:], h2[:]
+}
+
+// InitSecureCookie initializes the package-level securecookie instance.
+// Must be called once at startup before any cookie operations.
+func InitSecureCookie(secret string) {
+	scOnce.Do(func() {
+		hashKey, blockKey := deriveKeys(secret)
+		sc = securecookie.New(hashKey, blockKey)
+	})
 }
 
 type contextKey struct{}
 
 var sessionKey contextKey
 
-// signValue returns base64url(value) + "." + base64url(hmac-sha256(base64url(value), secret)).
-func signValue(value, secret string) string {
-	enc := base64.RawURLEncoding.EncodeToString([]byte(value))
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(enc))
-	sig := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
-	return enc + "." + sig
-}
-
 // verifySignedValue splits a signed cookie value, verifies the HMAC, and returns the original value.
+// Kept as fallback for cookies signed with the old HMAC scheme (~2h TTL).
 func verifySignedValue(signed, secret string) (string, bool) {
 	dot := strings.LastIndex(signed, ".")
 	if dot < 0 {
@@ -76,14 +95,20 @@ func ExtractFromRequest(r *http.Request, cookieName, secret string) (*Session, e
 		decoded = c.Value
 	}
 	var s Session
-	// Try signed format first (backward compat with HMAC-signed cookies, ~2h TTL).
+	// Tier 1: Try securecookie decode (new format).
+	if sc != nil {
+		if err := sc.Decode(cookieName, decoded, &s); err == nil && s.UserID != "" {
+			return &s, nil
+		}
+	}
+	// Tier 2: Fall back to old HMAC-signed format (~2h TTL backward compat).
 	plain, ok := verifySignedValue(decoded, secret)
 	if ok {
 		if err := json.Unmarshal([]byte(plain), &s); err != nil {
 			return nil, fmt.Errorf("parse session cookie: %w", err)
 		}
 	} else {
-		// New unsigned format: decoded is the plain JSON string.
+		// Tier 3: Unsigned raw JSON format (current).
 		if err := json.Unmarshal([]byte(decoded), &s); err != nil {
 			return nil, errors.New("session cookie: invalid format")
 		}
@@ -97,8 +122,27 @@ func ExtractFromRequest(r *http.Request, cookieName, secret string) (*Session, e
 	return &s, nil
 }
 
-// SignCookieValue signs a JSON session payload for cookie storage.
-// Used by cookie-setting endpoints (plan 004c) and the Next.js server action.
+// signValue returns base64url(value) + "." + base64url(hmac-sha256(base64url(value), secret)).
+// Kept as fallback when securecookie is not initialized (e.g., tests).
+func signValue(value, secret string) string {
+	enc := base64.RawURLEncoding.EncodeToString([]byte(value))
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(enc))
+	sig := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	return enc + "." + sig
+}
+
+// EncodeSession encodes a Session into a signed cookie value using securecookie.
+// Returns the cookie value or an error. Caller must call InitSecureCookie first.
+func EncodeSession(s *Session) (string, error) {
+	if sc == nil {
+		return "", errors.New("securecookie not initialized, call InitSecureCookie")
+	}
+	return sc.Encode("auth", s)
+}
+
+// SignCookieValue signs a JSON session payload for cookie storage (HMAC fallback).
+// Deprecated: use EncodeSession for new code.
 func SignCookieValue(value, secret string) string {
 	return signValue(value, secret)
 }

@@ -227,7 +227,8 @@ export const useSubmitQuestionnaire = (
       const timestamp = new Date().toISOString();
 
       if (isAuthenticated) {
-        dbDelete(STORES.assessmentDrafts, ['', questionnaireId]);
+        dbDelete(STORES.assessmentDrafts, ['', questionnaireId])
+          .catch((err) => console.warn('[IndexedDB]', err));
       }
 
       const API = await getAPI();

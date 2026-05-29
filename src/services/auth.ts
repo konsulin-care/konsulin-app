@@ -1,4 +1,3 @@
-import { setCookies } from '@/app/actions';
 import { Roles } from '@/constants/roles';
 import { mergeNames } from '@/utils/helper';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
@@ -60,6 +59,7 @@ export const restoreAuthCookie = async (
       // If profile fetch fails, create minimal auth payload with available data
       const authPayload = {
         userId,
+        roles: Array.isArray(roles) ? roles : [role],
         role_name: role,
         email: '',
         profile_picture: '',
@@ -69,7 +69,11 @@ export const restoreAuthCookie = async (
       };
 
       try {
-        await setCookies('auth', JSON.stringify(authPayload));
+        await fetch('/auth/cookie', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(authPayload)
+        });
         console.log(
           'Auth cookie restored with minimal data (profile fetch failed)'
         );
@@ -88,6 +92,7 @@ export const restoreAuthCookie = async (
 
     const authPayload = {
       userId,
+      roles: Array.isArray(roles) ? roles : [role],
       role_name: role,
       email: email || '',
       profile_picture: result?.photo?.[0]?.url ?? '',
@@ -96,9 +101,12 @@ export const restoreAuthCookie = async (
       profile_complete
     };
 
-    // Set the auth cookie using the existing mechanism
     try {
-      await setCookies('auth', JSON.stringify(authPayload));
+      await fetch('/auth/cookie', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(authPayload)
+      });
       console.log('Auth cookie successfully restored');
       return true;
     } catch (cookieError) {

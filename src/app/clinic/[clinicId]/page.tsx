@@ -103,7 +103,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
         qualification: practitioner.qualification,
         email: email.value
       }
-    });
+    }).catch((err) => console.warn('[IndexedDB]', err));
   };
 
   const filteredPractitioners = useMemo(() => {

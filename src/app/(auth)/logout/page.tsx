@@ -3,16 +3,19 @@
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { useAuth } from '@/context/auth/authContext';
 import { useProfile } from '@/context/profile/profileContext';
+import { clearUserData } from '@/lib/indexeddb';
 import { useEffect } from 'react';
 import Session from 'supertokens-auth-react/recipe/session';
 
 export default function Logout() {
-  const { dispatch } = useAuth();
+  const { state, dispatch } = useAuth();
   const { dispatch: dispatchProfile } = useProfile();
 
   useEffect(() => {
     const handleLogout = async () => {
+      const ownerId = state.userInfo.userId || '';
       await Session.signOut();
+      await clearUserData(ownerId);
       dispatch({ type: 'logout' });
       dispatchProfile({ type: 'reset' });
       window.location.href = '/';

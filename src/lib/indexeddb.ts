@@ -1,5 +1,5 @@
 const DB_NAME = 'konsulin';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const STORES = {
   guestSessions: 'guest_sessions',
@@ -8,7 +8,8 @@ export const STORES = {
   serviceRequests: 'service_requests',
   tempBooking: 'temp_booking',
   uiPreferences: 'ui_preferences',
-  navigationState: 'navigation_state'
+  navigationState: 'navigation_state',
+  userProfile: 'user_profile'
 } as const;
 
 export type StoreName = (typeof STORES)[keyof typeof STORES];
@@ -20,7 +21,8 @@ const STORE_SCHEMAS: { name: StoreName; keyPath: string | string[] }[] = [
   { name: STORES.serviceRequests, keyPath: 'id' },
   { name: STORES.tempBooking, keyPath: 'ownerId' },
   { name: STORES.uiPreferences, keyPath: ['ownerId', 'prefKey'] },
-  { name: STORES.navigationState, keyPath: ['ownerId', 'stateKey'] }
+  { name: STORES.navigationState, keyPath: ['ownerId', 'stateKey'] },
+  { name: STORES.userProfile, keyPath: 'userId' }
 ];
 
 export function openDB(): Promise<IDBDatabase> {
@@ -112,9 +114,9 @@ export async function dbGetAll<T>(storeName: StoreName): Promise<T[]> {
   });
 }
 
-async function cursorDeleteAll(
+export async function cursorDeleteAll(
   storeName: StoreName,
-  predicate: (value: any) => boolean
+  predicate: (value: any, key: IDBValidKey) => boolean
 ): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -123,7 +125,7 @@ async function cursorDeleteAll(
     req.onsuccess = () => {
       const cursor = req.result;
       if (cursor) {
-        if (predicate(cursor.value)) {
+        if (predicate(cursor.value, cursor.key)) {
           cursor.delete();
         }
         cursor.continue();
@@ -154,6 +156,9 @@ export async function clearUserData(ownerId: string): Promise<void> {
       }
       if (storeName === STORES.tempBooking) {
         return value.ownerId === ownerId;
+      }
+      if (storeName === STORES.userProfile) {
+        return value.userId === ownerId;
       }
       return false;
     });

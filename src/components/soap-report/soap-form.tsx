@@ -101,7 +101,7 @@ export default function SoapForm({
         patientId,
         draft: questionnaireResponse,
         updatedAt: Date.now()
-      });
+      }).catch((err) => console.warn('[IndexedDB]', err));
     }, 300);
   };
 
@@ -195,7 +195,8 @@ export default function SoapForm({
           `SOAP berhasil ${mode === 'create' ? 'dikirim' : 'diupdate'}`
         );
         const ownerId = practitionerId || '';
-        dbDelete(STORES.soapDrafts, [ownerId, patientId]);
+        dbDelete(STORES.soapDrafts, [ownerId, patientId])
+          .catch((err) => console.warn('[IndexedDB]', err));
         router.push('/');
       }
     } catch (error) {

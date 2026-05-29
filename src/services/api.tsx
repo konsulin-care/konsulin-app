@@ -1,7 +1,5 @@
-import { getClientConfig } from '@/lib/config';
 import { clearUserData } from '@/lib/indexeddb';
 import axios, { AxiosInstance } from 'axios';
-import { deleteCookie, getCookie } from 'cookies-next';
 import { toast } from 'react-toastify';
 import { parseAxiosError } from './api-error';
 
@@ -10,34 +8,15 @@ let apiInstance: AxiosInstance | null = null;
 export async function getAPI(): Promise<AxiosInstance> {
   if (apiInstance) return apiInstance;
 
-  const config = await getClientConfig();
-
   apiInstance = axios.create({
-    baseURL: config.appInfo.apiDomain,
+    baseURL: '/proxy',
     headers: {
       'Content-Type': 'application/json'
     }
   });
 
-  apiInstance.interceptors.request.use(
-    config => {
-      // Read Bearer token from auth cookie (set by frontendConfig on login)
-      let auth: Record<string, any> = {};
-      try {
-        auth = JSON.parse(getCookie('auth') || '{}');
-      } catch {
-        auth = {};
-      }
-      if (auth.sAccessToken) {
-        config.headers.Authorization = `Bearer ${auth.sAccessToken}`;
-      }
-
-      return config;
-    },
-    error => {
-      return Promise.reject(error);
-    }
-  );
+  // Authorization header injected by Go SSR proxy (reads sAccessToken cookie).
+  // SuperTokens SDK global interceptors handle 401 + token refresh automatically.
 
   apiInstance.interceptors.response.use(
     response => response,
@@ -57,7 +36,6 @@ export async function getAPI(): Promise<AxiosInstance> {
 
       if (isExpiredToken || isMissingToken) {
         setTimeout(() => {
-          deleteCookie('auth');
           clearUserData('guest');
           try {
             window.location.href = '/';

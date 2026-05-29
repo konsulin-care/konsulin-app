@@ -1,5 +1,4 @@
 'use client';
-import { setCookies } from '@/app/actions';
 import Input from '@/components/general/input';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import DobCalendar from '@/components/profile/dob-calendar';
@@ -45,7 +44,7 @@ import { processImageForAvatar } from '@/utils/image-processing';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
 import { validateEmail } from '@/utils/validation';
 import { useQuery } from '@tanstack/react-query';
-import { getCookie } from 'cookies-next';
+
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Patient, Practitioner } from 'fhir/r4';
@@ -115,14 +114,9 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string>('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const getInitialPhoneBasedUser = () => {
-    try {
-      const auth = JSON.parse(getCookie('auth') || '{}');
-      const email = auth?.email || '';
-      const phoneNumber = auth?.phoneNumber || '';
-      return !!phoneNumber && !email;
-    } catch {
-      return false;
-    }
+    const email = authState.userInfo?.email || '';
+    const phoneNumber = authState.userInfo?.phoneNumber || '';
+    return !!phoneNumber && !email;
   };
   const [isPhoneBasedUser] = useState<boolean>(getInitialPhoneBasedUser);
 
@@ -402,24 +396,17 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       .join(' ')
       .trim();
 
-    let auth: { email?: string; phoneNumber?: string } = {};
-    try {
-      auth = JSON.parse(getCookie('auth') || '{}');
-    } catch {
-      // use empty auth
-    }
-    const isEmailBased = !!auth?.email?.trim();
-    const isPhoneBased = !!auth?.phoneNumber?.trim();
+    const authEmail = authState.userInfo?.email || '';
+    const authPhone = authState.userInfo?.phoneNumber || '';
+    const isEmailBased = !!authEmail.trim();
+    const isPhoneBased = !!authPhone.trim();
     const emailForModifyProfile = (
       updateUser.email ||
-      (authState.userInfo?.email as string) ||
-      auth?.email ||
-      ''
+      authEmail
     ).trim();
     const phoneForModifyProfile = (
       updateUser.phone ||
-      auth?.phoneNumber ||
-      ''
+      authPhone
     ).trim();
 
     const shouldCallModifyProfile =
@@ -604,23 +591,34 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     try {
       const result = await updateProfile({ payload });
       if (result) {
-        let auth: any = {};
-        try {
-          auth = JSON.parse(getCookie('auth') || '{}');
-        } catch {
-          console.warn('Failed to parse auth cookie, starting fresh');
-        }
+        const existing = authState.userInfo || {};
         const updatedPhotoUrl =
-          result?.photo?.[0]?.url || photoUrlForPayload || auth.profile_picture;
-        auth.profile_picture = updatedPhotoUrl;
-        auth.fullname =
+          result?.photo?.[0]?.url || photoUrlForPayload || existing.profile_picture;
+        const updatedFullname =
           result.resourceType === 'Practitioner'
             ? mergeNames(result.name, result?.qualification)
             : mergeNames(result.name);
 
-        auth.profile_complete = isProfileCompleteFromFHIR(result);
-        await setCookies('auth', JSON.stringify(auth));
-        dispatchAuth({ type: 'auth-check', payload: auth });
+        const authPayload = {
+          userId: existing.userId,
+          roles: existing.roles || [existing.role_name || 'Patient'],
+          role_name: existing.role_name,
+          email: existing.email,
+          phoneNumber: existing.phoneNumber,
+          fhirId: result.id || existing.fhirId,
+          fullname: updatedFullname,
+          profile_picture: updatedPhotoUrl,
+          profile_complete: isProfileCompleteFromFHIR(result)
+        };
+
+        await fetch('/auth/cookie', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(authPayload)
+        }).catch(err =>
+          console.error('[auth:cookie] failed to set auth cookie', err)
+        );
+        dispatchAuth({ type: 'auth-check', payload: authPayload });
 
         setDrawerState(DRAWER_STATE.SUCCESS);
       }
