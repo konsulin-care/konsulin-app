@@ -1,8 +1,8 @@
 import { Roles } from '@/constants/roles';
+import { STORES, dbSet } from '@/lib/indexeddb';
 import { createProfile, getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { extractSafeRedirectPath } from '@/utils/redirect-guard';
-import { STORES, dbSet } from '@/lib/indexeddb';
 import {
   clearRedirectIntent,
   getIntent,
@@ -35,7 +35,7 @@ async function fetchCSRFToken(): Promise<string | null> {
   try {
     const res = await fetch('/auth/cookie/csrf-token');
     if (!res.ok) return null;
-    const data = await res.json() as { token?: string };
+    const data = (await res.json()) as { token?: string };
     return data.token ?? null;
   } catch {
     return null;
@@ -43,11 +43,42 @@ async function fetchCSRFToken(): Promise<string | null> {
 }
 
 /** Posts auth cookie data to the server. */
-async function postAuthCookie(body: Record<string, unknown>): Promise<Response> {
+async function postAuthCookie(
+  body: Record<string, unknown>
+): Promise<Response> {
   const token = await fetchCSRFToken();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
   if (token) headers['X-CSRF-Token'] = token;
-  return fetch('/auth/cookie', { method: 'POST', headers, body: JSON.stringify(body) });
+  return fetch('/auth/cookie', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+}
+
+async function postAuthCookieForUser(
+  role: string,
+  userId: string,
+  roles: string[] | undefined,
+  emails: string[],
+  phoneNumbers: string[],
+  profile: Patient | Practitioner | null
+): Promise<void> {
+  const cookieData = {
+    userId,
+    roles,
+    role_name: role,
+    email: emails[0] || '',
+    phoneNumber: phoneNumbers[0] || '',
+    profile_picture: profile?.photo?.[0]?.url ?? '',
+    fullname: mergeNames(profile?.name),
+    fhirId: profile?.id ?? ''
+  };
+  const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
+  if (!cookieRes.ok)
+    console.error('[auth:cookie] server returned', cookieRes.status);
 }
 
 async function handleNewUserLogin(
@@ -56,24 +87,37 @@ async function handleNewUserLogin(
   emails: string[],
   phoneNumbers: string[]
 ): Promise<void> {
-  const role = Array.isArray(roles) && roles.includes(Roles.Practitioner) ? Roles.Practitioner : Roles.Patient;
-  let profileData = (await getProfileByIdentifier({ userId, type: role })) as Patient | Practitioner | null;
+  const role =
+    Array.isArray(roles) && roles.includes(Roles.Practitioner)
+      ? Roles.Practitioner
+      : Roles.Patient;
+  let profileData = (await getProfileByIdentifier({ userId, type: role })) as
+    | Patient
+    | Practitioner
+    | null;
 
   if (!profileData) {
-    await createProfile({ userId, email: emails[0] || '', phoneNumber: phoneNumbers[0] || '', type: role });
-    profileData = (await getProfileByIdentifier({ userId, type: role })) as Patient | Practitioner | null;
+    await createProfile({
+      userId,
+      email: emails[0] || '',
+      phoneNumber: phoneNumbers[0] || '',
+      type: role
+    });
+    profileData = (await getProfileByIdentifier({ userId, type: role })) as
+      | Patient
+      | Practitioner
+      | null;
     if (!profileData) throw new Error('Failed to create profile');
   }
 
-  const cookieData = {
-    userId, roles, role_name: role,
-    email: emails[0] || '', phoneNumber: phoneNumbers[0] || '',
-    profile_picture: profileData?.photo?.[0]?.url ?? '',
-    fullname: mergeNames(profileData?.name), fhirId: profileData?.id ?? ''
-  };
-
-  const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
-  if (!cookieRes.ok) console.error('[auth:cookie] server returned', cookieRes.status);
+  await postAuthCookieForUser(
+    role,
+    userId,
+    roles,
+    emails,
+    phoneNumbers,
+    profileData
+  );
 }
 
 async function handleReturningUserLogin(
@@ -82,30 +126,37 @@ async function handleReturningUserLogin(
   emails: string[],
   phoneNumbers: string[]
 ): Promise<void> {
-  const role = Array.isArray(roles) && roles.includes(Roles.Practitioner) ? Roles.Practitioner : Roles.Patient;
-  const profile = (await getProfileByIdentifier({ userId, type: role })) as Patient | Practitioner | null;
+  const role =
+    Array.isArray(roles) && roles.includes(Roles.Practitioner)
+      ? Roles.Practitioner
+      : Roles.Patient;
+  const profile = (await getProfileByIdentifier({ userId, type: role })) as
+    | Patient
+    | Practitioner
+    | null;
 
-  const cookieData = {
-    userId, roles, role_name: role,
-    email: emails[0] || '', phoneNumber: phoneNumbers[0] || '',
-    profile_picture: profile?.photo?.[0]?.url ?? '',
-    fullname: mergeNames(profile?.name), fhirId: profile?.id ?? ''
-  };
-
-  const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
-  if (!cookieRes.ok) console.error('[auth:cookie] server returned', cookieRes.status);
+  await postAuthCookieForUser(
+    role,
+    userId,
+    roles,
+    emails,
+    phoneNumbers,
+    profile
+  );
 }
 
 function resolvePostLoginRedirect(): string | null {
   const redirectUrl = getRedirectIntent();
   if (redirectUrl) {
     clearRedirectIntent();
-    return extractSafeRedirectPath(`?redirectToPath=${encodeURIComponent(redirectUrl)}`);
+    return extractSafeRedirectPath(
+      `?redirectToPath=${encodeURIComponent(redirectUrl)}`
+    );
   }
   const intent = getIntent();
   if (intent) {
     clearRedirectIntent();
-    return intent.payload?.path as string ?? '/';
+    return (intent.payload?.path as string) ?? '/';
   }
   return extractSafeRedirectPath(globalThis.location.search);
 }
@@ -238,7 +289,10 @@ export const frontendConfig = (): SuperTokensConfig => {
             value: 'true'
           });
 
-          if (context.isNewRecipeUser && context.user.loginMethods.length === 1) {
+          if (
+            context.isNewRecipeUser &&
+            context.user.loginMethods.length === 1
+          ) {
             await handleNewUserLogin(roles, userId, emails, phoneNumbers);
           } else {
             await handleReturningUserLogin(roles, userId, emails, phoneNumbers);

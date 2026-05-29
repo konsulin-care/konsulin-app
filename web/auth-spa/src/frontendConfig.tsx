@@ -1,40 +1,81 @@
+import type { Patient, Practitioner } from 'fhir/r4';
+import type { SuperTokensConfig } from 'supertokens-auth-react/lib/build/types';
+import Passwordless from 'supertokens-auth-react/recipe/passwordless';
+import Session, { getClaimValue } from 'supertokens-auth-react/recipe/session';
+import ThirdParty from 'supertokens-auth-react/recipe/thirdparty';
+import { UserRoleClaim } from 'supertokens-auth-react/recipe/userroles';
+import { getAppInfo } from './appInfo';
 import { Roles } from './constants/roles';
 import { createProfile, getProfileByIdentifier } from './services/profile';
 import { mergeNames } from './utils/helper';
+import { extractSafeRedirectPath } from './utils/redirect-guard';
 import {
   clearRedirectIntent,
   getIntent,
-  getRedirectIntent,
+  getRedirectIntent
 } from './utils/redirect-intent';
-import { extractSafeRedirectPath } from './utils/redirect-guard';
-import type { Patient, Practitioner } from 'fhir/r4';
-import type { SuperTokensConfig } from 'supertokens-auth-react/lib/build/types';
 
 /** Posts auth cookie data to the server with CSRF protection. */
+async function postAuthCookieForUser(
+  role: string,
+  userId: string,
+  roles: string[] | undefined,
+  emails: string[],
+  phoneNumbers: string[],
+  profile: Patient | Practitioner | null
+): Promise<void> {
+  const cookieData = {
+    userId,
+    roles,
+    role_name: role,
+    email: emails[0] || '',
+    phoneNumber: phoneNumbers[0] || '',
+    profile_picture: profile?.photo?.[0]?.url ?? '',
+    fullname: mergeNames(profile?.name),
+    fhirId: profile?.id ?? ''
+  };
+  const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
+  if (!cookieRes.ok)
+    console.error('[auth:cookie] server returned', cookieRes.status);
+}
+
 async function handleNewUserLogin(
   roles: string[] | undefined,
   userId: string,
   emails: string[],
   phoneNumbers: string[]
 ): Promise<void> {
-  const role = Array.isArray(roles) && roles.includes(Roles.Practitioner) ? Roles.Practitioner : Roles.Patient;
-  let profileData = (await getProfileByIdentifier({ userId, type: role })) as Patient | Practitioner | null;
+  const role =
+    Array.isArray(roles) && roles.includes(Roles.Practitioner)
+      ? Roles.Practitioner
+      : Roles.Patient;
+  let profileData = (await getProfileByIdentifier({ userId, type: role })) as
+    | Patient
+    | Practitioner
+    | null;
 
   if (!profileData) {
-    await createProfile({ userId, email: emails[0] || '', phoneNumber: phoneNumbers[0] || '', type: role });
-    profileData = (await getProfileByIdentifier({ userId, type: role })) as Patient | Practitioner | null;
+    await createProfile({
+      userId,
+      email: emails[0] || '',
+      phoneNumber: phoneNumbers[0] || '',
+      type: role
+    });
+    profileData = (await getProfileByIdentifier({ userId, type: role })) as
+      | Patient
+      | Practitioner
+      | null;
     if (!profileData) throw new Error('Failed to create profile');
   }
 
-  const cookieData = {
-    userId, roles, role_name: role,
-    email: emails[0] || '', phoneNumber: phoneNumbers[0] || '',
-    profile_picture: profileData?.photo?.[0]?.url ?? '',
-    fullname: mergeNames(profileData?.name), fhirId: profileData?.id ?? ''
-  };
-
-  const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
-  if (!cookieRes.ok) console.error('[auth:cookie] server returned', cookieRes.status);
+  await postAuthCookieForUser(
+    role,
+    userId,
+    roles,
+    emails,
+    phoneNumbers,
+    profileData
+  );
 }
 
 async function handleReturningUserLogin(
@@ -43,49 +84,64 @@ async function handleReturningUserLogin(
   emails: string[],
   phoneNumbers: string[]
 ): Promise<void> {
-  const role = Array.isArray(roles) && roles.includes(Roles.Practitioner) ? Roles.Practitioner : Roles.Patient;
-  const profile = (await getProfileByIdentifier({ userId, type: role })) as Patient | Practitioner | null;
+  const role =
+    Array.isArray(roles) && roles.includes(Roles.Practitioner)
+      ? Roles.Practitioner
+      : Roles.Patient;
+  const profile = (await getProfileByIdentifier({ userId, type: role })) as
+    | Patient
+    | Practitioner
+    | null;
 
-  const cookieData = {
-    userId, roles, role_name: role,
-    email: emails[0] || '', phoneNumber: phoneNumbers[0] || '',
-    profile_picture: profile?.photo?.[0]?.url ?? '',
-    fullname: mergeNames(profile?.name), fhirId: profile?.id ?? ''
-  };
-
-  const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
-  if (!cookieRes.ok) console.error('[auth:cookie] server returned', cookieRes.status);
+  await postAuthCookieForUser(
+    role,
+    userId,
+    roles,
+    emails,
+    phoneNumbers,
+    profile
+  );
 }
 
 function resolvePostLoginRedirect(): string | null {
   const redirectUrl = getRedirectIntent();
   if (redirectUrl) {
     clearRedirectIntent();
-    return extractSafeRedirectPath(`?redirectToPath=${encodeURIComponent(redirectUrl)}`);
+    return extractSafeRedirectPath(
+      `?redirectToPath=${encodeURIComponent(redirectUrl)}`
+    );
   }
   const intent = getIntent();
   if (intent) {
     clearRedirectIntent();
-    return intent.payload?.path as string ?? '/';
+    return (intent.payload?.path as string) ?? '/';
   }
   return extractSafeRedirectPath(globalThis.location.search);
 }
 
-async function postAuthCookie(body: Record<string, unknown>): Promise<Response> {
+async function postAuthCookie(
+  body: Record<string, unknown>
+): Promise<Response> {
   let token = '';
   try {
     const res = await fetch('/auth/cookie/csrf-token');
-        if (res.ok) { const data = await res.json() as { token?: string }; token = data.token ?? ''; }
-  } catch { /* CSRF token fetch is best-effort */ }
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (res.ok) {
+      const data = (await res.json()) as { token?: string };
+      token = data.token ?? '';
+    }
+  } catch {
+    /* CSRF token fetch is best-effort */
+  }
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
   if (token) headers['X-CSRF-Token'] = token;
-  return fetch('/auth/cookie', { method: 'POST', headers, body: JSON.stringify(body) });
+  return fetch('/auth/cookie', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
 }
-import Passwordless from 'supertokens-auth-react/recipe/passwordless';
-import Session, { getClaimValue } from 'supertokens-auth-react/recipe/session';
-import ThirdParty from 'supertokens-auth-react/recipe/thirdparty';
-import { UserRoleClaim } from 'supertokens-auth-react/recipe/userroles';
-import { getAppInfo } from './appInfo';
 
 /** SuperTokens frontend configuration. */
 export const frontendConfig = (): SuperTokensConfig => {
@@ -96,9 +152,9 @@ export const frontendConfig = (): SuperTokensConfig => {
       translations: {
         en: {
           AUTH_PAGE_HEADER_TITLE_SIGN_IN_AND_UP: 'Wellness Starts Here',
-          PWLESS_SIGN_IN_UP_CONTINUE_BUTTON: 'Sign In',
-        },
-      },
+          PWLESS_SIGN_IN_UP_CONTINUE_BUTTON: 'Sign In'
+        }
+      }
     },
     style: `
         #supertokens-root {
@@ -178,25 +234,44 @@ export const frontendConfig = (): SuperTokensConfig => {
             {
               id: 'email',
               name: 'Email',
-              logo: <img src='/icons/email.svg' alt='email' width={18} height={18} />,
+              logo: (
+                <img
+                  src='/icons/email.svg'
+                  alt='email'
+                  width={18}
+                  height={18}
+                />
+              )
             },
             {
               id: 'whatsapp',
               name: 'WhatsApp',
-              logo: <img src='/icons/whatsapp.png' alt='whatsapp' width={18} height={18} />,
-            },
-          ],
-        },
+              logo: (
+                <img
+                  src='/icons/whatsapp.png'
+                  alt='whatsapp'
+                  width={18}
+                  height={18}
+                />
+              )
+            }
+          ]
+        }
       }),
       Passwordless.init({
         contactMethod: 'EMAIL_OR_PHONE',
-        onHandleEvent: async (context) => {
+        onHandleEvent: async context => {
           if (context.action !== 'SUCCESS') return;
 
           const { id: userId, emails, phoneNumbers } = context.user;
-          const roles = await getClaimValue({ claim: UserRoleClaim }) as string[] | undefined;
+          const roles = (await getClaimValue({ claim: UserRoleClaim })) as
+            | string[]
+            | undefined;
 
-          if (context.isNewRecipeUser && context.user.loginMethods.length === 1) {
+          if (
+            context.isNewRecipeUser &&
+            context.user.loginMethods.length === 1
+          ) {
             await handleNewUserLogin(roles, userId, emails, phoneNumbers);
           } else {
             await handleReturningUserLogin(roles, userId, emails, phoneNumbers);
@@ -205,8 +280,8 @@ export const frontendConfig = (): SuperTokensConfig => {
           const redirectToPath = resolvePostLoginRedirect();
           console.log('[auth:redirect] redirecting to:', redirectToPath ?? '/');
           globalThis.location.href = redirectToPath ?? '/';
-        },
-      }),
-    ],
+        }
+      })
+    ]
   };
 };

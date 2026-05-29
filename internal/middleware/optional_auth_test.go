@@ -46,27 +46,35 @@ func mockAnonymousSessionAPI(guestID string) *httptest.Server {
 	}))
 }
 
-func TestOptionalAuth_noCookies_createsSession(t *testing.T) {
-	ResetAnonSessionCache()
-	apiServer := mockAnonymousSessionAPI("test-guest-abc")
-	t.Cleanup(apiServer.Close)
+func setupOptionalAuthTest(t *testing.T, apiServer *httptest.Server) (*httptest.Server, func() *session.Session) {
+	t.Helper()
 	r := newOptionalAuthRouter(apiServer)
-	var gotSession *session.Session
+	var captured *session.Session
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		s, ok := session.SessionFromContext(r.Context())
+		var ok bool
+		captured, ok = session.SessionFromContext(r.Context())
 		if !ok {
 			t.Error("expected session in context")
 		}
-		gotSession = s
 		w.WriteHeader(http.StatusOK)
 	})
 	server := httptest.NewServer(r)
 	t.Cleanup(server.Close)
+	return server, func() *session.Session { return captured }
+}
+
+func TestOptionalAuth_noCookies_createsSession(t *testing.T) {
+	ResetAnonSessionCache()
+	apiServer := mockAnonymousSessionAPI("test-guest-abc")
+	t.Cleanup(apiServer.Close)
+	server, getSession := setupOptionalAuthTest(t, apiServer)
+
 	resp, err := http.Get(server.URL + "/")
 	if err != nil {
 		t.Fatalf("GET / failed: %v", err)
 	}
 	resp.Body.Close()
+	gotSession := getSession()
 	if gotSession == nil {
 		t.Fatal("expected session to be set")
 	}
@@ -82,20 +90,10 @@ func TestOptionalAuth_noCookies_createsSession(t *testing.T) {
 func TestOptionalAuth_authCookie_realSession(t *testing.T) {
 	apiServer := mockAnonymousSessionAPI("should-not-be-called")
 	t.Cleanup(apiServer.Close)
-	r := newOptionalAuthRouter(apiServer)
-	var gotSession *session.Session
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		s, ok := session.SessionFromContext(r.Context())
-		if !ok {
-			t.Error("expected session in context")
-		}
-		gotSession = s
-		w.WriteHeader(http.StatusOK)
-	})
+	server, getSession := setupOptionalAuthTest(t, apiServer)
+
 	authJSON, _ := json.Marshal(map[string]string{"userId": "u1", "role_name": "Patient"})
 	cookieVal := signedCookieValue(string(authJSON))
-	server := httptest.NewServer(r)
-	t.Cleanup(server.Close)
 	req, _ := http.NewRequest(http.MethodGet, server.URL+"/", http.NoBody)
 	req.Header.Set("Cookie", "auth="+cookieVal)
 	resp, err := http.DefaultClient.Do(req)
@@ -103,6 +101,7 @@ func TestOptionalAuth_authCookie_realSession(t *testing.T) {
 		t.Fatalf("GET / failed: %v", err)
 	}
 	resp.Body.Close()
+	gotSession := getSession()
 	if gotSession == nil {
 		t.Fatal("expected session to be set")
 	}
@@ -117,19 +116,9 @@ func TestOptionalAuth_authCookie_realSession(t *testing.T) {
 func TestOptionalAuth_guestCookie_guestSession(t *testing.T) {
 	apiServer := mockAnonymousSessionAPI("should-not-be-called")
 	t.Cleanup(apiServer.Close)
-	r := newOptionalAuthRouter(apiServer)
-	var gotSession *session.Session
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		s, ok := session.SessionFromContext(r.Context())
-		if !ok {
-			t.Error("expected session in context")
-		}
-		gotSession = s
-		w.WriteHeader(http.StatusOK)
-	})
+	server, getSession := setupOptionalAuthTest(t, apiServer)
+
 	cookieVal := url.QueryEscape(`{"guestId":"existing-guest-xyz"}`)
-	server := httptest.NewServer(r)
-	t.Cleanup(server.Close)
 	req, _ := http.NewRequest(http.MethodGet, server.URL+"/", http.NoBody)
 	req.Header.Set("Cookie", "guest_session="+cookieVal)
 	resp, err := http.DefaultClient.Do(req)
@@ -137,6 +126,7 @@ func TestOptionalAuth_guestCookie_guestSession(t *testing.T) {
 		t.Fatalf("GET / failed: %v", err)
 	}
 	resp.Body.Close()
+	gotSession := getSession()
 	if gotSession == nil {
 		t.Fatal("expected session to be set")
 	}
@@ -156,19 +146,7 @@ func TestOptionalAuth_apiUnavailable_fallback(t *testing.T) {
 	}))
 	apiServer.Close()
 
-	r := newOptionalAuthRouter(apiServer)
-	var gotSession *session.Session
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		s, ok := session.SessionFromContext(r.Context())
-		if !ok {
-			t.Error("expected session in context")
-		}
-		gotSession = s
-		w.WriteHeader(http.StatusOK)
-	})
-
-	server := httptest.NewServer(r)
-	t.Cleanup(server.Close)
+	server, getSession := setupOptionalAuthTest(t, apiServer)
 
 	resp, err := http.Get(server.URL + "/")
 	if err != nil {
@@ -176,6 +154,7 @@ func TestOptionalAuth_apiUnavailable_fallback(t *testing.T) {
 	}
 	resp.Body.Close()
 
+	gotSession := getSession()
 	if gotSession == nil {
 		t.Fatal("expected session to be set despite API failure")
 	}
@@ -191,16 +170,7 @@ func TestOptionalAuth_authCookieOverridesGuest(t *testing.T) {
 	apiServer := mockAnonymousSessionAPI("should-not-be-called")
 	t.Cleanup(apiServer.Close)
 
-	r := newOptionalAuthRouter(apiServer)
-	var gotSession *session.Session
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		s, ok := session.SessionFromContext(r.Context())
-		if !ok {
-			t.Error("expected session in context")
-		}
-		gotSession = s
-		w.WriteHeader(http.StatusOK)
-	})
+	server, getSession := setupOptionalAuthTest(t, apiServer)
 
 	authJSON, _ := json.Marshal(map[string]string{
 		"userId":    "u1",
@@ -208,9 +178,6 @@ func TestOptionalAuth_authCookieOverridesGuest(t *testing.T) {
 	})
 	authCookieVal := signedCookieValue(string(authJSON))
 	guestCookieVal := url.QueryEscape(`{"guestId":"guest-123"}`)
-
-	server := httptest.NewServer(r)
-	t.Cleanup(server.Close)
 
 	req, err := http.NewRequest(http.MethodGet, server.URL+"/", http.NoBody)
 	if err != nil {
@@ -224,6 +191,7 @@ func TestOptionalAuth_authCookieOverridesGuest(t *testing.T) {
 	}
 	resp.Body.Close()
 
+	gotSession := getSession()
 	if gotSession == nil {
 		t.Fatal("expected session to be set")
 	}

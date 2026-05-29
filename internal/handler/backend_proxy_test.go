@@ -75,55 +75,38 @@ func TestBackendProxy_forwardsRequest(t *testing.T) {
 	}
 }
 
-//nolint:dupl // similar structure to injectsBearerFromCookie but tests header forwarding
-func TestBackendProxy_forwardsAuthorizationHeader(t *testing.T) {
-	proxyURL := newProxyServer(t)
-
-	req, err := http.NewRequest(http.MethodPost, proxyURL+"/proxy/api/v1/echo", http.NoBody)
-	if err != nil {
-		t.Fatal(err)
+func TestBackendProxy_headerBehavior(t *testing.T) {
+	tests := []struct {
+		name       string
+		authHeader string
+		cookie     string
+		wantAuth   string
+	}{
+		{
+			name:       "forwards Authorization header",
+			authHeader: "Bearer test-token-xyz",
+			wantAuth:   "Bearer test-token-xyz",
+		},
+		{
+			name:     "forwards missing Authorization as empty",
+			wantAuth: "",
+		},
+		{
+			name:     "injects Bearer from Cookie",
+			cookie:   "sAccessToken=injected-token-abc",
+			wantAuth: "Bearer injected-token-abc",
+		},
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer test-token-xyz")
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	var result map[string]any
-	json.NewDecoder(resp.Body).Decode(&result)
-	if result["auth"] != "Bearer test-token-xyz" {
-		t.Errorf("expected forwarded Bearer test-token-xyz, got %v", result["auth"])
-	}
-}
-
-//nolint:dupl // similar structure to others but verifies no auth header is forwarded
-func TestBackendProxy_forwardsMissingAuthorization(t *testing.T) {
-	proxyURL := newProxyServer(t)
-
-	req, err := http.NewRequest(http.MethodPost, proxyURL+"/proxy/api/v1/echo", http.NoBody)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	var result map[string]any
-	json.NewDecoder(resp.Body).Decode(&result)
-	if result["auth"] != "" {
-		t.Errorf("expected empty auth, got %v", result["auth"])
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testBackendProxyHeaderCase(t, tt.authHeader, tt.cookie, tt.wantAuth)
+		})
 	}
 }
 
-//nolint:dupl // similar structure to forwardsAuthorizationHeader but tests cookie injection
-func TestBackendProxy_injectsBearerFromCookie(t *testing.T) {
+func testBackendProxyHeaderCase(t *testing.T, authHeader, cookie, wantAuth string) {
+	t.Helper()
 	proxyURL := newProxyServer(t)
 
 	req, err := http.NewRequest(http.MethodPost, proxyURL+"/proxy/api/v1/echo", http.NoBody)
@@ -131,7 +114,12 @@ func TestBackendProxy_injectsBearerFromCookie(t *testing.T) {
 		t.Fatal(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Cookie", "sAccessToken=injected-token-abc")
+	if authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
+	}
+	if cookie != "" {
+		req.Header.Set("Cookie", cookie)
+	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -141,8 +129,8 @@ func TestBackendProxy_injectsBearerFromCookie(t *testing.T) {
 
 	var result map[string]any
 	json.NewDecoder(resp.Body).Decode(&result)
-	if result["auth"] != "Bearer injected-token-abc" {
-		t.Errorf("expected Bearer injected-token-abc from cookie, got %v", result["auth"])
+	if result["auth"] != wantAuth {
+		t.Errorf("expected auth %q, got %v", wantAuth, result["auth"])
 	}
 }
 
