@@ -8,7 +8,7 @@ deps:
 	go mod download
 
 # Testing
-test-go:
+test-go: templ-gen
 	go test ./... -count=1
 
 test-js:
