@@ -121,7 +121,7 @@ export const frontendConfig = (): SuperTokensConfig => {
         onHandleEvent: async (context) => {
           if (context.action === 'SUCCESS') {
             const { id: userId, emails, phoneNumbers } = context.user;
-            const roles = (await getClaimValue({ claim: UserRoleClaim })) as string[];
+            const roles = await getClaimValue({ claim: UserRoleClaim }) as string[] | undefined;
 
             if (
               context.isNewRecipeUser &&
@@ -129,7 +129,7 @@ export const frontendConfig = (): SuperTokensConfig => {
             ) {
               let profileData = (await getProfileByIdentifier({
                 userId,
-                type: roles.includes(Roles.Practitioner)
+                type: Array.isArray(roles) && roles.includes(Roles.Practitioner)
                   ? Roles.Practitioner
                   : Roles.Patient,
               })) as Patient | Practitioner | null;
@@ -140,13 +140,13 @@ export const frontendConfig = (): SuperTokensConfig => {
                     userId,
                     email: emails[0] || '',
                     phoneNumber: phoneNumbers[0] || '',
-                    type: roles.includes(Roles.Practitioner)
+                    type: Array.isArray(roles) && roles.includes(Roles.Practitioner)
                       ? Roles.Practitioner
                       : Roles.Patient,
                   });
                   profileData = (await getProfileByIdentifier({
                     userId,
-                    type: roles.includes(Roles.Practitioner)
+                    type: Array.isArray(roles) && roles.includes(Roles.Practitioner)
                       ? Roles.Practitioner
                       : Roles.Patient,
                   })) as Patient | Practitioner | null;
@@ -159,7 +159,7 @@ export const frontendConfig = (): SuperTokensConfig => {
               const cookieData = {
                 userId,
                 roles,
-                role_name: roles.includes(Roles.Practitioner)
+                role_name: Array.isArray(roles) && roles.includes(Roles.Practitioner)
                   ? Roles.Practitioner
                   : Roles.Patient,
                 email: emails[0] || '',
@@ -169,15 +169,17 @@ export const frontendConfig = (): SuperTokensConfig => {
                 fhirId: profileData?.id ?? '',
               };
 
-              await fetch('/auth/cookie', {
+              const cookieRes = await fetch('/auth/cookie', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(cookieData),
-              }).catch((err) =>
-                console.error('[auth:cookie] failed to set auth cookie', err),
-              );
+              });
+              if (!cookieRes.ok) {
+                console.error('[auth:cookie] server returned', cookieRes.status);
+                return;
+              }
             } else {
-              const type = roles.includes(Roles.Practitioner)
+              const type = Array.isArray(roles) && roles.includes(Roles.Practitioner)
                 ? Roles.Practitioner
                 : Roles.Patient;
               const profile = (await getProfileByIdentifier({
@@ -188,7 +190,7 @@ export const frontendConfig = (): SuperTokensConfig => {
               const cookieData = {
                 userId,
                 roles,
-                role_name: roles.includes(Roles.Practitioner)
+                role_name: Array.isArray(roles) && roles.includes(Roles.Practitioner)
                   ? Roles.Practitioner
                   : Roles.Patient,
                 email: emails[0] || '',
@@ -198,13 +200,15 @@ export const frontendConfig = (): SuperTokensConfig => {
                 fhirId: profile?.id ?? '',
               };
 
-              await fetch('/auth/cookie', {
+              const cookieRes = await fetch('/auth/cookie', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(cookieData),
-              }).catch((err) =>
-                console.error('[auth:cookie] failed to set auth cookie', err),
-              );
+              });
+              if (!cookieRes.ok) {
+                console.error('[auth:cookie] server returned', cookieRes.status);
+                return;
+              }
             }
 
             const redirectUrl = getRedirectIntent();
@@ -212,11 +216,12 @@ export const frontendConfig = (): SuperTokensConfig => {
 
             if (redirectUrl) {
               clearRedirectIntent();
-              redirectToPath = redirectUrl;
+              redirectToPath = extractSafeRedirectPath(`?redirectToPath=${encodeURIComponent(redirectUrl)}`);
             } else {
               const intent = getIntent();
               if (intent) {
-                redirectToPath = '/';
+                clearRedirectIntent();
+                redirectToPath = intent.payload?.path ?? '/';
               } else {
                 redirectToPath = extractSafeRedirectPath(globalThis.location.search);
               }

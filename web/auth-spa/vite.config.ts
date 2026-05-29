@@ -7,7 +7,7 @@ export default defineConfig({
   build: {
     outDir: '../static/auth-spa',
     emptyOutDir: true,
-    rolldownOptions: {
+    rollupOptions: {
       output: {
         entryFileNames: 'index.js',
         chunkFileNames: 'assets/[name]-[hash].js',

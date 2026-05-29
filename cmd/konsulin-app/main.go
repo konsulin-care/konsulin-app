@@ -82,12 +82,13 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 
 	r.Post("/auth/logout", handler.NewLogoutHandler(handler.LogoutOptions{
-		AuthPath:          cfg.AuthPath,
-		CookieName:        cfg.AuthCookieName,
-		AccessCookieName:  cfg.SessionCookieNameAccess,
-		RefreshCookieName: cfg.SessionCookieNameRefresh,
-		BackendBaseURL:    cfg.APIURL,
-		SecureCookie:      cfg.CookieSecure,
+		AuthPath:            cfg.AuthPath,
+		CookieName:          cfg.AuthCookieName,
+		AccessCookieName:    cfg.SessionCookieNameAccess,
+		RefreshCookieName:   cfg.SessionCookieNameRefresh,
+		IDRefreshCookieName: cfg.SessionCookieNameIDRefresh,
+		BackendBaseURL:      cfg.APIURL,
+		SecureCookie:        cfg.CookieSecure,
 	}))
 
 	r.HandleFunc("/auth/cookie", handler.NewAuthCookieHandler(handler.AuthCookieOptions{

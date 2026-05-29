@@ -23,6 +23,7 @@ type Config struct {
 	AuthCookieName           string `json:"auth_cookie_name"`
 	SessionCookieNameAccess  string `json:"session_cookie_name_access"`
 	SessionCookieNameRefresh string `json:"session_cookie_name_refresh"`
+	SessionCookieNameIDRefresh string `json:"session_cookie_name_id_refresh"`
 	SessionCookieSecret      string `json:"session_cookie_secret"`
 
 	GuestSessionCookieName    string `json:"guest_session_cookie_name"`
@@ -91,10 +92,11 @@ func Load() (*Config, error) {
 		AppURL:      appURL,
 		TXURL:       txURL,
 
-		AuthCookieName:           env("AUTH_COOKIE_NAME", "auth"),
-		SessionCookieNameAccess:  env("SESSION_COOKIE_NAME_ACCESS", "sAccessToken"),
-		SessionCookieNameRefresh: env("SESSION_COOKIE_NAME_REFRESH", "sRefreshToken"),
-		SessionCookieSecret:      sessionSecret,
+		AuthCookieName:             env("AUTH_COOKIE_NAME", "auth"),
+		SessionCookieNameAccess:    env("SESSION_COOKIE_NAME_ACCESS", "sAccessToken"),
+		SessionCookieNameRefresh:   env("SESSION_COOKIE_NAME_REFRESH", "sRefreshToken"),
+		SessionCookieNameIDRefresh: env("SESSION_COOKIE_NAME_ID_REFRESH", "sIdRefreshToken"),
+		SessionCookieSecret:        sessionSecret,
 
 		GuestSessionCookieName:   env("GUEST_SESSION_COOKIE_NAME", "guest_session"),
 		RedirectIntentCookieName: env("REDIRECT_INTENT_COOKIE_NAME", "redirect_intent"),

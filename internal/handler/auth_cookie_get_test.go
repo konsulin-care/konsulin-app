@@ -10,7 +10,7 @@ func TestGetAuthCookie_returnsAuthenticated(t *testing.T) {
 	srv := newAuthCookieServer()
 	t.Cleanup(srv.Close)
 
-	// No sAccessToken cookie → authenticated: false
+	// No auth cookie → authenticated: false
 	req, err := http.NewRequest(http.MethodGet, srv.URL+"/auth/cookie", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
@@ -35,12 +35,12 @@ func TestGetAuthCookie_returnsAuthenticated(t *testing.T) {
 		t.Error("expected authenticated=false without sAccessToken")
 	}
 
-	// With sAccessToken cookie → authenticated: true
+	// With auth cookie → authenticated: true
 	req2, err := http.NewRequest(http.MethodGet, srv.URL+"/auth/cookie", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req2.AddCookie(&http.Cookie{Name: "sAccessToken", Value: "tok"})
+	req2.AddCookie(&http.Cookie{Name: "auth", Value: "tok"})
 	resp2, err := http.DefaultClient.Do(req2)
 	if err != nil {
 		t.Fatal(err)
@@ -55,6 +55,6 @@ func TestGetAuthCookie_returnsAuthenticated(t *testing.T) {
 		t.Fatalf("failed to decode body: %v", err)
 	}
 	if !body.Authenticated {
-		t.Error("expected authenticated=true with sAccessToken")
+		t.Error("expected authenticated=true with auth cookie")
 	}
 }

@@ -35,7 +35,7 @@ func NewAuthCookieHandler(opts AuthCookieOptions) http.HandlerFunc {
 		case http.MethodPost:
 			handleSetAuthCookie(w, r, opts)
 		case http.MethodGet:
-			handleGetAuthCookie(w, r)
+			handleGetAuthCookie(w, r, opts)
 		case http.MethodDelete:
 			handleDeleteAuthCookie(w, r, opts)
 		default:
@@ -46,6 +46,7 @@ func NewAuthCookieHandler(opts AuthCookieOptions) http.HandlerFunc {
 
 func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {
 	var req authCookieRequest
+	r.Body = http.MaxBytesReader(w, r.Body, 10*1024)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		slog.Warn("auth cookie: invalid request body", "err", err)
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -77,7 +78,7 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 		ProfilePicture:  req.ProfilePicture,
 	}
 
-	encoded, err := session.EncodeSession(sess)
+	encoded, err := session.EncodeSession(sess, opts.CookieName)
 	if err != nil {
 		slog.Error("auth cookie: failed to encode session", "err", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -99,9 +100,9 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 	_, _ = w.Write([]byte(`{"status":"ok"}`))
 }
 
-func handleGetAuthCookie(w http.ResponseWriter, r *http.Request) {
+func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {
 	authenticated := false
-	if _, err := r.Cookie("sAccessToken"); err == nil {
+	if _, err := r.Cookie(opts.CookieName); err == nil {
 		authenticated = true
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -117,16 +118,23 @@ func boolStr(b bool) string {
 }
 
 func handleDeleteAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {
-	//nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
-	http.SetCookie(w, &http.Cookie{
-		Name:     opts.CookieName,
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   opts.CookieSecure,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   -1,
-	})
+	clear := func(name string) {
+		//nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
+		http.SetCookie(w, &http.Cookie{
+			Name:     name,
+			Value:    "",
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   opts.CookieSecure,
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   -1,
+		})
+	}
+
+	clear(opts.CookieName)
+	clear("sAccessToken")
+	clear("sRefreshToken")
+	clear("sIdRefreshToken")
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"ok"}`))

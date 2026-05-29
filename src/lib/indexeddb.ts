@@ -120,7 +120,8 @@ export async function cursorDeleteAll(
 ): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const store = getStore(db, storeName, 'readwrite');
+    const txn = db.transaction(storeName, 'readwrite');
+    const store = txn.objectStore(storeName);
     const req = store.openCursor();
     req.onsuccess = () => {
       const cursor = req.result;
@@ -129,11 +130,13 @@ export async function cursorDeleteAll(
           cursor.delete();
         }
         cursor.continue();
-      } else {
-        resolve();
       }
     };
     req.onerror = () => reject(req.error);
+    txn.oncomplete = () => resolve();
+    txn.onerror = (event) => {
+      reject((event.target as IDBRequest)?.error || new Error('transaction failed'));
+    };
   });
 }
 
@@ -171,6 +174,25 @@ export async function deleteGuestSession(
   await dbDelete(STORES.guestSessions, guestId);
 }
 
+function putWithTransaction<T>(
+  db: IDBDatabase,
+  storeName: StoreName,
+  values: T[]
+): Promise<void> {
+  if (values.length === 0) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const txn = db.transaction(storeName, 'readwrite');
+    const store = txn.objectStore(storeName);
+    for (const value of values) {
+      store.put(value);
+    }
+    txn.oncomplete = () => resolve();
+    txn.onerror = (event) => {
+      reject((event.target as IDBRequest)?.error || new Error('transaction failed'));
+    };
+  });
+}
+
 const MIGRATION_FLAG = 'konsulin_migration_done';
 
 export async function migrateLocalStorage(): Promise<void> {
@@ -194,21 +216,20 @@ export async function migrateLocalStorage(): Promise<void> {
 
   // 1. guest_sessions: konsulin.guest_id
   if (guestId) {
-    const store = getStore(db, STORES.guestSessions, 'readwrite');
-    store.put({ guest_id: guestId });
+    await putWithTransaction(db, STORES.guestSessions, [{ guest_id: guestId }]);
   }
 
   // 2. assessment_drafts: response_{questionnaireId}
   const responseKeys = Object.keys(localStorage).filter(k =>
     k.startsWith('response_')
   );
+  const assessmentValues: any[] = [];
   for (const key of responseKeys) {
     try {
       const raw = localStorage.getItem(key);
       if (raw) {
         const questionnaireId = key.replace('response_', '');
-        const store = getStore(db, STORES.assessmentDrafts, 'readwrite');
-        store.put({
+        assessmentValues.push({
           ownerId,
           questionnaireId,
           response: JSON.parse(raw),
@@ -219,18 +240,19 @@ export async function migrateLocalStorage(): Promise<void> {
       // skip corrupt entries
     }
   }
+  await putWithTransaction(db, STORES.assessmentDrafts, assessmentValues);
 
   // 3. soap_drafts: soap_{patientId}
   const soapKeys = Object.keys(localStorage).filter(k =>
     k.startsWith('soap_')
   );
+  const soapValues: any[] = [];
   for (const key of soapKeys) {
     try {
       const raw = localStorage.getItem(key);
       if (raw) {
         const patientId = key.replace('soap_', '');
-        const store = getStore(db, STORES.soapDrafts, 'readwrite');
-        store.put({
+        soapValues.push({
           practitionerId: '',
           patientId,
           draft: JSON.parse(raw),
@@ -241,18 +263,19 @@ export async function migrateLocalStorage(): Promise<void> {
       // skip corrupt entries
     }
   }
+  await putWithTransaction(db, STORES.soapDrafts, soapValues);
 
   // 4. service_requests: serviceRequest_{recordId}
   const srKeys = Object.keys(localStorage).filter(k =>
     k.startsWith('serviceRequest_')
   );
+  const srValues: any[] = [];
   for (const key of srKeys) {
     try {
       const raw = localStorage.getItem(key);
       if (raw) {
         const recordId = key.replace('serviceRequest_', '');
-        const store = getStore(db, STORES.serviceRequests, 'readwrite');
-        store.put({
+        srValues.push({
           id: recordId,
           ownerId,
           serviceRequestId: raw.trim(),
@@ -263,13 +286,14 @@ export async function migrateLocalStorage(): Promise<void> {
       // skip corrupt entries
     }
   }
+  await putWithTransaction(db, STORES.serviceRequests, srValues);
 
   // 5. temp_booking
+  const tempBookingValues: any[] = [];
   try {
     const raw = localStorage.getItem('temp-booking');
     if (raw) {
-      const store = getStore(db, STORES.tempBooking, 'readwrite');
-      store.put({
+      tempBookingValues.push({
         ownerId,
         ...JSON.parse(raw),
         updatedAt: Date.now()
@@ -278,6 +302,7 @@ export async function migrateLocalStorage(): Promise<void> {
   } catch {
     // skip
   }
+  await putWithTransaction(db, STORES.tempBooking, tempBookingValues);
 
   // 6. ui_preferences: result-table-colors, selected_clinic, selected_practitioner, skip-response-cleanup
   const prefMappings: Record<string, string> = {
@@ -286,12 +311,12 @@ export async function migrateLocalStorage(): Promise<void> {
     'selected_practitioner': 'selected_practitioner',
     'skip-response-cleanup': 'skip-response-cleanup'
   };
+  const prefValues: any[] = [];
   for (const [lsKey, prefKey] of Object.entries(prefMappings)) {
     try {
       const raw = localStorage.getItem(lsKey);
       if (raw !== null) {
-        const store = getStore(db, STORES.uiPreferences, 'readwrite');
-        store.put({
+        prefValues.push({
           ownerId,
           prefKey,
           value: (() => {
@@ -307,6 +332,7 @@ export async function migrateLocalStorage(): Promise<void> {
       // skip
     }
   }
+  await putWithTransaction(db, STORES.uiPreferences, prefValues);
 
   // Remove all migrated localStorage keys
   const lsKeysToRemove = [

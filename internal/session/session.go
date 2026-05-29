@@ -134,11 +134,11 @@ func signValue(value, secret string) string {
 
 // EncodeSession encodes a Session into a signed cookie value using securecookie.
 // Returns the cookie value or an error. Caller must call InitSecureCookie first.
-func EncodeSession(s *Session) (string, error) {
+func EncodeSession(s *Session, cookieName string) (string, error) {
 	if sc == nil {
 		return "", errors.New("securecookie not initialized, call InitSecureCookie")
 	}
-	return sc.Encode("auth", s)
+	return sc.Encode(cookieName, s)
 }
 
 // SignCookieValue signs a JSON session payload for cookie storage (HMAC fallback).

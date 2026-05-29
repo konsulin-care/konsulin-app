@@ -30,6 +30,7 @@ func NewBackendProxyHandler(opts BackendProxyOptions) http.HandlerFunc {
 
 		setProxyRequestHeaders(proxyReq, r)
 		setAuthorizationFromRequest(proxyReq, r, targetURL)
+		proxyReq = proxyReq.WithContext(r.Context())
 
 		//nolint:gosec // G704: intentional proxy — forwards to trusted backend
 		resp, err := backendProxyClient.Do(proxyReq)

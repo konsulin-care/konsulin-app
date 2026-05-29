@@ -4,6 +4,11 @@ import { toast } from 'react-toastify';
 import { parseAxiosError } from './api-error';
 
 let apiInstance: AxiosInstance | null = null;
+export let currentUserId: string | null = null;
+
+export function setCurrentUserId(id: string | null) {
+  currentUserId = id;
+}
 
 export async function getAPI(): Promise<AxiosInstance> {
   if (apiInstance) return apiInstance;
@@ -36,7 +41,7 @@ export async function getAPI(): Promise<AxiosInstance> {
 
       if (isExpiredToken || isMissingToken) {
         setTimeout(() => {
-          clearUserData('guest');
+          clearUserData(currentUserId ?? 'guest');
           try {
             window.location.href = '/';
           } catch {}

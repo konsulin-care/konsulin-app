@@ -10,12 +10,13 @@ import (
 var logoutClient = &http.Client{Timeout: 10 * time.Second}
 
 type LogoutOptions struct {
-	AuthPath          string
-	CookieName        string
-	AccessCookieName  string
-	RefreshCookieName string
-	BackendBaseURL    string
-	SecureCookie      bool
+	AuthPath            string
+	CookieName          string
+	AccessCookieName    string
+	RefreshCookieName   string
+	IDRefreshCookieName string
+	BackendBaseURL      string
+	SecureCookie        bool
 }
 
 func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
@@ -49,6 +50,17 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 		//nolint:gosec // G124: same pattern, clearing refresh token
 		http.SetCookie(w, &http.Cookie{
 			Name:     opts.RefreshCookieName,
+			Value:    "",
+			Path:     "/",
+			MaxAge:   -1,
+			HttpOnly: true,
+			Secure:   opts.SecureCookie,
+			SameSite: http.SameSiteLaxMode,
+		})
+
+		//nolint:gosec // G124: clearing id refresh token
+		http.SetCookie(w, &http.Cookie{
+			Name:     opts.IDRefreshCookieName,
 			Value:    "",
 			Path:     "/",
 			MaxAge:   -1,

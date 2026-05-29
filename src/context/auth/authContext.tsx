@@ -4,6 +4,7 @@ import { Roles } from '@/constants/roles';
 import { dbGet, dbSet, migrateLocalStorage, STORES } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { restoreAuthCookie } from '@/services/auth';
+import { setCurrentUserId } from '@/services/api';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { Patient, Practitioner } from 'fhir/r4';
@@ -40,11 +41,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const session = useSessionContext() as SessionContextUpdate;
 
-  // One-time migration: copy existing localStorage keys to IndexedDB
-  useEffect(() => {
-    migrateLocalStorage();
-  }, []);
-
   // Record pathname at first paint (full page load) so homepage can tell "reload of /" vs "navigated to /"
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -60,6 +56,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const fetchSession = async () => {
+      // One-time migration before reading IndexedDB cache
+      try { await migrateLocalStorage(); } catch { /* non-critical */ }
+
       if (!session.doesSessionExist) {
         // Reload on homepage: let the page call ensureAnonymousSession(true) once; avoid duplicate calls
         const navEntries =
@@ -89,18 +88,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch { /* non-critical — cookie may already exist */ }
 
       try {
-        const userId = session.userId!;
-        const roles = (await getClaimValue({ claim: UserRoleClaim })) as string[];
+        const userId = session.userId;
+        if (!userId) {
+          console.error('Auth: userId missing from SuperTokens session');
+          setIsLoading(false);
+          return;
+        }
+        setCurrentUserId(userId);
+        const roles = await getClaimValue({ claim: UserRoleClaim }) as string[] | undefined;
 
         // Try IndexedDB profile cache first.
         const cached = await dbGet<Record<string, any>>(STORES.userProfile, userId);
         if (cached?.userId === userId && cached?.role_name) {
+          setCurrentUserId(userId);
           dispatch({ type: 'login', payload: cached });
           setIsLoading(false);
           return;
         }
 
-        const role = roles.includes(Roles.Practitioner)
+        const role = Array.isArray(roles) && roles.includes(Roles.Practitioner)
           ? Roles.Practitioner
           : Roles.Patient;
 
@@ -146,9 +152,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         console.error('Error fetching session:', error);
         // Fall back to IndexedDB cache if API fails.
-        let userId: string | undefined;
-        try { userId = session.userId!; } catch {}
+        const userId = session.userId;
         if (userId) {
+          setCurrentUserId(userId);
           const cached = await dbGet<Record<string, any>>(STORES.userProfile, userId);
           if (cached?.userId) {
             dispatch({ type: 'auth-check', payload: cached });
