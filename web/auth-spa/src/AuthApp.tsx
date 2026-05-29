@@ -1,9 +1,6 @@
-'use client';
-
-import { saveIntent } from '@/utils/redirect-intent';
-import dynamic from 'next/dynamic';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { type ComponentType, ReactElement, useEffect, useState } from 'react';
+import { saveIntent } from './utils/redirect-intent';
+import type { ReactElement } from 'react';
+import { useEffect, useState } from 'react';
 import { redirectToAuth } from 'supertokens-auth-react';
 import MultiFactorAuth from 'supertokens-auth-react/recipe/multifactorauth';
 import { PasswordlessComponentsOverrideProvider } from 'supertokens-auth-react/recipe/passwordless';
@@ -12,18 +9,12 @@ import { ThirdPartyPreBuiltUI } from 'supertokens-auth-react/recipe/thirdparty/p
 import {
   AuthPage,
   canHandleRoute,
-  getRoutingComponent
+  getRoutingComponent,
 } from 'supertokens-auth-react/ui';
 
 const WHATSAPP_LINK =
   'https://wa.me/6285163181852?text=Request%20login%2C%20authenticate%20me';
 
-/**
- * Footer with "or" separator and WhatsApp button.
- * The "or" block uses the same structure as SuperTokens prebuilt AuthPageComponentList:
- * dividerWithOr > [divider, dividerText (DIVIDER_OR), divider] so prebuilt CSS applies.
- * Button uses providerButton structure to match social login UI.
- */
 const orDividerAndWhatsAppFooter = (
   <>
     <div data-supertokens='dividerWithOr'>
@@ -59,21 +50,17 @@ const orDividerAndWhatsAppFooter = (
   </>
 );
 
-const passwordlessOverrides = {
-  // MFA flow with OTP_EMAIL/LINK_EMAIL uses EmailForm (email-only), not EmailOrPhoneForm.
-  PasswordlessEmailForm_Override: ({
-    DefaultComponent,
-    ...props
-  }: {
-    DefaultComponent: ComponentType<Record<string, unknown>>;
-    [key: string]: unknown;
-  }) => <DefaultComponent {...props} footer={orDividerAndWhatsAppFooter} />
+const passwordlessOverrides: Record<string, any> = {
+  PasswordlessEmailForm_Override: (props: any) => {
+    const { DefaultComponent, ...rest } = props;
+    return <DefaultComponent {...rest} footer={orDividerAndWhatsAppFooter} />;
+  },
 };
 
-const PasswordlessAuthPage = () => {
+export default function AuthApp() {
   const [uiComponent, setUiComponent] = useState<ReactElement | null>(null);
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
+  const searchParams = new URLSearchParams(window.location.search);
+  const pathname = window.location.pathname;
   const redirectToPath = searchParams.get('redirectToPath');
   const isRootAuth = pathname === '/auth';
 
@@ -81,55 +68,39 @@ const PasswordlessAuthPage = () => {
     if (redirectToPath) {
       if (redirectToPath.startsWith('/journal')) {
         saveIntent('journal', { path: redirectToPath });
-      } else if (
-        redirectToPath.startsWith('/assessments') ||
-        redirectToPath.startsWith('/record')
-      ) {
-        // Just in case middleware intercepts these too, we can save generic redirect or handle specific intent
-        // For now, only journal is explicitly requested to be fixed via middleware interception
       }
     }
   }, [redirectToPath]);
 
   useEffect(() => {
-    // For Supertokens sub-routes like /auth/verify, /auth/callback/*, etc,
-    // we must let Supertokens handle routing so magic links / callbacks work.
     if (!isRootAuth) {
       if (!canHandleRoute([ThirdPartyPreBuiltUI, PasswordlessPreBuiltUI])) {
         redirectToAuth({ redirectBack: false });
         return;
       }
-
       setUiComponent(
-        getRoutingComponent([ThirdPartyPreBuiltUI, PasswordlessPreBuiltUI])
+        getRoutingComponent([ThirdPartyPreBuiltUI, PasswordlessPreBuiltUI]),
       );
       return;
     }
 
-    // Root /auth: show passwordless email form directly with "or" + WhatsApp button in footer.
     if (!canHandleRoute([ThirdPartyPreBuiltUI, PasswordlessPreBuiltUI])) {
       redirectToAuth({ redirectBack: false });
       return;
     }
 
     setUiComponent(
-      <PasswordlessComponentsOverrideProvider
-        components={passwordlessOverrides}
-      >
+      <PasswordlessComponentsOverrideProvider components={passwordlessOverrides}>
         <AuthPage
           preBuiltUIList={[ThirdPartyPreBuiltUI, PasswordlessPreBuiltUI]}
           factors={[
             MultiFactorAuth.FactorIds.OTP_EMAIL,
-            MultiFactorAuth.FactorIds.LINK_EMAIL
+            MultiFactorAuth.FactorIds.LINK_EMAIL,
           ]}
         />
-      </PasswordlessComponentsOverrideProvider>
+      </PasswordlessComponentsOverrideProvider>,
     );
   }, [isRootAuth]);
 
   return uiComponent;
-};
-
-export default dynamic(() => Promise.resolve(PasswordlessAuthPage), {
-  ssr: false
-});
+}

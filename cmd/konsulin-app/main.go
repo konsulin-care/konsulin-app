@@ -95,10 +95,11 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		CookieSecure: cfg.CookieSecure,
 	}))
 
-	// /auth/* — redirect authenticated users to /, proxy to Next.js for others.
+	// /auth/* — serve Go SSR shell; redirect authenticated users to /
 	r.Route("/auth", func(r chi.Router) {
 		r.Use(appmw.RedirectAuthenticated(cfg.AuthCookieName, cfg.SessionCookieSecret, "/"))
-		r.NotFound(proxy.ServeHTTP)
+		r.Get("/", handler.NewAuthPageHandler(cfg))
+		r.Get("/*", handler.NewAuthPageHandler(cfg))
 	})
 
 	// Backend API proxy — adds Bearer token from sAccessToken cookie.

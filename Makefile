@@ -100,8 +100,12 @@ dev-go: css-templ templ-gen
 dev-next:
 	npm run dev -- -p $(NEXT_PORT)
 
+# Auth SPA build
+build-auth-spa:
+	cd web && npm ci && npm run build
+
 # Build
-build-go: css-templ templ-gen
+build-go: css-templ templ-gen build-auth-spa
 	go build -o konsulin-app ./cmd/konsulin-app
 
 run: css-templ templ-gen

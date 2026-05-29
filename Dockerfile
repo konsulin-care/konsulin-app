@@ -1,23 +1,31 @@
-FROM golang:1.26-alpine AS builder
-WORKDIR /build
+# Stage 1: Build SPA assets
+FROM node:24-alpine AS spa-builder
+WORKDIR /build/web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/auth-spa ./auth-spa
+COPY web/static/css/templ-input.css ./static/css/templ-input.css
+COPY web/template ../template/
+COPY web/static/images ./static/images
+RUN npm run build
 
-# Cache go modules
+# Stage 2: Build Go binary
+FROM golang:1.26-alpine AS go-builder
+WORKDIR /build
+RUN apk add --no-cache git=2.52.0-r0
 COPY go.mod go.sum ./
 RUN go mod download
-
-# Install templ at version from mise.toml (single source of truth)
 COPY mise.toml ./
 RUN TEMPL_VERSION=$(awk -F'"' '/templ\/cmd\/templ/{print $4}' mise.toml) && \
-    echo "Installing templ@${TEMPL_VERSION}" && \
-    go install "github.com/a-h/templ/cmd/templ@${TEMPL_VERSION}"
-
-# Build the Go binary
+    GOPROXY=direct go install "github.com/a-h/templ/cmd/templ@v${TEMPL_VERSION}"
 COPY . .
+COPY --from=spa-builder /build/web/static ./web/static
 RUN templ generate && CGO_ENABLED=0 go build -o /app/server ./cmd/konsulin-app
 
+# Stage 3: Runtime
 FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
-COPY --from=builder /app/server /app/server
-COPY web ./web
+COPY --from=go-builder /app/server /app/server
+COPY --from=go-builder /build/web ./web
 EXPOSE 8080
 CMD ["/app/server"]
