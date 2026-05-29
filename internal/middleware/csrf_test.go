@@ -35,10 +35,10 @@ func testCSRFRouter() *chi.Mux {
 		w.Header().Set("X-CSRF-Token", token)
 		w.WriteHeader(http.StatusOK)
 	})
-	r.Post("/submit", func(w http.ResponseWriter, r *http.Request) {
+	r.Post("/submit", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	r.Post("/exempt", func(w http.ResponseWriter, r *http.Request) {
+	r.Post("/exempt", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 	return r

@@ -4,7 +4,7 @@ import {
   ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY,
   ANONYMOUS_SESSION_IDENTIFIER_SYSTEM
 } from '@/constants/anonymous-session';
-import { STORES, dbGet, dbSet } from '@/lib/indexeddb';
+import { STORES, dbSet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { Identifier } from 'fhir/r4';
 
@@ -71,7 +71,7 @@ export const getCachedGuestId = async (): Promise<string | null> => {
       try {
         const parsed = JSON.parse(decodeURIComponent(match[1]));
         if (parsed.guestId) return parsed.guestId;
-      } catch {}
+      } catch { /* not a JSON cookie */ }
     }
   }
 

@@ -4,7 +4,7 @@ import { Roles } from '@/constants/roles';
 import { dbGet, dbSet, migrateLocalStorage, STORES } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { restoreAuthCookie } from '@/services/auth';
-import { setCurrentUserId } from '@/services/api';
+import { setCurrentUserId, UserProfile } from '@/services/api';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { Patient, Practitioner } from 'fhir/r4';
@@ -98,7 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const roles = await getClaimValue({ claim: UserRoleClaim }) as string[] | undefined;
 
         // Try IndexedDB profile cache first.
-        const cached = await dbGet<Record<string, any>>(STORES.userProfile, userId);
+          const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
         if (cached?.userId === userId && cached?.role_name) {
           setCurrentUserId(userId);
           dispatch({ type: 'login', payload: cached });
@@ -155,7 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userId = session.userId;
         if (userId) {
           setCurrentUserId(userId);
-          const cached = await dbGet<Record<string, any>>(STORES.userProfile, userId);
+        const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
           if (cached?.userId) {
             dispatch({ type: 'auth-check', payload: cached });
           }
@@ -175,6 +175,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+/** Hook to access auth context. Throws if used outside AuthProvider. */
 export const useAuth = (): ContextProps => {
   const context = useContext(AuthContext);
   if (!context) {

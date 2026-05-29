@@ -4,7 +4,6 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { STORES, dbDelete, dbGet, dbSet } from '@/lib/indexeddb';
-import { getFromLocalStorage } from '@/lib/utils';
 import { getAPI } from '@/services/api';
 import {
   RESULT_BRIEF_LOGIN_REQUIRED,
@@ -56,7 +55,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
   useEffect(() => {
     const ownerId = authState.userInfo.userId || 'guest';
-    dbGet<{ value: any }>(STORES.uiPreferences, [
+    dbGet<{ value: Record<string, string> }>(STORES.uiPreferences, [
       ownerId,
       'result-table-colors'
     ]).then(saved => {
@@ -204,6 +203,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
       }
     };
 
+    /** Polls for the result brief from the backend service request. */
     const start = async () => {
       if (!questionnaireResponse) return;
       if (!authState.isAuthenticated) return;

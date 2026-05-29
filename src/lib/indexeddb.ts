@@ -25,6 +25,7 @@ const STORE_SCHEMAS: { name: StoreName; keyPath: string | string[] }[] = [
   { name: STORES.userProfile, keyPath: 'userId' }
 ];
 
+/** Opens the IndexedDB database, creating object stores on upgrade. */
 export function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -41,6 +42,7 @@ export function openDB(): Promise<IDBDatabase> {
   });
 }
 
+/** Returns an object store for the given database and store name. */
 export function getStore(
   db: IDBDatabase,
   name: StoreName,
@@ -49,6 +51,7 @@ export function getStore(
   return db.transaction(name, mode).objectStore(name);
 }
 
+/** Gets a single value by key from an IndexedDB store. */
 export async function dbGet<T>(
   storeName: StoreName,
   key: IDBValidKey
@@ -61,6 +64,7 @@ export async function dbGet<T>(
   });
 }
 
+/** Puts a value into an IndexedDB store. */
 export async function dbSet<T>(
   storeName: StoreName,
   value: T
@@ -73,6 +77,7 @@ export async function dbSet<T>(
   });
 }
 
+/** Deletes a value by key from an IndexedDB store. */
 export async function dbDelete(
   storeName: StoreName,
   key: IDBValidKey
@@ -85,6 +90,7 @@ export async function dbDelete(
   });
 }
 
+/** Clears all entries from an IndexedDB store. */
 export async function dbClearAll(storeName: StoreName): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -94,6 +100,7 @@ export async function dbClearAll(storeName: StoreName): Promise<void> {
   });
 }
 
+/** Gets all keys from an IndexedDB store. */
 export async function dbGetAllKeys(
   storeName: StoreName
 ): Promise<IDBValidKey[]> {
@@ -105,6 +112,7 @@ export async function dbGetAllKeys(
   });
 }
 
+/** Gets all values from an IndexedDB store. */
 export async function dbGetAll<T>(storeName: StoreName): Promise<T[]> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -114,9 +122,10 @@ export async function dbGetAll<T>(storeName: StoreName): Promise<T[]> {
   });
 }
 
+/** Deletes all entries from a store that match a predicate using a cursor. */
 export async function cursorDeleteAll(
   storeName: StoreName,
-  predicate: (value: any, key: IDBValidKey) => boolean
+  predicate: (value: unknown, key: IDBValidKey) => boolean
 ): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -140,10 +149,11 @@ export async function cursorDeleteAll(
   });
 }
 
+/** Clears all user data from all stores for a given owner ID. */
 export async function clearUserData(ownerId: string): Promise<void> {
   const allStores = Object.values(STORES);
   for (const storeName of allStores) {
-    await cursorDeleteAll(storeName, (value: any) => {
+    await cursorDeleteAll(storeName, (value: Record<string, unknown>) => {
       if (storeName === STORES.guestSessions) {
         return value.guest_id === ownerId;
       }
@@ -171,12 +181,14 @@ export async function clearUserData(ownerId: string): Promise<void> {
   }
 }
 
+/** Deletes a guest session from the store. */
 export async function deleteGuestSession(
   guestId: string
 ): Promise<void> {
   await dbDelete(STORES.guestSessions, guestId);
 }
 
+/** Puts multiple values into a store within a single transaction. */
 function putWithTransaction<T>(
   db: IDBDatabase,
   storeName: StoreName,
@@ -198,6 +210,7 @@ function putWithTransaction<T>(
 
 const MIGRATION_FLAG = 'konsulin_migration_done';
 
+/** Migrates data from localStorage to IndexedDB, one-time operation. */
 export async function migrateLocalStorage(): Promise<void> {
   try {
     if (localStorage.getItem(MIGRATION_FLAG) === 'true') return;
@@ -226,7 +239,7 @@ export async function migrateLocalStorage(): Promise<void> {
   const responseKeys = Object.keys(localStorage).filter(k =>
     k.startsWith('response_')
   );
-  const assessmentValues: any[] = [];
+  const assessmentValues: { ownerId: string; questionnaireId: string; response: unknown; updatedAt: number }[] = [];
   for (const key of responseKeys) {
     try {
       const raw = localStorage.getItem(key);
@@ -256,7 +269,7 @@ export async function migrateLocalStorage(): Promise<void> {
   const srKeys = Object.keys(localStorage).filter(k =>
     k.startsWith('serviceRequest_')
   );
-  const srValues: any[] = [];
+  const srValues: { id: string; ownerId: string; serviceRequestId: string; updatedAt: number }[] = [];
   for (const key of srKeys) {
     try {
       const raw = localStorage.getItem(key);
@@ -276,7 +289,7 @@ export async function migrateLocalStorage(): Promise<void> {
   await putWithTransaction(db, STORES.serviceRequests, srValues);
 
   // 5. temp_booking
-  const tempBookingValues: any[] = [];
+  const tempBookingValues: { ownerId: string; updatedAt: number; [key: string]: unknown }[] = [];
   try {
     const raw = localStorage.getItem('temp-booking');
     if (raw) {
@@ -298,7 +311,7 @@ export async function migrateLocalStorage(): Promise<void> {
     'selected_practitioner': 'selected_practitioner',
     'skip-response-cleanup': 'skip-response-cleanup'
   };
-  const prefValues: any[] = [];
+  const prefValues: { ownerId: string; prefKey: string; value: unknown }[] = [];
   for (const [lsKey, prefKey] of Object.entries(prefMappings)) {
     try {
       const raw = localStorage.getItem(lsKey);

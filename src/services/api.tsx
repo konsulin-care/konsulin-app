@@ -3,9 +3,27 @@ import axios, { AxiosInstance } from 'axios';
 import { toast } from 'react-toastify';
 import { parseAxiosError } from './api-error';
 
-let apiInstance: AxiosInstance | null = null;
-export let currentUserId: string | null = null;
+export interface UserProfile {
+  userId: string;
+  role_name?: string;
+  roles?: string[];
+  email?: string;
+  phoneNumber?: string;
+  fullname?: string;
+  profile_picture?: string;
+  fhirId?: string;
+  profile_complete?: boolean;
+  cachedAt?: number;
+}
 
+let apiInstance: AxiosInstance | null = null;
+let currentUserId: string | null = null;
+
+export function getCurrentUserId(): string | null {
+  return currentUserId;
+}
+
+/** Sets the current user ID for use in API error handlers. */
 export function setCurrentUserId(id: string | null) {
   currentUserId = id;
 }
@@ -44,7 +62,7 @@ export async function getAPI(): Promise<AxiosInstance> {
           clearUserData(currentUserId ?? 'guest');
           try {
             window.location.href = '/';
-          } catch {}
+          } catch { /* redirect may throw */ }
         }, 1000);
       }
 
@@ -60,25 +78,20 @@ export async function getAPI(): Promise<AxiosInstance> {
   return apiInstance;
 }
 
+/** Performs an API request and returns the response data. */
 export async function apiRequest<T>(
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   endpoint: string,
-  data?: any,
-  params?: any
+  data?: Record<string, unknown>,
+  params?: Record<string, unknown>
 ): Promise<T> {
   const API = await getAPI();
 
-  const config = {
+  const response = await API.request<T>({
     method,
     url: endpoint,
-    data: data,
-    params: params
-  };
-
-  try {
-    const response = await API.request<T>(config);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    data,
+    params
+  });
+  return response.data;
 }

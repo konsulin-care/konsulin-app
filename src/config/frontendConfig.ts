@@ -30,6 +30,7 @@ export function setRouter(
   routerInfo.pathName = pathName;
 }
 
+/** Fetches a CSRF token from the server for use in POST /auth/cookie requests. */
 async function fetchCSRFToken(): Promise<string | null> {
   try {
     const res = await fetch('/auth/cookie/csrf-token');
@@ -41,11 +42,72 @@ async function fetchCSRFToken(): Promise<string | null> {
   }
 }
 
+/** Posts auth cookie data to the server. */
 async function postAuthCookie(body: Record<string, unknown>): Promise<Response> {
   const token = await fetchCSRFToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['X-CSRF-Token'] = token;
   return fetch('/auth/cookie', { method: 'POST', headers, body: JSON.stringify(body) });
+}
+
+async function handleNewUserLogin(
+  roles: string[] | undefined,
+  userId: string,
+  emails: string[],
+  phoneNumbers: string[]
+): Promise<void> {
+  const role = Array.isArray(roles) && roles.includes(Roles.Practitioner) ? Roles.Practitioner : Roles.Patient;
+  let profileData = (await getProfileByIdentifier({ userId, type: role })) as Patient | Practitioner | null;
+
+  if (!profileData) {
+    await createProfile({ userId, email: emails[0] || '', phoneNumber: phoneNumbers[0] || '', type: role });
+    profileData = (await getProfileByIdentifier({ userId, type: role })) as Patient | Practitioner | null;
+    if (!profileData) throw new Error('Failed to create profile');
+  }
+
+  const cookieData = {
+    userId, roles, role_name: role,
+    email: emails[0] || '', phoneNumber: phoneNumbers[0] || '',
+    profile_picture: profileData?.photo?.[0]?.url ?? '',
+    fullname: mergeNames(profileData?.name), fhirId: profileData?.id ?? ''
+  };
+
+  const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
+  if (!cookieRes.ok) console.error('[auth:cookie] server returned', cookieRes.status);
+}
+
+async function handleReturningUserLogin(
+  roles: string[] | undefined,
+  userId: string,
+  emails: string[],
+  phoneNumbers: string[]
+): Promise<void> {
+  const role = Array.isArray(roles) && roles.includes(Roles.Practitioner) ? Roles.Practitioner : Roles.Patient;
+  const profile = (await getProfileByIdentifier({ userId, type: role })) as Patient | Practitioner | null;
+
+  const cookieData = {
+    userId, roles, role_name: role,
+    email: emails[0] || '', phoneNumber: phoneNumbers[0] || '',
+    profile_picture: profile?.photo?.[0]?.url ?? '',
+    fullname: mergeNames(profile?.name), fhirId: profile?.id ?? ''
+  };
+
+  const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
+  if (!cookieRes.ok) console.error('[auth:cookie] server returned', cookieRes.status);
+}
+
+function resolvePostLoginRedirect(): string | null {
+  const redirectUrl = getRedirectIntent();
+  if (redirectUrl) {
+    clearRedirectIntent();
+    return extractSafeRedirectPath(`?redirectToPath=${encodeURIComponent(redirectUrl)}`);
+  }
+  const intent = getIntent();
+  if (intent) {
+    clearRedirectIntent();
+    return intent.payload?.path as string ?? '/';
+  }
+  return extractSafeRedirectPath(globalThis.location.search);
 }
 
 export const frontendConfig = (): SuperTokensConfig => {
@@ -165,140 +227,32 @@ export const frontendConfig = (): SuperTokensConfig => {
       Passwordless.init({
         contactMethod: 'EMAIL_OR_PHONE',
         onHandleEvent: async context => {
-          if (context.action === 'SUCCESS') {
-            const { id: userId, emails, phoneNumbers } = context.user;
-            const roles = await getClaimValue({ claim: UserRoleClaim });
-            await dbSet(STORES.uiPreferences, {
-              ownerId: userId ?? '',
-              prefKey: 'skip-response-cleanup',
-              value: 'true'
-            });
+          if (context.action !== 'SUCCESS') return;
 
-            if (
-              context.isNewRecipeUser &&
-              context.user.loginMethods.length == 1
-            ) {
-              // depend on getProfileByIdentifier to fill
-              // the profile data instead of response from
-              // creating profile
-              let profileData = (await getProfileByIdentifier({
-                userId,
-                type: Array.isArray(roles) && roles.includes(Roles.Practitioner)
-                  ? Roles.Practitioner
-                  : Roles.Patient
-              })) as Patient | Practitioner;
+          const { id: userId, emails, phoneNumbers } = context.user;
+          const roles = await getClaimValue({ claim: UserRoleClaim });
 
-              if (!profileData) {
-                try {
-                  // Create FHIR Profile for new user
-                  await createProfile({
-                    userId,
-                    email: emails[0] || '',
-                    phoneNumber: phoneNumbers[0] || '',
-                    type: Array.isArray(roles) && roles.includes(Roles.Practitioner)
-                      ? Roles.Practitioner
-                      : Roles.Patient
-                  });
+          await dbSet(STORES.uiPreferences, {
+            ownerId: userId ?? '',
+            prefKey: 'skip-response-cleanup',
+            value: 'true'
+          });
 
-                  // re-fetch the profile data
-                  profileData = (await getProfileByIdentifier({
-                    userId,
-                    type: Array.isArray(roles) && roles.includes(Roles.Practitioner)
-                      ? Roles.Practitioner
-                      : Roles.Patient
-                  })) as Patient | Practitioner;
-
-                  if (!profileData) throw new Error('Failed to create profile');
-                } catch (error) {
-                  throw error;
-                }
-              }
-
-              const cookieData = {
-                userId,
-                roles,
-                role_name: Array.isArray(roles) && roles.includes(Roles.Practitioner)
-                  ? Roles.Practitioner
-                  : Roles.Patient,
-                email: emails[0] || '',
-                phoneNumber: phoneNumbers[0] || '',
-                profile_picture: profileData?.photo
-                  ? profileData?.photo[0]?.url
-                  : '',
-                fullname: mergeNames(profileData?.name),
-                fhirId: profileData?.id ?? ''
-              };
-
-              const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
-              if (!cookieRes.ok) {
-                console.error('[auth:cookie] server returned', cookieRes.status);
-                return;
-              }
-            } else {
-              const type = Array.isArray(roles) && roles.includes(Roles.Practitioner)
-                ? Roles.Practitioner
-                : Roles.Patient;
-              let profile = (await getProfileByIdentifier({
-                userId,
-                type
-              })) as Patient | Practitioner;
-
-              // Do not auto-create profile on lookup miss; leave fhirId empty
-
-              const cookieData = {
-                userId,
-                roles,
-                role_name: Array.isArray(roles) && roles.includes(Roles.Practitioner)
-                  ? Roles.Practitioner
-                  : Roles.Patient,
-                email: emails[0] || '',
-                phoneNumber: phoneNumbers[0] || '',
-                profile_picture: profile?.photo ? profile?.photo[0]?.url : '',
-                fullname: mergeNames(profile?.name),
-                fhirId: profile?.id ?? ''
-              };
-
-              const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
-              if (!cookieRes.ok) {
-                console.error('[auth:cookie] server returned', cookieRes.status);
-                return;
-              }
-            }
-
-            const isAuthRoute = (routerInfo.pathName || '').startsWith('/auth');
-            const redirectUrl = getRedirectIntent();
-            let redirectToPath: string | null = null;
-
-            if (redirectUrl) {
-              // Plain URL path in cookie — consume it
-              clearRedirectIntent();
-              redirectToPath = extractSafeRedirectPath(`?redirectToPath=${encodeURIComponent(redirectUrl)}`);
-            } else {
-              // Check for structured intent (appointment, assessmentResult, journal)
-              const intent = getIntent();
-              if (intent) {
-                clearRedirectIntent();
-                redirectToPath = intent.payload?.path ?? '/';
-              } else {
-                redirectToPath = extractSafeRedirectPath(globalThis.location.search);
-              }
-            }
-            if (!isAuthRoute) {
-              routerInfo.router.push('/auth');
-              await new Promise(resolve => setTimeout(resolve, 100));
-            }
-            if (redirectToPath) {
-              console.log(
-                '[auth:redirect] redirecting to:',
-                redirectToPath
-              );
-            } else {
-              console.log(
-                '[auth:redirect] no redirect target, defaulting to /'
-              );
-            }
-            globalThis.location.href = redirectToPath ?? '/';
+          if (context.isNewRecipeUser && context.user.loginMethods.length === 1) {
+            await handleNewUserLogin(roles, userId, emails, phoneNumbers);
+          } else {
+            await handleReturningUserLogin(roles, userId, emails, phoneNumbers);
           }
+
+          const isAuthRoute = (routerInfo.pathName || '').startsWith('/auth');
+          if (!isAuthRoute) {
+            routerInfo.router.push('/auth');
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+
+          const redirectToPath = resolvePostLoginRedirect();
+          console.log('[auth:redirect] redirecting to:', redirectToPath ?? '/');
+          globalThis.location.href = redirectToPath ?? '/';
         }
       })
     ],

@@ -15,6 +15,7 @@ declare global {
   }
 }
 
+/** Returns the app info from runtime config or defaults. */
 export function getAppInfo(): AppInfo {
   if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__?.appInfo) {
     return window.__RUNTIME_CONFIG__.appInfo;

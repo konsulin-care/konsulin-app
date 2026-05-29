@@ -116,7 +116,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const getInitialPhoneBasedUser = () => {
     const email = authState.userInfo?.email || '';
     const phoneNumber = authState.userInfo?.phoneNumber || '';
-    return !!phoneNumber && !email;
+    return Boolean(phoneNumber) && !email;
   };
   const [isPhoneBasedUser] = useState<boolean>(getInitialPhoneBasedUser);
 
@@ -341,137 +341,127 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     handleChangeInput('phone', cleaned);
   };
 
-  const handleEditSave = async () => {
-    let latestProfile: Patient | Practitioner | null = null;
-    let existingPhotoUrl = '';
-
-    try {
-      latestProfile = await getProfileById(fhirId, fhirRole);
-      existingPhotoUrl = latestProfile?.photo?.[0]?.url ?? '';
-    } catch (error) {
-      console.error('Error when refetching user profile: ', error);
-      toast.error('Failed to fetch the latest profile');
-
-      return;
+  const buildTelecom = () => {
+    const telecomArray: { system: 'phone' | 'email'; use: 'mobile' | 'home'; value: string }[] = [];
+    if (updateUser.phone?.trim()) {
+      telecomArray.push({ system: 'phone', use: 'mobile', value: updateUser.phone.trim() });
     }
+    if (updateUser.email?.trim() && validateEmail(updateUser.email)) {
+      telecomArray.push({ system: 'email', use: 'home', value: updateUser.email.trim() });
+    }
+    return telecomArray;
+  };
 
-    // only send a real URL; never send data URLs to FHIR
-    let photoUrlForPayload = existingPhotoUrl || '';
-
-    const existingChatwootId = latestProfile
-      ? findIdentifierValue(
-          latestProfile,
-          'https://login.konsulin.care/chatwoot-id'
-        )
-      : '';
-
-    let finalChatwootId = existingChatwootId;
-
-    const telecom = (() => {
-      const telecomArray = [];
-
-      if (updateUser.phone && updateUser.phone.trim() !== '') {
-        telecomArray.push({
-          system: 'phone',
-          use: 'mobile',
-          value: updateUser.phone.trim()
-        });
-      }
-
-      if (updateUser.email && updateUser.email.trim() !== '') {
-        if (validateEmail(updateUser.email)) {
-          telecomArray.push({
-            system: 'email',
-            use: 'home',
-            value: updateUser.email.trim()
-          });
-        }
-      }
-
-      return telecomArray;
-    })();
-
-    const trimmedName = [updateUser.firstName, updateUser.lastName?.trim()]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-
+  const syncChatwootIdentifier = async (
+    latestProfile: Patient | Practitioner | null,
+    existingChatwootId: string
+  ) => {
+    const trimmedName = [updateUser.firstName, updateUser.lastName?.trim()].filter(Boolean).join(' ').trim();
     const authEmail = authState.userInfo?.email || '';
     const authPhone = authState.userInfo?.phoneNumber || '';
-    const isEmailBased = !!authEmail.trim();
-    const isPhoneBased = !!authPhone.trim();
-    const emailForModifyProfile = (
-      updateUser.email ||
-      authEmail
-    ).trim();
-    const phoneForModifyProfile = (
-      updateUser.phone ||
-      authPhone
-    ).trim();
+    const isEmailBased = Boolean(authEmail.trim());
+    const isPhoneBased = Boolean(authPhone.trim());
+    const emailForModifyProfile = (updateUser.email || authEmail).trim();
+    const phoneForModifyProfile = (updateUser.phone || authPhone).trim();
+    const shouldCall = trimmedName && (isEmailBased
+      ? emailForModifyProfile && validateEmail(emailForModifyProfile)
+      : isPhoneBased && !!phoneForModifyProfile);
 
-    const shouldCallModifyProfile =
-      trimmedName &&
-      (isEmailBased
-        ? emailForModifyProfile && validateEmail(emailForModifyProfile)
-        : isPhoneBased && !!phoneForModifyProfile);
-
-    if (shouldCallModifyProfile) {
+    let finalChatwootId = existingChatwootId;
+    if (shouldCall) {
       try {
-        const { chatwootId: latestChatwootId } = await modifyProfile({
+        const { chatwootId } = await modifyProfile({
           name: trimmedName,
-          ...(isEmailBased
-            ? { email: emailForModifyProfile }
-            : { phoneNumber: phoneForModifyProfile })
+          ...(isEmailBased ? { email: emailForModifyProfile } : { phoneNumber: phoneForModifyProfile })
         });
-
-        if (latestChatwootId && latestChatwootId !== existingChatwootId) {
-          finalChatwootId = latestChatwootId;
-        }
+        if (chatwootId && chatwootId !== existingChatwootId) finalChatwootId = chatwootId;
       } catch (error) {
-        console.error(
-          '[update-chatwoot-id] failed to ensure chatwoot_id exists and up to date',
-          error
-        );
+        console.error('[update-chatwoot-id] failed to ensure chatwoot_id exists', error);
       }
     }
 
-    let identifiers = Array.isArray(latestProfile?.identifier)
-      ? [...latestProfile.identifier]
-      : [];
-
+    const identifiers = Array.isArray(latestProfile?.identifier) ? [...latestProfile!.identifier] : [];
     const ensureIdentifier = (system: string, value: string) => {
       if (!system || !value) return;
       const exists = identifiers.find(id => id.system === system);
-      if (exists) {
-        exists.value = value;
-      } else {
-        identifiers.push({ system, value });
-      }
+      if (exists) exists.value = value;
+      else identifiers.push({ system, value });
     };
-
     ensureIdentifier('https://login.konsulin.care/userid', updateUser.userId);
-    ensureIdentifier(
-      'https://login.konsulin.care/chatwoot-id',
-      finalChatwootId
-    );
+    ensureIdentifier('https://login.konsulin.care/chatwoot-id', finalChatwootId);
 
-    const needsIdentifierSync =
-      !existingChatwootId || existingChatwootId !== finalChatwootId;
+    return { finalChatwootId, identifiers };
+  };
 
-    // If chatwoot_id is missing or changed, sync identifiers first so avatar upload is accepted
+  const resolvePhotoUrl = async (
+    existingPhotoUrl: string,
+    finalChatwootId: string,
+    latestProfile: Patient | Practitioner | null
+  ): Promise<string> => {
+    if (isDataUrl(updateUser.photo)) {
+      if (!finalChatwootId) {
+        console.error('[avatar] missing chatwoot_id, aborting upload', { fhirId, latestProfile });
+        toast.error('Profile does not own chatwoot_id; avatar update is cancelled');
+        return existingPhotoUrl;
+      }
+      setIsUploadingPhoto(true);
+      try {
+        const originalBlob = dataUrlToBlob(updateUser.photo);
+        const mime = originalBlob.type || 'image/png';
+        const ext = mime === 'image/jpeg' ? 'jpg' : mime.includes('/') ? mime.split('/')[1] : 'png';
+        const file = new File([originalBlob], `avatar.${ext}`, { type: mime });
+        const processed = await processImageForAvatar(file, { outputType: mime });
+        const fileForUpload = processed.blob instanceof File
+          ? processed.blob
+          : new File([processed.blob], `avatar.${ext}`, { type: processed.blob.type || mime });
+        const uploadedUrl = await uploadAvatar(finalChatwootId, fileForUpload);
+        if (!uploadedUrl) throw new Error('receive empty response from uploadAvatar');
+        return uploadedUrl !== existingPhotoUrl ? uploadedUrl : existingPhotoUrl;
+      } catch (error: any) {
+        console.error('[avatar] upload error', { message: error?.message, status: error?.response?.status, response: error?.response?.data || error });
+        toast.error('Failed updating the profile picture');
+        return existingPhotoUrl;
+      } finally {
+        setIsUploadingPhoto(false);
+      }
+    }
+
+    if (updateUser.photo && isValidUrl(updateUser.photo)) {
+      const parsed = new URL(updateUser.photo);
+      if (['http:', 'https:'].includes(parsed.protocol) && updateUser.photo !== existingPhotoUrl) {
+        return updateUser.photo;
+      }
+    }
+    return existingPhotoUrl || '';
+  };
+
+  const handleEditSave = async () => {
+    let latestProfile: Patient | Practitioner | null = null;
+    try {
+      latestProfile = await getProfileById(fhirId, fhirRole);
+    } catch (error) {
+      console.error('Error when refetching user profile: ', error);
+      toast.error('Failed to fetch the latest profile');
+      return;
+    }
+
+    const existingPhotoUrl = latestProfile?.photo?.[0]?.url ?? '';
+    const existingChatwootId = latestProfile
+      ? findIdentifierValue(latestProfile, 'https://login.konsulin.care/chatwoot-id')
+      : '';
+
+    const { finalChatwootId, identifiers } = await syncChatwootIdentifier(latestProfile, existingChatwootId);
+    const telecom = buildTelecom();
+    const needsIdentifierSync = !existingChatwootId || existingChatwootId !== finalChatwootId;
+
     if (needsIdentifierSync) {
       if (!latestProfile) {
         toast.error('Failed updating profile');
         return;
       }
-
       try {
         await updateProfile({
-          payload: {
-            ...(latestProfile as Patient | Practitioner),
-            identifier: identifiers,
-            telecom: telecom
-          }
+          payload: { ...(latestProfile as Patient | Practitioner), identifier: identifiers, telecom }
         });
       } catch (error) {
         console.error('Error when syncing chatwoot identifier: ', error);
@@ -480,75 +470,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       }
     }
 
-    if (isDataUrl(updateUser.photo)) {
-      if (!finalChatwootId) {
-        console.error('[avatar] missing chatwoot_id, aborting upload', {
-          fhirId,
-          latestProfile
-        });
-        toast.error(
-          'Profile does not own chatwoot_id; avatar update is cancelled'
-        );
-        setIsUploadingPhoto(false);
-        return;
-      }
-
-      try {
-        setIsUploadingPhoto(true);
-        const originalBlob = dataUrlToBlob(updateUser.photo);
-
-        const mime = originalBlob.type || 'image/png';
-        const ext =
-          mime === 'image/jpeg'
-            ? 'jpg'
-            : mime?.includes('/')
-              ? mime.split('/')[1]
-              : 'png';
-
-        const file = new File([originalBlob], `avatar.${ext}`, {
-          type: mime
-        });
-
-        const processed = await processImageForAvatar(file, {
-          outputType: mime
-        });
-
-        const fileForUpload =
-          processed.blob instanceof File
-            ? processed.blob
-            : new File([processed.blob], `avatar.${ext}`, {
-                type: processed.blob.type || mime
-              });
-
-        const uploadedUrl = await uploadAvatar(finalChatwootId, fileForUpload);
-        if (!uploadedUrl) {
-          throw new Error('receive empty response from uploadAvatar');
-        }
-
-        if (uploadedUrl && uploadedUrl !== existingPhotoUrl) {
-          photoUrlForPayload = uploadedUrl;
-        }
-      } catch (error: any) {
-        console.error('[avatar] upload error', {
-          message: error?.message,
-          status: (error as any)?.response?.status,
-          response: (error as any)?.response?.data || error
-        });
-        toast.error('Failed updating the profile picture');
-
-        return;
-      } finally {
-        setIsUploadingPhoto(false);
-      }
-    } else if (updateUser.photo && isValidUrl(updateUser.photo)) {
-      // keep only http/https (avoid data URLs slipping in)
-      const parsed = new URL(updateUser.photo);
-      if (['http:', 'https:'].includes(parsed.protocol)) {
-        if (updateUser.photo !== existingPhotoUrl) {
-          photoUrlForPayload = updateUser.photo;
-        }
-      }
-    }
+    const photoUrlForPayload = await resolvePhotoUrl(existingPhotoUrl, finalChatwootId, latestProfile);
+    if (isDataUrl(updateUser.photo) && !photoUrlForPayload) return;
 
     const splitName = (updateUser.firstName || '').split(' ').filter(Boolean);
     const familyName = updateUser.lastName?.trim() || undefined;
@@ -559,69 +482,44 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       active: updateUser.active,
       birthDate: updateUser.birthDate,
       gender: updateUser.gender,
-      photo: photoUrlForPayload
-        ? [
-            {
-              url: photoUrlForPayload
-            }
-          ]
-        : [],
+      photo: photoUrlForPayload ? [{ url: photoUrlForPayload }] : [],
       identifier: identifiers,
-      name: [
-        {
-          use: 'official',
-          given: splitName,
-          ...(familyName ? { family: familyName } : {})
-        }
-      ],
-      address: [
-        {
-          use: 'home',
-          type: 'physical',
-          line: updateUser.addresses,
-          district: updateUser.district,
-          city: updateUser.city,
-          postalCode: updateUser.postalCode,
-          country: 'ID'
-        }
-      ],
+      name: [{ use: 'official', given: splitName, ...(familyName ? { family: familyName } : {}) }],
+      address: [{
+        use: 'home', type: 'physical', line: updateUser.addresses,
+        district: updateUser.district, city: updateUser.city,
+        postalCode: updateUser.postalCode, country: 'ID'
+      }],
       telecom
     };
 
     try {
       const result = await updateProfile({ payload });
-      if (result) {
-        const existing = authState.userInfo || {};
-        const updatedPhotoUrl =
-          result?.photo?.[0]?.url || photoUrlForPayload || existing.profile_picture;
-        const updatedFullname =
-          result.resourceType === 'Practitioner'
-            ? mergeNames(result.name, result?.qualification)
-            : mergeNames(result.name);
+      if (!result) return;
 
-        const authPayload = {
-          userId: existing.userId,
-          roles: existing.roles || [existing.role_name || 'Patient'],
-          role_name: existing.role_name,
-          email: existing.email,
-          phoneNumber: existing.phoneNumber,
-          fhirId: result.id || existing.fhirId,
-          fullname: updatedFullname,
-          profile_picture: updatedPhotoUrl,
-          profile_complete: isProfileCompleteFromFHIR(result)
-        };
+      const existing = authState.userInfo || {};
+      const updatedPhotoUrl = result?.photo?.[0]?.url || photoUrlForPayload || existing.profile_picture;
+      const updatedFullname = result.resourceType === 'Practitioner'
+        ? mergeNames(result.name, result?.qualification)
+        : mergeNames(result.name);
 
-        await fetch('/auth/cookie', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(authPayload)
-        }).catch(err =>
-          console.error('[auth:cookie] failed to set auth cookie', err)
-        );
-        dispatchAuth({ type: 'auth-check', payload: authPayload });
+      const authPayload = {
+        userId: existing.userId,
+        roles: existing.roles || [existing.role_name || 'Patient'],
+        role_name: existing.role_name, email: existing.email,
+        phoneNumber: existing.phoneNumber,
+        fhirId: result.id || existing.fhirId,
+        fullname: updatedFullname,
+        profile_picture: updatedPhotoUrl,
+        profile_complete: isProfileCompleteFromFHIR(result)
+      };
 
-        setDrawerState(DRAWER_STATE.SUCCESS);
-      }
+      await fetch('/auth/cookie', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(authPayload)
+      }).catch(err => console.error('[auth:cookie] failed to set auth cookie', err));
+      dispatchAuth({ type: 'auth-check', payload: authPayload });
+      setDrawerState(DRAWER_STATE.SUCCESS);
     } catch (error) {
       console.error('Error when updating profile: ', error);
       toast.error('Failed updating the profile');

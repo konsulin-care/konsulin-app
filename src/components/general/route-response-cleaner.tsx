@@ -26,7 +26,7 @@ export default function RouteResponseCleaner() {
 
       cursorDeleteAll(
         STORES.assessmentDrafts,
-        (value: any, key: IDBValidKey) => {
+        (value: unknown, key: IDBValidKey) => {
           const questionnaireId =
             Array.isArray(key) ? key[1] : '';
           const segments = pathname.split('/');

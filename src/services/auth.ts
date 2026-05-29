@@ -22,6 +22,7 @@ export async function fetchCSRFToken(): Promise<string | null> {
   }
 }
 
+/** Posts auth cookie data to the server. */
 async function postAuthCookie(body: Record<string, unknown>): Promise<Response> {
   const token = await fetchCSRFToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };

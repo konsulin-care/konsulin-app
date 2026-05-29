@@ -2,7 +2,7 @@ export type IntentKind = 'journal' | 'appointment' | 'assessmentResult';
 
 export interface Intent {
   kind: IntentKind;
-  payload: any;
+  payload: Record<string, unknown>;
   createdAt: number;
 }
 
@@ -11,6 +11,7 @@ const REDIRECT_INTENT_COOKIE = 'redirect_intent';
 // RequireRole middleware MaxAge=300 (5 min).
 const TTL_MS = 5 * 60 * 1000;
 
+/** Reads the redirect intent cookie value. */
 function readCookie(): string | null {
   const match = document.cookie.match(
     new RegExp(`(?:^|;\\s*)${REDIRECT_INTENT_COOKIE}=([^;]*)`)
@@ -23,21 +24,25 @@ function readCookie(): string | null {
   }
 }
 
+/** Returns a plain URL redirect intent if one exists. */
 export function getRedirectIntent(): string | null {
   const raw = readCookie();
   if (!raw || raw.startsWith('{')) return null;
   return raw;
 }
 
+/** Clears the redirect intent cookie. */
 export function clearRedirectIntent(): void {
   document.cookie = `${REDIRECT_INTENT_COOKIE}=; Path=/; Max-Age=0`;
 }
 
-export function saveIntent(kind: IntentKind, payload: any): void {
+/** Saves a redirect intent to a cookie for post-auth navigation. */
+export function saveIntent(kind: IntentKind, payload: Record<string, unknown>): void {
   const intent: Intent = { kind, payload, createdAt: Date.now() };
   document.cookie = `${REDIRECT_INTENT_COOKIE}=${encodeURIComponent(JSON.stringify(intent))}; Path=/; Max-Age=${TTL_MS / 1000}; SameSite=Lax`;
 }
 
+/** Returns a structured redirect intent if one exists and is not expired. */
 export function getIntent(): Intent | null {
   const raw = readCookie();
   if (!raw || !raw.startsWith('{')) return null;

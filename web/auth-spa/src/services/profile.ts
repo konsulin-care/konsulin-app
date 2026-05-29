@@ -2,6 +2,7 @@ import type { Bundle, Patient, Practitioner } from 'fhir/r4';
 
 const API_BASE = '/proxy';
 
+/** Generic API request helper for the auth SPA. */
 async function apiRequest<T>(
   method: string,
   path: string,
@@ -18,7 +19,8 @@ async function apiRequest<T>(
   return res.json();
 }
 
-export async function createProfile({
+/** Creates a FHIR profile (Patient or Practitioner) for a new user. */
+export function createProfile({
   userId,
   email,
   phoneNumber,
@@ -43,6 +45,7 @@ export async function createProfile({
   return apiRequest<Patient | Practitioner>('POST', `/fhir/${type}`, payload);
 }
 
+/** Fetches a FHIR profile by SuperTokens userId identifier. */
 export async function getProfileByIdentifier({
   userId,
   type,

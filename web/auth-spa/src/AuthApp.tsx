@@ -50,13 +50,14 @@ const orDividerAndWhatsAppFooter = (
   </>
 );
 
-const passwordlessOverrides: Record<string, any> = {
-  PasswordlessEmailForm_Override: (props: any) => {
+const passwordlessOverrides: Record<string, (props: any) => ReactElement> = {
+  PasswordlessEmailForm_Override: (props) => {
     const { DefaultComponent, ...rest } = props;
     return <DefaultComponent {...rest} footer={orDividerAndWhatsAppFooter} />;
   },
 };
 
+/** Main authentication application component. */
 export default function AuthApp() {
   const [uiComponent, setUiComponent] = useState<ReactElement | null>(null);
   const searchParams = new URLSearchParams(window.location.search);

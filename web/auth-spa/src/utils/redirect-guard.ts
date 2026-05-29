@@ -1,5 +1,6 @@
 const REDIRECT_PATH_MAX_LENGTH = 256;
 
+/** Safely extracts and validates a redirect path from search params. */
 export function extractSafeRedirectPath(search: string): string | null {
   const params = new URLSearchParams(search);
   const raw = params.get('redirectToPath');

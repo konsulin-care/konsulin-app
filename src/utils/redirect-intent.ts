@@ -2,7 +2,7 @@ export type IntentKind = 'journal' | 'appointment' | 'assessmentResult';
 
 export interface Intent {
   kind: IntentKind;
-  payload: any;
+  payload: Record<string, unknown>;
   createdAt: number;
 }
 
@@ -11,6 +11,7 @@ const REDIRECT_INTENT_COOKIE = 'redirect_intent';
 // RequireRole middleware MaxAge=300 (5 min).
 const TTL_MS = 5 * 60 * 1000;
 
+/** Reads the redirect intent cookie value. */
 function readCookie(): string | null {
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(
@@ -24,11 +25,13 @@ function readCookie(): string | null {
   }
 }
 
+/** Writes a value to the redirect intent cookie with a max age. */
 function writeCookie(value: string, maxAge: number): void {
   if (typeof document === 'undefined') return;
   document.cookie = `${REDIRECT_INTENT_COOKIE}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
 }
 
+/** Returns a plain URL redirect intent if one exists. */
 export function getRedirectIntent(): string | null {
   const raw = readCookie();
   if (!raw) return null;
@@ -37,16 +40,19 @@ export function getRedirectIntent(): string | null {
   return null;
 }
 
+/** Clears the redirect intent cookie. */
 export function clearRedirectIntent(): void {
   if (typeof document === 'undefined') return;
   document.cookie = `${REDIRECT_INTENT_COOKIE}=; Path=/; Max-Age=0`;
 }
 
-export function saveIntent(kind: IntentKind, payload: any): void {
+/** Saves a redirect intent to a cookie for post-auth navigation. */
+export function saveIntent(kind: IntentKind, payload: Record<string, unknown>): void {
   const intent: Intent = { kind, payload, createdAt: Date.now() };
   writeCookie(JSON.stringify(intent), TTL_MS / 1000);
 }
 
+/** Returns a structured redirect intent if one exists and is not expired. */
 export function getIntent(): Intent | null {
   const raw = readCookie();
   if (!raw) return null;
@@ -65,6 +71,7 @@ export function getIntent(): Intent | null {
   }
 }
 
+/** Alias for clearRedirectIntent. */
 export function clearIntent(): void {
   clearRedirectIntent();
 }
