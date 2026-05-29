@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gorilla/securecookie"
 )
@@ -27,13 +28,15 @@ type Session struct {
 	Email                  string `json:"email"`
 	PhoneNumber            string `json:"phoneNumber"`
 	ProfilePicture         string `json:"profile_picture"`
+	Exp                    int64  `json:"exp"`
 	GuestID                string `json:"-"`
 	Token                  string `json:"-"` // guest JWT, never serialized to cookie
 }
 
 var (
-	sc     *securecookie.SecureCookie
-	scOnce sync.Once
+	sc           *securecookie.SecureCookie
+	scOnce       sync.Once
+	AllowUnsigned bool
 )
 
 // deriveKeys derives 32-byte hash and block keys from a single secret using SHA-256.
@@ -94,24 +97,17 @@ func ExtractFromRequest(r *http.Request, cookieName, secret string) (*Session, e
 	if err != nil {
 		decoded = c.Value
 	}
-	var s Session
-	// Tier 1: Try securecookie decode (new format).
-	if sc != nil {
-		if err := sc.Decode(cookieName, decoded, &s); err == nil && s.UserID != "" {
-			return &s, nil
-		}
+	// Tier 1: securecookie — fast path.
+	if s, ok := decodeSecureCookie(cookieName, decoded); ok {
+		return s, nil
 	}
-	// Tier 2: Fall back to old HMAC-signed format (~2h TTL backward compat).
-	plain, ok := verifySignedValue(decoded, secret)
-	if ok {
-		if err := json.Unmarshal([]byte(plain), &s); err != nil {
-			return nil, fmt.Errorf("parse session cookie: %w", err)
-		}
-	} else {
-		// Tier 3: Unsigned raw JSON format (current).
-		if err := json.Unmarshal([]byte(decoded), &s); err != nil {
-			return nil, errors.New("session cookie: invalid format")
-		}
+	// Tiers 2–3: HMAC or unsigned fallback.
+	s, err := decodeFallback(decoded, secret)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkExpiry(s); err != nil {
+		return nil, err
 	}
 	if s.UserID == "" {
 		return nil, errors.New("session cookie missing userId")
@@ -119,7 +115,48 @@ func ExtractFromRequest(r *http.Request, cookieName, secret string) (*Session, e
 	if s.Role == "" {
 		s.Role = "Guest"
 	}
-	return &s, nil
+	return s, nil
+}
+
+func decodeSecureCookie(cookieName, decoded string) (*Session, bool) {
+	if sc == nil {
+		return nil, false
+	}
+	var s Session
+	if err := sc.Decode(cookieName, decoded, &s); err != nil || s.UserID == "" {
+		return nil, false
+	}
+	if err := checkExpiry(&s); err != nil {
+		return nil, false
+	}
+	return &s, true
+}
+
+func decodeFallback(decoded, secret string) (*Session, error) {
+	var s Session
+	plain, ok := verifySignedValue(decoded, secret)
+	if ok {
+		if err := json.Unmarshal([]byte(plain), &s); err != nil {
+			return nil, fmt.Errorf("parse session cookie: %w", err)
+		}
+		return &s, nil
+	}
+	if AllowUnsigned {
+		if err := json.Unmarshal([]byte(decoded), &s); err != nil {
+			return nil, errors.New("session cookie: invalid format")
+		}
+		return &s, nil
+	}
+	return nil, errors.New("session cookie: unsigned format rejected")
+}
+
+// checkExpiry returns an error if the session has an Exp field set and it is in the past.
+// Sessions without Exp (zero value) are treated as valid (backward-compatible).
+func checkExpiry(s *Session) error {
+	if s.Exp > 0 && time.Now().Unix() > s.Exp {
+		return errors.New("session expired")
+	}
+	return nil
 }
 
 // signValue returns base64url(value) + "." + base64url(hmac-sha256(base64url(value), secret)).

@@ -29,8 +29,11 @@ type Config struct {
 	GuestSessionCookieName    string `json:"guest_session_cookie_name"`
 	RedirectIntentCookieName  string `json:"redirect_intent_cookie_name"`
 
-	NextjsURL    string `json:"nextjs_url"`
-	CookieSecure bool   `json:"cookie_secure"`
+	NextjsURL                 string `json:"nextjs_url"`
+	CookieSecure              bool   `json:"cookie_secure"`
+	AllowInsecureBackendLogout bool  `json:"allow_insecure_backend_logout"`
+	AllowUnsignedCookies       bool  `json:"allow_unsigned_cookies"`
+	CSRFAuthKey                string `json:"csrf_auth_key"`
 }
 
 func (c *Config) AuthFullPath() string {
@@ -101,8 +104,11 @@ func Load() (*Config, error) {
 		GuestSessionCookieName:   env("GUEST_SESSION_COOKIE_NAME", "guest_session"),
 		RedirectIntentCookieName: env("REDIRECT_INTENT_COOKIE_NAME", "redirect_intent"),
 
-		NextjsURL:    env("NEXTJS_URL", "http://localhost:8080"),
-		CookieSecure: strings.HasPrefix(appURL, "https://"),
+		NextjsURL:                 env("NEXTJS_URL", "http://localhost:8080"),
+		CookieSecure:              strings.HasPrefix(appURL, "https://"),
+		AllowInsecureBackendLogout: env("ALLOW_INSECURE_BACKEND_LOGOUT", "") != "",
+		AllowUnsignedCookies:       env("ALLOW_UNSIGNED_COOKIES", "") != "",
+		CSRFAuthKey:                env("CSRF_AUTH_KEY", ""),
 	}
 	slog.Info("config loaded",
 		"port", cfg.Port,

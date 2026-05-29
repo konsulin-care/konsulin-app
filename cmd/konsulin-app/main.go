@@ -46,6 +46,22 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	r.Use(appmw.NewLogger(slog.Default()))
 	r.Use(chimw.Recoverer)
 
+	// CSRF protection — applies to all state-changing Go SSR routes.
+	// Exempt proxy, auth cookie API, health, and static routes.
+	if cfg.CSRFAuthKey != "" {
+		csrfMw := appmw.NewCSRFProtection(appmw.CSRFConfig{
+			AuthKey: []byte(cfg.CSRFAuthKey),
+			Secure:  cfg.CookieSecure,
+			ExemptPrefixes: []string{
+				"/auth/cookie",
+				"/proxy/",
+				"/health",
+				"/static/",
+			},
+		})
+		r.Use(csrfMw)
+	}
+
 	// Global soft auth — injects a session (real, guest, or new guest) for
 	// every request without ever redirecting.  The guest_session cookie is set
 	// once per guest and cached for subsequent requests.
@@ -82,13 +98,14 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 
 	r.Post("/auth/logout", handler.NewLogoutHandler(handler.LogoutOptions{
-		AuthPath:            cfg.AuthPath,
-		CookieName:          cfg.AuthCookieName,
-		AccessCookieName:    cfg.SessionCookieNameAccess,
-		RefreshCookieName:   cfg.SessionCookieNameRefresh,
-		IDRefreshCookieName: cfg.SessionCookieNameIDRefresh,
-		BackendBaseURL:      cfg.APIURL,
-		SecureCookie:        cfg.CookieSecure,
+		AuthPath:                  cfg.AuthPath,
+		CookieName:                cfg.AuthCookieName,
+		AccessCookieName:          cfg.SessionCookieNameAccess,
+		RefreshCookieName:         cfg.SessionCookieNameRefresh,
+		IDRefreshCookieName:       cfg.SessionCookieNameIDRefresh,
+		BackendBaseURL:            cfg.APIURL,
+		SecureCookie:              cfg.CookieSecure,
+		AllowInsecureBackendLogout: cfg.AllowInsecureBackendLogout,
 	}))
 
 	r.HandleFunc("/auth/cookie", handler.NewAuthCookieHandler(handler.AuthCookieOptions{
@@ -164,6 +181,7 @@ func main() {
 	}
 
 	session.InitSecureCookie(cfg.SessionCookieSecret)
+	session.AllowUnsigned = cfg.AllowUnsignedCookies
 
 	handler, err := routes(cfg)
 	if err != nil {

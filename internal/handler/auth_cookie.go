@@ -76,6 +76,7 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 		Email:           req.Email,
 		PhoneNumber:     req.PhoneNumber,
 		ProfilePicture:  req.ProfilePicture,
+		Exp:             time.Now().Add(2 * time.Hour).Unix(),
 	}
 
 	encoded, err := session.EncodeSession(sess, opts.CookieName)
