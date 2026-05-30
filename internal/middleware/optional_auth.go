@@ -188,6 +188,7 @@ func setGuestSessionCookie(w http.ResponseWriter, opts OptionalAuthOptions, gues
 	raw, _ := json.Marshal(data)
 	val := url.QueryEscape(string(raw))
 	//nolint:gosec // G124: HttpOnly=false required for JS to read guest_session cookie
+	// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 	http.SetCookie(w, &http.Cookie{
 		Name:     opts.GuestSessionCookieName,
 		Value:    val,

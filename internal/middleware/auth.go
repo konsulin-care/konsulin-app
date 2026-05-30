@@ -115,6 +115,7 @@ func requireRoleHandler(w http.ResponseWriter, r *http.Request, next http.Handle
 	if sess.Role == "Guest" && !containsRole(roles, "Guest") {
 		if validatedPath, valid := session.ValidateRedirectPath(r.URL.Path, opts.AppURL); valid {
 			//nolint:gosec // G124: HttpOnly=false required for JS to read redirect_intent cookie
+			// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 			http.SetCookie(w, &http.Cookie{
 				Name:     opts.RedirectIntentCookieName,
 				Value:    url.QueryEscape(validatedPath),

@@ -42,6 +42,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 		}
 
 		//nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
+		// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 		http.SetCookie(w, &http.Cookie{
 			Name:     opts.CookieName,
 			Value:    "",
@@ -53,6 +54,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 		})
 
 		//nolint:gosec // G124: same pattern, clearing access token
+		// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 		http.SetCookie(w, &http.Cookie{
 			Name:     opts.AccessCookieName,
 			Value:    "",
@@ -64,6 +66,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 		})
 
 		//nolint:gosec // G124: same pattern, clearing refresh token
+		// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 		http.SetCookie(w, &http.Cookie{
 			Name:     opts.RefreshCookieName,
 			Value:    "",
@@ -75,6 +78,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 		})
 
 		//nolint:gosec // G124: clearing id refresh token
+		// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 		http.SetCookie(w, &http.Cookie{
 			Name:     opts.IDRefreshCookieName,
 			Value:    "",
