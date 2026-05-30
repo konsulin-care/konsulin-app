@@ -17,8 +17,9 @@ declare global {
 
 /** Returns the app info from runtime config or defaults. */
 export function getAppInfo(): AppInfo {
-  if (globalThis.__RUNTIME_CONFIG__?.appInfo) {
-    return globalThis.__RUNTIME_CONFIG__.appInfo;
+  const config = (globalThis as typeof globalThis & Window).__RUNTIME_CONFIG__;
+  if (config?.appInfo) {
+    return config.appInfo;
   }
   return {
     appName: 'Konsulin',
