@@ -1,4 +1,3 @@
----
 exclude_paths:
   - "**/*_test.go"
   - "**/*.test.ts"

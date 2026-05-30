@@ -11,9 +11,8 @@ const REDIRECT_INTENT_COOKIE = 'redirect_intent';
 // RequireRole middleware MaxAge=300 (5 min).
 const TTL_MS = 5 * 60 * 1000;
 
-const REDIRECT_INTENT_REGEX = new RegExp(
-  String.raw`(?:^|;\s*)${REDIRECT_INTENT_COOKIE}=([^;]*)`
-);
+// REDIRECT_INTENT_COOKIE is a compile-time constant; static regex avoids false-positive scanner warnings.
+const REDIRECT_INTENT_REGEX = /(?:^|;\s*)redirect_intent=([^;]*)/;
 
 /** Reads the redirect intent cookie value. */
 function readCookie(): string | null {

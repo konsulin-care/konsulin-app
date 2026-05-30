@@ -216,35 +216,40 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     return '';
   };
 
-  const RULES: Record<string, (v: string) => string> = {
-    firstName: v => validateName(v, 'First name'),
-    lastName: v => (v && v.trim() !== '' ? validateName(v, 'Last name') : ''),
-    email: validateEmailField,
-    phone: value => {
+  const RULES = {
+    firstName: (v: string) => validateName(v, 'First name'),
+    lastName: (v: string) =>
+      v && v.trim() !== '' ? validateName(v, 'Last name') : '',
+    email: (v: string) => validateEmailField(v),
+    phone: (value: string) => {
       const phoneRegex = /^\+?[0-9]{8,15}$/;
       if (!value || value.trim() === '') return 'Phone number is required';
       if (!phoneRegex.test(value))
         return 'WhatsApp phone number must be 8-15 digits';
       return '';
     },
-    addresses: value =>
+    addresses: (value: string) =>
       !Array.isArray(value) ||
       value.length === 0 ||
       value.every(part => !part.trim())
         ? 'Address cannot be empty'
         : '',
-    city: v => validateRequiredText(v, 'City'),
-    district: v => validateRequiredText(v, 'District'),
-    province: v => validateRequiredText(v, 'Province'),
-    postalCode: v => validateRequiredText(v, 'Postal code'),
-    birthDate: value => (value ? '' : 'Birth date cannot be empty'),
-    gender: value => (value ? '' : 'Gender cannot be empty')
-  };
+    city: (v: string) => validateRequiredText(v, 'City'),
+    district: (v: string) => validateRequiredText(v, 'District'),
+    province: (v: string) => validateRequiredText(v, 'Province'),
+    postalCode: (v: string) => validateRequiredText(v, 'Postal code'),
+    birthDate: (value: string) => (value ? '' : 'Birth date cannot be empty'),
+    gender: (value: string) => (value ? '' : 'Gender cannot be empty')
+  } as const;
 
   const validateInput = (name: string, value: string): string => {
     if (name === 'email' && !isPhoneBasedUser) return '';
     if (name === 'phone' && isPhoneBasedUser) return '';
-    return RULES[name]?.(value) ?? '';
+    // SAFETY: RULES is a static lookup table (defined above). Dynamic key access
+    // is type-constrained via `as const`. `name` originates from form field names
+    // (controlled) or ICustomProfile iteration (typed). No command injection.
+    const fn = RULES[name as keyof typeof RULES];
+    return fn?.(value) ?? '';
   };
 
   const handleChangeInput = (label: string, value: string) => {

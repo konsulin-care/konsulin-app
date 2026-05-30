@@ -110,6 +110,7 @@ func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	//nolint:gosec // G203: response is JSON (Content-Type set), no XSS vector
 	jsonBytes, _ := json.Marshal(map[string]bool{"authenticated": authenticated})
 	_, _ = w.Write(jsonBytes)
 }

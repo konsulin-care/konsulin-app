@@ -4,6 +4,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 )
@@ -45,9 +46,16 @@ func NewBackendProxyHandler(opts BackendProxyOptions) http.HandlerFunc {
 	}
 }
 
+// buildTargetURL constructs the upstream URL from the original request.
+// path.Clean resolves ".." / "." traversal and normalises the path so it
+// stays within the configured backend base URL.
 func buildTargetURL(baseURL string, r *http.Request) string {
 	targetPath := strings.TrimPrefix(r.URL.Path, "/proxy")
-	targetURL := baseURL + targetPath
+	cleanPath := path.Clean(targetPath)
+	if cleanPath == "." || cleanPath == "" {
+		cleanPath = "/"
+	}
+	targetURL := baseURL + cleanPath
 	if r.URL.RawQuery != "" {
 		targetURL += "?" + r.URL.RawQuery
 	}
