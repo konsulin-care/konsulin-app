@@ -341,6 +341,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     handleChangeInput('phone', cleaned);
   };
 
+  /** Builds FHIR telecom array from current user phone/email. */
   const buildTelecom = () => {
     const telecomArray: { system: 'phone' | 'email'; use: 'mobile' | 'home'; value: string }[] = [];
     if (updateUser.phone?.trim()) {
@@ -352,6 +353,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     return telecomArray;
   };
 
+  /** Syncs Chatwoot contact identifier for the profile. */
   const syncChatwootIdentifier = async (
     latestProfile: Patient | Practitioner | null,
     existingChatwootId: string
@@ -365,7 +367,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     const phoneForModifyProfile = (updateUser.phone || authPhone).trim();
     const shouldCall = trimmedName && (isEmailBased
       ? emailForModifyProfile && validateEmail(emailForModifyProfile)
-      : isPhoneBased && !!phoneForModifyProfile);
+      : isPhoneBased && Boolean(phoneForModifyProfile));
 
     let finalChatwootId = existingChatwootId;
     if (shouldCall) {
@@ -380,7 +382,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       }
     }
 
-    const identifiers = Array.isArray(latestProfile?.identifier) ? [...latestProfile!.identifier] : [];
+    const identifiers = latestProfile?.identifier ? [...latestProfile.identifier] : [];
     const ensureIdentifier = (system: string, value: string) => {
       if (!system || !value) return;
       const exists = identifiers.find(id => id.system === system);
@@ -393,6 +395,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     return { finalChatwootId, identifiers };
   };
 
+  /** Resolves and uploads profile photo if needed, returns final photo URL. */
   const resolvePhotoUrl = async (
     existingPhotoUrl: string,
     finalChatwootId: string,
@@ -435,6 +438,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     return existingPhotoUrl || '';
   };
 
+  /** Handles profile save: syncs Chatwoot, uploads photo, updates FHIR profile. */
   const handleEditSave = async () => {
     let latestProfile: Patient | Practitioner | null = null;
     try {

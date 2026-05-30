@@ -6,6 +6,7 @@ import { redirectToAuth } from 'supertokens-auth-react';
 import MultiFactorAuth from 'supertokens-auth-react/recipe/multifactorauth';
 import { PasswordlessComponentsOverrideProvider } from 'supertokens-auth-react/recipe/passwordless';
 import { PasswordlessPreBuiltUI } from 'supertokens-auth-react/recipe/passwordless/prebuiltui';
+import type { ComponentOverrideMap } from 'supertokens-auth-react/lib/build/recipe/passwordless/types';
 import { ThirdPartyPreBuiltUI } from 'supertokens-auth-react/recipe/thirdparty/prebuiltui';
 import {
   AuthPage,
@@ -16,6 +17,7 @@ import {
 const WHATSAPP_LINK =
   'https://wa.me/6285163181852?text=Request%20login%2C%20authenticate%20me';
 
+// NOSONAR - deep nesting required by SuperTokens provider button spec
 const orDividerAndWhatsAppFooter = (
   <>
     <div data-supertokens='dividerWithOr'>
@@ -34,6 +36,7 @@ const orDividerAndWhatsAppFooter = (
         <div data-supertokens='providerButtonLeft'>
           <div data-supertokens='providerButtonLogo'>
             <div data-supertokens='providerButtonLogoCenter'>
+              {/* eslint-disable-next-line @next/next/no-img-element -- Vite SPA, not Next.js */}
               <img
                 src='/icons/whatsapp.png'
                 alt='whatsapp'
@@ -51,7 +54,7 @@ const orDividerAndWhatsAppFooter = (
   </>
 );
 
-const passwordlessOverrides: Record<string, (props: any) => ReactElement> = {
+const passwordlessOverrides: Partial<ComponentOverrideMap> = {
   PasswordlessEmailForm_Override: (props) => {
     const { DefaultComponent, ...rest } = props;
     return <DefaultComponent {...rest} footer={orDividerAndWhatsAppFooter} />;

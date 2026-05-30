@@ -19,6 +19,7 @@ export interface UserProfile {
 let apiInstance: AxiosInstance | null = null;
 let currentUserId: string | null = null;
 
+/** Returns the current user ID set during auth. */
 export function getCurrentUserId(): string | null {
   return currentUserId;
 }
@@ -28,8 +29,8 @@ export function setCurrentUserId(id: string | null) {
   currentUserId = id;
 }
 
-export async function getAPI(): Promise<AxiosInstance> {
-  if (apiInstance) return apiInstance;
+export function getAPI(): Promise<AxiosInstance> {
+  if (apiInstance) return Promise.resolve(apiInstance);
 
   apiInstance = axios.create({
     baseURL: '/proxy',
@@ -75,7 +76,7 @@ export async function getAPI(): Promise<AxiosInstance> {
     }
   );
 
-  return apiInstance;
+  return Promise.resolve(apiInstance);
 }
 
 /** Performs an API request and returns the response data. */

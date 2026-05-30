@@ -78,6 +78,7 @@ async function handleNewUserLogin(
   );
 }
 
+/** Handles login for returning users — fetches FHIR profile and sets auth cookie. */
 async function handleReturningUserLogin(
   roles: string[] | undefined,
   userId: string,
@@ -103,6 +104,7 @@ async function handleReturningUserLogin(
   );
 }
 
+/** Resolves post-login redirect URL from stored intent or query params. */
 function resolvePostLoginRedirect(): string | null {
   const redirectUrl = getRedirectIntent();
   if (redirectUrl) {
@@ -119,6 +121,7 @@ function resolvePostLoginRedirect(): string | null {
   return extractSafeRedirectPath(globalThis.location.search);
 }
 
+/** Posts auth cookie data to the server with CSRF protection. */
 async function postAuthCookie(
   body: Record<string, unknown>
 ): Promise<Response> {
@@ -234,6 +237,7 @@ export const frontendConfig = (): SuperTokensConfig => {
             {
               id: 'email',
               name: 'Email',
+              // eslint-disable-next-line @next/next/no-img-element -- Vite SPA, not Next.js
               logo: (
                 <img
                   src='/icons/email.svg'
@@ -246,6 +250,7 @@ export const frontendConfig = (): SuperTokensConfig => {
             {
               id: 'whatsapp',
               name: 'WhatsApp',
+              // eslint-disable-next-line @next/next/no-img-element -- Vite SPA, not Next.js
               logo: (
                 <img
                   src='/icons/whatsapp.png'

@@ -42,7 +42,7 @@ async function fetchCSRFToken(): Promise<string | null> {
   }
 }
 
-/** Posts auth cookie data to the server. */
+/** Posts auth cookie data to the server with CSRF protection. */
 async function postAuthCookie(
   body: Record<string, unknown>
 ): Promise<Response> {
@@ -81,6 +81,7 @@ async function postAuthCookieForUser(
     console.error('[auth:cookie] server returned', cookieRes.status);
 }
 
+/** Handles login for new users — creates FHIR profile if missing, sets auth cookie. */
 async function handleNewUserLogin(
   roles: string[] | undefined,
   userId: string,
@@ -120,6 +121,7 @@ async function handleNewUserLogin(
   );
 }
 
+/** Handles login for returning users — fetches FHIR profile and sets auth cookie. */
 async function handleReturningUserLogin(
   roles: string[] | undefined,
   userId: string,
@@ -145,6 +147,7 @@ async function handleReturningUserLogin(
   );
 }
 
+/** Resolves post-login redirect URL from stored intent or query params. */
 function resolvePostLoginRedirect(): string | null {
   const redirectUrl = getRedirectIntent();
   if (redirectUrl) {
