@@ -35,7 +35,6 @@ const orDividerAndWhatsAppFooter = (
         <div data-supertokens='providerButtonLeft'>
           <div data-supertokens='providerButtonLogo'>
             <div data-supertokens='providerButtonLogoCenter'>
-              {}
               <img
                 src='/icons/whatsapp.png'
                 alt='whatsapp'

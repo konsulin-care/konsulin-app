@@ -3,14 +3,14 @@
 import { Roles } from '@/constants/roles';
 import { dbGet, dbSet, migrateLocalStorage, STORES } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
-import { restoreAuthCookie } from '@/services/auth';
 import { setCurrentUserId, UserProfile } from '@/services/api';
+import { restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { Patient, Practitioner } from 'fhir/r4';
 import React, {
-  ReactNode,
   createContext,
+  ReactNode,
   useContext,
   useEffect,
   useReducer,
@@ -24,12 +24,12 @@ import {
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 import { isProfileCompleteFromFHIR } from '../../utils/profileCompleteness';
 import { initialState, reducer } from './authReducer';
-import { IStateAuth } from './authTypes';
+import { IActionAuth, IStateAuth } from './authTypes';
 
 interface ContextProps {
   isLoading: boolean;
   state: IStateAuth;
-  dispatch: React.Dispatch<any>;
+  dispatch: React.Dispatch<IActionAuth>;
 }
 
 const AuthContext = createContext<ContextProps | undefined>(undefined);
@@ -55,9 +55,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line sonarjs/cognitive-complexity
     const fetchSession = async () => {
       // One-time migration before reading IndexedDB cache
-      try { await migrateLocalStorage(); } catch { /* non-critical */ }
+      try {
+        await migrateLocalStorage();
+      } catch {
+        /* non-critical */
+      }
 
       if (!session.doesSessionExist) {
         // Reload on homepage: let the page call ensureAnonymousSession(true) once; avoid duplicate calls
@@ -85,7 +90,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Ensure auth cookie exists for Go SSR middleware (idempotent).
       try {
         await restoreAuthCookie(session);
-      } catch { /* non-critical — cookie may already exist */ }
+      } catch (err) {
+        console.error('restoreAuthCookie unexpected error:', err);
+      }
 
       try {
         const userId = session.userId;
@@ -95,10 +102,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
         setCurrentUserId(userId);
-        const roles = await getClaimValue({ claim: UserRoleClaim }) as string[] | undefined;
+        const roles = (await getClaimValue({ claim: UserRoleClaim })) as
+          | string[]
+          | undefined;
 
         // Try IndexedDB profile cache first.
-          const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
+        const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
         if (cached?.userId === userId && cached?.role_name) {
           setCurrentUserId(userId);
           dispatch({ type: 'login', payload: cached });
@@ -106,9 +115,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        const role = Array.isArray(roles) && roles.includes(Roles.Practitioner)
-          ? Roles.Practitioner
-          : Roles.Patient;
+        const role =
+          Array.isArray(roles) && roles.includes(Roles.Practitioner)
+            ? Roles.Practitioner
+            : Roles.Patient;
 
         const result = (await getProfileByIdentifier({
           userId,
@@ -125,7 +135,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             fhirId: '',
             profile_complete: false
           };
-          await dbSet(STORES.userProfile, { ...payload, roles, cachedAt: Date.now() });
+          await dbSet(STORES.userProfile, {
+            ...payload,
+            roles,
+            cachedAt: Date.now()
+          });
           dispatch({ type: 'login', payload });
           setIsLoading(false);
           return;
@@ -147,7 +161,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           profile_complete
         };
 
-        await dbSet(STORES.userProfile, { ...payload, roles, cachedAt: Date.now() });
+        await dbSet(STORES.userProfile, {
+          ...payload,
+          roles,
+          cachedAt: Date.now()
+        });
         dispatch({ type: 'login', payload });
       } catch (error) {
         console.error('Error fetching session:', error);
@@ -155,7 +173,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userId = session.userId;
         if (userId) {
           setCurrentUserId(userId);
-        const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
+          const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
           if (cached?.userId) {
             dispatch({ type: 'auth-check', payload: cached });
           }
@@ -166,6 +184,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     fetchSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.doesSessionExist]);
 
   return (
