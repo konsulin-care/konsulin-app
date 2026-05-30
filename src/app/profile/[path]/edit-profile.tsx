@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable max-lines -- TODO: refactor: split into smaller components */
 import Input from '@/components/general/input';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import DobCalendar from '@/components/profile/dob-calendar';
@@ -59,6 +60,8 @@ type Props = {
   userRole: string;
   fhirId: string;
 };
+
+type FHIRProfile = Patient | Practitioner | null;
 
 type ICustomProfile = {
   fhirId: string;
@@ -139,11 +142,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }
   });
 
-  const {
-    mutateAsync: updateProfile,
-    isLoading: isUpdateLoading,
-    isError: isUpdateError
-  } = useUpdateProfile();
+  const { mutateAsync: updateProfile, isLoading: isUpdateLoading } =
+    useUpdateProfile();
 
   const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
   const { data: listCities, isLoading: cityLoading } = useGetCities(
@@ -197,105 +197,57 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     };
   }, [updateUser.photo]);
 
-  const validateInput = (name: string, value: string) => {
-    let error = '';
+  const validateName = (value: string, label: string): string => {
     const usernameRegex = /^[a-zA-Z ]+$/;
-
-    // Skip validation for email/phone if user type doesn't allow editing them
-    if (name === 'email' && !isPhoneBasedUser) {
-      return ''; // Email-based users can't edit email, so no validation needed
-    }
-    if (name === 'phone' && isPhoneBasedUser) {
-      return ''; // Phone-based users can't edit phone, so no validation needed
-    }
-
-    switch (name) {
-      case 'firstName':
-        if (!value) {
-          error = 'First name cannot be empty';
-        } else if (!usernameRegex.test(value)) {
-          error = 'First name format is invalid';
-        } else if (value.length < 2) {
-          error = 'First name must be at least two characters';
-        }
-        break;
-      case 'lastName':
-        if (value && value.trim() !== '') {
-          if (!usernameRegex.test(value)) {
-            error = 'Last name format is invalid';
-          } else if (value.length < 2) {
-            error = 'Last name must be at least two characters';
-          }
-        }
-        break;
-      case 'email':
-        // Email-based users can't edit email, so validation is skipped via early return
-        // For phone-based users: email is required, then must be valid format
-        if (!value || value.trim() === '') {
-          error = 'Email is required';
-        } else if (!validateEmail(value)) {
-          error = 'Email format is invalid';
-        }
-        break;
-      case 'phone': {
-        const phoneRegex = /^\+?[0-9]{8,15}$/;
-        // Phone-based users can't edit phone, so validation is skipped via early return
-        // For email-based users: phone is required, then must be valid format
-        if (!value || value.trim() === '') {
-          error = 'Phone number is required';
-        } else if (!phoneRegex.test(value)) {
-          error = 'WhatsApp phone number must be 8-15 digits';
-        }
-        break;
-      }
-
-      case 'addresses':
-        if (
-          !Array.isArray(value) ||
-          value.length === 0 ||
-          value.every(part => !part.trim())
-        ) {
-          error = 'Address cannot be empty';
-        }
-        break;
-      case 'city':
-        if (!value.trim()) {
-          error = 'City cannot be empty';
-        }
-        break;
-      case 'district':
-        if (!value.trim()) {
-          error = 'District cannot be empty';
-        }
-        break;
-      case 'province':
-        if (!value.trim()) {
-          error = 'Province cannot be empty';
-        }
-        break;
-      case 'postalCode':
-        if (!value.trim()) {
-          error = 'Postal code cannot be empty';
-        }
-        break;
-      case 'birthDate':
-        if (!value) {
-          error = 'Birth date cannot be empty';
-        }
-        break;
-      case 'gender':
-        if (!value) {
-          error = 'Gender cannot be empty';
-        }
-        break;
-      default:
-        break;
-    }
-
-    return error;
+    if (!value) return `${label} cannot be empty`;
+    if (!usernameRegex.test(value)) return `${label} format is invalid`;
+    if (value.length < 2) return `${label} must be at least two characters`;
+    return '';
   };
 
-  const handleChangeInput = (label: string, value: any) => {
+  const validateEmailField = (value: string): string => {
+    if (!value || value.trim() === '') return 'Email is required';
+    if (!validateEmail(value)) return 'Email format is invalid';
+    return '';
+  };
+
+  const validateRequiredText = (value: string, label: string): string => {
+    if (!value.trim()) return `${label} cannot be empty`;
+    return '';
+  };
+
+  const RULES: Record<string, (v: string) => string> = {
+    firstName: v => validateName(v, 'First name'),
+    lastName: v => (v && v.trim() !== '' ? validateName(v, 'Last name') : ''),
+    email: validateEmailField,
+    phone: value => {
+      const phoneRegex = /^\+?[0-9]{8,15}$/;
+      if (!value || value.trim() === '') return 'Phone number is required';
+      if (!phoneRegex.test(value))
+        return 'WhatsApp phone number must be 8-15 digits';
+      return '';
+    },
+    addresses: value =>
+      !Array.isArray(value) ||
+      value.length === 0 ||
+      value.every(part => !part.trim())
+        ? 'Address cannot be empty'
+        : '',
+    city: v => validateRequiredText(v, 'City'),
+    district: v => validateRequiredText(v, 'District'),
+    province: v => validateRequiredText(v, 'Province'),
+    postalCode: v => validateRequiredText(v, 'Postal code'),
+    birthDate: value => (value ? '' : 'Birth date cannot be empty'),
+    gender: value => (value ? '' : 'Gender cannot be empty')
+  };
+
+  const validateInput = (name: string, value: string): string => {
+    if (name === 'email' && !isPhoneBasedUser) return '';
+    if (name === 'phone' && isPhoneBasedUser) return '';
+    return RULES[name]?.(value) ?? '';
+  };
+
+  const handleChangeInput = (label: string, value: string) => {
     setUpdateUser(prevState => ({ ...prevState, [label]: value }));
     const errorMessage = validateInput(label, value);
     setErrors(prev => ({
@@ -324,7 +276,10 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     return Object.keys(errors).length === 0;
   };
 
-  const handlePhoneChange = (value: string, meta?: any) => {
+  const handlePhoneChange = (
+    value: string,
+    meta?: { country?: { dialCode?: string } }
+  ) => {
     // Normalize phone to E.164-like: keep leading '+', digits; ensure country code is applied
     const dialCode = meta?.country?.dialCode ? `+${meta.country.dialCode}` : '';
     let cleaned = (value || '').replace(/[^\d+]/g, '');
@@ -343,46 +298,71 @@ export default function EditProfile({ userRole, fhirId }: Props) {
 
   /** Builds FHIR telecom array from current user phone/email. */
   const buildTelecom = () => {
-    const telecomArray: { system: 'phone' | 'email'; use: 'mobile' | 'home'; value: string }[] = [];
+    const telecomArray: {
+      system: 'phone' | 'email';
+      use: 'mobile' | 'home';
+      value: string;
+    }[] = [];
     if (updateUser.phone?.trim()) {
-      telecomArray.push({ system: 'phone', use: 'mobile', value: updateUser.phone.trim() });
+      telecomArray.push({
+        system: 'phone',
+        use: 'mobile',
+        value: updateUser.phone.trim()
+      });
     }
     if (updateUser.email?.trim() && validateEmail(updateUser.email)) {
-      telecomArray.push({ system: 'email', use: 'home', value: updateUser.email.trim() });
+      telecomArray.push({
+        system: 'email',
+        use: 'home',
+        value: updateUser.email.trim()
+      });
     }
     return telecomArray;
   };
 
   /** Syncs Chatwoot contact identifier for the profile. */
   const syncChatwootIdentifier = async (
-    latestProfile: Patient | Practitioner | null,
+    latestProfile: FHIRProfile,
     existingChatwootId: string
   ) => {
-    const trimmedName = [updateUser.firstName, updateUser.lastName?.trim()].filter(Boolean).join(' ').trim();
+    const trimmedName = [updateUser.firstName, updateUser.lastName?.trim()]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
     const authEmail = authState.userInfo?.email || '';
     const authPhone = authState.userInfo?.phoneNumber || '';
     const isEmailBased = Boolean(authEmail.trim());
     const isPhoneBased = Boolean(authPhone.trim());
     const emailForModifyProfile = (updateUser.email || authEmail).trim();
     const phoneForModifyProfile = (updateUser.phone || authPhone).trim();
-    const shouldCall = trimmedName && (isEmailBased
-      ? emailForModifyProfile && validateEmail(emailForModifyProfile)
-      : isPhoneBased && Boolean(phoneForModifyProfile));
+    const shouldCall =
+      trimmedName &&
+      (isEmailBased
+        ? emailForModifyProfile && validateEmail(emailForModifyProfile)
+        : isPhoneBased && Boolean(phoneForModifyProfile));
 
     let finalChatwootId = existingChatwootId;
     if (shouldCall) {
       try {
         const { chatwootId } = await modifyProfile({
           name: trimmedName,
-          ...(isEmailBased ? { email: emailForModifyProfile } : { phoneNumber: phoneForModifyProfile })
+          ...(isEmailBased
+            ? { email: emailForModifyProfile }
+            : { phoneNumber: phoneForModifyProfile })
         });
-        if (chatwootId && chatwootId !== existingChatwootId) finalChatwootId = chatwootId;
+        if (chatwootId && chatwootId !== existingChatwootId)
+          finalChatwootId = chatwootId;
       } catch (error) {
-        console.error('[update-chatwoot-id] failed to ensure chatwoot_id exists', error);
+        console.error(
+          '[update-chatwoot-id] failed to ensure chatwoot_id exists',
+          error
+        );
       }
     }
 
-    const identifiers = latestProfile?.identifier ? [...latestProfile.identifier] : [];
+    const identifiers = latestProfile?.identifier
+      ? [...latestProfile.identifier]
+      : [];
     const ensureIdentifier = (system: string, value: string) => {
       if (!system || !value) return;
       const exists = identifiers.find(id => id.system === system);
@@ -390,48 +370,87 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       else identifiers.push({ system, value });
     };
     ensureIdentifier('https://login.konsulin.care/userid', updateUser.userId);
-    ensureIdentifier('https://login.konsulin.care/chatwoot-id', finalChatwootId);
+    ensureIdentifier(
+      'https://login.konsulin.care/chatwoot-id',
+      finalChatwootId
+    );
 
     return { finalChatwootId, identifiers };
+  };
+
+  const getExtensionFromMime = (mime: string): string => {
+    if (mime === 'image/jpeg') return 'jpg';
+    if (mime.includes('/')) return mime.split('/')[1];
+    return 'png';
+  };
+
+  const processAvatarUpload = async (
+    photoDataUrl: string,
+    existingPhotoUrl: string,
+    finalChatwootId: string
+  ): Promise<string> => {
+    if (!finalChatwootId) {
+      console.error('[avatar] missing chatwoot_id, aborting upload', {
+        fhirId
+      });
+      toast.error(
+        'Profile does not own chatwoot_id; avatar update is cancelled'
+      );
+      return existingPhotoUrl;
+    }
+    setIsUploadingPhoto(true);
+    try {
+      const originalBlob = dataUrlToBlob(photoDataUrl);
+      const mime = originalBlob.type || 'image/png';
+      const ext = getExtensionFromMime(mime);
+      const file = new File([originalBlob], `avatar.${ext}`, { type: mime });
+      const processed = await processImageForAvatar(file, { outputType: mime });
+      const fileForUpload =
+        processed.blob instanceof File
+          ? processed.blob
+          : new File([processed.blob], `avatar.${ext}`, {
+              type: processed.blob.type || mime
+            });
+      const uploadedUrl = await uploadAvatar(finalChatwootId, fileForUpload);
+      if (!uploadedUrl)
+        throw new Error('receive empty response from uploadAvatar');
+      return uploadedUrl !== existingPhotoUrl ? uploadedUrl : existingPhotoUrl;
+    } catch (error) {
+      const apiError = error as {
+        message?: string;
+        response?: { status?: number; data?: unknown };
+      };
+      console.error('[avatar] upload error', {
+        message: apiError?.message,
+        status: apiError?.response?.status,
+        response: apiError?.response?.data || error
+      });
+      toast.error('Failed updating the profile picture');
+      return existingPhotoUrl;
+    } finally {
+      setIsUploadingPhoto(false);
+    }
   };
 
   /** Resolves and uploads profile photo if needed, returns final photo URL. */
   const resolvePhotoUrl = async (
     existingPhotoUrl: string,
-    finalChatwootId: string,
-    latestProfile: Patient | Practitioner | null
+    finalChatwootId: string
   ): Promise<string> => {
     if (isDataUrl(updateUser.photo)) {
-      if (!finalChatwootId) {
-        console.error('[avatar] missing chatwoot_id, aborting upload', { fhirId, latestProfile });
-        toast.error('Profile does not own chatwoot_id; avatar update is cancelled');
-        return existingPhotoUrl;
-      }
-      setIsUploadingPhoto(true);
-      try {
-        const originalBlob = dataUrlToBlob(updateUser.photo);
-        const mime = originalBlob.type || 'image/png';
-        const ext = mime === 'image/jpeg' ? 'jpg' : mime.includes('/') ? mime.split('/')[1] : 'png';
-        const file = new File([originalBlob], `avatar.${ext}`, { type: mime });
-        const processed = await processImageForAvatar(file, { outputType: mime });
-        const fileForUpload = processed.blob instanceof File
-          ? processed.blob
-          : new File([processed.blob], `avatar.${ext}`, { type: processed.blob.type || mime });
-        const uploadedUrl = await uploadAvatar(finalChatwootId, fileForUpload);
-        if (!uploadedUrl) throw new Error('receive empty response from uploadAvatar');
-        return uploadedUrl !== existingPhotoUrl ? uploadedUrl : existingPhotoUrl;
-      } catch (error: any) {
-        console.error('[avatar] upload error', { message: error?.message, status: error?.response?.status, response: error?.response?.data || error });
-        toast.error('Failed updating the profile picture');
-        return existingPhotoUrl;
-      } finally {
-        setIsUploadingPhoto(false);
-      }
+      return processAvatarUpload(
+        updateUser.photo,
+        existingPhotoUrl,
+        finalChatwootId
+      );
     }
 
     if (updateUser.photo && isValidUrl(updateUser.photo)) {
       const parsed = new URL(updateUser.photo);
-      if (['http:', 'https:'].includes(parsed.protocol) && updateUser.photo !== existingPhotoUrl) {
+      if (
+        ['http:', 'https:'].includes(parsed.protocol) &&
+        updateUser.photo !== existingPhotoUrl
+      ) {
         return updateUser.photo;
       }
     }
@@ -440,7 +459,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
 
   /** Handles profile save: syncs Chatwoot, uploads photo, updates FHIR profile. */
   const handleEditSave = async () => {
-    let latestProfile: Patient | Practitioner | null = null;
+    let latestProfile: FHIRProfile = null;
     try {
       latestProfile = await getProfileById(fhirId, fhirRole);
     } catch (error) {
@@ -451,12 +470,19 @@ export default function EditProfile({ userRole, fhirId }: Props) {
 
     const existingPhotoUrl = latestProfile?.photo?.[0]?.url ?? '';
     const existingChatwootId = latestProfile
-      ? findIdentifierValue(latestProfile, 'https://login.konsulin.care/chatwoot-id')
+      ? findIdentifierValue(
+          latestProfile,
+          'https://login.konsulin.care/chatwoot-id'
+        )
       : '';
 
-    const { finalChatwootId, identifiers } = await syncChatwootIdentifier(latestProfile, existingChatwootId);
+    const { finalChatwootId, identifiers } = await syncChatwootIdentifier(
+      latestProfile,
+      existingChatwootId
+    );
     const telecom = buildTelecom();
-    const needsIdentifierSync = !existingChatwootId || existingChatwootId !== finalChatwootId;
+    const needsIdentifierSync =
+      !existingChatwootId || existingChatwootId !== finalChatwootId;
 
     if (needsIdentifierSync) {
       if (!latestProfile) {
@@ -465,7 +491,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       }
       try {
         await updateProfile({
-          payload: { ...(latestProfile as Patient | Practitioner), identifier: identifiers, telecom }
+          payload: { ...latestProfile, identifier: identifiers, telecom }
         });
       } catch (error) {
         console.error('Error when syncing chatwoot identifier: ', error);
@@ -474,7 +500,10 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       }
     }
 
-    const photoUrlForPayload = await resolvePhotoUrl(existingPhotoUrl, finalChatwootId, latestProfile);
+    const photoUrlForPayload = await resolvePhotoUrl(
+      existingPhotoUrl,
+      finalChatwootId
+    );
     if (isDataUrl(updateUser.photo) && !photoUrlForPayload) return;
 
     const splitName = (updateUser.firstName || '').split(' ').filter(Boolean);
@@ -488,12 +517,24 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       gender: updateUser.gender,
       photo: photoUrlForPayload ? [{ url: photoUrlForPayload }] : [],
       identifier: identifiers,
-      name: [{ use: 'official', given: splitName, ...(familyName ? { family: familyName } : {}) }],
-      address: [{
-        use: 'home', type: 'physical', line: updateUser.addresses,
-        district: updateUser.district, city: updateUser.city,
-        postalCode: updateUser.postalCode, country: 'ID'
-      }],
+      name: [
+        {
+          use: 'official',
+          given: splitName,
+          ...(familyName ? { family: familyName } : {})
+        }
+      ],
+      address: [
+        {
+          use: 'home',
+          type: 'physical',
+          line: updateUser.addresses,
+          district: updateUser.district,
+          city: updateUser.city,
+          postalCode: updateUser.postalCode,
+          country: 'ID'
+        }
+      ],
       telecom
     };
 
@@ -502,15 +543,20 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       if (!result) return;
 
       const existing = authState.userInfo || {};
-      const updatedPhotoUrl = result?.photo?.[0]?.url || photoUrlForPayload || existing.profile_picture;
-      const updatedFullname = result.resourceType === 'Practitioner'
-        ? mergeNames(result.name, result?.qualification)
-        : mergeNames(result.name);
+      const updatedPhotoUrl =
+        result?.photo?.[0]?.url ||
+        photoUrlForPayload ||
+        existing.profile_picture;
+      const updatedFullname =
+        result.resourceType === 'Practitioner'
+          ? mergeNames(result.name, result?.qualification)
+          : mergeNames(result.name);
 
       const authPayload = {
         userId: existing.userId,
         roles: existing.roles || [existing.role_name || 'Patient'],
-        role_name: existing.role_name, email: existing.email,
+        role_name: existing.role_name,
+        email: existing.email,
         phoneNumber: existing.phoneNumber,
         fhirId: result.id || existing.fhirId,
         fullname: updatedFullname,
@@ -519,9 +565,12 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       };
 
       await fetch('/auth/cookie', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authPayload)
-      }).catch(err => console.error('[auth:cookie] failed to set auth cookie', err));
+      }).catch(err =>
+        console.error('[auth:cookie] failed to set auth cookie', err)
+      );
       dispatchAuth({ type: 'auth-check', payload: authPayload });
       setDrawerState(DRAWER_STATE.SUCCESS);
     } catch (error) {
@@ -542,10 +591,10 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     setDrawerState(DRAWER_STATE.NONE);
   };
 
-  const handleGenderSelect = (value: any) => {
+  const handleGenderSelect = (value: { code: string }) => {
     setUpdateUser(prevState => ({
       ...prevState,
-      gender: value.code
+      gender: value.code as ICustomProfile['gender']
     }));
   };
 
@@ -658,7 +707,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 id='firstName'
                 type='text'
                 value={updateUser.firstName}
-                onChange={(event: any) =>
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                   handleChangeInput('firstName', event.target.value)
                 }
                 opacity={false}
@@ -677,7 +726,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 id='lastName'
                 type='text'
                 value={updateUser.lastName}
-                onChange={(event: any) =>
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                   handleChangeInput('lastName', event.target.value)
                 }
                 opacity={false}
@@ -697,7 +746,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                 type='email'
                 value={updateUser.email}
                 readOnly={!isPhoneBasedUser}
-                onChange={(event: any) =>
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                   handleChangeInput('email', event.target.value)
                 }
                 opacity={false}
@@ -815,7 +864,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                     id={`addresses-${index}`}
                     type='text'
                     value={addr}
-                    onChange={(event: any) =>
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                       handleAddressChange(index, event.target.value)
                     }
                     opacity={false}
@@ -852,7 +901,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
                     id='postalCode'
                     type='text'
                     value={updateUser.postalCode}
-                    onChange={(event: any) => {
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                       const onlyNumbers = event.target.value.replace(/\D/g, '');
                       handleChangeInput('postalCode', onlyNumbers);
                     }}

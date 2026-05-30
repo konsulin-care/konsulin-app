@@ -17,14 +17,14 @@ declare global {
 
 /** Returns the app info from runtime config or defaults. */
 export function getAppInfo(): AppInfo {
-  if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__?.appInfo) {
-    return window.__RUNTIME_CONFIG__.appInfo;
+  if (globalThis.__RUNTIME_CONFIG__?.appInfo) {
+    return globalThis.__RUNTIME_CONFIG__.appInfo;
   }
   return {
     appName: 'Konsulin',
     apiDomain: 'http://localhost:3200',
     websiteDomain: 'http://localhost:3000',
     apiBasePath: '/api/v1/auth',
-    websiteBasePath: '/auth',
+    websiteBasePath: '/auth'
   };
 }

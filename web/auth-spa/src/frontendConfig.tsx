@@ -34,7 +34,7 @@ async function postAuthCookieForUser(
     fullname: mergeNames(profile?.name),
     fhirId: profile?.id ?? ''
   };
-  const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
+  const cookieRes = await postAuthCookie(cookieData);
   if (!cookieRes.ok)
     console.error('[auth:cookie] server returned', cookieRes.status);
 }
@@ -49,10 +49,9 @@ async function handleNewUserLogin(
     Array.isArray(roles) && roles.includes(Roles.Practitioner)
       ? Roles.Practitioner
       : Roles.Patient;
-  let profileData = (await getProfileByIdentifier({ userId, type: role })) as
-    | Patient
-    | Practitioner
-    | null;
+  let profileData: Patient | Practitioner | null = await getProfileByIdentifier(
+    { userId, type: role }
+  );
 
   if (!profileData) {
     await createProfile({
@@ -61,10 +60,7 @@ async function handleNewUserLogin(
       phoneNumber: phoneNumbers[0] || '',
       type: role
     });
-    profileData = (await getProfileByIdentifier({ userId, type: role })) as
-      | Patient
-      | Practitioner
-      | null;
+    profileData = await getProfileByIdentifier({ userId, type: role });
     if (!profileData) throw new Error('Failed to create profile');
   }
 
@@ -89,10 +85,10 @@ async function handleReturningUserLogin(
     Array.isArray(roles) && roles.includes(Roles.Practitioner)
       ? Roles.Practitioner
       : Roles.Patient;
-  const profile = (await getProfileByIdentifier({ userId, type: role })) as
-    | Patient
-    | Practitioner
-    | null;
+  const profile: Patient | Practitioner | null = await getProfileByIdentifier({
+    userId,
+    type: role
+  });
 
   await postAuthCookieForUser(
     role,
@@ -237,7 +233,7 @@ export const frontendConfig = (): SuperTokensConfig => {
             {
               id: 'email',
               name: 'Email',
-              // eslint-disable-next-line @next/next/no-img-element -- Vite SPA, not Next.js
+
               logo: (
                 <img
                   src='/icons/email.svg'
@@ -250,7 +246,7 @@ export const frontendConfig = (): SuperTokensConfig => {
             {
               id: 'whatsapp',
               name: 'WhatsApp',
-              // eslint-disable-next-line @next/next/no-img-element -- Vite SPA, not Next.js
+
               logo: (
                 <img
                   src='/icons/whatsapp.png'
@@ -269,9 +265,9 @@ export const frontendConfig = (): SuperTokensConfig => {
           if (context.action !== 'SUCCESS') return;
 
           const { id: userId, emails, phoneNumbers } = context.user;
-          const roles = (await getClaimValue({ claim: UserRoleClaim })) as
-            | string[]
-            | undefined;
+          const roles: string[] | undefined = await getClaimValue({
+            claim: UserRoleClaim
+          });
 
           if (
             context.isNewRecipeUser &&

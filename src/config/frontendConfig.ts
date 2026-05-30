@@ -76,7 +76,7 @@ async function postAuthCookieForUser(
     fullname: mergeNames(profile?.name),
     fhirId: profile?.id ?? ''
   };
-  const cookieRes = await postAuthCookie(cookieData as Record<string, unknown>);
+  const cookieRes = await postAuthCookie(cookieData);
   if (!cookieRes.ok)
     console.error('[auth:cookie] server returned', cookieRes.status);
 }
@@ -92,10 +92,9 @@ async function handleNewUserLogin(
     Array.isArray(roles) && roles.includes(Roles.Practitioner)
       ? Roles.Practitioner
       : Roles.Patient;
-  let profileData = (await getProfileByIdentifier({ userId, type: role })) as
-    | Patient
-    | Practitioner
-    | null;
+  let profileData: Patient | Practitioner | null = await getProfileByIdentifier(
+    { userId, type: role }
+  );
 
   if (!profileData) {
     await createProfile({
@@ -104,10 +103,7 @@ async function handleNewUserLogin(
       phoneNumber: phoneNumbers[0] || '',
       type: role
     });
-    profileData = (await getProfileByIdentifier({ userId, type: role })) as
-      | Patient
-      | Practitioner
-      | null;
+    profileData = await getProfileByIdentifier({ userId, type: role });
     if (!profileData) throw new Error('Failed to create profile');
   }
 
@@ -132,10 +128,10 @@ async function handleReturningUserLogin(
     Array.isArray(roles) && roles.includes(Roles.Practitioner)
       ? Roles.Practitioner
       : Roles.Patient;
-  const profile = (await getProfileByIdentifier({ userId, type: role })) as
-    | Patient
-    | Practitioner
-    | null;
+  const profile: Patient | Practitioner | null = await getProfileByIdentifier({
+    userId,
+    type: role
+  });
 
   await postAuthCookieForUser(
     role,

@@ -23,5 +23,11 @@ module.exports = [
         sourceType: 'module'
       }
     }
+  },
+  {
+    files: ['web/auth-spa/**/*.{js,jsx,ts,tsx}'],
+    rules: {
+      '@next/next/no-img-element': 'off'
+    }
   }
 ]

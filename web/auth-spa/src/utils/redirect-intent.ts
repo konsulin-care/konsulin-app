@@ -11,11 +11,13 @@ const REDIRECT_INTENT_COOKIE = 'redirect_intent';
 // RequireRole middleware MaxAge=300 (5 min).
 const TTL_MS = 5 * 60 * 1000;
 
+const REDIRECT_INTENT_REGEX = new RegExp(
+  String.raw`(?:^|;\s*)${REDIRECT_INTENT_COOKIE}=([^;]*)`
+);
+
 /** Reads the redirect intent cookie value. */
 function readCookie(): string | null {
-  const match = document.cookie.match(
-    new RegExp(`(?:^|;\\s*)${REDIRECT_INTENT_COOKIE}=([^;]*)`)
-  );
+  const match = REDIRECT_INTENT_REGEX.exec(document.cookie);
   if (!match) return null;
   try {
     return decodeURIComponent(match[1]);
@@ -37,7 +39,10 @@ export function clearRedirectIntent(): void {
 }
 
 /** Saves a redirect intent to a cookie for post-auth navigation. */
-export function saveIntent(kind: IntentKind, payload: Record<string, unknown>): void {
+export function saveIntent(
+  kind: IntentKind,
+  payload: Record<string, unknown>
+): void {
   const intent: Intent = { kind, payload, createdAt: Date.now() };
   document.cookie = `${REDIRECT_INTENT_COOKIE}=${encodeURIComponent(JSON.stringify(intent))}; Path=/; Max-Age=${TTL_MS / 1000}; SameSite=Lax`;
 }
@@ -45,7 +50,7 @@ export function saveIntent(kind: IntentKind, payload: Record<string, unknown>): 
 /** Returns a structured redirect intent if one exists and is not expired. */
 export function getIntent(): Intent | null {
   const raw = readCookie();
-  if (!raw || !raw.startsWith('{')) return null;
+  if (!raw?.startsWith('{')) return null;
   try {
     const intent = JSON.parse(raw) as Intent;
     if (!intent.kind || !intent.createdAt) return null;

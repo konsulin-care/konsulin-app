@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- utility module with full IndexedDB abstraction */
 const DB_NAME = 'konsulin';
 const DB_VERSION = 2;
 
@@ -65,10 +66,7 @@ export async function dbGet<T>(
 }
 
 /** Puts a value into an IndexedDB store. */
-export async function dbSet<T>(
-  storeName: StoreName,
-  value: T
-): Promise<void> {
+export async function dbSet<T>(storeName: StoreName, value: T): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const req = getStore(db, storeName, 'readwrite').put(value);
@@ -143,8 +141,10 @@ export async function cursorDeleteAll(
     };
     req.onerror = () => reject(req.error);
     txn.oncomplete = () => resolve();
-    txn.onerror = (event) => {
-      reject((event.target as IDBRequest)?.error || new Error('transaction failed'));
+    txn.onerror = event => {
+      reject(
+        (event.target as IDBRequest)?.error || new Error('transaction failed')
+      );
     };
   });
 }
@@ -182,9 +182,7 @@ export async function clearUserData(ownerId: string): Promise<void> {
 }
 
 /** Deletes a guest session from the store. */
-export async function deleteGuestSession(
-  guestId: string
-): Promise<void> {
+export async function deleteGuestSession(guestId: string): Promise<void> {
   await dbDelete(STORES.guestSessions, guestId);
 }
 
@@ -202,52 +200,44 @@ function putWithTransaction<T>(
       store.put(value);
     }
     txn.oncomplete = () => resolve();
-    txn.onerror = (event) => {
-      reject((event.target as IDBRequest)?.error || new Error('transaction failed'));
+    txn.onerror = event => {
+      reject(
+        (event.target as IDBRequest)?.error || new Error('transaction failed')
+      );
     };
   });
 }
 
 const MIGRATION_FLAG = 'konsulin_migration_done';
 
-/** Migrates data from localStorage to IndexedDB, one-time operation. */
-export async function migrateLocalStorage(): Promise<void> {
-  try {
-    if (localStorage.getItem(MIGRATION_FLAG) === 'true') return;
-  } catch {
-    return;
-  }
+async function migrateGuestSessions(
+  db: IDBDatabase,
+  guestId: string
+): Promise<void> {
+  if (!guestId) return;
+  await putWithTransaction(db, STORES.guestSessions, [{ guest_id: guestId }]);
+}
 
-  const db = await openDB();
-
-  const guestId = (() => {
-    try {
-      return localStorage.getItem('konsulin.guest_id') ?? '';
-    } catch {
-      return '';
-    }
-  })();
-
-  const ownerId = guestId || 'anonymous';
-
-  // 1. guest_sessions: konsulin.guest_id
-  if (guestId) {
-    await putWithTransaction(db, STORES.guestSessions, [{ guest_id: guestId }]);
-  }
-
-  // 2. assessment_drafts: response_{questionnaireId}
+async function migrateAssessmentDrafts(
+  db: IDBDatabase,
+  ownerId: string
+): Promise<string[]> {
   const responseKeys = Object.keys(localStorage).filter(k =>
     k.startsWith('response_')
   );
-  const assessmentValues: { ownerId: string; questionnaireId: string; response: unknown; updatedAt: number }[] = [];
+  const assessmentValues: {
+    ownerId: string;
+    questionnaireId: string;
+    response: unknown;
+    updatedAt: number;
+  }[] = [];
   for (const key of responseKeys) {
     try {
       const raw = localStorage.getItem(key);
       if (raw) {
-        const questionnaireId = key.replace('response_', '');
         assessmentValues.push({
           ownerId,
-          questionnaireId,
+          questionnaireId: key.replace('response_', ''),
           response: JSON.parse(raw),
           updatedAt: Date.now()
         });
@@ -257,26 +247,28 @@ export async function migrateLocalStorage(): Promise<void> {
     }
   }
   await putWithTransaction(db, STORES.assessmentDrafts, assessmentValues);
+  return responseKeys;
+}
 
-  // 3. soap_drafts: soap_{patientId}
-  // NOTE: soap_drafts uses composite key ['practitionerId', 'patientId'].
-  // The old localStorage keys (soap_{patientId}) don't include practitionerId.
-  // Without a known practitioner, skip migration to avoid key collisions.
-  // Legacy data remains in localStorage for the fallback path.
-  const soapKeys: string[] = [];
-
-  // 4. service_requests: serviceRequest_{recordId}
+async function migrateServiceRequests(
+  db: IDBDatabase,
+  ownerId: string
+): Promise<string[]> {
   const srKeys = Object.keys(localStorage).filter(k =>
     k.startsWith('serviceRequest_')
   );
-  const srValues: { id: string; ownerId: string; serviceRequestId: string; updatedAt: number }[] = [];
+  const srValues: {
+    id: string;
+    ownerId: string;
+    serviceRequestId: string;
+    updatedAt: number;
+  }[] = [];
   for (const key of srKeys) {
     try {
       const raw = localStorage.getItem(key);
       if (raw) {
-        const recordId = key.replace('serviceRequest_', '');
         srValues.push({
-          id: recordId,
+          id: key.replace('serviceRequest_', ''),
           ownerId,
           serviceRequestId: raw.trim(),
           updatedAt: Date.now()
@@ -287,28 +279,37 @@ export async function migrateLocalStorage(): Promise<void> {
     }
   }
   await putWithTransaction(db, STORES.serviceRequests, srValues);
+  return srKeys;
+}
 
-  // 5. temp_booking
-  const tempBookingValues: { ownerId: string; updatedAt: number; [key: string]: unknown }[] = [];
+async function migrateTempBooking(
+  db: IDBDatabase,
+  ownerId: string
+): Promise<void> {
   try {
     const raw = localStorage.getItem('temp-booking');
     if (raw) {
-      tempBookingValues.push({
-        ownerId,
-        ...JSON.parse(raw),
-        updatedAt: Date.now()
-      });
+      await putWithTransaction(db, STORES.tempBooking, [
+        {
+          ownerId,
+          ...JSON.parse(raw),
+          updatedAt: Date.now()
+        }
+      ]);
     }
   } catch {
     // skip
   }
-  await putWithTransaction(db, STORES.tempBooking, tempBookingValues);
+}
 
-  // 6. ui_preferences: result-table-colors, selected_clinic, selected_practitioner, skip-response-cleanup
+async function migrateUiPreferences(
+  db: IDBDatabase,
+  ownerId: string
+): Promise<void> {
   const prefMappings: Record<string, string> = {
     'result-table-colors': 'result-table-colors',
-    'selected_clinic': 'selected_clinic',
-    'selected_practitioner': 'selected_practitioner',
+    selected_clinic: 'selected_clinic',
+    selected_practitioner: 'selected_practitioner',
     'skip-response-cleanup': 'skip-response-cleanup'
   };
   const prefValues: { ownerId: string; prefKey: string; value: unknown }[] = [];
@@ -333,8 +334,14 @@ export async function migrateLocalStorage(): Promise<void> {
     }
   }
   await putWithTransaction(db, STORES.uiPreferences, prefValues);
+}
 
-  // Remove all migrated localStorage keys
+function cleanupMigratedKeys(
+  guestId: string,
+  responseKeys: string[],
+  srKeys: string[],
+  soapKeys: string[]
+): void {
   const lsKeysToRemove = [
     'konsulin.guest_id',
     'redirect',
@@ -351,13 +358,47 @@ export async function migrateLocalStorage(): Promise<void> {
     try {
       localStorage.removeItem(key);
     } catch {
-      // ignore
+      /* ignore */
     }
   }
+}
 
+function setMigrationFlag(): void {
   try {
     localStorage.setItem(MIGRATION_FLAG, 'true');
   } catch {
-    // ignore
+    /* ignore */
   }
+}
+
+/** Migrates data from localStorage to IndexedDB, one-time operation. */
+export async function migrateLocalStorage(): Promise<void> {
+  try {
+    if (localStorage.getItem(MIGRATION_FLAG) === 'true') return;
+  } catch {
+    return;
+  }
+
+  const db = await openDB();
+
+  const guestId = (() => {
+    try {
+      return localStorage.getItem('konsulin.guest_id') ?? '';
+    } catch {
+      return '';
+    }
+  })();
+
+  const ownerId = guestId || 'anonymous';
+
+  // soap_drafts migration is skipped — composite key lacks practitionerId
+  const soapKeys: string[] = [];
+
+  await migrateGuestSessions(db, guestId);
+  const responseKeys = await migrateAssessmentDrafts(db, ownerId);
+  const srKeys = await migrateServiceRequests(db, ownerId);
+  await migrateTempBooking(db, ownerId);
+  await migrateUiPreferences(db, ownerId);
+  cleanupMigratedKeys(guestId, responseKeys, srKeys, soapKeys);
+  setMigrationFlag();
 }

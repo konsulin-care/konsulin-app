@@ -56,13 +56,13 @@ export const getCachedGuestId = async (): Promise<string | null> => {
 
   // 2. Check meta tag injected by Go SSR base layout
   if (typeof document !== 'undefined') {
-    const meta = document.querySelector('meta[name="konsulin-guest-id"]');
+    const meta = document.querySelector<HTMLMetaElement>(
+      'meta[name="konsulin-guest-id"]'
+    );
     const content = meta?.getAttribute('content');
     if (content) return content;
 
-    // 3. Check guest session cookie (set by OptionalAuth middleware)
-    const guestCookieName =
-      meta?.getAttribute('data-cookie-name') || 'guest_session';
+    const guestCookieName = meta?.dataset.cookieName || 'guest_session';
     const cookiePair = document.cookie
       .split(';')
       .map(c => c.trim())

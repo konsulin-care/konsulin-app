@@ -1,18 +1,17 @@
-import { saveIntent } from './utils/redirect-intent';
 import type { ReactElement } from 'react';
-import { createElement } from 'react';
-import { useEffect, useState } from 'react';
+import { createElement, useEffect, useState } from 'react';
 import { redirectToAuth } from 'supertokens-auth-react';
+import type { ComponentOverrideMap } from 'supertokens-auth-react/lib/build/recipe/passwordless/types';
 import MultiFactorAuth from 'supertokens-auth-react/recipe/multifactorauth';
 import { PasswordlessComponentsOverrideProvider } from 'supertokens-auth-react/recipe/passwordless';
 import { PasswordlessPreBuiltUI } from 'supertokens-auth-react/recipe/passwordless/prebuiltui';
-import type { ComponentOverrideMap } from 'supertokens-auth-react/lib/build/recipe/passwordless/types';
 import { ThirdPartyPreBuiltUI } from 'supertokens-auth-react/recipe/thirdparty/prebuiltui';
 import {
   AuthPage,
   canHandleRoute,
-  getRoutingComponent,
+  getRoutingComponent
 } from 'supertokens-auth-react/ui';
+import { saveIntent } from './utils/redirect-intent';
 
 const WHATSAPP_LINK =
   'https://wa.me/6285163181852?text=Request%20login%2C%20authenticate%20me';
@@ -36,7 +35,7 @@ const orDividerAndWhatsAppFooter = (
         <div data-supertokens='providerButtonLeft'>
           <div data-supertokens='providerButtonLogo'>
             <div data-supertokens='providerButtonLogoCenter'>
-              {/* eslint-disable-next-line @next/next/no-img-element -- Vite SPA, not Next.js */}
+              {}
               <img
                 src='/icons/whatsapp.png'
                 alt='whatsapp'
@@ -55,17 +54,17 @@ const orDividerAndWhatsAppFooter = (
 );
 
 const passwordlessOverrides: Partial<ComponentOverrideMap> = {
-  PasswordlessEmailForm_Override: (props) => {
+  PasswordlessEmailForm_Override: props => {
     const { DefaultComponent, ...rest } = props;
     return <DefaultComponent {...rest} footer={orDividerAndWhatsAppFooter} />;
-  },
+  }
 };
 
 /** Main authentication application component. */
 export default function AuthApp() {
   const [uiComponent, setUiComponent] = useState<ReactElement | null>(null);
-  const searchParams = new URLSearchParams(window.location.search);
-  const pathname = window.location.pathname;
+  const searchParams = new URLSearchParams(globalThis.location.search);
+  const pathname = globalThis.location.pathname;
   const redirectToPath = searchParams.get('redirectToPath');
   const isRootAuth = pathname === '/auth';
 
@@ -84,7 +83,7 @@ export default function AuthApp() {
         return;
       }
       setUiComponent(
-        getRoutingComponent([ThirdPartyPreBuiltUI, PasswordlessPreBuiltUI]),
+        getRoutingComponent([ThirdPartyPreBuiltUI, PasswordlessPreBuiltUI])
       );
       return;
     }
@@ -102,10 +101,10 @@ export default function AuthApp() {
           preBuiltUIList: [ThirdPartyPreBuiltUI, PasswordlessPreBuiltUI],
           factors: [
             MultiFactorAuth.FactorIds.OTP_EMAIL,
-            MultiFactorAuth.FactorIds.LINK_EMAIL,
-          ],
-        }),
-      ),
+            MultiFactorAuth.FactorIds.LINK_EMAIL
+          ]
+        })
+      )
     );
   }, [isRootAuth]);
 
