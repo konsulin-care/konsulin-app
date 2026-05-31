@@ -83,9 +83,7 @@ async function attemptProfileFetch(
   role: string
 ): Promise<Patient | Practitioner | null> {
   try {
-    return (await getProfileByIdentifier({ userId, type: role })) as
-      | Patient
-      | Practitioner;
+    return await getProfileByIdentifier({ userId, type: role });
   } catch (profileError) {
     console.error('Failed to fetch profile data:', profileError);
     return null;

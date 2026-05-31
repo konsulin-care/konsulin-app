@@ -9,6 +9,9 @@ import {
 } from '@/utils/redirect-intent';
 import { Patient, Practitioner } from 'fhir/r4';
 
+type FHIRProfile = Patient | Practitioner | null;
+type RolesParam = string[] | undefined;
+
 /** Fetches a CSRF token from the server for use in POST /auth/cookie requests. */
 async function fetchCSRFToken(): Promise<string | null> {
   try {
@@ -46,10 +49,10 @@ async function postAuthCookie(
 async function postAuthCookieForUser(
   role: string,
   userId: string,
-  roles: string[] | undefined,
+  roles: RolesParam,
   emails: string[],
   phoneNumbers: string[],
-  profile: Patient | Practitioner | null
+  profile: FHIRProfile
 ): Promise<void> {
   if (!role || !userId) {
     console.error('[auth:cookie] missing required params', { role, userId });
@@ -76,7 +79,7 @@ async function postAuthCookieForUser(
 
 /** Handles login for new users — creates FHIR profile if missing, sets auth cookie. */
 async function handleNewUserLogin(
-  roles: string[] | undefined,
+  roles: RolesParam,
   userId: string,
   emails: string[],
   phoneNumbers: string[]
@@ -89,7 +92,7 @@ async function handleNewUserLogin(
     Array.isArray(roles) && roles.includes(Roles.Practitioner)
       ? Roles.Practitioner
       : Roles.Patient;
-  let profileData: Patient | Practitioner | null = null;
+  let profileData: FHIRProfile = null;
   try {
     profileData = await getProfileByIdentifier({ userId, type: role });
   } catch (err) {
@@ -128,7 +131,7 @@ async function handleNewUserLogin(
 
 /** Handles login for returning users — fetches FHIR profile and sets auth cookie. */
 async function handleReturningUserLogin(
-  roles: string[] | undefined,
+  roles: RolesParam,
   userId: string,
   emails: string[],
   phoneNumbers: string[]
@@ -141,7 +144,7 @@ async function handleReturningUserLogin(
     Array.isArray(roles) && roles.includes(Roles.Practitioner)
       ? Roles.Practitioner
       : Roles.Patient;
-  let profile: Patient | Practitioner | null = null;
+  let profile: FHIRProfile = null;
   try {
     profile = await getProfileByIdentifier({
       userId,
@@ -176,7 +179,7 @@ function resolvePostLoginRedirect(): string | null {
   const intent = getIntent();
   if (intent) {
     clearRedirectIntent();
-    return (intent.payload?.path as string) ?? '/';
+    return intent.payload?.path ?? '/';
   }
   return extractSafeRedirectPath(globalThis.location.search);
 }

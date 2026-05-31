@@ -9,6 +9,8 @@ import {
   getRedirectIntent
 } from './utils/redirect-intent';
 
+type FHIRProfile = Patient | Practitioner | null;
+
 /** Posts auth cookie data to the server with CSRF protection. */
 async function postAuthCookie(
   body: Record<string, unknown>
@@ -46,7 +48,7 @@ async function postAuthCookieForUser(
   roles: string[] | undefined,
   emails: string[],
   phoneNumbers: string[],
-  profile: Patient | Practitioner | null
+  profile: FHIRProfile
 ): Promise<void> {
   if (!role || !userId) {
     console.error('[auth:cookie] missing required params', { role, userId });
@@ -172,7 +174,7 @@ function resolvePostLoginRedirect(): string | null {
   const intent = getIntent();
   if (intent) {
     clearRedirectIntent();
-    return (intent.payload?.path as string) ?? '/';
+    return intent.payload?.path ?? '/';
   }
   return extractSafeRedirectPath(globalThis.location.search);
 }

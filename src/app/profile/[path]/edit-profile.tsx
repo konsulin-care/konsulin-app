@@ -291,7 +291,9 @@ export default function EditProfile({ userRole, fhirId }: Props) {
 
     if (cleaned.startsWith('0') && dialCode) {
       cleaned = `${dialCode}${cleaned.slice(1)}`;
-    } else if (!cleaned.startsWith('+') && dialCode) {
+    } else if (cleaned.startsWith('+') && dialCode) {
+      // Already has + prefix, no change needed
+    } else if (dialCode) {
       cleaned = `${dialCode}${cleaned}`;
     }
 
@@ -410,12 +412,9 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       const ext = getExtensionFromMime(mime);
       const file = new File([originalBlob], `avatar.${ext}`, { type: mime });
       const processed = await processImageForAvatar(file, { outputType: mime });
-      const fileForUpload =
-        processed.blob instanceof File
-          ? processed.blob
-          : new File([processed.blob], `avatar.${ext}`, {
-              type: processed.blob.type || mime
-            });
+      const fileForUpload = new File([processed.blob], `avatar.${ext}`, {
+        type: processed.blob.type || mime
+      });
       const uploadedUrl = await uploadAvatar(finalChatwootId, fileForUpload);
       if (!uploadedUrl)
         throw new Error('receive empty response from uploadAvatar');

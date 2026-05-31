@@ -2,7 +2,7 @@ export type IntentKind = 'journal' | 'appointment' | 'assessmentResult';
 
 export interface Intent {
   kind: IntentKind;
-  payload: Record<string, unknown>;
+  payload: { path: string; [key: string]: unknown };
   createdAt: number;
 }
 
@@ -40,7 +40,7 @@ export function clearRedirectIntent(): void {
 /** Saves a redirect intent to a cookie for post-auth navigation. */
 export function saveIntent(
   kind: IntentKind,
-  payload: Record<string, unknown>
+  payload: { path: string; [key: string]: unknown }
 ): void {
   const intent: Intent = { kind, payload, createdAt: Date.now() };
   document.cookie = `${REDIRECT_INTENT_COOKIE}=${encodeURIComponent(JSON.stringify(intent))}; Path=/; Max-Age=${TTL_MS / 1000}; SameSite=Lax`;
