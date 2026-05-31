@@ -418,7 +418,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       const uploadedUrl = await uploadAvatar(finalChatwootId, fileForUpload);
       if (!uploadedUrl)
         throw new Error('receive empty response from uploadAvatar');
-      return uploadedUrl !== existingPhotoUrl ? uploadedUrl : existingPhotoUrl;
+      return uploadedUrl === existingPhotoUrl ? existingPhotoUrl : uploadedUrl;
     } catch (error) {
       const apiError = error as {
         message?: string;

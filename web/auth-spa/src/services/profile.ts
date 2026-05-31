@@ -57,13 +57,10 @@ export async function getProfileByIdentifier({
   userId: string;
   type: string;
 }): Promise<Patient | Practitioner | null> {
-  const bundle = await apiRequest<Bundle>(
+  const bundle = await apiRequest<Bundle<Patient | Practitioner>>(
     'GET',
     `/fhir/${type}?identifier=https://login.konsulin.care/userid|${userId}`
   );
-  const entry = bundle?.entry?.[0]?.resource as
-    | Patient
-    | Practitioner
-    | undefined;
+  const entry = bundle?.entry?.[0]?.resource;
   return entry ?? null;
 }
