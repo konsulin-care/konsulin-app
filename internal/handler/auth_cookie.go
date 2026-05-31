@@ -77,8 +77,8 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 
 	sess := &session.Session{
 		UserID:          verified.UserID,
-		Roles:           req.Roles,
-		Role:            req.Role,
+		Roles:           verified.Roles,
+		Role:            verified.Role,
 		FHIRID:          req.FHIRID,
 		ProfileComplete: req.ProfileComplete,
 		FullName:        req.FullName,

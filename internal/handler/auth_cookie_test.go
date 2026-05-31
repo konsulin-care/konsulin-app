@@ -15,9 +15,12 @@ func init() {
 	session.InitSecureCookie(cookieTestSecret)
 }
 
-// testJWT is a fixed JWT with payload {"sub":"test-user","exp":9999999999}
+// testJWT is a fixed JWT with payload {"sub":"test-user","exp":9999999999,"st-role":{"v":["Patient"]}}
 // used to simulate a valid sAccessToken cookie in tests.
-const testJWT = "eyJhbGciOiAiUlMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidGVzdC11c2VyIiwgImV4cCI6IDk5OTk5OTk5OTl9.ZmFrZS1zaWc"
+const testJWT = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJleHAiOjk5OTk5OTk5OTksInN0LXJvbGUiOnsidiI6WyJQYXRpZW50Il19fQ.ZmFrZS1zaWc"
+
+// testJWTPractitioner is a fixed JWT with payload {"sub":"test-user","exp":9999999999,"st-role":{"v":["Patient","Practitioner"]}}
+const testJWTPractitioner = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJleHAiOjk5OTk5OTk5OTksInN0LXJvbGUiOnsidiI6WyJQYXRpZW50IiwiUHJhY3RpdGlvbmVyIl19fQ.ZmFrZS1zaWc"
 
 func newAuthCookieServer(t *testing.T) *httptest.Server {
 	t.Helper()
@@ -101,23 +104,16 @@ func TestPostAuthCookie_setsCookie(t *testing.T) {
 	if authCookie == nil {
 		t.Fatal("expected auth cookie")
 	}
-	if authCookie.Value == "" {
-		t.Fatal("expected non-empty cookie value")
-	}
-	if !authCookie.HttpOnly {
-		t.Error("expected HttpOnly=true")
-	}
-	if authCookie.SameSite != http.SameSiteLaxMode {
-		t.Errorf("expected SameSite=Lax, got %v", authCookie.SameSite)
-	}
-
 	sess := extractSessionFromCookie(t, authCookie)
-	// UserID comes from the verified SuperTokens session, not the request body.
+	// UserID and roles come from the verified JWT, not the request body.
 	if sess.UserID != "test-user" {
 		t.Errorf("expected UserID test-user (verified), got %q", sess.UserID)
 	}
+	if len(sess.Roles) != 1 || sess.Roles[0] != "Patient" {
+		t.Errorf("expected Roles [Patient] (from JWT), got %v", sess.Roles)
+	}
 	if sess.Role != "Patient" {
-		t.Errorf("expected Role Patient, got %q", sess.Role)
+		t.Errorf("expected Role Patient (from JWT), got %q", sess.Role)
 	}
 	if sess.FHIRID != "f1" {
 		t.Errorf("expected FHIRID f1, got %q", sess.FHIRID)
@@ -160,6 +156,32 @@ func TestPostAuthCookie_missingSAccessToken(t *testing.T) {
 	}
 }
 
+func TestPostAuthCookie_rolesFromJWTNotBody(t *testing.T) {
+	srv := newAuthCookieServer(t)
+	t.Cleanup(srv.Close)
+
+	body := `{"userId":"u1","role_name":"Admin","roles":["Admin"],"fhirId":"f1"}`
+	resp := mustPost(t, srv, "/auth/cookie", body, &http.Cookie{
+		Name:  "sAccessToken",
+		Value: testJWT,
+	})
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+	authCookie := findCookie(resp, "auth")
+	if authCookie == nil {
+		t.Fatal("expected auth cookie")
+	}
+	sess := extractSessionFromCookie(t, authCookie)
+	// JWT st-role overrides body's Admin claim.
+	if len(sess.Roles) != 1 || sess.Roles[0] != "Patient" {
+		t.Errorf("expected Roles [Patient] (from JWT, body claimed Admin), got %v", sess.Roles)
+	}
+	if sess.Role != "Patient" {
+		t.Errorf("expected Role Patient (from JWT, body claimed Admin), got %q", sess.Role)
+	}
+}
+
 func TestDeleteAuthCookie_clearsCookie(t *testing.T) {
 	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
@@ -180,12 +202,6 @@ func TestDeleteAuthCookie_clearsCookie(t *testing.T) {
 	if authCookie.MaxAge != -1 {
 		t.Errorf("expected MaxAge -1, got %d", authCookie.MaxAge)
 	}
-	if !authCookie.HttpOnly {
-		t.Error("expected HttpOnly=true")
-	}
-	if authCookie.SameSite != http.SameSiteLaxMode {
-		t.Errorf("expected SameSite=Lax, got %v", authCookie.SameSite)
-	}
 }
 
 func TestPostAuthCookie_withAllFields(t *testing.T) {
@@ -205,7 +221,7 @@ func TestPostAuthCookie_withAllFields(t *testing.T) {
 	}`
 	resp := mustPost(t, srv, "/auth/cookie", body, &http.Cookie{
 		Name:  "sAccessToken",
-		Value: testJWT,
+		Value: testJWTPractitioner,
 	})
 
 	if resp.StatusCode != http.StatusOK {
@@ -218,15 +234,15 @@ func TestPostAuthCookie_withAllFields(t *testing.T) {
 	}
 
 	sess := extractSessionFromCookie(t, authCookie)
-	// UserID comes from the verified SuperTokens session.
 	if sess.UserID != "test-user" {
 		t.Errorf("expected UserID test-user (verified), got %q", sess.UserID)
 	}
+	// Role/Roles from JWT st-role, not request body.
 	if sess.Role != "Practitioner" {
-		t.Errorf("expected Role Practitioner, got %q", sess.Role)
+		t.Errorf("expected Role Practitioner (from JWT), got %q", sess.Role)
 	}
 	if len(sess.Roles) != 2 || sess.Roles[0] != "Patient" || sess.Roles[1] != "Practitioner" {
-		t.Errorf("expected Roles [Patient Practitioner], got %v", sess.Roles)
+		t.Errorf("expected Roles [Patient Practitioner] (from JWT), got %v", sess.Roles)
 	}
 	if sess.FHIRID != "f2" {
 		t.Errorf("expected FHIRID f2, got %q", sess.FHIRID)

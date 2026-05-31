@@ -11,11 +11,30 @@ import (
 // VerifiedSessionResult holds the verified session data extracted from the JWT.
 type VerifiedSessionResult struct {
 	UserID string
+	Roles  []string
+	Role   string
+}
+
+// stRoleClaim maps the SuperTokens UserRoleClaim format: {"v": ["Patient"]}.
+type stRoleClaim struct {
+	Values []string `json:"v"`
 }
 
 type jwtPayload struct {
-	Sub string `json:"sub"`
-	Exp int64  `json:"exp"`
+	Sub    string      `json:"sub"`
+	Exp    int64       `json:"exp"`
+	STRole stRoleClaim `json:"st-role"`
+}
+
+// activeRoleFrom returns "Practitioner" if present in roles, else "Patient".
+// Matches the frontend selection logic in auth-helpers.ts and auth.ts.
+func activeRoleFrom(roles []string) string {
+	for _, r := range roles {
+		if r == "Practitioner" {
+			return "Practitioner"
+		}
+	}
+	return "Patient"
 }
 
 // VerifySession decodes and validates the sAccessToken JWT locally.
@@ -46,5 +65,14 @@ func VerifySession(accessToken string) (*VerifiedSessionResult, error) {
 		return nil, fmt.Errorf("verify session: token expired")
 	}
 
-	return &VerifiedSessionResult{UserID: payload.Sub}, nil
+	roles := payload.STRole.Values
+	if len(roles) == 0 {
+		roles = []string{"Patient"}
+	}
+
+	return &VerifiedSessionResult{
+		UserID: payload.Sub,
+		Roles:  roles,
+		Role:   activeRoleFrom(roles),
+	}, nil
 }
