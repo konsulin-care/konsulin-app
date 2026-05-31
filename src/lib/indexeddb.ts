@@ -337,7 +337,6 @@ async function migrateUiPreferences(
 }
 
 function cleanupMigratedKeys(
-  guestId: string,
   responseKeys: string[],
   srKeys: string[],
   soapKeys: string[]
@@ -399,6 +398,6 @@ export async function migrateLocalStorage(): Promise<void> {
   const srKeys = await migrateServiceRequests(db, ownerId);
   await migrateTempBooking(db, ownerId);
   await migrateUiPreferences(db, ownerId);
-  cleanupMigratedKeys(guestId, responseKeys, srKeys, soapKeys);
+  cleanupMigratedKeys(responseKeys, srKeys, soapKeys);
   setMigrationFlag();
 }
