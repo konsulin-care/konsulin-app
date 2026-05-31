@@ -14,6 +14,7 @@ func TestHealthEndpoint(t *testing.T) {
 	t.Setenv("APP_URL", "http://test:3000")
 	t.Setenv("TX_URL", "http://test:3300")
 	t.Setenv("SESSION_COOKIE_SECRET", "test-secret")
+	t.Setenv("CSRF_AUTH_KEY", "dev-csrf-auth-key-32-bytes-long!")
 
 	cfg, err := config.Load()
 	if err != nil {

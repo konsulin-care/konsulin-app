@@ -16,15 +16,15 @@ async function postAuthCookie(
   body: Record<string, unknown>
 ): Promise<Response> {
   let token = '';
-  try {
-    const res = await fetch('/auth/cookie/csrf-token');
-    if (res.ok) {
-      const data = (await res.json()) as { token?: string };
-      token = data.token ?? '';
-    }
-  } catch {
-    /* CSRF token fetch is best-effort */
+  const res = await fetch('/auth/cookie/csrf-token');
+  if (!res.ok) {
+    throw new Error(`CSRF token fetch failed: ${res.status} ${res.statusText}`);
   }
+  const data = (await res.json()) as { token?: string };
+  if (!data.token) {
+    throw new Error('CSRF token missing from response');
+  }
+  token = data.token;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
   };
@@ -64,12 +64,10 @@ async function postAuthCookieForUser(
     fullname: mergeNames(profile?.name),
     fhirId: profile?.id ?? ''
   };
-  try {
-    const cookieRes = await postAuthCookie(cookieData);
-    if (!cookieRes.ok)
-      console.error('[auth:cookie] server returned', cookieRes.status);
-  } catch (err) {
-    console.error('[auth:cookie] failed to post auth cookie', err);
+  const cookieRes = await postAuthCookie(cookieData);
+  if (!cookieRes.ok) {
+    const body = await cookieRes.text().catch(() => '');
+    throw new Error(`auth cookie server error: ${cookieRes.status} ${body}`);
   }
 }
 
@@ -172,9 +170,21 @@ function resolvePostLoginRedirect(): string | null {
     );
   }
   const intent = getIntent();
-  if (intent) {
+  if (
+    intent?.payload &&
+    typeof intent.payload === 'object' &&
+    'path' in intent.payload
+  ) {
     clearRedirectIntent();
-    return intent.payload?.path ?? '/';
+    const path = (intent.payload as { path?: unknown }).path;
+    if (typeof path === 'string') {
+      return (
+        extractSafeRedirectPath(
+          `?redirectToPath=${encodeURIComponent(path)}`
+        ) ?? '/'
+      );
+    }
+    return '/';
   }
   return extractSafeRedirectPath(globalThis.location.search);
 }

@@ -68,12 +68,10 @@ async function postAuthCookieForUser(
     fullname: mergeNames(profile?.name),
     fhirId: profile?.id ?? ''
   };
-  try {
-    const cookieRes = await postAuthCookie(cookieData);
-    if (!cookieRes.ok)
-      console.error('[auth:cookie] server returned', cookieRes.status);
-  } catch (err) {
-    console.error('[auth:cookie] failed to post auth cookie', err);
+  const cookieRes = await postAuthCookie(cookieData);
+  if (!cookieRes.ok) {
+    const body = await cookieRes.text().catch(() => '');
+    throw new Error(`auth cookie server error: ${cookieRes.status} ${body}`);
   }
 }
 

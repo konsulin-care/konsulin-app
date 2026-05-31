@@ -9,7 +9,6 @@ import '@/styles/globals.css';
 import '@/styles/index.scss';
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
-import { headers } from 'next/headers';
 import NextTopLoader from 'nextjs-toploader';
 import React, { Suspense } from 'react';
 import 'react-international-phone/style.css';
@@ -70,6 +69,7 @@ const toastConfig: ToastContainerProps = {
   draggable: true
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function safeSerialize(obj: any) {
   return JSON.stringify(obj)
     .replace(/</g, '\\u003c')
@@ -78,17 +78,9 @@ function safeSerialize(obj: any) {
 }
 
 async function fetchRuntimeConfig() {
+  const origin = process.env.APP_URL || 'http://localhost:3000';
   try {
-    const host =
-      headers().get('host') ??
-      process.env.NEXT_PUBLIC_SITE_ORIGIN ??
-      'localhost:3000';
-    const proto =
-      headers().get('x-forwarded-proto') ??
-      (process.env.NODE_ENV === 'production' ? 'https' : 'http');
-    const base = `${proto}://${host}`;
-
-    const res = await fetch(`${base}/api/config`, { cache: 'no-store' });
+    const res = await fetch(`${origin}/api/config`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`config fetch failed: ${res.status}`);
 
     const raw = await res.json();
@@ -100,18 +92,14 @@ async function fetchRuntimeConfig() {
         apiBasePath: raw.API_BASE_PATH + raw.AUTH_PATH,
         websiteBasePath: raw.AUTH_PATH
       },
-      // keep other values if you want them later
       terminologyServer: raw.TX_URL
     };
-  } catch (err) {
-    // fallback defaults — empty domains force a clear error if
-    // /api/config fetch fails in production rather than silently
-    // connecting to localhost.
+  } catch {
     return {
       appInfo: {
         appName: 'Konsulin',
-        apiDomain: '',
-        websiteDomain: '',
+        apiDomain: origin,
+        websiteDomain: origin,
         apiBasePath: '/api/v1/auth',
         websiteBasePath: '/auth'
       },

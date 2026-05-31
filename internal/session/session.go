@@ -37,6 +37,9 @@ var (
 	sc            *securecookie.SecureCookie
 	scOnce        sync.Once
 	AllowUnsigned bool
+	// stored separately for Gob fallback (unexported in securecookie)
+	scHashKey  []byte
+	scBlockKey []byte
 )
 
 // deriveKeys derives 32-byte hash and block keys from a single secret using SHA-256.
@@ -50,10 +53,14 @@ func deriveKeys(secret string) (hashKey, blockKey []byte) {
 
 // InitSecureCookie initializes the package-level securecookie instance.
 // Must be called once at startup before any cookie operations.
+// Uses JSONEncoder so encoding/json tags (json:"...") on Session are respected.
 func InitSecureCookie(secret string) {
 	scOnce.Do(func() {
 		hashKey, blockKey := deriveKeys(secret)
+		scHashKey = hashKey
+		scBlockKey = blockKey
 		sc = securecookie.New(hashKey, blockKey)
+		sc.SetSerializer(securecookie.JSONEncoder{})
 	})
 }
 
@@ -122,14 +129,27 @@ func decodeSecureCookie(cookieName, decoded string) (*Session, bool) {
 	if sc == nil {
 		return nil, false
 	}
+	// Try JSON decode first (current serializer).
 	var s Session
-	if err := sc.Decode(cookieName, decoded, &s); err != nil || s.UserID == "" {
+	if err := sc.Decode(cookieName, decoded, &s); err == nil && s.UserID != "" {
+		if err := checkExpiry(&s); err == nil {
+			return &s, true
+		}
+	}
+	// Fallback: Gob-encoded cookies from before JSONEncoder migration.
+	if len(scHashKey) == 0 || len(scBlockKey) == 0 {
 		return nil, false
 	}
-	if err := checkExpiry(&s); err != nil {
+	gobSC := securecookie.New(scHashKey, scBlockKey)
+	gobSC.SetSerializer(securecookie.GobEncoder{})
+	var gobS Session
+	if err := gobSC.Decode(cookieName, decoded, &gobS); err != nil || gobS.UserID == "" {
 		return nil, false
 	}
-	return &s, true
+	if err := checkExpiry(&gobS); err != nil {
+		return nil, false
+	}
+	return &gobS, true
 }
 
 func decodeFallback(decoded, secret string) (*Session, error) {

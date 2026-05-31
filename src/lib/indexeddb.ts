@@ -282,6 +282,40 @@ async function migrateServiceRequests(
   return srKeys;
 }
 
+async function migrateSoapDrafts(db: IDBDatabase): Promise<string[]> {
+  const soapKeys = Object.keys(localStorage).filter(k =>
+    k.startsWith('soap_draft_')
+  );
+  if (soapKeys.length === 0) return soapKeys;
+  const soapValues: {
+    practitionerId: string;
+    patientId: string;
+    value: unknown;
+    updatedAt: number;
+  }[] = [];
+  for (const key of soapKeys) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        // Key format: soap_draft_{practitionerId}_{patientId}
+        const parts = key.replace('soap_draft_', '').split('_');
+        soapValues.push({
+          practitionerId: parts[0] || '',
+          patientId: parts[1] || '',
+          value: JSON.parse(raw),
+          updatedAt: Date.now()
+        });
+      }
+    } catch {
+      // skip corrupt entries
+    }
+  }
+  if (soapValues.length > 0) {
+    await putWithTransaction(db, STORES.soapDrafts, soapValues);
+  }
+  return soapKeys;
+}
+
 async function migrateTempBooking(
   db: IDBDatabase,
   ownerId: string
@@ -388,16 +422,42 @@ export async function migrateLocalStorage(): Promise<void> {
     }
   })();
 
-  const ownerId = guestId || 'anonymous';
+  let soapKeys: string[] = [];
+  const pendingMigrations: (() => Promise<string[]>)[] = [];
 
-  // soap_drafts migration is skipped — composite key lacks practitionerId
-  const soapKeys: string[] = [];
+  // Only run owner-scoped migrations when a real guestId exists.
+  if (guestId) {
+    await migrateGuestSessions(db, guestId);
+    pendingMigrations.push(
+      () => migrateAssessmentDrafts(db, guestId),
+      () => migrateServiceRequests(db, guestId),
+      async () => {
+        await migrateTempBooking(db, guestId);
+        return [];
+      },
+      async () => {
+        await migrateUiPreferences(db, guestId);
+        return [];
+      },
+      () => migrateSoapDrafts(db)
+    );
+  } else {
+    // Without a guestId, migrate only what doesn't need owner scoping.
+    pendingMigrations.push(() => migrateSoapDrafts(db));
+  }
 
-  await migrateGuestSessions(db, guestId);
-  const responseKeys = await migrateAssessmentDrafts(db, ownerId);
-  const srKeys = await migrateServiceRequests(db, ownerId);
-  await migrateTempBooking(db, ownerId);
-  await migrateUiPreferences(db, ownerId);
+  let responseKeys: string[] = [];
+  let srKeys: string[] = [];
+  for (const pm of pendingMigrations) {
+    const keys = await pm();
+    if (keys.length === 0) continue;
+    // Categorize keys by prefix.
+    if (keys[0]?.startsWith('response_')) responseKeys = keys;
+    else if (keys[0]?.startsWith('serviceRequest_')) srKeys = keys;
+    else soapKeys = keys;
+  }
+
+  // Only mark migration complete once soapKeys has been processed.
   cleanupMigratedKeys(responseKeys, srKeys, soapKeys);
   setMigrationFlag();
 }

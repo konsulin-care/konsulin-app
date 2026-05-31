@@ -15,7 +15,13 @@ func init() {
 	session.InitSecureCookie(cookieTestSecret)
 }
 
-func newAuthCookieServer() *httptest.Server {
+// testJWT is a fixed JWT with payload {"sub":"test-user","exp":9999999999}
+// used to simulate a valid sAccessToken cookie in tests.
+const testJWT = "eyJhbGciOiAiUlMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidGVzdC11c2VyIiwgImV4cCI6IDk5OTk5OTk5OTl9.ZmFrZS1zaWc"
+
+func newAuthCookieServer(t *testing.T) *httptest.Server {
+	t.Helper()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth/cookie", NewAuthCookieHandler(AuthCookieOptions{
 		CookieName:   "auth",
@@ -78,13 +84,13 @@ func extractSessionFromCookie(t *testing.T, cookie *http.Cookie) *session.Sessio
 }
 
 func TestPostAuthCookie_setsCookie(t *testing.T) {
-	srv := newAuthCookieServer()
+	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
 
 	body := `{"userId":"u1","role_name":"Patient","fhirId":"f1","profile_complete":true,"fullname":"Alice","email":"a@b.com"}`
 	resp := mustPost(t, srv, "/auth/cookie", body, &http.Cookie{
 		Name:  "sAccessToken",
-		Value: "test-token-123",
+		Value: testJWT,
 	})
 
 	if resp.StatusCode != http.StatusOK {
@@ -106,8 +112,9 @@ func TestPostAuthCookie_setsCookie(t *testing.T) {
 	}
 
 	sess := extractSessionFromCookie(t, authCookie)
-	if sess.UserID != "u1" {
-		t.Errorf("expected UserID u1, got %q", sess.UserID)
+	// UserID comes from the verified SuperTokens session, not the request body.
+	if sess.UserID != "test-user" {
+		t.Errorf("expected UserID test-user (verified), got %q", sess.UserID)
 	}
 	if sess.Role != "Patient" {
 		t.Errorf("expected Role Patient, got %q", sess.Role)
@@ -127,13 +134,13 @@ func TestPostAuthCookie_setsCookie(t *testing.T) {
 }
 
 func TestPostAuthCookie_missingUserId(t *testing.T) {
-	srv := newAuthCookieServer()
+	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
 
 	body := `{"role_name":"Patient"}`
 	resp := mustPost(t, srv, "/auth/cookie", body, &http.Cookie{
 		Name:  "sAccessToken",
-		Value: "test-token",
+		Value: testJWT,
 	})
 
 	if resp.StatusCode != http.StatusBadRequest {
@@ -142,7 +149,7 @@ func TestPostAuthCookie_missingUserId(t *testing.T) {
 }
 
 func TestPostAuthCookie_missingSAccessToken(t *testing.T) {
-	srv := newAuthCookieServer()
+	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
 
 	body := `{"userId":"u1","role_name":"Patient"}`
@@ -154,7 +161,7 @@ func TestPostAuthCookie_missingSAccessToken(t *testing.T) {
 }
 
 func TestDeleteAuthCookie_clearsCookie(t *testing.T) {
-	srv := newAuthCookieServer()
+	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
 
 	resp := mustDelete(t, srv, "/auth/cookie")
@@ -182,7 +189,7 @@ func TestDeleteAuthCookie_clearsCookie(t *testing.T) {
 }
 
 func TestPostAuthCookie_withAllFields(t *testing.T) {
-	srv := newAuthCookieServer()
+	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
 
 	body := `{
@@ -198,7 +205,7 @@ func TestPostAuthCookie_withAllFields(t *testing.T) {
 	}`
 	resp := mustPost(t, srv, "/auth/cookie", body, &http.Cookie{
 		Name:  "sAccessToken",
-		Value: "token-456",
+		Value: testJWT,
 	})
 
 	if resp.StatusCode != http.StatusOK {
@@ -211,8 +218,9 @@ func TestPostAuthCookie_withAllFields(t *testing.T) {
 	}
 
 	sess := extractSessionFromCookie(t, authCookie)
-	if sess.UserID != "u2" {
-		t.Errorf("expected UserID u2, got %q", sess.UserID)
+	// UserID comes from the verified SuperTokens session.
+	if sess.UserID != "test-user" {
+		t.Errorf("expected UserID test-user (verified), got %q", sess.UserID)
 	}
 	if sess.Role != "Practitioner" {
 		t.Errorf("expected Role Practitioner, got %q", sess.Role)
@@ -241,7 +249,7 @@ func TestPostAuthCookie_withAllFields(t *testing.T) {
 }
 
 func TestAuthCookieHandler_wrongMethod(t *testing.T) {
-	srv := newAuthCookieServer()
+	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
 
 	req, err := http.NewRequest(http.MethodPatch, srv.URL+"/auth/cookie", http.NoBody)
@@ -260,12 +268,12 @@ func TestAuthCookieHandler_wrongMethod(t *testing.T) {
 }
 
 func TestPostAuthCookie_invalidJSON(t *testing.T) {
-	srv := newAuthCookieServer()
+	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
 
 	resp := mustPost(t, srv, "/auth/cookie", "not-json", &http.Cookie{
 		Name:  "sAccessToken",
-		Value: "token",
+		Value: testJWT,
 	})
 
 	if resp.StatusCode != http.StatusBadRequest {

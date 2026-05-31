@@ -31,8 +31,10 @@ export const decodeJwtPayload = (
   }
 };
 
+const GUEST_SESSION_KEY = 'current_guest';
+
 export const getCachedGuestId = async (): Promise<string | null> => {
-  // 1. Check IndexedDB guest_sessions store
+  // 1. Check IndexedDB guest_sessions store (singleton key)
   try {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const req = indexedDB.open('konsulin');
@@ -41,14 +43,16 @@ export const getCachedGuestId = async (): Promise<string | null> => {
     });
     const tx = db.transaction(STORES.guestSessions, 'readonly');
     const store = tx.objectStore(STORES.guestSessions);
-    const keysReq = store.getAllKeys();
-    const keys = await new Promise<IDBValidKey[]>((resolve, reject) => {
-      keysReq.onsuccess = () => resolve(keysReq.result);
-      keysReq.onerror = () => reject(keysReq.error);
+    const result = await new Promise<{
+      guest_id: string;
+      value: string;
+    } | null>((resolve, reject) => {
+      const req = store.get(GUEST_SESSION_KEY);
+      req.onsuccess = () => resolve(req.result ?? null);
+      req.onerror = () => reject(req.error);
     });
-    if (keys.length > 0) {
-      const guestId = keys[0] as string;
-      return guestId;
+    if (result?.value) {
+      return result.value;
     }
   } catch {
     // fall through
@@ -88,7 +92,10 @@ export const getCachedGuestId = async (): Promise<string | null> => {
 
 export const cacheGuestId = async (guestId: string) => {
   try {
-    await dbSet(STORES.guestSessions, { guest_id: guestId });
+    await dbSet(STORES.guestSessions, {
+      guest_id: GUEST_SESSION_KEY,
+      value: guestId
+    });
   } catch {
     // ignore storage errors
   }

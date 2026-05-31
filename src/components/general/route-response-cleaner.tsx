@@ -1,6 +1,6 @@
 'use client';
 
-import { STORES, dbGet, cursorDeleteAll } from '@/lib/indexeddb';
+import { STORES, cursorDeleteAll, dbGet } from '@/lib/indexeddb';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -12,10 +12,10 @@ export default function RouteResponseCleaner() {
     let cancelled = false;
 
     (async () => {
-      const saved = await dbGet<{ value: string }>(
-        STORES.uiPreferences,
-        ['', 'skip-response-cleanup']
-      ).catch((err) => {
+      const saved = await dbGet<{ value: string }>(STORES.uiPreferences, [
+        '',
+        'skip-response-cleanup'
+      ]).catch(err => {
         console.warn('[IndexedDB]', err);
         return null;
       });
@@ -27,8 +27,7 @@ export default function RouteResponseCleaner() {
       cursorDeleteAll(
         STORES.assessmentDrafts,
         (value: unknown, key: IDBValidKey) => {
-          const questionnaireId =
-            Array.isArray(key) ? key[1] : '';
+          const questionnaireId = Array.isArray(key) ? key[1] : '';
           const segments = pathname.split('/');
           const isRecordPage = segments[1] === 'record';
           const recordId = isRecordPage ? segments[2] : null;
@@ -46,19 +45,23 @@ export default function RouteResponseCleaner() {
             !isSkipCleanup
           );
         }
-      ).catch((err) => console.warn('[IndexedDB]', err));
+      ).catch(err => console.warn('[IndexedDB]', err));
 
       const isOnSoapPage =
         /^\/record\/[^/]+\/edit/.test(pathname) ||
         pathname.includes('/assessments/soap');
+      const isOnAuthPage = pathname.includes('/auth');
 
-      if (!isOnSoapPage) {
-        cursorDeleteAll(STORES.soapDrafts, () => true)
-          .catch((err) => console.warn('[IndexedDB]', err));
+      if (!isOnSoapPage && !isOnAuthPage) {
+        cursorDeleteAll(STORES.soapDrafts, () => true).catch(err =>
+          console.warn('[IndexedDB]', err)
+        );
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [pathname, searchParams]);
 
   return null;

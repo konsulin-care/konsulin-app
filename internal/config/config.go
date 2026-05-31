@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/a-h/templ"
@@ -107,8 +108,8 @@ func Load() (*Config, error) {
 
 		NextjsURL:                  env("NEXTJS_URL", "http://localhost:8080"),
 		CookieSecure:               strings.HasPrefix(appURL, "https://"),
-		AllowInsecureBackendLogout: env("ALLOW_INSECURE_BACKEND_LOGOUT", "") != "",
-		AllowUnsignedCookies:       env("ALLOW_UNSIGNED_COOKIES", "") != "",
+		AllowInsecureBackendLogout: envBool("ALLOW_INSECURE_BACKEND_LOGOUT", false),
+		AllowUnsignedCookies:       envBool("ALLOW_UNSIGNED_COOKIES", false),
 		CSRFAuthKey:                env("CSRF_AUTH_KEY", ""),
 		LogLevel:                   env("LOG", "info"),
 	}
@@ -134,6 +135,23 @@ func env(key, defaultVal string) string {
 	}
 	slog.Debug("env var not set, using default", "key", key, "default", defaultVal)
 	return defaultVal
+}
+
+func envBool(key string, defaultVal bool) bool {
+	val, ok := os.LookupEnv(key)
+	if !ok {
+		return defaultVal
+	}
+	val = strings.TrimSpace(val)
+	if val == "" {
+		return defaultVal
+	}
+	b, err := strconv.ParseBool(val)
+	if err != nil {
+		slog.Warn("env var is not a valid bool, using default", "key", key, "default", defaultVal)
+		return defaultVal
+	}
+	return b
 }
 
 func MustEnv(key string) (string, error) {

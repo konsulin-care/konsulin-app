@@ -49,24 +49,20 @@ func routes(cfg *config.Config) (http.Handler, error) {
 
 	// CSRF protection — applies to all state-changing Go SSR routes.
 	// Exempt proxy, CSRF token endpoint, health, and static routes.
-	if cfg.CSRFAuthKey != "" {
-		if len(cfg.CSRFAuthKey) != 32 {
-			slog.Error("CSRF_AUTH_KEY must be exactly 32 bytes, CSRF disabled",
-				"length", len(cfg.CSRFAuthKey))
-		} else {
-			csrfMw := appmw.NewCSRFProtection(appmw.CSRFConfig{
-				AuthKey: []byte(cfg.CSRFAuthKey),
-				Secure:  cfg.CookieSecure,
-				ExemptPrefixes: []string{
-					"/api/config",
-					"/proxy/",
-					"/health",
-					"/static/",
-				},
-			})
-			r.Use(csrfMw)
-		}
+	if cfg.CSRFAuthKey == "" || len(cfg.CSRFAuthKey) != 32 {
+		return nil, fmt.Errorf("CSRF_AUTH_KEY must be exactly 32 bytes, got length %d", len(cfg.CSRFAuthKey))
 	}
+	csrfMw := appmw.NewCSRFProtection(appmw.CSRFConfig{
+		AuthKey: []byte(cfg.CSRFAuthKey),
+		Secure:  cfg.CookieSecure,
+		ExemptPrefixes: []string{
+			"/api/config",
+			"/proxy/",
+			"/health",
+			"/static/",
+		},
+	})
+	r.Use(csrfMw)
 
 	// Global soft auth — injects a session (real, guest, or new guest) for
 	// every request without ever redirecting.  The guest_session cookie is set

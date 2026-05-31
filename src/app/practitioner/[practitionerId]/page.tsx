@@ -56,6 +56,8 @@ type IPractitionerLocalStorage = {
  * @param params - Route parameters object containing `practitionerId`
  * @returns A React element that displays practitioner details, availability interaction, and a booking confirmation drawer
  */
+/* eslint-disable sonarjs/cognitive-complexity */
+// deepsource-disable-next-line GO-S1034
 export default function Practitioner({ params }: IPractitionerProps) {
   const router = useRouter();
   const { state: bookingState, dispatch } = useBooking();
@@ -67,15 +69,15 @@ export default function Practitioner({ params }: IPractitionerProps) {
   const [practitionerDataLoading, setPractitionerDataLoading] = useState(true);
 
   useEffect(() => {
-    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_clinic']).then(
-      saved => {
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_clinic'])
+      .then(saved => {
         if (saved?.value) {
           setSelectedClinicId(saved.value);
         } else {
           router.push('/clinic');
         }
-      }
-    ).catch((err) => console.warn('[IndexedDB]', err));
+      })
+      .catch(err => console.warn('[IndexedDB]', err));
   }, []);
 
   useEffect(() => {
@@ -84,13 +86,19 @@ export default function Practitioner({ params }: IPractitionerProps) {
     dbGet<{ value: IPractitionerLocalStorage }>(STORES.uiPreferences, [
       '',
       'selected_practitioner'
-    ]).then(saved => {
-      setPractitionerData(saved?.value ?? null);
-      setPractitionerDataLoading(false);
-    }).catch((err) => {
-      console.warn('[IndexedDB]', err);
-      setPractitionerDataLoading(false);
-    });
+    ])
+      .then(saved => {
+        if (saved?.value?.roleId === params.practitionerId) {
+          setPractitionerData(saved.value);
+        } else {
+          setPractitionerData(null);
+        }
+        setPractitionerDataLoading(false);
+      })
+      .catch(err => {
+        console.warn('[IndexedDB]', err);
+        setPractitionerDataLoading(false);
+      });
   }, [params.practitionerId]);
 
   useEffect(() => {

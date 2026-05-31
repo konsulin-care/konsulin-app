@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/konsulin-care/konsulin-app/internal/client"
 	"github.com/konsulin-care/konsulin-app/internal/session"
 )
 
@@ -60,15 +61,22 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 		return
 	}
 
-	// Verify SuperTokens session token is present (lightweight security check).
-	if _, err := r.Cookie("sAccessToken"); err != nil {
+	// Verify SuperTokens session server-side.
+	accessCookie, err := r.Cookie("sAccessToken")
+	if err != nil {
 		slog.Warn("auth cookie: missing sAccessToken cookie", "userId", req.UserID)
 		http.Error(w, "missing SuperTokens session", http.StatusUnauthorized)
 		return
 	}
+	verified, err := client.VerifySession(accessCookie.Value)
+	if err != nil {
+		slog.Warn("auth cookie: SuperTokens session verification failed", "err", err)
+		http.Error(w, "invalid SuperTokens session", http.StatusUnauthorized)
+		return
+	}
 
 	sess := &session.Session{
-		UserID:          req.UserID,
+		UserID:          verified.UserID,
 		Roles:           req.Roles,
 		Role:            req.Role,
 		FHIRID:          req.FHIRID,

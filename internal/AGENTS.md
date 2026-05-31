@@ -20,3 +20,6 @@ description: Shared Go packages — handler, service, fhir, config, session
 - One struct per file in `fhir/`
 - All Go code uses explicit error handling: return errors, never panic
 - Prefix interfaces with `I` only when disambiguation is needed
+- SuperTokens core is private (backend-only access). Session verification must
+  use local JWT decoding (`internal/client/session_verify.go`) — never make
+  HTTP calls to SuperTokens endpoints.

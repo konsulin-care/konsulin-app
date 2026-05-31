@@ -13,10 +13,17 @@ export default function Logout() {
 
   useEffect(() => {
     const handleLogout = async () => {
-      const ownerId = state.userInfo.userId || '';
+      const ownerId = state.userInfo?.userId ?? '';
       await Session.signOut();
       await clearUserData(ownerId);
-      await fetch('/auth/cookie', { method: 'DELETE' }).catch(err =>
+      const csrfRes = await fetch('/auth/cookie/csrf-token');
+      const csrfToken = csrfRes.ok
+        ? (((await csrfRes.json()) as { token?: string }).token ?? '')
+        : '';
+      await fetch('/auth/cookie', {
+        method: 'DELETE',
+        headers: { ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) }
+      }).catch(err =>
         console.error('[auth:cookie] failed to clear auth cookie', err)
       );
       dispatch({ type: 'logout' });

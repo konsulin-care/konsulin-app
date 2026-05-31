@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/cognitive-complexity, max-lines */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Roles } from '@/constants/roles';
@@ -13,7 +14,7 @@ import {
   DrawerHeader,
   DrawerTitle
 } from '@/components/ui/drawer';
-import { STORES, dbGet, dbSet } from '@/lib/indexeddb';
+import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import {
   BaseRenderer,
   getResponse,
@@ -30,11 +31,12 @@ import { toast } from 'react-toastify';
 
 interface FhirFormsRendererProps {
   questionnaire: Questionnaire;
-  isAuthenticated: Boolean;
+  isAuthenticated: boolean;
   patientId?: string;
   formType?: string;
   role?: string;
   practitionerId?: string;
+  ownerId?: string; // for scoping IndexedDB drafts per user/guest
 }
 
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
@@ -54,6 +56,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const draftOwnerId = props.ownerId || practitionerId || patientId || '';
 
   const queryClient = useRendererQueryClient();
   const isBuilding = useBuildForm(questionnaire, response);
@@ -67,13 +70,15 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   useEffect(() => {
     dbGet<{ response: QuestionnaireResponse }>(STORES.assessmentDrafts, [
-      '',
+      draftOwnerId,
       questionnaire.id
-    ]).then(saved => {
-      if (saved?.response) {
-        setResponse(saved.response);
-      }
-    }).catch((err) => console.warn('[IndexedDB]', err));
+    ])
+      .then(saved => {
+        if (saved?.response) {
+          setResponse(saved.response);
+        }
+      })
+      .catch(err => console.warn('[IndexedDB]', err));
   }, []);
 
   // add some delay to fetch the latest response after input settles
@@ -81,11 +86,11 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     setTimeout(() => {
       const questionnaireResponse = getResponse();
       dbSet(STORES.assessmentDrafts, {
-        ownerId: '',
+        ownerId: draftOwnerId,
         questionnaireId: questionnaire.id,
         response: questionnaireResponse,
         updatedAt: Date.now()
-      }).catch((err) => console.warn('[IndexedDB]', err));
+      }).catch(err => console.warn('[IndexedDB]', err));
     }, 300);
   };
 
@@ -209,21 +214,21 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         if (serviceRequestId) {
           dbSet(STORES.serviceRequests, {
             id: submitResult.id,
-            ownerId: '',
+            ownerId: draftOwnerId,
             serviceRequestId,
             updatedAt: Date.now()
-          }).catch((err) => console.warn('[IndexedDB]', err));
+          }).catch(err => console.warn('[IndexedDB]', err));
         }
       }
 
       /* save questionnaire response to IndexedDB for guest (if not closing) */
       if (buttonLabel !== 'close' && !isAuthenticated) {
         dbSet(STORES.assessmentDrafts, {
-          ownerId: '',
+          ownerId: draftOwnerId,
           questionnaireId: questionnaire.id,
           response: { ...questionnaireResponse, id: submitResult.id },
           updatedAt: Date.now()
-        }).catch((err) => console.warn('[IndexedDB]', err));
+        }).catch(err => console.warn('[IndexedDB]', err));
       }
 
       handleNavigate(buttonLabel, submitResult.id);

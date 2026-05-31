@@ -65,6 +65,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (!session.doesSessionExist) {
+        // Clear stale auth state on session expiry.
+        dispatch({ type: 'logout' });
+        setCurrentUserId(null);
+
         // Reload on homepage: let the page call ensureAnonymousSession(true) once; avoid duplicate calls
         const navEntries =
           typeof window !== 'undefined'
@@ -89,9 +93,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Ensure auth cookie exists for Go SSR middleware (idempotent).
       try {
-        await restoreAuthCookie(session);
+        const restored = await restoreAuthCookie(session);
+        if (!restored) {
+          console.error('restoreAuthCookie failed, aborting bootstrap');
+          setIsLoading(false);
+          return;
+        }
       } catch (err) {
         console.error('restoreAuthCookie unexpected error:', err);
+        setIsLoading(false);
+        return;
       }
 
       try {

@@ -7,7 +7,7 @@ import (
 )
 
 func TestGetAuthCookie_returnsAuthenticated(t *testing.T) {
-	srv := newAuthCookieServer()
+	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
 
 	// No auth cookie → authenticated: false
@@ -39,7 +39,7 @@ func TestGetAuthCookie_returnsAuthenticated(t *testing.T) {
 	// First POST to create a properly signed cookie, then use it for GET.
 	postResp := mustPost(t, srv, "/auth/cookie",
 		`{"userId":"u1","role_name":"Patient"}`,
-		&http.Cookie{Name: "sAccessToken", Value: "test-token"})
+		&http.Cookie{Name: "sAccessToken", Value: testJWT})
 	if postResp.StatusCode != http.StatusOK {
 		t.Fatalf("POST auth/cookie failed: %d", postResp.StatusCode)
 	}

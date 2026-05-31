@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, sonarjs/cognitive-complexity, max-lines, @next/next/no-img-element */
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -71,7 +72,7 @@ const getAvailableDays = (availableTime: any[], month: Date): Date[] => {
       );
 
       // find the first occurrence of the specified day
-      let currentDate = new Date(firstDayOfMonth);
+      const currentDate = new Date(firstDayOfMonth);
       while (currentDate.getDay() !== dayIndex) {
         currentDate.setDate(currentDate.getDate() + 1);
       }
@@ -192,6 +193,9 @@ export default function PractitionerAvailability({
    * apply it to the booking form and global state,
    * and remove the temporary data afterward. */
   useEffect(() => {
+    const userId = authState?.userInfo?.userId;
+    if (isOpenParam === 'true' && !userId) return;
+
     const intent = getIntent();
     if (intent && intent.kind === 'appointment') {
       const payload = intent.payload as AppointmentPayload;
@@ -210,10 +214,10 @@ export default function PractitionerAvailability({
       }
     }
 
-    if (isOpenParam === 'true') {
+    if (isOpenParam === 'true' && userId) {
       setIsOpen(true);
 
-      const ownerId = authState?.userInfo?.userId || '';
+      const ownerId = userId;
       dbGet<TempBookingData>(STORES.tempBooking, ownerId).then(parsed => {
         if (parsed) {
           setBookingInformation(() => ({
@@ -228,12 +232,13 @@ export default function PractitionerAvailability({
           handleFilterChange('startTime', parsed.startTime);
           handleFilterChange('hasUserChosenDate', parsed.hasUserChosenDate);
 
-          dbDelete(STORES.tempBooking, ownerId)
-            .catch((err) => console.warn('[IndexedDB]', err));
+          dbDelete(STORES.tempBooking, ownerId).catch(err =>
+            console.warn('[IndexedDB]', err)
+          );
         }
       });
     }
-  }, [isOpenParam]);
+  }, [isOpenParam, authState?.userInfo?.userId]);
 
   useEffect(() => {
     if (isOpenParam !== 'true') {
@@ -329,7 +334,7 @@ export default function PractitionerAvailability({
     currentDate: Date,
     availableDays: Date[]
   ): Date => {
-    let date = new Date(currentDate);
+    const date = new Date(currentDate);
 
     if (availableDays.length === 0) {
       return date;
@@ -485,7 +490,7 @@ export default function PractitionerAvailability({
       'Tipe Session': bookingForm.session_type
     };
 
-    let emptyField = Object.entries(requiredData).filter(item => !item[1]);
+    const emptyField = Object.entries(requiredData).filter(item => !item[1]);
 
     if (emptyField.length > 0) {
       setErrorForm(emptyField.map(item => item[0]));

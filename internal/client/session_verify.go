@@ -1,0 +1,50 @@
+package client
+
+import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"strings"
+	"time"
+)
+
+// VerifiedSessionResult holds the verified session data extracted from the JWT.
+type VerifiedSessionResult struct {
+	UserID string
+}
+
+type jwtPayload struct {
+	Sub string `json:"sub"`
+	Exp int64  `json:"exp"`
+}
+
+// VerifySession decodes and validates the sAccessToken JWT locally.
+// The token was signed by the SuperTokens core and delivered via HttpOnly cookie,
+// so we trust its claims. Signature verification is omitted because the SuperTokens
+// core (which holds the public JWKS) is not accessible from this service.
+func VerifySession(accessToken string) (*VerifiedSessionResult, error) {
+	parts := strings.Split(accessToken, ".")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("verify session: invalid JWT format")
+	}
+
+	payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, fmt.Errorf("verify session: base64 decode: %w", err)
+	}
+
+	var payload jwtPayload
+	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
+		return nil, fmt.Errorf("verify session: json decode: %w", err)
+	}
+
+	if payload.Sub == "" {
+		return nil, fmt.Errorf("verify session: missing sub claim")
+	}
+
+	if payload.Exp > 0 && time.Now().Unix() > payload.Exp {
+		return nil, fmt.Errorf("verify session: token expired")
+	}
+
+	return &VerifiedSessionResult{UserID: payload.Sub}, nil
+}

@@ -462,6 +462,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   };
 
   /** Handles profile save: syncs Chatwoot, uploads photo, updates FHIR profile. */
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   const handleEditSave = async () => {
     let latestProfile: FHIRProfile = null;
     try {
@@ -560,21 +561,31 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         userId: existing.userId,
         roles: existing.roles || [existing.role_name || 'Patient'],
         role_name: existing.role_name,
-        email: existing.email,
-        phoneNumber: existing.phoneNumber,
+        email: updateUser.email || existing.email,
+        phoneNumber: updateUser.phone || existing.phoneNumber,
         fhirId: result.id || existing.fhirId,
         fullname: updatedFullname,
         profile_picture: updatedPhotoUrl,
         profile_complete: isProfileCompleteFromFHIR(result)
       };
 
-      await fetch('/auth/cookie', {
+      const csrfToken = await fetch('/auth/cookie/csrf-token')
+        .then(r =>
+          r.ok ? r.json() : Promise.reject(new Error('CSRF fetch failed'))
+        )
+        .then(d => (d as { token?: string }).token ?? '')
+        .catch(() => '');
+      const cookieRes = await fetch('/auth/cookie', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+        },
         body: JSON.stringify(authPayload)
-      }).catch(err =>
-        console.error('[auth:cookie] failed to set auth cookie', err)
-      );
+      });
+      if (!cookieRes.ok) {
+        throw new Error(`auth cookie set failed: ${cookieRes.status}`);
+      }
       dispatchAuth({ type: 'auth-check', payload: authPayload });
       setDrawerState(DRAWER_STATE.SUCCESS);
     } catch (error) {
