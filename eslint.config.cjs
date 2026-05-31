@@ -6,6 +6,9 @@ const compat = new FlatCompat({
 })
 
 module.exports = [
+  {
+    ignores: ['web/static/js/*.min.js']
+  },
   ...compat.extends('next/core-web-vitals'),
   ...compat.extends('plugin:@typescript-eslint/recommended'),
   {
