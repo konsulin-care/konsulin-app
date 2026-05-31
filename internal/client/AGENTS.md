@@ -19,7 +19,7 @@ data extraction on tokens already held by the server.
 
 ## Key constraints
 
-- **SuperTokens core is private.** The core (default port 3567) runs in the
-  backend's Docker network and is NOT accessible from this Go server. Session
-  verification MUST use local JWT decoding — never attempt HTTP calls to
-  SuperTokens endpoints.
+- **Session verification delegated to backend.** The external backend service
+  (which connects privately to SuperTokens) is responsible for all SuperTokens
+  session and token verification. This Go server performs lightweight local JWT
+  decoding — it never makes HTTP calls to SuperTokens endpoints.

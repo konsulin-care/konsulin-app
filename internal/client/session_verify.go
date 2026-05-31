@@ -39,8 +39,9 @@ func activeRoleFrom(roles []string) string {
 
 // VerifySession decodes and validates the sAccessToken JWT locally.
 // The token was signed by the SuperTokens core and delivered via HttpOnly cookie,
-// so we trust its claims. Signature verification is omitted because the SuperTokens
-// core (which holds the public JWKS) is not accessible from this service.
+// so we trust its claims. Signature verification is unnecessary because the
+// external backend service (which has private SuperTokens access) already
+// verified the session before issuing the cookie.
 func VerifySession(accessToken string) (*VerifiedSessionResult, error) {
 	parts := strings.Split(accessToken, ".")
 	if len(parts) != 3 {
