@@ -2,7 +2,7 @@
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
-import { getFromLocalStorage } from '@/lib/utils';
+import { dbDelete, dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import { useSubmitSoapBundle } from '@/services/api/assessment';
 import {
   BaseRenderer,
@@ -49,8 +49,6 @@ export default function SoapForm({
   const searchParams = useSearchParams();
   const titleParam = searchParams?.get('title');
   const categoryParam = searchParams?.get('category');
-  const localKey = `soap_${patientId}`;
-
   const queryClient = useRendererQueryClient();
 
   const { mutateAsync: submitSoapBundle, isLoading: isSubmitSoapLoading } =
@@ -68,10 +66,12 @@ export default function SoapForm({
         if (mode === 'view') {
           finalResponse = questionnaireResponse;
         } else {
-          const savedResponses = getFromLocalStorage(localKey);
-          finalResponse = savedResponses
-            ? JSON.parse(savedResponses)
-            : (questionnaireResponse ?? null);
+          const ownerId = practitionerId;
+          const saved = await dbGet<{ draft: QuestionnaireResponse }>(
+            STORES.soapDrafts,
+            [ownerId, patientId]
+          );
+          finalResponse = saved?.draft ?? questionnaireResponse ?? null;
         }
 
         await buildForm(
@@ -95,7 +95,13 @@ export default function SoapForm({
   const handleResponseChange = () => {
     setTimeout(() => {
       const questionnaireResponse = getResponse();
-      localStorage.setItem(localKey, JSON.stringify(questionnaireResponse));
+      const ownerId = practitionerId || '';
+      dbSet(STORES.soapDrafts, {
+        practitionerId: ownerId,
+        patientId,
+        draft: questionnaireResponse,
+        updatedAt: Date.now()
+      }).catch(err => console.warn('[IndexedDB]', err));
     }, 300);
   };
 
@@ -188,7 +194,9 @@ export default function SoapForm({
         toast.success(
           `SOAP berhasil ${mode === 'create' ? 'dikirim' : 'diupdate'}`
         );
-        localStorage.removeItem(localKey);
+        dbDelete(STORES.soapDrafts, [practitionerId, patientId]).catch(err =>
+          console.warn('[IndexedDB]', err)
+        );
         router.push('/');
       }
     } catch (error) {
@@ -224,7 +232,7 @@ export default function SoapForm({
       </QueryClientProvider>
       <div className='flex-flex-col px-2'>
         {requiredItemEmpty > 0 || !patientId ? (
-          <div className='mb-2 w-full text-sm text-destructive'>
+          <div className='text-destructive mb-2 w-full text-sm'>
             Masih ada kolom wajib yang belum terisi, yuk dilengkapi dulu!
           </div>
         ) : (
@@ -233,7 +241,7 @@ export default function SoapForm({
         {mode !== 'view' && (
           <Button
             disabled={isSubmitSoapLoading || requiredItemEmpty > 0}
-            className='w-full bg-secondary text-white'
+            className='bg-secondary w-full text-white'
             onClick={() => {
               const isValid = handleValidation();
               if (isValid) {
@@ -251,7 +259,7 @@ export default function SoapForm({
 
         {mode === 'view' && (
           <Button
-            className='w-full bg-secondary text-white'
+            className='bg-secondary w-full text-white'
             disabled={!isAuthorSame}
             onClick={() => {
               const queryParams = new URLSearchParams({

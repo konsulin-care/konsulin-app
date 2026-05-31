@@ -5,8 +5,13 @@ import NavigationBar from '@/components/navigation-bar';
 import { useAuth } from '@/context/auth/authContext';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { getAPI } from '@/services/api';
-import { clearIntent, getIntent } from '@/utils/intent-storage';
-import { getCookie } from 'cookies-next';
+import {
+  clearIntent,
+  clearRedirectIntent,
+  getIntent,
+  getRedirectIntent
+} from '@/utils/redirect-intent';
+
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -47,22 +52,25 @@ const App = () => {
     if (isLoading) return;
     if (authState.isAuthenticated) return;
 
-    // Cookie guard: avoid race where context says not signed in but cookie already set
-    let auth: { userId?: string; role_name?: string } = {};
-    try {
-      auth = JSON.parse(getCookie('auth') || '{}');
-    } catch {
-      // ignore parse errors
-    }
-    if (auth?.userId && auth?.role_name) return;
-
-    hasRunReloadAnonymousRef.current = true;
-    try {
-      sessionStorage.setItem('konsulin_reload_anonymous_done', '1');
-    } catch {
-      // ignore
-    }
-    ensureAnonymousSession(true).catch(err => {
+    // Server-side HttpOnly cookie check: avoid anonymous session creation
+    // when the browser already has a real SuperTokens session (sAccessToken).
+    const checkAuthThenAnon = async () => {
+      try {
+        const res = await fetch('/auth/cookie');
+        const data = await res.json();
+        if (data.authenticated) return;
+      } catch {
+        // if check fails, proceed with anonymous session
+      }
+      hasRunReloadAnonymousRef.current = true;
+      try {
+        sessionStorage.setItem('konsulin_reload_anonymous_done', '1');
+      } catch {
+        // ignore
+      }
+      await ensureAnonymousSession(true);
+    };
+    checkAuthThenAnon().catch(err => {
       console.error('Failed to refresh anonymous session on reload:', err);
     });
   }, [isLoading, authState.isAuthenticated]);
@@ -73,16 +81,9 @@ const App = () => {
     let abortController: AbortController | null = null;
     let isMounted = true;
 
-    let storedRedirect: string | null = null;
-    try {
-      storedRedirect = localStorage.getItem('redirect');
-      if (storedRedirect) {
-        localStorage.removeItem('redirect');
-      }
-    } catch (error) {
-      console.error('Failed to access redirect in localStorage:', error);
-      setIsRedirecting(false);
-      return;
+    const storedRedirect = getRedirectIntent();
+    if (storedRedirect) {
+      clearRedirectIntent();
     }
 
     if (storedRedirect) {
@@ -123,12 +124,7 @@ const App = () => {
     }
 
     if (authState.isAuthenticated) {
-      let intent: ReturnType<typeof getIntent> | null = null;
-      try {
-        intent = getIntent();
-      } catch (error) {
-        console.error('Failed to access intent in localStorage:', error);
-      }
+      const intent = getIntent();
 
       if (intent) {
         const handleIntent = async () => {
@@ -149,7 +145,7 @@ const App = () => {
             }
 
             if (intent.kind === 'assessmentResult') {
-              const { path } = intent.payload;
+              const path = intent.payload.path;
               const api = await getAPI();
 
               await api.patch('/api/v1/auth/anonymous/claim', null, {

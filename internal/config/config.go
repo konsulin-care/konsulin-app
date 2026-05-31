@@ -20,13 +20,21 @@ type Config struct {
 	AppURL      string `json:"app_url"`
 	TXURL       string `json:"tx_url"`
 
-	AuthCookieName           string `json:"auth_cookie_name"`
-	SessionCookieNameAccess  string `json:"session_cookie_name_access"`
-	SessionCookieNameRefresh string `json:"session_cookie_name_refresh"`
-	SessionCookieSecret      string `json:"session_cookie_secret"`
+	AuthCookieName             string `json:"auth_cookie_name"`
+	SessionCookieNameAccess    string `json:"session_cookie_name_access"`
+	SessionCookieNameRefresh   string `json:"session_cookie_name_refresh"`
+	SessionCookieNameIDRefresh string `json:"session_cookie_name_id_refresh"`
+	SessionCookieSecret        string `json:"session_cookie_secret"`
 
-	NextjsURL    string `json:"nextjs_url"`
-	CookieSecure bool   `json:"cookie_secure"`
+	GuestSessionCookieName   string `json:"guest_session_cookie_name"`
+	RedirectIntentCookieName string `json:"redirect_intent_cookie_name"`
+
+	NextjsURL                  string `json:"nextjs_url"`
+	CookieSecure               bool   `json:"cookie_secure"`
+	AllowInsecureBackendLogout bool   `json:"allow_insecure_backend_logout"`
+	AllowUnsignedCookies       bool   `json:"allow_unsigned_cookies"`
+	CSRFAuthKey                string `json:"csrf_auth_key"`
+	LogLevel                   string `json:"log_level"`
 }
 
 func (c *Config) AuthFullPath() string {
@@ -88,13 +96,21 @@ func Load() (*Config, error) {
 		AppURL:      appURL,
 		TXURL:       txURL,
 
-		AuthCookieName:           env("AUTH_COOKIE_NAME", "auth"),
-		SessionCookieNameAccess:  env("SESSION_COOKIE_NAME_ACCESS", "sAccessToken"),
-		SessionCookieNameRefresh: env("SESSION_COOKIE_NAME_REFRESH", "sRefreshToken"),
-		SessionCookieSecret:      sessionSecret,
+		AuthCookieName:             env("AUTH_COOKIE_NAME", "auth"),
+		SessionCookieNameAccess:    env("SESSION_COOKIE_NAME_ACCESS", "sAccessToken"),
+		SessionCookieNameRefresh:   env("SESSION_COOKIE_NAME_REFRESH", "sRefreshToken"),
+		SessionCookieNameIDRefresh: env("SESSION_COOKIE_NAME_ID_REFRESH", "sIdRefreshToken"),
+		SessionCookieSecret:        sessionSecret,
 
-		NextjsURL:    env("NEXTJS_URL", "http://localhost:8080"),
-		CookieSecure: strings.HasPrefix(appURL, "https://"),
+		GuestSessionCookieName:   env("GUEST_SESSION_COOKIE_NAME", "guest_session"),
+		RedirectIntentCookieName: env("REDIRECT_INTENT_COOKIE_NAME", "redirect_intent"),
+
+		NextjsURL:                  env("NEXTJS_URL", "http://localhost:8080"),
+		CookieSecure:               strings.HasPrefix(appURL, "https://"),
+		AllowInsecureBackendLogout: env("ALLOW_INSECURE_BACKEND_LOGOUT", "") != "",
+		AllowUnsignedCookies:       env("ALLOW_UNSIGNED_COOKIES", "") != "",
+		CSRFAuthKey:                env("CSRF_AUTH_KEY", ""),
+		LogLevel:                   env("LOG", "info"),
 	}
 	slog.Info("config loaded",
 		"port", cfg.Port,
@@ -104,6 +120,8 @@ func Load() (*Config, error) {
 		"auth_path", cfg.AuthPath,
 		"app_url", cfg.AppURL,
 		"auth_cookie_name", cfg.AuthCookieName,
+		"guest_session_cookie_name", cfg.GuestSessionCookieName,
+		"redirect_intent_cookie_name", cfg.RedirectIntentCookieName,
 		"cookie_secure", cfg.CookieSecure,
 		"session_cookie_secret_set", cfg.SessionCookieSecret != "",
 	)

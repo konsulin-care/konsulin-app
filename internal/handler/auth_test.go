@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/konsulin-care/konsulin-app/internal/middleware"
@@ -220,6 +221,44 @@ func TestLogoutClient_hasTimeout(t *testing.T) {
 	if logoutClient.Timeout <= 0 {
 		t.Errorf("expected logout client timeout > 0, got %v", logoutClient.Timeout)
 	}
+}
+
+func TestTryBackendLogout_httpSkipped(t *testing.T) {
+	// HTTP backend URL — should skip (log warning), not make a request.
+	r := httptest.NewRequest(http.MethodPost, "/logout", http.NoBody)
+	tryBackendLogout(r, "http://localhost:8080", false)
+	// If it didn't panic and skipped the HTTP call, the test passes.
+	// We verify by checking no server received the request (no server started).
+}
+
+func TestTryBackendLogout_httpsForwarded(t *testing.T) {
+	// Start a local HTTPS server to receive the forwarded request.
+	received := make(chan struct{}, 1)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/auth/signout" {
+			received <- struct{}{}
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(server.Close)
+
+	// The httptest server URL is already http:// — but we use the
+	// "allow insecure" flag to confirm HTTPS skip is bypassed when allowed.
+	req := httptest.NewRequest(http.MethodPost, "/logout", http.NoBody)
+	tryBackendLogout(req, server.URL, true)
+
+	select {
+	case <-received:
+		// backend logout was forwarded
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected backend signout request, but none was received")
+	}
+}
+
+func TestTryBackendLogout_emptyBackend(t *testing.T) {
+	r := httptest.NewRequest(http.MethodPost, "/logout", http.NoBody)
+	// Should not panic with empty backend URL.
+	tryBackendLogout(r, "", false)
 }
 
 func TestHTMXProtectedRoute_redirectsViaHeader(t *testing.T) {

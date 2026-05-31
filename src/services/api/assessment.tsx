@@ -1,4 +1,5 @@
 import { IQuestionnaireResponse } from '@/types/assessment';
+import { STORES, dbDelete } from '@/lib/indexeddb';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {
@@ -226,7 +227,8 @@ export const useSubmitQuestionnaire = (
       const timestamp = new Date().toISOString();
 
       if (isAuthenticated) {
-        localStorage.removeItem(`response_${questionnaireId}`);
+        dbDelete(STORES.assessmentDrafts, ['', questionnaireId])
+          .catch((err) => console.warn('[IndexedDB]', err));
       }
 
       const API = await getAPI();

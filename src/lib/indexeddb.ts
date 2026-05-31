@@ -1,0 +1,403 @@
+/* eslint-disable max-lines -- utility module with full IndexedDB abstraction */
+const DB_NAME = 'konsulin';
+const DB_VERSION = 2;
+
+export const STORES = {
+  guestSessions: 'guest_sessions',
+  assessmentDrafts: 'assessment_drafts',
+  soapDrafts: 'soap_drafts',
+  serviceRequests: 'service_requests',
+  tempBooking: 'temp_booking',
+  uiPreferences: 'ui_preferences',
+  navigationState: 'navigation_state',
+  userProfile: 'user_profile'
+} as const;
+
+export type StoreName = (typeof STORES)[keyof typeof STORES];
+
+const STORE_SCHEMAS: { name: StoreName; keyPath: string | string[] }[] = [
+  { name: STORES.guestSessions, keyPath: 'guest_id' },
+  { name: STORES.assessmentDrafts, keyPath: ['ownerId', 'questionnaireId'] },
+  { name: STORES.soapDrafts, keyPath: ['practitionerId', 'patientId'] },
+  { name: STORES.serviceRequests, keyPath: 'id' },
+  { name: STORES.tempBooking, keyPath: 'ownerId' },
+  { name: STORES.uiPreferences, keyPath: ['ownerId', 'prefKey'] },
+  { name: STORES.navigationState, keyPath: ['ownerId', 'stateKey'] },
+  { name: STORES.userProfile, keyPath: 'userId' }
+];
+
+/** Opens the IndexedDB database, creating object stores on upgrade. */
+export function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      for (const schema of STORE_SCHEMAS) {
+        if (!db.objectStoreNames.contains(schema.name)) {
+          db.createObjectStore(schema.name, { keyPath: schema.keyPath });
+        }
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/** Returns an object store for the given database and store name. */
+export function getStore(
+  db: IDBDatabase,
+  name: StoreName,
+  mode: IDBTransactionMode = 'readonly'
+): IDBObjectStore {
+  return db.transaction(name, mode).objectStore(name);
+}
+
+/** Gets a single value by key from an IndexedDB store. */
+export async function dbGet<T>(
+  storeName: StoreName,
+  key: IDBValidKey
+): Promise<T | null> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = getStore(db, storeName, 'readonly').get(key);
+    req.onsuccess = () => resolve(req.result ?? null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/** Puts a value into an IndexedDB store. */
+export async function dbSet<T>(storeName: StoreName, value: T): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = getStore(db, storeName, 'readwrite').put(value);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/** Deletes a value by key from an IndexedDB store. */
+export async function dbDelete(
+  storeName: StoreName,
+  key: IDBValidKey
+): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = getStore(db, storeName, 'readwrite').delete(key);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/** Clears all entries from an IndexedDB store. */
+export async function dbClearAll(storeName: StoreName): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = getStore(db, storeName, 'readwrite').clear();
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/** Gets all keys from an IndexedDB store. */
+export async function dbGetAllKeys(
+  storeName: StoreName
+): Promise<IDBValidKey[]> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = getStore(db, storeName, 'readonly').getAllKeys();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/** Gets all values from an IndexedDB store. */
+export async function dbGetAll<T>(storeName: StoreName): Promise<T[]> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = getStore(db, storeName, 'readonly').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/** Deletes all entries from a store that match a predicate using a cursor. */
+export async function cursorDeleteAll(
+  storeName: StoreName,
+  predicate: (value: unknown, key: IDBValidKey) => boolean
+): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const txn = db.transaction(storeName, 'readwrite');
+    const store = txn.objectStore(storeName);
+    const req = store.openCursor();
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (cursor) {
+        if (predicate(cursor.value, cursor.key)) {
+          cursor.delete();
+        }
+        cursor.continue();
+      }
+    };
+    req.onerror = () => reject(req.error);
+    txn.oncomplete = () => resolve();
+    txn.onerror = event => {
+      reject(
+        (event.target as IDBRequest)?.error || new Error('transaction failed')
+      );
+    };
+  });
+}
+
+/** Clears all user data from all stores for a given owner ID. */
+export async function clearUserData(ownerId: string): Promise<void> {
+  const allStores = Object.values(STORES);
+  for (const storeName of allStores) {
+    await cursorDeleteAll(storeName, (value: Record<string, unknown>) => {
+      if (storeName === STORES.guestSessions) {
+        return value.guest_id === ownerId;
+      }
+      if (storeName === STORES.serviceRequests) {
+        return value.ownerId === ownerId;
+      }
+      if (
+        storeName === STORES.assessmentDrafts ||
+        storeName === STORES.uiPreferences ||
+        storeName === STORES.navigationState
+      ) {
+        return value.ownerId === ownerId;
+      }
+      if (storeName === STORES.soapDrafts) {
+        return value.practitionerId === ownerId;
+      }
+      if (storeName === STORES.tempBooking) {
+        return value.ownerId === ownerId;
+      }
+      if (storeName === STORES.userProfile) {
+        return value.userId === ownerId;
+      }
+      return false;
+    });
+  }
+}
+
+/** Deletes a guest session from the store. */
+export async function deleteGuestSession(guestId: string): Promise<void> {
+  await dbDelete(STORES.guestSessions, guestId);
+}
+
+/** Puts multiple values into a store within a single transaction. */
+function putWithTransaction<T>(
+  db: IDBDatabase,
+  storeName: StoreName,
+  values: T[]
+): Promise<void> {
+  if (values.length === 0) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const txn = db.transaction(storeName, 'readwrite');
+    const store = txn.objectStore(storeName);
+    for (const value of values) {
+      store.put(value);
+    }
+    txn.oncomplete = () => resolve();
+    txn.onerror = event => {
+      reject(
+        (event.target as IDBRequest)?.error || new Error('transaction failed')
+      );
+    };
+  });
+}
+
+const MIGRATION_FLAG = 'konsulin_migration_done';
+
+async function migrateGuestSessions(
+  db: IDBDatabase,
+  guestId: string
+): Promise<void> {
+  if (!guestId) return;
+  await putWithTransaction(db, STORES.guestSessions, [{ guest_id: guestId }]);
+}
+
+async function migrateAssessmentDrafts(
+  db: IDBDatabase,
+  ownerId: string
+): Promise<string[]> {
+  const responseKeys = Object.keys(localStorage).filter(k =>
+    k.startsWith('response_')
+  );
+  const assessmentValues: {
+    ownerId: string;
+    questionnaireId: string;
+    response: unknown;
+    updatedAt: number;
+  }[] = [];
+  for (const key of responseKeys) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        assessmentValues.push({
+          ownerId,
+          questionnaireId: key.replace('response_', ''),
+          response: JSON.parse(raw),
+          updatedAt: Date.now()
+        });
+      }
+    } catch {
+      // skip corrupt entries
+    }
+  }
+  await putWithTransaction(db, STORES.assessmentDrafts, assessmentValues);
+  return responseKeys;
+}
+
+async function migrateServiceRequests(
+  db: IDBDatabase,
+  ownerId: string
+): Promise<string[]> {
+  const srKeys = Object.keys(localStorage).filter(k =>
+    k.startsWith('serviceRequest_')
+  );
+  const srValues: {
+    id: string;
+    ownerId: string;
+    serviceRequestId: string;
+    updatedAt: number;
+  }[] = [];
+  for (const key of srKeys) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        srValues.push({
+          id: key.replace('serviceRequest_', ''),
+          ownerId,
+          serviceRequestId: raw.trim(),
+          updatedAt: Date.now()
+        });
+      }
+    } catch {
+      // skip corrupt entries
+    }
+  }
+  await putWithTransaction(db, STORES.serviceRequests, srValues);
+  return srKeys;
+}
+
+async function migrateTempBooking(
+  db: IDBDatabase,
+  ownerId: string
+): Promise<void> {
+  try {
+    const raw = localStorage.getItem('temp-booking');
+    if (raw) {
+      await putWithTransaction(db, STORES.tempBooking, [
+        {
+          ownerId,
+          ...JSON.parse(raw),
+          updatedAt: Date.now()
+        }
+      ]);
+    }
+  } catch {
+    // skip
+  }
+}
+
+async function migrateUiPreferences(
+  db: IDBDatabase,
+  ownerId: string
+): Promise<void> {
+  const prefMappings: Record<string, string> = {
+    'result-table-colors': 'result-table-colors',
+    selected_clinic: 'selected_clinic',
+    selected_practitioner: 'selected_practitioner',
+    'skip-response-cleanup': 'skip-response-cleanup'
+  };
+  const prefValues: { ownerId: string; prefKey: string; value: unknown }[] = [];
+  for (const [lsKey, prefKey] of Object.entries(prefMappings)) {
+    try {
+      const raw = localStorage.getItem(lsKey);
+      if (raw !== null) {
+        prefValues.push({
+          ownerId,
+          prefKey,
+          value: (() => {
+            try {
+              return JSON.parse(raw);
+            } catch {
+              return raw;
+            }
+          })()
+        });
+      }
+    } catch {
+      // skip
+    }
+  }
+  await putWithTransaction(db, STORES.uiPreferences, prefValues);
+}
+
+function cleanupMigratedKeys(
+  responseKeys: string[],
+  srKeys: string[],
+  soapKeys: string[]
+): void {
+  const lsKeysToRemove = [
+    'konsulin.guest_id',
+    'redirect',
+    ...responseKeys,
+    ...soapKeys,
+    ...srKeys,
+    'temp-booking',
+    'result-table-colors',
+    'selected_clinic',
+    'selected_practitioner',
+    'skip-response-cleanup'
+  ];
+  for (const key of lsKeysToRemove) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+function setMigrationFlag(): void {
+  try {
+    localStorage.setItem(MIGRATION_FLAG, 'true');
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Migrates data from localStorage to IndexedDB, one-time operation. */
+export async function migrateLocalStorage(): Promise<void> {
+  try {
+    if (localStorage.getItem(MIGRATION_FLAG) === 'true') return;
+  } catch {
+    return;
+  }
+
+  const db = await openDB();
+
+  const guestId = (() => {
+    try {
+      return localStorage.getItem('konsulin.guest_id') ?? '';
+    } catch {
+      return '';
+    }
+  })();
+
+  const ownerId = guestId || 'anonymous';
+
+  // soap_drafts migration is skipped — composite key lacks practitionerId
+  const soapKeys: string[] = [];
+
+  await migrateGuestSessions(db, guestId);
+  const responseKeys = await migrateAssessmentDrafts(db, ownerId);
+  const srKeys = await migrateServiceRequests(db, ownerId);
+  await migrateTempBooking(db, ownerId);
+  await migrateUiPreferences(db, ownerId);
+  cleanupMigratedKeys(responseKeys, srKeys, soapKeys);
+  setMigrationFlag();
+}

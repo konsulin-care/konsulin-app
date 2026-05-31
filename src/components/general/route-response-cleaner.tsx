@@ -1,6 +1,6 @@
 'use client';
 
-import { getFromLocalStorage } from '@/lib/utils';
+import { STORES, dbGet, cursorDeleteAll } from '@/lib/indexeddb';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -9,55 +9,56 @@ export default function RouteResponseCleaner() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const keys = Object.keys(localStorage);
-    const responseKey = keys.find(key => key.startsWith('response_'));
-    const soapKey = keys.find(key => key.startsWith('soap_'));
+    let cancelled = false;
 
-    const isSkipCleanup =
-      getFromLocalStorage('skip-response-cleanup') === 'true';
+    (async () => {
+      const saved = await dbGet<{ value: string }>(
+        STORES.uiPreferences,
+        ['', 'skip-response-cleanup']
+      ).catch((err) => {
+        console.warn('[IndexedDB]', err);
+        return null;
+      });
+      if (cancelled) return;
+      const isSkipCleanup = saved?.value === 'true';
 
-    const categoryParam = searchParams.get('category');
+      const categoryParam = searchParams.get('category');
 
-    if (responseKey) {
-      const segments = pathname.split('/');
-      const isRecordPage = segments[1] === 'record';
-      const recordId = isRecordPage ? segments[2] : null;
-      const questionnaireId = responseKey.replace('response_', '');
-      const isOnQuestionnairePage = pathname.includes(
-        `/assessments/${questionnaireId}`
-      );
-      const isOnAuthPage = pathname.includes('/auth');
-      const isOnResultPage =
-        pathname.includes(`/record/${recordId}`) && categoryParam === '1';
+      cursorDeleteAll(
+        STORES.assessmentDrafts,
+        (value: unknown, key: IDBValidKey) => {
+          const questionnaireId =
+            Array.isArray(key) ? key[1] : '';
+          const segments = pathname.split('/');
+          const isRecordPage = segments[1] === 'record';
+          const recordId = isRecordPage ? segments[2] : null;
+          const isOnQuestionnairePage = pathname.includes(
+            `/assessments/${questionnaireId}`
+          );
+          const isOnAuthPage = pathname.includes('/auth');
+          const isOnResultPage =
+            pathname.includes(`/record/${recordId}`) && categoryParam === '1';
 
-      /*
-       * make sure the user is on one of these 3 routes.
-       * if not, remove the questionnaire response.
-       * */
-      if (
-        !isOnQuestionnairePage &&
-        !isOnResultPage &&
-        !isOnAuthPage &&
-        !isSkipCleanup
-      ) {
-        localStorage.removeItem(responseKey);
-      }
-    }
+          return (
+            !isOnQuestionnairePage &&
+            !isOnResultPage &&
+            !isOnAuthPage &&
+            !isSkipCleanup
+          );
+        }
+      ).catch((err) => console.warn('[IndexedDB]', err));
 
-    if (soapKey) {
-      // matches routes like '/record/:id/edit' or '/assessments/soap'
       const isOnSoapPage =
         /^\/record\/[^/]+\/edit/.test(pathname) ||
         pathname.includes('/assessments/soap');
 
       if (!isOnSoapPage) {
-        keys.forEach(key => {
-          if (key.startsWith('soap_')) {
-            localStorage.removeItem(key);
-          }
-        });
+        cursorDeleteAll(STORES.soapDrafts, () => true)
+          .catch((err) => console.warn('[IndexedDB]', err));
       }
-    }
+    })();
+
+    return () => { cancelled = true; };
   }, [pathname, searchParams]);
 
   return null;

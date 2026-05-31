@@ -5,4 +5,9 @@
 export PATH="$HOME/.local/share/mise/shims:$PATH"
 
 make check-go && go test ./... -count=1 && make docker-check || exit 1
-npx --no-install lint-staged 2>/dev/null || echo "  lint-staged: not available (run npm install)"
+
+# Lint staged JS/TS files — fail commit on any error
+if ! npx --no-install lint-staged; then
+  echo "  Linting failed. Fix errors and try again."
+  exit 1
+fi

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
-import { getFromLocalStorage } from '@/lib/utils';
+import { STORES, dbDelete, dbGet, dbSet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import {
   RESULT_BRIEF_LOGIN_REQUIRED,
@@ -11,7 +11,7 @@ import {
   useQuestionnaireResponse
 } from '@/services/api/assessment';
 import { formatQueryTitle } from '@/utils/helper';
-import { saveIntent } from '@/utils/intent-storage';
+import { saveIntent } from '@/utils/redirect-intent';
 import { QuestionnaireResponseItem } from 'fhir/r4';
 import { LinkIcon, NotepadTextIcon, UsersIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -54,17 +54,27 @@ export default function RecordAssessment({ recordId, title }: Props) {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
   useEffect(() => {
-    const savedColorMap = getFromLocalStorage('result-table-colors');
-    if (savedColorMap) {
-      setColorMap(JSON.parse(savedColorMap));
-    }
-  }, []);
+    const ownerId = authState.userInfo.userId || 'guest';
+    dbGet<{ value: Record<string, string> }>(STORES.uiPreferences, [
+      ownerId,
+      'result-table-colors'
+    ]).then(saved => {
+      if (saved?.value) {
+        setColorMap(saved.value);
+      }
+    }).catch((err) => console.warn('[IndexedDB]', err));
+  }, [authState.userInfo.userId]);
 
   useEffect(() => {
     if (Object.keys(colorMap).length > 0) {
-      localStorage.setItem('result-table-colors', JSON.stringify(colorMap));
+      const ownerId = authState.userInfo.userId || 'guest';
+      dbSet(STORES.uiPreferences, {
+        ownerId,
+        prefKey: 'result-table-colors',
+        value: colorMap
+      }).catch((err) => console.warn('[IndexedDB]', err));
     }
-  }, [colorMap]);
+  }, [colorMap, authState.userInfo.userId]);
 
   const getColor = (name: string) => {
     // check if the color for this item is already saved
@@ -134,34 +144,11 @@ export default function RecordAssessment({ recordId, title }: Props) {
   }, [questionnaireResponse]);
 
   useEffect(() => {
-    if (!questionnaireResponse) return;
-    if (!authState.isAuthenticated) return;
-
-    const interpretationItem = questionnaireResponse.item.find(
-      item => item.linkId === 'interpretation'
-    );
-
-    const resultBriefItem = interpretationItem?.item.find(
-      subItem => subItem.linkId === 'result-brief'
-    );
-
-    const existingResult =
-      resultBriefItem?.answer?.[0]?.valueString?.trim() ?? '';
-
-    if (existingResult && existingResult !== RESULT_BRIEF_PLACEHOLDER) {
-      setPolledResultBrief(existingResult);
-      return;
-    }
-
-    const serviceRequestId = localStorage.getItem(`serviceRequest_${recordId}`);
-
-    if (!serviceRequestId) return;
-
     let cancelled = false;
     let attempts = 0;
     const MAX_ATTEMPTS = 3;
 
-    const poll = async () => {
+    const poll = async (serviceRequestId: string) => {
       try {
         const API = await getAPI();
         const res = await API.get(
@@ -173,6 +160,10 @@ export default function RecordAssessment({ recordId, title }: Props) {
         if (note && !cancelled) {
           if (!authState.isAuthenticated) return;
           setPolledResultBrief(note);
+
+          const interpretationItem = questionnaireResponse.item.find(
+            item => item.linkId === 'interpretation'
+          );
 
           const updatedInterpretationItem = {
             ...interpretationItem,
@@ -198,20 +189,52 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
           await API.put(`/fhir/QuestionnaireResponse/${recordId}`, updatedQR);
 
-          localStorage.removeItem(`serviceRequest_${recordId}`);
+          dbDelete(STORES.serviceRequests, recordId)
+            .catch((err) => console.warn('[IndexedDB]', err));
           return;
         }
 
         attempts += 1;
         if (attempts < MAX_ATTEMPTS && !cancelled) {
-          setTimeout(poll, 1000);
+          setTimeout(() => poll(serviceRequestId), 1000);
         }
       } catch (err) {
         console.error('[record-assessment] polling error:', err);
       }
     };
 
-    poll();
+    /** Polls for the result brief from the backend service request. */
+    const start = async () => {
+      if (!questionnaireResponse) return;
+      if (!authState.isAuthenticated) return;
+
+      const interpretationItem = questionnaireResponse.item.find(
+        item => item.linkId === 'interpretation'
+      );
+
+      const resultBriefItem = interpretationItem?.item.find(
+        subItem => subItem.linkId === 'result-brief'
+      );
+
+      const existingResult =
+        resultBriefItem?.answer?.[0]?.valueString?.trim() ?? '';
+
+      if (existingResult && existingResult !== RESULT_BRIEF_PLACEHOLDER) {
+        setPolledResultBrief(existingResult);
+        return;
+      }
+
+      const srRecord = await dbGet<{ serviceRequestId: string }>(
+        STORES.serviceRequests,
+        recordId
+      );
+      const serviceRequestId = srRecord?.serviceRequestId;
+      if (!serviceRequestId) return;
+
+      poll(serviceRequestId);
+    };
+
+    start();
 
     return () => {
       cancelled = true;

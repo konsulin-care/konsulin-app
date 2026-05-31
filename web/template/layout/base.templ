@@ -5,18 +5,31 @@ import (
 	"github.com/konsulin-care/konsulin-app/web/template/components"
 )
 
-templ Base(cfg *config.Config, activeNav string, headerContent, children templ.Component) {
+templ Base(cfg *config.Config, activeNav string, headerContent, children templ.Component, guestID string, csrfToken string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<meta name="theme-color" content="#FFFFFF"/>
+			<meta name="konsulin-guest-id" content={ guestID } data-cookie-name={ cfg.GuestSessionCookieName }/>
+			if csrfToken != "" {
+				<meta name="csrf-token" content={ csrfToken }/>
+			}
 			<link rel="manifest" href="/static/manifest.json"/>
 			<link rel="apple-touch-icon" href="/static/favicon/apple-touch-icon.png"/>
 			<link rel="stylesheet" href="/static/css/output.css"/>
 			<script src="/static/js/htmx.min.js"></script>
 			<script defer src="/static/js/alpine.min.js"></script>
+			<script>
+				document.addEventListener('DOMContentLoaded', function() {
+					var meta = document.querySelector('meta[name="csrf-token"]');
+					if (meta) {
+						htmx.config.headers = htmx.config.headers || {};
+						htmx.config.headers['X-CSRF-Token'] = meta.getAttribute('content');
+					}
+				});
+			</script>
 			@cfg.RuntimeConfigScript()
 			<script>
 				window.__RUNTIME_CONFIG__ = JSON.parse(document.getElementById('__RUNTIME_CONFIG__').textContent);

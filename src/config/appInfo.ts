@@ -23,8 +23,8 @@ export function getAppInfo(): AppInfo {
   // fallback (if running on server or config missing)
   return {
     appName: 'Konsulin',
-    apiDomain: 'https://dev-api.konsulin.care',
-    websiteDomain: 'http://localhost:3000',
+    apiDomain: '',
+    websiteDomain: '',
     apiBasePath: '/api/v1/auth',
     websiteBasePath: '/auth'
   };

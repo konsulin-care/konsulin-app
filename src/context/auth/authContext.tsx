@@ -1,15 +1,16 @@
 'use client';
 
 import { Roles } from '@/constants/roles';
+import { dbGet, dbSet, migrateLocalStorage, STORES } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
+import { setCurrentUserId, UserProfile } from '@/services/api';
 import { restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
-import { getCookie } from 'cookies-next';
 import { Patient, Practitioner } from 'fhir/r4';
 import React, {
-  ReactNode,
   createContext,
+  ReactNode,
   useContext,
   useEffect,
   useReducer,
@@ -23,12 +24,12 @@ import {
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 import { isProfileCompleteFromFHIR } from '../../utils/profileCompleteness';
 import { initialState, reducer } from './authReducer';
-import { IStateAuth } from './authTypes';
+import { IActionAuth, IStateAuth } from './authTypes';
 
 interface ContextProps {
   isLoading: boolean;
   state: IStateAuth;
-  dispatch: React.Dispatch<any>;
+  dispatch: React.Dispatch<IActionAuth>;
 }
 
 const AuthContext = createContext<ContextProps | undefined>(undefined);
@@ -54,73 +55,70 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line sonarjs/cognitive-complexity
     const fetchSession = async () => {
-      let auth: Record<string, any> = {};
+      // One-time migration before reading IndexedDB cache
       try {
-        auth = JSON.parse(getCookie('auth') || '{}');
+        await migrateLocalStorage();
       } catch {
-        auth = {};
+        /* non-critical */
       }
 
       if (!session.doesSessionExist) {
-        // Don't create anonymous session if auth cookie suggests user is signed in (e.g. session not yet restored)
-        if (!auth?.userId) {
-          // Reload on homepage: let the page call ensureAnonymousSession(true) once; avoid duplicate calls
-          const navEntries =
-            typeof window !== 'undefined'
-              ? performance.getEntriesByType('navigation')
-              : [];
-          const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
-          const isReloadOnHomepage =
-            nav?.type === 'reload' &&
-            typeof window !== 'undefined' &&
-            window.location.pathname === '/';
+        // Reload on homepage: let the page call ensureAnonymousSession(true) once; avoid duplicate calls
+        const navEntries =
+          typeof window !== 'undefined'
+            ? performance.getEntriesByType('navigation')
+            : [];
+        const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
+        const isReloadOnHomepage =
+          nav?.type === 'reload' &&
+          typeof window !== 'undefined' &&
+          window.location.pathname === '/';
 
-          if (!isReloadOnHomepage) {
-            try {
-              await ensureAnonymousSession(false);
-            } catch (error) {
-              console.error('Failed to initialize anonymous session:', error);
-            }
+        if (!isReloadOnHomepage) {
+          try {
+            await ensureAnonymousSession(false);
+          } catch (error) {
+            console.error('Failed to initialize anonymous session:', error);
           }
         }
         setIsLoading(false);
         return;
       }
 
-      // Check if auth cookie is missing but SuperTokens session is valid
-      // This is the condition for auto-restoration
-      const shouldRestoreAuthCookie = !auth?.userId && session.doesSessionExist;
-
-      if (shouldRestoreAuthCookie) {
-        try {
-          console.log('Attempting to restore auth cookie...');
-          const restorationSuccess = await restoreAuthCookie(session);
-
-          if (restorationSuccess) {
-            // After successful restoration, reload the auth cookie
-            const restoredAuth = JSON.parse(
-              getCookie('auth') || '{}'
-            );
-            if (restoredAuth?.userId) {
-              dispatch({ type: 'auth-check', payload: restoredAuth });
-              setIsLoading(false);
-              return;
-            }
-          }
-        } catch (restorationError) {
-          console.error('Auth cookie restoration failed:', restorationError);
-          // Continue with normal flow even if restoration fails
-        }
+      // Ensure auth cookie exists for Go SSR middleware (idempotent).
+      try {
+        await restoreAuthCookie(session);
+      } catch (err) {
+        console.error('restoreAuthCookie unexpected error:', err);
       }
 
       try {
-        const roles = await getClaimValue({ claim: UserRoleClaim });
         const userId = session.userId;
+        if (!userId) {
+          console.error('Auth: userId missing from SuperTokens session');
+          setIsLoading(false);
+          return;
+        }
+        setCurrentUserId(userId);
+        const roles = (await getClaimValue({ claim: UserRoleClaim })) as
+          | string[]
+          | undefined;
 
-        const role = roles.includes(Roles.Practitioner)
-          ? Roles.Practitioner
-          : Roles.Patient;
+        // Try IndexedDB profile cache first.
+        const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
+        if (cached?.userId === userId && cached?.role_name) {
+          setCurrentUserId(userId);
+          dispatch({ type: 'login', payload: cached });
+          setIsLoading(false);
+          return;
+        }
+
+        const role =
+          Array.isArray(roles) && roles.includes(Roles.Practitioner)
+            ? Roles.Practitioner
+            : Roles.Patient;
 
         const result = (await getProfileByIdentifier({
           userId,
@@ -128,19 +126,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         })) as Patient | Practitioner;
 
         if (!result) {
-          dispatch({
-            type: 'login',
-            payload: {
-              userId,
-              role_name: role,
-              email: '',
-              fullname: '',
-              profile_picture: '',
-              fhirId: '',
-              profile_complete: false
-            }
+          const payload = {
+            userId,
+            role_name: role,
+            email: '',
+            fullname: '',
+            profile_picture: '',
+            fhirId: '',
+            profile_complete: false
+          };
+          await dbSet(STORES.userProfile, {
+            ...payload,
+            roles,
+            cachedAt: Date.now()
           });
-
+          dispatch({ type: 'login', payload });
           setIsLoading(false);
           return;
         }
@@ -161,11 +161,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           profile_complete
         };
 
+        await dbSet(STORES.userProfile, {
+          ...payload,
+          roles,
+          cachedAt: Date.now()
+        });
         dispatch({ type: 'login', payload });
       } catch (error) {
         console.error('Error fetching session:', error);
-        if (auth?.userId) {
-          dispatch({ type: 'auth-check', payload: auth });
+        // Fall back to IndexedDB cache if API fails.
+        const userId = session.userId;
+        if (userId) {
+          setCurrentUserId(userId);
+          const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
+          if (cached?.userId) {
+            dispatch({ type: 'auth-check', payload: cached });
+          }
         }
       } finally {
         setIsLoading(false);
@@ -173,6 +184,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     fetchSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.doesSessionExist]);
 
   return (
@@ -182,6 +194,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+/** Hook to access auth context. Throws if used outside AuthProvider. */
 export const useAuth = (): ContextProps => {
   const context = useContext(AuthContext);
   if (!context) {
