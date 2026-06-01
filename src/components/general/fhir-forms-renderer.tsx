@@ -1,7 +1,11 @@
-/* eslint-disable sonarjs/cognitive-complexity, max-lines */
+/* eslint-disable sonarjs/cognitive-complexity */
+import PageLoader from '@/components/general/page-loader';
+import { SmartFormShell } from '@/components/general/smart-form-shell';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Roles } from '@/constants/roles';
+import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
+import { useRequiredValidation } from '@/hooks/useRequiredValidation';
 import { getAPI } from '@/services/api';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
 import Image from 'next/image';
@@ -16,14 +20,10 @@ import {
 } from '@/components/ui/drawer';
 import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import {
-  BaseRenderer,
   getResponse,
   RendererThemeProvider,
-  useBuildForm,
-  useQuestionnaireResponseStore,
-  useRendererQueryClient
+  useBuildForm
 } from '@aehrc/smart-forms-renderer';
-import { QueryClientProvider } from '@tanstack/react-query';
 import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
@@ -51,14 +51,12 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const [isPending, startTransition] = useTransition();
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null);
-  const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0);
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const draftOwnerId = props.ownerId || practitionerId || patientId || '';
 
-  const queryClient = useRendererQueryClient();
   const isBuilding = useBuildForm(questionnaire, response);
 
   const {
@@ -66,7 +64,8 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     isLoading: submitQuestionnaireIsLoading
   } = useSubmitQuestionnaire(questionnaire.id, isAuthenticated);
 
-  const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
+  const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =
+    useRequiredValidation();
 
   useEffect(() => {
     dbGet<{ response: QuestionnaireResponse }>(STORES.assessmentDrafts, [
@@ -79,32 +78,17 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         }
       })
       .catch(err => console.warn('[IndexedDB]', err));
-  }, []);
+  }, [draftOwnerId, questionnaire.id]);
 
-  // add some delay to fetch the latest response after input settles
-  const handleResponseChange = () => {
-    setTimeout(() => {
-      const questionnaireResponse = getResponse();
-      dbSet(STORES.assessmentDrafts, {
-        ownerId: draftOwnerId,
-        questionnaireId: questionnaire.id,
-        response: questionnaireResponse,
-        updatedAt: Date.now()
-      }).catch(err => console.warn('[IndexedDB]', err));
-    }, 300);
-  };
-
-  const checkRequiredIsEmpty = () => {
-    const required = Object.values(invalidItems).flatMap(item =>
-      item.issue
-        .filter(issue => issue.code === 'required')
-        .map(issue => ({
-          expression: issue.expression[0],
-          message: issue.details.text
-        }))
-    );
-    setRequiredItemEmpty(required.length);
-  };
+  const handleResponseChange = useDraftAutoSave(
+    STORES.assessmentDrafts,
+    qr => ({
+      ownerId: draftOwnerId,
+      questionnaireId: questionnaire.id,
+      response: qr,
+      updatedAt: Date.now()
+    })
+  );
 
   const handleValidation = () => {
     if (Object.keys(invalidItems).length !== 0) {
@@ -239,11 +223,6 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     }
   };
 
-  useEffect(() => {
-    if (Object.keys(invalidItems).length === 0) setRequiredItemEmpty(0);
-    if (requiredItemEmpty > 0) checkRequiredIsEmpty();
-  }, [invalidItems]);
-
   const renderDrawerContent = (
     <>
       <DrawerHeader className='mx-auto flex flex-col items-center gap-4 pb-0 text-[20px]'>
@@ -318,24 +297,15 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   );
 
   if (isBuilding) {
-    return (
-      <div className='flex min-h-screen min-w-full items-center justify-center'>
-        <LoadingSpinnerIcon
-          width={56}
-          height={56}
-          className='w-full animate-spin'
-        />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (
     <RendererThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <div className='custom-smart-form' onChange={handleResponseChange}>
-          <BaseRenderer />
-        </div>
-      </QueryClientProvider>
+      <SmartFormShell
+        className='custom-smart-form'
+        onChange={handleResponseChange}
+      />
       <div className='flex-flex-col mt-4 px-2'>
         {requiredItemEmpty > 0 ? (
           <div className='text-destructive mb-2 w-full text-sm'>
