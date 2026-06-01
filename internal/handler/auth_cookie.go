@@ -108,7 +108,7 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 	})
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status":"ok"}`))
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
 func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {
@@ -118,9 +118,7 @@ func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	//nolint:gosec // G203: response is JSON (Content-Type set), no XSS vector
-	jsonBytes, _ := json.Marshal(map[string]bool{"authenticated": authenticated})
-	_, _ = w.Write(jsonBytes)
+	_ = json.NewEncoder(w).Encode(map[string]bool{"authenticated": authenticated})
 }
 
 func handleDeleteAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {
@@ -144,5 +142,5 @@ func handleDeleteAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCoo
 	clear("sIdRefreshToken")
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status":"ok"}`))
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }

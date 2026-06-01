@@ -47,10 +47,16 @@ func NewBackendProxyHandler(opts BackendProxyOptions) http.HandlerFunc {
 }
 
 // buildTargetURL constructs the upstream URL from the original request.
-// path.Clean resolves ".." / "." traversal and normalises the path so it
-// stays within the configured backend base URL.
+// path.Clean resolves "." / ".." segments and normalises the path.
+// The explicit ".." guard prevents path traversal to unintended backend routes.
 func buildTargetURL(baseURL string, r *http.Request) string {
 	targetPath := strings.TrimPrefix(r.URL.Path, "/proxy")
+
+	if strings.HasPrefix(targetPath, "..") || strings.Contains(targetPath, "/..") {
+		slog.Warn("backend proxy: path traversal rejected", "path", targetPath)
+		targetPath = "/"
+	}
+
 	cleanPath := path.Clean(targetPath)
 	if cleanPath == "." || cleanPath == "" {
 		cleanPath = "/"

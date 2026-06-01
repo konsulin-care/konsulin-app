@@ -31,7 +31,7 @@ export const decodeJwtPayload = (
   }
 };
 
-const GUEST_SESSION_KEY = 'current_guest';
+const GUEST_SESSION_RECORD_ID = 'current_guest';
 
 export const getCachedGuestId = async (): Promise<string | null> => {
   // 1. Check IndexedDB guest_sessions store (singleton key)
@@ -47,7 +47,7 @@ export const getCachedGuestId = async (): Promise<string | null> => {
       guest_id: string;
       value: string;
     } | null>((resolve, reject) => {
-      const req = store.get(GUEST_SESSION_KEY);
+      const req = store.get(GUEST_SESSION_RECORD_ID);
       req.onsuccess = () => resolve(req.result ?? null);
       req.onerror = () => reject(req.error);
     });
@@ -93,7 +93,7 @@ export const getCachedGuestId = async (): Promise<string | null> => {
 export const cacheGuestId = async (guestId: string) => {
   try {
     await dbSet(STORES.guestSessions, {
-      guest_id: GUEST_SESSION_KEY,
+      guest_id: GUEST_SESSION_RECORD_ID,
       value: guestId
     });
   } catch {
