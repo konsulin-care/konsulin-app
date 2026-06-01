@@ -16,6 +16,7 @@ import (
 	"github.com/konsulin-care/konsulin-app/internal/config"
 	"github.com/konsulin-care/konsulin-app/internal/handler"
 	appmw "github.com/konsulin-care/konsulin-app/internal/middleware"
+	"github.com/konsulin-care/konsulin-app/internal/service"
 	"github.com/konsulin-care/konsulin-app/internal/session"
 )
 
@@ -147,7 +148,15 @@ func routes(cfg *config.Config) (http.Handler, error) {
 
 	// Guest-allowed Go SSR routes — OptionalAuth provides the session, no
 	// RequireRole needed.  These routes are accessible to all roles.
-	// r.Get("/", handler.NewHomeHandler(...))
+	homeSvc := service.NewHomeService(service.NewStubProvider())
+	r.Get("/", handler.NewHomeHandler(cfg, homeSvc))
+
+	// Role switcher — GET returns partial, POST updates session cookie.
+	r.HandleFunc("/auth/role/switch", handler.NewRoleSwitchHandler(handler.RoleSwitchOptions{
+		CookieName:   cfg.AuthCookieName,
+		CookieSecure: cfg.CookieSecure,
+		CookieSecret: cfg.SessionCookieSecret,
+	}))
 
 	// Protected Next.js pages (mirrors old middleware.ts route list).
 	authGuard := appmw.AuthGuard(appmw.AuthGuardOptions{

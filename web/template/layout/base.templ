@@ -5,7 +5,7 @@ import (
 	"github.com/konsulin-care/konsulin-app/web/template/components"
 )
 
-templ Base(cfg *config.Config, activeNav string, headerContent, children templ.Component, guestID string, csrfToken string) {
+templ Base(cfg *config.Config, activeNav string, headerContent, children templ.Component, guestID string, csrfToken string, roleSwitcher templ.Component) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -36,10 +36,20 @@ templ Base(cfg *config.Config, activeNav string, headerContent, children templ.C
 			</script>
 			<title>{ cfg.AppName }</title>
 		</head>
-		<body class="flex min-h-screen flex-col bg-white">
+		<body
+			class="flex min-h-screen flex-col bg-white"
+			x-data="{ mobileMenuOpen: false }"
+		>
 			<div class="bg-[#08979C] bg-[url('/static/images/nav-banner.svg')] bg-right bg-no-repeat">
 				<div class="relative flex items-start justify-between p-[16px] pb-[40px]">
-					@headerContent
+					<div class="flex flex-col gap-2">
+						@headerContent
+					</div>
+					<div class="flex items-center gap-2">
+						if roleSwitcher != nil {
+							@roleSwitcher
+						}
+					</div>
 				</div>
 			</div>
 			<main class="mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col">
@@ -51,7 +61,49 @@ templ Base(cfg *config.Config, activeNav string, headerContent, children templ.C
 }
 
 templ navBar(active string) {
-	<div class="fixed bottom-0 z-10 flex h-[90px] w-full max-w-screen-sm justify-around bg-white px-[10px] py-[21px] shadow-[0px_-5px_15.1px_0px_#D7D7D740]">
+	<!-- Mobile hamburger toggle, visible on small screens only -->
+	<button
+		class="fixed bottom-[95px] right-4 z-20 flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#08979C] text-white shadow-lg sm:hidden"
+		@click="mobileMenuOpen = !mobileMenuOpen"
+		x-show="!mobileMenuOpen"
+		type="button"
+		aria-label="Open navigation menu"
+	>
+		<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			<path d="M3 12h18M3 6h18M3 18h18"/>
+		</svg>
+	</button>
+	<button
+		class="fixed bottom-[95px] right-4 z-20 flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#08979C] text-white shadow-lg sm:hidden"
+		@click="mobileMenuOpen = false"
+		x-show="mobileMenuOpen"
+		type="button"
+		aria-label="Close navigation menu"
+	>
+		<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			<path d="M18 6L6 18M6 6l12 12"/>
+		</svg>
+	</button>
+	<!-- Mobile nav: shown only when toggled -->
+	<div
+		class="fixed bottom-0 z-10 flex h-[90px] w-full max-w-screen-sm justify-around bg-white px-[10px] py-[21px] shadow-[0px_-5px_15.1px_0px_#D7D7D740] sm:hidden"
+		x-show="mobileMenuOpen"
+		x-transition:enter="transition ease-out duration-200"
+		x-transition:enter-start="translate-y-full"
+		x-transition:enter-end="translate-y-0"
+		x-transition:leave="transition ease-in duration-150"
+		x-transition:leave-start="translate-y-0"
+		x-transition:leave-end="translate-y-full"
+	>
+		@navTab("/", "Home", active, components.HouseIcon)
+		@navTab("/clinic", "Appointment", active, components.OfficeIcon)
+		@navTab("/assessments", "Assessments", active, components.LiteratureIcon)
+		@navTab("/profile", "Profile", active, components.UserIcon)
+	</div>
+	<!-- Desktop nav: always visible on sm+ -->
+	<div
+		class="fixed bottom-0 z-10 hidden h-[90px] w-full max-w-screen-sm justify-around bg-white px-[10px] py-[21px] shadow-[0px_-5px_15.1px_0px_#D7D7D740] sm:flex"
+	>
 		@navTab("/", "Home", active, components.HouseIcon)
 		@navTab("/clinic", "Appointment", active, components.OfficeIcon)
 		@navTab("/assessments", "Assessments", active, components.LiteratureIcon)

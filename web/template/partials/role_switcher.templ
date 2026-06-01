@@ -1,0 +1,12 @@
+package partials
+
+import (
+	"github.com/konsulin-care/konsulin-app/web/template/components"
+)
+
+templ RoleSwitcher(currentRole string, roles []string) {
+	<div class="flex items-center gap-2">
+		<span class="text-[10px] text-white/80">Role:</span>
+		@components.RoleDropdown(currentRole, roles)
+	</div>
+}

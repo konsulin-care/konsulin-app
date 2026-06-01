@@ -1,0 +1,92 @@
+package home
+
+import (
+	"net/url"
+	"github.com/konsulin-care/konsulin-app/internal/service"
+)
+
+templ PatientGuestPage(data *service.HomeData) {
+	<div class="p-4">
+		<div class="mb-2 text-[14px] font-bold text-muted">
+			Recommended for You
+		</div>
+		if len(data.Recommendations) > 0 {
+			<div class="flex flex-col gap-3">
+				for _, rec := range data.Recommendations {
+					@recommendationCard(rec, data.IsGuest)
+				}
+			</div>
+		} else {
+			<div class="rounded-lg bg-[#F9F9F9] p-4 text-center text-[12px] text-[#2C2F3599]">
+				No recommendations available yet
+			</div>
+		}
+	</div>
+	<div class="flex gap-4 p-4">
+		for _, action := range data.QuickActions {
+			<a href={ action.Href } class="card flex flex-1 items-center justify-center rounded-lg bg-[#F9F9F9] p-4 text-[12px] font-bold text-[#2C2F35]">
+				{ action.Title }
+			</a>
+		}
+	</div>
+	if len(data.PopularAssessments) > 0 {
+		<div class="p-4">
+			<div class="mb-2 text-[14px] font-bold text-muted">
+				Popular Assessments
+			</div>
+			<div class="flex flex-wrap gap-3">
+				for _, a := range data.PopularAssessments {
+					<a href={ "/assessments/" + a.ID } class="rounded-lg bg-[#F9F9F9] p-3 text-[12px] font-semibold text-[#2C2F35]">
+						{ a.Title }
+					</a>
+				}
+			</div>
+		</div>
+	}
+	if data.Community != nil && len(data.Community.Items) > 0 {
+		<div class="p-4">
+			<div class="mb-2 text-[14px] font-bold text-muted">
+				Community
+			</div>
+			<div class="rounded-lg bg-[#F9F9F9] p-4">
+				for _, item := range data.Community.Items {
+					<div class="text-[12px] text-[#2C2F3599]">{ item }</div>
+				}
+			</div>
+		</div>
+	}
+}
+
+templ recommendationCard(rec service.RecommendationCard, isGuest bool) {
+	if isGuest {
+		<a
+			href="/auth?redirectToPath=/"
+			class="flex items-center justify-between rounded-lg bg-[#F9F9F9] p-4"
+		>
+			<div class="flex flex-col">
+				<span class="text-[14px] font-bold text-[#2C2F35]">{ rec.Specialty }</span>
+				<span class="text-[10px] text-[#2C2F3599]">{ rec.Practitioner }</span>
+				<span class="mt-1 text-[10px] text-[#08979C]">{ rec.Fee }</span>
+			</div>
+			<div class="flex flex-col items-end">
+				<span class="text-[10px] text-[#2C2F3599]">{ rec.NextAvailable }</span>
+				<span class="mt-1 text-[10px] font-bold text-[#08979C]">Book</span>
+			</div>
+		</a>
+	} else {
+		<a
+			href={ "/schedule?specialty=" + url.QueryEscape(rec.Specialty) }
+			class="flex items-center justify-between rounded-lg bg-[#F9F9F9] p-4"
+		>
+			<div class="flex flex-col">
+				<span class="text-[14px] font-bold text-[#2C2F35]">{ rec.Specialty }</span>
+				<span class="text-[10px] text-[#2C2F3599]">{ rec.Practitioner }</span>
+				<span class="mt-1 text-[10px] text-[#08979C]">{ rec.Fee }</span>
+			</div>
+			<div class="flex flex-col items-end">
+				<span class="text-[10px] text-[#2C2F3599]">{ rec.NextAvailable }</span>
+				<span class="mt-1 text-[10px] font-bold text-[#08979C]">Book</span>
+			</div>
+		</a>
+	}
+}

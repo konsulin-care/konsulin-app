@@ -1,0 +1,95 @@
+package home
+
+import (
+	"strconv"
+	"github.com/konsulin-care/konsulin-app/internal/service"
+)
+
+templ PractitionerPage(data *service.HomeData) {
+	<div class="p-4">
+		<div class="mb-2 flex items-center justify-between">
+			<div class="text-[14px] font-bold text-muted">
+				Today's Schedule
+			</div>
+			<a href="/schedule" class="text-secondary text-[12px]">
+				See All
+			</a>
+		</div>
+		if len(data.TodaySchedule) > 0 {
+			<div class="flex flex-col gap-2">
+				for _, s := range data.TodaySchedule {
+					<div class="flex items-center justify-between rounded-lg bg-[#F9F9F9] p-3">
+						<div class="flex items-center gap-3">
+							<span class="text-[12px] font-bold text-[#2C2F35]">{ s.Time }</span>
+							<span class="text-[12px] text-[#2C2F3599]">{ s.Patient }</span>
+						</div>
+						<span class="text-[10px] text-[#08979C]">{ s.Status }</span>
+					</div>
+				}
+			</div>
+		} else {
+			<div class="rounded-lg bg-[#F9F9F9] p-4 text-center text-[12px] text-[#2C2F3599]">
+				No appointments scheduled today
+			</div>
+		}
+	</div>
+	if data.Stats != nil {
+		<div class="px-4 pb-4">
+			<div class="flex gap-4">
+				<div class="flex flex-1 flex-col items-center rounded-lg bg-[#F9F9F9] p-4">
+					<span class="text-[20px] font-bold text-[#08979C]">{ strconv.Itoa(data.Stats.SessionsToday) }</span>
+					<span class="text-[10px] text-[#2C2F3599]">Sessions</span>
+				</div>
+				<div class="flex flex-1 flex-col items-center rounded-lg bg-[#F9F9F9] p-4">
+					<span class="text-[20px] font-bold text-[#08979C]">{ strconv.Itoa(data.Stats.PatientsToday) }</span>
+					<span class="text-[10px] text-[#2C2F3599]">Patients</span>
+				</div>
+			</div>
+		</div>
+	}
+	<div class="flex gap-4 px-4 pb-4">
+		<a href={ data.SOAPLink.Href } class="card flex flex-1 flex-col items-center rounded-lg bg-[#F9F9F9] p-4">
+			<span class="text-[12px] font-bold text-[#2C2F35]">{ data.SOAPLink.Title }</span>
+			<span class="mt-1 text-[10px] text-[#2C2F3599]">Record your session</span>
+		</a>
+		<a href={ data.ExerciseLink.Href } class="card flex flex-1 flex-col items-center rounded-lg bg-[#F9F9F9] p-4">
+			<span class="text-[12px] font-bold text-[#2C2F35]">{ data.ExerciseLink.Title }</span>
+			<span class="mt-1 text-[10px] text-[#2C2F3599]">Patient materials</span>
+		</a>
+	</div>
+	if len(data.Instruments) > 0 {
+		<div class="p-4 pt-0">
+			<div class="mb-2 flex items-center justify-between">
+				<div class="text-[14px] font-bold text-muted">
+					Browse Instruments
+				</div>
+				<a href="/assessments" class="text-secondary text-[12px]">
+					See All
+				</a>
+			</div>
+			<div class="grid grid-cols-2 gap-3">
+				for _, inst := range data.Instruments {
+					<a href={ "/assessments/" + inst.ID } class="flex items-center rounded-lg bg-[#F9F9F9] p-3">
+						<div class="mr-2 flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#F8F8F8]">
+							<span class="text-[14px]">📋</span>
+						</div>
+						<div class="flex flex-col">
+							<span class="text-[12px] font-semibold text-[#2C2F35]">{ inst.Title }</span>
+							<span class="text-[10px] text-[#2C2F3599]">{ inst.Description }</span>
+						</div>
+					</a>
+				}
+			</div>
+		</div>
+	}
+	if data.Community != nil && len(data.Community.Items) > 0 {
+		<div class="p-4 pt-0">
+			<div class="mb-2 text-[14px] font-bold text-muted">Community</div>
+			<div class="rounded-lg bg-[#F9F9F9] p-4">
+				for _, item := range data.Community.Items {
+					<div class="text-[12px] text-[#2C2F3599]">{ item }</div>
+				}
+			</div>
+		</div>
+	}
+}
