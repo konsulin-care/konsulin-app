@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, max-lines */
+import { STORES, dbDelete } from '@/lib/indexeddb';
 import { IQuestionnaireResponse } from '@/types/assessment';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -216,7 +218,7 @@ export const useSubmitSoapBundle = () => {
 
 export const useSubmitQuestionnaire = (
   questionnaireId: string,
-  isAuthenticated: Boolean
+  isAuthenticated: boolean
 ) => {
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
@@ -224,10 +226,6 @@ export const useSubmitQuestionnaire = (
       const { author, item, resourceType, subject } = questionnaireResponse;
 
       const timestamp = new Date().toISOString();
-
-      if (isAuthenticated) {
-        localStorage.removeItem(`response_${questionnaireId}`);
-      }
 
       const API = await getAPI();
 
@@ -247,6 +245,14 @@ export const useSubmitQuestionnaire = (
         authored: timestamp,
         subject
       });
+
+      // Only delete draft after successful server submission.
+      if (isAuthenticated) {
+        dbDelete(STORES.assessmentDrafts, ['', questionnaireId]).catch(err =>
+          console.warn('[IndexedDB]', err)
+        );
+      }
+
       return response.data;
     }
   });

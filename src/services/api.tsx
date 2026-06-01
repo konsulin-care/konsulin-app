@@ -1,40 +1,46 @@
-import { getClientConfig } from '@/lib/config';
+import { clearUserData } from '@/lib/indexeddb';
 import axios, { AxiosInstance } from 'axios';
-import { deleteCookie, getCookie } from 'cookies-next';
 import { toast } from 'react-toastify';
 import { parseAxiosError } from './api-error';
 
+export interface UserProfile {
+  userId: string;
+  role_name?: string;
+  roles?: string[];
+  email?: string;
+  phoneNumber?: string;
+  fullname?: string;
+  profile_picture?: string;
+  fhirId?: string;
+  profile_complete?: boolean;
+  cachedAt?: number;
+}
+
 let apiInstance: AxiosInstance | null = null;
+let currentUserId: string | null = null;
 
-export async function getAPI(): Promise<AxiosInstance> {
-  if (apiInstance) return apiInstance;
+/** Returns the current user ID set during auth. */
+export function getCurrentUserId(): string | null {
+  return currentUserId;
+}
 
-  const config = await getClientConfig();
+/** Sets the current user ID for use in API error handlers. */
+export function setCurrentUserId(id: string | null) {
+  currentUserId = id;
+}
+
+export function getAPI(): Promise<AxiosInstance> {
+  if (apiInstance) return Promise.resolve(apiInstance);
 
   apiInstance = axios.create({
-    baseURL: config.appInfo.apiDomain,
+    baseURL: '/proxy',
     headers: {
       'Content-Type': 'application/json'
     }
   });
 
-  apiInstance.interceptors.request.use(
-    config => {
-      let auth: Record<string, any> = {};
-      try {
-        auth = JSON.parse(getCookie('auth') || '{}');
-      } catch {
-        auth = {};
-      }
-
-      if (auth.token) config.headers.Authorization = `Bearer ${auth.token}`;
-
-      return config;
-    },
-    error => {
-      return Promise.reject(error);
-    }
-  );
+  // Authorization header injected by Go SSR proxy (reads sAccessToken cookie).
+  // SuperTokens SDK global interceptors handle 401 + token refresh automatically.
 
   apiInstance.interceptors.response.use(
     response => response,
@@ -54,13 +60,10 @@ export async function getAPI(): Promise<AxiosInstance> {
 
       if (isExpiredToken || isMissingToken) {
         setTimeout(() => {
-          deleteCookie('auth');
-          try {
-            localStorage.clear();
-          } catch {}
+          clearUserData(currentUserId ?? 'guest');
           try {
             window.location.href = '/';
-          } catch {}
+          } catch { /* redirect may throw */ }
         }, 1000);
       }
 
@@ -73,28 +76,23 @@ export async function getAPI(): Promise<AxiosInstance> {
     }
   );
 
-  return apiInstance;
+  return Promise.resolve(apiInstance);
 }
 
+/** Performs an API request and returns the response data. */
 export async function apiRequest<T>(
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   endpoint: string,
-  data?: any,
-  params?: any
+  data?: Record<string, unknown>,
+  params?: Record<string, unknown>
 ): Promise<T> {
   const API = await getAPI();
 
-  const config = {
+  const response = await API.request<T>({
     method,
     url: endpoint,
-    data: data,
-    params: params
-  };
-
-  try {
-    const response = await API.request<T>(config);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    data,
+    params
+  });
+  return response.data;
 }

@@ -1,19 +1,19 @@
 'use client';
 
+import PageLoader from '@/components/general/page-loader';
+import { SmartFormShell } from '@/components/general/smart-form-shell';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
-import { getFromLocalStorage } from '@/lib/utils';
+import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
+import { useRequiredValidation } from '@/hooks/useRequiredValidation';
+import { dbDelete, dbGet, STORES } from '@/lib/indexeddb';
 import { useSubmitSoapBundle } from '@/services/api/assessment';
 import {
-  BaseRenderer,
   buildForm,
   extractObservationBased,
   getResponse,
-  RendererThemeProvider,
-  useQuestionnaireResponseStore,
-  useRendererQueryClient
+  RendererThemeProvider
 } from '@aehrc/smart-forms-renderer';
-import { QueryClientProvider } from '@tanstack/react-query';
 import {
   Bundle,
   BundleEntryRequest,
@@ -42,21 +42,18 @@ export default function SoapForm({
   questionnaireResponse,
   isAuthorSame
 }: Props) {
-  const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0);
   const [isBuilding, setIsBuilding] = useState<boolean>(false);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const titleParam = searchParams?.get('title');
   const categoryParam = searchParams?.get('category');
-  const localKey = `soap_${patientId}`;
-
-  const queryClient = useRendererQueryClient();
 
   const { mutateAsync: submitSoapBundle, isLoading: isSubmitSoapLoading } =
     useSubmitSoapBundle();
 
-  const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
+  const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =
+    useRequiredValidation();
 
   useEffect(() => {
     if (!questionnaire) return;
@@ -68,10 +65,12 @@ export default function SoapForm({
         if (mode === 'view') {
           finalResponse = questionnaireResponse;
         } else {
-          const savedResponses = getFromLocalStorage(localKey);
-          finalResponse = savedResponses
-            ? JSON.parse(savedResponses)
-            : (questionnaireResponse ?? null);
+          const ownerId = practitionerId;
+          const saved = await dbGet<{ draft: QuestionnaireResponse }>(
+            STORES.soapDrafts,
+            [ownerId, patientId]
+          );
+          finalResponse = saved?.draft ?? questionnaireResponse ?? null;
         }
 
         await buildForm(
@@ -89,27 +88,14 @@ export default function SoapForm({
     };
 
     runBuildForm();
-  }, [questionnaire, mode, questionnaireResponse, patientId]);
+  }, [questionnaire, mode, questionnaireResponse, patientId, practitionerId]);
 
-  // add some delay to fetch the latest response after input settles
-  const handleResponseChange = () => {
-    setTimeout(() => {
-      const questionnaireResponse = getResponse();
-      localStorage.setItem(localKey, JSON.stringify(questionnaireResponse));
-    }, 300);
-  };
-
-  const checkRequiredIsEmpty = () => {
-    const required = Object.values(invalidItems).flatMap(item =>
-      item.issue
-        .filter(issue => issue.code === 'required')
-        .map(issue => ({
-          expression: issue.expression[0],
-          message: issue.details.text
-        }))
-    );
-    setRequiredItemEmpty(required.length);
-  };
+  const handleResponseChange = useDraftAutoSave(STORES.soapDrafts, qr => ({
+    practitionerId: practitionerId || '',
+    patientId,
+    draft: qr,
+    updatedAt: Date.now()
+  }));
 
   const handleValidation = () => {
     checkRequiredIsEmpty();
@@ -188,7 +174,9 @@ export default function SoapForm({
         toast.success(
           `SOAP berhasil ${mode === 'create' ? 'dikirim' : 'diupdate'}`
         );
-        localStorage.removeItem(localKey);
+        dbDelete(STORES.soapDrafts, [practitionerId, patientId]).catch(err =>
+          console.warn('[IndexedDB]', err)
+        );
         router.push('/');
       }
     } catch (error) {
@@ -198,33 +186,19 @@ export default function SoapForm({
     }
   };
 
-  useEffect(() => {
-    if (Object.keys(invalidItems).length === 0) setRequiredItemEmpty(0);
-    if (requiredItemEmpty > 0) checkRequiredIsEmpty();
-  }, [invalidItems]);
-
   if (isBuilding) {
-    return (
-      <div className='flex min-h-screen min-w-full items-center justify-center'>
-        <LoadingSpinnerIcon
-          width={56}
-          height={56}
-          className='w-full animate-spin'
-        />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (
     <RendererThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <div className='custom-soap-form' onChange={handleResponseChange}>
-          <BaseRenderer />
-        </div>
-      </QueryClientProvider>
+      <SmartFormShell
+        className='custom-soap-form'
+        onChange={handleResponseChange}
+      />
       <div className='flex-flex-col px-2'>
         {requiredItemEmpty > 0 || !patientId ? (
-          <div className='mb-2 w-full text-sm text-destructive'>
+          <div className='text-destructive mb-2 w-full text-sm'>
             Masih ada kolom wajib yang belum terisi, yuk dilengkapi dulu!
           </div>
         ) : (
@@ -233,7 +207,7 @@ export default function SoapForm({
         {mode !== 'view' && (
           <Button
             disabled={isSubmitSoapLoading || requiredItemEmpty > 0}
-            className='w-full bg-secondary text-white'
+            className='bg-secondary w-full text-white'
             onClick={() => {
               const isValid = handleValidation();
               if (isValid) {
@@ -251,7 +225,7 @@ export default function SoapForm({
 
         {mode === 'view' && (
           <Button
-            className='w-full bg-secondary text-white'
+            className='bg-secondary w-full text-white'
             disabled={!isAuthorSame}
             onClick={() => {
               const queryParams = new URLSearchParams({

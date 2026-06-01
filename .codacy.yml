@@ -1,0 +1,5 @@
+exclude_paths:
+  - "**/*_test.go"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/node_modules/**"

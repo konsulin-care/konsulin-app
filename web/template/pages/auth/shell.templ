@@ -1,0 +1,26 @@
+package auth
+
+import "github.com/konsulin-care/konsulin-app/internal/config"
+
+templ AuthShell(cfg *config.Config) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="theme-color" content="#FFFFFF"/>
+			<link rel="manifest" href="/static/manifest.json"/>
+			<link rel="apple-touch-icon" href="/static/favicon/apple-touch-icon.png"/>
+			<link rel="stylesheet" href="/static/css/output.css"/>
+			@cfg.RuntimeConfigScript()
+			<script>
+				window.__RUNTIME_CONFIG__ = JSON.parse(document.getElementById('__RUNTIME_CONFIG__').textContent);
+			</script>
+			<title>Sign In - { cfg.AppName }</title>
+		</head>
+		<body class="bg-white">
+			<div id="supertokens-root"></div>
+			<script src="/static/auth-spa/index.js"></script>
+		</body>
+	</html>
+}

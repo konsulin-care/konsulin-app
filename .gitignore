@@ -58,8 +58,10 @@ CLAUDE.md
 CLAUDE.local.md
 *.local.md
 
-# Tailwind CSS build output (templ templates)
-web/static/css/*.css
+# Generated static assets (built in CI)
+web/static/*
+!web/static/**/AGENTS.md
+!web/static/images/**
 !web/static/css/templ-input.css
 
 # templ generated Go code (regenerated at build time)

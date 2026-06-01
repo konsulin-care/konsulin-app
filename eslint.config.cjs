@@ -6,6 +6,9 @@ const compat = new FlatCompat({
 })
 
 module.exports = [
+  {
+    ignores: ['web/static/js/*.min.js']
+  },
   ...compat.extends('next/core-web-vitals'),
   ...compat.extends('plugin:@typescript-eslint/recommended'),
   {
@@ -22,6 +25,12 @@ module.exports = [
         ecmaVersion: 2020,
         sourceType: 'module'
       }
+    }
+  },
+  {
+    files: ['web/auth-spa/**/*.{js,jsx,ts,tsx}'],
+    rules: {
+      '@next/next/no-img-element': 'off'
     }
   }
 ]

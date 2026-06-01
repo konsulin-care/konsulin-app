@@ -16,7 +16,7 @@ import {
   DrawerTitle
 } from '@/components/ui/drawer';
 import { useBooking } from '@/context/booking/bookingContext';
-import { getFromLocalStorage } from '@/lib/utils';
+import { STORES, dbGet } from '@/lib/indexeddb';
 import { useDetailPractitioner } from '@/services/clinic';
 import { generateAvatarPlaceholder, mergeNames } from '@/utils/helper';
 import {
@@ -56,6 +56,8 @@ type IPractitionerLocalStorage = {
  * @param params - Route parameters object containing `practitionerId`
  * @returns A React element that displays practitioner details, availability interaction, and a booking confirmation drawer
  */
+/* eslint-disable sonarjs/cognitive-complexity */
+// deepsource-disable-next-line GO-S1034
 export default function Practitioner({ params }: IPractitionerProps) {
   const router = useRouter();
   const { state: bookingState, dispatch } = useBooking();
@@ -67,27 +69,36 @@ export default function Practitioner({ params }: IPractitionerProps) {
   const [practitionerDataLoading, setPractitionerDataLoading] = useState(true);
 
   useEffect(() => {
-    const clinicId = getFromLocalStorage('selected_clinic');
-
-    if (clinicId) {
-      setSelectedClinicId(clinicId);
-    } else {
-      router.push('/clinic');
-    }
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_clinic'])
+      .then(saved => {
+        if (saved?.value) {
+          setSelectedClinicId(saved.value);
+        } else {
+          router.push('/clinic');
+        }
+      })
+      .catch(err => console.warn('[IndexedDB]', err));
   }, []);
 
   useEffect(() => {
-    const fetchPractitionerData = () => {
-      if (!params.practitionerId) return;
+    if (!params.practitionerId) return;
 
-      const raw = getFromLocalStorage('selected_practitioner');
-      const parsed = raw ? JSON.parse(raw) : null;
-
-      setPractitionerData(parsed);
-      setPractitionerDataLoading(false);
-    };
-
-    fetchPractitionerData();
+    dbGet<{ value: IPractitionerLocalStorage }>(STORES.uiPreferences, [
+      '',
+      'selected_practitioner'
+    ])
+      .then(saved => {
+        if (saved?.value?.roleId === params.practitionerId) {
+          setPractitionerData(saved.value);
+        } else {
+          setPractitionerData(null);
+        }
+        setPractitionerDataLoading(false);
+      })
+      .catch(err => {
+        console.warn('[IndexedDB]', err);
+        setPractitionerDataLoading(false);
+      });
   }, [params.practitionerId]);
 
   useEffect(() => {

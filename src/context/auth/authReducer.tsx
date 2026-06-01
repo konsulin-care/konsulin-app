@@ -1,5 +1,4 @@
 import { Roles } from '@/constants/roles';
-import { deleteCookie } from 'cookies-next';
 import { IStateAuth } from './authTypes';
 
 export const initialState: IStateAuth = {
@@ -30,8 +29,6 @@ export const reducer = (state: IStateAuth, action: any): IStateAuth => {
         userInfo: action.payload
       };
     case 'logout':
-      deleteCookie('auth');
-      localStorage.clear();
       return initialState;
 
     default:

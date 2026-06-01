@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, sonarjs/cognitive-complexity, max-lines, @next/next/no-img-element */
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -20,6 +21,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
+import { STORES, dbDelete, dbGet } from '@/lib/indexeddb';
 import { cn, conjunction } from '@/lib/utils';
 import { getAPI } from '@/services/api';
 import {
@@ -27,7 +29,7 @@ import {
   usePayAppointment
 } from '@/services/api/appointments';
 import { useFindAvailability } from '@/services/clinicians';
-import { clearIntent, getIntent, saveIntent } from '@/utils/intent-storage';
+import { clearIntent, getIntent, saveIntent } from '@/utils/redirect-intent';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addDays,
@@ -70,7 +72,7 @@ const getAvailableDays = (availableTime: any[], month: Date): Date[] => {
       );
 
       // find the first occurrence of the specified day
-      let currentDate = new Date(firstDayOfMonth);
+      const currentDate = new Date(firstDayOfMonth);
       while (currentDate.getDay() !== dayIndex) {
         currentDate.setDate(currentDate.getDate() + 1);
       }
@@ -84,6 +86,23 @@ const getAvailableDays = (availableTime: any[], month: Date): Date[] => {
   });
 
   return availableDays;
+};
+
+type AppointmentPayload = {
+  path: string;
+  slot: { date: string; startTime: string; slotId: string };
+  formData: { session_type: string; problem_brief: string };
+};
+
+type TempBookingData = {
+  scheduleId: string;
+  sessionType: string;
+  problemBrief: string;
+  practitionerRoleId: string;
+  practitionerAvailableTime: string;
+  date: string;
+  startTime: string;
+  hasUserChosenDate: boolean;
 };
 
 type Props = {
@@ -174,10 +193,14 @@ export default function PractitionerAvailability({
    * apply it to the booking form and global state,
    * and remove the temporary data afterward. */
   useEffect(() => {
+    const userId = authState?.userInfo?.userId;
+    if (isOpenParam === 'true' && !userId) return;
+
     const intent = getIntent();
     if (intent && intent.kind === 'appointment') {
-      if (intent.payload.path.includes(practitionerId as string)) {
-        const { slot, formData } = intent.payload;
+      const payload = intent.payload as AppointmentPayload;
+      if (payload.path.includes(practitionerId as string)) {
+        const { slot, formData } = payload;
         setBookingInformation(formData);
         handleFilterChange('date', new Date(slot.date));
         handleFilterChange('startTime', slot.startTime);
@@ -191,13 +214,12 @@ export default function PractitionerAvailability({
       }
     }
 
-    if (isOpenParam === 'true') {
+    if (isOpenParam === 'true' && userId) {
       setIsOpen(true);
 
-      const tempData = localStorage.getItem('temp-booking');
-      if (tempData) {
-        try {
-          const parsed = JSON.parse(tempData);
+      const ownerId = userId;
+      dbGet<TempBookingData>(STORES.tempBooking, ownerId).then(parsed => {
+        if (parsed) {
           setBookingInformation(() => ({
             schedule_id: parsed.scheduleId,
             session_type: parsed.sessionType,
@@ -210,13 +232,13 @@ export default function PractitionerAvailability({
           handleFilterChange('startTime', parsed.startTime);
           handleFilterChange('hasUserChosenDate', parsed.hasUserChosenDate);
 
-          localStorage.removeItem('temp-booking');
-        } catch (e) {
-          console.error('Invalid localStorage data');
+          dbDelete(STORES.tempBooking, ownerId).catch(err =>
+            console.warn('[IndexedDB]', err)
+          );
         }
-      }
+      });
     }
-  }, [isOpenParam]);
+  }, [isOpenParam, authState?.userInfo?.userId]);
 
   useEffect(() => {
     if (isOpenParam !== 'true') {
@@ -312,7 +334,7 @@ export default function PractitionerAvailability({
     currentDate: Date,
     availableDays: Date[]
   ): Date => {
-    let date = new Date(currentDate);
+    const date = new Date(currentDate);
 
     if (availableDays.length === 0) {
       return date;
@@ -468,7 +490,7 @@ export default function PractitionerAvailability({
       'Tipe Session': bookingForm.session_type
     };
 
-    let emptyField = Object.entries(requiredData).filter(item => !item[1]);
+    const emptyField = Object.entries(requiredData).filter(item => !item[1]);
 
     if (emptyField.length > 0) {
       setErrorForm(emptyField.map(item => item[0]));

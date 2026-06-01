@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { useAuth } from '@/context/auth/authContext';
+import { STORES, dbSet } from '@/lib/indexeddb';
 import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
 import { getAPI } from '@/services/api';
 import { useGetUpcomingAppointments } from '@/services/api/appointments';
@@ -93,7 +94,11 @@ export default function Clinic() {
   });
 
   const handleSelectedClinic = (clinicId: string) => {
-    localStorage.setItem('selected_clinic', clinicId);
+    dbSet(STORES.uiPreferences, {
+      ownerId: '',
+      prefKey: 'selected_clinic',
+      value: clinicId
+    }).catch((err) => console.warn('[IndexedDB]', err));
     router.push(`/clinic/${clinicId}`);
   };
 

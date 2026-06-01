@@ -69,7 +69,13 @@ export const createProfile = async ({ userId, email, phoneNumber, type }) => {
   }
 };
 
-export const getProfileByIdentifier = async ({ userId, type }) => {
+export const getProfileByIdentifier = async ({
+  userId,
+  type
+}: {
+  userId: string;
+  type: string;
+}): Promise<Patient | Practitioner | null> => {
   try {
     const bundle = await apiRequest<Bundle>(
       'GET',
@@ -78,8 +84,8 @@ export const getProfileByIdentifier = async ({ userId, type }) => {
 
     const entries = bundle?.entry;
 
-    if (Array.isArray(entries) && entries.length > 0) {
-      return entries[0]?.resource;
+    if (Array.isArray(entries) && entries.length > 0 && entries[0]?.resource) {
+      return entries[0].resource as Patient | Practitioner;
     }
 
     return null;
@@ -140,6 +146,11 @@ export const useUpdateProfile = () => {
   });
 };
 
+function normalizePhone(phone: string): string {
+  if (!phone) return '';
+  return phone.startsWith('+') ? phone.replace(/^\++/, '+') : `+${phone}`;
+}
+
 export const modifyProfile = async ({
   email,
   phoneNumber,
@@ -156,12 +167,7 @@ export const modifyProfile = async ({
   const trimmedName = (name || '').trim();
   const trimmedEmail = (email ?? '').trim();
   const trimmedPhone = (phoneNumber ?? '').trim();
-  // Ensure phone sent upstream always has a single leading plus sign
-  const phoneForRequest = trimmedPhone
-    ? trimmedPhone.startsWith('+')
-      ? trimmedPhone.replace(/^\++/, '+')
-      : `+${trimmedPhone}`
-    : '';
+  const phoneForRequest = normalizePhone(trimmedPhone);
 
   if (!trimmedName) {
     throw new Error('Missing name for modify-profile');
@@ -228,7 +234,7 @@ export const uploadAvatar = async (
         }
       }
     );
-  } catch (error: any) {
+  } catch {
     throw new Error('Failed to upload avatar');
   }
 

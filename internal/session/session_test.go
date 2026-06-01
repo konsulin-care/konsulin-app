@@ -2,9 +2,11 @@ package session
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 )
 
 const testSecret = "test-secret-key-for-testing"
@@ -59,16 +61,50 @@ func TestExtractFromRequest_emptyCookie(t *testing.T) {
 	}
 }
 
+func TestExtractFromRequest_expiredCookie(t *testing.T) {
+	// Cookie with past Exp — should return error.
+	payload := `{"userId":"u1","role_name":"Patient","exp":1000000000}`
+	r := signedCookie(t, payload)
+	_, err := ExtractFromRequest(r, "auth", testSecret)
+	if err == nil {
+		t.Fatal("expected error for expired cookie")
+	}
+}
+
+func TestExtractFromRequest_validExp(t *testing.T) {
+	// Cookie with future Exp — should succeed.
+	future := time.Now().Add(1 * time.Hour).Unix()
+	payload := fmt.Sprintf(`{"userId":"u1","role_name":"Patient","exp":%d}`, future)
+	r := signedCookie(t, payload)
+	s, err := ExtractFromRequest(r, "auth", testSecret)
+	if err != nil {
+		t.Fatalf("unexpected error for valid exp cookie: %v", err)
+	}
+	if s.UserID != "u1" {
+		t.Errorf("expected UserID u1, got %q", s.UserID)
+	}
+}
+
+func TestExtractFromRequest_noExp(t *testing.T) {
+	// Cookie without Exp field — should be accepted (backward compat).
+	payload := `{"userId":"u1","role_name":"Patient"}`
+	r := signedCookie(t, payload)
+	s, err := ExtractFromRequest(r, "auth", testSecret)
+	if err != nil {
+		t.Fatalf("unexpected error for no-exp cookie: %v", err)
+	}
+	if s.UserID != "u1" {
+		t.Errorf("expected UserID u1, got %q", s.UserID)
+	}
+}
+
 func TestExtractFromRequest_unsignedCookie(t *testing.T) {
-	// Unsigned JSON is accepted (URI-encoded plain JSON format)
+	// Unsigned JSON is rejected when AllowUnsigned is false (default).
 	r := &http.Request{Header: http.Header{}}
 	r.Header.Set("Cookie", "auth="+url.QueryEscape(`{"userId":"u1","role_name":"Admin"}`))
-	sess, err := ExtractFromRequest(r, "auth", testSecret)
-	if err != nil {
-		t.Fatalf("expected success for unsigned cookie, got: %v", err)
-	}
-	if sess.UserID != "u1" || sess.Role != "Admin" {
-		t.Fatalf("unexpected session: %+v", sess)
+	_, err := ExtractFromRequest(r, "auth", testSecret)
+	if err == nil {
+		t.Fatal("expected error for unsigned cookie")
 	}
 }
 
