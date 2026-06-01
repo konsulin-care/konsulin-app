@@ -15,7 +15,6 @@ type FHIRProfile = Patient | Practitioner | null;
 async function postAuthCookie(
   body: Record<string, unknown>
 ): Promise<Response> {
-  let token = '';
   const res = await fetch('/auth/cookie/csrf-token');
   if (!res.ok) {
     throw new Error(`CSRF token fetch failed: ${res.status} ${res.statusText}`);
@@ -24,11 +23,10 @@ async function postAuthCookie(
   if (!data.token) {
     throw new Error('CSRF token missing from response');
   }
-  token = data.token;
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': data.token
   };
-  if (token) headers['X-CSRF-Token'] = token;
   try {
     const res = await fetch('/auth/cookie', {
       method: 'POST',
