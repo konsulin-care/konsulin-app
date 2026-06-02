@@ -17,10 +17,12 @@ description: HTTP handlers — one per route group, thin delegation to service l
 | 008 | Handler behavior branches on active role from session                             |
 | 009 | Admin handler actions scoped to active clinic context                             |
 | 011 | Handler returns HTMX partials for progressive PHR timeline loading                |
+| 014 | Home handler injects auth token and self URL into context; no `fhirClient` param  |
 
 ## Rules
 
 - Keep handlers under 20 lines — delegate all logic to service layer
+- Inject per-request auth into context for service FHIR proxy calls; never use shared `fhirClient.SetAuthToken()`
 - Return HTML fragments from HTMX endpoints, never JSON
 - Use `HX-Redirect` for auth redirects, not client-side navigation
 - Read role and clinic from session on every HTMX request (session lost on partial renders)

@@ -19,4 +19,5 @@ description: Base layout shell — nav, footer, HTMX/Alpine.js script imports, T
 - Include `@ctx.Inject()` for CSRF tokens and flash messages in base layout
 - Role dropdown and clinic dropdown rendered conditionally based on session data
 - HTMX scripts in `<head>`; Alpine.js deferred in `<head>`
+- FHIR data is server-side rendered; no client-side FHIR JS module
 - Layout is the only place where `<html>`, `<head>`, `<body>` tags are defined

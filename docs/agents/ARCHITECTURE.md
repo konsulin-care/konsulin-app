@@ -1,30 +1,37 @@
 ---
 title: System Architecture
 description: Go SSR frontend for healthcare scheduling PWA
-status: stable
-date: 2026-05-26
+status: updated
+date: 2026-06-02
 ---
 
 # Overview
 
 Server-side rendered Go web application serving a healthcare scheduling
 platform. Low-memory, mobile-first, FHIR-native architecture. One React
-SPA route for AEHRC Smart Forms assessments; all other pages are pure
-Go SSR + HTMX.
+SPA route for AEHRC Smart Forms assessments; all other pages are
+Go SSR + HTMX supplemented by Alpine.js for
+interactivity.
 
 # Design Principles
 
 - Low RAM: target 15-40 MB idle, 50-120 MB under load
-- Mobile-first: ~0 KB JS on Go SSR pages
+- Mobile-first: minimal JS on Go SSR pages
 - FHIR-native: no custom endpoints, frontend aggregates FHIR resources
 - Progressive: timeline loading for PHR, HTMX partial updates
 - Role-driven: explicit context switching for multi-role users
+- Two client-side islands: Alpine (interactivity), React (complex UIs); FHIR data server-side rendered
 
 # System Architecture
 
 ```
 Browser
-├── Go SSR pages: templ + HTMX + Alpine.js
+│
+├── Two client-side islands:
+│   ├── Alpine.js ── expand/collapse, mobile menu, toggles
+│   └── React ── auth (supertokens-react), AEHRC Smart Forms
+│
+├── Go SSR pages: templ + HTMX + Alpine.js (interactivity); FHIR data server-side rendered
 ├── Assessment page: React SPA (AEHRC Smart Forms)
 └── Auth: supertokens-auth-react (client-side SDK)
         ↓
@@ -32,7 +39,8 @@ Go SSR Frontend (Chi)
 ├── HTML templates (templ)
 ├── React SPA bundle server (/assessment/*)
 ├── Cookie-based auth guard
-└── API proxy to backend
+├── API proxy to backend (/proxy/*)
+└── Static assets (/static/): Alpine.js, HTMX
         ↓
 Backend API (Go + SuperTokens Go SDK)
 ├── FHIR R4 endpoints (Blaze FHIR)
@@ -56,12 +64,16 @@ Backend API (Go + SuperTokens Go SDK)
 | Offline assessment (AEHRC SPA)   | `@docs/ADR/010-offline-assessment-support.md`    |
 | Timeline-based PHR rendering     | `@docs/ADR/011-timeline-based-phr-rendering.md`  |
 | Runtime configuration (env vars) | `@docs/ADR/012-runtime-configuration.md`         |
+| Three Islands client-side layer  | `@docs/ADR/013-client-side-data-layer.md`        |
+| SSR upcoming session             | `@docs/ADR/014-ssr-upcoming-session.md`          |
 
 # Data Flow
 
 1. Browser request → Chi router → middleware (auth, logging)
-2. Handler fetches FHIR data from backend via Go HTTP client
-3. Handler populates templ component with data
+2. Go SSR renders initial HTML (templates) including server-side fetched data (e.g. upcoming session)
+3. Client-side islands hydrate on page load:
+   a. Alpine.js handles interactivity (mobile menu, toggles)
+   b. React SPA mount points (assessment) render independently
 4. HTMX handles partial updates (form submit, pagination)
 5. Assessment page loads React SPA → AEHRC renders Questionnaire
 6. React SPA communicates via Go SSR proxy → backend FHIR API

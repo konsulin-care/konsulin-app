@@ -11,6 +11,7 @@ description: FHIR R4 resource types as Go structs and HTTP client with auth
 | 004 | Models PractitionerRole, HealthcareService, Schedule, Slot types for dynamic scheduling          |
 | 005 | Fetches Appointment bundles across multiple clinics for unified calendar                         |
 | 006 | Queries FHIR resources needed for recommendation computation                                     |
+| 014 | `GetUpcomingSession` bypasses `fhir.Client` — uses proxy endpoint for per-request auth           |
 
 ## Rules
 
@@ -20,4 +21,4 @@ description: FHIR R4 resource types as Go structs and HTTP client with auth
 - Cache stable resources (Practitioner, Organization) with TTL — never cache volatile resources (Slot, Appointment)
 - Use `_summary=count` for list endpoints when only metadata/count needed
 - PractitionerRole contains nested availability by location — parse carefully for clinic-scoped vs practitioner-scoped scheduling
-- FHIR HTTP client handles auth headers, retry, and timeout; never bypass client with raw HTTP calls
+- FHIR HTTP client handles auth headers, retry, and timeout; use for direct backend calls. For per-request auth, call the proxy endpoint (`/proxy/fhir/*`) via `http.Client` instead.

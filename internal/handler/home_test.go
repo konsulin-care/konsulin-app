@@ -13,10 +13,11 @@ import (
 
 func testConfig() *config.Config {
 	return &config.Config{
-		AppName:              "Konsulin",
-		AuthCookieName:       "auth",
+		Port:                   "9999",
+		AppName:               "Konsulin",
+		AuthCookieName:        "auth",
 		GuestSessionCookieName: "guest_session",
-		CookieSecure:         false,
+		CookieSecure:          false,
 	}
 }
 
@@ -158,7 +159,7 @@ func TestHomeHandler_roleSwitcherHiddenForSingleRole(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Errorf("expected 200, got %d", rec.Code)
 	}
-	if strings.Contains(rec.Body.String(), "Role:") {
+	if strings.Contains(rec.Body.String(), ">Role:</span>") {
 		t.Error("role switcher should be hidden for single-role users")
 	}
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -23,7 +24,16 @@ func NewHomeHandler(cfg *config.Config, svc *service.HomeService) http.HandlerFu
 			return
 		}
 
-		data, err := svc.FetchHomeData(r.Context(), sess.Role, sess.FHIRID, displayNameFromSession(sess))
+		// Inject per-request auth token and self URL into context so the
+		// service can call the proxy endpoint with the user's credentials.
+		ctx := r.Context()
+		if token, err := r.Cookie("sAccessToken"); err == nil {
+			ctx = service.WithAuthToken(ctx, token.Value)
+		}
+		selfURL := fmt.Sprintf("http://localhost:%s", cfg.Port)
+		ctx = service.WithSelfURL(ctx, selfURL)
+
+		data, err := svc.FetchHomeData(ctx, sess.Role, sess.FHIRID, displayNameFromSession(sess))
 		if err != nil {
 			slog.Error("home: fetch data failed", "role", sess.Role, "err", err)
 		}

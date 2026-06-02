@@ -10,11 +10,12 @@ import (
 type HomeData struct {
 	DisplayName string
 	IsGuest     bool
+	FHIRID      string
+	Role        string
 
 	Recommendations    []RecommendationCard
 	QuickActions       []QuickAction
 	PopularAssessments []AssessmentCard
-	Community          *CommunityData
 
 	TodaySchedule []AppointmentSummary
 	PatientList   []PatientSummary
@@ -40,18 +41,16 @@ type RecommendationCard struct {
 }
 
 type QuickAction struct {
-	Title string
-	Href  string
+	Title       string
+	Href        string
+	Icon        string
+	Description string
 }
 
 type AssessmentCard struct {
 	ID          string
 	Title       string
 	Description string
-}
-
-type CommunityData struct {
-	Items []string
 }
 
 type AppointmentSummary struct {
@@ -76,9 +75,9 @@ type ClinicContext struct {
 }
 
 type UpcomingSessionData struct {
-	Time     string
-	Location string
-	Type     string
+	DisplayName string
+	Time        string
+	Date        string
 }
 
 type HomeService struct {
@@ -104,6 +103,8 @@ func (s *HomeService) FetchHomeData(ctx context.Context, role, fhirID, displayNa
 	data := &HomeData{
 		DisplayName: displayName,
 		IsGuest:     role == "Guest",
+		FHIRID:      fhirID,
+		Role:        role,
 	}
 
 	switch role {
@@ -121,6 +122,8 @@ func (s *HomeService) FetchHomeData(ctx context.Context, role, fhirID, displayNa
 		}
 	}
 
+	// Upcoming session is server-side rendered to avoid client-side fetch
+	// inconsistency (Alpine.js race with session initialization).
 	session, err := s.provider.GetUpcomingSession(ctx, role, fhirID)
 	if err == nil {
 		data.UpcomingSession = session
@@ -137,11 +140,10 @@ func (s *HomeService) populatePatient(ctx context.Context, data *HomeData) error
 	data.Recommendations = recs
 
 	data.QuickActions = []QuickAction{
-		{Title: "Journal", Href: "/journal"},
-		{Title: "Assessment", Href: "/assessments"},
+		{Title: "Journal", Href: "/journal", Icon: "/static/images/writing.svg", Description: "Express your current feelings"},
+		{Title: "Assessment", Href: "/assessments", Icon: "/static/images/mental-health.svg", Description: "Check your mental well-being"},
 	}
 	data.PopularAssessments, _ = s.provider.GetPopularAssessments(ctx)
-	data.Community = &CommunityData{Items: []string{"Community discussions coming soon"}}
 	return nil
 }
 
@@ -153,8 +155,8 @@ func (s *HomeService) populatePractitioner(ctx context.Context, data *HomeData, 
 	data.TodaySchedule = schedule
 
 	data.QuickActions = []QuickAction{
-		{Title: "Journal", Href: "/journal"},
-		{Title: "Assessment", Href: "/assessments"},
+		{Title: "Journal", Href: "/journal", Icon: "/static/images/writing.svg", Description: "Express your current feelings"},
+		{Title: "Assessment", Href: "/assessments", Icon: "/static/images/mental-health.svg", Description: "Check your mental well-being"},
 	}
 	data.ExerciseLink = QuickAction{Title: "Health Exercise Resources", Href: "/exercise"}
 	data.SOAPLink = QuickAction{Title: "SOAP Report", Href: "/assessments/soap"}
@@ -166,7 +168,6 @@ func (s *HomeService) populatePractitioner(ctx context.Context, data *HomeData, 
 	stats, _ := s.provider.GetPractitionerStats(ctx, fhirID)
 	data.Stats = stats
 
-	data.Community = &CommunityData{Items: []string{"Community discussions coming soon"}}
 	return nil
 }
 
@@ -208,9 +209,9 @@ func (p *StubProvider) GetUpcomingSession(_ context.Context, _, _ string) (*Upco
 	now := time.Now()
 	tomorrow := now.Add(24 * time.Hour)
 	return &UpcomingSessionData{
-		Time:     tomorrow.Format("Mon 15:04"),
-		Location: "Main Clinic",
-		Type:     "In-person",
+		DisplayName: "Dr. Sarah",
+		Time:        tomorrow.Format("15:04"),
+		Date:        tomorrow.Format("02/01/2006"),
 	}, nil
 }
 
