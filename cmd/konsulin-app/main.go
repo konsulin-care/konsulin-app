@@ -14,10 +14,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/konsulin-care/konsulin-app/internal/config"
-	"github.com/konsulin-care/konsulin-app/internal/fhir"
 	"github.com/konsulin-care/konsulin-app/internal/handler"
 	appmw "github.com/konsulin-care/konsulin-app/internal/middleware"
-	"github.com/konsulin-care/konsulin-app/internal/service"
 	"github.com/konsulin-care/konsulin-app/internal/session"
 )
 
@@ -146,13 +144,6 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	r.Handle("/proxy/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
 		BackendBaseURL: cfg.APIURL,
 	}))
-
-	// Guest-allowed Go SSR routes — OptionalAuth provides the session, no
-	// RequireRole needed.  These routes are accessible to all roles.
-	fhirBaseURL := strings.TrimRight(cfg.APIURL, "/") + "/fhir"
-	fhirClient := fhir.NewClient(fhirBaseURL)
-	homeSvc := service.NewHomeService(service.NewFHIRProvider(fhirClient))
-	r.Get("/", handler.NewHomeHandler(cfg, homeSvc))
 
 	// Role switcher — GET returns partial, POST updates session cookie.
 	r.HandleFunc("/auth/role/switch", handler.NewRoleSwitchHandler(handler.RoleSwitchOptions{
