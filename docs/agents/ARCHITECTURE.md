@@ -1,46 +1,46 @@
 ---
 title: System Architecture
-description: Go SSR frontend for healthcare scheduling PWA
+description: Go BFF with Next.js static frontend for healthcare scheduling PWA
 status: updated
-date: 2026-06-02
+date: 2026-06-03
 ---
 
 # Overview
 
-Server-side rendered Go web application serving a healthcare scheduling
-platform. Low-memory, mobile-first, FHIR-native architecture. One React
-SPA route for AEHRC Smart Forms assessments; all other pages are
-Go SSR + HTMX supplemented by Alpine.js for
-interactivity.
+Go BFF (Backend for Frontend) serving a Next.js static React
+application. The Go server handles auth cookies, proxies FHIR
+requests to the backend, and serves the Next.js static build.
+All pages are React — no Go SSR templates, no HTMX, no Alpine.js.
+
+Lowest latency path: browser → Go BFF → FHIR backend → Go BFF → browser.
+FHIR Bundle parsing happens entirely on the client side.
 
 # Design Principles
 
-- Low RAM: target 15-40 MB idle, 50-120 MB under load
-- Mobile-first: minimal JS on Go SSR pages
-- FHIR-native: no custom endpoints, frontend aggregates FHIR resources
-- Progressive: timeline loading for PHR, HTMX partial updates
-- Role-driven: explicit context switching for multi-role users
-- Two client-side islands: Alpine (interactivity), React (complex UIs); FHIR data server-side rendered
+- **Single rendering stack**: React for every page, every route
+- **Timezone-safe**: ISO 8601 timestamps pass through as-is, browser
+  `Intl.DateTimeFormat` handles local rendering
+- **No duplicate logic**: FHIR parsing once (client), auth once (Go BFF)
+- **Single binary in production**: Next.js builds to static files,
+  Go serves them. No Node.js, no Nginx.
+- **Role-driven**: explicit context switching for multi-role users
 
 # System Architecture
 
 ```
-Browser
+Browser (Next.js/React SPA)
 │
-├── Two client-side islands:
-│   ├── Alpine.js ── expand/collapse, mobile menu, toggles
-│   └── React ── auth (supertokens-react), AEHRC Smart Forms
+├── React components: all pages (home, profile, schedule, record, etc.)
+├── React Query: data fetching, caching, pagination
+├── supertokens-auth-react: client-side auth SDK
 │
-├── Go SSR pages: templ + HTMX + Alpine.js (interactivity); FHIR data server-side rendered
-├── Assessment page: React SPA (AEHRC Smart Forms)
-└── Auth: supertokens-auth-react (client-side SDK)
-        ↓
-Go SSR Frontend (Chi)
-├── HTML templates (templ)
-├── React SPA bundle server (/assessment/*)
-├── Cookie-based auth guard
-├── API proxy to backend (/proxy/*)
-└── Static assets (/static/): Alpine.js, HTMX
+↓
+Go BFF (Chi router, single binary)
+├── GET /proxy/*     → FHIR backend (inject sAccessToken)
+├── POST /auth/*     → cookie management
+├── GET /api/config  → runtime config JSON
+├── GET /static/*    → Go dev static assets
+└── GET /*           → serve Next.js static export (out/)
         ↓
 Backend API (Go + SuperTokens Go SDK)
 ├── FHIR R4 endpoints (Blaze FHIR)
@@ -52,7 +52,7 @@ Backend API (Go + SuperTokens Go SDK)
 
 | Decision                         | ADR                                              |
 | -------------------------------- | ------------------------------------------------ |
-| Go SSR + Chi + templ + HTMX      | `@docs/ADR/001-frontend-architecture.md`         |
+| Go BFF + Next.js static frontend | `@docs/ADR/015-go-bff-static-nextjs.md`          |
 | Backend FHIR compliance          | `@docs/ADR/002-backend-fhir-compliance.md`       |
 | Recommendation shaping           | `@docs/ADR/003-recommendation-shaping.md`        |
 | Dynamic scheduling               | `@docs/ADR/004-dynamic-scheduling.md`            |
@@ -64,16 +64,26 @@ Backend API (Go + SuperTokens Go SDK)
 | Offline assessment (AEHRC SPA)   | `@docs/ADR/010-offline-assessment-support.md`    |
 | Timeline-based PHR rendering     | `@docs/ADR/011-timeline-based-phr-rendering.md`  |
 | Runtime configuration (env vars) | `@docs/ADR/012-runtime-configuration.md`         |
-| Three Islands client-side layer  | `@docs/ADR/013-client-side-data-layer.md`        |
-| SSR upcoming session             | `@docs/ADR/014-ssr-upcoming-session.md`          |
 
 # Data Flow
 
-1. Browser request → Chi router → middleware (auth, logging)
-2. Go SSR renders initial HTML (templates) including server-side fetched data (e.g. upcoming session)
-3. Client-side islands hydrate on page load:
-   a. Alpine.js handles interactivity (mobile menu, toggles)
-   b. React SPA mount points (assessment) render independently
-4. HTMX handles partial updates (form submit, pagination)
-5. Assessment page loads React SPA → AEHRC renders Questionnaire
-6. React SPA communicates via Go SSR proxy → backend FHIR API
+1. Browser requests `GET /` → Go BFF serves `out/index.html`
+   (Next.js static export)
+2. React hydrates on the client, reads auth state from cookies
+3. Components fetch data via `GET /proxy/fhir/*` →
+   Go BFF injects `sAccessToken` as `Authorization: Bearer` →
+   forwards to FHIR backend
+4. FHIR backend returns raw Bundle → Go BFF passes it through
+   unchanged (transparent proxy)
+5. React parses Bundle (`entry[].resource`), runs component
+   logic, renders UI
+6. All FHIR timestamps are ISO 8601 strings — React formats
+   them client-side via `Intl.DateTimeFormat`
+
+# Superseded Decisions
+
+| Decision                        | Superseded By       |
+| ------------------------------- | ------------------- |
+| Go SSR + Chi + templ + HTMX     | ADR-015             |
+| Three Islands client-side layer | ADR-014 (→ ADR-015) |
+| SSR upcoming session            | ADR-015             |

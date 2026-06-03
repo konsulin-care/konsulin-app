@@ -1,7 +1,8 @@
 ---
 title: SSR Upcoming Session
 description: Move upcoming session fetch from Alpine.js client-side to Go SSR via proxy
-status: accepted
+status: superseded
+superseded_by: ADR-015
 date: 2026-06-02
 ---
 
