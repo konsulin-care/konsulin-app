@@ -26,7 +26,6 @@ import { Pagination } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import AppChartClient from '../components/general/home/app-chart-client';
 import AppMenu from '../components/general/home/app-menu';
-import Community from '../components/general/home/community';
 import PopularAssessment from '../components/general/home/popular-assessment';
 
 export default function HomeContentPatient() {
@@ -104,7 +103,7 @@ export default function HomeContentPatient() {
 
       {/* Record Summary */}
       <div className='p-4'>
-        <div className='flex justify-between text-muted'>
+        <div className='text-muted flex justify-between'>
           <span className='mb-2 text-[14px] font-bold'>
             Previous Record Summary
           </span>
@@ -200,7 +199,7 @@ export default function HomeContentPatient() {
                           <div className='text-[12px] font-bold'>
                             {formattedTitle}
                           </div>
-                          <div className='overflow-hidden text-ellipsis whitespace-nowrap text-[10px]'>
+                          <div className='overflow-hidden text-[10px] text-ellipsis whitespace-nowrap'>
                             <ReactMarkdown
                               components={customMarkdownComponents}
                             >
@@ -245,10 +244,6 @@ export default function HomeContentPatient() {
               })}
           </Swiper>
         )}
-      </div>
-
-      <div className='p-4'>
-        <Community />
       </div>
     </>
   );

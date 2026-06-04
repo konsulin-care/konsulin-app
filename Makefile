@@ -75,7 +75,7 @@ GO_PORT ?= 3000
 NEXT_PORT ?= 8080
 
 # Development
-dev: css-templ templ-gen
+dev: update-js css-templ templ-gen
 	@echo "Go SSR on :$(GO_PORT)  |  Next.js on :$(NEXT_PORT)"
 	@trap 'kill 0' EXIT; \
 	  export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3300} NEXTJS_URL=http://localhost:$(NEXT_PORT) SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
@@ -83,7 +83,7 @@ dev: css-templ templ-gen
 	  npm run dev -- -p $(NEXT_PORT) & \
 	  wait
 
-dev-go: css-templ templ-gen
+dev-go: update-js css-templ templ-gen
 	export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3300} NEXTJS_URL=http://localhost:$(NEXT_PORT) SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
 	go run ./cmd/konsulin-app
 
@@ -95,10 +95,10 @@ build-auth-spa:
 	cd web && npm ci && npm run build
 
 # Build
-build-go: css-templ templ-gen build-auth-spa
+build-go: update-js css-templ templ-gen build-auth-spa
 	go build -o konsulin-app ./cmd/konsulin-app
 
-run: css-templ templ-gen
+run: update-js css-templ templ-gen
 	go run ./cmd/konsulin-app
 
 update-js:

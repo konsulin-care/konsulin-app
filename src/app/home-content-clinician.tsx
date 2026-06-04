@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+
 import CardLoader from '@/components/general/card-loader';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,7 +32,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import Community from '../components/general/home/community';
 
 type IColumn = {
   data: {
@@ -153,6 +154,7 @@ export default function HomeContentClinician() {
     setDataMonthly(dataMonthly);
   }, [practitionerSlotsData, authState.userInfo.fhirId]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const configColumn: any = {
     axis: {
       x: { title: null },
@@ -392,10 +394,6 @@ export default function HomeContentClinician() {
           </div>
         )}
       </div>
-      <div className='p-4'>
-        <Community />
-      </div>
-
       <Drawer open={isOpen} onClose={() => setIsOpen(false)}>
         <DrawerTrigger asChild>
           <div />

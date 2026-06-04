@@ -31,11 +31,11 @@ Five pages/components have no real functionality and are safe to deprecate:
 - [ ] Omit `/settings` from Chi router
 - [ ] Omit `/forget-password` from Chi router
 - [ ] Omit `/reset-password-form` from Chi router
-- [ ] Remove Community section from guest home template (plan 005)
-- [ ] Remove Community section from patient home template (plan 005)
-- [ ] Remove Community section from practitioner home template (plan 018)
-- [ ] Update `docs/plans/005-home-page-migration.md` — remove community references from layout descriptions
-- [ ] Delete source files during M019: `src/app/notification/`, `src/app/settings/`, `src/app/(auth)/forget-password/`, `src/app/(auth)/reset-password-form/`, `src/components/general/home/community.tsx`
+- [x] Remove Community section from guest home template (plan 005)
+- [x] Remove Community section from patient home template (plan 005)
+- [x] Remove Community section from practitioner home template (plan 018)
+- [x] Update `docs/plans/005-home-page-migration.md` — remove community references from layout descriptions
+- [x] Delete source files during M019: `src/app/notification/`, `src/app/settings/`, `src/app/(auth)/forget-password/`, `src/app/(auth)/reset-password-form/`, `src/components/general/home/community.tsx`
 
 # Reference
 
@@ -62,34 +62,34 @@ Five pages/components have no real functionality and are safe to deprecate:
 @src/components/general/home/community.tsx:
 
 - Links to misspelled `/comunity` (404)
-- Remove: delete entire component file
+- Removed: file deleted
 
 @src/app/home-content-guest.tsx (line 3, 49):
 
 - Imports and renders `<Community />`
-- Remove: delete import and usage, adjust layout
+- Removed: import and usage deleted
 
 @src/app/home-content-patient.tsx (line 29, 251):
 
 - Imports and renders `<Community />`
-- Remove: delete import and usage, adjust layout
+- Removed: import and usage deleted
 
 @src/app/home-content-clinician.tsx (line 33, 396):
 
 - Imports and renders `<Community />`
-- Remove: delete import and usage, adjust layout
+- Removed: import and usage deleted
 
 @docs/plans/005-home-page-migration.md:
 
 - References community in 7 lines (19, 20, 29, 41, 72, 77, 82)
-- Update: remove community section from all role layouts
+- Removed: all community references removed from layout descriptions
 
 # Risks
 
 | Risk                                        | Likelihood | Impact | Mitigation                                                                                                |
 | ------------------------------------------- | ---------- | ------ | --------------------------------------------------------------------------------------------------------- |
 | Settings page had useful features we missed | Low        | Low    | Audit showed 7/9 items disabled; the 2 working items (password change, app version) are covered elsewhere |
-| Community section removal leaves visual gap | Low        | Low    | Home page templates will fill space naturally; no layout breaking                                         |
+| Community section removal leaves visual gap | Low        | Low    | Home page templates fill space naturally; no layout broken                                                |
 
 # UAT
 
@@ -97,5 +97,5 @@ Five pages/components have no real functionality and are safe to deprecate:
 2. Visit `/settings` — same behavior
 3. Visit `/forget-password` — same behavior
 4. Visit `/reset-password-form` — same behavior
-5. Home page for all roles — no Community section rendered
+5. Home page for all roles — no Community section rendered (done)
 6. After M019 — all five return 404 from Go SSR

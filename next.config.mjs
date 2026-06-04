@@ -1,20 +1,11 @@
 /** @type {import('next').NextConfig} */
 
-import withSerwistInit from '@serwist/next'
-
-const withSerwist = withSerwistInit({
-  swSrc: 'src/app/sw.ts',
-  swDest: 'public/sw.js',
-  reloadOnOnline: true,
-  disable: process.env.NODE_ENV === 'development'
-})
-
 const nextConfig = {
-  reactStrictMode: process.env.NODE_ENV !== 'development',
-  output: 'standalone',
+  output: 'export',
+  trailingSlash: true,
   images: {
-    domains: ['s3.konsulin.care', '37.27.46.214', 'cs.konsulin.care']
+    unoptimized: true
   }
 }
 
-export default withSerwist(nextConfig)
+export default nextConfig

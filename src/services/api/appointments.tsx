@@ -7,7 +7,7 @@ export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
   return useQuery({
-    queryKey: ['appointments', dateReference],
+    queryKey: ['appointments', patientId, dateReference],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get(
@@ -18,13 +18,16 @@ export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
     select: response => {
       return response.data || null;
     },
+    staleTime: 60 * 1000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     enabled: !!patientId && !!dateReference
   });
 };
 
 export const useGetAllAppointments = ({ patientId }) => {
   return useQuery({
-    queryKey: ['all-appointments'],
+    queryKey: ['all-appointments', patientId],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get(
@@ -43,7 +46,7 @@ export const useGetUpcomingSessions = ({ practitionerId, dateReference }) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
   return useQuery({
-    queryKey: ['sessions', dateReference],
+    queryKey: ['sessions', practitionerId, dateReference],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get(
@@ -54,13 +57,16 @@ export const useGetUpcomingSessions = ({ practitionerId, dateReference }) => {
     select: response => {
       return response.data || null;
     },
+    staleTime: 60 * 1000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     enabled: !!practitionerId && !!dateReference
   });
 };
 
 export const useGetAllSessions = ({ practitionerId }) => {
   return useQuery({
-    queryKey: ['all-sessions'],
+    queryKey: ['all-sessions', practitionerId],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get(
@@ -83,7 +89,7 @@ export const useGetTodaySessions = ({
   const { utcStart, utcEnd } = getUtcDayRange(dateReference);
 
   return useQuery({
-    queryKey: ['today-sessions'],
+    queryKey: ['today-sessions', practitionerId, dateReference],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get(
@@ -142,7 +148,7 @@ export const useGetPractitionerSlots = ({ practitionerId, dateReference }) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
   return useQuery({
-    queryKey: ['slots', dateReference],
+    queryKey: ['slots', practitionerId, dateReference],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get(

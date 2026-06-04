@@ -10,9 +10,10 @@ import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { getNow } from '@/constants/date';
 import { useAuth } from '@/context/auth/authContext';
-import { STORES, dbSet } from '@/lib/indexeddb';
 import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
+import { STORES, dbSet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { IUseClinicParams, useListClinics } from '@/services/clinic';
@@ -26,8 +27,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import ClinicFilter from './clinic-filter';
 
-const now = new Date();
-
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export default function Clinic() {
   const router = useRouter();
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
@@ -36,6 +36,7 @@ export default function Clinic() {
   const {
     data: clinics,
     isLoading: isListClinicsLoading,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isFetching: isFetchingClinics
   } = useListClinics(
     {
@@ -48,7 +49,7 @@ export default function Clinic() {
   const { state: authState } = useAuth();
   const { data: upcomingData } = useGetUpcomingAppointments({
     patientId: authState?.userInfo?.fhirId,
-    dateReference: format(now, 'yyyy-MM-dd')
+    dateReference: format(getNow(), 'yyyy-MM-dd')
   });
 
   const parsedAppointmentsData = useMemo(() => {
@@ -57,7 +58,7 @@ export default function Clinic() {
     const parsed = parseMergedAppointments(upcomingData);
     const filtered = parsed.filter(session => {
       const slotStart = parseISO(session.slotStart);
-      return isAfter(slotStart, now);
+      return isAfter(slotStart, getNow());
     });
 
     return filtered;
@@ -98,7 +99,7 @@ export default function Clinic() {
       ownerId: '',
       prefKey: 'selected_clinic',
       value: clinicId
-    }).catch((err) => console.warn('[IndexedDB]', err));
+    }).catch(err => console.warn('[IndexedDB]', err));
     router.push(`/clinic/${clinicId}`);
   };
 

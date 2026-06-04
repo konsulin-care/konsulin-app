@@ -12,6 +12,15 @@ import {
   getRedirectIntent
 } from '@/utils/redirect-intent';
 
+import { getNow } from '@/constants/date';
+import { Roles } from '@/constants/roles';
+import {
+  useGetUpcomingAppointments,
+  useGetUpcomingSessions
+} from '@/services/api/appointments';
+import { getUtcDayRange } from '@/utils/helper';
+import { useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -21,6 +30,56 @@ import HomeHeader from './home-header';
 const App = () => {
   const { isLoading, state: authState } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const isPatient = authState?.userInfo?.role_name === Roles.Patient;
+  const isPractitioner = authState?.userInfo?.role_name === Roles.Practitioner;
+  const fhirId = authState?.userInfo?.fhirId;
+
+  const { data: appointmentData } = useGetUpcomingAppointments({
+    patientId: isPatient ? fhirId : undefined,
+    dateReference: format(getNow(), 'yyyy-MM-dd')
+  });
+
+  const { data: sessionData } = useGetUpcomingSessions({
+    practitionerId: isPractitioner ? fhirId : undefined,
+    dateReference: format(getNow(), 'yyyy-MM-dd')
+  });
+
+  // Force-fetch appointments/sessions when auth resolves and role/fhirId become available.
+  // This bypasses React Query observer-level enabled/queryKey transition edge cases.
+  useEffect(() => {
+    if (isLoading || !fhirId) return;
+    const dateRef = format(getNow(), 'yyyy-MM-dd');
+
+    if (isPatient) {
+      queryClient.fetchQuery({
+        queryKey: ['appointments', fhirId, dateRef],
+        queryFn: async () => {
+          const API = await getAPI();
+          const { utcStart } = getUtcDayRange(new Date(dateRef));
+          const response = await API.get(
+            `/fhir/Appointment?actor=Patient/${fhirId}&slot.start=ge${utcStart}&_include=Appointment:actor:PractitionerRole&_include:iterate=PractitionerRole:practitioner&_include=Appointment:slot`
+          );
+          return response;
+        }
+      });
+    }
+
+    if (isPractitioner) {
+      queryClient.fetchQuery({
+        queryKey: ['sessions', fhirId, dateRef],
+        queryFn: async () => {
+          const API = await getAPI();
+          const { utcStart } = getUtcDayRange(new Date(dateRef));
+          const response = await API.get(
+            `/fhir/Appointment?actor=Practitioner/${fhirId}&slot.start=ge${utcStart}&_include=Appointment:actor:Patient&_include=Appointment:slot`
+          );
+          return response;
+        }
+      });
+    }
+  }, [isLoading, isPatient, isPractitioner, fhirId, queryClient]);
 
   const [isRedirecting, setIsRedirecting] = useState(true);
   const isHandlingIntentRef = useRef(false);
@@ -207,7 +266,7 @@ const App = () => {
   return (
     <>
       <NavigationBar />
-      <HomeHeader />
+      <HomeHeader appointmentData={appointmentData} sessionData={sessionData} />
       <HomeContent />
     </>
   );

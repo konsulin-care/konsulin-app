@@ -5,6 +5,7 @@ import MedalCollection from '@/components/profile/medal-collection';
 import Settings from '@/components/profile/settings';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getNow } from '@/constants/date';
 import { medalLists, settingMenus } from '@/constants/profile';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
@@ -30,15 +31,13 @@ type Props = {
   fhirId: string;
 };
 
-const now = new Date();
-
 export default function Patient({ fhirId }: Props) {
   const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const { data: upcomingData, isLoading: isUpcomingDataLoading } =
     useGetUpcomingAppointments({
       patientId: authState?.userInfo?.fhirId,
-      dateReference: format(now, 'yyyy-MM-dd')
+      dateReference: format(getNow(), 'yyyy-MM-dd')
     });
 
   const parsedAppointmentsData = useMemo(() => {
@@ -47,7 +46,7 @@ export default function Patient({ fhirId }: Props) {
     const parsed = parseMergedAppointments(upcomingData);
     const filtered = parsed.filter(session => {
       const slotStart = parseISO(session.slotStart);
-      return isAfter(slotStart, now);
+      return isAfter(slotStart, getNow());
     });
 
     return filtered;

@@ -4,39 +4,33 @@ import Avatar from '@/components/general/avatar';
 import Header from '@/components/header';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getNow } from '@/constants/date';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
-import {
-  useGetUpcomingAppointments,
-  useGetUpcomingSessions
-} from '@/services/api/appointments';
 import {
   generateAvatarPlaceholder,
   parseMergedAppointments,
   parseMergedSessions
 } from '@/utils/helper';
-import { format, isAfter, parseISO } from 'date-fns';
+import { isAfter, parseISO } from 'date-fns';
+import { Bundle } from 'fhir/r4';
 import { useMemo } from 'react';
 
-const now = new Date();
+interface HomeHeaderProps {
+  appointmentData?: Bundle | null;
+  sessionData?: Bundle | null;
+}
 
-export default function HomeHeader() {
+export default function HomeHeader({
+  appointmentData,
+  sessionData
+}: HomeHeaderProps) {
   const { state: authState, isLoading: isLoadingAuth } = useAuth();
 
   const role = authState?.userInfo?.role_name;
-  const fhirId = authState?.userInfo?.fhirId;
   const isPatient = role === Roles.Patient;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isPractitioner = role === Roles.Practitioner;
-
-  const { data: appointmentData } = useGetUpcomingAppointments({
-    patientId: isPatient ? fhirId : undefined,
-    dateReference: format(now, 'yyyy-MM-dd')
-  });
-
-  const { data: sessionData } = useGetUpcomingSessions({
-    practitionerId: isPractitioner ? fhirId : undefined,
-    dateReference: format(now, 'yyyy-MM-dd')
-  });
 
   const parsedAppointmentsData = useMemo(() => {
     if (
@@ -49,7 +43,7 @@ export default function HomeHeader() {
     const parsed = parseMergedAppointments(appointmentData);
     const filtered = parsed.filter(session => {
       const slotStart = parseISO(session.slotStart);
-      return isAfter(slotStart, now);
+      return isAfter(slotStart, getNow());
     });
 
     return filtered;
@@ -62,7 +56,7 @@ export default function HomeHeader() {
     const parsed = parseMergedSessions(sessionData);
     const filtered = parsed.filter(session => {
       const slotStart = parseISO(session.slotStart);
-      return isAfter(slotStart, now);
+      return isAfter(slotStart, getNow());
     });
 
     return filtered;
