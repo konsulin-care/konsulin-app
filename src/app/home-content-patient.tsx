@@ -167,7 +167,7 @@ export default function HomeContentPatient() {
                   category: typeMappings[record.type]?.category,
                   title
                 }).toString();
-                const url = `record/${recordId}?${queryParams}`;
+                const url = `/record?recordId=${recordId}&${queryParams}`;
 
                 const { displayName, email } = getPractitionerInfo(record);
                 const { initials, backgroundColor } = generateAvatarPlaceholder(

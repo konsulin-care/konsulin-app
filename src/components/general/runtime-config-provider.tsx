@@ -16,7 +16,7 @@ type RuntimeConfig = {
   terminologyServer: string;
 };
 
-const RuntimeConfigContext = createContext<RuntimeConfig | null>(null);
+export const RuntimeConfigContext = createContext<RuntimeConfig | null>(null);
 
 export function RuntimeConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<RuntimeConfig | null>(null);

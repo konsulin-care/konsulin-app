@@ -12,17 +12,16 @@ import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
 import { useQuestionnaire } from '@/services/api/assessment';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import Participant from '../soap/participant';
+import Participant from './soap/participant';
 
-export interface IQuestionnaire {
-  params: { assessmentsId: string };
-}
-
-export default function Questionnaire({ params }) {
+export default function AssessmentsDetail() {
+  const searchParams = useSearchParams();
+  const assessmentsId = searchParams.get('assessmentsId') ?? '';
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const { data: questionnaire, isLoading: questionnaireIsLoading } =
-    useQuestionnaire(params.assessmentsId);
+    useQuestionnaire(assessmentsId);
   const [participantId, setParticipantId] = useState('');
   const [patientsListToday, setPatientListToday] = useState([]);
 
@@ -35,7 +34,7 @@ export default function Questionnaire({ params }) {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [params.assessmentsId]);
+  }, [assessmentsId]);
 
   useEffect(() => {
     if (!todaySessions || todaySessions.length === 0) return;

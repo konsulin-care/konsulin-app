@@ -7,12 +7,9 @@ import Header from '@/components/header';
 import EditJournal from '@/components/journal/edit';
 import { useSearchParams } from 'next/navigation';
 
-export interface IDetailRecordParams {
-  params: { recordId: string };
-}
-
-export default function EditRecordDetail({ params }: IDetailRecordParams) {
+export default function EditRecordDetail() {
   const searchParams = useSearchParams();
+  const recordId = searchParams.get('recordId') ?? '';
   const category = Number(searchParams.get('category'));
   const titleParam = searchParams.get('title');
 
@@ -34,9 +31,9 @@ export default function EditRecordDetail({ params }: IDetailRecordParams) {
   const renderContent = (category: number) => {
     switch (category) {
       case 3:
-        return <EditSoap soapId={params.recordId} title={titleParam} />;
+        return <EditSoap soapId={recordId} title={titleParam} />;
       case 4:
-        return <EditJournal journalId={params.recordId} />;
+        return <EditJournal journalId={recordId} />;
     }
   };
 

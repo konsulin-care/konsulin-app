@@ -7,7 +7,7 @@ import Session from 'supertokens-auth-react/recipe/session';
 import ThirdParty from 'supertokens-auth-react/recipe/thirdparty';
 import { getClaimValue } from 'supertokens-web-js/recipe/session';
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
-import { getAppInfo } from './appInfo';
+import { getAppInfo, type AppInfo } from './appInfo';
 import {
   handleNewUserLogin,
   handleReturningUserLogin,
@@ -25,9 +25,11 @@ export function setRouter(
   routerInfo.pathName = pathName;
 }
 
-export const frontendConfig = (): SuperTokensConfig => {
+export const frontendConfig = (
+  appInfoOverride?: AppInfo
+): SuperTokensConfig => {
   return {
-    appInfo: getAppInfo(),
+    appInfo: appInfoOverride ?? getAppInfo(),
     useShadowDom: false,
     languageTranslations: {
       translations: {

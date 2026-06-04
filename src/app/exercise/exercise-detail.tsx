@@ -7,19 +7,17 @@ import Header from '@/components/header';
 import NavigationBar from '@/components/navigation-bar';
 import { useGetExercise } from '@/services/api/exercise';
 import { ChevronLeftIcon } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export interface IDetailExerciserProps {
-  params: { exerciseId: string };
-}
-
-export default function DetailExercise({ params }: IDetailExerciserProps) {
+export default function ExerciseDetail() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const exerciseId = searchParams.get('exerciseId') ?? '';
 
   const { data, isLoading: excerciseIsLoading } = useGetExercise();
 
   const excerciseData =
-    Array.isArray(data) && data?.find(item => item?.id === params.exerciseId);
+    Array.isArray(data) && data?.find(item => item?.id === exerciseId);
 
   return (
     <>

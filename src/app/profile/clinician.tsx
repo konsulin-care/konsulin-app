@@ -280,7 +280,7 @@ export default function Clinician({ fhirId }: Props) {
             subTitle={displayName}
             buttonText='Edit Profile'
             details={profileDetail}
-            onEdit={() => router.push('profile/edit-profile')}
+            onEdit={() => router.push('/profile?path=edit-profile')}
             role='clinician'
           />
         </div>
@@ -300,7 +300,7 @@ export default function Clinician({ fhirId }: Props) {
           title='Practice Information'
           buttonText='Edit Detail'
           details={activeFirms}
-          onEdit={() => router.push('profile/edit-practice')}
+          onEdit={() => router.push('/profile?path=edit-practice')}
           role='clinician'
           isEditPractice={true}
         />

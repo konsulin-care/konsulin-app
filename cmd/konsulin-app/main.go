@@ -60,6 +60,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 			"/proxy/",
 			"/health",
 			"/static/",
+			"/api/v1/auth/",
 		},
 	})
 	r.Use(csrfMw)

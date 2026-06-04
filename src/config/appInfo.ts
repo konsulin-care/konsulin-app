@@ -20,11 +20,15 @@ export function getAppInfo(): AppInfo {
   if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__?.appInfo) {
     return window.__RUNTIME_CONFIG__.appInfo;
   }
-  // fallback (if running on server or config missing)
+  // fallback: use origin when __RUNTIME_CONFIG__ is not set (dev mode)
+  const origin =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : 'http://localhost:3000';
   return {
     appName: 'Konsulin',
-    apiDomain: '',
-    websiteDomain: '',
+    apiDomain: origin,
+    websiteDomain: origin,
     apiBasePath: '/api/v1/auth',
     websiteBasePath: '/auth'
   };

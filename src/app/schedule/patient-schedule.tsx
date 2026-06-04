@@ -71,7 +71,7 @@ const AppointmentCard = ({
 
   return (
     <Link
-      href={`/schedule/${appointment.appointmentId}`}
+      href={`/schedule?appointmentId=${appointment.appointmentId}`}
       className='card mt-4 flex flex-col gap-2 p-4'
     >
       <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>

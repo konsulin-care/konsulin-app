@@ -1,9 +1,11 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetSingleRecord } from '@/services/api/record';
 import { format } from 'date-fns';
 import { FileCheckIcon, NotepadTextIcon } from 'lucide-react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type Props = {
   journalId: string;
@@ -11,10 +13,10 @@ type Props = {
 
 export default function RecordJournal({ journalId }: Props) {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const titleParam = searchParams?.get('title');
   const categoryParam = searchParams?.get('category');
+  const recordId = searchParams?.get('recordId');
   const { data: journalData, isLoading } = useGetSingleRecord({
     id: journalId,
     resourceType: 'Observation'
@@ -39,14 +41,14 @@ export default function RecordJournal({ journalId }: Props) {
             <FileCheckIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
 
             <div className='flex grow flex-col'>
-              <span className='text-[10px] text-muted'>Journal Create</span>
+              <span className='text-muted text-[10px]'>Journal Create</span>
               <span className='text-[14px] font-bold'>
                 {journalData.effectiveDateTime &&
                   formattedDate(journalData.effectiveDateTime)}
               </span>
             </div>
             <div className='flex flex-col'>
-              <span className='text-right text-[10px] text-muted'>
+              <span className='text-muted text-right text-[10px]'>
                 Last Edit
               </span>
               <span className='text-right text-[14px] font-bold'>
@@ -67,7 +69,7 @@ export default function RecordJournal({ journalId }: Props) {
           {journalData.note.map((item: { text: string }, index: number) => {
             return (
               <div key={index}>
-                <div className='mb-2 text-[12px] text-muted'>
+                <div className='text-muted mb-2 text-[12px]'>
                   Write anything here
                 </div>
 
@@ -81,12 +83,13 @@ export default function RecordJournal({ journalId }: Props) {
           <Button
             onClick={() => {
               const queryParams = new URLSearchParams({
+                recordId: recordId ?? journalId,
                 category: categoryParam,
                 title: titleParam
               }).toString();
-              router.push(`${pathname}/edit?${queryParams}`);
+              router.push(`/record/edit?${queryParams}`);
             }}
-            className='!mt-auto w-full rounded-full bg-secondary p-4 text-[14px] text-white'
+            className='bg-secondary !mt-auto w-full rounded-full p-4 text-[14px] text-white'
           >
             Edit Journal
           </Button>

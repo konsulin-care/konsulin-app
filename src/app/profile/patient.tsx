@@ -157,7 +157,7 @@ export default function Patient({ fhirId }: Props) {
           subTitle={authState.userInfo.email}
           buttonText='Edit Profile'
           details={profileDetail}
-          onEdit={() => router.push('profile/edit-profile')}
+          onEdit={() => router.push('/profile?path=edit-profile')}
           role={Roles.Patient}
         />
       )}

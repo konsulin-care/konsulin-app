@@ -10,12 +10,9 @@ import RecordExercise from './record-exercise';
 import RecordJournal from './record-journal';
 import RecordSoap from './record-soap';
 
-export interface IDetailRecordParams {
-  params: { recordId: string };
-}
-
-export default function RecordDetail({ params }: IDetailRecordParams) {
+export default function RecordDetail() {
   const searchParams = useSearchParams();
+  const recordId = searchParams.get('recordId') ?? '';
   const category = Number(searchParams.get('category'));
   const titleParam = searchParams.get('title');
   const formattedTitle = formatTitle(titleParam);
@@ -44,15 +41,13 @@ export default function RecordDetail({ params }: IDetailRecordParams) {
   const renderContent = (category: number) => {
     switch (category) {
       case 1:
-        return (
-          <RecordAssessment recordId={params.recordId} title={formattedTitle} />
-        );
+        return <RecordAssessment recordId={recordId} title={formattedTitle} />;
       case 2:
         return <RecordExercise />;
       case 3:
-        return <RecordSoap soapId={params.recordId} title={titleParam} />;
+        return <RecordSoap soapId={recordId} title={titleParam} />;
       case 4:
-        return <RecordJournal journalId={params.recordId} />;
+        return <RecordJournal journalId={recordId} />;
     }
   };
 

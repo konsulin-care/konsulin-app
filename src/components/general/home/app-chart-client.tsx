@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -151,7 +152,7 @@ export default function AppChartClient({
                 plot.chart.on('element:click', () => {
                   if (latestRecordIdRef.current) {
                     router.push(
-                      `/record/${latestRecordIdRef.current}?category=1&title=big-five-inventory`
+                      `/record?recordId=${latestRecordIdRef.current}&category=1&title=big-five-inventory`
                     );
                   }
                 });

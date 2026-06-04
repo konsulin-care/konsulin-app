@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable max-lines */
 
 import Avatar from '@/components/general/avatar';
 import CardLoader from '@/components/general/card-loader';
@@ -19,12 +20,9 @@ import { format, setHours, setMinutes } from 'date-fns';
 import { ChevronLeftIcon, HeartPulse, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import ClinicFilter from '../clinic-filter';
-
-export interface IDetailClinic {
-  params: { clinicId: string };
-}
+import ClinicFilter from './clinic-filter';
 
 // generates an array of 3-letter weekday abbreviations from given date range
 const generateFilterDays = (start: Date, end: Date) => {
@@ -61,7 +59,10 @@ const isSlotAvailable = ({
   );
 };
 
-export default function DetailClinic({ params }: IDetailClinic) {
+export default function ClinicDetail() {
+  const searchParams = useSearchParams();
+  const clinicId = searchParams.get('clinicId') ?? '';
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -75,7 +76,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
     newPractitionerData: practitionersData,
     isFetching,
     isLoading
-  } = useClinicById(params.clinicId);
+  } = useClinicById(clinicId);
 
   const mergeAddress = (clinic: IOrganizationResource) => {
     if (!clinic || !clinic.address || clinic.address.length === 0) return;
@@ -103,7 +104,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
         qualification: practitioner.qualification,
         email: email.value
       }
-    }).catch((err) => console.warn('[IndexedDB]', err));
+    }).catch(err => console.warn('[IndexedDB]', err));
   };
 
   const filteredPractitioners = useMemo(() => {
@@ -319,7 +320,7 @@ export default function DetailClinic({ params }: IDetailClinic) {
                   </div>
                   <Link
                     href={{
-                      pathname: `/practitioner/${practitioner.id}`
+                      pathname: `/practitioner?practitionerId=${practitioner.id}`
                     }}
                     className='mt-auto w-full'
                   >

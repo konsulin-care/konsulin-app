@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import ModalQr from '@/components/general/modal-qr';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -58,11 +59,13 @@ export default function RecordAssessment({ recordId, title }: Props) {
     dbGet<{ value: Record<string, string> }>(STORES.uiPreferences, [
       ownerId,
       'result-table-colors'
-    ]).then(saved => {
-      if (saved?.value) {
-        setColorMap(saved.value);
-      }
-    }).catch((err) => console.warn('[IndexedDB]', err));
+    ])
+      .then(saved => {
+        if (saved?.value) {
+          setColorMap(saved.value);
+        }
+      })
+      .catch(err => console.warn('[IndexedDB]', err));
   }, [authState.userInfo.userId]);
 
   useEffect(() => {
@@ -72,7 +75,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
         ownerId,
         prefKey: 'result-table-colors',
         value: colorMap
-      }).catch((err) => console.warn('[IndexedDB]', err));
+      }).catch(err => console.warn('[IndexedDB]', err));
     }
   }, [colorMap, authState.userInfo.userId]);
 
@@ -141,6 +144,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
     if (questionnaireResponse) {
       scoreData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionnaireResponse]);
 
   useEffect(() => {
@@ -189,8 +193,9 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
           await API.put(`/fhir/QuestionnaireResponse/${recordId}`, updatedQR);
 
-          dbDelete(STORES.serviceRequests, recordId)
-            .catch((err) => console.warn('[IndexedDB]', err));
+          dbDelete(STORES.serviceRequests, recordId).catch(err =>
+            console.warn('[IndexedDB]', err)
+          );
           return;
         }
 

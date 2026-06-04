@@ -46,12 +46,12 @@ export default function PopularAssessment() {
       </div>
 
       <div className='mt-2 flex flex-col gap-2 py-4'>
-        <Link href={`assessments/${selectedAssessment?.id}`}>
-          <Button className='h-full w-full rounded-xl bg-secondary p-4 text-white'>
+        <Link href={`/assessments?assessmentsId=${selectedAssessment?.id}`}>
+          <Button className='bg-secondary h-full w-full rounded-xl p-4 text-white'>
             Start Test
           </Button>
         </Link>
-        <DrawerClose className='items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50'>
+        <DrawerClose className='focus:ring-opacity-50 items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:ring-2 focus:ring-gray-300 focus:outline-none'>
           Close
         </DrawerClose>
       </div>
@@ -60,14 +60,14 @@ export default function PopularAssessment() {
 
   return (
     <div className='bg-[#F9F9F9] p-4'>
-      <div className='flex justify-between text-muted'>
+      <div className='text-muted flex justify-between'>
         <span className='mb-2 text-[14px] font-bold'>Popular Assessment</span>
         <Link className='text-[12px]' href={'/assessments'}>
           See All
         </Link>
       </div>
 
-      <ScrollArea className='w-full whitespace-nowrap pb-4'>
+      <ScrollArea className='w-full pb-4 whitespace-nowrap'>
         {popularLoading ? (
           <CardLoader item={2} height='h-[80px]' />
         ) : popularAssessments && popularAssessments.length > 0 ? (
@@ -89,7 +89,7 @@ export default function PopularAssessment() {
                       <span className='text-[12px] font-bold'>
                         {assessment.resource.title}
                       </span>
-                      <span className='max-w-[200px] truncate text-ellipsis text-[10px] text-muted'>
+                      <span className='text-muted max-w-[200px] truncate text-[10px] text-ellipsis'>
                         {assessment.resource.description}
                       </span>
                     </div>

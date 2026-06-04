@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable sonarjs/cognitive-complexity */
+
 import Avatar from '@/components/general/avatar';
 import BackButton from '@/components/general/back-button';
 import EmptyState from '@/components/general/empty-state';
@@ -32,13 +34,9 @@ import {
   HospitalIcon
 } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
-import PractitionerAvailability from '../practitioner-availability';
-
-export interface IPractitionerProps {
-  params: { practitionerId: string };
-}
+import PractitionerAvailability from '../practitioner/practitioner-availability';
 
 type IPractitionerLocalStorage = {
   roleId: string;
@@ -48,18 +46,10 @@ type IPractitionerLocalStorage = {
   email: string;
 };
 
-/**
- * Render the practitioner detail page showing practitioner information, availability controls, and a booking-success drawer.
- *
- * This component reads selected clinic and practitioner data from localStorage, fetches detailed practitioner data, and manages booking feedback via a confirmation drawer. It also computes avatar placeholders and formats practice information for display.
- *
- * @param params - Route parameters object containing `practitionerId`
- * @returns A React element that displays practitioner details, availability interaction, and a booking confirmation drawer
- */
-/* eslint-disable sonarjs/cognitive-complexity */
-// deepsource-disable-next-line GO-S1034
-export default function Practitioner({ params }: IPractitionerProps) {
+export default function Practitioner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const practitionerId = searchParams.get('practitionerId') ?? '';
   const { state: bookingState, dispatch } = useBooking();
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -78,17 +68,17 @@ export default function Practitioner({ params }: IPractitionerProps) {
         }
       })
       .catch(err => console.warn('[IndexedDB]', err));
-  }, []);
+  }, [router]);
 
   useEffect(() => {
-    if (!params.practitionerId) return;
+    if (!practitionerId) return;
 
     dbGet<{ value: IPractitionerLocalStorage }>(STORES.uiPreferences, [
       '',
       'selected_practitioner'
     ])
       .then(saved => {
-        if (saved?.value?.roleId === params.practitionerId) {
+        if (saved?.value?.roleId === practitionerId) {
           setPractitionerData(saved.value);
         } else {
           setPractitionerData(null);
@@ -99,14 +89,14 @@ export default function Practitioner({ params }: IPractitionerProps) {
         console.warn('[IndexedDB]', err);
         setPractitionerDataLoading(false);
       });
-  }, [params.practitionerId]);
+  }, [practitionerId]);
 
   useEffect(() => {
     if (bookingState.isBookingSubmitted) {
       setIsOpen(true);
       dispatch({ type: 'RESET_BOOKING_INFO' });
     }
-  }, [bookingState.isBookingSubmitted]);
+  }, [bookingState.isBookingSubmitted, dispatch]);
 
   const {
     newData: detailPractitioner,
@@ -131,7 +121,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
   }, [practitionerData]);
 
   const { initials, backgroundColor } = generateAvatarPlaceholder({
-    id: params.practitionerId,
+    id: practitionerId,
     name: displayName,
     email: practitionerData?.email
   });
@@ -202,7 +192,7 @@ export default function Practitioner({ params }: IPractitionerProps) {
     <>
       <Header>
         <div className='flex w-full items-center'>
-          <BackButton route={`/clinic/${selectedClinicId}`} />
+          <BackButton route={`/clinic?clinicId=${selectedClinicId}`} />
           <div className='text-[14px] font-bold text-white'>
             Detail Practitioner
           </div>
@@ -278,11 +268,6 @@ export default function Practitioner({ params }: IPractitionerProps) {
                     {detailPractitioner.organization.name}
                   </span>
                 </div>
-                {/* NOTE: not provided by api */}
-                {/* <div className='flex justify-between text-[12px]'> */}
-                {/*   <span className='mr-2'>Experience</span> */}
-                {/*   <span className='font-bold'>2 Year</span> */}
-                {/* </div> */}
                 <div className='flex justify-between text-[12px]'>
                   <span className='mr-2'>Fee</span>
                   <span className='font-bold'>

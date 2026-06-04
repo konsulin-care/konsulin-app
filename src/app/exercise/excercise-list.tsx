@@ -45,7 +45,7 @@ export default function ExcerciseList() {
             filteredExcerciseData.map(excercise => (
               <Link
                 key={excercise.id}
-                href={`/exercise/${excercise.id}`}
+                href={`/exercise?exerciseId=${excercise.id}`}
                 className='card flex gap-4 bg-white'
               >
                 <Image

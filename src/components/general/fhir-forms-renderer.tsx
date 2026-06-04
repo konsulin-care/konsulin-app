@@ -1,4 +1,4 @@
-/* eslint-disable sonarjs/cognitive-complexity */
+/* eslint-disable sonarjs/cognitive-complexity, max-lines */
 import PageLoader from '@/components/general/page-loader';
 import { SmartFormShell } from '@/components/general/smart-form-shell';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -106,7 +106,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           title: questionnaire.title
         }).toString();
 
-        router.push(`/record/${responseId}?${query}`);
+        router.push(`/record?recordId=${responseId}&${query}`);
         setIsSubmitting(false);
       } else {
         router.push('/assessments');

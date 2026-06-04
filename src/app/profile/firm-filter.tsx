@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FilterIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -122,7 +123,7 @@ export default function FirmFilter({ onChange }) {
           </Button>
         )}
         <Button
-          className='mt-4 rounded-xl bg-secondary p-4 text-white'
+          className='bg-secondary mt-4 rounded-xl p-4 text-white'
           onClick={() => {
             setIsOpen(false);
             onChange(filter);

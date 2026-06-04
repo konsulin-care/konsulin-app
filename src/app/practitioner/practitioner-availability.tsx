@@ -238,6 +238,7 @@ export default function PractitionerAvailability({
         }
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpenParam, authState?.userInfo?.userId]);
 
   useEffect(() => {
@@ -253,6 +254,7 @@ export default function PractitionerAvailability({
         handleFilterChange('date', initialDate);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpenParam]);
 
   const handleBookingInformationChange = (key: string, value: any) => {
@@ -424,6 +426,7 @@ export default function PractitionerAvailability({
       )
         setErrorForm(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingForm, bookingState.date, bookingState.startTime]);
 
   /* validate the selected date and time:
@@ -479,6 +482,7 @@ export default function PractitionerAvailability({
 
     params.delete('isOpen');
     router.push(`?${params.toString()}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingState.date, bookingState.startTime, slotPills, listAvailableDate]);
 
   const handleSubmitForm = async () => {
@@ -712,7 +716,7 @@ export default function PractitionerAvailability({
                   disabled={isPending}
                   onClick={() => {
                     saveIntent('appointment', {
-                      path: `/practitioner/${practitionerId}`,
+                      path: `/practitioner?practitionerId=${practitionerId}`,
                       slot: {
                         date: bookingState.date,
                         startTime: bookingState.startTime,

@@ -16,13 +16,12 @@ import {
 import { capitalizeFirstLetter } from '@/utils/validation';
 import { format } from 'date-fns';
 import { HospitalIcon } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 
-type Props = {
-  params: { appointmentId: string };
-};
-
-export default function DetailAppointment({ params }: Props) {
+export default function ScheduleDetail() {
+  const searchParams = useSearchParams();
+  const appointmentId = searchParams.get('appointmentId') ?? '';
   const { state: authState } = useAuth();
   const {
     data: upcomingData,
@@ -38,11 +37,11 @@ export default function DetailAppointment({ params }: Props) {
     const parsed = parseMergedAppointments(upcomingData);
 
     const found = parsed.find(
-      (item: MergedAppointment) => item.appointmentId === params.appointmentId
+      (item: MergedAppointment) => item.appointmentId === appointmentId
     );
 
     return found;
-  }, [upcomingData, params.appointmentId]);
+  }, [upcomingData, appointmentId]);
 
   const { initials, backgroundColor, displayName, time, date } = useMemo(() => {
     if (!appointmentData) {

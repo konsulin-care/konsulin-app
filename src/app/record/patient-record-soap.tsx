@@ -48,7 +48,7 @@ export default function PatientRecordSoap({ soapId, title }: Props) {
           </div>
 
           <div>
-            <div className='mb-2 text-[12px] text-muted'>Plan Note</div>
+            <div className='text-muted mb-2 text-[12px]'>Plan Note</div>
             <div className='card flex text-[14px]'>
               <div>{soapData.valueString}</div>
             </div>

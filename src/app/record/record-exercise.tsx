@@ -1,4 +1,4 @@
-import { FileCheckIcon, NotepadTextIcon, UsersIcon } from 'lucide-react'
+import { FileCheckIcon, NotepadTextIcon, UsersIcon } from 'lucide-react';
 
 export default function RecordExercise() {
   return (
@@ -15,11 +15,11 @@ export default function RecordExercise() {
         <FileCheckIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
 
         <div className='flex grow flex-col'>
-          <span className='text-[10px] text-muted'>Completetion</span>
+          <span className='text-muted text-[10px]'>Completetion</span>
           <span className='text-[14px] font-bold'>Not Fully Complete</span>
         </div>
         <div className='flex flex-col'>
-          <span className='text-right text-[10px] text-muted'>Stop at</span>
+          <span className='text-muted text-right text-[10px]'>Stop at</span>
           <span className='text-right text-[14px] font-bold'>11:12/15:40</span>
         </div>
       </div>
@@ -28,5 +28,5 @@ export default function RecordExercise() {
         <div>1st</div>
       </div>
     </div>
-  )
+  );
 }
