@@ -22,9 +22,9 @@ import {
   formatTitle,
   generateAvatarPlaceholder,
   getTypeLabel,
-  mergeNames,
-  parseRecordBundles
+  mergeNames
 } from '@/utils/helper';
+import { parseRecordBundles } from '@/utils/record-parser';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { SearchIcon } from 'lucide-react';

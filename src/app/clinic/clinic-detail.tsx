@@ -319,9 +319,7 @@ export default function ClinicDetail() {
                     )}
                   </div>
                   <Link
-                    href={{
-                      pathname: `/practitioner?practitionerId=${practitioner.id}`
-                    }}
+                    href={`/practitioner?practitionerRoleId=${practitioner.practitionerRole.id}`}
                     className='mt-auto w-full'
                   >
                     <Button

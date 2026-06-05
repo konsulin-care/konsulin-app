@@ -208,6 +208,24 @@ export default function AssessmentsList() {
 
   const isPractitioner = authState?.userInfo?.role_name === Roles.Practitioner;
 
+  const findAssessmentById = useCallback(
+    (id: string) => {
+      const allRegular = [
+        ...(popularAssessments || []),
+        ...(regularAssessments || [])
+      ];
+
+      const regularFound = allRegular.find(item => item.resource.id === id);
+      if (regularFound) return regularFound.resource;
+
+      const researchFound = research?.find(item => item.resource.id === id);
+      if (researchFound) return researchFound.resource;
+
+      return null;
+    },
+    [popularAssessments, regularAssessments, research]
+  );
+
   useEffect(() => {
     if (!isDrawerOpenParam || !assessmentIdParam) return;
     const found = findAssessmentById(assessmentIdParam);
@@ -244,24 +262,6 @@ export default function AssessmentsList() {
     regularAssessments,
     findAssessmentById
   ]);
-
-  const findAssessmentById = useCallback(
-    (id: string) => {
-      const allRegular = [
-        ...(popularAssessments || []),
-        ...(regularAssessments || [])
-      ];
-
-      const regularFound = allRegular.find(item => item.resource.id === id);
-      if (regularFound) return regularFound.resource;
-
-      const researchFound = research?.find(item => item.resource.id === id);
-      if (researchFound) return researchFound.resource;
-
-      return null;
-    },
-    [popularAssessments, regularAssessments, research]
-  );
 
   const handleResearchClick = (
     study: ResearchStudy,

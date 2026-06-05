@@ -1,0 +1,203 @@
+'use client';
+
+import { ensureAnonymousSession } from '@/services/anonymous-session';
+import { getAPI } from '@/services/api';
+import {
+  clearIntent,
+  clearRedirectIntent,
+  getIntent,
+  getRedirectIntent
+} from '@/utils/redirect-intent';
+import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'react-toastify';
+
+import { IStateAuth } from '@/context/auth/authTypes';
+
+interface UseRedirectIntentOptions {
+  isLoading: boolean;
+  authState: IStateAuth;
+}
+
+export function useRedirectIntent({
+  isLoading,
+  authState
+}: UseRedirectIntentOptions) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [isRedirecting, setIsRedirecting] = useState(true);
+  const isHandlingIntentRef = useRef(false);
+  const hasRunReloadAnonymousRef = useRef(false);
+
+  // Refresh anonymous session on manual reload of homepage only
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const navEntries = performance.getEntriesByType('navigation');
+    const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
+    if (nav?.type !== 'reload') return;
+    if (window.location.pathname !== '/') return;
+    let initialPathname: string | null = null;
+    try {
+      initialPathname = sessionStorage.getItem('konsulin_initial_pathname');
+    } catch {
+      // ignore
+    }
+    if (initialPathname !== '/') return;
+    try {
+      if (sessionStorage.getItem('konsulin_reload_anonymous_done') === '1')
+        return;
+    } catch {
+      // ignore
+    }
+    if (hasRunReloadAnonymousRef.current) return;
+    if (isLoading) return;
+    if (authState.isAuthenticated) return;
+
+    const checkAuthThenAnon = async () => {
+      try {
+        const res = await fetch('/auth/cookie');
+        const data = await res.json();
+        if (data.authenticated) return;
+      } catch {
+        // if check fails, proceed with anonymous session
+      }
+      hasRunReloadAnonymousRef.current = true;
+      try {
+        sessionStorage.setItem('konsulin_reload_anonymous_done', '1');
+      } catch {
+        // ignore
+      }
+      await ensureAnonymousSession(true);
+    };
+    checkAuthThenAnon().catch(err => {
+      console.error('Failed to refresh anonymous session on reload:', err);
+    });
+  }, [isLoading, authState.isAuthenticated]);
+
+  // Handle redirect intents (journal, appointment, assessmentResult) and stored redirects
+  useEffect(() => {
+    if (isLoading) return;
+
+    let abortController: AbortController | null = null;
+    let isMounted = true;
+
+    const storedRedirect = getRedirectIntent();
+    if (storedRedirect) {
+      clearRedirectIntent();
+    }
+
+    if (storedRedirect) {
+      try {
+        const decoded = decodeURIComponent(storedRedirect);
+        if (decoded.startsWith('/') && !decoded.startsWith('//')) {
+          const currentPath =
+            window.location.pathname +
+            window.location.search +
+            window.location.hash;
+          if (decoded === currentPath) {
+            setIsRedirecting(false);
+            return () => {
+              isMounted = false;
+            };
+          }
+          try {
+            router.push(decoded);
+          } finally {
+            setIsRedirecting(false);
+          }
+          return () => {
+            isMounted = false;
+          };
+        }
+        console.warn('Invalid redirect path (not relative):', decoded);
+        setIsRedirecting(false);
+        return () => {
+          isMounted = false;
+        };
+      } catch (error) {
+        console.error('Invalid redirect value in cookie:', error);
+        setIsRedirecting(false);
+        return () => {
+          isMounted = false;
+        };
+      }
+    }
+
+    if (authState.isAuthenticated) {
+      const intent = getIntent();
+
+      if (intent) {
+        const handleIntent = async () => {
+          if (isHandlingIntentRef.current) return;
+          isHandlingIntentRef.current = true;
+          abortController = new AbortController();
+          try {
+            if (intent.kind === 'journal') {
+              router.push(intent.payload.path);
+              clearIntent();
+              return;
+            }
+
+            if (intent.kind === 'appointment') {
+              router.push(intent.payload.path);
+              clearIntent();
+              return;
+            }
+
+            if (intent.kind === 'assessmentResult') {
+              const path = intent.payload.path;
+              const api = await getAPI();
+
+              await api.patch('/api/v1/auth/anonymous/claim', null, {
+                signal: abortController.signal
+              });
+
+              if (isMounted) {
+                toast.success(
+                  'Your assessment result is now linked to your account.'
+                );
+                router.push(path);
+                clearIntent();
+                return;
+              }
+            }
+          } catch (error) {
+            if ((error as Error)?.name !== 'AbortError') {
+              console.error('Failed to restore intent:', error);
+              toast.error(
+                'Failed to link your assessment result. Please try again.'
+              );
+              clearIntent();
+            }
+          } finally {
+            if (isMounted) {
+              setIsRedirecting(false);
+              isHandlingIntentRef.current = false;
+            }
+          }
+        };
+
+        handleIntent();
+        return () => {
+          isMounted = false;
+          abortController?.abort();
+        };
+      }
+    }
+
+    setIsRedirecting(false);
+    return () => {
+      isMounted = false;
+      abortController?.abort();
+    };
+  }, [
+    isLoading,
+    authState.isAuthenticated,
+    authState.userInfo,
+    router,
+    queryClient
+  ]);
+
+  return { isRedirecting };
+}

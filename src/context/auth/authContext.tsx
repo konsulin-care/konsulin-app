@@ -134,7 +134,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const role =
           Array.isArray(roles) && roles.includes(Roles.Practitioner)
             ? Roles.Practitioner
-            : Roles.Patient;
+            : Array.isArray(roles) && roles.includes(Roles.ClinicAdmin)
+              ? Roles.ClinicAdmin
+              : Roles.Patient;
 
         const result = (await getProfileByIdentifier({
           userId,

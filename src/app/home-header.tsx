@@ -7,30 +7,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { getNow } from '@/constants/date';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
+import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
 import {
   generateAvatarPlaceholder,
   parseMergedAppointments,
   parseMergedSessions
 } from '@/utils/helper';
 import { isAfter, parseISO } from 'date-fns';
-import { Bundle } from 'fhir/r4';
 import { useMemo } from 'react';
 
-interface HomeHeaderProps {
-  appointmentData?: Bundle | null;
-  sessionData?: Bundle | null;
-}
-
-export default function HomeHeader({
-  appointmentData,
-  sessionData
-}: HomeHeaderProps) {
+export default function HomeHeader() {
   const { state: authState, isLoading: isLoadingAuth } = useAuth();
+  const { appointmentData, sessionData } = useUpcomingEvents();
 
   const role = authState?.userInfo?.role_name;
   const isPatient = role === Roles.Patient;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const isPractitioner = role === Roles.Practitioner;
+  const isAdmin = role === Roles.ClinicAdmin;
 
   const parsedAppointmentsData = useMemo(() => {
     if (
@@ -115,7 +107,7 @@ export default function HomeHeader({
             </div>
           )}
 
-          {data && data.length > 0 && (
+          {data && data.length > 0 && !isAdmin && (
             <UpcomingSession data={data} role={role} />
           )}
         </div>

@@ -3,257 +3,31 @@
 import { LoadingSpinnerIcon } from '@/components/icons';
 import NavigationBar from '@/components/navigation-bar';
 import { useAuth } from '@/context/auth/authContext';
-import { ensureAnonymousSession } from '@/services/anonymous-session';
-import { getAPI } from '@/services/api';
-import {
-  clearIntent,
-  clearRedirectIntent,
-  getIntent,
-  getRedirectIntent
-} from '@/utils/redirect-intent';
-
-import { getNow } from '@/constants/date';
-import { Roles } from '@/constants/roles';
-import {
-  useGetUpcomingAppointments,
-  useGetUpcomingSessions
-} from '@/services/api/appointments';
-import { getUtcDayRange } from '@/utils/helper';
+import { useRedirectIntent } from '@/hooks/useRedirectIntent';
 import { useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
-import { toast } from 'react-toastify';
+import { useEffect, useRef } from 'react';
+
 import HomeContent from './home-content';
 import HomeHeader from './home-header';
 
 const App = () => {
   const { isLoading, state: authState } = useAuth();
-  const router = useRouter();
   const queryClient = useQueryClient();
+  const { isRedirecting } = useRedirectIntent({ isLoading, authState });
+  const previousRoleRef = useRef(authState?.userInfo?.role_name);
 
-  const isPatient = authState?.userInfo?.role_name === Roles.Patient;
-  const isPractitioner = authState?.userInfo?.role_name === Roles.Practitioner;
-  const fhirId = authState?.userInfo?.fhirId;
-
-  const { data: appointmentData } = useGetUpcomingAppointments({
-    patientId: isPatient ? fhirId : undefined,
-    dateReference: format(getNow(), 'yyyy-MM-dd')
-  });
-
-  const { data: sessionData } = useGetUpcomingSessions({
-    practitionerId: isPractitioner ? fhirId : undefined,
-    dateReference: format(getNow(), 'yyyy-MM-dd')
-  });
-
-  // Force-fetch appointments/sessions when auth resolves and role/fhirId become available.
-  // This bypasses React Query observer-level enabled/queryKey transition edge cases.
+  // Invalidate all React Query caches when the user's role changes
   useEffect(() => {
-    if (isLoading || !fhirId) return;
-    const dateRef = format(getNow(), 'yyyy-MM-dd');
-
-    if (isPatient) {
-      queryClient.fetchQuery({
-        queryKey: ['appointments', fhirId, dateRef],
-        queryFn: async () => {
-          const API = await getAPI();
-          const { utcStart } = getUtcDayRange(new Date(dateRef));
-          const response = await API.get(
-            `/fhir/Appointment?actor=Patient/${fhirId}&slot.start=ge${utcStart}&_include=Appointment:actor:PractitionerRole&_include:iterate=PractitionerRole:practitioner&_include=Appointment:slot`
-          );
-          return response;
-        }
-      });
+    const currentRole = authState?.userInfo?.role_name;
+    if (previousRoleRef.current && previousRoleRef.current !== currentRole) {
+      queryClient.invalidateQueries();
     }
-
-    if (isPractitioner) {
-      queryClient.fetchQuery({
-        queryKey: ['sessions', fhirId, dateRef],
-        queryFn: async () => {
-          const API = await getAPI();
-          const { utcStart } = getUtcDayRange(new Date(dateRef));
-          const response = await API.get(
-            `/fhir/Appointment?actor=Practitioner/${fhirId}&slot.start=ge${utcStart}&_include=Appointment:actor:Patient&_include=Appointment:slot`
-          );
-          return response;
-        }
-      });
-    }
-  }, [isLoading, isPatient, isPractitioner, fhirId, queryClient]);
-
-  const [isRedirecting, setIsRedirecting] = useState(true);
-  const isHandlingIntentRef = useRef(false);
-  const hasRunReloadAnonymousRef = useRef(false);
-
-  // Refresh anonymous session on manual reload of homepage only — not when navigating to /
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const navEntries = performance.getEntriesByType('navigation');
-    const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
-    if (nav?.type !== 'reload') return;
-    if (window.location.pathname !== '/') return;
-    // Only run if this document load was for / (reload of homepage), not when user navigated to /
-    let initialPathname: string | null = null;
-    try {
-      initialPathname = sessionStorage.getItem('konsulin_initial_pathname');
-    } catch {
-      // ignore
-    }
-    if (initialPathname !== '/') return;
-    // Already ran this document load (e.g. user reloaded / then navigated away and back)
-    try {
-      if (sessionStorage.getItem('konsulin_reload_anonymous_done') === '1')
-        return;
-    } catch {
-      // ignore
-    }
-    if (hasRunReloadAnonymousRef.current) return;
-    if (isLoading) return;
-    if (authState.isAuthenticated) return;
-
-    // Server-side HttpOnly cookie check: avoid anonymous session creation
-    // when the browser already has a real SuperTokens session (sAccessToken).
-    const checkAuthThenAnon = async () => {
-      try {
-        const res = await fetch('/auth/cookie');
-        const data = await res.json();
-        if (data.authenticated) return;
-      } catch {
-        // if check fails, proceed with anonymous session
-      }
-      hasRunReloadAnonymousRef.current = true;
-      try {
-        sessionStorage.setItem('konsulin_reload_anonymous_done', '1');
-      } catch {
-        // ignore
-      }
-      await ensureAnonymousSession(true);
-    };
-    checkAuthThenAnon().catch(err => {
-      console.error('Failed to refresh anonymous session on reload:', err);
-    });
-  }, [isLoading, authState.isAuthenticated]);
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    let abortController: AbortController | null = null;
-    let isMounted = true;
-
-    const storedRedirect = getRedirectIntent();
-    if (storedRedirect) {
-      clearRedirectIntent();
-    }
-
-    if (storedRedirect) {
-      try {
-        const decoded = decodeURIComponent(storedRedirect);
-        if (decoded.startsWith('/') && !decoded.startsWith('//')) {
-          const currentPath =
-            window.location.pathname +
-            window.location.search +
-            window.location.hash;
-          if (decoded === currentPath) {
-            setIsRedirecting(false);
-            return () => {
-              isMounted = false;
-            };
-          }
-          try {
-            router.push(decoded);
-          } finally {
-            setIsRedirecting(false);
-          }
-          return () => {
-            isMounted = false;
-          };
-        }
-        console.warn('Invalid redirect path (not relative):', decoded);
-        setIsRedirecting(false);
-        return () => {
-          isMounted = false;
-        };
-      } catch (error) {
-        console.error('Invalid redirect value in localStorage:', error);
-        setIsRedirecting(false);
-        return () => {
-          isMounted = false;
-        };
-      }
-    }
-
-    if (authState.isAuthenticated) {
-      const intent = getIntent();
-
-      if (intent) {
-        const handleIntent = async () => {
-          if (isHandlingIntentRef.current) return;
-          isHandlingIntentRef.current = true;
-          abortController = new AbortController();
-          try {
-            if (intent.kind === 'journal') {
-              router.push(intent.payload.path);
-              clearIntent();
-              return;
-            }
-
-            if (intent.kind === 'appointment') {
-              router.push(intent.payload.path);
-              clearIntent();
-              return;
-            }
-
-            if (intent.kind === 'assessmentResult') {
-              const path = intent.payload.path;
-              const api = await getAPI();
-
-              await api.patch('/api/v1/auth/anonymous/claim', null, {
-                signal: abortController.signal
-              });
-
-              if (isMounted) {
-                toast.success(
-                  'Your assessment result is now linked to your account.'
-                );
-                router.push(path);
-                clearIntent();
-                return;
-              }
-            }
-          } catch (error) {
-            if ((error as Error)?.name !== 'AbortError') {
-              console.error('Failed to restore intent:', error);
-              toast.error(
-                'Failed to link your assessment result. Please try again.'
-              );
-              clearIntent();
-            }
-          } finally {
-            if (isMounted) {
-              setIsRedirecting(false);
-              isHandlingIntentRef.current = false;
-            }
-          }
-        };
-
-        handleIntent();
-        return () => {
-          isMounted = false;
-          abortController?.abort();
-        };
-      }
-    }
-
-    setIsRedirecting(false);
-    return () => {
-      isMounted = false;
-      abortController?.abort();
-    };
-  }, [isLoading, authState.isAuthenticated, authState.userInfo, router]);
+    previousRoleRef.current = currentRole;
+  }, [authState?.userInfo?.role_name, queryClient]);
 
   if (isLoading || isRedirecting) {
     return (
-      <div className='mt-[-24px] flex min-h-screen min-w-full items-center justify-center rounded-[16px] bg-white pt-4 pb-[100px]'>
+      <div className='mt-[-24px] flex min-h-screen min-w-full items-center justify-center rounded-b-[16px] bg-white pt-4 pb-[100px]'>
         <LoadingSpinnerIcon
           width={60}
           height={60}
@@ -266,7 +40,7 @@ const App = () => {
   return (
     <>
       <NavigationBar />
-      <HomeHeader appointmentData={appointmentData} sessionData={sessionData} />
+      <HomeHeader />
       <HomeContent />
     </>
   );

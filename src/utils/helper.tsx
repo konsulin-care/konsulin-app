@@ -1,24 +1,16 @@
 import { typeMappings } from '@/constants/record';
 import { MergedAppointment, MergedSession } from '@/types/appointment';
-import { IBundleResponse } from '@/types/record';
 import { parse } from 'date-fns';
 import {
   Address,
-  Annotation,
   Appointment,
   AppointmentParticipant,
   Bundle,
   BundleEntry,
-  Coding,
-  FhirResource,
   HumanName,
-  Observation,
   Patient,
   Practitioner,
   PractitionerQualification,
-  QuestionnaireItem,
-  QuestionnaireResponse,
-  QuestionnaireResponseItem,
   Slot
 } from 'fhir/r4';
 
@@ -45,249 +37,6 @@ export const mergeNames = (
 
 export const customMarkdownComponents = {
   p: ({ children }) => <span>{children}</span>
-};
-
-export const parseRecordBundles = (bundles: IBundleResponse[]) => {
-  const results = [];
-
-  if (!Array.isArray(bundles)) return results;
-
-  const extractObservation = (resource: Observation) => {
-    const codeList = resource.code?.coding ?? [];
-    const loincCode = codeList.find(
-      (c: Coding) => c.system === 'http://loinc.org'
-    )?.code;
-    const notes = (resource.note ?? [])
-      .map((n: Annotation) => n.text)
-      .join('\n\n');
-
-    const practitionerRef = resource.performer?.[0]?.reference;
-    const practitionerId = practitionerRef?.split('/')[1] ?? null;
-
-    if (loincCode === '51855-5') {
-      return {
-        type: 'Patient Note',
-        id: `${resource.resourceType}/${resource.id}`,
-        title: resource.valueString ?? '',
-        result: notes,
-        lastUpdated: resource.meta?.lastUpdated
-      };
-    }
-
-    if (loincCode === '67855-7') {
-      return {
-        type: 'Practitioner Note',
-        id: `${resource.resourceType}/${resource.id}`,
-        title: codeList?.[0]?.display ?? '',
-        result: resource.valueString,
-        lastUpdated: resource.meta?.lastUpdated,
-        practitionerId
-      };
-    }
-
-    return null;
-  };
-
-  const extractQuestionnaire = (resource: QuestionnaireResponse) => {
-    const result =
-      resource.item
-        ?.find((i: QuestionnaireItem) => i.linkId === 'interpretation')
-        ?.item?.find((i: QuestionnaireItem) => i.linkId === 'result-brief')
-        ?.answer?.[0]?.valueString ?? null;
-
-    return {
-      type: 'QuestionnaireResponse',
-      id: `${resource.resourceType}/${resource.id}`,
-      title: resource.questionnaire,
-      result,
-      lastUpdated: resource.meta?.lastUpdated
-    };
-  };
-
-  for (const bundleResponse of bundles) {
-    const bundle = bundleResponse.resource;
-    if (bundle.total <= 0 || !bundle.entry) continue;
-
-    for (const entry of bundle.entry) {
-      const resource = entry.resource;
-      let parsed = null;
-
-      if (resource.resourceType === 'Observation') {
-        parsed = extractObservation(resource);
-      } else if (resource.resourceType === 'QuestionnaireResponse') {
-        parsed = extractQuestionnaire(resource);
-      }
-
-      if (parsed) results.push(parsed);
-    }
-  }
-
-  // Sort by lastUpdated
-  return results.sort(
-    (a, b) =>
-      new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime()
-  );
-};
-
-// extracts unique Observations and QuestionnaireResponses from a nested FHIR Bundle.
-export const parseRecordBundlePractitioner = (bundle: Bundle) => {
-  const results = [];
-
-  if (
-    !bundle ||
-    bundle.resourceType !== 'Bundle' ||
-    !Array.isArray(bundle.entry)
-  )
-    return results;
-
-  // map to store unique resources based on "resourceType/id"
-  const uniqueMap = new Map<string, FhirResource>();
-
-  // first-level: entry[].resource should be a Bundle
-  for (const outerEntry of bundle.entry) {
-    const innerBundle = outerEntry.resource;
-
-    if (
-      innerBundle?.resourceType !== 'Bundle' ||
-      !Array.isArray(innerBundle.entry)
-    )
-      continue;
-
-    // second-level: entry[].resource is actual Observation or QuestionnaireResponse
-    for (const innerEntry of innerBundle.entry) {
-      const resource = innerEntry.resource;
-      if (!resource?.resourceType || !resource.id) continue;
-
-      const key = `${resource.resourceType}/${resource.id}`;
-      if (!uniqueMap.has(key)) {
-        uniqueMap.set(key, resource);
-      }
-    }
-  }
-
-  const extractObservation = (resource: Observation) => {
-    const codeList = resource.code?.coding ?? [];
-    const loincCode = codeList.find(
-      (c: Coding) => c.system === 'http://loinc.org'
-    )?.code;
-
-    const notes = (resource.note ?? [])
-      .map((n: Annotation) => n.text)
-      .join('\n\n');
-
-    const id = `${resource.resourceType}/${resource.id}`;
-    const lastUpdated = resource.meta?.lastUpdated;
-
-    const performerRef = resource.performer?.[0]?.reference ?? '';
-    const practitionerId = performerRef.startsWith('Practitioner/')
-      ? performerRef.split('/')[1]
-      : null;
-
-    if (loincCode === '51855-5') {
-      return {
-        type: 'Patient Note',
-        id,
-        title: resource.valueString ?? '',
-        result: notes,
-        lastUpdated
-      };
-    }
-
-    return {
-      type: 'Practitioner Note',
-      id,
-      title: codeList?.[0]?.display ?? '',
-      result: resource.valueString ?? resource.valueCodeableConcept ?? '',
-      lastUpdated,
-      practitionerId
-    };
-  };
-
-  const extractSoapQuestionnaire = (resource: QuestionnaireResponse) => {
-    const values = [];
-    const practitionerRef = resource.author?.reference;
-    const practitionerId = practitionerRef?.split('/')[1] ?? null;
-
-    for (const section of resource.item ?? []) {
-      for (const item of section.item ?? []) {
-        // recursively collect all nested items and extract answer values with type detection
-        const collect = (node: QuestionnaireResponseItem) => {
-          const children = (node.item ?? []).flatMap(collect);
-          return [node, ...children];
-        };
-
-        for (const field of collect(item)) {
-          if (!field.answer) continue;
-
-          for (const ans of field.answer) {
-            let val = null;
-
-            if ('valueString' in ans) val = ans.valueString;
-            else if ('valueBoolean' in ans) val = ans.valueBoolean;
-            else if ('valueInteger' in ans) val = ans.valueInteger;
-            else if ('valueDate' in ans) val = ans.valueDate;
-            else if ('valueQuantity' in ans)
-              val = `${ans.valueQuantity.value} ${ans.valueQuantity.unit}`;
-            else if ('valueCoding' in ans) val = ans.valueCoding.display;
-
-            if (val != null) {
-              values.push({
-                section: section.text,
-                label: field.text,
-                value: val
-              });
-            }
-          }
-        }
-      }
-    }
-
-    return {
-      type: 'SOAP Notes',
-      id: `${resource.resourceType}/${resource.id}`,
-      title: resource.questionnaire,
-      result: values,
-      lastUpdated: resource.meta?.lastUpdated,
-      practitionerId
-    };
-  };
-
-  const extractQuestionnaire = (resource: QuestionnaireResponse) => {
-    const brief =
-      resource.item
-        ?.find(i => i.linkId === 'interpretation')
-        ?.item?.find(ii => ii.linkId === 'result-brief')?.answer?.[0]
-        ?.valueString ?? '';
-
-    return {
-      type: 'QuestionnaireResponse',
-      id: `${resource.resourceType}/${resource.id}`,
-      title: resource.questionnaire,
-      result: brief,
-      lastUpdated: resource.meta?.lastUpdated
-    };
-  };
-
-  for (const resource of Array.from(uniqueMap.values())) {
-    if (!resource?.resourceType || !resource.id) continue;
-
-    if (resource.resourceType === 'Observation') {
-      results.push(extractObservation(resource));
-    } else if (resource.resourceType === 'QuestionnaireResponse') {
-      if (resource.questionnaire === 'Questionnaire/soap') {
-        results.push(extractSoapQuestionnaire(resource));
-      } else {
-        results.push(extractQuestionnaire(resource));
-      }
-    }
-  }
-
-  // sort by lastUpdated
-  return results.sort(
-    (a, b) =>
-      new Date(b.lastUpdated || '').getTime() -
-      new Date(a.lastUpdated || '').getTime()
-  );
 };
 
 export const parseFhirProfile = (data: Patient | Practitioner) => {
@@ -448,6 +197,7 @@ export const generateAvatarPlaceholder = ({
   return { initials: initials || null, backgroundColor };
 };
 
+/* eslint-disable max-lines */
 export const isDataUrl = (value: string) => {
   return typeof value === 'string' && value.startsWith('data:image/');
 };
@@ -457,14 +207,15 @@ export const dataUrlToBlob = (dataUrl: string) => {
   const mimeMatch = arr[0]?.match(/:(.*?);/);
   const mime = mimeMatch?.[1] ?? 'image/png';
   const base64String = arr[1];
+  const gThis = globalThis as {
+    Buffer?: { from: (s: string, enc: string) => string };
+  };
   const decode =
     typeof atob === 'function'
       ? atob(base64String)
       : typeof globalThis !== 'undefined' &&
-          typeof (globalThis as any).Buffer?.from === 'function'
-        ? (globalThis as any).Buffer.from(base64String, 'base64').toString(
-            'binary'
-          )
+          typeof gThis.Buffer?.from === 'function'
+        ? gThis.Buffer.from(base64String, 'base64').toString('binary')
         : '';
   if (!decode) {
     throw new Error('Base64 decoding not supported in this environment');

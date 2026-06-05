@@ -716,7 +716,7 @@ export default function PractitionerAvailability({
                   disabled={isPending}
                   onClick={() => {
                     saveIntent('appointment', {
-                      path: `/practitioner?practitionerId=${practitionerId}`,
+                      path: `/practitioner?practitionerRoleId=${practitionerRole.id}`,
                       slot: {
                         date: bookingState.date,
                         startTime: bookingState.startTime,

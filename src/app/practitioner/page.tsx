@@ -49,7 +49,7 @@ type IPractitionerLocalStorage = {
 export default function Practitioner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const practitionerId = searchParams.get('practitionerId') ?? '';
+  const practitionerRoleId = searchParams.get('practitionerRoleId') ?? '';
   const { state: bookingState, dispatch } = useBooking();
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -71,14 +71,14 @@ export default function Practitioner() {
   }, [router]);
 
   useEffect(() => {
-    if (!practitionerId) return;
+    if (!practitionerRoleId) return;
 
     dbGet<{ value: IPractitionerLocalStorage }>(STORES.uiPreferences, [
       '',
       'selected_practitioner'
     ])
       .then(saved => {
-        if (saved?.value?.roleId === practitionerId) {
+        if (saved?.value?.roleId === practitionerRoleId) {
           setPractitionerData(saved.value);
         } else {
           setPractitionerData(null);
@@ -89,7 +89,7 @@ export default function Practitioner() {
         console.warn('[IndexedDB]', err);
         setPractitionerDataLoading(false);
       });
-  }, [practitionerId]);
+  }, [practitionerRoleId]);
 
   useEffect(() => {
     if (bookingState.isBookingSubmitted) {
@@ -121,7 +121,7 @@ export default function Practitioner() {
   }, [practitionerData]);
 
   const { initials, backgroundColor } = generateAvatarPlaceholder({
-    id: practitionerId,
+    id: practitionerRoleId,
     name: displayName,
     email: practitionerData?.email
   });
