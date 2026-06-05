@@ -63,7 +63,7 @@ const passwordlessOverrides: Partial<ComponentOverrideMap> = {
 export default function AuthApp() {
   const [uiComponent, setUiComponent] = useState<ReactElement | null>(null);
   const searchParams = new URLSearchParams(globalThis.location.search);
-  const pathname = globalThis.location.pathname;
+  const pathname = globalThis.location.pathname.replace(/\/+$/, '');
   const redirectToPath = searchParams.get('redirectToPath');
   const isRootAuth = pathname === '/auth';
 
