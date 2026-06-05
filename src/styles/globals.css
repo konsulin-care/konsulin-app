@@ -10,24 +10,6 @@ body {
   color: hsl(var(--foreground));
 }
 
-.swiper-pagination {
-  position: relative !important;
-  max-width: 95px !important;
-}
-
-.swiper-pagination-bullets {
-  left: auto !important;
-  transform: none !important;
-  margin-left: auto;
-}
-
-.swiper-pagination-bullet-active {
-  background: #0abdc3 !important;
-  width: 24px !important;
-  height: 6px !important;
-  border-radius: 4px !important;
-}
-
 @layer utilities {
   .bg-secondary {
     background-color: var(--secondary);
