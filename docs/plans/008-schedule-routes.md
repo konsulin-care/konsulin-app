@@ -1,98 +1,81 @@
 ---
-title: Schedule Routes Migration
-description: Appointment list, booking via HTMX, dynamic intervals
-date: 2026-05-26
+title: Schedule Pages — React SPA
+description: Appointment list, booking, dynamic intervals — React Query
+date: 2026-06-05
 ---
 
 # Overview
 
 Before implementing, read @docs/wiki/001-pages-routes.md for route patterns and @docs/wiki/003-api-services.md for current API service patterns.
 
-Migrate `/schedule*` routes from Next.js to Go SSR. Appointment list,
-detail view, booking form with dynamic interval computation (ADR-004),
-and HTMX partial updates for appointment status changes.
+Rewrite `/schedule*` as Next.js React SPA pages. Appointment list,
+detail, and booking use React Query through `GET /proxy/fhir/*`.
+Dynamic interval computation (ADR-004) runs client-side via React Query
+on availability data. No Go SSR — Go BFF is pure proxy. Aligned with ADR-015.
 
 # Goals
 
-- `GET /schedule` lists appointments with HTMX pagination
-- `GET /schedule/:id` shows appointment detail
-- `GET /schedule/book` renders booking form with available slots
-- `POST /schedule/book` validates and creates appointment via FHIR
+- `GET /schedule` — appointment list with `useInfiniteQuery` pagination (Intersection Observer)
+- `GET /schedule/:id` — appointment detail via `useQuery`
+- `GET /schedule/book` — booking form with slot selection; intervals computed from availability data
+- `POST /schedule/book` — create appointment via `useMutation` through proxy
 - Dynamic slot computation (continuous availability, not fixed slots)
-- HTMX partials for status transitions (confirmed → completed)
+- Status transitions (confirmed → completed) via `useMutation`
 
 # Implementation Steps
 
-- [ ] Create `internal/service/schedule.go` — list appointments, compute intervals, book
-- [ ] Create `internal/fhir/types.go` — Appointment, Slot Go structs with FHIR R4 tags
-- [ ] Create `internal/fhir/client.go` — FHIR HTTP client with base URL and auth forwarding
-- [ ] Create `web/template/pages/schedule/list.templ` — appointment list with HTMX load-more
-- [ ] Create `web/template/pages/schedule/detail.templ` — appointment detail
-- [ ] Create `web/template/pages/schedule/book.templ` — booking form with slot selection
-- [ ] Create `web/template/partials/schedule/` — status badge, slot picker, time-range partials
-- [ ] Create `internal/handler/schedule.go` — list/detail/book handlers
-- [ ] Register routes: `GET /schedule`, `GET /schedule/:id`, `GET /schedule/book`, `POST /schedule/book`
-- [ ] Write `internal/service/schedule_test.go` — mock FHIR, test interval computation and booking logic
+- [ ] Create `src/app/schedule/page.tsx` — role-dispatch list; `useInfiniteQuery` with `_count` and `Bundle.link[rel=next]`
+- [ ] Create `src/app/schedule/[id]/page.tsx` — appointment detail via `useQuery`
+- [ ] Create `src/app/schedule/book/page.tsx` — booking form; availability fetched via `useQuery`, intervals computed client-side
+- [ ] Add React Query hooks: `useAppointments(role, filters)`, `useAppointment(id)`, `useCreateAppointment()`, `useUpdateAppointmentStatus()`
+- [ ] Write availability interval computation as pure function (ADR-004) — input: PractitionerRole/Schedule/Slot FHIR, output: time slot array
+- [ ] Write `src/app/schedule/__tests__/schedule.test.tsx` — mock fetch, test pagination and booking flow
 
 # Reference
 
 @src/app/schedule/page.tsx:
 
 - Main schedule: role-based dispatch to patient-schedule or practitioner-schedule
-- Reimplement: same role dispatch in Go handler
+- Keep: same role dispatch in React SPA
+- Adapt: replace fetch with `useInfiniteQuery('/proxy/fhir/Appointment', ...)`
 
 @src/app/schedule/patient-schedule.tsx:
 
 - Patient schedule: lists upcoming appointments with FHIR includes
-- Reimplement: same data display with HTMX pagination
+- Keep: same data display with `useInfiniteQuery` instead of manual pagination
 
 @src/app/schedule/practitioner-schedule.tsx:
 
 - Practitioner schedule: lists sessions, filterable
-- Reimplement: same data with HTMX filter partials
+- Keep: same data with React state filters
 
 @src/services/api/appointments.tsx:
 
 - Appointment API: upcoming/list/book/pay for patients and practitioners
-- Reimplement: same FHIR queries with \_include=PractitionerRole,Practitioner,Slot,Patient
+- Adapt: wrap with React Query hooks using `/proxy/fhir/` base path
 
 @src/services/api/schedule.ts:
 
 - Schedule mgmt: mark unavailability, update PractitionerRole availability
-- Reimplement: same endpoints in Go service
+- Adapt: same endpoints via `/proxy/fhir/`
 
 @src/utils/availability.ts:
 
 - Availability utilities: day index conversion, FHIR availableTime parsing/formatting
-- Reimplement: same logic in Go (framework-agnostic, direct translation)
+- Keep: same logic as framework-agnostic pure functions
 
 @src/types/appointment.ts:
 
 - MergedAppointment, MergedSession types (flattened FHIR views)
-- Reimplement: same fields as Go structs
-
-@src/types/schedule.ts:
-
-- MarkUnavailabilityRequest/Response, conflict types
-- Reimplement: same fields as Go structs
-
-@src/components/icons/office-icon.tsx:
-
-- OfficeIcon — used for Appointment nav tab (maps to /schedule for patients)
-- Reimplement: inline SVG in base.templ
-
-@public/icons/calendar.svg, @public/icons/calendar-profile.svg:
-
-- Schedule display icons
-- Reimplement: static assets from web/static/
+- Keep: same TypeScript types
 
 # Risks
 
-| Risk                                     | Likelihood | Impact | Mitigation                                                                  |
-| ---------------------------------------- | ---------- | ------ | --------------------------------------------------------------------------- |
-| Dynamic interval computation too slow    | Medium     | Medium | Cache practitioner schedule data; compute on request with timeout           |
-| Double-booking race condition            | Low        | High   | Backend FHIR server enforces scheduling constraints; Go SSR is display-only |
-| Large appointment list overwhelms mobile | Low        | Medium | Paginate with `_count` param; HTMX loads next page on scroll                |
+| Risk                                     | Likelihood | Impact | Mitigation                                                           |
+| ---------------------------------------- | ---------- | ------ | -------------------------------------------------------------------- |
+| Dynamic interval computation too slow    | Medium     | Medium | Cache practitioner schedule data client-side; compute on demand      |
+| Double-booking race condition            | Low        | High   | Backend FHIR server enforces scheduling constraints; Go BFF is proxy |
+| Large appointment list overwhelms mobile | Low        | Medium | Paginate with `_count=10`; InfiniteQuery loads next page on scroll   |
 
 # UAT
 
@@ -100,4 +83,4 @@ and HTMX partial updates for appointment status changes.
 2. Click appointment — detail view shows full info
 3. Click "Book" — form shows available slots from interval computation
 4. Submit booking — appointment appears in list
-5. Scroll down — next page loads via HTMX
+5. Scroll down — next page loads via infinite scroll

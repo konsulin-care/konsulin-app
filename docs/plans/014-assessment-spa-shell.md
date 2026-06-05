@@ -1,73 +1,65 @@
 ---
-title: Assessment SPA Shell
-description: AEHRC Smart Forms React SPA in Go SSR
-date: 2026-05-26
+title: Assessment SPA Routes
+description: AEHRC Smart Forms React SPA in Next.js
+date: 2026-06-05
 ---
 
 # Overview
 
 Before implementing, read @docs/wiki/007-aehrc-forms.md for current AEHRC Smart Forms integration and SOAP flow.
 
-Embed the AEHRC Smart Forms React SPA within the Go SSR application
-(ADR-010). Go server serves shell HTML for three assessment flows:
-(1) general assessment browse/fill at `/assessments`, (2) practitioner
-SOAP notes at `/assessments/soap`, (3) general assessment fill with
-practitioner-on-behalf at `/assessments/{id}`. The SPA bundles are
-served as static assets; API calls are proxied to backend FHIR.
+Serve the AEHRC Smart Forms React SPA from Next.js pages instead of
+Go SSR shell templates (ADR-010). Three assessment flows are served by
+Next.js page components. The SPA bundles are served as Next.js static
+assets; API calls are proxied to backend FHIR through Go BFF. Aligned
+with ADR-015.
 
 # Goals
 
-- `GET /assessments` serves SPA shell — assessment browse centre
-- `GET /assessments/{id}` serves SPA shell — fill questionnaire (patient or practitioner-on-behalf)
-- `GET /assessments/soap` serves SPA shell — practitioner-only SOAP note creation
-- Practitioner selects patient via participant dropdown (today's sessions or create new)
+- `GET /assessments` — Next.js page renders SPA shell for assessment browse centre
+- `GET /assessments/{id}` — Next.js page renders SPA shell for fill questionnaire (patient or practitioner-on-behalf)
+- `GET /assessments/soap` — Next.js page renders SPA shell (practitioner-only SOAP)
+- Practitioner selects patient via participant dropdown component
 - SOAP uses AEHRC Smart Forms + `extractObservationBased()` to produce Observation resources
 - SOAP submitted as FHIR transaction Bundle (QuestionnaireResponse + Observation[])
-- Practitioner-only auth guard on `/assessments/soap`
-- React SPA bundles at `web/assessment-spa/` served as static assets
-- Go server proxies `/assessments/api/*` to backend FHIR
+- Practitioner-only auth guard on `/assessments/soap` via Next.js middleware or page effect
+- React SPA bundles at `src/assessment-spa/` built into Next.js static export
+- Go BFF proxies `/assessments/api/*` to backend FHIR
 - IndexedDB-based draft persistence for offline (ADR-010)
-- Terminology server URL passed from Go config to React SPA via global JS variable
-- SPA build tooling (webpack/vite) integrated into `make build`
+- Terminology server URL passed from Go config via global JS variable (set in Go `index.html` injection)
 
 # Implementation Steps
 
-- [ ] Scaffold `web/assessment-spa/` with React + AEHRC Smart Forms renderer
-- [ ] Create three mount templates:
-  - `web/template/pages/assessment/shell.templ` — general assessment
-  - `web/template/pages/assessment/soap-shell.templ` — SOAP (practitioner-only)
-  - `web/template/pages/assessment/fill.templ` — fill with participant selector
-- [ ] Create participant-selector templ partial for practitioner-on-behalf patient selection
-- [ ] Configure Go server to serve `web/assessment-spa/dist/` at `/assessment-spa/`
-- [ ] Create proxy handler for `/assessments/api/*` to backend FHIR
-- [ ] Register routes: `GET /assessments`, `GET /assessments/{id}`, `GET /assessments/soap`, `GET /assessment-spa/*`
-- [ ] Add auth middleware check: only Practitioner role for `/assessments/soap`
-- [ ] Implement SOAP submission handler — construct FHIR transaction Bundle
-- [ ] Add assessment build to Makefile: `build-assessment-spa`
-- [ ] Implement IndexedDB draft save/load in the React SPA
-- [ ] Write tests for API proxy handler (verify path rewriting, header forwarding)
+- [ ] Create `src/app/assessments/page.tsx` — SPA shell for assessment browse centre
+- [ ] Create `src/app/assessments/[id]/page.tsx` — SPA shell with participant selector component
+- [ ] Create `src/app/assessments/soap/page.tsx` — SPA shell with practitioner-only guard
+- [ ] Create participant-selector React component (fetches today's sessions, allows patient search)
+- [ ] Add auth guard in `src/app/assessments/soap/page.tsx` — redirect non-Practitioner roles
+- [ ] Ensure React SPA bundles (`src/assessment-spa/`) are built by Next.js pipeline
+- [ ] Go BFF: register `/assessments/api/*` proxy route (already exists in proxy pattern)
+- [ ] Write `src/app/assessments/__tests__/assessment.test.tsx` — test SPA mount, auth guard, SOAP submission
 
 # Reference
 
 @src/app/assessments/page.tsx:
 
 - Assessment centre: browse/search questionnaires, popular/regular/research tabs, QR sharing
-- Keep as React SPA; Go serves HTML shell + AEHRC renderer runs client-side
+- Keep: same React SPA, served by Next.js page
 
 @src/app/assessments/[assessmentsId]/page.tsx:
 
 - Fill assessment: fetches Questionnaire, FhirFormsRenderer with participant selector for practitioners
-- Reimplement: Go serves shell with participant-selector templ partial; AEHRC runs client-side
+- Keep: same React component; add participant-selector as React component (was templ partial)
 
 @src/app/assessments/soap/page.tsx:
 
 - SOAP creation: fetches SOAP Questionnaire, participant selector, SoapForm renderer
-- Reimplement: Go serves shell with practitioner-only auth guard; AEHRC runs client-side
+- Keep: same React rendering; auth guard via React effect or Next.js middleware
 
 @src/app/assessments/soap/participant.tsx:
 
 - Patient selector: today's sessions list, create new patient by email
-- Reimplement: same participant selection as templ partial (FHIR session query)
+- Keep: participant selector as React component (was templ)
 
 @src/components/soap-report/soap-form.tsx:
 
@@ -82,25 +74,15 @@ served as static assets; API calls are proxied to backend FHIR.
 @src/services/api/assessment.tsx:
 
 - Assessment API: questionnaire CRUD, SOAP submission, search, result brief
-- Adapt: Go proxy forwards /assessments/api/\* to backend FHIR
-
-@src/styles/custom-smart-form.scss:
-
-- Custom SCSS for AEHRC Smart Forms
-- Adapt: port to Tailwind or keep as-is in React SPA bundle
-
-@src/components/icons/literature-icon.tsx:
-
-- LiteratureIcon — used for Assessments nav tab
-- Reimplement: inline SVG in base.templ
+- Adapt: Go BFF proxies /assessments/api/\* to backend FHIR
 
 # Risks
 
-| Risk                                    | Likelihood | Impact | Mitigation                                                      |
-| --------------------------------------- | ---------- | ------ | --------------------------------------------------------------- |
-| AEHRC bundle size too large (~200 KB)   | Low        | Medium | Already expected per ADR-010; cache via service worker          |
-| Terminology server URL mismatched       | Medium     | Medium | Pass terminology URL from Go config to React SPA via global var |
-| React SPA state lost on HTMX navigation | Low        | Low    | Assessment route is standalone SPA; no HTMX mixing              |
+| Risk                                  | Likelihood | Impact | Mitigation                                                     |
+| ------------------------------------- | ---------- | ------ | -------------------------------------------------------------- |
+| AEHRC bundle size too large (~200 KB) | Low        | Medium | Already expected per ADR-010; cache via service worker         |
+| Terminology server URL mismatched     | Medium     | Medium | Pass terminology URL from Go config to React via global var    |
+| SPA routing conflicts with Next.js    | Low        | High   | Keep SPA on dedicated routes; Next.js won't SSR the SPA bundle |
 
 # UAT
 
