@@ -2,9 +2,8 @@
 
 import EditSoap from '@/app/assessments/soap/edit-soap';
 import Notfound from '@/app/not-found';
-import BackButton from '@/components/general/back-button';
-import Header from '@/components/header';
 import EditJournal from '@/components/journal/edit';
+import PageHeader from '@/components/page-header';
 import { useSearchParams } from 'next/navigation';
 
 export default function EditRecordDetail() {
@@ -39,15 +38,7 @@ export default function EditRecordDetail() {
 
   return (
     <>
-      <Header showChat={false}>
-        <div className='flex w-full items-center'>
-          <BackButton />
-
-          <div className='text-[14px] font-bold text-white'>
-            {pageTitle(category)}
-          </div>
-        </div>
-      </Header>
+      <PageHeader pageIndicator={pageTitle(category)} />
       <div className='mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] bg-white p-4'>
         {renderContent(category)}
       </div>

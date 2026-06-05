@@ -1,12 +1,10 @@
 'use client';
 
-import BackButton from '@/components/general/back-button';
 import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
 import FhirFormsRenderer from '@/components/general/fhir-forms-renderer';
-import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
-import { Skeleton } from '@/components/ui/skeleton';
+import PageHeader from '@/components/page-header';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
@@ -41,20 +39,14 @@ export default function AssessmentsDetail() {
     setPatientListToday(todaySessions);
   }, [todaySessions]);
 
+  const title =
+    questionnaireIsLoading || isAuthLoading
+      ? ''
+      : questionnaire?.[0]?.resource?.title || '-';
+
   return (
     <>
-      <Header>
-        <div className='flex w-full items-center'>
-          <BackButton />
-          <div className='text-[14px] font-bold text-white'>
-            {questionnaireIsLoading || isAuthLoading ? (
-              <Skeleton className='h-[24px] w-[175px]' />
-            ) : (
-              questionnaire?.[0]?.resource?.title || '-'
-            )}
-          </div>
-        </div>
-      </Header>
+      <PageHeader pageIndicator={title} />
       <ContentWraper>
         <div className='min-h-screen p-4'>
           {questionnaireIsLoading || isAuthLoading || isPatientListLoading ? (

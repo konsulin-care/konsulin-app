@@ -2,11 +2,10 @@
 /* eslint-disable max-lines */
 
 import Avatar from '@/components/general/avatar';
-import BackButton from '@/components/general/back-button';
 import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
-import Header from '@/components/header';
 import NoteIcon from '@/components/icons/note-icon';
+import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -176,12 +175,7 @@ export default function PatientRecord() {
 
   return (
     <>
-      <Header showChat={false}>
-        <div className='flex w-full items-center'>
-          <BackButton route='/' />
-          <div className='text-[14px] font-bold text-white'>Summary Record</div>
-        </div>
-      </Header>
+      <PageHeader pageIndicator='Summary Record' backRoute='/' />
 
       <ContentWraper className='pt-4'>
         {/* Filter & Search based on result prop */}

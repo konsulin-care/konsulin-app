@@ -1,10 +1,9 @@
 'use client';
-/* eslint-disable max-lines */
 
 import Avatar from '@/components/general/avatar';
 import CardLoader from '@/components/general/card-loader';
 import EmptyState from '@/components/general/empty-state';
-import Header from '@/components/header';
+import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
@@ -17,7 +16,7 @@ import {
   parseTime
 } from '@/utils/helper';
 import { format, setHours, setMinutes } from 'date-fns';
-import { ChevronLeftIcon, HeartPulse, SearchIcon } from 'lucide-react';
+import { HeartPulse, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -186,14 +185,10 @@ export default function ClinicDetail() {
 
   return (
     <>
-      <Header>
-        <div className='flex w-full items-center'>
-          <Link href='/clinic'>
-            <ChevronLeftIcon color='white' className='mr-2 cursor-pointer' />
-          </Link>
-          <div className='text-[14px] font-bold text-white'>Detail Clinic</div>
-        </div>
-      </Header>
+      <PageHeader
+        pageIndicator={`Check Out ${displayOrganizationName}`}
+        backRoute='/clinic'
+      />
       <div className='mt-[-24px] rounded-[16px] bg-white p-4'>
         <Image
           className='h-[124px] w-full rounded-lg object-cover'

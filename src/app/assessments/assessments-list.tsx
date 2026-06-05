@@ -2,12 +2,11 @@
 
 /* eslint-disable sonarjs/cognitive-complexity, max-lines */
 
-import BackButton from '@/components/general/back-button';
 import CardLoader from '@/components/general/card-loader';
 import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
-import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
+import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -494,14 +493,7 @@ export default function AssessmentsList() {
 
   return (
     <>
-      <Header>
-        <div className='flex w-full items-center'>
-          <BackButton route='/' />
-          <div className='text-[14px] font-bold text-white'>
-            Assesment Centre
-          </div>
-        </div>
-      </Header>
+      <PageHeader />
 
       <ContentWraper className='pt-4'>
         <div className='flex gap-4 px-4'>

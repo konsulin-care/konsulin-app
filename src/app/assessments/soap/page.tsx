@@ -1,8 +1,7 @@
 'use client';
 
-import BackButton from '@/components/general/back-button';
-import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
+import PageHeader from '@/components/page-header';
 import SoapForm from '@/components/soap-report/soap-form';
 import { useAuth } from '@/context/auth/authContext';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
@@ -27,13 +26,7 @@ export default function Soap() {
 
   return (
     <>
-      <Header showChat={false}>
-        <div className='flex w-full items-center'>
-          <BackButton />
-
-          <div className='text-[14px] font-bold text-white'>SOAP Report</div>
-        </div>
-      </Header>
+      <PageHeader pageIndicator='SOAP Report' />
 
       <div className='mt-[-24px] rounded-[16px] bg-white'>
         {isQuestionnaireLoading || isAuthLoading || isPatientListLoading ? (

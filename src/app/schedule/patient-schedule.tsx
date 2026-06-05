@@ -1,12 +1,8 @@
 'use client';
 
-/* eslint-disable max-lines */
-
 import Avatar from '@/components/general/avatar';
-import BackButton from '@/components/general/back-button';
 import EmptyState from '@/components/general/empty-state';
-import Header from '@/components/header';
-import UpcomingSession from '@/components/schedule/upcoming-session';
+import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -121,18 +117,6 @@ export default function PatientSchedule({ fhirId }: Props) {
     const parsed = parseMergedAppointments(upcomingData);
     return parsed;
   }, [upcomingData, authState]);
-
-  const unfilteredAppointmentsData = useMemo(() => {
-    if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
-      return null;
-
-    const filtered = parsedAppointmentsData.filter(session => {
-      const slotStart = parseISO(session.slotStart);
-      return isAfter(slotStart, getNow());
-    });
-
-    return filtered;
-  }, [parsedAppointmentsData]);
 
   const filteredAppointmentsData = useMemo(() => {
     if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
@@ -273,25 +257,7 @@ export default function PatientSchedule({ fhirId }: Props) {
 
   return (
     <>
-      <Header>
-        <div className='flex w-full flex-col'>
-          <div className='flex items-center'>
-            <BackButton />
-            <span className='text-[14px] font-bold text-white'>
-              Scheduled Session
-            </span>
-          </div>
-
-          {authState &&
-            unfilteredAppointmentsData &&
-            unfilteredAppointmentsData.length > 0 && (
-              <UpcomingSession
-                data={unfilteredAppointmentsData}
-                role={authState.userInfo.role_name}
-              />
-            )}
-        </div>
-      </Header>
+      <PageHeader />
       <div className='mt-[-24px] rounded-[16px] bg-white pb-20'>
         <div className='w-full p-4'>
           <div className='flex gap-4'>

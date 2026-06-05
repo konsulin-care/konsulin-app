@@ -3,13 +3,11 @@
 import ContentWraper from '@/components/general/content-wraper';
 import PageLoader from '@/components/general/page-loader';
 import Share from '@/components/general/share';
-import Header from '@/components/header';
+import PageHeader from '@/components/page-header';
 import { useGetExercise } from '@/services/api/exercise';
-import { ChevronLeftIcon } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 export default function ExerciseDetail() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const exerciseId = searchParams.get('exerciseId') ?? '';
 
@@ -20,19 +18,7 @@ export default function ExerciseDetail() {
 
   return (
     <>
-      <Header showChat={false} showNotification={false}>
-        <div className='flex w-full items-center'>
-          <ChevronLeftIcon
-            onClick={() => router.back()}
-            color='white'
-            className='mr-2 cursor-pointer'
-          />
-
-          <div className='w-full text-center text-[14px] font-bold text-white'>
-            {excerciseData?.title}
-          </div>
-        </div>
-      </Header>
+      <PageHeader pageIndicator={excerciseData?.title} />
 
       <ContentWraper className='p-4'>
         {excerciseIsLoading && !excerciseData ? (

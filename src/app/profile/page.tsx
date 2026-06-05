@@ -1,9 +1,8 @@
 'use client';
 
-import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
+import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
-import { ChevronLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import EditPractice from './edit-practice';
@@ -64,26 +63,7 @@ const PathProfile = () => {
 
     return (
       <>
-        <Header showChat={false} showNotification={false}>
-          {!authState.isAuthenticated ? (
-            <div className='mt-8'></div>
-          ) : (
-            <div className='mb-[-5px] flex w-full items-center justify-between'>
-              <ChevronLeft
-                width={32}
-                height={32}
-                onClick={() => router.back()}
-                color='white'
-                className='cursor-pointer'
-              />
-              <div className='my-2 flex flex-grow'>
-                <span className='w-full pr-6 text-center text-[14px] font-bold text-white'>
-                  {title}
-                </span>
-              </div>
-            </div>
-          )}
-        </Header>
+        <PageHeader pageIndicator={title} />
         <div className='mt-[-24px] rounded-[16px] bg-white'>
           <div className='min-h-[calc(100vh-105px)] p-4'>{component}</div>
         </div>

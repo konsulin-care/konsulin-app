@@ -47,7 +47,7 @@ function SessionCard({
       href={href}
       className='card mt-4 flex items-center border-0 bg-[#F9F9F9]'
     >
-      <Calendar className='mr-[10px] h-5 w-5 shrink-0 text-[#13C2C2]' />
+      <Calendar className='mr-[10px] h-5 w-5 shrink-0 text-black' />
       <div className='mr-auto flex flex-col'>
         <span className='text-muted text-[12px]'>Upcoming Session With</span>
         <span className='text-secondary text-left text-[14px] font-bold'>

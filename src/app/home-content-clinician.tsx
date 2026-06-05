@@ -29,14 +29,16 @@ export default function HomeContentClinician() {
 
     const parsed = parseMergedSessions(sessionData);
 
-    const enriched = parsed.map(session => {
-      const patientName = mergeNames(session.patientName);
-      return {
-        ...session,
-        displayPatientName:
-          patientName.trim() === '-' ? session.patientEmail : patientName
-      };
-    });
+    const enriched = parsed
+      .filter(session => session.slotStart && session.slotEnd)
+      .map(session => {
+        const patientName = mergeNames(session.patientName);
+        return {
+          ...session,
+          displayPatientName:
+            patientName.trim() === '-' ? session.patientEmail : patientName
+        };
+      });
 
     enriched.sort((a, b) => {
       return parseISO(a.slotStart).getTime() - parseISO(b.slotStart).getTime();
@@ -93,6 +95,7 @@ export default function HomeContentClinician() {
           ) : (
             <div className='divide-y divide-gray-100'>
               {sessions.map((session, idx) => {
+                if (!session.slotStart || !session.slotEnd) return null;
                 const startTime = format(parseISO(session.slotStart), 'HH:mm');
                 const endTime = format(parseISO(session.slotEnd), 'HH:mm');
                 const isPast = parseISO(session.slotEnd).getTime() < Date.now();

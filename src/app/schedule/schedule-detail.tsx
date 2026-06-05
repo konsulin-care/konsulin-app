@@ -1,10 +1,9 @@
 'use client';
 
 import Avatar from '@/components/general/avatar';
-import BackButton from '@/components/general/back-button';
 import EmptyState from '@/components/general/empty-state';
-import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
+import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetAllAppointments } from '@/services/api/appointments';
 import { MergedAppointment } from '@/types/appointment';
@@ -81,12 +80,7 @@ export default function ScheduleDetail() {
 
   return (
     <>
-      <Header>
-        <div className='flex w-full items-center'>
-          <BackButton />
-          <div className='text-[14px] font-bold text-white'>Schedule</div>
-        </div>
-      </Header>
+      <PageHeader />
 
       <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
         {!appointmentData || isUpcomingError ? (

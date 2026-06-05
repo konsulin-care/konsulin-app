@@ -3,27 +3,20 @@
 import CardLoader from '@/components/general/card-loader';
 import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
-import Header from '@/components/header';
 import LoadingSpinnerIcon from '@/components/icons/loading-spinner-icon';
-import UpcomingSession from '@/components/schedule/upcoming-session';
+import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
-import { getNow } from '@/constants/date';
-import { useAuth } from '@/context/auth/authContext';
 import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
 import { STORES, dbSet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
-import { useGetUpcomingAppointments } from '@/services/api/appointments';
 import { IUseClinicParams, useListClinics } from '@/services/clinic';
-import { parseMergedAppointments } from '@/utils/helper';
-import { format, isAfter, parseISO } from 'date-fns';
 import { BundleEntry } from 'fhir/r4';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import ClinicFilter from './clinic-filter';
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -44,24 +37,6 @@ export default function ClinicList() {
     },
     500
   );
-
-  const { state: authState } = useAuth();
-  const { data: upcomingData } = useGetUpcomingAppointments({
-    patientId: authState?.userInfo?.fhirId,
-    dateReference: format(getNow(), 'yyyy-MM-dd')
-  });
-
-  const parsedAppointmentsData = useMemo(() => {
-    if (!upcomingData || upcomingData?.total === 0) return null;
-
-    const parsed = parseMergedAppointments(upcomingData);
-    const filtered = parsed.filter(session => {
-      const slotStart = parseISO(session.slotStart);
-      return isAfter(slotStart, getNow());
-    });
-
-    return filtered;
-  }, [upcomingData]);
 
   // Memoize server search function to prevent infinite loops
   const serverSearchFunction = useCallback(async (term: string) => {
@@ -104,33 +79,7 @@ export default function ClinicList() {
 
   return (
     <>
-      <Header>
-        <div className='flex w-full flex-col'>
-          <div className='text-[14px] font-bold text-white'>Book Session</div>
-          <div className='mt-4 flex items-center justify-between'>
-            <div className='text-[14px] font-bold text-white'>
-              Schedule Active
-            </div>
-            <Link
-              href={
-                authState && !authState.isAuthenticated ? '/auth' : '/schedule'
-              }
-              className='text-[10px] text-white'
-            >
-              See All
-            </Link>
-          </div>
-
-          {authState &&
-            parsedAppointmentsData &&
-            parsedAppointmentsData.length > 0 && (
-              <UpcomingSession
-                data={parsedAppointmentsData}
-                role={authState.userInfo.role_name}
-              />
-            )}
-        </div>
-      </Header>
+      <PageHeader />
       <ContentWraper>
         <div className='w-full p-4'>
           <div className='flex gap-4'>

@@ -3,10 +3,9 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 
 import Avatar from '@/components/general/avatar';
-import BackButton from '@/components/general/back-button';
 import EmptyState from '@/components/general/empty-state';
-import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
+import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -190,14 +189,10 @@ export default function Practitioner() {
 
   return (
     <>
-      <Header>
-        <div className='flex w-full items-center'>
-          <BackButton route={`/clinic?clinicId=${selectedClinicId}`} />
-          <div className='text-[14px] font-bold text-white'>
-            Detail Practitioner
-          </div>
-        </div>
-      </Header>
+      <PageHeader
+        pageIndicator={`View ${displayName}`}
+        backRoute={`/clinic?clinicId=${selectedClinicId}`}
+      />
 
       <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
         {practitionerDataLoading ? (

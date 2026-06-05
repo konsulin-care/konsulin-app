@@ -1,7 +1,7 @@
 'use client';
 
-import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
+import PageHeader from '@/components/page-header';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import Clinician from './clinician';
@@ -27,15 +27,7 @@ export default function ProfileDisplay() {
 
   return (
     <>
-      <Header>
-        <div className='flex'>
-          <div className='my-2 flex flex-col'>
-            <div className='mb-[-5px] text-[14px] font-bold text-white'>
-              My Profile
-            </div>
-          </div>
-        </div>
-      </Header>
+      <PageHeader />
       <div className='mt-[-24px] rounded-[16px] bg-white'>
         {isLoading ? (
           <div className='flex min-h-screen min-w-full items-center justify-center'>

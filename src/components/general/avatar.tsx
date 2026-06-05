@@ -30,25 +30,24 @@ export default function Avatar({
       {photoUrl && !fallback ? (
         <Image
           className={cn(
-            isRadiusIcon
-              ? `h-[${height}px] w-[${width}px] rounded-full object-cover`
-              : '',
+            isRadiusIcon ? 'rounded-full object-cover' : '',
             imageClassName
           )}
           src={photoUrl}
           alt='practitioner'
           width={width}
           height={height}
+          style={{ height, width }}
           unoptimized
           onError={() => setFallback(true)}
         />
       ) : (
         <div
           className={cn(
-            `flex h-[${height}px] w-[${width}px] items-center justify-center rounded-full font-bold text-white`,
+            'flex items-center justify-center rounded-full font-bold text-white',
             className
           )}
-          style={{ backgroundColor }}
+          style={{ backgroundColor, height, width }}
         >
           {initials}
         </div>
