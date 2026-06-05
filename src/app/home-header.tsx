@@ -54,7 +54,8 @@ export default function HomeHeader() {
     return filtered;
   }, [sessionData, authState]);
 
-  const data = isPatient ? parsedAppointmentsData : parsedSessionsData;
+  const allData = isPatient ? parsedAppointmentsData : parsedSessionsData;
+  const data = allData?.slice(0, 1) ?? null;
 
   const { initials, backgroundColor } = generateAvatarPlaceholder({
     id: authState.userInfo?.fhirId,
