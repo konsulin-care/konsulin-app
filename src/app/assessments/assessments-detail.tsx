@@ -6,7 +6,6 @@ import EmptyState from '@/components/general/empty-state';
 import FhirFormsRenderer from '@/components/general/fhir-forms-renderer';
 import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
-import NavigationBar from '@/components/navigation-bar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
@@ -44,7 +43,6 @@ export default function AssessmentsDetail() {
 
   return (
     <>
-      <NavigationBar />
       <Header>
         <div className='flex w-full items-center'>
           <BackButton />

@@ -7,7 +7,6 @@ import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
 import NoteIcon from '@/components/icons/note-icon';
-import NavigationBar from '@/components/navigation-bar';
 import { Badge } from '@/components/ui/badge';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -177,7 +176,6 @@ export default function PatientRecord() {
 
   return (
     <>
-      <NavigationBar />
       <Header showChat={false}>
         <div className='flex w-full items-center'>
           <BackButton route='/' />

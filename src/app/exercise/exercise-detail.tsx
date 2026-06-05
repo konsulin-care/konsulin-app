@@ -4,7 +4,6 @@ import ContentWraper from '@/components/general/content-wraper';
 import PageLoader from '@/components/general/page-loader';
 import Share from '@/components/general/share';
 import Header from '@/components/header';
-import NavigationBar from '@/components/navigation-bar';
 import { useGetExercise } from '@/services/api/exercise';
 import { ChevronLeftIcon } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -21,7 +20,6 @@ export default function ExerciseDetail() {
 
   return (
     <>
-      <NavigationBar />
       <Header showChat={false} showNotification={false}>
         <div className='flex w-full items-center'>
           <ChevronLeftIcon

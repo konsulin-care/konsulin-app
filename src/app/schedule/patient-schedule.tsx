@@ -6,7 +6,6 @@ import Avatar from '@/components/general/avatar';
 import BackButton from '@/components/general/back-button';
 import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
-import NavigationBar from '@/components/navigation-bar';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Badge } from '@/components/ui/badge';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
@@ -274,7 +273,6 @@ export default function PatientSchedule({ fhirId }: Props) {
 
   return (
     <>
-      <NavigationBar />
       <Header>
         <div className='flex w-full flex-col'>
           <div className='flex items-center'>
@@ -294,7 +292,7 @@ export default function PatientSchedule({ fhirId }: Props) {
             )}
         </div>
       </Header>
-      <div className='mt-[-24px] rounded-[16px] bg-white pb-[100px]'>
+      <div className='mt-[-24px] rounded-[16px] bg-white pb-20'>
         <div className='w-full p-4'>
           <div className='flex gap-4'>
             <InputWithIcon

@@ -2,6 +2,7 @@ import ProfileCompletenessModal from '@/components/general/profile-completeness-
 import QueryProvider from '@/components/general/query-provider';
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
 import { RuntimeConfigProvider } from '@/components/general/runtime-config-provider';
+import QuickActionFab from '@/components/quick-action-fab';
 import { SuperTokensProviders } from '@/components/supertokensProvider';
 import { AuthProvider } from '@/context/auth/authContext';
 import { BookingProvider } from '@/context/booking/bookingContext';
@@ -100,6 +101,7 @@ export default function RootLayout({
                         <div id='modal' />
                         <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
                           {children}
+                          <QuickActionFab />
                         </main>
                       </div>
                     </Suspense>

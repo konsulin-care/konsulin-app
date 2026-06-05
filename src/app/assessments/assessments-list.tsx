@@ -8,7 +8,6 @@ import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
-import NavigationBar from '@/components/navigation-bar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -495,7 +494,6 @@ export default function AssessmentsList() {
 
   return (
     <>
-      <NavigationBar />
       <Header>
         <div className='flex w-full items-center'>
           <BackButton route='/' />

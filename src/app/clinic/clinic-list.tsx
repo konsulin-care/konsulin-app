@@ -5,7 +5,6 @@ import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
 import Header from '@/components/header';
 import LoadingSpinnerIcon from '@/components/icons/loading-spinner-icon';
-import NavigationBar from '@/components/navigation-bar';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -105,7 +104,6 @@ export default function ClinicList() {
 
   return (
     <>
-      <NavigationBar />
       <Header>
         <div className='flex w-full flex-col'>
           <div className='text-[14px] font-bold text-white'>Book Session</div>

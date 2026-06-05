@@ -1,7 +1,6 @@
 'use client';
 
 import { LoadingSpinnerIcon } from '@/components/icons';
-import NavigationBar from '@/components/navigation-bar';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import PatientSchedule from './patient-schedule';
@@ -24,7 +23,6 @@ export default function ScheduleList() {
 
   return (
     <>
-      <NavigationBar />
       {isAuthLoading ? (
         <div className='flex min-h-screen min-w-full items-center justify-center'>
           <LoadingSpinnerIcon

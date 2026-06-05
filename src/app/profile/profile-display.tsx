@@ -2,7 +2,6 @@
 
 import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
-import NavigationBar from '@/components/navigation-bar';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import Clinician from './clinician';
@@ -13,7 +12,7 @@ export default function ProfileDisplay() {
 
   const renderHomeContent = () => {
     return (
-      <div className='mt-[-16px] rounded-[16px] bg-white pt-4 pb-[100px]'>
+      <div className='mt-[-16px] rounded-[16px] bg-white pt-4 pb-20'>
         <div className='text-center'>
           {authState.userInfo.role_name === Roles.Patient && (
             <Patient fhirId={authState.userInfo.fhirId} />
@@ -28,7 +27,6 @@ export default function ProfileDisplay() {
 
   return (
     <>
-      <NavigationBar />
       <Header>
         <div className='flex'>
           <div className='my-2 flex flex-col'>

@@ -1,16 +1,14 @@
-'use client'
+'use client';
 
-import Header from '@/components/header'
-import NavigationBar from '@/components/navigation-bar'
-import { ChevronLeftIcon } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import Header from '@/components/header';
+import { ChevronLeftIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function Message() {
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <>
-      <NavigationBar />
       <Header showChat={false} showNotification={false}>
         <div className='flex w-full items-center'>
           <ChevronLeftIcon
@@ -28,5 +26,5 @@ export default function Message() {
         <div>Message</div>
       </div>
     </>
-  )
+  );
 }

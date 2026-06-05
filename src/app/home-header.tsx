@@ -14,6 +14,7 @@ import {
   parseMergedSessions
 } from '@/utils/helper';
 import { isAfter, parseISO } from 'date-fns';
+import Link from 'next/link';
 import { useMemo } from 'react';
 
 export default function HomeHeader() {
@@ -87,7 +88,7 @@ export default function HomeHeader() {
               </div>
             </div>
           ) : (
-            <div className='flex'>
+            <Link href='/profile' className='flex cursor-pointer'>
               <Avatar
                 initials={initials}
                 backgroundColor={backgroundColor}
@@ -105,7 +106,7 @@ export default function HomeHeader() {
                   {displayName}
                 </div>
               </div>
-            </div>
+            </Link>
           )}
 
           {data && data.length > 0 && !isAdmin && (

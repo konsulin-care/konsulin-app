@@ -1,7 +1,6 @@
 'use client';
 
 import { LoadingSpinnerIcon } from '@/components/icons';
-import NavigationBar from '@/components/navigation-bar';
 import { useAuth } from '@/context/auth/authContext';
 import { useRedirectIntent } from '@/hooks/useRedirectIntent';
 import { useQueryClient } from '@tanstack/react-query';
@@ -27,7 +26,7 @@ const App = () => {
 
   if (isLoading || isRedirecting) {
     return (
-      <div className='mt-[-24px] flex min-h-screen min-w-full items-center justify-center rounded-b-[16px] bg-white pt-4 pb-[100px]'>
+      <div className='mt-[-24px] flex min-h-screen min-w-full items-center justify-center rounded-b-[16px] bg-white pt-4 pb-20'>
         <LoadingSpinnerIcon
           width={60}
           height={60}
@@ -39,7 +38,6 @@ const App = () => {
 
   return (
     <>
-      <NavigationBar />
       <HomeHeader />
       <HomeContent />
     </>
