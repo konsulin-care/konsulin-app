@@ -155,7 +155,9 @@ export const restoreAuthCookie = async (
   const role =
     Array.isArray(roles) && roles.includes(Roles.Practitioner)
       ? Roles.Practitioner
-      : Roles.Patient;
+      : Array.isArray(roles) && roles.includes(Roles.ClinicAdmin)
+        ? Roles.ClinicAdmin
+        : Roles.Patient;
 
   const profile = await attemptProfileFetch(userId, role);
   const authPayload = buildAuthPayload(userId, roles, role, profile);

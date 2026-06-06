@@ -25,13 +25,6 @@ export function RuntimeConfigProvider({ children }: { children: ReactNode }) {
   }));
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__) {
-      setConfig({
-        appInfo: window.__RUNTIME_CONFIG__.appInfo,
-        terminologyServer: window.__RUNTIME_CONFIG__.terminologyServer ?? ''
-      });
-      return;
-    }
     fetch('/api/config')
       .then(r => {
         if (!r.ok) throw new Error(`config fetch failed: ${r.status}`);

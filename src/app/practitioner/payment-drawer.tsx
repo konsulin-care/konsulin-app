@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import Avatar from '@/components/general/avatar';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
@@ -38,22 +39,13 @@ function PractitionerInfo({
 }) {
   return (
     <div className='flex flex-col items-center'>
-      {practitionerAvatar?.photoUrl ? (
-        <img
-          src={practitionerAvatar.photoUrl}
-          alt='practitioner'
-          className='h-[72px] w-[72px] rounded-full object-cover'
-        />
-      ) : (
-        <div
-          className='flex h-[72px] w-[72px] items-center justify-center rounded-full text-lg font-bold text-white'
-          style={{
-            backgroundColor: practitionerAvatar?.backgroundColor || '#999'
-          }}
-        >
-          {practitionerAvatar?.initials}
-        </div>
-      )}
+      <Avatar
+        photoUrl={practitionerAvatar?.photoUrl}
+        initials={practitionerAvatar?.initials || ''}
+        backgroundColor={practitionerAvatar?.backgroundColor || '#999'}
+        height={72}
+        width={72}
+      />
       {practitionerOrganizationName && (
         <div className='mt-2 text-[12px] font-normal'>
           {practitionerOrganizationName}

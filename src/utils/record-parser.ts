@@ -93,7 +93,8 @@ export const parseRecordBundles = (bundles: IBundleResponse[]) => {
 
   return results.sort(
     (a, b) =>
-      new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime()
+      new Date(a.lastUpdated || '').getTime() -
+      new Date(b.lastUpdated || '').getTime()
   );
 };
 
