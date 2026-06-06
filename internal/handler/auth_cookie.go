@@ -112,7 +112,7 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 }
 
 type getAuthCookieResponse struct {
-	Authenticated    bool     `json:"authenticated"`
+	Authenticated   bool     `json:"authenticated"`
 	UserID          string   `json:"userId,omitempty"`
 	Roles           []string `json:"roles,omitempty"`
 	Role            string   `json:"role_name,omitempty"`
