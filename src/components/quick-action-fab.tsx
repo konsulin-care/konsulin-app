@@ -1,15 +1,20 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Plus } from 'lucide-react';
+import { BookText, Calendar, HeartPulse, Plus, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const pills = [
-  { label: 'Self Checkup', href: '/assessments', delay: 0 },
-  { label: 'View Schedule', href: '/schedule', delay: 50 },
-  { label: 'See Clinics', href: '/clinic', delay: 100 },
-  { label: 'Get Recommendation', href: '/recommendation', delay: 150 }
+  { label: 'Self Checkup', href: '/assessments', icon: HeartPulse, delay: 0 },
+  { label: 'Write Journal', href: '/journal', icon: BookText, delay: 50 },
+  { label: 'View Schedule', href: '/schedule', icon: Calendar, delay: 100 },
+  {
+    label: 'Get Recommendation',
+    href: '/recommendation',
+    icon: Sparkles,
+    delay: 150
+  }
 ];
 
 const SCROLL_THRESHOLD = 10;
@@ -72,9 +77,10 @@ export default function QuickActionFab() {
                 key={pill.href}
                 href={pill.href}
                 onClick={close}
-                className='animate-pill-in inline-flex items-center gap-2 rounded-lg bg-white px-4 py-3 text-sm font-medium text-[#2c2f35] shadow-lg transition-colors hover:bg-gray-50'
+                className='animate-pill-in inline-flex items-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-medium text-[#2c2f35] shadow-lg transition-colors hover:bg-gray-50'
                 style={{ animationDelay: `${pill.delay}ms` }}
               >
+                <pill.icon className='h-4 w-4' />
                 {pill.label}
               </Link>
             ))}
