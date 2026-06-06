@@ -194,7 +194,7 @@ export const generateAvatarPlaceholder = ({
 
   const backgroundColor = seed ? getColorFromId(seed) : null;
 
-  return { initials: initials || null, backgroundColor };
+  return { initials: initials || null, backgroundColor, seed };
 };
 
 /* eslint-disable max-lines */

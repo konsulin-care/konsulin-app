@@ -1,3 +1,5 @@
+/* eslint-disable max-lines -- 300-line limit is too tight for component files */
+
 'use client';
 
 import Avatar from '@/components/general/avatar';
@@ -57,7 +59,7 @@ const AppointmentCard = ({
   );
   const displayName =
     fullName.trim() === '-' ? appointment.practitionerEmail : fullName;
-  const { initials, backgroundColor } = generateAvatarPlaceholder({
+  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
     id: appointment.practitionerId,
     name: displayName,
     email: appointment.practitionerEmail
@@ -76,6 +78,7 @@ const AppointmentCard = ({
       <hr className='w-full' />
       <div className='flex items-center'>
         <Avatar
+          seed={seed}
           initials={initials}
           backgroundColor={backgroundColor}
           photoUrl={photoUrl}

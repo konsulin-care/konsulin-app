@@ -119,7 +119,7 @@ export default function Practitioner() {
     return name;
   }, [practitionerData]);
 
-  const { initials, backgroundColor } = generateAvatarPlaceholder({
+  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
     id: practitionerRoleId,
     name: displayName,
     email: practitionerData?.email
@@ -208,6 +208,7 @@ export default function Practitioner() {
             <div className='flex flex-col items-center'>
               <div className='flex flex-col items-center'>
                 <Avatar
+                  seed={seed}
                   initials={initials}
                   backgroundColor={backgroundColor}
                   photoUrl={photoUrl}

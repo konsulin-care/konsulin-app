@@ -42,39 +42,42 @@ export default function ScheduleDetail() {
     return found;
   }, [upcomingData, appointmentId]);
 
-  const { initials, backgroundColor, displayName, time, date } = useMemo(() => {
-    if (!appointmentData) {
+  const { initials, backgroundColor, displayName, time, date, seed } =
+    useMemo(() => {
+      if (!appointmentData) {
+        return {
+          displayName: '',
+          initials: '',
+          backgroundColor: '',
+          time: '',
+          date: '',
+          seed: ''
+        };
+      }
+
+      const name = mergeNames(
+        appointmentData.practitionerName,
+        appointmentData.practitionerQualification
+      );
+
+      const avatar = generateAvatarPlaceholder({
+        id: appointmentData.practitionerId,
+        name,
+        email: appointmentData.practitionerEmail
+      });
+
+      const time = format(new Date(appointmentData.slotStart), 'HH:mm');
+      const date = format(new Date(appointmentData.slotStart), 'dd/MM/yyy');
+
       return {
-        displayName: '',
-        initials: '',
-        backgroundColor: '',
-        time: '',
-        date: ''
+        displayName: name,
+        initials: avatar.initials,
+        backgroundColor: avatar.backgroundColor,
+        seed: avatar.seed,
+        time,
+        date
       };
-    }
-
-    const name = mergeNames(
-      appointmentData.practitionerName,
-      appointmentData.practitionerQualification
-    );
-
-    const avatar = generateAvatarPlaceholder({
-      id: appointmentData.practitionerId,
-      name,
-      email: appointmentData.practitionerEmail
-    });
-
-    const time = format(new Date(appointmentData.slotStart), 'HH:mm');
-    const date = format(new Date(appointmentData.slotStart), 'dd/MM/yyy');
-
-    return {
-      displayName: name,
-      initials: avatar.initials,
-      backgroundColor: avatar.backgroundColor,
-      time,
-      date
-    };
-  }, [appointmentData]);
+    }, [appointmentData]);
 
   const photoUrl = appointmentData?.practitionerPhoto?.[0]?.url;
 
@@ -102,6 +105,7 @@ export default function ScheduleDetail() {
             <div className='flex flex-col items-center'>
               <div className='flex flex-col items-center'>
                 <Avatar
+                  seed={seed}
                   initials={initials}
                   backgroundColor={backgroundColor}
                   photoUrl={photoUrl}

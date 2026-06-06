@@ -272,11 +272,12 @@ export default function ClinicDetail() {
               const email = practitioner.telecom.find(
                 item => item.system === 'email'
               );
-              const { initials, backgroundColor } = generateAvatarPlaceholder({
-                id: practitioner.id,
-                name: displayName,
-                email: email?.value
-              });
+              const { initials, backgroundColor, seed } =
+                generateAvatarPlaceholder({
+                  id: practitioner.id,
+                  name: displayName,
+                  email: email?.value
+                });
               const photoUrl = practitioner.photo?.[0]?.url;
 
               return (
@@ -286,6 +287,7 @@ export default function ClinicDetail() {
                 >
                   <div className='relative flex justify-center'>
                     <Avatar
+                      seed={seed}
                       initials={initials}
                       backgroundColor={backgroundColor}
                       photoUrl={photoUrl}

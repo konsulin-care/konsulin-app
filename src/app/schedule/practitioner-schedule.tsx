@@ -50,7 +50,7 @@ const SessionCard = ({ session }: { session: MergedSession }) => {
     : '-/-/-';
   const fullName = mergeNames(session.patientName);
   const displayName = fullName.trim() === '-' ? session.patientEmail : fullName;
-  const { initials, backgroundColor } = generateAvatarPlaceholder({
+  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
     id: session.patientId,
     name: displayName,
     email: session.patientEmail
@@ -69,6 +69,7 @@ const SessionCard = ({ session }: { session: MergedSession }) => {
       <hr className='w-full' />
       <div className='flex items-center'>
         <Avatar
+          seed={seed}
           initials={initials}
           backgroundColor={backgroundColor}
           photoUrl={photoUrl}

@@ -323,11 +323,12 @@ export default function PractitionerRecord() {
               const url = `/record?recordId=${recordId}&${queryParams}`;
 
               const { displayName, email } = getPractitionerInfo(record);
-              const { initials, backgroundColor } = generateAvatarPlaceholder({
-                id: record.practitionerId,
-                name: displayName,
-                email: email
-              });
+              const { initials, backgroundColor, seed } =
+                generateAvatarPlaceholder({
+                  id: record.practitionerId,
+                  name: displayName,
+                  email: email
+                });
               const photoUrl = record.practitionerProfile?.photo?.[0]?.url;
 
               return (
@@ -363,6 +364,7 @@ export default function PractitionerRecord() {
                     record.type === 'Practitioner Note' ? (
                       <>
                         <Avatar
+                          seed={seed}
                           initials={initials}
                           backgroundColor={backgroundColor}
                           photoUrl={photoUrl}

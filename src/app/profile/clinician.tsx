@@ -233,7 +233,7 @@ export default function Clinician({ fhirId }: Props) {
     }
   ];
 
-  const { initials, backgroundColor } = generateAvatarPlaceholder({
+  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
     id: authState.userInfo?.fhirId,
     name: authState.userInfo?.fullname,
     email: authState.userInfo?.email
@@ -275,6 +275,7 @@ export default function Clinician({ fhirId }: Props) {
             isRadiusIcon
             initials={initials}
             backgroundColor={backgroundColor}
+            seed={seed}
             iconUrl={profileData?.photo?.[0].url}
             title='General Information'
             subTitle={displayName}

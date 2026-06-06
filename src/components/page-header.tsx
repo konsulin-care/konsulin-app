@@ -81,7 +81,7 @@ export default function PageHeader({
   const isPatient = role === Roles.Patient;
   const isAdmin = role === Roles.ClinicAdmin;
 
-  const { initials, backgroundColor } = generateAvatarPlaceholder({
+  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
     id: authState.userInfo?.fhirId,
     name: authState.userInfo?.fullname,
     email: authState.userInfo?.email
@@ -166,6 +166,7 @@ export default function PageHeader({
               )}
             </div>
             <Avatar
+              seed={seed}
               initials={initials}
               backgroundColor={backgroundColor}
               photoUrl={authState.userInfo?.profile_picture}

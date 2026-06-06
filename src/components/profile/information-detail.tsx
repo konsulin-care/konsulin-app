@@ -10,7 +10,8 @@ function HeaderSection({
   subTitle,
   role,
   initials,
-  backgroundColor
+  backgroundColor,
+  seed
 }) {
   const titleStyle =
     role === Roles.Patient
@@ -24,6 +25,7 @@ function HeaderSection({
   return (
     <div className='flex w-1/2 items-center'>
       <Avatar
+        seed={seed}
         initials={initials}
         backgroundColor={backgroundColor}
         photoUrl={iconUrl}
@@ -152,7 +154,21 @@ export default function InformationDetail({
   role,
   isEditPractice = false,
   initials,
-  backgroundColor
+  backgroundColor,
+  seed
+}: {
+  isRadiusIcon?: boolean;
+  iconUrl?: string;
+  title?: string;
+  subTitle?: string;
+  buttonText?: string;
+  details?: unknown[];
+  onEdit?: () => void;
+  role?: string;
+  isEditPractice?: boolean;
+  initials: string;
+  backgroundColor: string;
+  seed?: string;
 }) {
   return (
     <div className='flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
@@ -165,6 +181,7 @@ export default function InformationDetail({
           role={role}
           initials={initials}
           backgroundColor={backgroundColor}
+          seed={seed}
         />
         <div className='flex w-1/2 items-start justify-end'>
           <button
