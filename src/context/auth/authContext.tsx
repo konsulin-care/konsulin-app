@@ -32,6 +32,11 @@ interface ContextProps {
   dispatch: React.Dispatch<IActionAuth>;
 }
 
+type UserRole =
+  | typeof Roles.Practitioner
+  | typeof Roles.ClinicAdmin
+  | typeof Roles.Patient;
+
 const AuthContext = createContext<ContextProps | undefined>(undefined);
 
 const INITIAL_PATHNAME_STORAGE_KEY = 'konsulin_initial_pathname';
@@ -128,7 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         })) as string[] | undefined;
 
         // Role priority: auth cookie > SuperTokens hardcoded priority.
-        const role =
+        const role: string | UserRole =
           cookieRole ||
           (Array.isArray(superTokensRoles) &&
           superTokensRoles.includes(Roles.Practitioner)

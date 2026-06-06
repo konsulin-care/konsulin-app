@@ -30,7 +30,7 @@ export default function AssessmentsDetail() {
   const practitionerId = isPractitioner ? authState?.userInfo?.fhirId : null;
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    globalThis.window.scrollTo(0, 0);
   }, [assessmentsId]);
 
   useEffect(() => {

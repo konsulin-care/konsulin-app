@@ -1,3 +1,5 @@
+/* eslint-disable max-lines -- 300-line limit is too tight for component files */
+
 'use client';
 
 import Avatar from '@/components/general/avatar';
@@ -46,7 +48,14 @@ const isSlotAvailable = ({
   filterEndTime,
   practitionerStartTime,
   practitionerEndTime
-}) => {
+}: Readonly<{
+  slot: { daysOfWeek?: string[] };
+  filterDays: string[];
+  filterStartTime: Date;
+  filterEndTime: Date;
+  practitionerStartTime: Date;
+  practitionerEndTime: Date;
+}>) => {
   const slotDays = slot.daysOfWeek.map((day: string) => day.toLowerCase());
   const isDayMatch = slotDays.some((day: string) => filterDays.includes(day));
 

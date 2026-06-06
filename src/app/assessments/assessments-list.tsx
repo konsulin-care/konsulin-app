@@ -69,7 +69,8 @@ export default function AssessmentsList() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const baseUrl =
+    typeof window !== 'undefined' ? globalThis.window.location.origin : '';
   const isDrawerOpenParam = searchParams.get('isDrawerOpen') === 'true';
   const assessmentIdParam = searchParams.get('assessmentId');
   const [currentLocation, setCurrentLocation] = useState<string>('');
@@ -124,8 +125,13 @@ export default function AssessmentsList() {
   const QuestionnaireAssessmentCard = ({ assessment, onClick }) => {
     return (
       <div
+        role='button'
+        tabIndex={0}
         className='flex cursor-pointer flex-col gap-4'
         onClick={() => onClick(assessment.resource)}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') onClick(assessment.resource);
+        }}
       >
         <div className='flex items-start justify-between'>
           <Image
@@ -248,7 +254,7 @@ export default function AssessmentsList() {
     setSelectedAssessment(found);
     setIsOpen(true);
 
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(globalThis.window.location.search);
     const fullUrl = `${baseUrl}${pathname}?${params.toString()}`;
     setCurrentLocation(fullUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -283,7 +289,7 @@ export default function AssessmentsList() {
     setSelectedAssessment(study);
     setResearchUrl(resolvedQuestionnaireId);
 
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(globalThis.window.location.search);
     params.set('isDrawerOpen', 'true');
     params.set('assessmentId', study.id);
 
@@ -294,7 +300,7 @@ export default function AssessmentsList() {
   const handleAssessmentClick = (assessment: Questionnaire) => {
     if (!assessment) return;
 
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(globalThis.window.location.search);
     params.set('isDrawerOpen', 'true');
     params.set('assessmentId', assessment.id);
     router.push(`?${params.toString()}`, { scroll: false });
@@ -308,7 +314,7 @@ export default function AssessmentsList() {
   const handleDrawerClose = () => {
     setIsOpen(false);
 
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(globalThis.window.location.search);
     params.delete('isDrawerOpen');
     params.delete('assessmentId');
 
@@ -435,7 +441,7 @@ export default function AssessmentsList() {
             {(selectedAssessment.contact ?? []).map((item, index) => (
               <div
                 className='card mt-2 border-0 bg-[#F9F9F9] text-sm'
-                key={index}
+                key={item.name ?? `contact-${index}`}
               >
                 {item.name}
               </div>
@@ -610,12 +616,21 @@ export default function AssessmentsList() {
 
                                   {questionnaireId && (
                                     <div
+                                      role='button'
+                                      tabIndex={0}
                                       className='bg-secondary cursor-pointer rounded-[32px] px-4 py-2 text-sm font-bold text-white'
                                       onClick={() => {
                                         handleResearchClick(
                                           item.resource,
                                           questionnaireId
                                         );
+                                      }}
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter' || e.key === ' ')
+                                          handleResearchClick(
+                                            item.resource,
+                                            questionnaireId
+                                          );
                                       }}
                                     >
                                       Participate
@@ -654,9 +669,15 @@ export default function AssessmentsList() {
                       (assessment: BundleEntry<Questionnaire>) => (
                         <div
                           key={assessment.resource.id}
+                          role='button'
+                          tabIndex={0}
                           className='card flex cursor-pointer flex-col gap-4 bg-white'
                           onClick={() => {
                             handleAssessmentClick(assessment.resource);
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ')
+                              handleAssessmentClick(assessment.resource);
                           }}
                         >
                           <div className='flex items-start justify-between'>
@@ -717,9 +738,15 @@ export default function AssessmentsList() {
                     (assessment: BundleEntry<Questionnaire>) => (
                       <div
                         key={assessment.resource.id}
+                        role='button'
+                        tabIndex={0}
                         className='card item flex cursor-pointer flex-col p-2'
                         onClick={() => {
                           handleAssessmentClick(assessment.resource);
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' || e.key === ' ')
+                            handleAssessmentClick(assessment.resource);
                         }}
                       >
                         <div className='flex items-center'>

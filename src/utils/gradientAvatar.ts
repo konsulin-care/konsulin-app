@@ -31,11 +31,11 @@ function seeded(hash: number): () => number {
 
 function escapeXml(s: string): string {
   return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
 }
 
 export function generateAvatarSvgDataUrl(
@@ -84,7 +84,14 @@ export function generateAvatarSvgDataUrl(
     );
   }
 
-  const fontSize = initials.length <= 1 ? 42 : initials.length >= 3 ? 28 : 36;
+  let fontSize: number;
+  if (initials.length <= 1) {
+    fontSize = 42;
+  } else if (initials.length >= 3) {
+    fontSize = 28;
+  } else {
+    fontSize = 36;
+  }
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
   <defs>

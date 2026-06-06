@@ -193,7 +193,7 @@ export default function ClinicList() {
                 subtitle='Try a different search term.'
               />
             )
-          ) : clinics && clinics.length > 0 ? (
+          ) : clinics?.length > 0 ? (
             // No search term, show all clinics
             <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
               {clinics.map((clinic: BundleEntry) => (

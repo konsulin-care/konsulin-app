@@ -116,7 +116,10 @@ export default function HomeContentPatient() {
               );
 
               const result = record.result as string;
-              const cleanDescription = (result || '-').replace(/\n\n/g, '. ');
+              const cleanDescription = (result || '-').replaceAll(
+                /\n\n/g,
+                '. '
+              );
 
               const queryParams = new URLSearchParams({
                 category: typeMappings[record.type]?.category,
