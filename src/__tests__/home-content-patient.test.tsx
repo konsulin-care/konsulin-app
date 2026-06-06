@@ -65,8 +65,8 @@ describe('HomeContentPatient', () => {
 
   it('renders quick action links', () => {
     render(<HomeContentPatient />, { wrapper });
-    expect(screen.getByText('Write Journal')).toBeDefined();
     expect(screen.getByText('Show All Clinics')).toBeDefined();
+    expect(screen.getByText('Find practitioners near you')).toBeDefined();
   });
 
   it('renders previous records section', () => {

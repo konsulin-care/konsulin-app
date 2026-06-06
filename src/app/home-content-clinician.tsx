@@ -21,7 +21,7 @@ export default function HomeContentClinician() {
   } = useGetTodaySessions({
     practitionerId,
     dateReference: format(new Date(), 'yyyy-MM-dd'),
-    enabled: !isAuthLoading && !!practitionerId
+    enabled: !isAuthLoading && Boolean(practitionerId)
   });
 
   const sessions = useMemo(() => {
@@ -68,7 +68,7 @@ export default function HomeContentClinician() {
         <div className='mb-2 flex items-center gap-2'>
           <Calendar className='h-4 w-4 text-[#13C2C2]' />
           <span className='text-[14px] font-bold text-[#2C2F3599]'>
-            Today's Schedule
+            Today&apos;s Schedule
           </span>
         </div>
 

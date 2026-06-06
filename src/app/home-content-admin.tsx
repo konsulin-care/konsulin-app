@@ -54,7 +54,7 @@ export default function HomeContentAdmin() {
       const response = await API.get('/fhir/Practitioner?_summary=count');
       return response.data?.total ?? 0;
     },
-    enabled: !!authState?.userInfo?.fhirId
+    enabled: Boolean(authState?.userInfo?.fhirId)
   });
 
   const isLoading = isAuthLoading || isCountLoading;

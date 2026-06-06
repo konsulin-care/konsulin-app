@@ -645,7 +645,7 @@ const EditPractice = () => {
                     index={index}
                     firm={firm}
                     invoice={invoiceData[index]}
-                    isOpen={!!openCollapsibles[index]}
+                    isOpen={Boolean(openCollapsibles[index])}
                     onToggle={handleToggle}
                     tagInputs={tagInputs}
                     handleChangeFee={handleChangeFee}
@@ -911,8 +911,8 @@ const CollapsibleItem = ({
             placeholder='duration in minutes'
             value={slotConfigs[index]?.sessionDuration ?? ''}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const v = e.target.value;
-              if (v === '') {
+              const value = e.target.value;
+              if (value === '') {
                 setSlotConfigs((s: any) => ({
                   ...s,
                   [index]: { ...(s[index] || {}), sessionDuration: '' }
@@ -920,10 +920,10 @@ const CollapsibleItem = ({
                 return;
               }
               const numberOnly = /^\d+$/;
-              if (numberOnly.test(v) && Number(v) > 0) {
+              if (numberOnly.test(value) && Number(value) > 0) {
                 setSlotConfigs((s: any) => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), sessionDuration: v }
+                  [index]: { ...(s[index] || {}), sessionDuration: value }
                 }));
               }
             }}
@@ -943,8 +943,8 @@ const CollapsibleItem = ({
             placeholder='gap between sessions (minutes)'
             value={slotConfigs[index]?.bufferTime ?? ''}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const v = e.target.value;
-              if (v === '') {
+              const value = e.target.value;
+              if (value === '') {
                 setSlotConfigs((s: any) => ({
                   ...s,
                   [index]: { ...(s[index] || {}), bufferTime: '' }
@@ -952,10 +952,10 @@ const CollapsibleItem = ({
                 return;
               }
               const numberOnly = /^\d+$/;
-              if (numberOnly.test(v)) {
+              if (numberOnly.test(value)) {
                 setSlotConfigs((s: any) => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), bufferTime: v }
+                  [index]: { ...(s[index] || {}), bufferTime: value }
                 }));
               }
             }}

@@ -32,6 +32,7 @@ export default function ExerciseDetail() {
               height='352'
               allow='autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'
               loading='lazy'
+              sandbox='allow-scripts allow-same-origin allow-popups'
             />
             <div className='mt-4 mb-4 flex w-full items-center justify-between'>
               <span className='text-[12px] font-bold'>Excersise Brief</span>

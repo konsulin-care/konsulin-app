@@ -35,7 +35,7 @@ import {
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
-import PractitionerAvailability from '../practitioner/practitioner-availability';
+import PractitionerAvailability from './practitioner-availability';
 
 type IPractitionerLocalStorage = {
   roleId: string;
@@ -236,7 +236,7 @@ export default function Practitioner() {
                 detailPractitioner.organization.name
               }
               practitionerAvatar={{
-                photoUrl: photoUrl,
+                photoUrl,
                 initials,
                 backgroundColor
               }}
@@ -292,9 +292,9 @@ export default function Practitioner() {
                 <div className='mt-4 flex flex-wrap gap-2'>
                   {detailPractitioner.resource.specialty.length > 0 &&
                     detailPractitioner.resource.specialty.map(
-                      (specialty: CodeableConcept, index: number) => (
+                      (specialty: CodeableConcept) => (
                         <Badge
-                          key={index}
+                          key={specialty.text}
                           className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
                         >
                           {specialty.text}

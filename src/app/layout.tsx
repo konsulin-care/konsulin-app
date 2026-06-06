@@ -81,7 +81,8 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{sessionStorage.setItem("konsulin_initial_pathname",window.location.pathname);sessionStorage.removeItem("konsulin_reload_anonymous_done");}catch(e){}`
+            __html:
+              'try{sessionStorage.setItem("konsulin_initial_pathname",window.location.pathname);sessionStorage.removeItem("konsulin_reload_anonymous_done");}catch(e){}'
           }}
         />
       </head>

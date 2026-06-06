@@ -128,8 +128,8 @@ export default function ClinicDetail() {
     const lowerKeyword = keyword.trim().toLowerCase();
     const { start_date, end_date, start_time, end_time } = practitionerFilter;
 
-    const hasDateFilter = !!start_date && !!end_date;
-    const hasTimeFilter = !!start_time || !!end_time;
+    const hasDateFilter = Boolean(start_date) && Boolean(end_date);
+    const hasTimeFilter = Boolean(start_time) || Boolean(end_time);
 
     const filterDays = hasDateFilter
       ? generateFilterDays(start_date, end_date)
@@ -255,16 +255,12 @@ export default function ClinicDetail() {
         <div className='flex gap-4'>
           {practitionerFilter.start_date && practitionerFilter.end_date && (
             <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
-              {format(practitionerFilter.start_date, 'dd MMM yy') +
-                ' - ' +
-                format(practitionerFilter.end_date, 'dd MMM yy')}
+              {`${format(practitionerFilter.start_date, 'dd MMM yy')} - ${format(practitionerFilter.end_date, 'dd MMM yy')}`}
             </Badge>
           )}
           {practitionerFilter.start_time && practitionerFilter.end_time && (
             <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
-              {practitionerFilter.start_time +
-                ' - ' +
-                practitionerFilter.end_time}
+              {`${practitionerFilter.start_time} - ${practitionerFilter.end_time}`}
             </Badge>
           )}
         </div>
@@ -313,16 +309,14 @@ export default function ClinicDetail() {
                     {displayName}
                   </div>
                   <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                    {practitioner.practitionerRole.specialty?.map(
-                      (specialty, index) => (
-                        <Badge
-                          key={index}
-                          className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
-                        >
-                          {specialty.text}
-                        </Badge>
-                      )
-                    )}
+                    {practitioner.practitionerRole.specialty?.map(specialty => (
+                      <Badge
+                        key={specialty.text}
+                        className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
+                      >
+                        {specialty.text}
+                      </Badge>
+                    ))}
                   </div>
                   <Link
                     href={`/practitioner?practitionerRoleId=${practitioner.practitionerRole.id}`}
