@@ -21,7 +21,7 @@ export default function HomeContentGuest() {
     <>
       {/* PRIMARY: Recommendation Card Stack */}
       <div className='p-4'>
-        <RecommendationCardStack onBook={handleBook} isGuest={true} />
+        <RecommendationCardStack onBook={handleBook} />
       </div>
 
       {/* SECONDARY: Quick Actions */}

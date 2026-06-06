@@ -2,8 +2,9 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Recommendation } from '@/constants/recommendations';
-import { cn } from '@/lib/utils';
+import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
 import Image from 'next/image';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 interface RecommendationCardProps {
   recommendation: Recommendation;
@@ -12,75 +13,160 @@ interface RecommendationCardProps {
   onClick?: () => void;
 }
 
+function getInitials(name: string): string {
+  const parts = name.split(' ').filter(Boolean);
+  const meaningful = parts.filter(p => !/^dr\.?$/i.test(p));
+  if (meaningful.length >= 2) {
+    return (
+      meaningful[0][0] + meaningful[meaningful.length - 1][0]
+    ).toUpperCase();
+  }
+  if (meaningful.length === 1) {
+    return meaningful[0].slice(0, 2).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+}
+
 export default function RecommendationCard({
   recommendation,
   className,
   style,
   onClick
 }: RecommendationCardProps) {
+  const [expanded, setExpanded] = useState(false);
+  const { photoUrl, name, serviceName, specialties, fee, id, description } =
+    recommendation;
+
   const formattedFee = new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
-  }).format(recommendation.fee);
+  }).format(fee);
+
+  const initials = getInitials(name);
+
+  const gradientDataUrl = useMemo(
+    () => generateAvatarSvgDataUrl(id || name, initials),
+    [id, name, initials]
+  );
+
+  const serviceRef = useRef<HTMLDivElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = serviceRef.current;
+    if (el) {
+      setIsOverflowing(el.scrollWidth > el.clientWidth);
+    }
+  }, [serviceName]);
+
+  const isTouchDevice =
+    typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches;
+
+  useEffect(() => {
+    if (document.getElementById('marquee-style')) return;
+    const style = document.createElement('style');
+    style.id = 'marquee-style';
+    style.textContent = `
+      @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      .animate-marquee {
+        animation: marquee 10s linear infinite;
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
 
   return (
     <div
-      className={cn(
-        'flex h-full w-full cursor-pointer flex-col rounded-2xl bg-white shadow-lg',
-        className
-      )}
+      className={`group relative aspect-square w-full cursor-pointer overflow-hidden rounded-2xl shadow-lg ${className ?? ''}`}
       style={style}
-      onClick={onClick}
     >
-      <div className='relative flex h-[60%] min-h-0 w-full items-center justify-center overflow-hidden rounded-t-2xl'>
-        {recommendation.photoUrl ? (
+      <div className='h-full w-full' onClick={onClick}>
+        {photoUrl ? (
           <Image
-            src={recommendation.photoUrl}
-            alt={recommendation.name}
+            src={photoUrl}
+            alt={name}
             fill
             className='object-cover'
             sizes='(max-width: 640px) 100vw, 400px'
           />
-        ) : (
+        ) : gradientDataUrl ? (
           <Image
-            src='/images/provider-fallback.svg'
-            alt={recommendation.name}
+            src={gradientDataUrl}
+            alt={name}
             fill
             className='object-cover'
             sizes='(max-width: 640px) 100vw, 400px'
+            unoptimized
           />
-        )}
+        ) : null}
       </div>
 
-      <div className='flex flex-1 flex-col justify-between p-4'>
-        <div>
-          <h3 className='text-[14px] leading-tight font-bold text-gray-900'>
-            {recommendation.name}
-          </h3>
-          <p className='mt-0.5 text-[12px] text-gray-500'>
-            {recommendation.serviceName}
-          </p>
-
-          {recommendation.specialties.length > 0 && (
-            <div className='mt-2 flex flex-wrap gap-1'>
-              {recommendation.specialties.map(s => (
-                <Badge
-                  key={s}
-                  className='rounded-full bg-[#F0F0F0] px-2 py-0.5 text-[10px] font-normal text-gray-600 hover:bg-[#F0F0F0]'
-                >
-                  {s}
-                </Badge>
-              ))}
+      <div
+        className={`absolute right-0 bottom-0 left-0 z-10 overflow-hidden bg-black/50 backdrop-blur-md transition-[height] duration-300 ${
+          expanded ? 'h-full' : ''
+        } ${!expanded ? 'h-[20%] group-hover:h-full' : ''}`}
+        onClick={e => {
+          if (isTouchDevice) {
+            e.stopPropagation();
+            setExpanded(prev => !prev);
+          }
+        }}
+      >
+        <div
+          className={`absolute inset-0 flex flex-col justify-center overflow-hidden px-3 transition-opacity duration-200 ${
+            expanded ? 'opacity-0' : 'opacity-100'
+          } ${!expanded ? 'group-hover:opacity-0' : ''}`}
+        >
+          <div className='truncate text-center text-sm leading-tight font-bold text-white'>
+            {name} ({formattedFee})
+          </div>
+          <div className='mt-1 flex items-center justify-center overflow-hidden'>
+            <div
+              ref={serviceRef}
+              className={`text-xs whitespace-nowrap text-white/80 ${
+                isOverflowing ? 'animate-marquee flex w-fit' : 'truncate'
+              }`}
+            >
+              {isOverflowing ? (
+                <>
+                  <span>{serviceName}</span>
+                  <span>{serviceName}</span>
+                </>
+              ) : (
+                serviceName
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        <div className='mt-3 border-t border-gray-100 pt-3 text-center'>
-          <span className='text-[16px] font-bold text-[#13C2C2]'>
-            {formattedFee}
-          </span>
+        <div
+          className={`absolute inset-0 flex flex-col items-center justify-center gap-1 p-4 text-center transition-opacity delay-100 duration-200 ${
+            expanded ? 'opacity-100' : 'opacity-0'
+          } ${!expanded ? 'group-hover:opacity-100 group-hover:delay-100' : ''}`}
+        >
+          <p className='text-base font-bold text-white'>{name}</p>
+          <div className='flex flex-wrap justify-center gap-1'>
+            {specialties.map(s => (
+              <Badge
+                key={s}
+                className='rounded-full border-none bg-white/20 px-2 py-0.5 text-[10px] text-white'
+              >
+                {s}
+              </Badge>
+            ))}
+          </div>
+          <p className='text-xs text-white/80'>{serviceName}</p>
+          {description && (
+            <p className='max-w-[90%] text-[10px] leading-tight text-white/70'>
+              {description}
+            </p>
+          )}
+          <p className='text-base font-bold text-white'>{formattedFee}</p>
         </div>
       </div>
     </div>

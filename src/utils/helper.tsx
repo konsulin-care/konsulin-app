@@ -207,14 +207,16 @@ export const dataUrlToBlob = (dataUrl: string) => {
   const mimeMatch = arr[0]?.match(/:(.*?);/);
   const mime = mimeMatch?.[1] ?? 'image/png';
   const base64String = arr[1];
-  const gThis = globalThis as {
-    Buffer?: { from: (s: string, enc: string) => string };
-  };
+
+  interface BufferLike {
+    from: (s: string, enc: string) => { toString: (enc: string) => string };
+  }
+
+  const gThis = globalThis as unknown as { Buffer?: BufferLike };
   const decode =
     typeof atob === 'function'
       ? atob(base64String)
-      : typeof globalThis !== 'undefined' &&
-          typeof gThis.Buffer?.from === 'function'
+      : typeof gThis.Buffer?.from === 'function'
         ? gThis.Buffer.from(base64String, 'base64').toString('binary')
         : '';
   if (!decode) {

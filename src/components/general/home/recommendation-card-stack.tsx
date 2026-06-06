@@ -10,8 +10,6 @@ interface RecommendationCardStackProps {
   onBook: (practitionerId: string) => void;
 }
 
-const SLIDE_HEIGHT = 460;
-
 export default function RecommendationCardStack({
   onBook
 }: RecommendationCardStackProps) {
@@ -34,8 +32,7 @@ export default function RecommendationCardStack({
           <SwiperSlide
             key={card.id}
             onClick={() => onBook(card.id)}
-            className='cursor-pointer !overflow-visible'
-            style={{ height: SLIDE_HEIGHT }}
+            className='aspect-square cursor-pointer !overflow-visible'
           >
             {({ isActive }) => (
               <div
