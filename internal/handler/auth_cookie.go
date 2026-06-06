@@ -111,14 +111,37 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
+type getAuthCookieResponse struct {
+	Authenticated    bool     `json:"authenticated"`
+	UserID          string   `json:"userId,omitempty"`
+	Roles           []string `json:"roles,omitempty"`
+	Role            string   `json:"role_name,omitempty"`
+	FHIRID          string   `json:"fhirId,omitempty"`
+	ProfileComplete bool     `json:"profile_complete"`
+	FullName        string   `json:"fullname,omitempty"`
+	Email           string   `json:"email,omitempty"`
+	PhoneNumber     string   `json:"phoneNumber,omitempty"`
+	ProfilePicture  string   `json:"profile_picture,omitempty"`
+}
+
 func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {
-	authenticated := false
-	if _, err := session.ExtractFromRequest(r, opts.CookieName, opts.CookieSecret); err == nil {
-		authenticated = true
+	resp := getAuthCookieResponse{}
+	sess, err := session.ExtractFromRequest(r, opts.CookieName, opts.CookieSecret)
+	if err == nil && sess != nil {
+		resp.Authenticated = true
+		resp.UserID = sess.UserID
+		resp.Roles = sess.Roles
+		resp.Role = sess.Role
+		resp.FHIRID = sess.FHIRID
+		resp.ProfileComplete = sess.ProfileComplete
+		resp.FullName = sess.FullName
+		resp.Email = sess.Email
+		resp.PhoneNumber = sess.PhoneNumber
+		resp.ProfilePicture = sess.ProfilePicture
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(map[string]bool{"authenticated": authenticated})
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func handleDeleteAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {

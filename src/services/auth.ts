@@ -7,6 +7,32 @@ import { getClaimValue } from 'supertokens-auth-react/recipe/session';
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 import { getProfileByIdentifier } from './profile';
 
+export interface AuthCookieSession {
+  authenticated: boolean;
+  userId?: string;
+  role_name?: string;
+  roles?: string[];
+  fhirId?: string;
+  profile_picture?: string;
+  fullname?: string;
+  email?: string;
+  profile_complete?: boolean;
+}
+
+/**
+ * Reads the current auth cookie session from the Go BFF.
+ * Returns the session data or null if the request fails.
+ */
+export async function getAuthCookieSession(): Promise<AuthCookieSession | null> {
+  try {
+    const res = await fetch('/auth/cookie');
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Fetches CSRF token from the server for use in POST /auth/cookie requests.
  * Returns the token string or null if the endpoint is unavailable.
@@ -91,9 +117,8 @@ async function attemptProfileFetch(
 }
 
 /**
- * Restores the auth cookie when SuperTokens session is valid but auth cookie is missing
- * This function fetches user data from SuperTokens session and profile service,
- * then recreates the auth cookie using the existing cookie setting mechanism
+ * Restores the auth cookie when SuperTokens session is valid but auth cookie is missing.
+ * Skips if the cookie already exists with a valid role_name (idempotent).
  */
 export const restoreAuthCookie = async (
   sessionContext: SessionContextUpdate
@@ -103,6 +128,12 @@ export const restoreAuthCookie = async (
       'SuperTokens session does not exist, skipping auth cookie restoration'
     );
     return false;
+  }
+
+  // If auth cookie already has a valid role, skip restore.
+  const existing = await getAuthCookieSession();
+  if (existing?.authenticated && existing?.role_name) {
+    return true;
   }
 
   let roles: string[] | undefined;

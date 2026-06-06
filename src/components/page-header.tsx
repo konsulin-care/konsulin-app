@@ -1,16 +1,12 @@
 'use client';
 
-import Avatar from '@/components/general/avatar';
+import RoleAvatarPopup from '@/components/role-avatar-popup';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { getNow } from '@/constants/date';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
-import {
-  generateAvatarPlaceholder,
-  parseMergedAppointments,
-  parseMergedSessions
-} from '@/utils/helper';
+import { parseMergedAppointments, parseMergedSessions } from '@/utils/helper';
 import { isAfter, parseISO } from 'date-fns';
 import { ChevronLeftIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -81,12 +77,6 @@ export default function PageHeader({
   const isPatient = role === Roles.Patient;
   const isAdmin = role === Roles.ClinicAdmin;
 
-  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
-    id: authState.userInfo?.fhirId,
-    name: authState.userInfo?.fullname,
-    email: authState.userInfo?.email
-  });
-
   const displayName =
     !authState.userInfo?.fullname || authState.userInfo.fullname.trim() === '-'
       ? authState.userInfo?.email
@@ -152,30 +142,7 @@ export default function PageHeader({
         )}
 
         {!isLoadingAuth && authState.isAuthenticated ? (
-          <Link href='/profile' className='flex items-center gap-2'>
-            <div className='flex flex-col text-right'>
-              {indicator && (
-                <div className='text-xs font-normal text-[#2c2f35]'>
-                  {indicator}
-                </div>
-              )}
-              {displayName && (
-                <div className='text-sm font-bold text-[#2c2f35]'>
-                  {displayName}
-                </div>
-              )}
-            </div>
-            <Avatar
-              seed={seed}
-              initials={initials}
-              backgroundColor={backgroundColor}
-              photoUrl={authState.userInfo?.profile_picture}
-              height={32}
-              width={32}
-              className='text-xs'
-              imageClassName='self-center'
-            />
-          </Link>
+          <RoleAvatarPopup indicator={indicator} displayName={displayName} />
         ) : (
           <div className='flex h-[32px] items-center text-sm font-bold text-[#2c2f35]'>
             Konsulin

@@ -1,76 +1,65 @@
 ---
-title: Role & Clinic Context Switcher
-description: React context switcher, cookie-based session
-date: 2026-06-05
+title: Role Switcher via Header Profile Picture
+description: Stacked avatar circles, popup with role list, POST to existing endpoint
+date: 2026-06-06
 ---
 
 # Overview
 
-Before implementing, read @docs/wiki/004-state-management.md for current auth context patterns and @docs/wiki/005-auth-session.md for session handling.
+Replace the single-avatar header with stacked circles for multi-role users.
+Clicking opens a popup with Profile link and role list. Uses existing
+`/auth/role/switch` endpoint. No new Go endpoint required initially.
 
-Implement the role context switcher (ADR-008) and clinic context
-switcher (ADR-009) as React components. Users with multiple roles
-select active role via dropdown; clinic admins select active clinic.
-Changes POST to Go BFF endpoint (sets cookie), then React context
-updates the UI. No Go SSR, no HTMX. Aligned with ADR-015.
+Supersedes original 016 scope (nav-based dropdown, clinic switcher).
 
 # Goals
 
-- Role switcher dropdown in nav for multi-role users — React component
-- Clinic context switcher dropdown for multi-clinic admins — React component
-- Fetch POST to `/context/role` or `/context/clinic` updates server cookie
-- React Context (`AuthContext`) stores active role and active clinic
-- All subsequent requests include cookie for server-side context
-- Navbar re-renders via React state when context changes
+- Multi-role header shows stacked circles, active role on top
+- Single-role users keep current behavior (Link to /profile)
+- Popup contains Profile link + per-role avatars with switch action
+- FHIR batch request fetches all role profiles in one API call
+- Role switch works via existing `/auth/role/switch` with CSRF
 
 # Implementation Steps
 
-- [ ] Extend `src/context/auth/authContext.tsx` — add ActiveRole, ActiveClinicID to context value
-- [ ] Create `src/components/nav/role-switcher.tsx` — dropdown listing user's roles; onChange does `fetch('/context/role', { method: 'POST', body: JSON.stringify({role}) })`
-- [ ] Create `src/components/nav/clinic-switcher.tsx` — dropdown listing admin's clinics; onChange does `fetch('/context/clinic', ...)`
-- [ ] On response, update React context state (triggers navbar re-render)
-- [ ] Update `src/components/navigation-bar.tsx` — render switchers in nav header (role-aware tab visibility)
-- [ ] Go BFF: keep `POST /context/role` and `POST /context/clinic` handlers (already needed for cookie)
-- [ ] Write `src/components/nav/__tests__/switcher.test.tsx` — mock fetch, verify role/clinic switch updates UI
+- [ ] Revise 016 plan file (this document)
+- [ ] Create `src/services/batch-profile.ts` — single `POST /fhir` batch Bundle
+- [ ] Create `src/components/role-avatar-popup.tsx` — stacked circles + DropdownMenu
+- [ ] Modify `src/components/page-header.tsx` — conditionally render RoleAvatarPopup
+- [ ] (Optional) Create `internal/handler/context.go` — `POST /context/role` JSON endpoint
 
 # Reference
 
 @src/constants/roles.ts:
 
-- Role constants: Practitioner, Patient, Guest
-- Keep: same TypeScript constants
+- Patient → Patient, Practitioner → Practitioner, ClinicAdmin → Person (FHIR mapping)
 
-@src/components/navigation-bar.tsx:
+@src/components/page-header.tsx:
 
-- Bottom nav: 5 tabs with role-aware routing (Clinic vs Schedule)
-- Keep: same role-aware nav in React; tab visibility depends on active role + clinic context
-
-@src/context/auth/authContext.tsx:
-
-- Auth context: provides auth state and user info
-- Keep: React Context pattern; add ActiveRole, ActiveClinicID fields
+- Lines 154-178: current avatar + Link block. Replace with conditional render.
 
 @src/context/auth/authTypes.ts:
 
-- IStateUserInfo: userId, role_name, email, fullname, fhirId, profile_complete
-- Keep: same TypeScript type; extend with ActiveRole, ActiveClinicID
+- `IStateUserInfo.roles: string[]` — already available for multi-role detection
 
-@src/utils/intent-storage.ts:
+@internal/handler/role_switcher.go:
 
-- Intent storage: save/get/clear with 6-hour TTL
-- Keep: client-side intent pattern for guest → login flows
+- Existing `/auth/role/switch` — form POST, updates role in cookie, sets `HX-Redirect`
+- React can POST form-urlencoded with CSRF token
 
 # Risks
 
-| Risk                                           | Likelihood | Impact | Mitigation                                                    |
-| ---------------------------------------------- | ---------- | ------ | ------------------------------------------------------------- |
-| Context cookie doesn't persist across requests | Low        | High   | Set cookie with domain-wide path; verify via integration test |
-| Context not propagated to all nav elements     | Low        | Medium | Single React context provider wraps entire app                |
+| Risk                              | Likelihood | Impact | Mitigation                                            |
+| --------------------------------- | ---------- | ------ | ----------------------------------------------------- |
+| `/auth/role/switch` needs CSRF    | Medium     | Low    | Use same `fetchCSRFToken()` pattern as `/auth/cookie` |
+| FHIR Person resource not deployed | Medium     | Medium | Fallback to initials for ClinicAdmin                  |
+| Stacked circles overlap poorly    | Low        | Low    | Fixed 32x32 container, test on breakpoints            |
 
 # UAT
 
-1. Login as multi-role user (e.g. patient + practitioner)
-2. Click role switcher — dropdown shows both roles
-3. Switch to practitioner — nav updates, content shows practitioner UI
-4. Login as multi-clinic admin — clinic switcher appears
-5. Switch clinic — management data updates to selected clinic
+1. Single-role user: single avatar, click navigates to /profile (unchanged)
+2. Multi-role user: stacked circles appear, click opens popup
+3. Popup shows Profile icon + link to /profile
+4. Popup shows other roles with their FHIR profile photos
+5. Clicking a role POSTs to `/auth/role/switch`, redirects to / with new role
+6. ClinicAdmin shows initials fallback if no Person resource
