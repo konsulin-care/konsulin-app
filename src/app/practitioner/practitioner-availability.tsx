@@ -95,7 +95,7 @@ export default function PractitionerAvailability({
     session_type: 'offline',
     problem_brief: ''
   });
-  const [errorForm, setErrorForm] = useState();
+  const [errorForm, setErrorForm] = useState<string[] | null>(null);
   const queryClient = useQueryClient();
   const {
     mutateAsync: createAppointment,
