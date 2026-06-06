@@ -99,7 +99,7 @@ export default function HomeContentPatient() {
               Tap to retry
             </button>
           </div>
-        ) : records && records.length > 0 ? (
+        ) : records.length > 0 ? (
           <div className='flex flex-col gap-3'>
             {records.slice(0, 10).map((record: IRecord) => {
               const splitTitle = record.title.split('/');

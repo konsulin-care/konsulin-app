@@ -128,11 +128,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     queryFn: () => getProfileById(fhirId, fhirRole),
     enabled: Boolean(fhirId),
     onSuccess: result => {
-      const parsed = parseFhirProfile(result);
-
-      if (parsed) {
-        setUpdateUser(parsed);
-      }
+      setUpdateUser(parseFhirProfile(result));
       setIsLoading(false);
     },
     onError: (error: Error) => {
@@ -228,7 +224,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         return 'WhatsApp phone number must be 8-15 digits';
       return '';
     },
-    addresses: (value: string) =>
+    addresses: (value: string | string[]) =>
       !Array.isArray(value) ||
       value.length === 0 ||
       value.every(part => !part.trim())

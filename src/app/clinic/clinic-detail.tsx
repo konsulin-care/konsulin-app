@@ -110,7 +110,7 @@ export default function ClinicDetail() {
         name: practitioner.name,
         photo: practitioner.photo,
         qualification: practitioner.qualification,
-        email: email.value
+        email: email?.value
       }
     }).catch(err => console.warn('[IndexedDB]', err));
   };

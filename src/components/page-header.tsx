@@ -78,9 +78,10 @@ export default function PageHeader({
   const isAdmin = role === Roles.ClinicAdmin;
 
   const displayName =
-    !authState.userInfo?.fullname || authState.userInfo.fullname.trim() === '-'
-      ? authState.userInfo?.email
-      : authState.userInfo?.fullname;
+    !authState?.userInfo?.fullname ||
+    authState.userInfo?.fullname.trim() === '-'
+      ? authState?.userInfo?.email
+      : authState?.userInfo?.fullname;
 
   const parsedAppointmentsData = useMemo(() => {
     if (

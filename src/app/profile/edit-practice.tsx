@@ -179,32 +179,6 @@ function extractTimezoneFromPeriod(period?: {
   return null;
 }
 
-// Convert GMT+x format to ISO datetime with timezone offset
-function convertGMTToISO(gmtString: string): string {
-  // Parse GMT+x or GMT+x:xx format
-  const match = gmtString.match(/GMT([+-])(\d+)(?::(\d{2}))?/);
-  if (!match) {
-    // Fallback to current time with browser timezone
-    return new Date().toISOString();
-  }
-
-  const sign = match[1];
-  const hours = parseInt(match[2], 10);
-  const minutes = match[3] ? parseInt(match[3], 10) : 0;
-  const offset = `${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-
-  // Get current date/time and format with timezone
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours24 = String(now.getHours()).padStart(2, '0');
-  const mins = String(now.getMinutes()).padStart(2, '0');
-  const secs = String(now.getSeconds()).padStart(2, '0');
-
-  return `${year}-${month}-${day}T${hours24}:${mins}:${secs}${offset}`;
-}
-
 // getTheLatestEntry is a helper function to get the latest entry from an array of objects,
 // for now, the use case of this function is to consistenly use the same Schedule
 // object in case a practitioner role has multiple schedules.
@@ -281,14 +255,9 @@ const EditPractice = () => {
     }
   });
 
-  const {
-    mutateAsync: updatePractitionerInfo,
-    isLoading: isUpdatePractitionerLoading
-  } = useUpdatePractitionerInfo();
-  const { mutateAsync: createInvoice, isLoading: isCreateInvoiceLoading } =
-    useCreateInvoice();
-  const { mutateAsync: updateInvoice, isLoading: isUpdateInvoiceLoading } =
-    useUpdateInvoice();
+  const { mutateAsync: updatePractitionerInfo } = useUpdatePractitionerInfo();
+  const { mutateAsync: createInvoice } = useCreateInvoice();
+  const { mutateAsync: updateInvoice } = useUpdateInvoice();
 
   useEffect(() => {
     setSlotConfigs(prev => {

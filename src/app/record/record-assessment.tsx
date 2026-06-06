@@ -120,7 +120,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
       .map((subItem: QuestionnaireResponseItem) => {
         if (subItem.linkId === 'reference') return null;
 
-        const score = subItem?.answer[0]?.valueInteger;
+        const score = subItem.answer?.[0]?.valueInteger;
         const ref = reference?.answer[0]?.valueInteger;
 
         if (score && ref) {

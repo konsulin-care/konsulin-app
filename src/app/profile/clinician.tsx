@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable max-lines */
-
 import { LoadingSpinnerIcon } from '@/components/icons';
 import InformationDetail from '@/components/profile/information-detail';
 import Settings from '@/components/profile/settings';
@@ -68,17 +66,14 @@ export default function Clinician({ fhirId }: Props) {
 
   /* get list of practitioner's roles */
   const { refetch, isLoading: isPractitionerRolesLoading } =
-    useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
+    useGetPractitionerRolesDetail(authState.userInfo?.fhirId, {
       onSuccess: data => {
         const resources = data?.map(entry => entry.resource) || [];
         setPractitionerRolesData(resources);
       }
     });
 
-  const {
-    mutateAsync: updatePractitionerInfo, // eslint-disable-line @typescript-eslint/no-unused-vars
-    isLoading: isUpdatePractitionerLoading // eslint-disable-line @typescript-eslint/no-unused-vars
-  } = useUpdatePractitionerInfo();
+  useUpdatePractitionerInfo();
 
   const activeFirms = practitionerRolesData?.filter(firm => firm.active);
 
@@ -144,23 +139,6 @@ export default function Clinician({ fhirId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [practitionerRolesData]);
 
-  const organizationWithPrice = Array.isArray(activeFirms)
-    ? activeFirms.filter(role => {
-        return (
-          role.invoiceData?.totalNet &&
-          typeof role.invoiceData.totalNet.value === 'number' &&
-          role.invoiceData.totalNet.value > 0
-        );
-      })
-    : [];
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const firms = organizationWithPrice.map(item => ({
-    roleId: item.id,
-    code: item.organizationData.id,
-    name: item.organizationData.name
-  }));
-
   const handleSaveSuccess = async () => {
     try {
       toast.success('Jadwal berhasil disimpan');
@@ -210,12 +188,9 @@ export default function Clinician({ fhirId }: Props) {
   });
 
   const displayName =
-    !authState.userInfo.fullname || authState.userInfo.fullname.trim() === '-'
-      ? authState.userInfo.email
-      : authState.userInfo.fullname;
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const hasData = Object.keys(groupedByFirmAndDay).length > 0;
+    !authState.userInfo?.fullname || authState.userInfo?.fullname.trim() === '-'
+      ? authState.userInfo?.email
+      : authState.userInfo?.fullname;
 
   return (
     <>
