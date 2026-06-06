@@ -10,42 +10,25 @@ supersedes:
 
 # Context
 
-The Go SSR + templ + HTMX architecture introduced timezone-sensitive
-data rendering on the server. Server local time was used to determine
-upcoming sessions, causing inconsistencies between what Go SSR showed
-on the home page and what React showed on profile pages. The `now`
-module-level constant in the React codebase compounded this with frozen
-timestamps.
-
-Two rendering stacks (Go SSR + React SPA) required duplicate FHIR
-parsing logic — `fhir_provider.go` on the server and
-`parseMergedAppointments` in React. Changes to FHIR response handling
-required coordinated deploys on both sides.
-
-Routes with `AuthGuard` middleware already proxy to Next.js. Only the
-home page (`GET /`) and auth page (`GET /auth`) were served as Go SSR
-templates. Moving these to Next.js eliminates the second stack entirely.
+Go SSR + templ used server local time for upcoming sessions, causing
+inconsistencies with React profile pages. Two rendering stacks required
+duplicate FHIR parsing (Go `fhir_provider.go` + React
+`parseMergedAppointments`). Routes with `AuthGuard` already proxy to
+Next.js; only `GET /` and `GET /auth` remain as Go SSR templates.
 
 # Decision
 
-The Go server strips all page rendering. It becomes a pure BFF
-(Backend for Frontend) with three responsibilities:
+Go becomes pure BFF with three responsibilities:
 
-- `/proxy/*` — transparent proxy to FHIR backend, injects
-  `sAccessToken` cookie as `Authorization: Bearer` header. Passes
-  raw FHIR Bundle through unchanged.
-- `/auth/*` — cookie management (read/write local auth cookie
-  after SuperTokens login).
-- `/*` — serve Next.js static export files (`out/` directory).
-  Includes `GET /`, `/profile`, `/record`, etc.
+- `/proxy/*` — transparent FHIR proxy, injects `sAccessToken` as
+  `Authorization: Bearer`
+- `/auth/*` — cookie management (read/write after SuperTokens login)
+- `/*` — serve Next.js static export (`out/` directory)
 
-All pages are rendered by Next.js as a React SPA. Dynamic route
-segments (`/record/[id]`, `/assessments/[id]`, etc.) use query
-parameters instead of path segments (`/record?id=xyz`).
-
-FHIR timestamps pass through the proxy as-is in ISO 8601 format.
-The client formats them via `Intl.DateTimeFormat`. No server-side
-timezone logic.
+All pages render in React as SPA. Dynamic route segments use query
+params instead of path segments (`/record?id=X`). FHIR timestamps pass
+through as-is (ISO 8601); `Intl.DateTimeFormat` handles client-side
+formatting.
 
 ## What Stays
 
@@ -59,15 +42,15 @@ timezone logic.
 
 ## What Goes
 
-| Component                           | Reason                          |
-| ----------------------------------- | ------------------------------- |
-| `internal/handler/home.go`          | Go SSR home page handler        |
-| `internal/service/home.go`          | Home data aggregation service   |
-| `internal/service/fhir_provider.go` | Server-side FHIR bundle parsing |
-| `web/template/pages/home/`          | templ page templates            |
-| `web/template/layout/`              | templ layout templates          |
-| Alpine.js on page templates         | Replaced by React components    |
-| HTMX partials                       | Replaced by React data fetching |
+| Component                             | Reason                          |
+| ------------------------------------- | ------------------------------- |
+| `@/internal/handler/home.go`          | Go SSR home page handler        |
+| `@/internal/service/home.go`          | Home data aggregation service   |
+| `@/internal/service/fhir_provider.go` | Server-side FHIR bundle parsing |
+| `@/web/template/pages/home/`          | templ page templates            |
+| `@/web/template/layout/`              | templ layout templates          |
+| Alpine.js on page templates           | Replaced by React components    |
+| HTMX partials                         | Replaced by React data fetching |
 
 ## Dynamic Routes → Query Params
 
@@ -81,41 +64,23 @@ timezone logic.
 | `/schedule/[appointmentId]`      | `/schedule?id=X`     |
 | `/record/[recordId]`             | `/record?id=X`       |
 
-Alternatives considered: two-process container with Node.js
-standalone server (adds complexity, requires Node.js in production),
-Alpine.js widgets embedded in Go SSR (still two stacks, adds JS
-duplication with React).
-
 # Impact
 
 Positive:
 
-- Single rendering stack — every page is a React component, every
-  route serves the same static `index.html` for the SPA shell.
-- No duplicate FHIR parsing — React `parseMergedAppointments`
-  is the single source of truth.
-- Timezone-safe — ISO timestamps pass through as-is, browser
-  `Intl.DateTimeFormat` renders locally.
-- No Node.js in production — Next.js builds to static HTML/JS,
-  Go serves files directly. Single alpine binary.
-- Deployment stays the same — Coolify builds the Dockerfile,
-  exposes port 3000.
+- Single rendering stack — every page is React, every route serves `index.html`
+- No duplicate FHIR parsing — React is single source of truth
+- Timezone-safe — ISO timestamps pass through as-is, browser formats locally
+- No Node.js in production — single Go binary serves static files
+- Deployment unchanged — Coolify builds Dockerfile, exposes port 3000
 
 Negative:
 
-- 7 dynamic route components must be refactored from `[param]` path
-  segments to `?param=` query params.
-- All `<Link>` and `router.push()` calls for those routes must
-  update to query-parameter format.
-- Initial JS bundle includes full React app (~150 KB gzipped)
-  instead of Go SSR's ~0 KB. Mitigated by code splitting and
-  skeleton loading states.
-- No server-side rendering for SEO. Not relevant for this app
-  (authenticated-only pages).
+- 7 dynamic routes refactored from `[param]` to `?param=` query params
+- All `<Link>` and `router.push()` calls for those routes must update
+- Initial JS bundle ~150 KB gzipped (mitigated by code splitting + skeleton loading)
+- No SSR for SEO — acceptable for authenticated-only pages
 
 Neutral:
 
-- `GET /auth` page must either become a Next.js page or remain as
-  a minimal Go SSR template. Auth page has no interactive data
-  (login form is SuperTokens SDK), so it can stay as Go SSR or
-  move to Next.js.
+- `GET /auth` can stay as Go SSR or move to Next.js (login form is SuperTokens SDK, no interactive data)

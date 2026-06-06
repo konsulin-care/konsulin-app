@@ -139,6 +139,9 @@ func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 		resp.PhoneNumber = sess.PhoneNumber
 		resp.ProfilePicture = sess.ProfilePicture
 	}
+	w.Header().Set("Cache-Control", "no-store, private")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Vary", "Cookie")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(resp)

@@ -63,9 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line sonarjs/cognitive-complexity
     const fetchSession = async () => {
       // SuperTokens is still initializing — wait for the next effect cycle
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ctx = session as any;
-      if (ctx.loading) return;
+      if (session.doesSessionExist === undefined) return;
 
       // One-time migration before reading IndexedDB cache
       try {

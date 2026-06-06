@@ -19,7 +19,10 @@ type RuntimeConfig = {
 export const RuntimeConfigContext = createContext<RuntimeConfig | null>(null);
 
 export function RuntimeConfigProvider({ children }: { children: ReactNode }) {
-  const [config, setConfig] = useState<RuntimeConfig | null>(null);
+  const [config, setConfig] = useState<RuntimeConfig>(() => ({
+    appInfo: getAppInfo(),
+    terminologyServer: ''
+  }));
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__) {
@@ -30,7 +33,10 @@ export function RuntimeConfigProvider({ children }: { children: ReactNode }) {
       return;
     }
     fetch('/api/config')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`config fetch failed: ${r.status}`);
+        return r.json();
+      })
       .then(raw =>
         setConfig({
           appInfo: {
@@ -43,15 +49,14 @@ export function RuntimeConfigProvider({ children }: { children: ReactNode }) {
           terminologyServer: raw.TX_URL ?? ''
         })
       )
-      .catch(() =>
+      .catch(err => {
+        console.error('Failed to fetch /api/config, using fallback:', err);
         setConfig({
           appInfo: getAppInfo(),
           terminologyServer: ''
-        })
-      );
+        });
+      });
   }, []);
-
-  if (!config) return null;
 
   return (
     <RuntimeConfigContext.Provider value={config}>

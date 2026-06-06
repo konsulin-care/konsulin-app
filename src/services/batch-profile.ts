@@ -43,54 +43,64 @@ function extractPhoto(resource: FhirEntry): string {
   return '';
 }
 
+function buildBatchBody(
+  userId: string,
+  roles: string[]
+): Record<string, unknown> {
+  return {
+    resourceType: 'Bundle',
+    type: 'batch',
+    entry: roles.map(role => ({
+      request: {
+        method: 'GET',
+        url: `/${resourceForRole(role)}?identifier=https://login.konsulin.care/userid|${userId}`
+      }
+    }))
+  };
+}
+
+function parseRoleProfileResponse(
+  responseEntries: Bundle['entry'],
+  roles: string[]
+): RoleProfileMap {
+  const result: RoleProfileMap = {};
+  roles.forEach((role, index) => {
+    const entry = responseEntries?.[index];
+    const resource = entry?.resource as FhirEntry | undefined;
+    if (!resource?.id) {
+      result[role] = {
+        fhirId: '',
+        profile_picture: '',
+        fullname: '',
+        email: ''
+      };
+      return;
+    }
+    result[role] = {
+      fhirId: resource.id ?? '',
+      profile_picture: extractPhoto(resource),
+      fullname: resource.name ? mergeNames(resource.name) : '',
+      email: extractEmail(resource)
+    };
+  });
+  return result;
+}
+
 export async function fetchRoleProfiles(
   userId: string,
   roles: string[]
 ): Promise<RoleProfileMap> {
   if (!userId || roles.length === 0) return {};
 
-  const batchBody = {
-    resourceType: 'Bundle',
-    type: 'batch',
-    entry: roles.map(role => ({
-      request: {
-        method: 'GET' as const,
-        url: `/${resourceForRole(role)}?identifier=https://login.konsulin.care/userid|${userId}`
-      }
-    }))
-  };
-
   try {
     const response = await apiRequest<Bundle>(
       'POST',
       '/fhir',
-      batchBody as unknown as Record<string, unknown>
+      buildBatchBody(userId, roles)
     );
-    const responseEntries = response?.entry ?? [];
-    const result: RoleProfileMap = {};
-
-    roles.forEach((role, index) => {
-      const entry = responseEntries[index];
-      const resource = entry?.resource as FhirEntry | undefined;
-      if (!resource?.id) {
-        result[role] = {
-          fhirId: '',
-          profile_picture: '',
-          fullname: '',
-          email: ''
-        };
-        return;
-      }
-      result[role] = {
-        fhirId: resource.id ?? '',
-        profile_picture: extractPhoto(resource),
-        fullname: resource.name ? mergeNames(resource.name) : '',
-        email: extractEmail(resource)
-      };
-    });
-
-    return result;
-  } catch {
+    return parseRoleProfileResponse(response?.entry ?? [], roles);
+  } catch (err) {
+    console.error('Failed to fetch role profiles:', err);
     return {};
   }
 }

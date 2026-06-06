@@ -6,7 +6,7 @@ date: 2026-06-05
 
 # Overview
 
-Before implementing, read @docs/wiki/010-infrastructure.md for current Docker and deployment configuration.
+Before implementing, review Docker and deployment configuration at @docs/agents/ARCHITECTURE.md and the repo's Dockerfile.
 
 Complete the migration by removing all Go SSR code — templ page templates,
 Go page handlers, Go page services, and the templ generation pipeline.

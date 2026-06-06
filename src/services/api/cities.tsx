@@ -22,10 +22,11 @@ export const useGetCities = (provinceCode: number) => {
       const response = await axios.get(
         `${BASE}/regencies/${provinceCode}.json`
       );
-      return response.data;
+      const payload = response.data?.data ?? response.data;
+      return Array.isArray(payload) ? payload : [];
     },
     enabled: provinceCode !== undefined && provinceCode !== null,
-    select: response => response || null
+    select: response => response || []
   });
 };
 
@@ -35,9 +36,10 @@ export const useGetDistricts = (cityCode: number) => {
     queryFn: async () => {
       if (cityCode === 0) return null;
       const response = await axios.get(`${BASE}/districts/${cityCode}.json`);
-      return response.data;
+      const payload = response.data?.data ?? response.data;
+      return Array.isArray(payload) ? payload : [];
     },
     enabled: cityCode !== undefined && cityCode !== null,
-    select: response => response || null
+    select: response => response || []
   });
 };
