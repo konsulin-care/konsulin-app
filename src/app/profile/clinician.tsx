@@ -4,11 +4,9 @@
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import InformationDetail from '@/components/profile/information-detail';
-import MedalCollection from '@/components/profile/medal-collection';
 import Settings from '@/components/profile/settings';
 import Tags from '@/components/profile/tags';
 import MarkUnavailabilityButton from '@/components/schedule/mark-unavailability';
-import UpcomingSession from '@/components/schedule/upcoming-session';
 import {
   Drawer,
   DrawerContent,
@@ -16,28 +14,20 @@ import {
   DrawerTitle
 } from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getNow } from '@/constants/date';
-import { medalLists, settingMenus } from '@/constants/profile';
+import { settingMenus } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
-import { useGetUpcomingSessions } from '@/services/api/appointments';
 import {
   useGetPractitionerRolesDetail,
   useUpdatePractitionerInfo
 } from '@/services/clinicians';
 import { getProfileById } from '@/services/profile';
-import {
-  findAge,
-  generateAvatarPlaceholder,
-  mapAddress,
-  parseMergedSessions
-} from '@/utils/helper';
+import { findAge, generateAvatarPlaceholder, mapAddress } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
-import { format, isAfter, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { Practitioner, PractitionerRole } from 'fhir/r4';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import PractitionerAvailabilityEditor from '../practitioner/practitioner-availability-editor';
 
@@ -46,14 +36,14 @@ type Props = {
 };
 
 /**
- * Renders the clinician profile page including upcoming sessions, general and practice information, availability overview, and an availability editor drawer.
+ * Renders the clinician profile page including general and practice information, availability overview, and an availability editor drawer.
  *
- * Displays practitioner's upcoming sessions, basic profile details, practice information, availability grouped by organization and day, and controls to edit availability (per-day collapsible editors with time ranges). Handles data fetching, form state for availability editing, validation, and saving changes.
+ * Displays practitioner's basic profile details, practice information, availability grouped by organization and day, and controls to edit availability (per-day collapsible editors with time ranges). Handles data fetching, form state for availability editing, validation, and saving changes.
  *
  * @param fhirId - The practitioner's FHIR resource ID used to fetch profile and role data.
  * @returns The JSX element for the Clinician profile page.
  */
-// eslint-disable-next-line sonarjs/cognitive-complexity
+
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -63,26 +53,6 @@ export default function Clinician({ fhirId }: Props) {
   const [selectedPractitionerRoles, setSelectedPractitionerRoles] = useState<
     PractitionerRole[]
   >([]);
-
-  /* get practitioner's upcoming sessions*/
-  const { data: sessionData, isLoading: isUpcomingSessionsLoading } =
-    useGetUpcomingSessions({
-      practitionerId: authState?.userInfo?.fhirId,
-      dateReference: format(getNow(), 'yyyy-MM-dd')
-    });
-
-  const parsedSessionsData = useMemo(() => {
-    if (!sessionData || sessionData?.total === 0 || !authState.isAuthenticated)
-      return null;
-
-    const parsed = parseMergedSessions(sessionData);
-    const filtered = parsed.filter(session => {
-      const slotStart = parseISO(session.slotStart);
-      return isAfter(slotStart, getNow());
-    });
-
-    return filtered;
-  }, [sessionData, authState]);
 
   /* get practitioner's basic information*/
   const { data: profileData, isLoading: isProfileLoading } =
@@ -249,23 +219,6 @@ export default function Clinician({ fhirId }: Props) {
 
   return (
     <>
-      {/* display practitioner's upcoming sessions */}
-      <div className='text-muted flex items-center justify-between'>
-        <div className='text-[14px] font-bold'>Schedule Active</div>
-        <Link href='/schedule' className='text-[10px]'>
-          See All
-        </Link>
-      </div>
-
-      {isUpcomingSessionsLoading || isAuthLoading ? (
-        <Skeleton className='mt-4 h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
-      ) : authState && parsedSessionsData && parsedSessionsData.length > 0 ? (
-        <UpcomingSession
-          data={parsedSessionsData}
-          role={authState.userInfo.role_name}
-        />
-      ) : null}
-
       {/* display practitioner's basic information */}
       {isProfileLoading || isAuthLoading ? (
         <Skeleton className='my-4 h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
@@ -398,7 +351,6 @@ export default function Clinician({ fhirId }: Props) {
         </div>
       </div>
 
-      <MedalCollection medals={medalLists} isDisabled={true} />
       <Settings menus={settingMenus} />
 
       <Drawer onClose={() => setIsDrawerOpen(false)} open={isDrawerOpen}>
