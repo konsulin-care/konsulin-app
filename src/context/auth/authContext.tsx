@@ -59,6 +59,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Safety timeout: force-reset loading if SuperTokens never initializes.
+  useEffect(() => {
+    if (session.doesSessionExist !== undefined) return;
+    const id = setTimeout(() => {
+      setIsLoading(false);
+      console.error(
+        'Auth: SuperTokens session did not initialize within 10s, proceeding as unauthenticated'
+      );
+    }, 10_000);
+    return () => clearTimeout(id);
+  }, [session.doesSessionExist]);
+
   useEffect(() => {
     // eslint-disable-next-line sonarjs/cognitive-complexity
     const fetchSession = async () => {

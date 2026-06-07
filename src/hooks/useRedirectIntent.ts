@@ -162,7 +162,15 @@ export function useRedirectIntent({
     if (isLoading) return;
     if (handleStoredRedirect(setIsRedirecting, router)) return;
     if (authState.isAuthenticated) {
-      return handleIntent(setIsRedirecting, isHandlingIntentRef, router);
+      const cleanup = handleIntent(
+        setIsRedirecting,
+        isHandlingIntentRef,
+        router
+      );
+      if (!cleanup) {
+        setIsRedirecting(false);
+      }
+      return cleanup;
     }
     setIsRedirecting(false);
   }, [isLoading, authState.isAuthenticated, authState.userInfo, router]);
