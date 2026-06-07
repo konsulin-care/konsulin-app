@@ -33,11 +33,11 @@ function PractitionerInfo({
   practitionerAvatar,
   practitionerOrganizationName,
   practitionerName
-}: {
+}: Readonly<{
   practitionerAvatar?: Props['practitionerAvatar'];
   practitionerOrganizationName?: string;
   practitionerName?: string;
-}) {
+}>) {
   return (
     <div className='flex flex-col items-center'>
       <Avatar
@@ -63,10 +63,10 @@ function PractitionerInfo({
 function PayButtonContent({
   isPaying,
   label
-}: {
+}: Readonly<{
   isPaying: boolean;
   label: string;
-}) {
+}>) {
   if (isPaying) {
     return (
       <LoadingSpinnerIcon width={20} height={20} className='animate-spin' />
@@ -76,7 +76,7 @@ function PayButtonContent({
 }
 
 /** Online payment button with loading spinner state. */
-function PayNowButtonContent({ isPaying }: { isPaying: boolean }) {
+function PayNowButtonContent({ isPaying }: Readonly<{ isPaying: boolean }>) {
   if (isPaying) {
     return (
       <LoadingSpinnerIcon
@@ -108,7 +108,7 @@ export default function PaymentDrawer({
   queryClient,
   handleFilterChange,
   setIsOpen
-}: Props) {
+}: Readonly<Props>) {
   const isPaymentDisabled =
     isPaying ||
     !patientId ||

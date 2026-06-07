@@ -402,7 +402,7 @@ const CollapsibleItem = ({
               if (value === '') {
                 setSlotConfigs((s: any) => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), sessionDuration: '' }
+                  [index]: { ...(s[index] || {}), sessionDuration: '' } // NOSONAR - s[index] may be undefined
                 }));
                 return;
               }
@@ -410,7 +410,7 @@ const CollapsibleItem = ({
               if (numberOnly.test(value) && Number(value) > 0) {
                 setSlotConfigs((s: any) => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), sessionDuration: value }
+                  [index]: { ...(s[index] || {}), sessionDuration: value } // NOSONAR - s[index] may be undefined
                 }));
               }
             }}
@@ -434,7 +434,7 @@ const CollapsibleItem = ({
               if (value === '') {
                 setSlotConfigs((s: any) => ({
                   ...s,
-                  [index]: { ...s[index], bufferTime: '' }
+                  [index]: { ...(s[index] || {}), bufferTime: '' }
                 }));
                 return;
               }
@@ -442,7 +442,7 @@ const CollapsibleItem = ({
               if (numberOnly.test(value)) {
                 setSlotConfigs((s: any) => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), bufferTime: value }
+                  [index]: { ...(s[index] || {}), bufferTime: value } // NOSONAR - s[index] may be undefined
                 }));
               }
             }}

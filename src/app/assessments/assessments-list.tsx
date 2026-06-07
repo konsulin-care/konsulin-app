@@ -53,10 +53,10 @@ const isQuestionnaire = (
 function ResearchAssessmentCard({
   assessment,
   onClick
-}: {
+}: Readonly<{
   assessment: BundleEntry<ResearchStudy>;
   onClick: (resource: ResearchStudy) => void;
-}) {
+}>) {
   return (
     <div className='flex max-w-[280px] cursor-pointer flex-col gap-2'>
       <div className='flex gap-2'>
@@ -92,10 +92,10 @@ function ResearchAssessmentCard({
 function QuestionnaireAssessmentCard({
   assessment,
   onClick
-}: {
+}: Readonly<{
   assessment: BundleEntry<Questionnaire>;
   onClick: (resource: Questionnaire) => void;
-}) {
+}>) {
   return (
     <div
       role='button'
@@ -126,16 +126,45 @@ function QuestionnaireAssessmentCard({
   );
 }
 
+/** Render a single assessment card based on its resource type. */
+function AssessmentCard({
+  assessment,
+  onResearchClick,
+  onAssessmentClick
+}: Readonly<{
+  assessment: BundleEntry;
+  onResearchClick: (resource: ResearchStudy, questionnaireId?: string) => void;
+  onAssessmentClick: (assessment: Questionnaire) => void;
+}>) {
+  if (isResearchStudy(assessment)) {
+    return (
+      <ResearchAssessmentCard
+        assessment={assessment}
+        onClick={resource => onResearchClick(resource)}
+      />
+    );
+  }
+  if (isQuestionnaire(assessment)) {
+    return (
+      <QuestionnaireAssessmentCard
+        assessment={assessment}
+        onClick={resource => onAssessmentClick(resource)}
+      />
+    );
+  }
+  return null;
+}
+
 /** Grid of mixed research/questionnaire search results. */
 function AssessmentSearchResults({
   assessments,
   onResearchClick,
   onAssessmentClick
-}: {
+}: Readonly<{
   assessments: BundleEntry[];
   onResearchClick: (resource: ResearchStudy, questionnaireId?: string) => void;
   onAssessmentClick: (assessment: Questionnaire) => void;
-}) {
+}>) {
   return (
     <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
       {assessments.map((assessment: BundleEntry) => (
@@ -143,17 +172,11 @@ function AssessmentSearchResults({
           key={assessment.resource.id}
           className='card flex flex-col gap-2 p-4'
         >
-          {isResearchStudy(assessment) ? (
-            <ResearchAssessmentCard
-              assessment={assessment}
-              onClick={resource => onResearchClick(resource)}
-            />
-          ) : isQuestionnaire(assessment) ? (
-            <QuestionnaireAssessmentCard
-              assessment={assessment}
-              onClick={resource => onAssessmentClick(resource)}
-            />
-          ) : null}
+          <AssessmentCard
+            assessment={assessment}
+            onResearchClick={onResearchClick}
+            onAssessmentClick={onAssessmentClick}
+          />
         </div>
       ))}
     </div>

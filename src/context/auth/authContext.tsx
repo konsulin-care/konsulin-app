@@ -143,8 +143,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         })) as string[] | undefined;
 
         // Role priority: auth cookie > SuperTokens hardcoded priority.
-        const role: string | UserRole =
-          cookieRole ||
+        const role: UserRole =
+          (cookieRole as UserRole) ||
           (Array.isArray(superTokensRoles) &&
           superTokensRoles.includes(Roles.Practitioner)
             ? Roles.Practitioner

@@ -1,9 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, max-lines, react/display-name */
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery
+} from '@tanstack/react-query';
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
@@ -168,7 +173,6 @@ import {
   usePayAppointment
 } from '@/services/api/appointments';
 import { useFindAvailability } from '@/services/clinicians';
-import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
 function createWrapper(queryClient: QueryClient) {
@@ -287,7 +291,7 @@ describe('PractitionerAvailability', () => {
     fireEvent.click(screen.getByTestId('trigger-child'));
     const drawers = screen.getAllByTestId('mock-drawer');
     const bookingDrawer = drawers[0];
-    expect(bookingDrawer.getAttribute('data-open')).toBe('true');
+    expect(bookingDrawer.dataset.open).toBe('true');
   });
 
   it('shows calendar inside drawer', () => {

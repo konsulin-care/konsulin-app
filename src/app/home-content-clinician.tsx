@@ -69,7 +69,7 @@ export default function HomeContentClinician() {
     displayPatientName: string;
   };
 
-  function SessionRow({ session }: { session: SessionRowData }) {
+  function SessionRow({ session }: Readonly<{ session: SessionRowData }>) {
     if (!session.slotStart || !session.slotEnd) return null;
     const startTime = format(parseISO(session.slotStart), 'HH:mm');
     const endTime = format(parseISO(session.slotEnd), 'HH:mm');

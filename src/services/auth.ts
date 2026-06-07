@@ -117,6 +117,15 @@ async function attemptProfileFetch(
   }
 }
 
+/** Resolve the highest-priority role from SuperTokens role claims. */
+function resolveRole(roles: string[] | undefined): string {
+  if (Array.isArray(roles)) {
+    if (roles.includes(Roles.Practitioner)) return Roles.Practitioner;
+    if (roles.includes(Roles.ClinicAdmin)) return Roles.ClinicAdmin;
+  }
+  return Roles.Patient;
+}
+
 /**
  * Restores the auth cookie when SuperTokens session is valid but auth cookie is missing.
  * Skips if the cookie already exists with a valid role_name (idempotent).
@@ -152,12 +161,7 @@ export const restoreAuthCookie = async (
     return false;
   }
 
-  const role =
-    Array.isArray(roles) && roles.includes(Roles.Practitioner)
-      ? Roles.Practitioner
-      : Array.isArray(roles) && roles.includes(Roles.ClinicAdmin)
-        ? Roles.ClinicAdmin
-        : Roles.Patient;
+  const role = resolveRole(roles);
 
   const profile = await attemptProfileFetch(userId, role);
   const authPayload = buildAuthPayload(userId, roles, role, profile);

@@ -48,7 +48,7 @@ export default function HomeContentPatient() {
     router.push(`/appointment?practitioner=${practitionerId}`);
   };
 
-  function RecordCard({ record }: { record: IRecord }) {
+  function RecordCard({ record }: Readonly<{ record: IRecord }>) {
     const splitTitle = record.title.split('/');
     const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
     const formattedTitle =

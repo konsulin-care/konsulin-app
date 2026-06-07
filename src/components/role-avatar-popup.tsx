@@ -71,9 +71,10 @@ function useRoleProfiles(
     (isOpen: boolean) => {
       if (isOpen && !fetchedRef.current && userId && otherRoles.length > 0) {
         fetchedRef.current = true;
-        fetchRoleProfiles(userId, [...otherRoles, currentRole!]).then(
-          setRoleProfiles
-        );
+        fetchRoleProfiles(
+          userId,
+          [...otherRoles, currentRole].filter(Boolean) as string[]
+        ).then(setRoleProfiles);
       }
     },
     [userId, otherRoles, currentRole]

@@ -13,10 +13,10 @@ type Props = {
 function SessionCard({
   session,
   role
-}: {
+}: Readonly<{
   session: MergedAppointment | MergedSession;
   role: string;
-}) {
+}>) {
   const sessionStartTime = session.slotStart
     ? format(parseISO(session.slotStart), 'HH:mm')
     : '-:-';
@@ -62,7 +62,7 @@ function SessionCard({
   );
 }
 
-export default function UpcomingSession({ data, role }: Props) {
+export default function UpcomingSession({ data, role }: Readonly<Props>) {
   if (!data || data.length === 0) return null;
 
   return (

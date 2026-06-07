@@ -467,7 +467,6 @@ export default function PractitionerAvailability({
                 bookingState={bookingState}
                 errorForm={errorForm}
                 handleBookingInformationChange={handleBookingInformationChange}
-                handleFilterChange={handleFilterChange}
                 handleSubmitForm={handleSubmitForm}
                 scheduleId={scheduleId}
                 isCreateAppointmentLoading={isCreateAppointmentLoading}

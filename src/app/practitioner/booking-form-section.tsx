@@ -19,7 +19,6 @@ type Props = {
   bookingState: any;
   errorForm: any;
   handleBookingInformationChange: (key: string, value: any) => void;
-  handleFilterChange: (label: string, value: any) => void;
   handleSubmitForm: () => void;
   scheduleId: string;
   isCreateAppointmentLoading: boolean;
@@ -54,7 +53,7 @@ export default function BookingFormSection({
   saveIntent,
   startTransition,
   setIsOpen
-}: Props) {
+}: Readonly<Props>) {
   return (
     <>
       {bookingState.startTime && (

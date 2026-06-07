@@ -640,7 +640,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     handleAddAddress,
     formatDate,
     setDrawerState
-  }: {
+  }: Readonly<{
     updateUser: ICustomProfile;
     errors: Record<string, string>;
     listProvinces: IWilayahResponse[];
@@ -664,7 +664,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     handleAddAddress: () => void;
     formatDate: (dateObject: string) => string;
     setDrawerState: (state: string) => void;
-  }) {
+  }>) {
     return (
       <div className='flex flex-grow flex-col space-y-4'>
         <Input
@@ -926,14 +926,11 @@ export default function EditProfile({ userRole, fhirId }: Props) {
           </>
         )}
         <button
-          className={`text-md border-primary mt-6 w-full rounded-full border-1 p-4 font-semibold ${validateForm(updateUser as unknown as Record<string, unknown>, isPhoneBasedUser) && !isUpdateLoading && !isUploadingPhoto ? 'bg-secondary text-white' : 'cursor-not-allowed bg-gray-300 text-gray-500'}`}
+          className={`text-md border-primary mt-6 w-full rounded-full border-1 p-4 font-semibold ${validateForm(updateUser, isPhoneBasedUser) && !isUpdateLoading && !isUploadingPhoto ? 'bg-secondary text-white' : 'cursor-not-allowed bg-gray-300 text-gray-500'}`}
           type='submit'
           onClick={handleEditSave}
           disabled={
-            !validateForm(
-              updateUser as unknown as Record<string, unknown>,
-              isPhoneBasedUser
-            ) ||
+            !validateForm(updateUser, isPhoneBasedUser) ||
             isUpdateLoading ||
             isUploadingPhoto
           }

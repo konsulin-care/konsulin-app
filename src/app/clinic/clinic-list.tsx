@@ -22,10 +22,10 @@ import ClinicFilter from './clinic-filter';
 function ClinicCard({
   clinic,
   onSelect
-}: {
+}: Readonly<{
   clinic: BundleEntry;
   onSelect: (id: string) => void;
-}) {
+}>) {
   return (
     <div className='card flex flex-col items-center'>
       <Image

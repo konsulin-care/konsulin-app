@@ -9,7 +9,7 @@ export type AppInfo = {
 
 export function getAppInfo(): AppInfo {
   const origin =
-    typeof globalThis.window === 'undefined'
+    globalThis.window === undefined
       ? 'http://localhost:3000'
       : globalThis.window.location.origin;
   return {

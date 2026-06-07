@@ -18,7 +18,9 @@ type RuntimeConfig = {
 
 export const RuntimeConfigContext = createContext<RuntimeConfig | null>(null);
 
-export function RuntimeConfigProvider({ children }: { children: ReactNode }) {
+export function RuntimeConfigProvider({
+  children
+}: Readonly<{ children: ReactNode }>) {
   const [config, setConfig] = useState<RuntimeConfig>(() => ({
     appInfo: getAppInfo(),
     terminologyServer: ''

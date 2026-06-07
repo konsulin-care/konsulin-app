@@ -77,9 +77,9 @@ export default function TimeSlotsSection({
               }}
               className={cn(
                 'w-full items-center justify-center rounded-md border-0 px-4 py-2 text-[12px]',
-                pill.value === bookingState.startTime
-                  ? 'bg-secondary hover:bg-secondary font-bold text-white'
-                  : 'bg-white font-normal'
+                pill.value === bookingState.startTime &&
+                  'bg-secondary hover:bg-secondary font-bold text-white',
+                pill.value !== bookingState.startTime && 'bg-white font-normal'
               )}
               aria-disabled={pill.disabled}
             >

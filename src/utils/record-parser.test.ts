@@ -34,12 +34,8 @@ function makeBundle(observations: Observation[]): IBundleResponse {
 
 describe('parseRecordBundles', () => {
   it('returns empty array for non-array input', () => {
-    expect(
-      parseRecordBundles(undefined as unknown as IBundleResponse[])
-    ).toEqual([]);
-    expect(parseRecordBundles(null as unknown as IBundleResponse[])).toEqual(
-      []
-    );
+    expect(parseRecordBundles(undefined as IBundleResponse[])).toEqual([]);
+    expect(parseRecordBundles(null as IBundleResponse[])).toEqual([]);
   });
 
   it('returns empty array for empty array', () => {

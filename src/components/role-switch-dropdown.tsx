@@ -37,9 +37,9 @@ async function switchRole(role: string): Promise<void> {
 
 function RoleSwitchMenuItems({
   otherRoleAvatars
-}: {
+}: Readonly<{
   otherRoleAvatars: (AvatarInfo & { role: string })[];
-}) {
+}>) {
   if (otherRoleAvatars.length === 0) return null;
   return (
     <>

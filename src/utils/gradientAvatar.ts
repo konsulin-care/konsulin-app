@@ -15,7 +15,7 @@ const DIRECTIONS = [
 function djb2(str: string): number {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) + hash + str.charCodeAt(i);
+    hash = (hash << 5) + hash + str.codePointAt(i)!;
     hash = Math.trunc(hash);
   }
   return Math.abs(hash);
@@ -24,7 +24,7 @@ function djb2(str: string): number {
 function seeded(hash: number): () => number {
   let s = hash;
   return () => {
-    s = (s * 1103515245 + 12345) | 0;
+    s = Math.trunc(s * 1103515245 + 12345);
     return Math.abs(s) / 0x7fffffff;
   };
 }

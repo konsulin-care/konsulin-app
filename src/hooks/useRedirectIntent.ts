@@ -25,7 +25,7 @@ function useReloadAnonymousSession(
 ) {
   const hasRunRef = useRef(false);
   useEffect(() => {
-    if (typeof globalThis.window === 'undefined') return;
+    if (globalThis.window === undefined) return;
     const nav = performance.getEntriesByType('navigation')[0] as
       | PerformanceNavigationTiming
       | undefined;

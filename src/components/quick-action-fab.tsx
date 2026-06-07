@@ -56,8 +56,14 @@ export default function QuickActionFab() {
     <>
       {isOpen && (
         <div
+          role='button'
+          tabIndex={0}
           className='animate-overlay-in fixed inset-0 z-40 bg-black/80'
           onClick={close}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') close();
+          }}
+          aria-label='Close menu'
         />
       )}
 

@@ -202,6 +202,21 @@ export const isDataUrl = (value: string) => {
   return typeof value === 'string' && value.startsWith('data:image/');
 };
 
+function decodeBase64(
+  base64String: string,
+  env: {
+    Buffer?: {
+      from: (s: string, enc: string) => { toString: (enc: string) => string };
+    };
+  }
+): string {
+  if (typeof atob === 'function') return atob(base64String);
+  if (typeof env.Buffer?.from === 'function') {
+    return env.Buffer.from(base64String, 'base64').toString('binary');
+  }
+  return '';
+}
+
 export const dataUrlToBlob = (dataUrl: string) => {
   const arr = dataUrl.split(',');
   const mimeMatch = arr[0]?.match(/:(.*?);/);
@@ -213,12 +228,7 @@ export const dataUrlToBlob = (dataUrl: string) => {
   }
 
   const gThis = globalThis as unknown as { Buffer?: BufferLike };
-  const decode =
-    typeof atob === 'function'
-      ? atob(base64String)
-      : typeof gThis.Buffer?.from === 'function'
-        ? gThis.Buffer.from(base64String, 'base64').toString('binary')
-        : '';
+  const decode = decodeBase64(base64String, gThis);
   if (!decode) {
     throw new Error('Base64 decoding not supported in this environment');
   }

@@ -20,12 +20,12 @@ function ActionCard({
   title,
   description,
   href
-}: {
+}: Readonly<{
   icon: React.ReactNode;
   title: string;
   description: string;
   href: string;
-}) {
+}>) {
   return (
     <Link href={href} className='card flex w-full items-center gap-3 p-4'>
       <div className='flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
@@ -45,13 +45,13 @@ function StatCard({
   label,
   bgColor,
   iconColor
-}: {
+}: Readonly<{
   icon: React.ReactNode;
   value: React.ReactNode;
   label: string;
   bgColor: string;
   iconColor: string;
-}) {
+}>) {
   return (
     <div className='card flex items-center gap-4 p-4'>
       <div

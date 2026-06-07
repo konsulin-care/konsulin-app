@@ -19,13 +19,13 @@ function LayeredAvatar({
   offsetX,
   opacity,
   zIndex
-}: {
+}: Readonly<{
   avatar: AvatarInfo;
   baseSize: number;
   offsetX: number;
   opacity: number;
   zIndex: number;
-}) {
+}>) {
   return (
     <div
       className='absolute'

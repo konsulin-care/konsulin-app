@@ -22,7 +22,7 @@ function createFetchMock(
     ok?: boolean;
   }>
 ) {
-  global.fetch = vi
+  globalThis.fetch = vi
     .fn()
     .mockImplementation((url: string, init?: RequestInit) => {
       const h = handlers.find(h => h.match(url, init));

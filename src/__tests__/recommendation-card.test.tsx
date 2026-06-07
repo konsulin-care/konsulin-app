@@ -123,7 +123,7 @@ describe('RecommendationCard', () => {
   });
 
   it('expands overlay on click when touch device', () => {
-    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    globalThis.matchMedia = vi.fn().mockImplementation((query: string) => ({
       matches: query === '(hover: none)',
       media: query,
       onchange: null,

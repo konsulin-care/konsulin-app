@@ -72,7 +72,7 @@ const toastConfig: ToastContainerProps = {
   draggable: true
 };
 
-function AppProviders({ children }: { children: React.ReactNode }) {
+function AppProviders({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <RuntimeConfigProvider>
       <SuperTokensProviders>

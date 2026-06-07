@@ -76,8 +76,17 @@ function ExpandingOverlay({
       className={`absolute right-0 bottom-0 left-0 z-10 overflow-hidden bg-black/50 backdrop-blur-md transition-[height] duration-300 ${
         expanded ? 'h-full' : 'h-[20%] group-hover:h-full'
       }`}
+      role={isTouchDevice ? 'button' : undefined}
+      tabIndex={isTouchDevice ? 0 : undefined}
+      aria-label={isTouchDevice ? 'Toggle details' : undefined}
       onClick={e => {
         if (isTouchDevice) {
+          e.stopPropagation();
+          setExpanded(prev => !prev);
+        }
+      }}
+      onKeyDown={e => {
+        if (isTouchDevice && (e.key === 'Enter' || e.key === ' ')) {
           e.stopPropagation();
           setExpanded(prev => !prev);
         }
@@ -229,6 +238,7 @@ export default function RecommendationCard({
               }
             : undefined
         }
+        // NOSONAR - div used intentionally for layout; interactive role/keyboard added manually
       >
         <CardPhoto
           photoUrl={photoUrl}

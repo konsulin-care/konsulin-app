@@ -1,10 +1,10 @@
 export function HeaderText({
   indicator,
   displayName
-}: {
+}: Readonly<{
   indicator?: string;
   displayName?: string;
-}) {
+}>) {
   return (
     <div className='flex flex-col text-right'>
       {indicator && (

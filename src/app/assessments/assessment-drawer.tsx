@@ -37,8 +37,7 @@ export default function AssessmentDrawerContent({
   router
 }: Readonly<AssessmentDrawerContentProps>) {
   const showBadge =
-    selectedAssessment &&
-    selectedAssessment.resourceType === 'ResearchStudy' &&
+    selectedAssessment?.resourceType === 'ResearchStudy' &&
     (selectedAssessment.note?.length ?? 0) > 0;
 
   /** Navigate to assessment detail or research URL. */
@@ -159,20 +158,19 @@ export default function AssessmentDrawerContent({
         </div>
       </div>
 
-      {selectedAssessment &&
-        selectedAssessment.resourceType === 'ResearchStudy' && (
-          <div>
-            <div className='mt-4 font-bold'>Researcher</div>
-            {(selectedAssessment.contact ?? []).map((item, index) => (
-              <div
-                className='card mt-2 border-0 bg-[#F9F9F9] text-sm'
-                key={item.name ?? `contact-${index}`}
-              >
-                {item.name}
-              </div>
-            ))}
-          </div>
-        )}
+      {selectedAssessment?.resourceType === 'ResearchStudy' && (
+        <div>
+          <div className='mt-4 font-bold'>Researcher</div>
+          {(selectedAssessment.contact ?? []).map((item, index) => (
+            <div
+              className='card mt-2 border-0 bg-[#F9F9F9] text-sm'
+              key={item.name ?? `contact-${index}`}
+            >
+              {item.name}
+            </div>
+          ))}
+        </div>
+      )}
 
       {selectedAssessment && (
         <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>

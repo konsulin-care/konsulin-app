@@ -32,9 +32,7 @@ export function getProfileValidationRules(isPhoneBasedUser: boolean) {
       return '';
     },
     addresses: (value: string | string[]) =>
-      !Array.isArray(value) ||
-      value.length === 0 ||
-      value.every(part => !part.trim())
+      !Array.isArray(value) || value.every(part => !part.trim())
         ? 'Address cannot be empty'
         : '',
     city: (v: string) => validateRequiredText(v, 'City'),
@@ -99,7 +97,7 @@ export function formatLabel(label: string) {
 }
 
 export function convertCurrencyStringToNumber(currencyString: string) {
-  const numberString = currencyString.replace(/[^0-9]/g, '');
+  const numberString = currencyString.replace(/\D/g, '');
   return parseInt(numberString, 10);
 }
 
@@ -108,7 +106,7 @@ export function formatCurrency(value) {
     return '';
   }
 
-  const numberValue = parseInt(value.replace(/[^0-9]/g, ''), 10);
+  const numberValue = parseInt(value.replace(/\D/g, ''), 10);
 
   if (isNaN(numberValue)) {
     return '';

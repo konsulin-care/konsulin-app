@@ -45,51 +45,57 @@ export default function AssessmentsDetail() {
       ? ''
       : questionnaire?.[0]?.resource?.title || '-';
 
+  const renderContent = () => {
+    if (questionnaireIsLoading || isAuthLoading || isPatientListLoading) {
+      return (
+        <div className='flex min-h-screen min-w-full items-center justify-center'>
+          <LoadingSpinnerIcon
+            width={56}
+            height={56}
+            className='w-full animate-spin'
+          />
+        </div>
+      );
+    }
+    if (!questionnaire || questionnaire.length === 0) {
+      return (
+        <EmptyState
+          className='py-16'
+          title='Questionnaire not found'
+          subtitle=''
+        />
+      );
+    }
+    return (
+      <div className='flex flex-col gap-5'>
+        {practitionerId && (
+          <Participant
+            list={patientsListToday}
+            value={participantId}
+            placeholder='Select patient'
+            onSelect={value => setParticipantId(value.patientId)}
+          />
+        )}
+        <FhirFormsRenderer
+          questionnaire={questionnaire?.[0]?.resource}
+          isAuthenticated={authState.isAuthenticated}
+          patientId={isPractitioner ? participantId : authState.userInfo.fhirId}
+          formType={
+            questionnaire?.[0]?.resource?.useContext?.[0]?.valueCodeableConcept
+              ?.coding?.[0]?.code
+          }
+          role={role}
+          practitionerId={practitionerId}
+        />
+      </div>
+    );
+  };
+
   return (
     <>
       <PageHeader pageIndicator={title} />
       <ContentWraper>
-        <div className='min-h-screen p-4'>
-          {questionnaireIsLoading || isAuthLoading || isPatientListLoading ? (
-            <div className='flex min-h-screen min-w-full items-center justify-center'>
-              <LoadingSpinnerIcon
-                width={56}
-                height={56}
-                className='w-full animate-spin'
-              />
-            </div>
-          ) : !questionnaire || questionnaire.length === 0 ? (
-            <EmptyState
-              className='py-16'
-              title='Questionnaire not found'
-              subtitle=''
-            />
-          ) : (
-            <div className='flex flex-col gap-5'>
-              {practitionerId && (
-                <Participant
-                  list={patientsListToday}
-                  value={participantId}
-                  placeholder='Select patient'
-                  onSelect={value => setParticipantId(value.patientId)}
-                />
-              )}
-              <FhirFormsRenderer
-                questionnaire={questionnaire?.[0]?.resource}
-                isAuthenticated={authState.isAuthenticated}
-                patientId={
-                  isPractitioner ? participantId : authState.userInfo.fhirId
-                }
-                formType={
-                  questionnaire?.[0]?.resource?.useContext?.[0]
-                    ?.valueCodeableConcept?.coding?.[0]?.code
-                }
-                role={role}
-                practitionerId={practitionerId}
-              />
-            </div>
-          )}
-        </div>
+        <div className='min-h-screen p-4'>{renderContent()}</div>
       </ContentWraper>
     </>
   );
