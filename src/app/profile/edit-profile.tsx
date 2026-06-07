@@ -43,7 +43,7 @@ import {
 } from '@/utils/helper';
 import { processImageForAvatar } from '@/utils/image-processing';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
-import { validateForm, validateInput } from '@/utils/validation';
+import { validateEmail, validateForm, validateInput } from '@/utils/validation';
 import { useQuery } from '@tanstack/react-query';
 
 import { format } from 'date-fns';

@@ -48,6 +48,7 @@ lint-go:
 	golangci-lint run ./...
 
 check-go: check-file-length lint-go-cognitive check-fmt-go lint-go
+	go vet ./...
 
 # Dockerfile linting
 docker-check:

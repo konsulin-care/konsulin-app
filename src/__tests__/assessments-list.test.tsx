@@ -238,8 +238,8 @@ describe('AssessmentsList', () => {
     vi.clearAllMocks();
 
     mockRouterPush = vi.fn();
-    vi.mocked(useRouter).mockReturnValue({ push: mockRouterPush });
-    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams());
+    vi.mocked(useRouter).mockReturnValue({ push: mockRouterPush } as any);
+    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams() as any);
     vi.mocked(usePathname).mockReturnValue('/assessments');
 
     // Default: patient role, not loading
@@ -276,6 +276,7 @@ describe('AssessmentsList', () => {
       filteredData: [],
       isServerSearching: false,
       showServerResults: false,
+      serverSearchTerm: '',
       serverData: undefined,
       serverSearchCompleted: false
     });
@@ -479,7 +480,7 @@ describe('AssessmentsList', () => {
     const params = new URLSearchParams();
     params.set('isDrawerOpen', 'true');
     params.set('assessmentId', 'pop-1');
-    vi.mocked(useSearchParams).mockReturnValue(params);
+    vi.mocked(useSearchParams).mockReturnValue(params as any);
 
     render(<AssessmentsList />, { wrapper });
 

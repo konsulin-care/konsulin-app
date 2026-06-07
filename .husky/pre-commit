@@ -6,6 +6,12 @@ export PATH="$HOME/.local/share/mise/shims:$PATH"
 
 make check-go && make test-go && make docker-check || exit 1
 
+# Type-check TypeScript — fail commit on any error
+if ! npm run typecheck; then
+  echo "  TypeScript errors found. Fix them and try again."
+  exit 1
+fi
+
 # Lint staged JS/TS files — fail commit on any error
 if ! npx --no-install lint-staged; then
   echo "  Linting failed. Fix errors and try again."

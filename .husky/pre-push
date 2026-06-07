@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/h"
+
+# Go dependency hygiene — fail push if go mod tidy changes files
+go mod tidy && go mod download
+if ! git diff --exit-code go.mod go.sum; then
+  echo "  go.mod or go.sum changed after 'go mod tidy'. Commit the changes and try again."
+  exit 1
+fi
+
+# Full Next.js build — fail push on build error
+if ! npx next build; then
+  echo "  Build failed. Fix errors and try again."
+  exit 1
+fi
+
+# Run JS/TS tests — fail push on test failure
+if ! npx vitest run; then
+  echo "  Tests failed. Fix them and try again."
+  exit 1
+fi

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { parseRecordBundles } from './record-parser';
 
 function makeObservation(
-  overrides: Partial<Observation> & { id: string }
+  overrides: Partial<Observation> & { id: string; lastUpdated?: string }
 ): Observation {
   return {
     resourceType: 'Observation',

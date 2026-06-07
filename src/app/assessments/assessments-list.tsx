@@ -36,8 +36,17 @@ import PopularAssessmentsSection from './popular-assessments-section';
 import ResearchSection from './research-section';
 
 /** Check if a bundle entry is a ResearchStudy resource. */
-const isResearchStudy = (assessment: BundleEntry): boolean => {
+const isResearchStudy = (
+  assessment: BundleEntry
+): assessment is BundleEntry<ResearchStudy> => {
   return assessment.resource.resourceType === 'ResearchStudy';
+};
+
+/** Check if a bundle entry is a Questionnaire resource. */
+const isQuestionnaire = (
+  assessment: BundleEntry
+): assessment is BundleEntry<Questionnaire> => {
+  return assessment.resource.resourceType === 'Questionnaire';
 };
 
 /** Research study card with image, title, description, and Join button. */
@@ -45,8 +54,8 @@ function ResearchAssessmentCard({
   assessment,
   onClick
 }: {
-  assessment: BundleEntry;
-  onClick: (resource: ResearchStudy | Questionnaire) => void;
+  assessment: BundleEntry<ResearchStudy>;
+  onClick: (resource: ResearchStudy) => void;
 }) {
   return (
     <div className='flex max-w-[280px] cursor-pointer flex-col gap-2'>
@@ -84,8 +93,8 @@ function QuestionnaireAssessmentCard({
   assessment,
   onClick
 }: {
-  assessment: BundleEntry;
-  onClick: (resource: ResearchStudy | Questionnaire) => void;
+  assessment: BundleEntry<Questionnaire>;
+  onClick: (resource: Questionnaire) => void;
 }) {
   return (
     <div
@@ -137,14 +146,14 @@ function AssessmentSearchResults({
           {isResearchStudy(assessment) ? (
             <ResearchAssessmentCard
               assessment={assessment}
-              onClick={resource => onResearchClick(resource as ResearchStudy)}
+              onClick={resource => onResearchClick(resource)}
             />
-          ) : (
+          ) : isQuestionnaire(assessment) ? (
             <QuestionnaireAssessmentCard
               assessment={assessment}
-              onClick={resource => onAssessmentClick(resource as Questionnaire)}
+              onClick={resource => onAssessmentClick(resource)}
             />
-          )}
+          ) : null}
         </div>
       ))}
     </div>
