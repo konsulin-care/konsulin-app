@@ -68,12 +68,7 @@ export default function ClinicList() {
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const {
-    data: clinics,
-    isLoading: isListClinicsLoading,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    isFetching: isFetchingClinics
-  } = useListClinics(
+  const { data: clinics, isLoading: isListClinicsLoading } = useListClinics(
     {
       cityFilter: clinicFilter.city,
       nameFilter: '' // Always use empty nameFilter for base clinic list

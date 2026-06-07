@@ -72,21 +72,14 @@ function ExpandingOverlay({
   serviceRef: React.RefObject<HTMLDivElement | null>;
 }>) {
   return (
-    <div
-      className={`absolute right-0 bottom-0 left-0 z-10 overflow-hidden bg-black/50 backdrop-blur-md transition-[height] duration-300 ${
+    <button
+      type='button'
+      className={`absolute right-0 bottom-0 left-0 z-10 overflow-hidden bg-black/50 text-left backdrop-blur-md transition-[height] duration-300 ${
         expanded ? 'h-full' : 'h-[20%] group-hover:h-full'
       }`}
-      role={isTouchDevice ? 'button' : undefined}
-      tabIndex={isTouchDevice ? 0 : undefined}
       aria-label={isTouchDevice ? 'Toggle details' : undefined}
       onClick={e => {
         if (isTouchDevice) {
-          e.stopPropagation();
-          setExpanded(prev => !prev);
-        }
-      }}
-      onKeyDown={e => {
-        if (isTouchDevice && (e.key === 'Enter' || e.key === ' ')) {
           e.stopPropagation();
           setExpanded(prev => !prev);
         }
@@ -145,7 +138,7 @@ function ExpandingOverlay({
         )}
         <p className='text-base font-bold text-white'>{formattedFee}</p>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -171,9 +164,7 @@ function getInitials(name: string): string {
   const parts = name.split(' ').filter(Boolean);
   const meaningful = parts.filter(p => !/^dr\.?$/i.test(p));
   if (meaningful.length >= 2) {
-    return (
-      meaningful[0][0] + meaningful[meaningful.length - 1][0]
-    ).toUpperCase();
+    return (meaningful[0][0] + meaningful.at(-1)![0]).toUpperCase();
   }
   if (meaningful.length === 1) {
     return meaningful[0].slice(0, 2).toUpperCase();
@@ -216,8 +207,7 @@ export default function RecommendationCard({
   }, [serviceName]);
 
   const isTouchDevice =
-    typeof globalThis.window !== 'undefined' &&
-    globalThis.window.matchMedia('(hover: none)').matches;
+    globalThis.matchMedia?.('(hover: none)')?.matches ?? false;
 
   useMarqueeAnimation();
 
@@ -226,26 +216,17 @@ export default function RecommendationCard({
       className={`group relative aspect-square w-full cursor-pointer overflow-hidden rounded-2xl shadow-lg ${className ?? ''}`}
       style={style}
     >
-      <div
-        className='h-full w-full'
+      <button
+        type='button'
+        className='h-full w-full text-left'
         onClick={onClick}
-        role={onClick ? 'button' : undefined}
-        tabIndex={onClick ? 0 : undefined}
-        onKeyDown={
-          onClick
-            ? (e: React.KeyboardEvent) => {
-                if (e.key === 'Enter' || e.key === ' ') onClick();
-              }
-            : undefined
-        }
-        // NOSONAR - div used intentionally for layout; interactive role/keyboard added manually
       >
         <CardPhoto
           photoUrl={photoUrl}
           gradientDataUrl={gradientDataUrl}
           name={name}
         />
-      </div>
+      </button>
 
       <ExpandingOverlay
         expanded={expanded}

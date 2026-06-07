@@ -20,7 +20,7 @@ export default function BookingCalendar({
   listAvailableDate,
   availableTime,
   today
-}: Props) {
+}: Readonly<Props>) {
   return (
     <>
       <DrawerTitle className='mx-auto text-[20px] font-bold'>

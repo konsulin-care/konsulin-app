@@ -73,7 +73,7 @@ function useRoleProfiles(
         fetchedRef.current = true;
         fetchRoleProfiles(
           userId,
-          [...otherRoles, currentRole].filter(Boolean) as string[]
+          [...otherRoles, currentRole].filter(Boolean)
         ).then(setRoleProfiles);
       }
     },
@@ -86,10 +86,10 @@ function useRoleProfiles(
 export default function RoleAvatarPopup({
   indicator,
   displayName
-}: {
+}: Readonly<{
   indicator?: string;
   displayName?: string;
-}) {
+}>) {
   const { state: authState } = useAuth();
   const roles = authState.userInfo?.roles ?? [];
   const currentRole = authState.userInfo?.role_name;

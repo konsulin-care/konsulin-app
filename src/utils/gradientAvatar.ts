@@ -15,7 +15,7 @@ const DIRECTIONS = [
 function djb2(str: string): number {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) + hash + str.codePointAt(i)!;
+    hash = (hash << 5) + hash + (str.codePointAt(i) ?? 0);
     hash = Math.trunc(hash);
   }
   return Math.abs(hash);

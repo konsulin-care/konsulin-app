@@ -41,6 +41,19 @@ const AuthContext = createContext<ContextProps | undefined>(undefined);
 
 const INITIAL_PATHNAME_STORAGE_KEY = 'konsulin_initial_pathname';
 
+function resolveActiveRole(
+  cookieRole: string | undefined,
+  superTokensRoles: string[] | undefined
+): UserRole {
+  if (cookieRole) return cookieRole as UserRole;
+  if (Array.isArray(superTokensRoles)) {
+    if (superTokensRoles.includes(Roles.Practitioner))
+      return Roles.Practitioner;
+    if (superTokensRoles.includes(Roles.ClinicAdmin)) return Roles.ClinicAdmin;
+  }
+  return Roles.Patient;
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -48,11 +61,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Record pathname at first paint (full page load) so homepage can tell "reload of /" vs "navigated to /"
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof globalThis.window === 'undefined') return;
     try {
       sessionStorage.setItem(
         INITIAL_PATHNAME_STORAGE_KEY,
-        window.location.pathname
+        globalThis.location.pathname
       );
     } catch {
       // ignore
@@ -91,7 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // Reload on homepage: let the page call ensureAnonymousSession(true) once; avoid duplicate calls
         const navEntries =
-          typeof window !== 'undefined'
+          typeof globalThis.window !== 'undefined'
             ? performance.getEntriesByType('navigation')
             : [];
         const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
@@ -142,16 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           claim: UserRoleClaim
         })) as string[] | undefined;
 
-        // Role priority: auth cookie > SuperTokens hardcoded priority.
-        const role: UserRole =
-          (cookieRole as UserRole) ||
-          (Array.isArray(superTokensRoles) &&
-          superTokensRoles.includes(Roles.Practitioner)
-            ? Roles.Practitioner
-            : Array.isArray(superTokensRoles) &&
-                superTokensRoles.includes(Roles.ClinicAdmin)
-              ? Roles.ClinicAdmin
-              : Roles.Patient);
+        const role = resolveActiveRole(cookieRole, superTokensRoles);
 
         const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
 

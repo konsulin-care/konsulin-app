@@ -174,9 +174,11 @@ const flattenItems = (
   return [node, ...children];
 };
 
+type ExtractableValue = string | boolean | number | null;
+
 const extractAnswerValue = (
   ans: QuestionnaireResponseItemAnswer
-): string | boolean | number | null => {
+): ExtractableValue => {
   if ('valueString' in ans) return ans.valueString ?? null;
   if ('valueBoolean' in ans) return ans.valueBoolean ?? null;
   if ('valueInteger' in ans) return ans.valueInteger ?? null;
@@ -191,7 +193,7 @@ const extractValuesFromSection = (section: QuestionnaireResponseItem) => {
   const values: Array<{
     section: string | undefined;
     label: string | undefined;
-    value: string | boolean | number | null;
+    value: ExtractableValue;
   }> = [];
 
   for (const item of section.item ?? []) {
@@ -214,7 +216,7 @@ export const extractSoapQuestionnaire = (resource: QuestionnaireResponse) => {
   const values: Array<{
     section: string | undefined;
     label: string | undefined;
-    value: string | boolean | number | null;
+    value: ExtractableValue;
   }> = [];
 
   const practitionerId = resource.author?.reference?.split('/')[1] ?? null;

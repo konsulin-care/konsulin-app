@@ -49,15 +49,11 @@ export default function RecommendationCardStack({
       </Swiper>
       <div className='mt-2 flex items-center justify-center gap-2 pb-2'>
         {cards.map((card, index) => (
-          <div
+          <button
             key={card.id}
-            role='button'
-            tabIndex={0}
+            type='button'
             onClick={() => swiper?.slideToLoop(index)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' || e.key === ' ')
-                swiper?.slideToLoop(index);
-            }}
+            aria-label={`Go to slide ${index + 1}`}
             className={`cursor-pointer rounded-full transition-all duration-300 ${
               index === activeIndex
                 ? 'h-[6px] w-6 bg-[#0abdc3]'

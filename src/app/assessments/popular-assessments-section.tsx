@@ -17,10 +17,10 @@ interface PopularAssessmentsSectionProps {
 function PopularAssessmentCard({
   assessment,
   onClick
-}: {
+}: Readonly<{
   assessment: BundleEntry<Questionnaire>;
   onClick: (assessment: Questionnaire) => void;
-}) {
+}>) {
   return (
     <button
       key={assessment.resource.id}

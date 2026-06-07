@@ -29,7 +29,7 @@ async function switchRole(role: string): Promise<void> {
       },
       body: new URLSearchParams({ role })
     });
-    if (res.ok) window.location.href = '/';
+    if (res.ok) globalThis.location.href = '/';
   } catch {
     // role switch failed silently
   }

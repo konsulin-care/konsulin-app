@@ -31,6 +31,7 @@ export default function ExerciseDetail() {
               src={excerciseData.url}
               width='100%'
               height='352'
+              title={excerciseData?.title || 'Exercise video'}
               allow='autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'
               loading='lazy'
               sandbox='allow-scripts allow-popups'

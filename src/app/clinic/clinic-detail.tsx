@@ -196,6 +196,89 @@ export default function ClinicDetail() {
     return clinic.resource?.name ?? '-';
   }, [clinic]);
 
+  const renderPractitionerGrid = () => {
+    if (isLoading || isFetching || !filteredPractitioners) {
+      return <CardLoader />;
+    }
+    if (filteredPractitioners.length === 0) {
+      return (
+        <EmptyState
+          className='py-16'
+          title='No Practitioners Found'
+          subtitle='Try Another Clinic.'
+        />
+      );
+    }
+    return (
+      <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+        {practitionersData.map((practitioner: IPractitioner) => {
+          const displayName = mergeNames(
+            practitioner.name,
+            practitioner.qualification
+          );
+          const email = practitioner.telecom.find(
+            item => item.system === 'email'
+          );
+          const { initials, backgroundColor, seed } = generateAvatarPlaceholder(
+            {
+              id: practitioner.id,
+              name: displayName,
+              email: email?.value
+            }
+          );
+          const photoUrl = practitioner.photo?.[0]?.url;
+
+          return (
+            <div
+              key={practitioner.id}
+              className='card flex flex-col items-center'
+            >
+              <div className='relative flex justify-center'>
+                <Avatar
+                  seed={seed}
+                  initials={initials}
+                  backgroundColor={backgroundColor}
+                  photoUrl={photoUrl}
+                  className='text-2xl'
+                />
+                <Badge className='absolute bottom-0 flex h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
+                  <HeartPulse size={16} color='#08979C' fill='white' />
+                  <span className='whitespace-nowrap'>
+                    {displayOrganizationName}
+                  </span>
+                </Badge>
+              </div>
+              <div className='text-primary mt-2 text-center font-bold'>
+                {displayName}
+              </div>
+              <div className='mt-2 flex flex-wrap justify-center gap-1'>
+                {practitioner.practitionerRole.specialty?.map(specialty => (
+                  <Badge
+                    key={specialty.text}
+                    className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
+                  >
+                    {specialty.text}
+                  </Badge>
+                ))}
+              </div>
+              <Link
+                href={`/practitioner?practitionerRoleId=${practitioner.practitionerRole.id}`}
+                className='mt-auto w-full'
+              >
+                <Button
+                  className='btn-soft-gray mt-2 w-full rounded-[32px] py-2 font-normal'
+                  onClick={() => handleSelectPractitioner(practitioner)}
+                >
+                  <b>View Practice Information</b>
+                </Button>
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <>
       <PageHeader
@@ -269,81 +352,7 @@ export default function ClinicDetail() {
           )}
         </div>
 
-        {isLoading || isFetching || !filteredPractitioners ? (
-          <CardLoader />
-        ) : filteredPractitioners.length > 0 ? (
-          <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-            {practitionersData.map((practitioner: IPractitioner) => {
-              const displayName = mergeNames(
-                practitioner.name,
-                practitioner.qualification
-              );
-              const email = practitioner.telecom.find(
-                item => item.system === 'email'
-              );
-              const { initials, backgroundColor, seed } =
-                generateAvatarPlaceholder({
-                  id: practitioner.id,
-                  name: displayName,
-                  email: email?.value
-                });
-              const photoUrl = practitioner.photo?.[0]?.url;
-
-              return (
-                <div
-                  key={practitioner.id}
-                  className='card flex flex-col items-center'
-                >
-                  <div className='relative flex justify-center'>
-                    <Avatar
-                      seed={seed}
-                      initials={initials}
-                      backgroundColor={backgroundColor}
-                      photoUrl={photoUrl}
-                      className='text-2xl'
-                    />
-                    <Badge className='absolute bottom-0 flex h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
-                      <HeartPulse size={16} color='#08979C' fill='white' />
-                      <span className='whitespace-nowrap'>
-                        {displayOrganizationName}
-                      </span>
-                    </Badge>
-                  </div>
-                  <div className='text-primary mt-2 text-center font-bold'>
-                    {displayName}
-                  </div>
-                  <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                    {practitioner.practitionerRole.specialty?.map(specialty => (
-                      <Badge
-                        key={specialty.text}
-                        className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
-                      >
-                        {specialty.text}
-                      </Badge>
-                    ))}
-                  </div>
-                  <Link
-                    href={`/practitioner?practitionerRoleId=${practitioner.practitionerRole.id}`}
-                    className='mt-auto w-full'
-                  >
-                    <Button
-                      className='btn-soft-gray mt-2 w-full rounded-[32px] py-2 font-normal'
-                      onClick={() => handleSelectPractitioner(practitioner)}
-                    >
-                      <b>View Practice Information</b>
-                    </Button>
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <EmptyState
-            className='py-16'
-            title='No Practitioners Found'
-            subtitle='Try Another Clinic.'
-          />
-        )}
+        {renderPractitionerGrid()}
       </div>
     </>
   );

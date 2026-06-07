@@ -19,14 +19,14 @@ interface PageHeaderProps {
   hideUpcomingSession?: boolean;
 }
 
-const FIRST_LEVEL_ROUTES = [
+const FIRST_LEVEL_ROUTES = new Set([
   '/clinic',
   '/assessments',
   '/profile',
   '/recommendation',
   '/schedule',
   '/exercise'
-];
+]);
 
 function getPageIndicator(
   pathname: string,
@@ -55,7 +55,7 @@ function getDefaultBackRoute(
 ): string | undefined {
   if (pathname === '/') return undefined;
   if (pathname === '/clinic' && searchParams.has('clinicId')) return '/clinic';
-  if (FIRST_LEVEL_ROUTES.includes(pathname)) return '/';
+  if (FIRST_LEVEL_ROUTES.has(pathname)) return '/';
   return undefined;
 }
 

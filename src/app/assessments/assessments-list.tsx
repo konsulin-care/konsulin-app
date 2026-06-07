@@ -97,14 +97,10 @@ function QuestionnaireAssessmentCard({
   onClick: (resource: Questionnaire) => void;
 }>) {
   return (
-    <div
-      role='button'
-      tabIndex={0}
-      className='flex cursor-pointer flex-col gap-4'
+    <button
+      type='button'
+      className='flex flex-col gap-4 text-left'
       onClick={() => onClick(assessment.resource)}
-      onKeyDown={e => {
-        if (e.key === 'Enter' || e.key === ' ') onClick(assessment.resource);
-      }}
     >
       <div className='flex items-start justify-between'>
         <Image
@@ -122,7 +118,7 @@ function QuestionnaireAssessmentCard({
           {assessment.resource.description}
         </span>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -188,10 +184,7 @@ export default function AssessmentsList() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const baseUrl =
-    typeof globalThis.window !== 'undefined'
-      ? globalThis.window.location.origin
-      : '';
+  const baseUrl = globalThis.window?.location.origin ?? '';
   const isDrawerOpenParam = searchParams.get('isDrawerOpen') === 'true';
   const assessmentIdParam = searchParams.get('assessmentId');
   const [currentLocation, setCurrentLocation] = useState<string>('');

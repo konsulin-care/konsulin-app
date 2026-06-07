@@ -34,7 +34,7 @@ export default function TimeSlotsSection({
   scheduleId,
   handleFilterChange,
   setSelectedSlotId
-}: Props) {
+}: Readonly<Props>) {
   return (
     <div className='card my-4 border-0 bg-[#F9F9F9]'>
       <div className='mb-4 font-bold'>
@@ -66,26 +66,30 @@ export default function TimeSlotsSection({
         </div>
       ) : (
         <div className='grid grid-cols-[repeat(auto-fill,minmax(70px,1fr))] justify-center gap-x-1 gap-y-2'>
-          {slotPills.map(pill => (
-            <Button
-              variant='outline'
-              key={pill.id}
-              disabled={pill.disabled || !scheduleId}
-              onClick={() => {
-                handleFilterChange('startTime', pill.value);
-                setSelectedSlotId(pill.id);
-              }}
-              className={cn(
-                'w-full items-center justify-center rounded-md border-0 px-4 py-2 text-[12px]',
-                pill.value === bookingState.startTime &&
-                  'bg-secondary hover:bg-secondary font-bold text-white',
-                pill.value !== bookingState.startTime && 'bg-white font-normal'
-              )}
-              aria-disabled={pill.disabled}
-            >
-              {pill.displayLabel}
-            </Button>
-          ))}
+          {slotPills.map(pill => {
+            const isSelected = pill.value === bookingState.startTime;
+            const pillClassName = isSelected
+              ? 'bg-secondary hover:bg-secondary font-bold text-white'
+              : 'bg-white font-normal';
+            return (
+              <Button
+                variant='outline'
+                key={pill.id}
+                disabled={pill.disabled || !scheduleId}
+                onClick={() => {
+                  handleFilterChange('startTime', pill.value);
+                  setSelectedSlotId(pill.id);
+                }}
+                className={cn(
+                  'w-full items-center justify-center rounded-md border-0 px-4 py-2 text-[12px]',
+                  pillClassName
+                )}
+                aria-disabled={pill.disabled}
+              >
+                {pill.displayLabel}
+              </Button>
+            );
+          })}
         </div>
       )}
     </div>

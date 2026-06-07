@@ -25,7 +25,7 @@ export function getProfileValidationRules(isPhoneBasedUser: boolean) {
     email: (v: string) => (isPhoneBasedUser ? validateEmailField(v) : ''),
     phone: (value: string) => {
       if (!isPhoneBasedUser) return '';
-      const phoneRegex = /^\+?[0-9]{8,15}$/;
+      const phoneRegex = /^\+?\d{8,15}$/;
       if (!value || value.trim() === '') return 'Phone number is required';
       if (!phoneRegex.test(value))
         return 'WhatsApp phone number must be 8-15 digits';
@@ -52,8 +52,9 @@ export function validateInput(
   if (name === 'email' && !isPhoneBasedUser) return '';
   if (name === 'phone' && isPhoneBasedUser) return '';
   const rules = getProfileValidationRules(isPhoneBasedUser);
-  const fn = rules[name as keyof ReturnType<typeof getProfileValidationRules>];
-  return fn?.(value as never) ?? '';
+  if (!Object.prototype.hasOwnProperty.call(rules, name)) return '';
+  const fn = rules[name];
+  return fn(value) ?? '';
 }
 
 export function validateForm(
@@ -98,7 +99,7 @@ export function formatLabel(label: string) {
 
 export function convertCurrencyStringToNumber(currencyString: string) {
   const numberString = currencyString.replace(/\D/g, '');
-  return parseInt(numberString, 10);
+  return Number.parseInt(numberString, 10);
 }
 
 export function formatCurrency(value) {
@@ -106,7 +107,7 @@ export function formatCurrency(value) {
     return '';
   }
 
-  const numberValue = parseInt(value.replace(/\D/g, ''), 10);
+  const numberValue = Number.parseInt(value.replace(/\D/g, ''), 10);
 
   if (isNaN(numberValue)) {
     return '';
