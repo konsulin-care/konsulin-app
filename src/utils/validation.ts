@@ -51,9 +51,11 @@ export function validateInput(
 ): string {
   if (name === 'email' && !isPhoneBasedUser) return '';
   if (name === 'phone' && isPhoneBasedUser) return '';
-  const rules = getProfileValidationRules(isPhoneBasedUser);
-  if (!Object.prototype.hasOwnProperty.call(rules, name)) return '';
-  const fn = rules[name];
+  const rules = new Map(
+    Object.entries(getProfileValidationRules(isPhoneBasedUser))
+  );
+  const fn = rules.get(name);
+  if (!fn) return '';
   return fn(value) ?? '';
 }
 
