@@ -176,14 +176,13 @@ export default function PractitionerAvailability({
 
   // Derive practitioner timezone offset from PractitionerRole.period.start (e.g., +07:00)
   const practitionerTzOffset = useMemo(() => {
-    const iso =
-      practitionerRole?.period?.start || practitionerRole?.period?.end;
+    const iso = practitionerRole.period?.start || practitionerRole.period?.end;
     if (typeof iso === 'string') {
       const match = iso.match(/([+-]\d{2}:\d{2}|Z)$/);
       return match ? match[1] : 'Z';
     }
     return 'Z';
-  }, [practitionerRole?.period?.start, practitionerRole?.period?.end]);
+  }, [practitionerRole.period?.start, practitionerRole.period?.end]);
 
   // Build practitioner-TZ day window strings and day cache key
   const { startFrom, startTo, dayKey } = useMemo(() => {

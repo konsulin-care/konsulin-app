@@ -34,7 +34,7 @@ export default function AssessmentsDetail() {
   }, [assessmentsId]);
 
   useEffect(() => {
-    if (!todaySessions || todaySessions.length === 0) return;
+    if (todaySessions.length === 0) return;
 
     setPatientListToday(todaySessions);
   }, [todaySessions]);
