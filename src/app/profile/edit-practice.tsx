@@ -35,6 +35,7 @@ import FirmFilter, { IFirmFilter } from './firm-filter';
 
 type SlotConfig = { slotMinutes?: number; bufferMinutes?: number };
 
+/** Parse slot/buffer minutes from a Schedule.comment JSON string. */
 function parseScheduleComment(comment: unknown): SlotConfig {
   try {
     if (typeof comment !== 'string' || !comment.trim()) return {};
@@ -50,6 +51,7 @@ function parseScheduleComment(comment: unknown): SlotConfig {
   }
 }
 
+/** Build a JSON comment string from session duration and buffer time. */
 function buildScheduleComment(
   sessionDuration: string | undefined,
   bufferTime: string | undefined
@@ -197,6 +199,278 @@ function getTheLatestEntry<T extends { meta?: { lastUpdated?: string } }>(
   return arr[0];
 }
 
+/** Input field for a firm's fee. */
+const FeeInput = ({ id, value, onChange }) => {
+  return (
+    <div className='flex w-full items-center justify-between'>
+      <label htmlFor={id} className='text-sm font-medium text-gray-700'>
+        Fee
+      </label>
+      <input
+        id={id}
+        type='text'
+        className='w-3/4 rounded-lg border px-3 py-2 text-gray-900'
+        value={value}
+        onChange={onChange}
+        placeholder='Rp 250.000'
+      />
+    </div>
+  );
+};
+
+/** Tag-based specialty input with add/remove functionality. */
+const SpecialtiesSection = ({
+  id,
+  specialties,
+  tagInput,
+  onTagChange,
+  onTagAdd,
+  onTagRemove
+}) => {
+  return (
+    <div className='mt-2 flex w-full items-center'>
+      <div className='w-1/4'>
+        <label htmlFor={id} className='text-sm font-medium text-gray-700'>
+          Specialties
+        </label>
+      </div>
+      <div className='relative w-3/4 rounded-lg border bg-white px-3 py-2 text-gray-900'>
+        <div className='mb-2 flex flex-wrap gap-2'>
+          {specialties &&
+            Array.isArray(specialties) &&
+            specialties.map((tag: CodeableConcept, tagIndex: number) => (
+              <div
+                key={`${tag.text ?? tagIndex}`}
+                className='text-md flex items-center space-x-1 rounded-full bg-[#F9F9F9] px-2 py-1 text-gray-700'
+              >
+                <span>{tag.text}</span>
+                <button
+                  type='button'
+                  onClick={() => onTagRemove(tagIndex)}
+                  className='focus:outline-none'
+                  aria-label='Remove tag'
+                >
+                  <XCircle color='#FF6B6B' size={16} />
+                </button>
+              </div>
+            ))}
+        </div>
+        <textarea
+          id={id}
+          value={tagInput}
+          onChange={onTagChange}
+          onKeyDown={onTagAdd}
+          className='w-full rounded-lg border p-2 text-sm text-gray-900'
+          placeholder='Add a new specialty and press Enter'
+        />
+      </div>
+    </div>
+  );
+};
+
+/** Expandable firm card with header and collapsible content. */
+const Collapsible = ({ isOpen, onToggle, children, data }) => {
+  return (
+    <div className='collapsible my-4 rounded-[25px] border bg-gray-50'>
+      <button
+        className={`toggle flex w-full items-center justify-between rounded-[25px] p-2 text-left focus:outline-none ${
+          isOpen
+            ? 'bg-secondary text-[18px] font-bold text-white'
+            : 'bg-transparent text-gray-700'
+        }`}
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        aria-controls='collapsible-content'
+      >
+        <div className='flex items-center'>
+          <Image
+            className='block rounded-full'
+            src='/images/clinic.jpg'
+            alt='Prefix Icon'
+            width={38}
+            height={38}
+            style={{ width: '38px', height: '38px' }}
+          />
+          <div className='flex flex-col justify-center gap-1 pl-2'>
+            <span className='text-sm'>{data.organizationData.name}</span>
+            <span className='text-xs'>
+              {mapAddress(data.organizationData.address)}
+            </span>
+          </div>
+        </div>
+        <div className='flex items-center gap-2'>
+          {isOpen && (
+            <span className='text-xs font-medium text-white/80'>Active</span>
+          )}
+          <div
+            className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          >
+            <svg
+              width='20'
+              height='20'
+              viewBox='0 0 20 20'
+              fill='none'
+              xmlns='http://www.w3.org/2000/svg'
+            >
+              <path
+                d='M5 7.5L10 12.5L15 7.5'
+                stroke={isOpen ? 'white' : 'currentColor'}
+                strokeWidth='2'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+              />
+            </svg>
+          </div>
+        </div>
+      </button>
+      {isOpen && (
+        <div
+          id='collapsible-content'
+          className='content rounded-b-[25px] bg-gray-50 p-4'
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/** Collapsible firm item with fee, specialties, session, and timezone inputs. */
+const CollapsibleItem = ({
+  index,
+  firm,
+  invoice,
+  isOpen,
+  onToggle,
+  tagInputs,
+  handleChangeFee,
+  handleAddTag,
+  handleRemoveTag,
+  setTagInputs,
+  slotConfigs,
+  setSlotConfigs
+}) => {
+  return (
+    <Collapsible
+      key={index}
+      isOpen={isOpen}
+      onToggle={() => onToggle(index)}
+      data={firm}
+    >
+      <div className='flex flex-col space-y-2'>
+        <FeeInput
+          id={`fee-${index}`}
+          value={invoice.totalNet.value}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const numberOnly = /^\d*$/;
+            if (numberOnly.test(e.target.value)) {
+              handleChangeFee(index, e.target.value);
+            }
+          }}
+        />
+        <SpecialtiesSection
+          id={`specialty-${index}`}
+          specialties={firm?.specialty}
+          tagInput={tagInputs[index] || ''}
+          onTagChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+            setTagInputs((prevTags: string[]) => {
+              const updatedTags = [...prevTags];
+              updatedTags[index] = e.target.value;
+              return updatedTags;
+            })
+          }
+          onTagAdd={(event: React.ChangeEvent<HTMLInputElement>) =>
+            handleAddTag(index, event)
+          }
+          onTagRemove={(tagIndex: number) => handleRemoveTag(index, tagIndex)}
+        />
+        <div className='flex w-full items-center justify-between'>
+          <label
+            htmlFor={`session-duration-${index}`}
+            className='text-sm font-medium text-gray-700'
+          >
+            Session Duration
+          </label>
+          <input
+            id={`session-duration-${index}`}
+            type='text'
+            className='w-3/4 rounded-lg border px-3 py-2 text-gray-900'
+            placeholder='duration in minutes'
+            value={slotConfigs[index]?.sessionDuration ?? ''}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              const value = e.target.value;
+              if (value === '') {
+                setSlotConfigs((s: any) => ({
+                  ...s,
+                  [index]: { ...(s[index] || {}), sessionDuration: '' }
+                }));
+                return;
+              }
+              const numberOnly = /^\d+$/;
+              if (numberOnly.test(value) && Number(value) > 0) {
+                setSlotConfigs((s: any) => ({
+                  ...s,
+                  [index]: { ...(s[index] || {}), sessionDuration: value }
+                }));
+              }
+            }}
+          />
+        </div>
+        <div className='flex w-full items-center justify-between'>
+          <label
+            htmlFor={`buffer-time-${index}`}
+            className='text-sm font-medium text-gray-700'
+          >
+            Buffer Time
+          </label>
+          <input
+            id={`buffer-time-${index}`}
+            type='text'
+            className='w-3/4 rounded-lg border px-3 py-2 text-gray-900'
+            placeholder='gap between sessions (minutes)'
+            value={slotConfigs[index]?.bufferTime ?? ''}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              const value = e.target.value;
+              if (value === '') {
+                setSlotConfigs((s: any) => ({
+                  ...s,
+                  [index]: { ...s[index], bufferTime: '' }
+                }));
+                return;
+              }
+              const numberOnly = /^\d+$/;
+              if (numberOnly.test(value)) {
+                setSlotConfigs((s: any) => ({
+                  ...s,
+                  [index]: { ...(s[index] || {}), bufferTime: value }
+                }));
+              }
+            }}
+          />
+        </div>
+        <div className='flex w-full items-center justify-between'>
+          <label
+            htmlFor={`timezone-${index}`}
+            className='text-sm font-medium text-gray-700'
+          >
+            Time Zone
+          </label>
+          <input
+            id={`timezone-${index}`}
+            type='text'
+            className='w-3/4 cursor-not-allowed rounded-lg border bg-gray-100 px-3 py-2 text-gray-900'
+            placeholder='GMT+7'
+            value={slotConfigs[index]?.timezone || getBrowserTimezoneGMT()}
+            readOnly
+            disabled
+          />
+        </div>
+      </div>
+    </Collapsible>
+  );
+};
+
+/** Practice settings page: manage firms, specialties, fees, schedules. */
 const EditPractice = () => {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -280,7 +554,7 @@ const EditPractice = () => {
           next[idx] = {
             sessionDuration: slotMinutes != null ? String(slotMinutes) : '',
             bufferTime: bufferMinutes != null ? String(bufferMinutes) : '',
-            timezone: timezone
+            timezone
           };
         }
       });
@@ -341,6 +615,7 @@ const EditPractice = () => {
     });
   }, [firmData, firmFilter, searchInput]);
 
+  /** Save all firm data, invoices, and schedule changes to the server. */
   const handleSubmitFirmsStatus = async () => {
     setIsSaving(true);
     const updatedInvoice = [...invoiceData];
@@ -557,6 +832,7 @@ const EditPractice = () => {
     });
   }, []);
 
+  /** Remove a specialty tag at the given index from a firm's specialty list. */
   function handleRemoveTag(index: number, tagIndex: number) {
     setFirmData(prevData => {
       const updatedData = [...prevData];
@@ -712,274 +988,6 @@ const EditPractice = () => {
         </DrawerContent>
       </Drawer>
     </>
-  );
-};
-
-const FeeInput = ({ id, value, onChange }) => {
-  return (
-    <div className='flex w-full items-center justify-between'>
-      <label htmlFor={id} className='text-sm font-medium text-gray-700'>
-        Fee
-      </label>
-      <input
-        id={id}
-        type='text'
-        className='w-3/4 rounded-lg border px-3 py-2 text-gray-900'
-        value={value}
-        onChange={onChange}
-        placeholder='Rp 250.000'
-      />
-    </div>
-  );
-};
-
-const SpecialtiesSection = ({
-  id,
-  specialties,
-  tagInput,
-  onTagChange,
-  onTagAdd,
-  onTagRemove
-}) => {
-  return (
-    <div className='mt-2 flex w-full items-center'>
-      <div className='w-1/4'>
-        <label htmlFor={id} className='text-sm font-medium text-gray-700'>
-          Specialties
-        </label>
-      </div>
-      <div className='relative w-3/4 rounded-lg border bg-white px-3 py-2 text-gray-900'>
-        <div className='mb-2 flex flex-wrap gap-2'>
-          {specialties &&
-            Array.isArray(specialties) &&
-            specialties.map((tag: CodeableConcept, tagIndex: number) => (
-              <div
-                key={tagIndex}
-                className='text-md flex items-center space-x-1 rounded-full bg-[#F9F9F9] px-2 py-1 text-gray-700'
-              >
-                <span>{tag.text}</span>
-                <button
-                  type='button'
-                  onClick={() => onTagRemove(tagIndex)}
-                  className='focus:outline-none'
-                  aria-label='Remove tag'
-                >
-                  <XCircle color='#FF6B6B' size={16} />
-                </button>
-              </div>
-            ))}
-        </div>
-        <textarea
-          id={id}
-          value={tagInput}
-          onChange={onTagChange}
-          onKeyDown={onTagAdd}
-          className='w-full rounded-lg border p-2 text-sm text-gray-900'
-          placeholder='Add a new specialty and press Enter'
-        />
-      </div>
-    </div>
-  );
-};
-
-const Collapsible = ({ isOpen, onToggle, children, data }) => {
-  return (
-    <div className='collapsible my-4 rounded-[25px] border bg-gray-50'>
-      <button
-        className={`toggle flex w-full items-center justify-between rounded-[25px] p-2 text-left focus:outline-none ${
-          isOpen
-            ? 'bg-secondary text-[18px] font-bold text-white'
-            : 'bg-transparent text-gray-700'
-        }`}
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        aria-controls='collapsible-content'
-      >
-        <div className='flex items-center'>
-          <Image
-            className='block rounded-full'
-            src='/images/clinic.jpg'
-            alt='Prefix Icon'
-            width={38}
-            height={38}
-            style={{ width: '38px', height: '38px' }}
-          />
-          <div className='flex flex-col justify-center gap-1 pl-2'>
-            <span className='text-sm'>{data.organizationData.name}</span>
-            <span className='text-xs'>
-              {mapAddress(data.organizationData.address)}
-            </span>
-          </div>
-        </div>
-        <div className='flex items-center gap-2'>
-          {/* Active status indicator - shown when expanded */}
-          {isOpen && (
-            <span className='text-xs font-medium text-white/80'>Active</span>
-          )}
-          <div
-            className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-          >
-            <svg
-              width='20'
-              height='20'
-              viewBox='0 0 20 20'
-              fill='none'
-              xmlns='http://www.w3.org/2000/svg'
-            >
-              <path
-                d='M5 7.5L10 12.5L15 7.5'
-                stroke={isOpen ? 'white' : 'currentColor'}
-                strokeWidth='2'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-              />
-            </svg>
-          </div>
-        </div>
-      </button>
-      {isOpen && (
-        <div
-          id='collapsible-content'
-          className='content rounded-b-[25px] bg-gray-50 p-4'
-        >
-          {children}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const CollapsibleItem = ({
-  index,
-  firm,
-  invoice,
-  isOpen,
-  onToggle,
-  tagInputs,
-  handleChangeFee,
-  handleAddTag,
-  handleRemoveTag,
-  setTagInputs,
-  slotConfigs,
-  setSlotConfigs
-}) => {
-  return (
-    <Collapsible
-      key={index}
-      isOpen={isOpen}
-      onToggle={() => onToggle(index)}
-      data={firm}
-    >
-      <div className='flex flex-col space-y-2'>
-        <FeeInput
-          id={`fee-${index}`}
-          value={invoice.totalNet.value}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            const numberOnly = /^\d*$/;
-            if (numberOnly.test(e.target.value)) {
-              handleChangeFee(index, e.target.value);
-            }
-          }}
-        />
-        <SpecialtiesSection
-          id={`specialty-${index}`}
-          specialties={firm?.specialty}
-          tagInput={tagInputs[index] || ''}
-          onTagChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-            setTagInputs((prevTags: string[]) => {
-              const updatedTags = [...prevTags];
-              updatedTags[index] = e.target.value;
-              return updatedTags;
-            })
-          }
-          onTagAdd={(event: React.ChangeEvent<HTMLInputElement>) =>
-            handleAddTag(index, event)
-          }
-          onTagRemove={(tagIndex: number) => handleRemoveTag(index, tagIndex)}
-        />
-        <div className='flex w-full items-center justify-between'>
-          <label
-            htmlFor={`session-duration-${index}`}
-            className='text-sm font-medium text-gray-700'
-          >
-            Session Duration
-          </label>
-          <input
-            id={`session-duration-${index}`}
-            type='text'
-            className='w-3/4 rounded-lg border px-3 py-2 text-gray-900'
-            placeholder='duration in minutes'
-            value={slotConfigs[index]?.sessionDuration ?? ''}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const value = e.target.value;
-              if (value === '') {
-                setSlotConfigs((s: any) => ({
-                  ...s,
-                  [index]: { ...(s[index] || {}), sessionDuration: '' }
-                }));
-                return;
-              }
-              const numberOnly = /^\d+$/;
-              if (numberOnly.test(value) && Number(value) > 0) {
-                setSlotConfigs((s: any) => ({
-                  ...s,
-                  [index]: { ...(s[index] || {}), sessionDuration: value }
-                }));
-              }
-            }}
-          />
-        </div>
-        <div className='flex w-full items-center justify-between'>
-          <label
-            htmlFor={`buffer-time-${index}`}
-            className='text-sm font-medium text-gray-700'
-          >
-            Buffer Time
-          </label>
-          <input
-            id={`buffer-time-${index}`}
-            type='text'
-            className='w-3/4 rounded-lg border px-3 py-2 text-gray-900'
-            placeholder='gap between sessions (minutes)'
-            value={slotConfigs[index]?.bufferTime ?? ''}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const value = e.target.value;
-              if (value === '') {
-                setSlotConfigs((s: any) => ({
-                  ...s,
-                  [index]: { ...s[index], bufferTime: '' }
-                }));
-                return;
-              }
-              const numberOnly = /^\d+$/;
-              if (numberOnly.test(value)) {
-                setSlotConfigs((s: any) => ({
-                  ...s,
-                  [index]: { ...(s[index] || {}), bufferTime: value }
-                }));
-              }
-            }}
-          />
-        </div>
-        <div className='flex w-full items-center justify-between'>
-          <label
-            htmlFor={`timezone-${index}`}
-            className='text-sm font-medium text-gray-700'
-          >
-            Time Zone
-          </label>
-          <input
-            id={`timezone-${index}`}
-            type='text'
-            className='w-3/4 cursor-not-allowed rounded-lg border bg-gray-100 px-3 py-2 text-gray-900'
-            placeholder='GMT+7'
-            value={slotConfigs[index]?.timezone || getBrowserTimezoneGMT()}
-            readOnly
-            disabled
-          />
-        </div>
-      </div>
-    </Collapsible>
   );
 };
 

@@ -28,6 +28,7 @@ type Props = {
   setIsOpen: (open: boolean) => void;
 };
 
+/** Practitioner avatar, organization, and name in payment drawer. */
 function PractitionerInfo({
   practitionerAvatar,
   practitionerOrganizationName,
@@ -58,6 +59,7 @@ function PractitionerInfo({
   );
 }
 
+/** Button content showing spinner during payment or label otherwise. */
 function PayButtonContent({
   isPaying,
   label
@@ -70,9 +72,10 @@ function PayButtonContent({
       <LoadingSpinnerIcon width={20} height={20} className='animate-spin' />
     );
   }
-  return <>{label}</>;
+  return label;
 }
 
+/** Online payment button with loading spinner state. */
 function PayNowButtonContent({ isPaying }: { isPaying: boolean }) {
   if (isPaying) {
     return (
@@ -84,9 +87,10 @@ function PayNowButtonContent({ isPaying }: { isPaying: boolean }) {
       />
     );
   }
-  return <>Bayar Sekarang</>;
+  return 'Bayar Sekarang';
 }
 
+/** Payment drawer with invoice summary and pay online/offline buttons. */
 export default function PaymentDrawer({
   paymentOpen,
   setPaymentOpen,
@@ -139,6 +143,7 @@ export default function PaymentDrawer({
     }
   };
 
+  /** Submit appointment payment offline (pay later). */
   const handlePayOffline = async () => {
     try {
       await payAppointment({

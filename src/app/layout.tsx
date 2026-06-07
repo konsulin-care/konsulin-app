@@ -11,6 +11,7 @@ import '@/styles/globals.css';
 import '@/styles/index.scss';
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import Script from 'next/script';
 import NextTopLoader from 'nextjs-toploader';
 import React, { Suspense } from 'react';
 import 'react-international-phone/style.css';
@@ -71,6 +72,24 @@ const toastConfig: ToastContainerProps = {
   draggable: true
 };
 
+function AppProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <RuntimeConfigProvider>
+      <SuperTokensProviders>
+        <ProfileProvider>
+          <AuthProvider>
+            <BookingProvider>
+              <QueryProvider>
+                <Suspense fallback={null}>{children}</Suspense>
+              </QueryProvider>
+            </BookingProvider>
+          </AuthProvider>
+        </ProfileProvider>
+      </SuperTokensProviders>
+    </RuntimeConfigProvider>
+  );
+}
+
 export default function RootLayout({
   children
 }: Readonly<{
@@ -78,40 +97,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en'>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              'try{sessionStorage.setItem("konsulin_initial_pathname",window.location.pathname);sessionStorage.removeItem("konsulin_reload_anonymous_done");}catch(e){}'
-          }}
-        />
-      </head>
       <body className={inter.className}>
-        <RuntimeConfigProvider>
-          <SuperTokensProviders>
-            <ProfileProvider>
-              <AuthProvider>
-                <BookingProvider>
-                  <QueryProvider>
-                    <Suspense fallback={null}>
-                      <RouteResponseCleaner />
-                      <NextTopLoader showSpinner={false} color='#13c2c2' />
-                      <ToastContainer {...toastConfig} />
-                      <ProfileCompletenessModal />
-                      <div className='flex min-h-screen flex-col'>
-                        <div id='modal' />
-                        <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
-                          {children}
-                          <QuickActionFab />
-                        </main>
-                      </div>
-                    </Suspense>
-                  </QueryProvider>
-                </BookingProvider>
-              </AuthProvider>
-            </ProfileProvider>
-          </SuperTokensProviders>
-        </RuntimeConfigProvider>
+        <Script src='/js/pathname-init.js' strategy='beforeInteractive' />
+        <AppProviders>
+          <RouteResponseCleaner />
+          <NextTopLoader showSpinner={false} color='#13c2c2' />
+          <ToastContainer {...toastConfig} />
+          <ProfileCompletenessModal />
+          <div className='flex min-h-screen flex-col'>
+            <div id='modal' />
+            <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
+              {children}
+              <QuickActionFab />
+            </main>
+          </div>
+        </AppProviders>
       </body>
     </html>
   );

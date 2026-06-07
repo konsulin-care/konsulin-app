@@ -107,6 +107,7 @@ export default function PractitionerAvailability({
   const patientId = authState?.userInfo?.fhirId;
   const isAuthenticated = authState?.isAuthenticated;
 
+  /** Update a single booking information field (problem brief, etc.). */
   const handleBookingInformationChange = (key: string, value: any) => {
     setBookingInformation(prevState => ({
       ...prevState,
@@ -119,6 +120,7 @@ export default function PractitionerAvailability({
     bookingState.date
   );
 
+  /** Check if a given date exists in the available days array. */
   const isDateAvailable = (date: Date, availableDays: Date[]): boolean => {
     return availableDays.some(
       availableDate =>
@@ -128,6 +130,7 @@ export default function PractitionerAvailability({
     );
   };
 
+  /** Dispatch a booking info update to the reducer. */
   const handleFilterChange = (label: string, value: any) => {
     dispatch({
       type: 'UPDATE_BOOKING_INFO',
@@ -137,6 +140,7 @@ export default function PractitionerAvailability({
     });
   };
 
+  /** Find the next available date from the given date, incrementing day by day. */
   const getNextAvailableDate = (
     currentDate: Date,
     availableDays: Date[]
@@ -168,6 +172,7 @@ export default function PractitionerAvailability({
     return date;
   };
 
+  /** Reset the booking form state (time, problem brief, errors). */
   const resetData = () => {
     handleFilterChange('startTime', null);
     handleBookingInformationChange('problem_brief', '');
@@ -408,6 +413,7 @@ export default function PractitionerAvailability({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingState.date, bookingState.startTime, slotPills, listAvailableDate]);
 
+  /** Validate and submit the booking form, triggering payment. */
   const handleSubmitForm = () => {
     const { date, startTime } = bookingState;
     const requiredData = {

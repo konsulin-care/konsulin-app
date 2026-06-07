@@ -9,6 +9,7 @@ import { useEffect, useRef } from 'react';
 import HomeContent from './home-content';
 import HomeHeader from './home-header';
 
+/** Root app component displaying home header + content based on auth state. */
 const App = () => {
   const { isLoading, state: authState } = useAuth();
   const queryClient = useQueryClient();

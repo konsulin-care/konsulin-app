@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import ClinicDetail from './clinic-detail';
 import ClinicList from './clinic-list';
 
+/** Clinic root: route to list or detail view based on clinicId param. */
 export default function ClinicPage() {
   const searchParams = useSearchParams();
   const clinicId = searchParams.get('clinicId');

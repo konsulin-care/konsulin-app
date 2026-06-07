@@ -35,6 +35,7 @@ type Props = {
   setIsOpen: (open: boolean) => void;
 };
 
+/** Booking form with session type, problem brief, and submit handler. */
 export default function BookingFormSection({
   bookingForm,
   bookingState,

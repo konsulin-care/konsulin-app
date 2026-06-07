@@ -43,6 +43,7 @@ type IPractitionerLocalStorage = {
   email: string;
 };
 
+/** Full-screen loading spinner. */
 const LoadingState = () => (
   <div className='flex min-h-screen min-w-full items-center justify-center'>
     <LoadingSpinnerIcon
@@ -53,6 +54,7 @@ const LoadingState = () => (
   </div>
 );
 
+/** Empty state shown when no practitioner is found or data is missing. */
 const EmptyPractitionerState = () => (
   <EmptyState
     className='py-16'
@@ -61,6 +63,7 @@ const EmptyPractitionerState = () => (
   />
 );
 
+/** Practitioner booking page with avatar, availability calendar, and payment flow. */
 export default function Practitioner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -120,6 +123,7 @@ export default function Practitioner() {
     isFetching
   } = useDetailPractitioner(practitionerData?.roleId);
 
+  /** Navigate back to home after booking submission. */
   const handleClose = () => {
     startTransition(() => {
       router.push('/');

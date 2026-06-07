@@ -35,10 +35,12 @@ import BrowseInstrumentsSection from './browse-instruments-section';
 import PopularAssessmentsSection from './popular-assessments-section';
 import ResearchSection from './research-section';
 
+/** Check if a bundle entry is a ResearchStudy resource. */
 const isResearchStudy = (assessment: BundleEntry): boolean => {
   return assessment.resource.resourceType === 'ResearchStudy';
 };
 
+/** Research study card with image, title, description, and Join button. */
 function ResearchAssessmentCard({
   assessment,
   onClick
@@ -77,6 +79,7 @@ function ResearchAssessmentCard({
   );
 }
 
+/** Questionnaire card with icon, title and description. */
 function QuestionnaireAssessmentCard({
   assessment,
   onClick
@@ -114,6 +117,7 @@ function QuestionnaireAssessmentCard({
   );
 }
 
+/** Grid of mixed research/questionnaire search results. */
 function AssessmentSearchResults({
   assessments,
   onResearchClick,
@@ -147,6 +151,7 @@ function AssessmentSearchResults({
   );
 }
 
+/** Full assessments list page with search, research, popular, and browse sections. */
 export default function AssessmentsList() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -259,6 +264,7 @@ export default function AssessmentsList() {
     findAssessmentById
   ]);
 
+  /** Open drawer for a research study, resolving its questionnaire ID. */
   const handleResearchClick = (
     study: ResearchStudy,
     questionnaireId?: string
@@ -289,6 +295,7 @@ export default function AssessmentsList() {
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
+  /** Open drawer for a regular questionnaire assessment. */
   const handleAssessmentClick = (assessment: Questionnaire) => {
     if (!assessment) return;
 
@@ -303,6 +310,7 @@ export default function AssessmentsList() {
     setCurrentLocation(fullUrl);
   };
 
+  /** Close the assessment drawer and clean up URL params. */
   const handleDrawerClose = () => {
     setIsOpen(false);
 

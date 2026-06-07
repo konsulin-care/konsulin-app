@@ -13,6 +13,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Participant from './soap/participant';
 
+/** Assessment detail page: loads and renders a FHIR Questionnaire via AEHRC forms. */
 export default function AssessmentsDetail() {
   const searchParams = useSearchParams();
   const assessmentsId = searchParams.get('assessmentsId') ?? '';

@@ -25,6 +25,7 @@ type Props = {
   setSelectedSlotId: (id: string | null) => void;
 };
 
+/** Time slot pills grid showing available appointment times. */
 export default function TimeSlotsSection({
   bookingState,
   isLoading,

@@ -43,7 +43,7 @@ import {
 } from '@/utils/helper';
 import { processImageForAvatar } from '@/utils/image-processing';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
-import { validateEmail } from '@/utils/validation';
+import { validateForm, validateInput } from '@/utils/validation';
 import { useQuery } from '@tanstack/react-query';
 
 import { format } from 'date-fns';
@@ -85,6 +85,7 @@ type ICustomProfile = {
   email: string;
 };
 
+/** Profile edit page with personal info, photo, gender, city, addresses. */
 export default function EditProfile({ userRole, fhirId }: Props) {
   const router = useRouter();
   const { state: authState, dispatch: dispatchAuth } = useAuth();
@@ -116,6 +117,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string>('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  /** Check if the user is phone-only (no email). */
   const getInitialPhoneBasedUser = () => {
     const email = authState.userInfo?.email || '';
     const phoneNumber = authState.userInfo?.phoneNumber || '';
@@ -149,10 +151,10 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     Number(updateUser.cityCode)
   );
 
+  /** Check if a string is a valid URL. */
   const isValidUrl = (url: string): boolean => {
     try {
-      new URL(url);
-      return true;
+      return URL.canParse(url);
     } catch {
       return false;
     }
@@ -193,88 +195,13 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     };
   }, [updateUser.photo]);
 
-  const validateName = (value: string, label: string): string => {
-    const usernameRegex = /^[a-zA-Z ]+$/;
-    if (!value) return `${label} cannot be empty`;
-    if (!usernameRegex.test(value)) return `${label} format is invalid`;
-    if (value.length < 2) return `${label} must be at least two characters`;
-    return '';
-  };
-
-  const validateEmailField = (value: string): string => {
-    if (!value || value.trim() === '') return 'Email is required';
-    if (!validateEmail(value)) return 'Email format is invalid';
-    return '';
-  };
-
-  const validateRequiredText = (value: string, label: string): string => {
-    if (!value.trim()) return `${label} cannot be empty`;
-    return '';
-  };
-
-  const RULES = {
-    firstName: (v: string) => validateName(v, 'First name'),
-    lastName: (v: string) =>
-      v && v.trim() !== '' ? validateName(v, 'Last name') : '',
-    email: (v: string) => validateEmailField(v),
-    phone: (value: string) => {
-      const phoneRegex = /^\+?[0-9]{8,15}$/;
-      if (!value || value.trim() === '') return 'Phone number is required';
-      if (!phoneRegex.test(value))
-        return 'WhatsApp phone number must be 8-15 digits';
-      return '';
-    },
-    addresses: (value: string | string[]) =>
-      !Array.isArray(value) ||
-      value.length === 0 ||
-      value.every(part => !part.trim())
-        ? 'Address cannot be empty'
-        : '',
-    city: (v: string) => validateRequiredText(v, 'City'),
-    district: (v: string) => validateRequiredText(v, 'District'),
-    province: (v: string) => validateRequiredText(v, 'Province'),
-    postalCode: (v: string) => validateRequiredText(v, 'Postal code'),
-    birthDate: (value: string) => (value ? '' : 'Birth date cannot be empty'),
-    gender: (value: string) => (value ? '' : 'Gender cannot be empty')
-  } as const;
-
-  const validateInput = (name: string, value: string): string => {
-    if (name === 'email' && !isPhoneBasedUser) return '';
-    if (name === 'phone' && isPhoneBasedUser) return '';
-    // SAFETY: RULES is a static lookup table (defined above). Dynamic key access
-    // is type-constrained via `as const`. `name` originates from form field names
-    // (controlled) or ICustomProfile iteration (typed). No command injection.
-    const fn = RULES[name as keyof typeof RULES];
-    return fn?.(value) ?? '';
-  };
-
   const handleChangeInput = (label: string, value: string) => {
     setUpdateUser(prevState => ({ ...prevState, [label]: value }));
-    const errorMessage = validateInput(label, value);
+    const errorMessage = validateInput(label, value, isPhoneBasedUser);
     setErrors(prev => ({
       ...prev,
       [label]: errorMessage
     }));
-  };
-
-  const validateForm = (data: ICustomProfile): boolean => {
-    const errors: { [key: string]: string } = {};
-    Object.entries(data).forEach(([key, value]) => {
-      // Skip validation for fields that shouldn't be editable based on user type
-      if (key === 'email' && !isPhoneBasedUser) {
-        return; // Email-based users can't edit email, skip validation
-      }
-      if (key === 'phone' && isPhoneBasedUser) {
-        return; // Phone-based users can't edit phone, skip validation
-      }
-
-      const error = validateInput(key, value as string);
-      if (error) {
-        errors[key] = error;
-      }
-    });
-
-    return Object.keys(errors).length === 0;
   };
 
   const handlePhoneChange = (
@@ -381,6 +308,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     return { finalChatwootId, identifiers };
   };
 
+  /** Convert a MIME type to a file extension (jpg/png). */
   const getExtensionFromMime = (mime: string): string => {
     if (mime === 'image/jpeg') return 'jpg';
     if (mime.includes('/')) return mime.split('/')[1];
@@ -590,6 +518,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }
   };
 
+  /** Update birth date from date picker. */
   const handleDOBChange = (value: Date) => {
     setUpdateUser(prevState => ({
       ...prevState,
@@ -598,10 +527,12 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     setDrawerState(DRAWER_STATE.NONE);
   };
 
+  /** Close the currently open drawer. */
   const closeDrawer = () => {
     setDrawerState(DRAWER_STATE.NONE);
   };
 
+  /** Set gender from gender selection drawer. */
   const handleGenderSelect = (value: { code: string }) => {
     setUpdateUser(prevState => ({
       ...prevState,
@@ -619,6 +550,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }));
   };
 
+  /** Set city/district/province from city selection drawer. */
   const handleCitySelect = (value: IWilayahResponse) => {
     setUpdateUser(prevState => ({
       ...prevState,
@@ -637,6 +569,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }));
   };
 
+  /** Update user photo URL. */
   const handleUserPhoto = (value: string) => {
     setUpdateUser(prevState => ({
       ...prevState,
@@ -644,6 +577,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }));
   };
 
+  /** Add a new blank address field to the address list. */
   const handleAddAddress = () => {
     const newAddresses = Array.isArray(updateUser.addresses)
       ? [...updateUser.addresses, '']
@@ -651,6 +585,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     setUpdateUser(prev => ({ ...prev, addresses: newAddresses }));
   };
 
+  /** Update address at the given index. */
   const handleAddressChange = (index: number, value: string) => {
     setUpdateUser(prevState => ({
       ...prevState,
@@ -660,6 +595,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }));
   };
 
+  /** Remove address at the given index. */
   const handleRemoveAddress = (index: number) => {
     setUpdateUser(prev => ({
       ...prev,
@@ -667,6 +603,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }));
   };
 
+  /** Format an ISO date string for display. */
   const formatDate = (dateObject: string) => {
     const date = new Date(dateObject);
 
@@ -681,6 +618,262 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       return 'Invalid date';
     }
   };
+
+  function ProfileFormSection({
+    updateUser,
+    errors,
+    listProvinces,
+    listCities,
+    listDistricts,
+    isPhoneBasedUser,
+    provinceLoading,
+    cityLoading,
+    districtLoading,
+    handleChangeInput,
+    handlePhoneChange,
+    handleProvinceSelect,
+    handleCitySelect,
+    handleDistrictSelect,
+    handleGenderSelect,
+    handleAddressChange,
+    handleRemoveAddress,
+    handleAddAddress,
+    formatDate,
+    setDrawerState
+  }: {
+    updateUser: ICustomProfile;
+    errors: Record<string, string>;
+    listProvinces: IWilayahResponse[];
+    listCities: IWilayahResponse[];
+    listDistricts: IWilayahResponse[];
+    isPhoneBasedUser: boolean;
+    provinceLoading: boolean;
+    cityLoading: boolean;
+    districtLoading: boolean;
+    handleChangeInput: (label: string, value: string) => void;
+    handlePhoneChange: (
+      value: string,
+      meta?: { country?: { dialCode?: string } }
+    ) => void;
+    handleProvinceSelect: (value: IWilayahResponse) => void;
+    handleCitySelect: (value: IWilayahResponse) => void;
+    handleDistrictSelect: (value: IWilayahResponse) => void;
+    handleGenderSelect: (value: { code: string }) => void;
+    handleAddressChange: (index: number, value: string) => void;
+    handleRemoveAddress: (index: number) => void;
+    handleAddAddress: () => void;
+    formatDate: (dateObject: string) => string;
+    setDrawerState: (state: string) => void;
+  }) {
+    return (
+      <div className='flex flex-grow flex-col space-y-4'>
+        <Input
+          width={24}
+          height={24}
+          prefixIcon={'/icons/user-edit.svg'}
+          placeholder='First Name'
+          name='firstName'
+          id='firstName'
+          type='text'
+          value={updateUser.firstName}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+            handleChangeInput('firstName', event.target.value)
+          }
+          opacity={false}
+          outline={false}
+          className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+        />
+        {errors.firstName && (
+          <p className='px-4 text-xs text-red-500'>{errors.firstName}</p>
+        )}
+        <Input
+          width={24}
+          height={24}
+          prefixIcon={'/icons/user-edit.svg'}
+          placeholder='Last Name'
+          name='lastName'
+          id='lastName'
+          type='text'
+          value={updateUser.lastName}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+            handleChangeInput('lastName', event.target.value)
+          }
+          opacity={false}
+          outline={false}
+          className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+        />
+        {errors.lastName && (
+          <p className='px-4 text-xs text-red-500'>{errors.lastName}</p>
+        )}
+        <Input
+          width={24}
+          height={24}
+          prefixIcon={'/icons/email.svg'}
+          placeholder='address@domain.tld'
+          name='email'
+          id='email'
+          type='email'
+          value={updateUser.email}
+          readOnly={!isPhoneBasedUser}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+            handleChangeInput('email', event.target.value)
+          }
+          opacity={false}
+          outline={false}
+          className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+        />
+        {errors.email && (
+          <p className='px-4 text-xs text-red-500'>{errors.email}</p>
+        )}
+        <div
+          className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+          onClick={() => setDrawerState(DRAWER_STATE.DOB)}
+        >
+          <Image
+            src='/icons/calendar-edit.png'
+            alt='calendar-icon'
+            width={24}
+            height={24}
+          />
+          <div className='flex flex-grow justify-start text-sm'>
+            {updateUser.birthDate
+              ? formatDate(updateUser.birthDate)
+              : 'Date of Birth'}
+          </div>
+        </div>
+        <div className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'>
+          <PhoneInput
+            defaultCountry='id'
+            value={updateUser.phone}
+            onChange={handlePhoneChange}
+            placeholder='WhatsApp Number'
+            className='flex-1'
+            disabled={isPhoneBasedUser}
+            inputStyle={{
+              width: '100%',
+              border: 'none',
+              outline: 'none',
+              fontSize: '14px',
+              fontWeight: 'normal',
+              color: '#2C2F35',
+              ...(isPhoneBasedUser && { cursor: 'not-allowed', opacity: 0.6 })
+            }}
+          />
+        </div>
+        {errors.phone && (
+          <p className='px-4 text-xs text-red-500'>{errors.phone}</p>
+        )}
+        <DropdownProfile
+          options={genderList}
+          value={updateUser.gender}
+          onSelect={handleGenderSelect}
+          placeholder='Input your gender'
+        />
+        {errors.gender && (
+          <p className='p-4 text-xs text-red-500'>{errors.gender}</p>
+        )}
+        <DropdownProfile
+          options={listProvinces}
+          value={updateUser.provinceCode}
+          onSelect={handleProvinceSelect}
+          placeholder='Province'
+          loading={provinceLoading}
+        />
+        {errors.province && (
+          <p className='p-4 text-xs text-red-500'>{errors.province}</p>
+        )}
+        {(updateUser.provinceCode || updateUser.city) && (
+          <>
+            <DropdownProfile
+              options={listCities}
+              value={updateUser.cityCode}
+              onSelect={handleCitySelect}
+              placeholder='City'
+              labelPlaceholder={updateUser.city}
+              loading={cityLoading}
+            />
+            {errors.city && (
+              <p className='p-4 text-xs text-red-500'>{errors.city}</p>
+            )}
+          </>
+        )}
+        {(updateUser.cityCode || updateUser.district) && (
+          <>
+            <DropdownProfile
+              options={listDistricts}
+              value={updateUser.districtCode}
+              onSelect={handleDistrictSelect}
+              placeholder='District'
+              labelPlaceholder={updateUser.district}
+              loading={districtLoading}
+            />
+            {errors.district && (
+              <p className='p-4 text-xs text-red-500'>{errors.district}</p>
+            )}
+          </>
+        )}
+        {updateUser.addresses?.map((addr: string, index: number) => (
+          <div key={index} className='mb-2 flex items-center gap-2'>
+            <Input
+              width={24}
+              height={24}
+              prefixIcon={'/icons/location.svg'}
+              placeholder='Address'
+              name={`addresses-${index}`}
+              id={`addresses-${index}`}
+              type='text'
+              value={addr}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                handleAddressChange(index, event.target.value)
+              }
+              opacity={false}
+              outline={false}
+              className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+            />
+            <button
+              type='button'
+              onClick={() => handleRemoveAddress(index)}
+              className='px-2 text-sm text-red-500'
+            >
+              <X />
+            </button>
+          </div>
+        ))}
+        <div className='my-4 flex justify-center'>
+          <p
+            className='cursor-pointer text-center text-sm font-normal'
+            onClick={handleAddAddress}
+          >
+            + Add New Address
+          </p>
+        </div>
+        <div className='flex w-full flex-grow flex-col justify-between space-x-2'>
+          <div className='flex-1'>
+            <Input
+              width={24}
+              height={24}
+              prefixIcon={'/icons/location.svg'}
+              placeholder='Postal Code'
+              name='postalCode'
+              id='postalCode'
+              type='text'
+              value={updateUser.postalCode}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                const onlyNumbers = event.target.value.replace(/\D/g, '');
+                handleChangeInput('postalCode', onlyNumbers);
+              }}
+              opacity={false}
+              outline={false}
+              className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
+            />
+            {errors.postalCode && (
+              <p className='px-4 text-xs text-red-500'>{errors.postalCode}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const { initials, backgroundColor } = generateAvatarPlaceholder({
     id: authState.userInfo?.fhirId,
@@ -708,234 +901,41 @@ export default function EditProfile({ userRole, fhirId }: Props) {
               initials={initials}
               backgroundColor={backgroundColor}
             />
-            <div className='flex flex-grow flex-col space-y-4'>
-              <Input
-                width={24}
-                height={24}
-                prefixIcon={'/icons/user-edit.svg'}
-                placeholder='First Name'
-                name='firstName'
-                id='firstName'
-                type='text'
-                value={updateUser.firstName}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                  handleChangeInput('firstName', event.target.value)
-                }
-                opacity={false}
-                outline={false}
-                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-              />
-              {errors.firstName && (
-                <p className='px-4 text-xs text-red-500'>{errors.firstName}</p>
-              )}
-              <Input
-                width={24}
-                height={24}
-                prefixIcon={'/icons/user-edit.svg'}
-                placeholder='Last Name'
-                name='lastName'
-                id='lastName'
-                type='text'
-                value={updateUser.lastName}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                  handleChangeInput('lastName', event.target.value)
-                }
-                opacity={false}
-                outline={false}
-                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-              />
-              {errors.lastName && (
-                <p className='px-4 text-xs text-red-500'>{errors.lastName}</p>
-              )}
-              <Input
-                width={24}
-                height={24}
-                prefixIcon={'/icons/email.svg'}
-                placeholder='address@domain.tld'
-                name='email'
-                id='email'
-                type='email'
-                value={updateUser.email}
-                readOnly={!isPhoneBasedUser}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                  handleChangeInput('email', event.target.value)
-                }
-                opacity={false}
-                outline={false}
-                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-              />
-              {errors.email && (
-                <p className='px-4 text-xs text-red-500'>{errors.email}</p>
-              )}
-              <div
-                className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-                onClick={() => setDrawerState(DRAWER_STATE.DOB)}
-              >
-                <Image
-                  src={'/icons/calendar-edit.png'}
-                  alt='calendar-icon'
-                  width={24}
-                  height={24}
-                />
-                <div className='flex flex-grow justify-start text-sm'>
-                  {updateUser.birthDate
-                    ? formatDate(updateUser.birthDate)
-                    : 'Date of Birth'}
-                </div>
-              </div>
-              <div className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'>
-                <PhoneInput
-                  defaultCountry='id'
-                  value={updateUser.phone}
-                  onChange={handlePhoneChange}
-                  placeholder='WhatsApp Number'
-                  className='flex-1'
-                  disabled={isPhoneBasedUser}
-                  inputStyle={{
-                    width: '100%',
-                    border: 'none',
-                    outline: 'none',
-                    fontSize: '14px',
-                    fontWeight: 'normal',
-                    color: '#2C2F35',
-                    ...(isPhoneBasedUser && {
-                      cursor: 'not-allowed',
-                      opacity: 0.6
-                    })
-                  }}
-                />
-              </div>
-              {errors.phone && (
-                <p className='px-4 text-xs text-red-500'>{errors.phone}</p>
-              )}
-
-              <DropdownProfile
-                options={genderList}
-                value={updateUser.gender}
-                onSelect={handleGenderSelect}
-                placeholder='Input your gender'
-              />
-              {errors.gender && (
-                <p className='p-4 text-xs text-red-500'>{errors.gender}</p>
-              )}
-
-              <DropdownProfile
-                options={listProvinces}
-                value={updateUser.provinceCode}
-                onSelect={handleProvinceSelect}
-                placeholder='Province'
-                loading={provinceLoading}
-              />
-              {errors.province && (
-                <p className='p-4 text-xs text-red-500'>{errors.province}</p>
-              )}
-
-              {(updateUser.provinceCode || updateUser.city) && (
-                <>
-                  <DropdownProfile
-                    options={listCities}
-                    value={updateUser.cityCode}
-                    onSelect={handleCitySelect}
-                    placeholder='City'
-                    labelPlaceholder={updateUser.city}
-                    loading={cityLoading}
-                  />
-                  {errors.city && (
-                    <p className='p-4 text-xs text-red-500'>{errors.city}</p>
-                  )}
-                </>
-              )}
-
-              {(updateUser.cityCode || updateUser.district) && (
-                <>
-                  <DropdownProfile
-                    options={listDistricts}
-                    value={updateUser.districtCode}
-                    onSelect={handleDistrictSelect}
-                    placeholder='District'
-                    labelPlaceholder={updateUser.district}
-                    loading={districtLoading}
-                  />
-                  {errors.district && (
-                    <p className='p-4 text-xs text-red-500'>
-                      {errors.district}
-                    </p>
-                  )}
-                </>
-              )}
-
-              {updateUser.addresses?.map((addr: string, index: number) => (
-                <div key={index} className='mb-2 flex items-center gap-2'>
-                  <Input
-                    width={24}
-                    height={24}
-                    prefixIcon={'/icons/location.svg'}
-                    placeholder='Address'
-                    name={`addresses-${index}`}
-                    id={`addresses-${index}`}
-                    type='text'
-                    value={addr}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                      handleAddressChange(index, event.target.value)
-                    }
-                    opacity={false}
-                    outline={false}
-                    className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-                  />
-                  <button
-                    type='button'
-                    onClick={() => handleRemoveAddress(index)}
-                    className='px-2 text-sm text-red-500'
-                  >
-                    <X />
-                  </button>
-                </div>
-              ))}
-
-              <div className='my-4 flex justify-center'>
-                <p
-                  className='cursor-pointer text-center text-sm font-normal'
-                  onClick={handleAddAddress}
-                >
-                  + Add New Address
-                </p>
-              </div>
-
-              <div className='flex w-full flex-grow flex-col justify-between space-x-2'>
-                <div className='flex-1'>
-                  <Input
-                    width={24}
-                    height={24}
-                    prefixIcon={'/icons/location.svg'}
-                    placeholder='Postal Code'
-                    name='postalCode'
-                    id='postalCode'
-                    type='text'
-                    value={updateUser.postalCode}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                      const onlyNumbers = event.target.value.replace(/\D/g, '');
-                      handleChangeInput('postalCode', onlyNumbers);
-                    }}
-                    opacity={false}
-                    outline={false}
-                    className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
-                  />
-                  {errors.postalCode && (
-                    <p className='px-4 text-xs text-red-500'>
-                      {errors.postalCode}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
+            <ProfileFormSection
+              updateUser={updateUser}
+              errors={errors}
+              listProvinces={listProvinces}
+              listCities={listCities}
+              listDistricts={listDistricts}
+              isPhoneBasedUser={isPhoneBasedUser}
+              provinceLoading={provinceLoading}
+              cityLoading={cityLoading}
+              districtLoading={districtLoading}
+              handleChangeInput={handleChangeInput}
+              handlePhoneChange={handlePhoneChange}
+              handleProvinceSelect={handleProvinceSelect}
+              handleCitySelect={handleCitySelect}
+              handleDistrictSelect={handleDistrictSelect}
+              handleGenderSelect={handleGenderSelect}
+              handleAddressChange={handleAddressChange}
+              handleRemoveAddress={handleRemoveAddress}
+              handleAddAddress={handleAddAddress}
+              formatDate={formatDate}
+              setDrawerState={setDrawerState}
+            />
           </>
         )}
         <button
-          className={`text-md border-primary mt-6 w-full rounded-full border-1 p-4 font-semibold ${validateForm(updateUser) && !isUpdateLoading && !isUploadingPhoto ? 'bg-secondary text-white' : 'cursor-not-allowed bg-gray-300 text-gray-500'}`}
+          className={`text-md border-primary mt-6 w-full rounded-full border-1 p-4 font-semibold ${validateForm(updateUser as unknown as Record<string, unknown>, isPhoneBasedUser) && !isUpdateLoading && !isUploadingPhoto ? 'bg-secondary text-white' : 'cursor-not-allowed bg-gray-300 text-gray-500'}`}
           type='submit'
           onClick={handleEditSave}
           disabled={
-            !validateForm(updateUser) || isUpdateLoading || isUploadingPhoto
+            !validateForm(
+              updateUser as unknown as Record<string, unknown>,
+              isPhoneBasedUser
+            ) ||
+            isUpdateLoading ||
+            isUploadingPhoto
           }
         >
           {isUpdateLoading || isUploadingPhoto ? (

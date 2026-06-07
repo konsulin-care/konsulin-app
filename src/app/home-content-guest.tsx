@@ -10,9 +10,11 @@ const RecommendationCardStack = dynamic(
   { ssr: false }
 );
 
+/** Guest home page with recommendation stack and login CTA. */
 export default function HomeContentGuest() {
   const router = useRouter();
 
+  /** Redirect guest to auth page to book an appointment. */
   const handleBook = () => {
     router.push('/auth');
   };

@@ -111,6 +111,7 @@ export default function ClinicList() {
     debounceDelay: 1000
   });
 
+  /** Save clinic selection in IndexedDB and navigate to detail. */
   const handleSelectedClinic = (clinicId: string) => {
     dbSet(STORES.uiPreferences, {
       ownerId: '',

@@ -41,6 +41,7 @@ const generateFilterDays = (start: Date, end: Date) => {
   return filterDays;
 };
 
+/** Check if a slot's days and time overlap with the given filter range. */
 const isSlotAvailable = ({
   slot,
   filterDays,
@@ -67,6 +68,7 @@ const isSlotAvailable = ({
   );
 };
 
+/** Clinic detail page showing practitioners, filters, and booking. */
 export default function ClinicDetail() {
   const searchParams = useSearchParams();
   const clinicId = searchParams.get('clinicId') ?? '';
@@ -86,9 +88,10 @@ export default function ClinicDetail() {
     isLoading
   } = useClinicById(clinicId);
 
-  const mergeAddress = (clinic: IOrganizationResource) => {
+  /** Merge organization address fields into a single string. */
+  const mergeAddress = (clinic: IOrganizationResource): string | undefined => {
     const address = clinic?.address?.[0];
-    if (!address) return;
+    if (!address) return undefined;
 
     const { city, country, district, postalCode, line } = address;
 
@@ -97,6 +100,7 @@ export default function ClinicDetail() {
       .join(', ');
   };
 
+  /** Navigate to the practitioner's booking page. */
   const handleSelectPractitioner = (practitioner: IPractitioner) => {
     if (!practitioner) return;
 

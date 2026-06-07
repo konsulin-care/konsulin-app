@@ -19,6 +19,7 @@ interface ResearchSectionProps {
   onResearchClick: (study: ResearchStudy, questionnaireId?: string) => void;
 }
 
+/** Filter research items that have valid resources. */
 const filteredResearch = (
   research: OngoingResearchItem[] | undefined
 ): OngoingResearchItem[] => {
@@ -26,6 +27,7 @@ const filteredResearch = (
   return research.filter(item => item?.resource);
 };
 
+/** Horizontal scrollable list of ongoing research studies. */
 export default function ResearchSection({
   research,
   researchLoading,

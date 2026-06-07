@@ -7,6 +7,7 @@ import PageHeader from '@/components/page-header';
 import { useGetExercise } from '@/services/api/exercise';
 import { useSearchParams } from 'next/navigation';
 
+/** Single exercise detail page with iframe player and description. */
 export default function ExerciseDetail() {
   const searchParams = useSearchParams();
   const exerciseId = searchParams.get('exerciseId') ?? '';
@@ -32,7 +33,7 @@ export default function ExerciseDetail() {
               height='352'
               allow='autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'
               loading='lazy'
-              sandbox='allow-scripts allow-same-origin allow-popups'
+              sandbox='allow-scripts allow-popups'
             />
             <div className='mt-4 mb-4 flex w-full items-center justify-between'>
               <span className='text-[12px] font-bold'>Excersise Brief</span>

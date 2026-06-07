@@ -26,6 +26,7 @@ interface AssessmentDrawerContentProps {
   router: { push: (url: string, options?: Record<string, unknown>) => void };
 }
 
+/** Assessment detail drawer with QR code, description, and action button. */
 export default function AssessmentDrawerContent({
   selectedAssessment,
   researchUrl,
@@ -40,6 +41,7 @@ export default function AssessmentDrawerContent({
     selectedAssessment.resourceType === 'ResearchStudy' &&
     (selectedAssessment.note?.length ?? 0) > 0;
 
+  /** Navigate to assessment detail or research URL. */
   const handleButtonClick = () => {
     if (selectedAssessment?.resourceType === 'ResearchStudy' && !researchUrl) {
       return;

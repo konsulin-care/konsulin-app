@@ -11,6 +11,7 @@ interface BrowseInstrumentsSectionProps {
   onAssessmentClick: (assessment: Questionnaire) => void;
 }
 
+/** Grid of regular assessment instruments shown below popular assessments. */
 export default function BrowseInstrumentsSection({
   regularAssessments,
   regularLoading,

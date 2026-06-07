@@ -23,6 +23,7 @@ const ReactMarkdown = dynamic(() => import('react-markdown'), {
   ssr: false
 });
 
+/** Patient home page with recommendations, clinic quick link, and records. */
 export default function HomeContentPatient() {
   const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
@@ -42,9 +43,56 @@ export default function HomeContentPatient() {
       )
     : [];
 
+  /** Navigate to the practitioner booking page. */
   const handleBook = (practitionerId: string) => {
     router.push(`/appointment?practitioner=${practitionerId}`);
   };
+
+  function RecordCard({ record }: { record: IRecord }) {
+    const splitTitle = record.title.split('/');
+    const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
+    const formattedTitle =
+      record.type === 'QuestionnaireResponse' ? formatTitle(title) : title;
+
+    const recordId = record.id.split('/')[1];
+    const formattedDate = format(new Date(record.lastUpdated), 'dd/MM/yyyy');
+
+    const result = record.result as string;
+    const cleanDescription = (result || '-').replaceAll(/\n\n/g, '. ');
+
+    const queryParams = new URLSearchParams({
+      category: typeMappings[record.type]?.category,
+      title
+    }).toString();
+    const url = `/record?recordId=${recordId}&${queryParams}`;
+
+    return (
+      <Link href={url} className='card flex flex-col gap-2 p-4'>
+        <div className='flex items-center gap-2'>
+          <div className='mr-2 h-[40px] w-[40px] shrink-0 rounded-full bg-[#F8F8F8] p-2'>
+            <BookText className='h-6 w-6 text-gray-500' />
+          </div>
+          <div className='flex-1 overflow-hidden'>
+            <div className='truncate text-[12px] font-bold'>
+              {formattedTitle}
+            </div>
+            <div className='truncate text-[10px] text-gray-500'>
+              <ReactMarkdown components={customMarkdownComponents}>
+                {cleanDescription}
+              </ReactMarkdown>
+            </div>
+          </div>
+        </div>
+        <hr className='w-full' />
+        <div className='flex items-center justify-between'>
+          <Badge className='rounded-full bg-[#08979C] px-[10px] py-[4px] text-[10px] text-white'>
+            {typeMappings[record.type]?.text ?? record.type}
+          </Badge>
+          <div className='text-[10px] text-gray-500'>{formattedDate}</div>
+        </div>
+      </Link>
+    );
+  }
 
   const renderRecordsContent = () => {
     if (isAuthLoading || isRecordsLoading) {
@@ -73,62 +121,9 @@ export default function HomeContentPatient() {
     if (records.length > 0) {
       return (
         <div className='flex flex-col gap-3'>
-          {records.slice(0, 10).map((record: IRecord) => {
-            const splitTitle = record.title.split('/');
-            const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
-            const formattedTitle =
-              record.type === 'QuestionnaireResponse'
-                ? formatTitle(title)
-                : title;
-
-            const recordId = record.id.split('/')[1];
-            const formattedDate = format(
-              new Date(record.lastUpdated),
-              'dd/MM/yyyy'
-            );
-
-            const result = record.result as string;
-            const cleanDescription = (result || '-').replaceAll(/\n\n/g, '. ');
-
-            const queryParams = new URLSearchParams({
-              category: typeMappings[record.type]?.category,
-              title
-            }).toString();
-            const url = `/record?recordId=${recordId}&${queryParams}`;
-
-            return (
-              <Link
-                key={recordId}
-                href={url}
-                className='card flex flex-col gap-2 p-4'
-              >
-                <div className='flex items-center gap-2'>
-                  <div className='mr-2 h-[40px] w-[40px] shrink-0 rounded-full bg-[#F8F8F8] p-2'>
-                    <BookText className='h-6 w-6 text-gray-500' />
-                  </div>
-                  <div className='flex-1 overflow-hidden'>
-                    <div className='truncate text-[12px] font-bold'>
-                      {formattedTitle}
-                    </div>
-                    <div className='truncate text-[10px] text-gray-500'>
-                      <ReactMarkdown components={customMarkdownComponents}>
-                        {cleanDescription}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                </div>
-                <hr className='w-full' />
-                <div className='flex items-center justify-between'>
-                  <Badge className='rounded-full bg-[#08979C] px-[10px] py-[4px] text-[10px] text-white'>
-                    {typeMappings[record.type]?.text ?? record.type}
-                  </Badge>
-                  <div className='text-[10px] text-gray-500'>
-                    {formattedDate}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+          {records.slice(0, 10).map((record: IRecord) => (
+            <RecordCard key={record.id.split('/')[1]} record={record} />
+          ))}
         </div>
       );
     }

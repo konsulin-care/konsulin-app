@@ -14,6 +14,52 @@ interface PopularAssessmentsSectionProps {
   onAssessmentClick: (assessment: Questionnaire) => void;
 }
 
+function PopularAssessmentCard({
+  assessment,
+  onClick
+}: {
+  assessment: BundleEntry<Questionnaire>;
+  onClick: (assessment: Questionnaire) => void;
+}) {
+  return (
+    <button
+      key={assessment.resource.id}
+      type='button'
+      className='card flex cursor-pointer flex-col gap-4 bg-white text-left'
+      onClick={() => {
+        onClick(assessment.resource);
+      }}
+    >
+      <div className='flex items-start justify-between'>
+        <Image
+          src='/images/exercise.svg'
+          height={40}
+          width={40}
+          alt='exercise'
+        />
+        <div className='flex min-w-[192px] justify-end gap-2'>
+          <Badge className='bg-secondary flex items-center rounded-[8px] px-[10px] py-[4px]'>
+            <AwardIcon size={16} color='white' fill='white' />
+            <div className='text-[10px] text-white'>Best Impact</div>
+          </Badge>
+          <Badge className='bg-secondary rounded-[8px] px-[10px] py-[4px]'>
+            <BookmarkIcon size={16} color='white' fill='white' />
+          </Badge>
+        </div>
+      </div>
+      <div className='flex flex-col items-start'>
+        <span className='text-[12px] font-bold'>
+          {assessment.resource.title}
+        </span>
+        <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
+          {assessment.resource.description}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+/** Horizontal scrollable list of popular assessment cards. */
 export default function PopularAssessmentsSection({
   popularAssessments,
   popularLoading,
@@ -33,43 +79,11 @@ export default function PopularAssessmentsSection({
           <div className='flex w-max space-x-4 pb-4'>
             {(popularAssessments ?? []).map(
               (assessment: BundleEntry<Questionnaire>) => (
-                <button
+                <PopularAssessmentCard
                   key={assessment.resource.id}
-                  type='button'
-                  className='card flex cursor-pointer flex-col gap-4 bg-white text-left'
-                  onClick={() => {
-                    onAssessmentClick(assessment.resource);
-                  }}
-                >
-                  <div className='flex items-start justify-between'>
-                    <Image
-                      src={'/images/exercise.svg'}
-                      height={40}
-                      width={40}
-                      alt='exercise'
-                    />
-                    <div className='flex min-w-[192px] justify-end gap-2'>
-                      <Badge className='bg-secondary flex items-center rounded-[8px] px-[10px] py-[4px]'>
-                        <AwardIcon size={16} color='white' fill='white' />
-                        <div className='text-[10px] text-white'>
-                          Best Impact
-                        </div>
-                      </Badge>
-                      <Badge className='bg-secondary rounded-[8px] px-[10px] py-[4px]'>
-                        <BookmarkIcon size={16} color='white' fill='white' />
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className='flex flex-col items-start'>
-                    <span className='text-[12px] font-bold'>
-                      {assessment.resource.title}
-                    </span>
-                    <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
-                      {assessment.resource.description}
-                    </span>
-                  </div>
-                </button>
+                  assessment={assessment}
+                  onClick={onAssessmentClick}
+                />
               )
             )}
           </div>

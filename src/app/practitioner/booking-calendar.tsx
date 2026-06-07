@@ -12,6 +12,7 @@ type Props = {
   today: Date;
 };
 
+/** Calendar-based date picker showing practitioner availability. */
 export default function BookingCalendar({
   bookingState,
   handleFilterChange,

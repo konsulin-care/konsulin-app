@@ -39,6 +39,35 @@ function ActionCard({
   );
 }
 
+function StatCard({
+  icon,
+  value,
+  label,
+  bgColor,
+  iconColor
+}: {
+  icon: React.ReactNode;
+  value: React.ReactNode;
+  label: string;
+  bgColor: string;
+  iconColor: string;
+}) {
+  return (
+    <div className='card flex items-center gap-4 p-4'>
+      <div
+        className={`flex h-[48px] w-[48px] items-center justify-center rounded-full ${bgColor}`}
+      >
+        <div className={iconColor}>{icon}</div>
+      </div>
+      <div>
+        <div className='text-[24px] font-bold'>{value}</div>
+        <div className='text-[12px] text-gray-500'>{label}</div>
+      </div>
+    </div>
+  );
+}
+
+/** Admin home page with clinic overview, context, and service management. */
 export default function HomeContentAdmin() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
@@ -70,41 +99,32 @@ export default function HomeContentAdmin() {
 
   return (
     <>
-      <div className='p-4'>
-        <div className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
+      <section className='p-4'>
+        <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
           Clinic Overview
-        </div>
+        </h2>
         <div className='flex flex-col gap-4'>
-          <div className='card flex items-center gap-4 p-4'>
-            <div className='flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#E6F7F7]'>
-              <Users className='h-6 w-6 text-[#13C2C2]' />
-            </div>
-            <div>
-              <div className='text-[24px] font-bold'>
-                {isCountError ? '-' : practitionerCount}
-              </div>
-              <div className='text-[12px] text-gray-500'>
-                Active Practitioners
-              </div>
-            </div>
-          </div>
-
-          <div className='card flex items-center gap-4 p-4'>
-            <div className='flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#FFF7E6]'>
-              <Clock className='h-6 w-6 text-[#FAAD14]' />
-            </div>
-            <div>
-              <div className='text-[24px] font-bold'>-</div>
-              <div className='text-[12px] text-gray-500'>Pending Approvals</div>
-            </div>
-          </div>
+          <StatCard
+            icon={<Users />}
+            value={isCountError ? '-' : practitionerCount}
+            label='Active Practitioners'
+            bgColor='bg-[#E6F7F7]'
+            iconColor='text-[#13C2C2]'
+          />
+          <StatCard
+            icon={<Clock />}
+            value='-'
+            label='Pending Approvals'
+            bgColor='bg-[#FFF7E6]'
+            iconColor='text-[#FAAD14]'
+          />
         </div>
-      </div>
+      </section>
 
-      <div className='p-4'>
-        <div className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
+      <section className='p-4'>
+        <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
           Clinic Context
-        </div>
+        </h2>
         <div className='card flex items-center gap-4 p-4 opacity-60'>
           <div className='flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#F8F8F8]'>
             <Building2 className='h-5 w-5 text-gray-400' />
@@ -116,39 +136,39 @@ export default function HomeContentAdmin() {
             </span>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className='p-4'>
-        <div className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
+      <section className='p-4'>
+        <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
           Service Management
-        </div>
+        </h2>
         <div className='flex flex-col gap-4'>
           <ActionCard
-            icon={<Cog className='h-5 w-5 text-gray-600' />}
+            icon={<Cog />}
             title='Manage Practitioners'
             description='View and manage practitioner profiles'
             href='/practitioner'
           />
           <ActionCard
-            icon={<Building2 className='h-5 w-5 text-gray-600' />}
+            icon={<Building2 />}
             title='Clinic Settings'
             description='Configure clinic information and services'
             href='/clinic'
           />
           <ActionCard
-            icon={<CalendarRange className='h-5 w-5 text-gray-600' />}
+            icon={<CalendarRange />}
             title='View Schedule'
             description='Review clinic-wide appointment schedule'
             href='/schedule'
           />
           <ActionCard
-            icon={<FileText className='h-5 w-5 text-gray-600' />}
+            icon={<FileText />}
             title='Reports'
             description='Generate operational and clinical reports'
             href='/record'
           />
         </div>
-      </div>
+      </section>
 
       {isCountError && (
         <div className='px-4 pb-4'>
