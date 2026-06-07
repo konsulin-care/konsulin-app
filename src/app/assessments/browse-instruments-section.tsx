@@ -16,7 +16,7 @@ export default function BrowseInstrumentsSection({
   regularLoading,
   isAuthLoading,
   onAssessmentClick
-}: BrowseInstrumentsSectionProps) {
+}: Readonly<BrowseInstrumentsSectionProps>) {
   return (
     <div className='p-4'>
       <div className='text-[14px] font-bold text-[hsla(220,9%,19%,0.6)]'>
@@ -29,17 +29,12 @@ export default function BrowseInstrumentsSection({
         <div className='mt-4 grid grid-cols-1 gap-2 md:grid-cols-2'>
           {(regularAssessments ?? []).map(
             (assessment: BundleEntry<Questionnaire>) => (
-              <div
+              <button
                 key={assessment.resource.id}
-                role='button'
-                tabIndex={0}
-                className='card item flex cursor-pointer flex-col p-2'
+                type='button'
+                className='card item flex cursor-pointer flex-col p-2 text-left'
                 onClick={() => {
                   onAssessmentClick(assessment.resource);
-                }}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' || e.key === ' ')
-                    onAssessmentClick(assessment.resource);
                 }}
               >
                 <div className='flex items-center'>
@@ -56,7 +51,7 @@ export default function BrowseInstrumentsSection({
                     {assessment.resource.title}
                   </div>
                 </div>
-              </div>
+              </button>
             )
           )}
         </div>

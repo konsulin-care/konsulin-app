@@ -156,7 +156,7 @@ export default function InformationDetail({
   initials,
   backgroundColor,
   seed
-}: {
+}: Readonly<{
   isRadiusIcon?: boolean;
   iconUrl?: string;
   title?: string;
@@ -169,7 +169,7 @@ export default function InformationDetail({
   initials: string;
   backgroundColor: string;
   seed?: string;
-}) {
+}>) {
   return (
     <div className='flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
       <div className='flex w-full items-start justify-between'>

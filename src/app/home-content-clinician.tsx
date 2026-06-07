@@ -61,6 +61,77 @@ export default function HomeContentClinician() {
     );
   }
 
+  const renderScheduleContent = () => {
+    if (isSessionsError) {
+      return (
+        <div className='p-6 text-center'>
+          <p className='mb-2 text-[12px] text-gray-500'>
+            Failed to load schedule
+          </p>
+          <button
+            onClick={() => refetchSessions()}
+            className='text-secondary text-[12px] underline'
+          >
+            Tap to retry
+          </button>
+        </div>
+      );
+    }
+    if (sessions.length === 0) {
+      return (
+        <div className='p-6 text-center'>
+          <Calendar className='mx-auto mb-2 h-8 w-8 text-gray-300' />
+          <p className='text-[12px] text-gray-500'>
+            No sessions scheduled for today
+          </p>
+        </div>
+      );
+    }
+    return (
+      <div className='divide-y divide-gray-100'>
+        {sessions.map((session, idx) => {
+          if (!session.slotStart || !session.slotEnd) return null;
+          const startTime = format(parseISO(session.slotStart), 'HH:mm');
+          const endTime = format(parseISO(session.slotEnd), 'HH:mm');
+          const isPast = parseISO(session.slotEnd).getTime() < Date.now();
+
+          return (
+            <div
+              key={session.appointmentId || idx}
+              className='flex items-center gap-3 px-4 py-3'
+            >
+              <div className='min-w-[60px] text-center'>
+                <div className='text-[13px] font-bold text-gray-800'>
+                  {startTime}
+                </div>
+                <div className='text-[10px] text-gray-400'>{endTime}</div>
+              </div>
+              <div
+                className={`h-8 w-[3px] rounded-full ${
+                  isPast ? 'bg-gray-200' : 'bg-[#13C2C2]'
+                }`}
+              />
+              <div className='flex-1'>
+                <div className='text-[12px] font-bold text-gray-800'>
+                  {session.displayPatientName}
+                </div>
+              </div>
+              <div
+                className={`rounded-full px-2 py-0.5 text-[10px] ${
+                  isPast
+                    ? 'bg-gray-100 text-gray-400'
+                    : 'bg-[#E6F7F7] text-[#13C2C2]'
+                }`}
+              >
+                {isPast ? 'Completed' : 'Upcoming'}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <>
       {/* PRIMARY: Today's Schedule Calendar Stub */}
@@ -73,68 +144,7 @@ export default function HomeContentClinician() {
         </div>
 
         <div className='overflow-hidden rounded-lg bg-[#F9F9F9]'>
-          {isSessionsError ? (
-            <div className='p-6 text-center'>
-              <p className='mb-2 text-[12px] text-gray-500'>
-                Failed to load schedule
-              </p>
-              <button
-                onClick={() => refetchSessions()}
-                className='text-secondary text-[12px] underline'
-              >
-                Tap to retry
-              </button>
-            </div>
-          ) : sessions.length === 0 ? (
-            <div className='p-6 text-center'>
-              <Calendar className='mx-auto mb-2 h-8 w-8 text-gray-300' />
-              <p className='text-[12px] text-gray-500'>
-                No sessions scheduled for today
-              </p>
-            </div>
-          ) : (
-            <div className='divide-y divide-gray-100'>
-              {sessions.map((session, idx) => {
-                if (!session.slotStart || !session.slotEnd) return null;
-                const startTime = format(parseISO(session.slotStart), 'HH:mm');
-                const endTime = format(parseISO(session.slotEnd), 'HH:mm');
-                const isPast = parseISO(session.slotEnd).getTime() < Date.now();
-
-                return (
-                  <div
-                    key={session.appointmentId || idx}
-                    className='flex items-center gap-3 px-4 py-3'
-                  >
-                    <div className='min-w-[60px] text-center'>
-                      <div className='text-[13px] font-bold text-gray-800'>
-                        {startTime}
-                      </div>
-                      <div className='text-[10px] text-gray-400'>{endTime}</div>
-                    </div>
-                    <div
-                      className={`h-8 w-[3px] rounded-full ${
-                        isPast ? 'bg-gray-200' : 'bg-[#13C2C2]'
-                      }`}
-                    />
-                    <div className='flex-1'>
-                      <div className='text-[12px] font-bold text-gray-800'>
-                        {session.displayPatientName}
-                      </div>
-                    </div>
-                    <div
-                      className={`rounded-full px-2 py-0.5 text-[10px] ${
-                        isPast
-                          ? 'bg-gray-100 text-gray-400'
-                          : 'bg-[#E6F7F7] text-[#13C2C2]'
-                      }`}
-                    >
-                      {isPast ? 'Completed' : 'Upcoming'}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {renderScheduleContent()}
         </div>
 
         <div className='mt-1 text-right text-[10px] text-gray-400'>

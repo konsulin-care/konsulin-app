@@ -19,7 +19,50 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import ClinicFilter from './clinic-filter';
 
-// eslint-disable-next-line sonarjs/cognitive-complexity
+function ClinicCard({
+  clinic,
+  onSelect
+}: {
+  clinic: BundleEntry;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className='card flex flex-col items-center'>
+      <Image
+        className='h-[100px] w-full rounded-lg object-cover'
+        src='/images/clinic.jpg'
+        alt='clinic'
+        width={158}
+        height={100}
+      />
+      <div className='text-primary mt-2 text-center font-bold'>
+        {clinic.resource.resourceType === 'Organization' &&
+          clinic.resource.name}
+      </div>
+      <Button
+        onClick={() => onSelect(clinic.resource.id)}
+        className='bg-secondary mt-2 w-full rounded-[32px] py-2 font-normal text-white'
+      >
+        View Practitioners
+      </Button>
+    </div>
+  );
+}
+
+function clinicGrid(clinics: BundleEntry[], onSelect: (id: string) => void) {
+  return (
+    <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+      {clinics.map(clinic => (
+        <ClinicCard
+          key={clinic.resource.id}
+          clinic={clinic}
+          onSelect={onSelect}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function ClinicList() {
   const router = useRouter();
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
@@ -77,6 +120,52 @@ export default function ClinicList() {
     router.push(`/clinic?clinicId=${clinicId}`);
   };
 
+  const renderClinicResults = () => {
+    if (isListClinicsLoading) return <CardLoader />;
+
+    if (searchTerm) {
+      if (filteredClinics.length > 0) {
+        return clinicGrid(filteredClinics, handleSelectedClinic);
+      }
+      if (showServerResults && serverClinics && serverClinics.length > 0) {
+        return clinicGrid(serverClinics, handleSelectedClinic);
+      }
+      if (isServerSearching) {
+        return (
+          <div className='flex flex-col items-center justify-center py-16'>
+            <div className='flex items-center gap-2'>
+              <LoadingSpinnerIcon />
+              <span className='text-muted'>
+                No results found, requesting more data to the server
+              </span>
+            </div>
+          </div>
+        );
+      }
+      if (serverSearchCompleted) {
+        return (
+          <EmptyState
+            className='py-16'
+            title='No results found'
+            subtitle='Would you try another search term?'
+          />
+        );
+      }
+      return (
+        <EmptyState
+          className='py-16'
+          title='No clinics found'
+          subtitle='Try a different search term.'
+        />
+      );
+    }
+
+    if (clinics?.length > 0) {
+      return clinicGrid(clinics, handleSelectedClinic);
+    }
+    return <EmptyState className='py-16' />;
+  };
+
   return (
     <>
       <PageHeader />
@@ -109,121 +198,7 @@ export default function ClinicList() {
             )}
           </div>
 
-          {isListClinicsLoading ? (
-            <CardLoader />
-          ) : searchTerm ? (
-            // When there's a search term, show filtered results first, then server results if needed
-            // Priority: Local results > Server results > Loading > No results
-            filteredClinics.length > 0 ? (
-              <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-                {filteredClinics.map((clinic: BundleEntry) => (
-                  <div
-                    key={clinic.resource.id}
-                    className='card flex flex-col items-center'
-                  >
-                    <Image
-                      className='h-[100px] w-full rounded-lg object-cover'
-                      src='/images/clinic.jpg'
-                      alt='clinic'
-                      width={158}
-                      height={100}
-                    />
-                    <div className='text-primary mt-2 text-center font-bold'>
-                      {clinic.resource.resourceType === 'Organization' &&
-                        clinic.resource.name}
-                    </div>
-                    <Button
-                      onClick={() => handleSelectedClinic(clinic.resource.id)}
-                      className='bg-secondary mt-2 w-full rounded-[32px] py-2 font-normal text-white'
-                    >
-                      View Practitioners
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : showServerResults &&
-              serverClinics &&
-              serverClinics.length > 0 ? (
-              // Show server results when available and has data
-              <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-                {serverClinics.map((clinic: BundleEntry) => (
-                  <div
-                    key={clinic.resource.id}
-                    className='card flex flex-col items-center'
-                  >
-                    <Image
-                      className='h-[100px] w-full rounded-lg object-cover'
-                      src='/images/clinic.jpg'
-                      alt='clinic'
-                      width={158}
-                      height={100}
-                    />
-                    <div className='text-primary mt-2 text-center font-bold'>
-                      {clinic.resource.resourceType === 'Organization' &&
-                        clinic.resource.name}
-                    </div>
-                    <Button
-                      onClick={() => handleSelectedClinic(clinic.resource.id)}
-                      className='bg-secondary mt-2 w-full rounded-[32px] py-2 font-normal text-white'
-                    >
-                      View Practitioners
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : isServerSearching ? (
-              <div className='flex flex-col items-center justify-center py-16'>
-                <div className='flex items-center gap-2'>
-                  <LoadingSpinnerIcon />
-                  <span className='text-muted'>
-                    No results found, requesting more data to the server
-                  </span>
-                </div>
-              </div>
-            ) : serverSearchCompleted ? (
-              <EmptyState
-                className='py-16'
-                title='No results found'
-                subtitle='Would you try another search term?'
-              />
-            ) : (
-              <EmptyState
-                className='py-16'
-                title='No clinics found'
-                subtitle='Try a different search term.'
-              />
-            )
-          ) : clinics?.length > 0 ? (
-            // No search term, show all clinics
-            <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-              {clinics.map((clinic: BundleEntry) => (
-                <div
-                  key={clinic.resource.id}
-                  className='card flex flex-col items-center'
-                >
-                  <Image
-                    className='h-[100px] w-full rounded-lg object-cover'
-                    src='/images/clinic.jpg'
-                    alt='clinic'
-                    width={158}
-                    height={100}
-                  />
-                  <div className='text-primary mt-2 text-center font-bold'>
-                    {clinic.resource.resourceType === 'Organization' &&
-                      clinic.resource.name}
-                  </div>
-                  <Button
-                    onClick={() => handleSelectedClinic(clinic.resource.id)}
-                    className='bg-secondary mt-2 w-full rounded-[32px] py-2 font-normal text-white'
-                  >
-                    View Practitioners
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState className='py-16' />
-          )}
+          {renderClinicResults()}
         </div>
       </ContentWraper>
     </>

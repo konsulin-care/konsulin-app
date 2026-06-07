@@ -87,10 +87,10 @@ export default function ClinicDetail() {
   } = useClinicById(clinicId);
 
   const mergeAddress = (clinic: IOrganizationResource) => {
-    if (!clinic || !clinic.address || clinic.address.length === 0) return;
+    const address = clinic?.address?.[0];
+    if (!address) return;
 
-    const { city, country, district, postalCode, line } =
-      clinic.address[0] || {};
+    const { city, country, district, postalCode, line } = address;
 
     return [line[0], district, city, country, postalCode]
       .filter(Boolean)

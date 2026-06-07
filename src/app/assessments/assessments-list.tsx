@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable sonarjs/cognitive-complexity, max-lines */
+/* eslint-disable max-lines */
 
 import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
@@ -39,16 +39,122 @@ const isResearchStudy = (assessment: BundleEntry): boolean => {
   return assessment.resource.resourceType === 'ResearchStudy';
 };
 
-const isQuestionnaire = (assessment: BundleEntry): boolean => {
-  return assessment.resource.resourceType === 'Questionnaire';
-};
+function ResearchAssessmentCard({
+  assessment,
+  onClick
+}: {
+  assessment: BundleEntry;
+  onClick: (resource: ResearchStudy | Questionnaire) => void;
+}) {
+  return (
+    <div className='flex max-w-[280px] cursor-pointer flex-col gap-2'>
+      <div className='flex gap-2'>
+        <Image
+          className='h-[64px] w-[64px] rounded-[8px] object-cover'
+          src='/images/clinic.jpg'
+          height={64}
+          width={64}
+          alt='research'
+        />
+        <div className='flex flex-col text-[12px]'>
+          <div className='font-bold text-wrap text-black'>
+            {assessment.resource.title}
+          </div>
+          <div className='overflow-hidden text-wrap'>
+            {assessment.resource.description?.length > 100
+              ? `${assessment.resource.description.slice(0, 100)}...`
+              : assessment.resource.description}
+          </div>
+        </div>
+      </div>
+      <Button
+        onClick={() => onClick(assessment.resource)}
+        className='bg-secondary rounded-[32px] px-4 py-2 text-sm font-bold text-white'
+      >
+        Join
+      </Button>
+    </div>
+  );
+}
+
+function QuestionnaireAssessmentCard({
+  assessment,
+  onClick
+}: {
+  assessment: BundleEntry;
+  onClick: (resource: ResearchStudy | Questionnaire) => void;
+}) {
+  return (
+    <div
+      role='button'
+      tabIndex={0}
+      className='flex cursor-pointer flex-col gap-4'
+      onClick={() => onClick(assessment.resource)}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') onClick(assessment.resource);
+      }}
+    >
+      <div className='flex items-start justify-between'>
+        <Image
+          src='/images/exercise.svg'
+          height={40}
+          width={40}
+          alt='exercise'
+        />
+      </div>
+      <div className='flex flex-col items-start'>
+        <span className='text-[12px] font-bold'>
+          {assessment.resource.title}
+        </span>
+        <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
+          {assessment.resource.description}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function AssessmentSearchResults({
+  assessments,
+  onResearchClick,
+  onAssessmentClick
+}: {
+  assessments: BundleEntry[];
+  onResearchClick: (resource: ResearchStudy, questionnaireId?: string) => void;
+  onAssessmentClick: (assessment: Questionnaire) => void;
+}) {
+  return (
+    <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+      {assessments.map((assessment: BundleEntry) => (
+        <div
+          key={assessment.resource.id}
+          className='card flex flex-col gap-2 p-4'
+        >
+          {isResearchStudy(assessment) ? (
+            <ResearchAssessmentCard
+              assessment={assessment}
+              onClick={resource => onResearchClick(resource as ResearchStudy)}
+            />
+          ) : (
+            <QuestionnaireAssessmentCard
+              assessment={assessment}
+              onClick={resource => onAssessmentClick(resource as Questionnaire)}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function AssessmentsList() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const baseUrl =
-    typeof window !== 'undefined' ? globalThis.window.location.origin : '';
+    typeof globalThis.window !== 'undefined'
+      ? globalThis.window.location.origin
+      : '';
   const isDrawerOpenParam = searchParams.get('isDrawerOpen') === 'true';
   const assessmentIdParam = searchParams.get('assessmentId');
   const [currentLocation, setCurrentLocation] = useState<string>('');
@@ -67,98 +173,6 @@ export default function AssessmentsList() {
   const { data: regularAssessments = [], isLoading: regularLoading } =
     useRegularAssessments();
   const { data: research, isLoading: researchLoading } = useOngoingResearch();
-
-  const ResearchAssessmentCard = ({ assessment, onClick }) => {
-    return (
-      <div className='flex max-w-[280px] cursor-pointer flex-col gap-2'>
-        <div className='flex gap-2'>
-          <Image
-            className='h-[64px] w-[64px] rounded-[8px] object-cover'
-            src='/images/clinic.jpg'
-            height={64}
-            width={64}
-            alt='research'
-          />
-          <div className='flex flex-col text-[12px]'>
-            <div className='font-bold text-wrap text-black'>
-              {assessment.resource.title}
-            </div>
-            <div className='overflow-hidden text-wrap'>
-              {assessment.resource.description?.length > 100
-                ? `${assessment.resource.description.slice(0, 100)}...`
-                : assessment.resource.description}
-            </div>
-          </div>
-        </div>
-        <Button
-          onClick={() => onClick(assessment.resource)}
-          className='bg-secondary rounded-[32px] px-4 py-2 text-sm font-bold text-white'
-        >
-          Join
-        </Button>
-      </div>
-    );
-  };
-
-  const QuestionnaireAssessmentCard = ({ assessment, onClick }) => {
-    return (
-      <div
-        role='button'
-        tabIndex={0}
-        className='flex cursor-pointer flex-col gap-4'
-        onClick={() => onClick(assessment.resource)}
-        onKeyDown={e => {
-          if (e.key === 'Enter' || e.key === ' ') onClick(assessment.resource);
-        }}
-      >
-        <div className='flex items-start justify-between'>
-          <Image
-            src='/images/exercise.svg'
-            height={40}
-            width={40}
-            alt='exercise'
-          />
-        </div>
-        <div className='flex flex-col items-start'>
-          <span className='text-[12px] font-bold'>
-            {assessment.resource.title}
-          </span>
-          <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
-            {assessment.resource.description}
-          </span>
-        </div>
-      </div>
-    );
-  };
-
-  const AssessmentSearchResults = ({
-    assessments,
-    onResearchClick,
-    onAssessmentClick
-  }) => {
-    return (
-      <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-        {assessments.map((assessment: BundleEntry) => (
-          <div
-            key={assessment.resource.id}
-            className='card flex flex-col gap-2 p-4'
-          >
-            {isResearchStudy(assessment) ? (
-              <ResearchAssessmentCard
-                assessment={assessment}
-                onClick={onResearchClick}
-              />
-            ) : isQuestionnaire(assessment) ? (
-              <QuestionnaireAssessmentCard
-                assessment={assessment}
-                onClick={onAssessmentClick}
-              />
-            ) : null}
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   const searchAssessments = useMemo(() => {
     return [
@@ -299,6 +313,81 @@ export default function AssessmentsList() {
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
+  const renderSearchResults = () => {
+    if (!searchTerm) {
+      return (
+        <>
+          <ResearchSection
+            research={research}
+            researchLoading={researchLoading}
+            isAuthLoading={isAuthLoading}
+            onResearchClick={handleResearchClick}
+          />
+
+          <PopularAssessmentsSection
+            popularAssessments={popularAssessments}
+            popularLoading={popularLoading}
+            isAuthLoading={isAuthLoading}
+            onAssessmentClick={handleAssessmentClick}
+          />
+
+          <BrowseInstrumentsSection
+            regularAssessments={regularAssessments}
+            regularLoading={regularLoading}
+            isAuthLoading={isAuthLoading}
+            onAssessmentClick={handleAssessmentClick}
+          />
+        </>
+      );
+    }
+    if (filteredAssessments.length > 0) {
+      return (
+        <AssessmentSearchResults
+          assessments={filteredAssessments}
+          onResearchClick={handleResearchClick}
+          onAssessmentClick={handleAssessmentClick}
+        />
+      );
+    }
+    if (showServerResults && serverAssessments?.length > 0) {
+      return (
+        <AssessmentSearchResults
+          assessments={serverAssessments}
+          onResearchClick={handleResearchClick}
+          onAssessmentClick={handleAssessmentClick}
+        />
+      );
+    }
+    if (isServerSearching) {
+      return (
+        <div className='flex flex-col items-center justify-center py-16'>
+          <div className='flex items-center gap-2'>
+            <LoadingSpinnerIcon />
+            <span className='text-muted'>
+              No results found, requesting more data to the server
+            </span>
+          </div>
+        </div>
+      );
+    }
+    if (serverSearchCompleted) {
+      return (
+        <EmptyState
+          className='py-16'
+          title='No results found'
+          subtitle='Would you try another search term?'
+        />
+      );
+    }
+    return (
+      <EmptyState
+        className='py-16'
+        title='No assessments found'
+        subtitle='Try a different search term.'
+      />
+    );
+  };
+
   return (
     <>
       <PageHeader />
@@ -314,65 +403,7 @@ export default function AssessmentsList() {
           />
         </div>
 
-        {searchTerm ? (
-          filteredAssessments.length > 0 ? (
-            <AssessmentSearchResults
-              assessments={filteredAssessments}
-              onResearchClick={handleResearchClick}
-              onAssessmentClick={handleAssessmentClick}
-            />
-          ) : showServerResults && serverAssessments?.length > 0 ? (
-            <AssessmentSearchResults
-              assessments={serverAssessments}
-              onResearchClick={handleResearchClick}
-              onAssessmentClick={handleAssessmentClick}
-            />
-          ) : isServerSearching ? (
-            <div className='flex flex-col items-center justify-center py-16'>
-              <div className='flex items-center gap-2'>
-                <LoadingSpinnerIcon />
-                <span className='text-muted'>
-                  No results found, requesting more data to the server
-                </span>
-              </div>
-            </div>
-          ) : serverSearchCompleted ? (
-            <EmptyState
-              className='py-16'
-              title='No results found'
-              subtitle='Would you try another search term?'
-            />
-          ) : (
-            <EmptyState
-              className='py-16'
-              title='No assessments found'
-              subtitle='Try a different search term.'
-            />
-          )
-        ) : (
-          <>
-            <ResearchSection
-              research={research}
-              researchLoading={researchLoading}
-              isAuthLoading={isAuthLoading}
-              onResearchClick={handleResearchClick}
-            />
-
-            <PopularAssessmentsSection
-              popularAssessments={popularAssessments}
-              popularLoading={popularLoading}
-              isAuthLoading={isAuthLoading}
-              onAssessmentClick={handleAssessmentClick}
-            />
-
-            <BrowseInstrumentsSection
-              regularAssessments={regularAssessments}
-              regularLoading={regularLoading}
-              isAuthLoading={isAuthLoading}
-              onAssessmentClick={handleAssessmentClick}
-            />
-          </>
-        )}
+        {renderSearchResults()}
       </ContentWraper>
 
       <Drawer onClose={handleDrawerClose} open={isOpen}>

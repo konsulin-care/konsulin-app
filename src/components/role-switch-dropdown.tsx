@@ -85,7 +85,7 @@ export function RoleSwitchDropdown({
   indicator,
   displayName,
   onOpenChange
-}: RoleSwitchDropdownProps) {
+}: Readonly<RoleSwitchDropdownProps>) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const handleProfileClick = useCallback(

@@ -67,8 +67,12 @@ export default function UpcomingSession({ data, role }: Props) {
 
   return (
     <>
-      {data.map((session, index) => (
-        <SessionCard key={index} session={session} role={role} />
+      {data.map(session => (
+        <SessionCard
+          key={session.appointmentId}
+          session={session}
+          role={role}
+        />
       ))}
     </>
   );

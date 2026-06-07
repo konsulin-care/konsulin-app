@@ -444,14 +444,14 @@ describe('AssessmentsList', () => {
 
     // Initially the drawer is closed
     const drawer = screen.getByTestId('drawer');
-    expect(drawer.getAttribute('data-open')).toBe('false');
+    expect(drawer.dataset.open).toBe('false');
 
     // Click on the assessment card (its title text)
     fireEvent.click(screen.getByText('Popular Test 1'));
 
     // Drawer should now be open
     await waitFor(() => {
-      expect(drawer.getAttribute('data-open')).toBe('true');
+      expect(drawer.dataset.open).toBe('true');
     });
 
     // Router push was called with the correct search params
@@ -486,7 +486,7 @@ describe('AssessmentsList', () => {
     // Drawer should be open from the URL effect
     await waitFor(() => {
       const drawer = screen.getByTestId('drawer');
-      expect(drawer.getAttribute('data-open')).toBe('true');
+      expect(drawer.dataset.open).toBe('true');
     });
 
     // Selected assessment title appears both in the card listing and the drawer title

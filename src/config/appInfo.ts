@@ -9,9 +9,9 @@ export type AppInfo = {
 
 export function getAppInfo(): AppInfo {
   const origin =
-    typeof window !== 'undefined'
-      ? window.location.origin
-      : 'http://localhost:3000';
+    typeof globalThis.window === 'undefined'
+      ? 'http://localhost:3000'
+      : globalThis.window.location.origin;
   return {
     appName: 'Konsulin',
     apiDomain: origin,

@@ -64,7 +64,6 @@ function PayButtonContent({
 }: {
   isPaying: boolean;
   label: string;
-  stroke?: string;
 }) {
   if (isPaying) {
     return (

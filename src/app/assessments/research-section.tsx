@@ -31,7 +31,7 @@ export default function ResearchSection({
   researchLoading,
   isAuthLoading,
   onResearchClick
-}: ResearchSectionProps) {
+}: Readonly<ResearchSectionProps>) {
   if (researchLoading || isAuthLoading) {
     return (
       <div className='text-muted mt-4 mb-2 px-4'>
@@ -99,20 +99,15 @@ export default function ResearchSection({
                       </div>
 
                       {questionnaireId && (
-                        <div
-                          role='button'
-                          tabIndex={0}
-                          className='bg-secondary cursor-pointer rounded-[32px] px-4 py-2 text-sm font-bold text-white'
+                        <button
+                          type='button'
+                          className='bg-secondary cursor-pointer rounded-[32px] border-0 px-4 py-2 text-sm font-bold text-white'
                           onClick={() => {
                             onResearchClick(item.resource, questionnaireId);
                           }}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter' || e.key === ' ')
-                              onResearchClick(item.resource, questionnaireId);
-                          }}
                         >
                           Participate
-                        </div>
+                        </button>
                       )}
                     </div>
                   </div>

@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable sonarjs/cognitive-complexity */
-
 import Avatar from '@/components/general/avatar';
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -44,6 +42,24 @@ type IPractitionerLocalStorage = {
   qualification: PractitionerQualification[];
   email: string;
 };
+
+const LoadingState = () => (
+  <div className='flex min-h-screen min-w-full items-center justify-center'>
+    <LoadingSpinnerIcon
+      width={56}
+      height={56}
+      className='w-full animate-spin'
+    />
+  </div>
+);
+
+const EmptyPractitionerState = () => (
+  <EmptyState
+    className='py-16'
+    title='Practitioner Not Found'
+    subtitle='Please return to the clinic page and select a practitioner.'
+  />
+);
 
 export default function Practitioner() {
   const router = useRouter();
@@ -169,23 +185,111 @@ export default function Practitioner() {
     </>
   );
 
-  const LoadingState = () => (
-    <div className='flex min-h-screen min-w-full items-center justify-center'>
-      <LoadingSpinnerIcon
-        width={56}
-        height={56}
-        className='w-full animate-spin'
-      />
-    </div>
-  );
+  const renderMainContent = () => {
+    if (practitionerDataLoading) return <LoadingState />;
+    if (!practitionerData) return <EmptyPractitionerState />;
+    if (isLoading || isFetching) return <LoadingState />;
+    if (!detailPractitioner || isError) return <EmptyPractitionerState />;
 
-  const EmptyPractitionerState = () => (
-    <EmptyState
-      className='py-16'
-      title='Practitioner Not Found'
-      subtitle='Please return to the clinic page and select a practitioner.'
-    />
-  );
+    return (
+      <>
+        <div className='flex flex-col items-center'>
+          <div className='flex flex-col items-center'>
+            <Avatar
+              seed={seed}
+              initials={initials}
+              backgroundColor={backgroundColor}
+              photoUrl={photoUrl}
+              className='text-2xl'
+            />
+
+            <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
+              <HeartPulse size={16} color='#08979C' fill='white' />
+              <span className='whitespace-nowrap'>
+                {detailPractitioner.organization.name}
+              </span>
+            </Badge>
+          </div>
+          <h3 className='mt-2 text-center text-[20px] font-bold'>
+            {displayName}
+          </h3>
+        </div>
+
+        <PractitionerAvailability
+          practitionerRole={detailPractitioner.resource}
+          scheduleId={detailPractitioner?.schedule?.id}
+          invoice={detailPractitioner.invoice}
+          practitionerName={displayName}
+          practitionerOrganizationName={detailPractitioner.organization.name}
+          practitionerAvatar={{
+            photoUrl,
+            initials,
+            backgroundColor
+          }}
+        >
+          <div className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'>
+            <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />
+            <span className='mr-auto text-[12px] font-bold'>
+              See Availability
+            </span>
+            <ArrowRightIcon color='#13C2C2' />
+          </div>
+        </PractitionerAvailability>
+
+        <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>
+          <div className='flex items-center'>
+            <HospitalIcon size={24} color='#13C2C2' className='mr-2' />
+            <span className='text-[12px] font-bold'>Practice Information</span>
+          </div>
+          <div className='mt-4 flex flex-col space-y-2'>
+            <div className='flex justify-between text-[12px]'>
+              <span className='mr-2'>Affiliation</span>
+              <span className='font-bold'>
+                {detailPractitioner.organization.name}
+              </span>
+            </div>
+            <div className='flex justify-between text-[12px]'>
+              <span className='mr-2'>Fee</span>
+              <span className='font-bold'>
+                {detailPractitioner.invoice?.totalNet
+                  ? `${new Intl.NumberFormat('id-ID', {
+                      style: 'currency',
+                      currency: detailPractitioner.invoice.totalNet.currency,
+                      minimumFractionDigits: 0
+                    }).format(
+                      detailPractitioner.invoice.totalNet.value
+                    )} / Session`
+                  : '-'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {detailPractitioner.resource.specialty && (
+          <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9]'>
+            <div className='flex items-center'>
+              <HospitalIcon size={32} color='#13C2C2' className='mr-2' />
+              <span className='text-[12px] font-bold'>Specialty</span>
+            </div>
+
+            <div className='mt-4 flex flex-wrap gap-2'>
+              {detailPractitioner.resource.specialty.length > 0 &&
+                detailPractitioner.resource.specialty.map(
+                  (specialty: CodeableConcept) => (
+                    <Badge
+                      key={specialty.text}
+                      className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
+                    >
+                      {specialty.text}
+                    </Badge>
+                  )
+                )}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  };
 
   return (
     <>
@@ -195,117 +299,7 @@ export default function Practitioner() {
       />
 
       <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
-        {practitionerDataLoading ? (
-          <LoadingState />
-        ) : !practitionerData ? (
-          <EmptyPractitionerState />
-        ) : isLoading || isFetching ? (
-          <LoadingState />
-        ) : !detailPractitioner || isError ? (
-          <EmptyPractitionerState />
-        ) : (
-          <>
-            <div className='flex flex-col items-center'>
-              <div className='flex flex-col items-center'>
-                <Avatar
-                  seed={seed}
-                  initials={initials}
-                  backgroundColor={backgroundColor}
-                  photoUrl={photoUrl}
-                  className='text-2xl'
-                />
-
-                <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
-                  <HeartPulse size={16} color='#08979C' fill='white' />
-                  <span className='whitespace-nowrap'>
-                    {detailPractitioner.organization.name}
-                  </span>
-                </Badge>
-              </div>
-              <h3 className='mt-2 text-center text-[20px] font-bold'>
-                {displayName}
-              </h3>
-            </div>
-
-            <PractitionerAvailability
-              practitionerRole={detailPractitioner.resource}
-              scheduleId={detailPractitioner?.schedule?.id}
-              invoice={detailPractitioner.invoice}
-              practitionerName={displayName}
-              practitionerOrganizationName={
-                detailPractitioner.organization.name
-              }
-              practitionerAvatar={{
-                photoUrl,
-                initials,
-                backgroundColor
-              }}
-            >
-              <div className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'>
-                <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />
-                <span className='mr-auto text-[12px] font-bold'>
-                  See Availability
-                </span>
-                <ArrowRightIcon color='#13C2C2' />
-              </div>
-            </PractitionerAvailability>
-
-            <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>
-              <div className='flex items-center'>
-                <HospitalIcon size={24} color='#13C2C2' className='mr-2' />
-                <span className='text-[12px] font-bold'>
-                  Practice Information
-                </span>
-              </div>
-              <div className='mt-4 flex flex-col space-y-2'>
-                <div className='flex justify-between text-[12px]'>
-                  <span className='mr-2'>Affiliation</span>
-                  <span className='font-bold'>
-                    {detailPractitioner.organization.name}
-                  </span>
-                </div>
-                <div className='flex justify-between text-[12px]'>
-                  <span className='mr-2'>Fee</span>
-                  <span className='font-bold'>
-                    {detailPractitioner.invoice?.totalNet
-                      ? `${new Intl.NumberFormat('id-ID', {
-                          style: 'currency',
-                          currency:
-                            detailPractitioner.invoice.totalNet.currency,
-                          minimumFractionDigits: 0
-                        }).format(
-                          detailPractitioner.invoice.totalNet.value
-                        )} / Session`
-                      : '-'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {detailPractitioner.resource.specialty && (
-              <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9]'>
-                <div className='flex items-center'>
-                  <HospitalIcon size={32} color='#13C2C2' className='mr-2' />
-                  <span className='text-[12px] font-bold'>Specialty</span>
-                </div>
-
-                <div className='mt-4 flex flex-wrap gap-2'>
-                  {detailPractitioner.resource.specialty.length > 0 &&
-                    detailPractitioner.resource.specialty.map(
-                      (specialty: CodeableConcept) => (
-                        <Badge
-                          key={specialty.text}
-                          className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
-                        >
-                          {specialty.text}
-                        </Badge>
-                      )
-                    )}
-                </div>
-              </div>
-            )}
-          </>
-        )}
+        {renderMainContent()}
       </div>
 
       <Drawer open={isOpen} onOpenChange={() => setIsOpen(false)}>

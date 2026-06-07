@@ -61,9 +61,13 @@ export async function getProfileByIdentifier({
     'GET',
     `/fhir/${type}?identifier=https://login.konsulin.care/userid|${userId}`
   );
-  const entry = bundle?.entry?.[0]?.resource as
-    | Patient
-    | Practitioner
-    | undefined;
-  return entry ?? null;
+  const resource = bundle?.entry?.[0]?.resource;
+  if (
+    !resource ||
+    (resource.resourceType !== 'Patient' &&
+      resource.resourceType !== 'Practitioner')
+  ) {
+    return null;
+  }
+  return resource as Patient | Practitioner;
 }

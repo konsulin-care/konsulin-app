@@ -25,11 +25,12 @@ function useReloadAnonymousSession(
 ) {
   const hasRunRef = useRef(false);
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof globalThis.window === 'undefined') return;
     const nav = performance.getEntriesByType('navigation')[0] as
       | PerformanceNavigationTiming
       | undefined;
-    if (nav?.type !== 'reload' || window.location.pathname !== '/') return;
+    if (nav?.type !== 'reload' || globalThis.window.location.pathname !== '/')
+      return;
     try {
       if (sessionStorage.getItem('konsulin_initial_pathname') !== '/') return;
     } catch {
@@ -77,9 +78,9 @@ function handleStoredRedirect(
     const decoded = decodeURIComponent(storedRedirect);
     if (decoded.startsWith('/') && !decoded.startsWith('//')) {
       const currentPath =
-        window.location.pathname +
-        window.location.search +
-        window.location.hash;
+        globalThis.window.location.pathname +
+        globalThis.window.location.search +
+        globalThis.window.location.hash;
       if (decoded === currentPath) {
         setIsRedirecting(false);
         return true;

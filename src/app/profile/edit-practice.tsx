@@ -947,7 +947,7 @@ const CollapsibleItem = ({
               if (value === '') {
                 setSlotConfigs((s: any) => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), bufferTime: '' }
+                  [index]: { ...s[index], bufferTime: '' }
                 }));
                 return;
               }

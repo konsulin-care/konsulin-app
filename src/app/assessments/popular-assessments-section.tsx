@@ -19,7 +19,7 @@ export default function PopularAssessmentsSection({
   popularLoading,
   isAuthLoading,
   onAssessmentClick
-}: PopularAssessmentsSectionProps) {
+}: Readonly<PopularAssessmentsSectionProps>) {
   return (
     <div className='bg-[#F9F9F9] p-4'>
       <div className='text-muted mb-2 text-[14px] font-bold'>
@@ -33,17 +33,12 @@ export default function PopularAssessmentsSection({
           <div className='flex w-max space-x-4 pb-4'>
             {(popularAssessments ?? []).map(
               (assessment: BundleEntry<Questionnaire>) => (
-                <div
+                <button
                   key={assessment.resource.id}
-                  role='button'
-                  tabIndex={0}
-                  className='card flex cursor-pointer flex-col gap-4 bg-white'
+                  type='button'
+                  className='card flex cursor-pointer flex-col gap-4 bg-white text-left'
                   onClick={() => {
                     onAssessmentClick(assessment.resource);
-                  }}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ')
-                      onAssessmentClick(assessment.resource);
                   }}
                 >
                   <div className='flex items-start justify-between'>
@@ -74,7 +69,7 @@ export default function PopularAssessmentsSection({
                       {assessment.resource.description}
                     </span>
                   </div>
-                </div>
+                </button>
               )
             )}
           </div>

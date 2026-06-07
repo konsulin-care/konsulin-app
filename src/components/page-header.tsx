@@ -63,7 +63,7 @@ export default function PageHeader({
   pageIndicator: overrideIndicator,
   backRoute: overrideBackRoute,
   hideUpcomingSession
-}: PageHeaderProps) {
+}: Readonly<PageHeaderProps>) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();

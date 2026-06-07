@@ -49,11 +49,11 @@ export function StackedCircles({
   roles,
   currentAvatar,
   otherRoleAvatars
-}: {
+}: Readonly<{
   roles: string[];
   currentAvatar: AvatarInfo;
   otherRoleAvatars: (AvatarInfo & { role: string })[];
-}) {
+}>) {
   const layout = computeLayerLayout(roles.length);
 
   return (

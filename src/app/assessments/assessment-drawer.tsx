@@ -34,7 +34,7 @@ export default function AssessmentDrawerContent({
   isPractitioner,
   startTransition,
   router
-}: AssessmentDrawerContentProps) {
+}: Readonly<AssessmentDrawerContentProps>) {
   const showBadge =
     selectedAssessment &&
     selectedAssessment.resourceType === 'ResearchStudy' &&
@@ -59,11 +59,11 @@ export default function AssessmentDrawerContent({
     isPending ||
     (selectedAssessment?.resourceType === 'ResearchStudy' && !researchUrl);
 
-  const buttonText = isPractitioner
-    ? 'Isi assessment untuk Pasien'
-    : selectedAssessment?.resourceType === 'ResearchStudy'
-      ? 'Mulai'
-      : 'Start Test';
+  const buttonText = (() => {
+    if (isPractitioner) return 'Isi assessment untuk Pasien';
+    if (selectedAssessment?.resourceType === 'ResearchStudy') return 'Mulai';
+    return 'Start Test';
+  })();
 
   const renderBadge = showBadge && (
     <Badge
