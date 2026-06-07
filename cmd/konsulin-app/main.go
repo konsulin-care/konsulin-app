@@ -146,6 +146,11 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		BackendBaseURL: cfg.APIURL,
 	}))
 
+	// SuperTokens API — proxy directly to backend, bypass Next.js.
+	r.Handle("/api/v1/auth/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
+		BackendBaseURL: cfg.APIURL,
+	}))
+
 	// Role switcher — GET returns partial, POST updates session cookie.
 	r.HandleFunc("/auth/role/switch", handler.NewRoleSwitchHandler(handler.RoleSwitchOptions{
 		CookieName:   cfg.AuthCookieName,
