@@ -13,7 +13,7 @@ export default function ContentWraper({
   return (
     <div
       className={cn(
-        'mt-[-24px] min-h-screen rounded-b-[16px] bg-white pb-20',
+        'mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] bg-white pb-20',
         className
       )}
     >

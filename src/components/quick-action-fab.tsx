@@ -1,8 +1,10 @@
 'use client';
 
+import { Roles } from '@/constants/roles';
+import { useAuth } from '@/context/auth/authContext';
 import { cn } from '@/lib/utils';
 import { BookText, Calendar, HeartPulse, Plus, Sparkles } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const pills = [
@@ -21,9 +23,13 @@ const SCROLL_THRESHOLD = 10;
 const SCROLL_HIDE_OFFSET = 100;
 
 export default function QuickActionFab() {
+  const router = useRouter();
+  const { state: authState } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
+
+  const isGuest = authState?.userInfo?.role_name === Roles.Guest;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -52,6 +58,19 @@ export default function QuickActionFab() {
   const close = useCallback(() => setIsOpen(false), []);
   const toggle = useCallback(() => setIsOpen(v => !v), []);
 
+  const handlePillClick = useCallback(
+    (href: string) => {
+      close();
+      if (isGuest && href !== '/assessments') {
+        document.cookie = `redirect_intent=${encodeURIComponent(href)}; Path=/; Max-Age=300; SameSite=Lax`;
+        router.push('/auth');
+        return;
+      }
+      router.push(href);
+    },
+    [close, isGuest, router]
+  );
+
   return (
     <>
       {isOpen && (
@@ -75,16 +94,16 @@ export default function QuickActionFab() {
         {isOpen && (
           <div className='flex flex-col-reverse items-end gap-3'>
             {pills.map(pill => (
-              <Link
+              <button
                 key={pill.href}
-                href={pill.href}
-                onClick={close}
+                type='button'
+                onClick={() => handlePillClick(pill.href)}
                 className='animate-pill-in inline-flex items-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-medium text-[#2c2f35] shadow-lg transition-colors hover:bg-gray-50'
                 style={{ animationDelay: `${pill.delay}ms` }}
               >
                 <pill.icon className='h-4 w-4' />
                 {pill.label}
-              </Link>
+              </button>
             ))}
           </div>
         )}

@@ -12,7 +12,13 @@ export default function HomeContent() {
   const { state: authState } = useAuth();
 
   return (
-    <ContentWraper>
+    <ContentWraper
+      className={
+        authState.userInfo.role_name === Roles.Guest
+          ? 'min-h-0 pb-4'
+          : undefined
+      }
+    >
       {authState.userInfo.role_name === Roles.Guest && <HomeContentGuest />}
       {authState.userInfo.role_name === Roles.Patient && <HomeContentPatient />}
       {authState.userInfo.role_name === Roles.Practitioner && (

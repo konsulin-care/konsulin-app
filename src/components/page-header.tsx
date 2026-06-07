@@ -1,12 +1,17 @@
 'use client';
 
+import Avatar from '@/components/general/avatar';
 import RoleAvatarPopup from '@/components/role-avatar-popup';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { getNow } from '@/constants/date';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
-import { parseMergedAppointments, parseMergedSessions } from '@/utils/helper';
+import {
+  generateAvatarPlaceholder,
+  parseMergedAppointments,
+  parseMergedSessions
+} from '@/utils/helper';
 import { isAfter, parseISO } from 'date-fns';
 import { ChevronLeftIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -83,6 +88,11 @@ export default function PageHeader({
       ? authState?.userInfo?.email
       : authState?.userInfo?.fullname;
 
+  const guestAvatar = useMemo(() => {
+    const seed = crypto.randomUUID();
+    return generateAvatarPlaceholder({ id: seed, name: 'Guest' });
+  }, []);
+
   const parsedAppointmentsData = useMemo(() => {
     if (
       !appointmentData ||
@@ -145,9 +155,25 @@ export default function PageHeader({
         {!isLoadingAuth && authState.isAuthenticated ? (
           <RoleAvatarPopup indicator={indicator} displayName={displayName} />
         ) : (
-          <div className='flex h-[32px] items-center text-sm font-bold text-[#2c2f35]'>
-            Konsulin
-          </div>
+          <Link href='/auth' className='flex items-center gap-2'>
+            <div className='flex flex-col text-right'>
+              {indicator && (
+                <div className='text-xs font-normal text-[#2c2f35]'>
+                  {indicator}
+                </div>
+              )}
+              <div className='text-sm font-bold text-[#2c2f35]'>Guest</div>
+            </div>
+            <Avatar
+              seed={guestAvatar.seed}
+              initials={guestAvatar.initials}
+              backgroundColor={guestAvatar.backgroundColor}
+              height={32}
+              width={32}
+              className='text-xs'
+              imageClassName='self-center'
+            />
+          </Link>
         )}
       </div>
 
