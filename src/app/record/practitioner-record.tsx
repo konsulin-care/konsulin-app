@@ -41,8 +41,11 @@ function PractitionerRecordCard({
   record,
   getPractitionerInfo
 }: {
-  record: IRecord;
-  getPractitionerInfo: (r: IRecord) => { displayName: string; email: string };
+  readonly record: IRecord;
+  readonly getPractitionerInfo: (r: IRecord) => {
+    displayName: string;
+    email: string;
+  };
 }) {
   const splitTitle = record.title.split('/');
   const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];

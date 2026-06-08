@@ -8,7 +8,6 @@ import { getAuthCookieSession, restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { roleToFhirResource } from '@/utils/role-fhir';
-import { Patient, Practitioner } from 'fhir/r4';
 import React, {
   createContext,
   ReactNode,
@@ -201,10 +200,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        const result = (await getProfileByIdentifier({
+        const result = await getProfileByIdentifier({
           userId,
           type: roleToFhirResource(role)
-        })) as Patient | Practitioner;
+        });
 
         if (!result) {
           const payload = {

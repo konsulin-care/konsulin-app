@@ -5,6 +5,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type { ComponentType, SVGProps } from 'react';
 import {
   ExerciseIcon,
   HouseIcon,
@@ -12,6 +13,21 @@ import {
   OfficeIcon,
   UserIcon
 } from './icons';
+
+function NavIcon({
+  icon: Icon,
+  isActive
+}: {
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  isActive: boolean;
+}) {
+  return (
+    <Icon
+      fill={isActive ? '#13C2C2' : '#161C26'}
+      strokeWidth={isActive ? 1.2 : 1}
+    />
+  );
+}
 
 /**
  *
@@ -30,57 +46,32 @@ export default function NavigationBar({
     {
       href: '/',
       isActive: pathname === '/',
-      icon: (isActive: boolean) => (
-        <HouseIcon
-          fill={isActive ? '#13C2C2' : '#161C26'}
-          strokeWidth={isActive ? 1.2 : 1}
-        />
-      ),
+      icon: HouseIcon,
       label: 'Home'
     },
     {
       href: isPractitioner ? '/schedule' : '/clinic',
       isActive:
         pathname?.startsWith('/clinic') || pathname?.startsWith('/schedule'),
-      icon: (isActive: boolean) => (
-        <OfficeIcon
-          fill={isActive ? '#13C2C2' : '#161C26'}
-          strokeWidth={isActive ? 1.2 : 1}
-        />
-      ),
+      icon: OfficeIcon,
       label: 'Appointment'
     },
     {
       href: '/assessments',
       isActive: pathname?.startsWith('/assessments'),
-      icon: (isActive: boolean) => (
-        <LiteratureIcon
-          fill={isActive ? '#13C2C2' : '#161C26'}
-          strokeWidth={isActive ? 1.2 : 1}
-        />
-      ),
+      icon: LiteratureIcon,
       label: 'Assessments'
     },
     {
       href: '/exercise',
       isActive: pathname?.startsWith('/exercise'),
-      icon: (isActive: boolean) => (
-        <ExerciseIcon
-          fill={isActive ? '#13C2C2' : '#161C26'}
-          strokeWidth={isActive ? 1.2 : 1}
-        />
-      ),
+      icon: ExerciseIcon,
       label: 'Exercise'
     },
     {
       href: '/profile',
       isActive: pathname?.startsWith('/profile'),
-      icon: (isActive: boolean) => (
-        <UserIcon
-          fill={isActive ? '#13C2C2' : '#161C26'}
-          strokeWidth={isActive ? 1.2 : 1}
-        />
-      ),
+      icon: UserIcon,
       label: 'Profile'
     }
   ];
@@ -97,7 +88,7 @@ export default function NavigationBar({
               item.isActive ? activePathStyle : pathStyle
             )}
           >
-            {item.icon(item.isActive)}
+            <NavIcon icon={item.icon} isActive={item.isActive} />
             <span className='mt-[5px] text-[12px]'>{item.label}</span>
           </Link>
         ))}

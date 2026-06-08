@@ -1,3 +1,5 @@
+'use client';
+
 import { Share2Icon } from 'lucide-react';
 import { ShareSocial } from 'react-share-social';
 import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
@@ -10,7 +12,7 @@ interface IShareProps {
  *
  */
 export default function Share({ title = 'Share' }: IShareProps) {
-  const currentLocation = window.location.href;
+  const currentLocation = globalThis?.location?.href ?? '';
 
   const style = {
     root: {
