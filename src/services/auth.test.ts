@@ -91,7 +91,7 @@ describe('restoreAuthCookie role resolution', () => {
     await restoreAuthCookie(makeSession('ca-1'));
 
     expect(mockGetProfileByIdentifier).toHaveBeenCalledWith(
-      expect.objectContaining({ type: Roles.ClinicAdmin })
+      expect.objectContaining({ type: 'Person' })
     );
   });
 

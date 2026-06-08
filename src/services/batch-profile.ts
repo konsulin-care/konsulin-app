@@ -1,5 +1,5 @@
-import { Roles } from '@/constants/roles';
 import { mergeNames } from '@/utils/helper';
+import { roleToFhirResource } from '@/utils/role-fhir';
 import { Bundle, HumanName } from 'fhir/r4';
 import { apiRequest } from './api';
 
@@ -18,16 +18,6 @@ export type RoleProfile = {
 };
 
 export type RoleProfileMap = Record<string, RoleProfile>;
-
-const ROLE_TO_RESOURCE: Record<string, string> = {
-  [Roles.Patient]: 'Patient',
-  [Roles.Practitioner]: 'Practitioner',
-  [Roles.ClinicAdmin]: 'Person'
-};
-
-function resourceForRole(role: string): string {
-  return ROLE_TO_RESOURCE[role] || 'Patient';
-}
 
 function extractEmail(resource: FhirEntry): string {
   const telecom = resource?.telecom;
@@ -53,7 +43,7 @@ function buildBatchBody(
     entry: roles.map(role => ({
       request: {
         method: 'GET',
-        url: `/${resourceForRole(role)}?identifier=https://login.konsulin.care/userid|${userId}`
+        url: `/${roleToFhirResource(role)}?identifier=https://login.konsulin.care/userid|${userId}`
       }
     }))
   };

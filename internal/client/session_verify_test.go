@@ -9,8 +9,8 @@ func TestActiveRoleFrom(t *testing.T) {
 		want  string
 	}{
 		{
-			name:  "Practitioner takes priority over ClinicAdmin",
-			roles: []string{"Practitioner", "ClinicAdmin", "Patient"},
+			name:  "Practitioner takes priority over Clinic Admin",
+			roles: []string{"Practitioner", "Clinic Admin", "Patient"},
 			want:  "Practitioner",
 		},
 		{
@@ -19,18 +19,18 @@ func TestActiveRoleFrom(t *testing.T) {
 			want:  "Practitioner",
 		},
 		{
-			name:  "ClinicAdmin is recognized when Practitioner absent",
-			roles: []string{"ClinicAdmin", "Patient"},
-			want:  "ClinicAdmin",
+			name:  "Clinic Admin is recognized when Practitioner absent",
+			roles: []string{"Clinic Admin", "Patient"},
+			want:  "Clinic Admin",
 		},
 		{
-			name:  "ClinicAdmin alone returns ClinicAdmin",
-			roles: []string{"ClinicAdmin"},
-			want:  "ClinicAdmin",
+			name:  "Clinic Admin alone returns Clinic Admin",
+			roles: []string{"Clinic Admin"},
+			want:  "Clinic Admin",
 		},
 		{
 			name:  "falls back to Patient for unrecognized roles",
-			roles: []string{"SomeOtherRole"},
+			roles: []string{"ClinicAdmin"},
 			want:  "Patient",
 		},
 		{

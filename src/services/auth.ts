@@ -1,6 +1,7 @@
 import { Roles } from '@/constants/roles';
 import { mergeNames } from '@/utils/helper';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
+import { roleToFhirResource } from '@/utils/role-fhir';
 import { Patient, Practitioner } from 'fhir/r4';
 import { SessionContextUpdate } from 'supertokens-auth-react/lib/build/recipe/session/types';
 import { getClaimValue } from 'supertokens-auth-react/recipe/session';
@@ -163,7 +164,7 @@ export const restoreAuthCookie = async (
 
   const role = resolveRole(roles);
 
-  const profile = await attemptProfileFetch(userId, role);
+  const profile = await attemptProfileFetch(userId, roleToFhirResource(role));
   const authPayload = buildAuthPayload(userId, roles, role, profile);
 
   const logMessage = profile

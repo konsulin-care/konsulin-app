@@ -36,8 +36,8 @@ func activeRoleFrom(roles []string) string {
 		}
 	}
 	for _, r := range roles {
-		if r == "ClinicAdmin" {
-			return "ClinicAdmin"
+		if r == "Clinic Admin" {
+			return "Clinic Admin"
 		}
 	}
 	return "Patient"
