@@ -32,6 +32,7 @@ type IScore = {
 
 const BASE_HUE = 170;
 
+/** Generates a random HSL color based on a base hue. */
 const generateRandomColor = (baseHue: number) => {
   const hue = (baseHue + (Math.random() * 20 - 10)) % 360;
   const saturation = 70 + Math.random() * 20;
@@ -103,6 +104,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
     setCurrentLocation(fullUrl);
   }, []);
 
+  /** Extracts and calculates score data from questionnaire response. */
   const scoreData = () => {
     if (!questionnaireResponse) return;
 
@@ -155,6 +157,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
     let attempts = 0;
     const MAX_ATTEMPTS = 3;
 
+    /** Polls the backend for result brief data. */
     const poll = async (serviceRequestId: string) => {
       try {
         const API = await getAPI();

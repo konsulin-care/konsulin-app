@@ -33,6 +33,7 @@ const FIRST_LEVEL_ROUTES = new Set([
   '/exercise'
 ]);
 
+/** Returns the page title based on current route. */
 function getPageIndicator(
   pathname: string,
   searchParams: URLSearchParams
@@ -54,6 +55,7 @@ function getPageIndicator(
   }
 }
 
+/** Determines the default back navigation route. */
 function getDefaultBackRoute(
   pathname: string,
   searchParams: URLSearchParams
@@ -135,6 +137,7 @@ export default function PageHeader({
   const backAction =
     overrideBackRoute ?? getDefaultBackRoute(pathname, searchParams);
 
+  /** Navigates back using the backAction or browser history. */
   const handleBack = () => {
     if (backAction) {
       router.push(backAction);

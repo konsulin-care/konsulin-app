@@ -25,6 +25,7 @@ export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
   });
 };
 
+/** Fetch all appointments for a patient. */
 export const useGetAllAppointments = ({ patientId }) => {
   return useQuery({
     queryKey: ['all-appointments', patientId],
@@ -42,6 +43,7 @@ export const useGetAllAppointments = ({ patientId }) => {
   });
 };
 
+/** Fetch upcoming sessions for a practitioner from a given date. */
 export const useGetUpcomingSessions = ({ practitionerId, dateReference }) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
@@ -64,6 +66,7 @@ export const useGetUpcomingSessions = ({ practitionerId, dateReference }) => {
   });
 };
 
+/** Fetch all sessions for a practitioner. */
 export const useGetAllSessions = ({ practitionerId }) => {
   return useQuery({
     queryKey: ['all-sessions', practitionerId],
@@ -81,6 +84,7 @@ export const useGetAllSessions = ({ practitionerId }) => {
   });
 };
 
+/** Fetch today's sessions for a practitioner. */
 export const useGetTodaySessions = ({
   practitionerId,
   dateReference,
@@ -104,6 +108,7 @@ export const useGetTodaySessions = ({
   });
 };
 
+/** Create a new appointment via FHIR bundle. */
 export const useCreateAppointment = () => {
   return useMutation({
     mutationKey: ['create-appointments'],
@@ -144,6 +149,7 @@ export const usePayAppointment = () => {
   });
 };
 
+/** Fetch available slots for a practitioner on a given date. */
 export const useGetPractitionerSlots = ({ practitionerId, dateReference }) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 

@@ -39,6 +39,7 @@ export default function CreateJournal() {
 
   useEffect(addResponse, [addResponse]);
 
+  /** Submits a journal entry to the server. */
   const handleSubmitJournal = async () => {
     try {
       const payload = {

@@ -17,6 +17,7 @@ export default function ExerciseDetail() {
   const excerciseData =
     Array.isArray(data) && data?.find(item => item?.id === exerciseId);
 
+  /** Renders exercise iframe or loading/not-found states. */
   const renderContent = () => {
     if (excerciseIsLoading) return <PageLoader />;
     if (!excerciseData) {

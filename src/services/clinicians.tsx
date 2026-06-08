@@ -11,6 +11,7 @@ import {
 } from 'fhir/r4';
 import { getAPI } from './api';
 
+/** Check if an invoice has a participant matching the given role. */
 function hasParticipantForRole(
   invoice: BundleEntry<Invoice>,
   roleId: string
@@ -22,6 +23,7 @@ function hasParticipantForRole(
   );
 }
 
+/** Check if a schedule has an actor matching the given role. */
 function hasActorForRole(
   schedule: BundleEntry<Schedule>,
   roleId: string

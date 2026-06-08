@@ -10,6 +10,7 @@ import {
   QuestionnaireResponseItemAnswer
 } from 'fhir/r4';
 
+/** Extract patient or practitioner note from an Observation. */
 const extractObservationFromBundle = (resource: Observation) => {
   const codeList = resource.code?.coding ?? [];
   const loincCode = codeList.find(
@@ -44,6 +45,7 @@ const extractObservationFromBundle = (resource: Observation) => {
   return null;
 };
 
+/** Extract brief result from a QuestionnaireResponse. */
 const extractQuestionnaireFromBundle = (resource: QuestionnaireResponse) => {
   const result =
     resource.item
@@ -60,6 +62,7 @@ const extractQuestionnaireFromBundle = (resource: QuestionnaireResponse) => {
   };
 };
 
+/** Dispatch a FHIR resource to the appropriate extractor. */
 const processBundleResource = (resource: FhirResource) => {
   if (resource.resourceType === 'Observation') {
     return extractObservationFromBundle(resource);
@@ -70,6 +73,7 @@ const processBundleResource = (resource: FhirResource) => {
   return null;
 };
 
+/** Parse an array of bundle responses into sorted flat records. */
 export const parseRecordBundles = (bundles: IBundleResponse[]) => {
   const results = [];
 
@@ -98,6 +102,7 @@ export const parseRecordBundles = (bundles: IBundleResponse[]) => {
   );
 };
 
+/** Collect unique FHIR resources from a nested bundle structure. */
 const collectUniqueResources = (bundle: Bundle): Map<string, FhirResource> => {
   const uniqueMap = new Map<string, FhirResource>();
 
@@ -127,6 +132,7 @@ const collectUniqueResources = (bundle: Bundle): Map<string, FhirResource> => {
   return uniqueMap;
 };
 
+/** Extract observation values including practitioner notes. */
 const extractValueObservation = (resource: Observation) => {
   const codeList = resource.code?.coding ?? [];
   const loincCode = codeList.find(
@@ -163,6 +169,7 @@ const extractValueObservation = (resource: Observation) => {
   };
 };
 
+/** Recursively flatten a QuestionnaireResponseItem tree into a list. */
 const flattenItems = (
   node: QuestionnaireResponseItem
 ): QuestionnaireResponseItem[] => {
@@ -172,6 +179,7 @@ const flattenItems = (
 
 type ExtractableValue = string | boolean | number | null;
 
+/** Extract a primitive value from a questionnaire answer. */
 const extractAnswerValue = (
   ans: QuestionnaireResponseItemAnswer
 ): ExtractableValue => {
@@ -185,6 +193,7 @@ const extractAnswerValue = (
   return null;
 };
 
+/** Extract all answer values from a questionnaire section. */
 const extractValuesFromSection = (section: QuestionnaireResponseItem) => {
   const values: Array<{
     section: string | undefined;
@@ -208,6 +217,7 @@ const extractValuesFromSection = (section: QuestionnaireResponseItem) => {
   return values;
 };
 
+/** Extract a full SOAP questionnaire with all section values. */
 export const extractSoapQuestionnaire = (resource: QuestionnaireResponse) => {
   const values: Array<{
     section: string | undefined;
@@ -231,6 +241,7 @@ export const extractSoapQuestionnaire = (resource: QuestionnaireResponse) => {
   };
 };
 
+/** Extract only the brief result from a questionnaire. */
 const extractBriefQuestionnaire = (resource: QuestionnaireResponse) => {
   const brief =
     resource.item
@@ -247,6 +258,7 @@ const extractBriefQuestionnaire = (resource: QuestionnaireResponse) => {
   };
 };
 
+/** Parse a single practitioner bundle into sorted Observation/Questionnaire records. */
 export const parseRecordBundlePractitioner = (bundle: Bundle) => {
   if (bundle?.resourceType !== 'Bundle' || !Array.isArray(bundle?.entry))
     return [];

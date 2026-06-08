@@ -81,6 +81,7 @@ function toSearchString(value: unknown): string {
   }
 }
 
+/** Safely traverse a dot-delimited path into an object. */
 function getNestedValue(item: unknown, path: string): unknown {
   const parts = path.split('.');
   let current: unknown = item;
@@ -99,6 +100,7 @@ function getNestedValue(item: unknown, path: string): unknown {
   return current;
 }
 
+/** Check if an item field matches the lowercased search term. */
 function matchesField<T>(
   item: T,
   field: keyof T | SearchField,

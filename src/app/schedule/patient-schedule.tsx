@@ -23,6 +23,7 @@ type Props = {
   readonly fhirId: string;
 };
 
+/** Card displaying a single appointment entry. */
 const AppointmentCard = ({
   appointment
 }: {

@@ -25,6 +25,7 @@ export default function RecordJournal({ journalId }: Props) {
     resourceType: 'Observation'
   });
 
+  /** Formats a date string to readable format. */
   const formattedDate = (date: string) => {
     return format(new Date(date), 'dd MMMM yyyy');
   };

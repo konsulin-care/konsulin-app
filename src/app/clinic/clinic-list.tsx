@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import ClinicFilter from './clinic-filter';
 
+/** Card displaying a clinic with image and selection button. */
 function ClinicCard({
   clinic,
   onSelect
@@ -49,6 +50,7 @@ function ClinicCard({
   );
 }
 
+/** Renders a grid of clinic cards. */
 function clinicGrid(clinics: BundleEntry[], onSelect: (id: string) => void) {
   return (
     <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
@@ -116,6 +118,7 @@ export default function ClinicList() {
     router.push(`/clinic?clinicId=${clinicId}`);
   };
 
+  /** Renders clinic results, loading, or empty states. */
   const renderClinicResults = () => {
     if (isListClinicsLoading) return <CardLoader />;
 

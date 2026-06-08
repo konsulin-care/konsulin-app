@@ -63,6 +63,17 @@ const EmptyPractitionerState = () => (
   />
 );
 
+/** Trigger card shown inside PractitionerAvailability to reveal the calendar. */
+function AvailabilityTrigger() {
+  return (
+    <div className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'>
+      <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />
+      <span className='mr-auto text-[12px] font-bold'>See Availability</span>
+      <ArrowRightIcon color='#13C2C2' />
+    </div>
+  );
+}
+
 /** Practitioner booking page with avatar, availability calendar, and payment flow. */
 export default function Practitioner() {
   const router = useRouter();
@@ -217,6 +228,7 @@ export default function Practitioner() {
     </div>
   );
 
+  /** Renders main practitioner content, loading, or empty states. */
   const renderMainContent = () => {
     if (practitionerDataLoading) return <LoadingState />;
     if (!practitionerData) return <EmptyPractitionerState />;
@@ -239,13 +251,7 @@ export default function Practitioner() {
             backgroundColor
           }}
         >
-          <div className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'>
-            <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />
-            <span className='mr-auto text-[12px] font-bold'>
-              See Availability
-            </span>
-            <ArrowRightIcon color='#13C2C2' />
-          </div>
+          <AvailabilityTrigger />
         </PractitionerAvailability>
 
         <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>

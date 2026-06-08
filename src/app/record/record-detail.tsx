@@ -27,6 +27,7 @@ export default function RecordDetail() {
     return <Notfound />;
   }
 
+  /** Returns page title based on record category. */
   const pageTitle = (category: number) => {
     switch (category) {
       case 1:
@@ -42,6 +43,7 @@ export default function RecordDetail() {
     }
   };
 
+  /** Renders the appropriate record component based on category. */
   const renderContent = (category: number) => {
     switch (category) {
       case 1:

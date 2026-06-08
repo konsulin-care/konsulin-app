@@ -25,6 +25,7 @@ type Props = {
   readonly fhirId: string;
 };
 
+/** Card displaying a single session entry. */
 const SessionCard = ({ session }: { session: MergedSession }) => {
   const sessionStartTime = session.slotStart
     ? format(parseISO(session.slotStart), 'HH:mm')

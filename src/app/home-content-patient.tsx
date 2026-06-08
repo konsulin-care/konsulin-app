@@ -24,6 +24,24 @@ const ReactMarkdown = dynamic(() => import('react-markdown'), {
   ssr: false
 });
 
+/** Card body containing record title and description (avoids deep JSX nesting). */
+function RecordCardContent({
+  formattedTitle,
+  cleanDescription
+}: Readonly<{ formattedTitle: string; cleanDescription: string }>) {
+  return (
+    <div className='flex-1 overflow-hidden'>
+      <div className='truncate text-[12px] font-bold'>{formattedTitle}</div>
+      <div className='truncate text-[10px] text-gray-500'>
+        <ReactMarkdown components={customMarkdownComponents}>
+          {cleanDescription}
+        </ReactMarkdown>
+      </div>
+    </div>
+  );
+}
+
+/** Card displaying a single record entry. */
 function RecordCard({ record }: Readonly<{ record: IRecord }>) {
   const splitTitle = record.title.split('/');
   const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
@@ -48,14 +66,10 @@ function RecordCard({ record }: Readonly<{ record: IRecord }>) {
         <div className='mr-2 h-[40px] w-[40px] shrink-0 rounded-full bg-[#F8F8F8] p-2'>
           <BookText className='h-6 w-6 text-gray-500' />
         </div>
-        <div className='flex-1 overflow-hidden'>
-          <div className='truncate text-[12px] font-bold'>{formattedTitle}</div>
-          <div className='truncate text-[10px] text-gray-500'>
-            <ReactMarkdown components={customMarkdownComponents}>
-              {cleanDescription}
-            </ReactMarkdown>
-          </div>
-        </div>
+        <RecordCardContent
+          formattedTitle={formattedTitle}
+          cleanDescription={cleanDescription}
+        />
       </div>
       <hr className='w-full' />
       <div className='flex items-center justify-between'>
@@ -93,6 +107,7 @@ export default function HomeContentPatient() {
     router.push(`/appointment?practitioner=${practitionerId}`);
   };
 
+  /** Renders records list, loading, or error states. */
   const renderRecordsContent = () => {
     if (isAuthLoading || isRecordsLoading) {
       return (

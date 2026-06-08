@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterActions from '@/components/shared/filter-actions';
 import FilterCalendar from '@/components/shared/filter-calendar';
@@ -65,6 +65,29 @@ export type IRecordParams = {
   isUseCustomDate?: boolean;
 };
 
+/** Dropdown filter for record type. */
+function ShowBySection({
+  type,
+  onTypeChange
+}: Readonly<{ type?: string; onTypeChange: (value: string) => void }>) {
+  return (
+    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+      <div className='mb-4 font-bold'>Show By</div>
+      <Select value={type} onValueChange={onTypeChange}>
+        <SelectTrigger className='w-full border-none'>
+          <SelectValue placeholder='All' />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value='All'>All</SelectItem>
+          <SelectItem value='Patient Note'>Journal</SelectItem>
+          <SelectItem value='QuestionnaireResponse'>Assessment</SelectItem>
+          <SelectItem value='Practitioner Note, SOAP Notes'>SOAP</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 /**
  *
  */
@@ -112,36 +135,10 @@ export default function RecordFilter({ onChange }) {
   };
 
   const showBySection = (
-    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-      <div className='mb-4 font-bold'>Show By</div>
-      <div className='flex flex-wrap gap-[10px]'>
-        <Select
-          value={filter.type}
-          onValueChange={e => handleFilterChange('type', e)}
-        >
-          <SelectTrigger className='w-full border-none'>
-            <SelectValue placeholder='All' />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem key='All' value='All'>
-              All
-            </SelectItem>
-            <SelectItem key='Patient Note' value='Patient Note'>
-              Journal
-            </SelectItem>
-            <SelectItem
-              key='QuestionnaireResponse'
-              value='QuestionnaireResponse'
-            >
-              Assessment
-            </SelectItem>
-            <SelectItem key='SOAP' value='Practitioner Note, SOAP Notes'>
-              SOAP
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
+    <ShowBySection
+      type={filter.type}
+      onTypeChange={(value: string) => handleFilterChange('type', value)}
+    />
   );
 
   const renderDrawerContent = () => {

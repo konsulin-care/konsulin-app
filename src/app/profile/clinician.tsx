@@ -42,6 +42,32 @@ type Props = {
  * @returns The JSX element for the Clinician profile page.
  */
 
+/** Content of the availability editor drawer. */
+function DrawerBody({
+  selectedPractitionerRoles,
+  onSave,
+  onCancel
+}: Readonly<{
+  selectedPractitionerRoles: PractitionerRole[];
+  onSave: () => void;
+  onCancel: () => void;
+}>) {
+  if (!selectedPractitionerRoles || selectedPractitionerRoles.length === 0) {
+    return (
+      <div className='flex h-full items-center justify-center'>
+        <LoadingSpinnerIcon width={50} height={50} className='animate-spin' />
+      </div>
+    );
+  }
+  return (
+    <PractitionerAvailabilityEditor
+      practitionerRoles={selectedPractitionerRoles}
+      onSuccess={onSave}
+      onCancel={onCancel}
+    />
+  );
+}
+
 /**
  *
  */
@@ -162,6 +188,7 @@ export default function Clinician({ fhirId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [practitionerRolesData]);
 
+  /** Handle successful availability save and refetch roles. */
   const handleSaveSuccess = async () => {
     try {
       toast.success('Jadwal berhasil disimpan');
@@ -252,7 +279,7 @@ export default function Clinician({ fhirId }: Props) {
           details={activeFirms}
           onEdit={() => router.push('/profile?path=edit-practice')}
           role='clinician'
-          isEditPractice={true}
+          isEditPractice
         />
       )}
 
@@ -270,22 +297,11 @@ export default function Clinician({ fhirId }: Props) {
           <DrawerTitle />
           <DrawerDescription />
           <div className='scrollbar-hide my-2 flex-grow overflow-y-auto'>
-            {selectedPractitionerRoles &&
-            selectedPractitionerRoles.length > 0 ? (
-              <PractitionerAvailabilityEditor
-                practitionerRoles={selectedPractitionerRoles}
-                onSuccess={handleSaveSuccess}
-                onCancel={() => setIsDrawerOpen(false)}
-              />
-            ) : (
-              <div className='flex h-full items-center justify-center'>
-                <LoadingSpinnerIcon
-                  width={50}
-                  height={50}
-                  className='animate-spin'
-                />
-              </div>
-            )}
+            <DrawerBody
+              selectedPractitionerRoles={selectedPractitionerRoles}
+              onSave={handleSaveSuccess}
+              onCancel={() => setIsDrawerOpen(false)}
+            />
           </div>
         </DrawerContent>
       </Drawer>

@@ -255,6 +255,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
     </div>
   );
 
+  /** Renders the filter drawer content based on current selection. */
   const renderDrawerContent = () => {
     switch (whichContent) {
       case CONTENT_DEFAULT:

@@ -66,6 +66,7 @@ async function postAuthCookie(
   });
 }
 
+/** Post auth payload and log the result. */
 async function postAuthCookieWithLogging(
   authPayload: Record<string, unknown>,
   logMessage: string
@@ -84,6 +85,7 @@ async function postAuthCookieWithLogging(
   }
 }
 
+/** Build the auth cookie payload from user and profile data. */
 function buildAuthPayload(
   userId: string,
   roles: string[] | undefined,
@@ -106,6 +108,7 @@ function buildAuthPayload(
   };
 }
 
+/** Attempt to fetch the FHIR profile for a user. */
 async function attemptProfileFetch(
   userId: string,
   role: string

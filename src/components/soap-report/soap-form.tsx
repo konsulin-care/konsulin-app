@@ -61,6 +61,7 @@ export default function SoapForm({
   useEffect(() => {
     if (!questionnaire) return;
 
+    /** Loads draft or existing response and builds the smart form. */
     const runBuildForm = async () => {
       setIsBuilding(true);
       try {
@@ -100,12 +101,14 @@ export default function SoapForm({
     updatedAt: Date.now()
   }));
 
+  /** Validates required SOAP fields and returns whether form is valid. */
   const handleValidation = () => {
     checkRequiredIsEmpty();
 
     return Object.keys(invalidItems).length === 0;
   };
 
+  /** Submits the SOAP bundle and cleans up drafts on success. */
   const handleSubmitSoap = async () => {
     const questionnaireResponse = getResponse();
     const author = { reference: `Practitioner/${practitionerId}` };

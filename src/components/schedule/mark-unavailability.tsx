@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth, max-lines */
+/* eslint-disable @typescript-eslint/no-explicit-any, max-lines */
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +42,252 @@ type Props = {
   triggerClassName?: string;
   buttonText?: string;
 };
+
+/** Trigger button that opens the unavailability dialog. */
+function UnavailabilityTrigger({
+  triggerClassName,
+  buttonText,
+  onClick
+}: Readonly<{
+  triggerClassName?: string;
+  buttonText: string;
+  onClick: () => void;
+}>) {
+  return (
+    <button
+      type='button'
+      className={cn(
+        'cursor-pointer transition-all duration-200 hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500',
+        triggerClassName
+      )}
+      onClick={onClick}
+    >
+      <div className='bg-secondary min-w-[100px] rounded-full p-[7px]'>
+        <p className='text-[10px] text-white'>{buttonText}</p>
+      </div>
+    </button>
+  );
+}
+
+/** Form body inside the unavailability dialog — date, time, roles, reason, buttons. */
+function UnavailabilityFormBody({
+  date,
+  onDateSelect,
+  allDay,
+  onAllDayChange,
+  fromTime,
+  onFromTimeChange,
+  toTime,
+  onToTimeChange,
+  roleEntries,
+  rolesLoading,
+  selectedRoleIds,
+  onSelectedRoleIdsChange,
+  reason,
+  onReasonChange,
+  canSave,
+  saving,
+  onSave,
+  onCancel
+}: Readonly<{
+  date: Date | undefined;
+  onDateSelect: (date: Date | undefined) => void;
+  allDay: boolean;
+  onAllDayChange: (checked: boolean) => void;
+  fromTime: string;
+  onFromTimeChange: (value: string) => void;
+  toTime: string;
+  onToTimeChange: (value: string) => void;
+  roleEntries: any[];
+  rolesLoading: boolean;
+  selectedRoleIds: string[];
+  onSelectedRoleIdsChange: (ids: string[]) => void;
+  reason: string;
+  onReasonChange: (value: string) => void;
+  canSave: boolean;
+  saving: boolean;
+  onSave: () => void;
+  onCancel: () => void;
+}>) {
+  const roles = (roleEntries || [])
+    .map((e: any) => e.resource)
+    .filter((r: any) => r?.active);
+
+  let rolesContent: React.ReactNode;
+  if (rolesLoading) {
+    rolesContent = <div className='text-muted text-sm'>Loading roles...</div>;
+  } else if (roles?.length) {
+    rolesContent = (
+      <div className='grid grid-cols-1 gap-2'>
+        {roles.map((r: any) => (
+          <label key={r.id} className='flex items-center gap-2'>
+            <Checkbox
+              checked={selectedRoleIds.includes(r.id)}
+              onCheckedChange={() => {
+                if (selectedRoleIds.includes(r.id))
+                  onSelectedRoleIdsChange(
+                    selectedRoleIds.filter(x => x !== r.id)
+                  );
+                else onSelectedRoleIdsChange([...selectedRoleIds, r.id]);
+              }}
+            />
+            <span className='text-sm'>{r.organizationData?.name || r.id}</span>
+          </label>
+        ))}
+      </div>
+    );
+  } else {
+    rolesContent = <div className='text-muted text-sm'>No roles</div>;
+  }
+
+  return (
+    <div className='mt-2 space-y-4'>
+      <div className='flex flex-col gap-2'>
+        <div className='text-center text-xs font-bold'>Date</div>
+        <div className='flex w-full justify-center'>
+          <Calendar
+            mode='single'
+            selected={date}
+            onSelect={onDateSelect}
+            className='p-0'
+          />
+        </div>
+      </div>
+
+      <div className='flex items-center gap-2'>
+        <Checkbox checked={allDay} onCheckedChange={onAllDayChange} />
+        <span className='text-sm'>Unavailable all day</span>
+      </div>
+
+      {!allDay && (
+        <div className='flex w-full items-center justify-between gap-4'>
+          <div className='flex items-center gap-2'>
+            <span className='text-sm font-medium'>From</span>
+            <input
+              type='time'
+              className='block rounded-md border-2 p-2 text-sm'
+              value={fromTime}
+              onChange={e => onFromTimeChange(e.target.value)}
+            />
+          </div>
+          <div className='flex items-center gap-2'>
+            <span className='text-sm font-medium'>To</span>
+            <input
+              type='time'
+              className='block rounded-md border-2 p-2 text-sm'
+              value={toTime}
+              onChange={e => onToTimeChange(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className='flex flex-col gap-2'>
+        <div className='text-xs font-bold'>Apply to Practitioner Role(s)</div>
+        {rolesContent}
+      </div>
+
+      <div className='flex flex-col gap-2'>
+        <div className='text-xs font-bold'>Reason</div>
+        <Textarea
+          value={reason}
+          onChange={e => onReasonChange(e.target.value)}
+          placeholder='Practitioner unavailable'
+          className='w-full resize-none text-[12px] text-[#2C2F35]'
+        />
+      </div>
+
+      <div className='flex justify-end gap-3'>
+        <Button variant='outline' onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button
+          className='bg-secondary font-bold text-white'
+          disabled={!canSave || saving}
+          onClick={onSave}
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** Dialog body for the mark-unavailability form. */
+function UnavailabilityDialogBody({
+  open,
+  onOpenChange,
+  date,
+  onDateSelect,
+  allDay,
+  onAllDayChange,
+  fromTime,
+  onFromTimeChange,
+  toTime,
+  onToTimeChange,
+  roleEntries,
+  rolesLoading,
+  selectedRoleIds,
+  onSelectedRoleIdsChange,
+  reason,
+  onReasonChange,
+  canSave,
+  saving,
+  onSave,
+  onCancel
+}: Readonly<{
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  date: Date | undefined;
+  onDateSelect: (date: Date | undefined) => void;
+  allDay: boolean;
+  onAllDayChange: (checked: boolean) => void;
+  fromTime: string;
+  onFromTimeChange: (value: string) => void;
+  toTime: string;
+  onToTimeChange: (value: string) => void;
+  roleEntries: any[];
+  rolesLoading: boolean;
+  selectedRoleIds: string[];
+  onSelectedRoleIdsChange: (ids: string[]) => void;
+  reason: string;
+  onReasonChange: (value: string) => void;
+  canSave: boolean;
+  saving: boolean;
+  onSave: () => void;
+  onCancel: () => void;
+}>) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className='mx-auto max-h-[85vh] max-w-screen-sm overflow-y-auto p-4'>
+        <DialogHeader>
+          <div className='mx-auto text-[20px] font-bold'>Unavailable Date</div>
+        </DialogHeader>
+
+        <UnavailabilityFormBody
+          date={date}
+          onDateSelect={onDateSelect}
+          allDay={allDay}
+          onAllDayChange={onAllDayChange}
+          fromTime={fromTime}
+          onFromTimeChange={onFromTimeChange}
+          toTime={toTime}
+          onToTimeChange={onToTimeChange}
+          roleEntries={roleEntries}
+          rolesLoading={rolesLoading}
+          selectedRoleIds={selectedRoleIds}
+          onSelectedRoleIdsChange={onSelectedRoleIdsChange}
+          reason={reason}
+          onReasonChange={onReasonChange}
+          canSave={canSave}
+          saving={saving}
+          onSave={onSave}
+          onCancel={onCancel}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 /**
  *
@@ -153,162 +399,42 @@ export default function MarkUnavailabilityButton({
     toast.error(data?.message || 'Failed to save unavailability');
   };
 
-  const roles = (roleEntries || [])
-    .map((e: any) => e.resource)
-    .filter((r: any) => r?.active);
-
-  const datePickerCalendar = (
-    <div className='flex flex-col gap-2'>
-      <div className='text-center text-xs font-bold'>Date</div>
-      <div className='flex w-full justify-center'>
-        <Calendar
-          mode='single'
-          selected={date}
-          onSelect={setDate as any}
-          className='p-0'
-        />
-      </div>
-    </div>
-  );
-
-  const timeInputs = (
-    <>
-      <div className='flex items-center gap-2'>
-        <Checkbox
-          checked={allDay}
-          onCheckedChange={v => setAllDay(Boolean(v))}
-        />
-        <span className='text-sm'>Unavailable all day</span>
-      </div>
-
-      {!allDay && (
-        <div className='flex w-full items-center justify-between gap-4'>
-          <div className='flex items-center gap-2'>
-            <span className='text-sm font-medium'>From</span>
-            <input
-              type='time'
-              className='block rounded-md border-2 p-2 text-sm'
-              value={fromTime}
-              onChange={e => setFromTime(e.target.value)}
-            />
-          </div>
-          <div className='flex items-center gap-2'>
-            <span className='text-sm font-medium'>To</span>
-            <input
-              type='time'
-              className='block rounded-md border-2 p-2 text-sm'
-              value={toTime}
-              onChange={e => setToTime(e.target.value)}
-            />
-          </div>
-        </div>
-      )}
-    </>
-  );
-
-  let rolesListContent = <div className='text-muted text-sm'>No roles</div>;
-  if (rolesLoading) {
-    rolesListContent = (
-      <div className='text-muted text-sm'>Loading roles...</div>
-    );
-  } else if (roles?.length) {
-    rolesListContent = (
-      <div className='grid grid-cols-1 gap-2'>
-        {roles.map((r: any) => (
-          <label key={r.id} className='flex items-center gap-2'>
-            <Checkbox
-              checked={selectedRoleIds.includes(r.id)}
-              onCheckedChange={() => {
-                if (selectedRoleIds.includes(r.id))
-                  setSelectedRoleIds(selectedRoleIds.filter(x => x !== r.id));
-                else setSelectedRoleIds([...selectedRoleIds, r.id]);
-              }}
-            />
-            <span className='text-sm'>{r.organizationData?.name || r.id}</span>
-          </label>
-        ))}
-      </div>
-    );
-  }
-
-  const rolesSection = (
-    <div className='flex flex-col gap-2'>
-      <div className='text-xs font-bold'>Apply to Practitioner Role(s)</div>
-      {rolesListContent}
-    </div>
-  );
-
-  const reasonSection = (
-    <div className='flex flex-col gap-2'>
-      <div className='text-xs font-bold'>Reason</div>
-      <Textarea
-        value={reason}
-        onChange={e => setReason(e.target.value)}
-        placeholder='Practitioner unavailable'
-        className='w-full resize-none text-[12px] text-[#2C2F35]'
-      />
-    </div>
-  );
-
-  const actionButtons = (
-    <div className='flex justify-end gap-3'>
-      <Button
-        variant='outline'
-        onClick={() => {
-          setOpen(false);
-          reset();
-        }}
-      >
-        Cancel
-      </Button>
-      <Button
-        className='bg-secondary font-bold text-white'
-        disabled={!canSave || saving}
-        onClick={onSave}
-      >
-        {saving ? 'Saving...' : 'Save'}
-      </Button>
-    </div>
-  );
-
   return (
     <>
-      <button
-        type='button'
-        className={cn(
-          'cursor-pointer transition-all duration-200 hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500',
-          triggerClassName
-        )}
+      <UnavailabilityTrigger
+        triggerClassName={triggerClassName}
+        buttonText={buttonText}
         onClick={() => setOpen(true)}
-      >
-        <div className='bg-secondary min-w-[100px] rounded-full p-[7px]'>
-          <p className='text-[10px] text-white'>{buttonText}</p>
-        </div>
-      </button>
+      />
 
-      <Dialog
+      <UnavailabilityDialogBody
         open={open}
         onOpenChange={o => {
           setOpen(o);
           if (!o) reset();
         }}
-      >
-        <DialogContent className='mx-auto max-h-[85vh] max-w-screen-sm overflow-y-auto p-4'>
-          <DialogHeader>
-            <div className='mx-auto text-[20px] font-bold'>
-              Unavailable Date
-            </div>
-          </DialogHeader>
-
-          <div className='mt-2 space-y-4'>
-            {datePickerCalendar}
-            {timeInputs}
-            {rolesSection}
-            {reasonSection}
-            {actionButtons}
-          </div>
-        </DialogContent>
-      </Dialog>
+        date={date}
+        onDateSelect={setDate as any}
+        allDay={allDay}
+        onAllDayChange={v => setAllDay(Boolean(v))}
+        fromTime={fromTime}
+        onFromTimeChange={setFromTime}
+        toTime={toTime}
+        onToTimeChange={setToTime}
+        roleEntries={roleEntries}
+        rolesLoading={rolesLoading}
+        selectedRoleIds={selectedRoleIds}
+        onSelectedRoleIdsChange={setSelectedRoleIds}
+        reason={reason}
+        onReasonChange={setReason}
+        canSave={canSave}
+        saving={saving}
+        onSave={onSave}
+        onCancel={() => {
+          setOpen(false);
+          reset();
+        }}
+      />
 
       <AlertDialog open={conflictOpen} onOpenChange={setConflictOpen}>
         <AlertDialogContent>

@@ -3,6 +3,7 @@
 import Avatar from '@/components/general/avatar';
 import { AvatarInfo } from '@/components/role-avatar-popup-types';
 
+/** Computes layout parameters for stacked avatar circles. */
 function computeLayerLayout(total: number) {
   return {
     total,
@@ -13,6 +14,7 @@ function computeLayerLayout(total: number) {
   };
 }
 
+/** Renders a single avatar layer with given offset and opacity. */
 function LayeredAvatar({
   avatar,
   baseSize,

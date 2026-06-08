@@ -13,6 +13,7 @@ import Patient from './patient';
 export default function ProfileDisplay() {
   const { state: authState, isLoading } = useAuth();
 
+  /** Render the patient or clinician profile based on role. */
   const renderHomeContent = () => {
     return (
       <div className='mt-[-16px] rounded-[16px] bg-white pt-4 pb-20'>

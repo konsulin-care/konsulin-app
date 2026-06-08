@@ -35,6 +35,7 @@ export default function QuickActionFab() {
   const isGuest = authState?.userInfo?.role_name === Roles.Guest;
 
   useEffect(() => {
+    /** Hides or shows FAB based on scroll direction and offset. */
     const handleScroll = () => {
       if (isOpen) return;
 

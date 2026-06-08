@@ -16,6 +16,7 @@ type SessionRowData = {
   displayPatientName: string;
 };
 
+/** Row displaying a single session with time and status. */
 function SessionRow({ session }: Readonly<{ session: SessionRowData }>) {
   if (!session.slotStart || !session.slotEnd) return null;
   const startTime = format(parseISO(session.slotStart), 'HH:mm');
@@ -116,6 +117,7 @@ export default function HomeContentClinician() {
     );
   }
 
+  /** Renders schedule content, loading, or error states. */
   const renderScheduleContent = () => {
     if (isSessionsError) {
       return (

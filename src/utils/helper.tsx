@@ -14,6 +14,7 @@ import {
   Slot
 } from 'fhir/r4';
 
+/** Merge human names with optional qualification code. */
 export const mergeNames = (
   name: HumanName[],
   qualification?: PractitionerQualification[]
@@ -39,6 +40,7 @@ export const customMarkdownComponents = {
   p: ({ children }) => <span>{children}</span>
 };
 
+/** Parse FHIR Patient or Practitioner profile. */
 export const parseFhirProfile = (data: Patient | Practitioner) => {
   const phone = data.telecom?.find(t => t.system === 'phone')?.value ?? '';
   const email = data.telecom?.find(t => t.system === 'email')?.value ?? '';
@@ -72,6 +74,7 @@ export const parseFhirProfile = (data: Patient | Practitioner) => {
   };
 };
 
+/** Parse and merge appointment bundle data. */
 export const parseMergedAppointments = (
   bundle: Bundle
 ): MergedAppointment[] => {
@@ -136,6 +139,7 @@ export const parseMergedAppointments = (
   });
 };
 
+/** Parse a time string using date-fns parse. */
 export const parseTime = (timeStr: string, formatStr = 'HH:mm') => {
   return parse(timeStr, formatStr, new Date());
 };
@@ -157,6 +161,7 @@ const getColorFromId = (id: string) => {
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
+/** Generate avatar placeholder with initials and color. */
 export const generateAvatarPlaceholder = ({
   id,
   name,
@@ -201,6 +206,7 @@ export const isDataUrl = (value: string) => {
   return typeof value === 'string' && value.startsWith('data:image/');
 };
 
+/** Decode a base64 string using available API. */
 function decodeBase64(
   base64String: string,
   env: {
@@ -216,6 +222,7 @@ function decodeBase64(
   return '';
 }
 
+/** Convert a data URL to a Blob object. */
 export const dataUrlToBlob = (dataUrl: string) => {
   const arr = dataUrl.split(',');
   const mimeMatch = arr[0]?.match(/:(.*?);/);
@@ -240,6 +247,7 @@ export const dataUrlToBlob = (dataUrl: string) => {
   return new Blob([u8arr], { type: mime });
 };
 
+/** Find identifier value by system from FHIR resource. */
 export const findIdentifierValue = (
   data: Patient | Practitioner,
   system: string
@@ -250,6 +258,7 @@ export const findIdentifierValue = (
   );
 };
 
+/** Check if a URL points to a valid image. */
 export const isValidImageUrl = async (url: string): Promise<boolean> => {
   if (!url) return false;
   if (isDataUrl(url)) return true;
@@ -270,6 +279,7 @@ export const isValidImageUrl = async (url: string): Promise<boolean> => {
   }
 };
 
+/** Format a raw title string with proper casing. */
 export const formatTitle = (raw: string) => {
   if (!raw) return '-';
 
@@ -287,6 +297,7 @@ export const formatTitle = (raw: string) => {
   return cleaned.toUpperCase();
 };
 
+/** Format a query title by replacing + with spaces and capitalizing. */
 export const formatQueryTitle = (raw: string) => {
   if (!raw) return '-';
 
@@ -298,6 +309,7 @@ export const formatQueryTitle = (raw: string) => {
     .join(' ');
 };
 
+/** Map FHIR Address to a formatted string. */
 export const mapAddress = (address: Address[]) => {
   if (!address || address.length === 0) return '-';
 
@@ -307,6 +319,7 @@ export const mapAddress = (address: Address[]) => {
   return parts.filter(Boolean).join(', ');
 };
 
+/** Calculate age from a birth date string. */
 export const findAge = (birthDateStr: string) => {
   const birthdate = new Date(birthDateStr);
   const today = new Date();
@@ -328,6 +341,7 @@ export const findAge = (birthDateStr: string) => {
   return age;
 };
 
+/** Get UTC day range from local dates. */
 export const getUtcDayRange = (startLocalDate: Date, endLocalDate?: Date) => {
   const start = new Date(startLocalDate);
   start.setHours(0, 0, 0, 0); // 00:00:00 local time
@@ -341,6 +355,7 @@ export const getUtcDayRange = (startLocalDate: Date, endLocalDate?: Date) => {
   return { utcStart, utcEnd };
 };
 
+/** Parse and merge session bundle data. */
 export const parseMergedSessions = (bundle: Bundle): MergedSession[] => {
   const appointments = bundle.entry
     .filter(entry => entry.resource.resourceType === 'Appointment')
@@ -395,6 +410,7 @@ export const parseMergedSessions = (bundle: Bundle): MergedSession[] => {
   });
 };
 
+/** Get display label for a record type. */
 export const getTypeLabel = (type: string) => {
   if (!type || type === 'All') return null;
 

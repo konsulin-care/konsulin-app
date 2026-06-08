@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-max-depth */
 import { Roles } from '@/constants/roles';
 import { IPractitionerRoleDetail } from '@/types/practitioner';
 import Avatar from '../general/avatar';
@@ -144,6 +143,27 @@ function DetailPractice({ items }) {
  * @param backgroundColor - Background color for the avatar.
  * @returns The React element for the information card.
  */
+/** Action button section with rounded pill style. */
+const DetailActionButton = ({
+  onEdit,
+  buttonText
+}: {
+  onEdit?: () => void;
+  buttonText?: string;
+}) => (
+  <div className='flex w-1/2 items-start justify-end'>
+    <button
+      onClick={onEdit}
+      className='cursor-pointer transition-all duration-200 hover:brightness-90'
+    >
+      <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
+        <p className='text-[10px] text-white'>{buttonText}</p>
+      </div>
+    </button>
+  </div>
+);
+
+/** Displays a profile information card with header, details, and edit action. */
 export default function InformationDetail({
   isRadiusIcon = true,
   iconUrl,
@@ -184,16 +204,7 @@ export default function InformationDetail({
           backgroundColor={backgroundColor}
           seed={seed}
         />
-        <div className='flex w-1/2 items-start justify-end'>
-          <button
-            onClick={onEdit}
-            className='cursor-pointer transition-all duration-200 hover:brightness-90'
-          >
-            <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
-              <p className='text-[10px] text-white'>{buttonText}</p>
-            </div>
-          </button>
-        </div>
+        <DetailActionButton onEdit={onEdit} buttonText={buttonText} />
       </div>
 
       {details && <div className='flex w-full' />}

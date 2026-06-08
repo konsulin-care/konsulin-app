@@ -15,6 +15,7 @@ export default function Logout() {
   const { dispatch: dispatchProfile } = useProfile();
 
   useEffect(() => {
+    /** Handles user logout and data cleanup. */
     const handleLogout = async () => {
       const ownerId = state.userInfo?.userId ?? '';
       await Session.signOut();

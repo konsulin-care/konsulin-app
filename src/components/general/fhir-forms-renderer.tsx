@@ -93,6 +93,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     })
   );
 
+  /** Validates required fields before submission. */
   const handleValidation = () => {
     if (Object.keys(invalidItems).length === 0) {
       setIsOpen(true);
@@ -101,6 +102,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     }
   };
 
+  /** Navigates after form submission based on button label. */
   const handleNavigate = (buttonLabel: string, responseId?: string) => {
     startTransition(() => {
       if (buttonLabel === 'result') {
@@ -117,6 +119,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     });
   };
 
+  /** Submits the questionnaire response and triggers post-submit actions. */
   const handleSubmitQuestionnaire = async (buttonLabel: string) => {
     if (buttonLabel === 'close') {
       handleNavigate(buttonLabel);

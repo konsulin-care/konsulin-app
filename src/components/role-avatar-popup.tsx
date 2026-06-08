@@ -10,6 +10,7 @@ import { IStateAuth } from '@/context/auth/authTypes';
 import { generateAvatarPlaceholder } from '@/utils/helper';
 import Link from 'next/link';
 
+/** Builds AvatarInfo for the current user and role. */
 function getCurrentAvatar(
   role: string | undefined,
   userId: string,
@@ -31,6 +32,7 @@ function getCurrentAvatar(
   };
 }
 
+/** Generates AvatarInfo for a given role name. */
 function avatarInfoForRole(role: string): AvatarInfo {
   const displayName = roleLabel(role);
   const placeholder = generateAvatarPlaceholder({
@@ -91,7 +93,7 @@ export default function RoleAvatarPopup({
       roles={roles}
       indicator={indicator}
       displayName={displayName}
-      onOpenChange={() => {}}
+      onOpenChange={undefined}
     />
   );
 }

@@ -52,6 +52,7 @@ export const useRecordSummary = () => {
   });
 };
 
+/** Build a FHIR batch bundle for fetching patient records. */
 function buildRecordBatchPayload(patientId: string) {
   return {
     type: 'batch',
@@ -80,6 +81,7 @@ function buildRecordBatchPayload(patientId: string) {
   };
 }
 
+/** Query patient record summary (QuestionnaireResponse + Observations). */
 export const useRecordSummaryQuery = (patientId: string) => {
   return useQuery({
     queryKey: ['patient-records', patientId],
@@ -96,6 +98,7 @@ export const useRecordSummaryQuery = (patientId: string) => {
   });
 };
 
+/** Filter patient records by date range. */
 export const useFilterRecordByDate = () => {
   return useMutation<IBundleResponse[], Error, IFilterRecord>({
     mutationKey: ['filtered-record-summary-patient'],
@@ -143,6 +146,7 @@ export const useFilterRecordByDate = () => {
   });
 };
 
+/** Fetch patient records from a practitioner perspective. */
 export const useRecordSummaryPractitioner = () => {
   return useMutation<Bundle, Error, { patientId: string }>({
     mutationKey: ['record-summary-practitioner'],
@@ -185,6 +189,7 @@ export const useRecordSummaryPractitioner = () => {
   });
 };
 
+/** Filter practitioner-view records by date range. */
 export const useFilterRecordPractitionerByDate = () => {
   return useMutation<Bundle, Error, IFilterRecord>({
     mutationKey: ['filtered-record-summary-practitioner'],
@@ -232,6 +237,7 @@ export const useFilterRecordPractitionerByDate = () => {
   });
 };
 
+/** Fetch a single record by ID and resource type. */
 export const useGetSingleRecord = ({
   id,
   resourceType
@@ -253,6 +259,7 @@ export const useGetSingleRecord = ({
   });
 };
 
+/** Submit a new journal entry (Observation). */
 export const useSubmitJournal = () => {
   return useMutation({
     mutationKey: ['journal'],
@@ -271,6 +278,7 @@ export const useSubmitJournal = () => {
   });
 };
 
+/** Update an existing journal entry (Observation). */
 export const useUpdateJournal = () => {
   return useMutation({
     mutationKey: ['journal-update'],

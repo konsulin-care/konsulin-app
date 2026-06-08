@@ -38,6 +38,7 @@ export default function FirmFilter({ onChange }) {
 
   const isInitiaFilterState = !filter.city;
 
+  /** Update a single filter field value. */
   const handleFilterChange = (label: string, value: any) => {
     setFilter(prevState => ({
       ...prevState,
@@ -45,6 +46,7 @@ export default function FirmFilter({ onChange }) {
     }));
   };
 
+  /** Reset all filter selections to initial state. */
   const resetFilter = () => {
     setFilter({
       city: undefined,
@@ -135,6 +137,7 @@ export default function FirmFilter({ onChange }) {
     </>
   );
 
+  /** Render the drawer body with location filter and actions. */
   const renderDrawerContent = () => {
     return (
       <div className='flex flex-col'>

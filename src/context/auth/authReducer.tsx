@@ -15,6 +15,7 @@ export const initialState: IStateAuth = {
   }
 };
 
+/** Auth reducer handling login, auth-check, and logout actions. */
 export const reducer = (state: IStateAuth, action: any): IStateAuth => {
   switch (action.type) {
     case 'login':

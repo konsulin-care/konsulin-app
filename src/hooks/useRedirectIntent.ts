@@ -19,6 +19,7 @@ interface UseRedirectIntentOptions {
   authState: IStateAuth;
 }
 
+/** Refresh anonymous session on homepage reload if no authenticated session. */
 function useReloadAnonymousSession(
   isLoading: boolean,
   isAuthenticated: boolean
@@ -65,6 +66,7 @@ function useReloadAnonymousSession(
   }, [isLoading, isAuthenticated]);
 }
 
+/** Handle a redirect stored in cookie before auth was ready. */
 function handleStoredRedirect(
   setIsRedirecting: (v: boolean) => void,
   router: ReturnType<typeof useRouter>
@@ -98,11 +100,12 @@ function handleStoredRedirect(
   return true;
 }
 
+/** Process a pending intent (journal, appointment, assessment). */
 function handleIntent(
   setIsRedirecting: (v: boolean) => void,
   isHandlingRef: { current: boolean },
   router: ReturnType<typeof useRouter>
-): (() => void) | void {
+): (() => void) | undefined {
   const intent = getIntent();
   if (!intent || isHandlingRef.current) return undefined;
   isHandlingRef.current = true;
@@ -110,6 +113,7 @@ function handleIntent(
   const abortController = new AbortController();
   let isMounted = true;
 
+  /** Execute the intent's navigation or API claim flow. */
   const run = async () => {
     try {
       if (intent.kind === 'journal' || intent.kind === 'appointment') {

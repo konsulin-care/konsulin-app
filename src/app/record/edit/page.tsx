@@ -15,6 +15,7 @@ export default function EditRecordDetail() {
   const category = Number(searchParams.get('category'));
   const titleParam = searchParams.get('title');
 
+  /** Returns page title based on record category. */
   const pageTitle = (category: number) => {
     switch (category) {
       case 3:
@@ -32,6 +33,7 @@ export default function EditRecordDetail() {
     return <Notfound />;
   }
 
+  /** Renders the edit form based on record category. */
   const renderContent = (category: number) => {
     switch (category) {
       case 3:

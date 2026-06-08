@@ -72,22 +72,50 @@ const toastConfig: ToastContainerProps = {
   draggable: true
 };
 
-function AppProviders({ children }: Readonly<{ children: React.ReactNode }>) {
+/** Wraps children in auth, booking, and query providers. */
+function AuthProvidersLayer({
+  children
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <AuthProvider>
+      <BookingProvider>
+        <QueryProvider>
+          <Suspense fallback={null}>{children}</Suspense>
+        </QueryProvider>
+      </BookingProvider>
+    </AuthProvider>
+  );
+}
+
+/** Wraps children in runtime config, SuperTokens, and profile providers. */
+function OuterProviders({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <RuntimeConfigProvider>
       <SuperTokensProviders>
-        <ProfileProvider>
-          <AuthProvider>
-            <BookingProvider>
-              <QueryProvider>
-                {/* eslint-disable-next-line react/jsx-max-depth */}
-                <Suspense fallback={null}>{children}</Suspense>
-              </QueryProvider>
-            </BookingProvider>
-          </AuthProvider>
-        </ProfileProvider>
+        <ProfileProvider>{children}</ProfileProvider>
       </SuperTokensProviders>
     </RuntimeConfigProvider>
+  );
+}
+
+/** Main page layout wrapper. */
+function PageContent({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <div className='flex min-h-screen flex-col'>
+      <div id='modal' />
+      <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
+        {children}
+      </main>
+    </div>
+  );
+}
+
+/** Composes all app-level providers. */
+function AppProviders({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <OuterProviders>
+      <AuthProvidersLayer>{children}</AuthProvidersLayer>
+    </OuterProviders>
   );
 }
 
@@ -108,12 +136,7 @@ export default function RootLayout({
           <NextTopLoader showSpinner={false} color='#13c2c2' />
           <ToastContainer {...toastConfig} />
           <ProfileCompletenessModal />
-          <div className='flex min-h-screen flex-col'>
-            <div id='modal' />
-            <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
-              {children}
-            </main>
-          </div>
+          <PageContent>{children}</PageContent>
           <QuickActionFab />
         </AppProviders>
       </body>

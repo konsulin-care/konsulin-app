@@ -34,6 +34,7 @@ export default function Patient({ fhirId }: Props) {
     }
   });
 
+  /** Find a telecom value by system (phone/email). */
   const findTelecom = (system: string) => {
     const found = profileData.telecom.find(
       (item: ContactPoint) => item.system === system
