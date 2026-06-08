@@ -7,80 +7,42 @@ import { roleLabel } from '@/components/role-avatar-popup-utils';
 import { RoleSwitchDropdown } from '@/components/role-switch-dropdown';
 import { useAuth } from '@/context/auth/authContext';
 import { IStateAuth } from '@/context/auth/authTypes';
-import {
-  fetchRoleProfiles,
-  RoleProfile,
-  RoleProfileMap
-} from '@/services/batch-profile';
 import { generateAvatarPlaceholder } from '@/utils/helper';
 import Link from 'next/link';
-import { useCallback, useRef, useState } from 'react';
 
 function getCurrentAvatar(
   role: string | undefined,
   userId: string,
-  roleProfiles: RoleProfileMap,
   authState: IStateAuth
 ): AvatarInfo {
-  const profile = role ? roleProfiles[role] : undefined;
   const displayName =
-    profile?.fullname ||
-    authState?.userInfo?.fullname ||
-    (role ? roleLabel(role) : '');
-  const seed =
-    profile?.fhirId || authState?.userInfo?.fhirId || userId || role || '';
+    authState?.userInfo?.fullname || (role ? roleLabel(role) : '');
+  const seed = authState?.userInfo?.fhirId || userId || role || '';
   const placeholder = generateAvatarPlaceholder({
     id: seed,
     name: displayName,
-    email: profile?.email || authState?.userInfo?.email
+    email: authState?.userInfo?.email
   });
   return {
     seed: placeholder.seed,
     initials: placeholder.initials,
     backgroundColor: placeholder.backgroundColor,
-    photoUrl:
-      profile?.profile_picture || authState?.userInfo?.profile_picture || ''
+    photoUrl: authState?.userInfo?.profile_picture || ''
   };
 }
 
-function avatarInfoForRole(role: string, profile?: RoleProfile): AvatarInfo {
-  const displayName = profile?.fullname || roleLabel(role);
-  const seed = profile?.fhirId || role;
+function avatarInfoForRole(role: string): AvatarInfo {
+  const displayName = roleLabel(role);
   const placeholder = generateAvatarPlaceholder({
-    id: seed,
-    name: displayName,
-    email: profile?.email || ''
+    id: role,
+    name: displayName
   });
   return {
     seed: placeholder.seed,
     initials: placeholder.initials,
     backgroundColor: placeholder.backgroundColor,
-    photoUrl: profile?.profile_picture || ''
+    photoUrl: ''
   };
-}
-
-function useRoleProfiles(
-  userId: string,
-  otherRoles: string[],
-  currentRole: string | undefined
-): [RoleProfileMap, (isOpen: boolean) => void] {
-  const [roleProfiles, setRoleProfiles] = useState<RoleProfileMap>({});
-  const fetchedRef = useRef(false);
-
-  const handleOpenChange = useCallback(
-    (isOpen: boolean) => {
-      if (isOpen && !fetchedRef.current && userId && otherRoles.length > 0) {
-        fetchedRef.current = true;
-        fetchRoleProfiles(
-          userId,
-          [...otherRoles, currentRole].filter(Boolean)
-        ).then(setRoleProfiles);
-      }
-    },
-    [userId, otherRoles, currentRole]
-  );
-
-  return [roleProfiles, handleOpenChange];
 }
 
 /**
@@ -97,17 +59,7 @@ export default function RoleAvatarPopup({
   const roles = authState.userInfo?.roles ?? [];
   const currentRole = authState.userInfo?.role_name;
   const userId = authState.userInfo?.userId ?? '';
-  const [roleProfiles, handleOpenChange] = useRoleProfiles(
-    userId,
-    roles.filter(r => r !== currentRole),
-    currentRole
-  );
-  const currentAvatar = getCurrentAvatar(
-    currentRole,
-    userId,
-    roleProfiles,
-    authState
-  );
+  const currentAvatar = getCurrentAvatar(currentRole, userId, authState);
 
   if (roles.length <= 1) {
     return (
@@ -133,13 +85,13 @@ export default function RoleAvatarPopup({
         .filter(r => r !== currentRole)
         .map(role => ({
           role,
-          ...avatarInfoForRole(role, roleProfiles[role])
+          ...avatarInfoForRole(role)
         }))}
       currentAvatar={currentAvatar}
       roles={roles}
       indicator={indicator}
       displayName={displayName}
-      onOpenChange={handleOpenChange}
+      onOpenChange={() => {}}
     />
   );
 }
