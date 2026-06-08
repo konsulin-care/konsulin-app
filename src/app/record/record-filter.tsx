@@ -1,7 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth, max-lines */
-import { FilterIcon } from '@/components/icons';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth */
+import DatePresetFilter from '@/components/shared/date-preset-filter';
+import FilterActions from '@/components/shared/filter-actions';
+import FilterCalendar from '@/components/shared/filter-calendar';
+import FilterDrawerTrigger from '@/components/shared/filter-drawer-trigger';
+import { Button } from '@/components/ui/button';
 import {
   Drawer,
   DrawerContent,
@@ -16,12 +18,10 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import {
   addDays,
   endOfMonth,
   endOfWeek,
-  format,
   startOfMonth,
   startOfWeek
 } from 'date-fns';
@@ -111,55 +111,6 @@ export default function RecordFilter({ onChange }) {
     handleFilterChange('isUseCustomDate', false);
   };
 
-  const dateFilterSection = (
-    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-      <div className='mb-4 font-bold'>Date</div>
-      <div className='flex flex-wrap gap-[10px]'>
-        {filterContentListDate.map(date => (
-          <Button
-            key={date.label}
-            onClick={() => {
-              handleFilterChange('start_date', date.value.start);
-              handleFilterChange('end_date', date.value.end);
-              handleFilterChange('isUseCustomDate', false);
-              setIsUseCustomDate(false);
-            }}
-            variant='outline'
-            className={cn(
-              'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-              filter.start_date === date.value.start &&
-                filter.end_date === date.value.end
-                ? 'bg-secondary hover:bg-secondary font-bold text-white'
-                : 'bg-white font-normal'
-            )}
-          >
-            {date.label}
-          </Button>
-        ))}
-        <Button
-          variant='outline'
-          onClick={handleCustomFilterOpen}
-          className={cn(
-            'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-            isUseCustomDate
-              ? 'bg-secondary hover:bg-secondary font-bold text-white'
-              : 'bg-white font-normal'
-          )}
-        >
-          Custom
-          {(() => {
-            if (!isUseCustomDate || !filter.start_date || !filter.end_date)
-              return '';
-            if (filter.start_date === filter.end_date) {
-              return ` : ${format(filter.start_date, 'dd MMM yy')}`;
-            }
-            return ` : ${format(filter.start_date, 'dd MMM yy')} - ${format(filter.end_date, 'dd MMM yy')}`;
-          })()}
-        </Button>
-      </div>
-    </div>
-  );
-
   const showBySection = (
     <div className='card mt-4 border-0 bg-[#F9F9F9]'>
       <div className='mb-4 font-bold'>Show By</div>
@@ -193,34 +144,6 @@ export default function RecordFilter({ onChange }) {
     </div>
   );
 
-  const defaultActions = (
-    <>
-      {!isInitiaFilterState && (
-        <Button
-          variant='outline'
-          size='sm'
-          className={cn(
-            buttonVariants({ variant: 'outline' }),
-            'mt-4 w-min border-0 text-[12px]'
-          )}
-          onClick={resetFilter}
-        >
-          Reset Filter
-        </Button>
-      )}
-
-      <Button
-        className='bg-secondary mt-4 rounded-xl p-4 text-white'
-        onClick={() => {
-          setIsOpen(false);
-          onChange(filter);
-        }}
-      >
-        Terapkan Filter
-      </Button>
-    </>
-  );
-
   const renderDrawerContent = () => {
     switch (whichContent) {
       case CONTENT_DEFAULT:
@@ -231,9 +154,28 @@ export default function RecordFilter({ onChange }) {
             </DrawerTitle>
 
             <DrawerDescription />
-            {dateFilterSection}
+            <DatePresetFilter
+              presets={filterContentListDate}
+              activeStart={filter.start_date}
+              activeEnd={filter.end_date}
+              isCustom={isUseCustomDate}
+              onPresetSelect={(start, end) => {
+                handleFilterChange('start_date', start);
+                handleFilterChange('end_date', end);
+                handleFilterChange('isUseCustomDate', false);
+                setIsUseCustomDate(false);
+              }}
+              onCustomOpen={handleCustomFilterOpen}
+            />
             {showBySection}
-            {defaultActions}
+            <FilterActions
+              showReset={!isInitiaFilterState}
+              onReset={resetFilter}
+              onApply={() => {
+                setIsOpen(false);
+                onChange(filter);
+              }}
+            />
           </div>
         );
       case CONTENT_CUSTOM:
@@ -245,8 +187,7 @@ export default function RecordFilter({ onChange }) {
 
             <DrawerDescription />
             <div className='mt-4 flex w-full flex-col justify-center'>
-              <Calendar
-                mode='range'
+              <FilterCalendar
                 selected={{
                   from: filter.start_date,
                   to: filter.end_date
@@ -258,22 +199,6 @@ export default function RecordFilter({ onChange }) {
                     date?.to ? date.to : date?.from
                   );
                   setIsUseCustomDate(true);
-                }}
-                // disabled={{ before: today }}
-                className='w-full p-0'
-                classNames={{
-                  month: 'space-y-8 w-full',
-                  head_row: 'flex w-full',
-                  head_cell:
-                    'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] w-full',
-                  cell: 'w-full h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
-                  day: cn(
-                    buttonVariants({ variant: 'ghost' }),
-                    'h-9 p-0 font-normal aria-selected:opacity-100 w-full'
-                  ),
-                  day_selected:
-                    'bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground focus:bg-secondary focus:text-secondary-foreground',
-                  day_today: 'bg-accent text-accent-foreground font-extrabold'
                 }}
               />
             </div>
@@ -302,20 +227,7 @@ export default function RecordFilter({ onChange }) {
       modal={isOpen}
     >
       <DrawerTrigger asChild>
-        <Button
-          onClick={() => setIsOpen(true)}
-          variant='outline'
-          className={cn(
-            'flex h-[50px] w-[50px] items-center justify-center rounded-lg border-0 bg-[#F9F9F9]'
-          )}
-        >
-          <FilterIcon
-            width={20}
-            height={20}
-            className='min-h-[20px] min-w-[20px]'
-            fill='#13c2c2'
-          />
-        </Button>
+        <FilterDrawerTrigger onClick={() => setIsOpen(true)} />
       </DrawerTrigger>
       <DrawerContent
         className='mx-auto max-w-screen-sm p-4'

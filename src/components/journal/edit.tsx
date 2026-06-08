@@ -1,62 +1,42 @@
 'use client';
 
-/* eslint-disable react/jsx-max-depth */
-import { LoadingSpinnerIcon } from '@/components/icons';
-import { Button } from '@/components/ui/button';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle
-} from '@/components/ui/drawer';
+import { useJournalForm } from '@/components/shared/hooks/useJournalForm';
+import JournalResponseFields from '@/components/shared/journal-response-fields';
+import JournalSubmitButton from '@/components/shared/journal-submit-button';
+import JournalSuccessDrawer from '@/components/shared/journal-succes-drawer';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetSingleRecord, useUpdateJournal } from '@/services/api/record';
 import { format } from 'date-fns';
-import { FileCheckIcon, NotepadTextIcon, XIcon } from 'lucide-react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { FileCheckIcon, NotepadTextIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 
 type Props = {
-  journalId: string;
+  readonly journalId: string;
 };
 
 /**
  *
  */
 export default function EditJournal({ journalId }: Props) {
-  const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const nextId = useRef(0);
-  const [response, setResponse] = useState<{ id: number; text: string }[]>([]);
-  const [journalTitle, setJournalTitle] = useState<string>('');
+  const {
+    response,
+    journalTitle,
+    nextId,
+    setJournalTitle,
+    setResponse,
+    handleResponseChange,
+    addResponse,
+    removeResponse
+  } = useJournalForm();
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useUpdateJournal();
   const { data: journalData, isLoading: isJournalLoading } = useGetSingleRecord(
     { id: journalId, resourceType: 'Observation' }
   );
-
-  const handleResponseChange = (index: number, value: string) => {
-    const newResponse = [...response];
-    newResponse[index].text = value;
-    setResponse(newResponse);
-  };
-
-  const addResponse = () => {
-    setResponse(prevState => [
-      ...prevState,
-      {
-        id: nextId.current++,
-        text: ''
-      }
-    ]);
-  };
 
   useEffect(() => {
     if (journalData) {
@@ -71,7 +51,7 @@ export default function EditJournal({ journalId }: Props) {
         );
       }
     }
-  }, [journalData]);
+  }, [journalData, setJournalTitle, setResponse, nextId]);
 
   const handleSubmitJournal = async () => {
     try {
@@ -110,66 +90,34 @@ export default function EditJournal({ journalId }: Props) {
     }
   };
 
-  const removeResponse = (index: number) => {
-    setResponse(response.filter((_, find) => find != index));
-  };
-
   const formattedDate = (date: string) => {
     return format(new Date(date), 'dd MMMM yyyy');
   };
 
-  const renderDrawerContent = (
-    <>
-      <DrawerHeader className='mx-auto flex flex-col items-center gap-4 pb-0 text-[20px]'>
-        <Image
-          className='rounded-[8px] object-cover p-6'
-          src={'/images/journal-img.png'}
-          height={0}
-          width={200}
-          style={{ width: 'auto', height: 'auto' }}
-          alt='success'
-        />
-        <DrawerTitle className='mb-2 text-center text-2xl font-bold'>
-          Tetap Semangat Untuk Hari Ini!
-        </DrawerTitle>
-      </DrawerHeader>
+  const journalInfoCard = journalData && (
+    <div className='card flex items-center bg-[hsla(0,0%,98%,1)]'>
+      <FileCheckIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
 
-      <DrawerDescription className='px-4 text-center text-sm opacity-50'>
-        Menulis jurnal adalah langkah penting untuk memahami diri sendiri dan
-        menjaga kesehatan mental Anda.
-      </DrawerDescription>
-
-      <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
-        <Button
-          className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-          onClick={() => router.push('/record')}
-        >
-          Back
-        </Button>
-      </DrawerFooter>
-    </>
+      <div className='flex grow flex-col'>
+        <span className='text-muted text-[10px]'>Journal Create</span>
+        <span className='text-[14px] font-bold'>
+          {journalData.effectiveDateTime &&
+            formattedDate(journalData.effectiveDateTime)}
+        </span>
+      </div>
+      <div className='flex flex-col'>
+        <span className='text-muted text-right text-[10px]'>Last Edit</span>
+        <span className='text-right text-[14px] font-bold'>
+          {journalData.meta.lastUpdated &&
+            formattedDate(journalData.meta.lastUpdated)}
+        </span>
+      </div>
+    </div>
   );
 
   const journalContent = (
     <>
-      <div className='card flex items-center bg-[hsla(0,0%,98%,1)]'>
-        <FileCheckIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
-
-        <div className='flex grow flex-col'>
-          <span className='text-muted text-[10px]'>Journal Create</span>
-          <span className='text-[14px] font-bold'>
-            {journalData.effectiveDateTime &&
-              formattedDate(journalData.effectiveDateTime)}
-          </span>
-        </div>
-        <div className='flex flex-col'>
-          <span className='text-muted text-right text-[10px]'>Last Edit</span>
-          <span className='text-right text-[14px] font-bold'>
-            {journalData.meta.lastUpdated &&
-              formattedDate(journalData.meta.lastUpdated)}
-          </span>
-        </div>
-      </div>
+      {journalInfoCard}
 
       <div className='card flex border'>
         <NotepadTextIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
@@ -182,58 +130,17 @@ export default function EditJournal({ journalId }: Props) {
         />
       </div>
 
-      <div>
-        {response.map((item, index) => (
-          <div className='mb-3' key={item.id}>
-            <div className='flex items-center justify-between'>
-              <div className='text-muted mb-2 text-[12px]'>
-                Write anything here
-              </div>
-              <Button
-                onClick={() => removeResponse(index)}
-                variant='ghost'
-                className='h-fit w-fit rounded-full p-2'
-              >
-                <XIcon fill='red' size={12} color='hsla(220,9%,19%,0.4)' />
-              </Button>
-            </div>
+      <JournalResponseFields
+        response={response}
+        onResponseChange={handleResponseChange}
+        onRemove={removeResponse}
+        onAdd={addResponse}
+      />
 
-            <Textarea
-              value={item.text}
-              onChange={e => handleResponseChange(index, e.target.value)}
-              className='rounded-lg text-[14px]'
-              placeholder='Type your message here.'
-            />
-          </div>
-        ))}
-      </div>
-
-      <div className='flex w-full justify-center'>
-        <Button
-          variant='ghost'
-          className='text-muted text-[12px]'
-          onClick={addResponse}
-        >
-          + Add New Thought
-        </Button>
-      </div>
-
-      <Button
+      <JournalSubmitButton
+        isLoading={isSubmitLoading}
         onClick={handleSubmitJournal}
-        className='bg-secondary !mt-auto w-full rounded-full p-4 text-[14px] text-white'
-        disabled={isSubmitLoading}
-      >
-        {isSubmitLoading ? (
-          <LoadingSpinnerIcon
-            width={20}
-            height={20}
-            stroke='white'
-            className='w-full animate-spin'
-          />
-        ) : (
-          'Save Journal'
-        )}
-      </Button>
+      />
     </>
   );
 
@@ -248,11 +155,7 @@ export default function EditJournal({ journalId }: Props) {
         journalContent
       )}
 
-      <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
-        <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-          {renderDrawerContent}
-        </DrawerContent>
-      </Drawer>
+      <JournalSuccessDrawer isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </>
   );
 }

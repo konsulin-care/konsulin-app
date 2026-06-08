@@ -1,15 +1,9 @@
-/* eslint-disable react/jsx-max-depth */
-
 'use client';
 
 import Avatar from '@/components/general/avatar';
-import EmptyState from '@/components/general/empty-state';
 import PageHeader from '@/components/page-header';
-import { Badge } from '@/components/ui/badge';
-import { InputWithIcon } from '@/components/ui/input-with-icon';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getNow } from '@/constants/date';
+import { useScheduleFilter } from '@/components/shared/hooks/useScheduleFilter';
+import SchedulePageShell from '@/components/shared/schedule-page-shell';
 import { useAuth } from '@/context/auth/authContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useGetAllAppointments } from '@/services/api/appointments';
@@ -18,28 +12,15 @@ import { MergedAppointment } from '@/types/appointment';
 import {
   generateAvatarPlaceholder,
   mergeNames,
-  parseMergedAppointments,
-  parseTime
+  parseMergedAppointments
 } from '@/utils/helper';
 import { capitalizeFirstLetter } from '@/utils/validation';
-import {
-  endOfDay,
-  format,
-  isAfter,
-  isBefore,
-  parse,
-  parseISO,
-  setHours,
-  setMinutes,
-  startOfDay
-} from 'date-fns';
-import { SearchIcon } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import SessionFilter from './session-filter';
 
 type Props = {
-  fhirId: string;
+  readonly fhirId: string;
 };
 
 const AppointmentCard = ({
@@ -124,214 +105,45 @@ export default function PatientSchedule({ fhirId }: Props) {
     return parsed;
   }, [upcomingData, authState]);
 
-  const filteredAppointmentsData = useMemo(() => {
-    if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
-      return null;
-
-    const { start_date, end_date, start_time, end_time } = sessionsFilter;
-
-    const hasDateFilter = Boolean(start_date) && Boolean(end_date);
-    const hasTimeFilter = Boolean(start_time) || Boolean(end_time);
-
-    const filterStartDate = start_date;
-    const filterEndDate = end_date;
-
-    const filterStartTime = start_time
-      ? parseTime(start_time, 'HH:mm')
-      : setHours(setMinutes(new Date(), 0), 0); // 00:00
-
-    const filterEndTime = end_time
-      ? parseTime(end_time, 'HH:mm')
-      : setHours(setMinutes(new Date(), 59), 23); // 23:59
-
-    return parsedAppointmentsData.filter(session => {
-      if (!session.slotStart) return false;
-
-      // parse full datetime from slotStart
-      const sessionDate = parseISO(session.slotStart);
-
-      // filter by date range
-      if (
-        hasDateFilter &&
-        (isBefore(sessionDate, startOfDay(filterStartDate!)) ||
-          isAfter(sessionDate, endOfDay(filterEndDate!)))
-      ) {
-        return false;
-      }
-
-      // filter by time range (extract only the time part)
-      if (hasTimeFilter) {
-        const sessionTimeOnly = parse(
-          format(sessionDate, 'HH:mm'),
-          'HH:mm',
-          new Date()
-        );
-
-        if (
-          isBefore(sessionTimeOnly, filterStartTime) ||
-          isAfter(sessionTimeOnly, filterEndTime)
-        ) {
-          return false;
-        }
-      }
-
-      // filter by practitioner's name and qualification, or email
+  const { upcoming, past } = useScheduleFilter({
+    data: parsedAppointmentsData,
+    sessionsFilter,
+    keyword: debouncedKeyword,
+    keywordMatcher: (appointment: MergedAppointment, query: string) => {
       const fullName = mergeNames(
-        session.practitionerName,
-        session.practitionerQualification
+        appointment.practitionerName,
+        appointment.practitionerQualification
       )?.toLowerCase();
-      const email = session.practitionerEmail?.toLowerCase();
-
-      if (
-        debouncedKeyword &&
-        !fullName.includes(debouncedKeyword.toLowerCase()) &&
-        !email.includes(debouncedKeyword.toLowerCase())
-      ) {
-        return false;
-      }
-
-      return true;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parsedAppointmentsData, sessionsFilter, selectedTab, debouncedKeyword]);
-
-  const listUpcomingAppointments = useMemo(() => {
-    if (!filteredAppointmentsData || filteredAppointmentsData.length === 0)
-      return [];
-
-    return filteredAppointmentsData
-      .filter(s => s.slotStart && new Date(s.slotStart) >= getNow())
-      .sort(
-        (a, b) =>
-          new Date(a.slotStart!).getTime() - new Date(b.slotStart!).getTime() // soonest first
+      const email = appointment.practitionerEmail?.toLowerCase();
+      return (
+        fullName?.includes(query.toLowerCase()) ||
+        email?.includes(query.toLowerCase())
       );
-  }, [filteredAppointmentsData]);
-
-  const listPastAppointments = useMemo(() => {
-    if (!filteredAppointmentsData || filteredAppointmentsData.length === 0)
-      return [];
-
-    return filteredAppointmentsData
-      .filter(s => s.slotStart && new Date(s.slotStart) < getNow())
-      .sort(
-        (a, b) =>
-          new Date(b.slotStart!).getTime() - new Date(a.slotStart!).getTime() // most-recent first
-      );
-  }, [filteredAppointmentsData]);
-
-  const TabUpcomingSession = () => {
-    return !listUpcomingAppointments ||
-      listUpcomingAppointments.length === 0 ? (
-      <EmptyState
-        className='py-16'
-        title='No Upcoming Sessions'
-        subtitle='You have no scheduled sessions at the moment'
-      />
-    ) : (
-      listUpcomingAppointments.map((appointment: MergedAppointment) => (
-        <AppointmentCard
-          key={appointment.appointmentId}
-          appointment={appointment}
-        />
-      ))
-    );
-  };
-
-  const TabPastSession = () => {
-    return !listPastAppointments || listPastAppointments.length === 0 ? (
-      <EmptyState
-        className='py-16'
-        title='No Past Sessions'
-        subtitle='You haven’t completed any sessions yet'
-      />
-    ) : (
-      listPastAppointments.map((appointment: MergedAppointment) => (
-        <AppointmentCard
-          key={appointment.appointmentId}
-          appointment={appointment}
-        />
-      ))
-    );
-  };
+    }
+  });
 
   return (
     <>
       <PageHeader />
-      <div className='mt-[-24px] rounded-[16px] bg-white pb-20'>
-        <div className='w-full p-4'>
-          <div className='flex gap-4'>
-            <InputWithIcon
-              value={keyword}
-              onChange={event => setKeyword(event.target.value)}
-              placeholder='Search'
-              className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
-              startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
-            />
-            <SessionFilter
-              onChange={(filter: IUseClinicParams) => {
-                setSessionsFilter(prevState => ({
-                  ...prevState,
-                  ...filter
-                }));
-              }}
-              type={selectedTab}
-              initialFilter={sessionsFilter}
-            />
-          </div>
-
-          <div className='mb-4 flex gap-4'>
-            {sessionsFilter.start_date && sessionsFilter.end_date && (
-              <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
-                {format(new Date(sessionsFilter.start_date), 'dd MMM yy') +
-                  ' - ' +
-                  format(new Date(sessionsFilter.end_date), 'dd MMM yy')}
-              </Badge>
-            )}
-            {sessionsFilter.start_time && sessionsFilter.end_time && (
-              <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
-                {sessionsFilter.start_time + ' - ' + sessionsFilter.end_time}
-              </Badge>
-            )}
-          </div>
-
-          <Tabs
-            defaultValue='upcoming'
-            className='w-full'
-            value={selectedTab}
-            onValueChange={value => setSelectedTab(value)}
-          >
-            <TabsList className='grid w-full grid-cols-2 bg-transparent'>
-              <TabsTrigger
-                className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
-                value='upcoming'
-              >
-                Upcoming Session
-              </TabsTrigger>
-              <TabsTrigger
-                className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
-                value='past'
-              >
-                Past Session
-              </TabsTrigger>
-            </TabsList>
-            {isUpcomingLoading ? (
-              <Skeleton
-                count={4}
-                className='mt-4 h-[100px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
-              />
-            ) : (
-              <>
-                <TabsContent value='upcoming'>
-                  <TabUpcomingSession />
-                </TabsContent>
-                <TabsContent value='past'>
-                  <TabPastSession />
-                </TabsContent>
-              </>
-            )}
-          </Tabs>
-        </div>
-      </div>
+      <SchedulePageShell
+        keyword={keyword}
+        onKeywordChange={setKeyword}
+        sessionsFilter={sessionsFilter}
+        onFilterChange={(filter: IUseClinicParams) => {
+          setSessionsFilter(prevState => ({
+            ...prevState,
+            ...filter
+          }));
+        }}
+        selectedTab={selectedTab}
+        onTabChange={setSelectedTab}
+        isLoading={isUpcomingLoading}
+        upcoming={upcoming}
+        past={past}
+        renderCard={(appointment: MergedAppointment) => (
+          <AppointmentCard appointment={appointment} />
+        )}
+      />
     </>
   );
 }

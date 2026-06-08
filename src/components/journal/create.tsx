@@ -1,30 +1,20 @@
 'use client';
 
-/* eslint-disable react/jsx-max-depth */
-import { LoadingSpinnerIcon } from '@/components/icons';
+import { useJournalForm } from '@/components/shared/hooks/useJournalForm';
+import JournalResponseFields from '@/components/shared/journal-response-fields';
+import JournalSubmitButton from '@/components/shared/journal-submit-button';
+import JournalSuccessDrawer from '@/components/shared/journal-succes-drawer';
 import { Button } from '@/components/ui/button';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle
-} from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth/authContext';
 import { useSubmitJournal } from '@/services/api/record';
 import { addDays, subDays } from 'date-fns';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  NotepadTextIcon,
-  XIcon
+  NotepadTextIcon
 } from 'lucide-react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import CalendarJournal from './calender-journal';
 const today = new Date();
@@ -33,33 +23,21 @@ const today = new Date();
  *
  */
 export default function CreateJournal() {
-  const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(today);
-  const nextId = useRef(0);
-  const [response, setResponse] = useState<{ id: number; text: string }[]>([]);
-  const [journalTitle, setJournalTitle] = useState<string>('');
+  const {
+    response,
+    journalTitle,
+    setJournalTitle,
+    handleResponseChange,
+    addResponse,
+    removeResponse
+  } = useJournalForm();
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useSubmitJournal();
 
-  const handleResponseChange = (index: number, value: string) => {
-    const newResponse = [...response];
-    newResponse[index].text = value;
-    setResponse(newResponse);
-  };
-
-  const addResponse = () => {
-    setResponse(prevState => [
-      ...prevState,
-      {
-        id: nextId.current++,
-        text: ''
-      }
-    ]);
-  };
-
-  useEffect(addResponse, []);
+  useEffect(addResponse, [addResponse]);
 
   const handleSubmitJournal = async () => {
     try {
@@ -97,10 +75,6 @@ export default function CreateJournal() {
     }
   };
 
-  const removeResponse = (index: number) => {
-    setResponse(response.filter((_, find) => find != index));
-  };
-
   const nextDay = () => {
     setDate(addDays(date, 1));
   };
@@ -108,38 +82,6 @@ export default function CreateJournal() {
   const prevDay = () => {
     setDate(subDays(date, 1));
   };
-
-  const renderDrawerContent = (
-    <>
-      <DrawerHeader className='mx-auto flex flex-col items-center gap-4 pb-0 text-[20px]'>
-        <Image
-          className='rounded-[8px] object-cover p-6'
-          src={'/images/journal-img.png'}
-          height={0}
-          width={200}
-          style={{ width: 'auto', height: 'auto' }}
-          alt='success'
-        />
-        <DrawerTitle className='mb-2 text-center text-2xl font-bold'>
-          Tetap Semangat Untuk Hari Ini!
-        </DrawerTitle>
-      </DrawerHeader>
-
-      <DrawerDescription className='px-4 text-center text-sm opacity-50'>
-        Menulis jurnal adalah langkah penting untuk memahami diri sendiri dan
-        menjaga kesehatan mental Anda.
-      </DrawerDescription>
-
-      <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
-        <Button
-          className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-          onClick={() => router.push('/record')}
-        >
-          Back
-        </Button>
-      </DrawerFooter>
-    </>
-  );
 
   const datePicker = (
     <div className='card flex items-center justify-evenly bg-[hsla(0,0%,98%,1)]'>
@@ -175,58 +117,17 @@ export default function CreateJournal() {
         />
       </div>
 
-      <div>
-        {response.map((item, index) => (
-          <div className='mb-3' key={item.id}>
-            <div className='flex items-center justify-between'>
-              <div className='text-muted mb-2 text-[12px]'>
-                Write anything here
-              </div>
-              <Button
-                onClick={() => removeResponse(index)}
-                variant='ghost'
-                className='h-fit w-fit rounded-full p-2'
-              >
-                <XIcon fill='red' size={12} color='hsla(220,9%,19%,0.4)' />
-              </Button>
-            </div>
+      <JournalResponseFields
+        response={response}
+        onResponseChange={handleResponseChange}
+        onRemove={removeResponse}
+        onAdd={addResponse}
+      />
 
-            <Textarea
-              value={item.text}
-              onChange={e => handleResponseChange(index, e.target.value)}
-              className='rounded-lg text-[14px]'
-              placeholder='Type your message here.'
-            />
-          </div>
-        ))}
-      </div>
-
-      <div className='flex w-full justify-center'>
-        <Button
-          variant='ghost'
-          className='text-muted text-[12px]'
-          onClick={addResponse}
-        >
-          + Add New Thought
-        </Button>
-      </div>
-
-      <Button
+      <JournalSubmitButton
+        isLoading={isSubmitLoading}
         onClick={handleSubmitJournal}
-        className='bg-secondary !mt-auto w-full rounded-full p-4 text-[14px] text-white'
-        disabled={isSubmitLoading}
-      >
-        {isSubmitLoading ? (
-          <LoadingSpinnerIcon
-            width={20}
-            height={20}
-            stroke='white'
-            className='w-full animate-spin'
-          />
-        ) : (
-          'Save Journal'
-        )}
-      </Button>
+      />
     </>
   );
 
@@ -250,11 +151,7 @@ export default function CreateJournal() {
         )}
       </div>
 
-      <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
-        <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-          {renderDrawerContent}
-        </DrawerContent>
-      </Drawer>
+      <JournalSuccessDrawer isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </>
   );
 }
