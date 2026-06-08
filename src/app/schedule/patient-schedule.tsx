@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- 300-line limit is too tight for component files */
+/* eslint-disable react/jsx-max-depth */
 
 'use client';
 
@@ -96,6 +96,9 @@ const AppointmentCard = ({
   );
 };
 
+/**
+ *
+ */
 export default function PatientSchedule({ fhirId }: Props) {
   const { state: authState } = useAuth();
   const [keyword, setKeyword] = useState<string>('');
@@ -127,8 +130,8 @@ export default function PatientSchedule({ fhirId }: Props) {
 
     const { start_date, end_date, start_time, end_time } = sessionsFilter;
 
-    const hasDateFilter = !!start_date && !!end_date;
-    const hasTimeFilter = !!start_time || !!end_time;
+    const hasDateFilter = Boolean(start_date) && Boolean(end_date);
+    const hasTimeFilter = Boolean(start_time) || Boolean(end_time);
 
     const filterStartDate = start_date;
     const filterEndDate = end_date;
@@ -217,44 +220,37 @@ export default function PatientSchedule({ fhirId }: Props) {
   }, [filteredAppointmentsData]);
 
   const TabUpcomingSession = () => {
-    return (
-      <>
-        {!listUpcomingAppointments || listUpcomingAppointments.length === 0 ? (
-          <EmptyState
-            className='py-16'
-            title='No Upcoming Sessions'
-            subtitle='You have no scheduled sessions at the moment'
-          />
-        ) : (
-          listUpcomingAppointments.map((appointment: MergedAppointment) => (
-            <AppointmentCard
-              key={appointment.appointmentId}
-              appointment={appointment}
-            />
-          ))
-        )}
-      </>
+    return !listUpcomingAppointments ||
+      listUpcomingAppointments.length === 0 ? (
+      <EmptyState
+        className='py-16'
+        title='No Upcoming Sessions'
+        subtitle='You have no scheduled sessions at the moment'
+      />
+    ) : (
+      listUpcomingAppointments.map((appointment: MergedAppointment) => (
+        <AppointmentCard
+          key={appointment.appointmentId}
+          appointment={appointment}
+        />
+      ))
     );
   };
 
   const TabPastSession = () => {
-    return (
-      <>
-        {!listPastAppointments || listPastAppointments.length === 0 ? (
-          <EmptyState
-            className='py-16'
-            title='No Past Sessions'
-            subtitle='You haven’t completed any sessions yet'
-          />
-        ) : (
-          listPastAppointments.map((appointment: MergedAppointment) => (
-            <AppointmentCard
-              key={appointment.appointmentId}
-              appointment={appointment}
-            />
-          ))
-        )}
-      </>
+    return !listPastAppointments || listPastAppointments.length === 0 ? (
+      <EmptyState
+        className='py-16'
+        title='No Past Sessions'
+        subtitle='You haven’t completed any sessions yet'
+      />
+    ) : (
+      listPastAppointments.map((appointment: MergedAppointment) => (
+        <AppointmentCard
+          key={appointment.appointmentId}
+          appointment={appointment}
+        />
+      ))
     );
   };
 

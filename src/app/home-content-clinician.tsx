@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable react/jsx-max-depth */
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetTodaySessions } from '@/services/api/appointments';
@@ -86,6 +87,36 @@ export default function HomeContentClinician() {
 
   const isLoading = isAuthLoading || isSessionsLoading;
 
+  const soapReportLink = (
+    <div className='card flex w-full items-center gap-3 p-4'>
+      <div className='flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
+        <FileText className='h-5 w-5 text-gray-600' />
+      </div>
+      <div className='flex flex-col'>
+        <span className='text-primary text-[12px] font-bold'>SOAP Report</span>
+        <span className='text-primary text-[10px]'>
+          Record your session notes
+        </span>
+      </div>
+    </div>
+  );
+
+  const exerciseLink = (
+    <div className='card flex w-full items-center gap-3 p-4'>
+      <div className='flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
+        <Dumbbell className='h-5 w-5 text-gray-600' />
+      </div>
+      <div className='flex flex-col'>
+        <span className='text-primary text-[12px] font-bold'>
+          Health Exercise Resources
+        </span>
+        <span className='text-primary text-[10px]'>
+          Help your patient with curated exercises
+        </span>
+      </div>
+    </div>
+  );
+
   if (isLoading) {
     return (
       <div className='p-4'>
@@ -166,34 +197,14 @@ export default function HomeContentClinician() {
             href='/assessments/soap'
             className='card flex w-full items-center gap-3 p-4'
           >
-            <div className='flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
-              <FileText className='h-5 w-5 text-gray-600' />
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-primary text-[12px] font-bold'>
-                SOAP Report
-              </span>
-              <span className='text-primary text-[10px]'>
-                Record your session notes
-              </span>
-            </div>
+            {soapReportLink}
           </Link>
 
           <Link
             href='/exercise'
             className='card flex w-full items-center gap-3 p-4'
           >
-            <div className='flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
-              <Dumbbell className='h-5 w-5 text-gray-600' />
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-primary text-[12px] font-bold'>
-                Health Exercise Resources
-              </span>
-              <span className='text-primary text-[10px]'>
-                Help your patient with curated exercises
-              </span>
-            </div>
+            {exerciseLink}
           </Link>
         </div>
       </div>

@@ -164,9 +164,7 @@ function getInitials(name: string): string {
   const parts = name.split(' ').filter(Boolean);
   const meaningful = parts.filter(p => !/^dr\.?$/i.test(p));
   if (meaningful.length >= 2) {
-    return (
-      meaningful[0][0] + meaningful[meaningful.length - 1][0]
-    ).toUpperCase();
+    return (meaningful[0][0] + meaningful.at(-1)[0]).toUpperCase();
   }
   if (meaningful.length === 1) {
     return meaningful[0].slice(0, 2).toUpperCase();
@@ -174,6 +172,9 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
+/**
+ *
+ */
 export default function RecommendationCard({
   recommendation,
   className,

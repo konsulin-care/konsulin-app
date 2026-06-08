@@ -91,7 +91,7 @@ export const useRecordSummaryQuery = (patientId: string) => {
       );
       return response.data.entry as IBundleResponse[];
     },
-    enabled: !!patientId,
+    enabled: Boolean(patientId),
     staleTime: 60 * 1000
   });
 };
@@ -249,7 +249,7 @@ export const useGetSingleRecord = ({
     select: response => {
       return response.data || null;
     },
-    enabled: !!id && !!resourceType
+    enabled: Boolean(id) && Boolean(resourceType)
   });
 };
 

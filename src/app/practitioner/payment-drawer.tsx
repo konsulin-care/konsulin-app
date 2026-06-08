@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth */
 import Avatar from '@/components/general/avatar';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
@@ -165,6 +165,24 @@ export default function PaymentDrawer({
     }
   };
 
+  const dateDisplay = (
+    <div className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'>
+      <span className='mr-2 text-[12px] text-[#2C2F35]'>
+        {bookingState?.date
+          ? format(bookingState.date, 'dd MMMM yyyy')
+          : '-/-/-'}
+      </span>
+    </div>
+  );
+
+  const timeDisplay = (
+    <div className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'>
+      <span className='mr-2 text-[12px] text-[#2C2F35]'>
+        {bookingState?.startTime || '-:-'}
+      </span>
+    </div>
+  );
+
   return (
     <Drawer onClose={() => setPaymentOpen(false)} open={paymentOpen}>
       <DrawerContent
@@ -179,18 +197,8 @@ export default function PaymentDrawer({
           />
 
           <div className='flex w-full items-center justify-center gap-2'>
-            <div className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'>
-              <span className='mr-2 text-[12px] text-[#2C2F35]'>
-                {bookingState?.date
-                  ? format(bookingState.date, 'dd MMMM yyyy')
-                  : '-/-/-'}
-              </span>
-            </div>
-            <div className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'>
-              <span className='mr-2 text-[12px] text-[#2C2F35]'>
-                {bookingState?.startTime || '-:-'}
-              </span>
-            </div>
+            {dateDisplay}
+            {timeDisplay}
           </div>
 
           <div className='mt-2 flex items-center justify-between rounded-[12px] bg-[#F9F9F9] p-3'>

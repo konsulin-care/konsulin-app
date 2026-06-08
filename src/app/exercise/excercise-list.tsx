@@ -9,20 +9,23 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
+/**
+ *
+ */
 export default function ExcerciseList() {
   const [keyWord, setKeyWord] = useState('');
 
   const { data: excerciseData, isLoading: excerciseIsLoading } =
     useGetExercise();
 
-  const filteredExcerciseData = !keyWord
-    ? excerciseData
-    : Array.isArray(excerciseData) &&
+  const filteredExcerciseData = keyWord
+    ? Array.isArray(excerciseData) &&
       excerciseData.filter(
         item =>
           item.title.toLowerCase().includes(keyWord.toLowerCase()) ||
           item.description.toLowerCase().includes(keyWord.toLowerCase())
-      );
+      )
+    : excerciseData;
   return (
     <ContentWraper>
       {/* Filter / Search */}

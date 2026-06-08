@@ -14,6 +14,9 @@ interface AvailableTime {
   availableEndTime?: string;
 }
 
+/**
+ *
+ */
 export async function postMarkUnavailability(
   payload: MarkUnavailabilityRequest
 ): Promise<MarkUnavailabilityResult> {
@@ -24,6 +27,9 @@ export async function postMarkUnavailability(
   return { data: res.data as MarkUnavailabilityResponse, status: res.status };
 }
 
+/**
+ *
+ */
 export function useMarkUnavailability() {
   return useMutation({
     mutationKey: ['schedule-unavailable'],
@@ -31,6 +37,9 @@ export function useMarkUnavailability() {
   });
 }
 
+/**
+ *
+ */
 export async function updateSchedule(payload: Schedule): Promise<Schedule> {
   if (!payload?.id) {
     throw new Error('Schedule id is required');

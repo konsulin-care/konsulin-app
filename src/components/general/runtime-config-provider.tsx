@@ -18,6 +18,9 @@ type RuntimeConfig = {
 
 export const RuntimeConfigContext = createContext<RuntimeConfig | null>(null);
 
+/**
+ *
+ */
 export function RuntimeConfigProvider({
   children
 }: Readonly<{ children: ReactNode }>) {
@@ -60,6 +63,9 @@ export function RuntimeConfigProvider({
   );
 }
 
+/**
+ *
+ */
 export function useRuntimeConfig() {
   const ctx = useContext(RuntimeConfigContext);
   if (!ctx)

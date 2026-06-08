@@ -20,19 +20,30 @@ export const useGetExercise = () => {
     select: (response): ExerciseItem[] => {
       const entries = response.data.entry || [];
 
-      return entries.map((entry: any) => {
-        const resource = entry.resource;
+      return entries.map(
+        (entry: {
+          resource: ExerciseItem & {
+            content?: { url?: string; title?: string };
+            note?: Array<{ text: string }>;
+          };
+        }) => {
+          const resource = entry.resource;
 
-        return {
-          id: resource.id,
-          url: resource.content?.url ?? '',
-          title: resource.content?.title ?? '',
-          duration: resource.duration ? Math.floor(resource.duration / 60) : 0,
-          description: resource.note
-            ? resource.note.map((n: any) => n.text).join(' ')
-            : ''
-        };
-      });
+          return {
+            id: resource.id,
+            url: resource.content?.url ?? '',
+            title: resource.content?.title ?? '',
+            duration: resource.duration
+              ? Math.floor(resource.duration / 60)
+              : 0,
+            description: resource.note
+              ? (resource.note as Array<{ text: string }>)
+                  .map(n => n.text)
+                  .join(' ')
+              : ''
+          };
+        }
+      );
     }
   });
 };

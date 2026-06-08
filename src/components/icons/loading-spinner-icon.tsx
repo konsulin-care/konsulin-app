@@ -1,6 +1,9 @@
-import { cn } from '@/lib/utils'
-import * as React from 'react'
+import { cn } from '@/lib/utils';
+import * as React from 'react';
 
+/**
+ *
+ */
 export default function LoadingSpinnerIcon(
   props: React.SVGProps<SVGSVGElement>
 ) {
@@ -10,7 +13,7 @@ export default function LoadingSpinnerIcon(
     width = 24,
     height = 24,
     className
-  } = props
+  } = props;
 
   return (
     <svg
@@ -27,5 +30,5 @@ export default function LoadingSpinnerIcon(
     >
       <path d='M21 12a9 9 0 1 1-6.219-8.56' />
     </svg>
-  )
+  );
 }

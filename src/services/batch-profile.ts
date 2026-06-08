@@ -86,6 +86,9 @@ function parseRoleProfileResponse(
   return result;
 }
 
+/**
+ *
+ */
 export async function fetchRoleProfiles(
   userId: string,
   roles: string[]

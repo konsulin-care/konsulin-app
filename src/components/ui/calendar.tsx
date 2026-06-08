@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import * as React from 'react';
 import { DayPicker } from 'react-day-picker';
@@ -30,6 +31,9 @@ const components: any = {
   IconNext: () => <ChevronRight className='h-4 w-4' />
 };
 
+/**
+ *
+ */
 function Calendar({
   className,
   classNames,

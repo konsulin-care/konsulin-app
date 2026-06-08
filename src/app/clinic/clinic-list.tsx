@@ -63,18 +63,18 @@ function clinicGrid(clinics: BundleEntry[], onSelect: (id: string) => void) {
   );
 }
 
+/**
+ *
+ */
 export default function ClinicList() {
   const router = useRouter();
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const { data: clinics, isLoading: isListClinicsLoading } = useListClinics(
-    {
-      cityFilter: clinicFilter.city,
-      nameFilter: '' // Always use empty nameFilter for base clinic list
-    },
-    500
-  );
+  const { data: clinics, isLoading: isListClinicsLoading } = useListClinics({
+    cityFilter: clinicFilter.city,
+    nameFilter: '' // Always use empty nameFilter for base clinic list
+  });
 
   // Memoize server search function to prevent infinite loops
   const serverSearchFunction = useCallback(async (term: string) => {

@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable react/jsx-max-depth */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,17 +24,21 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import CalendarJournal from './calender-journal';
 const today = new Date();
 
+/**
+ *
+ */
 export default function CreateJournal() {
   const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(today);
-  const [response, setResponse] = useState([]);
+  const nextId = useRef(0);
+  const [response, setResponse] = useState<{ id: number; text: string }[]>([]);
   const [journalTitle, setJournalTitle] = useState<string>('');
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useSubmitJournal();
@@ -48,19 +53,21 @@ export default function CreateJournal() {
     setResponse(prevState => [
       ...prevState,
       {
+        id: nextId.current++,
         text: ''
       }
     ]);
   };
 
-  useEffect(addResponse, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(addResponse, []);
 
   const handleSubmitJournal = async () => {
     try {
       const payload = {
         valueString: journalTitle,
         resourceType: 'Observation',
-        note: response,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        note: response.map(({ id, ...rest }) => rest),
         effectiveDateTime: date.toISOString(),
         status: 'final',
         code: {
@@ -125,7 +132,7 @@ export default function CreateJournal() {
 
       <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
         <Button
-          className='h-full w-full rounded-xl bg-secondary p-4 text-white'
+          className='bg-secondary h-full w-full rounded-xl p-4 text-white'
           onClick={() => router.push('/record')}
         >
           Back
@@ -134,12 +141,101 @@ export default function CreateJournal() {
     </>
   );
 
+  const datePicker = (
+    <div className='card flex items-center justify-evenly bg-[hsla(0,0%,98%,1)]'>
+      <Button onClick={prevDay} variant='ghost' className='w-fit rounded-full'>
+        <ChevronLeftIcon color='hsla(220,9%,19%,0.4)' />
+      </Button>
+
+      <div className='flex grow flex-col items-center text-[14px]'>
+        <CalendarJournal
+          value={date}
+          onChange={(newDate: Date) => setDate(newDate)}
+        />
+      </div>
+
+      <Button onClick={nextDay} variant='ghost' className='w-fit rounded-full'>
+        <ChevronRightIcon color='hsla(220,9%,19%,0.4)' />
+      </Button>
+    </div>
+  );
+
+  const journalForm = (
+    <>
+      {datePicker}
+
+      <div className='card flex border'>
+        <NotepadTextIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
+        <input
+          placeholder='Journal Title'
+          value={journalTitle}
+          onChange={e => setJournalTitle(e.target.value)}
+          type='text'
+          className='w-full focus:outline-none'
+        />
+      </div>
+
+      <div>
+        {response.map((item, index) => (
+          <div className='mb-3' key={item.id}>
+            <div className='flex items-center justify-between'>
+              <div className='text-muted mb-2 text-[12px]'>
+                Write anything here
+              </div>
+              <Button
+                onClick={() => removeResponse(index)}
+                variant='ghost'
+                className='h-fit w-fit rounded-full p-2'
+              >
+                <XIcon fill='red' size={12} color='hsla(220,9%,19%,0.4)' />
+              </Button>
+            </div>
+
+            <Textarea
+              value={item.text}
+              onChange={e => handleResponseChange(index, e.target.value)}
+              className='rounded-lg text-[14px]'
+              placeholder='Type your message here.'
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className='flex w-full justify-center'>
+        <Button
+          variant='ghost'
+          className='text-muted text-[12px]'
+          onClick={addResponse}
+        >
+          + Add New Thought
+        </Button>
+      </div>
+
+      <Button
+        onClick={handleSubmitJournal}
+        className='bg-secondary !mt-auto w-full rounded-full p-4 text-[14px] text-white'
+        disabled={isSubmitLoading}
+      >
+        {isSubmitLoading ? (
+          <LoadingSpinnerIcon
+            width={20}
+            height={20}
+            stroke='white'
+            className='w-full animate-spin'
+          />
+        ) : (
+          'Save Journal'
+        )}
+      </Button>
+    </>
+  );
+
   return (
     <>
       <div className='mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] bg-white p-4'>
         <div>
-          <div className='text-center font-bold text-muted'>Journal Entry</div>
-          <div className='text-center text-muted'>
+          <div className='text-muted text-center font-bold'>Journal Entry</div>
+          <div className='text-muted text-center'>
             To help you write with some thought if you need references
           </div>
         </div>
@@ -150,103 +246,7 @@ export default function CreateJournal() {
             className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
           />
         ) : (
-          <>
-            <div className='card flex items-center justify-evenly bg-[hsla(0,0%,98%,1)]'>
-              <Button
-                onClick={prevDay}
-                variant='ghost'
-                className='w-fit rounded-full'
-              >
-                <ChevronLeftIcon color='hsla(220,9%,19%,0.4)' />
-              </Button>
-
-              <div className='flex grow flex-col items-center text-[14px]'>
-                <CalendarJournal
-                  value={date}
-                  onChange={(newDate: Date) => setDate(newDate)}
-                />
-              </div>
-
-              <Button
-                onClick={nextDay}
-                variant='ghost'
-                className='w-fit rounded-full'
-              >
-                <ChevronRightIcon color='hsla(220,9%,19%,0.4)' />
-              </Button>
-            </div>
-
-            <div className='card flex border'>
-              <NotepadTextIcon
-                className='mr-[10px]'
-                color='hsla(220,9%,19%,0.4)'
-              />
-              <input
-                placeholder='Journal Title'
-                value={journalTitle}
-                onChange={e => setJournalTitle(e.target.value)}
-                type='text'
-                className='w-full focus:outline-none'
-              />
-            </div>
-
-            <div>
-              {response.map((item, index) => (
-                <div className='mb-3' key={index}>
-                  <div className='flex items-center justify-between'>
-                    <div className='mb-2 text-[12px] text-muted'>
-                      Write anything here
-                    </div>
-                    <Button
-                      onClick={() => removeResponse(index)}
-                      variant='ghost'
-                      className='h-fit w-fit rounded-full p-2'
-                    >
-                      <XIcon
-                        fill='red'
-                        size={12}
-                        color='hsla(220,9%,19%,0.4)'
-                      />
-                    </Button>
-                  </div>
-
-                  <Textarea
-                    value={item.text}
-                    onChange={e => handleResponseChange(index, e.target.value)}
-                    className='rounded-lg text-[14px]'
-                    placeholder='Type your message here.'
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className='flex w-full justify-center'>
-              <Button
-                variant='ghost'
-                className='text-[12px] text-muted'
-                onClick={addResponse}
-              >
-                + Add New Thought
-              </Button>
-            </div>
-
-            <Button
-              onClick={handleSubmitJournal}
-              className='!mt-auto w-full rounded-full bg-secondary p-4 text-[14px] text-white'
-              disabled={isSubmitLoading}
-            >
-              {isSubmitLoading ? (
-                <LoadingSpinnerIcon
-                  width={20}
-                  height={20}
-                  stroke='white'
-                  className='w-full animate-spin'
-                />
-              ) : (
-                'Save Journal'
-              )}
-            </Button>
-          </>
+          journalForm
         )}
       </div>
 

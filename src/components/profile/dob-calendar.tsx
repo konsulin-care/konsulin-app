@@ -1,51 +1,56 @@
-import { addDays } from 'date-fns'
-import { useState } from 'react'
-import Calendar from 'react-calendar'
-import 'react-calendar/dist/Calendar.css'
-import styles from './dob-calendar.module.css'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { addDays } from 'date-fns';
+import { useState } from 'react';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
+import styles from './dob-calendar.module.css';
 
+/**
+ *
+ */
 export default function DobCalendar({ value, onChange }) {
-  const [selectedDate, setSelectedDate] = useState(value)
+  const [selectedDate, setSelectedDate] = useState(value);
 
   const handleDateChange = (date: any) => {
-    onChange(date)
-    setSelectedDate(date)
-  }
+    onChange(date);
+    setSelectedDate(date);
+  };
 
   const tileDisabled = ({ date, view }) => {
     if (view === 'month') {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const tomorrow = addDays(today, 1)
-      return date >= tomorrow
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = addDays(today, 1);
+      return date >= tomorrow;
     }
-  }
+    return false;
+  };
 
   const getTileClassName = ({ date, view }) => {
-    const classes = [styles['custom-tile']]
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const classes = [styles['custom-tile']];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     if (view === 'month') {
       if (
         date instanceof Date &&
         date.toDateString() === today.toDateString()
       ) {
-        classes.push(styles['custom-today'])
+        classes.push(styles['custom-today']);
       }
       if (tileDisabled({ date, view })) {
-        classes.push(styles['custom-disabled'])
+        classes.push(styles['custom-disabled']);
       }
       if (
         selectedDate instanceof Date &&
         date instanceof Date &&
         date.toDateString() === selectedDate.toDateString()
       ) {
-        classes.push(styles['custom-selected'])
+        classes.push(styles['custom-selected']);
       }
     }
-    return classes.join(' ')
-  }
+    return classes.join(' ');
+  };
 
   return (
     <div className='p-4'>
@@ -59,5 +64,5 @@ export default function DobCalendar({ value, onChange }) {
         tileClassName={getTileClassName}
       />
     </div>
-  )
+  );
 }

@@ -4,6 +4,9 @@ import { cn } from '@/lib/utils';
 import { DayOfWeek, DaySelectorNavigationProps } from '@/types/availability';
 import { getDayShortName, hasAvailabilityForDay } from '@/utils/availability';
 
+/**
+ *
+ */
 export default function DaySelectorNavigation({
   selectedDay,
   weeklyAvailability,

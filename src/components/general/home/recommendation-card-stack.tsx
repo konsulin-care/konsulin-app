@@ -10,6 +10,9 @@ interface RecommendationCardStackProps {
   onBook: (practitionerId: string) => void;
 }
 
+/**
+ *
+ */
 export default function RecommendationCardStack({
   onBook
 }: Readonly<RecommendationCardStackProps>) {

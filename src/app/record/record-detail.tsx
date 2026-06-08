@@ -9,6 +9,9 @@ import RecordExercise from './record-exercise';
 import RecordJournal from './record-journal';
 import RecordSoap from './record-soap';
 
+/**
+ *
+ */
 export default function RecordDetail() {
   const searchParams = useSearchParams();
   const recordId = searchParams.get('recordId') ?? '';
@@ -34,6 +37,8 @@ export default function RecordDetail() {
         return 'SOAP Detail';
       case 4:
         return 'Journal Detail';
+      default:
+        return '';
     }
   };
 
@@ -47,6 +52,8 @@ export default function RecordDetail() {
         return <RecordSoap soapId={recordId} title={titleParam} />;
       case 4:
         return <RecordJournal journalId={recordId} />;
+      default:
+        return null;
     }
   };
 

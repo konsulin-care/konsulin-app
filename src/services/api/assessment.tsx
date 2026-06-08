@@ -28,7 +28,7 @@ function parseCanonicalOrReference(
     if (expectedType === 'Questionnaire') {
       const segments = url.pathname.split('/').filter(Boolean);
       if (segments.length > 0) {
-        return segments[segments.length - 1];
+        return segments.at(-1);
       }
     }
   } catch {
@@ -38,7 +38,7 @@ function parseCanonicalOrReference(
   const parts = withoutVersion.split('/');
 
   if (!expectedType) {
-    return parts.length > 1 ? parts[parts.length - 1] || null : withoutVersion;
+    return parts.length > 1 ? parts.at(-1) || null : withoutVersion;
   }
 
   const typeIndex = parts.findIndex(part => part === expectedType);
@@ -105,11 +105,14 @@ export const useOngoingResearch = () => {
       return response.data;
     },
     select: data => {
-      const entries = Array.isArray(data?.entry)
-        ? data.entry
-        : Array.isArray(data)
-          ? data
-          : [];
+      let entries: unknown[];
+      if (Array.isArray(data?.entry)) {
+        entries = data.entry;
+      } else if (Array.isArray(data)) {
+        entries = data;
+      } else {
+        entries = [];
+      }
 
       const resources = entries.map((e: any) => e?.resource ?? e);
 
@@ -384,7 +387,7 @@ export const useQuestionnaireResponse = ({
       return response;
     },
     select: response => response.data || null,
-    enabled: enabled
+    enabled
   });
 };
 
@@ -476,7 +479,7 @@ export const useSearchQuestionnaire = (query: string, context?: string) => {
       return response;
     },
     select: response => response.data.entry || [],
-    enabled: !!query && query.length >= 3 // Only enable if query is meaningful
+    enabled: Boolean(query) && query.length >= 3 // Only enable if query is meaningful
   });
 };
 

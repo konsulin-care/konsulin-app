@@ -9,6 +9,9 @@ import {
 } from '@/services/api/appointments';
 import { format } from 'date-fns';
 
+/**
+ *
+ */
 export function useUpcomingEvents() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 

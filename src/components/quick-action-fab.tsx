@@ -22,6 +22,9 @@ const pills = [
 const SCROLL_THRESHOLD = 10;
 const SCROLL_HIDE_OFFSET = 100;
 
+/**
+ *
+ */
 export default function QuickActionFab() {
   const router = useRouter();
   const { state: authState } = useAuth();

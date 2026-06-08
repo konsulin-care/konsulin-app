@@ -16,6 +16,9 @@ type Props = {
   title: string;
 };
 
+/**
+ *
+ */
 export default function PractitionerRecordSoap({ soapId, title }: Props) {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
@@ -43,7 +46,7 @@ export default function PractitionerRecordSoap({ soapId, title }: Props) {
     useQuery<Patient>({
       queryKey: ['profile-patient', patientId],
       queryFn: () => getProfileById(patientId, 'Patient') as Promise<Patient>,
-      enabled: !!patientId
+      enabled: Boolean(patientId)
     });
 
   const fullName = mergeNames(patientProfile?.name);
@@ -56,45 +59,38 @@ export default function PractitionerRecordSoap({ soapId, title }: Props) {
     return <EmptyState className='py-16' title='No Data Found' />;
   }
 
-  return (
-    <>
-      {isAuthLoading ||
-      isSoapLoading ||
-      isQuestionnaireLoading ||
-      isProfileLoading ? (
-        <div className='flex min-h-screen min-w-full items-center justify-center'>
-          <LoadingSpinnerIcon
-            width={56}
-            height={56}
-            className='w-full animate-spin'
-          />
+  return isAuthLoading ||
+    isSoapLoading ||
+    isQuestionnaireLoading ||
+    isProfileLoading ? (
+    <div className='flex min-h-screen min-w-full items-center justify-center'>
+      <LoadingSpinnerIcon
+        width={56}
+        height={56}
+        className='w-full animate-spin'
+      />
+    </div>
+  ) : (
+    <div className='flex flex-col gap-5'>
+      <div className='space-y-4'>
+        <div className='card flex border'>
+          <UsersIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
+          <div>{displayName}</div>
         </div>
-      ) : (
-        <div className='flex flex-col gap-5'>
-          <div className='space-y-4'>
-            <div className='card flex border'>
-              <UsersIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
-              <div>{displayName}</div>
-            </div>
 
-            <div className='card flex border'>
-              <NotepadTextIcon
-                className='mr-[10px]'
-                color='hsla(220,9%,19%,0.4)'
-              />
-              <div>{formatTitle(title)}</div>
-            </div>
-          </div>
-          <SoapForm
-            questionnaire={questionnaireData}
-            patientId={patientId}
-            practitionerId={authState.userInfo.fhirId}
-            mode='view'
-            questionnaireResponse={soapData}
-            isAuthorSame={isAuthorSame}
-          />
+        <div className='card flex border'>
+          <NotepadTextIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
+          <div>{formatTitle(title)}</div>
         </div>
-      )}
-    </>
+      </div>
+      <SoapForm
+        questionnaire={questionnaireData}
+        patientId={patientId}
+        practitionerId={authState.userInfo.fhirId}
+        mode='view'
+        questionnaireResponse={soapData}
+        isAuthorSame={isAuthorSame}
+      />
+    </div>
   );
 }

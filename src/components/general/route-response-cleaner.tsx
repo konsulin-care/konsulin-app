@@ -4,6 +4,9 @@ import { STORES, cursorDeleteAll, dbGet } from '@/lib/indexeddb';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
+/**
+ *
+ */
 export default function RouteResponseCleaner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();

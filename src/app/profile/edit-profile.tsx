@@ -693,8 +693,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         </DrawerTrigger>
         <DrawerContent className='mx-auto flex w-full max-w-screen-sm flex-col p-4'>
           <DrawerHeader>
-            <DrawerTitle></DrawerTitle>
-            <DrawerDescription></DrawerDescription>
+            <DrawerTitle />
+            <DrawerDescription />
           </DrawerHeader>
           <DobCalendar
             value={updateUser.birthDate}
@@ -720,8 +720,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
               Changes Successful!
             </DrawerTitle>
             <DrawerDescription className='text-center text-sm text-[#2C2F35] opacity-60'>
-              {subtitle_success_updated.split('\n').map((line, index) => (
-                <Fragment key={index}>
+              {subtitle_success_updated.split('\n').map(line => (
+                <Fragment key={line}>
                   {line}
                   <br />
                 </Fragment>

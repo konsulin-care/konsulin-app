@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -34,6 +34,20 @@ type Props = {
   setIsOpen: (open: boolean) => void;
 };
 
+const sessionTypeSelect = (
+  <Select disabled>
+    <SelectTrigger className='w-[50%] text-[12px] text-[#2C2F35]'>
+      <SelectValue placeholder='Offline' />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectGroup className='text-[12px] text-[#2C2F35]'>
+        <SelectItem value='online'>Online</SelectItem>
+        <SelectItem value='offline'>Offline</SelectItem>
+      </SelectGroup>
+    </SelectContent>
+  </Select>
+);
+
 /** Booking form with session type, problem brief, and submit handler. */
 export default function BookingFormSection({
   bookingForm,
@@ -59,19 +73,7 @@ export default function BookingFormSection({
       {bookingState.startTime && (
         <>
           <div className='text-[12px] font-bold'>Session Type</div>
-          <div className='mt-2 flex space-x-4'>
-            <Select disabled>
-              <SelectTrigger className='w-[50%] text-[12px] text-[#2C2F35]'>
-                <SelectValue placeholder='Offline' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup className='text-[12px] text-[#2C2F35]'>
-                  <SelectItem value='online'>Online</SelectItem>
-                  <SelectItem value='offline'>Offline</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
+          <div className='mt-2 flex space-x-4'>{sessionTypeSelect}</div>
 
           <div className='mt-4 text-[12px] font-bold'>Problem Brief</div>
           <div className='mt-2 mb-4'>

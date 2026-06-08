@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react/jsx-max-depth */
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import InformationDetail from '@/components/profile/information-detail';
@@ -42,6 +43,9 @@ type Props = {
  * @returns The JSX element for the Clinician profile page.
  */
 
+/**
+ *
+ */
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -95,10 +99,53 @@ export default function Clinician({ fhirId }: Props) {
    *   ...
    * }
    */
+  const processTimeSlot = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    timeSlot: any,
+    organizationName: string,
+    grouped: Record<
+      string,
+      {
+        availability: Record<
+          string,
+          Array<{ fromTime: string; toTime: string }>
+        >;
+      }
+    >
+  ) => {
+    if (!Array.isArray(timeSlot.daysOfWeek)) return;
+    timeSlot.daysOfWeek.forEach((day: string) => {
+      const dayKey = day.charAt(0).toUpperCase() + day.slice(1);
+
+      if (!grouped[organizationName]) {
+        grouped[organizationName] = {
+          availability: {}
+        };
+      }
+
+      if (!grouped[organizationName].availability[dayKey]) {
+        grouped[organizationName].availability[dayKey] = [];
+      }
+
+      grouped[organizationName].availability[dayKey].push({
+        fromTime: timeSlot.availableStartTime,
+        toTime: timeSlot.availableEndTime
+      });
+    });
+  };
+
   useEffect(() => {
     if (!Array.isArray(activeFirms)) return;
 
-    const newGroupedByFirmAndDay = {};
+    const newGroupedByFirmAndDay: Record<
+      string,
+      {
+        availability: Record<
+          string,
+          Array<{ fromTime: string; toTime: string }>
+        >;
+      }
+    > = {};
 
     activeFirms.forEach(role => {
       const organizationName = role?.organizationData.name || '';
@@ -106,31 +153,7 @@ export default function Clinician({ fhirId }: Props) {
       if (Array.isArray(role.availableTime)) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         role.availableTime.forEach((timeSlot: any) => {
-          if (Array.isArray(timeSlot.daysOfWeek)) {
-            timeSlot.daysOfWeek.forEach((day: string) => {
-              const dayKey = day.charAt(0).toUpperCase() + day.slice(1);
-
-              if (!newGroupedByFirmAndDay[organizationName]) {
-                newGroupedByFirmAndDay[organizationName] = {
-                  availability: {}
-                };
-              }
-
-              if (
-                !newGroupedByFirmAndDay[organizationName].availability[dayKey]
-              ) {
-                newGroupedByFirmAndDay[organizationName].availability[dayKey] =
-                  [];
-              }
-
-              newGroupedByFirmAndDay[organizationName].availability[
-                dayKey
-              ].push({
-                fromTime: timeSlot.availableStartTime,
-                toTime: timeSlot.availableEndTime
-              });
-            });
-          }
+          processTimeSlot(timeSlot, organizationName, newGroupedByFirmAndDay);
         });
       }
     });
@@ -150,15 +173,13 @@ export default function Clinician({ fhirId }: Props) {
     }
   };
 
-  const age =
-    profileData && profileData.birthDate
-      ? `${format(new Date(profileData?.birthDate), 'dd-MM-yyyy')} (${findAge(profileData.birthDate)})`
-      : '-';
-  const gender =
-    profileData && profileData.gender
-      ? profileData.gender.charAt(0).toUpperCase() +
-        profileData.gender.slice(1).toLowerCase()
-      : '-';
+  const age = profileData?.birthDate
+    ? `${format(new Date(profileData?.birthDate), 'dd-MM-yyyy')} (${findAge(profileData.birthDate)})`
+    : '-';
+  const gender = profileData?.gender
+    ? profileData.gender.charAt(0).toUpperCase() +
+      profileData.gender.slice(1).toLowerCase()
+    : '-';
   const phone =
     profileData && Array.isArray(profileData.telecom)
       ? profileData.telecom.find(item => item.system === 'phone')?.value || '-'
@@ -265,10 +286,10 @@ export default function Clinician({ fhirId }: Props) {
 
         {/* Availability content with border divider */}
         <div className='mt-2 flex w-full flex-col border-t border-[#E3E3E3]'>
-          {Object.keys(groupedByFirmAndDay).map((firm, index) => {
+          {Object.keys(groupedByFirmAndDay).map(firm => {
             const availability = groupedByFirmAndDay[firm].availability;
             return (
-              <div key={index}>
+              <div key={firm}>
                 <div className='mb-1 text-start text-[14px] font-bold'>
                   {firm}
                 </div>

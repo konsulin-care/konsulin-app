@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable react/jsx-max-depth */
 import Avatar from '@/components/general/avatar';
 import EmptyState from '@/components/general/empty-state';
 import PageHeader from '@/components/page-header';
@@ -87,6 +88,9 @@ const SessionCard = ({ session }: { session: MergedSession }) => {
   );
 };
 
+/**
+ *
+ */
 export default function PractitionerSchedule({ fhirId }: Props) {
   const searchParams = useSearchParams();
   const startDateParam = searchParams.get('start_date');
@@ -133,8 +137,8 @@ export default function PractitionerSchedule({ fhirId }: Props) {
 
     const { start_date, end_date, start_time, end_time } = sessionsFilter;
 
-    const hasDateFilter = !!start_date && !!end_date;
-    const hasTimeFilter = !!start_time || !!end_time;
+    const hasDateFilter = Boolean(start_date) && Boolean(end_date);
+    const hasTimeFilter = Boolean(start_time) || Boolean(end_time);
 
     const filterStartDate = start_date;
     const filterEndDate = end_date;
@@ -218,38 +222,30 @@ export default function PractitionerSchedule({ fhirId }: Props) {
   }, [filteredSessionsData]);
 
   const TabUpcomingSession = () => {
-    return (
-      <>
-        {!listUpcomingSessions || listUpcomingSessions.length === 0 ? (
-          <EmptyState
-            className='py-16'
-            title='No Upcoming Sessions'
-            subtitle='You have no scheduled sessions at the moment'
-          />
-        ) : (
-          listUpcomingSessions.map((session: MergedSession) => (
-            <SessionCard key={session.appointmentId} session={session} />
-          ))
-        )}
-      </>
+    return !listUpcomingSessions || listUpcomingSessions.length === 0 ? (
+      <EmptyState
+        className='py-16'
+        title='No Upcoming Sessions'
+        subtitle='You have no scheduled sessions at the moment'
+      />
+    ) : (
+      listUpcomingSessions.map((session: MergedSession) => (
+        <SessionCard key={session.appointmentId} session={session} />
+      ))
     );
   };
 
   const TabPastSession = () => {
-    return (
-      <>
-        {!listPastSessions || listPastSessions.length === 0 ? (
-          <EmptyState
-            className='py-16'
-            title='No Past Sessions'
-            subtitle='You haven’t completed any sessions yet'
-          />
-        ) : (
-          listPastSessions.map((session: MergedSession) => (
-            <SessionCard key={session.appointmentId} session={session} />
-          ))
-        )}
-      </>
+    return !listPastSessions || listPastSessions.length === 0 ? (
+      <EmptyState
+        className='py-16'
+        title='No Past Sessions'
+        subtitle='You haven’t completed any sessions yet'
+      />
+    ) : (
+      listPastSessions.map((session: MergedSession) => (
+        <SessionCard key={session.appointmentId} session={session} />
+      ))
     );
   };
 

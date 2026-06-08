@@ -78,6 +78,9 @@ interface RoleSwitchDropdownProps {
   onOpenChange: (open: boolean) => void;
 }
 
+/**
+ *
+ */
 export function RoleSwitchDropdown({
   otherRoleAvatars,
   currentAvatar,

@@ -268,6 +268,8 @@ export const parseRecordBundlePractitioner = (bundle: Bundle) => {
           results.push(extractBriefQuestionnaire(resource));
         }
         break;
+      default:
+        break;
     }
   }
 

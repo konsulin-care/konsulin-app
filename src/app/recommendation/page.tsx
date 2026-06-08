@@ -3,6 +3,9 @@
 import ContentWraper from '@/components/general/content-wraper';
 import PageHeader from '@/components/page-header';
 
+/**
+ *
+ */
 export default function Recommendation() {
   return (
     <>

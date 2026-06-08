@@ -1,4 +1,4 @@
-/* eslint-disable sonarjs/cognitive-complexity, max-lines */
+/* eslint-disable sonarjs/cognitive-complexity, react/jsx-max-depth */
 import PageLoader from '@/components/general/page-loader';
 import { SmartFormShell } from '@/components/general/smart-form-shell';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -39,6 +39,9 @@ interface FhirFormsRendererProps {
   ownerId?: string; // for scoping IndexedDB drafts per user/guest
 }
 
+/**
+ *
+ */
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const {
     questionnaire,
@@ -91,10 +94,10 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   );
 
   const handleValidation = () => {
-    if (Object.keys(invalidItems).length !== 0) {
-      checkRequiredIsEmpty();
-    } else {
+    if (Object.keys(invalidItems).length === 0) {
       setIsOpen(true);
+    } else {
+      checkRequiredIsEmpty();
     }
   };
 
@@ -128,11 +131,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     let author;
     let subject;
 
-    // Guest
-    if (!isAuthenticated) {
-      author = undefined;
-      subject = undefined;
-    } else {
+    if (isAuthenticated) {
       // Authenticated
       if (role === Roles.Practitioner) {
         if (!practitionerId || !patientId) {
@@ -151,26 +150,16 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         author = { reference: `Patient/${patientId}` };
         subject = { reference: `Patient/${patientId}` };
       }
+    } else {
+      author = undefined;
+      subject = undefined;
     }
 
-    /* Check if the questionnaire response contains an item with linkId = 'interpretation'.
-     * If it does, extract the item and send it to the webhook. */
     const interpretationItem = questionnaireResponse.item.find(
       item => item.linkId === 'interpretation'
     );
 
     try {
-      if (!interpretationItem) {
-        const result = await submitQuestionnaire({
-          ...questionnaireResponse,
-          author,
-          subject
-        });
-
-        handleNavigate(buttonLabel, result.id);
-        return;
-      }
-
       const submitResult = await submitQuestionnaire({
         ...questionnaireResponse,
         author,
@@ -223,6 +212,65 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     }
   };
 
+  const drawerTitleText =
+    formType === 'research' ? (
+      <div className='mb-2 text-2xl font-bold'>
+        Terima Kasih Karena Telah Berpatisipasi Dalam Research
+      </div>
+    ) : (
+      <div className='mb-2 text-2xl font-bold'>
+        Selamat Anda Menyelesaikan Test
+      </div>
+    );
+
+  const drawerDescriptionText =
+    formType === 'research' ? (
+      <span className='text-sm opacity-50'>
+        Partisipasi Anda sangat berharga bagi kami dan akan membantu kami dalam
+        mengembangkan solusi yg lebih baik untuk kebutuhan Anda.
+      </span>
+    ) : (
+      <span className='text-sm opacity-50'>
+        Hasil test ini akan memberikan wawasan berharga tentang kesehatan mental
+        Anda
+      </span>
+    );
+
+  const drawerButtons = (
+    <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
+      {formType !== 'research' && (
+        <Button
+          className='bg-secondary h-full w-full rounded-xl p-4 text-white'
+          onClick={() => handleSubmitQuestionnaire('result')}
+          disabled={isSubmitting || isPending}
+        >
+          {isSubmitting || isPending ? (
+            <LoadingSpinnerIcon
+              width={20}
+              height={20}
+              stroke='white'
+              className='w-full animate-spin'
+            />
+          ) : (
+            'See result'
+          )}
+        </Button>
+      )}
+      <Button
+        className={`focus:ring-opacity-50 h-full w-full rounded-xl border border-solid p-4 transition-all focus:ring-2 focus:ring-gray-300 focus:outline-none ${
+          formType === 'research'
+            ? 'hover:bg-secondary/90 bg-secondary border-transparent text-white'
+            : 'border-secondary text-secondary bg-transparent hover:bg-gray-100'
+        }`}
+        onClick={() => {
+          handleSubmitQuestionnaire('close');
+        }}
+      >
+        Close
+      </Button>
+    </DrawerFooter>
+  );
+
   const renderDrawerContent = (
     <>
       <DrawerHeader className='mx-auto flex flex-col items-center gap-4 pb-0 text-[20px]'>
@@ -234,65 +282,14 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           style={{ width: '200', height: 'auto' }}
           alt='success'
         />
-        <DrawerTitle className='text-center'>
-          {formType === 'research' ? (
-            <div className='mb-2 text-2xl font-bold'>
-              Terima Kasih Karena Telah Berpatisipasi Dalam Research
-            </div>
-          ) : (
-            <div className='mb-2 text-2xl font-bold'>
-              Selamat Anda Menyelesaikan Test
-            </div>
-          )}
-        </DrawerTitle>
+        <DrawerTitle className='text-center'>{drawerTitleText}</DrawerTitle>
       </DrawerHeader>
 
       <DrawerDescription className='text-center'>
-        {formType === 'research' ? (
-          <span className='text-sm opacity-50'>
-            Partisipasi Anda sangat berharga bagi kami dan akan membantu kami
-            dalam mengembangkan solusi yg lebih baik untuk kebutuhan Anda.
-          </span>
-        ) : (
-          <span className='text-sm opacity-50'>
-            Hasil test ini akan memberikan wawasan berharga tentang kesehatan
-            mental Anda
-          </span>
-        )}
+        {drawerDescriptionText}
       </DrawerDescription>
 
-      <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
-        {formType !== 'research' && (
-          <Button
-            className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-            onClick={() => handleSubmitQuestionnaire('result')}
-            disabled={isSubmitting || isPending}
-          >
-            {isSubmitting || isPending ? (
-              <LoadingSpinnerIcon
-                width={20}
-                height={20}
-                stroke='white'
-                className='w-full animate-spin'
-              />
-            ) : (
-              'See result'
-            )}
-          </Button>
-        )}
-        <Button
-          className={`focus:ring-opacity-50 h-full w-full rounded-xl border border-solid p-4 transition-all focus:ring-2 focus:ring-gray-300 focus:outline-none ${
-            formType !== 'research'
-              ? 'border-secondary text-secondary bg-transparent hover:bg-gray-100'
-              : 'hover:bg-secondary/90 bg-secondary border-transparent text-white'
-          }`}
-          onClick={() => {
-            handleSubmitQuestionnaire('close');
-          }}
-        >
-          Close
-        </Button>
-      </DrawerFooter>
+      {drawerButtons}
     </>
   );
 

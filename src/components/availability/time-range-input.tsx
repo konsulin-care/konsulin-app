@@ -15,6 +15,9 @@ interface TimeRangeInputProps {
   error?: string;
 }
 
+/**
+ *
+ */
 export default function TimeRangeInput({
   timeRange,
   onFromChange,
@@ -46,7 +49,7 @@ export default function TimeRangeInput({
             error && 'border-destructive focus-visible:ring-destructive'
           )}
           aria-label='End time'
-          aria-invalid={!!error}
+          aria-invalid={Boolean(error)}
           aria-describedby={error ? `error-${timeRange.id}` : undefined}
         />
       </div>

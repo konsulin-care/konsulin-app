@@ -80,6 +80,7 @@ function AppProviders({ children }: Readonly<{ children: React.ReactNode }>) {
           <AuthProvider>
             <BookingProvider>
               <QueryProvider>
+                {/* eslint-disable-next-line react/jsx-max-depth */}
                 <Suspense fallback={null}>{children}</Suspense>
               </QueryProvider>
             </BookingProvider>
@@ -90,6 +91,9 @@ function AppProviders({ children }: Readonly<{ children: React.ReactNode }>) {
   );
 }
 
+/**
+ *
+ */
 export default function RootLayout({
   children
 }: Readonly<{
@@ -108,9 +112,9 @@ export default function RootLayout({
             <div id='modal' />
             <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
               {children}
-              <QuickActionFab />
             </main>
           </div>
+          <QuickActionFab />
         </AppProviders>
       </body>
     </html>

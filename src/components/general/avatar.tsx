@@ -17,6 +17,9 @@ type Props = {
   seed?: string;
 };
 
+/**
+ *
+ */
 export default function Avatar({
   photoUrl,
   initials,
@@ -37,33 +40,29 @@ export default function Avatar({
 
   const displayUrl = photoUrl || generatedUrl;
 
-  return (
-    <>
-      {displayUrl && !fallback ? (
-        <Image
-          className={cn(
-            isRadiusIcon ? 'rounded-full object-cover' : '',
-            imageClassName
-          )}
-          src={displayUrl}
-          alt='practitioner'
-          width={width}
-          height={height}
-          style={{ height, width }}
-          unoptimized
-          onError={() => setFallback(true)}
-        />
-      ) : (
-        <div
-          className={cn(
-            'flex items-center justify-center rounded-full font-bold text-white',
-            className
-          )}
-          style={{ backgroundColor, height, width }}
-        >
-          {initials}
-        </div>
+  return displayUrl && !fallback ? (
+    <Image
+      className={cn(
+        isRadiusIcon ? 'rounded-full object-cover' : '',
+        imageClassName
       )}
-    </>
+      src={displayUrl}
+      alt='practitioner'
+      width={width}
+      height={height}
+      style={{ height, width }}
+      unoptimized
+      onError={() => setFallback(true)}
+    />
+  ) : (
+    <div
+      className={cn(
+        'flex items-center justify-center rounded-full font-bold text-white',
+        className
+      )}
+      style={{ backgroundColor, height, width }}
+    >
+      {initials}
+    </div>
   );
 }

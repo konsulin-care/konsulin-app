@@ -8,6 +8,9 @@ interface ImageUploaderProps {
   backgroundColor: string;
 }
 
+/**
+ *
+ */
 export default function ImageUploader({
   userPhoto,
   onPhotoChange,
@@ -55,7 +58,7 @@ export default function ImageUploader({
         )}
       </div>
       <div className='flex items-center justify-center rounded-xl bg-[#F6F6F6]'>
-        <div className='pb-2 pl-4 pr-2 pt-2'>
+        <div className='pt-2 pr-2 pb-2 pl-4'>
           <Image
             src={'/icons/edit-photo.svg'}
             width={16}
@@ -64,7 +67,7 @@ export default function ImageUploader({
           />
         </div>
         <span
-          className='cursor-pointer pr-4 text-center text-[12px] font-semibold text-[#18AAA1] text-secondary'
+          className='text-secondary cursor-pointer pr-4 text-center text-[12px] font-semibold text-[#18AAA1]'
           onClick={handleButtonClick}
         >
           Ganti Photo

@@ -68,6 +68,19 @@ function serverReducer<T>(
   }
 }
 
+/** Convert a value to a searchable string, avoiding [object Object]. */
+function toSearchString(value: unknown): string {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return '';
+  }
+}
+
 function getNestedValue(item: unknown, path: string): unknown {
   const parts = path.split('.');
   let current: unknown = item;
@@ -99,7 +112,8 @@ function matchesField<T>(
     try {
       const value = (item as Record<string, unknown>)[field as string];
       return (
-        value != null && String(value).toLowerCase().includes(lowerSearchTerm)
+        value != null &&
+        toSearchString(value).toLowerCase().includes(lowerSearchTerm)
       );
     } catch {
       return false;
@@ -117,13 +131,16 @@ function matchesField<T>(
     }
     return (
       finalValue != null &&
-      String(finalValue).toLowerCase().includes(lowerSearchTerm)
+      toSearchString(finalValue).toLowerCase().includes(lowerSearchTerm)
     );
   } catch {
     return false;
   }
 }
 
+/**
+ *
+ */
 export function useSearchWithFallback<T>({
   data,
   searchFields,
@@ -197,14 +214,17 @@ export function useSearchWithFallback<T>({
 
       // Check condition for client-side results using ref
       const lowerSearchTerm = searchTerm.toLowerCase();
-      const clientResults =
-        dataRef.current?.filter(item => {
-          if (!item) return false;
-
-          return searchFieldsRef.current.some(field =>
-            matchesField(item, field, lowerSearchTerm)
-          );
-        }) || [];
+      const currentData = dataRef.current || [];
+      const clientResults: T[] = [];
+      for (const item of currentData) {
+        if (!item) continue;
+        for (const field of searchFieldsRef.current) {
+          if (matchesField(item, field, lowerSearchTerm)) {
+            clientResults.push(item);
+            break;
+          }
+        }
+      }
 
       // Only trigger server search if no client results and criteria met
       if (

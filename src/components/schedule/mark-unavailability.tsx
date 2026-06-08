@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth, max-lines */
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +43,9 @@ type Props = {
   buttonText?: string;
 };
 
+/**
+ *
+ */
 export default function MarkUnavailabilityButton({
   triggerClassName,
   buttonText = 'Mark Unavailable Date/Time'
@@ -153,6 +157,120 @@ export default function MarkUnavailabilityButton({
     .map((e: any) => e.resource)
     .filter((r: any) => r?.active);
 
+  const datePickerCalendar = (
+    <div className='flex flex-col gap-2'>
+      <div className='text-center text-xs font-bold'>Date</div>
+      <div className='flex w-full justify-center'>
+        <Calendar
+          mode='single'
+          selected={date}
+          onSelect={setDate as any}
+          className='p-0'
+        />
+      </div>
+    </div>
+  );
+
+  const timeInputs = (
+    <>
+      <div className='flex items-center gap-2'>
+        <Checkbox
+          checked={allDay}
+          onCheckedChange={v => setAllDay(Boolean(v))}
+        />
+        <span className='text-sm'>Unavailable all day</span>
+      </div>
+
+      {!allDay && (
+        <div className='flex w-full items-center justify-between gap-4'>
+          <div className='flex items-center gap-2'>
+            <span className='text-sm font-medium'>From</span>
+            <input
+              type='time'
+              className='block rounded-md border-2 p-2 text-sm'
+              value={fromTime}
+              onChange={e => setFromTime(e.target.value)}
+            />
+          </div>
+          <div className='flex items-center gap-2'>
+            <span className='text-sm font-medium'>To</span>
+            <input
+              type='time'
+              className='block rounded-md border-2 p-2 text-sm'
+              value={toTime}
+              onChange={e => setToTime(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  let rolesListContent = <div className='text-muted text-sm'>No roles</div>;
+  if (rolesLoading) {
+    rolesListContent = (
+      <div className='text-muted text-sm'>Loading roles...</div>
+    );
+  } else if (roles?.length) {
+    rolesListContent = (
+      <div className='grid grid-cols-1 gap-2'>
+        {roles.map((r: any) => (
+          <label key={r.id} className='flex items-center gap-2'>
+            <Checkbox
+              checked={selectedRoleIds.includes(r.id)}
+              onCheckedChange={() => {
+                if (selectedRoleIds.includes(r.id))
+                  setSelectedRoleIds(selectedRoleIds.filter(x => x !== r.id));
+                else setSelectedRoleIds([...selectedRoleIds, r.id]);
+              }}
+            />
+            <span className='text-sm'>{r.organizationData?.name || r.id}</span>
+          </label>
+        ))}
+      </div>
+    );
+  }
+
+  const rolesSection = (
+    <div className='flex flex-col gap-2'>
+      <div className='text-xs font-bold'>Apply to Practitioner Role(s)</div>
+      {rolesListContent}
+    </div>
+  );
+
+  const reasonSection = (
+    <div className='flex flex-col gap-2'>
+      <div className='text-xs font-bold'>Reason</div>
+      <Textarea
+        value={reason}
+        onChange={e => setReason(e.target.value)}
+        placeholder='Practitioner unavailable'
+        className='w-full resize-none text-[12px] text-[#2C2F35]'
+      />
+    </div>
+  );
+
+  const actionButtons = (
+    <div className='flex justify-end gap-3'>
+      <Button
+        variant='outline'
+        onClick={() => {
+          setOpen(false);
+          reset();
+        }}
+      >
+        Cancel
+      </Button>
+      <Button
+        className='bg-secondary font-bold text-white'
+        disabled={!canSave || saving}
+        onClick={onSave}
+      >
+        {saving ? 'Saving...' : 'Save'}
+      </Button>
+    </div>
+  );
+
   return (
     <>
       <button
@@ -183,108 +301,11 @@ export default function MarkUnavailabilityButton({
           </DialogHeader>
 
           <div className='mt-2 space-y-4'>
-            <div className='flex flex-col gap-2'>
-              <div className='text-center text-xs font-bold'>Date</div>
-              <div className='flex w-full justify-center'>
-                <Calendar
-                  mode='single'
-                  selected={date}
-                  onSelect={setDate as any}
-                  className='p-0'
-                />
-              </div>
-            </div>
-
-            <div className='flex items-center gap-2'>
-              <Checkbox
-                checked={allDay}
-                onCheckedChange={v => setAllDay(!!v)}
-              />
-              <span className='text-sm'>Unavailable all day</span>
-            </div>
-
-            {!allDay && (
-              <div className='flex w-full items-center justify-between gap-4'>
-                <div className='flex items-center gap-2'>
-                  <span className='text-sm font-medium'>From</span>
-                  <input
-                    type='time'
-                    className='block rounded-md border-2 p-2 text-sm'
-                    value={fromTime}
-                    onChange={e => setFromTime(e.target.value)}
-                  />
-                </div>
-                <div className='flex items-center gap-2'>
-                  <span className='text-sm font-medium'>To</span>
-                  <input
-                    type='time'
-                    className='block rounded-md border-2 p-2 text-sm'
-                    value={toTime}
-                    onChange={e => setToTime(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className='flex flex-col gap-2'>
-              <div className='text-xs font-bold'>
-                Apply to Practitioner Role(s)
-              </div>
-              {rolesLoading ? (
-                <div className='text-muted text-sm'>Loading roles...</div>
-              ) : roles?.length ? (
-                <div className='grid grid-cols-1 gap-2'>
-                  {roles.map((r: any) => (
-                    <label key={r.id} className='flex items-center gap-2'>
-                      <Checkbox
-                        checked={selectedRoleIds.includes(r.id)}
-                        onCheckedChange={() => {
-                          if (selectedRoleIds.includes(r.id))
-                            setSelectedRoleIds(
-                              selectedRoleIds.filter(x => x !== r.id)
-                            );
-                          else setSelectedRoleIds([...selectedRoleIds, r.id]);
-                        }}
-                      />
-                      <span className='text-sm'>
-                        {r.organizationData?.name || r.id}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <div className='text-muted text-sm'>No roles</div>
-              )}
-            </div>
-
-            <div className='flex flex-col gap-2'>
-              <div className='text-xs font-bold'>Reason</div>
-              <Textarea
-                value={reason}
-                onChange={e => setReason(e.target.value)}
-                placeholder='Practitioner unavailable'
-                className='w-full resize-none text-[12px] text-[#2C2F35]'
-              />
-            </div>
-
-            <div className='flex justify-end gap-3'>
-              <Button
-                variant='outline'
-                onClick={() => {
-                  setOpen(false);
-                  reset();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                className='bg-secondary font-bold text-white'
-                disabled={!canSave || saving}
-                onClick={onSave}
-              >
-                {saving ? 'Saving...' : 'Save'}
-              </Button>
-            </div>
+            {datePickerCalendar}
+            {timeInputs}
+            {rolesSection}
+            {reasonSection}
+            {actionButtons}
           </div>
         </DialogContent>
       </Dialog>
@@ -295,8 +316,8 @@ export default function MarkUnavailabilityButton({
             <AlertDialogTitle>Conflicts detected</AlertDialogTitle>
             <AlertDialogDescription>
               {lastConflicts.length
-                ? lastConflicts.map((c, i) => (
-                    <div key={i} className='mb-2'>
+                ? lastConflicts.map(c => (
+                    <div key={c.slotId} className='mb-2'>
                       Role: {c.practitionerRoleId}
                       <br />
                       Slot: {c.slotId}

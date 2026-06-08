@@ -3,6 +3,9 @@
 import { useQuestionnaireResponseStore } from '@aehrc/smart-forms-renderer';
 import { useCallback, useEffect, useState } from 'react';
 
+/**
+ *
+ */
 export function useRequiredValidation() {
   const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0);
   const invalidItems = useQuestionnaireResponseStore.use.invalidItems();

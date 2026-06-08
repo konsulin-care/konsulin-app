@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth */
 import { FilterIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -26,6 +26,9 @@ export type IFirmFilter = {
   province_code: string;
 };
 
+/**
+ *
+ */
 export default function FirmFilter({ onChange }) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [filter, setFilter] = useState<IUseClinicParams>({
@@ -54,83 +57,92 @@ export default function FirmFilter({ onChange }) {
   );
   const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
 
+  const locationContent = (
+    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+      <div className='mb-4'>
+        <div className='font-bold'>Location</div>
+        <span className='text-muted-foreground text-xs opacity-50'>
+          Please select a province first, then select a city.
+        </span>
+      </div>
+      <div className='flex flex-wrap gap-[10px]'>
+        <Select
+          onValueChange={e => handleFilterChange('province_code', e)}
+          value={filter.province_code}
+        >
+          <SelectTrigger className='w-full border-none'>
+            <SelectValue placeholder='Select Province' />
+          </SelectTrigger>
+          <SelectContent>
+            {listProvinces &&
+              listProvinces.length > 0 &&
+              !provinceLoading &&
+              listProvinces.map((item: IWilayahResponse) => (
+                <SelectItem key={item.code} value={item.code}>
+                  {item.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+
+        {filter.province_code && (
+          <Select
+            value={filter.city}
+            onValueChange={e => handleFilterChange('city', e)}
+          >
+            <SelectTrigger className='w-full border-none'>
+              <SelectValue placeholder='Select City' />
+            </SelectTrigger>
+            <SelectContent>
+              {listCities &&
+                !cityLoading &&
+                listCities.map((item: IWilayahResponse) => (
+                  <SelectItem key={item.name} value={item.name}>
+                    {item.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+    </div>
+  );
+
+  const filterActions = (
+    <>
+      {!isInitiaFilterState && (
+        <Button
+          variant='outline'
+          size='sm'
+          className={cn(
+            buttonVariants({ variant: 'outline' }),
+            'mt-4 w-min border-0 text-[12px]'
+          )}
+          onClick={resetFilter}
+        >
+          Reset Filter
+        </Button>
+      )}
+      <Button
+        className='bg-secondary mt-4 rounded-xl p-4 text-white'
+        onClick={() => {
+          setIsOpen(false);
+          onChange(filter);
+        }}
+      >
+        Terapkan Filter
+      </Button>
+    </>
+  );
+
   const renderDrawerContent = () => {
     return (
       <div className='flex flex-col'>
         <DrawerTitle className='mx-auto text-[20px] font-bold'>
           Filter & Sort
         </DrawerTitle>
-        <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-          <div className='mb-4'>
-            <div className='font-bold'>Location</div>
-            <span className='text-muted-foreground text-xs opacity-50'>
-              Please select a province first, then select a city.
-            </span>
-          </div>
-          <div className='flex flex-wrap gap-[10px]'>
-            <Select
-              onValueChange={e => handleFilterChange('province_code', e)}
-              value={filter.province_code}
-            >
-              <SelectTrigger className='w-full border-none'>
-                <SelectValue placeholder='Select Province' />
-              </SelectTrigger>
-              <SelectContent>
-                {listProvinces &&
-                  listProvinces.length > 0 &&
-                  !provinceLoading &&
-                  listProvinces.map((item: IWilayahResponse) => (
-                    <SelectItem key={item.code} value={item.code}>
-                      {item.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-
-            {filter.province_code && (
-              <Select
-                value={filter.city}
-                onValueChange={e => handleFilterChange('city', e)}
-              >
-                <SelectTrigger className='w-full border-none'>
-                  <SelectValue placeholder='Select City' />
-                </SelectTrigger>
-                <SelectContent>
-                  {listCities &&
-                    !cityLoading &&
-                    listCities.map((item: IWilayahResponse) => (
-                      <SelectItem key={item.name} value={item.name}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-        </div>
-
-        {!isInitiaFilterState && (
-          <Button
-            variant='outline'
-            size='sm'
-            className={cn(
-              buttonVariants({ variant: 'outline' }),
-              'mt-4 w-min border-0 text-[12px]'
-            )}
-            onClick={resetFilter}
-          >
-            Reset Filter
-          </Button>
-        )}
-        <Button
-          className='bg-secondary mt-4 rounded-xl p-4 text-white'
-          onClick={() => {
-            setIsOpen(false);
-            onChange(filter);
-          }}
-        >
-          Terapkan Filter
-        </Button>
+        {locationContent}
+        {filterActions}
       </div>
     );
   };

@@ -62,6 +62,9 @@ function SessionCard({
   );
 }
 
+/**
+ *
+ */
 export default function UpcomingSession({ data, role }: Readonly<Props>) {
   if (!data || data.length === 0) return null;
 

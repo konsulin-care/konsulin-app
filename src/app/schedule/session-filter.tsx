@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, max-lines */
 import { FilterIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -119,6 +120,9 @@ const filterContentListTime = [
   }
 ];
 
+/**
+ *
+ */
 export default function SessionFilter({ onChange, type, initialFilter }) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [whichContent, setWhichContent] = useState<
@@ -204,7 +208,176 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
   useEffect(() => {
     resetFilter();
     onChange({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
+
+  const dateFilterSection = (
+    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+      <div className='mb-4 font-bold'>Date</div>
+      <div className='flex flex-wrap gap-[10px]'>
+        {type === 'upcoming'
+          ? filterContentListUpcomingDate.map(date => (
+              <Button
+                key={date.label}
+                onClick={() => {
+                  handleFilterChange('start_date', date.value.start);
+                  handleFilterChange('end_date', date.value.end);
+                  setIsUseCustomDate(false);
+                }}
+                variant='outline'
+                className={cn(
+                  'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+                  isSameDay(filter.start_date, date.value.start) &&
+                    isSameDay(filter.end_date, date.value.end)
+                    ? 'bg-secondary hover:bg-secondary font-bold text-white'
+                    : 'bg-white font-normal'
+                )}
+              >
+                {date.label}
+              </Button>
+            ))
+          : filterContentListPastDate.map(date => (
+              <Button
+                key={date.label}
+                onClick={() => {
+                  handleFilterChange('start_date', date.value.start);
+                  handleFilterChange('end_date', date.value.end);
+                  setIsUseCustomDate(false);
+                }}
+                variant='outline'
+                className={cn(
+                  'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+                  isSameDay(filter.start_date, date.value.start) &&
+                    isSameDay(filter.end_date, date.value.end)
+                    ? 'bg-secondary hover:bg-secondary font-bold text-white'
+                    : 'bg-white font-normal'
+                )}
+              >
+                {date.label}
+              </Button>
+            ))}
+        <Button
+          variant='outline'
+          onClick={handleCustomFilterOpen}
+          className={cn(
+            'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+            isUseCustomDate
+              ? 'bg-secondary hover:bg-secondary font-bold text-white'
+              : 'bg-white font-normal'
+          )}
+        >
+          Custom
+          {(() => {
+            if (!isUseCustomDate || !filter.start_date || !filter.end_date)
+              return '';
+            if (filter.start_date === filter.end_date) {
+              return ` : ${format(filter.start_date, 'dd MMM yy')}`;
+            }
+            return ` : ${format(filter.start_date, 'dd MMM yy')} - ${format(filter.end_date, 'dd MMM yy')}`;
+          })()}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const timeFilterSection = (
+    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+      <div className='mb-4 font-bold'>Session Time</div>
+      <div className='flex flex-wrap gap-[10px]'>
+        {filterContentListTime.map(time => (
+          <Button
+            variant='outline'
+            key={time.label}
+            onClick={() => {
+              setIsUseCustomTime(false);
+              handleFilterChange('start_time', time.value.start);
+              handleFilterChange('end_time', time.value.end);
+            }}
+            className={cn(
+              'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+              filter.start_time === time.value.start &&
+                filter.end_time === time.value.end
+                ? 'bg-secondary hover:bg-secondary font-bold text-white'
+                : 'bg-white font-normal'
+            )}
+          >
+            {time.label}
+          </Button>
+        ))}
+        {isUseCustomTime && filter.start_time && filter.end_time && (
+          <Button
+            variant='outline'
+            onClick={handleCustomFilterOpen}
+            className={cn(
+              'bg-secondary hover:bg-secondary h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px] font-bold text-white'
+            )}
+          >
+            Custom : {`${filter.start_time} - ${filter.end_time}`}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  const defaultActions = (
+    <>
+      {!isInitiaFilterState && (
+        <Button
+          variant='outline'
+          size='sm'
+          className={cn(
+            buttonVariants({ variant: 'outline' }),
+            'mt-4 w-min border-0 text-[12px]'
+          )}
+          onClick={resetFilter}
+        >
+          Reset Filter
+        </Button>
+      )}
+
+      <Button
+        className='bg-secondary mt-4 rounded-xl p-4 text-white'
+        onClick={() => {
+          setIsOpen(false);
+          onChange(filter);
+        }}
+      >
+        Terapkan Filter
+      </Button>
+    </>
+  );
+
+  const customTimeInputs = (
+    <div className='mt-8 flex gap-4'>
+      <div className='grid w-full max-w-sm items-center gap-1.5'>
+        <Label htmlFor='start_time'>Start Time</Label>
+        <Input
+          onChange={e => {
+            handleFilterChange('start_time', e.target.value);
+            setIsUseCustomTime(true);
+          }}
+          value={filter.start_time}
+          id='start_time'
+          className='block p-4'
+          type='time'
+        />
+      </div>
+      <div className='grid w-full max-w-sm items-center gap-1.5'>
+        <Label htmlFor='end_time'>End Time</Label>
+        <Input
+          min={filter.start_time}
+          onChange={e => {
+            handleFilterChange('end_time', e.target.value);
+            setIsUseCustomTime(true);
+          }}
+          value={filter.end_time}
+          id='end_time'
+          className='block p-4'
+          type='time'
+        />
+      </div>
+    </div>
+  );
 
   const renderDrawerContent = () => {
     switch (whichContent) {
@@ -214,179 +387,9 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
             <DrawerTitle className='mx-auto text-[20px] font-bold'>
               Filter & Sort
             </DrawerTitle>
-            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Date</div>
-              <div className='flex flex-wrap gap-[10px]'>
-                {type === 'upcoming'
-                  ? filterContentListUpcomingDate.map(date => (
-                      <Button
-                        key={date.label}
-                        onClick={() => {
-                          handleFilterChange('start_date', date.value.start);
-                          handleFilterChange('end_date', date.value.end);
-                          setIsUseCustomDate(false);
-                        }}
-                        variant='outline'
-                        className={cn(
-                          'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                          isSameDay(filter.start_date, date.value.start) &&
-                            isSameDay(filter.end_date, date.value.end)
-                            ? 'bg-secondary font-bold text-white hover:bg-secondary'
-                            : 'bg-white font-normal'
-                        )}
-                      >
-                        {date.label}
-                      </Button>
-                    ))
-                  : filterContentListPastDate.map(date => (
-                      <Button
-                        key={date.label}
-                        onClick={() => {
-                          handleFilterChange('start_date', date.value.start);
-                          handleFilterChange('end_date', date.value.end);
-                          setIsUseCustomDate(false);
-                        }}
-                        variant='outline'
-                        className={cn(
-                          'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                          isSameDay(filter.start_date, date.value.start) &&
-                            isSameDay(filter.end_date, date.value.end)
-                            ? 'bg-secondary font-bold text-white hover:bg-secondary'
-                            : 'bg-white font-normal'
-                        )}
-                      >
-                        {date.label}
-                      </Button>
-                    ))}
-                <Button
-                  variant='outline'
-                  onClick={handleCustomFilterOpen}
-                  className={cn(
-                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                    isUseCustomDate
-                      ? 'bg-secondary font-bold text-white hover:bg-secondary'
-                      : 'bg-white font-normal'
-                  )}
-                >
-                  Custom
-                  {!isUseCustomDate || !filter.start_date || !filter.end_date
-                    ? ''
-                    : filter.start_date === filter.end_date
-                      ? ` : ${format(filter.start_date, 'dd MMM yy')}`
-                      : ` : ${format(filter.start_date, 'dd MMM yy')} - ${format(filter.end_date, 'dd MMM yy')}`}
-                </Button>
-              </div>
-            </div>
-            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Session Time</div>
-              <div className='flex flex-wrap gap-[10px]'>
-                {filterContentListTime.map(time => (
-                  <Button
-                    variant='outline'
-                    key={time.label}
-                    onClick={() => {
-                      setIsUseCustomTime(false);
-                      handleFilterChange('start_time', time.value.start);
-                      handleFilterChange('end_time', time.value.end);
-                    }}
-                    className={cn(
-                      'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                      filter.start_time === time.value.start &&
-                        filter.end_time === time.value.end
-                        ? 'bg-secondary font-bold text-white hover:bg-secondary'
-                        : 'bg-white font-normal'
-                    )}
-                  >
-                    {time.label}
-                  </Button>
-                ))}
-                {isUseCustomTime && filter.start_time && filter.end_time && (
-                  <Button
-                    variant='outline'
-                    onClick={handleCustomFilterOpen}
-                    className={cn(
-                      'h-[50px] w-min items-center justify-center rounded-lg border-0 bg-secondary p-4 text-[12px] font-bold text-white hover:bg-secondary'
-                    )}
-                  >
-                    Custom : {`${filter.start_time} - ${filter.end_time}`}
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/**
-             * Session Type temporary removed
-             */}
-            {/* <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Session Type</div>
-              <div className='flex flex-wrap gap-2'>
-                <Button
-                  variant='outline'
-                  className={cn(
-                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                    filter.type === 'all'
-                      ? 'bg-secondary font-bold text-white'
-                      : 'bg-white'
-                  )}
-                  onClick={() => {
-                    handleFilterChange('type', 'all')
-                  }}
-                >
-                  All
-                </Button>
-                <Button
-                  variant='outline'
-                  className={cn(
-                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                    filter.type === 'online'
-                      ? 'bg-secondary font-bold text-white'
-                      : 'bg-white'
-                  )}
-                  onClick={() => {
-                    handleFilterChange('type', 'online')
-                  }}
-                >
-                  Online
-                </Button>
-                <Button
-                  variant='outline'
-                  className={cn(
-                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                    filter.type === 'offline'
-                      ? 'bg-secondary font-bold text-white'
-                      : 'bg-white'
-                  )}
-                  onClick={() => {
-                    handleFilterChange('type', 'offline')
-                  }}
-                >
-                  Offline
-                </Button>
-              </div>
-            </div> */}
-            {!isInitiaFilterState && (
-              <Button
-                variant='outline'
-                size='sm'
-                className={cn(
-                  buttonVariants({ variant: 'outline' }),
-                  'mt-4 w-min border-0 text-[12px]'
-                )}
-                onClick={resetFilter}
-              >
-                Reset Filter
-              </Button>
-            )}
-
-            <Button
-              className='mt-4 rounded-xl bg-secondary p-4 text-white'
-              onClick={() => {
-                setIsOpen(false);
-                onChange(filter);
-              }}
-            >
-              Terapkan Filter
-            </Button>
+            {dateFilterSection}
+            {timeFilterSection}
+            {defaultActions}
           </div>
         );
       case CONTENT_CUSTOM:
@@ -426,40 +429,12 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
                 }}
               />
 
-              <div className='mt-8 flex gap-4'>
-                <div className='grid w-full max-w-sm items-center gap-1.5'>
-                  <Label htmlFor='start_time'>Start Time</Label>
-                  <Input
-                    onChange={e => {
-                      handleFilterChange('start_time', e.target.value);
-                      setIsUseCustomTime(true);
-                    }}
-                    value={filter.start_time}
-                    id='start_time'
-                    className='block p-4'
-                    type='time'
-                  />
-                </div>
-                <div className='grid w-full max-w-sm items-center gap-1.5'>
-                  <Label htmlFor='end_time'>End Time</Label>
-                  <Input
-                    min={filter.start_time}
-                    onChange={e => {
-                      handleFilterChange('end_time', e.target.value);
-                      setIsUseCustomTime(true);
-                    }}
-                    value={filter.end_time}
-                    id='end_time'
-                    className='block p-4'
-                    type='time'
-                  />
-                </div>
-              </div>
+              {customTimeInputs}
             </div>
             <Button
               type='button'
               onClick={() => setWhichContent(CONTENT_DEFAULT)}
-              className='mt-4 rounded-xl bg-secondary text-white'
+              className='bg-secondary mt-4 rounded-xl text-white'
             >
               Kembali
             </Button>
@@ -467,7 +442,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
         );
 
       default:
-        break;
+        return null;
     }
   };
 

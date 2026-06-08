@@ -95,14 +95,13 @@ export const parseMergedAppointments = (
 
   appointments.forEach((appointment: Appointment) => {
     // extract slot id
-    const slotReference = appointment.slot && appointment.slot[0]?.reference;
+    const slotReference = appointment.slot?.[0]?.reference;
     const slotId = slotReference ? slotReference.split('/')[1] : null;
 
     // extract practitioner reference from participants
     const practitionerParticipant = appointment.participant.find(
       (participant: AppointmentParticipant) =>
-        participant.actor.reference &&
-        participant.actor.reference.startsWith('Practitioner/')
+        participant.actor.reference?.startsWith('Practitioner/')
     );
     const practitionerId = practitionerParticipant
       ? practitionerParticipant.actor.reference.split('/')[1]
@@ -143,7 +142,7 @@ export const parseTime = (timeStr: string, formatStr = 'HH:mm') => {
 
 // generate a consistent color from an id
 const getColorFromId = (id: string) => {
-  if (!id) return;
+  if (!id) return '';
 
   const saturation = 70;
   const lightness = 50;
@@ -178,7 +177,7 @@ export const generateAvatarPlaceholder = ({
     const parts = normalizedName.split(' ').filter(Boolean);
     if (parts.length >= 2) {
       const first = parts[0][0] || '';
-      const last = parts[parts.length - 1][0] || '';
+      const last = parts.at(-1)[0] || '';
       initials = `${first}${last}`;
     } else {
       initials = normalizedName.slice(0, 2);
@@ -363,8 +362,7 @@ export const parseMergedSessions = (bundle: Bundle): MergedSession[] => {
 
     const patientParticipant = appointment.participant.find(
       (participant: AppointmentParticipant) =>
-        participant.actor.reference &&
-        participant.actor.reference.startsWith('Patient/')
+        participant.actor.reference?.startsWith('Patient/')
     );
 
     const patientId = patientParticipant

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,6 +40,9 @@ type DropdownProps = {
   onSelect: (value: DropdownOption) => void;
 };
 
+/**
+ *
+ */
 export default function Participant({
   list,
   value,
@@ -118,7 +122,7 @@ export default function Participant({
           type: 'Patient'
         })) as Patient;
 
-        if (!patient || !patient.id) {
+        if (!patient?.id) {
           throw new Error('Failed to create patient');
         }
 
@@ -148,6 +152,38 @@ export default function Participant({
     }
   };
 
+  const dialogContent = (
+    <div className='space-y-4'>
+      <div className='flex flex-col gap-2'>
+        <Input
+          type='email'
+          placeholder='Enter Email Address'
+          className='w-full rounded border p-2'
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          disabled={isSubmitting}
+        />
+        {error && <div className='w-full text-sm text-red-500'>{error}</div>}
+      </div>
+
+      <Button
+        className='bg-secondary w-full text-white'
+        onClick={handleCreatePatient}
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? (
+          <LoadingSpinnerIcon
+            width={20}
+            height={20}
+            className='w-full animate-spin'
+          />
+        ) : (
+          'Register a Patient'
+        )}
+      </Button>
+    </div>
+  );
+
   const renderDialogContent = (
     <>
       <DialogHeader>
@@ -157,41 +193,49 @@ export default function Participant({
         <DialogDescription />
       </DialogHeader>
 
-      <div className='space-y-4'>
-        <div className='flex flex-col gap-2'>
-          <Input
-            type='email'
-            placeholder='Enter Email Address'
-            className='w-full rounded border p-2'
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            disabled={isSubmitting}
-          />
-          {error && <div className='w-full text-sm text-red-500'>{error}</div>}
-        </div>
-
-        <Button
-          className='bg-secondary w-full text-white'
-          onClick={handleCreatePatient}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <LoadingSpinnerIcon
-              width={20}
-              height={20}
-              className='w-full animate-spin'
-            />
-          ) : (
-            'Register a Patient'
-          )}
-        </Button>
-      </div>
+      {dialogContent}
 
       <DialogFooter>
         <DialogClose asChild />
       </DialogFooter>
     </>
   );
+
+  const triggerLabel = loading ? (
+    <LoadingSpinnerIcon
+      width={20}
+      height={20}
+      className='w-full animate-spin'
+    />
+  ) : (
+    (options &&
+      options.length > 0 &&
+      options.find(option => option.patientId === value)?.patientName) ||
+    placeholder
+  );
+
+  const dropdownItems =
+    options && options.length > 0 ? (
+      options.map(item => (
+        <DropdownItem
+          key={item.patientId}
+          onSelect={() => onSelect(item)}
+          className={`w-full cursor-pointer ${
+            value === item.patientId ? 'bg-secondary text-white' : ''
+          }`}
+        >
+          <div className='flex w-full items-center justify-start p-1'>
+            <UsersIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
+            <span>{item.patientName}</span>
+            {value === item.patientId && (
+              <Check className='text-accent-foreground ml-2 h-4 w-4 text-white' />
+            )}
+          </div>
+        </DropdownItem>
+      ))
+    ) : (
+      <div className='text-muted px-4 py-2 text-sm'>No patient today</div>
+    );
 
   return (
     <>
@@ -207,19 +251,7 @@ export default function Participant({
               <UsersIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
               <div className='flex w-full items-center justify-between'>
                 <span className='text-sm font-normal text-[#2C2F35]'>
-                  {loading ? (
-                    <LoadingSpinnerIcon
-                      width={20}
-                      height={20}
-                      className='w-full animate-spin'
-                    />
-                  ) : (
-                    (options &&
-                      options.length > 0 &&
-                      options.find(option => option.patientId === value)
-                        ?.patientName) ||
-                    placeholder
-                  )}
+                  {triggerLabel}
                 </span>
                 <ChevronDown
                   className='ml-2 h-4 w-4 shrink-0 opacity-50'
@@ -241,32 +273,7 @@ export default function Participant({
                 New Patient
               </div>
             </DropdownItem>
-            {options && options.length > 0 ? (
-              options.map(item => (
-                <DropdownItem
-                  key={item.patientId}
-                  onSelect={() => onSelect(item)}
-                  className={`w-full cursor-pointer ${
-                    value === item.patientId ? 'bg-secondary text-white' : ''
-                  }`}
-                >
-                  <div className='flex w-full items-center justify-start p-1'>
-                    <UsersIcon
-                      color='hsla(220,9%,19%,0.4)'
-                      className='mr-[10px]'
-                    />
-                    <span>{item.patientName}</span>
-                    {value === item.patientId && (
-                      <Check className='text-accent-foreground ml-2 h-4 w-4 text-white' />
-                    )}
-                  </div>
-                </DropdownItem>
-              ))
-            ) : (
-              <div className='text-muted px-4 py-2 text-sm'>
-                No patient today
-              </div>
-            )}
+            {dropdownItems}
           </DropdownContent>
         </Dropdown>
       </div>

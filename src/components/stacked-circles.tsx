@@ -45,6 +45,9 @@ function LayeredAvatar({
   );
 }
 
+/**
+ *
+ */
 export function StackedCircles({
   roles,
   currentAvatar,

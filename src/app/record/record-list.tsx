@@ -6,6 +6,9 @@ import { useAuth } from '@/context/auth/authContext';
 import PatientRecord from './patient-record';
 import PractitionerRecord from './practitioner-record';
 
+/**
+ *
+ */
 export default function RecordList() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
@@ -19,19 +22,15 @@ export default function RecordList() {
     </>
   );
 
-  return (
-    <>
-      {isAuthLoading ? (
-        <div className='flex min-h-screen min-w-full items-center justify-center'>
-          <LoadingSpinnerIcon
-            width={56}
-            height={56}
-            className='w-full animate-spin'
-          />
-        </div>
-      ) : (
-        renderHomeContent
-      )}
-    </>
+  return isAuthLoading ? (
+    <div className='flex min-h-screen min-w-full items-center justify-center'>
+      <LoadingSpinnerIcon
+        width={56}
+        height={56}
+        className='w-full animate-spin'
+      />
+    </div>
+  ) : (
+    renderHomeContent
   );
 }

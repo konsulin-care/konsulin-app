@@ -21,7 +21,7 @@ export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
     staleTime: 60 * 1000,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
-    enabled: !!patientId && !!dateReference
+    enabled: Boolean(patientId) && Boolean(dateReference)
   });
 };
 
@@ -38,7 +38,7 @@ export const useGetAllAppointments = ({ patientId }) => {
     select: response => {
       return response.data || null;
     },
-    enabled: !!patientId
+    enabled: Boolean(patientId)
   });
 };
 
@@ -60,7 +60,7 @@ export const useGetUpcomingSessions = ({ practitionerId, dateReference }) => {
     staleTime: 60 * 1000,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
-    enabled: !!practitionerId && !!dateReference
+    enabled: Boolean(practitionerId) && Boolean(dateReference)
   });
 };
 
@@ -77,7 +77,7 @@ export const useGetAllSessions = ({ practitionerId }) => {
     select: response => {
       return response.data || null;
     },
-    enabled: !!practitionerId
+    enabled: Boolean(practitionerId)
   });
 };
 
@@ -100,7 +100,7 @@ export const useGetTodaySessions = ({
     select: response => {
       return response.data || null;
     },
-    enabled: !!dateReference && !!practitionerId && enabled
+    enabled: Boolean(dateReference) && Boolean(practitionerId) && enabled
   });
 };
 
@@ -159,6 +159,6 @@ export const useGetPractitionerSlots = ({ practitionerId, dateReference }) => {
     select: response => {
       return response.data || null;
     },
-    enabled: !!practitionerId && !!dateReference
+    enabled: Boolean(practitionerId) && Boolean(dateReference)
   });
 };

@@ -6,6 +6,9 @@ import EditJournal from '@/components/journal/edit';
 import PageHeader from '@/components/page-header';
 import { useSearchParams } from 'next/navigation';
 
+/**
+ *
+ */
 export default function EditRecordDetail() {
   const searchParams = useSearchParams();
   const recordId = searchParams.get('recordId') ?? '';
@@ -18,6 +21,8 @@ export default function EditRecordDetail() {
         return 'SOAP Report';
       case 4:
         return 'Journaling';
+      default:
+        return '';
     }
   };
 
@@ -33,6 +38,8 @@ export default function EditRecordDetail() {
         return <EditSoap soapId={recordId} title={titleParam} />;
       case 4:
         return <EditJournal journalId={recordId} />;
+      default:
+        return null;
     }
   };
 

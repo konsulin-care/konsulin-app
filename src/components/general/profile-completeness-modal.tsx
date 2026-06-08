@@ -18,34 +18,20 @@ const ProfileCompletenessModal = () => {
   const isProfileRoute = pathname.startsWith(PROFILE_ROUTE_PREFIX);
 
   useEffect(() => {
-    setIsOpen(false);
-    setDismissed(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (isLoading) return;
-    if (!authState.isAuthenticated) {
-      setIsOpen(false);
-      return;
+    let cleanup;
+    if (
+      !isLoading &&
+      authState.isAuthenticated &&
+      !isProfileRoute &&
+      authState.userInfo?.profile_complete !== true &&
+      !dismissed
+    ) {
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+      }, MODAL_DELAY_MS);
+      cleanup = () => clearTimeout(timer);
     }
-    if (isProfileRoute) {
-      setIsOpen(false);
-      return;
-    }
-    if (authState.userInfo?.profile_complete === true) {
-      setIsOpen(false);
-      return;
-    }
-    if (dismissed) {
-      setIsOpen(false);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setIsOpen(true);
-    }, MODAL_DELAY_MS);
-
-    return () => clearTimeout(timer);
+    return cleanup;
   }, [
     isLoading,
     authState.isAuthenticated,
@@ -81,7 +67,7 @@ const ProfileCompletenessModal = () => {
         <button
           ref={closeBtnRef}
           type='button'
-          className='absolute right-3 top-3 text-gray-500 hover:text-gray-700'
+          className='absolute top-3 right-3 text-gray-500 hover:text-gray-700'
           aria-label='Close profile completeness prompt'
           onClick={() => {
             setIsOpen(false);

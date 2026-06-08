@@ -74,14 +74,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Safety timeout: force-reset loading if SuperTokens never initializes.
   useEffect(() => {
-    if (session.doesSessionExist !== undefined) return;
-    const id = setTimeout(() => {
-      setIsLoading(false);
-      console.error(
-        'Auth: SuperTokens session did not initialize within 10s, proceeding as unauthenticated'
-      );
-    }, 10_000);
-    return () => clearTimeout(id);
+    let cleanup;
+    if (session.doesSessionExist === undefined) {
+      const id = setTimeout(() => {
+        setIsLoading(false);
+        console.error(
+          'Auth: SuperTokens session did not initialize within 10s, proceeding as unauthenticated'
+        );
+      }, 10_000);
+      cleanup = () => clearTimeout(id);
+    }
+    return cleanup;
   }, [session.doesSessionExist]);
 
   useEffect(() => {
@@ -110,8 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
         const isReloadOnHomepage =
           nav?.type === 'reload' &&
-          globalThis.window !== undefined &&
-          globalThis.window.location.pathname === '/';
+          globalThis.window?.location.pathname === '/';
 
         if (!isReloadOnHomepage) {
           try {

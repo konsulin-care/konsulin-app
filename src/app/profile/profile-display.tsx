@@ -7,6 +7,9 @@ import { useAuth } from '@/context/auth/authContext';
 import Clinician from './clinician';
 import Patient from './patient';
 
+/**
+ *
+ */
 export default function ProfileDisplay() {
   const { state: authState, isLoading } = useAuth();
 

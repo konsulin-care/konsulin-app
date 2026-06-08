@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable react/jsx-max-depth */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,18 +19,22 @@ import { format } from 'date-fns';
 import { FileCheckIcon, NotepadTextIcon, XIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
 type Props = {
   journalId: string;
 };
 
+/**
+ *
+ */
 export default function EditJournal({ journalId }: Props) {
   const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [response, setResponse] = useState([]);
+  const nextId = useRef(0);
+  const [response, setResponse] = useState<{ id: number; text: string }[]>([]);
   const [journalTitle, setJournalTitle] = useState<string>('');
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useUpdateJournal();
@@ -47,6 +52,7 @@ export default function EditJournal({ journalId }: Props) {
     setResponse(prevState => [
       ...prevState,
       {
+        id: nextId.current++,
         text: ''
       }
     ]);
@@ -57,7 +63,12 @@ export default function EditJournal({ journalId }: Props) {
       setJournalTitle(journalData?.valueString || '');
 
       if (journalData.note.length !== 0) {
-        setResponse(journalData.note);
+        setResponse(
+          journalData.note.map(item => ({
+            ...item,
+            id: nextId.current++
+          }))
+        );
       }
     }
   }, [journalData]);
@@ -68,7 +79,8 @@ export default function EditJournal({ journalId }: Props) {
         id: journalId,
         valueString: journalTitle,
         resourceType: 'Observation',
-        note: response,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        note: response.map(({ id, ...rest }) => rest),
         effectiveDateTime: journalData.effectiveDateTime,
         status: 'amended',
         code: {
@@ -129,12 +141,99 @@ export default function EditJournal({ journalId }: Props) {
 
       <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
         <Button
-          className='h-full w-full rounded-xl bg-secondary p-4 text-white'
+          className='bg-secondary h-full w-full rounded-xl p-4 text-white'
           onClick={() => router.push('/record')}
         >
           Back
         </Button>
       </DrawerFooter>
+    </>
+  );
+
+  const journalContent = (
+    <>
+      <div className='card flex items-center bg-[hsla(0,0%,98%,1)]'>
+        <FileCheckIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
+
+        <div className='flex grow flex-col'>
+          <span className='text-muted text-[10px]'>Journal Create</span>
+          <span className='text-[14px] font-bold'>
+            {journalData.effectiveDateTime &&
+              formattedDate(journalData.effectiveDateTime)}
+          </span>
+        </div>
+        <div className='flex flex-col'>
+          <span className='text-muted text-right text-[10px]'>Last Edit</span>
+          <span className='text-right text-[14px] font-bold'>
+            {journalData.meta.lastUpdated &&
+              formattedDate(journalData.meta.lastUpdated)}
+          </span>
+        </div>
+      </div>
+
+      <div className='card flex border'>
+        <NotepadTextIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
+        <input
+          placeholder='Journal Title'
+          value={journalTitle}
+          onChange={e => setJournalTitle(e.target.value)}
+          type='text'
+          className='w-full focus:outline-none'
+        />
+      </div>
+
+      <div>
+        {response.map((item, index) => (
+          <div className='mb-3' key={item.id}>
+            <div className='flex items-center justify-between'>
+              <div className='text-muted mb-2 text-[12px]'>
+                Write anything here
+              </div>
+              <Button
+                onClick={() => removeResponse(index)}
+                variant='ghost'
+                className='h-fit w-fit rounded-full p-2'
+              >
+                <XIcon fill='red' size={12} color='hsla(220,9%,19%,0.4)' />
+              </Button>
+            </div>
+
+            <Textarea
+              value={item.text}
+              onChange={e => handleResponseChange(index, e.target.value)}
+              className='rounded-lg text-[14px]'
+              placeholder='Type your message here.'
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className='flex w-full justify-center'>
+        <Button
+          variant='ghost'
+          className='text-muted text-[12px]'
+          onClick={addResponse}
+        >
+          + Add New Thought
+        </Button>
+      </div>
+
+      <Button
+        onClick={handleSubmitJournal}
+        className='bg-secondary !mt-auto w-full rounded-full p-4 text-[14px] text-white'
+        disabled={isSubmitLoading}
+      >
+        {isSubmitLoading ? (
+          <LoadingSpinnerIcon
+            width={20}
+            height={20}
+            stroke='white'
+            className='w-full animate-spin'
+          />
+        ) : (
+          'Save Journal'
+        )}
+      </Button>
     </>
   );
 
@@ -146,95 +245,7 @@ export default function EditJournal({ journalId }: Props) {
           className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
         />
       ) : (
-        <>
-          <div className='card flex items-center bg-[hsla(0,0%,98%,1)]'>
-            <FileCheckIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
-
-            <div className='flex grow flex-col'>
-              <span className='text-[10px] text-muted'>Journal Create</span>
-              <span className='text-[14px] font-bold'>
-                {journalData.effectiveDateTime &&
-                  formattedDate(journalData.effectiveDateTime)}
-              </span>
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-right text-[10px] text-muted'>
-                Last Edit
-              </span>
-              <span className='text-right text-[14px] font-bold'>
-                {journalData.meta.lastUpdated &&
-                  formattedDate(journalData.meta.lastUpdated)}
-              </span>
-            </div>
-          </div>
-
-          <div className='card flex border'>
-            <NotepadTextIcon
-              className='mr-[10px]'
-              color='hsla(220,9%,19%,0.4)'
-            />
-            <input
-              placeholder='Journal Title'
-              value={journalTitle}
-              onChange={e => setJournalTitle(e.target.value)}
-              type='text'
-              className='w-full focus:outline-none'
-            />
-          </div>
-
-          <div>
-            {response.map((item, index) => (
-              <div className='mb-3' key={index}>
-                <div className='flex items-center justify-between'>
-                  <div className='mb-2 text-[12px] text-muted'>
-                    Write anything here
-                  </div>
-                  <Button
-                    onClick={() => removeResponse(index)}
-                    variant='ghost'
-                    className='h-fit w-fit rounded-full p-2'
-                  >
-                    <XIcon fill='red' size={12} color='hsla(220,9%,19%,0.4)' />
-                  </Button>
-                </div>
-
-                <Textarea
-                  value={item.text}
-                  onChange={e => handleResponseChange(index, e.target.value)}
-                  className='rounded-lg text-[14px]'
-                  placeholder='Type your message here.'
-                />
-              </div>
-            ))}
-          </div>
-
-          <div className='flex w-full justify-center'>
-            <Button
-              variant='ghost'
-              className='text-[12px] text-muted'
-              onClick={addResponse}
-            >
-              + Add New Thought
-            </Button>
-          </div>
-
-          <Button
-            onClick={handleSubmitJournal}
-            className='!mt-auto w-full rounded-full bg-secondary p-4 text-[14px] text-white'
-            disabled={isSubmitLoading}
-          >
-            {isSubmitLoading ? (
-              <LoadingSpinnerIcon
-                width={20}
-                height={20}
-                stroke='white'
-                className='w-full animate-spin'
-              />
-            ) : (
-              'Save Journal'
-            )}
-          </Button>
-        </>
+        journalContent
       )}
 
       <Drawer onClose={() => setIsOpen(false)} open={isOpen}>

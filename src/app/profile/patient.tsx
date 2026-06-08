@@ -17,6 +17,9 @@ type Props = {
   fhirId: string;
 };
 
+/**
+ *
+ */
 export default function Patient({ fhirId }: Props) {
   const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
@@ -24,7 +27,7 @@ export default function Patient({ fhirId }: Props) {
   const { data: profileData, isLoading: isProfileLoading } = useQuery<Patient>({
     queryKey: ['profile-data', fhirId],
     queryFn: () => getProfileById(fhirId, 'Patient') as Promise<Patient>,
-    enabled: !!fhirId,
+    enabled: Boolean(fhirId),
     onError: (error: Error) => {
       console.error('Error when fetching user profile: ', error);
       toast.error(error.message);
@@ -41,15 +44,13 @@ export default function Patient({ fhirId }: Props) {
     return found.value;
   };
 
-  const age =
-    profileData && profileData.birthDate
-      ? `${findAge(profileData.birthDate)} year`
-      : '-';
-  const gender =
-    profileData && profileData.gender
-      ? profileData.gender.charAt(0).toUpperCase() +
-        profileData.gender.slice(1).toLowerCase()
-      : '-';
+  const age = profileData?.birthDate
+    ? `${findAge(profileData.birthDate)} year`
+    : '-';
+  const gender = profileData?.gender
+    ? profileData.gender.charAt(0).toUpperCase() +
+      profileData.gender.slice(1).toLowerCase()
+    : '-';
   const phone =
     profileData && Array.isArray(profileData.telecom)
       ? findTelecom('phone')

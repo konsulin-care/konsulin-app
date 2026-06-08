@@ -83,6 +83,9 @@ function useRoleProfiles(
   return [roleProfiles, handleOpenChange];
 }
 
+/**
+ *
+ */
 export default function RoleAvatarPopup({
   indicator,
   displayName

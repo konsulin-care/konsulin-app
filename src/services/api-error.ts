@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { AxiosError } from 'axios';
 
 export type ParsedAxiosError = {
@@ -8,6 +9,9 @@ export type ParsedAxiosError = {
   isMissingToken: boolean;
 };
 
+/**
+ *
+ */
 export function parseAxiosError(err: unknown): ParsedAxiosError {
   const error = err as Partial<AxiosError & { message?: string }> | undefined;
   const response = error?.response as any as any | undefined;
@@ -16,12 +20,12 @@ export function parseAxiosError(err: unknown): ParsedAxiosError {
       ? (response.data as any)
       : undefined;
 
-  const messageFromResponse =
-    typeof data?.message === 'string'
-      ? data.message
-      : typeof response?.data === 'string'
-        ? (response.data as string)
-        : undefined;
+  let messageFromResponse: string | undefined;
+  if (typeof data?.message === 'string') {
+    messageFromResponse = data.message;
+  } else if (typeof response?.data === 'string') {
+    messageFromResponse = response.data as string;
+  }
 
   const errorMessage =
     messageFromResponse ||

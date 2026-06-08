@@ -1,7 +1,10 @@
-import React from 'react'
+import React from 'react';
 
+/**
+ *
+ */
 export default function NoteIcon(props: React.SVGProps<SVGSVGElement>) {
-  const { fill = '#13C2C2', width = 24, height = 24 } = props
+  const { fill = '#13C2C2', width = 24, height = 24 } = props;
 
   return (
     <svg
@@ -16,5 +19,5 @@ export default function NoteIcon(props: React.SVGProps<SVGSVGElement>) {
         fill={fill}
       />
     </svg>
-  )
+  );
 }

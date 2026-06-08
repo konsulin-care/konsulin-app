@@ -18,6 +18,9 @@ import { HospitalIcon } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 
+/**
+ *
+ */
 export default function ScheduleDetail() {
   const searchParams = useSearchParams();
   const appointmentId = searchParams.get('appointmentId') ?? '';

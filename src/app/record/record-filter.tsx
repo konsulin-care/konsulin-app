@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth, max-lines */
 import { FilterIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -64,6 +65,9 @@ export type IRecordParams = {
   isUseCustomDate?: boolean;
 };
 
+/**
+ *
+ */
 export default function RecordFilter({ onChange }) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [whichContent, setWhichContent] = useState<
@@ -107,6 +111,116 @@ export default function RecordFilter({ onChange }) {
     handleFilterChange('isUseCustomDate', false);
   };
 
+  const dateFilterSection = (
+    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+      <div className='mb-4 font-bold'>Date</div>
+      <div className='flex flex-wrap gap-[10px]'>
+        {filterContentListDate.map(date => (
+          <Button
+            key={date.label}
+            onClick={() => {
+              handleFilterChange('start_date', date.value.start);
+              handleFilterChange('end_date', date.value.end);
+              handleFilterChange('isUseCustomDate', false);
+              setIsUseCustomDate(false);
+            }}
+            variant='outline'
+            className={cn(
+              'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+              filter.start_date === date.value.start &&
+                filter.end_date === date.value.end
+                ? 'bg-secondary hover:bg-secondary font-bold text-white'
+                : 'bg-white font-normal'
+            )}
+          >
+            {date.label}
+          </Button>
+        ))}
+        <Button
+          variant='outline'
+          onClick={handleCustomFilterOpen}
+          className={cn(
+            'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
+            isUseCustomDate
+              ? 'bg-secondary hover:bg-secondary font-bold text-white'
+              : 'bg-white font-normal'
+          )}
+        >
+          Custom
+          {(() => {
+            if (!isUseCustomDate || !filter.start_date || !filter.end_date)
+              return '';
+            if (filter.start_date === filter.end_date) {
+              return ` : ${format(filter.start_date, 'dd MMM yy')}`;
+            }
+            return ` : ${format(filter.start_date, 'dd MMM yy')} - ${format(filter.end_date, 'dd MMM yy')}`;
+          })()}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const showBySection = (
+    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+      <div className='mb-4 font-bold'>Show By</div>
+      <div className='flex flex-wrap gap-[10px]'>
+        <Select
+          value={filter.type}
+          onValueChange={e => handleFilterChange('type', e)}
+        >
+          <SelectTrigger className='w-full border-none'>
+            <SelectValue placeholder='All' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem key='All' value='All'>
+              All
+            </SelectItem>
+            <SelectItem key='Patient Note' value='Patient Note'>
+              Journal
+            </SelectItem>
+            <SelectItem
+              key='QuestionnaireResponse'
+              value='QuestionnaireResponse'
+            >
+              Assessment
+            </SelectItem>
+            <SelectItem key='SOAP' value='Practitioner Note, SOAP Notes'>
+              SOAP
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
+  const defaultActions = (
+    <>
+      {!isInitiaFilterState && (
+        <Button
+          variant='outline'
+          size='sm'
+          className={cn(
+            buttonVariants({ variant: 'outline' }),
+            'mt-4 w-min border-0 text-[12px]'
+          )}
+          onClick={resetFilter}
+        >
+          Reset Filter
+        </Button>
+      )}
+
+      <Button
+        className='bg-secondary mt-4 rounded-xl p-4 text-white'
+        onClick={() => {
+          setIsOpen(false);
+          onChange(filter);
+        }}
+      >
+        Terapkan Filter
+      </Button>
+    </>
+  );
+
   const renderDrawerContent = () => {
     switch (whichContent) {
       case CONTENT_DEFAULT:
@@ -117,107 +231,9 @@ export default function RecordFilter({ onChange }) {
             </DrawerTitle>
 
             <DrawerDescription />
-            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Date</div>
-              <div className='flex flex-wrap gap-[10px]'>
-                {filterContentListDate.map(date => (
-                  <Button
-                    key={date.label}
-                    onClick={() => {
-                      handleFilterChange('start_date', date.value.start);
-                      handleFilterChange('end_date', date.value.end);
-                      handleFilterChange('isUseCustomDate', false);
-                      setIsUseCustomDate(false);
-                    }}
-                    variant='outline'
-                    className={cn(
-                      'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                      filter.start_date === date.value.start &&
-                        filter.end_date === date.value.end
-                        ? 'bg-secondary font-bold text-white hover:bg-secondary'
-                        : 'bg-white font-normal'
-                    )}
-                  >
-                    {date.label}
-                  </Button>
-                ))}
-                <Button
-                  variant='outline'
-                  onClick={handleCustomFilterOpen}
-                  className={cn(
-                    'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
-                    isUseCustomDate
-                      ? 'bg-secondary font-bold text-white hover:bg-secondary'
-                      : 'bg-white font-normal'
-                  )}
-                >
-                  Custom
-                  {!isUseCustomDate || !filter.start_date || !filter.end_date
-                    ? ''
-                    : filter.start_date === filter.end_date
-                      ? ` : ${format(filter.start_date, 'dd MMM yy')}`
-                      : ` : ${format(filter.start_date, 'dd MMM yy')} - ${format(filter.end_date, 'dd MMM yy')}`}
-                </Button>
-              </div>
-            </div>
-
-            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Show By</div>
-              <div className='flex flex-wrap gap-[10px]'>
-                <Select
-                  value={filter.type}
-                  onValueChange={e => handleFilterChange('type', e)}
-                >
-                  <SelectTrigger className='w-full border-none'>
-                    <SelectValue placeholder='All' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem key='All' value='All'>
-                      All
-                    </SelectItem>
-                    <SelectItem key='Patient Note' value='Patient Note'>
-                      Journal
-                    </SelectItem>
-                    <SelectItem
-                      key='QuestionnaireResponse'
-                      value='QuestionnaireResponse'
-                    >
-                      Assessment
-                    </SelectItem>
-                    <SelectItem
-                      key='SOAP'
-                      value='Practitioner Note, SOAP Notes'
-                    >
-                      SOAP
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {!isInitiaFilterState && (
-              <Button
-                variant='outline'
-                size='sm'
-                className={cn(
-                  buttonVariants({ variant: 'outline' }),
-                  'mt-4 w-min border-0 text-[12px]'
-                )}
-                onClick={resetFilter}
-              >
-                Reset Filter
-              </Button>
-            )}
-
-            <Button
-              className='mt-4 rounded-xl bg-secondary p-4 text-white'
-              onClick={() => {
-                setIsOpen(false);
-                onChange(filter);
-              }}
-            >
-              Terapkan Filter
-            </Button>
+            {dateFilterSection}
+            {showBySection}
+            {defaultActions}
           </div>
         );
       case CONTENT_CUSTOM:
@@ -264,7 +280,7 @@ export default function RecordFilter({ onChange }) {
             <Button
               type='button'
               onClick={() => setWhichContent(CONTENT_DEFAULT)}
-              className='mt-4 rounded-xl bg-secondary text-white'
+              className='bg-secondary mt-4 rounded-xl text-white'
             >
               Kembali
             </Button>
@@ -272,7 +288,7 @@ export default function RecordFilter({ onChange }) {
         );
 
       default:
-        break;
+        return null;
     }
   };
 

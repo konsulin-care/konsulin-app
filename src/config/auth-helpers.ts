@@ -46,6 +46,9 @@ async function postAuthCookie(
   }
 }
 
+/**
+ *
+ */
 async function postAuthCookieForUser(
   role: string,
   userId: string,

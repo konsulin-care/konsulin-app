@@ -5,6 +5,9 @@ import { mergeNames, parseMergedSessions } from '@/utils/helper';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
 
+/**
+ *
+ */
 export function useTodaySessions() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const practitionerId = authState?.userInfo?.fhirId;

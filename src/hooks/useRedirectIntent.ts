@@ -104,7 +104,7 @@ function handleIntent(
   router: ReturnType<typeof useRouter>
 ): (() => void) | void {
   const intent = getIntent();
-  if (!intent || isHandlingRef.current) return;
+  if (!intent || isHandlingRef.current) return undefined;
   isHandlingRef.current = true;
 
   const abortController = new AbortController();
@@ -148,6 +148,9 @@ function handleIntent(
   };
 }
 
+/**
+ *
+ */
 export function useRedirectIntent({
   isLoading,
   authState
@@ -159,20 +162,20 @@ export function useRedirectIntent({
   useReloadAnonymousSession(isLoading, authState.isAuthenticated);
 
   useEffect(() => {
-    if (isLoading) return;
-    if (handleStoredRedirect(setIsRedirecting, router)) return;
-    if (authState.isAuthenticated) {
-      const cleanup = handleIntent(
-        setIsRedirecting,
-        isHandlingIntentRef,
-        router
-      );
+    let cleanup;
+    if (isLoading) {
+      // wait for loading to finish
+    } else if (handleStoredRedirect(setIsRedirecting, router)) {
+      // redirect handled
+    } else if (authState.isAuthenticated) {
+      cleanup = handleIntent(setIsRedirecting, isHandlingIntentRef, router);
       if (!cleanup) {
         setIsRedirecting(false);
       }
-      return cleanup;
+    } else {
+      setIsRedirecting(false);
     }
-    setIsRedirecting(false);
+    return cleanup;
   }, [isLoading, authState.isAuthenticated, authState.userInfo, router]);
 
   return { isRedirecting };

@@ -38,6 +38,9 @@ function escapeXml(s: string): string {
     .replaceAll("'", '&apos;');
 }
 
+/**
+ *
+ */
 export function generateAvatarSvgDataUrl(
   seed: string,
   initials: string

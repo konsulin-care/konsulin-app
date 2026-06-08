@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * TEMPORARY Calendar wrapper.
  *
@@ -15,6 +16,9 @@ import 'react-day-picker/style.css';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
+/**
+ *
+ */
 function Calendar(props: CalendarProps) {
   return (
     <DayPicker

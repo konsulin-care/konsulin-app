@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, sonarjs/cognitive-complexity, max-lines, react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, sonarjs/cognitive-complexity, max-lines, react-hooks/exhaustive-deps, react/jsx-max-depth */
 import EmptyState from '@/components/general/empty-state';
 import Input from '@/components/general/input';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -552,8 +552,8 @@ const EditPractice = () => {
 
         if (slotMinutes != null || bufferMinutes != null || timezone) {
           next[idx] = {
-            sessionDuration: slotMinutes != null ? String(slotMinutes) : '',
-            bufferTime: bufferMinutes != null ? String(bufferMinutes) : '',
+            sessionDuration: slotMinutes == null ? '' : String(slotMinutes),
+            bufferTime: bufferMinutes == null ? '' : String(bufferMinutes),
             timezone
           };
         }
@@ -908,38 +908,47 @@ const EditPractice = () => {
           </div>
 
           <div className='flex-1 overflow-y-auto pb-[15px]'>
-            {isPractitionerRolesLoading || isPractitionerRolesFetching ? (
-              <Skeleton
-                count={4}
-                className='mt-4 h-[60px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
-              />
-            ) : filteredFirmData && filteredFirmData.length > 0 ? (
-              filteredFirmData.map(
-                (firm: BundleEntry<IPractitionerRoleDetail>, index: number) => (
-                  <CollapsibleItem
-                    key={firm.id}
-                    index={index}
-                    firm={firm}
-                    invoice={invoiceData[index]}
-                    isOpen={Boolean(openCollapsibles[index])}
-                    onToggle={handleToggle}
-                    tagInputs={tagInputs}
-                    handleChangeFee={handleChangeFee}
-                    handleAddTag={handleAddTag}
-                    handleRemoveTag={handleRemoveTag}
-                    setTagInputs={setTagInputs}
-                    slotConfigs={slotConfigs}
-                    setSlotConfigs={setSlotConfigs}
+            {(() => {
+              if (isPractitionerRolesLoading || isPractitionerRolesFetching) {
+                return (
+                  <Skeleton
+                    count={4}
+                    className='mt-4 h-[60px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
                   />
-                )
-              )
-            ) : (
-              <EmptyState
-                className='py-16'
-                title='No Firms Found'
-                subtitle='You have no firms registered at the moment'
-              />
-            )}
+                );
+              }
+              if (filteredFirmData && filteredFirmData.length > 0) {
+                return filteredFirmData.map(
+                  (
+                    firm: BundleEntry<IPractitionerRoleDetail>,
+                    index: number
+                  ) => (
+                    <CollapsibleItem
+                      key={firm.id}
+                      index={index}
+                      firm={firm}
+                      invoice={invoiceData[index]}
+                      isOpen={Boolean(openCollapsibles[index])}
+                      onToggle={handleToggle}
+                      tagInputs={tagInputs}
+                      handleChangeFee={handleChangeFee}
+                      handleAddTag={handleAddTag}
+                      handleRemoveTag={handleRemoveTag}
+                      setTagInputs={setTagInputs}
+                      slotConfigs={slotConfigs}
+                      setSlotConfigs={setSlotConfigs}
+                    />
+                  )
+                );
+              }
+              return (
+                <EmptyState
+                  className='py-16'
+                  title='No Firms Found'
+                  subtitle='You have no firms registered at the moment'
+                />
+              );
+            })()}
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, max-lines */
 import { FilterIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -92,6 +93,9 @@ const filterContentListTime = [
   }
 ];
 
+/**
+ *
+ */
 export default function ClinicFilter({ onChange, type }) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [whichContent, setWhichContent] = useState<
@@ -195,13 +199,18 @@ export default function ClinicFilter({ onChange, type }) {
                       )}
                     >
                       Custom
-                      {!isUseCustomDate ||
-                      !filter.start_date ||
-                      !filter.end_date
-                        ? ''
-                        : filter.start_date === filter.end_date
-                          ? ` : ${format(filter.start_date, 'dd MMM yy')}`
-                          : ` : ${format(filter.start_date, 'dd MMM yy')} - ${format(filter.end_date, 'dd MMM yy')}`}
+                      {(() => {
+                        if (
+                          !isUseCustomDate ||
+                          !filter.start_date ||
+                          !filter.end_date
+                        )
+                          return '';
+                        if (filter.start_date === filter.end_date) {
+                          return ` : ${format(filter.start_date, 'dd MMM yy')}`;
+                        }
+                        return ` : ${format(filter.start_date, 'dd MMM yy')} - ${format(filter.end_date, 'dd MMM yy')}`;
+                      })()}
                     </Button>
                   </div>
                 </div>
@@ -448,7 +457,7 @@ export default function ClinicFilter({ onChange, type }) {
         );
 
       default:
-        break;
+        return null;
     }
   };
 

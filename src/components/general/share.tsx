@@ -1,13 +1,16 @@
-import { Share2Icon } from 'lucide-react'
-import { ShareSocial } from 'react-share-social'
-import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer'
+import { Share2Icon } from 'lucide-react';
+import { ShareSocial } from 'react-share-social';
+import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
 
 interface IShareProps {
-  title?: string
+  title?: string;
 }
 
+/**
+ *
+ */
 export default function Share({ title = 'Share' }: IShareProps) {
-  let currentLocation = window.location.href
+  const currentLocation = window.location.href;
 
   const style = {
     root: {
@@ -23,7 +26,7 @@ export default function Share({ title = 'Share' }: IShareProps) {
       color: '#13c2c2',
       background: 'white'
     }
-  }
+  };
 
   return (
     <Drawer>
@@ -52,5 +55,5 @@ export default function Share({ title = 'Share' }: IShareProps) {
         </div>
       </DrawerContent>
     </Drawer>
-  )
+  );
 }

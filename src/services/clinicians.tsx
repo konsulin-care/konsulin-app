@@ -11,6 +11,28 @@ import {
 } from 'fhir/r4';
 import { getAPI } from './api';
 
+function hasParticipantForRole(
+  invoice: BundleEntry<Invoice>,
+  roleId: string
+): boolean {
+  return (
+    invoice.resource.participant?.some(
+      p => p.actor?.reference === `PractitionerRole/${roleId}`
+    ) ?? false
+  );
+}
+
+function hasActorForRole(
+  schedule: BundleEntry<Schedule>,
+  roleId: string
+): boolean {
+  return (
+    schedule.resource.actor?.some(
+      actor => actor.reference === `PractitionerRole/${roleId}`
+    ) ?? false
+  );
+}
+
 export const useFindAvailability = ({
   practitionerRoleId,
   dateReference,
@@ -50,7 +72,7 @@ export const useFindAvailability = ({
       return response;
     },
     select: response => response.data.entry || null,
-    enabled: !!practitionerRoleId && !!ge && !!le,
+    enabled: Boolean(practitionerRoleId) && Boolean(ge) && Boolean(le),
     staleTime: 5 * 60 * 1000 // 5 minutes
   });
 };
@@ -102,16 +124,12 @@ export const useGetPractitionerRolesDetail = (
         )?.resource;
 
         const invoiceData = invoices.find((invoice: BundleEntry<Invoice>) =>
-          invoice.resource.participant?.some(
-            p => p.actor?.reference === `PractitionerRole/${roleId}`
-          )
+          hasParticipantForRole(invoice, roleId)
         )?.resource;
 
         const scheduleData = schedules
           .filter((schedule: BundleEntry<Schedule>) =>
-            schedule.resource.actor?.some(
-              actor => actor.reference === `PractitionerRole/${roleId}`
-            )
+            hasActorForRole(schedule, roleId)
           )
           .map((schedule: BundleEntry<Schedule>) => schedule.resource);
 
@@ -126,7 +144,7 @@ export const useGetPractitionerRolesDetail = (
         };
       });
     },
-    enabled: !!practitionerId,
+    enabled: Boolean(practitionerId),
     ...queryOptions
   });
 };

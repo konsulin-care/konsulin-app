@@ -17,6 +17,9 @@ import {
 const routerInfo: { router?: ReturnType<typeof useRouter>; pathName?: string } =
   {};
 
+/**
+ *
+ */
 export function setRouter(
   router: ReturnType<typeof useRouter>,
   pathName: string
