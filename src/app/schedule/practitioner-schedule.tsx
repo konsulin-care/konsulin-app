@@ -1,15 +1,13 @@
 'use client';
 
 import Avatar from '@/components/general/avatar';
-import BackButton from '@/components/general/back-button';
 import EmptyState from '@/components/general/empty-state';
-import Header from '@/components/header';
-import NavigationBar from '@/components/navigation-bar';
-import UpcomingSession from '@/components/schedule/upcoming-session';
+import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getNow } from '@/constants/date';
 import { useAuth } from '@/context/auth/authContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useGetAllSessions } from '@/services/api/appointments';
@@ -39,8 +37,6 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import SessionFilter from './session-filter';
 
-const now = new Date();
-
 type Props = {
   fhirId: string;
 };
@@ -54,7 +50,7 @@ const SessionCard = ({ session }: { session: MergedSession }) => {
     : '-/-/-';
   const fullName = mergeNames(session.patientName);
   const displayName = fullName.trim() === '-' ? session.patientEmail : fullName;
-  const { initials, backgroundColor } = generateAvatarPlaceholder({
+  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
     id: session.patientId,
     name: displayName,
     email: session.patientEmail
@@ -73,6 +69,7 @@ const SessionCard = ({ session }: { session: MergedSession }) => {
       <hr className='w-full' />
       <div className='flex items-center'>
         <Avatar
+          seed={seed}
           initials={initials}
           backgroundColor={backgroundColor}
           photoUrl={photoUrl}
@@ -110,7 +107,7 @@ export default function PractitionerSchedule({ fhirId }: Props) {
       const start = startOfDay(new Date(startDateParam));
       const end = endOfDay(new Date(endDateParam));
 
-      const isPast = end < new Date(now.toDateString());
+      const isPast = end < new Date(getNow().toDateString());
       setSelectedTab(isPast ? 'past' : 'upcoming');
 
       setSessionsFilter(prev => ({
@@ -130,17 +127,6 @@ export default function PractitionerSchedule({ fhirId }: Props) {
     const parsed = parseMergedSessions(sessionData);
     return parsed;
   }, [sessionData, authState]);
-
-  const unfilteredSessionsData = useMemo(() => {
-    if (!parsedSessionsData || parsedSessionsData.length === 0) return null;
-
-    const filtered = parsedSessionsData.filter(session => {
-      const slotStart = parseISO(session.slotStart);
-      return isAfter(slotStart, now);
-    });
-
-    return filtered;
-  }, [parsedSessionsData]);
 
   const filteredSessionsData = useMemo(() => {
     if (!parsedSessionsData || parsedSessionsData.length === 0) return null;
@@ -206,13 +192,14 @@ export default function PractitionerSchedule({ fhirId }: Props) {
 
       return true;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parsedSessionsData, sessionsFilter, selectedTab, debouncedKeyword]);
 
   const listUpcomingSessions = useMemo(() => {
     if (!filteredSessionsData || filteredSessionsData.length === 0) return [];
 
     return filteredSessionsData
-      .filter(s => s.slotStart && new Date(s.slotStart) >= now)
+      .filter(s => s.slotStart && new Date(s.slotStart) >= getNow())
       .sort(
         (a, b) =>
           new Date(a.slotStart!).getTime() - new Date(b.slotStart!).getTime() // soonest first
@@ -223,7 +210,7 @@ export default function PractitionerSchedule({ fhirId }: Props) {
     if (!filteredSessionsData || filteredSessionsData.length === 0) return [];
 
     return filteredSessionsData
-      .filter(s => s.slotStart && new Date(s.slotStart) < now)
+      .filter(s => s.slotStart && new Date(s.slotStart) < getNow())
       .sort(
         (a, b) =>
           new Date(b.slotStart!).getTime() - new Date(a.slotStart!).getTime() // most-recent first
@@ -268,34 +255,15 @@ export default function PractitionerSchedule({ fhirId }: Props) {
 
   return (
     <>
-      <NavigationBar />
-      <Header>
-        <div className='flex w-full flex-col'>
-          <div className='flex items-center'>
-            <BackButton />
-            <span className='text-[14px] font-bold text-white'>
-              Scheduled Session
-            </span>
-          </div>
-
-          {authState &&
-            unfilteredSessionsData &&
-            unfilteredSessionsData.length > 0 && (
-              <UpcomingSession
-                data={unfilteredSessionsData}
-                role={authState.userInfo.role_name}
-              />
-            )}
-        </div>
-      </Header>
-      <div className='mt-[-24px] rounded-[16px] bg-white pb-[100px]'>
+      <PageHeader />
+      <div className='mt-[-24px] rounded-[16px] bg-white pb-20'>
         <div className='w-full p-4'>
           <div className='flex gap-4'>
             <InputWithIcon
               value={keyword}
               onChange={event => setKeyword(event.target.value)}
               placeholder='Search'
-              className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
+              className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
             <SessionFilter
@@ -312,14 +280,14 @@ export default function PractitionerSchedule({ fhirId }: Props) {
 
           <div className='mb-4 flex gap-4'>
             {sessionsFilter.start_date && sessionsFilter.end_date && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+              <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
                 {format(new Date(sessionsFilter.start_date), 'dd MMM yy') +
                   ' - ' +
                   format(new Date(sessionsFilter.end_date), 'dd MMM yy')}
               </Badge>
             )}
             {sessionsFilter.start_time && sessionsFilter.end_time && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+              <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
                 {sessionsFilter.start_time + ' - ' + sessionsFilter.end_time}
               </Badge>
             )}
@@ -333,13 +301,13 @@ export default function PractitionerSchedule({ fhirId }: Props) {
           >
             <TabsList className='grid w-full grid-cols-2 bg-transparent'>
               <TabsTrigger
-                className='rounded-none border-secondary data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:text-secondary data-[state=active]:shadow-none'
+                className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
                 value='upcoming'
               >
                 Upcoming Session
               </TabsTrigger>
               <TabsTrigger
-                className='rounded-none border-secondary data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:text-secondary data-[state=active]:shadow-none'
+                className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
                 value='past'
               >
                 Past Session

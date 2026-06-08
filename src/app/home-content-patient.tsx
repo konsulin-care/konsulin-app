@@ -1,254 +1,174 @@
-import Avatar from '@/components/general/avatar';
-import NoteIcon from '@/components/icons/note-icon';
+'use client';
+
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { typeMappings } from '@/constants/record';
 import { useAuth } from '@/context/auth/authContext';
-import { useRecordSummary } from '@/services/api/record';
-import { getProfileById } from '@/services/profile';
+import { useRecordSummaryQuery } from '@/services/api/record';
 import { IRecord } from '@/types/record';
-import {
-  customMarkdownComponents,
-  formatTitle,
-  generateAvatarPlaceholder,
-  mergeNames,
-  parseRecordBundles
-} from '@/utils/helper';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { customMarkdownComponents, formatTitle } from '@/utils/helper';
+import { parseRecordBundles } from '@/utils/record-parser';
 import { format } from 'date-fns';
-import Image from 'next/image';
+import { BookText, Building2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
-import { toast } from 'react-toastify';
-import 'swiper/css';
-import 'swiper/css/pagination';
-import { Pagination } from 'swiper/modules';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import AppChartClient from '../components/general/home/app-chart-client';
-import AppMenu from '../components/general/home/app-menu';
-import Community from '../components/general/home/community';
-import PopularAssessment from '../components/general/home/popular-assessment';
+import { useRouter } from 'next/navigation';
 
+const RecommendationCardStack = dynamic(
+  () => import('@/components/general/home/recommendation-card-stack'),
+  { ssr: false }
+);
+
+const ReactMarkdown = dynamic(() => import('react-markdown'), {
+  ssr: false
+});
+
+function RecordCard({ record }: Readonly<{ record: IRecord }>) {
+  const splitTitle = record.title.split('/');
+  const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
+  const formattedTitle =
+    record.type === 'QuestionnaireResponse' ? formatTitle(title) : title;
+
+  const recordId = record.id.split('/')[1];
+  const formattedDate = format(new Date(record.lastUpdated), 'dd/MM/yyyy');
+
+  const result = record.result as string;
+  const cleanDescription = (result || '-').replaceAll('\n\n', '. ');
+
+  const queryParams = new URLSearchParams({
+    category: typeMappings[record.type]?.category,
+    title
+  }).toString();
+  const url = `/record?recordId=${recordId}&${queryParams}`;
+
+  return (
+    <Link href={url} className='card flex flex-col gap-2 p-4'>
+      <div className='flex items-center gap-2'>
+        <div className='mr-2 h-[40px] w-[40px] shrink-0 rounded-full bg-[#F8F8F8] p-2'>
+          <BookText className='h-6 w-6 text-gray-500' />
+        </div>
+        <div className='flex-1 overflow-hidden'>
+          <div className='truncate text-[12px] font-bold'>{formattedTitle}</div>
+          <div className='truncate text-[10px] text-gray-500'>
+            <ReactMarkdown components={customMarkdownComponents}>
+              {cleanDescription}
+            </ReactMarkdown>
+          </div>
+        </div>
+      </div>
+      <hr className='w-full' />
+      <div className='flex items-center justify-between'>
+        <Badge className='rounded-full bg-[#08979C] px-[10px] py-[4px] text-[10px] text-white'>
+          {typeMappings[record.type]?.text ?? record.type}
+        </Badge>
+        <div className='text-[10px] text-gray-500'>{formattedDate}</div>
+      </div>
+    </Link>
+  );
+}
+
+/** Patient home page with recommendations, clinic quick link, and records. */
 export default function HomeContentPatient() {
+  const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
-  const { mutateAsync: getRecords, isLoading: isRecordLoading } =
-    useRecordSummary();
   const patientId = authState?.userInfo?.fhirId;
-  const queryClient = useQueryClient();
 
-  /*
-   * fetch patient records. if a record is a 'Practitioner Note',
-   * also fetch the practitioner's profile to include in the result.
-   */
-  const fetchRecords = async () => {
-    if (!patientId) return [];
+  const {
+    data: recordsBundle,
+    isLoading: isRecordsLoading,
+    isError: isRecordsError,
+    refetch: refetchRecords
+  } = useRecordSummaryQuery(patientId);
 
-    const result = await getRecords({ patientId });
+  const records = recordsBundle
+    ? (parseRecordBundles(recordsBundle) as IRecord[]).sort(
+        (a, b) =>
+          new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+      )
+    : [];
 
-    const parsed = parseRecordBundles(result);
-
-    const attachProfile = await Promise.all(
-      parsed.map(async item => {
-        if (item.type !== 'Practitioner Note') return item;
-
-        const practitionerProfile = await queryClient.fetchQuery({
-          queryKey: ['profile-practitioner', item.practitionerId],
-          queryFn: () => getProfileById(item.practitionerId, 'Practitioner')
-        });
-
-        return { ...item, practitionerProfile };
-      })
-    );
-
-    const sorted = attachProfile.sort(
-      (a, b) =>
-        new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
-    );
-
-    return sorted;
+  /** Navigate to the practitioner booking page. */
+  const handleBook = (practitionerId: string) => {
+    router.push(`/appointment?practitioner=${practitionerId}`);
   };
 
-  const { data: records, isLoading: isQueryLoading } = useQuery({
-    queryKey: ['patient-records', patientId],
-    queryFn: fetchRecords,
-    onError: (error: Error) => {
-      toast.error(error.message);
+  const renderRecordsContent = () => {
+    if (isAuthLoading || isRecordsLoading) {
+      return (
+        <div className='space-y-3'>
+          <Skeleton className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+          <Skeleton className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+        </div>
+      );
     }
-  });
-
-  const getPractitionerInfo = (record: IRecord) => {
-    if (record.type !== 'Practitioner Note')
-      return { displayName: '', email: '' };
-
-    const name = mergeNames(
-      record.practitionerProfile?.name,
-      record.practitionerProfile?.qualification
+    if (isRecordsError) {
+      return (
+        <div className='rounded-lg bg-[#F9F9F9] p-4 text-center'>
+          <p className='mb-2 text-[12px] text-gray-500'>
+            Failed to load records
+          </p>
+          <button
+            onClick={() => refetchRecords()}
+            className='text-secondary text-[12px] underline'
+          >
+            Tap to retry
+          </button>
+        </div>
+      );
+    }
+    if (records.length > 0) {
+      return (
+        <div className='flex flex-col gap-3'>
+          {records.slice(0, 10).map((record: IRecord) => (
+            <RecordCard key={record.id.split('/')[1]} record={record} />
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className='rounded-lg bg-[#F9F9F9] p-4 text-center text-[12px] text-gray-500'>
+        No records yet. Complete an assessment to see it here.
+      </div>
     );
-
-    const email =
-      record.practitionerProfile?.telecom.find(item => item.system === 'email')
-        ?.value || '';
-
-    return { displayName: name, email };
   };
 
   return (
     <>
-      <AppChartClient />
-
-      <div className='flex gap-4 p-4'>
-        <AppMenu />
+      {/* PRIMARY: Recommendation Card Stack */}
+      <div className='overflow-x-hidden px-0 pt-4'>
+        <RecommendationCardStack onBook={handleBook} />
       </div>
 
-      <PopularAssessment />
+      {/* SECONDARY: Quick Actions */}
+      <div className='px-4 pb-4'>
+        <Link
+          href='/clinic'
+          className='card flex w-full items-center gap-3 p-4'
+        >
+          <div className='flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
+            <Building2 className='h-5 w-5 text-gray-600' />
+          </div>
+          <div className='flex flex-col'>
+            <span className='text-primary text-[12px] font-bold'>
+              Show All Clinics
+            </span>
+            <span className='text-primary text-[10px]'>
+              Find practitioners near you
+            </span>
+          </div>
+        </Link>
+      </div>
 
-      {/* Record Summary */}
+      {/* BELOW FOLD: Previous Records */}
       <div className='p-4'>
-        <div className='flex justify-between text-muted'>
-          <span className='mb-2 text-[14px] font-bold'>
-            Previous Record Summary
-          </span>
-          <Link className='text-[12px]' href={'/record'}>
+        <div className='text-muted flex justify-between'>
+          <span className='mb-2 text-[14px] font-bold'>Previous Records</span>
+          <Link className='text-[12px]' href='/record'>
             See All
           </Link>
         </div>
 
-        {isAuthLoading || isRecordLoading || isQueryLoading ? (
-          <Skeleton
-            count={1}
-            className='h-[100px] w-full bg-[hsl(210,40%,96.1%)]'
-          />
-        ) : (
-          <Swiper
-            pagination={{
-              dynamicBullets: true,
-              clickable: true,
-              renderBullet: function (index, className) {
-                return `
-                <span class="${className}" 
-                    style="
-                    display: inline-block;
-                    width: 8px;
-                    height: 8px;
-                    margin: 0 4px;
-                    border-radius: 50%;
-                    background: #d1d5db;
-                    transition: all 0.3s ease;
-                ">
-                </span>
-                `;
-              }
-            }}
-            spaceBetween={10}
-            modules={[Pagination]}
-          >
-            {records &&
-              records.length > 0 &&
-              records.map((record: IRecord) => {
-                const splitTitle = record.title.split('/');
-                const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
-                const formattedTitle =
-                  record.type === 'QuestionnaireResponse'
-                    ? formatTitle(title)
-                    : title;
-
-                const recordId = record.id.split('/')[1];
-                const formattedDate = format(
-                  new Date(record.lastUpdated),
-                  'dd/MM/yyyy'
-                );
-
-                const result = record.result as string;
-                const cleanDescription = (result || '\\-').replace(
-                  /\n\n/g,
-                  '. '
-                );
-
-                const queryParams = new URLSearchParams({
-                  category: typeMappings[record.type]?.category,
-                  title
-                }).toString();
-                const url = `record/${recordId}?${queryParams}`;
-
-                const { displayName, email } = getPractitionerInfo(record);
-                const { initials, backgroundColor } = generateAvatarPlaceholder(
-                  {
-                    id: record.practitionerId,
-                    name: displayName,
-                    email: email
-                  }
-                );
-                const photoUrl = record.practitionerProfile?.photo?.[0]?.url;
-
-                return (
-                  <SwiperSlide key={recordId}>
-                    <Link
-                      href={url}
-                      className='card mb-4 !flex flex-col gap-2 p-4'
-                    >
-                      <div className='flex'>
-                        <div className='mr-2 h-[40px] w-[40px] shrink-0 rounded-full bg-[#F8F8F8] p-2'>
-                          <Image
-                            className='h-[24px] w-[24px] object-cover'
-                            src={'/images/note.svg'}
-                            width={24}
-                            height={24}
-                            alt='note'
-                          />
-                        </div>
-                        <div className='flex w-0 grow flex-col justify-center'>
-                          <div className='text-[12px] font-bold'>
-                            {formattedTitle}
-                          </div>
-                          <div className='overflow-hidden text-ellipsis whitespace-nowrap text-[10px]'>
-                            <ReactMarkdown
-                              components={customMarkdownComponents}
-                            >
-                              {cleanDescription}
-                            </ReactMarkdown>
-                          </div>
-                        </div>
-                      </div>
-                      <hr className='w-full' />
-                      <div className='flex items-center'>
-                        {record.type === 'Practitioner Note' ? (
-                          <>
-                            <Avatar
-                              initials={initials}
-                              backgroundColor={backgroundColor}
-                              photoUrl={photoUrl}
-                              className='mr-2 text-xs'
-                              imageClassName='mr-2 self-center'
-                              height={32}
-                              width={32}
-                            />
-                            <div className='mr-auto text-[12px]'>
-                              {displayName}
-                            </div>
-                          </>
-                        ) : (
-                          <div className='mr-auto text-[12px]'>
-                            <Badge className='flex items-center rounded-full bg-[#08979C] px-[10px] py-[4px]'>
-                              <NoteIcon fill='white' width={16} height={16} />
-                              <div className='ml-1 text-[10px] text-white'>
-                                {typeMappings[record.type]?.text ?? record.type}
-                              </div>
-                            </Badge>
-                          </div>
-                        )}
-
-                        <div className='text-[10px]'>{formattedDate}</div>
-                      </div>
-                    </Link>
-                  </SwiperSlide>
-                );
-              })}
-          </Swiper>
-        )}
-      </div>
-
-      <div className='p-4'>
-        <Community />
+        {renderRecordsContent()}
       </div>
     </>
   );

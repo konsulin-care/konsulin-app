@@ -52,6 +52,50 @@ export const useRecordSummary = () => {
   });
 };
 
+function buildRecordBatchPayload(patientId: string) {
+  return {
+    type: 'batch',
+    resourceType: 'Bundle',
+    id: 'search-record-for-patient',
+    entry: [
+      {
+        request: {
+          method: 'GET',
+          url: `/QuestionnaireResponse?patient=${patientId}&author=Patient/${patientId}&_sorted=-_lastUpdated`
+        }
+      },
+      {
+        request: {
+          method: 'GET',
+          url: `/Observation?patient=${patientId}&code=http://loinc.org|51855-5&_sorted=-_lastUpdated`
+        }
+      },
+      {
+        request: {
+          method: 'GET',
+          url: `/Observation?patient=${patientId}&code=http://loinc.org|67855-7&_sorted=-_lastUpdated`
+        }
+      }
+    ]
+  };
+}
+
+export const useRecordSummaryQuery = (patientId: string) => {
+  return useQuery({
+    queryKey: ['patient-records', patientId],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.post(
+        '/fhir',
+        buildRecordBatchPayload(patientId)
+      );
+      return response.data.entry as IBundleResponse[];
+    },
+    enabled: !!patientId,
+    staleTime: 60 * 1000
+  });
+};
+
 export const useFilterRecordByDate = () => {
   return useMutation<IBundleResponse[], Error, IFilterRecord>({
     mutationKey: ['filtered-record-summary-patient'],

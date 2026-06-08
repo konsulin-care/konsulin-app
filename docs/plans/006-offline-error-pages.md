@@ -1,7 +1,7 @@
 ---
 title: Offline & Error Pages
 description: Offline fallback, 404 page, plain service worker
-date: 2026-05-26
+date: 2026-06-05
 ---
 
 # Overview
@@ -11,13 +11,14 @@ Before implementing, read @docs/wiki/008-pwa-offline.md for current service work
 Implement offline fallback page (`/~offline`), custom 404 page, and a
 plain service worker to replace Serwist (Next.js-specific PWA plugin).
 The service worker uses cache-first for static assets and network-first
-for navigation, enabling offline assessment access.
+for navigation, enabling offline assessment access. Pages are served by
+Next.js static export through Go BFF — no Go SSR. Aligned with ADR-015.
 
 # Goals
 
-- `GET /~offline` renders static offline fallback page from Go SSR
-- `GET /404` renders custom not-found page
-- Service worker (`web/static/js/sw.js`) replaces Serwist entirely
+- `GET /~offline` — offline fallback page from Next.js static export
+- `GET /404` — custom not-found page from Next.js static export
+- Service worker (`out/sw.js`) replaces Serwist entirely
 - Cache-first strategy for `/static/*` assets
 - Network-first strategy for navigation requests
 - Offline fallback page displayed when navigation fails offline
@@ -25,17 +26,16 @@ for navigation, enabling offline assessment access.
 
 # Implementation Steps
 
-- [ ] Create `web/template/pages/offline.templ` — offline fallback with app logo, message, retry button
-- [ ] Create `web/template/pages/notfound.templ` — 404 page with link to home
-- [ ] Register `GET /~offline` and `GET /404` in Chi router
-- [ ] Create `web/static/js/sw.js` — plain service worker with install/activate/fetch listeners
+- [ ] Create `src/app/~offline/page.tsx` — offline fallback with app logo, message, retry button
+- [ ] Ensure `src/app/not-found.tsx` — 404 page with link to home
+- [ ] Create `public/sw.js` — plain service worker with install/activate/fetch listeners
 - [ ] Implement cache-first for `/static/*`: on install pre-cache critical assets, on fetch serve from cache, update in background
 - [ ] Implement network-first for navigation: try network, fall back to cache, last resort to `/~offline`
 - [ ] Add IndexedDB helper (for later assessment offline storage): versioned open, schema creation
-- [ ] Register SW in `base.templ` via `<script>` tag (remove Next.js Serwist registration)
+- [ ] Register SW in `src/app/layout.tsx` via `<script>` tag (remove Next.js Serwist registration)
 - [ ] Remove Serwist from `next.config.mjs` and `package.json`
-- [ ] Remove `public/sw.js` (Serwist-generated) — replaced by `web/static/js/sw.js`
-- [ ] Write `web/static/js/sw.test.js` (vitest) — test SW logic (cache strategies, offline detection)
+- [ ] Remove `public/workbox-*.js` (Serwist-generated) — replaced by `public/sw.js`
+- [ ] Write `sw.test.js` (vitest) — test SW logic (cache strategies, offline detection)
 - [ ] Verify: SW installs, caches assets, serves offline page when offline
 
 # Reference
@@ -43,12 +43,12 @@ for navigation, enabling offline assessment access.
 @src/app/~offline/page.tsx:
 
 - Offline fallback: "Loading-Time.svg" illustration, "You're Offline" heading, Retry button
-- Reimplement: same content as static Go SSR page at GET /~offline
+- Keep: same content as Next.js static page
 
 @src/app/not-found.tsx:
 
 - 404 page: "Fast-Internet.svg" illustration, "Page Not Found" heading, Go Home button
-- Reimplement: same content as Go SSR page at GET /404
+- Keep: same content as Next.js not-found page
 
 @src/app/sw.ts:
 

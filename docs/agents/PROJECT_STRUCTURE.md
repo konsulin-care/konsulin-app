@@ -45,7 +45,7 @@ This is the target structure — the current codebase is still Next.js.
 │   │   └── components/       Shared UI components (button, card, etc.)
 │   ├── static/               Served at /static/
 │   │   ├── css/              Tailwind output
-│   │   ├── js/               Alpine.js, HTMX, service worker
+│   │   ├── js/               Alpine.js, HTMX, service worker, fhir-client.js
 │   │   └── images/           Static images
 │   └── assessment-spa/       React SPA bundle for AEHRC
 ├── Dockerfile                Multi-stage Go build

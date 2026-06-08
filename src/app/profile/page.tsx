@@ -1,56 +1,77 @@
 'use client';
 
-import Header from '@/components/header';
 import { LoadingSpinnerIcon } from '@/components/icons';
-import NavigationBar from '@/components/navigation-bar';
-import { Roles } from '@/constants/roles';
+import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
-import Clinician from './clinician';
-import Patient from './patient';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import EditPractice from './edit-practice';
+import EditProfile from './edit-profile';
+import ProfileDisplay from './profile-display';
 
-export default function Profile() {
+const PathProfile = () => {
   const { state: authState, isLoading } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const path = searchParams.get('path');
+  const [title, setTitle] = useState('');
 
-  const renderHomeContent = () => {
+  useEffect(() => {
+    if (path === 'edit-profile') {
+      setTitle('Perbarui Profile');
+    } else if (path === 'edit-practice') {
+      setTitle('Perbarui Practice Information');
+    }
+  }, [path]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!authState.isAuthenticated) {
+      router.push('/auth');
+    }
+  }, [isLoading, authState.isAuthenticated, router]);
+
+  if (path) {
+    let component = null;
+
+    if (path === 'edit-profile' && authState.userInfo) {
+      component = (
+        <EditProfile
+          userRole={authState.userInfo.role_name}
+          fhirId={authState.userInfo.fhirId}
+        />
+      );
+    } else if (path === 'edit-practice') {
+      component = <EditPractice />;
+    }
+
+    if (isLoading) {
+      return (
+        <div className='mt-[-24px] flex min-h-screen min-w-full items-center justify-center rounded-[16px] bg-white pt-4 pb-20'>
+          <LoadingSpinnerIcon
+            width={60}
+            height={60}
+            className='w-full animate-spin'
+          />
+        </div>
+      );
+    }
+
+    if (!authState.isAuthenticated) {
+      return null;
+    }
+
     return (
-      <div className='mt-[-16px] rounded-[16px] bg-white pt-4 pb-[100px]'>
-        <div className='text-center'>
-          {authState.userInfo.role_name === Roles.Patient && (
-            <Patient fhirId={authState.userInfo.fhirId} />
-          )}
-          {authState.userInfo.role_name === Roles.Practitioner && (
-            <Clinician fhirId={authState.userInfo.fhirId} />
-          )}
+      <>
+        <PageHeader pageIndicator={title} />
+        <div className='mt-[-24px] rounded-[16px] bg-white'>
+          <div className='min-h-[calc(100vh-105px)] p-4'>{component}</div>
         </div>
-      </div>
+      </>
     );
-  };
+  }
 
-  return (
-    <>
-      <NavigationBar />
-      <Header>
-        <div className='flex'>
-          <div className='my-2 flex flex-col'>
-            <div className='mb-[-5px] text-[14px] font-bold text-white'>
-              My Profile
-            </div>
-          </div>
-        </div>
-      </Header>
-      <div className='mt-[-24px] rounded-[16px] bg-white'>
-        {isLoading ? (
-          <div className='flex min-h-screen min-w-full items-center justify-center'>
-            <LoadingSpinnerIcon
-              width={56}
-              height={56}
-              className='w-full animate-spin'
-            />
-          </div>
-        ) : (
-          <div className='min-h-screen p-4'>{renderHomeContent()}</div>
-        )}
-      </div>
-    </>
-  );
-}
+  return <ProfileDisplay />;
+};
+
+export default PathProfile;

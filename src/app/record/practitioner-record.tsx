@@ -1,12 +1,11 @@
 'use client';
+/* eslint-disable max-lines */
 
 import Avatar from '@/components/general/avatar';
-import BackButton from '@/components/general/back-button';
 import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
-import Header from '@/components/header';
 import NoteIcon from '@/components/icons/note-icon';
-import NavigationBar from '@/components/navigation-bar';
+import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,9 +23,9 @@ import {
   formatTitle,
   generateAvatarPlaceholder,
   getTypeLabel,
-  mergeNames,
-  parseRecordBundlePractitioner
+  mergeNames
 } from '@/utils/helper';
+import { parseRecordBundlePractitioner } from '@/utils/record-parser';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { SearchIcon } from 'lucide-react';
@@ -199,13 +198,7 @@ export default function PractitionerRecord() {
 
   return (
     <>
-      <NavigationBar />
-      <Header showChat={false}>
-        <div className='flex w-full items-center'>
-          <BackButton route='/' />
-          <div className='text-[14px] font-bold text-white'>Summary Record</div>
-        </div>
-      </Header>
+      <PageHeader pageIndicator='Summary Record' backRoute='/' />
 
       <ContentWraper className='pt-4'>
         {/* Filter & Search based on result prop */}
@@ -217,7 +210,7 @@ export default function PractitionerRecord() {
                 handleSetRecordFilter('query', event.target.value)
               }
               placeholder='Search Entry & Record'
-              className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
+              className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
             <RecordFilter
@@ -232,7 +225,7 @@ export default function PractitionerRecord() {
 
           <div className='flex gap-4'>
             {recordFilter.start_date && recordFilter.end_date && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+              <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
                 {recordFilter.start_date == recordFilter.end_date
                   ? format(recordFilter.start_date, 'dd MMM yy')
                   : format(recordFilter.start_date, 'dd MMM yy') +
@@ -241,7 +234,7 @@ export default function PractitionerRecord() {
               </Badge>
             )}
             {filterTypeLabel && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+              <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
                 {filterTypeLabel}
               </Badge>
             )}
@@ -260,10 +253,10 @@ export default function PractitionerRecord() {
               alt='writing'
             />
             <div className='ml-2 flex flex-col'>
-              <span className='text-[12px] font-bold text-primary'>
+              <span className='text-primary text-[12px] font-bold'>
                 SOAP Report
               </span>
-              <span className='text-[10px] text-primary'>Start Writting</span>
+              <span className='text-primary text-[10px]'>Start Writting</span>
             </div>
           </Link>
         </div>
@@ -327,14 +320,15 @@ export default function PractitionerRecord() {
                 category: typeMappings[record.type]?.category,
                 title
               }).toString();
-              const url = `record/${recordId}?${queryParams}`;
+              const url = `/record?recordId=${recordId}&${queryParams}`;
 
               const { displayName, email } = getPractitionerInfo(record);
-              const { initials, backgroundColor } = generateAvatarPlaceholder({
-                id: record.practitionerId,
-                name: displayName,
-                email: email
-              });
+              const { initials, backgroundColor, seed } =
+                generateAvatarPlaceholder({
+                  id: record.practitionerId,
+                  name: displayName,
+                  email: email
+                });
               const photoUrl = record.practitionerProfile?.photo?.[0]?.url;
 
               return (
@@ -357,7 +351,7 @@ export default function PractitionerRecord() {
                       <div className='text-[12px] font-bold'>
                         {formattedTitle}
                       </div>
-                      <div className='line-clamp-3 overflow-hidden text-ellipsis text-[10px]'>
+                      <div className='line-clamp-3 overflow-hidden text-[10px] text-ellipsis'>
                         <ReactMarkdown components={customMarkdownComponents}>
                           {cleanDescription}
                         </ReactMarkdown>
@@ -370,6 +364,7 @@ export default function PractitionerRecord() {
                     record.type === 'Practitioner Note' ? (
                       <>
                         <Avatar
+                          seed={seed}
                           initials={initials}
                           backgroundColor={backgroundColor}
                           photoUrl={photoUrl}

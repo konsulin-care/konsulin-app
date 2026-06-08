@@ -1,20 +1,17 @@
-import BackButton from '@/components/general/back-button';
-import Header from '@/components/header';
-import NavigationBar from '@/components/navigation-bar';
-import ExcerciseList from './excercise-list';
+'use client';
 
-export default function Exercise() {
-  return (
-    <>
-      <NavigationBar />
-      <Header showChat={false}>
-        <div className='flex w-full items-center'>
-          <BackButton route='/' />
+import { useSearchParams } from 'next/navigation';
+import ExerciseDetail from './exercise-detail';
+import ExerciseList from './exercise-list';
 
-          <div className='text-[14px] font-bold text-white'>Self Excercise</div>
-        </div>
-      </Header>
-      <ExcerciseList />
-    </>
-  );
+/** Exercise root: route to list or detail view based on exerciseId param. */
+export default function ExercisePage() {
+  const searchParams = useSearchParams();
+  const exerciseId = searchParams.get('exerciseId');
+
+  if (exerciseId) {
+    return <ExerciseDetail />;
+  }
+
+  return <ExerciseList />;
 }

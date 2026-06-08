@@ -60,6 +60,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 			"/proxy/",
 			"/health",
 			"/static/",
+			"/api/v1/auth/",
 		},
 	})
 	r.Use(csrfMw)
@@ -145,9 +146,17 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		BackendBaseURL: cfg.APIURL,
 	}))
 
-	// Guest-allowed Go SSR routes — OptionalAuth provides the session, no
-	// RequireRole needed.  These routes are accessible to all roles.
-	// r.Get("/", handler.NewHomeHandler(...))
+	// SuperTokens API — proxy directly to backend, bypass Next.js.
+	r.Handle("/api/v1/auth/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
+		BackendBaseURL: cfg.APIURL,
+	}))
+
+	// Role switcher — GET returns partial, POST updates session cookie.
+	r.HandleFunc("/auth/role/switch", handler.NewRoleSwitchHandler(handler.RoleSwitchOptions{
+		CookieName:   cfg.AuthCookieName,
+		CookieSecure: cfg.CookieSecure,
+		CookieSecret: cfg.SessionCookieSecret,
+	}))
 
 	// Protected Next.js pages (mirrors old middleware.ts route list).
 	authGuard := appmw.AuthGuard(appmw.AuthGuardOptions{

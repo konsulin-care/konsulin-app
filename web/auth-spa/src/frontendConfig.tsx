@@ -95,40 +95,8 @@ export const frontendConfig = (): SuperTokensConfig => {
     `,
     recipeList: [
       Session.init(),
-      ThirdParty.init({
-        signInAndUpFeature: {
-          providers: [
-            {
-              id: 'email',
-              name: 'Email',
-
-              logo: (
-                <img
-                  src='/icons/email.svg'
-                  alt='email'
-                  width={18}
-                  height={18}
-                />
-              )
-            },
-            {
-              id: 'whatsapp',
-              name: 'WhatsApp',
-
-              logo: (
-                <img
-                  src='/icons/whatsapp.png'
-                  alt='whatsapp'
-                  width={18}
-                  height={18}
-                />
-              )
-            }
-          ]
-        }
-      }),
       Passwordless.init({
-        contactMethod: 'EMAIL_OR_PHONE',
+        contactMethod: 'EMAIL',
         onHandleEvent: async context => {
           if (context.action !== 'SUCCESS') return;
 
@@ -149,6 +117,25 @@ export const frontendConfig = (): SuperTokensConfig => {
           const redirectToPath = resolvePostLoginRedirect();
           console.log('[auth:redirect] redirecting to:', redirectToPath ?? '/');
           globalThis.location.href = redirectToPath ?? '/';
+        }
+      }),
+      ThirdParty.init({
+        signInAndUpFeature: {
+          providers: [
+            {
+              id: 'whatsapp',
+              name: 'WhatsApp',
+
+              logo: (
+                <img
+                  src='/icons/whatsapp.png'
+                  alt='whatsapp'
+                  width={18}
+                  height={18}
+                />
+              )
+            }
+          ]
         }
       })
     ]

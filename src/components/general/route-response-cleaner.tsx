@@ -28,15 +28,13 @@ export default function RouteResponseCleaner() {
         STORES.assessmentDrafts,
         (value: unknown, key: IDBValidKey) => {
           const questionnaireId = Array.isArray(key) ? key[1] : '';
-          const segments = pathname.split('/');
-          const isRecordPage = segments[1] === 'record';
-          const recordId = isRecordPage ? segments[2] : null;
-          const isOnQuestionnairePage = pathname.includes(
-            `/assessments/${questionnaireId}`
-          );
+          const recordId = searchParams.get('recordId');
+          const assessmentsId = searchParams.get('assessmentsId');
+          const isOnQuestionnairePage =
+            pathname === '/assessments' && assessmentsId === questionnaireId;
           const isOnAuthPage = pathname.includes('/auth');
           const isOnResultPage =
-            pathname.includes(`/record/${recordId}`) && categoryParam === '1';
+            pathname === '/record' && recordId && categoryParam === '1';
 
           return (
             !isOnQuestionnairePage &&
@@ -48,8 +46,7 @@ export default function RouteResponseCleaner() {
       ).catch(err => console.warn('[IndexedDB]', err));
 
       const isOnSoapPage =
-        /^\/record\/[^/]+\/edit/.test(pathname) ||
-        pathname.includes('/assessments/soap');
+        pathname === '/record/edit' || pathname === '/assessments/soap';
       const isOnAuthPage = pathname.includes('/auth');
 
       if (!isOnSoapPage && !isOnAuthPage) {

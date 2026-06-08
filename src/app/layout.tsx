@@ -1,6 +1,8 @@
 import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
 import QueryProvider from '@/components/general/query-provider';
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
+import { RuntimeConfigProvider } from '@/components/general/runtime-config-provider';
+import QuickActionFab from '@/components/quick-action-fab';
 import { SuperTokensProviders } from '@/components/supertokensProvider';
 import { AuthProvider } from '@/context/auth/authContext';
 import { BookingProvider } from '@/context/booking/bookingContext';
@@ -9,6 +11,7 @@ import '@/styles/globals.css';
 import '@/styles/index.scss';
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import Script from 'next/script';
 import NextTopLoader from 'nextjs-toploader';
 import React, { Suspense } from 'react';
 import 'react-international-phone/style.css';
@@ -69,90 +72,46 @@ const toastConfig: ToastContainerProps = {
   draggable: true
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function safeSerialize(obj: any) {
-  return JSON.stringify(obj)
-    .replace(/</g, '\\u003c')
-    .replace(/\u2028/g, '\\u2028')
-    .replace(/\u2029/g, '\\u2029');
+function AppProviders({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <RuntimeConfigProvider>
+      <SuperTokensProviders>
+        <ProfileProvider>
+          <AuthProvider>
+            <BookingProvider>
+              <QueryProvider>
+                <Suspense fallback={null}>{children}</Suspense>
+              </QueryProvider>
+            </BookingProvider>
+          </AuthProvider>
+        </ProfileProvider>
+      </SuperTokensProviders>
+    </RuntimeConfigProvider>
+  );
 }
 
-async function fetchRuntimeConfig() {
-  const origin = process.env.APP_URL || 'http://localhost:3000';
-  try {
-    const res = await fetch(`${origin}/api/config`, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`config fetch failed: ${res.status}`);
-
-    const raw = await res.json();
-    return {
-      appInfo: {
-        appName: raw.APP_NAME,
-        apiDomain: raw.API_URL,
-        websiteDomain: raw.APP_URL,
-        apiBasePath: raw.API_BASE_PATH + raw.AUTH_PATH,
-        websiteBasePath: raw.AUTH_PATH
-      },
-      terminologyServer: raw.TX_URL
-    };
-  } catch {
-    return {
-      appInfo: {
-        appName: 'Konsulin',
-        apiDomain: origin,
-        websiteDomain: origin,
-        apiBasePath: '/api/v1/auth',
-        websiteBasePath: '/auth'
-      },
-      terminologyServer: ''
-    };
-  }
-}
-
-export default async function RootLayout({
+export default function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const runtimeConfig = await fetchRuntimeConfig();
-  const serialized = safeSerialize(runtimeConfig);
-
   return (
     <html lang='en'>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.__RUNTIME_CONFIG__ = ${serialized};`
-          }}
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{sessionStorage.setItem("konsulin_initial_pathname",window.location.pathname);sessionStorage.removeItem("konsulin_reload_anonymous_done");}catch(e){}`
-          }}
-        />
-      </head>
       <body className={inter.className}>
-        <SuperTokensProviders>
-          <ProfileProvider>
-            <AuthProvider>
-              <BookingProvider>
-                <QueryProvider>
-                  <Suspense fallback={null}>
-                    <RouteResponseCleaner />
-                    <NextTopLoader showSpinner={false} color='#13c2c2' />
-                    <ToastContainer {...toastConfig} />
-                    <ProfileCompletenessModal />
-                    <div className='flex min-h-screen flex-col'>
-                      <div id='modal' />
-                      <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
-                        {children}
-                      </main>
-                    </div>
-                  </Suspense>
-                </QueryProvider>
-              </BookingProvider>
-            </AuthProvider>
-          </ProfileProvider>
-        </SuperTokensProviders>
+        <Script src='/js/pathname-init.js' strategy='beforeInteractive' />
+        <AppProviders>
+          <RouteResponseCleaner />
+          <NextTopLoader showSpinner={false} color='#13c2c2' />
+          <ToastContainer {...toastConfig} />
+          <ProfileCompletenessModal />
+          <div className='flex min-h-screen flex-col'>
+            <div id='modal' />
+            <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
+              {children}
+              <QuickActionFab />
+            </main>
+          </div>
+        </AppProviders>
       </body>
     </html>
   );

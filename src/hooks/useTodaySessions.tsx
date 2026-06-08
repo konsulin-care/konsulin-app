@@ -1,10 +1,9 @@
+import { getNow } from '@/constants/date';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetTodaySessions } from '@/services/api/appointments';
 import { mergeNames, parseMergedSessions } from '@/utils/helper';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
-
-const now = new Date();
 
 export function useTodaySessions() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
@@ -18,7 +17,7 @@ export function useTodaySessions() {
     isFetching
   } = useGetTodaySessions({
     practitionerId,
-    dateReference: format(now, 'yyyy-MM-dd'),
+    dateReference: format(getNow(), 'yyyy-MM-dd'),
     enabled: !isAuthLoading
   });
 

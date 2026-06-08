@@ -1,9 +1,9 @@
-import { cn } from '@/lib/utils'
-import { ReactNode } from 'react'
+import { cn } from '@/lib/utils';
+import { ReactNode } from 'react';
 
 interface ContentWrapperProps {
-  className?: HTMLAnchorElement['className']
-  children: ReactNode
+  className?: HTMLAnchorElement['className'];
+  children: ReactNode;
 }
 
 export default function ContentWraper({
@@ -13,11 +13,11 @@ export default function ContentWraper({
   return (
     <div
       className={cn(
-        'mt-[-24px] min-h-screen rounded-[16px] bg-white pb-[100px]',
+        'mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] bg-white pb-20',
         className
       )}
     >
       {children}
     </div>
-  )
+  );
 }

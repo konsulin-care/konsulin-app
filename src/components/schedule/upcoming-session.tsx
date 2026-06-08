@@ -2,80 +2,78 @@ import { Roles } from '@/constants/roles';
 import { MergedAppointment, MergedSession } from '@/types/appointment';
 import { mergeNames } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
-import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { Calendar } from 'lucide-react';
+import Link from 'next/link';
 
 type Props = {
   data: MergedAppointment[] | MergedSession[];
   role: string;
 };
-export default function UpcomingSession({ data, role }: Props) {
-  const [nextSession, setNextSession] = useState<
-    MergedAppointment | MergedSession
-  >(null);
-  const sessionStartTime =
-    nextSession && nextSession.slotStart
-      ? format(parseISO(nextSession.slotStart), 'HH:mm')
-      : '-:-';
-  const sessionDate =
-    nextSession && nextSession.slotStart
-      ? format(parseISO(nextSession.slotStart), 'dd/MM/yyyy')
-      : '-/-/-';
 
-  useEffect(() => {
-    if (!data || data.length === 0) return null;
+function SessionCard({
+  session,
+  role
+}: Readonly<{
+  session: MergedAppointment | MergedSession;
+  role: string;
+}>) {
+  const sessionStartTime = session.slotStart
+    ? format(parseISO(session.slotStart), 'HH:mm')
+    : '-:-';
+  const sessionDate = session.slotStart
+    ? format(parseISO(session.slotStart), 'dd/MM/yyyy')
+    : '-/-/-';
 
-    setNextSession(data[0]);
-  }, [data]);
+  const isPatient = role === Roles.Patient;
 
-  const displayName = useMemo(() => {
-    if (!nextSession) return null;
-
-    const isPatient = role === Roles.Patient;
-
+  const displayName = (() => {
     const fullName = isPatient
       ? mergeNames(
-          (nextSession as MergedAppointment).practitionerName,
-          (nextSession as MergedAppointment).practitionerQualification
+          (session as MergedAppointment).practitionerName,
+          (session as MergedAppointment).practitionerQualification
         )
-      : mergeNames((nextSession as MergedSession).patientName);
-
+      : mergeNames((session as MergedSession).patientName);
     const email = isPatient
-      ? (nextSession as MergedAppointment).practitionerEmail
-      : (nextSession as MergedSession).patientEmail;
+      ? (session as MergedAppointment).practitionerEmail
+      : (session as MergedSession).patientEmail;
+    return fullName.trim() === '-' ? email : fullName;
+  })();
+  const href = isPatient
+    ? `/schedule?appointmentId=${session.appointmentId}`
+    : `/record?patientId=${(session as MergedSession).patientId}`;
 
-    const result = fullName.trim() === '-' ? email : fullName;
+  return (
+    <Link
+      href={href}
+      className='card mt-4 flex items-center border-0 bg-[#F9F9F9]'
+    >
+      <Calendar className='mr-[10px] h-5 w-5 shrink-0 text-black' />
+      <div className='mr-auto flex flex-col'>
+        <span className='text-muted text-[12px]'>Upcoming Session With</span>
+        <span className='text-secondary text-left text-[14px] font-bold'>
+          {displayName}
+        </span>
+      </div>
+      <div>
+        <span className='text-[12px] font-bold'>{sessionStartTime} </span>
+        <span className='text-[12px]'> | {sessionDate}</span>
+      </div>
+    </Link>
+  );
+}
 
-    return result;
-  }, [nextSession]);
+export default function UpcomingSession({ data, role }: Readonly<Props>) {
+  if (!data || data.length === 0) return null;
 
   return (
     <>
-      {data && nextSession && (
-        <>
-          <div className='card mt-4 flex items-center border-0 bg-[#F9F9F9]'>
-            <Image
-              className='mr-[10px] min-h-[32] min-w-[32]'
-              src={'/icons/calendar.svg'}
-              width={32}
-              height={32}
-              alt='calendar'
-            />
-            <div className='mr-auto flex flex-col'>
-              <span className='text-muted text-[12px]'>
-                Upcoming Session With
-              </span>
-              <span className='text-secondary text-left text-[14px] font-bold'>
-                {displayName}
-              </span>
-            </div>
-            <div className='s'>
-              <span className='text-[12px] font-bold'>{sessionStartTime} </span>
-              <span className='text-[12px]'>| {sessionDate}</span>
-            </div>
-          </div>
-        </>
-      )}
+      {data.map(session => (
+        <SessionCard
+          key={session.appointmentId}
+          session={session}
+          role={role}
+        />
+      ))}
     </>
   );
 }

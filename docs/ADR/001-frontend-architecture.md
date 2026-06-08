@@ -1,7 +1,8 @@
 ---
 title: Frontend Architecture
 description: Go SSR with Chi, templ, HTMX, Alpine.js instead of Next.js React
-status: accepted
+status: superseded
+superseded_by: ADR-015
 date: 2026-05-26
 ---
 
@@ -27,3 +28,12 @@ component model), React SPA (hydration overhead).
 Positive: 15-40 MB idle RAM, no hydration, small JS payloads (~0 KB for
 Go SSR pages). Negative: loss of React ecosystem, more server rendering
 complexity, must rebuild all components in templ.
+
+# Refined by ADR-013
+
+The original decision used Alpine.js for "minimal client-side state."
+ADR-013 refines this: plain JS modules handle client-side FHIR data
+operations (fetch, parse, CRUD), Alpine.js is scoped to lightweight
+interactivity (expand/collapse, toggles), and React is reserved for
+complex component UIs (auth, AEHRC Smart Forms). See
+`@docs/ADR/013-client-side-data-layer.md`.

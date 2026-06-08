@@ -1,7 +1,7 @@
 ---
 title: Remove Dead Routes
 description: Remove /message and /exercise routes (empty stubs)
-date: 2026-05-26
+date: 2026-06-05
 ---
 
 # Overview
@@ -15,30 +15,30 @@ feature. Both are dead code. Combining removal saves a milestone.
 
 # Goals
 
-- `/message` route NOT implemented in Go SSR
-- `/exercise` route NOT implemented in Go SSR
-- Chat icon removed from header template
-- Exercise tab removed from navigation bar
+- `/message` route removed from Next.js pages
+- `/exercise` route removed from Next.js pages
+- Chat icon removed from React header component
+- Exercise tab removed from React navigation bar
 - "Health Exercise Resources" card removed from practitioner home
 - All references in wiki docs updated to "removed"
 
 # Implementation Steps
 
-- [ ] Omit `/message` from Chi router
-- [ ] Omit `/exercise` from Chi router
-- [ ] Remove chat icon from `web/template/layout/base.templ` header
-- [ ] Remove Exercise tab from navigation-bar in `base.templ` (Alpine.js nav)
+- [ ] Delete `src/app/message/` — remove Next.js page
+- [ ] Delete `src/app/exercise/` — remove Next.js pages (list, detail, service)
+- [ ] Remove chat icon from `src/components/header.tsx`
+- [ ] Remove Exercise tab from `src/components/navigation-bar.tsx`
 - [ ] Remove "Health Exercise Resources" card from practitioner home (M005/M018)
 - [ ] Update `docs/wiki/001-pages-routes.md` — mark /message and /exercise as removed
 - [ ] Update `docs/wiki/002-ui-components.md` — remove chat icon + exercise icon from inventory
-- [ ] Delete source files during M019: `src/app/message/`, `src/app/exercise/`, `src/services/api/exercise.tsx`, `src/components/icons/exercise-icon.tsx`, `public/icons/message-square-chat.svg`, `public/images/exercise.svg`
+- [ ] Delete source files: `src/services/api/exercise.tsx`, `src/components/icons/exercise-icon.tsx`, `public/icons/message-square-chat.svg`
 
 # Reference
 
 @src/app/message/page.tsx:
 
 - Empty stub with "Message" heading and back button
-- Remove: do not implement in Go SSR
+- Remove: delete entire page directory
 
 @src/app/exercise/page.tsx + excercise-list.tsx + [exerciseId]/page.tsx:
 
@@ -48,27 +48,27 @@ feature. Both are dead code. Combining removal saves a milestone.
 @src/services/api/exercise.tsx:
 
 - React Query hook fetching /fhir/Media resources
-- Remove: no Go equivalent needed
+- Remove: no longer needed
 
 @src/components/header.tsx (line 26-31):
 
 - Chat icon SVG linking to /message
-- Remove: delete from Go SSR header template
+- Remove: delete from React header component
 
 @src/components/navigation-bar.tsx (line 88-99):
 
 - Exercise tab with ExerciseIcon in bottom nav
-- Remove: delete tab and icon from Go SSR nav
+- Remove: delete tab and icon from React nav
 
 @src/components/icons/exercise-icon.tsx:
 
 - Exercise SVG icon component
-- Remove: not needed in Go SSR, delete during M019
+- Remove: delete during cleanup
 
 @public/icons/message-square-chat.svg:
 
 - Chat bubble SVG asset
-- Remove: delete during M019 cleanup
+- Remove: delete during cleanup
 
 @public/images/exercise.svg:
 
@@ -83,7 +83,7 @@ feature. Both are dead code. Combining removal saves a milestone.
 @src/components/icons/index.tsx:
 
 - Re-exports ExerciseIcon from exercise-icon.tsx
-- Remove: delete ExerciseIcon export line during M019
+- Remove: delete ExerciseIcon export line
 
 # Risks
 
@@ -96,6 +96,5 @@ feature. Both are dead code. Combining removal saves a milestone.
 
 1. Navigate app — no chat icon in header
 2. No Exercise tab in bottom navigation
-3. Visit /message or /exercise — proxied to Next.js stub until M019
-4. After M019 — both return 404 from Go SSR
-5. Assessment cards still show exercise.svg icon (asset retained)
+3. Visit /message or /exercise — both return 404 from Next.js/Go BFF
+4. Assessment cards still show exercise.svg icon (asset retained)

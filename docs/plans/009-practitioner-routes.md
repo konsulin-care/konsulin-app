@@ -1,85 +1,73 @@
 ---
-title: Practitioner Routes Migration
-description: Profiles, availability, HealthcareService
-date: 2026-05-26
+title: Practitioner Pages — React SPA
+description: Practitioner profiles, availability, HealthcareService — React Query
+date: 2026-06-05
 ---
 
 # Overview
 
 Before implementing, read @docs/wiki/001-pages-routes.md for route patterns and @docs/wiki/006-data-types.md for FHIR type definitions.
 
-Migrate `/practitioner/*` routes from Next.js to Go SSR. Practitioner
+Rewrite `/practitioner/*` as Next.js React SPA pages. Practitioner
 listing with search/filter, detailed profile with HealthcareServices,
-and availability view.
+and availability view — all via React Query through `/proxy/fhir/*`.
+No Go SSR. Aligned with ADR-015.
 
 # Goals
 
-- `GET /practitioner` lists practitioners with search and specialty filter
-- `GET /practitioner/:id` shows detailed profile with services
-- `GET /practitioner/:id/availability` shows availability schedule
+- `GET /practitioner` — card grid with search and specialty filter (React state + `useQuery`)
+- `GET /practitioner/:id` — detailed profile with services via `useQuery`
+- `GET /practitioner/:id/availability` — weekly availability schedule
 - FHIR resources: Practitioner, PractitionerRole, HealthcareService
-- HTMX partials for filter/search without full page reload
+- Filter/search via React state (debounced input + query param change)
 
 # Implementation Steps
 
-- [ ] Create `internal/service/practitioner.go` — search, get by ID, get services, get availability
-- [ ] Add FHIR types for Practitioner, PractitionerRole, HealthcareService to `internal/fhir/types.go`
-- [ ] Create `web/template/pages/practitioner/list.templ` — card grid with search
-- [ ] Create `web/template/pages/practitioner/detail.templ` — profile with service list
-- [ ] Create `web/template/pages/practitioner/availability.templ` — weekly availability view
-- [ ] Create `web/template/partials/practitioner/` — search-bar, card, service-item partials
-- [ ] Create `internal/handler/practitioner.go` — list/detail/availability handlers
-- [ ] Register routes: `GET /practitioner`, `GET /practitioner/:id`, `GET /practitioner/:id/availability`
-- [ ] Write `internal/service/practitioner_test.go` — mock FHIR, test search and detail fetching
+- [ ] Create `src/app/practitioner/page.tsx` — card grid with search bar and specialty filter
+- [ ] Create `src/app/practitioner/[practitionerId]/page.tsx` — profile with service list
+- [ ] Create `src/app/practitioner/[practitionerId]/availability/page.tsx` — weekly availability view
+- [ ] Add React Query hooks: `usePractitioners(search, specialty)`, `usePractitionerDetail(id)`, `usePractitionerAvailability(id)`
+- [ ] Filter state managed via React state + URL search params; debounced input triggers refetch
+- [ ] Write `src/app/practitioner/__tests__/practitioner.test.tsx` — mock fetch, test search and detail flow
 
 # Reference
 
 @src/app/practitioner/[practitionerId]/page.tsx:
 
 - Practitioner detail: avatar, organization badge, availability, specialties, booking flow
-- Reimplement: same layout and data in templ
+- Keep: same layout and data in React
 - Keep: same FHIR includes (PractitionerRole, Organization, Practitioner, Invoice, Schedule)
 
 @src/app/practitioner/practitioner-availability.tsx:
 
 - Availability display: calendar + time slot picker + booking flow
-- Adapt: slot picker and booking logic ported to Go + HTMX
+- Keep: slot picker and booking logic in React
 
 @src/app/practitioner/practitioner-availability-editor.tsx:
 
 - Availability editor: add/remove time ranges per day per organization
-- Reimplement: same editor UI with Alpine.js for dynamic range management
+- Keep: same editor UI in React
 
 @src/services/clinicians.tsx:
 
 - Clinician API: findAvailability, getPractitionerRolesDetail, updatePractitionerInfo, create/update Invoice
-- Reimplement: same FHIR queries in Go service layer
+- Adapt: wrap with React Query hooks using `/proxy/fhir/` base path
 
 @src/types/practitioner.ts:
 
 - IPractitionerRoleDetail (enriched with organization, schedule, invoice data)
-- Reimplement: same enriched struct in Go
-
-@src/components/icons/office-icon.tsx:
-
-- OfficeIcon — Appointment nav tab (maps to /practitioner for patients browsing practitioners)
-- Reimplement: inline SVG in base.templ
-
-@public/icons/calendar-edit.png:
-
-- Used in practitioner booking UI
-- Reimplement: static asset from web/static/
+- Keep: same enriched TypeScript type
 
 # Risks
 
 | Risk                                        | Likelihood | Impact | Mitigation                                                  |
 | ------------------------------------------- | ---------- | ------ | ----------------------------------------------------------- |
 | N+1 queries for PractitionerRole references | High       | High   | Use `_include=PractitionerRole:practitioner` in FHIR search |
-| Large practitioner list slow on mobile      | Low        | Medium | Paginate with `_count=20`; HTMX lazy-load next page         |
+| Large practitioner list slow on mobile      | Low        | Medium | Paginate with `_count=20`; lazy-load next page on scroll    |
 
 # UAT
 
 1. Visit `/practitioner` — list loads with search bar
-2. Type in search — results filter via HTMX
+2. Type in search — results filter via debounced refetch
 3. Click practitioner — profile shows services and specialties
 4. Click "View Availability" — weekly schedule shown

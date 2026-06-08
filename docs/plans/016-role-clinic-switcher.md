@@ -1,80 +1,65 @@
 ---
-title: Role & Clinic Context Switcher
-description: Nav dropdown, session-based context switching
-date: 2026-05-26
+title: Role Switcher via Header Profile Picture
+description: Stacked avatar circles, popup with role list, POST to existing endpoint
+date: 2026-06-06
 ---
 
 # Overview
 
-Before implementing, read @docs/wiki/004-state-management.md for current auth context patterns and @docs/wiki/005-auth-session.md for session handling.
+Replace the single-avatar header with stacked circles for multi-role users.
+Clicking opens a popup with Profile link and role list. Uses existing
+`/auth/role/switch` endpoint. No new Go endpoint required initially.
 
-Implement the role context switcher (ADR-008) and clinic context
-switcher (ADR-009) in the navigation header. Users with multiple roles
-select active role via dropdown; clinic admins select active clinic.
-Changes update the server-side session for subsequent requests.
+Supersedes original 016 scope (nav-based dropdown, clinic switcher).
 
 # Goals
 
-- Role switcher dropdown in nav for multi-role users
-- Clinic context switcher dropdown for multi-clinic admins
-- HTMX POST updates session on switch, partial refreshes nav
-- Session stores active role and active clinic
-- All subsequent requests use the selected context
+- Multi-role header shows stacked circles, active role on top
+- Single-role users keep current behavior (Link to /profile)
+- Popup contains Profile link + per-role avatars with switch action
+- FHIR batch request fetches all role profiles in one API call
+- Role switch works via existing `/auth/role/switch` with CSRF
 
 # Implementation Steps
 
-- [ ] Update `internal/session/session.go` — add ActiveRole, ActiveClinicID fields
-- [ ] Create `internal/handler/context.go` — POST /context/role, POST /context/clinic handlers
-- [ ] Create `web/template/partials/nav/role-switcher.templ` — dropdown with user's roles
-- [ ] Create `web/template/partials/nav/clinic-switcher.templ` — dropdown with admin's clinics
-- [ ] Update `web/template/layout/base.templ` — render switchers in nav header
-- [ ] Wire session update into response via Set-Cookie or HTMX response header
-- [ ] Write `internal/handler/context_test.go` — verify role/clinic switch updates session
+- [ ] Revise 016 plan file (this document)
+- [ ] Create `src/services/batch-profile.ts` — single `POST /fhir` batch Bundle
+- [ ] Create `src/components/role-avatar-popup.tsx` — stacked circles + DropdownMenu
+- [ ] Modify `src/components/page-header.tsx` — conditionally render RoleAvatarPopup
+- [ ] (Optional) Create `internal/handler/context.go` — `POST /context/role` JSON endpoint
 
 # Reference
 
 @src/constants/roles.ts:
 
-- Role constants: Practitioner, Patient, Guest
-- Reimplement: same roles as Go enum/constants
+- Patient → Patient, Practitioner → Practitioner, ClinicAdmin → Person (FHIR mapping)
 
-@src/components/navigation-bar.tsx:
+@src/components/page-header.tsx:
 
-- Bottom nav: 5 tabs with role-aware routing (Clinic vs Schedule)
-- Adapt: tab visibility and target depend on active role + clinic context
-- Reimplement: same role-aware nav in base.templ with Alpine.js
-
-@src/context/auth/authContext.tsx:
-
-- Auth context: provides auth state and user info
-- Replace: Go middleware injects session into request context
+- Lines 154-178: current avatar + Link block. Replace with conditional render.
 
 @src/context/auth/authTypes.ts:
 
-- IStateUserInfo: userId, role_name, email, fullname, fhirId, profile_complete
-- Reimplement: same fields in Go session struct
+- `IStateUserInfo.roles: string[]` — already available for multi-role detection
 
-@src/utils/intent-storage.ts:
+@internal/handler/role_switcher.go:
 
-- Intent storage: save/get/clear with 6-hour TTL
-- Adapt: Go handles intents via session or URL params
-
-@src/components/icons/house-icon.tsx + office-icon.tsx + literature-icon.tsx + user-icon.tsx + exercise-icon.tsx:
-
-- All 5 nav icons affected by role/clinic context switching
-- Reimplement: inline SVGs in base.templ; ExerciseIcon removed in M013
+- Existing `/auth/role/switch` — form POST, updates role in cookie, sets `HX-Redirect`
+- React can POST form-urlencoded with CSRF token
 
 # Risks
 
-| Risk                                           | Likelihood | Impact | Mitigation                                                    |
-| ---------------------------------------------- | ---------- | ------ | ------------------------------------------------------------- |
-| HTMX partial doesn't update all UI elements    | Medium     | Medium | Use `hx-swap-oob` to update nav and content simultaneously    |
-| Context cookie doesn't persist across requests | Low        | High   | Set cookie with domain-wide path; verify via integration test |
+| Risk                              | Likelihood | Impact | Mitigation                                            |
+| --------------------------------- | ---------- | ------ | ----------------------------------------------------- |
+| `/auth/role/switch` needs CSRF    | Medium     | Low    | Use same `fetchCSRFToken()` pattern as `/auth/cookie` |
+| FHIR Person resource not deployed | Medium     | Medium | Fallback to initials for ClinicAdmin                  |
+| Stacked circles overlap poorly    | Low        | Low    | Fixed 32x32 container, test on breakpoints            |
 
 # UAT
 
-1. Login as multi-role user (e.g. patient + practitioner)
-2. Click role switcher — dropdown shows both roles
-3. Switch to practitioner — nav updates, content shows practitioner UI
-4. Login as multi-clinic admin — clinic switcher appears
-5. Switch clinic — management data updates to selected clinic
+1. Single-role user: single avatar, click navigates to /profile (unchanged)
+2. Multi-role user: stacked circles appear, click opens popup
+3. Popup shows Profile icon + link to /profile
+4. Popup shows other roles with their FHIR profile photos
+5. Clicking a role POSTs to `/auth/role/switch`, redirects to / with new role
+6. ClinicAdmin shows initials fallback if no Person resource

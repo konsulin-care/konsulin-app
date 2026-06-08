@@ -4,7 +4,7 @@ import { Roles } from '@/constants/roles';
 import { dbGet, dbSet, migrateLocalStorage, STORES } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { setCurrentUserId, UserProfile } from '@/services/api';
-import { restoreAuthCookie } from '@/services/auth';
+import { getAuthCookieSession, restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
 import { Patient, Practitioner } from 'fhir/r4';
@@ -32,9 +32,27 @@ interface ContextProps {
   dispatch: React.Dispatch<IActionAuth>;
 }
 
+type UserRole =
+  | typeof Roles.Practitioner
+  | typeof Roles.ClinicAdmin
+  | typeof Roles.Patient;
+
 const AuthContext = createContext<ContextProps | undefined>(undefined);
 
 const INITIAL_PATHNAME_STORAGE_KEY = 'konsulin_initial_pathname';
+
+function resolveActiveRole(
+  cookieRole: string | undefined,
+  superTokensRoles: string[] | undefined
+): UserRole {
+  if (cookieRole) return cookieRole as UserRole;
+  if (Array.isArray(superTokensRoles)) {
+    if (superTokensRoles.includes(Roles.Practitioner))
+      return Roles.Practitioner;
+    if (superTokensRoles.includes(Roles.ClinicAdmin)) return Roles.ClinicAdmin;
+  }
+  return Roles.Patient;
+}
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -43,20 +61,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Record pathname at first paint (full page load) so homepage can tell "reload of /" vs "navigated to /"
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (globalThis.window === undefined) return;
     try {
       sessionStorage.setItem(
         INITIAL_PATHNAME_STORAGE_KEY,
-        window.location.pathname
+        globalThis.location.pathname
       );
     } catch {
       // ignore
     }
   }, []);
 
+  // Safety timeout: force-reset loading if SuperTokens never initializes.
+  useEffect(() => {
+    if (session.doesSessionExist !== undefined) return;
+    const id = setTimeout(() => {
+      setIsLoading(false);
+      console.error(
+        'Auth: SuperTokens session did not initialize within 10s, proceeding as unauthenticated'
+      );
+    }, 10_000);
+    return () => clearTimeout(id);
+  }, [session.doesSessionExist]);
+
   useEffect(() => {
     // eslint-disable-next-line sonarjs/cognitive-complexity
     const fetchSession = async () => {
+      // SuperTokens is still initializing — wait for the next effect cycle
+      if (session.doesSessionExist === undefined) return;
+
       // One-time migration before reading IndexedDB cache
       try {
         await migrateLocalStorage();
@@ -71,14 +104,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // Reload on homepage: let the page call ensureAnonymousSession(true) once; avoid duplicate calls
         const navEntries =
-          typeof window !== 'undefined'
-            ? performance.getEntriesByType('navigation')
-            : [];
+          globalThis.window === undefined
+            ? []
+            : performance.getEntriesByType('navigation');
         const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
         const isReloadOnHomepage =
           nav?.type === 'reload' &&
-          typeof window !== 'undefined' &&
-          window.location.pathname === '/';
+          globalThis.window !== undefined &&
+          globalThis.window.location.pathname === '/';
 
         if (!isReloadOnHomepage) {
           try {
@@ -113,23 +146,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
         setCurrentUserId(userId);
-        const roles = (await getClaimValue({ claim: UserRoleClaim })) as
-          | string[]
-          | undefined;
 
-        // Try IndexedDB profile cache first.
+        // Read active role from auth cookie (source of truth after role switch).
+        const cookieSession = await getAuthCookieSession();
+        const cookieRole = cookieSession?.role_name;
+
+        const superTokensRoles = (await getClaimValue({
+          claim: UserRoleClaim
+        })) as string[] | undefined;
+
+        const role = resolveActiveRole(cookieRole, superTokensRoles);
+
         const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
-        if (cached?.userId === userId && cached?.role_name) {
+
+        // Use cache only if it matches the active role.
+        if (cached?.userId === userId && cached?.role_name === role) {
           setCurrentUserId(userId);
           dispatch({ type: 'login', payload: cached });
           setIsLoading(false);
           return;
         }
-
-        const role =
-          Array.isArray(roles) && roles.includes(Roles.Practitioner)
-            ? Roles.Practitioner
-            : Roles.Patient;
 
         const result = (await getProfileByIdentifier({
           userId,
@@ -140,6 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const payload = {
             userId,
             role_name: role,
+            roles: superTokensRoles,
             email: '',
             fullname: '',
             profile_picture: '',
@@ -148,7 +185,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           };
           await dbSet(STORES.userProfile, {
             ...payload,
-            roles,
             cachedAt: Date.now()
           });
           dispatch({ type: 'login', payload });
@@ -165,6 +201,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const payload = {
           userId,
           role_name: role,
+          roles: superTokensRoles,
           email,
           profile_picture: result?.photo?.[0]?.url ?? '',
           fullname: mergeNames(result?.name),
@@ -174,7 +211,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         await dbSet(STORES.userProfile, {
           ...payload,
-          roles,
+          roles: superTokensRoles,
           cachedAt: Date.now()
         });
         dispatch({ type: 'login', payload });

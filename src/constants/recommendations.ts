@@ -1,0 +1,62 @@
+export interface Recommendation {
+  id: string;
+  photoUrl: string;
+  name: string;
+  serviceName: string;
+  specialties: string[];
+  fee: number;
+  description: string;
+}
+
+export const MOCK_RECOMMENDATIONS: Recommendation[] = [
+  {
+    id: 'practitioner-1',
+    photoUrl: '',
+    name: 'dr. Sarah Chen',
+    serviceName: 'Smoking-Cessation Counselling',
+    specialties: ['addiction', 'substance use'],
+    fee: 500000,
+    description:
+      'Professional counselling to help overcome smoking addiction through evidence-based techniques and personalized support.'
+  },
+  {
+    id: 'practitioner-2',
+    photoUrl: '',
+    name: 'dr. Budi Santoso',
+    serviceName: 'Cognitive Behavioral Therapy',
+    specialties: ['anxiety', 'depression', 'stress'],
+    fee: 400000,
+    description:
+      'Structured therapy sessions focused on identifying and changing negative thought patterns and behaviors.'
+  },
+  {
+    id: 'practitioner-3',
+    photoUrl: '',
+    name: 'dr. Maya Putri',
+    serviceName: 'Child & Adolescent Psychology',
+    specialties: ['pediatric', 'developmental'],
+    fee: 450000,
+    description:
+      'Specialized psychological support for children and adolescents addressing developmental and emotional challenges.'
+  },
+  {
+    id: 'practitioner-4',
+    photoUrl: '',
+    name: 'dr. Alex Turner',
+    serviceName: 'Neuropsychology Assessment',
+    specialties: ['neurology', 'cognitive'],
+    fee: 600000,
+    description:
+      'Comprehensive assessment of cognitive function to evaluate memory, attention, and other neurological processes.'
+  },
+  {
+    id: 'practitioner-5',
+    photoUrl: '',
+    name: 'dr. Rina Wijaya',
+    serviceName: 'Marriage & Family Therapy',
+    specialties: ['relationship', 'family', 'couples'],
+    fee: 350000,
+    description:
+      'Therapeutic approach that helps couples and families improve communication and resolve conflicts.'
+  }
+];

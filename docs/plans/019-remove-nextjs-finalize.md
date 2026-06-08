@@ -1,78 +1,82 @@
 ---
-title: Remove Next.js & Finalize
-description: Purge JS stack, Go-only Dockerfile, CI/CD final
-date: 2026-05-26
+title: Remove Go SSR & Finalize SPA
+description: Purge Go SSR templates, finalize Next.js + Go BFF build
+date: 2026-06-05
 ---
 
 # Overview
 
-Before implementing, read @docs/wiki/010-infrastructure.md for current Docker and deployment configuration to understand what must be preserved.
+Before implementing, review Docker and deployment configuration at @docs/agents/ARCHITECTURE.md and the repo's Dockerfile.
 
-Complete the migration by removing all Next.js/JS code, dependencies,
-and configuration. Finalize the Go-only build pipeline, Dockerfile,
-CI/CD workflows, and documentation.
+Complete the migration by removing all Go SSR code — templ page templates,
+Go page handlers, Go page services, and the templ generation pipeline.
+Keep Go as pure BFF (proxy, auth, config, session, `/api/recommendations`).
+Next.js is the single UI layer. Aligned with ADR-015.
 
 # Goals
 
-- All `src/`, `node_modules/`, `public/` (excl. SW) Next.js code removed
-- `next.config.mjs`, `tsconfig.json`, `tailwind.config.ts`, `postcss.config.mjs`, `eslint*` removed
-- `package.json`, `package-lock.json` removed (unless needed for SW tests)
-- `.husky/` pre-commit replaced with pure Go pre-commit hook
-- Dockerfile updated to Go multi-stage build (no Node.js stage)
-- `go.mod` replaces `package.json` as single dependency manifest
-- GitHub Actions workflows updated for Go-only build and test
-- `.env.example` updated to Go-style env vars (no `NEXT_PUBLIC_` prefix)
-- README and CONTRIBUTING.md updated for Go workflow
-- `vitest` replaced with `go test`; JS test files removed or archived
+- All `web/template/` (templ pages, partials, layouts) removed — React replaces every page
+- Go page handlers (`internal/handler/profile.go`, `schedule.go`, `practitioner.go`, `clinic.go`, `record.go`, `journal.go`, `home.go`, `calendar.go`, `recommendation.go`, `context.go`) removed unless they serve BFF endpoints
+- Page services (`internal/service/profile.go`, `schedule.go`, `practitioner.go`, `clinic.go`, `record.go`, `journal.go`, `calendar.go`) removed — logic moved to React or BFF endpoint
+- `templ` generation removed from toolchain and `Makefile`
+- Dockerfile updated to Go BFF + Next.js static export (single binary serving `out/`)
+- GitHub Actions workflows updated for Go BFF + Next.js build
+- `.env.example` updated — keep `NEXT_PUBLIC_` vars for Next.js, add Go BFF vars
+- README and CONTRIBUTING.md updated for Go BFF + Next.js workflow
+- Go test files for removed page handlers/services archived or removed
 
 # Implementation Steps
 
-- [ ] Remove `src/`, `public/`, `node_modules/`, `.next/`, `next.config.mjs`, `tsconfig.json`, `tailwind.config.ts`, `postcss.config.mjs`, `eslint*`, `.prettier*`, `components.json`
-- [ ] Remove `package.json`, `package-lock.json`
-- [ ] Update `.husky/pre-commit` to run only `go test ./...` and `go vet ./...`
-- [ ] Update `Dockerfile` to Go multi-stage build (golang:1.26-alpine build, distroless or alpine run)
-- [ ] Update `Makefile` — remove Node.js targets, keep `build`, `test`, `lint`, `run`
-- [ ] Update `.github/workflows/pull-request.yml` — remove Node.js setup, keep Go test+build
-- [ ] Update `.github/workflows/docker-build.yml` — Go build, no `.env` file creation
-- [ ] Update `.env.example` — remove `NEXT_PUBLIC_` vars, add Go server vars (PORT, API_URL)
-- [ ] Update `README.md` and `CONTRIBUTING.md` for Go workflow
-- [ ] Archive JS test files or remove them
-- [ ] Verify: `make build` produces binary, `go test ./...` passes, CI green
+- [ ] Remove `web/template/` directory (all `.templ` page templates, partials, layouts)
+- [ ] Remove Go page handlers: `internal/handler/profile.go`, `schedule.go`, `practitioner.go`, `clinic.go`, `record.go`, `journal.go`, `home.go`, `calendar.go`, `recommendation.go` (page handlers — keep `context.go` for cookie endpoints, keep `proxy.go`, `auth.go`, `config.go`)
+- [ ] Remove Go page services: `internal/service/profile.go`, `schedule.go`, `practitioner.go`, `clinic.go`, `record.go`, `journal.go`, `calendar.go` (keep `recommendation.go` if BFF endpoint is there, keep `pricing.go` used by BFF)
+- [ ] Remove `internal/template/` (templ renderer if exists)
+- [ ] Remove `cmd/templgen/` or any templ generation tooling
+- [ ] Remove `templ` dependency from `go.mod`
+- [ ] Remove templ generation targets from `Makefile` (`templ-gen`, `css-templ`)
+- [ ] Update `Dockerfile` — three-stage: `node:20` builds Next.js → `out/`, `golang:1.22` builds BFF binary, `alpine:3.20` copies both
+- [ ] Update `Makefile` — `make dev` starts Go BFF + Next.js dev; `make build` runs Next.js build + Go build
+- [ ] Update GitHub Actions workflows — Node.js setup for Next.js build + Go setup for BFF
+- [ ] Update `.env.example` — keep `NEXT_PUBLIC_*` vars, add Go BFF server vars
+- [ ] Update `README.md` and `CONTRIBUTING.md` for Go BFF + Next.js workflow
+- [ ] Remove page handler/service test files; keep BFF test files (`proxy_test.go`, `auth_test.go`, `context_test.go`)
+- [ ] Verify: `npm run build` succeeds, `go build` succeeds, `go test ./...` passes, binary serves app
 
 # Reference
 
-Files to delete during this milestone:
+## Files to Delete
 
-- `src/` (entire directory) — all Next.js pages, components, services, utils, types
-- `public/` (except assets migrated to web/static/) — Next.js-specific SVGs, icons, SW
-- `next.config.mjs`, `tsconfig.json`, `tailwind.config.ts`, `postcss.config.mjs`
-- `package.json`, `package-lock.json`, `node_modules/`
-- `.eslintrc.json`, `eslint.config.cjs`, `.prettierrc`, `.prettierignore`, `components.json`
-- `next-env.d.ts`, `.next/`, `vitest.config.ts`
+- `web/template/` — entire directory (templ page templates and partials)
+- `internal/handler/profile.go`, `schedule.go`, `practitioner.go`, `clinic.go`, `record.go`, `journal.go`, `home.go`, `calendar.go`, `recommendation.go` (page-rendering handlers)
+- `internal/service/profile.go`, `schedule.go`, `practitioner.go`, `clinic.go`, `record.go`, `journal.go`, `calendar.go` (page-oriented services)
+- `internal/template/` (templ renderer)
+- `cmd/templgen/` (templ generation)
 
-Files to update:
+## Files to Keep
 
-- `Dockerfile` — replace Node.js multi-stage with Go multi-stage (golang:1.26-alpine)
-- `.github/workflows/pull-request.yml` — remove Node.js setup; keep Go setup
-- `.github/workflows/docker-build.yml` — Go build, no .env file creation
-- `.husky/pre-commit` — replace `vitest run && go test` with `go test ./... && go vet ./...`
-- `Makefile` — remove Node.js targets (test-js, dev-js); keep build, test, lint, run
-- `.env.example` — remove NEXT*PUBLIC* prefix vars, add Go server vars
-- `README.md`, `CONTRIBUTING.md` — update for Go workflow
-- `mise.toml` — remove Node.js if no longer needed
+- `internal/handler/proxy.go` — FHIR proxy
+- `internal/handler/auth.go` — auth cookie endpoints
+- `internal/handler/config.go` — runtime config endpoint
+- `internal/handler/context.go` — role/clinic context cookie endpoints
+- `internal/service/recommendation.go` — BFF endpoint aggregation
+- `internal/service/pricing.go` — pricing logic used by BFF endpoint
+- `internal/session/` — session management
+- `internal/config/` — server configuration
+- `cmd/konsulin-app/` — main binary entry point
+- All FHIR proxy and middleware code
 
 # Risks
 
-| Risk                                         | Likelihood | Impact | Mitigation                                                                 |
-| -------------------------------------------- | ---------- | ------ | -------------------------------------------------------------------------- |
-| Something important still depends on Node.js | Medium     | High   | Run `git grep` for any remaining JS imports; test full app before removing |
-| Service worker tests need Node.js            | Low        | Medium | Keep vitest only for SW tests, or rewrite SW tests in Go                   |
-| Team unfamiliar with Go workflow             | High       | Medium | Update CONTRIBUTING.md with clear Go setup steps; provide make targets     |
+| Risk                                      | Likelihood | Impact | Mitigation                                                                  |
+| ----------------------------------------- | ---------- | ------ | --------------------------------------------------------------------------- |
+| Something still depends on Go SSR handler | Medium     | High   | Run full app and verify every route renders from Next.js                    |
+| Service worker tests need Node.js         | Low        | Medium | Keep vitest only for SW tests if needed                                     |
+| Team unfamiliar with Next.js workflow     | High       | Medium | Update CONTRIBUTING.md with clear Next.js setup steps; provide make targets |
 
 # UAT
 
-1. Clone fresh repo — run `mise install` → Go installed
-2. Run `make build` — binary produced at `cmd/konsulin-app/konsulin-app`
-3. Run `./konsulin-app` — server starts on :8080, app works end-to-end
-4. Run `go test ./...` — all tests pass
-5. Run `git commit` — pre-commit runs Go tests and vet, all green
+1. Clone fresh repo — run `npm ci` then `go mod download`
+2. Run `make build` — Next.js static export produced at `out/`, Go binary at `cmd/konsulin-app/konsulin-app`
+3. Run `./konsulin-app` — server starts on :3000, serves app end-to-end
+4. Run `go test ./...` — all BFF tests pass
+5. Run `npm run lint` — no errors

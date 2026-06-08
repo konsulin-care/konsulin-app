@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react';
 
-export interface SearchField<T> {
+export interface SearchField {
   path: string;
-  transform?: (value: any) => string;
+  transform?: (value: unknown) => string;
 }
 
 export interface UseSearchWithFallbackParams<T> {
   data: T[] | undefined;
-  searchFields: Array<keyof T | SearchField<T>>;
+  searchFields: Array<keyof T | SearchField>;
   serverSearchFunction: (searchTerm: string) => Promise<T[]>;
   searchTerm: string;
   debounceDelay?: number;
@@ -68,6 +68,62 @@ function serverReducer<T>(
   }
 }
 
+function getNestedValue(item: unknown, path: string): unknown {
+  const parts = path.split('.');
+  let current: unknown = item;
+  for (const part of parts) {
+    if (
+      current &&
+      typeof current === 'object' &&
+      Object.hasOwn(current, part)
+    ) {
+      current = (current as Record<string, unknown>)[part];
+    } else {
+      current = undefined;
+      break;
+    }
+  }
+  return current;
+}
+
+function matchesField<T>(
+  item: T,
+  field: keyof T | SearchField,
+  lowerSearchTerm: string
+): boolean {
+  if (
+    typeof field === 'string' ||
+    typeof field === 'number' ||
+    typeof field === 'symbol'
+  ) {
+    try {
+      const value = (item as Record<string, unknown>)[field as string];
+      return (
+        value != null && String(value).toLowerCase().includes(lowerSearchTerm)
+      );
+    } catch {
+      return false;
+    }
+  }
+  try {
+    const rawValue = getNestedValue(item, field.path);
+    let finalValue = rawValue;
+    if (field.transform && rawValue !== undefined) {
+      try {
+        finalValue = field.transform(rawValue);
+      } catch {
+        finalValue = rawValue;
+      }
+    }
+    return (
+      finalValue != null &&
+      String(finalValue).toLowerCase().includes(lowerSearchTerm)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function useSearchWithFallback<T>({
   data,
   searchFields,
@@ -96,64 +152,9 @@ export function useSearchWithFallback<T>({
       // Skip null/undefined items
       if (!item) return false;
 
-      return searchFields.some(field => {
-        if (
-          typeof field === 'string' ||
-          typeof field === 'number' ||
-          typeof field === 'symbol'
-        ) {
-          // Simple field access with validation
-          try {
-            const value = (item as any)[field];
-            return (
-              value != null &&
-              String(value).toLowerCase().includes(lowerSearchTerm)
-            );
-          } catch (error) {
-            console.warn('Field access error:', field, error);
-            return false;
-          }
-        } else {
-          // Complex field with path and optional transform
-          try {
-            const pathParts = field.path.split('.');
-            let currentValue: any = item;
-
-            // Navigate through nested path with validation
-            for (const part of pathParts) {
-              if (
-                currentValue &&
-                typeof currentValue === 'object' &&
-                currentValue.hasOwnProperty(part)
-              ) {
-                currentValue = currentValue[part];
-              } else {
-                currentValue = undefined;
-                break;
-              }
-            }
-
-            // Apply transform if provided with error handling
-            let finalValue = currentValue;
-            if (field.transform && currentValue !== undefined) {
-              try {
-                finalValue = field.transform(currentValue);
-              } catch (transformError) {
-                console.warn('Transform function error:', transformError);
-                finalValue = currentValue;
-              }
-            }
-
-            return (
-              finalValue != null &&
-              String(finalValue).toLowerCase().includes(lowerSearchTerm)
-            );
-          } catch (error) {
-            console.warn('Nested path resolution error:', field.path, error);
-            return false;
-          }
-        }
-      });
+      return searchFields.some(field =>
+        matchesField(item, field, lowerSearchTerm)
+      );
     });
   }, [data, searchFields, searchTerm]);
 
@@ -200,57 +201,9 @@ export function useSearchWithFallback<T>({
         dataRef.current?.filter(item => {
           if (!item) return false;
 
-          return searchFieldsRef.current.some(field => {
-            if (
-              typeof field === 'string' ||
-              typeof field === 'number' ||
-              typeof field === 'symbol'
-            ) {
-              try {
-                const value = (item as any)[field];
-                return (
-                  value != null &&
-                  String(value).toLowerCase().includes(lowerSearchTerm)
-                );
-              } catch (error) {
-                return false;
-              }
-            } else {
-              try {
-                const pathParts = field.path.split('.');
-                let currentValue: any = item;
-
-                for (const part of pathParts) {
-                  if (
-                    currentValue &&
-                    typeof currentValue === 'object' &&
-                    currentValue.hasOwnProperty(part)
-                  ) {
-                    currentValue = currentValue[part];
-                  } else {
-                    currentValue = undefined;
-                    break;
-                  }
-                }
-
-                let finalValue = currentValue;
-                if (field.transform && currentValue !== undefined) {
-                  try {
-                    finalValue = field.transform(currentValue);
-                  } catch (transformError) {
-                    finalValue = currentValue;
-                  }
-                }
-
-                return (
-                  finalValue != null &&
-                  String(finalValue).toLowerCase().includes(lowerSearchTerm)
-                );
-              } catch (error) {
-                return false;
-              }
-            }
-          });
+          return searchFieldsRef.current.some(field =>
+            matchesField(item, field, lowerSearchTerm)
+          );
         }) || [];
 
       // Only trigger server search if no client results and criteria met

@@ -1,17 +1,19 @@
 ---
 title: Recommendation Engine
-description: FHIR aggregation, proximity, specialty modal, booking
-date: 2026-05-26
+description: FHIR aggregation via BFF endpoint, React UI, ranking
+date: 2026-06-05
 ---
 
 # Overview
 
 Before implementing, read @docs/wiki/003-api-services.md for current API patterns and @docs/wiki/006-data-types.md for FHIR type definitions.
 
-Implement the recommendation-first patient UX (ADR-003, ADR-006). The
-Go SSR aggregates FHIR resources (PractitionerRole → HealthcareService →
-Location), ranks by nearest availability + proximity, and provides a
-booking flow from curated recommendation cards.
+Implement the recommendation-first patient UX (ADR-003, ADR-006). A
+dedicated Go BFF `/api/recommendations` endpoint aggregates FHIR
+resources (PractitionerRole → HealthcareService → Location) server-side,
+ranks by nearest availability + proximity, and returns a pre-joined JSON
+payload. React Query fetches this endpoint and renders recommendation
+cards. No Go SSR. Aligned with ADR-015.
 
 Intent params: `specialty` (required), `modality` (optional: online/offline),
 `lat` (optional), `lon` (optional). lat/lon come from external service
@@ -24,70 +26,74 @@ inline filters on the results page.
 
 # Goals
 
-- `GET /recommendations` accepts `specialty` (required), `modality`, `lat`, `lon`
-- Specialty picker modal when no params provided
-- Inline filters for specialty and modality on results page
-- Aggregates PractitionerRole → HealthcareService → Location (FHIR `?near` for proximity)
-- Ranks by nearest availability + proximity
-- Renders recommendation cards: practitioner, service, fee, next slot, distance badge
+- Go BFF `GET /api/recommendations?specialty=...` — FHIR aggregation server-side
+- React page `GET /recommendations` — fetches from BFF endpoint, renders cards
+- Specialty picker modal when no params provided (React modal)
+- Inline filters for specialty and modality (React state)
+- Ranking by nearest availability + proximity (Go BFF does the heavy work)
+- Recommendation cards: practitioner, service, fee, next slot, distance badge
 - Booking flow: card → select slot → confirm → appointment created
 - Guest redirected to login on booking; patient books directly
 - Pricing composition: `base_fee + practitioner_adjustment + system_adjustment` (ADR-007)
 
 # Implementation Steps
 
-- [ ] Create `internal/service/recommendation.go` — parse intent params, aggregate FHIR, rank
+## Go BFF Side
+
+- [ ] Create `internal/handler/api/recommendations.go` — `GET /api/recommendations` handler
+- [ ] Create `internal/service/recommendation.go` — aggregate FHIR: PractitionerRole → HealthcareService → Location
 - [ ] Create `internal/service/pricing.go` — fee composition logic (ADR-007)
-- [ ] Add FHIR `Location` type to `internal/fhir/types.go`
-- [ ] Add FHIR `HealthcareService` type to `internal/fhir/types.go`
-- [ ] Fetch Location resources via `GET /Location?near={lat}|{lon}|{distance}` for proximity filtering
-- [ ] Link Location → HealthcareService → PractitionerRole for recommendation pipeline
-- [ ] Create `web/template/pages/recommendation/list.templ` — results grid with inline filters
-- [ ] Create `web/template/pages/recommendation/specialty-modal.templ` — modal for specialty (required) + modality (optional)
-- [ ] Create `web/template/partials/recommendation/card.templ` — card with practitioner, fee, slot, distance
-- [ ] Create `web/template/pages/recommendation/book.templ` — slot selection → confirm flow
-- [ ] Create `internal/handler/recommendation.go` — list/modal/book handlers
-- [ ] Register routes: `GET /recommendations`, `POST /recommendations/search`, `GET /recommendations/book`, `POST /recommendations/book`
-- [ ] When no `specialty` param → serve specialty-modal page
-- [ ] Write `internal/service/recommendation_test.go` — mock FHIR, test ranking with proximity + slot availability
+- [ ] Parallel fetch PractitionerRole, HealthcareService, Location via errgroup
+- [ ] Use FHIR `?near` search on Location for proximity filtering
+- [ ] Rank results: nearest availability first, then proximity, then fee
+- [ ] Return pre-joined JSON payload (no HTML rendering in Go)
+
+## React Side
+
+- [ ] Create `src/app/recommendations/page.tsx` — results page; fetches via `useQuery('/api/recommendations', params)`
+- [ ] Create specialty-picker modal component — required specialty + optional modality selection
+- [ ] Create inline filter components — specialty + modality dropdowns trigger refetch
+- [ ] Create recommendation card component — practitioner name, specialty, fee, next slot, distance badge
+- [ ] Create booking flow page — card → select slot → confirm → `useMutation` creates appointment
+- [ ] Guest redirect: detect unauthenticated, save intent to localStorage, redirect to login, restore after auth
+- [ ] Write `src/app/recommendations/__tests__/recommendations.test.tsx` — mock BFF endpoint, test card rendering and booking
 
 # Reference
 
 @src/utils/intent-storage.ts:
 
 - Intent pattern: save intent before action, restore after auth
-- Adapt: recommendation booking uses same intent pattern for guest → login → book flow
+- Keep: recommendation booking uses same intent pattern for guest → login → book
 
 @src/app/practitioner/practitioner-availability.tsx:
 
 - Booking flow: calendar → slot picker → condition → payment
-- Adapt: recommendation booking reuses slot selection and payment flow from this component
+- Adapt: recommendation booking reuses slot selection and payment flow
 
 @src/types/availability.ts:
 
 - Availability types: DayOfWeek, TimeRange, WeeklyAvailability
-- Reimplement: same types in Go for slot computation
+- Keep: same TypeScript types for slot computation
 
 @src/services/api/appointments.tsx:
 
 - Appointment creation: useCreateAppointment (POST FHIR Bundle), usePayAppointment
-- Reimplement: same FHIR Bundle booking pattern in Go
+- Keep: same FHIR Bundle booking pattern via React Query
 
 @src/services/clinic.tsx:
 
-- Practitioner/HealthcareService query: useDetailPractitioner, useClinicById
-- Adapt: expand to include Location resource with `?near` spatial search
-
-(No existing recommendation engine in Next.js — this is a new feature.)
+- Practitioner/HealthcareService query
+- Adapt: replace direct FHIR calls with BFF `/api/recommendations` endpoint
 
 # Risks
 
-| Risk                                           | Likelihood | Impact | Mitigation                                                                    |
-| ---------------------------------------------- | ---------- | ------ | ----------------------------------------------------------------------------- |
-| FHIR aggregation too slow (multiple resources) | High       | High   | Parallelize FHIR fetches with errgroup; cache stable resources (Organization) |
-| No lat/lon on Location resources               | Medium     | Medium | Fall back to availability-only ranking                                        |
-| Specialty param missing — redirect to modal    | Low        | Low    | Specialty required; modal ensures user specifies before results               |
-| No Location resources with coordinates         | Medium     | Medium | Fall back to city/district-level name matching                                |
+| Risk                                           | Likelihood | Impact | Mitigation                                                                   |
+| ---------------------------------------------- | ---------- | ------ | ---------------------------------------------------------------------------- |
+| FHIR aggregation too slow (multiple resources) | High       | High   | Parallelize server-side with errgroup; cache stable resources (Organization) |
+| No lat/lon on Location resources               | Medium     | Medium | Fall back to availability-only ranking                                       |
+| Specialty param missing — redirect to modal    | Low        | Low    | Specialty required; modal ensures user specifies before results              |
+| No Location resources with coordinates         | Medium     | Medium | Fall back to city/district-level name matching                               |
+| BFF endpoint becomes bottleneck                | Low        | Medium | Cache pre-aggregated results for popular specialties with short TTL          |
 
 # UAT
 
@@ -96,6 +102,6 @@ inline filters on the results page.
 3. Visit `/recommendations` with no params — specialty picker modal appears
 4. Select specialty (required) and optionally modality → results load
 5. Card shows practitioner name, specialty, nearest slot, final fee, distance badge
-6. Use inline filter to change specialty or modality — results update via HTMX
+6. Use inline filter to change specialty or modality — results update via refetch
 7. Click "Book" as patient — select slot → confirm → appointment created
 8. Click "Book" as guest — redirected to login; booking resumes after auth

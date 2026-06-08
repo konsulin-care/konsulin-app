@@ -1,16 +1,15 @@
+/* eslint-disable max-lines -- 300-line limit is too tight for component files */
+
 'use client';
 
 import Avatar from '@/components/general/avatar';
-
-import BackButton from '@/components/general/back-button';
 import EmptyState from '@/components/general/empty-state';
-import Header from '@/components/header';
-import NavigationBar from '@/components/navigation-bar';
-import UpcomingSession from '@/components/schedule/upcoming-session';
+import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getNow } from '@/constants/date';
 import { useAuth } from '@/context/auth/authContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useGetAllAppointments } from '@/services/api/appointments';
@@ -39,8 +38,6 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import SessionFilter from './session-filter';
 
-const now = new Date();
-
 type Props = {
   fhirId: string;
 };
@@ -62,7 +59,7 @@ const AppointmentCard = ({
   );
   const displayName =
     fullName.trim() === '-' ? appointment.practitionerEmail : fullName;
-  const { initials, backgroundColor } = generateAvatarPlaceholder({
+  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
     id: appointment.practitionerId,
     name: displayName,
     email: appointment.practitionerEmail
@@ -71,7 +68,7 @@ const AppointmentCard = ({
 
   return (
     <Link
-      href={`/schedule/${appointment.appointmentId}`}
+      href={`/schedule?appointmentId=${appointment.appointmentId}`}
       className='card mt-4 flex flex-col gap-2 p-4'
     >
       <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
@@ -81,6 +78,7 @@ const AppointmentCard = ({
       <hr className='w-full' />
       <div className='flex items-center'>
         <Avatar
+          seed={seed}
           initials={initials}
           backgroundColor={backgroundColor}
           photoUrl={photoUrl}
@@ -122,18 +120,6 @@ export default function PatientSchedule({ fhirId }: Props) {
     const parsed = parseMergedAppointments(upcomingData);
     return parsed;
   }, [upcomingData, authState]);
-
-  const unfilteredAppointmentsData = useMemo(() => {
-    if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
-      return null;
-
-    const filtered = parsedAppointmentsData.filter(session => {
-      const slotStart = parseISO(session.slotStart);
-      return isAfter(slotStart, now);
-    });
-
-    return filtered;
-  }, [parsedAppointmentsData]);
 
   const filteredAppointmentsData = useMemo(() => {
     if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
@@ -203,6 +189,7 @@ export default function PatientSchedule({ fhirId }: Props) {
 
       return true;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parsedAppointmentsData, sessionsFilter, selectedTab, debouncedKeyword]);
 
   const listUpcomingAppointments = useMemo(() => {
@@ -210,7 +197,7 @@ export default function PatientSchedule({ fhirId }: Props) {
       return [];
 
     return filteredAppointmentsData
-      .filter(s => s.slotStart && new Date(s.slotStart) >= now)
+      .filter(s => s.slotStart && new Date(s.slotStart) >= getNow())
       .sort(
         (a, b) =>
           new Date(a.slotStart!).getTime() - new Date(b.slotStart!).getTime() // soonest first
@@ -222,7 +209,7 @@ export default function PatientSchedule({ fhirId }: Props) {
       return [];
 
     return filteredAppointmentsData
-      .filter(s => s.slotStart && new Date(s.slotStart) < now)
+      .filter(s => s.slotStart && new Date(s.slotStart) < getNow())
       .sort(
         (a, b) =>
           new Date(b.slotStart!).getTime() - new Date(a.slotStart!).getTime() // most-recent first
@@ -273,34 +260,15 @@ export default function PatientSchedule({ fhirId }: Props) {
 
   return (
     <>
-      <NavigationBar />
-      <Header>
-        <div className='flex w-full flex-col'>
-          <div className='flex items-center'>
-            <BackButton />
-            <span className='text-[14px] font-bold text-white'>
-              Scheduled Session
-            </span>
-          </div>
-
-          {authState &&
-            unfilteredAppointmentsData &&
-            unfilteredAppointmentsData.length > 0 && (
-              <UpcomingSession
-                data={unfilteredAppointmentsData}
-                role={authState.userInfo.role_name}
-              />
-            )}
-        </div>
-      </Header>
-      <div className='mt-[-24px] rounded-[16px] bg-white pb-[100px]'>
+      <PageHeader />
+      <div className='mt-[-24px] rounded-[16px] bg-white pb-20'>
         <div className='w-full p-4'>
           <div className='flex gap-4'>
             <InputWithIcon
               value={keyword}
               onChange={event => setKeyword(event.target.value)}
               placeholder='Search'
-              className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
+              className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
             <SessionFilter
@@ -317,14 +285,14 @@ export default function PatientSchedule({ fhirId }: Props) {
 
           <div className='mb-4 flex gap-4'>
             {sessionsFilter.start_date && sessionsFilter.end_date && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+              <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
                 {format(new Date(sessionsFilter.start_date), 'dd MMM yy') +
                   ' - ' +
                   format(new Date(sessionsFilter.end_date), 'dd MMM yy')}
               </Badge>
             )}
             {sessionsFilter.start_time && sessionsFilter.end_time && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
+              <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
                 {sessionsFilter.start_time + ' - ' + sessionsFilter.end_time}
               </Badge>
             )}
@@ -338,13 +306,13 @@ export default function PatientSchedule({ fhirId }: Props) {
           >
             <TabsList className='grid w-full grid-cols-2 bg-transparent'>
               <TabsTrigger
-                className='rounded-none border-secondary data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:text-secondary data-[state=active]:shadow-none'
+                className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
                 value='upcoming'
               >
                 Upcoming Session
               </TabsTrigger>
               <TabsTrigger
-                className='rounded-none border-secondary data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:text-secondary data-[state=active]:shadow-none'
+                className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
                 value='past'
               >
                 Past Session

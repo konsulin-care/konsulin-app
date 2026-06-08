@@ -2,11 +2,9 @@
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import InformationDetail from '@/components/profile/information-detail';
-import MedalCollection from '@/components/profile/medal-collection';
 import Settings from '@/components/profile/settings';
 import Tags from '@/components/profile/tags';
 import MarkUnavailabilityButton from '@/components/schedule/mark-unavailability';
-import UpcomingSession from '@/components/schedule/upcoming-session';
 import {
   Drawer,
   DrawerContent,
@@ -14,27 +12,20 @@ import {
   DrawerTitle
 } from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
-import { medalLists, settingMenus } from '@/constants/profile';
+import { settingMenus } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
-import { useGetUpcomingSessions } from '@/services/api/appointments';
 import {
   useGetPractitionerRolesDetail,
   useUpdatePractitionerInfo
 } from '@/services/clinicians';
 import { getProfileById } from '@/services/profile';
-import {
-  findAge,
-  generateAvatarPlaceholder,
-  mapAddress,
-  parseMergedSessions
-} from '@/utils/helper';
+import { findAge, generateAvatarPlaceholder, mapAddress } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
-import { format, isAfter, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { Practitioner, PractitionerRole } from 'fhir/r4';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import PractitionerAvailabilityEditor from '../practitioner/practitioner-availability-editor';
 
@@ -42,16 +33,15 @@ type Props = {
   fhirId: string;
 };
 
-const now = new Date();
-
 /**
- * Renders the clinician profile page including upcoming sessions, general and practice information, availability overview, and an availability editor drawer.
+ * Renders the clinician profile page including general and practice information, availability overview, and an availability editor drawer.
  *
- * Displays practitioner's upcoming sessions, basic profile details, practice information, availability grouped by organization and day, and controls to edit availability (per-day collapsible editors with time ranges). Handles data fetching, form state for availability editing, validation, and saving changes.
+ * Displays practitioner's basic profile details, practice information, availability grouped by organization and day, and controls to edit availability (per-day collapsible editors with time ranges). Handles data fetching, form state for availability editing, validation, and saving changes.
  *
  * @param fhirId - The practitioner's FHIR resource ID used to fetch profile and role data.
  * @returns The JSX element for the Clinician profile page.
  */
+
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -61,26 +51,6 @@ export default function Clinician({ fhirId }: Props) {
   const [selectedPractitionerRoles, setSelectedPractitionerRoles] = useState<
     PractitionerRole[]
   >([]);
-
-  /* get practitioner's upcoming sessions*/
-  const { data: sessionData, isLoading: isUpcomingSessionsLoading } =
-    useGetUpcomingSessions({
-      practitionerId: authState.userInfo.fhirId,
-      dateReference: format(now, 'yyyy-MM-dd')
-    });
-
-  const parsedSessionsData = useMemo(() => {
-    if (!sessionData || sessionData?.total === 0 || !authState.isAuthenticated)
-      return null;
-
-    const parsed = parseMergedSessions(sessionData);
-    const filtered = parsed.filter(session => {
-      const slotStart = parseISO(session.slotStart);
-      return isAfter(slotStart, now);
-    });
-
-    return filtered;
-  }, [sessionData, authState]);
 
   /* get practitioner's basic information*/
   const { data: profileData, isLoading: isProfileLoading } =
@@ -96,17 +66,14 @@ export default function Clinician({ fhirId }: Props) {
 
   /* get list of practitioner's roles */
   const { refetch, isLoading: isPractitionerRolesLoading } =
-    useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
+    useGetPractitionerRolesDetail(authState.userInfo?.fhirId, {
       onSuccess: data => {
         const resources = data?.map(entry => entry.resource) || [];
         setPractitionerRolesData(resources);
       }
     });
 
-  const {
-    mutateAsync: updatePractitionerInfo,
-    isLoading: isUpdatePractitionerLoading
-  } = useUpdatePractitionerInfo();
+  useUpdatePractitionerInfo();
 
   const activeFirms = practitionerRolesData?.filter(firm => firm.active);
 
@@ -137,6 +104,7 @@ export default function Clinician({ fhirId }: Props) {
       const organizationName = role?.organizationData.name || '';
 
       if (Array.isArray(role.availableTime)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         role.availableTime.forEach((timeSlot: any) => {
           if (Array.isArray(timeSlot.daysOfWeek)) {
             timeSlot.daysOfWeek.forEach((day: string) => {
@@ -168,23 +136,8 @@ export default function Clinician({ fhirId }: Props) {
     });
 
     setGroupedByFirmAndDay(newGroupedByFirmAndDay);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [practitionerRolesData]);
-
-  const organizationWithPrice = Array.isArray(activeFirms)
-    ? activeFirms.filter(role => {
-        return (
-          role.invoiceData?.totalNet &&
-          typeof role.invoiceData.totalNet.value === 'number' &&
-          role.invoiceData.totalNet.value > 0
-        );
-      })
-    : [];
-
-  const firms = organizationWithPrice.map(item => ({
-    roleId: item.id,
-    code: item.organizationData.id,
-    name: item.organizationData.name
-  }));
 
   const handleSaveSuccess = async () => {
     try {
@@ -228,38 +181,19 @@ export default function Clinician({ fhirId }: Props) {
     }
   ];
 
-  const { initials, backgroundColor } = generateAvatarPlaceholder({
+  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
     id: authState.userInfo?.fhirId,
     name: authState.userInfo?.fullname,
     email: authState.userInfo?.email
   });
 
   const displayName =
-    !authState.userInfo.fullname || authState.userInfo.fullname.trim() === '-'
-      ? authState.userInfo.email
-      : authState.userInfo.fullname;
-
-  const hasData = Object.keys(groupedByFirmAndDay).length > 0;
+    !authState.userInfo?.fullname || authState.userInfo?.fullname.trim() === '-'
+      ? authState.userInfo?.email
+      : authState.userInfo?.fullname;
 
   return (
     <>
-      {/* display practitioner's upcoming sessions */}
-      <div className='text-muted flex items-center justify-between'>
-        <div className='text-[14px] font-bold'>Schedule Active</div>
-        <Link href='/schedule' className='text-[10px]'>
-          See All
-        </Link>
-      </div>
-
-      {isUpcomingSessionsLoading || isAuthLoading ? (
-        <Skeleton className='mt-4 h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
-      ) : authState && parsedSessionsData && parsedSessionsData.length > 0 ? (
-        <UpcomingSession
-          data={parsedSessionsData}
-          role={authState.userInfo.role_name}
-        />
-      ) : null}
-
       {/* display practitioner's basic information */}
       {isProfileLoading || isAuthLoading ? (
         <Skeleton className='my-4 h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
@@ -269,12 +203,13 @@ export default function Clinician({ fhirId }: Props) {
             isRadiusIcon
             initials={initials}
             backgroundColor={backgroundColor}
+            seed={seed}
             iconUrl={profileData?.photo?.[0].url}
             title='General Information'
             subTitle={displayName}
             buttonText='Edit Profile'
             details={profileDetail}
-            onEdit={() => router.push('profile/edit-profile')}
+            onEdit={() => router.push('/profile?path=edit-profile')}
             role='clinician'
           />
         </div>
@@ -294,7 +229,7 @@ export default function Clinician({ fhirId }: Props) {
           title='Practice Information'
           buttonText='Edit Detail'
           details={activeFirms}
-          onEdit={() => router.push('profile/edit-practice')}
+          onEdit={() => router.push('/profile?path=edit-practice')}
           role='clinician'
           isEditPractice={true}
         />
@@ -340,6 +275,7 @@ export default function Clinician({ fhirId }: Props) {
                 {Object.keys(availability).map(day => {
                   const timeRanges = availability[day] || [];
                   const tags = timeRanges.map(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (timeRange: any) =>
                       `${day}: ${timeRange.fromTime} - ${timeRange.toTime}`
                   );
@@ -390,7 +326,6 @@ export default function Clinician({ fhirId }: Props) {
         </div>
       </div>
 
-      <MedalCollection medals={medalLists} isDisabled={true} />
       <Settings menus={settingMenus} />
 
       <Drawer onClose={() => setIsDrawerOpen(false)} open={isDrawerOpen}>
