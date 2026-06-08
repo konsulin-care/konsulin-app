@@ -101,11 +101,7 @@ export const parseRecordBundles = (bundles: IBundleResponse[]) => {
 const collectUniqueResources = (bundle: Bundle): Map<string, FhirResource> => {
   const uniqueMap = new Map<string, FhirResource>();
 
-  if (
-    !bundle ||
-    bundle.resourceType !== 'Bundle' ||
-    !Array.isArray(bundle.entry)
-  )
+  if (bundle?.resourceType !== 'Bundle' || !Array.isArray(bundle?.entry))
     return uniqueMap;
 
   for (const outerEntry of bundle.entry) {
@@ -252,11 +248,7 @@ const extractBriefQuestionnaire = (resource: QuestionnaireResponse) => {
 };
 
 export const parseRecordBundlePractitioner = (bundle: Bundle) => {
-  if (
-    !bundle ||
-    bundle.resourceType !== 'Bundle' ||
-    !Array.isArray(bundle.entry)
-  )
+  if (bundle?.resourceType !== 'Bundle' || !Array.isArray(bundle?.entry))
     return [];
 
   const uniqueMap = collectUniqueResources(bundle);

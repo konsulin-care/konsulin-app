@@ -35,12 +35,9 @@ export default function TimeSlotsSection({
   handleFilterChange,
   setSelectedSlotId
 }: Readonly<Props>) {
-  return (
-    <div className='card my-4 border-0 bg-[#F9F9F9]'>
-      <div className='mb-4 font-bold'>
-        {bookingState.date && format(bookingState.date, 'dd MMMM yyyy')}
-      </div>
-      {isLoading ? (
+  const renderSlots = () => {
+    if (isLoading) {
+      return (
         <div className='flex h-[120px] items-center justify-center'>
           <LoadingSpinnerIcon
             width={50}
@@ -48,7 +45,10 @@ export default function TimeSlotsSection({
             className='w-full animate-spin'
           />
         </div>
-      ) : isError ? (
+      );
+    }
+    if (isError) {
+      return (
         <div className='flex w-full justify-center'>
           <EmptyState
             size={42}
@@ -56,7 +56,10 @@ export default function TimeSlotsSection({
             subtitle='Please try again later'
           />
         </div>
-      ) : slotPills.length === 0 ? (
+      );
+    }
+    if (slotPills.length === 0) {
+      return (
         <div className='flex w-full justify-center'>
           <EmptyState
             size={42}
@@ -64,34 +67,44 @@ export default function TimeSlotsSection({
             subtitle='Try another date'
           />
         </div>
-      ) : (
-        <div className='grid grid-cols-[repeat(auto-fill,minmax(70px,1fr))] justify-center gap-x-1 gap-y-2'>
-          {slotPills.map(pill => {
-            const isSelected = pill.value === bookingState.startTime;
-            const pillClassName = isSelected
-              ? 'bg-secondary hover:bg-secondary font-bold text-white'
-              : 'bg-white font-normal';
-            return (
-              <Button
-                variant='outline'
-                key={pill.id}
-                disabled={pill.disabled || !scheduleId}
-                onClick={() => {
-                  handleFilterChange('startTime', pill.value);
-                  setSelectedSlotId(pill.id);
-                }}
-                className={cn(
-                  'w-full items-center justify-center rounded-md border-0 px-4 py-2 text-[12px]',
-                  pillClassName
-                )}
-                aria-disabled={pill.disabled}
-              >
-                {pill.displayLabel}
-              </Button>
-            );
-          })}
-        </div>
-      )}
+      );
+    }
+    return (
+      <div className='grid grid-cols-[repeat(auto-fill,minmax(70px,1fr))] justify-center gap-x-1 gap-y-2'>
+        {slotPills.map(pill => {
+          const isSelected = pill.value === bookingState.startTime;
+          const pillClassName = isSelected
+            ? 'bg-secondary hover:bg-secondary font-bold text-white'
+            : 'bg-white font-normal';
+          return (
+            <Button
+              variant='outline'
+              key={pill.id}
+              disabled={pill.disabled || !scheduleId}
+              onClick={() => {
+                handleFilterChange('startTime', pill.value);
+                setSelectedSlotId(pill.id);
+              }}
+              className={cn(
+                'w-full items-center justify-center rounded-md border-0 px-4 py-2 text-[12px]',
+                pillClassName
+              )}
+              aria-disabled={pill.disabled}
+            >
+              {pill.displayLabel}
+            </Button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  return (
+    <div className='card my-4 border-0 bg-[#F9F9F9]'>
+      <div className='mb-4 font-bold'>
+        {bookingState.date && format(bookingState.date, 'dd MMMM yyyy')}
+      </div>
+      {renderSlots()}
     </div>
   );
 }

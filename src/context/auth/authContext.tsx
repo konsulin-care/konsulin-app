@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Record pathname at first paint (full page load) so homepage can tell "reload of /" vs "navigated to /"
   useEffect(() => {
-    if (typeof globalThis.window === 'undefined') return;
+    if (globalThis.window === undefined) return;
     try {
       sessionStorage.setItem(
         INITIAL_PATHNAME_STORAGE_KEY,
@@ -104,14 +104,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // Reload on homepage: let the page call ensureAnonymousSession(true) once; avoid duplicate calls
         const navEntries =
-          typeof globalThis.window !== 'undefined'
-            ? performance.getEntriesByType('navigation')
-            : [];
+          globalThis.window === undefined
+            ? []
+            : performance.getEntriesByType('navigation');
         const nav = navEntries[0] as PerformanceNavigationTiming | undefined;
         const isReloadOnHomepage =
           nav?.type === 'reload' &&
-          typeof window !== 'undefined' &&
-          window.location.pathname === '/';
+          globalThis.window !== undefined &&
+          globalThis.window.location.pathname === '/';
 
         if (!isReloadOnHomepage) {
           try {

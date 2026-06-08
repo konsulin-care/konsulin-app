@@ -224,7 +224,7 @@ describe('PractitionerAvailability', () => {
     };
 
     vi.mocked(useRouter).mockReturnValue(mockRouter);
-    vi.mocked(useSearchParams).mockReturnValue(mockSearchParams as any);
+    vi.mocked(useSearchParams).mockReturnValue(mockSearchParams);
     vi.mocked(useParams).mockReturnValue({ practitionerId: 'test-1' });
     vi.mocked(useAuth).mockReturnValue({
       isLoading: false,

@@ -6,6 +6,7 @@ import { DRAWER_STATE, genderList } from '@/constants/profile';
 import { IWilayahResponse } from '@/types/wilayah';
 import { X } from 'lucide-react';
 import Image from 'next/image';
+import { useMemo } from 'react';
 import { PhoneInput } from 'react-international-phone';
 import type { ICustomProfile } from './edit-profile';
 
@@ -57,6 +58,11 @@ export default function ProfileFormSection({
   formatDate,
   setDrawerState
 }: Readonly<ProfileFormSectionProps>) {
+  const addressKeys = useMemo(
+    () => (updateUser.addresses ?? []).map(() => crypto.randomUUID()),
+    [updateUser.addresses]
+  );
+
   return (
     <div className='flex flex-grow flex-col space-y-4'>
       <Input
@@ -117,7 +123,8 @@ export default function ProfileFormSection({
       {errors.email && (
         <p className='px-4 text-xs text-red-500'>{errors.email}</p>
       )}
-      <div
+      <button
+        type='button'
         className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'
         onClick={() => setDrawerState(DRAWER_STATE.DOB)}
       >
@@ -132,7 +139,7 @@ export default function ProfileFormSection({
             ? formatDate(updateUser.birthDate)
             : 'Date of Birth'}
         </div>
-      </div>
+      </button>
       <div className='flex w-full items-center space-x-[10px] rounded-lg border border-[#E3E3E3] p-4'>
         <PhoneInput
           defaultCountry='id'
@@ -205,7 +212,7 @@ export default function ProfileFormSection({
         </>
       )}
       {updateUser.addresses?.map((addr: string, index: number) => (
-        <div key={index} className='mb-2 flex items-center gap-2'>
+        <div key={addressKeys[index]} className='mb-2 flex items-center gap-2'>
           <Input
             width={24}
             height={24}
@@ -232,12 +239,13 @@ export default function ProfileFormSection({
         </div>
       ))}
       <div className='my-4 flex justify-center'>
-        <p
+        <button
+          type='button'
           className='cursor-pointer text-center text-sm font-normal'
           onClick={handleAddAddress}
         >
           + Add New Address
-        </p>
+        </button>
       </div>
       <div className='flex w-full flex-grow flex-col justify-between space-x-2'>
         <div className='flex-1'>
