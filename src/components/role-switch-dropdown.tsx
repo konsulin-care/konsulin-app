@@ -103,7 +103,7 @@ export function RoleSwitchDropdown({
       open={open}
       onOpenChange={isOpen => {
         setOpen(isOpen);
-        onOpenChange(isOpen);
+        onOpenChange?.(isOpen);
       }}
     >
       <DropdownTrigger asChild>
