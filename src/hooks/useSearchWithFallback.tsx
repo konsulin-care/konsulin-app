@@ -215,12 +215,12 @@ export function useSearchWithFallback<T>({
       // Check condition for client-side results using ref
       const lowerSearchTerm = searchTerm.toLowerCase();
       const currentData = dataRef.current || [];
-      const clientResults: T[] = [];
+      let clientMatchCount = 0;
       for (const item of currentData) {
         if (!item) continue;
         for (const field of searchFieldsRef.current) {
           if (matchesField(item, field, lowerSearchTerm)) {
-            clientResults.push(item);
+            clientMatchCount++;
             break;
           }
         }
@@ -229,7 +229,7 @@ export function useSearchWithFallback<T>({
       // Only trigger server search if no client results and criteria met
       if (
         searchTerm.length >= minCharsForServerSearch &&
-        clientResults.length === 0
+        clientMatchCount === 0
       ) {
         // Mark that we're searching for this term
         serverSearchExecutedRef.current = searchKey;
