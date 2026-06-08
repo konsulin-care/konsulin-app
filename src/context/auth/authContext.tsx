@@ -101,6 +101,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (!session.doesSessionExist) {
+        // Fallback: check Go auth cookie when SuperTokens session is absent.
+        // User may have a valid auth cookie from a prior login even though
+        // the ST tokens (sAccessToken / sRefreshToken) are missing.
+        try {
+          const cookieSession = await getAuthCookieSession();
+          if (
+            cookieSession?.authenticated &&
+            cookieSession?.userId &&
+            cookieSession?.role_name
+          ) {
+            setCurrentUserId(cookieSession.userId);
+            dispatch({
+              type: 'login',
+              payload: {
+                userId: cookieSession.userId,
+                role_name: cookieSession.role_name,
+                roles: cookieSession.roles ?? [],
+                email: cookieSession.email ?? '',
+                fullname: cookieSession.fullname ?? '',
+                profile_picture: cookieSession.profile_picture ?? '',
+                fhirId: cookieSession.fhirId ?? '',
+                profile_complete: cookieSession.profile_complete ?? false
+              }
+            });
+            setIsLoading(false);
+            return;
+          }
+        } catch {
+          // Auth cookie fetch failed — fall through to guest flow
+        }
+
         // Clear stale auth state on session expiry.
         dispatch({ type: 'logout' });
         setCurrentUserId(null);

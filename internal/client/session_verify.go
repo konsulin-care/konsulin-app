@@ -26,12 +26,18 @@ type jwtPayload struct {
 	STRole stRoleClaim `json:"st-role"`
 }
 
-// activeRoleFrom returns "Practitioner" if present in roles, else "Patient".
+// activeRoleFrom returns the highest-priority role from the list.
+// Priority: Practitioner > ClinicAdmin > Patient.
 // Matches the frontend selection logic in auth-helpers.ts and auth.ts.
 func activeRoleFrom(roles []string) string {
 	for _, r := range roles {
 		if r == "Practitioner" {
 			return "Practitioner"
+		}
+	}
+	for _, r := range roles {
+		if r == "ClinicAdmin" {
+			return "ClinicAdmin"
 		}
 	}
 	return "Patient"
