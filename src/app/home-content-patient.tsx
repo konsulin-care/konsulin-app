@@ -1,5 +1,6 @@
 'use client';
 
+import ActionCard from '@/components/general/action-card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { typeMappings } from '@/constants/record';
@@ -141,22 +142,12 @@ export default function HomeContentPatient() {
 
       {/* SECONDARY: Quick Actions */}
       <div className='px-4 pb-4'>
-        <Link
+        <ActionCard
+          icon={<Building2 className='h-5 w-5 text-gray-600' />}
+          title='Show All Clinics'
+          description='Find practitioners near you'
           href='/clinic'
-          className='card flex w-full items-center gap-3 p-4'
-        >
-          <div className='flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
-            <Building2 className='h-5 w-5 text-gray-600' />
-          </div>
-          <div className='flex flex-col'>
-            <span className='text-primary text-[12px] font-bold'>
-              Show All Clinics
-            </span>
-            <span className='text-primary text-[10px]'>
-              Find practitioners near you
-            </span>
-          </div>
-        </Link>
+        />
       </div>
 
       {/* BELOW FOLD: Previous Records */}
