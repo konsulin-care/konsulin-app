@@ -18,6 +18,7 @@ import { AvatarInfo } from '@/components/role-avatar-popup-types';
 import { roleLabel } from '@/components/role-avatar-popup-utils';
 import { StackedCircles } from '@/components/stacked-circles';
 
+/** Switches the active user role via API call and reloads. */
 async function switchRole(role: string): Promise<void> {
   try {
     const token = await fetchCSRFToken();
@@ -35,6 +36,7 @@ async function switchRole(role: string): Promise<void> {
   }
 }
 
+/** Renders dropdown menu items for switching to other roles. */
 function RoleSwitchMenuItems({
   otherRoleAvatars
 }: Readonly<{
@@ -78,6 +80,9 @@ interface RoleSwitchDropdownProps {
   onOpenChange: (open: boolean) => void;
 }
 
+/**
+ *
+ */
 export function RoleSwitchDropdown({
   otherRoleAvatars,
   currentAvatar,
@@ -98,7 +103,7 @@ export function RoleSwitchDropdown({
       open={open}
       onOpenChange={isOpen => {
         setOpen(isOpen);
-        onOpenChange(isOpen);
+        onOpenChange?.(isOpen);
       }}
     >
       <DropdownTrigger asChild>

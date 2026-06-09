@@ -19,6 +19,7 @@ interface UseRedirectIntentOptions {
   authState: IStateAuth;
 }
 
+/** Refresh anonymous session on homepage reload if no authenticated session. */
 function useReloadAnonymousSession(
   isLoading: boolean,
   isAuthenticated: boolean
@@ -65,6 +66,7 @@ function useReloadAnonymousSession(
   }, [isLoading, isAuthenticated]);
 }
 
+/** Handle a redirect stored in cookie before auth was ready. */
 function handleStoredRedirect(
   setIsRedirecting: (v: boolean) => void,
   router: ReturnType<typeof useRouter>
@@ -98,18 +100,20 @@ function handleStoredRedirect(
   return true;
 }
 
+/** Process a pending intent (journal, appointment, assessment). */
 function handleIntent(
   setIsRedirecting: (v: boolean) => void,
   isHandlingRef: { current: boolean },
   router: ReturnType<typeof useRouter>
-): (() => void) | void {
+): (() => void) | undefined {
   const intent = getIntent();
-  if (!intent || isHandlingRef.current) return;
+  if (!intent || isHandlingRef.current) return undefined;
   isHandlingRef.current = true;
 
   const abortController = new AbortController();
   let isMounted = true;
 
+  /** Execute the intent's navigation or API claim flow. */
   const run = async () => {
     try {
       if (intent.kind === 'journal' || intent.kind === 'appointment') {
@@ -148,6 +152,9 @@ function handleIntent(
   };
 }
 
+/**
+ *
+ */
 export function useRedirectIntent({
   isLoading,
   authState
@@ -159,20 +166,20 @@ export function useRedirectIntent({
   useReloadAnonymousSession(isLoading, authState.isAuthenticated);
 
   useEffect(() => {
-    if (isLoading) return;
-    if (handleStoredRedirect(setIsRedirecting, router)) return;
-    if (authState.isAuthenticated) {
-      const cleanup = handleIntent(
-        setIsRedirecting,
-        isHandlingIntentRef,
-        router
-      );
+    let cleanup;
+    if (isLoading) {
+      // wait for loading to finish
+    } else if (handleStoredRedirect(setIsRedirecting, router)) {
+      // redirect handled
+    } else if (authState.isAuthenticated) {
+      cleanup = handleIntent(setIsRedirecting, isHandlingIntentRef, router);
       if (!cleanup) {
         setIsRedirecting(false);
       }
-      return cleanup;
+    } else {
+      setIsRedirecting(false);
     }
-    setIsRedirecting(false);
+    return cleanup;
   }, [isLoading, authState.isAuthenticated, authState.userInfo, router]);
 
   return { isRedirecting };

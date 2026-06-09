@@ -25,11 +25,11 @@ function createFetchMock(
   globalThis.fetch = vi
     .fn()
     .mockImplementation((url: string, init?: RequestInit) => {
-      const h = handlers.find(h => h.match(url, init));
-      if (h) {
+      const handler = handlers.find(h => h.match(url, init));
+      if (handler) {
         return Promise.resolve({
-          ok: h.ok ?? true,
-          json: () => Promise.resolve(h.response)
+          ok: handler.ok ?? true,
+          json: () => Promise.resolve(handler.response)
         });
       }
       return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
@@ -91,7 +91,7 @@ describe('restoreAuthCookie role resolution', () => {
     await restoreAuthCookie(makeSession('ca-1'));
 
     expect(mockGetProfileByIdentifier).toHaveBeenCalledWith(
-      expect.objectContaining({ type: Roles.ClinicAdmin })
+      expect.objectContaining({ type: 'Person' })
     );
   });
 

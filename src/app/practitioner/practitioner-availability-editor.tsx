@@ -1,7 +1,6 @@
 import AvailabilityEditor from '@/components/availability/availability-editor';
 import DaySelectorNavigation from '@/components/availability/day-selector-navigation';
 import FloatingSaveButton from '@/components/availability/floating-save-button';
-import { useAuth } from '@/context/auth/authContext';
 import { useUpdateAvailability } from '@/services/api/schedule';
 import {
   DayOfWeek,
@@ -54,9 +53,6 @@ export default function PractitionerAvailabilityEditor({
   onSuccess,
   onCancel
 }: Props) {
-  const { state: authState } = useAuth();
-  const practitionerId = authState?.userInfo?.fhirId;
-
   // Convert single practitionerRole to array for backward compatibility
   const memoizedRolesToUse = useMemo(
     () => practitionerRoles || (practitionerRole ? [practitionerRole] : []),

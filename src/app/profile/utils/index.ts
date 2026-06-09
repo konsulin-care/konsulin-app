@@ -1,6 +1,9 @@
 import { IPractitionerRoleDetail } from '@/types/practitioner';
 import { DayOfWeek, FormsState, TimeRange } from '../types';
 
+/**
+ *
+ */
 export function validateAll(
   day: string,
   formsState: FormsState,
@@ -11,6 +14,9 @@ export function validateAll(
   setErrorMessages(prev => ({ ...prev, [day]: errorMessage }));
 }
 
+/**
+ *
+ */
 export function handleOrganizationChange(
   formsState: FormsState,
   day: string,
@@ -30,6 +36,9 @@ export function handleOrganizationChange(
   validateAll(day, newFormsState, setErrorMessages);
 }
 
+/**
+ *
+ */
 export function handleRemoveTimeRange(
   day: string,
   formIndex: number,
@@ -46,6 +55,9 @@ export function handleRemoveTimeRange(
   validateAll(day, newFormsState, setErrorMessages);
 }
 
+/**
+ *
+ */
 export function handleAddForm(
   day: string,
   formsState: FormsState,
@@ -62,6 +74,9 @@ export function handleAddForm(
   validateAll(day, newFormsState, setErrorMessages);
 }
 
+/**
+ *
+ */
 export function handleTimeChange(
   day: string,
   formIndex: number,
@@ -78,8 +93,11 @@ export function handleTimeChange(
   validateAll(day, newFormsState, setErrorMessages);
 }
 
+/**
+ *
+ */
 export function validateTimeRanges(times: TimeRange[]) {
-  let messages: string[] = [];
+  const messages: string[] = [];
 
   const sortedTimes = times
     .map((time, index) => ({ ...time, index }))
@@ -131,6 +149,9 @@ export function validateTimeRanges(times: TimeRange[]) {
 //   return time;
 // }
 
+/**
+ *
+ */
 export function handlePayloadSend(
   practitionerRolesData: IPractitionerRoleDetail[],
   formsState: FormsState
@@ -200,6 +221,7 @@ export function handlePayloadSend(
         });
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { organizationData, invoiceData, scheduleData, ...cleanRole } =
         role;
 

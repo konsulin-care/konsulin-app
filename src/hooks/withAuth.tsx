@@ -8,6 +8,9 @@ export interface IWithAuth {
   isAuthenticated: boolean;
 }
 
+/**
+ *
+ */
 function withAuth<T>(
   WrappedComponent: React.ComponentType<T>,
   allowedRoles: string[] = [],

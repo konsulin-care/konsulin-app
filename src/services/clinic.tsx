@@ -15,10 +15,13 @@ export type IUseClinicParams = {
   // days?: String[];
 };
 
-export const useListClinics = (
-  { cityFilter, nameFilter }: { cityFilter?: string; nameFilter?: string },
-  delay: number = 500
-) => {
+export const useListClinics = ({
+  cityFilter,
+  nameFilter
+}: {
+  cityFilter?: string;
+  nameFilter?: string;
+}) => {
   const url = useMemo(() => {
     let url = '/fhir/Organization?_elements=name,address';
 
@@ -57,7 +60,7 @@ export const useClinicById = (clinicId: string) => {
       return response;
     },
     select: response => response.data.entry || null,
-    enabled: !!clinicId
+    enabled: Boolean(clinicId)
   });
 
   let clinic: BundleEntry | undefined;
@@ -110,7 +113,7 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
       return response;
     },
     select: response => response.data.entry || null,
-    enabled: !!practitionerRoleId
+    enabled: Boolean(practitionerRoleId)
   });
 
   let practitionerRole: BundleEntry | undefined;

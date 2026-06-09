@@ -7,6 +7,7 @@ import {
   getIntent,
   getRedirectIntent
 } from '@/utils/redirect-intent';
+import { roleToFhirResource } from '@/utils/role-fhir';
 import { Patient, Practitioner } from 'fhir/r4';
 
 type FHIRProfile = Patient | Practitioner | null;
@@ -46,6 +47,9 @@ async function postAuthCookie(
   }
 }
 
+/**
+ *
+ */
 async function postAuthCookieForUser(
   role: string,
   userId: string,
@@ -75,6 +79,19 @@ async function postAuthCookieForUser(
   }
 }
 
+/** Resolves the highest-priority role from the roles array. */
+function resolveLoginRole(roles: RolesParam): string {
+  let role: string = Roles.Patient;
+  if (Array.isArray(roles)) {
+    if (roles.includes(Roles.Practitioner)) {
+      role = Roles.Practitioner;
+    } else if (roles.includes(Roles.ClinicAdmin)) {
+      role = Roles.ClinicAdmin;
+    }
+  }
+  return role;
+}
+
 /** Handles login for new users — creates FHIR profile if missing, sets auth cookie. */
 async function handleNewUserLogin(
   roles: RolesParam,
@@ -86,31 +103,29 @@ async function handleNewUserLogin(
     console.error('[auth:login] missing userId');
     throw new Error('Missing userId for new user login');
   }
-  const role =
-    Array.isArray(roles) && roles.includes(Roles.Practitioner)
-      ? Roles.Practitioner
-      : Roles.Patient;
+  const role = resolveLoginRole(roles);
+  const fhirType = roleToFhirResource(role);
   let profileData: FHIRProfile = null;
   try {
-    profileData = await getProfileByIdentifier({ userId, type: role });
+    profileData = await getProfileByIdentifier({ userId, type: fhirType });
   } catch (err) {
     console.error('[auth:login] getProfileByIdentifier failed', err);
   }
 
-  if (!profileData) {
+  if (!profileData && role !== Roles.ClinicAdmin) {
     try {
       await createProfile({
         userId,
         email: emails[0] || '',
         phoneNumber: phoneNumbers[0] || '',
-        type: role
+        type: fhirType
       });
     } catch (err) {
       console.error('[auth:login] createProfile failed', err);
       throw new Error('Failed to create profile after login');
     }
     try {
-      profileData = await getProfileByIdentifier({ userId, type: role });
+      profileData = await getProfileByIdentifier({ userId, type: fhirType });
     } catch (err) {
       console.error('[auth:login] re-fetch profile failed', err);
     }
@@ -138,15 +153,13 @@ async function handleReturningUserLogin(
     console.error('[auth:login] missing userId for returning user');
     throw new Error('Missing userId for returning user login');
   }
-  const role =
-    Array.isArray(roles) && roles.includes(Roles.Practitioner)
-      ? Roles.Practitioner
-      : Roles.Patient;
+  const role = resolveLoginRole(roles);
+  const fhirType = roleToFhirResource(role);
   let profile: FHIRProfile = null;
   try {
     profile = await getProfileByIdentifier({
       userId,
-      type: role
+      type: fhirType
     });
   } catch (err) {
     console.error(

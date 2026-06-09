@@ -8,33 +8,32 @@ export type ParsedAxiosError = {
   isMissingToken: boolean;
 };
 
+/**
+ *
+ */
 export function parseAxiosError(err: unknown): ParsedAxiosError {
   const error = err as Partial<AxiosError & { message?: string }> | undefined;
-  const response = error?.response as any as any | undefined;
-  const data =
+  const response = error?.response as
+    | { data: unknown; status: number }
+    | undefined;
+  const data: Record<string, unknown> | undefined =
     response && typeof response.data === 'object'
-      ? (response.data as any)
+      ? (response.data as Record<string, unknown>)
       : undefined;
 
-  const messageFromResponse =
-    typeof data?.message === 'string'
-      ? data.message
-      : typeof response?.data === 'string'
-        ? (response.data as string)
-        : undefined;
+  let messageFromResponse: string | undefined;
+  if (typeof data?.message === 'string') {
+    messageFromResponse = data.message;
+  } else if (typeof response?.data === 'string') {
+    messageFromResponse = response.data;
+  }
 
   const errorMessage =
-    messageFromResponse ||
-    (error?.message as string | undefined) ||
-    'An unexpected error occured!';
+    messageFromResponse || error?.message || 'An unexpected error occured!';
   const devMessage =
-    typeof (data as any)?.dev_message === 'string'
-      ? (data as any).dev_message
-      : '';
+    typeof data?.dev_message === 'string' ? data.dev_message : '';
   const status =
-    typeof response?.status === 'number'
-      ? (response.status as number)
-      : undefined;
+    typeof response?.status === 'number' ? response.status : undefined;
 
   const isExpiredToken =
     status === 401 &&

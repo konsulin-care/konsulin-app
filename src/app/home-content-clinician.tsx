@@ -1,12 +1,12 @@
 'use client';
 
+import ActionCard from '@/components/general/action-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetTodaySessions } from '@/services/api/appointments';
 import { mergeNames, parseMergedSessions } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
 import { Calendar, Dumbbell, FileText } from 'lucide-react';
-import Link from 'next/link';
 import { useMemo } from 'react';
 
 type SessionRowData = {
@@ -16,6 +16,7 @@ type SessionRowData = {
   displayPatientName: string;
 };
 
+/** Row displaying a single session with time and status. */
 function SessionRow({ session }: Readonly<{ session: SessionRowData }>) {
   if (!session.slotStart || !session.slotEnd) return null;
   const startTime = format(parseISO(session.slotStart), 'HH:mm');
@@ -86,6 +87,24 @@ export default function HomeContentClinician() {
 
   const isLoading = isAuthLoading || isSessionsLoading;
 
+  const soapReportLink = (
+    <ActionCard
+      icon={<FileText className='h-5 w-5 text-gray-600' />}
+      title='SOAP Report'
+      description='Record your session notes'
+      href='/assessments/soap'
+    />
+  );
+
+  const exerciseLink = (
+    <ActionCard
+      icon={<Dumbbell className='h-5 w-5 text-gray-600' />}
+      title='Health Exercise Resources'
+      description='Help your patient with curated exercises'
+      href='/exercise'
+    />
+  );
+
   if (isLoading) {
     return (
       <div className='p-4'>
@@ -98,6 +117,7 @@ export default function HomeContentClinician() {
     );
   }
 
+  /** Renders schedule content, loading, or error states. */
   const renderScheduleContent = () => {
     if (isSessionsError) {
       return (
@@ -162,39 +182,8 @@ export default function HomeContentClinician() {
           Quick Actions
         </div>
         <div className='flex flex-col gap-4'>
-          <Link
-            href='/assessments/soap'
-            className='card flex w-full items-center gap-3 p-4'
-          >
-            <div className='flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
-              <FileText className='h-5 w-5 text-gray-600' />
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-primary text-[12px] font-bold'>
-                SOAP Report
-              </span>
-              <span className='text-primary text-[10px]'>
-                Record your session notes
-              </span>
-            </div>
-          </Link>
-
-          <Link
-            href='/exercise'
-            className='card flex w-full items-center gap-3 p-4'
-          >
-            <div className='flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
-              <Dumbbell className='h-5 w-5 text-gray-600' />
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-primary text-[12px] font-bold'>
-                Health Exercise Resources
-              </span>
-              <span className='text-primary text-[10px]'>
-                Help your patient with curated exercises
-              </span>
-            </div>
-          </Link>
+          {soapReportLink}
+          {exerciseLink}
         </div>
       </div>
     </>

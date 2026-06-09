@@ -1,7 +1,10 @@
-import * as React from 'react'
+import * as React from 'react';
 
+/**
+ *
+ */
 export default function FilterIcon(props: React.SVGProps<SVGSVGElement>) {
-  const { fill = '#000000', width = 24, height = 24 } = props
+  const { fill = '#000000', width = 24, height = 24 } = props;
 
   return (
     <svg
@@ -20,5 +23,5 @@ export default function FilterIcon(props: React.SVGProps<SVGSVGElement>) {
         fill={fill}
       />
     </svg>
-  )
+  );
 }

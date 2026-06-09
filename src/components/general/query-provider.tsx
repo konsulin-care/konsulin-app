@@ -3,6 +3,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRef } from 'react';
 
+/**
+ *
+ */
 export default function QueryProvider({
   children
 }: {

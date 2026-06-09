@@ -14,6 +14,9 @@ import { useEffect, useState } from 'react';
 
 const today = new Date();
 
+/**
+ *
+ */
 export default function CalendarJournal({ onChange, value }) {
   const [date, setDate] = useState<Date | undefined>(value);
 
@@ -36,7 +39,7 @@ export default function CalendarJournal({ onChange, value }) {
             'flex flex-col items-center justify-center rounded-lg border-0 p-4'
           )}
         >
-          <div className='font-bold text-secondary'>
+          <div className='text-secondary font-bold'>
             {date ? format(date, 'EEEE') : '-'}
           </div>
           <div className='text-muted'>
@@ -71,7 +74,7 @@ export default function CalendarJournal({ onChange, value }) {
               }}
             />
           </div>
-          <DrawerClose className='mt-4 w-full rounded-xl bg-secondary p-4 text-center text-white'>
+          <DrawerClose className='bg-secondary mt-4 w-full rounded-xl p-4 text-center text-white'>
             Kembali
           </DrawerClose>
         </div>

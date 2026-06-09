@@ -16,6 +16,7 @@ import {
 } from '../anonymous-session';
 import { getAPI } from '../api';
 
+/** Parse a canonical URL or reference to extract the resource ID. */
 function parseCanonicalOrReference(
   value?: string,
   expectedType?: string
@@ -28,7 +29,7 @@ function parseCanonicalOrReference(
     if (expectedType === 'Questionnaire') {
       const segments = url.pathname.split('/').filter(Boolean);
       if (segments.length > 0) {
-        return segments[segments.length - 1];
+        return segments.at(-1);
       }
     }
   } catch {
@@ -38,7 +39,7 @@ function parseCanonicalOrReference(
   const parts = withoutVersion.split('/');
 
   if (!expectedType) {
-    return parts.length > 1 ? parts[parts.length - 1] || null : withoutVersion;
+    return parts.length > 1 ? parts.at(-1) || null : withoutVersion;
   }
 
   const typeIndex = parts.findIndex(part => part === expectedType);
@@ -89,6 +90,7 @@ type ServiceRequestResultResponse = {
   };
 };
 
+/** Fetch ongoing active research studies with linked questionnaires. */
 export const useOngoingResearch = () => {
   return useQuery({
     queryKey: ['research'],
@@ -105,11 +107,14 @@ export const useOngoingResearch = () => {
       return response.data;
     },
     select: data => {
-      const entries = Array.isArray(data?.entry)
-        ? data.entry
-        : Array.isArray(data)
-          ? data
-          : [];
+      let entries: unknown[];
+      if (Array.isArray(data?.entry)) {
+        entries = data.entry;
+      } else if (Array.isArray(data)) {
+        entries = data;
+      } else {
+        entries = [];
+      }
 
       const resources = entries.map((e: any) => e?.resource ?? e);
 
@@ -175,6 +180,7 @@ export const useOngoingResearch = () => {
   });
 };
 
+/** Fetch a single questionnaire by ID. */
 export const useQuestionnaire = (questionnaireId: number | string) => {
   return useQuery({
     queryKey: ['assessments', questionnaireId],
@@ -191,6 +197,7 @@ export const useQuestionnaire = (questionnaireId: number | string) => {
   });
 };
 
+/** Fetch the SOAP questionnaire. */
 export const useQuestionnaireSoap = () => {
   return useQuery({
     queryKey: ['SOAP'],
@@ -205,6 +212,7 @@ export const useQuestionnaireSoap = () => {
   });
 };
 
+/** Submit a SOAP questionnaire response bundle. */
 export const useSubmitSoapBundle = () => {
   return useMutation({
     mutationKey: ['soap-response'],
@@ -216,6 +224,7 @@ export const useSubmitSoapBundle = () => {
   });
 };
 
+/** Submit a completed questionnaire response. */
 export const useSubmitQuestionnaire = (
   questionnaireId: string,
   isAuthenticated: boolean
@@ -258,6 +267,7 @@ export const useSubmitQuestionnaire = (
   });
 };
 
+/** Update an existing submitted questionnaire response. */
 export const useUpdateSubmitQuestionnaire = (
   questionnaireId: string,
   isAuthenticated: boolean
@@ -297,8 +307,10 @@ export const useUpdateSubmitQuestionnaire = (
   });
 };
 
+/** Sleep for a given number of milliseconds. */
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+/** Poll for a service request result note until timeout. */
 async function pollServiceRequestNote(
   API: Awaited<ReturnType<typeof getAPI>>,
   serviceRequestId: string
@@ -322,6 +334,7 @@ async function pollServiceRequestNote(
   return '';
 }
 
+/** Trigger interpretation hook and poll for result brief. */
 export const useResultBrief = (questionnaireId: string) => {
   type ResultBriefResponse = { note: string; serviceRequestId: string };
 
@@ -334,7 +347,7 @@ export const useResultBrief = (questionnaireId: string) => {
 
       // 1) Trigger async webhook through backend
       const hookRes = await API.post<HookInterpretResponse>(
-        `/api/v1/hook/interpret`,
+        '/api/v1/hook/interpret',
         payload
       );
 
@@ -361,6 +374,7 @@ export const useResultBrief = (questionnaireId: string) => {
   });
 };
 
+/** Fetch questionnaire response for a patient. */
 export const useQuestionnaireResponse = ({
   questionnaireId,
   patientId,
@@ -384,7 +398,7 @@ export const useQuestionnaireResponse = ({
       return response;
     },
     select: response => response.data || null,
-    enabled: enabled
+    enabled
   });
 };
 
@@ -400,7 +414,8 @@ export const searchQuestionnaires = async (
 ): Promise<BundleEntry[]> => {
   try {
     const API = await getAPI();
-    let url = `/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient`;
+    let url =
+      '/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient';
 
     if (context) {
       url += `&context=${context}`;
@@ -455,7 +470,8 @@ export const searchQuestionnaires = async (
  */
 export const useSearchQuestionnaire = (query: string, context?: string) => {
   const url = useMemo(() => {
-    let url = `/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient`;
+    let url =
+      '/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient';
 
     if (query) {
       url += `&_text=${encodeURIComponent(query)}`;
@@ -476,10 +492,11 @@ export const useSearchQuestionnaire = (query: string, context?: string) => {
       return response;
     },
     select: response => response.data.entry || [],
-    enabled: !!query && query.length >= 3 // Only enable if query is meaningful
+    enabled: Boolean(query) && query.length >= 3 // Only enable if query is meaningful
   });
 };
 
+/** Fetch regular (non-popular) active assessments. */
 export const useRegularAssessments = () => {
   return useQuery({
     queryKey: ['regular-assessments'],
@@ -494,6 +511,7 @@ export const useRegularAssessments = () => {
   });
 };
 
+/** Fetch popular assessments. */
 export const usePopularAssessments = () => {
   return useQuery({
     queryKey: ['popular-assessments'],

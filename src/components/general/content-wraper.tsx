@@ -6,6 +6,9 @@ interface ContentWrapperProps {
   children: ReactNode;
 }
 
+/**
+ *
+ */
 export default function ContentWraper({
   className,
   children

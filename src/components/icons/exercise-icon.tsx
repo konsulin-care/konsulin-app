@@ -1,5 +1,8 @@
 import React from 'react';
 
+/**
+ *
+ */
 export default function ExerciseIcon(props: React.SVGProps<SVGSVGElement>) {
   const { fill = '#000000', width = 24, height = 24, strokeWidth = 1 } = props;
 

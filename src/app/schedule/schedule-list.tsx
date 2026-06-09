@@ -6,6 +6,9 @@ import { useAuth } from '@/context/auth/authContext';
 import PatientSchedule from './patient-schedule';
 import PractitionerSchedule from './practitioner-schedule';
 
+/**
+ *
+ */
 export default function ScheduleList() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
@@ -21,19 +24,15 @@ export default function ScheduleList() {
     </>
   );
 
-  return (
-    <>
-      {isAuthLoading ? (
-        <div className='flex min-h-screen min-w-full items-center justify-center'>
-          <LoadingSpinnerIcon
-            width={56}
-            height={56}
-            className='w-full animate-spin'
-          />
-        </div>
-      ) : (
-        renderHomeContent
-      )}
-    </>
+  return isAuthLoading ? (
+    <div className='flex min-h-screen min-w-full items-center justify-center'>
+      <LoadingSpinnerIcon
+        width={56}
+        height={56}
+        className='w-full animate-spin'
+      />
+    </div>
+  ) : (
+    renderHomeContent
   );
 }

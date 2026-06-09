@@ -1,8 +1,15 @@
-import Image from 'next/image'
-import 'swiper/css'
-import { Swiper, SwiperSlide } from 'swiper/react'
+import Image from 'next/image';
+import 'swiper/css';
+import { Swiper, SwiperSlide } from 'swiper/react';
 
-const Carousel = ({ slides }) => {
+interface Slide {
+  icon: string;
+  alt: string;
+  title: string;
+  description: string;
+}
+
+const Carousel = ({ slides }: { slides: Slide[] }) => {
   return (
     <div className='w-full'>
       <Swiper
@@ -11,7 +18,7 @@ const Carousel = ({ slides }) => {
         onSlideChange={() => console.log('slide change')}
         onSwiper={swiper => console.log(swiper)}
       >
-        {slides.map((item: any) => {
+        {slides.map((item: Slide) => {
           return (
             <SwiperSlide key={item.alt} className='p-4'>
               <div className='flex items-center'>
@@ -22,7 +29,7 @@ const Carousel = ({ slides }) => {
                   height={48}
                 />
                 <div className='flex flex-grow flex-col items-start justify-start pl-2 text-start'>
-                  <p className='text-xs font-bold text-secondary'>
+                  <p className='text-secondary text-xs font-bold'>
                     {item.title}
                   </p>
                   <p className='text-black-100 text-[10px]'>
@@ -31,11 +38,11 @@ const Carousel = ({ slides }) => {
                 </div>
               </div>
             </SwiperSlide>
-          )
+          );
         })}
       </Swiper>
     </div>
-  )
-}
+  );
+};
 
-export default Carousel
+export default Carousel;

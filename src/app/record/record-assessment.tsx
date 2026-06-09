@@ -32,6 +32,7 @@ type IScore = {
 
 const BASE_HUE = 170;
 
+/** Generates a random HSL color based on a base hue. */
 const generateRandomColor = (baseHue: number) => {
   const hue = (baseHue + (Math.random() * 20 - 10)) % 360;
   const saturation = 70 + Math.random() * 20;
@@ -40,6 +41,9 @@ const generateRandomColor = (baseHue: number) => {
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
+/**
+ *
+ */
 export default function RecordAssessment({ recordId, title }: Props) {
   const router = useRouter();
   const {
@@ -100,6 +104,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
     setCurrentLocation(fullUrl);
   }, []);
 
+  /** Extracts and calculates score data from questionnaire response. */
   const scoreData = () => {
     if (!questionnaireResponse) return;
 
@@ -152,6 +157,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
     let attempts = 0;
     const MAX_ATTEMPTS = 3;
 
+    /** Polls the backend for result brief data. */
     const poll = async (serviceRequestId: string) => {
       try {
         const API = await getAPI();
@@ -316,20 +322,19 @@ export default function RecordAssessment({ recordId, title }: Props) {
           <Skeleton className='h-[50px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
         ) : (
           <div className='space-y-2 rounded-lg bg-[#F9F9F9] p-4'>
-            {scoreList &&
-              scoreList.map((item: IScore) => {
-                const randomColor = getColor(item.name);
-                return (
-                  <div
-                    key={item.name}
-                    className='grid grid-cols-[170px_1fr_30px] items-center gap-3'
-                  >
-                    <span className='text-wrap break-words'>{item.name}</span>
-                    <Progress value={item.score} color={randomColor} />
-                    <span className='text-sm'>{item.percentage}%</span>
-                  </div>
-                );
-              })}
+            {scoreList?.map((item: IScore) => {
+              const randomColor = getColor(item.name);
+              return (
+                <div
+                  key={item.name}
+                  className='grid grid-cols-[170px_1fr_30px] items-center gap-3'
+                >
+                  <span className='text-wrap break-words'>{item.name}</span>
+                  <Progress value={item.score} color={randomColor} />
+                  <span className='text-sm'>{item.percentage}%</span>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -344,7 +349,11 @@ export default function RecordAssessment({ recordId, title }: Props) {
       </div>
 
       <div className='text-m !mt-auto flex flex-col gap-3'>
-        {!authState.isAuthenticated ? (
+        {authState.isAuthenticated ? (
+          <Button className='bg-secondary h-full w-full rounded-xl p-4 text-white'>
+            Request Analysis
+          </Button>
+        ) : (
           <Button
             className='bg-secondary h-full w-full rounded-xl p-4 text-white'
             onClick={() => {
@@ -356,10 +365,6 @@ export default function RecordAssessment({ recordId, title }: Props) {
             }}
           >
             Save Result
-          </Button>
-        ) : (
-          <Button className='bg-secondary h-full w-full rounded-xl p-4 text-white'>
-            Request Analysis
           </Button>
         )}
       </div>

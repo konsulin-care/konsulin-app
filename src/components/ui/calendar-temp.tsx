@@ -15,6 +15,9 @@ import 'react-day-picker/style.css';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
+/**
+ *
+ */
 function Calendar(props: CalendarProps) {
   return (
     <DayPicker
@@ -23,7 +26,7 @@ function Calendar(props: CalendarProps) {
       style={
         {
           ...props.style,
-          ['--rdp-accent-color' as any]: '#0ABDC3'
+          '--rdp-accent-color': '#0ABDC3'
         } as React.CSSProperties
       }
       modifiersClassNames={{

@@ -60,6 +60,9 @@ const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
+/**
+ *
+ */
 async function processImageForAvatar(
   file: File,
   options?: ProcessImageOptions

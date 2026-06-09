@@ -13,6 +13,7 @@ interface RecommendationCardProps {
   onClick?: () => void;
 }
 
+/** Renders the card photo or gradient placeholder. */
 function CardPhoto({
   photoUrl,
   gradientDataUrl,
@@ -48,6 +49,7 @@ function CardPhoto({
   return null;
 }
 
+/** Expandable overlay showing recommendation details on hover/touch. */
 function ExpandingOverlay({
   expanded,
   setExpanded,
@@ -142,6 +144,7 @@ function ExpandingOverlay({
   );
 }
 
+/** Injects marquee keyframe animation into document head once. */
 function useMarqueeAnimation() {
   useEffect(() => {
     if (document.getElementById('marquee-style')) return;
@@ -160,13 +163,12 @@ function useMarqueeAnimation() {
   }, []);
 }
 
+/** Extracts initials from a name string, skipping honorifics. */
 function getInitials(name: string): string {
   const parts = name.split(' ').filter(Boolean);
   const meaningful = parts.filter(p => !/^dr\.?$/i.test(p));
   if (meaningful.length >= 2) {
-    return (
-      meaningful[0][0] + meaningful[meaningful.length - 1][0]
-    ).toUpperCase();
+    return (meaningful[0][0] + meaningful.at(-1)[0]).toUpperCase();
   }
   if (meaningful.length === 1) {
     return meaningful[0].slice(0, 2).toUpperCase();
@@ -174,6 +176,9 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
+/**
+ *
+ */
 export default function RecommendationCard({
   recommendation,
   className,

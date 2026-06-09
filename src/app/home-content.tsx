@@ -8,6 +8,9 @@ import HomeContentClinician from './home-content-clinician';
 import HomeContentGuest from './home-content-guest';
 import HomeContentPatient from './home-content-patient';
 
+/**
+ *
+ */
 export default function HomeContent() {
   const { state: authState } = useAuth();
 
@@ -27,6 +30,14 @@ export default function HomeContent() {
       {authState.userInfo.role_name === Roles.ClinicAdmin && (
         <HomeContentAdmin />
       )}
+      {authState.userInfo.role_name &&
+        !(Object.values(Roles) as string[]).includes(
+          authState.userInfo.role_name
+        ) && (
+          <div className='flex min-h-[40vh] items-center justify-center p-4 text-center text-gray-500'>
+            Unable to load content for this role.
+          </div>
+        )}
     </ContentWraper>
   );
 }

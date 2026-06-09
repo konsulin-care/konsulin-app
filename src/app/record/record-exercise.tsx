@@ -1,5 +1,8 @@
 import { FileCheckIcon, NotepadTextIcon, UsersIcon } from 'lucide-react';
 
+/**
+ *
+ */
 export default function RecordExercise() {
   return (
     <div className='space-y-4'>

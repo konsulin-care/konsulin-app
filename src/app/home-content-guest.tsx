@@ -1,8 +1,9 @@
 'use client';
 
+import ActionCard from '@/components/general/action-card';
+import GuestOnboardingSection from '@/components/general/home/guest-onboarding-section';
 import { Building2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const RecommendationCardStack = dynamic(
@@ -26,21 +27,17 @@ export default function HomeContentGuest() {
         <RecommendationCardStack onBook={handleBook} />
       </div>
 
-      {/* SECONDARY: Quick Actions */}
+      {/* SECONDARY: Feature Onboarding */}
+      <GuestOnboardingSection />
+
+      {/* TERTIARY: Quick Actions */}
       <div className='px-4 pb-4'>
-        <Link href='/auth' className='card flex w-full items-center gap-3 p-4'>
-          <div className='flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
-            <Building2 className='h-5 w-5 text-gray-600' />
-          </div>
-          <div className='flex flex-col'>
-            <span className='text-primary text-[12px] font-bold'>
-              Show All Clinics
-            </span>
-            <span className='text-primary text-[10px]'>
-              Login to browse clinics
-            </span>
-          </div>
-        </Link>
+        <ActionCard
+          icon={<Building2 className='h-5 w-5 text-gray-600' />}
+          title='Show All Clinics'
+          description='Login to browse clinics'
+          href='/auth'
+        />
       </div>
     </>
   );

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth */
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -11,6 +12,9 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Fragment, useState } from 'react';
 
+/**
+ *
+ */
 export default function Settings({ menus }) {
   const router = useRouter();
   const [drawerState, setDrawerState] = useState({
@@ -92,23 +96,23 @@ export default function Settings({ menus }) {
         <DrawerContent className='mx-auto w-full max-w-screen-sm p-4'>
           <div className='rounded-t-lg bg-white'>
             <DrawerTitle className='text-black-100 py-1 text-center text-lg font-bold md:text-xl'>
-              {drawerState.title.split('\n').map((line, index) => (
-                <Fragment key={index}>
+              {drawerState.title.split('\n').map(line => (
+                <Fragment key={line}>
                   {line}
                   <br />
                 </Fragment>
               ))}
             </DrawerTitle>
             <DrawerDescription className='text-center text-xs font-normal text-black opacity-60 md:text-sm'>
-              {drawerState.subTitle.split('\n').map((line, index) => (
-                <Fragment key={index}>
+              {drawerState.subTitle.split('\n').map(line => (
+                <Fragment key={line}>
                   {line}
                   <br />
                 </Fragment>
               ))}
             </DrawerDescription>
             <Button
-              className='my-4 h-[52px] w-full rounded-full border-primary bg-secondary'
+              className='border-primary bg-secondary my-4 h-[52px] w-full rounded-full'
               type='button'
               onClick={closeDrawer}
             >
@@ -117,7 +121,7 @@ export default function Settings({ menus }) {
               </span>
             </Button>
             <Button
-              className='mb-4 h-[52px] w-full rounded-full border border-[#2C2F35] border-opacity-20 bg-white text-sm font-bold'
+              className='border-opacity-20 mb-4 h-[52px] w-full rounded-full border border-[#2C2F35] bg-white text-sm font-bold'
               type='button'
               onClick={confirmLogout}
             >

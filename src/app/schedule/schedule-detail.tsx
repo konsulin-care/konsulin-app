@@ -18,6 +18,39 @@ import { HospitalIcon } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 
+/** Avatar and name section for the appointment session. */
+function SessionAvatarSection({
+  seed,
+  initials,
+  backgroundColor,
+  photoUrl,
+  displayName
+}: Readonly<{
+  seed: string;
+  initials: string;
+  backgroundColor: string;
+  photoUrl?: string;
+  displayName: string;
+}>) {
+  return (
+    <div className='flex flex-col items-center'>
+      <div className='flex flex-col items-center'>
+        <Avatar
+          seed={seed}
+          initials={initials}
+          backgroundColor={backgroundColor}
+          photoUrl={photoUrl}
+          className='text-2xl'
+        />
+      </div>
+      <h3 className='mt-2 text-center text-[20px] font-bold'>{displayName}</h3>
+    </div>
+  );
+}
+
+/**
+ *
+ */
 export default function ScheduleDetail() {
   const searchParams = useSearchParams();
   const appointmentId = searchParams.get('appointmentId') ?? '';
@@ -81,6 +114,7 @@ export default function ScheduleDetail() {
 
   const photoUrl = appointmentData?.practitionerPhoto?.[0]?.url;
 
+  /** Renders appointment detail or empty/loading states. */
   const renderContent = () => {
     if (!appointmentData || isUpcomingError) {
       return (
@@ -104,20 +138,13 @@ export default function ScheduleDetail() {
     }
     return (
       <>
-        <div className='flex flex-col items-center'>
-          <div className='flex flex-col items-center'>
-            <Avatar
-              seed={seed}
-              initials={initials}
-              backgroundColor={backgroundColor}
-              photoUrl={photoUrl}
-              className='text-2xl'
-            />
-          </div>
-          <h3 className='mt-2 text-center text-[20px] font-bold'>
-            {displayName}
-          </h3>
-        </div>
+        <SessionAvatarSection
+          seed={seed}
+          initials={initials}
+          backgroundColor={backgroundColor}
+          photoUrl={photoUrl}
+          displayName={displayName}
+        />
 
         <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>
           <div className='flex items-center'>

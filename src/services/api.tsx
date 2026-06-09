@@ -29,6 +29,9 @@ export function setCurrentUserId(id: string | null) {
   currentUserId = id;
 }
 
+/**
+ *
+ */
 export function getAPI(): Promise<AxiosInstance> {
   if (apiInstance) return Promise.resolve(apiInstance);
 
@@ -63,12 +66,13 @@ export function getAPI(): Promise<AxiosInstance> {
           clearUserData(currentUserId ?? 'guest');
           try {
             window.location.href = '/';
-          } catch { /* redirect may throw */ }
+          } catch (err) {
+            console.error('Failed to redirect to home:', err);
+          }
         }, 1000);
       }
 
       if (process.env.NODE_ENV !== 'production') {
-        // eslint-disable-next-line no-console
         console.debug('API error:', { error });
       }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import ActionCard from '@/components/general/action-card';
 import CardLoader from '@/components/general/card-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
@@ -13,55 +14,35 @@ import {
   FileText,
   Users
 } from 'lucide-react';
-import Link from 'next/link';
 
-function ActionCard({
-  icon,
-  title,
-  description,
-  href
-}: Readonly<{
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  href: string;
-}>) {
+/** Stat card showing the active practitioner count. */
+function PractitionerCountCard({
+  count,
+  isError
+}: Readonly<{ count: number; isError: boolean }>) {
   return (
-    <Link href={href} className='card flex w-full items-center gap-3 p-4'>
-      <div className='flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
-        {icon}
+    <div className='card flex items-center gap-4 p-4'>
+      <div className='flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#E6F7F7]'>
+        <Users className='text-[#13C2C2]' />
       </div>
-      <div className='flex flex-col'>
-        <span className='text-primary text-[12px] font-bold'>{title}</span>
-        <span className='text-primary text-[10px]'>{description}</span>
+      <div>
+        <div className='text-[24px] font-bold'>{isError ? '-' : count}</div>
+        <div className='text-[12px] text-gray-500'>Active Practitioners</div>
       </div>
-    </Link>
+    </div>
   );
 }
 
-function StatCard({
-  icon,
-  value,
-  label,
-  bgColor,
-  iconColor
-}: Readonly<{
-  icon: React.ReactNode;
-  value: React.ReactNode;
-  label: string;
-  bgColor: string;
-  iconColor: string;
-}>) {
+/** Stat card showing pending approvals placeholder. */
+function PendingApprovalsCard() {
   return (
     <div className='card flex items-center gap-4 p-4'>
-      <div
-        className={`flex h-[48px] w-[48px] items-center justify-center rounded-full ${bgColor}`}
-      >
-        <div className={iconColor}>{icon}</div>
+      <div className='flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#FFF7E6]'>
+        <Clock className='text-[#FAAD14]' />
       </div>
       <div>
-        <div className='text-[24px] font-bold'>{value}</div>
-        <div className='text-[12px] text-gray-500'>{label}</div>
+        <div className='text-[24px] font-bold'>-</div>
+        <div className='text-[12px] text-gray-500'>Pending Approvals</div>
       </div>
     </div>
   );
@@ -104,20 +85,11 @@ export default function HomeContentAdmin() {
           Clinic Overview
         </h2>
         <div className='flex flex-col gap-4'>
-          <StatCard
-            icon={<Users />}
-            value={isCountError ? '-' : practitionerCount}
-            label='Active Practitioners'
-            bgColor='bg-[#E6F7F7]'
-            iconColor='text-[#13C2C2]'
+          <PractitionerCountCard
+            count={practitionerCount}
+            isError={isCountError}
           />
-          <StatCard
-            icon={<Clock />}
-            value='-'
-            label='Pending Approvals'
-            bgColor='bg-[#FFF7E6]'
-            iconColor='text-[#FAAD14]'
-          />
+          <PendingApprovalsCard />
         </div>
       </section>
 

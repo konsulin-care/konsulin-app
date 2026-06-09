@@ -9,6 +9,9 @@ type Props = {
   title: string;
 };
 
+/**
+ *
+ */
 export default function RecordSoap({ soapId, title }: Props) {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
@@ -24,19 +27,15 @@ export default function RecordSoap({ soapId, title }: Props) {
     </>
   );
 
-  return (
-    <>
-      {isAuthLoading ? (
-        <div className='flex min-h-screen min-w-full items-center justify-center'>
-          <LoadingSpinnerIcon
-            width={56}
-            height={56}
-            className='w-full animate-spin'
-          />
-        </div>
-      ) : (
-        renderContent
-      )}
-    </>
+  return isAuthLoading ? (
+    <div className='flex min-h-screen min-w-full items-center justify-center'>
+      <LoadingSpinnerIcon
+        width={56}
+        height={56}
+        className='w-full animate-spin'
+      />
+    </div>
+  ) : (
+    renderContent
   );
 }

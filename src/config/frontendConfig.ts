@@ -17,6 +17,9 @@ import {
 const routerInfo: { router?: ReturnType<typeof useRouter>; pathName?: string } =
   {};
 
+/**
+ *
+ */
 export function setRouter(
   router: ReturnType<typeof useRouter>,
   pathName: string
@@ -180,9 +183,9 @@ export const frontendConfig = (
       ...original,
       location: {
         ...original.location,
-        getPathName: () => routerInfo.pathName!,
-        assign: url => routerInfo.router!.push(url.toString()),
-        setHref: url => routerInfo.router!.push(url.toString())
+        getPathName: () => routerInfo.pathName ?? '/',
+        assign: url => routerInfo.router?.push(url.toString()),
+        setHref: url => routerInfo.router?.push(url.toString())
       }
     })
   };

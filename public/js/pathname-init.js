@@ -5,5 +5,7 @@
       globalThis.location.pathname
     )
     sessionStorage.removeItem('konsulin_reload_anonymous_done')
-  } catch {}
+  } catch {
+    /* empty - sessionStorage may be unavailable */
+  }
 })()

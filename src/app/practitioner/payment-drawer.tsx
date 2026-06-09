@@ -90,6 +90,79 @@ function PayNowButtonContent({ isPaying }: Readonly<{ isPaying: boolean }>) {
   return 'Bayar Sekarang';
 }
 
+/** Inner body of the payment drawer — invoice summary and pay buttons. */
+function PaymentDrawerBody({
+  practitionerAvatar,
+  practitionerOrganizationName,
+  practitionerName,
+  dateDisplay,
+  timeDisplay,
+  invoice,
+  isPaying,
+  isPaymentDisabled,
+  isPaymentDisabledOffline,
+  handlePayOnline,
+  handlePayOffline
+}: Readonly<{
+  practitionerAvatar?: Props['practitionerAvatar'];
+  practitionerOrganizationName?: string;
+  practitionerName?: string;
+  dateDisplay: React.ReactNode;
+  timeDisplay: React.ReactNode;
+  invoice?: any;
+  isPaying: boolean;
+  isPaymentDisabled: boolean;
+  isPaymentDisabledOffline: boolean;
+  handlePayOnline: () => void;
+  handlePayOffline: () => void;
+}>) {
+  return (
+    <div className='flex flex-col gap-4'>
+      <PractitionerInfo
+        practitionerAvatar={practitionerAvatar}
+        practitionerOrganizationName={practitionerOrganizationName}
+        practitionerName={practitionerName}
+      />
+
+      <div className='flex w-full items-center justify-center gap-2'>
+        {dateDisplay}
+        {timeDisplay}
+      </div>
+
+      <div className='mt-2 flex items-center justify-between rounded-[12px] bg-[#F9F9F9] p-3'>
+        <span className='text-[12px] text-[#666]'>Total</span>
+        <span className='text-[16px] font-bold'>
+          {invoice?.totalNet
+            ? new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: invoice.totalNet.currency,
+                minimumFractionDigits: 0
+              }).format(invoice.totalNet.value)
+            : '-'}
+        </span>
+      </div>
+
+      <div className='mt-2 flex flex-col gap-2'>
+        <Button
+          className='bg-secondary w-full rounded-xl text-white disabled:opacity-50'
+          disabled={isPaymentDisabled}
+          onClick={handlePayOnline}
+        >
+          <PayNowButtonContent isPaying={isPaying} />
+        </Button>
+        <Button
+          variant='outline'
+          className='w-full rounded-xl border-0'
+          disabled={isPaymentDisabledOffline}
+          onClick={handlePayOffline}
+        >
+          <PayButtonContent isPaying={isPaying} label='Bayar Nanti' />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /** Payment drawer with invoice summary and pay online/offline buttons. */
 export default function PaymentDrawer({
   paymentOpen,
@@ -165,65 +238,43 @@ export default function PaymentDrawer({
     }
   };
 
+  const dateDisplay = (
+    <div className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'>
+      <span className='mr-2 text-[12px] text-[#2C2F35]'>
+        {bookingState?.date
+          ? format(bookingState.date, 'dd MMMM yyyy')
+          : '-/-/-'}
+      </span>
+    </div>
+  );
+
+  const timeDisplay = (
+    <div className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'>
+      <span className='mr-2 text-[12px] text-[#2C2F35]'>
+        {bookingState?.startTime || '-:-'}
+      </span>
+    </div>
+  );
+
   return (
     <Drawer onClose={() => setPaymentOpen(false)} open={paymentOpen}>
       <DrawerContent
         onInteractOutside={() => setPaymentOpen(false)}
         className='fixed right-0 bottom-0 left-0 mx-auto flex max-w-screen-sm flex-col bg-white p-4'
       >
-        <div className='flex flex-col gap-4'>
-          <PractitionerInfo
-            practitionerAvatar={practitionerAvatar}
-            practitionerOrganizationName={practitionerOrganizationName}
-            practitionerName={practitionerName}
-          />
-
-          <div className='flex w-full items-center justify-center gap-2'>
-            <div className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'>
-              <span className='mr-2 text-[12px] text-[#2C2F35]'>
-                {bookingState?.date
-                  ? format(bookingState.date, 'dd MMMM yyyy')
-                  : '-/-/-'}
-              </span>
-            </div>
-            <div className='flex w-[50%] items-center justify-between rounded-[14px] border border-[#E3E3E3] p-2'>
-              <span className='mr-2 text-[12px] text-[#2C2F35]'>
-                {bookingState?.startTime || '-:-'}
-              </span>
-            </div>
-          </div>
-
-          <div className='mt-2 flex items-center justify-between rounded-[12px] bg-[#F9F9F9] p-3'>
-            <span className='text-[12px] text-[#666]'>Total</span>
-            <span className='text-[16px] font-bold'>
-              {invoice?.totalNet
-                ? new Intl.NumberFormat('id-ID', {
-                    style: 'currency',
-                    currency: invoice.totalNet.currency,
-                    minimumFractionDigits: 0
-                  }).format(invoice.totalNet.value)
-                : '-'}
-            </span>
-          </div>
-
-          <div className='mt-2 flex flex-col gap-2'>
-            <Button
-              className='bg-secondary w-full rounded-xl text-white disabled:opacity-50'
-              disabled={isPaymentDisabled}
-              onClick={handlePayOnline}
-            >
-              <PayNowButtonContent isPaying={isPaying} />
-            </Button>
-            <Button
-              variant='outline'
-              className='w-full rounded-xl border-0'
-              disabled={isPaymentDisabledOffline}
-              onClick={handlePayOffline}
-            >
-              <PayButtonContent isPaying={isPaying} label='Bayar Nanti' />
-            </Button>
-          </div>
-        </div>
+        <PaymentDrawerBody
+          practitionerAvatar={practitionerAvatar}
+          practitionerOrganizationName={practitionerOrganizationName}
+          practitionerName={practitionerName}
+          dateDisplay={dateDisplay}
+          timeDisplay={timeDisplay}
+          invoice={invoice}
+          isPaying={isPaying}
+          isPaymentDisabled={isPaymentDisabled}
+          isPaymentDisabledOffline={isPaymentDisabledOffline}
+          handlePayOnline={handlePayOnline}
+          handlePayOffline={handlePayOffline}
+        />
       </DrawerContent>
     </Drawer>
   );

@@ -22,6 +22,9 @@ const pills = [
 const SCROLL_THRESHOLD = 10;
 const SCROLL_HIDE_OFFSET = 100;
 
+/**
+ *
+ */
 export default function QuickActionFab() {
   const router = useRouter();
   const { state: authState } = useAuth();
@@ -32,6 +35,7 @@ export default function QuickActionFab() {
   const isGuest = authState?.userInfo?.role_name === Roles.Guest;
 
   useEffect(() => {
+    /** Hides or shows FAB based on scroll direction and offset. */
     const handleScroll = () => {
       if (isOpen) return;
 

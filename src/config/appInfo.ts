@@ -7,6 +7,9 @@ export type AppInfo = {
   websiteBasePath: string;
 };
 
+/**
+ *
+ */
 export function getAppInfo(): AppInfo {
   const origin =
     globalThis.window === undefined

@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, sonarjs/cognitive-complexity, max-lines, react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, sonarjs/cognitive-complexity, max-lines, react-hooks/exhaustive-deps, react/jsx-max-depth */
 import EmptyState from '@/components/general/empty-state';
 import Input from '@/components/general/input';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -26,7 +26,7 @@ import {
 import { IPractitionerRoleDetail } from '@/types/practitioner';
 import { mapAddress } from '@/utils/helper';
 import { BundleEntry, CodeableConcept, Schedule } from 'fhir/r4';
-import { XCircle } from 'lucide-react';
+import { ChevronDown, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -268,72 +268,91 @@ const SpecialtiesSection = ({
   );
 };
 
-/** Expandable firm card with header and collapsible content. */
-const Collapsible = ({ isOpen, onToggle, children, data }) => {
+/** Active firm banner showing loading skeleton or current firm name. */
+const ActiveFirmSection = ({
+  isLoading,
+  isFetching,
+  activeFirms
+}: {
+  isLoading: boolean;
+  isFetching: boolean;
+  activeFirms: any[];
+}) => {
+  if (isLoading || isFetching) {
+    return (
+      <Skeleton
+        count={1}
+        className='h-[50px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
+      />
+    );
+  }
   return (
-    <div className='collapsible my-4 rounded-[25px] border bg-gray-50'>
-      <button
-        className={`toggle flex w-full items-center justify-between rounded-[25px] p-2 text-left focus:outline-none ${
-          isOpen
-            ? 'bg-secondary text-[18px] font-bold text-white'
-            : 'bg-transparent text-gray-700'
-        }`}
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        aria-controls='collapsible-content'
-      >
-        <div className='flex items-center'>
-          <Image
-            className='block rounded-full'
-            src='/images/clinic.jpg'
-            alt='Prefix Icon'
-            width={38}
-            height={38}
-            style={{ width: '38px', height: '38px' }}
-          />
-          <div className='flex flex-col justify-center gap-1 pl-2'>
-            <span className='text-sm'>{data.organizationData.name}</span>
-            <span className='text-xs'>
-              {mapAddress(data.organizationData.address)}
-            </span>
-          </div>
+    <div className='rounded-lg bg-[#F9F9F9] p-4'>
+      <div className='flex justify-between'>
+        <div className='text-sm opacity-40'>Current Firm</div>
+        <div className='text-m font-bold'>
+          {activeFirms[0]?.organizationData.name || 'No active firms'}
         </div>
-        <div className='flex items-center gap-2'>
-          {isOpen && (
-            <span className='text-xs font-medium text-white/80'>Active</span>
-          )}
-          <div
-            className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-          >
-            <svg
-              width='20'
-              height='20'
-              viewBox='0 0 20 20'
-              fill='none'
-              xmlns='http://www.w3.org/2000/svg'
-            >
-              <path
-                d='M5 7.5L10 12.5L15 7.5'
-                stroke={isOpen ? 'white' : 'currentColor'}
-                strokeWidth='2'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-              />
-            </svg>
-          </div>
-        </div>
-      </button>
-      {isOpen && (
-        <div
-          id='collapsible-content'
-          className='content rounded-b-[25px] bg-gray-50 p-4'
-        >
-          {children}
-        </div>
-      )}
+      </div>
     </div>
   );
 };
+
+/** Toggle button content for the collapsible firm card. */
+const CollapsibleToggle = ({ isOpen, onToggle, data }) => (
+  <button
+    className={`toggle flex w-full items-center justify-between rounded-[25px] p-2 text-left focus:outline-none ${
+      isOpen
+        ? 'bg-secondary text-[18px] font-bold text-white'
+        : 'bg-transparent text-gray-700'
+    }`}
+    onClick={onToggle}
+    aria-expanded={isOpen}
+    aria-controls='collapsible-content'
+  >
+    <div className='flex items-center'>
+      <Image
+        className='block rounded-full'
+        src='/images/clinic.jpg'
+        alt='Prefix Icon'
+        width={38}
+        height={38}
+        style={{ width: '38px', height: '38px' }}
+      />
+      <div className='flex flex-col justify-center gap-1 pl-2'>
+        <span className='text-sm'>{data.organizationData.name}</span>
+        <span className='text-xs'>
+          {mapAddress(data.organizationData.address)}
+        </span>
+      </div>
+    </div>
+    <div className='flex items-center gap-2'>
+      {isOpen && (
+        <span className='text-xs font-medium text-white/80'>Active</span>
+      )}
+      <div
+        className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+      >
+        <ChevronDown size={20} color={isOpen ? 'white' : 'currentColor'} />
+      </div>
+    </div>
+  </button>
+);
+
+/** Expandable firm card with header and collapsible content. */
+const Collapsible = ({ isOpen, onToggle, children, data }) => (
+  <div className='collapsible my-4 rounded-[25px] border bg-gray-50'>
+    <CollapsibleToggle isOpen={isOpen} onToggle={onToggle} data={data} />
+    {isOpen && (
+      <div
+        id='collapsible-content'
+        className='content rounded-b-[25px] bg-gray-50 p-4'
+      >
+        {children}
+      </div>
+    )}
+  </div>
+);
 
 /** Collapsible firm item with fee, specialties, session, and timezone inputs. */
 const CollapsibleItem = ({
@@ -552,8 +571,8 @@ const EditPractice = () => {
 
         if (slotMinutes != null || bufferMinutes != null || timezone) {
           next[idx] = {
-            sessionDuration: slotMinutes != null ? String(slotMinutes) : '',
-            bufferTime: bufferMinutes != null ? String(bufferMinutes) : '',
+            sessionDuration: slotMinutes == null ? '' : String(slotMinutes),
+            bufferTime: bufferMinutes == null ? '' : String(bufferMinutes),
             timezone
           };
         }
@@ -852,21 +871,11 @@ const EditPractice = () => {
     <>
       <div className='flex min-h-[calc(100vh-105px)] flex-col'>
         <div className='flex flex-1 flex-col overflow-hidden'>
-          {isPractitionerRolesLoading || isPractitionerRolesFetching ? (
-            <Skeleton
-              count={1}
-              className='h-[50px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
-            />
-          ) : (
-            <div className='rounded-lg bg-[#F9F9F9] p-4'>
-              <div className='flex justify-between'>
-                <div className='text-sm opacity-40'>Current Firm</div>
-                <div className='text-m font-bold'>
-                  {activeFirms[0]?.organizationData.name || 'No active firms'}
-                </div>
-              </div>
-            </div>
-          )}
+          <ActiveFirmSection
+            isLoading={isPractitionerRolesLoading}
+            isFetching={isPractitionerRolesFetching}
+            activeFirms={activeFirms}
+          />
 
           <div className='mt-4 flex items-center gap-4'>
             <div className='flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
@@ -908,38 +917,47 @@ const EditPractice = () => {
           </div>
 
           <div className='flex-1 overflow-y-auto pb-[15px]'>
-            {isPractitionerRolesLoading || isPractitionerRolesFetching ? (
-              <Skeleton
-                count={4}
-                className='mt-4 h-[60px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
-              />
-            ) : filteredFirmData && filteredFirmData.length > 0 ? (
-              filteredFirmData.map(
-                (firm: BundleEntry<IPractitionerRoleDetail>, index: number) => (
-                  <CollapsibleItem
-                    key={firm.id}
-                    index={index}
-                    firm={firm}
-                    invoice={invoiceData[index]}
-                    isOpen={Boolean(openCollapsibles[index])}
-                    onToggle={handleToggle}
-                    tagInputs={tagInputs}
-                    handleChangeFee={handleChangeFee}
-                    handleAddTag={handleAddTag}
-                    handleRemoveTag={handleRemoveTag}
-                    setTagInputs={setTagInputs}
-                    slotConfigs={slotConfigs}
-                    setSlotConfigs={setSlotConfigs}
+            {(() => {
+              if (isPractitionerRolesLoading || isPractitionerRolesFetching) {
+                return (
+                  <Skeleton
+                    count={4}
+                    className='mt-4 h-[60px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
                   />
-                )
-              )
-            ) : (
-              <EmptyState
-                className='py-16'
-                title='No Firms Found'
-                subtitle='You have no firms registered at the moment'
-              />
-            )}
+                );
+              }
+              if (filteredFirmData && filteredFirmData.length > 0) {
+                return filteredFirmData.map(
+                  (
+                    firm: BundleEntry<IPractitionerRoleDetail>,
+                    index: number
+                  ) => (
+                    <CollapsibleItem
+                      key={firm.id}
+                      index={index}
+                      firm={firm}
+                      invoice={invoiceData[index]}
+                      isOpen={Boolean(openCollapsibles[index])}
+                      onToggle={handleToggle}
+                      tagInputs={tagInputs}
+                      handleChangeFee={handleChangeFee}
+                      handleAddTag={handleAddTag}
+                      handleRemoveTag={handleRemoveTag}
+                      setTagInputs={setTagInputs}
+                      slotConfigs={slotConfigs}
+                      setSlotConfigs={setSlotConfigs}
+                    />
+                  )
+                );
+              }
+              return (
+                <EmptyState
+                  className='py-16'
+                  title='No Firms Found'
+                  subtitle='You have no firms registered at the moment'
+                />
+              );
+            })()}
           </div>
         </div>
 

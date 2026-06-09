@@ -63,6 +63,17 @@ const EmptyPractitionerState = () => (
   />
 );
 
+/** Trigger card shown inside PractitionerAvailability to reveal the calendar. */
+function AvailabilityTrigger() {
+  return (
+    <div className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'>
+      <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />
+      <span className='mr-auto text-[12px] font-bold'>See Availability</span>
+      <ArrowRightIcon color='#13C2C2' />
+    </div>
+  );
+}
+
 /** Practitioner booking page with avatar, availability calendar, and payment flow. */
 export default function Practitioner() {
   const router = useRouter();
@@ -147,9 +158,31 @@ export default function Practitioner() {
 
   const photoUrl = practitionerData?.photo?.[0]?.url;
 
+  const drawerFooter = (
+    <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
+      <Button
+        className='bg-secondary h-full w-full rounded-xl p-4 text-white'
+        onClick={handleClose}
+        disabled={isPending}
+      >
+        {isPending ? (
+          <LoadingSpinnerIcon
+            stroke='white'
+            width={20}
+            height={20}
+            className='animate-spin'
+          />
+        ) : (
+          'Close'
+        )}
+      </Button>
+    </DrawerFooter>
+  );
+
   const renderDrawerContent = (
     <>
       <DrawerHeader className='mx-auto flex flex-col items-center gap-4 pb-0 text-[20px]'>
+        {/* eslint-disable-next-line react/jsx-max-depth */}
         <Image
           className='rounded-[8px] object-cover p-6'
           src={'/images/booking-success.png'}
@@ -158,37 +191,44 @@ export default function Practitioner() {
           style={{ width: 'auto', height: 'auto' }}
           alt='success'
         />
+        {/* eslint-disable-next-line react/jsx-max-depth */}
         <DrawerTitle className='mb-2 text-center text-2xl font-bold'>
           Selamat! Anda Telah Berhasil Memesan Sesi Konsultasi
         </DrawerTitle>
       </DrawerHeader>
 
       <DrawerDescription className='px-4 text-center text-sm opacity-50'>
-        Pemesanan Anda telah berhasil, dan kami telah mencatat detail sesi
+        Pemesanan Anda telah berhasil, and kami telah mencatat detail sesi
         konsultasi Anda
       </DrawerDescription>
 
-      <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
-        <Button
-          className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-          onClick={handleClose}
-          disabled={isPending}
-        >
-          {isPending ? (
-            <LoadingSpinnerIcon
-              stroke='white'
-              width={20}
-              height={20}
-              className='animate-spin'
-            />
-          ) : (
-            'Close'
-          )}
-        </Button>
-      </DrawerFooter>
+      {drawerFooter}
     </>
   );
 
+  const practitionerHeader = (
+    <div className='flex flex-col items-center'>
+      <div className='flex flex-col items-center'>
+        <Avatar
+          seed={seed}
+          initials={initials}
+          backgroundColor={backgroundColor}
+          photoUrl={photoUrl}
+          className='text-2xl'
+        />
+
+        <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
+          <HeartPulse size={16} color='#08979C' fill='white' />
+          <span className='whitespace-nowrap'>
+            {detailPractitioner.organization.name}
+          </span>
+        </Badge>
+      </div>
+      <h3 className='mt-2 text-center text-[20px] font-bold'>{displayName}</h3>
+    </div>
+  );
+
+  /** Renders main practitioner content, loading, or empty states. */
   const renderMainContent = () => {
     if (practitionerDataLoading) return <LoadingState />;
     if (!practitionerData) return <EmptyPractitionerState />;
@@ -197,27 +237,7 @@ export default function Practitioner() {
 
     return (
       <>
-        <div className='flex flex-col items-center'>
-          <div className='flex flex-col items-center'>
-            <Avatar
-              seed={seed}
-              initials={initials}
-              backgroundColor={backgroundColor}
-              photoUrl={photoUrl}
-              className='text-2xl'
-            />
-
-            <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
-              <HeartPulse size={16} color='#08979C' fill='white' />
-              <span className='whitespace-nowrap'>
-                {detailPractitioner.organization.name}
-              </span>
-            </Badge>
-          </div>
-          <h3 className='mt-2 text-center text-[20px] font-bold'>
-            {displayName}
-          </h3>
-        </div>
+        {practitionerHeader}
 
         <PractitionerAvailability
           practitionerRole={detailPractitioner.resource}
@@ -231,13 +251,7 @@ export default function Practitioner() {
             backgroundColor
           }}
         >
-          <div className='card mt-4 flex cursor-pointer items-center border-0 bg-[#F9F9F9] p-4'>
-            <CalendarDaysIcon size={24} color='#13C2C2' className='mr-2' />
-            <span className='mr-auto text-[12px] font-bold'>
-              See Availability
-            </span>
-            <ArrowRightIcon color='#13C2C2' />
-          </div>
+          <AvailabilityTrigger />
         </PractitionerAvailability>
 
         <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>

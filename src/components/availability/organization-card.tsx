@@ -1,11 +1,15 @@
 'use client';
 
+/* eslint-disable react/jsx-max-depth */
 import { Button } from '@/components/ui/button';
 import { OrganizationCardProps } from '@/types/availability';
 import { validateTimeRange } from '@/utils/availability';
 import { Plus } from 'lucide-react';
 import TimeRangeInput from './time-range-input';
 
+/**
+ *
+ */
 export default function OrganizationCard({
   organization,
   timeRanges,

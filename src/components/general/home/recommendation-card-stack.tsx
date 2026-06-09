@@ -10,6 +10,9 @@ interface RecommendationCardStackProps {
   onBook: (practitionerId: string) => void;
 }
 
+/**
+ *
+ */
 export default function RecommendationCardStack({
   onBook
 }: Readonly<RecommendationCardStackProps>) {
@@ -24,8 +27,8 @@ export default function RecommendationCardStack({
         className='!overflow-visible'
         spaceBetween={16}
         slidesPerView={1.3}
-        centeredSlides={true}
-        loop={true}
+        centeredSlides
+        loop
         onSlideChange={swiper => setActiveIndex(swiper.realIndex)}
       >
         {cards.map(card => (

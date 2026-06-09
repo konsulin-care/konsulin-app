@@ -1,3 +1,6 @@
+/**
+ *
+ */
 export function HeaderText({
   indicator,
   displayName

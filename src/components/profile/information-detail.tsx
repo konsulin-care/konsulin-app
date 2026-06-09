@@ -72,17 +72,17 @@ function DetailItem({ item }) {
  * @returns A JSX fragment containing the practice detail rows and, when present, a Tags component for specialties.
  */
 function DetailPractice({ items }) {
-  const organizationName =
-    items && items.organizationData.name ? items.organizationData.name : '-';
+  const organizationName = items?.organizationData.name
+    ? items.organizationData.name
+    : '-';
 
-  const fee =
-    items && items.invoiceData?.totalNet
-      ? `${new Intl.NumberFormat('id-ID', {
-          style: 'currency',
-          currency: items.invoiceData.totalNet.currency,
-          minimumFractionDigits: 0
-        }).format(items.invoiceData.totalNet.value)} / Session`
-      : '-';
+  const fee = items?.invoiceData?.totalNet
+    ? `${new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: items.invoiceData.totalNet.currency,
+        minimumFractionDigits: 0
+      }).format(items.invoiceData.totalNet.value)} / Session`
+    : '-';
 
   const practiceInformationsDetail = [
     {
@@ -102,9 +102,9 @@ function DetailPractice({ items }) {
   return (
     <>
       <div className='flex w-full flex-col py-2'>
-        {practiceInformationsDetail.map((item, index) => {
+        {practiceInformationsDetail.map(item => {
           return (
-            <div key={index} className='mt-2 flex w-full justify-between'>
+            <div key={item.key} className='mt-2 flex w-full justify-between'>
               <div className='text-sm text-[#2C2F35] opacity-100'>
                 {item.key}
               </div>
@@ -143,6 +143,27 @@ function DetailPractice({ items }) {
  * @param backgroundColor - Background color for the avatar.
  * @returns The React element for the information card.
  */
+/** Action button section with rounded pill style. */
+const DetailActionButton = ({
+  onEdit,
+  buttonText
+}: {
+  onEdit?: () => void;
+  buttonText?: string;
+}) => (
+  <div className='flex w-1/2 items-start justify-end'>
+    <button
+      onClick={onEdit}
+      className='cursor-pointer transition-all duration-200 hover:brightness-90'
+    >
+      <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
+        <p className='text-[10px] text-white'>{buttonText}</p>
+      </div>
+    </button>
+  </div>
+);
+
+/** Displays a profile information card with header, details, and edit action. */
 export default function InformationDetail({
   isRadiusIcon = true,
   iconUrl,
@@ -183,16 +204,7 @@ export default function InformationDetail({
           backgroundColor={backgroundColor}
           seed={seed}
         />
-        <div className='flex w-1/2 items-start justify-end'>
-          <button
-            onClick={onEdit}
-            className='cursor-pointer transition-all duration-200 hover:brightness-90'
-          >
-            <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
-              <p className='text-[10px] text-white'>{buttonText}</p>
-            </div>
-          </button>
-        </div>
+        <DetailActionButton onEdit={onEdit} buttonText={buttonText} />
       </div>
 
       {details && <div className='flex w-full' />}
@@ -200,9 +212,9 @@ export default function InformationDetail({
       {isEditPractice ? (
         <div className='mt-2 flex w-full flex-col'>
           {Array.isArray(details) &&
-            details.map((detail, index) => (
+            details.map((detail: { id: string }) => (
               <div
-                key={index}
+                key={detail.id}
                 className='mt-1 flex flex-col border-t border-[#E3E3E3] font-[#2C2F35] text-xs'
               >
                 <DetailPractice items={detail} />
@@ -211,10 +223,10 @@ export default function InformationDetail({
         </div>
       ) : (
         <div className='mt-2 flex w-full flex-col space-y-2 border-t border-[#E3E3E3]'>
-          {details?.map((item: IPractitionerRoleDetail, index: number) => (
+          {details?.map((item: IPractitionerRoleDetail) => (
             <div
               className='mt-2 flex justify-between font-[#2C2F35] text-xs'
-              key={index}
+              key={item.id}
             >
               <DetailItem item={item} />
             </div>

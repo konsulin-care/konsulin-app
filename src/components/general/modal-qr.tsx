@@ -10,6 +10,9 @@ import {
 import QRCode from 'react-qr-code';
 import { toast } from 'react-toastify';
 
+/**
+ *
+ */
 export default function ModalQr({ value }) {
   const handleCopyToClipboard = () => {
     if (!value) return;
@@ -28,7 +31,7 @@ export default function ModalQr({ value }) {
   return (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button className='rounded-xl bg-secondary text-white'>Show QR</Button>
+        <Button className='bg-secondary rounded-xl text-white'>Show QR</Button>
       </DrawerTrigger>
       <DrawerContent
         onInteractOutside={handleCopyToClipboard}
@@ -49,7 +52,7 @@ export default function ModalQr({ value }) {
         />
         <DrawerClose
           onClick={handleCopyToClipboard}
-          className='rounded-xl border border-secondary bg-white p-4 text-[14px] text-secondary'
+          className='border-secondary text-secondary rounded-xl border bg-white p-4 text-[14px]'
         >
           Close
         </DrawerClose>

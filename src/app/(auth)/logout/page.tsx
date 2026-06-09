@@ -7,11 +7,15 @@ import { clearUserData } from '@/lib/indexeddb';
 import { useEffect } from 'react';
 import Session from 'supertokens-auth-react/recipe/session';
 
+/**
+ *
+ */
 export default function Logout() {
   const { state, dispatch } = useAuth();
   const { dispatch: dispatchProfile } = useProfile();
 
   useEffect(() => {
+    /** Handles user logout and data cleanup. */
     const handleLogout = async () => {
       const ownerId = state.userInfo?.userId ?? '';
       await Session.signOut();
@@ -32,6 +36,7 @@ export default function Logout() {
     };
 
     handleLogout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

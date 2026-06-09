@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import ClinicFilter from './clinic-filter';
 
+/** Card displaying a clinic with image and selection button. */
 function ClinicCard({
   clinic,
   onSelect
@@ -49,6 +50,7 @@ function ClinicCard({
   );
 }
 
+/** Renders a grid of clinic cards. */
 function clinicGrid(clinics: BundleEntry[], onSelect: (id: string) => void) {
   return (
     <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
@@ -63,18 +65,18 @@ function clinicGrid(clinics: BundleEntry[], onSelect: (id: string) => void) {
   );
 }
 
+/**
+ *
+ */
 export default function ClinicList() {
   const router = useRouter();
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const { data: clinics, isLoading: isListClinicsLoading } = useListClinics(
-    {
-      cityFilter: clinicFilter.city,
-      nameFilter: '' // Always use empty nameFilter for base clinic list
-    },
-    500
-  );
+  const { data: clinics, isLoading: isListClinicsLoading } = useListClinics({
+    cityFilter: clinicFilter.city,
+    nameFilter: '' // Always use empty nameFilter for base clinic list
+  });
 
   // Memoize server search function to prevent infinite loops
   const serverSearchFunction = useCallback(async (term: string) => {
@@ -116,6 +118,7 @@ export default function ClinicList() {
     router.push(`/clinic?clinicId=${clinicId}`);
   };
 
+  /** Renders clinic results, loading, or empty states. */
   const renderClinicResults = () => {
     if (isListClinicsLoading) return <CardLoader />;
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DayOfWeek, TimeRange, WeeklyAvailability } from '@/types/availability';
 import { PractitionerRole } from 'fhir/r4';
 

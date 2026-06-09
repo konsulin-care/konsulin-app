@@ -10,6 +10,7 @@ type Props = {
   role: string;
 };
 
+/** Renders a single upcoming session card with time and participant info. */
 function SessionCard({
   session,
   role
@@ -62,6 +63,9 @@ function SessionCard({
   );
 }
 
+/**
+ *
+ */
 export default function UpcomingSession({ data, role }: Readonly<Props>) {
   if (!data || data.length === 0) return null;
 

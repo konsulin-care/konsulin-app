@@ -4,10 +4,14 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { FloatingSaveButtonProps } from '@/types/availability';
 
+/**
+ *
+ */
 export default function FloatingSaveButton({
   isSaving,
   hasChanges,
   onSave,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onCancel
 }: FloatingSaveButtonProps) {
   return (

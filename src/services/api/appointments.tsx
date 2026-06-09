@@ -21,10 +21,11 @@ export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
     staleTime: 60 * 1000,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
-    enabled: !!patientId && !!dateReference
+    enabled: Boolean(patientId) && Boolean(dateReference)
   });
 };
 
+/** Fetch all appointments for a patient. */
 export const useGetAllAppointments = ({ patientId }) => {
   return useQuery({
     queryKey: ['all-appointments', patientId],
@@ -38,10 +39,11 @@ export const useGetAllAppointments = ({ patientId }) => {
     select: response => {
       return response.data || null;
     },
-    enabled: !!patientId
+    enabled: Boolean(patientId)
   });
 };
 
+/** Fetch upcoming sessions for a practitioner from a given date. */
 export const useGetUpcomingSessions = ({ practitionerId, dateReference }) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
@@ -60,10 +62,11 @@ export const useGetUpcomingSessions = ({ practitionerId, dateReference }) => {
     staleTime: 60 * 1000,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
-    enabled: !!practitionerId && !!dateReference
+    enabled: Boolean(practitionerId) && Boolean(dateReference)
   });
 };
 
+/** Fetch all sessions for a practitioner. */
 export const useGetAllSessions = ({ practitionerId }) => {
   return useQuery({
     queryKey: ['all-sessions', practitionerId],
@@ -77,10 +80,11 @@ export const useGetAllSessions = ({ practitionerId }) => {
     select: response => {
       return response.data || null;
     },
-    enabled: !!practitionerId
+    enabled: Boolean(practitionerId)
   });
 };
 
+/** Fetch today's sessions for a practitioner. */
 export const useGetTodaySessions = ({
   practitionerId,
   dateReference,
@@ -100,10 +104,11 @@ export const useGetTodaySessions = ({
     select: response => {
       return response.data || null;
     },
-    enabled: !!dateReference && !!practitionerId && enabled
+    enabled: Boolean(dateReference) && Boolean(practitionerId) && enabled
   });
 };
 
+/** Create a new appointment via FHIR bundle. */
 export const useCreateAppointment = () => {
   return useMutation({
     mutationKey: ['create-appointments'],
@@ -144,6 +149,7 @@ export const usePayAppointment = () => {
   });
 };
 
+/** Fetch available slots for a practitioner on a given date. */
 export const useGetPractitionerSlots = ({ practitionerId, dateReference }) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
@@ -159,6 +165,6 @@ export const useGetPractitionerSlots = ({ practitionerId, dateReference }) => {
     select: response => {
       return response.data || null;
     },
-    enabled: !!practitionerId && !!dateReference
+    enabled: Boolean(practitionerId) && Boolean(dateReference)
   });
 };

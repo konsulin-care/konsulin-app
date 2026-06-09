@@ -12,6 +12,7 @@ const DIRECTIONS = [
   { x1: '100%', y1: '100%', x2: '0%', y2: '0%' }
 ];
 
+/** Hash a string using the djb2 algorithm. */
 function djb2(str: string): number {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
@@ -21,14 +22,16 @@ function djb2(str: string): number {
   return Math.abs(hash);
 }
 
+/** Create a seeded pseudo-random number generator. */
 function seeded(hash: number): () => number {
-  let s = hash;
+  let seed = hash;
   return () => {
-    s = Math.trunc(s * 1103515245 + 12345);
-    return Math.abs(s) / 0x7fffffff;
+    seed = Math.trunc(seed * 1103515245 + 12345);
+    return Math.abs(seed) / 0x7fffffff;
   };
 }
 
+/** Escape XML special characters. */
 function escapeXml(s: string): string {
   return s
     .replaceAll('&', '&amp;')
@@ -38,6 +41,9 @@ function escapeXml(s: string): string {
     .replaceAll("'", '&apos;');
 }
 
+/**
+ *
+ */
 export function generateAvatarSvgDataUrl(
   seed: string,
   initials: string

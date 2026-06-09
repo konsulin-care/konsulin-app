@@ -32,7 +32,7 @@ describe('HomeContentAdmin', () => {
       state: {
         isAuthenticated: true,
         userInfo: {
-          role_name: 'ClinicAdmin',
+          role_name: 'Clinic Admin',
           fhirId: 'admin-1',
           fullname: 'Admin User',
           email: 'admin@clinic.com'

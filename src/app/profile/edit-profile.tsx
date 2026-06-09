@@ -44,7 +44,7 @@ import ProfileFormSection from './profile-form-section';
 
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Patient, Practitioner } from 'fhir/r4';
+import { ContactPoint, Identifier, Patient, Practitioner } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
 import { Fragment, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -77,6 +77,17 @@ export type ICustomProfile = {
   phone: string;
   email: string;
 };
+
+/** Full-screen loading spinner shown while profile data is being fetched. */
+const ProfileLoadingState = () => (
+  <div className='flex min-h-screen min-w-full items-center justify-center'>
+    <LoadingSpinnerIcon
+      width={56}
+      height={56}
+      className='w-full animate-spin'
+    />
+  </div>
+);
 
 /** Profile edit page with personal info, photo, gender, city, addresses. */
 export default function EditProfile({ userRole, fhirId }: Props) {
@@ -165,6 +176,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   useEffect(() => {
     let isActive = true;
 
+    /** Validate the current photo URL and resolve to displayable URL. */
     const validatePhoto = async () => {
       if (!updateUser.photo) {
         if (isActive) setResolvedPhotoUrl('');
@@ -188,6 +200,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     };
   }, [updateUser.photo]);
 
+  /** Update a profile field and run validation for it. */
   const handleChangeInput = (label: string, value: string) => {
     setUpdateUser(prevState => ({ ...prevState, [label]: value }));
     const errorMessage = validateInput(label, value, isPhoneBasedUser);
@@ -286,6 +299,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     const identifiers = latestProfile?.identifier
       ? [...latestProfile.identifier]
       : [];
+    /** Ensure an identifier with the given system exists in the list. */
     const ensureIdentifier = (system: string, value: string) => {
       if (!system || !value) return;
       const exists = identifiers.find(id => id.system === system);
@@ -308,6 +322,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     return 'png';
   };
 
+  /** Upload a new avatar photo and return the URL. */
   const processAvatarUpload = async (
     photoDataUrl: string,
     existingPhotoUrl: string,
@@ -378,60 +393,38 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     return existingPhotoUrl || '';
   };
 
-  /** Handles profile save: syncs Chatwoot, uploads photo, updates FHIR profile. */
-  // eslint-disable-next-line sonarjs/cognitive-complexity
-  const handleEditSave = async () => {
-    let latestProfile: FHIRProfile = null;
-    try {
-      latestProfile = await getProfileById(fhirId, fhirRole);
-    } catch (error) {
-      console.error('Error when refetching user profile: ', error);
-      toast.error('Failed to fetch the latest profile');
+  /** Sync FHIR identifier identifiers if chatwoot ID changed. */
+  const syncIdentifierIfNeeded = async (
+    latestProfile: FHIRProfile,
+    identifiers: Identifier[],
+    telecom: ContactPoint[],
+    finalChatwootId: string,
+    existingChatwootId: string
+  ) => {
+    if (existingChatwootId && existingChatwootId === finalChatwootId) return;
+    if (!latestProfile) {
+      toast.error('Failed updating profile');
       return;
     }
-
-    const existingPhotoUrl = latestProfile?.photo?.[0]?.url ?? '';
-    const existingChatwootId = latestProfile
-      ? findIdentifierValue(
-          latestProfile,
-          'https://login.konsulin.care/chatwoot-id'
-        )
-      : '';
-
-    const { finalChatwootId, identifiers } = await syncChatwootIdentifier(
-      latestProfile,
-      existingChatwootId
-    );
-    const telecom = buildTelecom();
-    const needsIdentifierSync =
-      !existingChatwootId || existingChatwootId !== finalChatwootId;
-
-    if (needsIdentifierSync) {
-      if (!latestProfile) {
-        toast.error('Failed updating profile');
-        return;
-      }
-      try {
-        await updateProfile({
-          payload: { ...latestProfile, identifier: identifiers, telecom }
-        });
-      } catch (error) {
-        console.error('Error when syncing chatwoot identifier: ', error);
-        toast.error('Failed to sync profile to Konsulin Omnichannel');
-        return;
-      }
+    try {
+      await updateProfile({
+        payload: { ...latestProfile, identifier: identifiers, telecom }
+      });
+    } catch (error) {
+      console.error('Error when syncing chatwoot identifier: ', error);
+      toast.error('Failed to sync profile to Konsulin Omnichannel');
     }
+  };
 
-    const photoUrlForPayload = await resolvePhotoUrl(
-      existingPhotoUrl,
-      finalChatwootId
-    );
-    if (isDataUrl(updateUser.photo) && !photoUrlForPayload) return;
-
+  /** Build the FHIR resource payload for profile update. */
+  const buildUpdatePayload = (
+    identifiers: Identifier[],
+    telecom: ContactPoint[],
+    photoUrlForPayload: string
+  ): Patient | Practitioner => {
     const splitName = (updateUser.firstName || '').split(' ').filter(Boolean);
     const familyName = updateUser.lastName?.trim() || undefined;
-
-    const payload: Patient | Practitioner = {
+    return {
       resourceType: updateUser.resourceType || fhirRole,
       id: updateUser.fhirId,
       active: updateUser.active,
@@ -459,6 +452,52 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       ],
       telecom
     };
+  };
+
+  /** Handles profile save: syncs Chatwoot, uploads photo, updates FHIR profile. */
+  const handleEditSave = async () => {
+    let latestProfile: FHIRProfile = null;
+    try {
+      latestProfile = await getProfileById(fhirId, fhirRole);
+    } catch (error) {
+      console.error('Error when refetching user profile: ', error);
+      toast.error('Failed to fetch the latest profile');
+      return;
+    }
+
+    const existingPhotoUrl = latestProfile?.photo?.[0]?.url ?? '';
+    const existingChatwootId = latestProfile
+      ? findIdentifierValue(
+          latestProfile,
+          'https://login.konsulin.care/chatwoot-id'
+        )
+      : '';
+
+    const { finalChatwootId, identifiers } = await syncChatwootIdentifier(
+      latestProfile,
+      existingChatwootId
+    );
+    const telecom = buildTelecom();
+
+    await syncIdentifierIfNeeded(
+      latestProfile,
+      identifiers,
+      telecom,
+      finalChatwootId,
+      existingChatwootId
+    );
+
+    const photoUrlForPayload = await resolvePhotoUrl(
+      existingPhotoUrl,
+      finalChatwootId
+    );
+    if (isDataUrl(updateUser.photo) && !photoUrlForPayload) return;
+
+    const payload = buildUpdatePayload(
+      identifiers,
+      telecom,
+      photoUrlForPayload
+    );
 
     try {
       const result = await updateProfile({ payload });
@@ -533,6 +572,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }));
   };
 
+  /** Set province and reset dependent city/district fields. */
   const handleProvinceSelect = (value: IWilayahResponse) => {
     setUpdateUser(prevState => ({
       ...prevState,
@@ -554,6 +594,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }));
   };
 
+  /** Set district from the district selector. */
   const handleDistrictSelect = (value: IWilayahResponse) => {
     setUpdateUser(prevState => ({
       ...prevState,
@@ -623,13 +664,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     <div className='flex min-h-screen flex-col'>
       <div className='flex flex-grow flex-col justify-between p-4'>
         {isLoading || isProfileLoading ? (
-          <div className='flex min-h-screen min-w-full items-center justify-center'>
-            <LoadingSpinnerIcon
-              width={56}
-              height={56}
-              className='w-full animate-spin'
-            />
-          </div>
+          <ProfileLoadingState />
         ) : (
           <>
             <ImageUploader
@@ -693,8 +728,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
         </DrawerTrigger>
         <DrawerContent className='mx-auto flex w-full max-w-screen-sm flex-col p-4'>
           <DrawerHeader>
-            <DrawerTitle></DrawerTitle>
-            <DrawerDescription></DrawerDescription>
+            <DrawerTitle />
+            <DrawerDescription />
           </DrawerHeader>
           <DobCalendar
             value={updateUser.birthDate}
@@ -720,8 +755,8 @@ export default function EditProfile({ userRole, fhirId }: Props) {
               Changes Successful!
             </DrawerTitle>
             <DrawerDescription className='text-center text-sm text-[#2C2F35] opacity-60'>
-              {subtitle_success_updated.split('\n').map((line, index) => (
-                <Fragment key={index}>
+              {subtitle_success_updated.split('\n').map(line => (
+                <Fragment key={line}>
                   {line}
                   <br />
                 </Fragment>

@@ -17,37 +17,39 @@ export default function ExerciseDetail() {
   const excerciseData =
     Array.isArray(data) && data?.find(item => item?.id === exerciseId);
 
+  /** Renders exercise iframe or loading/not-found states. */
+  const renderContent = () => {
+    if (excerciseIsLoading) return <PageLoader />;
+    if (!excerciseData) {
+      return <div className='text-[12px] font-normal'>Exercise not found</div>;
+    }
+    return (
+      <>
+        <iframe
+          style={{ borderRadius: '12px' }}
+          src={excerciseData.url}
+          width='100%'
+          height='352'
+          title={excerciseData.title || 'Exercise video'}
+          allow='autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'
+          loading='lazy'
+          sandbox='allow-scripts allow-popups'
+        />
+        <div className='mt-4 mb-4 flex w-full items-center justify-between'>
+          <span className='text-[12px] font-bold'>Excersise Brief</span>
+          <Share />
+        </div>
+        <div className='text-[12px] font-normal'>
+          {excerciseData.description}
+        </div>
+      </>
+    );
+  };
+
   return (
     <>
       <PageHeader pageIndicator={excerciseData?.title} />
-
-      <ContentWraper className='p-4'>
-        {excerciseIsLoading ? (
-          <PageLoader />
-        ) : !excerciseData ? (
-          <div className='text-[12px] font-normal'>Exercise not found</div>
-        ) : (
-          <>
-            <iframe
-              style={{ borderRadius: '12px' }}
-              src={excerciseData.url}
-              width='100%'
-              height='352'
-              title={excerciseData.title || 'Exercise video'}
-              allow='autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'
-              loading='lazy'
-              sandbox='allow-scripts allow-popups'
-            />
-            <div className='mt-4 mb-4 flex w-full items-center justify-between'>
-              <span className='text-[12px] font-bold'>Excersise Brief</span>
-              <Share />
-            </div>
-            <div className='text-[12px] font-normal'>
-              {excerciseData.description}
-            </div>
-          </>
-        )}
-      </ContentWraper>
+      <ContentWraper className='p-4'>{renderContent()}</ContentWraper>
     </>
   );
 }

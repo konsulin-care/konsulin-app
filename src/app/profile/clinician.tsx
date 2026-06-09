@@ -1,10 +1,10 @@
 'use client';
 
 import { LoadingSpinnerIcon } from '@/components/icons';
+import ClinicianPracticeSchedule from '@/components/profile/clinician-practice-schedule';
+import ClinicianUnavailabilityCard from '@/components/profile/clinician-unavailability-card';
 import InformationDetail from '@/components/profile/information-detail';
 import Settings from '@/components/profile/settings';
-import Tags from '@/components/profile/tags';
-import MarkUnavailabilityButton from '@/components/schedule/mark-unavailability';
 import {
   Drawer,
   DrawerContent,
@@ -22,8 +22,13 @@ import { getProfileById } from '@/services/profile';
 import { findAge, generateAvatarPlaceholder, mapAddress } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Practitioner, PractitionerRole } from 'fhir/r4';
-import Image from 'next/image';
+import {
+  Practitioner,
+  PractitionerRole,
+  PractitionerRoleAvailableTime
+} from 'fhir/r4';
+
+import type { IPractitionerRoleDetail } from '@/types/practitioner';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -42,11 +47,52 @@ type Props = {
  * @returns The JSX element for the Clinician profile page.
  */
 
+/** Content of the availability editor drawer. */
+function DrawerBody({
+  selectedPractitionerRoles,
+  onSave,
+  onCancel
+}: Readonly<{
+  selectedPractitionerRoles: PractitionerRole[];
+  onSave: () => void;
+  onCancel: () => void;
+}>) {
+  if (!selectedPractitionerRoles || selectedPractitionerRoles.length === 0) {
+    return (
+      <div className='flex h-full items-center justify-center'>
+        <LoadingSpinnerIcon width={50} height={50} className='animate-spin' />
+      </div>
+    );
+  }
+  return (
+    <PractitionerAvailabilityEditor
+      practitionerRoles={selectedPractitionerRoles}
+      onSuccess={onSave}
+      onCancel={onCancel}
+    />
+  );
+}
+
+/**
+ *
+ */
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [practitionerRolesData, setPractitionerRolesData] = useState([]);
-  const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState({});
+  const [practitionerRolesData, setPractitionerRolesData] = useState<
+    IPractitionerRoleDetail[]
+  >([]);
+  const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState<
+    Record<
+      string,
+      {
+        availability: Record<
+          string,
+          Array<{ fromTime: string; toTime: string }>
+        >;
+      }
+    >
+  >({});
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [selectedPractitionerRoles, setSelectedPractitionerRoles] = useState<
     PractitionerRole[]
@@ -95,43 +141,63 @@ export default function Clinician({ fhirId }: Props) {
    *   ...
    * }
    */
+  const processTimeSlot = (
+    timeSlot: PractitionerRoleAvailableTime,
+    organizationName: string,
+    grouped: Record<
+      string,
+      {
+        availability: Record<
+          string,
+          Array<{ fromTime: string; toTime: string }>
+        >;
+      }
+    >
+  ) => {
+    if (!Array.isArray(timeSlot.daysOfWeek)) return;
+    timeSlot.daysOfWeek.forEach((day: string) => {
+      const dayKey = day.charAt(0).toUpperCase() + day.slice(1);
+
+      if (!grouped[organizationName]) {
+        grouped[organizationName] = {
+          availability: {}
+        };
+      }
+
+      if (!grouped[organizationName].availability[dayKey]) {
+        grouped[organizationName].availability[dayKey] = [];
+      }
+
+      grouped[organizationName].availability[dayKey].push({
+        fromTime: timeSlot.availableStartTime,
+        toTime: timeSlot.availableEndTime
+      });
+    });
+  };
+
   useEffect(() => {
     if (!Array.isArray(activeFirms)) return;
 
-    const newGroupedByFirmAndDay = {};
+    const newGroupedByFirmAndDay: Record<
+      string,
+      {
+        availability: Record<
+          string,
+          Array<{ fromTime: string; toTime: string }>
+        >;
+      }
+    > = {};
 
     activeFirms.forEach(role => {
-      const organizationName = role?.organizationData.name || '';
+      if (!role) return;
+      const organizationName = role.organizationData?.name || '';
 
       if (Array.isArray(role.availableTime)) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        role.availableTime.forEach((timeSlot: any) => {
-          if (Array.isArray(timeSlot.daysOfWeek)) {
-            timeSlot.daysOfWeek.forEach((day: string) => {
-              const dayKey = day.charAt(0).toUpperCase() + day.slice(1);
-
-              if (!newGroupedByFirmAndDay[organizationName]) {
-                newGroupedByFirmAndDay[organizationName] = {
-                  availability: {}
-                };
-              }
-
-              if (
-                !newGroupedByFirmAndDay[organizationName].availability[dayKey]
-              ) {
-                newGroupedByFirmAndDay[organizationName].availability[dayKey] =
-                  [];
-              }
-
-              newGroupedByFirmAndDay[organizationName].availability[
-                dayKey
-              ].push({
-                fromTime: timeSlot.availableStartTime,
-                toTime: timeSlot.availableEndTime
-              });
-            });
+        role.availableTime.forEach(
+          (timeSlot: PractitionerRoleAvailableTime) => {
+            processTimeSlot(timeSlot, organizationName, newGroupedByFirmAndDay);
           }
-        });
+        );
       }
     });
 
@@ -139,6 +205,7 @@ export default function Clinician({ fhirId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [practitionerRolesData]);
 
+  /** Handle successful availability save and refetch roles. */
   const handleSaveSuccess = async () => {
     try {
       toast.success('Jadwal berhasil disimpan');
@@ -150,15 +217,13 @@ export default function Clinician({ fhirId }: Props) {
     }
   };
 
-  const age =
-    profileData && profileData.birthDate
-      ? `${format(new Date(profileData?.birthDate), 'dd-MM-yyyy')} (${findAge(profileData.birthDate)})`
-      : '-';
-  const gender =
-    profileData && profileData.gender
-      ? profileData.gender.charAt(0).toUpperCase() +
-        profileData.gender.slice(1).toLowerCase()
-      : '-';
+  const age = profileData?.birthDate
+    ? `${format(new Date(profileData?.birthDate), 'dd-MM-yyyy')} (${findAge(profileData.birthDate)})`
+    : '-';
+  const gender = profileData?.gender
+    ? profileData.gender.charAt(0).toUpperCase() +
+      profileData.gender.slice(1).toLowerCase()
+    : '-';
   const phone =
     profileData && Array.isArray(profileData.telecom)
       ? profileData.telecom.find(item => item.system === 'phone')?.value || '-'
@@ -231,100 +296,16 @@ export default function Clinician({ fhirId }: Props) {
           details={activeFirms}
           onEdit={() => router.push('/profile?path=edit-practice')}
           role='clinician'
-          isEditPractice={true}
+          isEditPractice
         />
       )}
 
-      {/* display practitioner's availability schedules */}
-      <div className='mt-4 flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
-        {/* Practice Schedule section title - moved to top with styling to match other sections */}
-        <div className='flex w-full items-center justify-between'>
-          <div className='flex w-1/2 items-center'>
-            <Image
-              src={'/icons/calendar-profile.svg'}
-              width={30}
-              height={30}
-              alt='calendar-icon'
-              className='pr-[13px]'
-            />
-            <p className='flex-grow text-start text-[10px] font-normal text-[#2C2F35] opacity-40'>
-              Practice Schedule
-            </p>
-          </div>
-          <div className='flex w-1/2 items-center justify-end'>
-            <button
-              onClick={handleOpenDrawer}
-              className='cursor-pointer transition-all duration-200 hover:brightness-90'
-            >
-              <div className='bg-secondary w-[100px] rounded-full p-[7px]'>
-                <p className='text-[10px] text-white'>Edit Schedule</p>
-              </div>
-            </button>
-          </div>
-        </div>
+      <ClinicianPracticeSchedule
+        groupedByFirmAndDay={groupedByFirmAndDay}
+        onEditSchedule={handleOpenDrawer}
+      />
 
-        {/* Availability content with border divider */}
-        <div className='mt-2 flex w-full flex-col border-t border-[#E3E3E3]'>
-          {Object.keys(groupedByFirmAndDay).map((firm, index) => {
-            const availability = groupedByFirmAndDay[firm].availability;
-            return (
-              <div key={index}>
-                <div className='mb-1 text-start text-[14px] font-bold'>
-                  {firm}
-                </div>
-                {Object.keys(availability).map(day => {
-                  const timeRanges = availability[day] || [];
-                  const tags = timeRanges.map(
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (timeRange: any) =>
-                      `${day}: ${timeRange.fromTime} - ${timeRange.toTime}`
-                  );
-
-                  return (
-                    <div
-                      key={`${firm}-${day}`}
-                      className='mb-1 flex w-full flex-wrap gap-[10px]'
-                    >
-                      <Tags tags={tags} />
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Current Unavailability section - separate section with same style as Practice Schedule */}
-      <div className='mt-4 flex w-full flex-col items-center justify-center rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
-        <div className='flex w-full items-center justify-between'>
-          <div className='flex w-1/2 items-center'>
-            <Image
-              src={'/icons/calendar-profile.svg'}
-              width={30}
-              height={30}
-              alt='calendar-icon'
-              className='pr-[13px]'
-            />
-            <p className='flex-grow text-start text-[10px] font-normal text-[#2C2F35] opacity-40'>
-              Current Unavailability
-            </p>
-          </div>
-          <div className='flex w-1/2 items-center justify-end'>
-            <MarkUnavailabilityButton
-              triggerClassName='cursor-pointer hover:brightness-90 transition-all duration-200'
-              buttonText='Mark Away'
-            />
-          </div>
-        </div>
-
-        {/* Unavailability content with border divider */}
-        <div className='mt-2 flex w-full flex-col border-t border-[#E3E3E3]'>
-          <div className='py-2 text-center text-[14px] text-[#2C2F35]'>
-            No Unavailability
-          </div>
-        </div>
-      </div>
+      <ClinicianUnavailabilityCard />
 
       <Settings menus={settingMenus} />
 
@@ -333,22 +314,11 @@ export default function Clinician({ fhirId }: Props) {
           <DrawerTitle />
           <DrawerDescription />
           <div className='scrollbar-hide my-2 flex-grow overflow-y-auto'>
-            {selectedPractitionerRoles &&
-            selectedPractitionerRoles.length > 0 ? (
-              <PractitionerAvailabilityEditor
-                practitionerRoles={selectedPractitionerRoles}
-                onSuccess={handleSaveSuccess}
-                onCancel={() => setIsDrawerOpen(false)}
-              />
-            ) : (
-              <div className='flex h-full items-center justify-center'>
-                <LoadingSpinnerIcon
-                  width={50}
-                  height={50}
-                  className='animate-spin'
-                />
-              </div>
-            )}
+            <DrawerBody
+              selectedPractitionerRoles={selectedPractitionerRoles}
+              onSave={handleSaveSuccess}
+              onCancel={() => setIsDrawerOpen(false)}
+            />
           </div>
         </DrawerContent>
       </Drawer>

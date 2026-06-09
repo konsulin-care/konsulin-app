@@ -6,18 +6,24 @@ import EditJournal from '@/components/journal/edit';
 import PageHeader from '@/components/page-header';
 import { useSearchParams } from 'next/navigation';
 
+/**
+ *
+ */
 export default function EditRecordDetail() {
   const searchParams = useSearchParams();
   const recordId = searchParams.get('recordId') ?? '';
   const category = Number(searchParams.get('category'));
   const titleParam = searchParams.get('title');
 
+  /** Returns page title based on record category. */
   const pageTitle = (category: number) => {
     switch (category) {
       case 3:
         return 'SOAP Report';
       case 4:
         return 'Journaling';
+      default:
+        return '';
     }
   };
 
@@ -27,12 +33,15 @@ export default function EditRecordDetail() {
     return <Notfound />;
   }
 
+  /** Renders the edit form based on record category. */
   const renderContent = (category: number) => {
     switch (category) {
       case 3:
         return <EditSoap soapId={recordId} title={titleParam} />;
       case 4:
         return <EditJournal journalId={recordId} />;
+      default:
+        return null;
     }
   };
 

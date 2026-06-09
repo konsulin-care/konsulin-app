@@ -36,6 +36,9 @@ type ProfileFormSectionProps = {
   setDrawerState: (state: string) => void;
 };
 
+/**
+ *
+ */
 export default function ProfileFormSection({
   updateUser,
   errors,

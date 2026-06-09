@@ -62,6 +62,9 @@ export const getTimeSlots = (startTime: string, endTime: string) => {
 };
 
 // Helper function to extract slotMinutes from Schedule's comment field
+/**
+ *
+ */
 export function getSlotMinutesText(schedule: any): string {
   if (!schedule) {
     return '';

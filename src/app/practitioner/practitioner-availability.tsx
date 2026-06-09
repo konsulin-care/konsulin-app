@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, max-lines */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, max-lines, react/jsx-max-depth */
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
@@ -246,7 +246,7 @@ export default function PractitionerAvailability({
     if (isOpenParam === 'true' && !userId) return;
 
     const intent = getIntent();
-    if (intent && intent.kind === 'appointment') {
+    if (intent?.kind === 'appointment') {
       const payload = intent.payload as AppointmentPayload;
       if (payload.path.includes(practitionerId as string)) {
         const { slot, formData } = payload;
@@ -433,6 +433,47 @@ export default function PractitionerAvailability({
     }
   };
 
+  const bookingContent = (
+    <div className='flex h-full flex-col'>
+      <BookingCalendar
+        bookingState={bookingState}
+        handleFilterChange={handleFilterChange}
+        resetData={resetData}
+        listAvailableDate={listAvailableDate}
+        availableTime={practitionerRole.availableTime}
+        today={today}
+      />
+      <TimeSlotsSection
+        bookingState={bookingState}
+        isLoading={isLoading}
+        isError={isError}
+        slotPills={slotPills}
+        scheduleId={scheduleId}
+        handleFilterChange={handleFilterChange}
+        setSelectedSlotId={setSelectedSlotId}
+      />
+      <BookingFormSection
+        bookingForm={bookingForm}
+        bookingState={bookingState}
+        errorForm={errorForm}
+        handleBookingInformationChange={handleBookingInformationChange}
+        handleSubmitForm={handleSubmitForm}
+        scheduleId={scheduleId}
+        isCreateAppointmentLoading={isCreateAppointmentLoading}
+        isPaying={isPaying}
+        isAuthenticated={isAuthenticated}
+        isPending={isPending}
+        practitionerRole={practitionerRole}
+        selectedSlotId={selectedSlotId}
+        scheduleById={scheduleById}
+        router={router}
+        saveIntent={saveIntent}
+        startTransition={startTransition}
+        setIsOpen={setIsOpen}
+      />
+    </div>
+  );
+
   return (
     <>
       <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
@@ -444,44 +485,7 @@ export default function PractitionerAvailability({
           className='fixed right-0 bottom-0 left-0 mx-auto flex h-[85%] max-w-screen-sm flex-col bg-white p-4'
         >
           <div className='scrollbar-hide mt-4 h-full overflow-y-auto px-1'>
-            <div className='flex h-full flex-col'>
-              <BookingCalendar
-                bookingState={bookingState}
-                handleFilterChange={handleFilterChange}
-                resetData={resetData}
-                listAvailableDate={listAvailableDate}
-                availableTime={practitionerRole.availableTime}
-                today={today}
-              />
-              <TimeSlotsSection
-                bookingState={bookingState}
-                isLoading={isLoading}
-                isError={isError}
-                slotPills={slotPills}
-                scheduleId={scheduleId}
-                handleFilterChange={handleFilterChange}
-                setSelectedSlotId={setSelectedSlotId}
-              />
-              <BookingFormSection
-                bookingForm={bookingForm}
-                bookingState={bookingState}
-                errorForm={errorForm}
-                handleBookingInformationChange={handleBookingInformationChange}
-                handleSubmitForm={handleSubmitForm}
-                scheduleId={scheduleId}
-                isCreateAppointmentLoading={isCreateAppointmentLoading}
-                isPaying={isPaying}
-                isAuthenticated={isAuthenticated}
-                isPending={isPending}
-                practitionerRole={practitionerRole}
-                selectedSlotId={selectedSlotId}
-                scheduleById={scheduleById}
-                router={router}
-                saveIntent={saveIntent}
-                startTransition={startTransition}
-                setIsOpen={setIsOpen}
-              />
-            </div>
+            {bookingContent}
           </div>
         </DrawerContent>
       </Drawer>
