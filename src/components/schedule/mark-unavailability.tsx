@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any, max-lines */
+/* eslint-disable max-lines */
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +19,9 @@ import { useAuth } from '@/context/auth/authContext';
 import { cn } from '@/lib/utils';
 import { useMarkUnavailability } from '@/services/api/schedule';
 import { useGetPractitionerRolesDetail } from '@/services/clinicians';
+import type { IPractitionerRoleDetail } from '@/types/practitioner';
 import { format } from 'date-fns';
+import { BundleEntry } from 'fhir/r4';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 
@@ -98,7 +100,7 @@ function UnavailabilityFormBody({
   onFromTimeChange: (value: string) => void;
   toTime: string;
   onToTimeChange: (value: string) => void;
-  roleEntries: any[];
+  roleEntries: BundleEntry<IPractitionerRoleDetail>[] | undefined;
   rolesLoading: boolean;
   selectedRoleIds: string[];
   onSelectedRoleIdsChange: (ids: string[]) => void;
@@ -110,8 +112,8 @@ function UnavailabilityFormBody({
   onCancel: () => void;
 }>) {
   const roles = (roleEntries || [])
-    .map((e: any) => e.resource)
-    .filter((r: any) => r?.active);
+    .map((e: BundleEntry<IPractitionerRoleDetail>) => e.resource)
+    .filter((r: IPractitionerRoleDetail) => r?.active);
 
   let rolesContent: React.ReactNode;
   if (rolesLoading) {
@@ -119,7 +121,7 @@ function UnavailabilityFormBody({
   } else if (roles?.length) {
     rolesContent = (
       <div className='grid grid-cols-1 gap-2'>
-        {roles.map((r: any) => (
+        {roles.map((r: IPractitionerRoleDetail) => (
           <label key={r.id} className='flex items-center gap-2'>
             <Checkbox
               checked={selectedRoleIds.includes(r.id)}
@@ -246,7 +248,7 @@ function UnavailabilityDialogBody({
   onFromTimeChange: (value: string) => void;
   toTime: string;
   onToTimeChange: (value: string) => void;
-  roleEntries: any[];
+  roleEntries: BundleEntry<IPractitionerRoleDetail>[] | undefined;
   rolesLoading: boolean;
   selectedRoleIds: string[];
   onSelectedRoleIdsChange: (ids: string[]) => void;
@@ -289,13 +291,8 @@ function UnavailabilityDialogBody({
   );
 }
 
-/**
- *
- */
-export default function MarkUnavailabilityButton({
-  triggerClassName,
-  buttonText = 'Mark Unavailable Date/Time'
-}: Props) {
+/** Hook managing all state and save logic for the unavailability form. */
+function useMarkUnavailabilityForm() {
   const { state: authState } = useAuth();
   const [open, setOpen] = useState(false);
   const [conflictOpen, setConflictOpen] = useState(false);
@@ -314,9 +311,7 @@ export default function MarkUnavailabilityButton({
   } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
     onSuccess: entries => {
       const resources = entries?.map(e => e.resource) || [];
-      const active = resources
-        .filter((r: any) => r.active)
-        .map((r: any) => r.id);
+      const active = resources.filter(r => r.active).map(r => r.id);
       setSelectedRoleIds(active);
     }
   });
@@ -357,22 +352,21 @@ export default function MarkUnavailabilityButton({
       setStatus: 'busy-tentative' as const
     };
 
-    let payload: any;
-    if (allDay) {
-      payload = { ...base, allDay: true, date: format(date, 'yyyy-MM-dd') };
-    } else {
-      const [fh, fm] = fromTime.split(':').map(Number);
-      const [th, tm] = toTime.split(':').map(Number);
-      const start = new Date(date);
-      start.setHours(fh, fm, 0, 0);
-      const end = new Date(date);
-      end.setHours(th, tm, 0, 0);
-      payload = {
-        ...base,
-        from: toOffsetISOString(start),
-        to: toOffsetISOString(end)
-      };
-    }
+    const payload = allDay
+      ? { ...base, allDay: true, date: format(date, 'yyyy-MM-dd') }
+      : (() => {
+          const [fh, fm] = fromTime.split(':').map(Number);
+          const [th, tm] = toTime.split(':').map(Number);
+          const start = new Date(date);
+          start.setHours(fh, fm, 0, 0);
+          const end = new Date(date);
+          end.setHours(th, tm, 0, 0);
+          return {
+            ...base,
+            from: toOffsetISOString(start),
+            to: toOffsetISOString(end)
+          };
+        })();
 
     const { data, status } = await markUnavailable(payload);
 
@@ -399,69 +393,129 @@ export default function MarkUnavailabilityButton({
     toast.error(data?.message || 'Failed to save unavailability');
   };
 
+  return {
+    open,
+    setOpen,
+    conflictOpen,
+    setConflictOpen,
+    date,
+    setDate,
+    allDay,
+    setAllDay,
+    fromTime,
+    setFromTime,
+    toTime,
+    setToTime,
+    reason,
+    setReason,
+    selectedRoleIds,
+    setSelectedRoleIds,
+    roleEntries,
+    rolesLoading,
+    saving,
+    canSave,
+    reset,
+    onSave,
+    lastConflicts
+  };
+}
+
+/** Alert dialog showing slot booking conflicts. */
+function ConflictAlertDialog({
+  open,
+  onOpenChange,
+  conflicts
+}: Readonly<{
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  conflicts: {
+    practitionerRoleId: string;
+    slotId: string;
+    start: string;
+    end: string;
+  }[];
+}>) {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Conflicts detected</AlertDialogTitle>
+          <AlertDialogDescription>
+            {conflicts.length
+              ? conflicts.map(c => (
+                  <div key={c.slotId} className='mb-2'>
+                    Role: {c.practitionerRoleId}
+                    <br />
+                    Slot: {c.slotId}
+                    <br />
+                    {c.start} - {c.end}
+                  </div>
+                ))
+              : 'Conflicts with existing booked slots.'}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className='flex justify-end gap-2'>
+          <AlertDialogCancel>Close</AlertDialogCancel>
+          <AlertDialogAction onClick={() => onOpenChange(false)}>
+            OK
+          </AlertDialogAction>
+        </div>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+/**
+ *
+ */
+export default function MarkUnavailabilityButton({
+  triggerClassName,
+  buttonText = 'Mark Unavailable Date/Time'
+}: Props) {
+  const form = useMarkUnavailabilityForm();
+
   return (
     <>
       <UnavailabilityTrigger
         triggerClassName={triggerClassName}
         buttonText={buttonText}
-        onClick={() => setOpen(true)}
+        onClick={() => form.setOpen(true)}
       />
 
       <UnavailabilityDialogBody
-        open={open}
+        open={form.open}
         onOpenChange={o => {
-          setOpen(o);
-          if (!o) reset();
+          form.setOpen(o);
+          if (!o) form.reset();
         }}
-        date={date}
-        onDateSelect={setDate as any}
-        allDay={allDay}
-        onAllDayChange={v => setAllDay(Boolean(v))}
-        fromTime={fromTime}
-        onFromTimeChange={setFromTime}
-        toTime={toTime}
-        onToTimeChange={setToTime}
-        roleEntries={roleEntries}
-        rolesLoading={rolesLoading}
-        selectedRoleIds={selectedRoleIds}
-        onSelectedRoleIdsChange={setSelectedRoleIds}
-        reason={reason}
-        onReasonChange={setReason}
-        canSave={canSave}
-        saving={saving}
-        onSave={onSave}
+        date={form.date}
+        onDateSelect={form.setDate as (date: Date | undefined) => void}
+        allDay={form.allDay}
+        onAllDayChange={v => form.setAllDay(Boolean(v))}
+        fromTime={form.fromTime}
+        onFromTimeChange={form.setFromTime}
+        toTime={form.toTime}
+        onToTimeChange={form.setToTime}
+        roleEntries={form.roleEntries}
+        rolesLoading={form.rolesLoading}
+        selectedRoleIds={form.selectedRoleIds}
+        onSelectedRoleIdsChange={form.setSelectedRoleIds}
+        reason={form.reason}
+        onReasonChange={form.setReason}
+        canSave={form.canSave}
+        saving={form.saving}
+        onSave={form.onSave}
         onCancel={() => {
-          setOpen(false);
-          reset();
+          form.setOpen(false);
+          form.reset();
         }}
       />
 
-      <AlertDialog open={conflictOpen} onOpenChange={setConflictOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Conflicts detected</AlertDialogTitle>
-            <AlertDialogDescription>
-              {lastConflicts.length
-                ? lastConflicts.map(c => (
-                    <div key={c.slotId} className='mb-2'>
-                      Role: {c.practitionerRoleId}
-                      <br />
-                      Slot: {c.slotId}
-                      <br />
-                      {c.start} - {c.end}
-                    </div>
-                  ))
-                : 'Conflicts with existing booked slots.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className='flex justify-end gap-2'>
-            <AlertDialogCancel>Close</AlertDialogCancel>
-            <AlertDialogAction onClick={() => setConflictOpen(false)}>
-              OK
-            </AlertDialogAction>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConflictAlertDialog
+        open={form.conflictOpen}
+        onOpenChange={form.setConflictOpen}
+        conflicts={form.lastConflicts}
+      />
     </>
   );
 }

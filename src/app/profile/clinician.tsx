@@ -22,8 +22,13 @@ import { getProfileById } from '@/services/profile';
 import { findAge, generateAvatarPlaceholder, mapAddress } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Practitioner, PractitionerRole } from 'fhir/r4';
+import {
+  Practitioner,
+  PractitionerRole,
+  PractitionerRoleAvailableTime
+} from 'fhir/r4';
 
+import type { IPractitionerRoleDetail } from '@/types/practitioner';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -74,8 +79,20 @@ function DrawerBody({
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [practitionerRolesData, setPractitionerRolesData] = useState([]);
-  const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState({});
+  const [practitionerRolesData, setPractitionerRolesData] = useState<
+    IPractitionerRoleDetail[]
+  >([]);
+  const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState<
+    Record<
+      string,
+      {
+        availability: Record<
+          string,
+          Array<{ fromTime: string; toTime: string }>
+        >;
+      }
+    >
+  >({});
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [selectedPractitionerRoles, setSelectedPractitionerRoles] = useState<
     PractitionerRole[]
@@ -125,8 +142,7 @@ export default function Clinician({ fhirId }: Props) {
    * }
    */
   const processTimeSlot = (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    timeSlot: any,
+    timeSlot: PractitionerRoleAvailableTime,
     organizationName: string,
     grouped: Record<
       string,
@@ -177,10 +193,11 @@ export default function Clinician({ fhirId }: Props) {
       const organizationName = role.organizationData?.name || '';
 
       if (Array.isArray(role.availableTime)) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        role.availableTime.forEach((timeSlot: any) => {
-          processTimeSlot(timeSlot, organizationName, newGroupedByFirmAndDay);
-        });
+        role.availableTime.forEach(
+          (timeSlot: PractitionerRoleAvailableTime) => {
+            processTimeSlot(timeSlot, organizationName, newGroupedByFirmAndDay);
+          }
+        );
       }
     });
 

@@ -66,8 +66,8 @@ export function getAPI(): Promise<AxiosInstance> {
           clearUserData(currentUserId ?? 'guest');
           try {
             window.location.href = '/';
-          } catch {
-            /* redirect may throw */
+          } catch (err) {
+            console.error('Failed to redirect to home:', err);
           }
         }, 1000);
       }

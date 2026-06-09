@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -21,23 +20,21 @@ export function getFromLocalStorage(key: string): string | null {
 /**
  *
  */
-export function setToLocalStorage(key: string, value: any): void {
+export function setToLocalStorage(key: string, value: unknown): void {
   if (typeof window !== 'undefined')
-    return window.localStorage.setItem(key, JSON.stringify(value));
-
-  return null;
+    window.localStorage.setItem(key, JSON.stringify(value));
 }
 
 /**
  *
  */
-export function toQueryString(obj: Record<string, any>): string {
+export function toQueryString(obj: Record<string, unknown>): string {
   const filteredParams = Object.entries(obj)
     .filter(([, value]) => value !== '' && value != null)
-    .map(
-      ([key, value]) =>
-        `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-    )
+    .map(([key, value]) => {
+      const str = typeof value === 'string' ? value : JSON.stringify(value);
+      return `${encodeURIComponent(key)}=${encodeURIComponent(str)}`;
+    })
     .join('&');
 
   return filteredParams;
@@ -46,7 +43,10 @@ export function toQueryString(obj: Record<string, any>): string {
 /**
  *
  */
-export function createUniqueRandomRange(min, max) {
+export function createUniqueRandomRange(
+  min: number,
+  max: number
+): () => number | undefined {
   const numbers = Array.from({ length: max - min + 1 }, (_, i) => i + min);
 
   return function () {
@@ -60,11 +60,14 @@ export function createUniqueRandomRange(min, max) {
 /**
  *
  */
-export function getDaysInRange(startDate, endDate) {
+export function getDaysInRange(
+  startDate: string,
+  endDate: string
+): string[] | null {
   const start = new Date(startDate);
   const end = new Date(endDate);
 
-  const daysInRange = [];
+  const daysInRange: string[] = [];
 
   while (start <= end) {
     daysInRange.push(start.toLocaleDateString('en-US', { weekday: 'short' }));
@@ -82,7 +85,7 @@ const formatter = new Intl.ListFormat('id', {
 /**
  *
  */
-export function conjunction(param) {
+export function conjunction(param: string[]): string | undefined {
   if (param) return formatter.format(param);
   return undefined;
 }

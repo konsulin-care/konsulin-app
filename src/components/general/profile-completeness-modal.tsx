@@ -18,7 +18,6 @@ const ProfileCompletenessModal = () => {
   const isProfileRoute = pathname.startsWith(PROFILE_ROUTE_PREFIX);
 
   useEffect(() => {
-    let cleanup;
     if (
       !isLoading &&
       authState.isAuthenticated &&
@@ -26,12 +25,11 @@ const ProfileCompletenessModal = () => {
       authState.userInfo?.profile_complete !== true &&
       !dismissed
     ) {
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-      }, MODAL_DELAY_MS);
-      cleanup = () => clearTimeout(timer);
+      const timer = setTimeout(() => setIsOpen(true), MODAL_DELAY_MS);
+      return () => clearTimeout(timer);
     }
-    return cleanup;
+    setIsOpen(false);
+    return undefined;
   }, [
     isLoading,
     authState.isAuthenticated,

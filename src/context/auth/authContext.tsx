@@ -92,31 +92,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   /** Handle auth state when no SuperTokens session exists. */
   const handleNoSession = async () => {
     try {
-      const cookieSession = await getAuthCookieSession();
-      if (
-        cookieSession?.authenticated &&
-        cookieSession?.userId &&
-        cookieSession?.role_name
-      ) {
-        setCurrentUserId(cookieSession.userId);
-        dispatch({
-          type: 'login',
-          payload: {
-            userId: cookieSession.userId,
-            role_name: cookieSession.role_name,
-            roles: cookieSession.roles ?? [],
-            email: cookieSession.email ?? '',
-            fullname: cookieSession.fullname ?? '',
-            profile_picture: cookieSession.profile_picture ?? '',
-            fhirId: cookieSession.fhirId ?? '',
-            profile_complete: cookieSession.profile_complete ?? false
-          }
-        });
-        setIsLoading(false);
-        return;
-      }
-    } catch {
-      // Auth cookie fetch failed — fall through to guest flow
+      await getAuthCookieSession();
+    } catch (err) {
+      console.error('Failed to fetch auth cookie, proceeding as guest:', err);
     }
 
     dispatch({ type: 'logout' });

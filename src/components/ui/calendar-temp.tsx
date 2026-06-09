@@ -1,6 +1,5 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * TEMPORARY Calendar wrapper.
  *
@@ -27,7 +26,7 @@ function Calendar(props: CalendarProps) {
       style={
         {
           ...props.style,
-          ['--rdp-accent-color' as any]: '#0ABDC3'
+          '--rdp-accent-color': '#0ABDC3'
         } as React.CSSProperties
       }
       modifiersClassNames={{
