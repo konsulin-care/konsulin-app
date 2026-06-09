@@ -33,7 +33,7 @@
 - **`react-share-social`**: Social sharing components.
 - **`react-toastify`**: Notification library.
 - **Sass**: CSS preprocessor.
-- **Serwist (`@serwist/next`)**: Service worker library for PWAs.
+- **Service Worker (`public/sw.js`)**: Plain service worker for offline PWA support.
 - **Swiper**: Modern touch slider.
 - **`uuid`**: For generating unique IDs.
 

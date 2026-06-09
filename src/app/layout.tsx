@@ -131,6 +131,14 @@ export default function RootLayout({
     <html lang='en'>
       <body className={inter.className}>
         <Script src='/js/pathname-init.js' strategy='beforeInteractive' />
+        <Script
+          id='sw-register'
+          strategy='afterInteractive'
+          dangerouslySetInnerHTML={{
+            __html:
+              "if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}"
+          }}
+        />
         <AppProviders>
           <RouteResponseCleaner />
           <NextTopLoader showSpinner={false} color='#13c2c2' />
