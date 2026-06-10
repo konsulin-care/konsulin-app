@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -17,38 +18,25 @@ func signedCookieValue(value string) string {
 	return url.QueryEscape(session.SignCookieValue(value, testSecret))
 }
 
-func newOptionalAuthRouter(apiServer *httptest.Server) *chi.Mux {
+func makeAnonSessionJWT(guestID string) string {
+	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"HS256"}`))
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"guest_id":"` + guestID + `"}`))
+	return header + "." + payload + ".test-sig"
+}
+
+func newOptionalAuthRouter() *chi.Mux {
 	r := chi.NewRouter()
-	apiURL := ""
-	if apiServer != nil {
-		apiURL = apiServer.URL
-	}
 	r.Use(OptionalAuth(OptionalAuthOptions{
-		AuthCookieName:         "auth",
-		GuestSessionCookieName: "guest_session",
-		CookieSecret:           testSecret,
-		BackendAPIURL:          apiURL,
-		CookieSecure:           false,
+		AuthCookieName:        "auth",
+		AnonSessionCookieName: "anon_session",
+		CookieSecret:          testSecret,
 	}))
 	return r
 }
 
-func mockAnonymousSessionAPI(guestID string) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]any{
-			"success": true, "message": "ok",
-			"data": map[string]any{"guest_id": guestID, "is_new": true, "role": "guest",
-				"token": "eyJhbGciOiJIUzI1NiJ9.eyJndWVzdF9pZCI6IjEyMyJ9.test",
-			},
-		})
-	}))
-}
-
-func setupOptionalAuthTest(t *testing.T, apiServer *httptest.Server) (*httptest.Server, func() *session.Session) {
+func setupOptionalAuthTest(t *testing.T) (*httptest.Server, func() *session.Session) {
 	t.Helper()
-	r := newOptionalAuthRouter(apiServer)
+	r := newOptionalAuthRouter()
 	var captured *session.Session
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		var ok bool
@@ -63,11 +51,8 @@ func setupOptionalAuthTest(t *testing.T, apiServer *httptest.Server) (*httptest.
 	return server, func() *session.Session { return captured }
 }
 
-func TestOptionalAuth_noCookies_createsSession(t *testing.T) {
-	ResetAnonSessionCache()
-	apiServer := mockAnonymousSessionAPI("test-guest-abc")
-	t.Cleanup(apiServer.Close)
-	server, getSession := setupOptionalAuthTest(t, apiServer)
+func TestOptionalAuth_noCookies_guestFallback(t *testing.T) {
+	server, getSession := setupOptionalAuthTest(t)
 
 	resp, err := http.Get(server.URL + "/")
 	if err != nil {
@@ -81,16 +66,13 @@ func TestOptionalAuth_noCookies_createsSession(t *testing.T) {
 	if gotSession.Role != "Guest" {
 		t.Errorf("expected Role Guest, got %q", gotSession.Role)
 	}
-	if gotSession.GuestID != "test-guest-abc" {
-		t.Errorf("expected GuestID test-guest-abc, got %q", gotSession.GuestID)
+	if gotSession.GuestID != "" {
+		t.Errorf("expected empty GuestID for unauthenticated request, got %q", gotSession.GuestID)
 	}
-	assertGuestSessionCookie(t, resp.Cookies(), "test-guest-abc")
 }
 
 func TestOptionalAuth_authCookie_realSession(t *testing.T) {
-	apiServer := mockAnonymousSessionAPI("should-not-be-called")
-	t.Cleanup(apiServer.Close)
-	server, getSession := setupOptionalAuthTest(t, apiServer)
+	server, getSession := setupOptionalAuthTest(t)
 
 	authJSON, _ := json.Marshal(map[string]string{"userId": "u1", "role_name": "Patient"})
 	cookieVal := signedCookieValue(string(authJSON))
@@ -113,14 +95,12 @@ func TestOptionalAuth_authCookie_realSession(t *testing.T) {
 	}
 }
 
-func TestOptionalAuth_guestCookie_guestSession(t *testing.T) {
-	apiServer := mockAnonymousSessionAPI("should-not-be-called")
-	t.Cleanup(apiServer.Close)
-	server, getSession := setupOptionalAuthTest(t, apiServer)
+func TestOptionalAuth_anonCookie_guestSession(t *testing.T) {
+	server, getSession := setupOptionalAuthTest(t)
 
-	cookieVal := url.QueryEscape(`{"guestId":"existing-guest-xyz"}`)
+	jwt := makeAnonSessionJWT("existing-guest-xyz")
 	req, _ := http.NewRequest(http.MethodGet, server.URL+"/", http.NoBody)
-	req.Header.Set("Cookie", "guest_session="+cookieVal)
+	req.Header.Set("Cookie", "anon_session="+jwt)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("GET / failed: %v", err)
@@ -138,52 +118,21 @@ func TestOptionalAuth_guestCookie_guestSession(t *testing.T) {
 	}
 }
 
-func TestOptionalAuth_apiUnavailable_fallback(t *testing.T) {
-	ResetAnonSessionCache()
-	// Start a server that will be closed immediately — simulating unavailable API
-	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	apiServer.Close()
-
-	server, getSession := setupOptionalAuthTest(t, apiServer)
-
-	resp, err := http.Get(server.URL + "/")
-	if err != nil {
-		t.Fatalf("GET / failed: %v", err)
-	}
-	resp.Body.Close()
-
-	gotSession := getSession()
-	if gotSession == nil {
-		t.Fatal("expected session to be set despite API failure")
-	}
-	if gotSession.Role != "Guest" {
-		t.Errorf("expected Role Guest, got %q", gotSession.Role)
-	}
-	if gotSession.GuestID != "" {
-		t.Errorf("expected empty GuestID on API failure, got %q", gotSession.GuestID)
-	}
-}
-
-func TestOptionalAuth_authCookieOverridesGuest(t *testing.T) {
-	apiServer := mockAnonymousSessionAPI("should-not-be-called")
-	t.Cleanup(apiServer.Close)
-
-	server, getSession := setupOptionalAuthTest(t, apiServer)
+func TestOptionalAuth_authCookieOverridesAnon(t *testing.T) {
+	server, getSession := setupOptionalAuthTest(t)
 
 	authJSON, _ := json.Marshal(map[string]string{
 		"userId":    "u1",
 		"role_name": "Practitioner",
 	})
 	authCookieVal := signedCookieValue(string(authJSON))
-	guestCookieVal := url.QueryEscape(`{"guestId":"guest-123"}`)
+	anonJWT := makeAnonSessionJWT("guest-123")
 
 	req, err := http.NewRequest(http.MethodGet, server.URL+"/", http.NoBody)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
-	req.Header.Set("Cookie", "auth="+authCookieVal+"; guest_session="+guestCookieVal)
+	req.Header.Set("Cookie", "auth="+authCookieVal+"; anon_session="+anonJWT)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -203,52 +152,5 @@ func TestOptionalAuth_authCookieOverridesGuest(t *testing.T) {
 	}
 	if gotSession.GuestID != "" {
 		t.Errorf("expected empty GuestID for real session, got %q", gotSession.GuestID)
-	}
-}
-
-type guestCookieCheck struct {
-	GuestID string `json:"guestId"`
-	Token   string `json:"token"`
-}
-
-func findGuestSessionCookie(cookies []*http.Cookie) (*guestCookieCheck, *http.Cookie, bool) {
-	for _, c := range cookies {
-		if c.Name != "guest_session" {
-			continue
-		}
-		decoded, err := url.QueryUnescape(c.Value)
-		if err != nil {
-			return nil, nil, false
-		}
-		var data guestCookieCheck
-		if err := json.Unmarshal([]byte(decoded), &data); err != nil {
-			return nil, nil, false
-		}
-		if data.GuestID == "" {
-			return nil, nil, false
-		}
-		return &data, c, true
-	}
-	return nil, nil, false
-}
-
-func assertGuestSessionCookie(t *testing.T, cookies []*http.Cookie, wantGuestID string) {
-	t.Helper()
-	data, c, found := findGuestSessionCookie(cookies)
-	if !found {
-		t.Error("expected guest_session cookie in response")
-		return
-	}
-	if data.GuestID != wantGuestID {
-		t.Errorf("expected cookie GuestID %q, got %q", wantGuestID, data.GuestID)
-	}
-	if data.Token == "" {
-		t.Error("expected non-empty token in guest_session cookie")
-	}
-	if c.MaxAge != guestSessionMaxAge {
-		t.Errorf("expected MaxAge %d, got %d", guestSessionMaxAge, c.MaxAge)
-	}
-	if c.HttpOnly {
-		t.Error("expected HttpOnly=false for guest_session cookie")
 	}
 }

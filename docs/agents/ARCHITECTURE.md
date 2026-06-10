@@ -53,6 +53,7 @@ Backend API (Go + SuperTokens Go SDK)
 | Decision                         | ADR                                              |
 | -------------------------------- | ------------------------------------------------ |
 | Go BFF + Next.js static frontend | `@docs/ADR/015-go-bff-static-nextjs.md`          |
+| Anonymous session consolidation  | `@docs/ADR/016-anon-session-consolidation.md`    |
 | Client-side data layer           | `@docs/ADR/013-client-side-data-layer.md`        |
 | SSR upcoming session             | `@docs/ADR/014-ssr-upcoming-session.md`          |
 | Backend FHIR compliance          | `@docs/ADR/002-backend-fhir-compliance.md`       |

@@ -65,15 +65,14 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	})
 	r.Use(csrfMw)
 
-	// Global soft auth — injects a session (real, guest, or new guest) for
-	// every request without ever redirecting.  The guest_session cookie is set
-	// once per guest and cached for subsequent requests.
+	// Global soft auth — injects a session (real auth or anon_session JWT
+	// cookie) into the request context without ever redirecting. The client
+	// calls POST /api/v1/auth/anonymous-session (proxied to backend) which
+	// sets the anon_session cookie; the middleware reads it passively.
 	r.Use(appmw.OptionalAuth(appmw.OptionalAuthOptions{
-		AuthCookieName:         cfg.AuthCookieName,
-		GuestSessionCookieName: cfg.GuestSessionCookieName,
-		CookieSecret:           cfg.SessionCookieSecret,
-		BackendAPIURL:          cfg.APIURL + cfg.APIBasePath,
-		CookieSecure:           cfg.CookieSecure,
+		AuthCookieName:        cfg.AuthCookieName,
+		AnonSessionCookieName: cfg.AnonSessionCookieName,
+		CookieSecret:          cfg.SessionCookieSecret,
 	}))
 
 	proxyURL, err := url.Parse(cfg.NextjsURL)

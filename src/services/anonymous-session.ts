@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY,
-  ANONYMOUS_SESSION_IDENTIFIER_SYSTEM
-} from '@/constants/anonymous-session';
+import { ANONYMOUS_SESSION_IDENTIFIER_SYSTEM } from '@/constants/anonymous-session';
 import { getAPI } from '@/services/api';
 import { Identifier } from 'fhir/r4';
 
@@ -27,22 +24,6 @@ export const decodeJwtPayload = (
     return JSON.parse(json);
   } catch {
     return null;
-  }
-};
-
-export const getCachedGuestId = (): string | null => {
-  try {
-    return localStorage.getItem(ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-};
-
-export const cacheGuestId = (guestId: string) => {
-  try {
-    localStorage.setItem(ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY, guestId);
-  } catch {
-    // ignore storage errors
   }
 };
 
@@ -79,7 +60,6 @@ export const ensureAnonymousSession = async (
     throw new Error('Failed to resolve guest_id from anonymous session');
   }
 
-  cacheGuestId(guestId);
   return guestId;
 };
 
