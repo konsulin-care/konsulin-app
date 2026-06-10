@@ -69,5 +69,5 @@ export async function getProfileByIdentifier({
   ) {
     return null;
   }
-  return resource;
+  return resource as Patient | Practitioner;
 }

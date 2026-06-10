@@ -16,6 +16,7 @@ import { saveIntent } from './utils/redirect-intent';
 const WHATSAPP_LINK =
   'https://wa.me/6285163181852?text=Request%20login%2C%20authenticate%20me';
 
+/* eslint-disable react/jsx-max-depth */
 // NOSONAR - deep nesting required by SuperTokens provider button spec
 const orDividerAndWhatsAppFooter = (
   <>
@@ -71,6 +72,19 @@ export default function AuthApp() {
     if (redirectToPath) {
       if (redirectToPath.startsWith('/journal')) {
         saveIntent('journal', { path: redirectToPath });
+      }
+      if (redirectToPath.startsWith('/record')) {
+        const intent = {
+          kind: 'assessmentResult' as const,
+          payload: { path: redirectToPath },
+          createdAt: Date.now()
+        };
+        try {
+          localStorage.setItem('konsulin.intent', JSON.stringify(intent));
+        } catch {
+          /* ignore */
+        }
+        saveIntent('assessmentResult', { path: redirectToPath });
       }
     }
   }, [redirectToPath]);

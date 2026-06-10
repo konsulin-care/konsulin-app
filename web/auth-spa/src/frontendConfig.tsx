@@ -9,6 +9,7 @@ import {
   handleReturningUserLogin,
   resolvePostLoginRedirect
 } from './auth-helpers';
+import { getIntent, getIntentLocal } from './utils/redirect-intent';
 
 /** SuperTokens frontend configuration. */
 export const frontendConfig = (): SuperTokensConfig => {
@@ -112,6 +113,34 @@ export const frontendConfig = (): SuperTokensConfig => {
             await handleNewUserLogin(roles, userId, emails, phoneNumbers);
           } else {
             await handleReturningUserLogin(roles, userId, emails, phoneNumbers);
+          }
+
+          const intent = getIntent() || getIntentLocal();
+          const redirectToPathParam = new URLSearchParams(
+            globalThis.location.search
+          ).get('redirectToPath');
+          if (
+            intent?.kind === 'assessmentResult' ||
+            redirectToPathParam?.startsWith('/record')
+          ) {
+            try {
+              await fetch('/api/v1/auth/anonymous/claim', { method: 'PATCH' });
+            } catch (err) {
+              console.error(
+                '[auth:claim] failed to claim assessment result:',
+                err
+              );
+            }
+          }
+          if (intent?.kind === 'appointment') {
+            try {
+              sessionStorage.setItem(
+                'pending_booking',
+                JSON.stringify(intent.payload)
+              );
+            } catch {
+              /* sessionStorage may be unavailable */
+            }
           }
 
           const redirectToPath = resolvePostLoginRedirect();

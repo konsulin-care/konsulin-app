@@ -77,8 +77,12 @@ func hasSuperTokensSession(r *http.Request, opts AuthGuardOptions) bool {
 }
 
 func redirectMissingSession(w http.ResponseWriter, r *http.Request, opts AuthGuardOptions) {
-	slog.Debug("auth guard: no valid session", "path", r.URL.Path)
-	redirectURL := redirectURLForPath(r.URL.Path, opts.AuthPath, opts.AppURL)
+	path := r.URL.Path
+	if r.URL.RawQuery != "" {
+		path += "?" + r.URL.RawQuery
+	}
+	slog.Debug("auth guard: no valid session", "path", path)
+	redirectURL := redirectURLForPath(path, opts.AuthPath, opts.AppURL)
 
 	if isHTMX(r) {
 		w.Header().Set(hxRedirectHeader, redirectURL)

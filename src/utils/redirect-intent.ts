@@ -9,7 +9,11 @@ export interface Intent {
 const REDIRECT_INTENT_COOKIE = 'redirect_intent';
 // Keep in sync with web/auth-spa/src/utils/redirect-intent.ts and
 // RequireRole middleware MaxAge=300 (5 min).
-const TTL_MS = 5 * 60 * 1000;
+const COOKIE_TTL_MS = 5 * 60 * 1000;
+
+// localStorage-based intent (matching develop's intent-storage.ts)
+const LOCAL_STORAGE_KEY = 'konsulin.intent';
+const LS_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 // REDIRECT_INTENT_COOKIE is a compile-time constant; static regex avoids false-positive scanner warnings.
 const REDIRECT_INTENT_REGEX = /(?:^|;\s*)redirect_intent=([^;]*)/;
@@ -36,7 +40,6 @@ function writeCookie(value: string, maxAge: number): void {
 export function getRedirectIntent(): string | null {
   const raw = readCookie();
   if (!raw) return null;
-  // If it's a simple URL path (not JSON), return it directly
   if (!raw.startsWith('{')) return raw;
   return null;
 }
@@ -47,24 +50,48 @@ export function clearRedirectIntent(): void {
   document.cookie = `${REDIRECT_INTENT_COOKIE}=; Path=/; Max-Age=0`;
 }
 
-/** Saves a redirect intent to a cookie for post-auth navigation. */
+/** Saves intent to both localStorage and cookie for post-auth navigation. */
 export function saveIntent(
   kind: IntentKind,
   payload: { path: string; [key: string]: unknown }
 ): void {
   const intent: Intent = { kind, payload, createdAt: Date.now() };
-  writeCookie(JSON.stringify(intent), TTL_MS / 1000);
+  // Primary: localStorage (proven to work on develop)
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(intent));
+  } catch {
+    /* ignore */
+  }
+  // Fallback: cookie
+  writeCookie(JSON.stringify(intent), COOKIE_TTL_MS / 1000);
 }
 
-/** Returns a structured redirect intent if one exists and is not expired. */
+/** Returns a structured redirect intent — tries localStorage first, then cookie. */
 export function getIntent(): Intent | null {
+  // 1. localStorage (primary — works reliably)
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (raw) {
+      const intent = JSON.parse(raw) as Intent;
+      if (intent.kind && intent.createdAt) {
+        if (Date.now() - intent.createdAt <= LS_TTL_MS) return intent;
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      } else {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      }
+    }
+  } catch {
+    /* fall through to cookie */
+  }
+
+  // 2. Cookie (fallback)
   const raw = readCookie();
   if (!raw) return null;
   if (!raw.startsWith('{')) return null;
   try {
     const intent = JSON.parse(raw) as Intent;
     if (!intent.kind || !intent.createdAt) return null;
-    if (Date.now() - intent.createdAt > TTL_MS) {
+    if (Date.now() - intent.createdAt > COOKIE_TTL_MS) {
       clearRedirectIntent();
       return null;
     }
@@ -75,7 +102,12 @@ export function getIntent(): Intent | null {
   }
 }
 
-/** Alias for clearRedirectIntent. */
+/** Clears intent from both localStorage and cookie. */
 export function clearIntent(): void {
+  try {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
   clearRedirectIntent();
 }

@@ -237,6 +237,28 @@ export default function PractitionerAvailability({
     refetchOnReconnect: false
   });
 
+  /** Restore booking from sessionStorage (set by auth SPA after login). */
+  function tryRestoreBookingFromSession(pid: string): boolean {
+    const stored = sessionStorage.getItem('pending_booking');
+    if (!stored) return false;
+    try {
+      const payload = JSON.parse(stored) as AppointmentPayload;
+      if (!payload.path?.includes(pid)) return false;
+      const { slot, formData } = payload;
+      setBookingInformation(formData);
+      handleFilterChange('date', new Date(slot.date));
+      handleFilterChange('startTime', slot.startTime);
+      handleFilterChange('hasUserChosenDate', true);
+      if (slot.slotId) setSelectedSlotId(slot.slotId);
+      setIsOpen(true);
+      sessionStorage.removeItem('pending_booking');
+      return true;
+    } catch {
+      sessionStorage.removeItem('pending_booking');
+      return false;
+    }
+  }
+
   /* when the modal is opened via the "isOpen=true" URL param,
    * load temporary booking data from localStorage (if any),
    * apply it to the booking form and global state,
@@ -262,6 +284,9 @@ export default function PractitionerAvailability({
         return;
       }
     }
+
+    /* fallback: sessionStorage set by auth SPA after login */
+    if (tryRestoreBookingFromSession(practitionerId as string)) return;
 
     if (isOpenParam === 'true' && userId) {
       setIsOpen(true);
