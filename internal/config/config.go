@@ -27,7 +27,7 @@ type Config struct {
 	SessionCookieNameIDRefresh string `json:"session_cookie_name_id_refresh"`
 	SessionCookieSecret        string `json:"session_cookie_secret"`
 
-	AnonSessionCookieName   string `json:"anon_session_cookie_name"`
+	AnonSessionCookieName    string `json:"anon_session_cookie_name"`
 	RedirectIntentCookieName string `json:"redirect_intent_cookie_name"`
 
 	NextjsURL                  string `json:"nextjs_url"`
@@ -103,7 +103,7 @@ func Load() (*Config, error) {
 		SessionCookieNameIDRefresh: env("SESSION_COOKIE_NAME_ID_REFRESH", "sIdRefreshToken"),
 		SessionCookieSecret:        sessionSecret,
 
-		AnonSessionCookieName:   env("ANON_SESSION_COOKIE_NAME", "anon_session"),
+		AnonSessionCookieName:    env("ANON_SESSION_COOKIE_NAME", "anon_session"),
 		RedirectIntentCookieName: env("REDIRECT_INTENT_COOKIE_NAME", "redirect_intent"),
 
 		NextjsURL:                  env("NEXTJS_URL", "http://localhost:8080"),
