@@ -100,13 +100,15 @@ func ExtractFromRequest(r *http.Request, cookieName, secret string) (*Session, e
 	if c.Value == "" {
 		return nil, errors.New("session cookie is empty")
 	}
-	decoded, err := url.QueryUnescape(c.Value)
-	if err != nil {
-		decoded = c.Value
-	}
-	// Tier 1: securecookie — fast path.
-	if s, ok := decodeSecureCookie(cookieName, decoded); ok {
+	// Use raw cookie value first (securecookie base64). Only try URL-unescaped
+	// as fallback — url.QueryUnescape converts "+" to space, corrupting base64.
+	raw := c.Value
+	if s, ok := decodeSecureCookie(cookieName, raw); ok {
 		return s, nil
+	}
+	decoded, unescapeErr := url.QueryUnescape(raw)
+	if unescapeErr != nil || decoded == raw {
+		decoded = raw
 	}
 	// Tiers 2–3: HMAC or unsigned fallback.
 	s, err := decodeFallback(decoded, secret)

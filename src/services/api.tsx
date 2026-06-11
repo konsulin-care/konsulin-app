@@ -51,17 +51,28 @@ export function getAPI(): Promise<AxiosInstance> {
       const { errorMessage, isExpiredToken, isMissingToken } =
         parseAxiosError(error);
 
-      toast.error(errorMessage, {
-        position: 'top-right',
-        autoClose: 2500,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined
-      });
+      const requestUrl: string =
+        (error.config?.url as string | undefined) ?? '';
+      const isFhirRequest = requestUrl.startsWith('/fhir/');
+      const isAuthEndpoint = requestUrl.startsWith('/api/v1/auth/');
 
-      if (isExpiredToken || isMissingToken) {
+      // Show toast for non-FHIR errors; FHIR 401s are often permission errors,
+      // not actual token expiry, and showing toasts for every FHIR 401 is noisy.
+      if (!isFhirRequest) {
+        toast.error(errorMessage, {
+          position: 'top-right',
+          autoClose: 2500,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined
+        });
+      }
+
+      // Only clear user data / redirect for actual auth endpoint failures,
+      // not for FHIR data access errors (e.g., Person resource 401).
+      if ((isExpiredToken || isMissingToken) && isAuthEndpoint) {
         setTimeout(() => {
           clearUserData(currentUserId ?? 'guest');
           try {
@@ -73,7 +84,12 @@ export function getAPI(): Promise<AxiosInstance> {
       }
 
       if (process.env.NODE_ENV !== 'production') {
-        console.debug('API error:', { error });
+        console.debug('API error:', {
+          url: requestUrl,
+          isFhirRequest,
+          isAuthEndpoint,
+          error
+        });
       }
 
       return Promise.reject(error);

@@ -91,10 +91,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   /** Handle auth state when no SuperTokens session exists. */
   const handleNoSession = async () => {
-    try {
-      await getAuthCookieSession();
-    } catch (err) {
-      console.error('Failed to fetch auth cookie, proceeding as guest:', err);
+    const cookieSession = await getAuthCookieSession();
+
+    // SuperTokens session is dead but auth cookie lingers. Delete it so
+    // RedirectAuthenticated middleware stops blocking /auth, allowing re-login.
+    if (cookieSession?.authenticated) {
+      console.warn(
+        'Auth: SuperTokens session missing but auth cookie exists — clearing auth cookie to unblock /auth'
+      );
+      try {
+        await fetch('/auth/cookie', { method: 'DELETE' });
+      } catch (err) {
+        console.error('Auth: failed to delete stale auth cookie:', err);
+      }
+      globalThis.location.href = '/auth';
+      return;
     }
 
     dispatch({ type: 'logout' });
@@ -118,48 +129,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
   };
 
-  /** Handle auth state when a SuperTokens session already exists. */
-  const handleSessionExists = async () => {
+  /** Attempt to restore the auth cookie; returns false to abort bootstrap. */
+  const tryRestoreAuthCookie = async (): Promise<boolean> => {
     try {
       const restored = await restoreAuthCookie(session);
       if (!restored) {
         console.error('restoreAuthCookie failed, aborting bootstrap');
-        setIsLoading(false);
-        return;
+        return false;
       }
+      return true;
     } catch (err) {
       console.error('restoreAuthCookie unexpected error:', err);
-      setIsLoading(false);
+      return false;
+    }
+  };
+
+  /** Fetch profile and dispatch login, falling back to auth cookie on error. */
+  const fetchProfileAndLogin = async () => {
+    const userId = session.userId;
+    if (!userId) {
+      console.error('Auth: userId missing from SuperTokens session');
+      return;
+    }
+    setCurrentUserId(userId);
+
+    const cookieSession = await getAuthCookieSession();
+    const cookieRole = cookieSession?.role_name;
+
+    const superTokensRoles = (await getClaimValue({
+      claim: UserRoleClaim
+    })) as string[] | undefined;
+
+    const role = resolveActiveRole(cookieRole, superTokensRoles);
+
+    const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
+
+    if (cached?.userId === userId && cached?.role_name === role) {
+      setCurrentUserId(userId);
+      dispatch({ type: 'login', payload: cached });
       return;
     }
 
     try {
-      const userId = session.userId;
-      if (!userId) {
-        console.error('Auth: userId missing from SuperTokens session');
-        setIsLoading(false);
-        return;
-      }
-      setCurrentUserId(userId);
-
-      const cookieSession = await getAuthCookieSession();
-      const cookieRole = cookieSession?.role_name;
-
-      const superTokensRoles = (await getClaimValue({
-        claim: UserRoleClaim
-      })) as string[] | undefined;
-
-      const role = resolveActiveRole(cookieRole, superTokensRoles);
-
-      const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
-
-      if (cached?.userId === userId && cached?.role_name === role) {
-        setCurrentUserId(userId);
-        dispatch({ type: 'login', payload: cached });
-        setIsLoading(false);
-        return;
-      }
-
       const result = await getProfileByIdentifier({
         userId,
         type: roleToFhirResource(role)
@@ -176,12 +187,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           fhirId: '',
           profile_complete: false
         };
-        await dbSet(STORES.userProfile, {
-          ...payload,
-          cachedAt: Date.now()
-        });
+        await dbSet(STORES.userProfile, { ...payload, cachedAt: Date.now() });
         dispatch({ type: 'login', payload });
-        setIsLoading(false);
         return;
       }
 
@@ -210,17 +217,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       dispatch({ type: 'login', payload });
     } catch (error) {
       console.error('Error fetching session:', error);
-      const userId = session.userId;
-      if (userId) {
-        setCurrentUserId(userId);
-        const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
-        if (cached?.userId) {
-          dispatch({ type: 'auth-check', payload: cached });
+      // Auth cookie has the current role (e.g., post-switch). Use it
+      // instead of the stale cached profile which holds the pre-switch role.
+      const fallbackCookie = await getAuthCookieSession();
+      if (fallbackCookie?.authenticated && fallbackCookie?.role_name) {
+        const payload = {
+          userId,
+          role_name: fallbackCookie.role_name,
+          roles: fallbackCookie.roles ?? [],
+          email: fallbackCookie.email ?? '',
+          fullname: fallbackCookie.fullname ?? '',
+          profile_picture: fallbackCookie.profile_picture ?? '',
+          fhirId: fallbackCookie.fhirId ?? '',
+          profile_complete: fallbackCookie.profile_complete ?? false
+        };
+        dispatch({ type: 'login', payload });
+      } else {
+        const fallbackCached = await dbGet<UserProfile>(
+          STORES.userProfile,
+          userId
+        );
+        if (fallbackCached?.userId) {
+          dispatch({ type: 'auth-check', payload: fallbackCached });
         }
       }
-    } finally {
-      setIsLoading(false);
     }
+  };
+
+  /** Handle auth state when a SuperTokens session already exists. */
+  const handleSessionExists = async () => {
+    const restored = await tryRestoreAuthCookie();
+    if (!restored) {
+      setIsLoading(false);
+      return;
+    }
+    await fetchProfileAndLogin();
+    setIsLoading(false);
   };
 
   useEffect(() => {

@@ -79,6 +79,12 @@ func setProxyRequestHeaders(proxyReq, r *http.Request) {
 }
 
 func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL string) {
+	// SuperTokens auth endpoints (session/refresh etc.) use cookie-based auth;
+	// injecting a Bearer header with the access token interferes with the refresh flow.
+	if strings.Contains(targetURL, "/api/v1/auth/") {
+		return
+	}
+
 	if auth := r.Header.Get("Authorization"); auth != "" {
 		proxyReq.Header.Set("Authorization", auth)
 		return
