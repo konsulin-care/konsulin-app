@@ -14,6 +14,7 @@ import {
 import { DRAWER_STATE, subtitle_success_updated } from '@/constants/profile';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
+import { useProfileEditDraft } from '@/hooks/useProfileEditDraft';
 import {
   useGetCities,
   useGetDistricts,
@@ -38,7 +39,7 @@ import {
 import { processImageForAvatar } from '@/utils/image-processing';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
 import { validateEmail, validateForm, validateInput } from '@/utils/validation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import ProfileFormSection from './profile-form-section';
 
@@ -46,7 +47,7 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { ContactPoint, Identifier, Patient, Practitioner } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
 type Props = {
@@ -128,13 +129,27 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     return Boolean(phoneNumber) && !email;
   };
   const [isPhoneBasedUser] = useState<boolean>(getInitialPhoneBasedUser);
+  const queryClient = useQueryClient();
+
+  const { initialDraft, saveDraft, clearDraft } = useProfileEditDraft(fhirId);
+  const draftRef = useRef<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    draftRef.current = initialDraft;
+    if (initialDraft && !isProfileLoading) {
+      setUpdateUser(prev => ({ ...prev, ...initialDraft }));
+    }
+  }, [initialDraft]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { isLoading: isProfileLoading } = useQuery<Patient | Practitioner>({
     queryKey: ['profile-data', fhirId],
     queryFn: () => getProfileById(fhirId, fhirRole),
     enabled: Boolean(fhirId),
     onSuccess: result => {
-      setUpdateUser(parseFhirProfile(result));
+      const parsed = parseFhirProfile(result);
+      setUpdateUser(
+        draftRef.current ? { ...parsed, ...draftRef.current } : parsed
+      );
       setIsLoading(false);
     },
     onError: (error: Error) => {
@@ -172,6 +187,15 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       }));
     }
   }, [updateUser.addresses]);
+
+  /** Debounced auto-save profile edits to localStorage. */
+  useEffect(() => {
+    if (isLoading || isProfileLoading) return undefined;
+    const timer = setTimeout(() => {
+      saveDraft(updateUser as unknown as Record<string, unknown>);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [updateUser, isLoading, isProfileLoading, saveDraft]);
 
   useEffect(() => {
     let isActive = true;
@@ -542,7 +566,9 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       if (!cookieRes.ok) {
         throw new Error(`auth cookie set failed: ${cookieRes.status}`);
       }
+      clearDraft();
       dispatchAuth({ type: 'auth-check', payload: authPayload });
+      queryClient.invalidateQueries({ queryKey: ['profile-data', fhirId] });
       setDrawerState(DRAWER_STATE.SUCCESS);
     } catch (error) {
       console.error('Error when updating profile: ', error);

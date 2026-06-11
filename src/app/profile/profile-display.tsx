@@ -2,8 +2,10 @@
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
+import CompletenessBanner from '@/components/profile/completeness-banner';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
+import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
 import Clinician from './clinician';
 import Patient from './patient';
 
@@ -12,6 +14,7 @@ import Patient from './patient';
  */
 export default function ProfileDisplay() {
   const { state: authState, isLoading } = useAuth();
+  const { showBanner } = useProfileCompleteness(undefined);
 
   /** Render the patient or clinician profile based on role. */
   const renderHomeContent = () => {
@@ -32,6 +35,7 @@ export default function ProfileDisplay() {
   return (
     <>
       <PageHeader />
+      {!isLoading && <CompletenessBanner show={showBanner} />}
       <div className='mt-[-24px] rounded-[16px] bg-white'>
         {isLoading ? (
           <div className='flex min-h-screen min-w-full items-center justify-center'>

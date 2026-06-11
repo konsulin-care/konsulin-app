@@ -26,20 +26,45 @@ const STORE_SCHEMAS: { name: StoreName; keyPath: string | string[] }[] = [
   { name: STORES.userProfile, keyPath: 'userId' }
 ];
 
-/** Opens the IndexedDB database, creating object stores on upgrade. */
+/**
+ * Opens the IndexedDB database at the highest known version.
+ *
+ * First discovers the existing version on disk, then opens at
+ * `max(existingVersion, DB_VERSION)`. This prevents VersionError
+ * when the stored DB is at a higher version than DB_VERSION
+ * (e.g. after a version rollback during development).
+ */
 export function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      for (const schema of STORE_SCHEMAS) {
-        if (!db.objectStoreNames.contains(schema.name)) {
-          db.createObjectStore(schema.name, { keyPath: schema.keyPath });
-        }
+    const discovery = indexedDB.open(DB_NAME);
+    discovery.onsuccess = () => {
+      const existingDB = discovery.result;
+      const existingVersion = existingDB.version;
+      existingDB.close();
+
+      const targetVersion = Math.max(existingVersion, DB_VERSION);
+
+      if (targetVersion <= existingVersion) {
+        // Already at or above target — no upgrade needed
+        const request = indexedDB.open(DB_NAME, targetVersion);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      } else {
+        // Need to upgrade
+        const request = indexedDB.open(DB_NAME, targetVersion);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          for (const schema of STORE_SCHEMAS) {
+            if (!db.objectStoreNames.contains(schema.name)) {
+              db.createObjectStore(schema.name, { keyPath: schema.keyPath });
+            }
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
       }
     };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    discovery.onerror = () => reject(discovery.error);
   });
 }
 
