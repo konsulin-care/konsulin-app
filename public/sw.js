@@ -5,7 +5,7 @@ const OFFLINE_URL = '/~offline'
 
 const PRECACHE_URLS = [OFFLINE_URL, '/manifest.json', '/images/Loading-Time.svg']
 
-self.addEventListener('install', function (event) {
+self.addEventListener('install', function (event) { // NOSONAR - self is SW global scope
   event.waitUntil(
     caches.open(STATIC_CACHE).then(function (cache) {
       return cache.addAll(PRECACHE_URLS)
@@ -40,7 +40,7 @@ self.addEventListener('activate', function (event) {
 })
 
 function isSameOrigin (url) {
-  return url.origin === self.location.origin
+  return url.origin === self.location.origin // NOSONAR - self is SW global scope
 }
 
 function isStaticAsset (pathname) {
@@ -72,13 +72,12 @@ async function networkFirst (request, cacheName, fallbackUrl) {
   try {
     const response = await fetch(request)
     if (response.ok) {
-      var cache = await caches.open(cacheName)
+      const cache = await caches.open(cacheName)
       cache.put(request, response.clone())
     }
     return response
-  } catch (err) {
-    void err
-    var cache = await caches.open(cacheName)
+  } catch {
+    const cache = await caches.open(cacheName)
     const cached = await cache.match(request)
     if (cached) return cached
     if (fallbackUrl) {

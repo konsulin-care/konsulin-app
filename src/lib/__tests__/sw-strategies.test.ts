@@ -32,7 +32,7 @@ function createMockCacheStorage(
     has: vi.fn(),
     delete: vi.fn(),
     keys: vi.fn()
-  } as unknown as CacheStorage;
+  };
 }
 
 function mockOkResponse(body = 'ok'): Response {

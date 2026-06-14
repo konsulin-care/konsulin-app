@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, renderHook, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -44,7 +44,6 @@ import { useAuth } from '@/context/auth/authContext';
 // ---------------------------------------------------------------------------
 
 import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
-import { renderHook } from '@testing-library/react';
 import { Patient } from 'fhir/r4';
 
 describe('useProfileCompleteness', () => {

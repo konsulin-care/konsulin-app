@@ -121,15 +121,35 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 // Install event
 // ---------------------------------------------------------------------------
-describe('install event', () => {
-  function fireInstall() {
-    const event = createMockEvent();
-    const handler = mockSelf.handlers['install']?.[0];
-    expect(handler, 'install handler must be registered').toBeDefined();
-    handler(event);
-    return event;
-  }
+// ---------------------------------------------------------------------------
+// Helper: fire SW events
+// ---------------------------------------------------------------------------
 
+function fireInstall() {
+  const event = createMockEvent();
+  const handler = mockSelf.handlers['install']?.[0];
+  expect(handler, 'install handler must be registered').toBeDefined();
+  handler(event);
+  return event;
+}
+
+function fireActivate() {
+  const event = createMockEvent();
+  const handler = mockSelf.handlers['activate']?.[0];
+  expect(handler, 'activate handler must be registered').toBeDefined();
+  handler(event);
+  return event;
+}
+
+function fireFetch(request: unknown) {
+  const event = createMockEvent({ request });
+  const handler = mockSelf.handlers['fetch']?.[0];
+  expect(handler, 'fetch handler must be registered').toBeDefined();
+  handler(event);
+  return event;
+}
+
+describe('install event', () => {
   it('pre-caches PRECACHE_URLS into STATIC_CACHE', async () => {
     const event = fireInstall();
 
@@ -153,14 +173,6 @@ describe('install event', () => {
 // Activate event
 // ---------------------------------------------------------------------------
 describe('activate event', () => {
-  function fireActivate() {
-    const event = createMockEvent();
-    const handler = mockSelf.handlers['activate']?.[0];
-    expect(handler, 'activate handler must be registered').toBeDefined();
-    handler(event);
-    return event;
-  }
-
   it('deletes old konsulin caches', async () => {
     mockCaches.stores['konsulin-old-v1'] = createMockCache();
     mockCaches.stores['konsulin-v0'] = createMockCache();
@@ -211,14 +223,6 @@ describe('activate event', () => {
 // Fetch event - routing
 // ---------------------------------------------------------------------------
 describe('fetch event routing', () => {
-  function fireFetch(request: unknown) {
-    const event = createMockEvent({ request });
-    const handler = mockSelf.handlers['fetch']?.[0];
-    expect(handler, 'fetch handler must be registered').toBeDefined();
-    handler(event);
-    return event;
-  }
-
   it('routes navigation requests through networkFirst (tries fetch)', () => {
     const event = fireFetch({
       url: 'https://konsulin.id/page',

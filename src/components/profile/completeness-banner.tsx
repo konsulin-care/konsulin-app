@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 const DISMISS_KEY = 'profile_completeness_dismissed';
 
 type Props = {
-  show: boolean;
+  readonly show: boolean;
 };
 
 /**

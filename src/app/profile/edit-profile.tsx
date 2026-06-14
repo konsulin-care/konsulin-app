@@ -192,7 +192,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   useEffect(() => {
     if (isLoading || isProfileLoading) return undefined;
     const timer = setTimeout(() => {
-      saveDraft(updateUser as unknown as Record<string, unknown>);
+      saveDraft(updateUser);
     }, 1000);
     return () => clearTimeout(timer);
   }, [updateUser, isLoading, isProfileLoading, saveDraft]);
