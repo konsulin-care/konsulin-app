@@ -73,7 +73,7 @@ templ-gen:
 
 # Ports
 GO_PORT ?= 3000
-NEXT_PORT ?= 8080
+NEXT_PORT ?= 8000
 
 # Development
 dev: update-js css-templ templ-gen
