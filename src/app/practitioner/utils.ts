@@ -61,6 +61,26 @@ export const getTimeSlots = (startTime: string, endTime: string) => {
   return slots;
 };
 
+/**
+ * Checks whether a stored intent payload path matches the current practitioner.
+ *
+ * The path is saved as `/practitioner?practitionerRoleId=<id>` by booking-form-section.
+ * Parses it as a URL and compares the `practitionerRoleId` query parameter exactly
+ * against the provided practitionerRoleId.
+ */
+export function matchesPractitionerFromPath(
+  path: string,
+  practitionerRoleId: string
+): boolean {
+  if (!path || !practitionerRoleId) return false;
+  try {
+    const url = new URL(path, 'http://localhost');
+    return url.searchParams.get('practitionerRoleId') === practitionerRoleId;
+  } catch {
+    return false;
+  }
+}
+
 // Helper function to extract slotMinutes from Schedule's comment field
 /**
  *

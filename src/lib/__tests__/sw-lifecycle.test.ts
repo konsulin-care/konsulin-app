@@ -240,7 +240,8 @@ describe('fetch event routing', () => {
 
   it('routes static asset requests through cacheFirst', () => {
     const event = fireFetch({
-      url: 'https://konsulin.id/_next/static/foo.js'
+      url: 'https://konsulin.id/_next/static/foo.js',
+      method: 'GET'
     });
 
     expect(event.respondWith).toHaveBeenCalled();
@@ -249,7 +250,8 @@ describe('fetch event routing', () => {
 
   it('routes favicon through cacheFirst', () => {
     const event = fireFetch({
-      url: 'https://konsulin.id/favicon/icon.ico'
+      url: 'https://konsulin.id/favicon/icon.ico',
+      method: 'GET'
     });
 
     expect(event.respondWith).toHaveBeenCalled();
@@ -258,7 +260,8 @@ describe('fetch event routing', () => {
 
   it('routes icons through cacheFirst', () => {
     const event = fireFetch({
-      url: 'https://konsulin.id/icons/192.png'
+      url: 'https://konsulin.id/icons/192.png',
+      method: 'GET'
     });
 
     expect(event.respondWith).toHaveBeenCalled();
@@ -267,7 +270,8 @@ describe('fetch event routing', () => {
 
   it('routes images through cacheFirst', () => {
     const event = fireFetch({
-      url: 'https://konsulin.id/images/logo.svg'
+      url: 'https://konsulin.id/images/logo.svg',
+      method: 'GET'
     });
 
     expect(event.respondWith).toHaveBeenCalled();
@@ -339,7 +343,7 @@ describe('fetch offline fallback', () => {
     const event = {
       waitUntil: vi.fn(),
       respondWith: vi.fn(),
-      request: { url: 'https://konsulin.id/new-page', mode: 'navigate' }
+      request: { url: 'https://konsulin.id/new-page', mode: 'navigate', method: 'GET' }
     };
 
     const handler = mockSelf.handlers['fetch']?.[0]!;
@@ -364,7 +368,7 @@ describe('fetch offline fallback', () => {
     const event = {
       waitUntil: vi.fn(),
       respondWith: vi.fn(),
-      request: { url: 'https://konsulin.id/cached-page', mode: 'navigate' }
+      request: { url: 'https://konsulin.id/cached-page', mode: 'navigate', method: 'GET' }
     };
 
     const handler = mockSelf.handlers['fetch']?.[0]!;

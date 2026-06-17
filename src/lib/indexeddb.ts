@@ -26,46 +26,70 @@ const STORE_SCHEMAS: { name: StoreName; keyPath: string | string[] }[] = [
   { name: STORES.userProfile, keyPath: 'userId' }
 ];
 
-/**
- * Opens the IndexedDB database at the highest known version.
- *
- * First discovers the existing version on disk, then opens at
- * `max(existingVersion, DB_VERSION)`. This prevents VersionError
- * when the stored DB is at a higher version than DB_VERSION
- * (e.g. after a version rollback during development).
- */
+/** Cached DB connection promise, reused across calls. */
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+/** Opens the IndexedDB database, caching the connection for subsequent calls. */
 export function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const discovery = indexedDB.open(DB_NAME);
-    discovery.onsuccess = () => {
-      const existingDB = discovery.result;
-      const existingVersion = existingDB.version;
-      existingDB.close();
+  if (dbPromise) return dbPromise;
 
-      const targetVersion = Math.max(existingVersion, DB_VERSION);
+  dbPromise = new Promise((resolve, reject) => {
+    // Primary path: single open at DB_VERSION (normal case)
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-      if (targetVersion <= existingVersion) {
-        // Already at or above target — no upgrade needed
-        const request = indexedDB.open(DB_NAME, targetVersion);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      } else {
-        // Need to upgrade
-        const request = indexedDB.open(DB_NAME, targetVersion);
-        request.onupgradeneeded = () => {
-          const db = request.result;
-          for (const schema of STORE_SCHEMAS) {
-            if (!db.objectStoreNames.contains(schema.name)) {
-              db.createObjectStore(schema.name, { keyPath: schema.keyPath });
-            }
-          }
-        };
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      for (const schema of STORE_SCHEMAS) {
+        if (!db.objectStoreNames.contains(schema.name)) {
+          db.createObjectStore(schema.name, { keyPath: schema.keyPath });
+        }
       }
     };
-    discovery.onerror = () => reject(discovery.error);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onclose = () => {
+        dbPromise = null;
+      };
+      db.onversionchange = () => {
+        db.close();
+        dbPromise = null;
+      };
+      resolve(db);
+    };
+
+    request.onerror = () => {
+      if (request.error?.name === 'VersionError') {
+        // Fallback: disk DB version > DB_VERSION (dev rollback safety).
+        // Discover existing version and open at that version.
+        const discovery = indexedDB.open(DB_NAME);
+        discovery.onsuccess = () => {
+          const existing = discovery.result;
+          const version = existing.version;
+          existing.close();
+
+          const retry = indexedDB.open(DB_NAME, version);
+          retry.onsuccess = () => {
+            const db = retry.result;
+            db.onclose = () => {
+              dbPromise = null;
+            };
+            db.onversionchange = () => {
+              db.close();
+              dbPromise = null;
+            };
+            resolve(db);
+          };
+          retry.onerror = () => reject(retry.error);
+        };
+        discovery.onerror = () => reject(discovery.error);
+      } else {
+        reject(request.error);
+      }
+    };
   });
+
+  return dbPromise;
 }
 
 /** Returns an object store for the given database and store name. */

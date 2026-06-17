@@ -18,11 +18,18 @@ export function useProfileEditDraft(fhirId: string) {
     unknown
   > | null>(null);
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-  const loadedRef = useRef(false);
+  const lastFhirIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!fhirId || loadedRef.current) return;
-    loadedRef.current = true;
+    if (!fhirId) return;
+
+    // Skip if already loaded for this fhirId
+    if (lastFhirIdRef.current === fhirId) return;
+    lastFhirIdRef.current = fhirId;
+
+    // Reset state before loading draft for new fhirId
+    setInitialDraft(null);
+    setIsDraftLoaded(false);
 
     try {
       const raw = localStorage.getItem(STORAGE_PREFIX + fhirId);
@@ -33,7 +40,9 @@ export function useProfileEditDraft(fhirId: string) {
         }
       }
     } catch {
-      // corrupt entry — ignore
+      // Remove corrupt entry so it doesn't block future loads
+      localStorage.removeItem(STORAGE_PREFIX + fhirId);
+      console.warn('[profile-draft] corrupt entry removed for', fhirId);
     }
     setIsDraftLoaded(true);
   }, [fhirId]);

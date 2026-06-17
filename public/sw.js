@@ -70,7 +70,7 @@ async function cacheFirst (request, cacheName) {
   if (cached) return cached
 
   const response = await fetch(request)
-  if (response.ok) {
+  if (response.ok && request.method === 'GET') {
     cache.put(request, response.clone())
   }
   return response
@@ -84,7 +84,7 @@ async function networkFirst (request, cacheName, fallbackUrl) {
 
   try {
     const response = await fetch(request)
-    if (response.ok) {
+    if (response.ok && request.method === 'GET') {
       const navCache = await caches.open(cacheName)
       navCache.put(request, response.clone())
     }
@@ -106,6 +106,13 @@ self.addEventListener('fetch', function (event) {
   const url = new URL(request.url)
 
   if (!isSameOrigin(url)) return
+
+  // Non-GET requests (POST, DELETE, etc.) bypass caching entirely.
+  // The Cache API only supports GET, so caching would throw.
+  if (request.method !== 'GET') {
+    event.respondWith(fetch(request))
+    return
+  }
 
   if (isProxyApi(url.pathname)) {
     event.respondWith(fetch(request))

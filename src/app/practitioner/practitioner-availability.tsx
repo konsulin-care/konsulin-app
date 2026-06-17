@@ -13,13 +13,13 @@ import { clearIntent, getIntent, saveIntent } from '@/utils/redirect-intent';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { addDays, format, isBefore, parseISO } from 'date-fns';
 import { BundleEntry, PractitionerRole, Slot } from 'fhir/r4';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState, useTransition } from 'react';
 import BookingCalendar from './booking-calendar';
 import BookingFormSection from './booking-form-section';
 import PaymentDrawer from './payment-drawer';
 import TimeSlotsSection from './time-slots-section';
-import { getAvailableDays } from './utils';
+import { getAvailableDays, matchesPractitionerFromPath } from './utils';
 
 type AppointmentPayload = {
   path: string;
@@ -80,8 +80,6 @@ export default function PractitionerAvailability({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const router = useRouter();
-  const params = useParams();
-  const practitionerId = params.practitionerId;
   const searchParams = useSearchParams();
   const isOpenParam = searchParams.get('isOpen');
 
@@ -238,12 +236,12 @@ export default function PractitionerAvailability({
   });
 
   /** Restore booking from sessionStorage (set by auth SPA after login). */
-  function tryRestoreBookingFromSession(pid: string): boolean {
+  function tryRestoreBookingFromSession(): boolean {
     const stored = sessionStorage.getItem('pending_booking');
     if (!stored) return false;
     try {
       const payload = JSON.parse(stored) as AppointmentPayload;
-      if (!payload.path?.includes(pid)) return false;
+      if (!matchesPractitionerFromPath(payload.path, practitionerRole.id)) return false;
       const { slot, formData } = payload;
       setBookingInformation(formData);
       handleFilterChange('date', new Date(slot.date));
@@ -270,7 +268,7 @@ export default function PractitionerAvailability({
     const intent = getIntent();
     if (intent?.kind === 'appointment') {
       const payload = intent.payload as AppointmentPayload;
-      if (payload.path.includes(practitionerId as string)) {
+      if (matchesPractitionerFromPath(payload.path, practitionerRole.id)) {
         const { slot, formData } = payload;
         setBookingInformation(formData);
         handleFilterChange('date', new Date(slot.date));
@@ -286,7 +284,7 @@ export default function PractitionerAvailability({
     }
 
     /* fallback: sessionStorage set by auth SPA after login */
-    if (tryRestoreBookingFromSession(practitionerId as string)) return;
+    if (tryRestoreBookingFromSession()) return;
 
     if (isOpenParam === 'true' && userId) {
       setIsOpen(true);
