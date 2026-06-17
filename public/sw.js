@@ -1,6 +1,6 @@
 const SW_VERSION = '1'
-const STATIC_CACHE = 'konsulin-static-v' + SW_VERSION
-const NAV_CACHE = 'konsulin-nav-v' + SW_VERSION
+const STATIC_CACHE = `konsulin-static-v${SW_VERSION}`
+const NAV_CACHE = `konsulin-nav-v${SW_VERSION}`
 const OFFLINE_URL = '/~offline'
 
 const PRECACHE_URLS = [OFFLINE_URL, '/manifest.json', '/images/Loading-Time.svg']
@@ -39,10 +39,12 @@ self.addEventListener('activate', function (event) {
   )
 })
 
+/** Checks if a URL belongs to the same origin. */
 function isSameOrigin (url) {
   return url.origin === self.location.origin // NOSONAR - self is SW global scope
 }
 
+/** Checks if a pathname is a precacheable static asset. */
 function isStaticAsset (pathname) {
   return (
     pathname.startsWith('/_next/static/') ||
@@ -52,10 +54,12 @@ function isStaticAsset (pathname) {
   )
 }
 
+/** Checks if a pathname targets the proxy API. */
 function isProxyApi (pathname) {
   return pathname.startsWith('/proxy/')
 }
 
+/** Cache-first strategy: serves from cache when available, otherwise fetches and caches. */
 async function cacheFirst (request, cacheName) {
   if (!request.url.startsWith('http')) {
     return fetch(request)
@@ -72,6 +76,7 @@ async function cacheFirst (request, cacheName) {
   return response
 }
 
+/** Network-first strategy: tries network, falls back to cache, then to offline fallback URL. */
 async function networkFirst (request, cacheName, fallbackUrl) {
   if (!request.url.startsWith('http')) {
     return fetch(request)

@@ -37,6 +37,7 @@ type UserRole =
   | typeof Roles.ClinicAdmin
   | typeof Roles.Patient;
 
+// skipcq: JS-W1042 - createContext requires a default value per React API
 const AuthContext = createContext<ContextProps | undefined>(undefined);
 
 const INITIAL_PATHNAME_STORAGE_KEY = 'konsulin_initial_pathname';
@@ -256,6 +257,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    /** Fetches the current session and dispatches the auth result to context. */
     const fetchSession = async () => {
       if (session.doesSessionExist === undefined) return;
 

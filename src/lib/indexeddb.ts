@@ -235,6 +235,7 @@ function putWithTransaction<T>(
 
 const MIGRATION_FLAG = 'konsulin_migration_done';
 
+/** Migrates the anonymous guest session ID from localStorage to IndexedDB. */
 async function migrateGuestSessions(
   db: IDBDatabase,
   guestId: string
@@ -243,6 +244,7 @@ async function migrateGuestSessions(
   await putWithTransaction(db, STORES.guestSessions, [{ guest_id: guestId }]);
 }
 
+/** Migrates assessment draft responses from localStorage to IndexedDB. */
 async function migrateAssessmentDrafts(
   db: IDBDatabase,
   ownerId: string
@@ -275,6 +277,7 @@ async function migrateAssessmentDrafts(
   return responseKeys;
 }
 
+/** Migrates service request IDs from localStorage to IndexedDB. */
 async function migrateServiceRequests(
   db: IDBDatabase,
   ownerId: string
@@ -307,6 +310,7 @@ async function migrateServiceRequests(
   return srKeys;
 }
 
+/** Migrates SOAP note drafts from localStorage to IndexedDB. */
 async function migrateSoapDrafts(db: IDBDatabase): Promise<string[]> {
   const soapKeys = Object.keys(localStorage).filter(k =>
     k.startsWith('soap_draft_')
@@ -341,6 +345,7 @@ async function migrateSoapDrafts(db: IDBDatabase): Promise<string[]> {
   return soapKeys;
 }
 
+/** Migrates temporary booking data from localStorage to IndexedDB. */
 async function migrateTempBooking(
   db: IDBDatabase,
   ownerId: string
@@ -361,6 +366,7 @@ async function migrateTempBooking(
   }
 }
 
+/** Migrates UI preference values from localStorage to IndexedDB. */
 async function migrateUiPreferences(
   db: IDBDatabase,
   ownerId: string
@@ -395,6 +401,7 @@ async function migrateUiPreferences(
   await putWithTransaction(db, STORES.uiPreferences, prefValues);
 }
 
+/** Removes migrated keys from localStorage to complete the migration. */
 function cleanupMigratedKeys(
   responseKeys: string[],
   srKeys: string[],
@@ -421,6 +428,7 @@ function cleanupMigratedKeys(
   }
 }
 
+/** Sets the migration completion flag in localStorage. */
 function setMigrationFlag(): void {
   try {
     localStorage.setItem(MIGRATION_FLAG, 'true');

@@ -113,6 +113,7 @@ describe('cacheFirst', () => {
 
   it('fetches and caches on cache miss', async () => {
     const cache = createMockCache();
+    // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
     cache.match.mockResolvedValue(undefined);
     const cacheStorage = createMockCacheStorage({ v1: cache });
 
@@ -132,6 +133,7 @@ describe('cacheFirst', () => {
 
   it('does not cache response when fetch fails (non-ok)', async () => {
     const cache = createMockCache();
+    // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
     cache.match.mockResolvedValue(undefined);
     const cacheStorage = createMockCacheStorage({ v1: cache });
 
@@ -149,6 +151,7 @@ describe('cacheFirst', () => {
 
   it('throws when fetch fails', async () => {
     const cache = createMockCache();
+    // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
     cache.match.mockResolvedValue(undefined);
     const cacheStorage = createMockCacheStorage({ v1: cache });
 
@@ -210,6 +213,7 @@ describe('networkFirst', () => {
 
   it('falls back to offline page when no cache and fallbackUrl provided', async () => {
     const navCache = createMockCache();
+    // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
     navCache.match.mockResolvedValue(undefined);
 
     const staticCache = createMockCache();
@@ -240,6 +244,7 @@ describe('networkFirst', () => {
 
   it('throws on total failure with no cache and no fallback', async () => {
     const cache = createMockCache();
+    // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
     cache.match.mockResolvedValue(undefined);
     const cacheStorage = createMockCacheStorage({ 'nav-v1': cache });
 
@@ -256,9 +261,9 @@ describe('networkFirst', () => {
 });
 
 describe('networkOnly', () => {
-  it('throws on non-http URL', async () => {
+  it('throws on non-http URL', () => {
     const request = new Request('javascript:void(0)');
-    await expect(networkOnly(request)).rejects.toThrow('Invalid URL');
+    expect(() => networkOnly(request)).toThrow('Invalid URL');
   });
 
   it('returns network response', async () => {

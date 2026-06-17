@@ -209,7 +209,7 @@ describe('CompletenessBanner', () => {
   });
 
   it('renders when show is true', () => {
-    render(<CompletenessBanner show={true} />);
+    render(<CompletenessBanner show />);
     expect(screen.getByText('Your profile is incomplete.')).toBeDefined();
     expect(screen.getByText('Edit Profile')).toBeDefined();
   });
@@ -220,7 +220,7 @@ describe('CompletenessBanner', () => {
   });
 
   it('navigates to edit profile on button click', () => {
-    render(<CompletenessBanner show={true} />);
+    render(<CompletenessBanner show />);
     const button = screen.getByText('Edit Profile');
     button.click();
     expect(mockRouterPush).toHaveBeenCalledWith('/profile?path=edit-profile');

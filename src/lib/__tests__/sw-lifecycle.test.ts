@@ -57,14 +57,15 @@ function createMockCaches() {
   const stores: Record<string, ReturnType<typeof createMockCache>> = {};
   return {
     stores,
-    open: vi.fn(async (name: string) => {
+    open: vi.fn((name: string) => {
       if (!stores[name]) stores[name] = createMockCache();
-      return stores[name];
+      return Promise.resolve(stores[name]);
     }),
-    keys: vi.fn(async () => Object.keys(stores)),
-    delete: vi.fn(async (key: string) => {
+    keys: vi.fn(() => Promise.resolve(Object.keys(stores))),
+    delete: vi.fn((key: string) => {
+      // skipcq: JS-0320 - dynamic property deletion in test mock infrastructure
       delete stores[key];
-      return true;
+      return Promise.resolve(true);
     }),
     has: vi.fn(),
     match: vi.fn()
@@ -329,9 +330,9 @@ describe('fetch offline fallback', () => {
     const offlineResponse = new Response('offline page', { status: 200 });
     mockCaches.stores['konsulin-static-v1'] = createMockCache();
     mockCaches.stores['konsulin-static-v1'].match.mockImplementation(
-      async (url: string) => {
-        if (url === '/~offline') return offlineResponse;
-        return undefined;
+      (url: string) => {
+        if (url === '/~offline') return Promise.resolve(offlineResponse);
+        return Promise.resolve(undefined);
       }
     );
 

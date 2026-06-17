@@ -9,7 +9,7 @@ import { Patient, Practitioner } from 'fhir/r4';
  * source, falling back to local FHIR resource inspection.
  */
 export function useProfileCompleteness(
-  profile: Patient | Practitioner | undefined
+  profile?: Patient | Practitioner
 ) {
   const { state: authState } = useAuth();
 

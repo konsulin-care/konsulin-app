@@ -23,6 +23,7 @@ export default function CompletenessBanner({ show }: Props) {
 
   if (!show || dismissed) return null;
 
+  /** Dismiss the banner and persist dismissal state to sessionStorage. */
   const handleDismiss = () => {
     setDismissed(true);
     sessionStorage.setItem(DISMISS_KEY, 'true');

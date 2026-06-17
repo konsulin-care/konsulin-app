@@ -79,7 +79,7 @@ export async function networkFirst(
 /**
  * Network-only strategy: always fetches from network, never caches.
  */
-export async function networkOnly(request: Request): Promise<Response> {
+export function networkOnly(request: Request): Promise<Response> {
   if (!isValidHttpUrl(request.url)) {
     throw new Error('Invalid URL: only http/https URLs are allowed');
   }

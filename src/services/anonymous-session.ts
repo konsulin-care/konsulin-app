@@ -9,6 +9,7 @@ type AnonymousSessionResponse = {
   guest_id?: string;
 };
 
+/** Decodes the payload of a JWT token without verification. */
 export const decodeJwtPayload = (
   token: string
 ): Record<string, unknown> | null => {
@@ -27,8 +28,12 @@ export const decodeJwtPayload = (
   }
 };
 
+/**
+ * Ensures an anonymous session exists, creating one if needed.
+ * Returns the resolved guest ID from the session token or response body.
+ */
 export const ensureAnonymousSession = async (
-  forceNew: boolean = false
+  forceNew = false
 ): Promise<string> => {
   const API = await getAPI();
   const url = '/api/v1/auth/anonymous-session';
@@ -63,6 +68,7 @@ export const ensureAnonymousSession = async (
   return guestId;
 };
 
+/** Builds a FHIR Identifier for the anonymous session guest ID. */
 export const buildAnonymousIdentifier = (guestId: string): Identifier => {
   return {
     system: ANONYMOUS_SESSION_IDENTIFIER_SYSTEM,

@@ -14,7 +14,7 @@ import Patient from './patient';
  */
 export default function ProfileDisplay() {
   const { state: authState, isLoading } = useAuth();
-  const { showBanner } = useProfileCompleteness(undefined);
+  const { showBanner } = useProfileCompleteness();
 
   /** Render the patient or clinician profile based on role. */
   const renderHomeContent = () => {

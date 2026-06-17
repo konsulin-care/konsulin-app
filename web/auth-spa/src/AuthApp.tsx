@@ -28,6 +28,7 @@ function sanitizePath(path: string | null): string | null {
 
 /* eslint-disable react/jsx-max-depth */
 // NOSONAR - deep nesting required by SuperTokens provider button spec
+// skipcq: JS-0415 - SuperTokens DOM spec requires this nesting depth
 const orDividerAndWhatsAppFooter = (
   <>
     <div data-supertokens='dividerWithOr'>
