@@ -59,7 +59,7 @@ docker-check:
 	fi
 
 # Tailwind CSS for templ templates
-TAILWIND = .bin/tailwindcss
+TAILWIND = ./node_modules/.bin/tailwindcss
 TAILWIND_INPUT = web/static/css/templ-input.css
 TAILWIND_OUTPUT = web/static/css/output.css
 TAILWIND_CONTENT = "web/template/**/*.templ"
