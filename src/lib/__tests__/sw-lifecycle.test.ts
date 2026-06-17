@@ -127,7 +127,7 @@ afterEach(() => {
 
 function fireInstall() {
   const event = createMockEvent();
-  const handler = mockSelf.handlers['install']?.[0];
+  const handler = mockSelf.handlers['install']?.[0]!;
   expect(handler, 'install handler must be registered').toBeDefined();
   handler(event);
   return event;
@@ -135,7 +135,7 @@ function fireInstall() {
 
 function fireActivate() {
   const event = createMockEvent();
-  const handler = mockSelf.handlers['activate']?.[0];
+  const handler = mockSelf.handlers['activate']?.[0]!;
   expect(handler, 'activate handler must be registered').toBeDefined();
   handler(event);
   return event;
@@ -143,7 +143,7 @@ function fireActivate() {
 
 function fireFetch(request: unknown) {
   const event = createMockEvent({ request });
-  const handler = mockSelf.handlers['fetch']?.[0];
+  const handler = mockSelf.handlers['fetch']?.[0]!;
   expect(handler, 'fetch handler must be registered').toBeDefined();
   handler(event);
   return event;
@@ -329,7 +329,7 @@ describe('fetch offline fallback', () => {
       request: { url: 'https://konsulin.id/new-page', mode: 'navigate' }
     };
 
-    const handler = mockSelf.handlers['fetch']?.[0];
+    const handler = mockSelf.handlers['fetch']?.[0]!;
     expect(handler).toBeDefined();
     handler(event);
 
@@ -354,7 +354,7 @@ describe('fetch offline fallback', () => {
       request: { url: 'https://konsulin.id/cached-page', mode: 'navigate' }
     };
 
-    const handler = mockSelf.handlers['fetch']?.[0];
+    const handler = mockSelf.handlers['fetch']?.[0]!;
     expect(handler).toBeDefined();
     handler(event);
 
