@@ -132,12 +132,8 @@ export default function RootLayout({
       <body className={inter.className}>
         <Script src='/js/pathname-init.js' strategy='beforeInteractive' />
         <Script
-          id='sw-register'
+          src='/js/sw-register.js'
           strategy='afterInteractive'
-          dangerouslySetInnerHTML={{
-            __html:
-              "if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}"
-          }}
         />
         <AppProviders>
           <RouteResponseCleaner />

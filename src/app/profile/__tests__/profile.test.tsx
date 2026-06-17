@@ -11,8 +11,10 @@ vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));
 
+const mockRouterPush = vi.fn();
+
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: mockRouterPush }),
   useSearchParams: () => ({ get: vi.fn() }),
   usePathname: () => '/profile'
 }));
@@ -203,6 +205,7 @@ import CompletenessBanner from '@/components/profile/completeness-banner';
 describe('CompletenessBanner', () => {
   beforeEach(() => {
     sessionStorage.clear();
+    mockRouterPush.mockClear();
   });
 
   it('renders when show is true', () => {
@@ -214,6 +217,13 @@ describe('CompletenessBanner', () => {
   it('does not render when show is false', () => {
     const { container } = render(<CompletenessBanner show={false} />);
     expect(container.firstChild).toBeNull();
+  });
+
+  it('navigates to edit profile on button click', () => {
+    render(<CompletenessBanner show={true} />);
+    const button = screen.getByText('Edit Profile');
+    button.click();
+    expect(mockRouterPush).toHaveBeenCalledWith('/profile?path=edit-profile');
   });
 });
 

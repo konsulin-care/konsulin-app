@@ -57,6 +57,10 @@ function isProxyApi (pathname) {
 }
 
 async function cacheFirst (request, cacheName) {
+  if (!request.url.startsWith('http')) {
+    return fetch(request)
+  }
+
   const cache = await caches.open(cacheName)
   const cached = await cache.match(request)
   if (cached) return cached
@@ -69,16 +73,20 @@ async function cacheFirst (request, cacheName) {
 }
 
 async function networkFirst (request, cacheName, fallbackUrl) {
+  if (!request.url.startsWith('http')) {
+    return fetch(request)
+  }
+
   try {
     const response = await fetch(request)
     if (response.ok) {
-      const cache = await caches.open(cacheName)
-      cache.put(request, response.clone())
+      const navCache = await caches.open(cacheName)
+      navCache.put(request, response.clone())
     }
     return response
   } catch {
-    const cache = await caches.open(cacheName)
-    const cached = await cache.match(request)
+    const fallbackCache = await caches.open(cacheName)
+    const cached = await fallbackCache.match(request)
     if (cached) return cached
     if (fallbackUrl) {
       const staticCache = await caches.open(STATIC_CACHE)

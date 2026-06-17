@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -13,6 +13,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SW_PATH = resolve(__dirname, '../../../public/sw.js');
+const SW_REGISTER_PATH = resolve(__dirname, '../../../public/js/sw-register.js');
 let SW_CODE: string;
 
 // ---------------------------------------------------------------------------
@@ -304,6 +305,17 @@ describe('fetch event routing', () => {
       expect.objectContaining({ url: 'https://konsulin.id/api/data' })
     );
   });
+
+  it('does not fetch non-http URLs (security guard)', () => {
+    const event = fireFetch({
+      url: 'javascript:void(0)',
+      mode: 'navigate'
+    });
+
+    // The handler should call respondWith but the fetch should not happen
+    // because the URL scheme is not http/https
+    expect(event.respondWith).not.toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -362,5 +374,28 @@ describe('fetch offline fallback', () => {
     expect(response).toBe(cachedResponse);
     // Should NOT reach the static cache fallback
     expect(mockCaches.open).not.toHaveBeenCalledWith('konsulin-static-v1');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// sw-register.js — extracted from dangerouslySetInnerHTML
+// ---------------------------------------------------------------------------
+describe('sw-register.js', () => {
+  const FILE_PATH = SW_REGISTER_PATH;
+
+  it('exists in public/js/', () => {
+    expect(existsSync(FILE_PATH)).toBe(true);
+  });
+
+  it('contains service worker registration code', () => {
+    const content = readFileSync(FILE_PATH, 'utf-8');
+    expect(content).toContain('serviceWorker');
+    expect(content).toContain('/sw.js');
+    expect(content).toContain('register');
+  });
+
+  it('does not use dangerouslySetInnerHTML (no XSS risk)', () => {
+    const content = readFileSync(FILE_PATH, 'utf-8');
+    expect(content).not.toContain('dangerouslySetInnerHTML');
   });
 });

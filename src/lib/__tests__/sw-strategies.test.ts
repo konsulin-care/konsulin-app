@@ -1,4 +1,4 @@
-import { cacheFirst, networkFirst, networkOnly } from '@/lib/sw-strategies';
+import { cacheFirst, isValidHttpUrl, networkFirst, networkOnly } from '@/lib/sw-strategies';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 function createMockCache(): {
@@ -50,7 +50,54 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+// ---------------------------------------------------------------------------
+// isValidHttpUrl
+// ---------------------------------------------------------------------------
+describe('isValidHttpUrl', () => {
+  it('returns true for https URL', () => {
+    expect(isValidHttpUrl('https://konsulin.id/page')).toBe(true);
+  });
+
+  it('returns true for http URL', () => {
+    expect(isValidHttpUrl('http://konsulin.id/page')).toBe(true);
+  });
+
+  it('returns false for javascript: URL', () => {
+    expect(isValidHttpUrl('javascript:void(0)')).toBe(false);
+  });
+
+  it('returns false for data: URL', () => {
+    expect(isValidHttpUrl('data:text/html,<script>alert(1)</script>')).toBe(
+      false
+    );
+  });
+
+  it('returns false for file: URL', () => {
+    expect(isValidHttpUrl('file:///etc/passwd')).toBe(false);
+  });
+
+  it('returns false for empty string', () => {
+    expect(isValidHttpUrl('')).toBe(false);
+  });
+
+  it('returns false for blob URL', () => {
+    expect(isValidHttpUrl('blob:https://konsulin.id/uuid')).toBe(false);
+  });
+
+  it('returns false for about:blank', () => {
+    expect(isValidHttpUrl('about:blank')).toBe(false);
+  });
+});
+
 describe('cacheFirst', () => {
+  it('throws on non-http URL', async () => {
+    const cacheStorage = createMockCacheStorage({});
+    const request = new Request('javascript:void(0)');
+    await expect(cacheFirst(request, 'v1', cacheStorage)).rejects.toThrow(
+      'Invalid URL'
+    );
+  });
+
   it('returns cached response when cache has match', async () => {
     const cache = createMockCache();
     const cachedResponse = mockOkResponse('cached');
@@ -119,6 +166,14 @@ describe('cacheFirst', () => {
 });
 
 describe('networkFirst', () => {
+  it('throws on non-http URL', async () => {
+    const cacheStorage = createMockCacheStorage({});
+    const request = new Request('javascript:void(0)');
+    await expect(
+      networkFirst(request, 'v1', cacheStorage)
+    ).rejects.toThrow('Invalid URL');
+  });
+
   it('returns network response and caches it on success', async () => {
     const cache = createMockCache();
     const cacheStorage = createMockCacheStorage({ 'nav-v1': cache });
@@ -201,6 +256,11 @@ describe('networkFirst', () => {
 });
 
 describe('networkOnly', () => {
+  it('throws on non-http URL', async () => {
+    const request = new Request('javascript:void(0)');
+    await expect(networkOnly(request)).rejects.toThrow('Invalid URL');
+  });
+
   it('returns network response', async () => {
     const fetchSpy = vi
       .spyOn(globalThis, 'fetch')
