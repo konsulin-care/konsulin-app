@@ -26,12 +26,6 @@ type UseAvatarUploadParams = {
 };
 
 type UseAvatarUploadResult = {
-  /** Uploads a data URL avatar and returns the final photo URL. */
-  processAvatarUpload: (
-    photoDataUrl: string,
-    existingPhotoUrl: string,
-    finalChatwootId: string
-  ) => Promise<string>;
   /** Resolves the final photo URL from the current photo state. */
   resolvePhotoUrl: (
     existingPhotoUrl: string,
@@ -42,7 +36,7 @@ type UseAvatarUploadResult = {
 
 /**
  * Hook providing avatar upload logic for the edit profile page.
- * Encapsulates `processAvatarUpload` and `resolvePhotoUrl`.
+ * Uses `processAvatarUpload` internally within `resolvePhotoUrl`.
  */
 export function useAvatarUpload({
   photo,
@@ -121,5 +115,5 @@ export function useAvatarUpload({
     return existingPhotoUrl || '';
   };
 
-  return { processAvatarUpload, resolvePhotoUrl };
+  return { resolvePhotoUrl };
 }

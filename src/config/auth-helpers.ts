@@ -8,9 +8,7 @@ import {
   getRedirectIntent
 } from '@/utils/redirect-intent';
 import { roleToFhirResource } from '@/utils/role-fhir';
-import { Patient, Practitioner } from 'fhir/r4';
-
-type FHIRProfile = Patient | Practitioner | null;
+import type { FHIRProfile } from '@/types/fhir';
 type RolesParam = string[] | undefined;
 
 /** Fetches a CSRF token from the server for use in POST /auth/cookie requests. */

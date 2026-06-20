@@ -129,7 +129,7 @@ afterEach(() => {
 
 function fireInstall() {
   const event = createMockEvent();
-  const handler = mockSelf.handlers['install']?.[0]!;
+  const handler = mockSelf.handlers['install'][0]!;
   expect(handler, 'install handler must be registered').toBeDefined();
   handler(event);
   return event;
@@ -137,7 +137,7 @@ function fireInstall() {
 
 function fireActivate() {
   const event = createMockEvent();
-  const handler = mockSelf.handlers['activate']?.[0]!;
+  const handler = mockSelf.handlers['activate'][0]!;
   expect(handler, 'activate handler must be registered').toBeDefined();
   handler(event);
   return event;
@@ -145,7 +145,7 @@ function fireActivate() {
 
 function fireFetch(request: unknown) {
   const event = createMockEvent({ request });
-  const handler = mockSelf.handlers['fetch']?.[0]!;
+  const handler = mockSelf.handlers['fetch'][0]!;
   expect(handler, 'fetch handler must be registered').toBeDefined();
   handler(event);
   return event;
@@ -313,7 +313,7 @@ describe('fetch event routing', () => {
 
   it('does not fetch non-http URLs (security guard)', () => {
     const event = fireFetch({
-      url: 'javascript:void(0)',
+      url: 'javascript:void(0)', // skipcq: JS-0087
       mode: 'navigate'
     });
 
@@ -336,7 +336,7 @@ describe('fetch offline fallback', () => {
     mockCaches.stores['konsulin-static-v1'].match.mockImplementation(
       (url: string) => {
         if (url === '/~offline') return Promise.resolve(offlineResponse);
-        return Promise.resolve(undefined);
+        return Promise.resolve();
       }
     );
 
@@ -346,7 +346,7 @@ describe('fetch offline fallback', () => {
       request: { url: 'https://konsulin.id/new-page', mode: 'navigate', method: 'GET' }
     };
 
-    const handler = mockSelf.handlers['fetch']?.[0]!;
+    const handler = mockSelf.handlers['fetch'][0]!;
     expect(handler).toBeDefined();
     handler(event);
 
@@ -371,7 +371,7 @@ describe('fetch offline fallback', () => {
       request: { url: 'https://konsulin.id/cached-page', mode: 'navigate', method: 'GET' }
     };
 
-    const handler = mockSelf.handlers['fetch']?.[0]!;
+    const handler = mockSelf.handlers['fetch'][0]!;
     expect(handler).toBeDefined();
     handler(event);
 

@@ -57,6 +57,7 @@ export function useProfileFormHandlers({
     }));
   };
 
+  /** Handle phone number input with country code prefix. */
   const handlePhoneChange = (
     value: string,
     meta?: { country?: { dialCode?: string } }

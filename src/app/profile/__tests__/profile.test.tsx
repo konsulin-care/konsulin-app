@@ -67,7 +67,7 @@ describe('useProfileCompleteness', () => {
       dispatch: vi.fn()
     } as any);
 
-    const { result } = renderHook(() => useProfileCompleteness(undefined));
+    const { result } = renderHook(() => useProfileCompleteness());
     expect(result.current.showBanner).toBe(true);
     expect(result.current.isComplete).toBe(false);
   });
@@ -82,7 +82,7 @@ describe('useProfileCompleteness', () => {
       dispatch: vi.fn()
     } as any);
 
-    const { result } = renderHook(() => useProfileCompleteness(undefined));
+    const { result } = renderHook(() => useProfileCompleteness());
     expect(result.current.showBanner).toBe(false);
     expect(result.current.isComplete).toBe(true);
   });

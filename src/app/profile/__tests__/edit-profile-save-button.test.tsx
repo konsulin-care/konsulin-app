@@ -7,7 +7,7 @@ describe('EditProfileSaveButton', () => {
   it('renders save button text when not loading', () => {
     render(
       <EditProfileSaveButton
-        isValid={true}
+        isValid
         isUpdateLoading={false}
         isUploadingPhoto={false}
         onSave={vi.fn()}
@@ -19,8 +19,8 @@ describe('EditProfileSaveButton', () => {
   it('shows loading spinner when updating', () => {
     render(
       <EditProfileSaveButton
-        isValid={true}
-        isUpdateLoading={true}
+        isValid
+        isUpdateLoading
         isUploadingPhoto={false}
         onSave={vi.fn()}
       />
@@ -32,9 +32,9 @@ describe('EditProfileSaveButton', () => {
   it('shows loading spinner when uploading photo', () => {
     render(
       <EditProfileSaveButton
-        isValid={true}
+        isValid
         isUpdateLoading={false}
-        isUploadingPhoto={true}
+        isUploadingPhoto
         onSave={vi.fn()}
       />
     );
@@ -58,7 +58,7 @@ describe('EditProfileSaveButton', () => {
     const onSave = vi.fn();
     render(
       <EditProfileSaveButton
-        isValid={true}
+        isValid
         isUpdateLoading={false}
         isUploadingPhoto={false}
         onSave={onSave}
@@ -73,7 +73,7 @@ describe('EditProfileSaveButton', () => {
     render(
       <EditProfileSaveButton
         isValid={false}
-        isUpdateLoading={true}
+        isUpdateLoading
         isUploadingPhoto={false}
         onSave={onSave}
       />

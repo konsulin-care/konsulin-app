@@ -128,7 +128,7 @@ describe('useProfileEditDraft', () => {
 
     const stored = localStorage.getItem(STORAGE_PREFIX + 'save-test');
     expect(stored).not.toBeNull();
-    expect(JSON.parse(stored!)).toEqual({ name: 'Jane', age: 30 });
+    expect(JSON.parse(stored as string)).toEqual({ name: 'Jane', age: 30 });
   });
 
   it('clearDraft removes draft from localStorage', async () => {

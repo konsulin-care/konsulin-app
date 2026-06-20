@@ -1,4 +1,4 @@
-import { cacheFirst, isValidHttpUrl, networkFirst } from '@/lib/sw-strategies';
+import { cacheFirst, networkFirst } from '@/lib/sw-strategies';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 function createMockCache(matchVal?: Response): {
@@ -7,7 +7,8 @@ function createMockCache(matchVal?: Response): {
 } {
   return {
     match: vi.fn().mockResolvedValue(matchVal ?? undefined),
-    put: vi.fn().mockResolvedValue(undefined)
+    // skipcq: JS-W1042 - explicit undefined matches fn signature
+        put: vi.fn().mockResolvedValue(undefined)
   };
 }
 

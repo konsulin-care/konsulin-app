@@ -61,7 +61,8 @@ describe('matchesPractitionerFromPath', () => {
 describe('getSlotMinutesText', () => {
   it('returns empty string for null/undefined', () => {
     expect(getSlotMinutesText(null)).toBe('');
-    expect(getSlotMinutesText(undefined)).toBe('');
+    // skipcq: JS-W1042 - explicit undefined to match function signature
+expect(getSlotMinutesText(undefined)).toBe('');
   });
 
   it('returns empty string for non-object', () => {

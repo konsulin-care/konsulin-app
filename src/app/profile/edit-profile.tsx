@@ -40,8 +40,6 @@ type Props = {
   fhirId: string;
 };
 
-type FHIRProfile = Patient | Practitioner | null;
-
 export type ICustomProfile = {
   fhirId: string;
   resourceType: 'Patient' | 'Practitioner';
@@ -231,7 +229,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     setDrawerState
   });
 
-  const { processAvatarUpload, resolvePhotoUrl } = useAvatarUpload({
+  const { resolvePhotoUrl } = useAvatarUpload({
     photo: updateUser.photo,
     fhirId,
     setIsUploadingPhoto

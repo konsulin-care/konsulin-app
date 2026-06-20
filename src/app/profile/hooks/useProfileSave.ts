@@ -9,9 +9,8 @@ import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
 import { validateEmail } from '@/utils/validation';
 import { getProfileById, modifyProfile } from '@/services/profile';
 
+import type { FHIRProfile } from '@/types/fhir';
 import type { ICustomProfile } from '../edit-profile';
-
-type FHIRProfile = Patient | Practitioner | null;
 
 type UseProfileSaveParams = {
   updateUser: ICustomProfile;
@@ -63,6 +62,7 @@ export function useProfileSave({
   queryClient,
   setDrawerState
 }: UseProfileSaveParams): UseProfileSaveResult {
+  /** Build telecom array from phone/email fields. */
   const buildTelecom = () => {
     const telecomArray: {
       system: 'phone' | 'email';
@@ -86,6 +86,7 @@ export function useProfileSave({
     return telecomArray;
   };
 
+  /** Sync user identity with Chatwoot omnichannel. */
   const syncChatwootIdentifier = async (
     latestProfile: FHIRProfile,
     existingChatwootId: string
@@ -128,6 +129,7 @@ export function useProfileSave({
     const identifiers = latestProfile?.identifier
       ? [...latestProfile.identifier]
       : [];
+    /** Ensure an identifier exists with the given system/value. */
     const ensureIdentifier = (system: string, value: string) => {
       if (!system || !value) return;
       const exists = identifiers.find(id => id.system === system);
@@ -142,6 +144,7 @@ export function useProfileSave({
     return { finalChatwootId, identifiers };
   };
 
+  /** Push identifier changes to FHIR if chatwoot ID changed. */
   const syncIdentifierIfNeeded = async (
     latestProfile: FHIRProfile,
     identifiers: Identifier[],
@@ -164,6 +167,7 @@ export function useProfileSave({
     }
   };
 
+  /** Build the FHIR Patient/Practitioner payload for update. */
   const buildUpdatePayload = (
     identifiers: Identifier[],
     telecom: ContactPoint[],
@@ -201,6 +205,7 @@ export function useProfileSave({
     };
   };
 
+  /** Orchestrate full profile save: fetch, sync, upload, persist. */
   const handleEditSave = async () => {
     let latestProfile: FHIRProfile = null;
     try {

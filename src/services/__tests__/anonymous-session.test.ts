@@ -1,3 +1,4 @@
+import type { AxiosInstance } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -50,7 +51,7 @@ describe('buildAnonymousIdentifier', () => {
 
 describe('ensureAnonymousSession', () => {
   beforeEach(() => {
-    vi.mocked(getAPI).mockResolvedValue(mockApi as any);
+    vi.mocked(getAPI).mockResolvedValue(mockApi as unknown as AxiosInstance);
     mockApi.post.mockReset();
   });
 
@@ -75,6 +76,7 @@ describe('ensureAnonymousSession', () => {
     // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
     const result = await ensureAnonymousSession();
 
+    // skipcq: JS-W1042 - args undefined to match actual call signature
     expect(mockApi.post).toHaveBeenCalledWith(
       '/api/v1/auth/anonymous-session',
       undefined,

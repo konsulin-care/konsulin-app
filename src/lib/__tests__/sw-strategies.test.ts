@@ -63,7 +63,7 @@ describe('isValidHttpUrl', () => {
   });
 
   it('returns false for javascript: URL', () => {
-    expect(isValidHttpUrl('javascript:void(0)')).toBe(false);
+    expect(isValidHttpUrl('javascript:void(0)')).toBe(false); // skipcq: JS-0087
   });
 
   it('returns false for data: URL', () => {
@@ -92,7 +92,7 @@ describe('isValidHttpUrl', () => {
 describe('cacheFirst', () => {
   it('throws on non-http URL', async () => {
     const cacheStorage = createMockCacheStorage({});
-    const request = new Request('javascript:void(0)');
+    const request = new Request('javascript:void(0)'); // skipcq: JS-0087
     await expect(cacheFirst(request, 'v1', cacheStorage)).rejects.toThrow(
       'Invalid URL'
     );
@@ -171,7 +171,7 @@ describe('cacheFirst', () => {
 describe('networkFirst', () => {
   it('throws on non-http URL', async () => {
     const cacheStorage = createMockCacheStorage({});
-    const request = new Request('javascript:void(0)');
+    const request = new Request('javascript:void(0)'); // skipcq: JS-0087
     await expect(
       networkFirst(request, 'v1', cacheStorage)
     ).rejects.toThrow('Invalid URL');
@@ -262,7 +262,7 @@ describe('networkFirst', () => {
 
 describe('networkOnly', () => {
   it('throws on non-http URL', () => {
-    const request = new Request('javascript:void(0)');
+    const request = new Request('javascript:void(0)'); // skipcq: JS-0087
     expect(() => networkOnly(request)).toThrow('Invalid URL');
   });
 
