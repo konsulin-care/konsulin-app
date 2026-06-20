@@ -29,9 +29,41 @@ const STORE_SCHEMAS: { name: StoreName; keyPath: string | string[] }[] = [
 /** Cached DB connection promise, reused across calls. */
 let dbPromise: Promise<IDBDatabase> | null = null;
 
+/**
+ * Handles a VersionError from the primary openDB attempt.
+ * Discovers the existing DB version and re-opens at that version.
+ * This is a dev rollback safety: the on-disk version exceeded DB_VERSION.
+ */
+function handleVersionError(
+  resolve: (db: IDBDatabase) => void,
+  reject: (err: unknown) => void
+): void {
+  const discovery = indexedDB.open(DB_NAME);
+  discovery.onsuccess = () => {
+    const existing = discovery.result;
+    const version = existing.version;
+    existing.close();
+
+    const retry = indexedDB.open(DB_NAME, version);
+    retry.onsuccess = () => {
+      const db = retry.result;
+      db.onclose = () => {
+        dbPromise = null;
+      };
+      db.onversionchange = () => {
+        db.close();
+        dbPromise = null;
+      };
+      resolve(db);
+    };
+    retry.onerror = () => reject(retry.error);
+  };
+  discovery.onerror = () => reject(discovery.error);
+}
+
 /** Opens the IndexedDB database, caching the connection for subsequent calls. */
 export function openDB(): Promise<IDBDatabase> {
-  if (dbPromise) return dbPromise;
+  if (dbPromise !== null) return dbPromise;
 
   dbPromise = new Promise((resolve, reject) => {
     // Primary path: single open at DB_VERSION (normal case)
@@ -60,29 +92,7 @@ export function openDB(): Promise<IDBDatabase> {
 
     request.onerror = () => {
       if (request.error?.name === 'VersionError') {
-        // Fallback: disk DB version > DB_VERSION (dev rollback safety).
-        // Discover existing version and open at that version.
-        const discovery = indexedDB.open(DB_NAME);
-        discovery.onsuccess = () => {
-          const existing = discovery.result;
-          const version = existing.version;
-          existing.close();
-
-          const retry = indexedDB.open(DB_NAME, version);
-          retry.onsuccess = () => {
-            const db = retry.result;
-            db.onclose = () => {
-              dbPromise = null;
-            };
-            db.onversionchange = () => {
-              db.close();
-              dbPromise = null;
-            };
-            resolve(db);
-          };
-          retry.onerror = () => reject(retry.error);
-        };
-        discovery.onerror = () => reject(discovery.error);
+        handleVersionError(resolve, reject);
       } else {
         reject(request.error);
       }

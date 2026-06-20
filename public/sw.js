@@ -11,7 +11,7 @@ self.addEventListener('install', function (event) { // NOSONAR - self is SW glob
       return cache.addAll(PRECACHE_URLS)
     })
   )
-  self.skipWaiting()
+  self.skipWaiting() // NOSONAR - self is SW global scope
 })
 
 self.addEventListener('activate', function (event) {
@@ -34,7 +34,7 @@ self.addEventListener('activate', function (event) {
         )
       })
       .then(function () {
-        return self.clients.claim()
+        return self.clients.claim() // NOSONAR - self is SW global scope
       })
   )
 })

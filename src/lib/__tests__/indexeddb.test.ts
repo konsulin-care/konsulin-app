@@ -16,6 +16,22 @@ vi.stubGlobal('indexedDB', mockIndexedDB);
 // We need to import after stubbing since the module uses globalThis.indexedDB
 let openDB: () => Promise<IDBDatabase>;
 
+/**
+ * Creates a mock IDBRequest object for use in IndexedDB test mocks.
+ * @param result - Optional result to set on the request
+ * @param error - Optional error to set on the request
+ */
+function createMockRequest(result?: IDBDatabase, error?: DOMException) {
+  const request: Record<string, unknown> = {
+    result: result ?? null,
+    error: error ?? null,
+    onsuccess: null,
+    onerror: null,
+    onupgradeneeded: null
+  };
+  return request;
+}
+
 describe('openDB', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -27,17 +43,6 @@ describe('openDB', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
-
-  function createMockRequest(result?: IDBDatabase, error?: DOMException) {
-    const request: Record<string, unknown> = {
-      result: result ?? null,
-      error: error ?? null,
-      onsuccess: null,
-      onerror: null,
-      onupgradeneeded: null
-    };
-    return request;
-  }
 
   it('opens DB with a single indexedDB.open call in normal case', async () => {
     const mockDb = {
@@ -55,7 +60,7 @@ describe('openDB', () => {
       // Simulate async success
       setTimeout(() => {
         if (request.onsuccess) {
-          (request.onsuccess as EventListener)({ target: request } as unknown as Event);
+          (request.onsuccess as (...args: unknown[]) => void)({ target: request } as unknown as Event);
         }
       }, 0);
       return request;
@@ -86,7 +91,7 @@ describe('openDB', () => {
       callCount++;
       setTimeout(() => {
         if (request.onsuccess) {
-          (request.onsuccess as EventListener)({ target: request } as unknown as Event);
+          (request.onsuccess as (...args: unknown[]) => void)({ target: request } as unknown as Event);
         }
       }, 0);
       return request;
@@ -125,23 +130,15 @@ describe('openDB', () => {
         req.error = versionError;
         setTimeout(() => {
           if (req.onerror) {
-            (req.onerror as EventListener)({ target: req } as unknown as Event);
+            (req.onerror as (...args: unknown[]) => void)({ target: req } as unknown as Event);
           }
         }, 0);
-      } else if (openCount === 2) {
-        // Discovery open (no version)
+      } else if (openCount === 2 || openCount === 3) {
+        // Discovery open (openCount === 2) or re-open at existing version (openCount === 3)
         req.result = mockDb as unknown as IDBDatabase;
         setTimeout(() => {
           if (req.onsuccess) {
-            (req.onsuccess as EventListener)({ target: req } as unknown as Event);
-          }
-        }, 0);
-      } else if (openCount === 3) {
-        // Re-open at existing version (5)
-        req.result = mockDb as unknown as IDBDatabase;
-        setTimeout(() => {
-          if (req.onsuccess) {
-            (req.onsuccess as EventListener)({ target: req } as unknown as Event);
+            (req.onsuccess as (...args: unknown[]) => void)({ target: req } as unknown as Event);
           }
         }, 0);
       }
