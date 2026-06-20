@@ -39,6 +39,16 @@ self.addEventListener('activate', function (event) {
   )
 })
 
+/** Checks if a URL uses http or https protocol. */
+function isValidHttpUrl (url) {
+  try {
+    var parsed = new URL(url)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch (_) {
+    return false
+  }
+}
+
 /** Checks if a URL belongs to the same origin. */
 function isSameOrigin (url) {
   return url.origin === self.location.origin // NOSONAR - self is SW global scope
@@ -61,7 +71,7 @@ function isProxyApi (pathname) {
 
 /** Cache-first strategy: serves from cache when available, otherwise fetches and caches. */
 async function cacheFirst (request, cacheName) {
-  if (!request.url.startsWith('http')) {
+  if (!isValidHttpUrl(request.url)) {
     return fetch(request)
   }
 
@@ -78,7 +88,7 @@ async function cacheFirst (request, cacheName) {
 
 /** Network-first strategy: tries network, falls back to cache, then to offline fallback URL. */
 async function networkFirst (request, cacheName, fallbackUrl) {
-  if (!request.url.startsWith('http')) {
+  if (!isValidHttpUrl(request.url)) {
     return fetch(request)
   }
 

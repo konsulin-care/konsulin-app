@@ -170,10 +170,7 @@ export function useProfileFormHandlers({
   const formatDate = (dateObject: string) => {
     const date = new Date(dateObject);
     try {
-      if (date instanceof Date) {
-        return format(date, 'dd MMM yyyy', { locale: id });
-      }
-      return dateObject;
+      return format(date, 'dd MMM yyyy', { locale: id });
     } catch (error) {
       console.error('Error formatting date:', error);
       return 'Invalid date';

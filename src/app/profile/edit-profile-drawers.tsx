@@ -36,7 +36,7 @@ export function EditProfileDrawers({
     <>
       <Drawer
         open={drawerState === DRAWER_STATE.DOB}
-        onOpenChange={open => !open && onCloseDrawer()}
+        onOpenChange={open => { if (!open) onCloseDrawer(); }}
       >
         <DrawerTrigger asChild>
           <div />

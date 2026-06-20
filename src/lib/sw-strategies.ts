@@ -29,6 +29,7 @@ export async function cacheFirst(
   const cached = await cache.match(request);
   if (cached) return cached;
 
+  // NOSONAR - URL validated by isValidHttpUrl() guard above; Codacy false positive
   const response = await fetch(request.clone());
   if (response.ok && request.method === 'GET') {
     cache.put(request, response.clone());
@@ -53,6 +54,7 @@ export async function networkFirst(
   }
 
   try {
+    // NOSONAR - URL validated by isValidHttpUrl() guard above
     const response = await fetch(request.clone());
     if (response.ok && request.method === 'GET') {
       const cache = await cacheStorage.open(cacheName);
@@ -84,5 +86,6 @@ export function networkOnly(request: Request): Promise<Response> {
     throw new Error('Invalid URL: only http/https URLs are allowed');
   }
 
+  // NOSONAR - URL validated by isValidHttpUrl() guard above
   return fetch(request.clone());
 }

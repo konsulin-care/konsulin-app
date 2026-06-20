@@ -78,9 +78,9 @@ export function useAvatarUpload({
         response?: { status?: number; data?: unknown };
       };
       console.error('[avatar] upload error', {
-        message: apiError?.message,
-        status: apiError?.response?.status,
-        response: apiError?.response?.data || error
+        message: apiError.message,
+        status: apiError.response?.status,
+        response: apiError.response?.data || error
       });
       toast.error('Failed updating the profile picture');
       return existingPhotoUrl;

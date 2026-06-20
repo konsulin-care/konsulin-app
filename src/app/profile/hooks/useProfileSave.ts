@@ -69,14 +69,14 @@ export function useProfileSave({
       use: 'mobile' | 'home';
       value: string;
     }[] = [];
-    if (updateUser.phone?.trim()) {
+    if (updateUser.phone.trim()) {
       telecomArray.push({
         system: 'phone',
         use: 'mobile',
         value: updateUser.phone.trim()
       });
     }
-    if (updateUser.email?.trim() && validateEmail(updateUser.email)) {
+    if (updateUser.email.trim() && validateEmail(updateUser.email)) {
       telecomArray.push({
         system: 'email',
         use: 'home',
@@ -91,7 +91,7 @@ export function useProfileSave({
     latestProfile: FHIRProfile,
     existingChatwootId: string
   ) => {
-    const trimmedName = [updateUser.firstName, updateUser.lastName?.trim()]
+    const trimmedName = [updateUser.firstName, updateUser.lastName.trim()]
       .filter(Boolean)
       .join(' ')
       .trim();
@@ -152,7 +152,7 @@ export function useProfileSave({
     finalChatwootId: string,
     existingChatwootId: string
   ) => {
-    if (existingChatwootId && existingChatwootId === finalChatwootId) return;
+    if (existingChatwootId === finalChatwootId) return;
     if (!latestProfile) {
       toast.error('Failed updating profile');
       return;
@@ -174,7 +174,7 @@ export function useProfileSave({
     photoUrlForPayload: string
   ): Patient | Practitioner => {
     const splitName = (updateUser.firstName || '').split(' ').filter(Boolean);
-    const familyName = updateUser.lastName?.trim() || undefined;
+    const familyName = updateUser.lastName.trim() || undefined;
     return {
       resourceType: (updateUser.resourceType || fhirRole) as 'Patient' | 'Practitioner',
       id: updateUser.fhirId,
@@ -263,7 +263,7 @@ export function useProfileSave({
 
       const existing = authState.userInfo || {};
       const updatedPhotoUrl =
-        (result as Patient | Practitioner)?.photo?.[0]?.url ||
+        (result as Patient | Practitioner).photo?.[0]?.url ||
         photoUrlForPayload ||
         existing.profile_picture;
       const updatedFullname =
