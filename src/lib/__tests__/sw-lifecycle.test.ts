@@ -278,3 +278,58 @@ describe('sw-register.js', () => {
     expect(content).not.toContain('dangerouslySetInnerHTML');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Defense-in-depth: cacheFirst / networkFirst URL validation
+// ---------------------------------------------------------------------------
+describe('defense-in-depth URL validation', () => {
+  it('cacheFirst throws for non-http URLs', async () => {
+    const patchedCode = SW_CODE.replace(
+      'async function cacheFirst (request, cacheName) {',
+      'self.__testCacheFirst = async function cacheFirst (request, cacheName) {'
+    );
+
+    const captureSelf = createMockSelf() as MockSelf & {
+      __testCacheFirst?: Function;
+    };
+    const fn = new Function(
+      'self',
+      'caches',
+      'fetch',
+      'Request',
+      'Response',
+      patchedCode
+    );
+    fn(captureSelf, mockCaches, mockFetch, Request, Response);
+
+    const request = new Request('javascript:void(0)'); // skipcq: JS-0087
+    await expect(
+      captureSelf.__testCacheFirst!(request, 'test-cache')
+    ).rejects.toThrow('Invalid URL: only http/https URLs are allowed');
+  });
+
+  it('networkFirst throws for non-http URLs', async () => {
+    const patchedCode = SW_CODE.replace(
+      'async function networkFirst (request, cacheName, fallbackUrl) {',
+      'self.__testNetworkFirst = async function networkFirst (request, cacheName, fallbackUrl) {'
+    );
+
+    const captureSelf = createMockSelf() as MockSelf & {
+      __testNetworkFirst?: Function;
+    };
+    const fn = new Function(
+      'self',
+      'caches',
+      'fetch',
+      'Request',
+      'Response',
+      patchedCode
+    );
+    fn(captureSelf, mockCaches, mockFetch, Request, Response);
+
+    const request = new Request('javascript:void(0)'); // skipcq: JS-0087
+    await expect(
+      captureSelf.__testNetworkFirst!(request, 'test-cache')
+    ).rejects.toThrow('Invalid URL: only http/https URLs are allowed');
+  });
+});

@@ -80,8 +80,7 @@ function isProxyApi (pathname) {
 /** Cache-first strategy: serves from cache when available, otherwise fetches and caches. */
 async function cacheFirst (request, cacheName) {
   if (!isValidHttpUrl(request.url)) {
-    // skipcq: JS-0376 - non-http URL passed through to browser native handler
-    return fetch(request)
+    throw new Error('Invalid URL: only http/https URLs are allowed')
   }
 
   const cache = await caches.open(cacheName)
@@ -99,7 +98,7 @@ async function cacheFirst (request, cacheName) {
 /** Network-first strategy: tries network, falls back to cache, then to offline fallback URL. */
 async function networkFirst (request, cacheName, fallbackUrl) {
   if (!isValidHttpUrl(request.url)) {
-    return fetch(request)
+    throw new Error('Invalid URL: only http/https URLs are allowed')
   }
 
   try {
