@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useProfileEditDraft } from '../useProfileEditDraft';
 
@@ -16,10 +16,7 @@ describe('useProfileEditDraft', () => {
 
   it('loads draft for the initial fhirId', async () => {
     const draft = { name: 'John', email: 'john@test.com' };
-    localStorage.setItem(
-      STORAGE_PREFIX + 'patient-1',
-      JSON.stringify(draft)
-    );
+    localStorage.setItem(`${STORAGE_PREFIX}patient-1`, JSON.stringify(draft));
 
     const { result } = renderHook(() => useProfileEditDraft('patient-1'));
 
@@ -34,14 +31,8 @@ describe('useProfileEditDraft', () => {
     // Pre-populate drafts for two different fhirIds
     const draftA = { name: 'Alice', email: 'alice@test.com' };
     const draftB = { name: 'Bob', email: 'bob@test.com' };
-    localStorage.setItem(
-      STORAGE_PREFIX + 'patient-a',
-      JSON.stringify(draftA)
-    );
-    localStorage.setItem(
-      STORAGE_PREFIX + 'patient-b',
-      JSON.stringify(draftB)
-    );
+    localStorage.setItem(`${STORAGE_PREFIX}patient-a`, JSON.stringify(draftA));
+    localStorage.setItem(`${STORAGE_PREFIX}patient-b`, JSON.stringify(draftB));
 
     const { result, rerender } = renderHook(
       ({ fhirId }) => useProfileEditDraft(fhirId),
@@ -64,10 +55,7 @@ describe('useProfileEditDraft', () => {
 
   it('resets initialDraft to null when fhirId changes and no draft exists', async () => {
     const draftA = { name: 'Alice' };
-    localStorage.setItem(
-      STORAGE_PREFIX + 'patient-a',
-      JSON.stringify(draftA)
-    );
+    localStorage.setItem(`${STORAGE_PREFIX}patient-a`, JSON.stringify(draftA));
 
     const { result, rerender } = renderHook(
       ({ fhirId }) => useProfileEditDraft(fhirId),
@@ -96,17 +84,15 @@ describe('useProfileEditDraft', () => {
   });
 
   it('removes corrupt draft entry and warns', async () => {
-    const consoleWarn = vi
-      .spyOn(console, 'warn')
-      .mockImplementation(() => {});
-    localStorage.setItem(STORAGE_PREFIX + 'corrupt', 'not-valid-json{{{');
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
+    localStorage.setItem(`${STORAGE_PREFIX}corrupt`, 'not-valid-json{{{');
 
     const { result } = renderHook(() => useProfileEditDraft('corrupt'));
 
     await act(() => Promise.resolve());
 
     // Corrupt entry should be removed
-    expect(localStorage.getItem(STORAGE_PREFIX + 'corrupt')).toBeNull();
+    expect(localStorage.getItem(`${STORAGE_PREFIX}corrupt`)).toBeNull();
     expect(result.current.initialDraft).toBeNull();
     expect(result.current.isDraftLoaded).toBe(true);
     expect(consoleWarn).toHaveBeenCalledWith(
@@ -126,14 +112,14 @@ describe('useProfileEditDraft', () => {
       result.current.saveDraft({ name: 'Jane', age: 30 });
     });
 
-    const stored = localStorage.getItem(STORAGE_PREFIX + 'save-test');
+    const stored = localStorage.getItem(`${STORAGE_PREFIX}save-test`);
     expect(stored).not.toBeNull();
     expect(JSON.parse(stored as string)).toEqual({ name: 'Jane', age: 30 });
   });
 
   it('clearDraft removes draft from localStorage', async () => {
     localStorage.setItem(
-      STORAGE_PREFIX + 'clear-test',
+      `${STORAGE_PREFIX}clear-test`,
       JSON.stringify({ x: 1 })
     );
 
@@ -145,6 +131,6 @@ describe('useProfileEditDraft', () => {
       result.current.clearDraft();
     });
 
-    expect(localStorage.getItem(STORAGE_PREFIX + 'clear-test')).toBeNull();
+    expect(localStorage.getItem(`${STORAGE_PREFIX}clear-test`)).toBeNull();
   });
 });

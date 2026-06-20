@@ -74,17 +74,19 @@ export type AppointmentPayload = {
  */
 export function isAppointmentPayload(obj: unknown): obj is AppointmentPayload {
   if (typeof obj !== 'object' || obj === null) return false;
-  const o = obj as Record<string, unknown>;
-  if (typeof o.path !== 'string' || !o.path) return false;
-  if (typeof o.slot !== 'object' || o.slot === null) return false;
-  const slot = o.slot as Record<string, unknown>;
+  const payload = obj as Record<string, unknown>;
+  if (typeof payload.path !== 'string' || !payload.path) return false;
+  if (typeof payload.slot !== 'object' || payload.slot === null) return false;
+  const slot = payload.slot as Record<string, unknown>;
   if (typeof slot.date !== 'string' || !slot.date) return false;
   if (typeof slot.startTime !== 'string' || !slot.startTime) return false;
-  if (typeof o.formData !== 'object' || o.formData === null) return false;
-  const formData = o.formData as Record<string, unknown>;
-  if (typeof formData.session_type !== 'string') return false;
-  if (typeof formData.problem_brief !== 'string') return false;
-  return true;
+  if (typeof payload.formData !== 'object' || payload.formData === null)
+    return false;
+  const formData = payload.formData as Record<string, unknown>;
+  return (
+    typeof formData.session_type === 'string' &&
+    typeof formData.problem_brief === 'string'
+  );
 }
 
 /**

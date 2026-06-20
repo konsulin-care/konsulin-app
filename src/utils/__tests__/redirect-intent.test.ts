@@ -3,6 +3,13 @@ import { clearIntent, getIntent, saveIntent } from '../redirect-intent';
 
 const LOCAL_STORAGE_KEY = 'konsulin.intent';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function readStored(): any {
+  const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+  expect(raw).not.toBeNull();
+  return JSON.parse(raw as string);
+}
+
 describe('saveIntent', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -22,7 +29,7 @@ describe('saveIntent', () => {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     expect(raw).not.toBeNull();
 
-    const parsed = JSON.parse(raw!);
+    const parsed = JSON.parse(raw as string);
     expect(parsed.kind).toBe('assessmentResult');
     expect(parsed.payload.path).toBe('/record/some-id?tab=results');
     expect(parsed.createdAt).toBeGreaterThan(0);
@@ -37,7 +44,7 @@ describe('saveIntent', () => {
     const match = document.cookie.match(/redirect_intent=([^;]*)/);
     expect(match).not.toBeNull();
 
-    const raw = decodeURIComponent(match![1]);
+    const raw = decodeURIComponent((match as RegExpMatchArray)[1]);
     const parsed = JSON.parse(raw);
     expect(parsed.kind).toBe('assessmentResult');
     expect(parsed.payload.path).toBe('/record/abc');
@@ -50,8 +57,9 @@ describe('saveIntent', () => {
 
     const intent = getIntent();
     expect(intent).not.toBeNull();
-    expect(intent!.kind).toBe('assessmentResult');
-    expect(intent!.payload.path).toBe('/record/test-123');
+    const intentValue = intent as NonNullable<ReturnType<typeof getIntent>>;
+    expect(intentValue.kind).toBe('assessmentResult');
+    expect(intentValue.payload.path).toBe('/record/test-123');
   });
 
   it('clearIntent removes intent from localStorage', () => {
@@ -64,9 +72,7 @@ describe('saveIntent', () => {
 
   it('handles multiple kind types', () => {
     saveIntent('journal', { path: '/journal/new' });
-    expect(JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)!).kind).toBe(
-      'journal'
-    );
+    expect(readStored().kind).toBe('journal');
 
     clearIntent();
 
@@ -75,7 +81,7 @@ describe('saveIntent', () => {
       slot: { date: '2026-06-20', startTime: '10:00' },
       formData: { session_type: 'online', problem_brief: 'Test' }
     });
-    const parsed = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)!);
+    const parsed = readStored();
     expect(parsed.kind).toBe('appointment');
     expect(parsed.payload.slot.date).toBe('2026-06-20');
   });

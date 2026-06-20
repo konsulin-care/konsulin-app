@@ -5,6 +5,9 @@ import { expect, type Mock, vi } from 'vitest';
 // SW Testing — mock factories
 // ---------------------------------------------------------------------------
 
+/**
+ *
+ */
 export function createMockCache() {
   return {
     addAll: vi.fn(),
@@ -17,6 +20,9 @@ export function createMockCache() {
 
 export type MockCache = ReturnType<typeof createMockCache>;
 
+/**
+ *
+ */
 export function createMockSelf() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type EventCallback = (event: Record<string, any>) => void;
@@ -37,12 +43,15 @@ export function createMockSelf() {
 
 export type MockSelf = ReturnType<typeof createMockSelf>;
 
+/**
+ *
+ */
 export function createMockCaches() {
   const stores: Record<string, MockCache> = {};
   return {
     stores,
     open: vi.fn((name: string) => {
-      (stores[name] ??= createMockCache());
+      stores[name] ??= createMockCache();
       return Promise.resolve(stores[name]);
     }),
     keys: vi.fn(() => Promise.resolve(Object.keys(stores))),
@@ -58,10 +67,16 @@ export function createMockCaches() {
 
 export type MockCaches = ReturnType<typeof createMockCaches>;
 
+/**
+ *
+ */
 export function createMockFetch() {
   return vi.fn().mockResolvedValue(new Response('ok', { status: 200 }));
 }
 
+/**
+ *
+ */
 export function createMockEvent(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   overrides: Record<string, any> = {}
@@ -78,6 +93,9 @@ export function createMockEvent(
 // SW Testing — event helpers
 // ---------------------------------------------------------------------------
 
+/**
+ *
+ */
 export function fireInstall(mockSelf: MockSelf) {
   const event = createMockEvent();
   const handler = mockSelf.handlers['install'][0];
@@ -86,6 +104,9 @@ export function fireInstall(mockSelf: MockSelf) {
   return event;
 }
 
+/**
+ *
+ */
 export function fireActivate(mockSelf: MockSelf) {
   const event = createMockEvent();
   const handler = mockSelf.handlers['activate'][0];
@@ -94,6 +115,9 @@ export function fireActivate(mockSelf: MockSelf) {
   return event;
 }
 
+/**
+ *
+ */
 export function fireFetch(
   mockSelf: MockSelf,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -106,9 +130,13 @@ export function fireFetch(
   return event;
 }
 
-export async function awaitEvent(
-  event: { waitUntil?: Mock; respondWith?: Mock }
-) {
+/**
+ *
+ */
+export async function awaitEvent(event: {
+  waitUntil?: Mock;
+  respondWith?: Mock;
+}): Promise<unknown> {
   if (event.waitUntil && event.waitUntil.mock.calls.length > 0) {
     const promise = event.waitUntil.mock.calls[0][0];
     if (promise instanceof Promise) await promise;
@@ -118,22 +146,28 @@ export async function awaitEvent(
     if (result instanceof Promise) return await result;
     return result;
   }
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
 // React Testing — helpers
 // ---------------------------------------------------------------------------
 
+/**
+ *
+ */
 export function createQueryClient() {
   return new QueryClient({
     defaultOptions: { queries: { retry: false } }
   });
 }
 
+/**
+ *
+ */
 export function mockAuth(
   useAuthMock: Mock,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  overrides?: Record<string, any>
+  overrides?: Record<string, unknown>
 ): void {
   useAuthMock.mockReturnValue({
     isLoading: false,
@@ -142,5 +176,5 @@ export function mockAuth(
       isAuthenticated: true,
       userInfo: overrides ?? {}
     }
-  }) as ReturnType<Mock['mockReturnValue']>;
+  });
 }

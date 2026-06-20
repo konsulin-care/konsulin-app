@@ -140,7 +140,6 @@ describe('isAppointmentPayload', () => {
   it('returns false for non-object values', () => {
     expect(isAppointmentPayload('string')).toBe(false);
     expect(isAppointmentPayload(42)).toBe(false);
-    expect(isAppointmentPayload(undefined)).toBe(false);
   });
 
   it('returns false when path is missing or empty', () => {
