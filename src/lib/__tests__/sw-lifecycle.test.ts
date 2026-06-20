@@ -129,25 +129,28 @@ afterEach(() => {
 
 function fireInstall() {
   const event = createMockEvent();
-  const handler = mockSelf.handlers['install'][0]!;
+  // skipcq: JS-0321 - safe: expect guard fails before optional call
+  const handler = mockSelf.handlers['install']?.[0];
   expect(handler, 'install handler must be registered').toBeDefined();
-  handler(event);
+  handler?.(event);
   return event;
 }
 
 function fireActivate() {
   const event = createMockEvent();
-  const handler = mockSelf.handlers['activate'][0]!;
+  // skipcq: JS-0321 - safe: expect guard fails before optional call
+  const handler = mockSelf.handlers['activate']?.[0];
   expect(handler, 'activate handler must be registered').toBeDefined();
-  handler(event);
+  handler?.(event);
   return event;
 }
 
 function fireFetch(request: unknown) {
   const event = createMockEvent({ request });
-  const handler = mockSelf.handlers['fetch'][0]!;
+  // skipcq: JS-0321 - safe: expect guard fails before optional call
+  const handler = mockSelf.handlers['fetch']?.[0];
   expect(handler, 'fetch handler must be registered').toBeDefined();
-  handler(event);
+  handler?.(event);
   return event;
 }
 
@@ -346,9 +349,10 @@ describe('fetch offline fallback', () => {
       request: { url: 'https://konsulin.id/new-page', mode: 'navigate', method: 'GET' }
     };
 
-    const handler = mockSelf.handlers['fetch'][0]!;
+    // skipcq: JS-0321 - safe: expect guard fails before optional call
+    const handler = mockSelf.handlers['fetch']?.[0];
     expect(handler).toBeDefined();
-    handler(event);
+    handler?.(event);
 
     const response = await event.respondWith.mock.calls[0][0];
     expect(response).toBe(offlineResponse);
@@ -371,9 +375,10 @@ describe('fetch offline fallback', () => {
       request: { url: 'https://konsulin.id/cached-page', mode: 'navigate', method: 'GET' }
     };
 
-    const handler = mockSelf.handlers['fetch'][0]!;
+    // skipcq: JS-0321 - safe: expect guard fails before optional call
+    const handler = mockSelf.handlers['fetch']?.[0];
     expect(handler).toBeDefined();
-    handler(event);
+    handler?.(event);
 
     const response = await event.respondWith.mock.calls[0][0];
     expect(response).toBe(cachedResponse);
