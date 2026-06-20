@@ -83,7 +83,7 @@ export function useProfileFormHandlers({
   const handleDOBChange = (value: Date) => {
     setUpdateUser(prevState => ({
       ...prevState,
-      birthDate: value ? format(value, 'yyyy-MM-dd') : ''
+      birthDate: format(value, 'yyyy-MM-dd')
     }));
     setDrawerState(DRAWER_STATE.NONE);
   };

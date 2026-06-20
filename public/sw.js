@@ -72,6 +72,7 @@ function isProxyApi (pathname) {
 /** Cache-first strategy: serves from cache when available, otherwise fetches and caches. */
 async function cacheFirst (request, cacheName) {
   if (!isValidHttpUrl(request.url)) {
+    // skipcq: JS-0376 - non-http URL passed through to browser native handler
     return fetch(request)
   }
 
@@ -79,6 +80,7 @@ async function cacheFirst (request, cacheName) {
   const cached = await cache.match(request)
   if (cached) return cached
 
+  // skipcq: JS-0376 - guarded by isValidHttpUrl() above
   const response = await fetch(request)
   if (response.ok && request.method === 'GET') {
     cache.put(request, response.clone())

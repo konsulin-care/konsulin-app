@@ -20,16 +20,14 @@ export type MockCache = ReturnType<typeof createMockCache>;
 export function createMockSelf() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type EventCallback = (event: Record<string, any>) => void;
-  const handlers: Record<string, EventCallback[]> = {};
-  const listeners: Record<string, EventCallback[]> = {};
+  const handlers: Record<string, EventCallback[] | undefined> = {};
+  const listeners: Record<string, EventCallback[] | undefined> = {};
   return {
     handlers,
     listeners,
     addEventListener: vi.fn((type: string, handler: EventCallback) => {
-      if (!handlers[type]) handlers[type] = [];
-      handlers[type].push(handler);
-      if (!listeners[type]) listeners[type] = [];
-      listeners[type].push(handler);
+      (handlers[type] ??= []).push(handler);
+      (listeners[type] ??= []).push(handler);
     }),
     skipWaiting: vi.fn(),
     clients: { claim: vi.fn() },
@@ -44,12 +42,12 @@ export function createMockCaches() {
   return {
     stores,
     open: vi.fn((name: string) => {
-      if (!stores[name]) stores[name] = createMockCache();
+      (stores[name] ??= createMockCache());
       return Promise.resolve(stores[name]);
     }),
     keys: vi.fn(() => Promise.resolve(Object.keys(stores))),
     delete: vi.fn((key: string) => {
-      // skipcq: JS-0320 - dynamic property deletion in test mock infrastructure
+      // skipcq: JS-0320, JS-0376 - dynamic property deletion in test mock infrastructure
       delete stores[key];
       return Promise.resolve(true);
     }),
@@ -82,17 +80,17 @@ export function createMockEvent(
 
 export function fireInstall(mockSelf: MockSelf) {
   const event = createMockEvent();
-  const handler = mockSelf.handlers['install']?.[0];
+  const handler = mockSelf.handlers['install'][0];
   expect(handler, 'install handler must be registered').toBeDefined();
-  handler?.(event);
+  handler(event);
   return event;
 }
 
 export function fireActivate(mockSelf: MockSelf) {
   const event = createMockEvent();
-  const handler = mockSelf.handlers['activate']?.[0];
+  const handler = mockSelf.handlers['activate'][0];
   expect(handler, 'activate handler must be registered').toBeDefined();
-  handler?.(event);
+  handler(event);
   return event;
 }
 
@@ -102,9 +100,9 @@ export function fireFetch(
   request: Record<string, any> = {}
 ) {
   const event = createMockEvent({ request });
-  const handler = mockSelf.handlers['fetch']?.[0];
+  const handler = mockSelf.handlers['fetch'][0];
   expect(handler, 'fetch handler must be registered').toBeDefined();
-  handler?.(event);
+  handler(event);
   return event;
 }
 
@@ -144,5 +142,5 @@ export function mockAuth(
       isAuthenticated: true,
       userInfo: overrides ?? {}
     }
-  } as any);
+  }) as ReturnType<Mock['mockReturnValue']>;
 }

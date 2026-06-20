@@ -42,7 +42,7 @@ type Props = {
 
 export type ICustomProfile = {
   fhirId: string;
-  resourceType: 'Patient' | 'Practitioner';
+  resourceType: 'Patient' | 'Practitioner' | null;
   active: boolean;
   birthDate: string;
   gender: 'male' | 'female' | 'other' | 'unknown';

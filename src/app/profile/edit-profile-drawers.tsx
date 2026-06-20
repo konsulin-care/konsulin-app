@@ -20,8 +20,7 @@ type Props = {
   readonly onSuccessClose: () => void;
 };
 
-/* eslint-disable react/jsx-max-depth */
-// skipcq: JS-0415 - nesting required by shadcn/ui Drawer component spec
+/* eslint-disable react/jsx-max-depth */ // skipcq: JS-0415 - nesting required by shadcn/ui Drawer component spec
 /** Date of Birth and Success drawers for the edit profile page. */
 export function EditProfileDrawers({
   drawerState,
