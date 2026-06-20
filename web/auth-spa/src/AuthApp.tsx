@@ -86,16 +86,6 @@ export default function AuthApp() {
         saveIntent('journal', { path: safePath });
       }
       if (safePath.startsWith('/record')) {
-        const intent = {
-          kind: 'assessmentResult' as const,
-          payload: { path: safePath },
-          createdAt: Date.now()
-        };
-        try {
-          localStorage.setItem('konsulin.intent', JSON.stringify(intent));
-        } catch {
-          /* ignore */
-        }
         saveIntent('assessmentResult', { path: safePath });
       }
     }
