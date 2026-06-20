@@ -238,13 +238,13 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const { handleEditSave } = useProfileSave({
     updateUser,
     fhirId,
-    fhirRole: fhirRole as 'Patient' | 'Practitioner',
+    fhirRole: fhirRole,
     authState,
     resolvePhotoUrl,
     isValidUrl,
     updateProfile,
     clearDraft,
-    dispatchAuth: dispatchAuth as (action: { type: string; payload: unknown }) => void,
+    dispatchAuth: dispatchAuth,
     queryClient,
     setDrawerState
   });

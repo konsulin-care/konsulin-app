@@ -11,6 +11,7 @@ import { getProfileById, modifyProfile } from '@/services/profile';
 
 import type { FHIRProfile } from '@/types/fhir';
 import type { ICustomProfile } from '../edit-profile';
+import type { IActionAuth } from '@/context/auth/authTypes';
 
 type UseProfileSaveParams = {
   updateUser: ICustomProfile;
@@ -36,7 +37,7 @@ type UseProfileSaveParams = {
   isValidUrl: (url: string) => boolean;
   updateProfile: (args: { payload: Patient | Practitioner }) => Promise<unknown>;
   clearDraft: () => void;
-  dispatchAuth: (action: { type: string; payload: unknown }) => void;
+  dispatchAuth: (action: IActionAuth) => void;
   queryClient: { invalidateQueries: (args: unknown) => void };
   setDrawerState: (state: string) => void;
 };
@@ -160,7 +161,7 @@ export function useProfileSave({
     try {
       await updateProfile({
         payload: { ...latestProfile, identifier: identifiers, telecom }
-      } as Parameters<typeof updateProfile>[0]);
+      });
     } catch (error) {
       console.error('Error when syncing chatwoot identifier: ', error);
       toast.error('Failed to sync profile to Konsulin Omnichannel');
@@ -176,7 +177,7 @@ export function useProfileSave({
     const splitName = (updateUser.firstName || '').split(' ').filter(Boolean);
     const familyName = updateUser.lastName.trim() || undefined;
     return {
-      resourceType: (updateUser.resourceType || fhirRole) as 'Patient' | 'Practitioner',
+      resourceType: updateUser.resourceType || fhirRole,
       id: updateUser.fhirId,
       active: updateUser.active,
       birthDate: updateUser.birthDate,

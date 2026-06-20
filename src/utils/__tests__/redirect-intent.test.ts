@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearIntent, getIntent, saveIntent } from '../redirect-intent';
+import { assertDefined } from './test-utils';
 
 const LOCAL_STORAGE_KEY = 'konsulin.intent';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function readStored(): any {
   const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-  expect(raw).not.toBeNull();
-  return JSON.parse(raw as string);
+  assertDefined(raw);
+  return JSON.parse(raw);
 }
 
 describe('saveIntent', () => {
@@ -27,9 +28,9 @@ describe('saveIntent', () => {
     });
 
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    expect(raw).not.toBeNull();
+    assertDefined(raw);
 
-    const parsed = JSON.parse(raw as string);
+    const parsed = JSON.parse(raw);
     expect(parsed.kind).toBe('assessmentResult');
     expect(parsed.payload.path).toBe('/record/some-id?tab=results');
     expect(parsed.createdAt).toBeGreaterThan(0);
@@ -41,10 +42,10 @@ describe('saveIntent', () => {
     });
 
     expect(document.cookie).toContain('redirect_intent=');
-    const match = document.cookie.match(/redirect_intent=([^;]*)/);
-    expect(match).not.toBeNull();
+    const match = /redirect_intent=([^;]*)/.exec(document.cookie);
+    assertDefined(match);
 
-    const raw = decodeURIComponent((match as RegExpMatchArray)[1]);
+    const raw = decodeURIComponent(match[1]);
     const parsed = JSON.parse(raw);
     expect(parsed.kind).toBe('assessmentResult');
     expect(parsed.payload.path).toBe('/record/abc');
@@ -56,10 +57,9 @@ describe('saveIntent', () => {
     });
 
     const intent = getIntent();
-    expect(intent).not.toBeNull();
-    const intentValue = intent as NonNullable<ReturnType<typeof getIntent>>;
-    expect(intentValue.kind).toBe('assessmentResult');
-    expect(intentValue.payload.path).toBe('/record/test-123');
+    assertDefined(intent);
+    expect(intent.kind).toBe('assessmentResult');
+    expect(intent.payload.path).toBe('/record/test-123');
   });
 
   it('clearIntent removes intent from localStorage', () => {

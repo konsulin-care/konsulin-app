@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useProfileEditDraft } from '../useProfileEditDraft';
+import { assertDefined } from '@/utils/__tests__/test-utils';
 
 const STORAGE_PREFIX = 'profile-edit-draft-';
 
@@ -113,8 +114,8 @@ describe('useProfileEditDraft', () => {
     });
 
     const stored = localStorage.getItem(`${STORAGE_PREFIX}save-test`);
-    expect(stored).not.toBeNull();
-    expect(JSON.parse(stored as string)).toEqual({ name: 'Jane', age: 30 });
+    assertDefined(stored);
+    expect(JSON.parse(stored)).toEqual({ name: 'Jane', age: 30 });
   });
 
   it('clearDraft removes draft from localStorage', async () => {

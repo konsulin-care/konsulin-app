@@ -16,6 +16,14 @@ vi.stubGlobal('indexedDB', mockIndexedDB);
 // We need to import after stubbing since the module uses globalThis.indexedDB
 let openDB: () => Promise<IDBDatabase>;
 
+/** Invoke an IndexedDB event handler mock safely. */
+function triggerEvent(
+  handler: unknown,
+  detail: Record<string, unknown>
+) {
+  if (handler) (handler as (...args: unknown[]) => void)(detail);
+}
+
 /**
  * Creates a mock IDBRequest object for use in IndexedDB test mocks.
  * @param result - Optional result to set on the request
@@ -60,7 +68,7 @@ describe('openDB', () => {
       // Simulate async success
       setTimeout(() => {
         if (request.onsuccess) {
-          (request.onsuccess as (...args: unknown[]) => void)({ target: request } as unknown as Event);
+          triggerEvent(request.onsuccess, { target: request });
         }
       }, 0);
       return request;
@@ -91,7 +99,7 @@ describe('openDB', () => {
       callCount++;
       setTimeout(() => {
         if (request.onsuccess) {
-          (request.onsuccess as (...args: unknown[]) => void)({ target: request } as unknown as Event);
+          triggerEvent(request.onsuccess, { target: request });
         }
       }, 0);
       return request;
@@ -130,15 +138,15 @@ describe('openDB', () => {
         req.error = versionError;
         setTimeout(() => {
           if (req.onerror) {
-            (req.onerror as (...args: unknown[]) => void)({ target: req } as unknown as Event);
+            triggerEvent(req.onerror, { target: req });
           }
         }, 0);
       } else if (openCount === 2 || openCount === 3) {
         // Discovery open (openCount === 2) or re-open at existing version (openCount === 3)
-        req.result = mockDb as unknown as IDBDatabase;
+        req.result = mockDb;
         setTimeout(() => {
           if (req.onsuccess) {
-            (req.onsuccess as (...args: unknown[]) => void)({ target: req } as unknown as Event);
+            triggerEvent(req.onsuccess, { target: req });
           }
         }, 0);
       }
