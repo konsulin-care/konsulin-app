@@ -42,7 +42,7 @@ self.addEventListener('activate', function (event) {
 /** Checks if a URL uses http or https protocol. */
 function isValidHttpUrl (url) {
   try {
-    var parsed = new URL(url)
+    const parsed = new URL(url)
     return parsed.protocol === 'http:' || parsed.protocol === 'https:'
   } catch (_) {
     return false
