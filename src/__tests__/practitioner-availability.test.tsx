@@ -53,8 +53,7 @@ vi.mock('@tanstack/react-query', async () => {
 
 vi.mock('next/navigation', () => ({
   useRouter: vi.fn(),
-  useSearchParams: vi.fn(),
-  useParams: vi.fn()
+  useSearchParams: vi.fn()
 }));
 
 vi.mock('@/components/ui/button', () => ({
@@ -173,7 +172,7 @@ import {
   usePayAppointment
 } from '@/services/api/appointments';
 import { useFindAvailability } from '@/services/clinicians';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 function createWrapper(queryClient: QueryClient) {
   return ({ children }: { children: React.ReactNode }) => (
@@ -225,7 +224,6 @@ describe('PractitionerAvailability', () => {
 
     vi.mocked(useRouter).mockReturnValue(mockRouter);
     vi.mocked(useSearchParams).mockReturnValue(mockSearchParams);
-    vi.mocked(useParams).mockReturnValue({ practitionerId: 'test-1' });
     vi.mocked(useAuth).mockReturnValue({
       isLoading: false,
       state: {

@@ -19,13 +19,12 @@ import BookingCalendar from './booking-calendar';
 import BookingFormSection from './booking-form-section';
 import PaymentDrawer from './payment-drawer';
 import TimeSlotsSection from './time-slots-section';
-import { getAvailableDays, matchesPractitionerFromPath } from './utils';
-
-type AppointmentPayload = {
-  path: string;
-  slot: { date: string; startTime: string; slotId: string };
-  formData: { session_type: string; problem_brief: string };
-};
+import {
+  AppointmentPayload,
+  getAvailableDays,
+  isAppointmentPayload,
+  matchesPractitionerFromPath
+} from './utils';
 
 type TempBookingData = {
   scheduleId: string;
@@ -240,8 +239,14 @@ export default function PractitionerAvailability({
     const stored = sessionStorage.getItem('pending_booking');
     if (!stored) return false;
     try {
-      const payload = JSON.parse(stored) as AppointmentPayload;
-      if (!matchesPractitionerFromPath(payload.path, practitionerRole.id)) return false;
+      const raw = JSON.parse(stored);
+      if (!isAppointmentPayload(raw)) {
+        sessionStorage.removeItem('pending_booking');
+        return false;
+      }
+      const payload: AppointmentPayload = raw;
+      if (!matchesPractitionerFromPath(payload.path, practitionerRole.id))
+        return false;
       const { slot, formData } = payload;
       setBookingInformation(formData);
       handleFilterChange('date', new Date(slot.date));
@@ -267,7 +272,11 @@ export default function PractitionerAvailability({
 
     const intent = getIntent();
     if (intent?.kind === 'appointment') {
-      const payload = intent.payload as AppointmentPayload;
+      if (!isAppointmentPayload(intent.payload)) {
+        clearIntent();
+        return;
+      }
+      const payload: AppointmentPayload = intent.payload;
       if (matchesPractitionerFromPath(payload.path, practitionerRole.id)) {
         const { slot, formData } = payload;
         setBookingInformation(formData);

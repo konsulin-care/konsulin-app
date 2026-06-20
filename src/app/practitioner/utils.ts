@@ -61,6 +61,32 @@ export const getTimeSlots = (startTime: string, endTime: string) => {
   return slots;
 };
 
+/** Untrusted intent payload from sessionStorage / localStorage. */
+export type AppointmentPayload = {
+  path: string;
+  slot: { date: string; startTime: string; slotId?: string };
+  formData: { session_type: string; problem_brief: string };
+};
+
+/**
+ * Runtime type guard for AppointmentPayload.
+ * Validates that a parsed JSON or intent payload has the expected shape.
+ */
+export function isAppointmentPayload(obj: unknown): obj is AppointmentPayload {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const o = obj as Record<string, unknown>;
+  if (typeof o.path !== 'string' || !o.path) return false;
+  if (typeof o.slot !== 'object' || o.slot === null) return false;
+  const slot = o.slot as Record<string, unknown>;
+  if (typeof slot.date !== 'string' || !slot.date) return false;
+  if (typeof slot.startTime !== 'string' || !slot.startTime) return false;
+  if (typeof o.formData !== 'object' || o.formData === null) return false;
+  const formData = o.formData as Record<string, unknown>;
+  if (typeof formData.session_type !== 'string') return false;
+  if (typeof formData.problem_brief !== 'string') return false;
+  return true;
+}
+
 /**
  * Checks whether a stored intent payload path matches the current practitioner.
  *

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  matchesPractitionerFromPath,
-  getSlotMinutesText,
   getAvailableDays,
-  getTimeSlots
+  getSlotMinutesText,
+  getTimeSlots,
+  isAppointmentPayload,
+  matchesPractitionerFromPath
 } from '../utils';
 
 describe('matchesPractitionerFromPath', () => {
@@ -62,7 +63,7 @@ describe('getSlotMinutesText', () => {
   it('returns empty string for null/undefined', () => {
     expect(getSlotMinutesText(null)).toBe('');
     // skipcq: JS-W1042 - explicit undefined to match function signature
-expect(getSlotMinutesText(undefined)).toBe('');
+    expect(getSlotMinutesText(undefined)).toBe('');
   });
 
   it('returns empty string for non-object', () => {
@@ -119,5 +120,101 @@ describe('getTimeSlots', () => {
   it('returns single slot when start equals end', () => {
     const slots = getTimeSlots('14:00:00', '14:00:00');
     expect(slots).toEqual(['14:00']);
+  });
+});
+
+describe('isAppointmentPayload', () => {
+  it('returns true for a valid AppointmentPayload object', () => {
+    const valid = {
+      path: '/practitioner?practitionerRoleId=role-1',
+      slot: { date: '2026-06-15', startTime: '09:00', slotId: 'slot-1' },
+      formData: { session_type: 'offline', problem_brief: 'test issue' }
+    };
+    expect(isAppointmentPayload(valid)).toBe(true);
+  });
+
+  it('returns false for null', () => {
+    expect(isAppointmentPayload(null)).toBe(false);
+  });
+
+  it('returns false for non-object values', () => {
+    expect(isAppointmentPayload('string')).toBe(false);
+    expect(isAppointmentPayload(42)).toBe(false);
+    expect(isAppointmentPayload(undefined)).toBe(false);
+  });
+
+  it('returns false when path is missing or empty', () => {
+    expect(isAppointmentPayload({ slot: {}, formData: {} })).toBe(false);
+    expect(isAppointmentPayload({ path: '', slot: {}, formData: {} })).toBe(
+      false
+    );
+  });
+
+  it('returns false when slot is missing or not an object', () => {
+    expect(
+      isAppointmentPayload({ path: '/test', slot: null, formData: {} })
+    ).toBe(false);
+    expect(
+      isAppointmentPayload({ path: '/test', slot: 'string', formData: {} })
+    ).toBe(false);
+  });
+
+  it('returns false when slot.date is missing or empty', () => {
+    expect(
+      isAppointmentPayload({
+        path: '/test',
+        slot: { startTime: '09:00' },
+        formData: { session_type: 'offline', problem_brief: 'test' }
+      })
+    ).toBe(false);
+  });
+
+  it('returns false when slot.startTime is missing or empty', () => {
+    expect(
+      isAppointmentPayload({
+        path: '/test',
+        slot: { date: '2026-06-15' },
+        formData: { session_type: 'offline', problem_brief: 'test' }
+      })
+    ).toBe(false);
+  });
+
+  it('returns false when formData is missing or not an object', () => {
+    expect(
+      isAppointmentPayload({
+        path: '/test',
+        slot: { date: '2026-06-15', startTime: '09:00' },
+        formData: null
+      })
+    ).toBe(false);
+  });
+
+  it('returns false when formData.session_type is missing', () => {
+    expect(
+      isAppointmentPayload({
+        path: '/test',
+        slot: { date: '2026-06-15', startTime: '09:00' },
+        formData: { problem_brief: 'test' }
+      })
+    ).toBe(false);
+  });
+
+  it('returns false when formData.problem_brief is missing', () => {
+    expect(
+      isAppointmentPayload({
+        path: '/test',
+        slot: { date: '2026-06-15', startTime: '09:00' },
+        formData: { session_type: 'offline' }
+      })
+    ).toBe(false);
+  });
+
+  it('allows missing slotId (accessed conditionally)', () => {
+    const withoutSlotId = {
+      path: '/practitioner?practitionerRoleId=role-1',
+      slot: { date: '2026-06-15', startTime: '09:00' },
+      formData: { session_type: 'offline', problem_brief: 'test' }
+    };
+    expect(isAppointmentPayload(withoutSlotId)).toBe(true);
   });
 });
