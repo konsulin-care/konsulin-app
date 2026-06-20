@@ -62,46 +62,47 @@ describe('isSameOrigin', () => {
 // isStaticAsset
 // ---------------------------------------------------------------------------
 describe('isStaticAsset', () => {
-  it('matches /_next/static/ prefix', () => {
-    expect(isStaticAsset('/_next/static/chunk.js')).toBe(true);
+  it.each([
+    { path: '/_next/static/chunk.js', label: '/_next/static/' },
+    { path: '/favicon/icon.ico', label: '/favicon/' },
+    { path: '/icons/192.png', label: '/icons/' },
+    { path: '/images/logo.svg', label: '/images/' }
+  ])('matches $label prefix', ({ path }) => {
+    expect(isStaticAsset(path)).toBe(true);
   });
 
-  it('matches /favicon/ prefix', () => {
-    expect(isStaticAsset('/favicon/icon.ico')).toBe(true);
+  it.each([
+    { path: '/api/data' },
+    { path: '/page' },
+    { path: '/static/js/file.js' },
+    { path: '/' },
+    { path: '' }
+  ])('rejects non-matching path "$path"', ({ path }) => {
+    expect(isStaticAsset(path)).toBe(false);
   });
 
-  it('matches /icons/ prefix', () => {
-    expect(isStaticAsset('/icons/192.png')).toBe(true);
+  it.each([
+    { path: '/IMAGES/logo.svg' },
+    { path: '/_NEXT/static/foo.js' },
+    { path: '/FAVICON/icon.ico' }
+  ])('is case-sensitive — rejects $path', ({ path }) => {
+    expect(isStaticAsset(path)).toBe(false);
   });
 
-  it('matches /images/ prefix', () => {
-    expect(isStaticAsset('/images/logo.svg')).toBe(true);
+  it.each([
+    { path: '/_next/static' },
+    { path: '/images' },
+    { path: '/icons' },
+    { path: '/favicon' }
+  ])('rejects prefix match without trailing slash — $path', ({ path }) => {
+    expect(isStaticAsset(path)).toBe(false);
   });
 
-  it('rejects non-matching pathnames', () => {
-    expect(isStaticAsset('/api/data')).toBe(false);
-    expect(isStaticAsset('/page')).toBe(false);
-    expect(isStaticAsset('/static/js/file.js')).toBe(false);
-    expect(isStaticAsset('/')).toBe(false);
-    expect(isStaticAsset('')).toBe(false);
-  });
-
-  it('is case-sensitive', () => {
-    expect(isStaticAsset('/IMAGES/logo.svg')).toBe(false);
-    expect(isStaticAsset('/_NEXT/static/foo.js')).toBe(false);
-    expect(isStaticAsset('/FAVICON/icon.ico')).toBe(false);
-  });
-
-  it('rejects prefix match without trailing slash', () => {
-    expect(isStaticAsset('/_next/static')).toBe(false);
-    expect(isStaticAsset('/images')).toBe(false);
-    expect(isStaticAsset('/icons')).toBe(false);
-    expect(isStaticAsset('/favicon')).toBe(false);
-  });
-
-  it('rejects deeply nested unrelated paths', () => {
-    expect(isStaticAsset('/images-something/foo')).toBe(false);
-    expect(isStaticAsset('/icons-custom/bar')).toBe(false);
+  it.each([
+    { path: '/images-something/foo' },
+    { path: '/icons-custom/bar' }
+  ])('rejects deeply nested unrelated path — $path', ({ path }) => {
+    expect(isStaticAsset(path)).toBe(false);
   });
 });
 
@@ -109,24 +110,25 @@ describe('isStaticAsset', () => {
 // isProxyApi
 // ---------------------------------------------------------------------------
 describe('isProxyApi', () => {
-  it('matches /proxy/ prefix', () => {
-    expect(isProxyApi('/proxy/fhir/Patient')).toBe(true);
-    expect(isProxyApi('/proxy/')).toBe(true);
-    expect(isProxyApi('/proxy/api/config')).toBe(true);
+  it.each([
+    { path: '/proxy/fhir/Patient' },
+    { path: '/proxy/' },
+    { path: '/proxy/api/config' }
+  ])('matches /proxy/ prefix — $path', ({ path }) => {
+    expect(isProxyApi(path)).toBe(true);
   });
 
-  it('rejects /proxy without trailing slash', () => {
-    expect(isProxyApi('/proxy')).toBe(false);
+  it.each([
+    { path: '/proxy' },
+    { path: '/api/data' },
+    { path: '/page' },
+    { path: '/' },
+    { path: '' }
+  ])('rejects non-matching path "$path"', ({ path }) => {
+    expect(isProxyApi(path)).toBe(false);
   });
 
-  it('rejects non-proxy paths', () => {
-    expect(isProxyApi('/api/data')).toBe(false);
-    expect(isProxyApi('/page')).toBe(false);
-    expect(isProxyApi('/')).toBe(false);
-    expect(isProxyApi('')).toBe(false);
-  });
-
-  it('is case-sensitive', () => {
+  it('is case-sensitive — rejects /PROXY/fhir', () => {
     expect(isProxyApi('/PROXY/fhir')).toBe(false);
   });
 });
