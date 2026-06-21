@@ -156,47 +156,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  /** Fetch profile and login, falling back to auth cookie on error. */
-  const fetchProfileAndLogin = async () => {
-    const userId = session.userId;
-    if (!userId) {
-      console.error('Auth: userId missing from SuperTokens session');
-      return;
-    }
-    setCurrentUserId(userId);
-
-    let role: UserRole;
-    let superTokensRoles: string[] | undefined;
-    try {
-      const result = await resolveUserRoles();
-      role = result.role;
-      superTokensRoles = result.superTokensRoles;
-    } catch (error) {
-      console.error('Auth: failed to resolve user roles:', error);
-      await fallbackProfileOnError(userId);
-      return;
-    }
-
-    let cached: UserProfile | null = null;
-    try {
-      cached = await dbGet<UserProfile>(STORES.userProfile, userId);
-    } catch {
-      // IndexedDB unavailable — skip cache and fetch from API
-    }
-    if (cached?.userId === userId && cached?.role_name === role) {
-      setCurrentUserId(userId);
-      dispatch({ type: 'login', payload: cached });
-      return;
-    }
-
-    try {
-      await fetchAndDispatchProfile(userId, role, superTokensRoles);
-    } catch (error) {
-      console.error('Error fetching session:', error);
-      await fallbackProfileOnError(userId);
-    }
-  };
-
   /** Resolve user role from auth cookie and SuperTokens claims. */
   const resolveUserRoles = async (): Promise<{
     role: UserRole;
@@ -283,6 +242,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (fallbackCached?.userId) {
         dispatch({ type: 'auth-check', payload: fallbackCached });
       }
+    }
+  };
+
+  /** Fetch profile and login, falling back to auth cookie on error. */
+  const fetchProfileAndLogin = async () => {
+    const userId = session.userId;
+    if (!userId) {
+      console.error('Auth: userId missing from SuperTokens session');
+      return;
+    }
+    setCurrentUserId(userId);
+
+    let role: UserRole;
+    let superTokensRoles: string[] | undefined;
+    try {
+      const result = await resolveUserRoles();
+      role = result.role;
+      superTokensRoles = result.superTokensRoles;
+    } catch (error) {
+      console.error('Auth: failed to resolve user roles:', error);
+      await fallbackProfileOnError(userId);
+      return;
+    }
+
+    let cached: UserProfile | null = null;
+    try {
+      cached = await dbGet<UserProfile>(STORES.userProfile, userId);
+    } catch {
+      // IndexedDB unavailable — skip cache and fetch from API
+    }
+    if (cached?.userId === userId && cached?.role_name === role) {
+      setCurrentUserId(userId);
+      dispatch({ type: 'login', payload: cached });
+      return;
+    }
+
+    try {
+      await fetchAndDispatchProfile(userId, role, superTokensRoles);
+    } catch (error) {
+      console.error('Error fetching session:', error);
+      await fallbackProfileOnError(userId);
     }
   };
 

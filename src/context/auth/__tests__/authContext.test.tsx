@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import fs from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuth } from '../authContext';
 
@@ -287,5 +288,35 @@ describe('Fix 2 — fetchProfileAndLogin fallback on early error', () => {
     expect(screen.getByTestId('auth-authenticated').textContent).toBe('true');
     // getProfileByIdentifier was called (skipped the dbGet cache)
     expect(getProfileByIdentifier).toHaveBeenCalled();
+  });
+});
+
+// =========================================================================
+// Fix 3: Source ordering — dependencies defined before their caller
+// =========================================================================
+describe('Fix 3 — function dependency ordering', () => {
+  it('fetchProfileAndLogin is declared AFTER its callees (resolveUserRoles, fetchAndDispatchProfile, fallbackProfileOnError)', async () => {
+    // GIVEN: the auth source file
+    const src = await fs.promises.readFile(
+      'src/context/auth/authContext.tsx',
+      'utf-8'
+    );
+    const lines = src.split('\n');
+
+    // Find line numbers of each function declaration (1-indexed)
+    const findLine = (name: string) =>
+      lines.findIndex(l => l.trim().startsWith('const ' + name + ' =')) + 1;
+
+    const callerLine = findLine('fetchProfileAndLogin');
+    const depLines = [
+      ['resolveUserRoles', findLine('resolveUserRoles')],
+      ['fetchAndDispatchProfile', findLine('fetchAndDispatchProfile')],
+      ['fallbackProfileOnError', findLine('fallbackProfileOnError')]
+    ];
+
+    // THEN: all three callees must appear ABOVE the caller
+    for (const [, line] of depLines) {
+      expect(line).toBeLessThan(callerLine);
+    }
   });
 });
