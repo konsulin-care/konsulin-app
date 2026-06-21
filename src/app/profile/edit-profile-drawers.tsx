@@ -15,7 +15,7 @@ import { Fragment } from 'react';
 type Props = {
   readonly drawerState: string;
   readonly birthDate: string;
-  readonly onDOBChange: (value: Date) => void;
+  readonly onDOBChange: (value: Date | null) => void;
   readonly onCloseDrawer: () => void;
   readonly onSuccessClose: () => void;
 };

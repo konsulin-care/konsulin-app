@@ -23,7 +23,7 @@ type UseProfileFormHandlersResult = {
     value: string,
     meta?: { country?: { dialCode?: string } }
   ) => void;
-  handleDOBChange: (value: Date) => void;
+  handleDOBChange: (value: Date | null) => void;
   closeDrawer: () => void;
   handleGenderSelect: (value: { code: string }) => void;
   handleProvinceSelect: (value: IWilayahResponse) => void;
@@ -80,10 +80,10 @@ export function useProfileFormHandlers({
   };
 
   /** Update birth date from date picker. */
-  const handleDOBChange = (value: Date) => {
+  const handleDOBChange = (value: Date | null) => {
     setUpdateUser(prevState => ({
       ...prevState,
-      birthDate: format(value, 'yyyy-MM-dd')
+      birthDate: value ? format(value, 'yyyy-MM-dd') : ''
     }));
     setDrawerState(DRAWER_STATE.NONE);
   };

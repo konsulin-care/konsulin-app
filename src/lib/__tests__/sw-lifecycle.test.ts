@@ -326,14 +326,9 @@ describe('defense-in-depth URL validation', () => {
     );
     fn(captureSelf, mockCaches, mockFetch, Request, Response);
 
-    const cacheFirst = captureSelf.__testCacheFirst;
-    if (typeof cacheFirst !== 'function') {
-      throw new Error('__testCacheFirst was not injected');
-    }
-
     const request = new Request('javascript:void(0)'); // skipcq: JS-0087
     await expect(
-      cacheFirst(request, 'test-cache')
+      captureSelf.__testCacheFirst!(request, 'test-cache')
     ).rejects.toThrow('Invalid URL: only http/https URLs are allowed');
   });
 
@@ -356,14 +351,9 @@ describe('defense-in-depth URL validation', () => {
     );
     fn(captureSelf, mockCaches, mockFetch, Request, Response);
 
-    const networkFirst = captureSelf.__testNetworkFirst;
-    if (typeof networkFirst !== 'function') {
-      throw new Error('__testNetworkFirst was not injected');
-    }
-
     const request = new Request('javascript:void(0)'); // skipcq: JS-0087
     await expect(
-      networkFirst(request, 'test-cache')
+      captureSelf.__testNetworkFirst!(request, 'test-cache')
     ).rejects.toThrow('Invalid URL: only http/https URLs are allowed');
   });
 });
