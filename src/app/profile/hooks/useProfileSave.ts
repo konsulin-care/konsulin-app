@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import type { ContactPoint, Identifier, Patient, Practitioner } from 'fhir/r4';
 import { toast } from 'react-toastify';
 
@@ -206,16 +207,21 @@ export function useProfileSave({
     };
   };
 
+  const isSavingRef = useRef(false);
+
   /** Orchestrate full profile save: fetch, sync, upload, persist. */
   const handleEditSave = async () => {
-    let latestProfile: FHIRProfile = null;
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
     try {
-      latestProfile = await getProfileById(fhirId, fhirRole);
-    } catch (error) {
-      console.error('Error when refetching user profile: ', error);
-      toast.error('Failed to fetch the latest profile');
-      return;
-    }
+      let latestProfile: FHIRProfile = null;
+      try {
+        latestProfile = await getProfileById(fhirId, fhirRole);
+      } catch (error) {
+        console.error('Error when refetching user profile: ', error);
+        toast.error('Failed to fetch the latest profile');
+        return;
+      }
 
     const existingPhotoUrl = latestProfile?.photo?.[0]?.url ?? '';
     const existingChatwootId = latestProfile
@@ -313,6 +319,9 @@ export function useProfileSave({
     } catch (error) {
       console.error('Error when updating profile: ', error);
       toast.error('Failed updating the profile');
+    }
+    } finally {
+      isSavingRef.current = false;
     }
   };
 

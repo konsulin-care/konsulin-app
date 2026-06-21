@@ -274,21 +274,21 @@ export default function PractitionerAvailability({
     if (intent?.kind === 'appointment') {
       if (!isAppointmentPayload(intent.payload)) {
         clearIntent();
-        return;
-      }
-      const payload: AppointmentPayload = intent.payload;
-      if (matchesPractitionerFromPath(payload.path, practitionerRole.id)) {
-        const { slot, formData } = payload;
-        setBookingInformation(formData);
-        handleFilterChange('date', new Date(slot.date));
-        handleFilterChange('startTime', slot.startTime);
-        handleFilterChange('hasUserChosenDate', true);
-        if (slot.slotId) {
-          setSelectedSlotId(slot.slotId);
+      } else {
+        const payload: AppointmentPayload = intent.payload;
+        if (matchesPractitionerFromPath(payload.path, practitionerRole.id)) {
+          const { slot, formData } = payload;
+          setBookingInformation(formData);
+          handleFilterChange('date', new Date(slot.date));
+          handleFilterChange('startTime', slot.startTime);
+          handleFilterChange('hasUserChosenDate', true);
+          if (slot.slotId) {
+            setSelectedSlotId(slot.slotId);
+          }
+          setIsOpen(true);
+          clearIntent();
+          return;
         }
-        setIsOpen(true);
-        clearIntent();
-        return;
       }
     }
 

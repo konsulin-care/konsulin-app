@@ -18,8 +18,7 @@ if ! npm run typecheck; then
 fi
 
 # Lint staged JS/TS files — fail commit on any error
-if npx --no-install lint-staged 2>/dev/null; then
-  :
-else
-  echo "  Lint-staged skipped (some lint dependencies missing)"
+if ! npx --no-install lint-staged; then
+  echo "  Lint-staged failed, do npm install and try again"
+  exit 1
 fi

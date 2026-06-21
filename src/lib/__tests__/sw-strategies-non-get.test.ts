@@ -139,8 +139,7 @@ describe('non-GET request handling', () => {
       .mockResolvedValue(new Response('auth ok', { status: 200 }));
 
     const request = new Request('https://example.com/auth/cookie', {
-      method: 'POST',
-      body: '{}'
+      method: 'GET'
     });
     const response = await networkFirst(request, 'nav', cacheStorage);
 

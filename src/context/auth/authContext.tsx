@@ -101,7 +101,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         'Auth: SuperTokens session missing but auth cookie exists — clearing auth cookie to unblock /auth'
       );
       try {
-        await fetch('/auth/cookie', { method: 'DELETE' });
+        const res = await fetch('/auth/cookie', { method: 'DELETE' });
+        if (!res.ok) {
+          console.warn('Auth: stale auth cookie deletion returned', res.status);
+        }
       } catch (err) {
         console.error('Auth: failed to delete stale auth cookie:', err);
       }
@@ -252,8 +255,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
       return;
     }
-    await fetchProfileAndLogin();
-    setIsLoading(false);
+    try {
+      await fetchProfileAndLogin();
+    } catch (error) {
+      console.error('Auth: fetchProfileAndLogin threw unexpectedly:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {

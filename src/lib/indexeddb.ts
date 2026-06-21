@@ -56,9 +56,15 @@ function handleVersionError(
       };
       resolve(db);
     };
-    retry.onerror = () => reject(retry.error);
+    retry.onerror = () => {
+      dbPromise = null;
+      reject(retry.error);
+    };
   };
-  discovery.onerror = () => reject(discovery.error);
+  discovery.onerror = () => {
+    dbPromise = null;
+    reject(discovery.error);
+  };
 }
 
 /** Opens the IndexedDB database, caching the connection for subsequent calls. */
@@ -94,6 +100,7 @@ export function openDB(): Promise<IDBDatabase> {
       if (request.error?.name === 'VersionError') {
         handleVersionError(resolve, reject);
       } else {
+        dbPromise = null;
         reject(request.error);
       }
     };

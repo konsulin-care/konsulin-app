@@ -46,7 +46,7 @@ self.addEventListener('activate', function (event) {
 function parseUrl (url) {
   try {
     return new URL(url)
-  } catch (_) {
+  } catch {
     return null
   }
 }

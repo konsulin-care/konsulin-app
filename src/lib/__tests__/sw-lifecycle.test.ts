@@ -314,7 +314,7 @@ describe('defense-in-depth URL validation', () => {
     );
 
     const captureSelf = createMockSelf() as MockSelf & {
-      __testCacheFirst?: Function;
+      __testCacheFirst?: (request: Request, cacheName: string) => Promise<Response>;
     };
     const fn = new Function(
       'self',
@@ -339,7 +339,7 @@ describe('defense-in-depth URL validation', () => {
     );
 
     const captureSelf = createMockSelf() as MockSelf & {
-      __testNetworkFirst?: Function;
+      __testNetworkFirst?: (request: Request, cacheName: string, fallbackUrl?: string) => Promise<Response>;
     };
     const fn = new Function(
       'self',

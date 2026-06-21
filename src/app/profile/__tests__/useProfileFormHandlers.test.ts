@@ -61,6 +61,30 @@ describe('useProfileFormHandlers', () => {
       expect(setDrawerState).toHaveBeenCalledWith(DRAWER_STATE.NONE);
     });
 
+    it('sets birthDate to empty string when value is an invalid Date', () => {
+      const { result } = renderHook(() =>
+        useProfileFormHandlers({
+          updateUser: BASE_PROFILE,
+          isPhoneBasedUser: false,
+          setUpdateUser,
+          setErrors,
+          setDrawerState,
+        })
+      );
+
+      expect(() => {
+        act(() => {
+          result.current.handleDOBChange(new Date('invalid'));
+        });
+      }).not.toThrow();
+
+      const updater = setUpdateUser.mock.calls[0][0];
+      const prevState = { ...BASE_PROFILE };
+      const nextState = updater(prevState);
+      expect(nextState.birthDate).toBe('');
+      expect(setDrawerState).toHaveBeenCalledWith(DRAWER_STATE.NONE);
+    });
+
     it('sets birthDate to empty string when value is null', () => {
       const { result } = renderHook(() =>
         useProfileFormHandlers({

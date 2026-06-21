@@ -64,7 +64,7 @@ describe('openDB', () => {
 
     const request = createMockRequest(mockDb as unknown as IDBDatabase);
 
-    mockIndexedDB.open.mockImplementation((_name: string, _version?: number) => {
+    mockIndexedDB.open.mockImplementation(() => {
       // Simulate async success
       setTimeout(() => {
         if (request.onsuccess) {
@@ -111,6 +111,55 @@ describe('openDB', () => {
     expect(db1).toBe(db2);
     // Only one actual open since the promise is cached
     expect(callCount).toBe(1);
+  });
+
+  it('retries openDB after a non-VersionError failure', async () => {
+    const mockDb = {
+      name: 'konsulin',
+      version: 2,
+      objectStoreNames: { contains: vi.fn().mockReturnValue(true) },
+      close: vi.fn(),
+      onclose: null,
+      onversionchange: null
+    };
+
+    let openCount = 0;
+    mockIndexedDB.open.mockImplementation(() => {
+      openCount++;
+      const req = createMockRequest();
+
+      if (openCount === 1) {
+        req.error = new Error('Internal error opening database');
+        setTimeout(() => {
+          if (req.onerror) {
+            triggerEvent(req.onerror, { target: req });
+          }
+        }, 0);
+      } else {
+        req.result = mockDb as unknown as IDBDatabase;
+        setTimeout(() => {
+          if (req.onsuccess) {
+            triggerEvent(req.onsuccess, { target: req });
+          }
+        }, 0);
+      }
+      return req;
+    });
+
+    // First call should reject
+    let caught = false;
+    try {
+      await openDB();
+    } catch (e) {
+      caught = true;
+      expect((e as Error).message).toBe('Internal error opening database');
+    }
+    expect(caught).toBe(true);
+
+    // Second call should succeed (dbPromise reset)
+    const db = await openDB();
+    expect(db).toBe(mockDb);
+    expect(openCount).toBe(2);
   });
 
   it('handles VersionError by falling back to existing version', async () => {

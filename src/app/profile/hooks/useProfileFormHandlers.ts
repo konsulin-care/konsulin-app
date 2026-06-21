@@ -81,9 +81,10 @@ export function useProfileFormHandlers({
 
   /** Update birth date from date picker. */
   const handleDOBChange = (value: Date | null) => {
+    const isValid = value !== null && !isNaN(value.getTime());
     setUpdateUser(prevState => ({
       ...prevState,
-      birthDate: value ? format(value, 'yyyy-MM-dd') : ''
+      birthDate: isValid ? format(value, 'yyyy-MM-dd') : ''
     }));
     setDrawerState(DRAWER_STATE.NONE);
   };
