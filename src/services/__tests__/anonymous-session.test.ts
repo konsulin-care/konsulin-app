@@ -42,9 +42,7 @@ describe('decodeJwtPayload', () => {
 describe('buildAnonymousIdentifier', () => {
   it('builds a FHIR Identifier with the correct system and value', () => {
     const result = buildAnonymousIdentifier('guest-123');
-    expect(result.system).toBe(
-      'https://login.konsulin.care/guestid'
-    );
+    expect(result.system).toBe('https://login.konsulin.care/guestid');
     expect(result.value).toBe('guest-123');
   });
 });
@@ -73,15 +71,13 @@ describe('ensureAnonymousSession', () => {
       }
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
     const result = await ensureAnonymousSession();
 
-    // skipcq: JS-W1042 - args undefined to match actual call signature
-    expect(mockApi.post).toHaveBeenCalledWith(
-      '/api/v1/auth/anonymous-session',
-      undefined,
-      undefined
-    );
+    expect(mockApi.post).toHaveBeenCalledTimes(1);
+    const callArgs = mockApi.post.mock.calls[0];
+    expect(callArgs[0]).toBe('/api/v1/auth/anonymous-session');
+    expect(callArgs[1]).toBeUndefined();
+    expect(callArgs[2]).toBeUndefined();
     expect(result).toBe('abc123');
   });
 

@@ -20,7 +20,6 @@ type Props = {
   readonly onSuccessClose: () => void;
 };
 
-/* eslint-disable react/jsx-max-depth */ // skipcq: JS-0415 - nesting required by shadcn/ui Drawer component spec
 /** Date of Birth and Success drawers for the edit profile page. */
 export function EditProfileDrawers({
   drawerState,
@@ -31,11 +30,14 @@ export function EditProfileDrawers({
 }: Props) {
   if (drawerState === DRAWER_STATE.NONE) return null;
 
+  // skipcq: JS-0415 - nesting required by shadcn/ui Drawer component spec
   return (
     <>
       <Drawer
         open={drawerState === DRAWER_STATE.DOB}
-        onOpenChange={open => { if (!open) onCloseDrawer(); }}
+        onOpenChange={open => {
+          if (!open) onCloseDrawer();
+        }}
       >
         <DrawerTrigger asChild>
           <div />
