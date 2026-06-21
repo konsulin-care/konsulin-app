@@ -73,7 +73,7 @@ export async function networkFirst(
         if (fallback) return fallback;
       }
     } catch {
-      // Cache operations failed — fall through to throw
+      console.warn('[SW] cache fallback failed for', request.url);
     }
 
     throw new Error(

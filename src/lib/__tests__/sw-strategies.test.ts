@@ -1,4 +1,9 @@
-import { cacheFirst, isValidHttpUrl, networkFirst, networkOnly } from '@/lib/sw-strategies';
+import {
+  cacheFirst,
+  isValidHttpUrl,
+  networkFirst,
+  networkOnly
+} from '@/lib/sw-strategies';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 function createMockCache(): {
@@ -172,9 +177,9 @@ describe('networkFirst', () => {
   it('throws on non-http URL', async () => {
     const cacheStorage = createMockCacheStorage({});
     const request = new Request('javascript:void(0)'); // skipcq: JS-0087
-    await expect(
-      networkFirst(request, 'v1', cacheStorage)
-    ).rejects.toThrow('Invalid URL');
+    await expect(networkFirst(request, 'v1', cacheStorage)).rejects.toThrow(
+      'Invalid URL'
+    );
   });
 
   it('returns network response and caches it on success', async () => {
@@ -259,10 +264,38 @@ describe('networkFirst', () => {
     fetchSpy.mockRestore();
   });
 
+  it('logs a warning when cache storage fails in the catch block', async () => {
+    const cacheStorage = createMockCacheStorage({});
+    cacheStorage.open = vi
+      .fn()
+      .mockRejectedValue(new Error('Storage corrupted'));
+
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockRejectedValue(new Error('Offline'));
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const request = new Request('https://example.com/page');
+
+    // Should throw the final fallback error, not the cache error
+    await expect(networkFirst(request, 'nav-v1', cacheStorage)).rejects.toThrow(
+      'Network request failed'
+    );
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[SW] cache fallback failed for',
+      expect.any(String)
+    );
+    warnSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+
   it('handles cache storage failure inside catch block gracefully', async () => {
     const cacheStorage = createMockCacheStorage({});
     // Make cacheStorage.open reject to simulate storage corruption
-    cacheStorage.open = vi.fn().mockRejectedValue(new Error('Storage corrupted'));
+    cacheStorage.open = vi
+      .fn()
+      .mockRejectedValue(new Error('Storage corrupted'));
 
     const fetchSpy = vi
       .spyOn(globalThis, 'fetch')
