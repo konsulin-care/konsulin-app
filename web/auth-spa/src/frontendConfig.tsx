@@ -139,7 +139,9 @@ export const frontendConfig = (): SuperTokensConfig => {
                 JSON.stringify(intent.payload)
               );
             } catch {
-              /* sessionStorage may be unavailable */
+              console.warn(
+                '[auth] sessionStorage unavailable, pending_booking not saved'
+              );
             }
           }
 

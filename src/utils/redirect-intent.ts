@@ -60,7 +60,7 @@ export function saveIntent(
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(intent));
   } catch {
-    /* ignore */
+    console.warn('[redirect-intent] localStorage.setItem failed in saveIntent');
   }
   // Fallback: cookie
   writeCookie(JSON.stringify(intent), COOKIE_TTL_MS / 1000);
@@ -81,7 +81,9 @@ export function getIntent(): Intent | null {
       }
     }
   } catch {
-    /* fall through to cookie */
+    console.warn(
+      '[redirect-intent] localStorage.getItem/parse failed, falling through to cookie'
+    );
   }
 
   // 2. Cookie (fallback)
@@ -107,7 +109,9 @@ export function clearIntent(): void {
   try {
     localStorage.removeItem(LOCAL_STORAGE_KEY);
   } catch {
-    /* ignore */
+    console.warn(
+      '[redirect-intent] localStorage.removeItem failed in clearIntent'
+    );
   }
   clearRedirectIntent();
 }
