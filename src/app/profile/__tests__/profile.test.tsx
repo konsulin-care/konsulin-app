@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, renderHook, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -48,7 +47,7 @@ import { useAuth } from '@/context/auth/authContext';
 // ---------------------------------------------------------------------------
 
 import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
-import { Patient } from 'fhir/r4';
+import { Patient, Practitioner } from 'fhir/r4';
 
 import { usePractitionerProfile } from '@/hooks/usePractitionerProfile';
 
@@ -156,7 +155,7 @@ describe('Profile page', () => {
       vi.mocked(getProfileById).mockResolvedValue({
         id: 'p1',
         resourceType: 'Practitioner'
-      } as any);
+      } as Practitioner);
 
       const { result } = renderHook(() => usePractitionerProfile('p1'), {
         wrapper
@@ -167,7 +166,9 @@ describe('Profile page', () => {
     });
 
     it('is not enabled when fhirId is empty', () => {
-      vi.mocked(getProfileById).mockResolvedValue({} as any);
+      vi.mocked(getProfileById).mockResolvedValue(
+        {} as unknown as Practitioner
+      );
 
       const { result } = renderHook(() => usePractitionerProfile(''), {
         wrapper
