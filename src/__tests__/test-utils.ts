@@ -32,8 +32,10 @@ export function createMockSelf() {
     handlers,
     listeners,
     addEventListener: vi.fn((type: string, handler: EventCallback) => {
-      (handlers[type] ??= []).push(handler);
-      (listeners[type] ??= []).push(handler);
+      const handlerArr = (handlers[type] ??= []);
+      handlerArr.push(handler);
+      const listenerArr = (listeners[type] ??= []);
+      listenerArr.push(handler);
     }),
     skipWaiting: vi.fn(),
     clients: { claim: vi.fn() },

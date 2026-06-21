@@ -62,14 +62,18 @@ export async function networkFirst(
     }
     return response;
   } catch {
-    const cache = await cacheStorage.open(cacheName);
-    const cached = await cache.match(request);
-    if (cached) return cached;
+    try {
+      const cache = await cacheStorage.open(cacheName);
+      const cached = await cache.match(request);
+      if (cached) return cached;
 
-    if (fallbackUrl && staticCacheName) {
-      const staticCache = await cacheStorage.open(staticCacheName);
-      const fallback = await staticCache.match(fallbackUrl);
-      if (fallback) return fallback;
+      if (fallbackUrl && staticCacheName) {
+        const staticCache = await cacheStorage.open(staticCacheName);
+        const fallback = await staticCache.match(fallbackUrl);
+        if (fallback) return fallback;
+      }
+    } catch {
+      // Cache operations failed — fall through to throw
     }
 
     throw new Error(

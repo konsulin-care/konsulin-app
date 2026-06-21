@@ -257,6 +257,30 @@ describe('fetch offline fallback', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Fetch event - cache failure resilience
+// ---------------------------------------------------------------------------
+describe('fetch cache failure resilience', () => {
+  it('throws graceful error when cache fails during offline fallback', async () => {
+    // Override mockCaches.open to reject, simulating storage corruption
+    mockCaches.open = vi.fn().mockRejectedValue(new Error('Cache corrupted'));
+    mockFetch.mockRejectedValue(new Error('Offline'));
+
+    const event = fireFetch(mockSelf, {
+      url: 'https://konsulin.id/new-page',
+      mode: 'navigate',
+      method: 'GET'
+    });
+
+    // The promise passed to respondWith should reject with the graceful error,
+    // not the raw 'Cache corrupted' error from caches.open
+    const capturedPromise = event.respondWith.mock.calls[0][0];
+    await expect(capturedPromise).rejects.toThrow(
+      'Network request failed and no cache/fallback available'
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
 // sw-register.js — extracted from dangerouslySetInnerHTML
 // ---------------------------------------------------------------------------
 describe('sw-register.js', () => {

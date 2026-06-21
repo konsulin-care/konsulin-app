@@ -258,6 +258,23 @@ describe('networkFirst', () => {
     );
     fetchSpy.mockRestore();
   });
+
+  it('handles cache storage failure inside catch block gracefully', async () => {
+    const cacheStorage = createMockCacheStorage({});
+    // Make cacheStorage.open reject to simulate storage corruption
+    cacheStorage.open = vi.fn().mockRejectedValue(new Error('Storage corrupted'));
+
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockRejectedValue(new Error('Offline'));
+
+    const request = new Request('https://example.com/page');
+    // Should throw the final fallback error, not the cache error
+    await expect(networkFirst(request, 'nav-v1', cacheStorage)).rejects.toThrow(
+      'Network request failed'
+    );
+    fetchSpy.mockRestore();
+  });
 });
 
 describe('networkOnly', () => {

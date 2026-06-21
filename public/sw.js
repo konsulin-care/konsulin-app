@@ -109,12 +109,17 @@ async function networkFirst (request, cacheName, fallbackUrl) {
     }
     return response
   } catch {
-    const fallbackCache = await caches.open(cacheName)
-    const cached = await fallbackCache.match(request)
-    if (cached) return cached
-    if (fallbackUrl) {
-      const staticCache = await caches.open(STATIC_CACHE)
-      return staticCache.match(fallbackUrl)
+    try {
+      const fallbackCache = await caches.open(cacheName)
+      const cached = await fallbackCache.match(request)
+      if (cached) return cached
+      if (fallbackUrl) {
+        const staticCache = await caches.open(STATIC_CACHE)
+        const fallback = await staticCache.match(fallbackUrl)
+        if (fallback) return fallback
+      }
+    } catch {
+      // Cache operations failed — fall through to throw
     }
     throw new Error('Network request failed and no cache/fallback available')
   }
