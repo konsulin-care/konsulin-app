@@ -26,7 +26,10 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SW_PATH = resolve(__dirname, '../../../public/sw.js');
-const SW_REGISTER_PATH = resolve(__dirname, '../../../public/js/sw-register.js');
+const SW_REGISTER_PATH = resolve(
+  __dirname,
+  '../../../public/js/sw-register.js'
+);
 let SW_CODE: string;
 
 // ---------------------------------------------------------------------------
@@ -312,9 +315,13 @@ describe('defense-in-depth URL validation', () => {
       'async function cacheFirst (request, cacheName) {',
       'self.__testCacheFirst = async function cacheFirst (request, cacheName) {'
     );
+    expect(patchedCode).toContain('self.__testCacheFirst');
 
     const captureSelf = createMockSelf() as MockSelf & {
-      __testCacheFirst?: (request: Request, cacheName: string) => Promise<Response>;
+      __testCacheFirst?: (
+        request: Request,
+        cacheName: string
+      ) => Promise<Response>;
     };
     const fn = new Function(
       'self',
@@ -327,8 +334,9 @@ describe('defense-in-depth URL validation', () => {
     fn(captureSelf, mockCaches, mockFetch, Request, Response);
 
     const request = new Request('javascript:void(0)'); // skipcq: JS-0087
+    expect(captureSelf.__testCacheFirst).toBeDefined();
     await expect(
-      captureSelf.__testCacheFirst!(request, 'test-cache')
+      captureSelf.__testCacheFirst(request, 'test-cache')
     ).rejects.toThrow('Invalid URL: only http/https URLs are allowed');
   });
 
@@ -337,9 +345,14 @@ describe('defense-in-depth URL validation', () => {
       'async function networkFirst (request, cacheName, fallbackUrl) {',
       'self.__testNetworkFirst = async function networkFirst (request, cacheName, fallbackUrl) {'
     );
+    expect(patchedCode).toContain('self.__testNetworkFirst');
 
     const captureSelf = createMockSelf() as MockSelf & {
-      __testNetworkFirst?: (request: Request, cacheName: string, fallbackUrl?: string) => Promise<Response>;
+      __testNetworkFirst?: (
+        request: Request,
+        cacheName: string,
+        fallbackUrl?: string
+      ) => Promise<Response>;
     };
     const fn = new Function(
       'self',
@@ -352,8 +365,9 @@ describe('defense-in-depth URL validation', () => {
     fn(captureSelf, mockCaches, mockFetch, Request, Response);
 
     const request = new Request('javascript:void(0)'); // skipcq: JS-0087
+    expect(captureSelf.__testNetworkFirst).toBeDefined();
     await expect(
-      captureSelf.__testNetworkFirst!(request, 'test-cache')
+      captureSelf.__testNetworkFirst(request, 'test-cache')
     ).rejects.toThrow('Invalid URL: only http/https URLs are allowed');
   });
 });
