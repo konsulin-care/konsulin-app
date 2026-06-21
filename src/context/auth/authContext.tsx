@@ -104,9 +104,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const res = await fetch('/auth/cookie', { method: 'DELETE' });
         if (!res.ok) {
           console.warn('Auth: stale auth cookie deletion returned', res.status);
+          dispatch({ type: 'logout' });
+          setCurrentUserId(null);
+          setIsLoading(false);
+          return;
         }
       } catch (err) {
         console.error('Auth: failed to delete stale auth cookie:', err);
+        dispatch({ type: 'logout' });
+        setCurrentUserId(null);
+        setIsLoading(false);
+        return;
       }
       globalThis.location.href = '/auth';
       return;
@@ -157,9 +165,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     setCurrentUserId(userId);
 
-    const { role, superTokensRoles } = await resolveUserRoles();
+    let role: UserRole;
+    let superTokensRoles: string[] | undefined;
+    try {
+      const result = await resolveUserRoles();
+      role = result.role;
+      superTokensRoles = result.superTokensRoles;
+    } catch (error) {
+      console.error('Auth: failed to resolve user roles:', error);
+      await fallbackProfileOnError(userId);
+      return;
+    }
 
-    const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
+    let cached: UserProfile | null = null;
+    try {
+      cached = await dbGet<UserProfile>(STORES.userProfile, userId);
+    } catch {
+      // IndexedDB unavailable — skip cache and fetch from API
+    }
     if (cached?.userId === userId && cached?.role_name === role) {
       setCurrentUserId(userId);
       dispatch({ type: 'login', payload: cached });
