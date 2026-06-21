@@ -62,9 +62,7 @@ export function useProfileFormHandlers({
     value: string,
     meta?: { country?: { dialCode?: string } }
   ) => {
-    const dialCode = meta?.country?.dialCode
-      ? `+${meta.country.dialCode}`
-      : '';
+    const dialCode = meta?.country?.dialCode ? `+${meta.country.dialCode}` : '';
     let cleaned = (value || '').replace(/[^\d+]/g, '');
 
     if (cleaned.startsWith('0') && dialCode) {
@@ -81,7 +79,7 @@ export function useProfileFormHandlers({
 
   /** Update birth date from date picker. */
   const handleDOBChange = (value: Date | null) => {
-    const isValid = value !== null && !isNaN(value.getTime());
+    const isValid = value !== null && !Number.isNaN(value.getTime());
     setUpdateUser(prevState => ({
       ...prevState,
       birthDate: isValid ? format(value, 'yyyy-MM-dd') : ''
