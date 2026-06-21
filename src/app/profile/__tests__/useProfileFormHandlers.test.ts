@@ -25,7 +25,7 @@ const BASE_PROFILE: ICustomProfile = {
   province: '',
   postalCode: '',
   phone: '',
-  email: '',
+  email: ''
 };
 
 describe('useProfileFormHandlers', () => {
@@ -45,12 +45,12 @@ describe('useProfileFormHandlers', () => {
           isPhoneBasedUser: false,
           setUpdateUser,
           setErrors,
-          setDrawerState,
+          setDrawerState
         })
       );
 
       act(() => {
-        result.current.handleDOBChange(new Date('2024-06-15'));
+        result.current.handleDOBChange(new Date(2024, 5, 15));
       });
 
       expect(setUpdateUser).toHaveBeenCalledOnce();
@@ -68,7 +68,7 @@ describe('useProfileFormHandlers', () => {
           isPhoneBasedUser: false,
           setUpdateUser,
           setErrors,
-          setDrawerState,
+          setDrawerState
         })
       );
 
@@ -92,7 +92,7 @@ describe('useProfileFormHandlers', () => {
           isPhoneBasedUser: false,
           setUpdateUser,
           setErrors,
-          setDrawerState,
+          setDrawerState
         })
       );
 
