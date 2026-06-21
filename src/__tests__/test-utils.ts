@@ -32,8 +32,10 @@ export function createMockSelf() {
     handlers,
     listeners,
     addEventListener: vi.fn((type: string, handler: EventCallback) => {
+      // skipcq: JS-0376 - dynamic property access in test mock infrastructure
       const handlerArr = (handlers[type] ??= []);
       handlerArr.push(handler);
+      // skipcq: JS-0376 - dynamic property access in test mock infrastructure
       const listenerArr = (listeners[type] ??= []);
       listenerArr.push(handler);
     }),
@@ -53,13 +55,15 @@ export function createMockCaches() {
   return {
     stores,
     open: vi.fn((name: string) => {
+      // skipcq: JS-0376 - dynamic property access in test mock infrastructure
       stores[name] ??= createMockCache();
+      // skipcq: JS-0376 - dynamic property access in test mock infrastructure
       return Promise.resolve(stores[name]);
     }),
     keys: vi.fn(() => Promise.resolve(Object.keys(stores))),
     delete: vi.fn((key: string) => {
       // skipcq: JS-0320, JS-0376 - dynamic property deletion in test mock infrastructure
-      delete stores[key];
+      delete stores[key]; // skipcq: JS-0320, JS-0376
       return Promise.resolve(true);
     }),
     has: vi.fn(),
