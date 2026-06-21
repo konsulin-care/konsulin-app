@@ -262,62 +262,66 @@ export default function PractitionerAvailability({
     }
   }
 
-  /* when the modal is opened via the "isOpen=true" URL param,
-   * load temporary booking data from localStorage (if any),
-   * apply it to the booking form and global state,
-   * and remove the temporary data afterward. */
+  /** Try to restore booking from redirect intent. */
+  function tryRestoreFromIntent(): boolean {
+    const intent = getIntent();
+    if (intent?.kind !== 'appointment') return false;
+
+    if (!isAppointmentPayload(intent.payload)) {
+      clearIntent();
+      return false;
+    }
+
+    const payload: AppointmentPayload = intent.payload;
+    if (!matchesPractitionerFromPath(payload.path, practitionerRole.id)) {
+      return false;
+    }
+
+    const { slot, formData } = payload;
+    setBookingInformation(formData);
+    handleFilterChange('date', new Date(slot.date));
+    handleFilterChange('startTime', slot.startTime);
+    handleFilterChange('hasUserChosenDate', true);
+    if (slot.slotId) {
+      setSelectedSlotId(slot.slotId);
+    }
+    setIsOpen(true);
+    clearIntent();
+    return true;
+  }
+
+  /** Load temporary booking data from IndexedDB. */
+  function loadTempBookingFromIndexedDB(userId: string): void {
+    setIsOpen(true);
+    dbGet<TempBookingData>(STORES.tempBooking, userId).then(parsed => {
+      if (parsed) {
+        setBookingInformation(() => ({
+          schedule_id: parsed.scheduleId,
+          session_type: parsed.sessionType,
+          problem_brief: parsed.problemBrief,
+          practitioner_role_id: parsed.practitionerRoleId,
+          practitioner_available_time: parsed.practitionerAvailableTime
+        }));
+
+        handleFilterChange('date', new Date(parsed.date));
+        handleFilterChange('startTime', parsed.startTime);
+        handleFilterChange('hasUserChosenDate', parsed.hasUserChosenDate);
+
+        dbDelete(STORES.tempBooking, userId).catch(err =>
+          console.warn('[IndexedDB]', err)
+        );
+      }
+    });
+  }
+
+  /** Restore booking state from available sources when the modal opens. */
   useEffect(() => {
     const userId = authState?.userInfo?.userId;
     if (isOpenParam === 'true' && !userId) return;
-
-    const intent = getIntent();
-    if (intent?.kind === 'appointment') {
-      if (!isAppointmentPayload(intent.payload)) {
-        clearIntent();
-      } else {
-        const payload: AppointmentPayload = intent.payload;
-        if (matchesPractitionerFromPath(payload.path, practitionerRole.id)) {
-          const { slot, formData } = payload;
-          setBookingInformation(formData);
-          handleFilterChange('date', new Date(slot.date));
-          handleFilterChange('startTime', slot.startTime);
-          handleFilterChange('hasUserChosenDate', true);
-          if (slot.slotId) {
-            setSelectedSlotId(slot.slotId);
-          }
-          setIsOpen(true);
-          clearIntent();
-          return;
-        }
-      }
-    }
-
-    /* fallback: sessionStorage set by auth SPA after login */
+    if (tryRestoreFromIntent()) return;
     if (tryRestoreBookingFromSession()) return;
-
     if (isOpenParam === 'true' && userId) {
-      setIsOpen(true);
-
-      const ownerId = userId;
-      dbGet<TempBookingData>(STORES.tempBooking, ownerId).then(parsed => {
-        if (parsed) {
-          setBookingInformation(() => ({
-            schedule_id: parsed.scheduleId,
-            session_type: parsed.sessionType,
-            problem_brief: parsed.problemBrief,
-            practitioner_role_id: parsed.practitionerRoleId,
-            practitioner_available_time: parsed.practitionerAvailableTime
-          }));
-
-          handleFilterChange('date', new Date(parsed.date));
-          handleFilterChange('startTime', parsed.startTime);
-          handleFilterChange('hasUserChosenDate', parsed.hasUserChosenDate);
-
-          dbDelete(STORES.tempBooking, ownerId).catch(err =>
-            console.warn('[IndexedDB]', err)
-          );
-        }
-      });
+      loadTempBookingFromIndexedDB(userId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpenParam, authState?.userInfo?.userId]);
@@ -405,7 +409,7 @@ export default function PractitionerAvailability({
 
     const isValidTime = validTimeSlots.includes(bookingState.startTime);
 
-    if (!isValidDate) {
+    if (isValidDate === false) {
       const nextValidDate = getNextAvailableDate(
         bookingState.date,
         listAvailableDate
@@ -419,7 +423,7 @@ export default function PractitionerAvailability({
       return;
     }
 
-    if (!isValidTime) {
+    if (isValidTime === false) {
       const nextAvailableTime = validTimeSlots.find(
         time => time > bookingState.startTime
       );
