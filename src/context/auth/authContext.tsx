@@ -148,7 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  /** Fetch profile and dispatch login, falling back to auth cookie on error. */
+  /** Fetch profile and login, falling back to auth cookie on error. */
   const fetchProfileAndLogin = async () => {
     const userId = session.userId;
     if (!userId) {
@@ -157,17 +157,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     setCurrentUserId(userId);
 
-    const cookieSession = await getAuthCookieSession();
-    const cookieRole = cookieSession?.role_name;
-
-    const superTokensRoles = (await getClaimValue({
-      claim: UserRoleClaim
-    })) as string[] | undefined;
-
-    const role = resolveActiveRole(cookieRole, superTokensRoles);
+    const { role, superTokensRoles } = await resolveUserRoles();
 
     const cached = await dbGet<UserProfile>(STORES.userProfile, userId);
-
     if (cached?.userId === userId && cached?.role_name === role) {
       setCurrentUserId(userId);
       dispatch({ type: 'login', payload: cached });
@@ -175,75 +167,98 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const result = await getProfileByIdentifier({
-        userId,
-        type: roleToFhirResource(role)
-      });
+      await fetchAndDispatchProfile(userId, role, superTokensRoles);
+    } catch (error) {
+      console.error('Error fetching session:', error);
+      await fallbackProfileOnError(userId);
+    }
+  };
 
-      if (!result) {
-        const payload = {
-          userId,
-          role_name: role,
-          roles: superTokensRoles,
-          email: '',
-          fullname: '',
-          profile_picture: '',
-          fhirId: '',
-          profile_complete: false
-        };
-        await dbSet(STORES.userProfile, { ...payload, cachedAt: Date.now() });
-        dispatch({ type: 'login', payload });
-        return;
-      }
+  /** Resolve user role from auth cookie and SuperTokens claims. */
+  const resolveUserRoles = async (): Promise<{
+    role: UserRole;
+    superTokensRoles: string[] | undefined;
+  }> => {
+    const cookieSession = await getAuthCookieSession();
+    const cookieRole = cookieSession?.role_name;
+    const superTokensRoles = (await getClaimValue({
+      claim: UserRoleClaim
+    })) as string[] | undefined;
+    const role = resolveActiveRole(cookieRole, superTokensRoles);
+    return { role, superTokensRoles };
+  };
 
-      const email = result.telecom?.find(
-        item => item.system === 'email'
-      )?.value;
+  /** Fetch profile from API and dispatch login. */
+  const fetchAndDispatchProfile = async (
+    userId: string,
+    role: UserRole,
+    superTokensRoles: string[] | undefined
+  ): Promise<void> => {
+    const result = await getProfileByIdentifier({
+      userId,
+      type: roleToFhirResource(role)
+    });
 
-      const profile_complete = isProfileCompleteFromFHIR(result);
-
+    if (!result) {
       const payload = {
         userId,
         role_name: role,
         roles: superTokensRoles,
-        email,
-        profile_picture: result?.photo?.[0]?.url ?? '',
-        fullname: mergeNames(result?.name),
-        fhirId: result?.id ?? '',
-        profile_complete
+        email: '',
+        fullname: '',
+        profile_picture: '',
+        fhirId: '',
+        profile_complete: false
       };
-
-      await dbSet(STORES.userProfile, {
-        ...payload,
-        roles: superTokensRoles,
-        cachedAt: Date.now()
-      });
+      await dbSet(STORES.userProfile, { ...payload, cachedAt: Date.now() });
       dispatch({ type: 'login', payload });
-    } catch (error) {
-      console.error('Error fetching session:', error);
-      // Auth cookie has the current role (e.g., post-switch). Use it
-      // instead of the stale cached profile which holds the pre-switch role.
-      const fallbackCookie = await getAuthCookieSession();
-      if (fallbackCookie?.authenticated && fallbackCookie?.role_name) {
-        const payload = {
-          userId,
-          role_name: fallbackCookie.role_name,
-          roles: fallbackCookie.roles ?? [],
-          email: fallbackCookie.email ?? '',
-          fullname: fallbackCookie.fullname ?? '',
-          profile_picture: fallbackCookie.profile_picture ?? '',
-          fhirId: fallbackCookie.fhirId ?? '',
-          profile_complete: fallbackCookie.profile_complete ?? false
-        };
-        dispatch({ type: 'login', payload });
-      } else {
-        const fallbackCached = await dbGet<UserProfile>(
-          STORES.userProfile,
-          userId
-        );
-        if (fallbackCached?.userId) {
-          dispatch({ type: 'auth-check', payload: fallbackCached });
-        }
+      return;
+    }
+
+    const email = result.telecom?.find(item => item.system === 'email')?.value;
+    const profile_complete = isProfileCompleteFromFHIR(result);
+
+    const payload = {
+      userId,
+      role_name: role,
+      roles: superTokensRoles,
+      email,
+      profile_picture: result?.photo?.[0]?.url ?? '',
+      fullname: mergeNames(result?.name),
+      fhirId: result?.id ?? '',
+      profile_complete
+    };
+
+    await dbSet(STORES.userProfile, {
+      ...payload,
+      roles: superTokensRoles,
+      cachedAt: Date.now()
+    });
+    dispatch({ type: 'login', payload });
+  };
+
+  /** Dispatch fallback profile when API fetch fails. */
+  const fallbackProfileOnError = async (userId: string): Promise<void> => {
+    const fallbackCookie = await getAuthCookieSession();
+    if (fallbackCookie?.authenticated && fallbackCookie?.role_name) {
+      const payload = {
+        userId,
+        role_name: fallbackCookie.role_name,
+        roles: fallbackCookie.roles ?? [],
+        email: fallbackCookie.email ?? '',
+        fullname: fallbackCookie.fullname ?? '',
+        profile_picture: fallbackCookie.profile_picture ?? '',
+        fhirId: fallbackCookie.fhirId ?? '',
+        profile_complete: fallbackCookie.profile_complete ?? false
+      };
+      dispatch({ type: 'login', payload });
+    } else {
+      const fallbackCached = await dbGet<UserProfile>(
+        STORES.userProfile,
+        userId
+      );
+      if (fallbackCached?.userId) {
+        dispatch({ type: 'auth-check', payload: fallbackCached });
       }
     }
   };
