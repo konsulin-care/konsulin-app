@@ -49,11 +49,11 @@ export async function networkFirst(
   staticCacheName?: string,
   fallbackUrl?: string
 ): Promise<Response> {
-  if (!isValidHttpUrl(request.url)) {
-    throw new Error('Invalid URL: only http/https URLs are allowed');
-  }
-
   try {
+    if (!isValidHttpUrl(request.url)) {
+      throw new Error('Invalid URL: only http/https URLs are allowed');
+    }
+
     // skipcq: JS-0376 - NOSONAR - URL validated by isValidHttpUrl() guard above
     const response = await fetch(request.clone());
     if (response.ok && request.method === 'GET') {
@@ -76,9 +76,8 @@ export async function networkFirst(
       console.warn('[SW] cache fallback failed for', request.url);
     }
 
-    throw new Error(
-      'Network request failed and no cache or fallback available'
-    );
+    // Graceful degradation instead of throwing
+    return new Response('Service Unavailable', { status: 503 });
   }
 }
 

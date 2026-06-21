@@ -174,12 +174,13 @@ describe('cacheFirst', () => {
 });
 
 describe('networkFirst', () => {
-  it('throws on non-http URL', async () => {
+  it('returns 503 on non-http URL', async () => {
     const cacheStorage = createMockCacheStorage({});
     const request = new Request('javascript:void(0)'); // skipcq: JS-0087
-    await expect(networkFirst(request, 'v1', cacheStorage)).rejects.toThrow(
-      'Invalid URL'
-    );
+    const response = await networkFirst(request, 'v1', cacheStorage);
+    expect(response.status).toBe(503);
+    const text = await response.text();
+    expect(text).toBe('Service Unavailable');
   });
 
   it('returns network response and caches it on success', async () => {
@@ -247,7 +248,7 @@ describe('networkFirst', () => {
     fetchSpy.mockRestore();
   });
 
-  it('throws on total failure with no cache and no fallback', async () => {
+  it('returns 503 on total failure with no cache and no fallback', async () => {
     const cache = createMockCache();
     // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
     cache.match.mockResolvedValue(undefined);
@@ -258,9 +259,10 @@ describe('networkFirst', () => {
       .mockRejectedValue(new Error('Offline'));
 
     const request = new Request('https://example.com/page');
-    await expect(networkFirst(request, 'nav-v1', cacheStorage)).rejects.toThrow(
-      'Network request failed'
-    );
+    const response = await networkFirst(request, 'nav-v1', cacheStorage);
+    expect(response.status).toBe(503);
+    const text = await response.text();
+    expect(text).toBe('Service Unavailable');
     fetchSpy.mockRestore();
   });
 
@@ -278,9 +280,8 @@ describe('networkFirst', () => {
     const request = new Request('https://example.com/page');
 
     // Should throw the final fallback error, not the cache error
-    await expect(networkFirst(request, 'nav-v1', cacheStorage)).rejects.toThrow(
-      'Network request failed'
-    );
+    const response = await networkFirst(request, 'nav-v1', cacheStorage);
+    expect(response.status).toBe(503);
 
     expect(warnSpy).toHaveBeenCalledWith(
       '[SW] cache fallback failed for',
@@ -302,10 +303,11 @@ describe('networkFirst', () => {
       .mockRejectedValue(new Error('Offline'));
 
     const request = new Request('https://example.com/page');
-    // Should throw the final fallback error, not the cache error
-    await expect(networkFirst(request, 'nav-v1', cacheStorage)).rejects.toThrow(
-      'Network request failed'
-    );
+    // Should return 503 gracefully, not throw the cache error
+    const response = await networkFirst(request, 'nav-v1', cacheStorage);
+    expect(response.status).toBe(503);
+    const text = await response.text();
+    expect(text).toBe('Service Unavailable');
     fetchSpy.mockRestore();
   });
 });

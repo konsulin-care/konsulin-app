@@ -274,12 +274,13 @@ describe('fetch cache failure resilience', () => {
       method: 'GET'
     });
 
-    // The promise passed to respondWith should reject with the graceful error,
-    // not the raw 'Cache corrupted' error from caches.open
+    // The promise passed to respondWith should resolve with a 503 Service Unavailable,
+    // not reject or throw the raw 'Cache corrupted' error from caches.open
     const capturedPromise = event.respondWith.mock.calls[0][0];
-    await expect(capturedPromise).rejects.toThrow(
-      'Network request failed and no cache/fallback available'
-    );
+    const response = await capturedPromise;
+    expect(response.status).toBe(503);
+    const text = await response.text();
+    expect(text).toBe('Service Unavailable');
   });
 });
 
@@ -317,8 +318,8 @@ describe('sw-register.js', () => {
 describe('defense-in-depth URL validation', () => {
   it('cacheFirst throws for non-http URLs', async () => {
     const patchedCode = SW_CODE.replace(
-      'async function cacheFirst(request, cacheName) {',
-      'self.__testCacheFirst = async function cacheFirst(request, cacheName) {'
+      'async function cacheFirst (request, cacheName) {',
+      'self.__testCacheFirst = async function cacheFirst (request, cacheName) {'
     );
 
     const captureSelf = createMockSelf() as MockSelf & {
@@ -344,10 +345,10 @@ describe('defense-in-depth URL validation', () => {
     ).rejects.toThrow('Invalid URL: only http/https URLs are allowed');
   });
 
-  it('networkFirst throws for non-http URLs', async () => {
+  it('networkFirst returns 503 for non-http URLs', async () => {
     const patchedCode = SW_CODE.replace(
-      'async function networkFirst(request, cacheName, fallbackUrl) {',
-      'self.__testNetworkFirst = async function networkFirst(request, cacheName, fallbackUrl) {'
+      'async function networkFirst (request, cacheName, fallbackUrl) {',
+      'self.__testNetworkFirst = async function networkFirst (request, cacheName, fallbackUrl) {'
     );
 
     const captureSelf = createMockSelf() as MockSelf & {
@@ -369,8 +370,12 @@ describe('defense-in-depth URL validation', () => {
 
     const request = new Request('javascript:void(0)'); // skipcq: JS-0087
     expect(captureSelf.__testNetworkFirst).toBeDefined();
-    await expect(
-      captureSelf.__testNetworkFirst(request, 'test-cache')
-    ).rejects.toThrow('Invalid URL: only http/https URLs are allowed');
+    const response = await captureSelf.__testNetworkFirst(
+      request,
+      'test-cache'
+    );
+    expect(response.status).toBe(503);
+    const text = await response.text();
+    expect(text).toBe('Service Unavailable');
   });
 });
