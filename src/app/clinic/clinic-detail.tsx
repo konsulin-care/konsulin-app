@@ -57,7 +57,9 @@ const isSlotAvailable = ({
   practitionerStartTime: Date;
   practitionerEndTime: Date;
 }>) => {
-  const slotDays = slot.daysOfWeek.map((day: string) => day.toLowerCase());
+  const slotDays = (slot.daysOfWeek ?? []).map((day: string) =>
+    day.toLowerCase()
+  );
   const isDayMatch = slotDays.some((day: string) => filterDays.includes(day));
 
   if (!isDayMatch) return false;
@@ -122,9 +124,7 @@ export default function ClinicDetail() {
   const filteredPractitioners = useMemo(() => {
     if (
       !keyword &&
-      Object.keys(practitionerFilter).every(
-        key => practitionerFilter[key] === undefined
-      )
+      Object.values(practitionerFilter).every(val => val === undefined)
     ) {
       return practitionersData;
     }
@@ -136,7 +136,7 @@ export default function ClinicDetail() {
     const hasTimeFilter = Boolean(start_time) || Boolean(end_time);
 
     const filterDays = hasDateFilter
-      ? generateFilterDays(start_date, end_date)
+      ? generateFilterDays(start_date!, end_date!)
       : [];
 
     const filterStartTime = start_time
@@ -147,10 +147,10 @@ export default function ClinicDetail() {
       ? parseTime(end_time, 'HH:mm')
       : setHours(setMinutes(new Date(), 59), 23); // default to 23:59
 
-    return practitionersData.filter((practitioner: IPractitioner) => {
+    return practitionersData.filter((practitioner: any) => {
       // name filtering
       const fullName = mergeNames(
-        practitioner.name,
+        practitioner.name ?? [],
         practitioner.qualification
       );
       if (!fullName) return false;
@@ -167,13 +167,13 @@ export default function ClinicDetail() {
       // if no date or time filters applied, skip availability filtering
       if (!hasDateFilter && !hasTimeFilter) return true;
 
-      return availableTime.some(slot => {
+      return availableTime.some((slot: any) => {
         const practitionerStartTime = parseTime(
-          slot.availableStartTime,
+          slot.availableStartTime ?? '00:00:00',
           'HH:mm:ss'
         );
         const practitionerEndTime = parseTime(
-          slot.availableEndTime,
+          slot.availableEndTime ?? '23:59:00',
           'HH:mm:ss'
         );
 
@@ -211,13 +211,13 @@ export default function ClinicDetail() {
     }
     return (
       <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-        {practitionersData.map((practitioner: IPractitioner) => {
+        {practitionersData.map((practitioner: any) => {
           const displayName = mergeNames(
-            practitioner.name,
+            practitioner.name ?? [],
             practitioner.qualification
           );
-          const email = practitioner.telecom.find(
-            item => item.system === 'email'
+          const email = practitioner.telecom?.find(
+            (item: any) => item.system === 'email'
           );
           const { initials, backgroundColor, seed } = generateAvatarPlaceholder(
             {
@@ -226,6 +226,8 @@ export default function ClinicDetail() {
               email: email?.value
             }
           );
+          const placeholderInitials = initials ?? '';
+          const placeholderBg = backgroundColor ?? '';
           const photoUrl = practitioner.photo?.[0]?.url;
 
           return (
@@ -236,8 +238,8 @@ export default function ClinicDetail() {
               <div className='relative flex justify-center'>
                 <Avatar
                   seed={seed}
-                  initials={initials}
-                  backgroundColor={backgroundColor}
+                  initials={placeholderInitials}
+                  backgroundColor={placeholderBg}
                   photoUrl={photoUrl}
                   className='text-2xl'
                 />
@@ -252,14 +254,16 @@ export default function ClinicDetail() {
                 {displayName}
               </div>
               <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                {practitioner.practitionerRole.specialty?.map(specialty => (
-                  <Badge
-                    key={specialty.text}
-                    className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
-                  >
-                    {specialty.text}
-                  </Badge>
-                ))}
+                {practitioner.practitionerRole.specialty?.map(
+                  (specialty: any) => (
+                    <Badge
+                      key={specialty.text}
+                      className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
+                    >
+                      {specialty.text}
+                    </Badge>
+                  )
+                )}
               </div>
               <Link
                 href={`/practitioner?practitionerRoleId=${practitioner.practitionerRole.id}`}

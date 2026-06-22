@@ -60,7 +60,7 @@ export default function ScheduleDetail() {
     isLoading: isUpcomingLoading,
     isError: isUpcomingError
   } = useGetAllAppointments({
-    patientId: authState?.userInfo?.fhirId
+    patientId: authState?.userInfo?.fhirId ?? ''
   });
 
   const appointmentData = useMemo(() => {
@@ -89,23 +89,26 @@ export default function ScheduleDetail() {
       }
 
       const name = mergeNames(
-        appointmentData.practitionerName,
-        appointmentData.practitionerQualification
+        appointmentData.practitionerName ?? [],
+        appointmentData.practitionerQualification ?? undefined
       );
 
       const avatar = generateAvatarPlaceholder({
-        id: appointmentData.practitionerId,
+        id: appointmentData.practitionerId ?? undefined,
         name,
-        email: appointmentData.practitionerEmail
+        email: appointmentData.practitionerEmail ?? undefined
       });
 
-      const time = format(new Date(appointmentData.slotStart), 'HH:mm');
-      const date = format(new Date(appointmentData.slotStart), 'dd/MM/yyy');
+      const time = format(new Date(appointmentData.slotStart ?? ''), 'HH:mm');
+      const date = format(
+        new Date(appointmentData.slotStart ?? ''),
+        'dd/MM/yyy'
+      );
 
       return {
         displayName: name,
-        initials: avatar.initials,
-        backgroundColor: avatar.backgroundColor,
+        initials: avatar.initials ?? '',
+        backgroundColor: avatar.backgroundColor ?? '',
         seed: avatar.seed,
         time,
         date

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { addDays } from 'date-fns';
 import { useState } from 'react';
 import Calendar from 'react-calendar';
@@ -8,7 +7,10 @@ import styles from './dob-calendar.module.css';
 /**
  *
  */
-export default function DobCalendar({ value, onChange }) {
+export default function DobCalendar({
+  value,
+  onChange
+}: Readonly<{ value: Date | null; onChange: (date: Date) => void }>) {
   const [selectedDate, setSelectedDate] = useState(value);
 
   const handleDateChange = (date: any) => {
@@ -16,7 +18,7 @@ export default function DobCalendar({ value, onChange }) {
     setSelectedDate(date);
   };
 
-  const tileDisabled = ({ date, view }) => {
+  const tileDisabled = ({ date, view }: { date: Date; view: string }) => {
     if (view === 'month') {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -26,7 +28,7 @@ export default function DobCalendar({ value, onChange }) {
     return false;
   };
 
-  const getTileClassName = ({ date, view }) => {
+  const getTileClassName = ({ date, view }: { date: Date; view: string }) => {
     const classes = [styles['custom-tile']];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -55,12 +57,14 @@ export default function DobCalendar({ value, onChange }) {
   return (
     <div className='p-4'>
       <Calendar
-        onChange={value => handleDateChange(value)}
+        onChange={value => {
+          handleDateChange(value);
+        }}
         value={selectedDate}
         prev2Label={null}
         next2Label={null}
         tileDisabled={tileDisabled}
-        className={`${styles['custom-calendar']}`}
+        className={styles['custom-calendar']}
         tileClassName={getTileClassName}
       />
     </div>

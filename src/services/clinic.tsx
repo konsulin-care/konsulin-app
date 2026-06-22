@@ -1,5 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { BundleEntry, PractitionerRole } from 'fhir/r4';
+import {
+  BundleEntry,
+  Invoice,
+  Organization,
+  PractitionerRole,
+  Schedule
+} from 'fhir/r4';
 import { useMemo } from 'react';
 import { getAPI } from './api';
 
@@ -69,27 +75,29 @@ export const useClinicById = (clinicId: string) => {
 
   if (data) {
     clinic = data.find(
-      (item: BundleEntry) => item.resource.resourceType === 'Organization'
+      (item: BundleEntry) => item.resource?.resourceType === 'Organization'
     );
     practitioners = data.filter(
-      (item: BundleEntry) => item.resource.resourceType === 'Practitioner'
+      (item: BundleEntry) => item.resource?.resourceType === 'Practitioner'
     );
     practitionerRoles = data.filter(
-      (item: BundleEntry) => item.resource.resourceType === 'PractitionerRole'
+      (item: BundleEntry) => item.resource?.resourceType === 'PractitionerRole'
     );
   }
 
   const newPractitionerData = practitioners.map((item: BundleEntry) => {
-    const practitionerId = item.resource.id;
+    const practitionerId = item.resource!.id!;
 
-    const practitionerRoleData = practitionerRoles.find(
-      (item: BundleEntry<PractitionerRole>) =>
-        item.resource.practitioner.reference.split('/')[1] === practitionerId
+    const practitionerRoleData = (
+      practitionerRoles as BundleEntry<PractitionerRole>[]
+    ).find(
+      item =>
+        item.resource!.practitioner!.reference!.split('/')[1] === practitionerId
     );
 
     return {
       ...item.resource,
-      practitionerRole: practitionerRoleData.resource
+      practitionerRole: practitionerRoleData!.resource as PractitionerRole
     };
   });
 
@@ -100,6 +108,13 @@ export const useClinicById = (clinicId: string) => {
     isFetching,
     isError
   };
+};
+
+export type DetailPractitionerData = Omit<BundleEntry, 'resource'> & {
+  resource: PractitionerRole;
+  invoice?: Invoice;
+  organization?: Organization;
+  schedule?: Schedule;
 };
 
 export const useDetailPractitioner = (practitionerRoleId: string) => {
@@ -120,28 +135,28 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
   let organization: BundleEntry | undefined;
   let invoice: BundleEntry | undefined;
   let schedules: BundleEntry | undefined;
-  let newData = undefined;
+  let newData: DetailPractitionerData | undefined;
 
   if (data) {
     practitionerRole = data.find(
-      (item: BundleEntry) => item.resource.resourceType === 'PractitionerRole'
+      (item: BundleEntry) => item.resource?.resourceType === 'PractitionerRole'
     );
     organization = data.find(
-      (item: BundleEntry) => item.resource.resourceType === 'Organization'
+      (item: BundleEntry) => item.resource?.resourceType === 'Organization'
     );
     invoice = data.find(
-      (item: BundleEntry) => item.resource.resourceType === 'Invoice'
+      (item: BundleEntry) => item.resource?.resourceType === 'Invoice'
     );
     schedules = data.find(
-      (item: BundleEntry) => item.resource.resourceType === 'Schedule'
+      (item: BundleEntry) => item.resource?.resourceType === 'Schedule'
     );
 
     newData = {
       ...practitionerRole,
-      invoice: invoice?.resource,
-      organization: organization?.resource,
-      schedule: schedules?.resource
-    };
+      invoice: invoice?.resource as Invoice | undefined,
+      organization: organization?.resource as Organization | undefined,
+      schedule: schedules?.resource as Schedule | undefined
+    } as DetailPractitionerData;
   }
 
   return {

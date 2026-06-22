@@ -26,8 +26,8 @@ function getCurrentAvatar(
   });
   return {
     seed: placeholder.seed,
-    initials: placeholder.initials,
-    backgroundColor: placeholder.backgroundColor,
+    initials: placeholder.initials ?? '',
+    backgroundColor: placeholder.backgroundColor ?? '',
     photoUrl: authState?.userInfo?.profile_picture || ''
   };
 }
@@ -41,8 +41,8 @@ function avatarInfoForRole(role: string): AvatarInfo {
   });
   return {
     seed: placeholder.seed,
-    initials: placeholder.initials,
-    backgroundColor: placeholder.backgroundColor,
+    initials: placeholder.initials ?? '',
+    backgroundColor: placeholder.backgroundColor ?? '',
     photoUrl: ''
   };
 }

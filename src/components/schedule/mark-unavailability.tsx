@@ -113,7 +113,10 @@ function UnavailabilityFormBody({
 }>) {
   const roles = (roleEntries || [])
     .map((e: BundleEntry<IPractitionerRoleDetail>) => e.resource)
-    .filter((r: IPractitionerRoleDetail) => r?.active);
+    .filter(
+      (r: IPractitionerRoleDetail | undefined): r is IPractitionerRoleDetail =>
+        r?.active ?? false
+    );
 
   let rolesContent: React.ReactNode;
   if (rolesLoading) {
@@ -121,16 +124,16 @@ function UnavailabilityFormBody({
   } else if (roles?.length) {
     rolesContent = (
       <div className='grid grid-cols-1 gap-2'>
-        {roles.map((r: IPractitionerRoleDetail) => (
+        {roles.map(r => (
           <label key={r.id} className='flex items-center gap-2'>
             <Checkbox
-              checked={selectedRoleIds.includes(r.id)}
+              checked={selectedRoleIds.includes(r.id!)}
               onCheckedChange={() => {
-                if (selectedRoleIds.includes(r.id))
+                if (selectedRoleIds.includes(r.id!))
                   onSelectedRoleIdsChange(
-                    selectedRoleIds.filter(x => x !== r.id)
+                    selectedRoleIds.filter(x => x !== r.id!)
                   );
-                else onSelectedRoleIdsChange([...selectedRoleIds, r.id]);
+                else onSelectedRoleIdsChange([...selectedRoleIds, r.id!]);
               }}
             />
             <span className='text-sm'>{r.organizationData?.name || r.id}</span>
@@ -297,7 +300,7 @@ function useMarkUnavailabilityForm() {
   const [open, setOpen] = useState(false);
   const [conflictOpen, setConflictOpen] = useState(false);
 
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [date, setDate] = useState<Date | undefined>();
   const [allDay, setAllDay] = useState(true);
   const [fromTime, setFromTime] = useState('');
   const [toTime, setToTime] = useState('');
@@ -308,10 +311,12 @@ function useMarkUnavailabilityForm() {
     isLoading: rolesLoading,
     refetch,
     data: roleEntries
-  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
+  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId!, {
     onSuccess: entries => {
       const resources = entries?.map(e => e.resource) || [];
-      const active = resources.filter(r => r.active).map(r => r.id);
+      const active = (resources || [])
+        .filter((r: any) => r?.active)
+        .map((r: any) => r.id!);
       setSelectedRoleIds(active);
     }
   });
@@ -324,7 +329,7 @@ function useMarkUnavailabilityForm() {
 
   const canSave = useMemo(() => {
     if (!date) return false;
-    if (!selectedRoleIds.length) return false;
+    if (selectedRoleIds.length === 0) return false;
     if (allDay) return true;
     if (!fromTime || !toTime) return false;
     return fromTime < toTime;
@@ -441,7 +446,7 @@ function ConflictAlertDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Conflicts detected</AlertDialogTitle>
           <AlertDialogDescription>
-            {conflicts.length
+            {conflicts.length > 0
               ? conflicts.map(c => (
                   <div key={c.slotId} className='mb-2'>
                     Role: {c.practitionerRoleId}

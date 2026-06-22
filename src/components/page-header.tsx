@@ -39,19 +39,25 @@ function getPageIndicator(
   searchParams: URLSearchParams
 ): string | null {
   switch (pathname) {
-    case '/':
+    case '/': {
       return 'Welcome to Your Dashboard';
-    case '/clinic':
+    }
+    case '/clinic': {
       if (searchParams.has('clinicId')) return null;
       return 'Book a Session';
-    case '/assessments':
+    }
+    case '/assessments': {
       return 'Assessment Center';
-    case '/profile':
+    }
+    case '/profile': {
       return 'User Profile';
-    case '/recommendation':
+    }
+    case '/recommendation': {
       return 'Recommended for You';
-    default:
+    }
+    default: {
       return '';
+    }
   }
 }
 
@@ -95,7 +101,12 @@ export default function PageHeader({
 
   const guestAvatar = useMemo(() => {
     const seed = crypto.randomUUID();
-    return generateAvatarPlaceholder({ id: seed, name: 'Guest' });
+    const placeholder = generateAvatarPlaceholder({ id: seed, name: 'Guest' });
+    return {
+      ...placeholder,
+      initials: placeholder.initials ?? '',
+      backgroundColor: placeholder.backgroundColor ?? ''
+    };
   }, []);
 
   const parsedAppointmentsData = useMemo(() => {
@@ -108,7 +119,7 @@ export default function PageHeader({
 
     const parsed = parseMergedAppointments(appointmentData);
     const filtered = parsed.filter(session => {
-      const slotStart = parseISO(session.slotStart);
+      const slotStart = parseISO(session.slotStart ?? '');
       return isAfter(slotStart, getNow());
     });
 
@@ -121,7 +132,7 @@ export default function PageHeader({
 
     const parsed = parseMergedSessions(sessionData);
     const filtered = parsed.filter(session => {
-      const slotStart = parseISO(session.slotStart);
+      const slotStart = parseISO(session.slotStart ?? '');
       return isAfter(slotStart, getNow());
     });
 
@@ -185,7 +196,7 @@ export default function PageHeader({
 
       {hasUpcomingSession && (
         <>
-          <UpcomingSession data={upcomingData} role={role} />
+          <UpcomingSession data={upcomingData} role={role ?? ''} />
           <div className='mt-1 flex justify-end'>
             <Link href='/schedule' className='text-[10px] text-[#2c2f35]'>
               See All

@@ -37,11 +37,11 @@ function ClinicCard({
         height={100}
       />
       <div className='text-primary mt-2 text-center font-bold'>
-        {clinic.resource.resourceType === 'Organization' &&
-          clinic.resource.name}
+        {clinic.resource?.resourceType === 'Organization' &&
+          clinic.resource?.name}
       </div>
       <Button
-        onClick={() => onSelect(clinic.resource.id)}
+        onClick={() => onSelect(clinic.resource?.id ?? '')}
         className='bg-secondary mt-2 w-full rounded-[32px] py-2 font-normal text-white'
       >
         View Practitioners
@@ -54,9 +54,9 @@ function ClinicCard({
 function clinicGrid(clinics: BundleEntry[], onSelect: (id: string) => void) {
   return (
     <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-      {clinics.map(clinic => (
+      {clinics.map((clinic: BundleEntry) => (
         <ClinicCard
-          key={clinic.resource.id}
+          key={clinic.resource?.id ?? ''}
           clinic={clinic}
           onSelect={onSelect}
         />
@@ -124,10 +124,13 @@ export default function ClinicList() {
 
     if (searchTerm) {
       if (filteredClinics.length > 0) {
-        return clinicGrid(filteredClinics, handleSelectedClinic);
+        return clinicGrid(
+          filteredClinics as BundleEntry[],
+          handleSelectedClinic
+        );
       }
       if (showServerResults && serverClinics && serverClinics.length > 0) {
-        return clinicGrid(serverClinics, handleSelectedClinic);
+        return clinicGrid(serverClinics as BundleEntry[], handleSelectedClinic);
       }
       if (isServerSearching) {
         return (

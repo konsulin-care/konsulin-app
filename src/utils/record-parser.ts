@@ -4,7 +4,6 @@ import {
   Coding,
   FhirResource,
   Observation,
-  QuestionnaireItem,
   QuestionnaireResponse,
   QuestionnaireResponseItem,
   QuestionnaireResponseItemAnswer
@@ -14,7 +13,7 @@ import {
 const extractObservationFromBundle = (resource: Observation) => {
   const codeList = resource.code?.coding ?? [];
   const loincCode = codeList.find(
-    (c: Coding) => c.system === 'http://loinc.org'
+    (c: Coding) => c.system === 'https://loinc.org'
   )?.code;
   const notes = (resource.note ?? []).map(n => n.text).join('\n\n');
 
@@ -49,9 +48,10 @@ const extractObservationFromBundle = (resource: Observation) => {
 const extractQuestionnaireFromBundle = (resource: QuestionnaireResponse) => {
   const result =
     resource.item
-      ?.find((i: QuestionnaireItem) => i.linkId === 'interpretation')
-      ?.item?.find((i: QuestionnaireItem) => i.linkId === 'result-brief')
-      ?.answer?.[0]?.valueString ?? null;
+      ?.find((i: QuestionnaireResponseItem) => i.linkId === 'interpretation')
+      ?.item?.find(
+        (i: QuestionnaireResponseItem) => i.linkId === 'result-brief'
+      )?.answer?.[0]?.valueString ?? null;
 
   return {
     type: 'QuestionnaireResponse',
@@ -75,7 +75,7 @@ const processBundleResource = (resource: FhirResource) => {
 
 /** Parse an array of bundle responses into sorted flat records. */
 export const parseRecordBundles = (bundles: IBundleResponse[]) => {
-  const results = [];
+  const results: any[] = [];
 
   if (!Array.isArray(bundles)) return results;
 
@@ -83,14 +83,14 @@ export const parseRecordBundles = (bundles: IBundleResponse[]) => {
     const bundle = bundleResponse.resource;
     if (
       bundle.resourceType !== 'Bundle' ||
-      bundle.total <= 0 ||
+      (bundle.total ?? 0) <= 0 ||
       !bundle.entry
     ) {
       continue;
     }
 
     for (const entry of bundle.entry) {
-      const parsed = processBundleResource(entry.resource);
+      const parsed = processBundleResource(entry.resource!);
       if (parsed) results.push(parsed);
     }
   }
@@ -136,7 +136,7 @@ const collectUniqueResources = (bundle: Bundle): Map<string, FhirResource> => {
 const extractValueObservation = (resource: Observation) => {
   const codeList = resource.code?.coding ?? [];
   const loincCode = codeList.find(
-    (c: Coding) => c.system === 'http://loinc.org'
+    (c: Coding) => c.system === 'https://loinc.org'
   )?.code;
 
   const notes = (resource.note ?? []).map(n => n.text).join('\n\n');
@@ -173,7 +173,7 @@ const extractValueObservation = (resource: Observation) => {
 const flattenItems = (
   node: QuestionnaireResponseItem
 ): QuestionnaireResponseItem[] => {
-  const children = (node.item ?? []).flatMap(flattenItems);
+  const children = (node.item ?? []).flatMap(item => flattenItems(item));
   return [node, ...children];
 };
 
@@ -188,8 +188,8 @@ const extractAnswerValue = (
   if ('valueInteger' in ans) return ans.valueInteger ?? null;
   if ('valueDate' in ans) return ans.valueDate ?? null;
   if ('valueQuantity' in ans)
-    return `${ans.valueQuantity.value} ${ans.valueQuantity.unit}`;
-  if ('valueCoding' in ans) return ans.valueCoding.display ?? null;
+    return `${ans.valueQuantity?.value ?? ''} ${ans.valueQuantity?.unit ?? ''}`;
+  if ('valueCoding' in ans) return ans.valueCoding?.display ?? null;
   return null;
 };
 
@@ -266,22 +266,25 @@ export const parseRecordBundlePractitioner = (bundle: Bundle) => {
   const uniqueMap = collectUniqueResources(bundle);
   const results = [];
 
-  for (const resource of Array.from(uniqueMap.values())) {
+  for (const resource of uniqueMap.values()) {
     if (!resource?.resourceType || !resource.id) continue;
 
     switch (resource.resourceType) {
-      case 'Observation':
+      case 'Observation': {
         results.push(extractValueObservation(resource));
         break;
-      case 'QuestionnaireResponse':
+      }
+      case 'QuestionnaireResponse': {
         if (resource.questionnaire === 'Questionnaire/soap') {
           results.push(extractSoapQuestionnaire(resource));
         } else {
           results.push(extractBriefQuestionnaire(resource));
         }
         break;
-      default:
+      }
+      default: {
         break;
+      }
     }
   }
 

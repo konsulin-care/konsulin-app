@@ -17,7 +17,7 @@ function hasParticipantForRole(
   roleId: string
 ): boolean {
   return (
-    invoice.resource.participant?.some(
+    invoice.resource?.participant?.some(
       p => p.actor?.reference === `PractitionerRole/${roleId}`
     ) ?? false
   );
@@ -29,7 +29,7 @@ function hasActorForRole(
   roleId: string
 ): boolean {
   return (
-    schedule.resource.actor?.some(
+    schedule.resource?.actor?.some(
       actor => actor.reference === `PractitionerRole/${roleId}`
     ) ?? false
   );
@@ -101,28 +101,28 @@ export const useGetPractitionerRolesDetail = (
 
       const practitionerRoles = entries.filter(
         (entry: BundleEntry) =>
-          entry.resource.resourceType === 'PractitionerRole'
+          entry.resource?.resourceType === 'PractitionerRole'
       );
 
       const organizations = entries.filter(
-        (entry: BundleEntry) => entry.resource.resourceType === 'Organization'
+        (entry: BundleEntry) => entry.resource?.resourceType === 'Organization'
       );
 
       const schedules = entries.filter(
-        (entry: BundleEntry) => entry.resource.resourceType === 'Schedule'
+        (entry: BundleEntry) => entry.resource?.resourceType === 'Schedule'
       );
 
       const invoices = entries.filter(
-        (entry: BundleEntry) => entry.resource.resourceType === 'Invoice'
+        (entry: BundleEntry) => entry.resource?.resourceType === 'Invoice'
       );
 
       // map PractitionerRole entries
       return practitionerRoles.map((role: BundleEntry<PractitionerRole>) => {
-        const roleId = role.resource.id;
-        const orgRef = role.resource.organization?.reference?.split('/')[1];
+        const roleId = role.resource!.id!;
+        const orgRef = role.resource!.organization?.reference?.split('/')[1];
 
         const organizationData = organizations.find(
-          (org: BundleEntry<Organization>) => org.resource.id === orgRef
+          (org: BundleEntry<Organization>) => org.resource!.id === orgRef
         )?.resource;
 
         const invoiceData = invoices.find((invoice: BundleEntry<Invoice>) =>

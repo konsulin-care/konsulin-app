@@ -18,7 +18,13 @@ const testItems = [
 /**
  *
  */
-export default function ObjectiveFindingModal({ objectiveFinding, onChange }) {
+export default function ObjectiveFindingModal({
+  objectiveFinding,
+  onChange
+}: {
+  objectiveFinding: boolean[];
+  onChange: (items: any[]) => void;
+}) {
   const [selectedTest, setSelectedTest] = useState(objectiveFinding);
 
   const handleSelectedTest = (index: number) => {

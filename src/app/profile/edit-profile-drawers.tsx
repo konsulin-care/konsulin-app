@@ -47,7 +47,10 @@ export function EditProfileDrawers({
             <DrawerTitle />
             <DrawerDescription />
           </DrawerHeader>
-          <DobCalendar value={birthDate} onChange={onDOBChange} />
+          <DobCalendar
+            value={birthDate ? new Date(birthDate) : null}
+            onChange={onDOBChange}
+          />
         </DrawerContent>
       </Drawer>
 

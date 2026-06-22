@@ -49,10 +49,13 @@ export default function RecordAssessment({ recordId, title }: Props) {
   const {
     data: questionnaireResponse,
     isLoading: questionnaireResponseIsLoading
-  } = useQuestionnaireResponse({ questionnaireId: recordId, enabled: true });
-  const [scoreList, setScoreList] = useState([]);
+  } = useQuestionnaireResponse({
+    questionnaireId: recordId,
+    enabled: true
+  }) as any;
+  const [scoreList, setScoreList] = useState<any[]>([]);
   const [currentLocation, setCurrentLocation] = useState<string>('');
-  const [colorMap, setColorMap] = useState({});
+  const [colorMap, setColorMap] = useState<Record<string, string>>({});
   const [polledResultBrief, setPolledResultBrief] = useState<string | null>(
     null
   );
@@ -172,14 +175,14 @@ export default function RecordAssessment({ recordId, title }: Props) {
           setPolledResultBrief(note);
 
           const interpretationItem = questionnaireResponse.item.find(
-            item => item.linkId === 'interpretation'
+            (item: any) => item.linkId === 'interpretation'
           );
 
           const updatedInterpretationItem = {
             ...interpretationItem,
             item: [
               ...(interpretationItem?.item ?? []).filter(
-                i => i.linkId !== 'result-brief'
+                (i: any) => i.linkId !== 'result-brief'
               ),
               {
                 linkId: 'result-brief',
@@ -190,7 +193,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
           const updatedQR = {
             ...questionnaireResponse,
-            item: questionnaireResponse.item.map(item =>
+            item: questionnaireResponse.item.map((item: any) =>
               item.linkId === 'interpretation'
                 ? updatedInterpretationItem
                 : item
@@ -220,11 +223,11 @@ export default function RecordAssessment({ recordId, title }: Props) {
       if (!authState.isAuthenticated) return;
 
       const interpretationItem = questionnaireResponse.item.find(
-        item => item.linkId === 'interpretation'
+        (item: any) => item.linkId === 'interpretation'
       );
 
       const resultBriefItem = interpretationItem?.item.find(
-        subItem => subItem.linkId === 'result-brief'
+        (subItem: any) => subItem.linkId === 'result-brief'
       );
 
       const existingResult =
@@ -263,11 +266,11 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
     // Otherwise, check persisted QuestionnaireResponse
     const interpretationItem = questionnaireResponse?.item.find(
-      item => item.linkId === 'interpretation'
+      (item: any) => item.linkId === 'interpretation'
     );
 
     const resultBriefItem = interpretationItem?.item.find(
-      subItem => subItem.linkId === 'result-brief'
+      (subItem: any) => subItem.linkId === 'result-brief'
     );
 
     // No result yet → placeholder

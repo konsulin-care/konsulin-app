@@ -110,7 +110,7 @@ export default function Practitioner() {
         if (saved?.value?.roleId === practitionerRoleId) {
           setPractitionerData(saved.value);
         } else {
-          setPractitionerData(null);
+          setPractitionerData(undefined);
         }
         setPractitionerDataLoading(false);
       })
@@ -132,7 +132,7 @@ export default function Practitioner() {
     isLoading,
     isError,
     isFetching
-  } = useDetailPractitioner(practitionerData?.roleId);
+  } = useDetailPractitioner(practitionerData?.roleId ?? '');
 
   /** Navigate back to home after booking submission. */
   const handleClose = () => {
@@ -143,7 +143,7 @@ export default function Practitioner() {
 
   const displayName = useMemo(() => {
     const name = mergeNames(
-      practitionerData?.name,
+      practitionerData?.name ?? [],
       practitionerData?.qualification
     );
 
@@ -155,6 +155,8 @@ export default function Practitioner() {
     name: displayName,
     email: practitionerData?.email
   });
+  const placeholderInitials = initials ?? '';
+  const placeholderBg = backgroundColor ?? '';
 
   const photoUrl = practitionerData?.photo?.[0]?.url;
 
@@ -211,8 +213,8 @@ export default function Practitioner() {
       <div className='flex flex-col items-center'>
         <Avatar
           seed={seed}
-          initials={initials}
-          backgroundColor={backgroundColor}
+          initials={placeholderInitials}
+          backgroundColor={placeholderBg}
           photoUrl={photoUrl}
           className='text-2xl'
         />
@@ -220,7 +222,7 @@ export default function Practitioner() {
         <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
           <HeartPulse size={16} color='#08979C' fill='white' />
           <span className='whitespace-nowrap'>
-            {detailPractitioner.organization.name}
+            {detailPractitioner!.organization!.name}
           </span>
         </Badge>
       </div>
@@ -240,15 +242,15 @@ export default function Practitioner() {
         {practitionerHeader}
 
         <PractitionerAvailability
-          practitionerRole={detailPractitioner.resource}
-          scheduleId={detailPractitioner?.schedule?.id}
-          invoice={detailPractitioner.invoice}
+          practitionerRole={detailPractitioner!.resource}
+          scheduleId={detailPractitioner?.schedule?.id ?? ''}
+          invoice={detailPractitioner!.invoice!}
           practitionerName={displayName}
-          practitionerOrganizationName={detailPractitioner.organization.name}
+          practitionerOrganizationName={detailPractitioner!.organization!.name}
           practitionerAvatar={{
             photoUrl,
-            initials,
-            backgroundColor
+            initials: placeholderInitials,
+            backgroundColor: placeholderBg
           }}
         >
           <AvailabilityTrigger />
@@ -263,19 +265,19 @@ export default function Practitioner() {
             <div className='flex justify-between text-[12px]'>
               <span className='mr-2'>Affiliation</span>
               <span className='font-bold'>
-                {detailPractitioner.organization.name}
+                {detailPractitioner!.organization!.name}
               </span>
             </div>
             <div className='flex justify-between text-[12px]'>
               <span className='mr-2'>Fee</span>
               <span className='font-bold'>
-                {detailPractitioner.invoice?.totalNet
+                {detailPractitioner!.invoice?.totalNet
                   ? `${new Intl.NumberFormat('id-ID', {
                       style: 'currency',
-                      currency: detailPractitioner.invoice.totalNet.currency,
+                      currency: detailPractitioner!.invoice!.totalNet!.currency,
                       minimumFractionDigits: 0
                     }).format(
-                      detailPractitioner.invoice.totalNet.value
+                      detailPractitioner!.invoice!.totalNet!.value!
                     )} / Session`
                   : '-'}
               </span>
@@ -283,7 +285,7 @@ export default function Practitioner() {
           </div>
         </div>
 
-        {detailPractitioner.resource.specialty && (
+        {detailPractitioner!.resource.specialty && (
           <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9]'>
             <div className='flex items-center'>
               <HospitalIcon size={32} color='#13C2C2' className='mr-2' />
@@ -291,8 +293,8 @@ export default function Practitioner() {
             </div>
 
             <div className='mt-4 flex flex-wrap gap-2'>
-              {detailPractitioner.resource.specialty.length > 0 &&
-                detailPractitioner.resource.specialty.map(
+              {detailPractitioner!.resource.specialty.length > 0 &&
+                detailPractitioner!.resource.specialty.map(
                   (specialty: CodeableConcept) => (
                     <Badge
                       key={specialty.text}

@@ -19,7 +19,7 @@ import { useMemo } from 'react';
 /**
  *
  */
-export function useScheduleFilter<T extends { slotStart?: string }>({
+export function useScheduleFilter<T extends { slotStart?: string | null }>({
   data,
   sessionsFilter,
   keyword,

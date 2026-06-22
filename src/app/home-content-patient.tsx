@@ -55,7 +55,7 @@ function RecordCard({ record }: Readonly<{ record: IRecord }>) {
   const cleanDescription = (result || '-').replaceAll('\n\n', '. ');
 
   const queryParams = new URLSearchParams({
-    category: typeMappings[record.type]?.category,
+    category: String(typeMappings[record.type]?.category ?? ''),
     title
   }).toString();
   const url = `/record?recordId=${recordId}&${queryParams}`;

@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, sonarjs/cognitive-complexity, max-lines, react-hooks/exhaustive-deps, react/jsx-max-depth */
+/* eslint-disable @typescript-eslint/no-unused-vars, sonarjs/cognitive-complexity, max-lines, react-hooks/exhaustive-deps, react/jsx-max-depth */
 import EmptyState from '@/components/general/empty-state';
 import Input from '@/components/general/input';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -25,7 +25,7 @@ import {
 } from '@/services/clinicians';
 import { IPractitionerRoleDetail } from '@/types/practitioner';
 import { mapAddress } from '@/utils/helper';
-import { BundleEntry, CodeableConcept, Schedule } from 'fhir/r4';
+import { Address, BundleEntry, CodeableConcept, Schedule } from 'fhir/r4';
 import { ChevronDown, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -163,8 +163,8 @@ function extractTimezoneFromPeriod(period?: {
         const hoursStr = match[2];
         if (hoursStr.length === 4) {
           // Format: +0700 (4 digits)
-          const hours = parseInt(hoursStr.substring(0, 2), 10);
-          const minutes = parseInt(hoursStr.substring(2, 4), 10);
+          const hours = parseInt(hoursStr.slice(0, 2), 10);
+          const minutes = parseInt(hoursStr.slice(2, 4), 10);
           if (minutes === 0) {
             return `GMT${sign}${hours}`;
           }
@@ -200,7 +200,15 @@ function getTheLatestEntry<T extends { meta?: { lastUpdated?: string } }>(
 }
 
 /** Input field for a firm's fee. */
-const FeeInput = ({ id, value, onChange }) => {
+const FeeInput = ({
+  id,
+  value,
+  onChange
+}: {
+  id: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) => {
   return (
     <div className='flex w-full items-center justify-between'>
       <label htmlFor={id} className='text-sm font-medium text-gray-700'>
@@ -226,6 +234,13 @@ const SpecialtiesSection = ({
   onTagChange,
   onTagAdd,
   onTagRemove
+}: {
+  id: string;
+  specialties: CodeableConcept[];
+  tagInput: string;
+  onTagChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onTagAdd: (event: React.KeyboardEvent) => void;
+  onTagRemove: (tagIndex: number) => void;
 }) => {
   return (
     <div className='mt-2 flex w-full items-center'>
@@ -299,7 +314,15 @@ const ActiveFirmSection = ({
 };
 
 /** Toggle button content for the collapsible firm card. */
-const CollapsibleToggle = ({ isOpen, onToggle, data }) => (
+const CollapsibleToggle = ({
+  isOpen,
+  onToggle,
+  data
+}: {
+  isOpen: boolean;
+  onToggle: () => void;
+  data: { organizationData: { name?: string; address?: Address[] } };
+}) => (
   <button
     className={`toggle flex w-full items-center justify-between rounded-[25px] p-2 text-left focus:outline-none ${
       isOpen
@@ -322,7 +345,7 @@ const CollapsibleToggle = ({ isOpen, onToggle, data }) => (
       <div className='flex flex-col justify-center gap-1 pl-2'>
         <span className='text-sm'>{data.organizationData.name}</span>
         <span className='text-xs'>
-          {mapAddress(data.organizationData.address)}
+          {mapAddress(data.organizationData.address ?? [])}
         </span>
       </div>
     </div>
@@ -340,7 +363,17 @@ const CollapsibleToggle = ({ isOpen, onToggle, data }) => (
 );
 
 /** Expandable firm card with header and collapsible content. */
-const Collapsible = ({ isOpen, onToggle, children, data }) => (
+const Collapsible = ({
+  isOpen,
+  onToggle,
+  children,
+  data
+}: {
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+  data: { organizationData: { name?: string; address?: Address[] } };
+}) => (
   <div className='collapsible my-4 rounded-[25px] border bg-gray-50'>
     <CollapsibleToggle isOpen={isOpen} onToggle={onToggle} data={data} />
     {isOpen && (
@@ -368,6 +401,29 @@ const CollapsibleItem = ({
   setTagInputs,
   slotConfigs,
   setSlotConfigs
+}: {
+  index: number;
+  firm: IPractitionerRoleDetail;
+  invoice: any;
+  isOpen: boolean;
+  onToggle: (index: number) => void;
+  tagInputs: string[];
+  handleChangeFee: (index: number, value: string) => void;
+  handleAddTag: (index: number, e: React.KeyboardEvent) => void;
+  handleRemoveTag: (index: number, tagIndex: number) => void;
+  setTagInputs: React.Dispatch<React.SetStateAction<string[]>>;
+  slotConfigs: Record<
+    number,
+    { sessionDuration?: string; bufferTime?: string; timezone?: string }
+  >;
+  setSlotConfigs: React.Dispatch<
+    React.SetStateAction<
+      Record<
+        number,
+        { sessionDuration?: string; bufferTime?: string; timezone?: string }
+      >
+    >
+  >;
 }) => {
   return (
     <Collapsible
@@ -389,7 +445,7 @@ const CollapsibleItem = ({
         />
         <SpecialtiesSection
           id={`specialty-${index}`}
-          specialties={firm?.specialty}
+          specialties={firm?.specialty ?? []}
           tagInput={tagInputs[index] || ''}
           onTagChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
             setTagInputs((prevTags: string[]) => {
@@ -398,9 +454,7 @@ const CollapsibleItem = ({
               return updatedTags;
             })
           }
-          onTagAdd={(event: React.ChangeEvent<HTMLInputElement>) =>
-            handleAddTag(index, event)
-          }
+          onTagAdd={(event: React.KeyboardEvent) => handleAddTag(index, event)}
           onTagRemove={(tagIndex: number) => handleRemoveTag(index, tagIndex)}
         />
         <div className='flex w-full items-center justify-between'>
@@ -421,7 +475,7 @@ const CollapsibleItem = ({
               if (value === '') {
                 setSlotConfigs((s: any) => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), sessionDuration: '' } // NOSONAR - s[index] may be undefined
+                  [index]: { ...s[index], sessionDuration: '' }
                 }));
                 return;
               }
@@ -429,7 +483,7 @@ const CollapsibleItem = ({
               if (numberOnly.test(value) && Number(value) > 0) {
                 setSlotConfigs((s: any) => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), sessionDuration: value } // NOSONAR - s[index] may be undefined
+                  [index]: { ...s[index], sessionDuration: value }
                 }));
               }
             }}
@@ -453,7 +507,7 @@ const CollapsibleItem = ({
               if (value === '') {
                 setSlotConfigs((s: any) => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), bufferTime: '' }
+                  [index]: { ...s[index], bufferTime: '' }
                 }));
                 return;
               }
@@ -461,7 +515,7 @@ const CollapsibleItem = ({
               if (numberOnly.test(value)) {
                 setSlotConfigs((s: any) => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), bufferTime: value } // NOSONAR - s[index] may be undefined
+                  [index]: { ...s[index], bufferTime: value }
                 }));
               }
             }}
@@ -494,12 +548,17 @@ const EditPractice = () => {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
-  const [firmFilter, setFirmFilter] = useState({ city: null });
-  const [tagInputs, setTagInputs] = useState([]);
-  const [firmData, setFirmData] = useState([]);
-  const [invoiceData, setInvoiceData] = useState([]);
+  const [firmFilter, setFirmFilter] = useState<{
+    city: string | null;
+    province_code?: string;
+  }>({ city: null });
+  const [tagInputs, setTagInputs] = useState<string[]>([]);
+  const [firmData, setFirmData] = useState<IPractitionerRoleDetail[]>([]);
+  const [invoiceData, setInvoiceData] = useState<any[]>([]);
   const { state: authState } = useAuth();
-  const [openCollapsibles, setOpenCollapsibles] = useState({});
+  const [openCollapsibles, setOpenCollapsibles] = useState<
+    Record<number, boolean>
+  >({});
   const [isSaving, setIsSaving] = useState(false);
   const [slotConfigs, setSlotConfigs] = useState<
     Record<
@@ -511,14 +570,16 @@ const EditPractice = () => {
   const {
     isLoading: isPractitionerRolesLoading,
     isFetching: isPractitionerRolesFetching
-  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
+  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId!, {
     onSuccess: data => {
-      const resources = data?.map(entry => entry.resource) || [];
+      const resources = (data?.map(entry => entry.resource) || []).filter(
+        Boolean
+      ) as IPractitionerRoleDetail[];
 
       /* separate invoice data from the main data
        * because they use different endpoints */
-      const invoiceDataList = [];
-      const firmDataList = [];
+      const invoiceDataList: any[] = [];
+      const firmDataList: any[] = [];
 
       resources.forEach(resource => {
         const { invoiceData, id, ...rest } = resource;
@@ -702,7 +763,7 @@ const EditPractice = () => {
       const scheduleUpdateResults = await Promise.allSettled(
         firmData.map(async (firm, index) => {
           const latestSchedule = getTheLatestEntry<Schedule>(
-            firm.scheduleData as Schedule[]
+            firm.scheduleData as unknown as Schedule[]
           );
           if (!latestSchedule) {
             return { skipped: true, index };
@@ -739,14 +800,14 @@ const EditPractice = () => {
             const replaceIdx = sArr.findIndex(
               (s: any) => s?.id === result.value.updated?.id
             );
-            if (replaceIdx >= 0) {
-              sArr[replaceIdx] = result.value.updated;
-            } else {
+            if (replaceIdx === -1) {
               sArr.unshift(result.value.updated);
+            } else {
+              sArr[replaceIdx] = result.value.updated;
             }
             updatedFirm[index] = {
               ...updatedFirm[index],
-              scheduleData: sArr
+              scheduleData: sArr as unknown as Schedule
             };
           }
         } else if (result.status === 'rejected') {
@@ -802,7 +863,7 @@ const EditPractice = () => {
   }, []);
 
   const handleAddTag = useCallback(
-    (index: number, e: { key: string; preventDefault: () => void }) => {
+    (index: number, e: React.KeyboardEvent) => {
       const inputValue = tagInputs[index]?.trim();
 
       if (e.key === 'Enter' && inputValue !== '') {
@@ -813,7 +874,7 @@ const EditPractice = () => {
           const currentSpecialties = updatedData[index].specialty || [];
           const alreadyExists = currentSpecialties.some(
             (specialty: CodeableConcept) =>
-              specialty.text.toLowerCase() === inputValue.toLowerCase()
+              (specialty.text ?? '').toLowerCase() === inputValue.toLowerCase()
           );
 
           if (!alreadyExists) {
@@ -857,7 +918,7 @@ const EditPractice = () => {
       const updatedData = [...prevData];
       updatedData[index] = {
         ...updatedData[index],
-        specialty: updatedData[index].specialty.filter(
+        specialty: (updatedData[index].specialty ?? []).filter(
           (_: any, i: any) => i !== tagIndex
         )
       };
@@ -935,7 +996,7 @@ const EditPractice = () => {
                     <CollapsibleItem
                       key={firm.id}
                       index={index}
-                      firm={firm}
+                      firm={firm as unknown as IPractitionerRoleDetail}
                       invoice={invoiceData[index]}
                       isOpen={Boolean(openCollapsibles[index])}
                       onToggle={handleToggle}

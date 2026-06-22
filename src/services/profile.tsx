@@ -20,7 +20,17 @@ type ModifyProfileResponseItem = {
   phone_number?: string;
 };
 
-export const createProfile = async ({ userId, email, phoneNumber, type }) => {
+export const createProfile = async ({
+  userId,
+  email,
+  phoneNumber,
+  type
+}: {
+  userId: string;
+  email: string;
+  phoneNumber: string;
+  type: string;
+}) => {
   const telecom = [];
 
   if (email && typeof email === 'string' && email.trim() !== '') {

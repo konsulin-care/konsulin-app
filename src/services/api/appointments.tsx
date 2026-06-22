@@ -3,7 +3,13 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Bundle } from 'fhir/r4';
 import { getAPI } from '../api';
 
-export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
+export const useGetUpcomingAppointments = ({
+  patientId,
+  dateReference
+}: {
+  patientId: string;
+  dateReference: string;
+}) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
   return useQuery({
@@ -26,7 +32,7 @@ export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
 };
 
 /** Fetch all appointments for a patient. */
-export const useGetAllAppointments = ({ patientId }) => {
+export const useGetAllAppointments = ({ patientId }: { patientId: string }) => {
   return useQuery({
     queryKey: ['all-appointments', patientId],
     queryFn: async () => {
@@ -44,7 +50,13 @@ export const useGetAllAppointments = ({ patientId }) => {
 };
 
 /** Fetch upcoming sessions for a practitioner from a given date. */
-export const useGetUpcomingSessions = ({ practitionerId, dateReference }) => {
+export const useGetUpcomingSessions = ({
+  practitionerId,
+  dateReference
+}: {
+  practitionerId: string;
+  dateReference: string;
+}) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
   return useQuery({
@@ -67,7 +79,11 @@ export const useGetUpcomingSessions = ({ practitionerId, dateReference }) => {
 };
 
 /** Fetch all sessions for a practitioner. */
-export const useGetAllSessions = ({ practitionerId }) => {
+export const useGetAllSessions = ({
+  practitionerId
+}: {
+  practitionerId: string;
+}) => {
   return useQuery({
     queryKey: ['all-sessions', practitionerId],
     queryFn: async () => {
@@ -89,8 +105,12 @@ export const useGetTodaySessions = ({
   practitionerId,
   dateReference,
   enabled = true
+}: {
+  practitionerId: string;
+  dateReference: string;
+  enabled?: boolean;
 }) => {
-  const { utcStart, utcEnd } = getUtcDayRange(dateReference);
+  const { utcStart, utcEnd } = getUtcDayRange(new Date(dateReference));
 
   return useQuery({
     queryKey: ['today-sessions', practitionerId, dateReference],
@@ -150,7 +170,13 @@ export const usePayAppointment = () => {
 };
 
 /** Fetch available slots for a practitioner on a given date. */
-export const useGetPractitionerSlots = ({ practitionerId, dateReference }) => {
+export const useGetPractitionerSlots = ({
+  practitionerId,
+  dateReference
+}: {
+  practitionerId: string;
+  dateReference: string;
+}) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
   return useQuery({

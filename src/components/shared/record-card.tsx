@@ -52,7 +52,7 @@ export default function RecordCard({
     : ((record.result as string) || '\\-').replace(/\n\n/g, '. ');
 
   const queryParams = new URLSearchParams({
-    category: typeMappings[record.type]?.category,
+    category: String(typeMappings[record.type]?.category ?? ''),
     title
   }).toString();
   const url = `/record?recordId=${recordId}&${queryParams}`;

@@ -29,7 +29,7 @@ export const mergeNames = (
 
   const fullName = name
     .map(item =>
-      [...(item.given || []), item.family || ''].filter(Boolean).join(' ')
+      [...(item.given ?? []), item.family || ''].filter(Boolean).join(' ')
     )
     .join('');
 
@@ -37,7 +37,7 @@ export const mergeNames = (
 };
 
 export const customMarkdownComponents = {
-  p: ({ children }) => <span>{children}</span>
+  p: ({ children, ...props }: any) => <span {...props}>{children}</span>
 };
 
 /** Parse FHIR Patient or Practitioner profile. */
@@ -59,7 +59,7 @@ export const parseFhirProfile = (data: Patient | Practitioner) => {
     gender: data.gender,
     photo: data.photo?.[0]?.url ?? '',
     userId,
-    firstName: name ? name.given.join(' ') : '',
+    firstName: name ? (name.given?.join(' ') ?? '') : '',
     lastName: name?.family ?? '',
     addresses: addresses?.line ?? [],
     cityCode: '',
@@ -78,19 +78,19 @@ export const parseFhirProfile = (data: Patient | Practitioner) => {
 export const parseMergedAppointments = (
   bundle: Bundle
 ): MergedAppointment[] => {
-  const appointments = bundle.entry
+  const appointments = (bundle.entry ?? [])
     .filter(
-      (entry: BundleEntry) => entry.resource.resourceType === 'Appointment'
+      (entry: BundleEntry) => entry.resource?.resourceType === 'Appointment'
     )
     .map((entry: BundleEntry) => entry.resource as Appointment);
 
-  const slots = bundle.entry
-    .filter((entry: BundleEntry) => entry.resource.resourceType === 'Slot')
+  const slots = (bundle.entry ?? [])
+    .filter((entry: BundleEntry) => entry.resource?.resourceType === 'Slot')
     .map((entry: BundleEntry) => entry.resource as Slot);
 
-  const practitioners = bundle.entry
+  const practitioners = (bundle.entry ?? [])
     .filter(
-      (entry: BundleEntry) => entry.resource.resourceType === 'Practitioner'
+      (entry: BundleEntry) => entry.resource?.resourceType === 'Practitioner'
     )
     .map((entry: BundleEntry) => entry.resource as Practitioner);
 
@@ -104,31 +104,31 @@ export const parseMergedAppointments = (
     // extract practitioner reference from participants
     const practitionerParticipant = appointment.participant.find(
       (participant: AppointmentParticipant) =>
-        participant.actor.reference?.startsWith('Practitioner/')
+        participant.actor?.reference?.startsWith('Practitioner/')
     );
     const practitionerId = practitionerParticipant
-      ? practitionerParticipant.actor.reference.split('/')[1]
+      ? (practitionerParticipant.actor?.reference?.split('/')[1] ?? null)
       : null;
 
     const slotData = slots.find((slot: Slot) => slot.id === slotId);
     const practitionerData = practitioners.find(
       (practitioner: Practitioner) => practitioner.id === practitionerId
     );
-    const practitionerEmail = practitionerData.telecom.find(
+    const practitionerEmail = practitionerData?.telecom?.find(
       data => data.system === 'email'
     );
 
     results.push({
-      appointmentId: appointment.id || null,
-      slotStart: slotData?.start || null,
-      slotEnd: slotData?.end || null,
-      slotStatus: slotData?.status || null,
-      appointmentType: appointment.appointmentType?.text || null,
-      practitionerId: practitionerData?.id || null,
-      practitionerName: practitionerData?.name || null,
-      practitionerQualification: practitionerData?.qualification || null,
-      practitionerPhoto: practitionerData?.photo || null,
-      practitionerEmail: practitionerEmail.value || null
+      appointmentId: appointment.id ?? '',
+      slotStart: slotData?.start ?? null,
+      slotEnd: slotData?.end ?? null,
+      slotStatus: slotData?.status ?? null,
+      appointmentType: appointment.appointmentType?.text ?? null,
+      practitionerId: practitionerData?.id ?? null,
+      practitionerName: practitionerData?.name ?? null,
+      practitionerQualification: practitionerData?.qualification ?? null,
+      practitionerPhoto: practitionerData?.photo ?? null,
+      practitionerEmail: practitionerEmail?.value ?? null
     });
   });
 
@@ -182,7 +182,7 @@ export const generateAvatarPlaceholder = ({
     const parts = normalizedName.split(' ').filter(Boolean);
     if (parts.length >= 2) {
       const first = parts[0][0] || '';
-      const last = parts.at(-1)[0] || '';
+      const last = parts.at(-1)?.[0] ?? '';
       initials = `${first}${last}`;
     } else {
       initials = normalizedName.slice(0, 2);
@@ -314,7 +314,7 @@ export const mapAddress = (address: Address[]) => {
   if (!address || address.length === 0) return '-';
 
   const addr = address[0];
-  const parts = [addr.line[0], addr.district, addr.city, addr.postalCode];
+  const parts = [addr.line?.[0], addr.district, addr.city, addr.postalCode];
 
   return parts.filter(Boolean).join(', ');
 };
@@ -357,16 +357,16 @@ export const getUtcDayRange = (startLocalDate: Date, endLocalDate?: Date) => {
 
 /** Parse and merge session bundle data. */
 export const parseMergedSessions = (bundle: Bundle): MergedSession[] => {
-  const appointments = bundle.entry
-    .filter(entry => entry.resource.resourceType === 'Appointment')
+  const appointments = (bundle.entry ?? [])
+    .filter(entry => entry.resource?.resourceType === 'Appointment')
     .map(entry => entry.resource as Appointment);
 
-  const slots = bundle.entry
-    .filter(entry => entry.resource.resourceType === 'Slot')
+  const slots = (bundle.entry ?? [])
+    .filter(entry => entry.resource?.resourceType === 'Slot')
     .map(entry => entry.resource as Slot);
 
-  const patients = bundle.entry
-    .filter(entry => entry.resource.resourceType === 'Patient')
+  const patients = (bundle.entry ?? [])
+    .filter(entry => entry.resource?.resourceType === 'Patient')
     .map(entry => entry.resource as Patient);
 
   const results: MergedSession[] = [];
@@ -377,30 +377,30 @@ export const parseMergedSessions = (bundle: Bundle): MergedSession[] => {
 
     const patientParticipant = appointment.participant.find(
       (participant: AppointmentParticipant) =>
-        participant.actor.reference?.startsWith('Patient/')
+        participant.actor?.reference?.startsWith('Patient/')
     );
 
     const patientId = patientParticipant
-      ? patientParticipant.actor.reference.split('/')[1]
+      ? (patientParticipant.actor?.reference?.split('/')[1] ?? null)
       : null;
 
     const slotData = slots.find(slot => slot.id === slotId);
     const patientData = patients.find(patient => patient.id === patientId);
 
-    const patientEmail = patientData.telecom.find(
+    const patientEmail = patientData?.telecom?.find(
       data => data.system === 'email'
     );
 
     results.push({
-      appointmentId: appointment.id || null,
-      slotStart: slotData?.start || null,
-      slotEnd: slotData?.end || null,
-      slotStatus: slotData?.status || null,
-      appointmentType: appointment.appointmentType?.text || null,
-      patientId: patientData?.id || null,
-      patientName: patientData.name || null,
-      patientPhoto: patientData?.photo || null,
-      patientEmail: patientEmail.value || null
+      appointmentId: appointment.id ?? '',
+      slotStart: slotData?.start ?? null,
+      slotEnd: slotData?.end ?? null,
+      slotStatus: slotData?.status ?? null,
+      appointmentType: appointment.appointmentType?.text ?? null,
+      patientId: patientData?.id ?? '',
+      patientName: patientData?.name ?? [],
+      patientPhoto: patientData?.photo ?? [],
+      patientEmail: patientEmail?.value ?? ''
     });
   });
 
@@ -417,8 +417,15 @@ export const getTypeLabel = (type: string) => {
   const types = type.split(',').map(t => t.trim());
 
   // map each to its display label
-  const label = types.map(type => typeMappings[type]?.text).filter(Boolean);
+  const label = types.find(
+    type =>
+      (typeMappings as Record<string, { text: string; category: number }>)[type]
+        ?.text
+  );
 
-  // return the first label (they should all be the same if grouped correctly)
-  return label[0] ?? null;
+  return (
+    (typeMappings as Record<string, { text: string; category: number }>)[
+      label ?? ''
+    ]?.text ?? null
+  );
 };

@@ -10,21 +10,18 @@ import {
   useGetDistricts,
   useGetProvinces
 } from '@/services/api/cities';
-import {
-  getProfileById,
-  useUpdateProfile
-} from '@/services/profile';
-import { validateForm } from '@/utils/validation';
+import { getProfileById, useUpdateProfile } from '@/services/profile';
 import {
   generateAvatarPlaceholder,
   isDataUrl,
   isValidImageUrl,
   parseFhirProfile
 } from '@/utils/helper';
+import { validateForm } from '@/utils/validation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { EditProfileSaveButton } from './edit-profile-save-button';
 import { EditProfileDrawers } from './edit-profile-drawers';
+import { EditProfileSaveButton } from './edit-profile-save-button';
 import { useAvatarUpload } from './hooks/useAvatarUpload';
 import { useProfileFormHandlers } from './hooks/useProfileFormHandlers';
 import { useProfileSave } from './hooks/useProfileSave';
@@ -33,7 +30,6 @@ import ProfileFormSection from './profile-form-section';
 import { Patient, Practitioner } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { toast } from 'react-toastify';
 
 type Props = {
   userRole: string;
@@ -83,7 +79,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     resourceType: null,
     active: false,
     birthDate: '',
-    gender: null,
+    gender: 'unknown',
     photo: '',
     userId: '',
     firstName: '',
@@ -102,7 +98,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const [drawerState, setDrawerState] = useState(DRAWER_STATE.NONE);
   const fhirRole =
     userRole === Roles.Patient ? Roles.Patient : Roles.Practitioner;
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string>('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   /** Check if the user is phone-only (no email). */
@@ -117,23 +113,38 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   const { initialDraft, saveDraft, clearDraft } = useProfileEditDraft(fhirId);
   const draftRef = useRef<Record<string, unknown> | null>(null);
 
-  const { isLoading: isProfileLoading } = useQuery<Patient | Practitioner>({
+  const { data: profileData, isLoading: isProfileLoading } = useQuery<
+    Patient | Practitioner
+  >({
     queryKey: ['profile-data', fhirId],
     queryFn: () => getProfileById(fhirId, fhirRole),
-    enabled: Boolean(fhirId),
-    onSuccess: result => {
-      const parsed = parseFhirProfile(result);
+    enabled: Boolean(fhirId)
+  });
+
+  useEffect(() => {
+    if (profileData) {
+      const parsed = parseFhirProfile(profileData);
       setUpdateUser(
-        draftRef.current ? { ...parsed, ...draftRef.current } : parsed
+        draftRef.current
+          ? {
+              ...parsed,
+              fhirId: parsed.fhirId ?? '',
+              active: parsed.active ?? false,
+              birthDate: parsed.birthDate ?? '',
+              gender: parsed.gender ?? ('unknown' as const),
+              ...draftRef.current
+            }
+          : {
+              ...parsed,
+              fhirId: parsed.fhirId ?? '',
+              active: parsed.active ?? false,
+              birthDate: parsed.birthDate ?? '',
+              gender: parsed.gender ?? ('unknown' as const)
+            }
       );
       setIsLoading(false);
-    },
-    onError: (error: Error) => {
-      console.error('Error when fetching user profile: ', error);
-      toast.error(error.message);
-      setIsLoading(false);
     }
-  });
+  }, [profileData]);
 
   useEffect(() => {
     draftRef.current = initialDraft;
@@ -173,11 +184,14 @@ export default function EditProfile({ userRole, fhirId }: Props) {
 
   /** Debounced auto-save profile edits to localStorage. */
   useEffect(() => {
-    if (isLoading || isProfileLoading) return undefined;
-    const timer = setTimeout(() => {
-      saveDraft(updateUser);
-    }, 1000);
-    return () => clearTimeout(timer);
+    if (!isLoading && !isProfileLoading) {
+      const timer = setTimeout(() => {
+        saveDraft(updateUser);
+      }, 1000);
+      return () => {
+        clearTimeout(timer);
+      };
+    }
   }, [updateUser, isLoading, isProfileLoading, saveDraft]);
 
   useEffect(() => {
@@ -245,7 +259,10 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     updateProfile,
     clearDraft,
     dispatchAuth,
-    queryClient,
+    queryClient: {
+      invalidateQueries: (args: unknown) =>
+        queryClient.invalidateQueries(args as any)
+    } as any,
     setDrawerState
   });
 
@@ -266,15 +283,15 @@ export default function EditProfile({ userRole, fhirId }: Props) {
             <ImageUploader
               userPhoto={resolvedPhotoUrl || updateUser.photo}
               onPhotoChange={handleUserPhoto}
-              initials={initials}
-              backgroundColor={backgroundColor}
+              initials={initials ?? ''}
+              backgroundColor={backgroundColor ?? ''}
             />
             <ProfileFormSection
               updateUser={updateUser}
               errors={errors}
               listProvinces={listProvinces}
-              listCities={listCities}
-              listDistricts={listDistricts}
+              listCities={listCities ?? []}
+              listDistricts={listDistricts ?? []}
               isPhoneBasedUser={isPhoneBasedUser}
               provinceLoading={provinceLoading}
               cityLoading={cityLoading}

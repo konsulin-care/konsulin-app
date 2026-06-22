@@ -19,3 +19,15 @@ if ! npx vitest run; then
   echo "  Tests failed. Fix them and try again."
   exit 1
 fi
+
+# Full-project lint — catch cross-file issues
+if ! npx eslint 'src/**/*.{ts,tsx}' --max-warnings 0; then
+  echo "  Full-project lint failed. Fix errors and try again."
+  exit 1
+fi
+
+# Deep type-check including library types
+if ! npx tsc --noEmit --skipLibCheck false; then
+  echo "  Library type errors found. Fix them and try again."
+  exit 1
+fi

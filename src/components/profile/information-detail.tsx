@@ -1,5 +1,5 @@
 import { Roles } from '@/constants/roles';
-import { IPractitionerRoleDetail } from '@/types/practitioner';
+
 import Avatar from '../general/avatar';
 import Tags from './tags';
 
@@ -12,6 +12,15 @@ function HeaderSection({
   initials,
   backgroundColor,
   seed
+}: {
+  isRadiusIcon?: boolean;
+  iconUrl?: string;
+  title?: string;
+  subTitle?: string;
+  role?: string;
+  initials: string;
+  backgroundColor: string;
+  seed?: string;
 }) {
   const titleStyle =
     role === Roles.Patient
@@ -49,7 +58,7 @@ function HeaderSection({
  * @param item - Object containing `key` (label text) and `value` (display value) to render
  * @returns A JSX element with two paragraph elements: the label on the left and the bold value on the right
  */
-function DetailItem({ item }) {
+function DetailItem({ item }: { item: { key: string; value: string } }) {
   return (
     <>
       <p className='text-left text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
@@ -71,7 +80,7 @@ function DetailItem({ item }) {
  *   - specialty: Array<{ text: string }> (optional)
  * @returns A JSX fragment containing the practice detail rows and, when present, a Tags component for specialties.
  */
-function DetailPractice({ items }) {
+function DetailPractice({ items }: { items: any }) {
   const organizationName = items?.organizationData.name
     ? items.organizationData.name
     : '-';
@@ -212,7 +221,7 @@ export default function InformationDetail({
       {isEditPractice ? (
         <div className='mt-2 flex w-full flex-col'>
           {Array.isArray(details) &&
-            details.map((detail: { id: string }) => (
+            (details as { id: string }[]).map(detail => (
               <div
                 key={detail.id}
                 className='mt-1 flex flex-col border-t border-[#E3E3E3] font-[#2C2F35] text-xs'
@@ -223,7 +232,7 @@ export default function InformationDetail({
         </div>
       ) : (
         <div className='mt-2 flex w-full flex-col space-y-2 border-t border-[#E3E3E3]'>
-          {details?.map((item: IPractitionerRoleDetail) => (
+          {details?.map((item: any) => (
             <div
               className='mt-2 flex justify-between font-[#2C2F35] text-xs'
               key={item.id}

@@ -103,18 +103,16 @@ export default function Clinician({ fhirId }: Props) {
     useQuery<Practitioner>({
       queryKey: ['profile-data', fhirId],
       queryFn: () =>
-        getProfileById(fhirId, 'Practitioner') as Promise<Practitioner>,
-      onError: (error: Error) => {
-        console.error('Error when fetching user profile: ', error);
-        toast.error(error.message);
-      }
+        getProfileById(fhirId, 'Practitioner') as Promise<Practitioner>
     });
 
   /* get list of practitioner's roles */
   const { refetch, isLoading: isPractitionerRolesLoading } =
-    useGetPractitionerRolesDetail(authState.userInfo?.fhirId, {
+    useGetPractitionerRolesDetail(authState.userInfo?.fhirId ?? '', {
       onSuccess: data => {
-        const resources = data?.map(entry => entry.resource) || [];
+        const resources = (data?.map(entry => entry.resource) || []).filter(
+          Boolean
+        ) as IPractitionerRoleDetail[];
         setPractitionerRolesData(resources);
       }
     });
@@ -169,8 +167,8 @@ export default function Clinician({ fhirId }: Props) {
       }
 
       grouped[organizationName].availability[dayKey].push({
-        fromTime: timeSlot.availableStartTime,
-        toTime: timeSlot.availableEndTime
+        fromTime: timeSlot.availableStartTime ?? '',
+        toTime: timeSlot.availableEndTime ?? ''
       });
     });
   };
@@ -226,7 +224,8 @@ export default function Clinician({ fhirId }: Props) {
     : '-';
   const phone =
     profileData && Array.isArray(profileData.telecom)
-      ? profileData.telecom.find(item => item.system === 'phone')?.value || '-'
+      ? (profileData.telecom.find(item => item.system === 'phone')?.value ??
+        '-')
       : '-';
   const address =
     profileData && Array.isArray(profileData.address)
@@ -266,10 +265,10 @@ export default function Clinician({ fhirId }: Props) {
         <div className='my-4'>
           <InformationDetail
             isRadiusIcon
-            initials={initials}
-            backgroundColor={backgroundColor}
+            initials={initials ?? ''}
+            backgroundColor={backgroundColor ?? ''}
             seed={seed}
-            iconUrl={profileData?.photo?.[0].url}
+            iconUrl={profileData?.photo?.[0]?.url}
             title='General Information'
             subTitle={displayName}
             buttonText='Edit Profile'

@@ -39,14 +39,14 @@ import ResearchSection from './research-section';
 const isResearchStudy = (
   assessment: BundleEntry
 ): assessment is BundleEntry<ResearchStudy> => {
-  return assessment.resource.resourceType === 'ResearchStudy';
+  return assessment.resource?.resourceType === 'ResearchStudy';
 };
 
 /** Check if a bundle entry is a Questionnaire resource. */
 const isQuestionnaire = (
   assessment: BundleEntry
 ): assessment is BundleEntry<Questionnaire> => {
-  return assessment.resource.resourceType === 'Questionnaire';
+  return assessment.resource?.resourceType === 'Questionnaire';
 };
 
 /** Research study card with image, title, description, and Join button. */
@@ -69,17 +69,19 @@ function ResearchAssessmentCard({
         />
         <div className='flex flex-col text-[12px]'>
           <div className='font-bold text-wrap text-black'>
-            {assessment.resource.title}
+            {assessment.resource!.title}
           </div>
           <div className='overflow-hidden text-wrap'>
-            {assessment.resource.description?.length > 100
-              ? `${assessment.resource.description.slice(0, 100)}...`
-              : assessment.resource.description}
+            {(() => {
+              const desc = assessment.resource!.description;
+              if (!desc) return '';
+              return desc.length > 100 ? `${desc.slice(0, 100)}...` : desc;
+            })()}
           </div>
         </div>
       </div>
       <Button
-        onClick={() => onClick(assessment.resource)}
+        onClick={() => onClick(assessment.resource!)}
         className='bg-secondary rounded-[32px] px-4 py-2 text-sm font-bold text-white'
       >
         Join
@@ -100,7 +102,7 @@ function QuestionnaireAssessmentCard({
     <button
       type='button'
       className='flex flex-col gap-4 text-left'
-      onClick={() => onClick(assessment.resource)}
+      onClick={() => onClick(assessment.resource!)}
     >
       <div className='flex items-start justify-between'>
         <Image
@@ -112,10 +114,10 @@ function QuestionnaireAssessmentCard({
       </div>
       <div className='flex flex-col items-start'>
         <span className='text-[12px] font-bold'>
-          {assessment.resource.title}
+          {assessment.resource!.title}
         </span>
         <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
-          {assessment.resource.description}
+          {assessment.resource!.description}
         </span>
       </div>
     </button>
@@ -165,7 +167,7 @@ function AssessmentSearchResults({
     <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
       {assessments.map((assessment: BundleEntry) => (
         <div
-          key={assessment.resource.id}
+          key={assessment.resource!.id}
           className='card flex flex-col gap-2 p-4'
         >
           <AssessmentCard
@@ -210,7 +212,7 @@ export default function AssessmentsList() {
       ...(regularAssessments || [])
     ].filter(
       (assessment: BundleEntry) =>
-        assessment.resource.resourceType === 'Questionnaire'
+        assessment.resource?.resourceType === 'Questionnaire'
     );
   }, [popularAssessments, regularAssessments]);
 
@@ -326,7 +328,7 @@ export default function AssessmentsList() {
 
     const params = new URLSearchParams(globalThis.window.location.search);
     params.set('isDrawerOpen', 'true');
-    params.set('assessmentId', assessment.id);
+    params.set('assessmentId', assessment.id ?? '');
     router.push(`?${params.toString()}`, { scroll: false });
     setSelectedAssessment(assessment);
     setIsOpen(true);
@@ -382,7 +384,11 @@ export default function AssessmentsList() {
         />
       );
     }
-    if (showServerResults && serverAssessments?.length > 0) {
+    if (
+      showServerResults &&
+      serverAssessments &&
+      serverAssessments.length > 0
+    ) {
       return (
         <AssessmentSearchResults
           assessments={serverAssessments}
