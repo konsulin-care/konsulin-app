@@ -125,27 +125,68 @@ module.exports = [
     rules: {
       ...tsStrictRules,
       ...tsStylisticRules,
+      // ── Always-on (error): real bugs that external tools flag too ──
       '@typescript-eslint/prefer-optional-chain': 'error',
       '@typescript-eslint/no-base-to-string': 'error',
-      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'off',
+      '@typescript-eslint/no-floating-promises': 'error',  // Codacy: Promise Rejection
+      '@typescript-eslint/no-misused-promises': 'error',   // DeepSource: async-as-handler
       '@typescript-eslint/no-unnecessary-condition': 'off',
-      '@typescript-eslint/prefer-nullish-coalescing': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/no-unsafe-argument': 'off',
+        // Requires strictNullChecks in tsconfig, which is off
+      '@typescript-eslint/no-unnecessary-type-conversion': 'error',
+      '@typescript-eslint/no-unused-vars': 'error',        // DeepScan: unused variable
+      'consistent-return': 'error',
+      'promise/catch-or-return': 'error',                  // Codacy: Promise Rejection
+      'promise/no-nesting': 'error',                       // SonarQube: nested callbacks
+      'sonarjs/no-unused-vars': 'error',                   // DeepScan: unused variable
+
+      // ── Progressive (warn → error as debt is paid) ──
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/use-unknown-in-catch-callback-variable': 'warn',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
+      '@typescript-eslint/no-deprecated': 'warn',
+      'unicorn/no-array-sort': 'warn',              // 13 calls, ~2h to fix
+      'promise/always-return': 'warn',
+      'sonarjs/slow-regex': 'warn',                 // 2 regex patterns
+      'sonarjs/function-return-type': 'warn',       // SonarQube: function return type
+      'sonarjs/no-dead-store': 'warn',              // DeepSource: Dead Store
+      'sonarjs/deprecation': 'off',                // duplicates @typescript-eslint/no-deprecated (set to warn above)
+
+      // ── Hard-off: FHIR domain patterns (not fixable without breaking FHIR) ──
       '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+        // FHIR bundles: item.resource!.practitioner!.reference!
+      '@typescript-eslint/restrict-template-expressions': 'off',
+        // Phone numbers, FHIR IDs, dates in templates — all legitimate numbers
+      'security/detect-object-injection': 'off',
+        // Every form handler triggers this; data is from controlled inputs
+      'sonarjs/no-clear-text-protocols': 'off',
+        // FHIR canonical URLs: http://loinc.org, http://snomed.info — not fixable
+
+      // ── Hard-off: stylistic noise (no bug-safety value) ──
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-confusing-void-expression': 'off',
       '@typescript-eslint/consistent-type-definitions': 'off',
-      '@typescript-eslint/use-unknown-in-catch-callback-variable': 'off',
-      '@typescript-eslint/no-misused-promises': 'off',
-      '@typescript-eslint/no-floating-promises': 'off',
-      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/array-type': 'off',
+      '@typescript-eslint/prefer-regexp-exec': 'off',
+      '@typescript-eslint/no-unnecessary-template-expression': 'off',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'off',
+      // Note: consistent-return is set to 'error' above as Tier 1
+      'import/no-named-as-default': 'off',
+      'jsdoc/require-jsdoc': 'off',
+
+      // ── Unicorn: noise reduction (stylistic, not bug-catching) ──
+      'unicorn/no-null': 'off',
+      'unicorn/filename-case': 'off',
+      'unicorn/prevent-abbreviations': 'off',
+      'unicorn/import-style': 'off',
+      'unicorn/no-array-for-each': 'off',
+      'unicorn/consistent-function-scoping': 'off',
       'unicorn/catch-error-name': 'off',
       'unicorn/prefer-logical-operator-over-ternary': 'off',
-      'unicorn/no-array-sort': 'off',
       'unicorn/prefer-split-limit': 'off',
       'unicorn/prefer-string-raw': 'off',
       'unicorn/prefer-string-replace-all': 'off',
@@ -156,33 +197,19 @@ module.exports = [
       'unicorn/prefer-regexp-test': 'off',
       'unicorn/prefer-code-point': 'off',
       'unicorn/consistent-compound-words': 'off',
-      'promise/always-return': 'off',
-      'promise/catch-or-return': 'off',
-      'promise/no-nesting': 'off',
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/prefer-regexp-exec': 'off',
-      '@typescript-eslint/array-type': 'off',
-      '@typescript-eslint/no-unnecessary-type-conversion': 'off',
-      '@typescript-eslint/no-deprecated': 'off',
-      '@typescript-eslint/no-unnecessary-template-expression': 'off',
+
+      // ── SonarJS: noise reduction (duplicates or false positives) ──
       'sonarjs/prefer-read-only-props': 'off',
-      'sonarjs/no-unused-vars': 'off',
-      'sonarjs/no-dead-store': 'off',
-      'sonarjs/deprecation': 'off',
-      'sonarjs/prefer-regexp-exec': 'off',
+      'sonarjs/no-duplicate-string': 'off',
+      'sonarjs/no-hardcoded-passwords': 'off',
       'sonarjs/no-useless-catch': 'off',
       'sonarjs/no-identical-expressions': 'off',
-      'sonarjs/function-return-type': 'off',
       'sonarjs/pseudo-random': 'off',
-      'sonarjs/slow-regex': 'off',
-      'sonarjs/no-clear-text-protocols': 'off',
-      'consistent-return': 'off',
-      'security/detect-object-injection': 'off',
+      'sonarjs/prefer-regexp-exec': 'off',
+
+      // ── Security: false positives for this codebase ──
       'security/detect-unsafe-regex': 'off',
-      'security/detect-function-call-injection': 'off',
-      'import/no-named-as-default': 'off',
-      'jsdoc/require-jsdoc': 'off',
-      '@typescript-eslint/no-explicit-any': 'off'
+      'security/detect-function-call-injection': 'off'
     }
   },
 

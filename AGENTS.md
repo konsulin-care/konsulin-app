@@ -29,6 +29,26 @@ Subdirectories may contain their own AGENTS.md with scope-specific instructions.
 - PRECEDENCE: The AGENTS.md closest to the file being edited takes priority
 - INHERITANCE: Nested files supplement, not replace, this root file
 
+## ESLint Quality Gate
+
+Before finishing any task, run:
+
+```sh
+npx eslint --max-warnings 50 src/<affected-dir>
+```
+
+Fix any new errors. Do not disable rules for new code.
+
+### Guardrails for Agentic Contributions
+
+Agentic contributions MUST NOT introduce:
+
+- New `any` types without a JSDoc `@type` comment above
+- New non-null assertions (`!`) without a comment explaining why
+- New `.then()` without `.catch()`
+- New `no-nested-ternary` violations
+- New unused imports or variables
+
 ## Architecture Decision Records (ADRs)
 
 - Before architecture changes: READ `@docs/agents/ARCHITECTURE.md` for existing decisions
