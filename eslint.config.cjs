@@ -149,10 +149,10 @@ module.exports = [
       '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
       '@typescript-eslint/no-deprecated': 'warn',
       'unicorn/no-array-sort': 'warn',              // 13 calls, ~2h to fix
-      'promise/always-return': 'warn',
-      'sonarjs/slow-regex': 'warn',                 // 2 regex patterns
+      'promise/always-return': 'error',
+      'sonarjs/slow-regex': 'error',
       'sonarjs/function-return-type': 'warn',       // SonarQube: function return type
-      'sonarjs/no-dead-store': 'warn',              // DeepSource: Dead Store
+      'sonarjs/no-dead-store': 'error',
       'sonarjs/deprecation': 'off',                // duplicates @typescript-eslint/no-deprecated (set to warn above)
 
       // ── Hard-off: FHIR domain patterns (not fixable without breaking FHIR) ──
@@ -199,6 +199,10 @@ module.exports = [
       'unicorn/consistent-compound-words': 'off',
 
       // ── SonarJS: noise reduction (duplicates or false positives) ──
+      // Leakage from plugin defaults — tracked here for graduation
+      'security/detect-non-literal-regexp': 'warn',
+      'import/no-named-as-default-member': 'warn',
+
       'sonarjs/prefer-read-only-props': 'off',
       'sonarjs/no-duplicate-string': 'off',
       'sonarjs/no-hardcoded-passwords': 'off',

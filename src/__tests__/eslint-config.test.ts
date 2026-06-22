@@ -21,6 +21,8 @@ function readConfigText(): string {
 function getRuleLevel(rule: string): string | undefined {
   const text = readConfigText();
 
+  // The rule name is controlled input from our known rule list — safe.
+  // eslint-disable-next-line security/detect-non-literal-regexp
   const ruleRegex = new RegExp(`'${escapeRegex(rule)}'\\s*:\\s*'([^']+)'`);
   const match = text.match(ruleRegex);
   return match?.[1];
@@ -44,7 +46,10 @@ describe('ESLint config rule tiers', () => {
       ['@typescript-eslint/no-unnecessary-type-conversion', 'error'],
       ['promise/no-nesting', 'error'],
       ['@typescript-eslint/no-unused-vars', 'error'],
-      ['sonarjs/no-unused-vars', 'error']
+      ['sonarjs/no-unused-vars', 'error'],
+      ['promise/always-return', 'error'],
+      ['sonarjs/slow-regex', 'error'],
+      ['sonarjs/no-dead-store', 'error']
     ];
 
     const tier1Off: [string, string][] = [
@@ -94,10 +99,9 @@ describe('ESLint config rule tiers', () => {
       ['@typescript-eslint/no-unnecessary-type-assertion', 'warn'],
       ['@typescript-eslint/no-deprecated', 'warn'],
       ['unicorn/no-array-sort', 'warn'],
-      ['promise/always-return', 'warn'],
-      ['sonarjs/slow-regex', 'warn'],
       ['sonarjs/function-return-type', 'warn'],
-      ['sonarjs/no-dead-store', 'warn']
+      ['security/detect-non-literal-regexp', 'warn'],
+      ['import/no-named-as-default-member', 'warn']
     ];
 
     it.each(tier3Rules)('rule %s is set to %s', (rule, expectedLevel) => {
