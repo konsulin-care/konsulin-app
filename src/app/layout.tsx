@@ -134,6 +134,7 @@ export default function RootLayout({
         <Script
           src='/js/sw-register.js'
           strategy='afterInteractive'
+          type='module'
         />
         <AppProviders>
           <RouteResponseCleaner />

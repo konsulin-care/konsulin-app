@@ -306,9 +306,10 @@ describe('sw-register.js', () => {
     expect(content).not.toContain('dangerouslySetInnerHTML');
   });
 
-  it('handles registration errors with a catch handler', () => {
+  it('handles registration errors with try/catch', () => {
     const content = readFileSync(FILE_PATH, 'utf-8');
-    expect(content).toContain('.catch');
+    expect(content).toMatch(/try\s*\{/);
+    expect(content).toMatch(/catch\s*\(/);
   });
 });
 
