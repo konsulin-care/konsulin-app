@@ -29,12 +29,18 @@ export async function cacheFirst(
   const cached = await cache.match(request);
   if (cached) return cached;
 
-  // skipcq: JS-0376 - NOSONAR - URL validated by isValidHttpUrl() guard above
-  const response = await fetch(request.clone());
-  if (response.ok && request.method === 'GET') {
-    cache.put(request, response.clone());
+  try {
+    const response = await fetch(request.clone());
+    if (response.ok && request.method === 'GET') {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    // Degrade gracefully: if fetch fails, try cache one more time
+    const fallback = await cache.match(request);
+    if (fallback) return fallback;
+    return new Response('Service Unavailable', { status: 503 });
   }
-  return response;
 }
 
 /**

@@ -154,8 +154,33 @@ describe('cacheFirst', () => {
     fetchSpy.mockRestore();
   });
 
-  it('throws when fetch fails', async () => {
+  it('falls back to cached response when fetch fails', async () => {
     const cache = createMockCache();
+    const cachedResponse = mockOkResponse('cached-fallback');
+    // First call (initial lookup): miss → proceed to fetch
+    // Second call (fallback in catch): hit → return cached
+    cache.match
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(cachedResponse);
+    const cacheStorage = createMockCacheStorage({ v1: cache });
+
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockRejectedValue(new Error('Network error'));
+
+    const request = new Request('https://example.com/test.js');
+    const response = await cacheFirst(request, 'v1', cacheStorage);
+
+    expect(response).toBe(cachedResponse);
+    const text = await response.text();
+    expect(text).toBe('cached-fallback');
+    expect(cache.put).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it('returns 503 when fetch fails and cache is empty', async () => {
+    const cache = createMockCache();
+    // Both calls to cache.match return undefined
     // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
     cache.match.mockResolvedValue(undefined);
     const cacheStorage = createMockCacheStorage({ v1: cache });
@@ -165,9 +190,11 @@ describe('cacheFirst', () => {
       .mockRejectedValue(new Error('Network error'));
 
     const request = new Request('https://example.com/test.js');
-    await expect(cacheFirst(request, 'v1', cacheStorage)).rejects.toThrow(
-      'Network error'
-    );
+    const response = await cacheFirst(request, 'v1', cacheStorage);
+
+    expect(response.status).toBe(503);
+    const text = await response.text();
+    expect(text).toBe('Service Unavailable');
     expect(cache.put).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
