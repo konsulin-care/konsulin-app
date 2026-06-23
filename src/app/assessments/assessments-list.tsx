@@ -69,11 +69,11 @@ function ResearchAssessmentCard({
         />
         <div className='flex flex-col text-[12px]'>
           <div className='font-bold text-wrap text-black'>
-            {assessment.resource!.title}
+            {assessment.resource.title}
           </div>
           <div className='overflow-hidden text-wrap'>
             {(() => {
-              const desc = assessment.resource!.description;
+              const desc = assessment.resource.description;
               if (!desc) return '';
               return desc.length > 100 ? `${desc.slice(0, 100)}...` : desc;
             })()}
@@ -81,7 +81,7 @@ function ResearchAssessmentCard({
         </div>
       </div>
       <Button
-        onClick={() => onClick(assessment.resource!)}
+        onClick={() => onClick(assessment.resource)}
         className='bg-secondary rounded-[32px] px-4 py-2 text-sm font-bold text-white'
       >
         Join
@@ -102,7 +102,7 @@ function QuestionnaireAssessmentCard({
     <button
       type='button'
       className='flex flex-col gap-4 text-left'
-      onClick={() => onClick(assessment.resource!)}
+      onClick={() => onClick(assessment.resource)}
     >
       <div className='flex items-start justify-between'>
         <Image
@@ -114,10 +114,10 @@ function QuestionnaireAssessmentCard({
       </div>
       <div className='flex flex-col items-start'>
         <span className='text-[12px] font-bold'>
-          {assessment.resource!.title}
+          {assessment.resource.title}
         </span>
         <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
-          {assessment.resource!.description}
+          {assessment.resource.description}
         </span>
       </div>
     </button>
@@ -167,7 +167,7 @@ function AssessmentSearchResults({
     <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
       {assessments.map((assessment: BundleEntry) => (
         <div
-          key={assessment.resource!.id}
+          key={assessment.resource.id}
           className='card flex flex-col gap-2 p-4'
         >
           <AssessmentCard

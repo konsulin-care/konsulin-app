@@ -146,7 +146,7 @@ module.exports = [
       '@typescript-eslint/no-unsafe-argument': 'warn',
       '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/use-unknown-in-catch-callback-variable': 'error',
-      '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
       '@typescript-eslint/no-deprecated': 'error',
       'unicorn/no-array-sort': 'error',
       'promise/always-return': 'error',
