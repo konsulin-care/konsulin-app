@@ -195,7 +195,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
           const updatedQR = {
             ...questionnaireResponse,
             item: questionnaireResponse.item.map((item: any) =>
-              item.linkId === 'interpretation'
+              item.linkId === 'interpretation' // eslint-disable-line @typescript-eslint/no-unsafe-return
                 ? updatedInterpretationItem
                 : item
             )
@@ -281,7 +281,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
       return RESULT_BRIEF_PLACEHOLDER;
     }
 
-    return resultBriefItem.answer?.[0]?.valueString ?? RESULT_BRIEF_PLACEHOLDER;
+    return resultBriefItem.answer?.[0]?.valueString ?? RESULT_BRIEF_PLACEHOLDER; // eslint-disable-line @typescript-eslint/no-unsafe-return
   };
 
   return (

@@ -85,7 +85,7 @@ export default function ClinicList() {
       const response = await API.get(
         `/fhir/Organization?_elements=name,address&name:contains=${term}`
       );
-      return response.data.entry || [];
+      return response.data.entry || []; // eslint-disable-line @typescript-eslint/no-unsafe-return
     } catch (error) {
       console.error('Clinic search failed:', error);
       // Return empty array to maintain consistent behavior

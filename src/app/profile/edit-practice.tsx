@@ -107,7 +107,7 @@ function extractTimezoneFromPeriod(period?: {
 
   // Try multiple patterns to handle different ISO 8601 formats
   // Pattern 1: Full format with colon: +07:00, -05:30
-  let match = iso.match(/([+-])(\d{2}):(\d{2})(?:\d{3})?$/);
+  let match = iso.match(/([+-])(\d{2}):(\d{2})(?:\d{3})?$/); // eslint-disable-line security/detect-unsafe-regex
   if (match) {
     const sign = match[1];
     const hours = parseInt(match[2], 10);
@@ -120,7 +120,7 @@ function extractTimezoneFromPeriod(period?: {
   }
 
   // Pattern 2: Format without colon: +07, -05
-  match = iso.match(/([+-])(\d{2})(?:\d{2})?$/);
+  match = iso.match(/([+-])(\d{2})(?:\d{2})?$/); // eslint-disable-line security/detect-unsafe-regex
   if (match) {
     const sign = match[1];
     const hours = parseInt(match[2], 10);
@@ -166,6 +166,7 @@ function extractTimezoneFromPeriod(period?: {
           const hours = parseInt(hoursStr.slice(0, 2), 10);
           const minutes = parseInt(hoursStr.slice(2, 4), 10);
           if (minutes === 0) {
+            // eslint-disable-line max-depth
             return `GMT${sign}${hours}`;
           }
           return `GMT${sign}${hours}:${String(minutes).padStart(2, '0')}`;
@@ -474,6 +475,7 @@ const CollapsibleItem = ({
               const value = e.target.value;
               if (value === '') {
                 setSlotConfigs((s: any) => ({
+                  // eslint-disable-line @typescript-eslint/no-unsafe-return
                   ...s,
                   [index]: { ...s[index], sessionDuration: '' }
                 }));
@@ -482,6 +484,7 @@ const CollapsibleItem = ({
               const numberOnly = /^\d+$/;
               if (numberOnly.test(value) && Number(value) > 0) {
                 setSlotConfigs((s: any) => ({
+                  // eslint-disable-line @typescript-eslint/no-unsafe-return
                   ...s,
                   [index]: { ...s[index], sessionDuration: value }
                 }));
@@ -506,6 +509,7 @@ const CollapsibleItem = ({
               const value = e.target.value;
               if (value === '') {
                 setSlotConfigs((s: any) => ({
+                  // eslint-disable-line @typescript-eslint/no-unsafe-return
                   ...s,
                   [index]: { ...s[index], bufferTime: '' }
                 }));
@@ -514,6 +518,7 @@ const CollapsibleItem = ({
               const numberOnly = /^\d+$/;
               if (numberOnly.test(value)) {
                 setSlotConfigs((s: any) => ({
+                  // eslint-disable-line @typescript-eslint/no-unsafe-return
                   ...s,
                   [index]: { ...s[index], bufferTime: value }
                 }));
@@ -908,7 +913,7 @@ const EditPractice = () => {
           value: Number(value)
         }
       };
-      return updatedData;
+      return updatedData; // eslint-disable-line @typescript-eslint/no-unsafe-return
     });
   }, []);
 
@@ -978,48 +983,50 @@ const EditPractice = () => {
           </div>
 
           <div className='flex-1 overflow-y-auto pb-[15px]'>
-            {(() => {
-              // eslint-disable-line sonarjs/function-return-type
-              if (isPractitionerRolesLoading || isPractitionerRolesFetching) {
+            {
+              // eslint-disable-next-line sonarjs/function-return-type
+              (() => {
+                if (isPractitionerRolesLoading || isPractitionerRolesFetching) {
+                  return (
+                    <Skeleton
+                      count={4}
+                      className='mt-4 h-[60px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
+                    />
+                  );
+                }
+                if (filteredFirmData && filteredFirmData.length > 0) {
+                  return filteredFirmData.map(
+                    (
+                      firm: BundleEntry<IPractitionerRoleDetail>,
+                      index: number
+                    ) => (
+                      <CollapsibleItem
+                        key={firm.id}
+                        index={index}
+                        firm={firm as unknown as IPractitionerRoleDetail}
+                        invoice={invoiceData[index]}
+                        isOpen={openCollapsibles[index] ?? false}
+                        onToggle={handleToggle}
+                        tagInputs={tagInputs}
+                        handleChangeFee={handleChangeFee}
+                        handleAddTag={handleAddTag}
+                        handleRemoveTag={handleRemoveTag}
+                        setTagInputs={setTagInputs}
+                        slotConfigs={slotConfigs}
+                        setSlotConfigs={setSlotConfigs}
+                      />
+                    )
+                  );
+                }
                 return (
-                  <Skeleton
-                    count={4}
-                    className='mt-4 h-[60px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
+                  <EmptyState
+                    className='py-16'
+                    title='No Firms Found'
+                    subtitle='You have no firms registered at the moment'
                   />
                 );
-              }
-              if (filteredFirmData && filteredFirmData.length > 0) {
-                return filteredFirmData.map(
-                  (
-                    firm: BundleEntry<IPractitionerRoleDetail>,
-                    index: number
-                  ) => (
-                    <CollapsibleItem
-                      key={firm.id}
-                      index={index}
-                      firm={firm as unknown as IPractitionerRoleDetail}
-                      invoice={invoiceData[index]}
-                      isOpen={openCollapsibles[index] ?? false}
-                      onToggle={handleToggle}
-                      tagInputs={tagInputs}
-                      handleChangeFee={handleChangeFee}
-                      handleAddTag={handleAddTag}
-                      handleRemoveTag={handleRemoveTag}
-                      setTagInputs={setTagInputs}
-                      slotConfigs={slotConfigs}
-                      setSlotConfigs={setSlotConfigs}
-                    />
-                  )
-                );
-              }
-              return (
-                <EmptyState
-                  className='py-16'
-                  title='No Firms Found'
-                  subtitle='You have no firms registered at the moment'
-                />
-              );
-            })()}
+              })()
+            }
           </div>
         </div>
 

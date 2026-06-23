@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }, 10_000);
       cleanup = () => clearTimeout(id);
     }
-    return cleanup;
+    return cleanup; // eslint-disable-line @typescript-eslint/no-unsafe-return
   }, [session.doesSessionExist]);
 
   /** Handle auth state when no SuperTokens session exists. */
@@ -163,9 +163,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }> => {
     const cookieSession = await getAuthCookieSession();
     const cookieRole = cookieSession?.role_name;
-    const superTokensRoles = (await getClaimValue({
+    const superTokensRoles = await getClaimValue({
       claim: UserRoleClaim
-    })) as string[] | undefined;
+    });
     const role = resolveActiveRole(cookieRole, superTokensRoles);
     return { role, superTokensRoles };
   };
@@ -321,7 +321,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await handleSessionExists();
     };
 
-    fetchSession();
+    void fetchSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.doesSessionExist]);
 

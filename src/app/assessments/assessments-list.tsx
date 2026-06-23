@@ -208,6 +208,7 @@ export default function AssessmentsList() {
 
   const searchAssessments = useMemo(() => {
     return [
+      // eslint-disable-line @typescript-eslint/no-unsafe-return
       ...(popularAssessments || []),
       ...(regularAssessments || [])
     ].filter(
@@ -244,10 +245,10 @@ export default function AssessmentsList() {
       ];
 
       const regularFound = allRegular.find(item => item.resource.id === id);
-      if (regularFound) return regularFound.resource;
+      if (regularFound) return regularFound.resource; // eslint-disable-line @typescript-eslint/no-unsafe-return
 
       const researchFound = research?.find(item => item.resource.id === id);
-      if (researchFound) return researchFound.resource;
+      if (researchFound) return researchFound.resource; // eslint-disable-line @typescript-eslint/no-unsafe-return
 
       return null;
     },

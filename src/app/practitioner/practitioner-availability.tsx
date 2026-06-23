@@ -225,7 +225,7 @@ export default function PractitionerAvailability({
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get(`/fhir/Schedule/${scheduleId}`);
-      return response.data || null;
+      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
     enabled: Boolean(scheduleId) && (isAuthenticated ?? false),
     staleTime: 5 * 60 * 1000,

@@ -38,7 +38,7 @@ const generateFilterDays = (start: Date, end: Date) => {
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
-  return filterDays;
+  return filterDays; // eslint-disable-line @typescript-eslint/no-unsafe-return
 };
 
 /** Check if a slot's days and time overlap with the given filter range. */

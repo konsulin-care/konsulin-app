@@ -10,8 +10,8 @@ const mockUseSessionContext = vi.fn();
 const mockGetClaimValue = vi.fn();
 
 vi.mock('supertokens-auth-react/recipe/session', () => ({
-  useSessionContext: () => mockUseSessionContext(),
-  getClaimValue: () => mockGetClaimValue()
+  useSessionContext: () => mockUseSessionContext(), // eslint-disable-line @typescript-eslint/no-unsafe-return
+  getClaimValue: () => mockGetClaimValue() // eslint-disable-line @typescript-eslint/no-unsafe-return
 }));
 
 vi.mock('supertokens-web-js/recipe/userroles', () => ({
@@ -58,12 +58,15 @@ vi.mock('@/lib/indexeddb', () => ({
 vi.mock('@/utils/role-fhir', () => ({
   roleToFhirResource: vi.fn((role: string) => {
     switch (role) {
-      case 'Practitioner':
+      case 'Practitioner': {
         return 'Practitioner';
-      case 'Clinic Admin':
+      }
+      case 'Clinic Admin': {
         return 'Person';
-      default:
+      }
+      default: {
         return 'Patient';
+      }
     }
   })
 }));
@@ -136,9 +139,7 @@ beforeEach(() => {
     accessTokenPayload: {}
   });
   mockGetClaimValue.mockResolvedValue(['Patient']);
-  (migrateLocalStorage as ReturnType<typeof vi.fn>).mockResolvedValue(
-    undefined
-  );
+  (migrateLocalStorage as ReturnType<typeof vi.fn>).mockResolvedValue();
   (dbGet as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 });
 
@@ -299,7 +300,7 @@ describe('Fix 3 — function dependency ordering', () => {
     // GIVEN: the auth source file
     const src = await fs.promises.readFile(
       'src/context/auth/authContext.tsx',
-      'utf-8'
+      'utf8'
     );
     const lines = src.split('\n');
 

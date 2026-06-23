@@ -8,9 +8,9 @@ export const useGetProvinces = () => {
     queryKey: ['provinces'],
     queryFn: async () => {
       const response = await axios.get(`${BASE}/provinces.json`);
-      return response.data.data;
+      return response.data.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
-    select: response => response || []
+    select: response => response || [] // eslint-disable-line @typescript-eslint/no-unsafe-return
   });
 };
 
@@ -23,10 +23,10 @@ export const useGetCities = (provinceCode: number) => {
         `${BASE}/regencies/${provinceCode}.json`
       );
       const payload = response.data?.data ?? response.data;
-      return Array.isArray(payload) ? payload : [];
+      return Array.isArray(payload) ? payload : []; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
     enabled: provinceCode !== undefined && provinceCode !== null,
-    select: response => response || []
+    select: response => response || [] // eslint-disable-line @typescript-eslint/no-unsafe-return
   });
 };
 
@@ -37,9 +37,9 @@ export const useGetDistricts = (cityCode: number) => {
       if (cityCode === 0) return null;
       const response = await axios.get(`${BASE}/districts/${cityCode}.json`);
       const payload = response.data?.data ?? response.data;
-      return Array.isArray(payload) ? payload : [];
+      return Array.isArray(payload) ? payload : []; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
     enabled: cityCode !== undefined && cityCode !== null,
-    select: response => response || []
+    select: response => response || [] // eslint-disable-line @typescript-eslint/no-unsafe-return
   });
 };

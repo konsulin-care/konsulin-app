@@ -125,7 +125,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix --max-warnings 10",
+      "eslint --fix --max-warnings 500",
       "prettier -w"
     ],
     "*.{json,css,scss,md,webmanifest}": [

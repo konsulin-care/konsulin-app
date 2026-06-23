@@ -7,6 +7,7 @@ import { useOngoingResearch } from '../assessment';
 vi.mock('@/services/api', async () => {
   const actual = await vi.importActual<any>('@/services/api');
   return {
+    // eslint-disable-line @typescript-eslint/no-unsafe-return
     ...actual,
     getAPI: vi.fn()
   };

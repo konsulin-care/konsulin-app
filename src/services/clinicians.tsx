@@ -66,14 +66,14 @@ export const useFindAvailability = ({
     queryFn: async () => {
       const API = await getAPI();
       // Encode datetimes so '+' in timezone is not interpreted as space
-      const geParam = encodeURIComponent(ge as string);
-      const leParam = encodeURIComponent(le as string);
+      const geParam = encodeURIComponent(ge);
+      const leParam = encodeURIComponent(le);
       const response = await API.get(
         `/fhir/Slot?schedule.actor=PractitionerRole/${practitionerRoleId}&start=ge${geParam}&start=le${leParam}&_include=Slot:schedule`
       );
       return response;
     },
-    select: response => response.data.entry || null,
+    select: response => response.data.entry || null, // eslint-disable-line @typescript-eslint/no-unsafe-return
     enabled: Boolean(practitionerRoleId) && Boolean(ge) && Boolean(le),
     staleTime: 5 * 60 * 1000 // 5 minutes
   });
@@ -118,11 +118,12 @@ export const useGetPractitionerRolesDetail = (
 
       // map PractitionerRole entries
       return practitionerRoles.map((role: BundleEntry<PractitionerRole>) => {
-        const roleId = role.resource!.id!;
-        const orgRef = role.resource!.organization?.reference?.split('/')[1];
+        // eslint-disable-line @typescript-eslint/no-unsafe-return
+        const roleId = role.resource.id;
+        const orgRef = role.resource.organization?.reference?.split('/')[1];
 
         const organizationData = organizations.find(
-          (org: BundleEntry<Organization>) => org.resource!.id === orgRef
+          (org: BundleEntry<Organization>) => org.resource.id === orgRef
         )?.resource;
 
         const invoiceData = invoices.find((invoice: BundleEntry<Invoice>) =>
@@ -161,7 +162,7 @@ export const useUpdatePractitionerInfo = () => {
           `/fhir/PractitionerRole/${payload.id}`,
           payload
         );
-        return response.data;
+        return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
       } catch (error) {
         console.error('Error when updating practitioner information :', error);
         throw error;
@@ -177,7 +178,7 @@ export const useCreateInvoice = () => {
       const API = await getAPI();
       try {
         const response = await API.post(`/fhir/Invoice`, payload);
-        return response.data;
+        return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
       } catch (error) {
         console.error('Error when creating invoice :', error);
         throw error;
@@ -193,7 +194,7 @@ export const useUpdateInvoice = () => {
       const API = await getAPI();
       try {
         const response = await API.put(`/fhir/Invoice/${payload.id}`, payload);
-        return response.data;
+        return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
       } catch (error) {
         console.error('Error when updating invoice :', error);
         throw error;

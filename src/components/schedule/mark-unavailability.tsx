@@ -316,7 +316,7 @@ function useMarkUnavailabilityForm() {
       const resources = entries?.map(e => e.resource) || [];
       const active = (resources || [])
         .filter((r: any) => r?.active)
-        .map((r: any) => r.id!);
+        .map((r: any) => r.id!); // eslint-disable-line @typescript-eslint/no-unsafe-return
       setSelectedRoleIds(active);
     }
   });

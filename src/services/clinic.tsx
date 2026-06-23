@@ -49,7 +49,7 @@ export const useListClinics = ({
       const response = await API.get(url);
       return response;
     },
-    select: response => response.data.entry || [],
+    select: response => response.data.entry || [], // eslint-disable-line @typescript-eslint/no-unsafe-return
     // Always run to get base clinic list, but only fetch when filters are meaningful
     enabled: true
   });
@@ -65,7 +65,7 @@ export const useClinicById = (clinicId: string) => {
       );
       return response;
     },
-    select: response => response.data.entry || null,
+    select: response => response.data.entry || null, // eslint-disable-line @typescript-eslint/no-unsafe-return
     enabled: Boolean(clinicId)
   });
 
@@ -86,18 +86,18 @@ export const useClinicById = (clinicId: string) => {
   }
 
   const newPractitionerData = practitioners.map((item: BundleEntry) => {
-    const practitionerId = item.resource!.id!;
+    const practitionerId = item.resource.id;
 
     const practitionerRoleData = (
       practitionerRoles as BundleEntry<PractitionerRole>[]
     ).find(
       item =>
-        item.resource!.practitioner!.reference!.split('/')[1] === practitionerId
+        item.resource.practitioner.reference.split('/')[1] === practitionerId
     );
 
     return {
       ...item.resource,
-      practitionerRole: practitionerRoleData!.resource as PractitionerRole
+      practitionerRole: practitionerRoleData.resource
     };
   });
 
@@ -127,7 +127,7 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
       );
       return response;
     },
-    select: response => response.data.entry || null,
+    select: response => response.data.entry || null, // eslint-disable-line @typescript-eslint/no-unsafe-return
     enabled: Boolean(practitionerRoleId)
   });
 

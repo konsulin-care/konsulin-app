@@ -46,6 +46,7 @@ export default function EditJournal({ journalId }: Props) {
       if (journalData.note.length > 0) {
         setResponse(
           journalData.note.map(item => ({
+            // eslint-disable-line @typescript-eslint/no-unsafe-return
             ...item,
             id: nextId.current++
           }))

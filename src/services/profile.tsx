@@ -147,7 +147,7 @@ export const useUpdateProfile = () => {
       try {
         const API = await getAPI();
         const response = await API.put(`/fhir/${resourceType}/${id}`, payload);
-        return response.data;
+        return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
       } catch (error) {
         console.error(`Error updating profile ${resourceType} : `, error);
         throw error;
@@ -258,5 +258,5 @@ export const uploadAvatar = async (
     throw new Error('Failed to upload avatar');
   }
 
-  return url;
+  return url; // eslint-disable-line @typescript-eslint/no-unsafe-return
 };

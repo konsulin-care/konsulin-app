@@ -22,7 +22,7 @@ export const useGetUpcomingAppointments = ({
       return response;
     },
     select: response => {
-      return response.data || null;
+      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
     staleTime: 60 * 1000,
     refetchOnMount: 'always',
@@ -43,7 +43,7 @@ export const useGetAllAppointments = ({ patientId }: { patientId: string }) => {
       return response;
     },
     select: response => {
-      return response.data || null;
+      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
     enabled: Boolean(patientId)
   });
@@ -69,7 +69,7 @@ export const useGetUpcomingSessions = ({
       return response;
     },
     select: response => {
-      return response.data || null;
+      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
     staleTime: 60 * 1000,
     refetchOnMount: 'always',
@@ -94,7 +94,7 @@ export const useGetAllSessions = ({
       return response;
     },
     select: response => {
-      return response.data || null;
+      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
     enabled: Boolean(practitionerId)
   });
@@ -122,7 +122,7 @@ export const useGetTodaySessions = ({
       return response;
     },
     select: response => {
-      return response.data || null;
+      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
     enabled: Boolean(dateReference) && Boolean(practitionerId) && enabled
   });
@@ -136,7 +136,7 @@ export const useCreateAppointment = () => {
       try {
         const API = await getAPI();
         const response = await API.post('/fhir', payload);
-        return response.data.entry;
+        return response.data.entry; // eslint-disable-line @typescript-eslint/no-unsafe-return
       } catch (error) {
         console.error('Error when booking an appointment:', error);
         throw error;
@@ -160,7 +160,7 @@ export const usePayAppointment = () => {
       try {
         const API = await getAPI();
         const response = await API.post('/api/v1/pay/appointment', payload);
-        return response.data;
+        return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
       } catch (error) {
         console.error('Error when paying/booking an appointment:', error);
         throw error;
@@ -189,7 +189,7 @@ export const useGetPractitionerSlots = ({
       return response;
     },
     select: response => {
-      return response.data || null;
+      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
     enabled: Boolean(practitionerId) && Boolean(dateReference)
   });

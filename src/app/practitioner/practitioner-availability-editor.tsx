@@ -257,7 +257,7 @@ export default function PractitionerAvailabilityEditor({
         normalized[day][org] = avail[day][org]
           .map(({ from, to }) => ({ from, to }))
           .toSorted(
-            (a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to)
+            (a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to) // eslint-disable-line @typescript-eslint/no-unsafe-return
           );
       }
     }

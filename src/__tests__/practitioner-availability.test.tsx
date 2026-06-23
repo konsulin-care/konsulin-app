@@ -76,13 +76,17 @@ vi.mock('@/components/ui/calendar-temp', () => ({
     <div data-testid='mock-calendar'>
       <button
         data-testid='calendar-date-btn'
-        onClick={() => onSelect?.(new Date('2026-06-15'))}
+        onClick={() => {
+          onSelect?.(new Date('2026-06-15'));
+        }}
       >
         Select Date
       </button>
       <button
         data-testid='calendar-month-btn'
-        onClick={() => onMonthChange?.(new Date('2026-07-01'))}
+        onClick={() => {
+          onMonthChange?.(new Date('2026-07-01'));
+        }}
       >
         Change Month
       </button>
@@ -160,7 +164,7 @@ vi.mock('@/components/icons', () => ({
 }));
 
 vi.mock('@/lib/utils', () => ({
-  cn: (...args: any[]) => args[0] || '',
+  cn: (...args: any[]) => args[0] || '', // eslint-disable-line @typescript-eslint/no-unsafe-return
   conjunction: (items: any[]) => (items ? items.join(', dan ') : '')
 }));
 

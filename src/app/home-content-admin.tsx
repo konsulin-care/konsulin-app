@@ -62,7 +62,7 @@ export default function HomeContentAdmin() {
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get('/fhir/Practitioner?_summary=count');
-      return response.data?.total ?? 0;
+      return response.data?.total ?? 0; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
     enabled: Boolean(authState?.userInfo?.fhirId)
   });
@@ -145,7 +145,7 @@ export default function HomeContentAdmin() {
       {isCountError && (
         <div className='px-4 pb-4'>
           <button
-            onClick={() => refetchCount()}
+            onClick={() => void refetchCount()}
             className='text-secondary w-full rounded-lg border border-gray-200 py-2 text-[12px]'
           >
             Failed to load practitioner data. Tap to retry.

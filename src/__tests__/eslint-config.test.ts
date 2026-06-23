@@ -60,6 +60,7 @@ describe('ESLint config rule tiers', () => {
       ['@typescript-eslint/no-deprecated', 'error'],
       ['@typescript-eslint/use-unknown-in-catch-callback-variable', 'error'],
       ['@typescript-eslint/no-unnecessary-type-assertion', 'error'],
+      ['@typescript-eslint/no-unsafe-return', 'error'],
       ['max-depth', 'error'],
       ['security/detect-unsafe-regex', 'error'],
       ['max-params', 'error']
@@ -106,7 +107,6 @@ describe('ESLint config rule tiers', () => {
     const tier3Rules: [string, string][] = [
       ['@typescript-eslint/no-unsafe-member-access', 'warn'],
       ['@typescript-eslint/no-unsafe-call', 'warn'],
-      ['@typescript-eslint/no-unsafe-return', 'warn'],
       ['@typescript-eslint/no-unsafe-argument', 'warn'],
       ['no-console', 'warn'],
       ['complexity', 'warn'],

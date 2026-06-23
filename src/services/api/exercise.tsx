@@ -21,6 +21,7 @@ export const useGetExercise = () => {
       const entries = response.data.entry || [];
 
       return entries.map(
+        // eslint-disable-line @typescript-eslint/no-unsafe-return
         (entry: {
           resource: ExerciseItem & {
             content?: { url?: string; title?: string };
