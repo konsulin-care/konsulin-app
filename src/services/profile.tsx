@@ -146,8 +146,11 @@ export const useUpdateProfile = () => {
       const { id, resourceType } = payload;
       try {
         const API = await getAPI();
-        const response = await API.put(`/fhir/${resourceType}/${id}`, payload);
-        return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
+        const response = await API.put<Patient | Practitioner>(
+          `/fhir/${resourceType}/${id}`,
+          payload
+        );
+        return response.data;
       } catch (error) {
         console.error(`Error updating profile ${resourceType} : `, error);
         throw error;
@@ -173,6 +176,7 @@ export const modifyProfile = async ({
   chatwootId: string;
   email?: string;
   phoneNumber?: string;
+  // eslint-disable-next-line complexity
 }> => {
   const trimmedName = (name || '').trim();
   const trimmedEmail = (email ?? '').trim();
@@ -199,13 +203,16 @@ export const modifyProfile = async ({
 
   const API = await getAPI();
 
-  const response = await API.post(
-    '/api/v1/hook/synchronous/modify-profile',
-    body
-  );
+  const response = await API.post<
+    Array<{
+      chatwoot_id: string;
+      email?: string;
+      phone_number?: string;
+    }>
+  >('/api/v1/hook/synchronous/modify-profile', body);
 
-  const isOk = response?.status >= 200 && response?.status < 300;
-  const data = response?.data;
+  const isOk = response.status >= 200 && response.status < 300;
+  const data = response.data;
   const first: ModifyProfileResponseItem | null =
     Array.isArray(data) && data.length > 0 ? data[0] : null;
   const chatwootId = first?.chatwoot_id;
@@ -233,24 +240,19 @@ export const uploadAvatar = async (
   formData.append('avatar', file);
 
   const API = await getAPI();
-  let response;
-  try {
-    response = await API.post(
-      '/api/v1/hook/synchronous/update-avatar',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+  const response = await API.post<Array<{ avatar_url?: string }>>(
+    '/api/v1/hook/synchronous/update-avatar',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data'
       }
-    );
-  } catch {
-    throw new Error('Failed to upload avatar');
-  }
+    }
+  );
 
-  const isOk = response?.status >= 200 && response?.status < 300;
+  const isOk = response.status >= 200 && response.status < 300;
   const url =
-    Array.isArray(response?.data) && response.data.length > 0
+    Array.isArray(response.data) && response.data.length > 0
       ? response.data[0]?.avatar_url
       : null;
 
@@ -258,5 +260,5 @@ export const uploadAvatar = async (
     throw new Error('Failed to upload avatar');
   }
 
-  return url; // eslint-disable-line @typescript-eslint/no-unsafe-return
+  return url;
 };
