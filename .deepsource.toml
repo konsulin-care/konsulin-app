@@ -1,11 +1,14 @@
 version = 1
 
 [[analyzers]]
-name = "javascript"
-
+name = "typescript"
   [analyzers.meta]
   plugins = ["react"]
-  environment = ["nodejs"]
 
-[[code_formatters]]
-name = "standardjs"
+[[analyzers]]
+name = "eslint"
+  [analyzers.meta]
+  config_file = "eslint.config.cjs"
+
+[[formatters]]
+name = "prettier"
