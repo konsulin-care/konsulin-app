@@ -96,7 +96,7 @@ export default function HomeContentPatient() {
   } = useRecordSummaryQuery(patientId);
 
   const records = recordsBundle
-    ? (parseRecordBundles(recordsBundle) as IRecord[]).sort(
+    ? (parseRecordBundles(recordsBundle) as IRecord[]).toSorted(
         (a, b) =>
           new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
       )
@@ -124,7 +124,9 @@ export default function HomeContentPatient() {
             Failed to load records
           </p>
           <button
-            onClick={() => refetchRecords()}
+            onClick={() => {
+              void refetchRecords();
+            }}
             className='text-secondary text-[12px] underline'
           >
             Tap to retry

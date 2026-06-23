@@ -378,7 +378,7 @@ export default function PractitionerAvailability({
       };
     });
 
-    return mapped.sort((a, b) => a.start.getTime() - b.start.getTime());
+    return mapped.toSorted((a, b) => a.start.getTime() - b.start.getTime());
   }, [schedule]);
 
   useEffect(() => {

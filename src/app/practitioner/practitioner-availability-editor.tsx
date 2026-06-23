@@ -104,7 +104,7 @@ export default function PractitionerAvailabilityEditor({
   const handleAddTimeRange = (organizationId: string, day: DayOfWeek) => {
     setWeeklyAvailability(prev => {
       const newAvailability = { ...prev };
-      newAvailability[day] = { ...(newAvailability[day] || {}) };
+      newAvailability[day] = { ...newAvailability[day] };
       const orgRanges = newAvailability[day][organizationId] || [];
       const newTimeRange: TimeRange = {
         id: generateTimeRangeId(),
@@ -131,7 +131,7 @@ export default function PractitionerAvailabilityEditor({
   ) => {
     setWeeklyAvailability(prev => {
       const newAvailability = { ...prev };
-      newAvailability[day] = { ...(newAvailability[day] || {}) };
+      newAvailability[day] = { ...newAvailability[day] };
       const orgRanges = newAvailability[day][organizationId] || [];
 
       newAvailability[day][organizationId] = orgRanges.map(range =>
@@ -153,7 +153,7 @@ export default function PractitionerAvailabilityEditor({
   ) => {
     setWeeklyAvailability(prev => {
       const newAvailability = { ...prev };
-      newAvailability[day] = { ...(newAvailability[day] || {}) };
+      newAvailability[day] = { ...newAvailability[day] };
       const orgRanges = newAvailability[day][organizationId] || [];
 
       newAvailability[day][organizationId] = orgRanges.filter(
@@ -256,7 +256,7 @@ export default function PractitionerAvailabilityEditor({
       for (const org in avail[day]) {
         normalized[day][org] = avail[day][org]
           .map(({ from, to }) => ({ from, to }))
-          .sort(
+          .toSorted(
             (a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to)
           );
       }
@@ -309,7 +309,9 @@ export default function PractitionerAvailabilityEditor({
 
       {/* Floating Save Button */}
       <FloatingSaveButton
-        onSave={handleSave}
+        onSave={() => {
+          void handleSave();
+        }}
         onCancel={onCancel}
         isSaving={isSaving}
         hasChanges={hasChanges}

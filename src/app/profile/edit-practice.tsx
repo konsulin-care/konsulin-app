@@ -193,7 +193,7 @@ function getTheLatestEntry<T extends { meta?: { lastUpdated?: string } }>(
       item,
       ts: item?.meta?.lastUpdated ? Date.parse(item.meta.lastUpdated) : NaN
     }))
-    .sort((a, b) => (isNaN(b.ts) ? -1 : b.ts) - (isNaN(a.ts) ? -1 : a.ts));
+    .toSorted((a, b) => (isNaN(b.ts) ? -1 : b.ts) - (isNaN(a.ts) ? -1 : a.ts));
   const first = withDates[0];
   if (first && !isNaN(first.ts)) return first.item;
   return arr[0];
@@ -570,11 +570,11 @@ const EditPractice = () => {
   const {
     isLoading: isPractitionerRolesLoading,
     isFetching: isPractitionerRolesFetching
-  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId!, {
+  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
     onSuccess: data => {
       const resources = (data?.map(entry => entry.resource) || []).filter(
         Boolean
-      ) as IPractitionerRoleDetail[];
+      );
 
       /* separate invoice data from the main data
        * because they use different endpoints */
@@ -979,6 +979,7 @@ const EditPractice = () => {
 
           <div className='flex-1 overflow-y-auto pb-[15px]'>
             {(() => {
+              // eslint-disable-line sonarjs/function-return-type
               if (isPractitionerRolesLoading || isPractitionerRolesFetching) {
                 return (
                   <Skeleton
@@ -998,7 +999,7 @@ const EditPractice = () => {
                       index={index}
                       firm={firm as unknown as IPractitionerRoleDetail}
                       invoice={invoiceData[index]}
-                      isOpen={Boolean(openCollapsibles[index])}
+                      isOpen={openCollapsibles[index] ?? false}
                       onToggle={handleToggle}
                       tagInputs={tagInputs}
                       handleChangeFee={handleChangeFee}
@@ -1025,7 +1026,9 @@ const EditPractice = () => {
         <div className='flex justify-center bg-white px-4 pt-4'>
           <div className='flex w-full max-w-screen-sm items-center justify-center'>
             <Button
-              onClick={handleSubmitFirmsStatus}
+              onClick={() => {
+                void handleSubmitFirmsStatus();
+              }}
               className='bg-secondary w-full rounded-[32px] py-2 font-normal text-white'
               disabled={isSaving}
             >

@@ -101,7 +101,7 @@ export function validateTimeRanges(times: TimeRange[]) {
 
   const sortedTimes = times
     .map((time, index) => ({ ...time, index }))
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       const timeToMinutes = (time: string) => {
         const [hours, minutes] = time.split(':').map(Number);
         return hours * 60 + minutes;
@@ -138,10 +138,7 @@ export function validateTimeRanges(times: TimeRange[]) {
   return messages.join('\n');
 }
 
-// export function formatTime(time: string) {
-//   if (time && typeof time === 'string') {
-//     const parts = time.split(':');
-//     const hours = parts[0] || '00';
+// Removed: outdated formatTime helper
 //     const minutes = parts[1] || '00';
 //     const seconds = parts[2] || '00';
 //     return `${hours}:${minutes}:${seconds}`;

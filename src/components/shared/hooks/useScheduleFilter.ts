@@ -56,8 +56,8 @@ export function useScheduleFilter<T extends { slotStart?: string | null }>({
 
       if (
         hasDateFilter &&
-        (isBefore(sessionDate, startOfDay(filterStartDate!)) ||
-          isAfter(sessionDate, endOfDay(filterEndDate!)))
+        (isBefore(sessionDate, startOfDay(filterStartDate)) ||
+          isAfter(sessionDate, endOfDay(filterEndDate)))
       ) {
         return false;
       }
@@ -90,9 +90,9 @@ export function useScheduleFilter<T extends { slotStart?: string | null }>({
     if (!filteredData) return [];
     return filteredData
       .filter(s => s.slotStart && new Date(s.slotStart) >= getNow())
-      .sort(
+      .toSorted(
         (a, b) =>
-          new Date(a.slotStart!).getTime() - new Date(b.slotStart!).getTime()
+          new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime()
       );
   }, [filteredData]);
 
@@ -100,9 +100,9 @@ export function useScheduleFilter<T extends { slotStart?: string | null }>({
     if (!filteredData) return [];
     return filteredData
       .filter(s => s.slotStart && new Date(s.slotStart) < getNow())
-      .sort(
+      .toSorted(
         (a, b) =>
-          new Date(b.slotStart!).getTime() - new Date(a.slotStart!).getTime()
+          new Date(b.slotStart).getTime() - new Date(a.slotStart).getTime()
       );
   }, [filteredData]);
 

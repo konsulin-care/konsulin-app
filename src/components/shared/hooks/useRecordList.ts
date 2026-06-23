@@ -7,7 +7,6 @@ import { IRecord } from '@/types/record';
 import { getTypeLabel, mergeNames } from '@/utils/helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
-import { Practitioner } from 'fhir/r4';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 
@@ -59,13 +58,13 @@ export function useRecordList({
   );
 
   const fetchRecords = useCallback(async () => {
-    if (!patientId) return undefined;
+    if (!patientId) return null;
 
     const result = recordFilter.isUseCustomDate
       ? await filterApi.mutateAsync({
           patientId,
-          startDate: format(recordFilter.start_date!, 'yyyy-MM-dd'),
-          endDate: format(recordFilter.end_date!, 'yyyy-MM-dd')
+          startDate: format(recordFilter.start_date, 'yyyy-MM-dd'),
+          endDate: format(recordFilter.end_date, 'yyyy-MM-dd')
         })
       : await summaryApi.mutateAsync({ patientId });
 
@@ -75,10 +74,10 @@ export function useRecordList({
       parsed.map(async item => {
         if (!profileTypes.includes(item.type)) return item;
 
-        const practitionerProfile = (await queryClient.fetchQuery({
+        const practitionerProfile = await queryClient.fetchQuery({
           queryKey: ['profile-practitioner', item.practitionerId],
           queryFn: () => getProfileById(item.practitionerId, 'Practitioner')
-        })) as Practitioner;
+        });
 
         return { ...item, practitionerProfile } as IRecord;
       })
@@ -143,7 +142,7 @@ export function useRecordList({
 
         return matchesDateRange && matchesType && matchesQuery;
       })
-      .sort(
+      .toSorted(
         (a, b) =>
           new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
       );
@@ -154,7 +153,7 @@ export function useRecordList({
 
   const getPractitionerInfo = useCallback(
     (record: IRecord) => {
-      const hasProfile = profileTypes.some(t => record.type === t);
+      const hasProfile = profileTypes.includes(record.type);
       if (!hasProfile) return { displayName: '', email: '' };
 
       const name = mergeNames(

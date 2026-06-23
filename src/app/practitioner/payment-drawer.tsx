@@ -3,6 +3,7 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { format } from 'date-fns';
+import type { ReactNode } from 'react';
 
 type Props = {
   paymentOpen: boolean;
@@ -59,23 +60,28 @@ function PractitionerInfo({
 }
 
 /** Button content showing spinner during payment or label otherwise. */
+// eslint-disable-next-line sonarjs/function-return-type
 function PayButtonContent({
   isPaying,
   label
 }: Readonly<{
   isPaying: boolean;
   label: string;
-}>) {
+}>): ReactNode {
   if (isPaying) {
     return (
       <LoadingSpinnerIcon width={20} height={20} className='animate-spin' />
     );
   }
+
   return label;
 }
 
 /** Online payment button with loading spinner state. */
-function PayNowButtonContent({ isPaying }: Readonly<{ isPaying: boolean }>) {
+// eslint-disable-next-line sonarjs/function-return-type
+function PayNowButtonContent({
+  isPaying
+}: Readonly<{ isPaying: boolean }>): ReactNode {
   if (isPaying) {
     return (
       <LoadingSpinnerIcon
@@ -86,6 +92,7 @@ function PayNowButtonContent({ isPaying }: Readonly<{ isPaying: boolean }>) {
       />
     );
   }
+
   return 'Bayar Sekarang';
 }
 

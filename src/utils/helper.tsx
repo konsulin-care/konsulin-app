@@ -133,7 +133,7 @@ export const parseMergedAppointments = (
   });
 
   // sort the results by slotStart in ascending order
-  return results.sort((a, b) => {
+  return results.toSorted((a, b) => {
     if (!a.slotStart || !b.slotStart) return 0;
     return new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime();
   });
@@ -319,7 +319,7 @@ export const mapAddress = (address: Address[]) => {
 };
 
 /** Calculate age from a birth date string. */
-export const findAge = (birthDateStr: string) => {
+export const findAge = (birthDateStr: string): string => {
   const birthdate = new Date(birthDateStr);
   const today = new Date();
 
@@ -337,7 +337,7 @@ export const findAge = (birthDateStr: string) => {
     age--;
   }
 
-  return age;
+  return String(age);
 };
 
 /** Get UTC day range from local dates. */
@@ -403,7 +403,7 @@ export const parseMergedSessions = (bundle: Bundle): MergedSession[] => {
     });
   });
 
-  return results.sort((a, b) => {
+  return results.toSorted((a, b) => {
     if (!a.slotStart || !b.slotStart) return 0;
     return new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime();
   });

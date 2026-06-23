@@ -148,10 +148,10 @@ module.exports = [
       '@typescript-eslint/use-unknown-in-catch-callback-variable': 'warn',
       '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
       '@typescript-eslint/no-deprecated': 'warn',
-      'unicorn/no-array-sort': 'warn',              // 13 calls, ~2h to fix
+      'unicorn/no-array-sort': 'error',
       'promise/always-return': 'error',
       'sonarjs/slow-regex': 'error',
-      'sonarjs/function-return-type': 'warn',       // SonarQube: function return type
+      'sonarjs/function-return-type': 'error',
       'sonarjs/no-dead-store': 'error',
       'sonarjs/deprecation': 'off',                // duplicates @typescript-eslint/no-deprecated (set to warn above)
 

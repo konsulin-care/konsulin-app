@@ -90,12 +90,12 @@ export const parseRecordBundles = (bundles: IBundleResponse[]) => {
     }
 
     for (const entry of bundle.entry) {
-      const parsed = processBundleResource(entry.resource!);
+      const parsed = processBundleResource(entry.resource);
       if (parsed) results.push(parsed);
     }
   }
 
-  return results.sort(
+  return results.toSorted(
     (a, b) =>
       new Date(a.lastUpdated || '').getTime() -
       new Date(b.lastUpdated || '').getTime()
@@ -183,14 +183,15 @@ type ExtractableValue = string | boolean | number | null;
 const extractAnswerValue = (
   ans: QuestionnaireResponseItemAnswer
 ): ExtractableValue => {
-  if ('valueString' in ans) return ans.valueString ?? null;
-  if ('valueBoolean' in ans) return ans.valueBoolean ?? null;
-  if ('valueInteger' in ans) return ans.valueInteger ?? null;
-  if ('valueDate' in ans) return ans.valueDate ?? null;
-  if ('valueQuantity' in ans)
-    return `${ans.valueQuantity?.value ?? ''} ${ans.valueQuantity?.unit ?? ''}`;
-  if ('valueCoding' in ans) return ans.valueCoding?.display ?? null;
-  return null;
+  let result: ExtractableValue = null;
+  if ('valueString' in ans) result = ans.valueString ?? null;
+  else if ('valueBoolean' in ans) result = ans.valueBoolean ?? null;
+  else if ('valueInteger' in ans) result = ans.valueInteger ?? null;
+  else if ('valueDate' in ans) result = ans.valueDate ?? null;
+  else if ('valueQuantity' in ans)
+    result = `${ans.valueQuantity?.value ?? ''} ${ans.valueQuantity?.unit ?? ''}`;
+  else if ('valueCoding' in ans) result = ans.valueCoding?.display ?? null;
+  return result;
 };
 
 /** Extract all answer values from a questionnaire section. */
@@ -288,7 +289,7 @@ export const parseRecordBundlePractitioner = (bundle: Bundle) => {
     }
   }
 
-  return results.sort(
+  return results.toSorted(
     (a, b) =>
       new Date(b.lastUpdated || '').getTime() -
       new Date(a.lastUpdated || '').getTime()
