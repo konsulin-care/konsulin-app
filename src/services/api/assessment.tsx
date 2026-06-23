@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import {
   Bundle,
   BundleEntry,
+  Questionnaire,
   QuestionnaireResponse,
   QuestionnaireResponseItem
 } from 'fhir/r4';
@@ -98,14 +99,12 @@ export const useOngoingResearch = () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       const API = await getAPI();
 
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/ResearchStudy?date=ge${today}&status=active&_include=ResearchStudy:protocol`
       );
-
-      // Return the response as-is - do not fall back to previous survey periods
-      // This ensures only current and future research studies are displayed
-      return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data;
     },
+    /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
     select: data => {
       let entries: unknown[];
       if (Array.isArray(data?.entry)) {
@@ -177,6 +176,7 @@ export const useOngoingResearch = () => {
         };
       });
     }
+    /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
   });
 };
 
@@ -186,13 +186,13 @@ export const useQuestionnaire = (questionnaireId: number | string) => {
     queryKey: ['assessments', questionnaireId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle<Questionnaire>>(
         `/fhir/Questionnaire?_id=${questionnaireId}`
       );
       return response;
     },
     select: response => {
-      return response.data.entry || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data.entry ?? null;
     }
   });
 };
@@ -203,11 +203,11 @@ export const useQuestionnaireSoap = () => {
     queryKey: ['SOAP'],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get('/fhir/Questionnaire/soap');
+      const response = await API.get<Questionnaire>('/fhir/Questionnaire/soap');
       return response;
     },
     select: response => {
-      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data || null;
     }
   });
 };
@@ -218,8 +218,8 @@ export const useSubmitSoapBundle = () => {
     mutationKey: ['soap-response'],
     mutationFn: async (bundle: Bundle) => {
       const API = await getAPI();
-      const response = await API.post('/fhir', bundle);
-      return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      const response = await API.post<Bundle>('/fhir', bundle);
+      return response.data;
     }
   });
 };
@@ -244,16 +244,19 @@ export const useSubmitQuestionnaire = (
         identifier = buildAnonymousIdentifier(guestId);
       }
 
-      const response = await API.post('/fhir/QuestionnaireResponse', {
-        author,
-        item,
-        identifier,
-        resourceType,
-        questionnaire: `Questionnaire/${questionnaireId}`,
-        status: 'completed',
-        authored: timestamp,
-        subject
-      });
+      const response = await API.post<QuestionnaireResponse>(
+        '/fhir/QuestionnaireResponse',
+        {
+          author,
+          item,
+          identifier,
+          resourceType,
+          questionnaire: `Questionnaire/${questionnaireId}`,
+          status: 'completed',
+          authored: timestamp,
+          subject
+        }
+      );
 
       // Only delete draft after successful server submission.
       if (isAuthenticated) {
@@ -262,7 +265,7 @@ export const useSubmitQuestionnaire = (
         );
       }
 
-      return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data;
     }
   });
 };
@@ -291,18 +294,21 @@ export const useUpdateSubmitQuestionnaire = (
         identifier = buildAnonymousIdentifier(guestId);
       }
 
-      const response = await API.put(`/fhir/QuestionnaireResponse/${id}`, {
-        id,
-        author,
-        item,
-        identifier,
-        resourceType,
-        questionnaire: `Questionnaire/${questionnaireId}`,
-        status: 'completed',
-        authored: timestamp,
-        subject
-      });
-      return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      const response = await API.put<QuestionnaireResponse>(
+        `/fhir/QuestionnaireResponse/${id}`,
+        {
+          id,
+          author,
+          item,
+          identifier,
+          resourceType,
+          questionnaire: `Questionnaire/${questionnaireId}`,
+          status: 'completed',
+          authored: timestamp,
+          subject
+        }
+      );
+      return response.data;
     }
   });
 };
@@ -394,10 +400,10 @@ export const useQuestionnaireResponse = ({
     queryKey: ['questionnaire-response', questionnaireId, patientId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(url);
+      const response = await API.get<Bundle>(url);
       return response;
     },
-    select: response => response.data || null, // eslint-disable-line @typescript-eslint/no-unsafe-return
+    select: response => response.data || null,
     enabled
   });
 };
@@ -433,18 +439,18 @@ export const searchQuestionnaires = async (
       for (const strategy of searchStrategies) {
         try {
           const testUrl = url + strategy;
-          const response = await API.get(testUrl);
+          const response = await API.get<Bundle<Questionnaire>>(testUrl);
 
           // If we get results, return them
           if (response.data.entry && response.data.entry.length > 0) {
             // eslint-disable-line max-depth
-            return response.data.entry || []; // eslint-disable-line @typescript-eslint/no-unsafe-return
+            return response.data.entry ?? [];
           }
         } catch (strategyError) {
           console.warn(
             'Search strategy failed, trying next:',
             strategy,
-            strategyError.message
+            (strategyError as Error).message
           );
           // Continue to next strategy
         }
@@ -454,8 +460,8 @@ export const searchQuestionnaires = async (
       return [];
     }
 
-    const response = await API.get(url);
-    return response.data.entry || []; // eslint-disable-line @typescript-eslint/no-unsafe-return
+    const response = await API.get<Bundle<Questionnaire>>(url);
+    return response.data.entry ?? [];
   } catch (error) {
     console.error('Error searching questionnaires:', error);
     // Return empty array instead of throwing to maintain consistent behavior
@@ -489,10 +495,10 @@ export const useSearchQuestionnaire = (query: string, context?: string) => {
     queryKey: ['search-questionnaire', query, context],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(url);
+      const response = await API.get<Bundle<Questionnaire>>(url);
       return response;
     },
-    select: response => response.data.entry || [], // eslint-disable-line @typescript-eslint/no-unsafe-return
+    select: response => response.data.entry ?? [],
     enabled: Boolean(query) && query.length >= 3 // Only enable if query is meaningful
   });
 };
@@ -503,12 +509,12 @@ export const useRegularAssessments = () => {
     queryKey: ['regular-assessments'],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle<Questionnaire>>(
         '/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient&status=active&context=regular'
       );
       return response;
     },
-    select: response => response.data.entry || null // eslint-disable-line @typescript-eslint/no-unsafe-return
+    select: response => response.data.entry ?? null
   });
 };
 
@@ -518,11 +524,11 @@ export const usePopularAssessments = () => {
     queryKey: ['popular-assessments'],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle<Questionnaire>>(
         '/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient&context=popular'
       );
       return response;
     },
-    select: response => response.data.entry || null // eslint-disable-line @typescript-eslint/no-unsafe-return
+    select: response => response.data.entry ?? null
   });
 };
