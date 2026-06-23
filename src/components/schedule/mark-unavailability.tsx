@@ -311,14 +311,12 @@ function useMarkUnavailabilityForm() {
     isLoading: rolesLoading,
     refetch,
     data: roleEntries
-  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
-    onSuccess: entries => {
-      const resources = entries?.map(e => e.resource) || [];
-      const active = (resources || [])
-        .filter((r: any) => r?.active)
-        .map((r: any) => r.id!); // eslint-disable-line @typescript-eslint/no-unsafe-return
-      setSelectedRoleIds(active);
-    }
+  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, entries => {
+    const resources = entries?.map(e => e.resource) || [];
+    const active = (resources || [])
+      .filter((r: any) => r?.active) // eslint-disable-line @typescript-eslint/no-unsafe-member-access
+      .map((r: any) => r.id!); // eslint-disable-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+    setSelectedRoleIds(active);
   });
 
   // eslint-disable-next-line @typescript-eslint/no-deprecated

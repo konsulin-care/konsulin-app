@@ -1,8 +1,9 @@
 import { IPractitionerRoleDetail } from '@/types/practitioner';
 import { getUtcDayRange } from '@/utils/helper';
-import { useMutation, useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { AxiosResponse } from 'axios';
 import {
+  Bundle,
   BundleEntry,
   Invoice,
   Organization,
@@ -68,12 +69,12 @@ export const useFindAvailability = ({
       // Encode datetimes so '+' in timezone is not interpreted as space
       const geParam = encodeURIComponent(ge);
       const leParam = encodeURIComponent(le);
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/Slot?schedule.actor=PractitionerRole/${practitionerRoleId}&start=ge${geParam}&start=le${leParam}&_include=Slot:schedule`
       );
       return response;
     },
-    select: response => response.data.entry || null, // eslint-disable-line @typescript-eslint/no-unsafe-return
+    select: response => response.data.entry ?? null,
     enabled: Boolean(practitionerRoleId) && Boolean(ge) && Boolean(le),
     staleTime: 5 * 60 * 1000 // 5 minutes
   });
@@ -81,75 +82,80 @@ export const useFindAvailability = ({
 
 export const useGetPractitionerRolesDetail = (
   practitionerId: string,
-  queryOptions?: UseQueryOptions<
+  onSuccess?: (data: BundleEntry<IPractitionerRoleDetail>[]) => void
+) => {
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  return useQuery<
     AxiosResponse,
     Error,
-    BundleEntry<IPractitionerRoleDetail>[]
-  >
-) => {
-  return useQuery({
-    queryKey: ['practitioner-roles', practitionerId],
-    queryFn: async () => {
+    BundleEntry<IPractitionerRoleDetail>[],
+    [string, string]
+  >(
+    ['practitioner-roles', practitionerId],
+    async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/PractitionerRole?practitioner=${practitionerId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
       );
       return response;
     },
-    select: response => {
-      const entries = response.data.entry || [];
+    {
+      select: response => {
+        const entries = (response.data as Bundle).entry || [];
 
-      const practitionerRoles = entries.filter(
-        (entry: BundleEntry) =>
-          entry.resource?.resourceType === 'PractitionerRole'
-      );
+        const practitionerRoles = entries.filter(
+          (entry: BundleEntry) =>
+            entry.resource?.resourceType === 'PractitionerRole'
+        );
 
-      const organizations = entries.filter(
-        (entry: BundleEntry) => entry.resource?.resourceType === 'Organization'
-      );
+        const organizations = entries.filter(
+          (entry: BundleEntry) =>
+            entry.resource?.resourceType === 'Organization'
+        );
 
-      const schedules = entries.filter(
-        (entry: BundleEntry) => entry.resource?.resourceType === 'Schedule'
-      );
+        const schedules = entries.filter(
+          (entry: BundleEntry) => entry.resource?.resourceType === 'Schedule'
+        );
 
-      const invoices = entries.filter(
-        (entry: BundleEntry) => entry.resource?.resourceType === 'Invoice'
-      );
+        const invoices = entries.filter(
+          (entry: BundleEntry) => entry.resource?.resourceType === 'Invoice'
+        );
 
-      // map PractitionerRole entries
-      return practitionerRoles.map((role: BundleEntry<PractitionerRole>) => {
-        // eslint-disable-line @typescript-eslint/no-unsafe-return
-        const roleId = role.resource.id;
-        const orgRef = role.resource.organization?.reference?.split('/')[1];
+        // map PractitionerRole entries
+        return practitionerRoles.map((role: BundleEntry<PractitionerRole>) => {
+          const roleId = role.resource.id;
+          const orgRef = role.resource.organization?.reference?.split('/')[1];
 
-        const organizationData = organizations.find(
-          (org: BundleEntry<Organization>) => org.resource.id === orgRef
-        )?.resource;
+          const organizationData = organizations.find(
+            (org: BundleEntry<Organization>) => org.resource.id === orgRef
+          )?.resource;
 
-        const invoiceData = invoices.find((invoice: BundleEntry<Invoice>) =>
-          hasParticipantForRole(invoice, roleId)
-        )?.resource;
+          const invoiceData = invoices.find((invoice: BundleEntry<Invoice>) =>
+            hasParticipantForRole(invoice, roleId)
+          )?.resource;
 
-        const scheduleData = schedules
-          .filter((schedule: BundleEntry<Schedule>) =>
-            hasActorForRole(schedule, roleId)
-          )
-          .map((schedule: BundleEntry<Schedule>) => schedule.resource);
+          const scheduleData = schedules
+            .filter((schedule: BundleEntry<Schedule>) =>
+              hasActorForRole(schedule, roleId)
+            )
+            .map((schedule: BundleEntry<Schedule>) => schedule.resource);
 
-        return {
-          ...role,
-          resource: {
-            ...role.resource,
-            organizationData,
-            invoiceData,
-            scheduleData
-          }
-        };
-      });
-    },
-    enabled: Boolean(practitionerId),
-    ...queryOptions
-  });
+          const result = {
+            ...role,
+            resource: {
+              ...role.resource,
+              organizationData,
+              invoiceData,
+              scheduleData
+            }
+          };
+          return result as unknown as BundleEntry<IPractitionerRoleDetail>;
+        });
+      },
+      enabled: Boolean(practitionerId),
+      onSuccess
+    }
+  );
 };
 
 export const useUpdatePractitionerInfo = () => {
@@ -177,8 +183,8 @@ export const useCreateInvoice = () => {
     mutationFn: async (payload: Invoice) => {
       const API = await getAPI();
       try {
-        const response = await API.post(`/fhir/Invoice`, payload);
-        return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
+        const response = await API.post<Invoice>(`/fhir/Invoice`, payload);
+        return response.data;
       } catch (error) {
         console.error('Error when creating invoice :', error);
         throw error;
@@ -193,8 +199,11 @@ export const useUpdateInvoice = () => {
     mutationFn: async (payload: Invoice) => {
       const API = await getAPI();
       try {
-        const response = await API.put(`/fhir/Invoice/${payload.id}`, payload);
-        return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
+        const response = await API.put<Invoice>(
+          `/fhir/Invoice/${payload.id}`,
+          payload
+        );
+        return response.data;
       } catch (error) {
         console.error('Error when updating invoice :', error);
         throw error;

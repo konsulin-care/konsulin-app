@@ -104,6 +104,7 @@ function buildProfileDetail(
 /**
  *
  */
+// eslint-disable-next-line complexity
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -136,13 +137,11 @@ export default function Clinician({ fhirId }: Props) {
 
   /* get list of practitioner's roles */
   const { refetch, isLoading: isPractitionerRolesLoading } =
-    useGetPractitionerRolesDetail(authState.userInfo?.fhirId ?? '', {
-      onSuccess: data => {
-        const resources = (data?.map(entry => entry.resource) || []).filter(
-          Boolean
-        );
-        setPractitionerRolesData(resources);
-      }
+    useGetPractitionerRolesDetail(authState.userInfo?.fhirId ?? '', data => {
+      const resources = (data?.map(entry => entry.resource) || []).filter(
+        Boolean
+      );
+      setPractitionerRolesData(resources);
     });
 
   useUpdatePractitionerInfo();

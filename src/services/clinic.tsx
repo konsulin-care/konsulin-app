@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import {
+  Bundle,
   BundleEntry,
   Invoice,
   Organization,
@@ -46,10 +47,10 @@ export const useListClinics = ({
     queryKey: ['list-clinics', cityFilter, nameFilter],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(url);
+      const response = await API.get<Bundle<Organization>>(url);
       return response;
     },
-    select: response => response.data.entry || [], // eslint-disable-line @typescript-eslint/no-unsafe-return
+    select: response => response.data.entry ?? [],
     // Always run to get base clinic list, but only fetch when filters are meaningful
     enabled: true
   });
@@ -60,12 +61,12 @@ export const useClinicById = (clinicId: string) => {
     queryKey: ['clinic', clinicId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/PractitionerRole?active=true&organization=${clinicId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner`
       );
       return response;
     },
-    select: response => response.data.entry || null, // eslint-disable-line @typescript-eslint/no-unsafe-return
+    select: response => response.data.entry ?? null,
     enabled: Boolean(clinicId)
   });
 
@@ -122,12 +123,12 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
     queryKey: ['practitioner-detail', practitionerRoleId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/PractitionerRole?active=true&_id=${practitionerRoleId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
       );
       return response;
     },
-    select: response => response.data.entry || null, // eslint-disable-line @typescript-eslint/no-unsafe-return
+    select: response => response.data.entry ?? null,
     enabled: Boolean(practitionerRoleId)
   });
 
