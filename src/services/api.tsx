@@ -85,7 +85,7 @@ export function getAPI(): Promise<AxiosInstance> {
       }
 
       if (process.env.NODE_ENV !== 'production') {
-        console.debug('API error:', {
+        console.info('API error:', {
           url: requestUrl,
           isFhirRequest,
           isAuthEndpoint,

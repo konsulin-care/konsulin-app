@@ -73,6 +73,34 @@ function DrawerBody({
   );
 }
 
+/** Build profile detail array from practitioner data. */
+function buildProfileDetail(
+  profileData: Practitioner | undefined
+): Array<{ key: string; value: string }> {
+  const age = profileData?.birthDate
+    ? `${format(new Date(profileData.birthDate), 'dd-MM-yyyy')} (${findAge(profileData.birthDate)})`
+    : '-';
+  const gender = profileData?.gender
+    ? `${profileData.gender.charAt(0).toUpperCase()}${profileData.gender.slice(1).toLowerCase()}`
+    : '-';
+  const phone =
+    profileData && Array.isArray(profileData.telecom)
+      ? (profileData.telecom.find(item => item.system === 'phone')?.value ??
+        '-')
+      : '-';
+  const address =
+    profileData && Array.isArray(profileData.address)
+      ? mapAddress(profileData.address)
+      : '-';
+
+  return [
+    { key: 'Birth(Age)', value: age },
+    { key: 'Sex', value: gender },
+    { key: 'Whatsapp', value: phone },
+    { key: 'Address', value: address }
+  ];
+}
+
 /**
  *
  */
@@ -112,7 +140,7 @@ export default function Clinician({ fhirId }: Props) {
       onSuccess: data => {
         const resources = (data?.map(entry => entry.resource) || []).filter(
           Boolean
-        ) as IPractitionerRoleDetail[];
+        );
         setPractitionerRolesData(resources);
       }
     });
@@ -211,39 +239,11 @@ export default function Clinician({ fhirId }: Props) {
       await refetch();
     } catch (error) {
       toast.error('Gagal menyimpan jadwal');
-      console.log('Error when updating availability schedules : ', error);
+      console.error('Error when updating availability schedules : ', error);
     }
   };
 
-  const age = profileData?.birthDate
-    ? `${format(new Date(profileData?.birthDate), 'dd-MM-yyyy')} (${findAge(profileData.birthDate)})`
-    : '-';
-  const gender = profileData?.gender
-    ? profileData.gender.charAt(0).toUpperCase() +
-      profileData.gender.slice(1).toLowerCase()
-    : '-';
-  const phone =
-    profileData && Array.isArray(profileData.telecom)
-      ? (profileData.telecom.find(item => item.system === 'phone')?.value ??
-        '-')
-      : '-';
-  const address =
-    profileData && Array.isArray(profileData.address)
-      ? mapAddress(profileData.address)
-      : '-';
-
-  const profileDetail = [
-    {
-      key: 'Birth(Age)',
-      value: age
-    },
-    { key: 'Sex', value: gender },
-    { key: 'Whatsapp', value: phone },
-    {
-      key: 'Address',
-      value: address
-    }
-  ];
+  const profileDetail = buildProfileDetail(profileData);
 
   const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
     id: authState.userInfo?.fhirId,
@@ -315,7 +315,7 @@ export default function Clinician({ fhirId }: Props) {
           <div className='scrollbar-hide my-2 flex-grow overflow-y-auto'>
             <DrawerBody
               selectedPractitionerRoles={selectedPractitionerRoles}
-              onSave={handleSaveSuccess}
+              onSave={() => void handleSaveSuccess()}
               onCancel={() => setIsDrawerOpen(false)}
             />
           </div>

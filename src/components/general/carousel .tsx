@@ -15,8 +15,8 @@ const Carousel = ({ slides }: { slides: Slide[] }) => {
       <Swiper
         spaceBetween={0}
         slidesPerView={2}
-        onSlideChange={() => console.log('slide change')}
-        onSwiper={swiper => console.log(swiper)}
+        onSlideChange={undefined}
+        onSwiper={undefined}
       >
         {slides.map((item: Slide) => {
           return (

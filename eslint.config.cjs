@@ -143,6 +143,8 @@ module.exports = [
       'security/detect-unsafe-regex': 'error',             // DeepSource: regex-dos
 
       // ── Progressive (warn → error as debt is paid) ──
+      'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
+      'complexity': ['warn', 30],
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unsafe-call': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',

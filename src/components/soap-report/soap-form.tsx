@@ -188,7 +188,7 @@ export default function SoapForm({
       }
     } catch (error) {
       toast.error('SOAP gagal dikirim');
-      console.log('Error message :', error);
+      console.error('Error message :', error);
       toast.error('An error occurred while submitting the SOAP');
     }
   };

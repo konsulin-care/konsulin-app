@@ -210,7 +210,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
       handleNavigate(buttonLabel, submitResult.id);
     } catch (error) {
-      console.log('Error message :', error);
+      console.error('Error message :', error);
       toast.error('An error occurred while submitting the questionnaire');
       setIsSubmitting(false);
     }

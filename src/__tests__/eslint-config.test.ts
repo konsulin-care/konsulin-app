@@ -23,9 +23,13 @@ function getRuleLevel(rule: string): string | undefined {
 
   // The rule name is controlled input from our known rule list — safe.
   // eslint-disable-next-line security/detect-non-literal-regexp
-  const ruleRegex = new RegExp(`'${escapeRegex(rule)}'\\s*:\\s*'([^']+)'`);
-  const match = text.match(ruleRegex);
-  return match?.[1];
+  const ruleRegex = new RegExp(
+    `'${escapeRegex(rule)}'\\s*:\\s*(?:'([^']+)'|\\['([^']+)')`,
+    'g'
+  );
+  const matches = [...text.matchAll(ruleRegex)];
+  const lastMatch = matches.at(-1);
+  return lastMatch?.[1] ?? lastMatch?.[2];
 }
 
 function escapeRegex(str: string): string {
@@ -104,6 +108,8 @@ describe('ESLint config rule tiers', () => {
       ['@typescript-eslint/no-unsafe-call', 'warn'],
       ['@typescript-eslint/no-unsafe-return', 'warn'],
       ['@typescript-eslint/no-unsafe-argument', 'warn'],
+      ['no-console', 'warn'],
+      ['complexity', 'warn'],
       ['security/detect-non-literal-regexp', 'warn'],
       ['import/no-named-as-default-member', 'warn']
     ];
