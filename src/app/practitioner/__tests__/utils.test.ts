@@ -63,7 +63,7 @@ describe('getSlotMinutesText', () => {
   it('returns empty string for null/undefined', () => {
     expect(getSlotMinutesText(null)).toBe('');
     // skipcq: JS-W1042 - explicit undefined to match function signature
-    expect(getSlotMinutesText(undefined)).toBe('');
+    expect(getSlotMinutesText(undefined)).toBe(''); // eslint-disable-line unicorn/no-useless-undefined
   });
 
   it('returns empty string for non-object', () => {

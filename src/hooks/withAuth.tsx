@@ -14,7 +14,7 @@ export interface IWithAuth {
 function withAuth<T>(
   WrappedComponent: React.ComponentType<T>,
   allowedRoles: string[] = [],
-  allowGuestMode: boolean = false
+  allowGuestMode = false
 ) {
   const Wrapper: React.FC = (props: T) => {
     const router = useRouter();

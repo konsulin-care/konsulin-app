@@ -17,6 +17,9 @@ type InputProps = {
 
 const noop = (): void => undefined;
 
+/**
+ *
+ */
 export default function Input({
   outline,
   prefixIcon,

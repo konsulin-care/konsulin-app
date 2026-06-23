@@ -12,7 +12,7 @@ export default function UserIcon(props: React.SVGProps<SVGSVGElement>) {
       height={height}
       viewBox='0 0 25 25'
       fill='none'
-      xmlns='http://www.w3.org/2000/svg'
+      xmlns='https://www.w3.org/2000/svg'
     >
       <g clipPath='url(#clip0_6506_5007)'>
         <mask

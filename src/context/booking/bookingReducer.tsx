@@ -16,14 +16,17 @@ export const reducer = (
   action: IActionBooking
 ): IStateBooking => {
   switch (action.type) {
-    case 'UPDATE_BOOKING_INFO':
+    case 'UPDATE_BOOKING_INFO': {
       return {
         ...state,
         ...action.payload
       };
-    case 'RESET_BOOKING_INFO':
+    }
+    case 'RESET_BOOKING_INFO': {
       return initialState;
-    default:
+    }
+    default: {
       return state;
+    }
   }
 };

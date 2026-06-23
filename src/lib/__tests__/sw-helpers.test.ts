@@ -41,6 +41,7 @@ describe('isSameOrigin', () => {
 
   it('returns false for different protocol', () => {
     expect(isSameOrigin(new URL('http://konsulin.id/page'), ORIGIN)).toBe(
+      // eslint-disable-line unicorn/prefer-https
       false
     );
   });
@@ -98,12 +99,12 @@ describe('isStaticAsset', () => {
     expect(isStaticAsset(path)).toBe(false);
   });
 
-  it.each([
-    { path: '/images-something/foo' },
-    { path: '/icons-custom/bar' }
-  ])('rejects deeply nested unrelated path — $path', ({ path }) => {
-    expect(isStaticAsset(path)).toBe(false);
-  });
+  it.each([{ path: '/images-something/foo' }, { path: '/icons-custom/bar' }])(
+    'rejects deeply nested unrelated path — $path',
+    ({ path }) => {
+      expect(isStaticAsset(path)).toBe(false);
+    }
+  );
 });
 
 // ---------------------------------------------------------------------------

@@ -50,7 +50,7 @@ export function createUniqueRandomRange(
   const numbers = Array.from({ length: max - min + 1 }, (_, i) => i + min);
 
   return function () {
-    if (numbers.length === 0) return undefined;
+    if (numbers.length === 0) return undefined; // eslint-disable-line unicorn/no-useless-undefined
 
     const randomIndex = Math.floor(Math.random() * numbers.length);
     return numbers.splice(randomIndex, 1)[0];
