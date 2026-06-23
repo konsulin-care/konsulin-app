@@ -442,8 +442,8 @@ export const searchQuestionnaires = async (
           const response = await API.get<Bundle<Questionnaire>>(testUrl);
 
           // If we get results, return them
+          // eslint-disable-next-line max-depth
           if (response.data.entry && response.data.entry.length > 0) {
-            // eslint-disable-line max-depth
             return response.data.entry ?? [];
           }
         } catch (strategyError) {
