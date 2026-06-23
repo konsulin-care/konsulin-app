@@ -102,16 +102,18 @@ describe('ESLint config rule tiers', () => {
     });
   });
 
-  // ── Tier 3: Progressive (warn) — Fixable debt ──
-  describe('Tier 3: Progressive (warn)', () => {
+  // ── Tier 3: Promoted from warn to error ──
+  describe('Tier 3: Promoted from warn to error', () => {
     const tier3Rules: [string, string][] = [
-      ['@typescript-eslint/no-unsafe-member-access', 'warn'],
-      ['@typescript-eslint/no-unsafe-call', 'warn'],
-      ['@typescript-eslint/no-unsafe-argument', 'warn'],
-      ['no-console', 'warn'],
-      ['complexity', 'warn'],
-      ['security/detect-non-literal-regexp', 'warn'],
-      ['import/no-named-as-default-member', 'warn']
+      ['@typescript-eslint/no-unsafe-member-access', 'error'],
+      ['@typescript-eslint/no-unsafe-call', 'error'],
+      ['@typescript-eslint/no-unsafe-argument', 'error'],
+      ['@typescript-eslint/no-unsafe-assignment', 'error'],
+      ['no-console', 'error'],
+      ['complexity', 'error'],
+      ['security/detect-non-literal-regexp', 'error'],
+      ['import/no-named-as-default-member', 'error'],
+      ['unicorn/prefer-at', 'error']
     ];
 
     it.each(tier3Rules)('rule %s is set to %s', (rule, expectedLevel) => {
@@ -156,8 +158,7 @@ describe('ESLint config rule tiers', () => {
       'sonarjs/pseudo-random',
       'sonarjs/deprecation',
       'sonarjs/prefer-regexp-exec',
-      'import/no-named-as-default',
-      'jsdoc/require-jsdoc'
+      'import/no-named-as-default'
     ];
 
     it.each(offRules)('rule %s is set to off', rule => {
@@ -166,6 +167,32 @@ describe('ESLint config rule tiers', () => {
         return;
       }
       expect(level).toBe('off');
+    });
+  });
+
+  // ── Complexity max check ──
+  describe('Complexity cap', () => {
+    it('complexity max is 15', () => {
+      const text = readConfigText();
+      const regex = /'complexity'\s*:\s*\['error'\s*,\s*(\d+)\]/;
+      const [, maxStr] = text.match(regex) ?? [];
+      expect(maxStr).toBeDefined();
+      expect(Number(maxStr)).toBe(15);
+    });
+  });
+
+  // ── jsdoc/require-jsdoc: error for TS, off for non-TS ──
+  describe('jsdoc/require-jsdoc', () => {
+    it('is error for TS files (last match wins from TS section)', () => {
+      const level = getRuleLevel('jsdoc/require-jsdoc');
+      expect(level).toBe('error');
+    });
+
+    it('has publicOnly config with same params', () => {
+      const text = readConfigText();
+      const regex =
+        /'jsdoc\/require-jsdoc'[^]*?publicOnly\s*:\s*true[^]*?require[^]*?FunctionDeclaration[^]*?ClassDeclaration[^]*?ArrowFunctionExpression[^]*?false/;
+      expect(text).toMatch(regex);
     });
   });
 

@@ -94,15 +94,8 @@ module.exports = [
       'react/no-array-index-key': 'error',
       'react/self-closing-comp': 'error',
       'sonarjs/no-nested-functions': 'error',
-      'jsdoc/require-jsdoc': ['warn', {
-        publicOnly: true,
-        require: {
-          FunctionDeclaration: true,
-          ClassDeclaration: true,
-          ArrowFunctionExpression: false
-        }
-      }],
-      'unicorn/prefer-at': 'warn'
+      'jsdoc/require-jsdoc': 'off',
+      'unicorn/prefer-at': 'error'
     },
     languageOptions: {
       parserOptions: {
@@ -143,13 +136,13 @@ module.exports = [
       'security/detect-unsafe-regex': 'error',             // DeepSource: regex-dos
 
       // ── Progressive (warn → error as debt is paid) ──
-      'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
-      'complexity': ['warn', 30],
-      '@typescript-eslint/no-unsafe-member-access': 'warn',
-      '@typescript-eslint/no-unsafe-call': 'warn',
+      'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
+      'complexity': ['error', 15],
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
       '@typescript-eslint/no-unsafe-return': 'error',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
-      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
       '@typescript-eslint/use-unknown-in-catch-callback-variable': 'error',
       '@typescript-eslint/no-unnecessary-type-assertion': 'error',
       '@typescript-eslint/no-deprecated': 'error',
@@ -181,7 +174,14 @@ module.exports = [
       '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'off',
       // Note: consistent-return is set to 'error' above as Tier 1
       'import/no-named-as-default': 'off',
-      'jsdoc/require-jsdoc': 'off',
+      'jsdoc/require-jsdoc': ['error', {
+        publicOnly: true,
+        require: {
+          FunctionDeclaration: true,
+          ClassDeclaration: true,
+          ArrowFunctionExpression: false
+        }
+      }],
 
       // ── Unicorn: noise reduction (stylistic, not bug-catching) ──
       'unicorn/no-null': 'off',
@@ -205,8 +205,8 @@ module.exports = [
 
       // ── SonarJS: noise reduction (duplicates or false positives) ──
       // Leakage from plugin defaults — tracked here for graduation
-      'security/detect-non-literal-regexp': 'warn',
-      'import/no-named-as-default-member': 'warn',
+      'security/detect-non-literal-regexp': 'error',
+      'import/no-named-as-default-member': 'error',
 
       'sonarjs/prefer-read-only-props': 'off',
       'sonarjs/no-duplicate-string': 'off',
