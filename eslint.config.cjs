@@ -207,7 +207,7 @@ module.exports = [
       'sonarjs/no-duplicate-string': 'off',
       'sonarjs/no-hardcoded-passwords': 'off',
       'sonarjs/no-useless-catch': 'off',
-      'sonarjs/no-identical-expressions': 'off',
+      'sonarjs/no-identical-expressions': 'error',
       'sonarjs/pseudo-random': 'off',
       'sonarjs/prefer-regexp-exec': 'off',
 
