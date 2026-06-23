@@ -10,5 +10,5 @@ name = "eslint"
   [analyzers.meta]
   config_file = "eslint.config.cjs"
 
-[[formatters]]
+[[code_formatters]]
 name = "prettier"

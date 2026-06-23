@@ -55,7 +55,10 @@ describe('ESLint config rule tiers', () => {
       ['sonarjs/function-return-type', 'error'],
       ['@typescript-eslint/no-deprecated', 'error'],
       ['@typescript-eslint/use-unknown-in-catch-callback-variable', 'error'],
-      ['@typescript-eslint/no-unnecessary-type-assertion', 'error']
+      ['@typescript-eslint/no-unnecessary-type-assertion', 'error'],
+      ['max-depth', 'error'],
+      ['security/detect-unsafe-regex', 'error'],
+      ['max-params', 'error']
     ];
 
     const tier1Off: [string, string][] = [
@@ -147,8 +150,6 @@ describe('ESLint config rule tiers', () => {
       'sonarjs/pseudo-random',
       'sonarjs/deprecation',
       'sonarjs/prefer-regexp-exec',
-      'security/detect-unsafe-regex',
-      'security/detect-function-call-injection',
       'import/no-named-as-default',
       'jsdoc/require-jsdoc'
     ];

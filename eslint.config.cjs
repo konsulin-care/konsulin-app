@@ -138,6 +138,9 @@ module.exports = [
       'promise/catch-or-return': 'error',                  // Codacy: Promise Rejection
       'promise/no-nesting': 'error',                       // SonarQube: nested callbacks
       'sonarjs/no-unused-vars': 'error',                   // DeepScan: unused variable
+      'max-depth': ['error', { max: 4 }],                  // DeepScan: excessive nesting
+      'max-params': ['error', { max: 5 }],                 // SonarQube S107: too many params
+      'security/detect-unsafe-regex': 'error',             // DeepSource: regex-dos
 
       // ── Progressive (warn → error as debt is paid) ──
       '@typescript-eslint/no-unsafe-member-access': 'warn',
@@ -212,8 +215,7 @@ module.exports = [
       'sonarjs/prefer-regexp-exec': 'off',
 
       // ── Security: false positives for this codebase ──
-      'security/detect-unsafe-regex': 'off',
-      'security/detect-function-call-injection': 'off'
+
     }
   },
 
