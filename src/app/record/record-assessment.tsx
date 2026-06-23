@@ -71,6 +71,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
         if (saved?.value) {
           setColorMap(saved.value);
         }
+        return saved;
       })
       .catch(err => console.warn('[IndexedDB]', err));
   }, [authState.userInfo.userId]);
@@ -210,7 +211,9 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
         attempts += 1;
         if (attempts < MAX_ATTEMPTS && !cancelled) {
-          setTimeout(() => poll(serviceRequestId), 1000);
+          setTimeout(() => {
+            void poll(serviceRequestId);
+          }, 1000);
         }
       } catch (err) {
         console.error('[record-assessment] polling error:', err);
@@ -245,10 +248,10 @@ export default function RecordAssessment({ recordId, title }: Props) {
       const serviceRequestId = srRecord?.serviceRequestId;
       if (!serviceRequestId) return;
 
-      poll(serviceRequestId);
+      void poll(serviceRequestId);
     };
 
-    start();
+    void start();
 
     return () => {
       cancelled = true;

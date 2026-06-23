@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth */
+/* eslint-disable react/jsx-max-depth */
 import { Button } from '@/components/ui/button';
 import {
   Drawer,

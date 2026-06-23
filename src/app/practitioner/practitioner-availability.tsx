@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, max-lines, react/jsx-max-depth */
+/* eslint-disable max-lines, react/jsx-max-depth */
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
@@ -94,10 +94,7 @@ export default function PractitionerAvailability({
   });
   const [errorForm, setErrorForm] = useState<string[] | null>(null);
   const queryClient = useQueryClient();
-  const {
-    mutateAsync: createAppointment,
-    isLoading: isCreateAppointmentLoading
-  } = useCreateAppointment();
+  const { isLoading: isCreateAppointmentLoading } = useCreateAppointment();
   const { mutateAsync: payAppointment, isLoading: isPaying } =
     usePayAppointment();
 
@@ -114,7 +111,7 @@ export default function PractitionerAvailability({
 
   const listAvailableDate = getAvailableDays(
     practitionerRole.availableTime ?? [],
-    bookingState.date!
+    bookingState.date
   );
 
   /** Check if a given date exists in the available days array. */
@@ -214,7 +211,7 @@ export default function PractitionerAvailability({
     isLoading,
     isError
   } = useFindAvailability({
-    practitionerRoleId: practitionerRole.id!,
+    practitionerRoleId: practitionerRole.id,
     startFrom,
     startTo,
     dayKey
@@ -228,7 +225,7 @@ export default function PractitionerAvailability({
       const response = await API.get(`/fhir/Schedule/${scheduleId}`);
       return response.data || null;
     },
-    enabled: Boolean(scheduleId) && Boolean(isAuthenticated),
+    enabled: Boolean(scheduleId) && (isAuthenticated ?? false),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false
@@ -245,7 +242,7 @@ export default function PractitionerAvailability({
         return false;
       }
       const payload: AppointmentPayload = raw;
-      if (!matchesPractitionerFromPath(payload.path, practitionerRole.id!))
+      if (!matchesPractitionerFromPath(payload.path, practitionerRole.id))
         return false;
       const { slot, formData } = payload;
       setBookingInformation(formData);
@@ -273,7 +270,7 @@ export default function PractitionerAvailability({
     }
 
     const payload: AppointmentPayload = intent.payload;
-    if (!matchesPractitionerFromPath(payload.path, practitionerRole.id!)) {
+    if (!matchesPractitionerFromPath(payload.path, practitionerRole.id)) {
       return false;
     }
 
@@ -293,25 +290,29 @@ export default function PractitionerAvailability({
   /** Load temporary booking data from IndexedDB. */
   function loadTempBookingFromIndexedDB(userId: string): void {
     setIsOpen(true);
-    dbGet<TempBookingData>(STORES.tempBooking, userId).then(parsed => {
-      if (parsed) {
-        setBookingInformation(() => ({
-          schedule_id: parsed.scheduleId,
-          session_type: parsed.sessionType,
-          problem_brief: parsed.problemBrief,
-          practitioner_role_id: parsed.practitionerRoleId,
-          practitioner_available_time: parsed.practitionerAvailableTime
-        }));
+    void dbGet<TempBookingData>(STORES.tempBooking, userId)
+      .then(parsed => {
+        if (parsed) {
+          setBookingInformation(() => ({
+            schedule_id: parsed.scheduleId,
+            session_type: parsed.sessionType,
+            problem_brief: parsed.problemBrief,
+            practitioner_role_id: parsed.practitionerRoleId,
+            practitioner_available_time: parsed.practitionerAvailableTime
+          }));
 
-        handleFilterChange('date', new Date(parsed.date));
-        handleFilterChange('startTime', parsed.startTime);
-        handleFilterChange('hasUserChosenDate', parsed.hasUserChosenDate);
-
-        dbDelete(STORES.tempBooking, userId).catch(err =>
-          console.warn('[IndexedDB]', err)
-        );
-      }
-    });
+          handleFilterChange('date', new Date(parsed.date));
+          handleFilterChange('startTime', parsed.startTime);
+          handleFilterChange('hasUserChosenDate', parsed.hasUserChosenDate);
+        }
+        return parsed;
+      })
+      .then(() => {
+        return userId ? dbDelete(STORES.tempBooking, userId) : undefined;
+      })
+      .catch(() => {
+        // Best-effort load — ignore errors
+      });
   }
 
   /** Restore booking state from available sources when the modal opens. */
@@ -333,7 +334,7 @@ export default function PractitionerAvailability({
         : getNextAvailableDate(today, listAvailableDate);
 
       if (
-        bookingState.date!.getTime() !== initialDate.getTime() &&
+        bookingState.date.getTime() !== initialDate.getTime() &&
         !bookingState.hasUserChosenDate
       ) {
         handleFilterChange('date', initialDate);
@@ -361,13 +362,13 @@ export default function PractitionerAvailability({
 
     const now = new Date();
     const mapped = entries.map(entry => {
-      const slotStart = parseISO(entry.resource!.start!);
-      const slotEnd = parseISO(entry.resource!.end!);
-      const status = entry.resource!.status!;
+      const slotStart = parseISO(entry.resource.start);
+      const slotEnd = parseISO(entry.resource.end);
+      const status = entry.resource.status;
       const disabledByStatus = status !== 'free';
       const disabledByPast = isBefore(slotStart, now);
       return {
-        id: entry.resource!.id!,
+        id: entry.resource.id,
         displayLabel: `${format(slotStart, 'HH:mm')}`,
         value: `${format(slotStart, 'HH:mm')}`,
         start: slotStart,
@@ -404,14 +405,14 @@ export default function PractitionerAvailability({
 
     const params = new URLSearchParams(window.location.search);
 
-    const isValidDate = isDateAvailable(bookingState.date!, listAvailableDate);
+    const isValidDate = isDateAvailable(bookingState.date, listAvailableDate);
     const validTimeSlots = slotPills.filter(p => !p.disabled).map(p => p.value);
 
-    const isValidTime = validTimeSlots.includes(bookingState.startTime!);
+    const isValidTime = validTimeSlots.includes(bookingState.startTime);
 
     if (isValidDate === false) {
       const nextValidDate = getNextAvailableDate(
-        bookingState.date!,
+        bookingState.date,
         listAvailableDate
       );
       handleFilterChange('date', nextValidDate);
@@ -425,14 +426,14 @@ export default function PractitionerAvailability({
 
     if (isValidTime === false) {
       const nextAvailableTime = validTimeSlots.find(
-        time => time > bookingState.startTime!
+        time => time > bookingState.startTime
       );
 
       if (nextAvailableTime) {
         handleFilterChange('startTime', nextAvailableTime);
       } else {
         const nextValidDate = getNextAvailableDate(
-          addDays(bookingState.date!, 1),
+          addDays(bookingState.date, 1),
           listAvailableDate
         );
         handleFilterChange('date', nextValidDate);

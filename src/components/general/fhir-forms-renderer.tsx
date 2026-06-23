@@ -79,6 +79,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         if (saved?.response) {
           setResponse(saved.response);
         }
+        return saved;
       })
       .catch(err => console.warn('[IndexedDB]', err));
   }, [draftOwnerId, questionnaire.id]);
@@ -244,7 +245,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       {formType !== 'research' && (
         <Button
           className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-          onClick={() => handleSubmitQuestionnaire('result')}
+          onClick={() => {
+            void handleSubmitQuestionnaire('result');
+          }}
           disabled={isSubmitting || isPending}
         >
           {isSubmitting || isPending ? (
@@ -266,7 +269,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
             : 'border-secondary text-secondary bg-transparent hover:bg-gray-100'
         }`}
         onClick={() => {
-          handleSubmitQuestionnaire('close');
+          void handleSubmitQuestionnaire('close');
         }}
       >
         Close

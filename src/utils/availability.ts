@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DayOfWeek, TimeRange, WeeklyAvailability } from '@/types/availability';
 import { PractitionerRole } from 'fhir/r4';
 
@@ -46,7 +45,7 @@ export function toJsDayIndex(dayOfWeek: DayOfWeek): number {
  * Generate a unique ID for a time range
  */
 export function generateTimeRangeId(): string {
-  return `time-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `time-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 /**
@@ -84,8 +83,8 @@ export function initializeWeeklyAvailability(
           if (item.availableStartTime && item.availableEndTime) {
             availability[day][defaultOrgId].push({
               id: generateTimeRangeId(),
-              from: item.availableStartTime.substring(0, 5),
-              to: item.availableEndTime.substring(0, 5)
+              from: item.availableStartTime.slice(0, 5),
+              to: item.availableEndTime.slice(0, 5)
             });
           }
         }
@@ -138,8 +137,8 @@ export function initializeWeeklyAvailabilityFromRoles(
             if (item.availableStartTime && item.availableEndTime) {
               availability[day][orgId].push({
                 id: generateTimeRangeId(),
-                from: item.availableStartTime.substring(0, 5),
-                to: item.availableEndTime.substring(0, 5)
+                from: item.availableStartTime.slice(0, 5),
+                to: item.availableEndTime.slice(0, 5)
               });
             }
           }
@@ -249,7 +248,7 @@ export function validateTimeRange(timeRange: TimeRange): {
   error?: string;
 } {
   // Check if times are in HH:mm format
-  const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  const timeRegex = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
   if (!timeRegex.test(timeRange.from)) {
     return { valid: false, error: 'Invalid "from" time format' };

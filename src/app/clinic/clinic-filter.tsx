@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, max-lines */
+/* eslint-disable max-lines */
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterCalendar from '@/components/shared/filter-calendar';
 import FilterCustomTimeInputs from '@/components/shared/filter-custom-time-inputs';
@@ -155,7 +155,7 @@ export default function ClinicFilter({ onChange, type }) {
 
   const renderDrawerContent = () => {
     switch (whichContent) {
-      case CONTENT_DEFAULT:
+      case CONTENT_DEFAULT: {
         return (
           <div className='flex flex-col'>
             <DrawerTitle className='mx-auto text-[20px] font-bold'>
@@ -280,7 +280,8 @@ export default function ClinicFilter({ onChange, type }) {
             </Button>
           </div>
         );
-      case CONTENT_CUSTOM:
+      }
+      case CONTENT_CUSTOM: {
         return (
           <div className='flex flex-col'>
             <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
@@ -323,9 +324,11 @@ export default function ClinicFilter({ onChange, type }) {
             </Button>
           </div>
         );
+      }
 
-      default:
+      default: {
         return null;
+      }
     }
   };
 

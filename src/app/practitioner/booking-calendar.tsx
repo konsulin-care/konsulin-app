@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Calendar } from '@/components/ui/calendar-temp';
 import { DrawerDescription, DrawerTitle } from '@/components/ui/drawer';
 import { getAvailableDays } from './utils';

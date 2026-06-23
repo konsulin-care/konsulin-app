@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, max-lines */
+/* eslint-disable max-lines */
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterActions from '@/components/shared/filter-actions';
 import FilterCalendar from '@/components/shared/filter-calendar';
@@ -258,7 +258,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
   /** Renders the filter drawer content based on current selection. */
   const renderDrawerContent = () => {
     switch (whichContent) {
-      case CONTENT_DEFAULT:
+      case CONTENT_DEFAULT: {
         return (
           <div className='flex flex-col'>
             <DrawerTitle className='mx-auto text-[20px] font-bold'>
@@ -287,7 +287,8 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
             />
           </div>
         );
-      case CONTENT_CUSTOM:
+      }
+      case CONTENT_CUSTOM: {
         return (
           <div className='flex flex-col'>
             <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
@@ -330,9 +331,11 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
             </Button>
           </div>
         );
+      }
 
-      default:
+      default: {
         return null;
+      }
     }
   };
 

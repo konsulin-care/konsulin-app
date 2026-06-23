@@ -225,8 +225,7 @@ function decodeBase64(
 /** Convert a data URL to a Blob object. */
 export const dataUrlToBlob = (dataUrl: string) => {
   const arr = dataUrl.split(',');
-  const mimeMatch = arr[0]?.match(/:(.*?);/);
-  const mime = mimeMatch?.[1] ?? 'image/png';
+  const mime = arr[0]?.split(';')[0]?.split(':')[1] ?? 'image/png';
   const base64String = arr[1];
 
   interface BufferLike {

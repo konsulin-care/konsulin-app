@@ -24,7 +24,6 @@ export type MockCache = ReturnType<typeof createMockCache>;
  *
  */
 export function createMockSelf() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type EventCallback = (event: Record<string, any>) => void;
   const handlers: Record<string, EventCallback[] | undefined> = {};
   const listeners: Record<string, EventCallback[] | undefined> = {};
@@ -62,8 +61,7 @@ export function createMockCaches() {
     }),
     keys: vi.fn(() => Promise.resolve(Object.keys(stores))),
     delete: vi.fn((key: string) => {
-      // skipcq: JS-0320, JS-0376 - dynamic property deletion in test mock infrastructure
-      delete stores[key]; // skipcq: JS-0320, JS-0376
+      Reflect.deleteProperty(stores, key);
       return Promise.resolve(true);
     }),
     has: vi.fn(),
@@ -83,10 +81,7 @@ export function createMockFetch() {
 /**
  *
  */
-export function createMockEvent(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  overrides: Record<string, any> = {}
-) {
+export function createMockEvent(overrides: Record<string, any> = {}) {
   return {
     waitUntil: vi.fn(),
     respondWith: vi.fn(),
@@ -104,7 +99,7 @@ export function createMockEvent(
  */
 export function fireInstall(mockSelf: MockSelf) {
   const event = createMockEvent();
-  const handler = mockSelf.handlers['install'][0];
+  const handler = mockSelf.handlers.install[0];
   expect(handler, 'install handler must be registered').toBeDefined();
   handler(event);
   return event;
@@ -115,7 +110,7 @@ export function fireInstall(mockSelf: MockSelf) {
  */
 export function fireActivate(mockSelf: MockSelf) {
   const event = createMockEvent();
-  const handler = mockSelf.handlers['activate'][0];
+  const handler = mockSelf.handlers.activate[0];
   expect(handler, 'activate handler must be registered').toBeDefined();
   handler(event);
   return event;
@@ -126,11 +121,10 @@ export function fireActivate(mockSelf: MockSelf) {
  */
 export function fireFetch(
   mockSelf: MockSelf,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   request: Record<string, any> = {}
 ) {
   const event = createMockEvent({ request });
-  const handler = mockSelf.handlers['fetch'][0];
+  const handler = mockSelf.handlers.fetch[0];
   expect(handler, 'fetch handler must be registered').toBeDefined();
   handler(event);
   return event;

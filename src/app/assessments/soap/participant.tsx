@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth */
+/* eslint-disable react/jsx-max-depth */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import {
@@ -74,8 +74,7 @@ export default function Participant({
   }, [list]);
 
   const handleEmailValidation = () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!email.includes('@') || !email.includes('.', email.indexOf('@'))) {
       setError('Email address is invalid');
       return false;
     }
@@ -168,7 +167,9 @@ export default function Participant({
 
       <Button
         className='bg-secondary w-full text-white'
-        onClick={handleCreatePatient}
+        onClick={() => {
+          void handleCreatePatient();
+        }}
         disabled={isSubmitting}
       >
         {isSubmitting ? (

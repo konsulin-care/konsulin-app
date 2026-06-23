@@ -61,7 +61,6 @@ export default function ClinicianPracticeSchedule({
               {Object.keys(availability).map(day => {
                 const timeRanges = availability[day] || [];
                 const tags = timeRanges.map(
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   (timeRange: any) =>
                     `${day}: ${timeRange.fromTime} - ${timeRange.toTime}`
                 );

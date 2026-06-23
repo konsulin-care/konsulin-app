@@ -4,7 +4,6 @@ import { assertDefined } from './test-utils';
 
 const LOCAL_STORAGE_KEY = 'konsulin.intent';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function readStored(): any {
   const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
   assertDefined(raw);
@@ -14,6 +13,7 @@ function readStored(): any {
 describe('saveIntent', () => {
   beforeEach(() => {
     localStorage.clear();
+    // eslint-disable-next-line unicorn/no-document-cookie
     document.cookie = '';
     vi.restoreAllMocks();
   });

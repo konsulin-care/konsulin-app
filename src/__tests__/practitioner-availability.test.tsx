@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, max-lines, react/display-name */
+/* eslint-disable max-lines, react/display-name */
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';

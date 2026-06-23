@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterActions from '@/components/shared/filter-actions';
 import FilterCalendar from '@/components/shared/filter-calendar';
@@ -143,7 +142,7 @@ export default function RecordFilter({ onChange }) {
 
   const renderDrawerContent = () => {
     switch (whichContent) {
-      case CONTENT_DEFAULT:
+      case CONTENT_DEFAULT: {
         return (
           <div className='flex flex-col'>
             <DrawerTitle>
@@ -175,7 +174,8 @@ export default function RecordFilter({ onChange }) {
             />
           </div>
         );
-      case CONTENT_CUSTOM:
+      }
+      case CONTENT_CUSTOM: {
         return (
           <div className='flex flex-col'>
             <DrawerTitle>
@@ -208,9 +208,11 @@ export default function RecordFilter({ onChange }) {
             </Button>
           </div>
         );
+      }
 
-      default:
+      default: {
         return null;
+      }
     }
   };
 

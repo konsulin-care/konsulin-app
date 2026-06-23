@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, max-lines */
+/* eslint-disable max-lines */
 import { STORES, dbDelete } from '@/lib/indexeddb';
 import { IQuestionnaireResponse } from '@/types/assessment';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -23,7 +23,7 @@ function parseCanonicalOrReference(
 ): string | null {
   if (!value) return null;
 
-  const withoutVersion = String(value).split('|')[0];
+  const withoutVersion = value.split('|')[0];
   try {
     const url = new URL(withoutVersion);
     if (expectedType === 'Questionnaire') {
@@ -42,8 +42,8 @@ function parseCanonicalOrReference(
     return parts.length > 1 ? parts.at(-1) || null : withoutVersion;
   }
 
-  const typeIndex = parts.findIndex(part => part === expectedType);
-  if (typeIndex >= 0 && parts[typeIndex + 1]) {
+  const typeIndex = parts.indexOf(expectedType);
+  if (typeIndex !== -1 && parts[typeIndex + 1]) {
     return parts[typeIndex + 1];
   }
 
@@ -126,7 +126,7 @@ export const useOngoingResearch = () => {
         (resource: any) => resource?.resourceType === 'PlanDefinition'
       );
 
-      if (!researchStudies.length) return [];
+      if (researchStudies.length === 0) return [];
 
       const planToQuestionnaires: Record<string, string[]> = {};
 

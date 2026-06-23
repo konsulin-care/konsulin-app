@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import Avatar from '@/components/general/avatar';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
@@ -272,8 +271,12 @@ export default function PaymentDrawer({
           isPaying={isPaying}
           isPaymentDisabled={isPaymentDisabled}
           isPaymentDisabledOffline={isPaymentDisabledOffline}
-          handlePayOnline={handlePayOnline}
-          handlePayOffline={handlePayOffline}
+          handlePayOnline={() => {
+            void handlePayOnline();
+          }}
+          handlePayOffline={() => {
+            void handlePayOffline();
+          }}
         />
       </DrawerContent>
     </Drawer>

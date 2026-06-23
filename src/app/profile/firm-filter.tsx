@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth */
+/* eslint-disable react/jsx-max-depth */
 import { FilterIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {

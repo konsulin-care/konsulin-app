@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { addMinutes, format, parse } from 'date-fns';
 
 /* returns all available appointment days for a given month.
@@ -126,11 +125,9 @@ export function getSlotMinutesText(schedule: any): string {
   try {
     const commentObj = JSON.parse(schedule.comment);
     if (typeof commentObj.slotMinutes === 'number') {
-      if (commentObj.slotMinutes > 0) {
-        return ` ${commentObj.slotMinutes} Menit`;
-      } else {
-        return '';
-      }
+      return commentObj.slotMinutes > 0
+        ? ` ${commentObj.slotMinutes} Menit`
+        : '';
     } else {
       return '';
     }

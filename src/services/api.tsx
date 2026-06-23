@@ -35,6 +35,7 @@ export function setCurrentUserId(id: string | null) {
 export function getAPI(): Promise<AxiosInstance> {
   if (apiInstance) return Promise.resolve(apiInstance);
 
+  // eslint-disable-next-line import/no-named-as-default-member
   apiInstance = axios.create({
     baseURL: '/proxy',
     headers: {
@@ -74,7 +75,7 @@ export function getAPI(): Promise<AxiosInstance> {
       // not for FHIR data access errors (e.g., Person resource 401).
       if ((isExpiredToken || isMissingToken) && isAuthEndpoint) {
         setTimeout(() => {
-          clearUserData(currentUserId ?? 'guest');
+          void clearUserData(currentUserId ?? 'guest');
           try {
             window.location.href = '/';
           } catch (err) {
@@ -92,7 +93,7 @@ export function getAPI(): Promise<AxiosInstance> {
         });
       }
 
-      return Promise.reject(error);
+      return Promise.reject(new Error(error));
     }
   );
 

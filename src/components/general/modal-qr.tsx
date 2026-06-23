@@ -21,6 +21,8 @@ export default function ModalQr({ value }) {
       .writeText(value)
       .then(() => {
         toast.success('URL copied to clipboard');
+        // eslint-disable-next-line sonarjs/no-redundant-jump
+        return;
       })
       .catch(err => {
         console.error('Error copying to clipboard', err);
