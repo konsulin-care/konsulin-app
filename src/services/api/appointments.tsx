@@ -1,6 +1,6 @@
 import { getUtcDayRange } from '@/utils/helper';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Bundle } from 'fhir/r4';
+import { Bundle, Slot } from 'fhir/r4';
 import { getAPI } from '../api';
 
 export const useGetUpcomingAppointments = ({
@@ -16,13 +16,13 @@ export const useGetUpcomingAppointments = ({
     queryKey: ['appointments', patientId, dateReference],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/Appointment?actor=Patient/${patientId}&slot.start=ge${utcStart}&_include=Appointment:actor:PractitionerRole&_include:iterate=PractitionerRole:practitioner&_include=Appointment:slot`
       );
       return response;
     },
     select: response => {
-      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data || null;
     },
     staleTime: 60 * 1000,
     refetchOnMount: 'always',
@@ -37,13 +37,13 @@ export const useGetAllAppointments = ({ patientId }: { patientId: string }) => {
     queryKey: ['all-appointments', patientId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/Appointment?actor=Patient/${patientId}&_include=Appointment:actor:PractitionerRole&_include:iterate=PractitionerRole:practitioner&_include=Appointment:slot`
       );
       return response;
     },
     select: response => {
-      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data || null;
     },
     enabled: Boolean(patientId)
   });
@@ -63,13 +63,13 @@ export const useGetUpcomingSessions = ({
     queryKey: ['sessions', practitionerId, dateReference],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/Appointment?actor=Practitioner/${practitionerId}&slot.start=ge${utcStart}&_include=Appointment:actor:Patient&_include=Appointment:slot`
       );
       return response;
     },
     select: response => {
-      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data || null;
     },
     staleTime: 60 * 1000,
     refetchOnMount: 'always',
@@ -88,13 +88,13 @@ export const useGetAllSessions = ({
     queryKey: ['all-sessions', practitionerId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/Appointment?actor=Practitioner/${practitionerId}&_include=Appointment:actor:Patient&_include=Appointment:slot`
       );
       return response;
     },
     select: response => {
-      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data || null;
     },
     enabled: Boolean(practitionerId)
   });
@@ -116,13 +116,13 @@ export const useGetTodaySessions = ({
     queryKey: ['today-sessions', practitionerId, dateReference],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/Appointment?_elements=appointmentType,participant,slot&practitioner=${practitionerId}&slot.start=ge${utcStart}&slot.start=le${utcEnd}&_include=Appointment:patient`
       );
       return response;
     },
     select: response => {
-      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data || null;
     },
     enabled: Boolean(dateReference) && Boolean(practitionerId) && enabled
   });
@@ -135,8 +135,9 @@ export const useCreateAppointment = () => {
     mutationFn: async (payload: Bundle) => {
       try {
         const API = await getAPI();
-        const response = await API.post('/fhir', payload);
-        return response.data.entry; // eslint-disable-line @typescript-eslint/no-unsafe-return
+        const response = await API.post<Bundle>('/fhir', payload);
+        const entries = response.data.entry;
+        return entries ?? [];
       } catch (error) {
         console.error('Error when booking an appointment:', error);
         throw error;
@@ -183,13 +184,13 @@ export const useGetPractitionerSlots = ({
     queryKey: ['slots', practitionerId, dateReference],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle<Slot>>(
         `/fhir/Slot?_has:Appointment:slot:practitioner=${practitionerId}&start=ge${utcStart}`
       );
       return response;
     },
     select: response => {
-      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data || null;
     },
     enabled: Boolean(practitionerId) && Boolean(dateReference)
   });
