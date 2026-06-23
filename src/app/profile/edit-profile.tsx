@@ -153,9 +153,9 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }
   }, [initialDraft]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: updateProfile, isLoading: isUpdateLoading } =
     useUpdateProfile();
-
   const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
   const { data: listCities, isLoading: cityLoading } = useGetCities(
     Number(updateUser.provinceCode)
@@ -183,6 +183,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   }, [updateUser.addresses]);
 
   /** Debounced auto-save profile edits to localStorage. */
+  // eslint-disable-next-line consistent-return
   useEffect(() => {
     if (!isLoading && !isProfileLoading) {
       const timer = setTimeout(() => {
@@ -214,7 +215,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       setResolvedPhotoUrl(valid ? updateUser.photo : '');
     };
 
-    validatePhoto();
+    void validatePhoto();
 
     return () => {
       isActive = false;
@@ -314,7 +315,9 @@ export default function EditProfile({ userRole, fhirId }: Props) {
           isValid={validateForm(updateUser, isPhoneBasedUser)}
           isUpdateLoading={isUpdateLoading}
           isUploadingPhoto={isUploadingPhoto}
-          onSave={handleEditSave}
+          onSave={() => {
+            void handleEditSave();
+          }}
         />
       </div>
 

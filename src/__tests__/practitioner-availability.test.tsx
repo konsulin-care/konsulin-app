@@ -255,6 +255,7 @@ describe('PractitionerAvailability', () => {
       mutateAsync: vi.fn(),
       isLoading: false
     } as any);
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     vi.mocked(useQuery as any).mockReturnValue({ data: null } as any);
   });
 

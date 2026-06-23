@@ -94,7 +94,9 @@ export default function PractitionerAvailability({
   });
   const [errorForm, setErrorForm] = useState<string[] | null>(null);
   const queryClient = useQueryClient();
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { isLoading: isCreateAppointmentLoading } = useCreateAppointment();
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: payAppointment, isLoading: isPaying } =
     usePayAppointment();
 

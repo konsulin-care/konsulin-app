@@ -97,7 +97,7 @@ export default function Practitioner() {
         }
         return saved;
       })
-      .catch(err => console.warn('[IndexedDB]', err));
+      .catch((err: unknown) => console.warn('[IndexedDB]', err));
   }, [router]);
 
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function Practitioner() {
         setPractitionerDataLoading(false);
         return saved;
       })
-      .catch(err => {
+      .catch((err: unknown) => {
         console.warn('[IndexedDB]', err);
         setPractitionerDataLoading(false);
       });

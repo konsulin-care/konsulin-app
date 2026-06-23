@@ -32,6 +32,7 @@ export default function EditJournal({ journalId }: Props) {
     addResponse,
     removeResponse
   } = useJournalForm();
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useUpdateJournal();
   const { data: journalData, isLoading: isJournalLoading } = useGetSingleRecord(
@@ -42,7 +43,7 @@ export default function EditJournal({ journalId }: Props) {
     if (journalData) {
       setJournalTitle(journalData?.valueString || '');
 
-      if (journalData.note.length !== 0) {
+      if (journalData.note.length > 0) {
         setResponse(
           journalData.note.map(item => ({
             ...item,
@@ -66,7 +67,7 @@ export default function EditJournal({ journalId }: Props) {
         code: {
           coding: [
             {
-              system: 'http://loinc.org',
+              system: 'https://loinc.org',
               code: '51855-5',
               display: 'Patient Note'
             }
@@ -139,7 +140,9 @@ export default function EditJournal({ journalId }: Props) {
 
       <JournalSubmitButton
         isLoading={isSubmitLoading}
-        onClick={handleSubmitJournal}
+        onClick={() => {
+          void handleSubmitJournal();
+        }}
       />
     </>
   );

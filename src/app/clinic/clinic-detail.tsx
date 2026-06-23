@@ -118,7 +118,7 @@ export default function ClinicDetail() {
         qualification: practitioner.qualification,
         email: email?.value
       }
-    }).catch(err => console.warn('[IndexedDB]', err));
+    }).catch((err: unknown) => console.warn('[IndexedDB]', err));
   };
 
   const filteredPractitioners = useMemo(() => {
@@ -136,7 +136,7 @@ export default function ClinicDetail() {
     const hasTimeFilter = Boolean(start_time) || Boolean(end_time);
 
     const filterDays = hasDateFilter
-      ? generateFilterDays(start_date!, end_date!)
+      ? generateFilterDays(start_date, end_date)
       : [];
 
     const filterStartTime = start_time

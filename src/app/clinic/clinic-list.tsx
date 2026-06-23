@@ -114,7 +114,7 @@ export default function ClinicList() {
       ownerId: '',
       prefKey: 'selected_clinic',
       value: clinicId
-    }).catch(err => console.warn('[IndexedDB]', err));
+    }).catch((err: unknown) => console.warn('[IndexedDB]', err));
     router.push(`/clinic?clinicId=${clinicId}`);
   };
 

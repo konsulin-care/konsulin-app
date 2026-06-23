@@ -145,15 +145,15 @@ module.exports = [
       '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
       '@typescript-eslint/no-unsafe-assignment': 'warn',
-      '@typescript-eslint/use-unknown-in-catch-callback-variable': 'warn',
+      '@typescript-eslint/use-unknown-in-catch-callback-variable': 'error',
       '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
-      '@typescript-eslint/no-deprecated': 'warn',
+      '@typescript-eslint/no-deprecated': 'error',
       'unicorn/no-array-sort': 'error',
       'promise/always-return': 'error',
       'sonarjs/slow-regex': 'error',
       'sonarjs/function-return-type': 'error',
       'sonarjs/no-dead-store': 'error',
-      'sonarjs/deprecation': 'off',                // duplicates @typescript-eslint/no-deprecated (set to warn above)
+      'sonarjs/deprecation': 'off',                // duplicates @typescript-eslint/no-deprecated (set to error above)
 
       // ── Hard-off: FHIR domain patterns (not fixable without breaking FHIR) ──
       '@typescript-eslint/no-non-null-assertion': 'off',

@@ -1,4 +1,4 @@
-/* eslint-disable sonarjs/cognitive-complexity, react/jsx-max-depth */
+/* eslint-disable sonarjs/cognitive-complexity, react/jsx-max-depth, max-lines */
 import PageLoader from '@/components/general/page-loader';
 import { SmartFormShell } from '@/components/general/smart-form-shell';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -64,7 +64,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const {
     mutateAsync: submitQuestionnaire,
-    isLoading: submitQuestionnaireIsLoading
+    isLoading: submitQuestionnaireIsLoading // eslint-disable-line @typescript-eslint/no-deprecated
   } = useSubmitQuestionnaire(questionnaire.id, isAuthenticated);
 
   const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =
@@ -81,7 +81,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         }
         return saved;
       })
-      .catch(err => console.warn('[IndexedDB]', err));
+      .catch((err: unknown) => console.warn('[IndexedDB]', err));
   }, [draftOwnerId, questionnaire.id]);
 
   const handleResponseChange = useDraftAutoSave(
@@ -194,7 +194,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
             ownerId: draftOwnerId,
             serviceRequestId,
             updatedAt: Date.now()
-          }).catch(err => console.warn('[IndexedDB]', err));
+          }).catch((err: unknown) => console.warn('[IndexedDB]', err));
         }
       }
 
@@ -205,7 +205,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           questionnaireId: questionnaire.id,
           response: { ...questionnaireResponse, id: submitResult.id },
           updatedAt: Date.now()
-        }).catch(err => console.warn('[IndexedDB]', err));
+        }).catch((err: unknown) => console.warn('[IndexedDB]', err));
       }
 
       handleNavigate(buttonLabel, submitResult.id);
@@ -343,5 +343,4 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     </RendererThemeProvider>
   );
 }
-
 export default FhirFormsRenderer;

@@ -257,8 +257,8 @@ export const useSubmitQuestionnaire = (
 
       // Only delete draft after successful server submission.
       if (isAuthenticated) {
-        dbDelete(STORES.assessmentDrafts, ['', questionnaireId]).catch(err =>
-          console.warn('[IndexedDB]', err)
+        dbDelete(STORES.assessmentDrafts, ['', questionnaireId]).catch(
+          (err: unknown) => console.warn('[IndexedDB]', err)
         );
       }
 

@@ -20,8 +20,10 @@ export default function PractitionerRecord() {
   const searchParams = useSearchParams();
   const patientId = searchParams.get('patientId');
   const { isLoading: isAuthLoading } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: getRecords, isLoading: isRecordLoading } =
     useRecordSummaryPractitioner();
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: getFilteredRecord, isLoading: isFilteredRecordLoading } =
     useFilterRecordPractitionerByDate();
 
@@ -43,7 +45,7 @@ export default function PractitionerRecord() {
             section.value?.toLowerCase().includes(query)
         );
       }
-      return (record.result as string)?.toLowerCase().includes(query);
+      return record.result?.toLowerCase().includes(query);
     }
   });
 

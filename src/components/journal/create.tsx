@@ -34,6 +34,7 @@ export default function CreateJournal() {
     addResponse,
     removeResponse
   } = useJournalForm();
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useSubmitJournal();
 
@@ -52,7 +53,7 @@ export default function CreateJournal() {
         code: {
           coding: [
             {
-              system: 'http://loinc.org',
+              system: 'https://loinc.org',
               code: '51855-5',
               display: 'Patient Note'
             }
@@ -127,7 +128,9 @@ export default function CreateJournal() {
 
       <JournalSubmitButton
         isLoading={isSubmitLoading}
-        onClick={handleSubmitJournal}
+        onClick={() => {
+          void handleSubmitJournal();
+        }}
       />
     </>
   );

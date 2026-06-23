@@ -41,13 +41,13 @@ export function RuntimeConfigProvider({
             appName: raw.APP_NAME,
             apiDomain: raw.API_URL,
             websiteDomain: raw.APP_URL,
-            apiBasePath: raw.API_BASE_PATH + raw.AUTH_PATH,
+            apiBasePath: String(raw.API_BASE_PATH) + String(raw.AUTH_PATH),
             websiteBasePath: raw.AUTH_PATH
           },
           terminologyServer: raw.TX_URL ?? ''
         })
       )
-      .catch(err => {
+      .catch((err: unknown) => {
         console.error('Failed to fetch /api/config, using fallback:', err);
         setConfig({
           appInfo: getAppInfo(),

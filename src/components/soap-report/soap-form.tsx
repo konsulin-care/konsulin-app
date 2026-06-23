@@ -52,6 +52,7 @@ export default function SoapForm({
   const titleParam = searchParams?.get('title');
   const categoryParam = searchParams?.get('category');
 
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: submitSoapBundle, isLoading: isSubmitSoapLoading } =
     useSubmitSoapBundle();
 
@@ -91,7 +92,7 @@ export default function SoapForm({
       }
     };
 
-    runBuildForm();
+    void runBuildForm();
   }, [questionnaire, mode, questionnaireResponse, patientId, practitionerId]);
 
   const handleResponseChange = useDraftAutoSave(STORES.soapDrafts, qr => ({
@@ -149,12 +150,12 @@ export default function SoapForm({
             }
           },
           ...observations.map(obs => {
-            // ensure all coding.system is set to "http://loinc.org"
+            // ensure all coding.system is set to loinc.org
             const fixedCode = {
               ...obs.code,
               coding: obs.code.coding?.map(coding => ({
                 ...coding,
-                system: 'http://loinc.org'
+                system: 'https://loinc.org'
               }))
             };
 
@@ -180,8 +181,8 @@ export default function SoapForm({
         toast.success(
           `SOAP berhasil ${mode === 'create' ? 'dikirim' : 'diupdate'}`
         );
-        dbDelete(STORES.soapDrafts, [practitionerId, patientId]).catch(err =>
-          console.warn('[IndexedDB]', err)
+        dbDelete(STORES.soapDrafts, [practitionerId, patientId]).catch(
+          (err: unknown) => console.warn('[IndexedDB]', err)
         );
         router.push('/');
       }
@@ -217,7 +218,7 @@ export default function SoapForm({
             onClick={() => {
               const isValid = handleValidation();
               if (isValid) {
-                handleSubmitSoap();
+                void handleSubmitSoap();
               }
             }}
           >

@@ -60,7 +60,7 @@ function useReloadAnonymousSession(
         /* ignore */
       }
       await ensureAnonymousSession(true);
-    })().catch(err =>
+    })().catch((err: unknown) =>
       console.error('Failed to refresh anonymous session on reload:', err)
     );
   }, [isLoading, isAuthenticated]);
@@ -145,7 +145,7 @@ function handleIntent(
     }
   };
 
-  run();
+  void run();
   return () => {
     isMounted = false;
     abortController.abort();

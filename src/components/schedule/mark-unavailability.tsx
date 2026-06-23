@@ -127,13 +127,13 @@ function UnavailabilityFormBody({
         {roles.map(r => (
           <label key={r.id} className='flex items-center gap-2'>
             <Checkbox
-              checked={selectedRoleIds.includes(r.id!)}
+              checked={selectedRoleIds.includes(r.id)}
               onCheckedChange={() => {
-                if (selectedRoleIds.includes(r.id!))
+                if (selectedRoleIds.includes(r.id))
                   onSelectedRoleIdsChange(
-                    selectedRoleIds.filter(x => x !== r.id!)
+                    selectedRoleIds.filter(x => x !== r.id)
                   );
-                else onSelectedRoleIdsChange([...selectedRoleIds, r.id!]);
+                else onSelectedRoleIdsChange([...selectedRoleIds, r.id]);
               }}
             />
             <span className='text-sm'>{r.organizationData?.name || r.id}</span>
@@ -311,7 +311,7 @@ function useMarkUnavailabilityForm() {
     isLoading: rolesLoading,
     refetch,
     data: roleEntries
-  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId!, {
+  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
     onSuccess: entries => {
       const resources = entries?.map(e => e.resource) || [];
       const active = (resources || [])
@@ -321,6 +321,7 @@ function useMarkUnavailabilityForm() {
     }
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: markUnavailable, isLoading: saving } =
     useMarkUnavailability();
   const [lastConflicts, setLastConflicts] = useState<
@@ -345,7 +346,7 @@ function useMarkUnavailabilityForm() {
   };
 
   useEffect(() => {
-    if (open) refetch();
+    if (open) void refetch();
   }, [open, refetch]);
 
   const onSave = async () => {
@@ -496,7 +497,7 @@ export default function MarkUnavailabilityButton({
         date={form.date}
         onDateSelect={form.setDate as (date: Date | undefined) => void}
         allDay={form.allDay}
-        onAllDayChange={v => form.setAllDay(Boolean(v))}
+        onAllDayChange={v => form.setAllDay(Boolean(v))} // eslint-disable-line @typescript-eslint/no-unnecessary-type-conversion
         fromTime={form.fromTime}
         onFromTimeChange={form.setFromTime}
         toTime={form.toTime}
@@ -509,7 +510,9 @@ export default function MarkUnavailabilityButton({
         onReasonChange={form.setReason}
         canSave={form.canSave}
         saving={form.saving}
-        onSave={form.onSave}
+        onSave={() => {
+          void form.onSave();
+        }}
         onCancel={() => {
           form.setOpen(false);
           form.reset();
