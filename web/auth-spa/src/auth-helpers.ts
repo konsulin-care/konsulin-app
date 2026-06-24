@@ -1,4 +1,4 @@
-import type { Patient, Practitioner } from 'fhir/r4';
+import type { Patient, Person, Practitioner } from 'fhir/r4';
 import { Roles } from './constants/roles';
 import { createProfile, getProfileByIdentifier } from './services/profile';
 import { mergeNames } from './utils/helper';
@@ -9,7 +9,7 @@ import {
   getRedirectIntent
 } from './utils/redirect-intent';
 
-type FHIRProfile = Patient | Practitioner | null;
+type FHIRProfile = Patient | Practitioner | Person | null;
 
 /** Posts auth cookie data to the server with CSRF protection. */
 async function postAuthCookie(
@@ -58,7 +58,9 @@ async function postAuthCookieForUser(
     role_name: role,
     email: emails[0] || '',
     phoneNumber: phoneNumbers[0] || '',
-    profile_picture: profile?.photo?.[0]?.url ?? '',
+    profile_picture: Array.isArray(profile?.photo)
+      ? (profile?.photo?.[0]?.url ?? '')
+      : (profile?.photo?.url ?? ''),
     fullname: mergeNames(profile?.name),
     fhirId: profile?.id ?? ''
   };
@@ -83,7 +85,7 @@ async function handleNewUserLogin(
     Array.isArray(roles) && roles.includes(Roles.Practitioner)
       ? Roles.Practitioner
       : Roles.Patient;
-  let profileData: Patient | Practitioner | null = null;
+  let profileData: FHIRProfile = null;
   try {
     profileData = await getProfileByIdentifier({ userId, type: role });
   } catch (error) {
@@ -135,7 +137,7 @@ async function handleReturningUserLogin(
     Array.isArray(roles) && roles.includes(Roles.Practitioner)
       ? Roles.Practitioner
       : Roles.Patient;
-  let profile: Patient | Practitioner | null = null;
+  let profile: FHIRProfile = null;
   try {
     profile = await getProfileByIdentifier({
       userId,
