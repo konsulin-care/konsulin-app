@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, unicorn/number-literal-case */
 const TEAL = '#13c2c2';
 const PARTNER_COLORS = ['#2c2f35', '#5E81AC', '#08979C'] as const;
 
