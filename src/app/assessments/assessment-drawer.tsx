@@ -1,4 +1,5 @@
 /* eslint-disable complexity */
+/* reason: assessment drawer renders practitioner/patient views with rich sub-sections */
 'use client';
 
 import { LoadingSpinnerIcon } from '@/components/icons';

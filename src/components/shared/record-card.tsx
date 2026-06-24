@@ -1,4 +1,5 @@
 /* eslint-disable complexity */
+/* reason: record card renders nested conditional sub-sections by type */
 'use client';
 
 import Avatar from '@/components/general/avatar';

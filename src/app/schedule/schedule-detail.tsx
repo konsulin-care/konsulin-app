@@ -1,3 +1,4 @@
+/* reason: session detail renders conditional sub-sections for avatar, status, and action buttons */
 'use client';
 
 import Avatar from '@/components/general/avatar';
