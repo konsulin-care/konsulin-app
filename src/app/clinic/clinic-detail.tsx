@@ -18,6 +18,11 @@ import {
   parseTime
 } from '@/utils/helper';
 import { format, setHours, setMinutes } from 'date-fns';
+import type {
+  CodeableConcept,
+  ContactPoint,
+  PractitionerRoleAvailableTime
+} from 'fhir/r4';
 import { HeartPulse, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -26,8 +31,8 @@ import { useMemo, useState } from 'react';
 import ClinicFilter from './clinic-filter';
 
 // generates an array of 3-letter weekday abbreviations from given date range
-const generateFilterDays = (start: Date, end: Date) => {
-  const filterDays = [];
+const generateFilterDays = (start: Date, end: Date): string[] => {
+  const filterDays: string[] = [];
   const currentDate = new Date(start);
 
   while (currentDate <= new Date(end)) {
@@ -38,7 +43,7 @@ const generateFilterDays = (start: Date, end: Date) => {
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
-  return filterDays; // eslint-disable-line @typescript-eslint/no-unsafe-return
+  return filterDays;
 };
 
 /** Check if a slot's days and time overlap with the given filter range. */
@@ -88,7 +93,12 @@ export default function ClinicDetail() {
     newPractitionerData: practitionersData,
     isFetching,
     isLoading
-  } = useClinicById(clinicId);
+  } = useClinicById(clinicId) as unknown as {
+    clinic: import('fhir/r4').BundleEntry | undefined;
+    newPractitionerData: IPractitioner[];
+    isFetching: boolean;
+    isLoading: boolean;
+  };
 
   /** Merge organization address fields into a single string. */
   const mergeAddress = (clinic: IOrganizationResource): string | undefined => {
@@ -147,7 +157,7 @@ export default function ClinicDetail() {
       ? parseTime(end_time, 'HH:mm')
       : setHours(setMinutes(new Date(), 59), 23); // default to 23:59
 
-    return practitionersData.filter((practitioner: any) => {
+    return practitionersData.filter((practitioner: IPractitioner) => {
       // name filtering
       const fullName = mergeNames(
         practitioner.name ?? [],
@@ -167,7 +177,7 @@ export default function ClinicDetail() {
       // if no date or time filters applied, skip availability filtering
       if (!hasDateFilter && !hasTimeFilter) return true;
 
-      return availableTime.some((slot: any) => {
+      return availableTime.some((slot: PractitionerRoleAvailableTime) => {
         const practitionerStartTime = parseTime(
           slot.availableStartTime ?? '00:00:00',
           'HH:mm:ss'
@@ -211,13 +221,13 @@ export default function ClinicDetail() {
     }
     return (
       <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-        {practitionersData.map((practitioner: any) => {
+        {practitionersData.map((practitioner: IPractitioner) => {
           const displayName = mergeNames(
             practitioner.name ?? [],
             practitioner.qualification
           );
           const email = practitioner.telecom?.find(
-            (item: any) => item.system === 'email'
+            (item: ContactPoint) => item.system === 'email'
           );
           const { initials, backgroundColor, seed } = generateAvatarPlaceholder(
             {
@@ -255,7 +265,7 @@ export default function ClinicDetail() {
               </div>
               <div className='mt-2 flex flex-wrap justify-center gap-1'>
                 {practitioner.practitionerRole.specialty?.map(
-                  (specialty: any) => (
+                  (specialty: CodeableConcept) => (
                     <Badge
                       key={specialty.text}
                       className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
