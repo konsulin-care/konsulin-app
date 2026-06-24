@@ -122,23 +122,23 @@ module.exports = [
       // ── Always-on (error): real bugs that external tools flag too ──
       '@typescript-eslint/prefer-optional-chain': 'error',
       '@typescript-eslint/no-base-to-string': 'error',
-      '@typescript-eslint/no-floating-promises': 'error',  // Codacy: Promise Rejection
-      '@typescript-eslint/no-misused-promises': 'error',   // DeepSource: async-as-handler
+      '@typescript-eslint/no-floating-promises': 'error', // Codacy: Promise Rejection
+      '@typescript-eslint/no-misused-promises': 'error', // DeepSource: async-as-handler
       '@typescript-eslint/no-unnecessary-condition': 'off',
-        // Requires strictNullChecks in tsconfig, which is off
+      // Requires strictNullChecks in tsconfig, which is off
       '@typescript-eslint/no-unnecessary-type-conversion': 'error',
-      '@typescript-eslint/no-unused-vars': 'error',        // DeepScan: unused variable
+      '@typescript-eslint/no-unused-vars': 'error', // DeepScan: unused variable
       'consistent-return': 'error',
-      'promise/catch-or-return': 'error',                  // Codacy: Promise Rejection
-      'promise/no-nesting': 'error',                       // SonarQube: nested callbacks
-      'sonarjs/no-unused-vars': 'error',                   // DeepScan: unused variable
-      'max-depth': ['error', { max: 4 }],                  // DeepScan: excessive nesting
-      'max-params': ['error', { max: 5 }],                 // SonarQube S107: too many params
-      'security/detect-unsafe-regex': 'error',             // DeepSource: regex-dos
+      'promise/catch-or-return': 'error', // Codacy: Promise Rejection
+      'promise/no-nesting': 'error', // SonarQube: nested callbacks
+      'sonarjs/no-unused-vars': 'error', // DeepScan: unused variable
+      'max-depth': ['error', { max: 4 }], // DeepScan: excessive nesting
+      'max-params': ['error', { max: 5 }], // SonarQube S107: too many params
+      'security/detect-unsafe-regex': 'error', // DeepSource: regex-dos
 
       // ── Progressive (warn → error as debt is paid) ──
       'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
-      'complexity': ['error', 15],
+      complexity: ['error', 15],
       '@typescript-eslint/no-unsafe-member-access': 'error',
       '@typescript-eslint/no-unsafe-call': 'error',
       '@typescript-eslint/no-unsafe-return': 'error',
@@ -152,17 +152,17 @@ module.exports = [
       'sonarjs/slow-regex': 'error',
       'sonarjs/function-return-type': 'error',
       'sonarjs/no-dead-store': 'error',
-      'sonarjs/deprecation': 'off',                // duplicates @typescript-eslint/no-deprecated (set to error above)
+      'sonarjs/deprecation': 'off', // duplicates @typescript-eslint/no-deprecated (set to error above)
 
       // ── Hard-off: FHIR domain patterns (not fixable without breaking FHIR) ──
       '@typescript-eslint/no-non-null-assertion': 'off',
-        // FHIR bundles: item.resource!.practitioner!.reference!
+      // FHIR bundles: item.resource!.practitioner!.reference!
       '@typescript-eslint/restrict-template-expressions': 'off',
-        // Phone numbers, FHIR IDs, dates in templates — all legitimate numbers
+      // Phone numbers, FHIR IDs, dates in templates — all legitimate numbers
       'security/detect-object-injection': 'off',
-        // Every form handler triggers this; data is from controlled inputs
+      // Every form handler triggers this; data is from controlled inputs
       'sonarjs/no-clear-text-protocols': 'off',
-        // FHIR canonical URLs: https://loinc.org, https://snomed.info — not fixable
+      // FHIR canonical URLs: https://loinc.org, https://snomed.info — not fixable
 
       // ── Hard-off: stylistic noise (no bug-safety value) ──
       '@typescript-eslint/no-explicit-any': 'off',
@@ -215,7 +215,7 @@ module.exports = [
       'sonarjs/no-useless-catch': 'off',
       'sonarjs/no-identical-expressions': 'error',
       'sonarjs/pseudo-random': 'off',
-      'sonarjs/prefer-regexp-exec': 'off',
+      'sonarjs/prefer-regexp-exec': 'off'
 
       // ── Security: false positives for this codebase ──
 
