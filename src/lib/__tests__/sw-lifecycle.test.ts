@@ -310,7 +310,7 @@ describe('sw-register.js', () => {
   it('handles registration errors with try/catch', () => {
     const content = readFileSync(FILE_PATH, 'utf-8');
     expect(content).toMatch(/try\s*\{/);
-    expect(content).toMatch(/catch\s*\(/);
+    expect(content).toMatch(/catch\s*{/);
   });
 });
 
@@ -321,7 +321,7 @@ describe('defense-in-depth URL validation', () => {
   it('cacheFirst throws for non-http URLs', async () => {
     const patchedCode = SW_CODE.replace(
       'async function cacheFirst(request, cacheName) {',
-      'self.__testCacheFirst = async function cacheFirst (request, cacheName) {'
+      'self.__testCacheFirst = async function cacheFirst(request, cacheName) {'
     );
 
     const captureSelf = createMockSelf() as MockSelf & {
@@ -350,7 +350,7 @@ describe('defense-in-depth URL validation', () => {
   it('networkFirst returns 503 for non-http URLs', async () => {
     const patchedCode = SW_CODE.replace(
       'async function networkFirst(request, cacheName, fallbackUrl) {',
-      'self.__testNetworkFirst = async function networkFirst (request, cacheName, fallbackUrl) {'
+      'self.__testNetworkFirst = async function networkFirst(request, cacheName, fallbackUrl) {'
     );
 
     const captureSelf = createMockSelf() as MockSelf & {

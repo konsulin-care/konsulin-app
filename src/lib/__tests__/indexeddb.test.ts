@@ -17,10 +17,7 @@ vi.stubGlobal('indexedDB', mockIndexedDB);
 let openDB: () => Promise<IDBDatabase>;
 
 /** Invoke an IndexedDB event handler mock safely. */
-function triggerEvent(
-  handler: unknown,
-  detail: Record<string, unknown>
-) {
+function triggerEvent(handler: unknown, detail: Record<string, unknown>) {
   if (handler) (handler as (...args: unknown[]) => void)(detail);
 }
 
@@ -57,6 +54,7 @@ describe('openDB', () => {
       name: 'konsulin',
       version: 2,
       objectStoreNames: { contains: vi.fn().mockReturnValue(true) },
+      addEventListener: vi.fn(),
       close: vi.fn(),
       onclose: null,
       onversionchange: null
@@ -87,6 +85,7 @@ describe('openDB', () => {
       name: 'konsulin',
       version: 2,
       objectStoreNames: { contains: vi.fn().mockReturnValue(true) },
+      addEventListener: vi.fn(),
       close: vi.fn(),
       onclose: null,
       onversionchange: null
@@ -118,6 +117,7 @@ describe('openDB', () => {
       name: 'konsulin',
       version: 2,
       objectStoreNames: { contains: vi.fn().mockReturnValue(true) },
+      addEventListener: vi.fn(),
       close: vi.fn(),
       onclose: null,
       onversionchange: null
@@ -167,6 +167,7 @@ describe('openDB', () => {
       name: 'konsulin',
       version: 5,
       objectStoreNames: { contains: vi.fn().mockReturnValue(true) },
+      addEventListener: vi.fn(),
       close: vi.fn(),
       onclose: null,
       onversionchange: null
