@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -11,10 +10,8 @@ import {
 import QRCode from 'react-qr-code';
 import { toast } from 'react-toastify';
 
-/**
- *
- */
-export default function ModalQr({ value }) {
+/** QR modal displaying a `value` prop as QR code content. */
+export default function ModalQr({ value }: { readonly value: string }) {
   /** Copy current URL to clipboard and show confirmation. */
   const handleCopyToClipboard = () => {
     if (!value) return;

@@ -118,11 +118,13 @@ export const useOngoingResearch = () => {
       const resources = entries.map((e: any) => e?.resource ?? e); // eslint-disable-line @typescript-eslint/no-unsafe-return
 
       const researchStudies = resources.filter(
-        (resource: any) => resource?.resourceType === 'ResearchStudy'
+        (resource: { resourceType: string }) =>
+          resource?.resourceType === 'ResearchStudy'
       );
 
       const planDefinitions = resources.filter(
-        (resource: any) => resource?.resourceType === 'PlanDefinition'
+        (resource: { resourceType: string }) =>
+          resource?.resourceType === 'PlanDefinition'
       );
 
       if (researchStudies.length === 0) return [];

@@ -13,6 +13,7 @@ import {
   PractitionerQualification,
   Slot
 } from 'fhir/r4';
+import type { ComponentPropsWithoutRef } from 'react';
 
 /** Merge human names with optional qualification code. */
 export const mergeNames = (
@@ -37,7 +38,9 @@ export const mergeNames = (
 };
 
 export const customMarkdownComponents = {
-  p: ({ children, ...props }: any) => <span {...props}>{children}</span>
+  p: ({ children, ...props }: ComponentPropsWithoutRef<'p'>) => (
+    <span {...props}>{children}</span>
+  )
 };
 
 /** Parse FHIR Patient or Practitioner profile. */

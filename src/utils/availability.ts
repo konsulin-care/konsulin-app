@@ -1,5 +1,5 @@
 import { DayOfWeek, TimeRange, WeeklyAvailability } from '@/types/availability';
-import { PractitionerRole } from 'fhir/r4';
+import { PractitionerRole, type PractitionerRoleAvailableTime } from 'fhir/r4';
 
 /**
  * Day names array using internal DayOfWeek convention (0 = Monday, 6 = Sunday)
@@ -217,8 +217,8 @@ export function convertToFhirAvailableTimeForOrganization(
  */
 export function convertToFhirAvailableTime(
   weeklyAvailability: WeeklyAvailability
-): any[] {
-  const result: any[] = [];
+): PractitionerRoleAvailableTime[] {
+  const result: PractitionerRoleAvailableTime[] = [];
 
   // Iterate through each day
   for (let i = 0; i <= 6; i++) {

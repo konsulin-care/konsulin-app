@@ -12,7 +12,7 @@ import { useFindAvailability } from '@/services/clinicians';
 import { clearIntent, getIntent, saveIntent } from '@/utils/redirect-intent';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { addDays, format, isBefore, parseISO } from 'date-fns';
-import { BundleEntry, PractitionerRole, Slot } from 'fhir/r4';
+import { BundleEntry, Invoice, PractitionerRole, Slot } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState, useTransition } from 'react';
 import BookingCalendar from './booking-calendar';
@@ -41,7 +41,7 @@ type Props = {
   children: ReactNode;
   practitionerRole: PractitionerRole;
   scheduleId: string;
-  invoice?: any;
+  invoice?: Invoice;
   practitionerName?: string;
   practitionerOrganizationName?: string;
   practitionerAvatar?: {

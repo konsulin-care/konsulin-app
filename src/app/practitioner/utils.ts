@@ -1,12 +1,16 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { addMinutes, format, parse } from 'date-fns';
+import type { PractitionerRoleAvailableTime } from 'fhir/r4';
 
 /* returns all available appointment days for a given month.
  * example:
  * if availableTime = [{ daysOfWeek: ['mon', 'wed'] }] and month = April 2025,
  * it will return all mondays and wednesdays in April 2025
  */
-export const getAvailableDays = (availableTime: any[], month: Date): Date[] => {
+export const getAvailableDays = (
+  availableTime: PractitionerRoleAvailableTime[],
+  month: Date
+): Date[] => {
   const availableDays: Date[] = [];
   const daysOfWeekMap: Record<string, number> = {
     mon: 1,
@@ -110,21 +114,20 @@ export function matchesPractitionerFromPath(
 }
 
 // Helper function to extract slotMinutes from Schedule's comment field
-/**
- *
- */
-export function getSlotMinutesText(schedule: any): string {
+/** Extract slot duration in minutes from a Schedule's comment field. */
+export function getSlotMinutesText(schedule: unknown): string {
   if (!schedule) {
     return '';
   }
-  if (typeof schedule !== 'object') {
+  if (typeof schedule !== 'object' || schedule === null) {
     return '';
   }
-  if (typeof schedule.comment !== 'string') {
+  const scheduleRecord = schedule as Record<string, unknown>;
+  if (typeof scheduleRecord.comment !== 'string') {
     return '';
   }
   try {
-    const commentObj = JSON.parse(schedule.comment);
+    const commentObj = JSON.parse(scheduleRecord.comment);
     if (typeof commentObj.slotMinutes === 'number') {
       return commentObj.slotMinutes > 0
         ? ` ${commentObj.slotMinutes} Menit`

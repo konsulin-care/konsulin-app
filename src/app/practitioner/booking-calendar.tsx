@@ -1,17 +1,18 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { Calendar } from '@/components/ui/calendar-temp';
 import { DrawerDescription, DrawerTitle } from '@/components/ui/drawer';
+import type { IStateBooking } from '@/context/booking/bookingTypes';
+import type { PractitionerRoleAvailableTime } from 'fhir/r4';
 import { getAvailableDays } from './utils';
 
 type Props = {
-  bookingState: any;
+  bookingState: IStateBooking;
   handleFilterChange: (
     label: string,
     value: string | Date | boolean | undefined
   ) => void;
   resetData: () => void;
   listAvailableDate: Date[];
-  availableTime: any[];
+  availableTime: PractitionerRoleAvailableTime[];
   today: Date;
 };
 

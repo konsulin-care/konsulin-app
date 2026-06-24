@@ -25,7 +25,13 @@ import {
 } from '@/services/clinicians';
 import { IPractitionerRoleDetail } from '@/types/practitioner';
 import { mapAddress } from '@/utils/helper';
-import { Address, BundleEntry, CodeableConcept, Schedule } from 'fhir/r4';
+import {
+  Address,
+  BundleEntry,
+  CodeableConcept,
+  Invoice,
+  Schedule
+} from 'fhir/r4';
 import { ChevronDown, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -408,7 +414,7 @@ const CollapsibleItem = ({
 }: {
   index: number;
   firm: IPractitionerRoleDetail;
-  invoice: any;
+  invoice?: Invoice;
   isOpen: boolean;
   onToggle: (index: number) => void;
   tagInputs: string[];
@@ -439,7 +445,7 @@ const CollapsibleItem = ({
       <div className='flex flex-col space-y-2'>
         <FeeInput
           id={`fee-${index}`}
-          value={invoice.totalNet.value}
+          value={String(invoice.totalNet.value ?? '')}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             const numberOnly = /^\d*$/;
             if (numberOnly.test(e.target.value)) {

@@ -96,7 +96,7 @@ describe('getAvailableDays', () => {
   it('returns mondays and wednesdays in the given month', () => {
     // May 2026: month 4 (0-indexed)
     const may2026 = new Date(2026, 4, 1);
-    const availableTime = [{ daysOfWeek: ['mon', 'wed'] }];
+    const availableTime = [{ daysOfWeek: ['mon' as const, 'wed' as const] }];
     const days = getAvailableDays(availableTime, may2026);
 
     expect(days.length).toBeGreaterThan(0);
