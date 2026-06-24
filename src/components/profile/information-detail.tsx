@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 import { Roles } from '@/constants/roles';
 
+import type { IPractitionerRoleDetail } from '@/types/practitioner';
 import Avatar from '../general/avatar';
 import Tags from './tags';
 
@@ -85,7 +85,11 @@ function DetailItem({
  *   - specialty: Array<{ text: string }> (optional)
  * @returns A JSX fragment containing the practice detail rows and, when present, a Tags component for specialties.
  */
-function DetailPractice({ items }: { readonly items: any }) {
+function DetailPractice({
+  items
+}: {
+  readonly items: IPractitionerRoleDetail;
+}) {
   const organizationName = items?.organizationData.name
     ? items.organizationData.name
     : '-';
@@ -226,7 +230,7 @@ export default function InformationDetail({
       {isEditPractice ? (
         <div className='mt-2 flex w-full flex-col'>
           {Array.isArray(details) &&
-            (details as { id: string }[]).map(detail => (
+            (details as IPractitionerRoleDetail[]).map(detail => (
               <div
                 key={detail.id}
                 className='mt-1 flex flex-col border-t border-[#E3E3E3] font-[#2C2F35] text-xs'
@@ -237,7 +241,7 @@ export default function InformationDetail({
         </div>
       ) : (
         <div className='mt-2 flex w-full flex-col space-y-2 border-t border-[#E3E3E3]'>
-          {details?.map((item: any) => (
+          {details?.map((item: { id: string; key: string; value: string }) => (
             <div
               className='mt-2 flex justify-between font-[#2C2F35] text-xs'
               key={item.id}

@@ -295,7 +295,7 @@ const ActiveFirmSection = ({
 }: {
   isLoading: boolean;
   isFetching: boolean;
-  activeFirms: any[];
+  activeFirms: IPractitionerRoleDetail[];
 }) => {
   if (isLoading || isFetching) {
     return (

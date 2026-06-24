@@ -1,5 +1,5 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
 /* eslint-disable react/jsx-max-depth */
 
 import Image from 'next/image';
@@ -62,7 +62,7 @@ export default function ClinicianPracticeSchedule({
               {Object.keys(availability).map(day => {
                 const timeRanges = availability[day] || [];
                 const tags = timeRanges.map(
-                  (timeRange: any) =>
+                  (timeRange: { fromTime: string; toTime: string }) =>
                     `${day}: ${timeRange.fromTime} - ${timeRange.toTime}`
                 );
 

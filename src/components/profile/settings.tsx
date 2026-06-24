@@ -1,4 +1,4 @@
-/* eslint-disable react/jsx-max-depth, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable react/jsx-max-depth */
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -15,7 +15,11 @@ import { Fragment, useState } from 'react';
 /**
  *
  */
-export default function Settings({ menus }) {
+export default function Settings({
+  menus
+}: {
+  readonly menus: readonly { readonly name: string; readonly link: string }[];
+}) {
   const router = useRouter();
   const [drawerState, setDrawerState] = useState({
     title: '',
@@ -63,7 +67,7 @@ export default function Settings({ menus }) {
     <>
       <div className='mt-4 w-full rounded-lg bg-white'>
         <ul>
-          {menus.map((item: any, index: number) => {
+          {menus.map((item, index) => {
             const isFirst = index === 0;
             const isLast = index === menus.length - 1;
             return (

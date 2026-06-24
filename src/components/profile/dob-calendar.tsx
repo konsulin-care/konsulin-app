@@ -1,20 +1,19 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { addDays } from 'date-fns';
 import { useState } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import styles from './dob-calendar.module.css';
 
-/**
- *
- */
+/** Date-of-birth calendar picker with future-date restriction. */
 export default function DobCalendar({
   value,
   onChange
 }: Readonly<{ value: Date | null; onChange: (date: Date) => void }>) {
   const [selectedDate, setSelectedDate] = useState(value);
 
-  const handleDateChange = (date: any) => {
+  const handleDateChange = (date: Date | Date[] | null) => {
+    if (!date) return;
+    if (Array.isArray(date)) return;
     onChange(date);
     setSelectedDate(date);
   };
