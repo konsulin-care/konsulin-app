@@ -108,7 +108,7 @@ function extractTimezoneFromPeriod(period?: {
 
   // Try multiple patterns to handle different ISO 8601 formats
   // Pattern 1: Full format with colon: +07:00, -05:30
-  let match = iso.match(/([+-])(\d{2}):(\d{2})(?:\d{3})?$/); // eslint-disable-line security/detect-unsafe-regex
+  let match = /([+-])(\d{2}):(\d{2})(?:\d{3})?$/.exec(iso); // eslint-disable-line security/detect-unsafe-regex
   if (match) {
     const sign = match[1];
     const hours = parseInt(match[2], 10);
@@ -121,10 +121,10 @@ function extractTimezoneFromPeriod(period?: {
   }
 
   // Pattern 2: Format without colon: +07, -05
-  match = iso.match(/([+-])(\d{2})(?:\d{2})?$/); // eslint-disable-line security/detect-unsafe-regex
+  match = /([+-])(\d{2})(?:\d{2})?$/.exec(iso); // eslint-disable-line security/detect-unsafe-regex
   if (match) {
     const sign = match[1];
-    const hours = parseInt(match[2], 10);
+    const hours = Number.parseInt(match[2], 10);
 
     return `GMT${sign}${hours}`;
   }
@@ -144,7 +144,7 @@ function extractTimezoneFromPeriod(period?: {
   ];
 
   for (const pattern of tzPatterns) {
-    match = iso.match(pattern);
+    match = pattern.exec(iso);
     if (match) {
       if (match[0] === 'Z') {
         return 'GMT+0';
@@ -164,8 +164,8 @@ function extractTimezoneFromPeriod(period?: {
         const hoursStr = match[2];
         if (hoursStr.length === 4) {
           // Format: +0700 (4 digits)
-          const hours = parseInt(hoursStr.slice(0, 2), 10);
-          const minutes = parseInt(hoursStr.slice(2, 4), 10);
+          const hours = Number.parseInt(hoursStr.slice(0, 2), 10);
+          const minutes = Number.parseInt(hoursStr.slice(2, 4), 10);
           if (minutes === 0) {
             return `GMT${sign}${hours}`;
           }
@@ -194,7 +194,10 @@ function getTheLatestEntry<T extends { meta?: { lastUpdated?: string } }>(
       item,
       ts: item?.meta?.lastUpdated ? Date.parse(item.meta.lastUpdated) : NaN
     }))
-    .toSorted((a, b) => (isNaN(b.ts) ? -1 : b.ts) - (isNaN(a.ts) ? -1 : a.ts));
+    .toSorted(
+      (a, b) =>
+        (Number.isNaN(b.ts) ? -1 : b.ts) - (Number.isNaN(a.ts) ? -1 : a.ts)
+    );
   const first = withDates[0];
   if (first && !isNaN(first.ts)) return first.item;
   return arr[0];

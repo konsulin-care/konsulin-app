@@ -22,8 +22,8 @@ export default function ObjectiveFindingModal({
   objectiveFinding,
   onChange
 }: {
-  objectiveFinding: boolean[];
-  onChange: (items: any[]) => void;
+  readonly objectiveFinding: readonly boolean[];
+  readonly onChange: (items: any[]) => void;
 }) {
   const [selectedTest, setSelectedTest] = useState(objectiveFinding);
 

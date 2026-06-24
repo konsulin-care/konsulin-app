@@ -15,6 +15,7 @@ import {
   FileText,
   Users
 } from 'lucide-react';
+import { useCallback } from 'react';
 
 /** Stat card showing the active practitioner count. */
 function PractitionerCountCard({
@@ -67,6 +68,13 @@ export default function HomeContentAdmin() {
     },
     enabled: Boolean(authState?.userInfo?.fhirId)
   });
+
+  /** Retry loading practitioner count on error. */
+  const handleRetryCount = useCallback(() => {
+    refetchCount().catch(() => {
+      /* error already handled by isError state */
+    });
+  }, [refetchCount]);
 
   const isLoading = isAuthLoading || isCountLoading;
 
@@ -146,7 +154,7 @@ export default function HomeContentAdmin() {
       {isCountError && (
         <div className='px-4 pb-4'>
           <button
-            onClick={() => void refetchCount()}
+            onClick={handleRetryCount}
             className='text-secondary w-full rounded-lg border border-gray-200 py-2 text-[12px]'
           >
             Failed to load practitioner data. Tap to retry.

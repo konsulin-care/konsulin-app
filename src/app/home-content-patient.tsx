@@ -14,6 +14,7 @@ import { BookText, Building2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useCallback } from 'react';
 
 const RecommendationCardStack = dynamic(
   () => import('@/components/general/home/recommendation-card-stack'),
@@ -95,6 +96,13 @@ export default function HomeContentPatient() {
     refetch: refetchRecords
   } = useRecordSummaryQuery(patientId);
 
+  /** Retry loading records on error. */
+  const handleRetryRecords = useCallback(() => {
+    refetchRecords().catch(() => {
+      /* error already handled by isError state */
+    });
+  }, [refetchRecords]);
+
   const records = recordsBundle
     ? (parseRecordBundles(recordsBundle) as IRecord[]).toSorted(
         (a, b) =>
@@ -124,9 +132,7 @@ export default function HomeContentPatient() {
             Failed to load records
           </p>
           <button
-            onClick={() => {
-              void refetchRecords();
-            }}
+            onClick={handleRetryRecords}
             className='text-secondary text-[12px] underline'
           >
             Tap to retry

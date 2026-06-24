@@ -14,14 +14,14 @@ function HeaderSection({
   backgroundColor,
   seed
 }: {
-  isRadiusIcon?: boolean;
-  iconUrl?: string;
-  title?: string;
-  subTitle?: string;
-  role?: string;
-  initials: string;
-  backgroundColor: string;
-  seed?: string;
+  readonly isRadiusIcon?: boolean;
+  readonly iconUrl?: string;
+  readonly title?: string;
+  readonly subTitle?: string;
+  readonly role?: string;
+  readonly initials: string;
+  readonly backgroundColor: string;
+  readonly seed?: string;
 }) {
   const titleStyle =
     role === Roles.Patient
@@ -59,7 +59,11 @@ function HeaderSection({
  * @param item - Object containing `key` (label text) and `value` (display value) to render
  * @returns A JSX element with two paragraph elements: the label on the left and the bold value on the right
  */
-function DetailItem({ item }: { item: { key: string; value: string } }) {
+function DetailItem({
+  item
+}: {
+  readonly item: { readonly key: string; readonly value: string };
+}) {
   return (
     <>
       <p className='text-left text-sm text-[#2C2F35] opacity-100'>{item.key}</p>
@@ -81,7 +85,7 @@ function DetailItem({ item }: { item: { key: string; value: string } }) {
  *   - specialty: Array<{ text: string }> (optional)
  * @returns A JSX fragment containing the practice detail rows and, when present, a Tags component for specialties.
  */
-function DetailPractice({ items }: { items: any }) {
+function DetailPractice({ items }: { readonly items: any }) {
   const organizationName = items?.organizationData.name
     ? items.organizationData.name
     : '-';

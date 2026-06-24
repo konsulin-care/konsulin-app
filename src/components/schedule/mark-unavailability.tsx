@@ -344,7 +344,10 @@ function useMarkUnavailabilityForm() {
   };
 
   useEffect(() => {
-    if (open) void refetch();
+    if (open)
+      refetch().catch(() => {
+        /* noop */
+      });
   }, [open, refetch]);
 
   const onSave = async () => {
