@@ -13,7 +13,7 @@ import {
 } from '@/services/api/assessment';
 import { formatQueryTitle } from '@/utils/helper';
 import { saveIntent } from '@/utils/redirect-intent';
-import { QuestionnaireResponseItem } from 'fhir/r4';
+import { QuestionnaireResponse, QuestionnaireResponseItem } from 'fhir/r4';
 import { LinkIcon, NotepadTextIcon, UsersIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -47,13 +47,15 @@ const generateRandomColor = (baseHue: number) => {
 export default function RecordAssessment({ recordId, title }: Props) {
   const router = useRouter();
   const {
-    data: questionnaireResponse,
+    data: questionnaireResponseRaw,
     isLoading: questionnaireResponseIsLoading
   } = useQuestionnaireResponse({
     questionnaireId: recordId,
     enabled: true
-  }) as any;
-  const [scoreList, setScoreList] = useState<any[]>([]);
+  });
+  const questionnaireResponse =
+    questionnaireResponseRaw as unknown as QuestionnaireResponse | null;
+  const [scoreList, setScoreList] = useState<IScore[]>([]);
   const [currentLocation, setCurrentLocation] = useState<string>('');
   const [colorMap, setColorMap] = useState<Record<string, string>>({});
   const [polledResultBrief, setPolledResultBrief] = useState<string | null>(
@@ -130,7 +132,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
         if (subItem.linkId === 'reference') return null;
 
         const score = subItem.answer?.[0]?.valueInteger;
-        const ref = reference?.answer[0]?.valueInteger;
+        const ref = reference?.answer?.[0]?.valueInteger;
 
         if (score && ref) {
           const newScore = score / ref;
@@ -165,25 +167,26 @@ export default function RecordAssessment({ recordId, title }: Props) {
     const poll = async (serviceRequestId: string) => {
       try {
         const API = await getAPI();
-        const res = await API.get(
+        const res = await API.get<{ data: { note?: string } }>(
           `/api/v1/service-request/${serviceRequestId}/result`
         );
 
-        const note = res.data?.data?.note?.trim();
+        const note: string | undefined = res.data?.data?.note?.trim();
 
         if (note && !cancelled) {
           if (!authState.isAuthenticated) return;
           setPolledResultBrief(note);
 
           const interpretationItem = questionnaireResponse.item.find(
-            (item: any) => item.linkId === 'interpretation'
+            (item: QuestionnaireResponseItem) =>
+              item.linkId === 'interpretation'
           );
 
           const updatedInterpretationItem = {
             ...interpretationItem,
             item: [
               ...(interpretationItem?.item ?? []).filter(
-                (i: any) => i.linkId !== 'result-brief'
+                (i: QuestionnaireResponseItem) => i.linkId !== 'result-brief'
               ),
               {
                 linkId: 'result-brief',
@@ -194,10 +197,11 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
           const updatedQR = {
             ...questionnaireResponse,
-            item: questionnaireResponse.item.map((item: any) =>
-              item.linkId === 'interpretation' // eslint-disable-line @typescript-eslint/no-unsafe-return
-                ? updatedInterpretationItem
-                : item
+            item: questionnaireResponse.item.map(
+              (item: QuestionnaireResponseItem) =>
+                item.linkId === 'interpretation'
+                  ? updatedInterpretationItem
+                  : item
             )
           };
 
@@ -221,16 +225,18 @@ export default function RecordAssessment({ recordId, title }: Props) {
     };
 
     /** Polls for the result brief from the backend service request. */
+    /** Polls for the result brief from the backend service request. */
     const start = async () => {
       if (!questionnaireResponse) return;
       if (!authState.isAuthenticated) return;
 
       const interpretationItem = questionnaireResponse.item.find(
-        (item: any) => item.linkId === 'interpretation'
+        (item: QuestionnaireResponseItem) => item.linkId === 'interpretation'
       );
 
       const resultBriefItem = interpretationItem?.item.find(
-        (subItem: any) => subItem.linkId === 'result-brief'
+        (subItem: QuestionnaireResponseItem) =>
+          subItem.linkId === 'result-brief'
       );
 
       const existingResult =
@@ -269,11 +275,11 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
     // Otherwise, check persisted QuestionnaireResponse
     const interpretationItem = questionnaireResponse?.item.find(
-      (item: any) => item.linkId === 'interpretation'
+      (item: QuestionnaireResponseItem) => item.linkId === 'interpretation'
     );
 
     const resultBriefItem = interpretationItem?.item.find(
-      (subItem: any) => subItem.linkId === 'result-brief'
+      (subItem: QuestionnaireResponseItem) => subItem.linkId === 'result-brief'
     );
 
     // No result yet → placeholder
@@ -281,7 +287,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
       return RESULT_BRIEF_PLACEHOLDER;
     }
 
-    return resultBriefItem.answer?.[0]?.valueString ?? RESULT_BRIEF_PLACEHOLDER; // eslint-disable-line @typescript-eslint/no-unsafe-return
+    return resultBriefItem.answer?.[0]?.valueString ?? RESULT_BRIEF_PLACEHOLDER;
   };
 
   return (
