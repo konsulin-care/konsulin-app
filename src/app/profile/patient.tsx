@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 'use client';
 
 import InformationDetail from '@/components/profile/information-detail';

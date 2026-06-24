@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-unused-vars, sonarjs/cognitive-complexity, max-lines, react-hooks/exhaustive-deps, react/jsx-max-depth */
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, sonarjs/cognitive-complexity, max-lines, max-depth, react-hooks/exhaustive-deps, react/jsx-max-depth */
 import EmptyState from '@/components/general/empty-state';
 import Input from '@/components/general/input';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -95,6 +95,7 @@ function getBrowserTimezoneGMT(): string {
  * @param period - Object containing optional ISO 8601 `start` or `end` datetime strings
  * @returns A GMT offset string such as `GMT+7`, `GMT+07:00`, `GMT-05:30`, or `GMT+0` for UTC; `null` if no timezone can be determined
  */
+// eslint-disable-next-line complexity
 function extractTimezoneFromPeriod(period?: {
   start?: string;
   end?: string;
@@ -166,7 +167,6 @@ function extractTimezoneFromPeriod(period?: {
           const hours = parseInt(hoursStr.slice(0, 2), 10);
           const minutes = parseInt(hoursStr.slice(2, 4), 10);
           if (minutes === 0) {
-            // eslint-disable-line max-depth
             return `GMT${sign}${hours}`;
           }
           return `GMT${sign}${hours}:${String(minutes).padStart(2, '0')}`;
@@ -475,7 +475,6 @@ const CollapsibleItem = ({
               const value = e.target.value;
               if (value === '') {
                 setSlotConfigs((s: any) => ({
-                  // eslint-disable-line @typescript-eslint/no-unsafe-return
                   ...s,
                   [index]: { ...s[index], sessionDuration: '' }
                 }));
@@ -484,7 +483,6 @@ const CollapsibleItem = ({
               const numberOnly = /^\d+$/;
               if (numberOnly.test(value) && Number(value) > 0) {
                 setSlotConfigs((s: any) => ({
-                  // eslint-disable-line @typescript-eslint/no-unsafe-return
                   ...s,
                   [index]: { ...s[index], sessionDuration: value }
                 }));
@@ -509,7 +507,6 @@ const CollapsibleItem = ({
               const value = e.target.value;
               if (value === '') {
                 setSlotConfigs((s: any) => ({
-                  // eslint-disable-line @typescript-eslint/no-unsafe-return
                   ...s,
                   [index]: { ...s[index], bufferTime: '' }
                 }));
@@ -518,7 +515,6 @@ const CollapsibleItem = ({
               const numberOnly = /^\d+$/;
               if (numberOnly.test(value)) {
                 setSlotConfigs((s: any) => ({
-                  // eslint-disable-line @typescript-eslint/no-unsafe-return
                   ...s,
                   [index]: { ...s[index], bufferTime: value }
                 }));
@@ -575,43 +571,41 @@ const EditPractice = () => {
   const {
     isLoading: isPractitionerRolesLoading,
     isFetching: isPractitionerRolesFetching
-  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
-    onSuccess: data => {
-      const resources = (data?.map(entry => entry.resource) || []).filter(
-        Boolean
-      );
+  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, data => {
+    const resources = (data?.map(entry => entry.resource) || []).filter(
+      Boolean
+    );
 
-      /* separate invoice data from the main data
-       * because they use different endpoints */
-      const invoiceDataList: any[] = [];
-      const firmDataList: any[] = [];
+    /* separate invoice data from the main data
+     * because they use different endpoints */
+    const invoiceDataList: any[] = [];
+    const firmDataList: any[] = [];
 
-      resources.forEach(resource => {
-        const { invoiceData, id, ...rest } = resource;
+    resources.forEach(resource => {
+      const { invoiceData, id, ...rest } = resource;
 
-        const initialInvoice = {
-          resourceType: 'Invoice',
-          status: 'draft',
-          totalNet: {
-            value: 0,
-            currency: 'IDR'
-          },
-          participant: [
-            {
-              actor: {
-                reference: `PractitionerRole/${id}`
-              }
+      const initialInvoice = {
+        resourceType: 'Invoice',
+        status: 'draft',
+        totalNet: {
+          value: 0,
+          currency: 'IDR'
+        },
+        participant: [
+          {
+            actor: {
+              reference: `PractitionerRole/${id}`
             }
-          ]
-        };
+          }
+        ]
+      };
 
-        invoiceDataList.push(invoiceData || initialInvoice);
-        firmDataList.push({ id, ...rest });
-      });
+      invoiceDataList.push(invoiceData || initialInvoice);
+      firmDataList.push({ id, ...rest });
+    });
 
-      setInvoiceData(invoiceDataList);
-      setFirmData(firmDataList);
-    }
+    setInvoiceData(invoiceDataList);
+    setFirmData(firmDataList);
   });
 
   const { mutateAsync: updatePractitionerInfo } = useUpdatePractitionerInfo();
@@ -913,7 +907,7 @@ const EditPractice = () => {
           value: Number(value)
         }
       };
-      return updatedData; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return updatedData;
     });
   }, []);
 

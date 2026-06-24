@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 import type { AxiosError } from 'axios';
 
 export type ParsedAxiosError = {

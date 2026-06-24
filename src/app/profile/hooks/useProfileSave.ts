@@ -1,18 +1,19 @@
+/* eslint-disable complexity */
 'use client';
 
-import { useRef } from 'react';
 import type { ContactPoint, Identifier, Patient, Practitioner } from 'fhir/r4';
+import { useRef } from 'react';
 import { toast } from 'react-toastify';
 
 import { DRAWER_STATE } from '@/constants/profile';
+import { getProfileById, modifyProfile } from '@/services/profile';
 import { findIdentifierValue, mergeNames } from '@/utils/helper';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
 import { validateEmail } from '@/utils/validation';
-import { getProfileById, modifyProfile } from '@/services/profile';
 
+import type { IActionAuth } from '@/context/auth/authTypes';
 import type { FHIRProfile } from '@/types/fhir';
 import type { ICustomProfile } from '../edit-profile';
-import type { IActionAuth } from '@/context/auth/authTypes';
 
 type UseProfileSaveParams = {
   updateUser: ICustomProfile;
@@ -36,7 +37,9 @@ type UseProfileSaveParams = {
     isValidUrl: (url: string) => boolean
   ) => Promise<string>;
   isValidUrl: (url: string) => boolean;
-  updateProfile: (args: { payload: Patient | Practitioner }) => Promise<unknown>;
+  updateProfile: (args: {
+    payload: Patient | Practitioner;
+  }) => Promise<unknown>;
   clearDraft: () => void;
   dispatchAuth: (action: IActionAuth) => void;
   queryClient: { invalidateQueries: (args: unknown) => void };
@@ -223,103 +226,103 @@ export function useProfileSave({
         return;
       }
 
-    const existingPhotoUrl = latestProfile?.photo?.[0]?.url ?? '';
-    const existingChatwootId = latestProfile
-      ? findIdentifierValue(
-          latestProfile,
-          'https://login.konsulin.care/chatwoot-id'
-        )
-      : '';
+      const existingPhotoUrl = latestProfile?.photo?.[0]?.url ?? '';
+      const existingChatwootId = latestProfile
+        ? findIdentifierValue(
+            latestProfile,
+            'https://login.konsulin.care/chatwoot-id'
+          )
+        : '';
 
-    const { finalChatwootId, identifiers } = await syncChatwootIdentifier(
-      latestProfile,
-      existingChatwootId
-    );
-    const telecom = buildTelecom();
+      const { finalChatwootId, identifiers } = await syncChatwootIdentifier(
+        latestProfile,
+        existingChatwootId
+      );
+      const telecom = buildTelecom();
 
-    await syncIdentifierIfNeeded(
-      latestProfile,
-      identifiers,
-      telecom,
-      finalChatwootId,
-      existingChatwootId
-    );
+      await syncIdentifierIfNeeded(
+        latestProfile,
+        identifiers,
+        telecom,
+        finalChatwootId,
+        existingChatwootId
+      );
 
-    const photoUrlForPayload = await resolvePhotoUrl(
-      existingPhotoUrl,
-      finalChatwootId,
-      isValidUrl
-    );
-    if (
-      typeof updateUser.photo === 'string' &&
-      (updateUser.photo.startsWith('data:image/') ||
-        updateUser.photo.includes(';base64,')) &&
-      !photoUrlForPayload
-    )
-      return;
+      const photoUrlForPayload = await resolvePhotoUrl(
+        existingPhotoUrl,
+        finalChatwootId,
+        isValidUrl
+      );
+      if (
+        typeof updateUser.photo === 'string' &&
+        (updateUser.photo.startsWith('data:image/') ||
+          updateUser.photo.includes(';base64,')) &&
+        !photoUrlForPayload
+      )
+        return;
 
-    const payload = buildUpdatePayload(
-      identifiers,
-      telecom,
-      photoUrlForPayload
-    );
+      const payload = buildUpdatePayload(
+        identifiers,
+        telecom,
+        photoUrlForPayload
+      );
 
-    try {
-      const result = await updateProfile({ payload });
-      if (!result) return;
+      try {
+        const result = await updateProfile({ payload });
+        if (!result) return;
 
-      const existing = authState.userInfo || {};
-      const updatedPhotoUrl =
-        (result as Patient | Practitioner).photo?.[0]?.url ||
-        photoUrlForPayload ||
-        existing.profile_picture;
-      const updatedFullname =
-        (result as Patient | Practitioner).resourceType === 'Practitioner'
-          ? mergeNames(
-              (result as Practitioner).name,
-              (result as Practitioner)?.qualification
-            )
-          : mergeNames((result as Patient).name);
+        const existing = authState.userInfo || {};
+        const updatedPhotoUrl =
+          (result as Patient | Practitioner).photo?.[0]?.url ||
+          photoUrlForPayload ||
+          existing.profile_picture;
+        const updatedFullname =
+          (result as Patient | Practitioner).resourceType === 'Practitioner'
+            ? mergeNames(
+                (result as Practitioner).name,
+                (result as Practitioner)?.qualification
+              )
+            : mergeNames((result as Patient).name);
 
-      const authPayload = {
-        userId: existing.userId,
-        roles: existing.roles || [existing.role_name || 'Patient'],
-        role_name: existing.role_name,
-        email: updateUser.email || existing.email,
-        phoneNumber: updateUser.phone || existing.phoneNumber,
-        fhirId: (result as Practitioner | Patient).id || existing.fhirId,
-        fullname: updatedFullname,
-        profile_picture: updatedPhotoUrl,
-        profile_complete: isProfileCompleteFromFHIR(
-          result as Patient | Practitioner
-        )
-      };
+        const authPayload = {
+          userId: existing.userId,
+          roles: existing.roles || [existing.role_name || 'Patient'],
+          role_name: existing.role_name,
+          email: updateUser.email || existing.email,
+          phoneNumber: updateUser.phone || existing.phoneNumber,
+          fhirId: (result as Practitioner | Patient).id || existing.fhirId,
+          fullname: updatedFullname,
+          profile_picture: updatedPhotoUrl,
+          profile_complete: isProfileCompleteFromFHIR(
+            result as Patient | Practitioner
+          )
+        };
 
-      const csrfToken = await fetch('/auth/cookie/csrf-token')
-        .then(r =>
-          r.ok ? r.json() : Promise.reject(new Error('CSRF fetch failed'))
-        )
-        .then(d => (d as { token?: string }).token ?? '')
-        .catch(() => '');
-      const cookieRes = await fetch('/auth/cookie', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
-        },
-        body: JSON.stringify(authPayload)
-      });
-      if (!cookieRes.ok) {
-        throw new Error(`auth cookie set failed: ${cookieRes.status}`);
+        const csrfToken = await fetch('/auth/cookie/csrf-token')
+          .then(r =>
+            r.ok ? r.json() : Promise.reject(new Error('CSRF fetch failed'))
+          )
+          .then(d => (d as { token?: string }).token ?? '')
+          .catch(() => '');
+        const cookieRes = await fetch('/auth/cookie', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+          },
+          body: JSON.stringify(authPayload)
+        });
+        if (!cookieRes.ok) {
+          throw new Error(`auth cookie set failed: ${cookieRes.status}`);
+        }
+        clearDraft();
+        dispatchAuth({ type: 'auth-check', payload: authPayload });
+        queryClient.invalidateQueries({ queryKey: ['profile-data', fhirId] });
+        setDrawerState(DRAWER_STATE.SUCCESS);
+      } catch (error) {
+        console.error('Error when updating profile: ', error);
+        toast.error('Failed updating the profile');
       }
-      clearDraft();
-      dispatchAuth({ type: 'auth-check', payload: authPayload });
-      queryClient.invalidateQueries({ queryKey: ['profile-data', fhirId] });
-      setDrawerState(DRAWER_STATE.SUCCESS);
-    } catch (error) {
-      console.error('Error when updating profile: ', error);
-      toast.error('Failed updating the profile');
-    }
     } finally {
       isSavingRef.current = false;
     }

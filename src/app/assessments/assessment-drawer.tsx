@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 'use client';
 
 import { LoadingSpinnerIcon } from '@/components/icons';

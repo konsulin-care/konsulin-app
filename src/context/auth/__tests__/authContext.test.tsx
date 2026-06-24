@@ -139,7 +139,9 @@ beforeEach(() => {
     accessTokenPayload: {}
   });
   mockGetClaimValue.mockResolvedValue(['Patient']);
-  (migrateLocalStorage as ReturnType<typeof vi.fn>).mockResolvedValue();
+  (migrateLocalStorage as ReturnType<typeof vi.fn>).mockResolvedValue(
+    undefined
+  ); // eslint-disable-line unicorn/no-useless-undefined
   (dbGet as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 });
 

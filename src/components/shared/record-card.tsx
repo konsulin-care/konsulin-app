@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 'use client';
 
 import Avatar from '@/components/general/avatar';

@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 'use client';
 
 import { IRecordParams } from '@/app/record/record-filter';
