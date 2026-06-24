@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, react/display-name */
+/* eslint-disable max-lines, react/display-name, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
@@ -164,7 +164,7 @@ vi.mock('@/components/icons', () => ({
 }));
 
 vi.mock('@/lib/utils', () => ({
-  cn: (...args: any[]) => args[0] || '', // eslint-disable-line @typescript-eslint/no-unsafe-return
+  cn: (...args: any[]) => args[0] || '',
   conjunction: (items: any[]) => (items ? items.join(', dan ') : '')
 }));
 
