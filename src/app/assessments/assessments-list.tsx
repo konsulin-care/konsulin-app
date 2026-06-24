@@ -349,6 +349,7 @@ export default function AssessmentsList() {
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
+  /** Render search results, research section, or empty states based on search term and loading status. */
   const renderSearchResults = () => {
     if (!searchTerm) {
       return (

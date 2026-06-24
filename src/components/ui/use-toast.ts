@@ -146,17 +146,17 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, 'id'>;
 
-/**
- *
- */
+/** Create and dispatch a new toast notification with update and dismiss helpers. */
 function toast({ ...props }: Toast) {
   const id = genId();
 
+  /** Update this toast's properties. */
   const update = (props: ToasterToast) =>
     dispatch({
       type: 'UPDATE_TOAST',
       toast: { ...props, id }
     });
+  /** Dismiss this specific toast by ID. */
   const dismiss = () => dispatch({ type: 'DISMISS_TOAST', toastId: id });
 
   dispatch({

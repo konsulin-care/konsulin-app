@@ -158,6 +158,7 @@ export const useGetPractitionerRolesDetail = (
   );
 };
 
+/** Mutation hook to update practitioner role info via PATCH. */
 export const useUpdatePractitionerInfo = () => {
   return useMutation({
     mutationKey: ['update-practitioner-role'],
@@ -177,6 +178,7 @@ export const useUpdatePractitionerInfo = () => {
   });
 };
 
+/** Mutation hook to create a new invoice for a practitioner role. */
 export const useCreateInvoice = () => {
   return useMutation({
     mutationKey: ['create-invoice'],
@@ -193,6 +195,7 @@ export const useCreateInvoice = () => {
   });
 };
 
+/** Mutation hook to update an existing invoice for a practitioner role. */
 export const useUpdateInvoice = () => {
   return useMutation({
     mutationKey: ['update-invoice'],

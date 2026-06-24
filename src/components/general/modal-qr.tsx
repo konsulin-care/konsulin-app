@@ -15,6 +15,7 @@ import { toast } from 'react-toastify';
  *
  */
 export default function ModalQr({ value }) {
+  /** Copy current URL to clipboard and show confirmation. */
   const handleCopyToClipboard = () => {
     if (!value) return;
 

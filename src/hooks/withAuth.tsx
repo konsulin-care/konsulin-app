@@ -16,6 +16,7 @@ function withAuth<T>(
   allowedRoles: string[] = [],
   allowGuestMode = false
 ) {
+  /** HOC component that redirects unauthenticated users to /login. */
   const Wrapper: React.FC = (props: T) => {
     const router = useRouter();
     const { state: authState } = useAuth();

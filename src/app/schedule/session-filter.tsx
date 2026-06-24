@@ -143,6 +143,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
     !filter.start_time &&
     !filter.end_time;
 
+  /** Update a single session-filter field by key. */
   const handleFilterChange = (
     label: string,
     value: string | Date | undefined
@@ -153,6 +154,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
     }));
   };
 
+  /** Reset all session filter fields to undefined. */
   const resetFilter = () => {
     setFilter({
       start_date: undefined,
@@ -186,6 +188,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
     }
   }, [initialFilter]);
 
+  /** Open custom date/time filter with default start/end values. */
   const handleCustomFilterOpen = () => {
     if (isInitiaFilterState) {
       handleFilterChange('start_time', '00:00');
@@ -259,6 +262,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
   );
 
   /** Renders the filter drawer content based on current selection. */
+  /** Render default or custom date/time filter drawer content. */
   const renderDrawerContent = () => {
     switch (whichContent) {
       case CONTENT_DEFAULT: {

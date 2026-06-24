@@ -40,9 +40,7 @@ type DropdownProps = {
   onSelect: (value: DropdownOption) => void;
 };
 
-/**
- *
- */
+/** Patient-selector dropdown with in-dialog patient creation by email. */
 export default function Participant({
   list,
   value,
@@ -73,6 +71,7 @@ export default function Participant({
     });
   }, [list]);
 
+  /** Validate email format, sets error state on failure. */
   const handleEmailValidation = () => {
     if (!email.includes('@') || !email.includes('.', email.indexOf('@'))) {
       setError('Email address is invalid');
@@ -83,6 +82,7 @@ export default function Participant({
     return true;
   };
 
+  /** Derive display name from FHIR Patient resource, falling back to email. */
   const derivePatientName = (
     patient: Patient | null,
     fallbackEmail: string
@@ -99,6 +99,7 @@ export default function Participant({
     return combined || fallbackEmail;
   };
 
+  /** Create or retrieve a patient by email, update local options, and select. */
   const handleCreatePatient = async () => {
     const isValid = handleEmailValidation();
     if (!isValid) return;

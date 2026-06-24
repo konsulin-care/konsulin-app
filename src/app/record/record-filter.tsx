@@ -109,6 +109,7 @@ export default function RecordFilter({ onChange }) {
     !filter.type &&
     !filter.isUseCustomDate;
 
+  /** Update a single record-filter field by key. */
   const handleFilterChange = (
     label: string,
     value: string | Date | boolean | undefined
@@ -119,6 +120,7 @@ export default function RecordFilter({ onChange }) {
     }));
   };
 
+  /** Reset all filter fields and custom date mode. */
   const resetFilter = () => {
     setFilter({
       start_date: undefined,
@@ -129,6 +131,7 @@ export default function RecordFilter({ onChange }) {
     handleFilterChange('isUseCustomDate', false);
   };
 
+  /** Open custom date picker with default 7-day range. */
   const handleCustomFilterOpen = () => {
     handleFilterChange('start_date', today);
     handleFilterChange('end_date', addDays(today, 7));
@@ -144,6 +147,7 @@ export default function RecordFilter({ onChange }) {
     />
   );
 
+  /** Render default filter content or custom calendar filter based on whichContent. */
   const renderDrawerContent = () => {
     switch (whichContent) {
       case CONTENT_DEFAULT: {

@@ -55,6 +55,7 @@ export default function EditJournal({ journalId }: Props) {
     }
   }, [journalData, setJournalTitle, setResponse, nextId]);
 
+  /** Submit journal entry to the API, creating or updating the resource. */
   const handleSubmitJournal = async () => {
     try {
       const payload = {
@@ -92,6 +93,7 @@ export default function EditJournal({ journalId }: Props) {
     }
   };
 
+  /** Format an ISO date string to a human-readable Indonesian locale format. */
   const formattedDate = (date: string) => {
     return format(new Date(date), 'dd MMMM yyyy');
   };

@@ -78,10 +78,12 @@ export default function CreateJournal() {
     }
   };
 
+  /** Increment selected date by one day. */
   const nextDay = () => {
     setDate(addDays(date, 1));
   };
 
+  /** Decrement selected date by one day. */
   const prevDay = () => {
     setDate(subDays(date, 1));
   };

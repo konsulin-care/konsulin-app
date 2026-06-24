@@ -56,6 +56,7 @@ export const useListClinics = ({
   });
 };
 
+/** Fetch clinic details by FHIR Organization ID. */
 export const useClinicById = (clinicId: string) => {
   const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ['clinic', clinicId],
@@ -118,6 +119,7 @@ export type DetailPractitionerData = Omit<BundleEntry, 'resource'> & {
   schedule?: Schedule;
 };
 
+/** Fetch practitioner detail including schedule, invoice, and organization. */
 export const useDetailPractitioner = (practitionerRoleId: string) => {
   const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ['practitioner-detail', practitionerRoleId],

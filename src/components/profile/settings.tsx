@@ -27,6 +27,7 @@ export default function Settings({
     show: false
   });
 
+  /** Navigate to the given path and close the drawer. */
   function handleClick(path: string) {
     if (path === '/logout') {
       setDrawerState({
@@ -47,6 +48,7 @@ export default function Settings({
     }
   }
 
+  /** Execute logout, clear redirect, and navigate to login page. */
   function confirmLogout() {
     setDrawerState(prevState => ({
       ...prevState,
@@ -56,6 +58,7 @@ export default function Settings({
     router.push('/logout');
   }
 
+  /** Close the logout confirmation drawer. */
   function closeDrawer() {
     setDrawerState(prevState => ({
       ...prevState,

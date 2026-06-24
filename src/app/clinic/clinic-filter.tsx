@@ -117,6 +117,7 @@ export default function ClinicFilter({ onChange, type }) {
     !filter.end_time &&
     !filter.city;
 
+  /** Update a single filter field by key. */
   const handleFilterChange = (
     label: string,
     value: string | Date | undefined
@@ -127,6 +128,7 @@ export default function ClinicFilter({ onChange, type }) {
     }));
   };
 
+  /** Reset all filter fields to undefined. */
   const resetFilter = () => {
     setFilter({
       start_date: undefined,
@@ -138,6 +140,7 @@ export default function ClinicFilter({ onChange, type }) {
     });
   };
 
+  /** Open the custom date/time filter pane, initializing defaults if no filter is active. */
   const handleCustomFilterOpen = () => {
     if (isInitiaFilterState) {
       handleFilterChange('start_time', '00:00');
@@ -156,6 +159,7 @@ export default function ClinicFilter({ onChange, type }) {
   );
   const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
 
+  /** Render default or custom date/time filter content based on whichContent state. */
   const renderDrawerContent = () => {
     switch (whichContent) {
       case CONTENT_DEFAULT: {

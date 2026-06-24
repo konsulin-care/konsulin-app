@@ -9,6 +9,7 @@ interface Slide {
   description: string;
 }
 
+/** Carousel displaying horizontal slides with icon, title, and description. */
 const Carousel = ({ slides }: { slides: Slide[] }) => {
   return (
     <div className='w-full'>

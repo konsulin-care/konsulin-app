@@ -4,6 +4,7 @@ import axios from 'axios';
 
 const BASE = 'https://wilayah.id/api';
 
+/** Fetch all provinces from wilayah.id API. */
 export const useGetProvinces = () => {
   return useQuery({
     queryKey: ['provinces'],
@@ -15,6 +16,7 @@ export const useGetProvinces = () => {
   });
 };
 
+/** Fetch cities for a given province code from wilayah.id API. */
 export const useGetCities = (provinceCode: number) => {
   return useQuery({
     queryKey: ['cities', provinceCode],
@@ -31,6 +33,7 @@ export const useGetCities = (provinceCode: number) => {
   });
 };
 
+/** Fetch districts for a given city code from wilayah.id API. */
 export const useGetDistricts = (cityCode: number) => {
   return useQuery({
     queryKey: ['districts', cityCode],

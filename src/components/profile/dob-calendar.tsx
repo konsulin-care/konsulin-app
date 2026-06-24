@@ -18,6 +18,7 @@ export default function DobCalendar({
     setSelectedDate(date);
   };
 
+  /** Disable tiles for future dates (tomorrow onward). */
   const tileDisabled = ({ date, view }: { date: Date; view: string }) => {
     if (view === 'month') {
       const today = new Date();
@@ -28,6 +29,7 @@ export default function DobCalendar({
     return false;
   };
 
+  /** Compose tile class names including custom, today, disabled, and selected styles. */
   const getTileClassName = ({ date, view }: { date: Date; view: string }) => {
     const classes = [styles['custom-tile']];
     const today = new Date();

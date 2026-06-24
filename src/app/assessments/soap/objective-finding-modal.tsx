@@ -15,9 +15,7 @@ const testItems = [
   { id: 3, name: 'BIG 3 Personality Test' }
 ];
 
-/**
- *
- */
+/** Objective-finding drawer for selecting psychological test batteries. */
 export default function ObjectiveFindingModal({
   objectiveFinding,
   onChange
@@ -27,6 +25,7 @@ export default function ObjectiveFindingModal({
 }) {
   const [selectedTest, setSelectedTest] = useState(objectiveFinding);
 
+  /** Toggle selection state for a test item at the given index. */
   const handleSelectedTest = (index: number) => {
     const newTest = [...selectedTest];
     newTest[index] = !newTest[index];

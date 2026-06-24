@@ -336,6 +336,7 @@ function useMarkUnavailabilityForm() {
     return fromTime < toTime;
   }, [date, allDay, fromTime, toTime, selectedRoleIds]);
 
+  /** Reset form fields to initial defaults. */
   const reset = () => {
     setDate(undefined);
     setAllDay(true);
@@ -352,6 +353,7 @@ function useMarkUnavailabilityForm() {
       });
   }, [open, refetch]);
 
+  /** Submit the mark-unavailability form, creating a FHIR Schedule resource. */
   const onSave = async () => {
     if (!date) return;
 

@@ -206,6 +206,7 @@ export default function ClinicDetail() {
     return clinic.resource?.name ?? '-';
   }, [clinic]);
 
+  /** Render practitioner card grid, loading skeleton, or empty state. */
   const renderPractitionerGrid = () => {
     if (isLoading || isFetching || !filteredPractitioners) {
       return <CardLoader />;

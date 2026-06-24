@@ -48,6 +48,7 @@ function extractTelecom(data: Patient | Practitioner) {
   };
 }
 
+/** Extract display name from a FHIR Patient/Practitioner resource. */
 function extractName(data: Patient | Practitioner) {
   const name = data.name?.[0];
   return {
@@ -56,6 +57,7 @@ function extractName(data: Patient | Practitioner) {
   };
 }
 
+/** Extract first address line from FHIR Patient/Practitioner resource. */
 function extractAddress(data: Patient | Practitioner) {
   const addresses = data.address?.[0];
   return {
@@ -66,6 +68,7 @@ function extractAddress(data: Patient | Practitioner) {
   };
 }
 
+/** Extract FHIR ID from Patient/Practitioner resource. */
 function extractUserId(data: Patient | Practitioner) {
   return (
     data.identifier?.find(
@@ -74,6 +77,7 @@ function extractUserId(data: Patient | Practitioner) {
   );
 }
 
+/** Parse a FHIR Patient/Practitioner resource into a flat profile object. */
 export const parseFhirProfile = (data: Patient | Practitioner) => {
   return {
     fhirId: data.id,
@@ -93,11 +97,13 @@ export const parseFhirProfile = (data: Patient | Practitioner) => {
   };
 };
 
+/** Extract slot ID from the first appointment participant. */
 function getSlotId(appointment: Appointment): string | null {
   const ref = appointment.slot?.[0]?.reference;
   return ref ? ref.split('/')[1] : null;
 }
 
+/** Extract practitioner ID from the first appointment participant. */
 function getPractitionerId(appointment: Appointment): string | null {
   const participant = appointment.participant.find(
     (p: AppointmentParticipant) =>
@@ -108,6 +114,7 @@ function getPractitionerId(appointment: Appointment): string | null {
     : null;
 }
 
+/** Merge practitioner/slot details into appointment records. */
 function mergeAppointmentData(
   appointment: Appointment,
   slots: Slot[],

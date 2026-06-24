@@ -38,6 +38,7 @@ export default function TimeSlotsSection({
   handleFilterChange,
   setSelectedSlotId
 }: Readonly<Props>) {
+  /** Render time slot grid, loading state, or empty state. */
   const renderSlots = () => {
     if (isLoading) {
       return (

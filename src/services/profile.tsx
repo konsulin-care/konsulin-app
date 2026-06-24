@@ -131,6 +131,7 @@ export const signupByEmail = (email: string) => {
   });
 };
 
+/** Mutation hook to update user profile via PATCH. */
 export const useUpdateProfile = () => {
   return useMutation<Patient | Practitioner, Error, IProfileRequest>({
     mutationKey: ['update-profile'],
@@ -151,11 +152,13 @@ export const useUpdateProfile = () => {
   });
 };
 
+/** Strip non-digit characters and leading '0' or '62' prefix, return last 11+ digits. */
 function normalizePhone(phone: string): string {
   if (!phone) return '';
   return phone.startsWith('+') ? phone.replace(/^\++/, '+') : `+${phone}`;
 }
 
+/** Create or update a FHIR Practitioner/Patient profile resource. */
 export const modifyProfile = async ({
   email,
   phoneNumber,
@@ -221,6 +224,7 @@ export const modifyProfile = async ({
   };
 };
 
+/** Upload a user avatar image to Chatwoot. */
 export const uploadAvatar = async (
   chatwootId: string,
   file: File | Blob
