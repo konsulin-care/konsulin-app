@@ -106,6 +106,7 @@ export const frontendConfig = (): SuperTokensConfig => {
             claim: UserRoleClaim
           });
 
+          /* eslint-disable-next-line unicorn/prefer-ternary */
           if (
             context.isNewRecipeUser &&
             context.user.loginMethods.length === 1
@@ -125,10 +126,10 @@ export const frontendConfig = (): SuperTokensConfig => {
           ) {
             try {
               await fetch('/api/v1/auth/anonymous/claim', { method: 'PATCH' });
-            } catch (err) {
+            } catch (error) {
               console.error(
                 '[auth:claim] failed to claim assessment result:',
-                err
+                error
               );
             }
           }

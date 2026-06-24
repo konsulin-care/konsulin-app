@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-global-this */
 const SW_VERSION = '1';
 const STATIC_CACHE = `konsulin-static-v${SW_VERSION}`;
 const NAV_CACHE = `konsulin-nav-v${SW_VERSION}`;

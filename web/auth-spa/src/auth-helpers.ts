@@ -34,8 +34,8 @@ async function postAuthCookie(
       body: JSON.stringify(body)
     });
     return res;
-  } catch (err) {
-    console.error('[auth:cookie] fetch failed', err);
+  } catch (error) {
+    console.error('[auth:cookie] fetch failed', error);
     return new Response(null, { status: 502 });
   }
 }
@@ -86,8 +86,8 @@ async function handleNewUserLogin(
   let profileData: Patient | Practitioner | null = null;
   try {
     profileData = await getProfileByIdentifier({ userId, type: role });
-  } catch (err) {
-    console.error('[auth:login] getProfileByIdentifier failed', err);
+  } catch (error) {
+    console.error('[auth:login] getProfileByIdentifier failed', error);
   }
 
   if (!profileData) {
@@ -98,14 +98,14 @@ async function handleNewUserLogin(
         phoneNumber: phoneNumbers[0] || '',
         type: role
       });
-    } catch (err) {
-      console.error('[auth:login] createProfile failed', err);
+    } catch (error) {
+      console.error('[auth:login] createProfile failed', error);
       throw new Error('Failed to create profile after login');
     }
     try {
       profileData = await getProfileByIdentifier({ userId, type: role });
-    } catch (err) {
-      console.error('[auth:login] re-fetch profile failed', err);
+    } catch (error) {
+      console.error('[auth:login] re-fetch profile failed', error);
     }
     if (!profileData) throw new Error('Failed to create profile');
   }
@@ -141,10 +141,10 @@ async function handleReturningUserLogin(
       userId,
       type: role
     });
-  } catch (err) {
+  } catch (error) {
     console.error(
       '[auth:login] getProfileByIdentifier failed for returning user',
-      err
+      error
     );
   }
 

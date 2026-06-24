@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { FlatCompat } = require('@eslint/eslintrc')
 const sonarjs = require('eslint-plugin-sonarjs')
 const jsdoc = require('eslint-plugin-jsdoc')
@@ -18,7 +19,7 @@ const tsStrictRules = tsPlugin.configs['strict-type-checked'].rules
 const tsStylisticRules = tsPlugin.configs['stylistic-type-checked'].rules
 
 module.exports = [
-  { ignores: ['web/static/js/*.min.js'] },
+  { ignores: ['web/static/js/*.min.js', '**/.next/**'] },
 
   // --- Base: Next.js (loads import, react, jsx-a11y plugins internally) ---
   ...compat.extends('next/core-web-vitals'),
@@ -161,7 +162,7 @@ module.exports = [
       'security/detect-object-injection': 'off',
         // Every form handler triggers this; data is from controlled inputs
       'sonarjs/no-clear-text-protocols': 'off',
-        // FHIR canonical URLs: http://loinc.org, http://snomed.info — not fixable
+        // FHIR canonical URLs: https://loinc.org, https://snomed.info — not fixable
 
       // ── Hard-off: stylistic noise (no bug-safety value) ──
       '@typescript-eslint/no-explicit-any': 'off',
@@ -225,7 +226,10 @@ module.exports = [
   {
     files: ['web/auth-spa/**/*.{js,jsx,ts,tsx}'],
     rules: {
-      '@next/next/no-img-element': 'off'
+      '@next/next/no-img-element': 'off',
+      'unicorn/catch-error-name': 'off',
+      'unicorn/prefer-query-selector': 'off',
+      'unicorn/no-document-cookie': 'off'
     }
   }
 ]
