@@ -172,7 +172,7 @@ export default function Participant({
       <Button
         className='bg-secondary w-full text-white'
         onClick={() => {
-          void handleCreatePatient();
+          handleCreatePatient().catch(console.error);
         }}
         disabled={isSubmitting}
       >

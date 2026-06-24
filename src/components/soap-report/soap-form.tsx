@@ -93,7 +93,7 @@ export default function SoapForm({
       }
     };
 
-    void runBuildForm();
+    runBuildForm().catch(console.error);
   }, [questionnaire, mode, questionnaireResponse, patientId, practitionerId]);
 
   const handleResponseChange = useDraftAutoSave(STORES.soapDrafts, qr => ({
@@ -219,7 +219,7 @@ export default function SoapForm({
             onClick={() => {
               const isValid = handleValidation();
               if (isValid) {
-                void handleSubmitSoap();
+                handleSubmitSoap().catch(console.error);
               }
             }}
           >

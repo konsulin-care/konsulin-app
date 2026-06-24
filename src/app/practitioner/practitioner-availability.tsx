@@ -295,7 +295,7 @@ export default function PractitionerAvailability({
   /** Load temporary booking data from IndexedDB. */
   function loadTempBookingFromIndexedDB(userId: string): void {
     setIsOpen(true);
-    void dbGet<TempBookingData>(STORES.tempBooking, userId)
+    dbGet<TempBookingData>(STORES.tempBooking, userId)
       .then(parsed => {
         if (parsed) {
           setBookingInformation(() => ({

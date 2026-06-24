@@ -217,7 +217,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
       setResolvedPhotoUrl(valid ? updateUser.photo : '');
     };
 
-    void validatePhoto();
+    validatePhoto().catch(console.error);
 
     return () => {
       isActive = false;
@@ -318,7 +318,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
           isUpdateLoading={isUpdateLoading}
           isUploadingPhoto={isUploadingPhoto}
           onSave={() => {
-            void handleEditSave();
+            handleEditSave().catch(console.error);
           }}
         />
       </div>

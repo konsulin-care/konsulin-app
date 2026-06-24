@@ -321,7 +321,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await handleSessionExists();
     };
 
-    void fetchSession();
+    fetchSession().catch(console.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.doesSessionExist]);
 

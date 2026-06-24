@@ -283,10 +283,10 @@ export default function PaymentDrawer({
           isPaymentDisabled={isPaymentDisabled}
           isPaymentDisabledOffline={isPaymentDisabledOffline}
           handlePayOnline={() => {
-            void handlePayOnline();
+            handlePayOnline().catch(console.error);
           }}
           handlePayOffline={() => {
-            void handlePayOffline();
+            handlePayOffline().catch(console.error);
           }}
         />
       </DrawerContent>

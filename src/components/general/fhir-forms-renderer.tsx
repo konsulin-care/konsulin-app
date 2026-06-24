@@ -246,7 +246,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         <Button
           className='bg-secondary h-full w-full rounded-xl p-4 text-white'
           onClick={() => {
-            void handleSubmitQuestionnaire('result');
+            handleSubmitQuestionnaire('result').catch(console.error);
           }}
           disabled={isSubmitting || isPending}
         >
@@ -269,7 +269,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
             : 'border-secondary text-secondary bg-transparent hover:bg-gray-100'
         }`}
         onClick={() => {
-          void handleSubmitQuestionnaire('close');
+          handleSubmitQuestionnaire('close').catch(console.error);
         }}
       >
         Close

@@ -514,7 +514,7 @@ export default function MarkUnavailabilityButton({
         canSave={form.canSave}
         saving={form.saving}
         onSave={() => {
-          void form.onSave();
+          form.onSave().catch(console.error);
         }}
         onCancel={() => {
           form.setOpen(false);

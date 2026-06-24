@@ -142,7 +142,7 @@ export default function EditJournal({ journalId }: Props) {
       <JournalSubmitButton
         isLoading={isSubmitLoading}
         onClick={() => {
-          void handleSubmitJournal();
+          handleSubmitJournal().catch(console.error);
         }}
       />
     </>

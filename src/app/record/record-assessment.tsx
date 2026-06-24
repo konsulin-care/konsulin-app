@@ -216,7 +216,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
         attempts += 1;
         if (attempts < MAX_ATTEMPTS && !cancelled) {
           setTimeout(() => {
-            void poll(serviceRequestId);
+            poll(serviceRequestId).catch(console.error);
           }, 1000);
         }
       } catch (err) {
@@ -254,10 +254,10 @@ export default function RecordAssessment({ recordId, title }: Props) {
       const serviceRequestId = srRecord?.serviceRequestId;
       if (!serviceRequestId) return;
 
-      void poll(serviceRequestId);
+      poll(serviceRequestId).catch(console.error);
     };
 
-    void start();
+    start().catch(console.error);
 
     return () => {
       cancelled = true;

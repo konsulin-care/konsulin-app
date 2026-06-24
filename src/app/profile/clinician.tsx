@@ -314,7 +314,9 @@ export default function Clinician({ fhirId }: Props) {
           <div className='scrollbar-hide my-2 flex-grow overflow-y-auto'>
             <DrawerBody
               selectedPractitionerRoles={selectedPractitionerRoles}
-              onSave={() => void handleSaveSuccess()}
+              onSave={() => {
+                handleSaveSuccess().catch(console.error);
+              }}
               onCancel={() => setIsDrawerOpen(false)}
             />
           </div>

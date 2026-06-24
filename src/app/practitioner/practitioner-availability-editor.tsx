@@ -313,7 +313,7 @@ export default function PractitionerAvailabilityEditor({
       {/* Floating Save Button */}
       <FloatingSaveButton
         onSave={() => {
-          void handleSave();
+          handleSave().catch(console.error);
         }}
         onCancel={onCancel}
         isSaving={isSaving}

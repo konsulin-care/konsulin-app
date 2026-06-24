@@ -76,7 +76,7 @@ export function getAPI(): Promise<AxiosInstance> {
       // not for FHIR data access errors (e.g., Person resource 401).
       if ((isExpiredToken || isMissingToken) && isAuthEndpoint) {
         setTimeout(() => {
-          void clearUserData(currentUserId ?? 'guest');
+          clearUserData(currentUserId ?? 'guest').catch(console.error);
           try {
             window.location.href = '/';
           } catch (err) {

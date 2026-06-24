@@ -146,7 +146,7 @@ function handleIntent(
     }
   };
 
-  void run();
+  run().catch(console.error);
   return () => {
     isMounted = false;
     abortController.abort();

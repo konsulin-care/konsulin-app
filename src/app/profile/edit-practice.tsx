@@ -1031,7 +1031,7 @@ const EditPractice = () => {
           <div className='flex w-full max-w-screen-sm items-center justify-center'>
             <Button
               onClick={() => {
-                void handleSubmitFirmsStatus();
+                handleSubmitFirmsStatus().catch(console.error);
               }}
               className='bg-secondary w-full rounded-[32px] py-2 font-normal text-white'
               disabled={isSaving}

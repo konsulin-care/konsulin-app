@@ -130,7 +130,7 @@ export default function CreateJournal() {
       <JournalSubmitButton
         isLoading={isSubmitLoading}
         onClick={() => {
-          void handleSubmitJournal();
+          handleSubmitJournal().catch(console.error);
         }}
       />
     </>
