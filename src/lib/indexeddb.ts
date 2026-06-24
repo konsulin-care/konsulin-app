@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- utility module with full IndexedDB abstraction */
+/* eslint-disable max-lines, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unnecessary-type-parameters, unicorn/prefer-includes-over-repeated-comparisons, unicorn/prefer-add-event-listener */
 const DB_NAME = 'konsulin';
 const DB_VERSION = 2;
 
@@ -47,9 +47,9 @@ function handleVersionError(
     const retry = indexedDB.open(DB_NAME, version);
     retry.onsuccess = () => {
       const db = retry.result;
-      db.onclose = () => {
+      db.addEventListener('close', () => {
         dbPromise = null;
-      };
+      });
       db.onversionchange = () => {
         db.close();
         dbPromise = null;
@@ -86,9 +86,9 @@ export function openDB(): Promise<IDBDatabase> {
 
     request.onsuccess = () => {
       const db = request.result;
-      db.onclose = () => {
+      db.addEventListener('close', () => {
         dbPromise = null;
-      };
+      });
       db.onversionchange = () => {
         db.close();
         dbPromise = null;

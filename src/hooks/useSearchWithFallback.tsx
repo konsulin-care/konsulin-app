@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import { useEffect, useMemo, useReducer, useRef } from 'react';
 
 export interface SearchField {
@@ -33,7 +34,7 @@ function serverReducer<T>(
   action: ServerAction<T>
 ): ServerState<T> {
   switch (action.type) {
-    case 'RESET':
+    case 'RESET': {
       return {
         isServerSearching: false,
         showServerResults: false,
@@ -41,13 +42,15 @@ function serverReducer<T>(
         serverData: undefined,
         serverSearchCompleted: false
       };
-    case 'START_SEARCH':
+    }
+    case 'START_SEARCH': {
       return {
         ...state,
         isServerSearching: true,
         showServerResults: false
       };
-    case 'SEARCH_SUCCESS':
+    }
+    case 'SEARCH_SUCCESS': {
       return {
         isServerSearching: false,
         showServerResults: true,
@@ -55,7 +58,8 @@ function serverReducer<T>(
         serverData: action.results,
         serverSearchCompleted: true
       };
-    case 'SEARCH_ERROR':
+    }
+    case 'SEARCH_ERROR': {
       return {
         isServerSearching: false,
         showServerResults: false,
@@ -63,8 +67,10 @@ function serverReducer<T>(
         serverData: undefined,
         serverSearchCompleted: true
       };
-    default:
+    }
+    default: {
       return state;
+    }
   }
 }
 

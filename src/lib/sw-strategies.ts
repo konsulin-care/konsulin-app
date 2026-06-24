@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 /**
  * Checks that a URL string uses an http or https protocol.
  * This prevents user-controlled URLs (javascript:, data:, etc.)

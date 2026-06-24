@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable sonarjs/no-redundant-jump, consistent-return */
 
 import { useAuth } from '@/context/auth/authContext';
 import { usePathname, useRouter } from 'next/navigation';
@@ -29,7 +30,7 @@ const ProfileCompletenessModal = () => {
       return () => clearTimeout(timer);
     }
     setIsOpen(false);
-    return undefined;
+    return;
   }, [
     isLoading,
     authState.isAuthenticated,

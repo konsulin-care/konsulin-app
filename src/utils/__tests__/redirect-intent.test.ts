@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearIntent, getIntent, saveIntent } from '../redirect-intent';
 import { assertDefined } from './test-utils';

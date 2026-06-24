@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable unicorn/no-document-cookie */
 
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';

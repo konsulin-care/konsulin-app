@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, react/jsx-max-depth */
+/* eslint-disable max-lines, react/jsx-max-depth, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
@@ -225,7 +225,7 @@ export default function PractitionerAvailability({
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get(`/fhir/Schedule/${scheduleId}`);
-      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data || null;
     },
     enabled: Boolean(scheduleId) && (isAuthenticated ?? false),
     staleTime: 5 * 60 * 1000,

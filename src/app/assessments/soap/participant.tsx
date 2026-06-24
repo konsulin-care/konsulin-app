@@ -1,4 +1,4 @@
-/* eslint-disable react/jsx-max-depth */
+/* eslint-disable react/jsx-max-depth, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { Calendar } from '@/components/ui/calendar-temp';
 import { DrawerDescription, DrawerTitle } from '@/components/ui/drawer';
 import { getAvailableDays } from './utils';

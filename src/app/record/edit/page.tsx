@@ -18,12 +18,15 @@ export default function EditRecordDetail() {
   /** Returns page title based on record category. */
   const pageTitle = (category: number) => {
     switch (category) {
-      case 3:
+      case 3: {
         return 'SOAP Report';
-      case 4:
+      }
+      case 4: {
         return 'Journaling';
-      default:
+      }
+      default: {
         return '';
+      }
     }
   };
 
@@ -36,12 +39,15 @@ export default function EditRecordDetail() {
   /** Renders the edit form based on record category. */
   const renderContent = (category: number) => {
     switch (category) {
-      case 3:
+      case 3: {
         return <EditSoap soapId={recordId} title={titleParam} />;
-      case 4:
+      }
+      case 4: {
         return <EditJournal journalId={recordId} />;
-      default:
+      }
+      default: {
         return null;
+      }
     }
   };
 

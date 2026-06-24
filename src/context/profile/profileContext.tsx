@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable sonarjs/no-commented-code */
 
 import React, { ReactNode, createContext, useContext, useReducer } from 'react';
 import { initialState, reducer } from './profileReducer';

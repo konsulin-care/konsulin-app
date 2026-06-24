@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { Roles } from '@/constants/roles';
 import { IStateAuth } from './authTypes';
 

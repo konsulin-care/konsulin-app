@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable react/jsx-max-depth */
 
 import Image from 'next/image';

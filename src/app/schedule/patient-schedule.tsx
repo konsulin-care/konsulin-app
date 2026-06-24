@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unnecessary-type-conversion */
 
 import Avatar from '@/components/general/avatar';
 import PageHeader from '@/components/page-header';

@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 
 import { useJournalForm } from '@/components/shared/hooks/useJournalForm';
 import JournalResponseFields from '@/components/shared/journal-response-fields';

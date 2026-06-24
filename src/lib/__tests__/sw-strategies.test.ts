@@ -64,7 +64,7 @@ describe('isValidHttpUrl', () => {
   });
 
   it('returns true for http URL', () => {
-    expect(isValidHttpUrl('http://konsulin.id/page')).toBe(true);
+    expect(isValidHttpUrl('http://konsulin.id/page')).toBe(true); // eslint-disable-line unicorn/prefer-https
   });
 
   it('returns false for javascript: URL', () => {
@@ -119,7 +119,7 @@ describe('cacheFirst', () => {
   it('fetches and caches on cache miss', async () => {
     const cache = createMockCache();
     // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
-    cache.match.mockResolvedValue(undefined);
+    cache.match.mockResolvedValue(undefined); // eslint-disable-line unicorn/no-useless-undefined
     const cacheStorage = createMockCacheStorage({ v1: cache });
 
     const fetchSpy = vi
@@ -139,7 +139,7 @@ describe('cacheFirst', () => {
   it('does not cache response when fetch fails (non-ok)', async () => {
     const cache = createMockCache();
     // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
-    cache.match.mockResolvedValue(undefined);
+    cache.match.mockResolvedValue(undefined); // eslint-disable-line unicorn/no-useless-undefined
     const cacheStorage = createMockCacheStorage({ v1: cache });
 
     const fetchSpy = vi
@@ -160,7 +160,7 @@ describe('cacheFirst', () => {
     // First call (initial lookup): miss → proceed to fetch
     // Second call (fallback in catch): hit → return cached
     cache.match
-      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined) // eslint-disable-line unicorn/no-useless-undefined
       .mockResolvedValueOnce(cachedResponse);
     const cacheStorage = createMockCacheStorage({ v1: cache });
 
@@ -182,7 +182,7 @@ describe('cacheFirst', () => {
     const cache = createMockCache();
     // Both calls to cache.match return undefined
     // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
-    cache.match.mockResolvedValue(undefined);
+    cache.match.mockResolvedValue(undefined); // eslint-disable-line unicorn/no-useless-undefined
     const cacheStorage = createMockCacheStorage({ v1: cache });
 
     const fetchSpy = vi
@@ -247,7 +247,7 @@ describe('networkFirst', () => {
   it('falls back to offline page when no cache and fallbackUrl provided', async () => {
     const navCache = createMockCache();
     // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
-    navCache.match.mockResolvedValue(undefined);
+    navCache.match.mockResolvedValue(undefined); // eslint-disable-line unicorn/no-useless-undefined
 
     const staticCache = createMockCache();
     const fallbackResponse = mockOkResponse('offline page');
@@ -278,7 +278,7 @@ describe('networkFirst', () => {
   it('returns 503 on total failure with no cache and no fallback', async () => {
     const cache = createMockCache();
     // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
-    cache.match.mockResolvedValue(undefined);
+    cache.match.mockResolvedValue(undefined); // eslint-disable-line unicorn/no-useless-undefined
     const cacheStorage = createMockCacheStorage({ 'nav-v1': cache });
 
     const fetchSpy = vi
@@ -303,7 +303,9 @@ describe('networkFirst', () => {
       .spyOn(globalThis, 'fetch')
       .mockRejectedValue(new Error('Offline'));
 
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+      /* noop */
+    });
     const request = new Request('https://example.com/page');
 
     // Should throw the final fallback error, not the cache error

@@ -30,32 +30,42 @@ export default function RecordDetail() {
   /** Returns page title based on record category. */
   const pageTitle = (category: number) => {
     switch (category) {
-      case 1:
+      case 1: {
         return 'Assessment Result';
-      case 2:
+      }
+      case 2: {
         return 'Exercise Result';
-      case 3:
+      }
+      case 3: {
         return 'SOAP Detail';
-      case 4:
+      }
+      case 4: {
         return 'Journal Detail';
-      default:
+      }
+      default: {
         return '';
+      }
     }
   };
 
   /** Renders the appropriate record component based on category. */
   const renderContent = (category: number) => {
     switch (category) {
-      case 1:
+      case 1: {
         return <RecordAssessment recordId={recordId} title={formattedTitle} />;
-      case 2:
+      }
+      case 2: {
         return <RecordExercise />;
-      case 3:
+      }
+      case 3: {
         return <RecordSoap soapId={recordId} title={titleParam} />;
-      case 4:
+      }
+      case 4: {
         return <RecordJournal journalId={recordId} />;
-      default:
+      }
+      default: {
         return null;
+      }
     }
   };
 

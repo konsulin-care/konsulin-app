@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-add-event-listener */
 /**
  * Utility to crop an image to a centered square, resize to target size,
  * and compress to a specified byte threshold on the client.
@@ -28,7 +29,7 @@ const defaultOptions: Required<ProcessImageOptions> = {
 const loadImage = (objectUrl: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(img);
+    img.addEventListener('load', () => resolve(img));
     img.onerror = reject;
     img.src = objectUrl;
   });

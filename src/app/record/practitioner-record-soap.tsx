@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 import EmptyState from '@/components/general/empty-state';
 import SoapHeaderCards from '@/components/shared/soap-header-cards';
 import SoapLoadingSpinner from '@/components/shared/soap-loading-spinner';

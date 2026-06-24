@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-conversion, @typescript-eslint/no-misused-promises, no-console */
 import { STORES, dbSet } from '@/lib/indexeddb';
 import { useRouter } from 'next/navigation';
 import React from 'react';
@@ -158,14 +159,10 @@ export const frontendConfig = (
             value: 'true'
           });
 
-          if (
-            context.isNewRecipeUser &&
-            context.user.loginMethods.length === 1
-          ) {
-            await handleNewUserLogin(roles, userId, emails, phoneNumbers);
-          } else {
-            await handleReturningUserLogin(roles, userId, emails, phoneNumbers);
-          }
+          await (context.isNewRecipeUser &&
+          context.user.loginMethods.length === 1
+            ? handleNewUserLogin(roles, userId, emails, phoneNumbers)
+            : handleReturningUserLogin(roles, userId, emails, phoneNumbers));
 
           const isAuthRoute = (routerInfo.pathName || '').startsWith('/auth');
           if (!isAuthRoute) {

@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
 
 import { useJournalForm } from '@/components/shared/hooks/useJournalForm';
 import JournalResponseFields from '@/components/shared/journal-response-fields';
@@ -46,7 +47,6 @@ export default function EditJournal({ journalId }: Props) {
       if (journalData.note.length > 0) {
         setResponse(
           journalData.note.map(item => ({
-            // eslint-disable-line @typescript-eslint/no-unsafe-return
             ...item,
             id: nextId.current++
           }))

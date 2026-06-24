@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 import type { IBundleResponse } from '@/types/record';
 import type { Bundle, Observation } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
@@ -10,7 +11,7 @@ function makeObservation(
     resourceType: 'Observation',
     status: 'final',
     code: {
-      coding: [{ system: 'http://loinc.org', code: '51855-5' }]
+      coding: [{ system: 'https://loinc.org', code: '51855-5' }]
     },
     meta: overrides.lastUpdated
       ? { lastUpdated: overrides.lastUpdated }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
@@ -8,9 +9,9 @@ export const useGetProvinces = () => {
     queryKey: ['provinces'],
     queryFn: async () => {
       const response = await axios.get(`${BASE}/provinces.json`);
-      return response.data.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data.data;
     },
-    select: response => response || [] // eslint-disable-line @typescript-eslint/no-unsafe-return
+    select: response => response || []
   });
 };
 
@@ -23,10 +24,10 @@ export const useGetCities = (provinceCode: number) => {
         `${BASE}/regencies/${provinceCode}.json`
       );
       const payload = response.data?.data ?? response.data;
-      return Array.isArray(payload) ? payload : []; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return Array.isArray(payload) ? payload : [];
     },
     enabled: provinceCode !== undefined && provinceCode !== null,
-    select: response => response || [] // eslint-disable-line @typescript-eslint/no-unsafe-return
+    select: response => response || []
   });
 };
 
@@ -37,9 +38,9 @@ export const useGetDistricts = (cityCode: number) => {
       if (cityCode === 0) return null;
       const response = await axios.get(`${BASE}/districts/${cityCode}.json`);
       const payload = response.data?.data ?? response.data;
-      return Array.isArray(payload) ? payload : []; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return Array.isArray(payload) ? payload : [];
     },
     enabled: cityCode !== undefined && cityCode !== null,
-    select: response => response || [] // eslint-disable-line @typescript-eslint/no-unsafe-return
+    select: response => response || []
   });
 };

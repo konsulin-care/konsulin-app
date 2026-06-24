@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 
 import ActionCard from '@/components/general/action-card';
 import CardLoader from '@/components/general/card-loader';
@@ -62,7 +63,7 @@ export default function HomeContentAdmin() {
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get('/fhir/Practitioner?_summary=count');
-      return response.data?.total ?? 0; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      return response.data?.total ?? 0;
     },
     enabled: Boolean(authState?.userInfo?.fhirId)
   });

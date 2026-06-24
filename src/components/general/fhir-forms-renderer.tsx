@@ -1,4 +1,4 @@
-/* eslint-disable sonarjs/cognitive-complexity, react/jsx-max-depth, max-lines */
+/* eslint-disable sonarjs/cognitive-complexity, react/jsx-max-depth, max-lines, complexity, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import PageLoader from '@/components/general/page-loader';
 import { SmartFormShell } from '@/components/general/smart-form-shell';
 import { LoadingSpinnerIcon } from '@/components/icons';

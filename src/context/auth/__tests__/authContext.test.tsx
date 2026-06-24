@@ -140,15 +140,15 @@ beforeEach(() => {
   });
   mockGetClaimValue.mockResolvedValue(['Patient']);
   (migrateLocalStorage as ReturnType<typeof vi.fn>).mockResolvedValue(
-    undefined
-  ); // eslint-disable-line unicorn/no-useless-undefined
+    undefined // eslint-disable-line unicorn/no-useless-undefined
+  );
   (dbGet as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 });
 
 // =========================================================================
 // Fix 1: Stale-cookie deletion short-circuit
 // =========================================================================
-describe('Fix 1 — stale cookie deletion short-circuit', () => {
+describe('Fix 1 - stale cookie deletion short-circuit', () => {
   it('does NOT redirect when stale cookie DELETE returns non-OK', async () => {
     // GIVEN: stale auth cookie exists but SuperTokens session is gone
     (getAuthCookieSession as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -219,7 +219,7 @@ describe('Fix 1 — stale cookie deletion short-circuit', () => {
 // =========================================================================
 // Fix 2: fetchProfileAndLogin guard against ghost session
 // =========================================================================
-describe('Fix 2 — fetchProfileAndLogin fallback on early error', () => {
+describe('Fix 2 - fetchProfileAndLogin fallback on early error', () => {
   beforeEach(() => {
     // GIVEN: an active SuperTokens session
     mockUseSessionContext.mockReturnValue({
@@ -279,7 +279,7 @@ describe('Fix 2 — fetchProfileAndLogin fallback on early error', () => {
     // WHEN: the auth provider mounts
     renderWithAuthProvider();
 
-    // THEN: no error propagates — auth state resolves
+    // THEN: no error propagates - auth state resolves
     await waitFor(() => {
       const loading = screen.getByTestId('auth-loading');
       expect(loading.textContent).toBe('false');
@@ -295,9 +295,9 @@ describe('Fix 2 — fetchProfileAndLogin fallback on early error', () => {
 });
 
 // =========================================================================
-// Fix 3: Source ordering — dependencies defined before their caller
+// Fix 3: Source ordering - dependencies defined before their caller
 // =========================================================================
-describe('Fix 3 — function dependency ordering', () => {
+describe('Fix 3 - function dependency ordering', () => {
   it('fetchProfileAndLogin is declared AFTER its callees (resolveUserRoles, fetchAndDispatchProfile, fallbackProfileOnError)', async () => {
     // GIVEN: the auth source file
     const src = await fs.promises.readFile(

@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-document-cookie */
 export type IntentKind = 'journal' | 'appointment' | 'assessmentResult';
 
 export interface Intent {

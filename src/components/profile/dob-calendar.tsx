@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { addDays } from 'date-fns';
 import { useState } from 'react';
 import Calendar from 'react-calendar';

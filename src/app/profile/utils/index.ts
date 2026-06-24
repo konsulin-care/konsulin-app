@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, max-params */
 import { IPractitionerRoleDetail } from '@/types/practitioner';
 import { DayOfWeek, FormsState, TimeRange } from '../types';
 

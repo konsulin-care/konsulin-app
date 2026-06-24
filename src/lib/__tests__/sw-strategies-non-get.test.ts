@@ -8,7 +8,7 @@ function createMockCache(matchVal?: Response): {
   return {
     match: vi.fn().mockResolvedValue(matchVal ?? undefined),
     // skipcq: JS-W1042 - explicit undefined matches fn signature
-        put: vi.fn().mockResolvedValue(undefined)
+    put: vi.fn().mockResolvedValue(undefined) // eslint-disable-line unicorn/no-useless-undefined
   };
 }
 

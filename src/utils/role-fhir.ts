@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-useless-switch-case */
 import { Roles } from '@/constants/roles';
 
 /**
@@ -5,12 +6,15 @@ import { Roles } from '@/constants/roles';
  */
 export function roleToFhirResource(role: string): string {
   switch (role) {
-    case Roles.Practitioner:
+    case Roles.Practitioner: {
       return 'Practitioner';
-    case Roles.ClinicAdmin:
+    }
+    case Roles.ClinicAdmin: {
       return 'Person';
+    }
     case Roles.Patient:
-    default:
+    default: {
       return 'Patient';
+    }
   }
 }

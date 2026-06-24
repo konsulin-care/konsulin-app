@@ -13,7 +13,7 @@ type UseProfileFormHandlersParams = {
   updateUser: ICustomProfile;
   isPhoneBasedUser: boolean;
   setUpdateUser: React.Dispatch<React.SetStateAction<ICustomProfile>>;
-  setErrors: React.Dispatch<React.SetStateAction<{ [key: string]: string }>>;
+  setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   setDrawerState: React.Dispatch<React.SetStateAction<string>>;
 };
 

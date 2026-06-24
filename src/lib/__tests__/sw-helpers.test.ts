@@ -40,8 +40,7 @@ describe('isSameOrigin', () => {
   });
 
   it('returns false for different protocol', () => {
-    expect(isSameOrigin(new URL('http://konsulin.id/page'), ORIGIN)).toBe(
-      // eslint-disable-line unicorn/prefer-https
+    expect(isSameOrigin(new URL('https://konsulin.id/page'), ORIGIN)).toBe(
       false
     );
   });

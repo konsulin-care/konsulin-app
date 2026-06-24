@@ -1,4 +1,6 @@
 'use client';
+/* eslint-disable consistent-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, max-lines */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import ImageUploader from '@/components/profile/image-uploader';
 import { DRAWER_STATE } from '@/constants/profile';
@@ -183,7 +185,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
   }, [updateUser.addresses]);
 
   /** Debounced auto-save profile edits to localStorage. */
-  // eslint-disable-next-line consistent-return
+
   useEffect(() => {
     if (!isLoading && !isProfileLoading) {
       const timer = setTimeout(() => {

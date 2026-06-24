@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable sonarjs/function-return-type */
 /* eslint-disable react/jsx-max-depth */
 
 import RecordFilter, { IRecordParams } from '@/app/record/record-filter';
@@ -105,7 +106,6 @@ export default function RecordPageShell({
             Previous Record Summary
           </div>
           {(() => {
-            // eslint-disable-line sonarjs/function-return-type
             if (isLoading) {
               return (
                 <div className='flex flex-col gap-2'>

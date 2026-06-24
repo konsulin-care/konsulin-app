@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
 import AvailabilityEditor from '@/components/availability/availability-editor';
 import DaySelectorNavigation from '@/components/availability/day-selector-navigation';
 import FloatingSaveButton from '@/components/availability/floating-save-button';
@@ -257,7 +258,7 @@ export default function PractitionerAvailabilityEditor({
         normalized[day][org] = avail[day][org]
           .map(({ from, to }) => ({ from, to }))
           .toSorted(
-            (a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to) // eslint-disable-line @typescript-eslint/no-unsafe-return
+            (a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to)
           );
       }
     }

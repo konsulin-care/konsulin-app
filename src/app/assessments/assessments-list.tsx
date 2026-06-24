@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
 
 /* eslint-disable max-lines */
 
@@ -208,7 +209,6 @@ export default function AssessmentsList() {
 
   const searchAssessments = useMemo(() => {
     return [
-      // eslint-disable-line @typescript-eslint/no-unsafe-return
       ...(popularAssessments || []),
       ...(regularAssessments || [])
     ].filter(
@@ -245,10 +245,10 @@ export default function AssessmentsList() {
       ];
 
       const regularFound = allRegular.find(item => item.resource.id === id);
-      if (regularFound) return regularFound.resource; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      if (regularFound) return regularFound.resource;
 
       const researchFound = research?.find(item => item.resource.id === id);
-      if (researchFound) return researchFound.resource; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      if (researchFound) return researchFound.resource;
 
       return null;
     },

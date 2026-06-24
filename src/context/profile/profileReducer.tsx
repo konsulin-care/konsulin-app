@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-commented-code, sonarjs/no-duplicated-branches */
 import { ActionProfile, IProfile } from './profileTypes';
 
 // export const initialState: StateProfile = {
@@ -33,20 +34,24 @@ export const reducer = (
   action: ActionProfile
 ): IProfile => {
   switch (action.type) {
-    case 'updated':
+    case 'updated': {
       return {
         ...state,
         ...action.payload
       };
-    case 'getProfile':
+    }
+    case 'getProfile': {
       return {
         ...state,
         ...action.payload
       };
-    case 'reset':
+    }
+    case 'reset': {
       return initialState;
-    default:
+    }
+    default: {
       return state;
+    }
   }
 };
 

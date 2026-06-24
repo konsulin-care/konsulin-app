@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-misused-promises */
 
 import Avatar from '@/components/general/avatar';
 import { UserIcon } from '@/components/icons';

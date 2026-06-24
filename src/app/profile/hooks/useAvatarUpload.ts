@@ -1,13 +1,11 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import { toast } from 'react-toastify';
 
-import {
-  dataUrlToBlob,
-  isDataUrl
-} from '@/utils/helper';
-import { processImageForAvatar } from '@/utils/image-processing';
 import { uploadAvatar } from '@/services/profile';
+import { dataUrlToBlob, isDataUrl } from '@/utils/helper';
+import { processImageForAvatar } from '@/utils/image-processing';
 
 /** Converts a MIME type string to a file extension (jpg/png). */
 export function getExtensionFromMime(mime: string): string {

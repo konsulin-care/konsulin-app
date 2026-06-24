@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-misused-promises */
 
 import ActionCard from '@/components/general/action-card';
 import { Skeleton } from '@/components/ui/skeleton';

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { QueryClient } from '@tanstack/react-query';
 import { expect, type Mock, vi } from 'vitest';
 
