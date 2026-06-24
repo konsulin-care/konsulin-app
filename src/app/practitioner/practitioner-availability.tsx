@@ -104,7 +104,7 @@ export default function PractitionerAvailability({
   const isAuthenticated = authState?.isAuthenticated;
 
   /** Update a single booking information field (problem brief, etc.). */
-  const handleBookingInformationChange = (key: string, value: any) => {
+  const handleBookingInformationChange = (key: string, value: string) => {
     setBookingInformation(prevState => ({
       ...prevState,
       [key]: value
@@ -127,7 +127,10 @@ export default function PractitionerAvailability({
   };
 
   /** Dispatch a booking info update to the reducer. */
-  const handleFilterChange = (label: string, value: any) => {
+  const handleFilterChange = (
+    label: string,
+    value: string | Date | boolean | undefined
+  ) => {
     dispatch({
       type: 'UPDATE_BOOKING_INFO',
       payload: {

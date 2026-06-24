@@ -39,7 +39,7 @@ export default function FirmFilter({ onChange }) {
   const isInitiaFilterState = !filter.city;
 
   /** Update a single filter field value. */
-  const handleFilterChange = (label: string, value: any) => {
+  const handleFilterChange = (label: string, value: string | undefined) => {
     setFilter(prevState => ({
       ...prevState,
       [label]: value

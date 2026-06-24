@@ -117,7 +117,7 @@ export default function Settings({ menus }) {
               onClick={closeDrawer}
             >
               <span className='text-sm font-bold text-white'>
-                No, I don't want to
+                No, I don&apos;t want to
               </span>
             </Button>
             <Button

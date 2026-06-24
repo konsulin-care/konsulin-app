@@ -1,9 +1,6 @@
-/* eslint-disable @typescript-eslint/require-await */
 import { redirect } from 'next/navigation';
 
-/**
- *
- */
-export async function navigate(url: string) {
+/** Navigate to a URL using Next.js redirect. */
+export function navigate(url: string) {
   redirect(url);
 }

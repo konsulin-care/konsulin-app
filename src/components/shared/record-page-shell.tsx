@@ -84,11 +84,9 @@ export default function RecordPageShell({
           <div className='flex gap-4'>
             {recordFilter.start_date && recordFilter.end_date && (
               <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
-                {recordFilter.start_date == recordFilter.end_date
+                {recordFilter.start_date === recordFilter.end_date
                   ? format(recordFilter.start_date, 'dd MMM yy')
-                  : format(recordFilter.start_date, 'dd MMM yy') +
-                    ' - ' +
-                    format(recordFilter.end_date, 'dd MMM yy')}
+                  : `${format(recordFilter.start_date, 'dd MMM yy')} - ${format(recordFilter.end_date, 'dd MMM yy')}`}
               </Badge>
             )}
             {filterTypeLabel && (

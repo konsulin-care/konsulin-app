@@ -21,7 +21,10 @@ type Props = {
   isError: boolean;
   slotPills: SlotPill[];
   scheduleId: string;
-  handleFilterChange: (label: string, value: any) => void;
+  handleFilterChange: (
+    label: string,
+    value: string | Date | boolean | undefined
+  ) => void;
   setSelectedSlotId: (id: string | null) => void;
 };
 

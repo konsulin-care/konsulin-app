@@ -77,11 +77,7 @@ export function useScheduleFilter<T extends { slotStart?: string | null }>({
         }
       }
 
-      if (keyword && !keywordMatcher(session, keyword)) {
-        return false;
-      }
-
-      return true;
+      return !keyword || keywordMatcher(session, keyword);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, sessionsFilter, keyword]);

@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable max-lines, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterActions from '@/components/shared/filter-actions';
 import FilterCalendar from '@/components/shared/filter-calendar';
@@ -143,6 +143,25 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
     !filter.start_time &&
     !filter.end_time;
 
+  const handleFilterChange = (
+    label: string,
+    value: string | Date | undefined
+  ) => {
+    setFilter(prevState => ({
+      ...prevState,
+      [label]: value
+    }));
+  };
+
+  const resetFilter = () => {
+    setFilter({
+      start_date: undefined,
+      end_date: undefined,
+      start_time: undefined,
+      end_time: undefined
+    });
+  };
+
   useEffect(() => {
     if (initialFilter.start_date && initialFilter.end_date) {
       handleFilterChange('start_date', initialFilter.start_date);
@@ -188,22 +207,6 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
 
   const disabledDates =
     type === 'upcoming' ? { before: today } : { after: today };
-
-  const handleFilterChange = (label: string, value: any) => {
-    setFilter(prevState => ({
-      ...prevState,
-      [label]: value
-    }));
-  };
-
-  const resetFilter = () => {
-    setFilter({
-      start_date: undefined,
-      end_date: undefined,
-      start_time: undefined,
-      end_time: undefined
-    });
-  };
 
   useEffect(() => {
     resetFilter();

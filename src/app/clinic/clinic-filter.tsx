@@ -117,20 +117,10 @@ export default function ClinicFilter({ onChange, type }) {
     !filter.end_time &&
     !filter.city;
 
-  const handleCustomFilterOpen = () => {
-    if (isInitiaFilterState) {
-      handleFilterChange('start_time', '00:00');
-      handleFilterChange('end_time', '23:59');
-      handleFilterChange('start_date', today);
-      handleFilterChange('end_date', addDays(today, 7));
-      setIsUseCustomDate(true);
-      setIsUseCustomTime(true);
-    }
-
-    setWhichContent(CONTENT_CUSTOM);
-  };
-
-  const handleFilterChange = (label: string, value: any) => {
+  const handleFilterChange = (
+    label: string,
+    value: string | Date | undefined
+  ) => {
     setFilter(prevState => ({
       ...prevState,
       [label]: value
@@ -146,6 +136,19 @@ export default function ClinicFilter({ onChange, type }) {
       city: undefined,
       province_code: undefined
     });
+  };
+
+  const handleCustomFilterOpen = () => {
+    if (isInitiaFilterState) {
+      handleFilterChange('start_time', '00:00');
+      handleFilterChange('end_time', '23:59');
+      handleFilterChange('start_date', today);
+      handleFilterChange('end_date', addDays(today, 7));
+      setIsUseCustomDate(true);
+      setIsUseCustomTime(true);
+    }
+
+    setWhichContent(CONTENT_CUSTOM);
   };
 
   const { data: listCities, isLoading: cityLoading } = useGetCities(

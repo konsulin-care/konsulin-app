@@ -25,7 +25,10 @@ type Props = {
   practitionerRole: any;
   payAppointment: any;
   queryClient: any;
-  handleFilterChange: (label: string, value: any) => void;
+  handleFilterChange: (
+    label: string,
+    value: string | Date | boolean | undefined
+  ) => void;
   setIsOpen: (open: boolean) => void;
 };
 

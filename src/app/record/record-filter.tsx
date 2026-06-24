@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterActions from '@/components/shared/filter-actions';
 import FilterCalendar from '@/components/shared/filter-calendar';
@@ -109,15 +109,10 @@ export default function RecordFilter({ onChange }) {
     !filter.type &&
     !filter.isUseCustomDate;
 
-  const handleCustomFilterOpen = () => {
-    handleFilterChange('start_date', today);
-    handleFilterChange('end_date', addDays(today, 7));
-    setIsUseCustomDate(true);
-    handleFilterChange('isUseCustomDate', true);
-    setWhichContent(CONTENT_CUSTOM);
-  };
-
-  const handleFilterChange = (label: string, value: any) => {
+  const handleFilterChange = (
+    label: string,
+    value: string | Date | boolean | undefined
+  ) => {
     setFilter(prevState => ({
       ...prevState,
       [label]: value
@@ -132,6 +127,14 @@ export default function RecordFilter({ onChange }) {
     });
     setIsUseCustomDate(false);
     handleFilterChange('isUseCustomDate', false);
+  };
+
+  const handleCustomFilterOpen = () => {
+    handleFilterChange('start_date', today);
+    handleFilterChange('end_date', addDays(today, 7));
+    setIsUseCustomDate(true);
+    handleFilterChange('isUseCustomDate', true);
+    setWhichContent(CONTENT_CUSTOM);
   };
 
   const showBySection = (

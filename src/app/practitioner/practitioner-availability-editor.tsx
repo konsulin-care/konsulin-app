@@ -253,8 +253,10 @@ export default function PractitionerAvailabilityEditor({
       Record<string, { from: string; to: string }[]>
     > = {};
     for (const day in avail) {
+      if (!Object.prototype.hasOwnProperty.call(avail, day)) continue;
       normalized[day] = {};
       for (const org in avail[day]) {
+        if (!Object.prototype.hasOwnProperty.call(avail[day], org)) continue;
         normalized[day][org] = avail[day][org]
           .map(({ from, to }) => ({ from, to }))
           .toSorted(

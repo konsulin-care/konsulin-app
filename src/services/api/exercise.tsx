@@ -15,7 +15,7 @@ export const useGetExercise = () => {
     queryKey: ['exercise'],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get<Bundle>(`/fhir/Media`);
+      const response = await API.get<Bundle>('/fhir/Media');
       return response;
     },
     select: (response): ExerciseItem[] => {

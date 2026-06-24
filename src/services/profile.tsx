@@ -86,43 +86,35 @@ export const getProfileByIdentifier = async ({
   userId: string;
   type: string;
 }): Promise<Patient | Practitioner | null> => {
-  try {
-    const bundle = await apiRequest<Bundle>(
-      'GET',
-      `/fhir/${type}?identifier=https://login.konsulin.care/userid|${userId}`
-    );
+  const bundle = await apiRequest<Bundle>(
+    'GET',
+    `/fhir/${type}?identifier=https://login.konsulin.care/userid|${userId}`
+  );
 
-    const entries = bundle?.entry;
+  const entries = bundle?.entry;
 
-    if (Array.isArray(entries) && entries.length > 0 && entries[0]?.resource) {
-      return entries[0].resource as Patient | Practitioner;
-    }
-
-    return null;
-  } catch (error) {
-    throw error;
+  if (Array.isArray(entries) && entries.length > 0 && entries[0]?.resource) {
+    return entries[0].resource as Patient | Practitioner;
   }
+
+  return null;
 };
 
 export const getProfileById = async (
   id: string,
   type: 'Patient' | 'Practitioner'
 ) => {
-  try {
-    if (!id) throw new Error('Missing FHIR id');
+  if (!id) throw new Error('Missing FHIR id');
 
-    const response = await apiRequest<Patient | Practitioner>(
-      'GET',
-      `/fhir/${type}/${id}`
-    );
+  const response = await apiRequest<Patient | Practitioner>(
+    'GET',
+    `/fhir/${type}/${id}`
+  );
 
-    return response;
-  } catch (error) {
-    throw error;
-  }
+  return response;
 };
 
-export const checkEmailExists = async (email: string) => {
+export const checkEmailExists = (email: string) => {
   const encodedEmail = encodeURIComponent(email);
   return apiRequest<EmailExistenceResponse>(
     'GET',
@@ -130,7 +122,7 @@ export const checkEmailExists = async (email: string) => {
   );
 };
 
-export const signupByEmail = async (email: string) => {
+export const signupByEmail = (email: string) => {
   if (!email) throw new Error('Missing email');
 
   return apiRequest('POST', '/api/v1/auth/signinup/code', {

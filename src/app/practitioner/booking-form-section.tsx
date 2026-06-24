@@ -1,4 +1,4 @@
-/* eslint-disable react/jsx-max-depth, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable react/jsx-max-depth */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -10,26 +10,29 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { cn, conjunction } from '@/lib/utils';
-import { TransitionStartFunction } from 'react';
+import type { PractitionerRole, Schedule } from 'fhir/r4';
+import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import type { TransitionStartFunction } from 'react';
 import { getSlotMinutesText } from './utils';
 
 type Props = {
   bookingForm: { session_type: string; problem_brief: string };
-  bookingState: any;
-  errorForm: any;
-  handleBookingInformationChange: (key: string, value: any) => void;
+  bookingState: IStateBooking;
+  errorForm: string[] | null;
+  handleBookingInformationChange: (key: string, value: string) => void;
   handleSubmitForm: () => void;
   scheduleId: string;
   isCreateAppointmentLoading: boolean;
   isPaying: boolean;
   isAuthenticated: boolean;
   isPending: boolean;
-  practitionerRole: any;
+  practitionerRole: PractitionerRole;
   selectedSlotId: string | null;
-  scheduleById: any;
-  router: any;
-  saveIntent: (kind: string, payload: any) => void;
+  scheduleById: Schedule | undefined;
+  router: AppRouterInstance;
+  saveIntent: (kind: string, payload: Record<string, unknown>) => void;
   startTransition: TransitionStartFunction;
   setIsOpen: (open: boolean) => void;
 };

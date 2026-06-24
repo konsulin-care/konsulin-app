@@ -51,7 +51,7 @@ export default function ModalQr({ value }) {
             margin: '32px 0'
           }}
           value={value}
-          viewBox={`0 0 256 256`}
+          viewBox='0 0 256 256'
         />
         <DrawerClose
           onClick={handleCopyToClipboard}

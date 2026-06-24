@@ -1,4 +1,4 @@
-/* eslint-disable react/jsx-max-depth, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable react/jsx-max-depth */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import {
@@ -144,8 +144,12 @@ export default function Participant({
       setIsOpen(false);
       setEmail('');
       setError('');
-    } catch (err: any) {
-      setError(err?.message || 'Failed to create new patient resource');
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to create new patient resource'
+      );
     } finally {
       setIsSubmitting(false);
     }

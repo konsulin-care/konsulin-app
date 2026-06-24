@@ -25,19 +25,21 @@ import { BundleEntry } from 'fhir/r4';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 
+/** Convert a Date to an ISO 8601 string with timezone offset. */
 function toOffsetISOString(date: Date) {
-  const pad = (n: number) => `${Math.floor(Math.abs(n))}`.padStart(2, '0');
-  const y = date.getFullYear();
-  const m = pad(date.getMonth() + 1);
-  const d = pad(date.getDate());
-  const hh = pad(date.getHours());
-  const mm = pad(date.getMinutes());
-  const ss = pad(date.getSeconds());
+  const pad = (value: number) =>
+    `${Math.floor(Math.abs(value))}`.padStart(2, '0');
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
   const tz = -date.getTimezoneOffset();
   const sign = tz >= 0 ? '+' : '-';
   const tzh = pad(Math.trunc(tz / 60));
   const tzm = pad(tz % 60);
-  return `${y}-${m}-${d}T${hh}:${mm}:${ss}${sign}${tzh}:${tzm}`;
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${sign}${tzh}:${tzm}`;
 }
 
 type Props = {
@@ -315,7 +317,7 @@ function useMarkUnavailabilityForm() {
     const resources = entries?.map(e => e.resource) || [];
     const active = (resources || [])
       .filter((r: any) => r?.active) // eslint-disable-line @typescript-eslint/no-unsafe-member-access
-      .map((r: any) => r.id!); // eslint-disable-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+      .map((r: any) => r.id ?? ''); // eslint-disable-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     setSelectedRoleIds(active);
   });
 

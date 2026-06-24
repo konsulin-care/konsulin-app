@@ -183,7 +183,7 @@ export const useCreateInvoice = () => {
     mutationFn: async (payload: Invoice) => {
       const API = await getAPI();
       try {
-        const response = await API.post<Invoice>(`/fhir/Invoice`, payload);
+        const response = await API.post<Invoice>('/fhir/Invoice', payload);
         return response.data;
       } catch (error) {
         console.error('Error when creating invoice :', error);

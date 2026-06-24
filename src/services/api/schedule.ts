@@ -85,7 +85,7 @@ export async function updatePractitionerRoleAvailability(
 export function useUpdateAvailability() {
   return useMutation({
     mutationKey: ['update-availability'],
-    mutationFn: async ({
+    mutationFn: ({
       practitionerRoleId,
       availableTime
     }: {

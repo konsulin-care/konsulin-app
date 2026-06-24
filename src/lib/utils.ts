@@ -57,19 +57,18 @@ export function createUniqueRandomRange(
   };
 }
 
-/**
- *
- */
+/** Get abbreviated weekday names for each day in a date range. */
 export function getDaysInRange(
   startDate: string,
   endDate: string
 ): string[] | null {
   const start = new Date(startDate);
   const end = new Date(endDate);
+  const endTime = end.getTime();
 
   const daysInRange: string[] = [];
 
-  while (start <= end) {
+  while (start.getTime() <= endTime) {
     daysInRange.push(start.toLocaleDateString('en-US', { weekday: 'short' }));
     start.setDate(start.getDate() + 1);
   }

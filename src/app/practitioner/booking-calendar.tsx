@@ -5,7 +5,10 @@ import { getAvailableDays } from './utils';
 
 type Props = {
   bookingState: any;
-  handleFilterChange: (label: string, value: any) => void;
+  handleFilterChange: (
+    label: string,
+    value: string | Date | boolean | undefined
+  ) => void;
   resetData: () => void;
   listAvailableDate: Date[];
   availableTime: any[];

@@ -34,7 +34,7 @@ function withAuth<T>(
           router.push(`/auth?redirectToPath=${pathname}`);
         }
       } else if (role && !allowedRoles.includes(role)) {
-        router.push(`/unauthorized`);
+        router.push('/unauthorized');
       } else {
         setIsVerified(true);
       }
