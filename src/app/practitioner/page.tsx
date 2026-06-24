@@ -210,28 +210,6 @@ export default function Practitioner() {
     </>
   );
 
-  const practitionerHeader = (
-    <div className='flex flex-col items-center'>
-      <div className='flex flex-col items-center'>
-        <Avatar
-          seed={seed}
-          initials={placeholderInitials}
-          backgroundColor={placeholderBg}
-          photoUrl={photoUrl}
-          className='text-2xl'
-        />
-
-        <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
-          <HeartPulse size={16} color='#08979C' fill='white' />
-          <span className='whitespace-nowrap'>
-            {detailPractitioner.organization.name}
-          </span>
-        </Badge>
-      </div>
-      <h3 className='mt-2 text-center text-[20px] font-bold'>{displayName}</h3>
-    </div>
-  );
-
   /** Renders main practitioner content, loading, or empty states. */
   const renderMainContent = () => {
     if (practitionerDataLoading) return <LoadingState />;
@@ -239,16 +217,40 @@ export default function Practitioner() {
     if (isLoading || isFetching) return <LoadingState />;
     if (!detailPractitioner || isError) return <EmptyPractitionerState />;
 
+    const orgName = detailPractitioner.organization?.name ?? '';
+
+    const practitionerHeader = (
+      <div className='flex flex-col items-center'>
+        <div className='flex flex-col items-center'>
+          <Avatar
+            seed={seed}
+            initials={placeholderInitials}
+            backgroundColor={placeholderBg}
+            photoUrl={photoUrl}
+            className='text-2xl'
+          />
+
+          <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
+            <HeartPulse size={16} color='#08979C' fill='white' />
+            <span className='whitespace-nowrap'>{orgName}</span>
+          </Badge>
+        </div>
+        <h3 className='mt-2 text-center text-[20px] font-bold'>
+          {displayName}
+        </h3>
+      </div>
+    );
+
     return (
       <>
         {practitionerHeader}
 
         <PractitionerAvailability
           practitionerRole={detailPractitioner.resource}
-          scheduleId={detailPractitioner?.schedule?.id ?? ''}
+          scheduleId={detailPractitioner.schedule?.id ?? ''}
           invoice={detailPractitioner.invoice}
           practitionerName={displayName}
-          practitionerOrganizationName={detailPractitioner.organization.name}
+          practitionerOrganizationName={orgName}
           practitionerAvatar={{
             photoUrl,
             initials: placeholderInitials,
@@ -266,9 +268,7 @@ export default function Practitioner() {
           <div className='mt-4 flex flex-col space-y-2'>
             <div className='flex justify-between text-[12px]'>
               <span className='mr-2'>Affiliation</span>
-              <span className='font-bold'>
-                {detailPractitioner.organization.name}
-              </span>
+              <span className='font-bold'>{orgName}</span>
             </div>
             <div className='flex justify-between text-[12px]'>
               <span className='mr-2'>Fee</span>
