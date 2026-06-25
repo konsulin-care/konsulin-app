@@ -76,13 +76,13 @@ export function getAPI(): Promise<AxiosInstance> {
       // not for FHIR data access errors (e.g., Person resource 401).
       if ((isExpiredToken || isMissingToken) && isAuthEndpoint) {
         setTimeout(() => {
-          clearUserData(currentUserId ?? 'guest').catch(console.error);
           try {
             window.location.href = '/';
           } catch (err) {
             console.error('Failed to redirect to home:', err);
           }
         }, 1000);
+        clearUserData(currentUserId ?? 'guest').catch(console.error); // eslint-disable-line promise/no-promise-in-callback
       }
 
       if (process.env.NODE_ENV !== 'production') {
