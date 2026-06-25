@@ -86,30 +86,6 @@ function isProxyApi (pathname) {
   return pathname.startsWith('/proxy/')
 }
 
-/** Cache-first strategy: serves from cache when available, otherwise fetches and caches. */
-async function cacheFirst (request, cacheName) {
-  if (!isValidHttpUrl(request.url)) {
-    throw new Error('Invalid URL: only http/https URLs are allowed')
-  }
-
-  const cache = await caches.open(cacheName)
-  const cached = await cache.match(request)
-  if (cached) return cached
-
-  try {
-    const response = await fetch(request)
-    if (response.ok && request.method === 'GET') {
-      cache.put(request, response.clone())
-    }
-    return response
-  } catch {
-    // Degrade gracefully: if fetch fails, try cache one more time
-    const fallback = await cache.match(request)
-    if (fallback) return fallback
-    return new Response('Service Unavailable', { status: 503 })
-  }
-}
-
 /** Network-first strategy: tries network, falls back to cache, then to offline fallback URL. */
 async function networkFirst (request, cacheName, fallbackUrl) {
   try {
@@ -165,8 +141,8 @@ self.addEventListener('fetch', function (event) {
   }
 
   if (isStaticAsset(url.pathname)) {
-    event.respondWith(cacheFirst(request, STATIC_CACHE))
-    return
+    event.respondWith(networkFirst(request, STATIC_CACHE));
+    return;
   }
 
   event.respondWith(networkFirst(request, NAV_CACHE))

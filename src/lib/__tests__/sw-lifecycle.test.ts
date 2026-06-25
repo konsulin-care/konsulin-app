@@ -157,11 +157,34 @@ describe('fetch event routing', () => {
     { url: 'https://konsulin.id/favicon/icon.ico', label: 'favicon' },
     { url: 'https://konsulin.id/icons/192.png', label: 'icons' },
     { url: 'https://konsulin.id/images/logo.svg', label: 'images' }
-  ])('routes $label through cacheFirst', ({ url }) => {
+  ])('routes $label through networkFirst', async ({ url }) => {
     const event = fireFetch(mockSelf, { url, method: 'GET' });
+    await awaitEvent(event);
 
     expect(event.respondWith).toHaveBeenCalled();
+    // networkFirst opens cache after network fetch succeeds
     expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v1');
+  });
+
+  it('fetches static assets from network even when cached (networkFirst behavior)', () => {
+    // Pre-populate cache so cacheFirst would return cached without fetching
+    const cachedResponse = new Response('cached', { status: 200 });
+    mockCaches.stores['konsulin-static-v1'] = createMockCache();
+    mockCaches.stores['konsulin-static-v1'].match.mockResolvedValue(
+      cachedResponse
+    );
+
+    fireFetch(mockSelf, {
+      url: 'https://konsulin.id/_next/static/chunk.js',
+      method: 'GET'
+    });
+
+    // networkFirst should fetch from network regardless of cache state
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'https://konsulin.id/_next/static/chunk.js'
+      })
+    );
   });
 
   it('routes proxy API directly to fetch (no cache)', () => {
@@ -318,35 +341,6 @@ describe('sw-register.js', () => {
 // Defense-in-depth: cacheFirst / networkFirst URL validation
 // ---------------------------------------------------------------------------
 describe('defense-in-depth URL validation', () => {
-  it('cacheFirst throws for non-http URLs', async () => {
-    const patchedCode = SW_CODE.replace(
-      'async function cacheFirst(request, cacheName) {',
-      'self.__testCacheFirst = async function cacheFirst(request, cacheName) {'
-    );
-
-    const captureSelf = createMockSelf() as MockSelf & {
-      __testCacheFirst?: (
-        request: Request,
-        cacheName: string
-      ) => Promise<Response>;
-    };
-    const fn = new Function(
-      'self',
-      'caches',
-      'fetch',
-      'Request',
-      'Response',
-      patchedCode
-    );
-    fn(captureSelf, mockCaches, mockFetch, Request, Response);
-
-    const request = new Request('javascript:void(0)'); // skipcq: JS-0087
-    expect(captureSelf.__testCacheFirst).toBeDefined();
-    await expect(
-      captureSelf.__testCacheFirst(request, 'test-cache')
-    ).rejects.toThrow('Invalid URL: only http/https URLs are allowed');
-  });
-
   it('networkFirst returns 503 for non-http URLs', async () => {
     const patchedCode = SW_CODE.replace(
       'async function networkFirst(request, cacheName, fallbackUrl) {',
