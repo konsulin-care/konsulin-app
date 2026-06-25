@@ -18,7 +18,6 @@ import { HeaderText } from '@/components/role-avatar-popup-header';
 import { AvatarInfo } from '@/components/role-avatar-popup-types';
 import { roleLabel } from '@/components/role-avatar-popup-utils';
 import { StackedCircles } from '@/components/stacked-circles';
-import { ChevronDown } from 'lucide-react';
 
 /** Switches the active user role via API call and reloads. */
 async function switchRole(role: string): Promise<void> {
@@ -116,7 +115,6 @@ export function RoleSwitchDropdown({
             currentAvatar={currentAvatar}
             otherRoleAvatars={otherRoleAvatars}
           />
-          <ChevronDown size={14} color='#2c2f35' />
         </div>
       </DropdownTrigger>
       <DropdownContent align='end' sideOffset={8} className='bg-white'>

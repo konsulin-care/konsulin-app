@@ -20,28 +20,6 @@ const baseAvatar: AvatarInfo = {
 };
 
 describe('RoleSwitchDropdown', () => {
-  it('renders a chevron-down indicator alongside the avatar area', () => {
-    render(
-      <RoleSwitchDropdown
-        roles={['patient', 'practitioner']}
-        currentAvatar={baseAvatar}
-        otherRoleAvatars={[
-          {
-            seed: '',
-            initials: 'PR',
-            backgroundColor: '#fff',
-            photoUrl: '',
-            role: 'practitioner'
-          }
-        ]}
-        onOpenChange={vi.fn()}
-      />
-    );
-
-    const chevron = document.querySelector('.lucide-chevron-down');
-    expect(chevron).toBeInTheDocument();
-  });
-
   it('renders the stacked circles with badge count', () => {
     render(
       <RoleSwitchDropdown

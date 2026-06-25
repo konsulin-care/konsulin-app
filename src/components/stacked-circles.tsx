@@ -3,12 +3,12 @@
 import Avatar from '@/components/general/avatar';
 import { AvatarInfo } from '@/components/role-avatar-popup-types';
 
-const BADGE_SIZE = 18;
 const BADGE_CAP = 9;
 
 /**
  * Renders the current role avatar with an optional "+N" badge
- * overlaying its bottom-right corner when additional roles exist.
+ * placed beside the avatar when additional roles exist.
+ * The badge uses teal at 80% opacity to complement the opaque avatar.
  */
 export function StackedCircles({
   currentAvatar,
@@ -23,7 +23,7 @@ export function StackedCircles({
     badgeCount > BADGE_CAP ? `+${BADGE_CAP}` : `+${badgeCount}`;
 
   return (
-    <div className='relative inline-flex'>
+    <div className='inline-flex items-center gap-1.5'>
       <Avatar
         seed={currentAvatar.seed}
         initials={currentAvatar.initials}
@@ -35,10 +35,7 @@ export function StackedCircles({
         imageClassName='self-center'
       />
       {badgeCount > 0 && (
-        <div
-          className='absolute -right-0.5 -bottom-0.5 flex items-center justify-center rounded-full bg-[#2c2f35] text-[10px] leading-none font-bold text-white'
-          style={{ width: BADGE_SIZE, height: BADGE_SIZE }}
-        >
+        <div className='flex h-5 items-center rounded-full bg-[#13c2c2]/80 px-1.5 text-[11px] leading-none font-bold text-white'>
           {badgeLabel}
         </div>
       )}

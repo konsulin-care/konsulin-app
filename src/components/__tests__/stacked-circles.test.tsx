@@ -38,7 +38,7 @@ describe('StackedCircles', () => {
     expect(screen.queryByText(/\+/)).not.toBeInTheDocument();
   });
 
-  it('renders avatar with +1 badge for one other role', () => {
+  it('renders avatar with +1 badge side by side for one other role', () => {
     render(
       <StackedCircles
         roles={['patient', 'practitioner']}
@@ -170,7 +170,7 @@ describe('StackedCircles', () => {
     expect(screen.queryByText('+10')).not.toBeInTheDocument();
   });
 
-  it('renders badge as a div element', () => {
+  it('renders badge with teal 80% background alongside the avatar', () => {
     render(
       <StackedCircles
         roles={['patient', 'practitioner']}
@@ -187,7 +187,9 @@ describe('StackedCircles', () => {
       />
     );
 
+    const container = screen.getByText('JD').closest('.inline-flex');
     const badge = screen.getByText('+1');
-    expect(badge.tagName).toBe('DIV');
+    expect(container).toContainElement(badge);
+    expect(badge).toHaveClass('bg-[#13c2c2]/80');
   });
 });
