@@ -509,7 +509,7 @@ export default function PractitionerAvailability({
         selectedSlotId={selectedSlotId}
         scheduleById={scheduleById}
         router={router}
-        saveIntent={saveIntent as (kind: string, payload: any) => void}
+        saveIntent={saveIntent}
         startTransition={startTransition}
         setIsOpen={setIsOpen}
       />

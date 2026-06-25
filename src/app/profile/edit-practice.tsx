@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, sonarjs/cognitive-complexity, max-lines, max-depth, react-hooks/exhaustive-deps, react/jsx-max-depth */
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, sonarjs/cognitive-complexity, max-lines, max-depth, react-hooks/exhaustive-deps, react/jsx-max-depth */
 import EmptyState from '@/components/general/empty-state';
 import Input from '@/components/general/input';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -483,7 +483,7 @@ const CollapsibleItem = ({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
               if (value === '') {
-                setSlotConfigs((s: any) => ({
+                setSlotConfigs(s => ({
                   ...s,
                   [index]: { ...s[index], sessionDuration: '' }
                 }));
@@ -491,7 +491,7 @@ const CollapsibleItem = ({
               }
               const numberOnly = /^\d+$/;
               if (numberOnly.test(value) && Number(value) > 0) {
-                setSlotConfigs((s: any) => ({
+                setSlotConfigs(s => ({
                   ...s,
                   [index]: { ...s[index], sessionDuration: value }
                 }));
@@ -515,7 +515,7 @@ const CollapsibleItem = ({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
               if (value === '') {
-                setSlotConfigs((s: any) => ({
+                setSlotConfigs(s => ({
                   ...s,
                   [index]: { ...s[index], bufferTime: '' }
                 }));
@@ -523,7 +523,7 @@ const CollapsibleItem = ({
               }
               const numberOnly = /^\d+$/;
               if (numberOnly.test(value)) {
-                setSlotConfigs((s: any) => ({
+                setSlotConfigs(s => ({
                   ...s,
                   [index]: { ...s[index], bufferTime: value }
                 }));
@@ -564,7 +564,7 @@ const EditPractice = () => {
   }>({ city: null });
   const [tagInputs, setTagInputs] = useState<string[]>([]);
   const [firmData, setFirmData] = useState<IPractitionerRoleDetail[]>([]);
-  const [invoiceData, setInvoiceData] = useState<any[]>([]);
+  const [invoiceData, setInvoiceData] = useState<Invoice[]>([]);
   const { state: authState } = useAuth();
   const [openCollapsibles, setOpenCollapsibles] = useState<
     Record<number, boolean>
@@ -587,13 +587,13 @@ const EditPractice = () => {
 
     /* separate invoice data from the main data
      * because they use different endpoints */
-    const invoiceDataList: any[] = [];
-    const firmDataList: any[] = [];
+    const invoiceDataList: Invoice[] = [];
+    const firmDataList: IPractitionerRoleDetail[] = [];
 
-    resources.forEach(resource => {
-      const { invoiceData, id, ...rest } = resource;
+    resources.forEach((resource: IPractitionerRoleDetail) => {
+      const invoiceData = resource.invoiceData;
 
-      const initialInvoice = {
+      const initialInvoice: Invoice = {
         resourceType: 'Invoice',
         status: 'draft',
         totalNet: {
@@ -603,14 +603,14 @@ const EditPractice = () => {
         participant: [
           {
             actor: {
-              reference: `PractitionerRole/${id}`
+              reference: `PractitionerRole/${resource.id}`
             }
           }
         ]
       };
 
-      invoiceDataList.push(invoiceData || initialInvoice);
-      firmDataList.push({ id, ...rest });
+      invoiceDataList.push(invoiceData ?? initialInvoice);
+      firmDataList.push(resource);
     });
 
     setInvoiceData(invoiceDataList);
@@ -627,9 +627,9 @@ const EditPractice = () => {
         number,
         { sessionDuration?: string; bufferTime?: string; timezone?: string }
       >;
-      firmData.forEach((firm: any, idx: number) => {
+      firmData.forEach((firm: IPractitionerRoleDetail, idx: number) => {
         const firstSchedule = getTheLatestEntry<Schedule>(
-          firm?.scheduleData as Schedule[]
+          firm?.scheduleData as unknown as Schedule[]
         );
         const { slotMinutes, bufferMinutes } = parseScheduleComment(
           firstSchedule?.comment
@@ -654,7 +654,7 @@ const EditPractice = () => {
   useEffect(() => {
     setOpenCollapsibles(prev => {
       const next = { ...prev };
-      firmData.forEach((firm: any, idx: number) => {
+      firmData.forEach((firm: IPractitionerRoleDetail, idx: number) => {
         if (firm.active) {
           next[idx] = true;
         } else if (next[idx] === undefined) {
@@ -746,7 +746,7 @@ const EditPractice = () => {
         invoiceData.map((invoice, index) => {
           const invoicePayload = { ...invoice };
           if (invoicePayload.status === 'draft' && !invoicePayload.id) {
-            invoicePayload.status = 'final';
+            invoicePayload.status = 'final' as unknown as Invoice['status'];
             return createInvoice(invoicePayload);
           } else {
             return updateInvoice(invoicePayload);
@@ -806,7 +806,7 @@ const EditPractice = () => {
               ? [...updatedFirm[index].scheduleData]
               : [];
             const replaceIdx = sArr.findIndex(
-              (s: any) => s?.id === result.value.updated?.id
+              (s: Schedule) => s?.id === result.value.updated?.id
             );
             if (replaceIdx === -1) {
               sArr.unshift(result.value.updated);
@@ -927,7 +927,7 @@ const EditPractice = () => {
       updatedData[index] = {
         ...updatedData[index],
         specialty: (updatedData[index].specialty ?? []).filter(
-          (_: any, i: any) => i !== tagIndex
+          (_: unknown, i: number) => i !== tagIndex
         )
       };
       return updatedData;

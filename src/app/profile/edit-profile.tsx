@@ -1,6 +1,6 @@
 'use client';
 /* eslint-disable consistent-return */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, max-lines */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, max-lines */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import ImageUploader from '@/components/profile/image-uploader';
 import { DRAWER_STATE } from '@/constants/profile';
@@ -263,9 +263,12 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     clearDraft,
     dispatchAuth,
     queryClient: {
-      invalidateQueries: (args: unknown) =>
-        queryClient.invalidateQueries(args as any)
-    } as any,
+      invalidateQueries: (args: unknown) => {
+        void queryClient.invalidateQueries(
+          args as { queryKey: readonly unknown[] }
+        );
+      }
+    },
     setDrawerState
   });
 

@@ -6,9 +6,12 @@ import { format } from 'date-fns';
 import {
   Bundle,
   BundleEntry,
+  PlanDefinition,
   Questionnaire,
   QuestionnaireResponse,
-  QuestionnaireResponseItem
+  QuestionnaireResponseItem,
+  Reference,
+  ResearchStudy
 } from 'fhir/r4';
 import { useMemo } from 'react';
 import {
@@ -104,7 +107,6 @@ export const useOngoingResearch = () => {
       );
       return response.data;
     },
-    /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
     select: data => {
       let entries: unknown[];
       if (Array.isArray(data?.entry)) {
@@ -115,15 +117,15 @@ export const useOngoingResearch = () => {
         entries = [];
       }
 
-      const resources = entries.map((e: any) => e?.resource ?? e); // eslint-disable-line @typescript-eslint/no-unsafe-return
+      const resources = (entries as BundleEntry[]).map(e => e.resource);
 
       const researchStudies = resources.filter(
-        (resource: { resourceType: string }) =>
+        (resource): resource is ResearchStudy =>
           resource?.resourceType === 'ResearchStudy'
       );
 
       const planDefinitions = resources.filter(
-        (resource: { resourceType: string }) =>
+        (resource): resource is PlanDefinition =>
           resource?.resourceType === 'PlanDefinition'
       );
 
@@ -131,23 +133,17 @@ export const useOngoingResearch = () => {
 
       const planToQuestionnaires: Record<string, string[]> = {};
 
-      planDefinitions.forEach((plan: any) => {
+      planDefinitions.forEach((plan: PlanDefinition) => {
         if (!plan?.id) return;
 
         const questionnaireIds: string[] =
-          plan.action?.flatMap((action: any) => {
+          plan.action?.flatMap(action => {
             const canId = parseCanonicalOrReference(
               action.definitionCanonical,
               'Questionnaire'
             );
-            if (canId) return [canId];
 
-            const refId = parseCanonicalOrReference(
-              action.definitionReference?.reference,
-              'Questionnaire'
-            );
-
-            return refId ? [refId] : [];
+            return canId ? [canId] : [];
           }) || [];
 
         const planId: string = plan.id;
@@ -155,18 +151,14 @@ export const useOngoingResearch = () => {
         planToQuestionnaires[planId] = [...new Set(questionnaireIds)];
       });
 
-      return researchStudies.map((study: any) => {
-        const protocolRefs = Array.isArray(study.protocol)
-          ? study.protocol
-          : [study.protocol].filter(Boolean);
+      return researchStudies.map((study: ResearchStudy) => {
+        const protocolRefs: Reference[] = study.protocol ?? [];
 
         const planIds = protocolRefs
-          .map((protocol: any) => {
-            const ref = protocol?.reference ?? protocol?.canonical ?? protocol;
-
-            return parseCanonicalOrReference(ref, 'PlanDefinition');
-          })
-          .filter(Boolean) as string[];
+          .map((protocol: Reference) =>
+            parseCanonicalOrReference(protocol.reference, 'PlanDefinition')
+          )
+          .filter((x): x is string => x !== null);
 
         const questionnaireIds = planIds.flatMap(
           planId => planToQuestionnaires[planId] || []
@@ -178,7 +170,6 @@ export const useOngoingResearch = () => {
         };
       });
     }
-    /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
   });
 };
 

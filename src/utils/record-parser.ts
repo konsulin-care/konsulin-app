@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, complexity */
-import { IBundleResponse } from '@/types/record';
+import { IBundleResponse, IRecord } from '@/types/record';
 import {
   Bundle,
   Coding,
@@ -76,7 +76,7 @@ const processBundleResource = (resource: FhirResource) => {
 
 /** Parse an array of bundle responses into sorted flat records. */
 export const parseRecordBundles = (bundles: IBundleResponse[]) => {
-  const results: any[] = [];
+  const results: IRecord[] = [];
 
   if (!Array.isArray(bundles)) return results;
 

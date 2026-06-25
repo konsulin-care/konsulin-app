@@ -1,10 +1,31 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 import Avatar from '@/components/general/avatar';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
+import type { IStateBooking } from '@/context/booking/bookingTypes';
+import type { QueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import type { Invoice, PractitionerRole } from 'fhir/r4';
 import type { ReactNode } from 'react';
+
+type PayAppointmentPayload = {
+  readonly patientId: string;
+  readonly invoiceId: string;
+  readonly useOnlinePayment: boolean;
+  readonly practitionerRoleId: string;
+  readonly slotId: string;
+  readonly condition: string;
+};
+
+type PayAppointmentResponse = {
+  readonly data?: {
+    readonly paymentUrl?: string;
+  };
+};
+
+type PayAppointmentFn = (
+  payload: PayAppointmentPayload
+) => Promise<PayAppointmentResponse>;
 
 type Props = {
   paymentOpen: boolean;
@@ -16,15 +37,15 @@ type Props = {
   };
   practitionerOrganizationName?: string;
   practitionerName?: string;
-  bookingState: any;
-  invoice?: any;
+  bookingState: IStateBooking;
+  invoice?: Invoice;
   isPaying: boolean;
   patientId: string;
   selectedSlotId: string | null;
   bookingForm: { session_type: string; problem_brief: string };
-  practitionerRole: any;
-  payAppointment: any;
-  queryClient: any;
+  practitionerRole: PractitionerRole;
+  payAppointment: PayAppointmentFn;
+  queryClient: QueryClient;
   handleFilterChange: (
     label: string,
     value: string | Date | boolean | undefined
@@ -119,7 +140,7 @@ function PaymentDrawerBody({
   practitionerName?: string;
   dateDisplay: React.ReactNode;
   timeDisplay: React.ReactNode;
-  invoice?: any;
+  invoice?: Invoice;
   isPaying: boolean;
   isPaymentDisabled: boolean;
   isPaymentDisabledOffline: boolean;
@@ -215,7 +236,7 @@ export default function PaymentDrawer({
         window.open(response.data.paymentUrl, '_blank');
       }
 
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ['find-availability', practitionerRole.id]
       });
       handleFilterChange('isBookingSubmitted', true);
@@ -237,7 +258,7 @@ export default function PaymentDrawer({
         slotId: `Slot/${selectedSlotId}`,
         condition: bookingForm.problem_brief
       });
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ['find-availability', practitionerRole.id]
       });
       handleFilterChange('isBookingSubmitted', true);
@@ -283,10 +304,10 @@ export default function PaymentDrawer({
           isPaymentDisabled={isPaymentDisabled}
           isPaymentDisabledOffline={isPaymentDisabledOffline}
           handlePayOnline={() => {
-            handlePayOnline().catch(console.error);
+            void handlePayOnline().catch(console.error);
           }}
           handlePayOffline={() => {
-            handlePayOffline().catch(console.error);
+            void handlePayOffline().catch(console.error);
           }}
         />
       </DrawerContent>

@@ -104,7 +104,7 @@ export default function HomeContentPatient() {
   }, [refetchRecords]);
 
   const records = recordsBundle
-    ? (parseRecordBundles(recordsBundle) as IRecord[]).toSorted(
+    ? parseRecordBundles(recordsBundle).toSorted(
         (a, b) =>
           new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
       )

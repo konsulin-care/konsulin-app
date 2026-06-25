@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -16,7 +16,7 @@ type SlotPill = {
 };
 
 type Props = {
-  bookingState: any;
+  bookingState: IStateBooking;
   isLoading: boolean;
   isError: boolean;
   slotPills: SlotPill[];

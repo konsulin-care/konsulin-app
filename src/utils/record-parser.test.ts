@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 import type { IBundleResponse } from '@/types/record';
 import type { Bundle, Observation } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';

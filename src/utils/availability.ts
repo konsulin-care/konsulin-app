@@ -188,8 +188,8 @@ export function hasAvailabilityForDay(
 export function convertToFhirAvailableTimeForOrganization(
   weeklyAvailability: WeeklyAvailability,
   organizationId: string
-): any[] {
-  const result: any[] = [];
+): PractitionerRoleAvailableTime[] {
+  const result: PractitionerRoleAvailableTime[] = [];
 
   // Iterate through each day
   for (let i = 0; i <= 6; i++) {
