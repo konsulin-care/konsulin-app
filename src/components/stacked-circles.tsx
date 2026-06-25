@@ -3,55 +3,14 @@
 import Avatar from '@/components/general/avatar';
 import { AvatarInfo } from '@/components/role-avatar-popup-types';
 
-/** Computes layout parameters for stacked avatar circles. */
-function computeLayerLayout(total: number) {
-  return {
-    total,
-    baseSize: 32,
-    overlap: 8,
-    containerWidth: 32 + (total - 1) * 8,
-    opacities: [0.8, 0.6, 0.5, 0.45] as const
-  };
-}
-
-/** Renders a single avatar layer with given offset and opacity. */
-function LayeredAvatar({
-  avatar,
-  baseSize,
-  offsetX,
-  opacity,
-  zIndex
-}: Readonly<{
-  avatar: AvatarInfo;
-  baseSize: number;
-  offsetX: number;
-  opacity: number;
-  zIndex: number;
-}>) {
-  return (
-    <div
-      className='absolute'
-      style={{ left: offsetX, top: 0, zIndex, opacity }}
-    >
-      <Avatar
-        seed={avatar.seed}
-        initials={avatar.initials}
-        backgroundColor={avatar.backgroundColor}
-        photoUrl={avatar.photoUrl}
-        height={baseSize}
-        width={baseSize}
-        className='border-2 border-white text-xs'
-        imageClassName='self-center'
-      />
-    </div>
-  );
-}
+const BADGE_SIZE = 18;
+const BADGE_CAP = 9;
 
 /**
- *
+ * Renders the current role avatar with an optional "+N" badge
+ * overlaying its bottom-right corner when additional roles exist.
  */
 export function StackedCircles({
-  roles,
   currentAvatar,
   otherRoleAvatars
 }: Readonly<{
@@ -59,36 +18,30 @@ export function StackedCircles({
   currentAvatar: AvatarInfo;
   otherRoleAvatars: (AvatarInfo & { role: string })[];
 }>) {
-  const layout = computeLayerLayout(roles.length);
+  const badgeCount = otherRoleAvatars.length;
+  const badgeLabel =
+    badgeCount > BADGE_CAP ? `+${BADGE_CAP}` : `+${badgeCount}`;
 
   return (
-    <div
-      className='relative'
-      style={{ width: layout.containerWidth, height: layout.baseSize }}
-    >
-      {otherRoleAvatars.map((item, index) => {
-        const offsetX = (layout.total - 1 - index) * layout.overlap;
-        const dist = otherRoleAvatars.length - 1 - index;
-        const opacity =
-          layout.opacities[Math.min(dist, layout.opacities.length - 1)];
-        return (
-          <LayeredAvatar
-            key={item.role}
-            avatar={item}
-            baseSize={layout.baseSize}
-            offsetX={offsetX}
-            opacity={opacity}
-            zIndex={index + 1}
-          />
-        );
-      })}
-      <LayeredAvatar
-        avatar={currentAvatar}
-        baseSize={layout.baseSize}
-        offsetX={0}
-        opacity={1}
-        zIndex={layout.total}
+    <div className='relative inline-flex'>
+      <Avatar
+        seed={currentAvatar.seed}
+        initials={currentAvatar.initials}
+        backgroundColor={currentAvatar.backgroundColor}
+        photoUrl={currentAvatar.photoUrl}
+        height={32}
+        width={32}
+        className='text-xs'
+        imageClassName='self-center'
       />
+      {badgeCount > 0 && (
+        <div
+          className='absolute -right-0.5 -bottom-0.5 flex items-center justify-center rounded-full bg-[#2c2f35] text-[10px] leading-none font-bold text-white'
+          style={{ width: BADGE_SIZE, height: BADGE_SIZE }}
+        >
+          {badgeLabel}
+        </div>
+      )}
     </div>
   );
 }
