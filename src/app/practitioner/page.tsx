@@ -162,6 +162,35 @@ export default function Practitioner() {
 
   const photoUrl = practitionerData?.photo?.[0]?.url;
 
+  /**
+   * Format fee display string. Safe to call only after detailPractitioner is
+   * verified truthy by the parent guard in renderMainContent.
+   */
+  const renderFeeText = () => {
+    const inv = detailPractitioner?.invoice;
+    if (!inv?.totalNet) return '-';
+    const { value, currency } = inv.totalNet;
+    return `${new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0
+    }).format(value)} / Session`;
+  };
+
+  /**
+   * Render specialty badges. Safe to call only after detailPractitioner is
+   * verified truthy by the parent guard in renderMainContent.
+   */
+  const renderSpecialtyBadges = () => {
+    const specialties = detailPractitioner?.resource?.specialty;
+    if (!specialties?.length) return null;
+    return specialties.map((s: CodeableConcept) => (
+      <Badge key={s.text} className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+        {s.text}
+      </Badge>
+    ));
+  };
+
   const drawerFooter = (
     <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
       <Button
@@ -217,7 +246,9 @@ export default function Practitioner() {
     if (isLoading || isFetching) return <LoadingState />;
     if (!detailPractitioner || isError) return <EmptyPractitionerState />;
 
-    const orgName = detailPractitioner.organization?.name ?? '';
+    const { organization, resource, invoice, schedule } = detailPractitioner;
+    const orgName = organization?.name ?? '';
+    const scheduleId = schedule?.id ?? '';
 
     const practitionerHeader = (
       <div className='flex flex-col items-center'>
@@ -246,9 +277,9 @@ export default function Practitioner() {
         {practitionerHeader}
 
         <PractitionerAvailability
-          practitionerRole={detailPractitioner.resource}
-          scheduleId={detailPractitioner.schedule?.id ?? ''}
-          invoice={detailPractitioner.invoice}
+          practitionerRole={resource}
+          scheduleId={scheduleId}
+          invoice={invoice}
           practitionerName={displayName}
           practitionerOrganizationName={orgName}
           practitionerAvatar={{
@@ -272,22 +303,12 @@ export default function Practitioner() {
             </div>
             <div className='flex justify-between text-[12px]'>
               <span className='mr-2'>Fee</span>
-              <span className='font-bold'>
-                {detailPractitioner.invoice?.totalNet
-                  ? `${new Intl.NumberFormat('id-ID', {
-                      style: 'currency',
-                      currency: detailPractitioner.invoice.totalNet.currency,
-                      minimumFractionDigits: 0
-                    }).format(
-                      detailPractitioner.invoice.totalNet.value
-                    )} / Session`
-                  : '-'}
-              </span>
+              <span className='font-bold'>{renderFeeText()}</span>
             </div>
           </div>
         </div>
 
-        {detailPractitioner.resource.specialty && (
+        {resource?.specialty && (
           <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9]'>
             <div className='flex items-center'>
               <HospitalIcon size={32} color='#13C2C2' className='mr-2' />
@@ -295,17 +316,7 @@ export default function Practitioner() {
             </div>
 
             <div className='mt-4 flex flex-wrap gap-2'>
-              {detailPractitioner.resource.specialty.length > 0 &&
-                detailPractitioner.resource.specialty.map(
-                  (specialty: CodeableConcept) => (
-                    <Badge
-                      key={specialty.text}
-                      className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
-                    >
-                      {specialty.text}
-                    </Badge>
-                  )
-                )}
+              {renderSpecialtyBadges()}
             </div>
           </div>
         )}

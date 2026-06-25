@@ -246,6 +246,37 @@ describe('Practitioner page – null safety', () => {
     );
   });
 
+  it('renders without crashing when detailPractitioner.resource is undefined (missing PractitionerRole in bundle)', async () => {
+    const mockMissingResource: any = {
+      organization: { name: 'Test Clinic' },
+      invoice: { totalNet: { value: 150000, currency: 'IDR' } },
+      schedule: { id: 'sched-1' }
+    };
+
+    vi.mocked(dbGet).mockResolvedValue({
+      value: {
+        roleId: 'test-role-id',
+        name: [{ given: ['John'], family: 'Doe' }],
+        photo: [],
+        qualification: [],
+        email: 'john@test.com'
+      }
+    });
+    vi.mocked(useDetailPractitioner).mockReturnValue({
+      newData: mockMissingResource,
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    });
+
+    expect(() => render(<Practitioner />)).not.toThrow();
+    await vi.waitFor(() => {
+      expect(
+        screen.getByTestId('mock-practitioner-availability')
+      ).toBeInTheDocument();
+    });
+  });
+
   it('renders without crashing when organization is missing from detailPractitioner', async () => {
     const mockDataWithoutOrg: any = {
       resource: {
