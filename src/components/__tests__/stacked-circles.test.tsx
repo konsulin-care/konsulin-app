@@ -59,7 +59,7 @@ describe('StackedCircles', () => {
     expect(screen.getByTestId('stack-bg-circle')).toBeInTheDocument();
   });
 
-  it('positions the background circle 3px right of the avatar', () => {
+  it('positions the background circle 8px right of the avatar', () => {
     render(
       <StackedCircles
         roles={['patient', 'practitioner']}
@@ -77,7 +77,7 @@ describe('StackedCircles', () => {
     );
 
     const bg = screen.getByTestId('stack-bg-circle');
-    expect(bg).toHaveStyle('left: 3px');
+    expect(bg).toHaveStyle('left: 8px');
   });
 
   it('applies teal-grey gradient and 80% opacity to the background circle', () => {
@@ -105,7 +105,6 @@ describe('StackedCircles', () => {
     );
 
     const bg = screen.getByTestId('stack-bg-circle');
-    expect(bg).toHaveClass('-z-10');
     expect(bg).toHaveClass('opacity-80');
     expect(bg).toHaveClass('bg-gradient-to-br');
   });

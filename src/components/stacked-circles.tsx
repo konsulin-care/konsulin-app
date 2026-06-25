@@ -5,8 +5,8 @@ import { AvatarInfo } from '@/components/role-avatar-popup-types';
 
 /**
  * Renders the current role avatar with a second circle peeking
- * 3px to the right when additional roles exist — creating a subtle
- * depth cue that signals more options beneath.
+ * 8px to the right when additional roles exist — creating a
+ * visible depth cue that signals more options beneath.
  */
 export function StackedCircles({
   currentAvatar,
@@ -23,20 +23,22 @@ export function StackedCircles({
       {hasMultipleRoles && (
         <div
           data-testid='stack-bg-circle'
-          className='absolute -z-10 rounded-full bg-gradient-to-br from-[#13c2c2] to-[#6b7280] opacity-80'
-          style={{ width: 32, height: 32, left: 3, top: 0 }}
+          className='absolute rounded-full bg-gradient-to-br from-[#13c2c2] to-[#6b7280] opacity-80'
+          style={{ width: 32, height: 32, left: 8, top: 0 }}
         />
       )}
-      <Avatar
-        seed={currentAvatar.seed}
-        initials={currentAvatar.initials}
-        backgroundColor={currentAvatar.backgroundColor}
-        photoUrl={currentAvatar.photoUrl}
-        height={32}
-        width={32}
-        className='text-xs'
-        imageClassName='self-center'
-      />
+      <div className='relative z-10'>
+        <Avatar
+          seed={currentAvatar.seed}
+          initials={currentAvatar.initials}
+          backgroundColor={currentAvatar.backgroundColor}
+          photoUrl={currentAvatar.photoUrl}
+          height={32}
+          width={32}
+          className='text-xs'
+          imageClassName='self-center'
+        />
+      </div>
     </div>
   );
 }
