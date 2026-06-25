@@ -2,11 +2,7 @@
 import { addMinutes, format, parse } from 'date-fns';
 import type { PractitionerRoleAvailableTime } from 'fhir/r4';
 
-/* returns all available appointment days for a given month.
- * example:
- * if availableTime = [{ daysOfWeek: ['mon', 'wed'] }] and month = April 2025,
- * it will return all mondays and wednesdays in April 2025
- */
+/** Returns all available appointment days for a given month. */
 export const getAvailableDays = (
   availableTime: PractitionerRoleAvailableTime[],
   month: Date
@@ -50,8 +46,7 @@ export const getAvailableDays = (
   return availableDays;
 };
 
-/* generate time slots at 30-minute intervals
- * based on the practitioner's start and end times */
+/** Generate time slots at 30-minute intervals based on start/end times. */
 export const getTimeSlots = (startTime: string, endTime: string) => {
   const slots: string[] = [];
   let start = parse(startTime, 'HH:mm:ss', new Date());

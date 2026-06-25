@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 const PROFILE_ROUTE_PREFIX = '/profile';
 const MODAL_DELAY_MS = 3000;
 
+/** Modal prompting user to complete their profile. */
 const ProfileCompletenessModal = () => {
   const { isLoading, state: authState } = useAuth();
   const pathname = usePathname();

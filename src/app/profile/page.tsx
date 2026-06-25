@@ -9,6 +9,7 @@ import EditPractice from './edit-practice';
 import EditProfile from './edit-profile';
 import ProfileDisplay from './profile-display';
 
+/** Profile page with edit/view toggle for practitioner profile. */
 const PathProfile = () => {
   const { state: authState, isLoading } = useAuth();
   const searchParams = useSearchParams();

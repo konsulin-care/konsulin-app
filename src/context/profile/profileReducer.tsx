@@ -29,6 +29,7 @@ export const initialState = {
   telecom: []
 };
 
+/** Profile state reducer handling authentication update actions. */
 export const reducer = (
   state = initialState,
   action: ActionProfile

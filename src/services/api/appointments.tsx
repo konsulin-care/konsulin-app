@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Bundle, Slot } from 'fhir/r4';
 import { getAPI } from '../api';
 
+/** Fetch upcoming appointments for a patient relative to a date. */
 export const useGetUpcomingAppointments = ({
   patientId,
   dateReference
@@ -146,7 +147,7 @@ export const useCreateAppointment = () => {
   });
 };
 
-// New unified payment/appointment endpoint
+/** Pay for an appointment via online payment or offline booking. */
 export const usePayAppointment = () => {
   return useMutation({
     mutationKey: ['pay-appointment'],

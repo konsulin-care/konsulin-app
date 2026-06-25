@@ -29,6 +29,7 @@ export function setRouter(
   routerInfo.pathName = pathName;
 }
 
+/** Build SuperTokens config with optional app info override. */
 export const frontendConfig = (
   appInfoOverride?: AppInfo
 ): SuperTokensConfig => {

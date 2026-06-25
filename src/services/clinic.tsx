@@ -22,6 +22,7 @@ export type IUseClinicParams = {
   // days?: String[];
 };
 
+/** List clinics with optional city/name filters. */
 export const useListClinics = ({
   cityFilter,
   nameFilter

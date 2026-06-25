@@ -180,7 +180,7 @@ module.exports = [
         require: {
           FunctionDeclaration: true,
           ClassDeclaration: true,
-          ArrowFunctionExpression: false
+          ArrowFunctionExpression: true
         }
       }],
 
@@ -219,6 +219,19 @@ module.exports = [
 
       // ── Security: false positives for this codebase ──
 
+    }
+  },
+
+  // --- Test & third-party UI: no JSDoc required (auto-generated or test helpers) ---
+  {
+    files: [
+      'src/components/ui/**/*.ts',
+      'src/components/ui/**/*.tsx',
+      'src/**/__tests__/**/*.ts',
+      'src/**/__tests__/**/*.tsx'
+    ],
+    rules: {
+      'jsdoc/require-jsdoc': 'off'
     }
   },
 

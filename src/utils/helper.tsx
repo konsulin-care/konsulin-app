@@ -227,6 +227,7 @@ export const generateAvatarPlaceholder = ({
 };
 
 /* eslint-disable max-lines */
+/** Check if a string is a base64 data URL. */
 export const isDataUrl = (value: string) => {
   return typeof value === 'string' && value.startsWith('data:image/');
 };

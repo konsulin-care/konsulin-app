@@ -36,6 +36,7 @@ function hasActorForRole(
   );
 }
 
+/** Fetch practitioner availability for a given date range. */
 export const useFindAvailability = ({
   practitionerRoleId,
   dateReference,
@@ -80,6 +81,7 @@ export const useFindAvailability = ({
   });
 };
 
+/** Fetch detail for all roles belonging to a practitioner. */
 export const useGetPractitionerRolesDetail = (
   practitionerId: string,
   onSuccess?: (data: BundleEntry<IPractitionerRoleDetail>[]) => void

@@ -10,6 +10,7 @@ type IFilterRecord = {
   endDate: string;
 };
 
+/** Fetch record summaries for a patient within a date range. */
 export const useRecordSummary = () => {
   return useMutation<IBundleResponse[], Error, { patientId: string }>({
     mutationKey: ['record-summary-patient'],

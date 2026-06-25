@@ -10,6 +10,7 @@ type ExerciseItem = {
   description: string;
 };
 
+/** Fetch exercise/physiotherapy data from the API. */
 export const useGetExercise = () => {
   return useQuery({
     queryKey: ['exercise'],

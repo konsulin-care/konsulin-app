@@ -11,6 +11,7 @@ export const initialState: IStateBooking = {
   isBookingSubmitted: false
 };
 
+/** Booking state reducer handling appointment flow actions. */
 export const reducer = (
   state: IStateBooking,
   action: IActionBooking

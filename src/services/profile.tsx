@@ -20,6 +20,7 @@ type ModifyProfileResponseItem = {
   phone_number?: string;
 };
 
+/** Create a new FHIR profile for the given user and role type. */
 export const createProfile = async ({
   userId,
   email,
@@ -79,6 +80,7 @@ export const createProfile = async ({
   }
 };
 
+/** Look up a FHIR profile by user ID and role type. */
 export const getProfileByIdentifier = async ({
   userId,
   type
@@ -100,6 +102,7 @@ export const getProfileByIdentifier = async ({
   return null;
 };
 
+/** Fetch a FHIR profile by its resource ID and type. */
 export const getProfileById = async (
   id: string,
   type: 'Patient' | 'Practitioner'
@@ -114,6 +117,7 @@ export const getProfileById = async (
   return response;
 };
 
+/** Check whether an email is already registered. */
 export const checkEmailExists = (email: string) => {
   const encodedEmail = encodeURIComponent(email);
   return apiRequest<EmailExistenceResponse>(
@@ -122,6 +126,7 @@ export const checkEmailExists = (email: string) => {
   );
 };
 
+/** Sign up a new user via email (returns JWT or verification token). */
 export const signupByEmail = (email: string) => {
   if (!email) throw new Error('Missing email');
 
