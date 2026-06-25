@@ -23,7 +23,6 @@ type Props = {
 export default function Avatar({
   photoUrl,
   initials,
-  backgroundColor,
   height = 100,
   width = 100,
   className = '',
@@ -60,7 +59,7 @@ export default function Avatar({
         'flex items-center justify-center rounded-full font-bold text-white',
         className
       )}
-      style={{ backgroundColor, height, width }}
+      style={{ backgroundColor: '#13c2c2', height, width }}
     >
       {initials}
     </div>

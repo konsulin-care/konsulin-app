@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, unicorn/number-literal-case */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, unicorn/number-literal-case, unicorn/prefer-https */
 const TEAL = '#13c2c2';
 const PARTNER_COLORS = ['#2c2f35', '#5E81AC', '#08979C'] as const;
 
@@ -100,7 +100,7 @@ export function generateAvatarSvgDataUrl(
     fontSize = 36;
   }
 
-  const svg = `<svg xmlns="https://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
   <defs>
     <linearGradient id="g" x1="${dir.x1}" y1="${dir.y1}" x2="${dir.x2}" y2="${dir.y2}">
       <stop offset="0%" stop-color="${TEAL}"/>

@@ -185,23 +185,6 @@ export const parseTime = (timeStr: string, formatStr = 'HH:mm') => {
   return parse(timeStr, formatStr, new Date());
 };
 
-// generate a consistent color from an id
-const getColorFromId = (id: string) => {
-  if (!id) return '';
-
-  const saturation = 70;
-  const lightness = 50;
-
-  let hash = 0;
-  for (const char of id) {
-    hash += char.charCodeAt(0);
-  }
-
-  const hue = hash % 360;
-
-  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-};
-
 /** Generate avatar placeholder with initials and color. */
 export const generateAvatarPlaceholder = ({
   id,
@@ -238,7 +221,7 @@ export const generateAvatarPlaceholder = ({
 
   initials = initials.toUpperCase();
 
-  const backgroundColor = seed ? getColorFromId(seed) : null;
+  const backgroundColor = seed ? '#13c2c2' : null;
 
   return { initials: initials || null, backgroundColor, seed };
 };

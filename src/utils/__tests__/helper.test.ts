@@ -1,6 +1,6 @@
 import type { Patient } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
-import { parseFhirProfile } from '../helper';
+import { generateAvatarPlaceholder, parseFhirProfile } from '../helper';
 
 const mockPatient: Patient = {
   resourceType: 'Patient',
@@ -34,6 +34,97 @@ const mockPatient: Patient = {
   ],
   photo: [{ url: 'https://example.com/photo.jpg' }]
 };
+
+describe('generateAvatarPlaceholder', () => {
+  it('returns teal #13c2c2 as backgroundColor when id is provided', () => {
+    const result = generateAvatarPlaceholder({
+      id: 'practitioner-123',
+      name: 'Dr. Smith',
+      email: 'smith@clinic.com'
+    });
+
+    expect(result.backgroundColor).toBe('#13c2c2');
+    expect(result.seed).toBe('practitioner-123');
+    expect(result.initials).toBe('DS');
+  });
+
+  it('returns teal #13c2c2 as backgroundColor when only email is provided', () => {
+    const result = generateAvatarPlaceholder({
+      email: 'jane@clinic.com'
+    });
+
+    expect(result.backgroundColor).toBe('#13c2c2');
+    expect(result.seed).toBe('jane@clinic.com');
+    expect(result.initials).toBe('JA');
+  });
+
+  it('returns teal #13c2c2 as backgroundColor when only userId is provided', () => {
+    const result = generateAvatarPlaceholder({
+      userId: 'user-xyz'
+    });
+
+    expect(result.backgroundColor).toBe('#13c2c2');
+    expect(result.seed).toBe('user-xyz');
+    expect(result.initials).toBe('US');
+  });
+
+  it('returns null backgroundColor when no seed is available', () => {
+    const result = generateAvatarPlaceholder({});
+
+    expect(result.backgroundColor).toBeNull();
+    expect(result.seed).toBe('');
+    expect(result.initials).toBeNull();
+  });
+
+  it('extracts initials from full name', () => {
+    const result = generateAvatarPlaceholder({
+      id: '123',
+      name: 'John Doe'
+    });
+
+    expect(result.initials).toBe('JD');
+  });
+
+  it('extracts initials from single name', () => {
+    const result = generateAvatarPlaceholder({
+      id: '456',
+      name: 'John'
+    });
+
+    expect(result.initials).toBe('JO');
+  });
+
+  it('extracts initials from email local part', () => {
+    const result = generateAvatarPlaceholder({
+      id: '789',
+      email: 'alice@example.com'
+    });
+
+    expect(result.initials).toBe('AL');
+  });
+
+  it('prefers id over other fields for seed', () => {
+    const result = generateAvatarPlaceholder({
+      id: 'preferred-id',
+      name: 'Some Name',
+      email: 'some@email.com',
+      userId: 'some-user'
+    });
+
+    expect(result.seed).toBe('preferred-id');
+  });
+
+  it('handles name that is just a dash', () => {
+    const result = generateAvatarPlaceholder({
+      id: 'id-1',
+      name: '-',
+      email: 'test@test.com'
+    });
+
+    expect(result.initials).toBe('TE');
+    expect(result.seed).toBe('id-1');
+  });
+});
 
 describe('parseFhirProfile', () => {
   it('extracts phone, email, and name from Patient', () => {
