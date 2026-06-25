@@ -25,7 +25,8 @@ describe('generateAvatarSvgDataUrl', () => {
     const svgContent = decodeURIComponent(
       result.replace('data:image/svg+xml;charset=utf-8,', '')
     );
-    expect(svgContent).toContain('https://www.w3.org/2000/svg');
+    // eslint-disable-next-line unicorn/prefer-https
+    expect(svgContent).toContain('http://www.w3.org/2000/svg');
     expect(svgContent).not.toContain('https://www.w3.org/2000/svg');
   });
 
