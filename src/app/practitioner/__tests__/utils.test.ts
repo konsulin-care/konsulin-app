@@ -71,6 +71,11 @@ describe('getSlotMinutesText', () => {
     expect(getSlotMinutesText(123)).toBe('');
   });
 
+  it('returns empty string for falsy non-null values (caught by truthiness guard)', () => {
+    expect(getSlotMinutesText(false)).toBe('');
+    expect(getSlotMinutesText(0)).toBe('');
+  });
+
   it('returns empty string when comment is not a string', () => {
     expect(getSlotMinutesText({ comment: 123 })).toBe('');
   });

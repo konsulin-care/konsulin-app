@@ -119,7 +119,7 @@ export function getSlotMinutesText(schedule: unknown): string {
   if (!schedule) {
     return '';
   }
-  if (typeof schedule !== 'object' || schedule === null) {
+  if (typeof schedule !== 'object') {
     return '';
   }
   const scheduleRecord = schedule as Record<string, unknown>;

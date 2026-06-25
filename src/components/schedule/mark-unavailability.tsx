@@ -296,6 +296,16 @@ function UnavailabilityDialogBody({
   );
 }
 
+/** Extract active practitioner role IDs from bundle entries. */
+export function getActiveRoleIds(
+  entries?: BundleEntry<IPractitionerRoleDetail>[]
+): string[] {
+  const resources = entries?.map(e => e.resource) || [];
+  return resources
+    .filter((r): r is IPractitionerRoleDetail => r?.active ?? false)
+    .map(r => r.id ?? '');
+}
+
 /** Hook managing all state and save logic for the unavailability form. */
 function useMarkUnavailabilityForm() {
   const { state: authState } = useAuth();
@@ -314,11 +324,7 @@ function useMarkUnavailabilityForm() {
     refetch,
     data: roleEntries
   } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, entries => {
-    const resources = entries?.map(e => e.resource) || [];
-    const active = (resources || [])
-      .filter((r: any) => r?.active) // eslint-disable-line @typescript-eslint/no-unsafe-member-access
-      .map((r: any) => r.id ?? ''); // eslint-disable-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
-    setSelectedRoleIds(active);
+    setSelectedRoleIds(getActiveRoleIds(entries));
   });
 
   // eslint-disable-next-line @typescript-eslint/no-deprecated
