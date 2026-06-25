@@ -246,7 +246,8 @@ export default function Practitioner() {
     if (isLoading || isFetching) return <LoadingState />;
     if (!detailPractitioner || isError) return <EmptyPractitionerState />;
 
-    const { organization, resource, invoice, schedule } = detailPractitioner;
+    const { organization, resource, invoice, schedule } =
+      detailPractitioner ?? {};
     const orgName = organization?.name ?? '';
     const scheduleId = schedule?.id ?? '';
 

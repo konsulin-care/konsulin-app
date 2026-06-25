@@ -277,6 +277,29 @@ describe('Practitioner page – null safety', () => {
     });
   });
 
+  it('renders empty state when detailPractitioner is undefined with isError=false (guard edge case)', async () => {
+    vi.mocked(dbGet).mockResolvedValue({
+      value: {
+        roleId: 'test-role-id',
+        name: [{ given: ['John'], family: 'Doe' }],
+        photo: [],
+        qualification: [],
+        email: 'john@test.com'
+      }
+    });
+    vi.mocked(useDetailPractitioner).mockReturnValue({
+      newData: undefined,
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    });
+
+    expect(() => render(<Practitioner />)).not.toThrow();
+    await vi.waitFor(() => {
+      expect(screen.getByTestId('mock-empty-state')).toBeInTheDocument();
+    });
+  });
+
   it('renders without crashing when organization is missing from detailPractitioner', async () => {
     const mockDataWithoutOrg: any = {
       resource: {
