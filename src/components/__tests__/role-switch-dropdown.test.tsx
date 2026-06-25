@@ -20,7 +20,7 @@ const baseAvatar: AvatarInfo = {
 };
 
 describe('RoleSwitchDropdown', () => {
-  it('renders the stacked circles with badge count', () => {
+  it('renders the stacked circles with background layer for 2+ roles', () => {
     render(
       <RoleSwitchDropdown
         roles={['patient', 'practitioner']}
@@ -38,6 +38,7 @@ describe('RoleSwitchDropdown', () => {
       />
     );
 
-    expect(screen.getByText('+1')).toBeInTheDocument();
+    expect(screen.getByText('JD')).toBeInTheDocument();
+    expect(screen.getByTestId('stack-bg-circle')).toBeInTheDocument();
   });
 });
