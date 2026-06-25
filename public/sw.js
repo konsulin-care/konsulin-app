@@ -141,8 +141,8 @@ self.addEventListener('fetch', function (event) {
   }
 
   if (isStaticAsset(url.pathname)) {
-    event.respondWith(networkFirst(request, STATIC_CACHE));
-    return;
+    event.respondWith(networkFirst(request, STATIC_CACHE))
+    return
   }
 
   event.respondWith(networkFirst(request, NAV_CACHE))
