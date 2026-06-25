@@ -105,6 +105,7 @@ describe('StackedCircles', () => {
     );
 
     const bg = screen.getByTestId('stack-bg-circle');
+    expect(bg).toHaveClass('-z-10');
     expect(bg).toHaveClass('opacity-80');
     expect(bg).toHaveClass('bg-gradient-to-br');
   });
