@@ -39,14 +39,14 @@ import ResearchSection from './research-section';
 const isResearchStudy = (
   assessment: BundleEntry
 ): assessment is BundleEntry<ResearchStudy> => {
-  return assessment.resource.resourceType === 'ResearchStudy';
+  return assessment.resource?.resourceType === 'ResearchStudy';
 };
 
 /** Check if a bundle entry is a Questionnaire resource. */
 const isQuestionnaire = (
   assessment: BundleEntry
 ): assessment is BundleEntry<Questionnaire> => {
-  return assessment.resource.resourceType === 'Questionnaire';
+  return assessment.resource?.resourceType === 'Questionnaire';
 };
 
 /** Research study card with image, title, description, and Join button. */
@@ -72,9 +72,11 @@ function ResearchAssessmentCard({
             {assessment.resource.title}
           </div>
           <div className='overflow-hidden text-wrap'>
-            {assessment.resource.description?.length > 100
-              ? `${assessment.resource.description.slice(0, 100)}...`
-              : assessment.resource.description}
+            {(() => {
+              const desc = assessment.resource.description;
+              if (!desc) return '';
+              return desc.length > 100 ? `${desc.slice(0, 100)}...` : desc;
+            })()}
           </div>
         </div>
       </div>
@@ -210,7 +212,7 @@ export default function AssessmentsList() {
       ...(regularAssessments || [])
     ].filter(
       (assessment: BundleEntry) =>
-        assessment.resource.resourceType === 'Questionnaire'
+        assessment.resource?.resourceType === 'Questionnaire'
     );
   }, [popularAssessments, regularAssessments]);
 
@@ -326,7 +328,7 @@ export default function AssessmentsList() {
 
     const params = new URLSearchParams(globalThis.window.location.search);
     params.set('isDrawerOpen', 'true');
-    params.set('assessmentId', assessment.id);
+    params.set('assessmentId', assessment.id ?? '');
     router.push(`?${params.toString()}`, { scroll: false });
     setSelectedAssessment(assessment);
     setIsOpen(true);
@@ -346,6 +348,7 @@ export default function AssessmentsList() {
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
+  /** Render search results, research section, or empty states based on search term and loading status. */
   const renderSearchResults = () => {
     if (!searchTerm) {
       return (
@@ -382,7 +385,11 @@ export default function AssessmentsList() {
         />
       );
     }
-    if (showServerResults && serverAssessments?.length > 0) {
+    if (
+      showServerResults &&
+      serverAssessments &&
+      serverAssessments.length > 0
+    ) {
       return (
         <AssessmentSearchResults
           assessments={serverAssessments}

@@ -59,7 +59,7 @@ docker-check:
 	fi
 
 # Tailwind CSS for templ templates
-TAILWIND = .bin/tailwindcss
+TAILWIND = ./node_modules/.bin/tailwindcss
 TAILWIND_INPUT = web/static/css/templ-input.css
 TAILWIND_OUTPUT = web/static/css/output.css
 TAILWIND_CONTENT = "web/template/**/*.templ"
@@ -73,10 +73,10 @@ templ-gen:
 
 # Ports
 GO_PORT ?= 3000
-NEXT_PORT ?= 8080
+NEXT_PORT ?= 8000
 
 # Development
-dev: update-js css-templ templ-gen
+dev: update-js css-templ templ-gen build-auth-spa-dev
 	@echo "Go SSR on :$(GO_PORT)  |  Next.js on :$(NEXT_PORT)"
 	@trap 'kill 0' EXIT; \
 	  export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3300} NEXTJS_URL=http://localhost:$(NEXT_PORT) SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
@@ -92,6 +92,9 @@ dev-next:
 	npm run dev -- -p $(NEXT_PORT)
 
 # Auth SPA build
+build-auth-spa-dev:
+	cd web && npm run build:auth-spa
+
 build-auth-spa:
 	cd web && npm ci && npm run build
 

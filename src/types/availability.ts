@@ -10,14 +10,10 @@ export type TimeRange = {
   to: string; // HH:mm format
 };
 
-export type OrganizationTimeRanges = {
-  [organizationId: string]: TimeRange[];
-};
+export type OrganizationTimeRanges = Record<string, TimeRange[]>;
 
 // Weekly availability structure (day-indexed)
-export type WeeklyAvailability = {
-  [day in DayOfWeek]: OrganizationTimeRanges;
-};
+export type WeeklyAvailability = Record<DayOfWeek, OrganizationTimeRanges>;
 
 // Simple organization type for UI
 export type UIOrganization = {

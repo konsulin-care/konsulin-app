@@ -13,6 +13,7 @@ import {
   PractitionerQualification,
   Slot
 } from 'fhir/r4';
+import type { ComponentPropsWithoutRef } from 'react';
 
 /** Merge human names with optional qualification code. */
 export const mergeNames = (
@@ -29,7 +30,7 @@ export const mergeNames = (
 
   const fullName = name
     .map(item =>
-      [...(item.given || []), item.family || ''].filter(Boolean).join(' ')
+      [...(item.given ?? []), item.family || ''].filter(Boolean).join(' ')
     )
     .join('');
 
@@ -37,20 +38,50 @@ export const mergeNames = (
 };
 
 export const customMarkdownComponents = {
-  p: ({ children }) => <span>{children}</span>
+  p: ({ children, ...props }: ComponentPropsWithoutRef<'p'>) => (
+    <span {...props}>{children}</span>
+  )
 };
 
 /** Parse FHIR Patient or Practitioner profile. */
-export const parseFhirProfile = (data: Patient | Practitioner) => {
-  const phone = data.telecom?.find(t => t.system === 'phone')?.value ?? '';
-  const email = data.telecom?.find(t => t.system === 'email')?.value ?? '';
+function extractTelecom(data: Patient | Practitioner) {
+  return {
+    phone: data.telecom?.find(t => t.system === 'phone')?.value ?? '',
+    email: data.telecom?.find(t => t.system === 'email')?.value ?? ''
+  };
+}
+
+/** Extract display name from a FHIR Patient/Practitioner resource. */
+function extractName(data: Patient | Practitioner) {
   const name = data.name?.[0];
+  return {
+    firstName: name ? (name.given?.join(' ') ?? '') : '',
+    lastName: name?.family ?? ''
+  };
+}
+
+/** Extract first address line from FHIR Patient/Practitioner resource. */
+function extractAddress(data: Patient | Practitioner) {
   const addresses = data.address?.[0];
-  const userId =
+  return {
+    addresses: addresses?.line ?? [],
+    city: addresses?.city ?? '',
+    district: addresses?.district ?? '',
+    postalCode: addresses?.postalCode ?? ''
+  };
+}
+
+/** Extract FHIR ID from Patient/Practitioner resource. */
+function extractUserId(data: Patient | Practitioner) {
+  return (
     data.identifier?.find(
       id => id.system === 'https://login.konsulin.care/userid'
-    )?.value ?? '';
+    )?.value ?? ''
+  );
+}
 
+/** Parse a FHIR Patient/Practitioner resource into a flat profile object. */
+export const parseFhirProfile = (data: Patient | Practitioner) => {
   return {
     fhirId: data.id,
     resourceType: data.resourceType,
@@ -58,107 +89,100 @@ export const parseFhirProfile = (data: Patient | Practitioner) => {
     birthDate: data.birthDate,
     gender: data.gender,
     photo: data.photo?.[0]?.url ?? '',
-    userId,
-    firstName: name ? name.given.join(' ') : '',
-    lastName: name?.family ?? '',
-    addresses: addresses?.line ?? [],
+    userId: extractUserId(data),
+    ...extractName(data),
+    ...extractAddress(data),
+    ...extractTelecom(data),
     cityCode: '',
-    city: addresses?.city ?? '',
     districtCode: '',
-    district: addresses?.district ?? '',
     provinceCode: '',
-    province: '',
-    postalCode: addresses?.postalCode ?? '',
-    phone,
-    email
+    province: ''
   };
 };
+
+/** Extract slot ID from the first appointment participant. */
+function getSlotId(appointment: Appointment): string | null {
+  const ref = appointment.slot?.[0]?.reference;
+  return ref ? ref.split('/')[1] : null;
+}
+
+/** Extract practitioner ID from the first appointment participant. */
+function getPractitionerId(appointment: Appointment): string | null {
+  const participant = appointment.participant.find(
+    (p: AppointmentParticipant) =>
+      p.actor?.reference?.startsWith('Practitioner/')
+  );
+  return participant
+    ? (participant.actor?.reference?.split('/')[1] ?? null)
+    : null;
+}
+
+/** Merge practitioner/slot details into appointment records. */
+function mergeAppointmentData(
+  appointment: Appointment,
+  slots: Slot[],
+  practitioners: Practitioner[]
+): MergedAppointment {
+  const slotData = slots.find((s: Slot) => s.id === getSlotId(appointment));
+  const practitionerData = practitioners.find(
+    (p: Practitioner) => p.id === getPractitionerId(appointment)
+  );
+  return buildMergedAppointment(appointment, slotData, practitionerData);
+}
+
+// eslint-disable-next-line complexity
+function buildMergedAppointment(
+  appointment: Appointment,
+  slotData: Slot | undefined,
+  practitionerData: Practitioner | undefined
+): MergedAppointment {
+  const email = practitionerData?.telecom?.find(t => t.system === 'email');
+  return {
+    appointmentId: appointment.id ?? '',
+    slotStart: slotData?.start ?? null,
+    slotEnd: slotData?.end ?? null,
+    slotStatus: slotData?.status ?? null,
+    appointmentType: appointment.appointmentType?.text ?? null,
+    practitionerId: practitionerData?.id ?? null,
+    practitionerName: practitionerData?.name ?? null,
+    practitionerQualification: practitionerData?.qualification ?? null,
+    practitionerPhoto: practitionerData?.photo ?? null,
+    practitionerEmail: email?.value ?? null
+  };
+}
 
 /** Parse and merge appointment bundle data. */
 export const parseMergedAppointments = (
   bundle: Bundle
 ): MergedAppointment[] => {
-  const appointments = bundle.entry
+  const appointments = (bundle.entry ?? [])
     .filter(
-      (entry: BundleEntry) => entry.resource.resourceType === 'Appointment'
+      (entry: BundleEntry) => entry.resource?.resourceType === 'Appointment'
     )
     .map((entry: BundleEntry) => entry.resource as Appointment);
 
-  const slots = bundle.entry
-    .filter((entry: BundleEntry) => entry.resource.resourceType === 'Slot')
+  const slots = (bundle.entry ?? [])
+    .filter((entry: BundleEntry) => entry.resource?.resourceType === 'Slot')
     .map((entry: BundleEntry) => entry.resource as Slot);
 
-  const practitioners = bundle.entry
+  const practitioners = (bundle.entry ?? [])
     .filter(
-      (entry: BundleEntry) => entry.resource.resourceType === 'Practitioner'
+      (entry: BundleEntry) => entry.resource?.resourceType === 'Practitioner'
     )
     .map((entry: BundleEntry) => entry.resource as Practitioner);
 
-  const results: MergedAppointment[] = [];
-
-  appointments.forEach((appointment: Appointment) => {
-    // extract slot id
-    const slotReference = appointment.slot?.[0]?.reference;
-    const slotId = slotReference ? slotReference.split('/')[1] : null;
-
-    // extract practitioner reference from participants
-    const practitionerParticipant = appointment.participant.find(
-      (participant: AppointmentParticipant) =>
-        participant.actor.reference?.startsWith('Practitioner/')
-    );
-    const practitionerId = practitionerParticipant
-      ? practitionerParticipant.actor.reference.split('/')[1]
-      : null;
-
-    const slotData = slots.find((slot: Slot) => slot.id === slotId);
-    const practitionerData = practitioners.find(
-      (practitioner: Practitioner) => practitioner.id === practitionerId
-    );
-    const practitionerEmail = practitionerData.telecom.find(
-      data => data.system === 'email'
-    );
-
-    results.push({
-      appointmentId: appointment.id || null,
-      slotStart: slotData?.start || null,
-      slotEnd: slotData?.end || null,
-      slotStatus: slotData?.status || null,
-      appointmentType: appointment.appointmentType?.text || null,
-      practitionerId: practitionerData?.id || null,
-      practitionerName: practitionerData?.name || null,
-      practitionerQualification: practitionerData?.qualification || null,
-      practitionerPhoto: practitionerData?.photo || null,
-      practitionerEmail: practitionerEmail.value || null
-    });
-  });
-
   // sort the results by slotStart in ascending order
-  return results.sort((a, b) => {
-    if (!a.slotStart || !b.slotStart) return 0;
-    return new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime();
-  });
+  return appointments
+    .map(appointment => mergeAppointmentData(appointment, slots, practitioners))
+    .toSorted((a, b) => {
+      if (!a.slotStart || !b.slotStart) return 0;
+      return new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime();
+    });
 };
 
 /** Parse a time string using date-fns parse. */
 export const parseTime = (timeStr: string, formatStr = 'HH:mm') => {
   return parse(timeStr, formatStr, new Date());
-};
-
-// generate a consistent color from an id
-const getColorFromId = (id: string) => {
-  if (!id) return '';
-
-  const saturation = 70;
-  const lightness = 50;
-
-  let hash = 0;
-  for (const char of id) {
-    hash += char.charCodeAt(0);
-  }
-
-  const hue = hash % 360;
-
-  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
 /** Generate avatar placeholder with initials and color. */
@@ -172,6 +196,7 @@ export const generateAvatarPlaceholder = ({
   name?: string;
   email?: string;
   userId?: string;
+  // eslint-disable-next-line complexity
 }) => {
   const normalizedName =
     name?.trim() && name?.trim() !== '-' ? name.trim() : '';
@@ -182,7 +207,7 @@ export const generateAvatarPlaceholder = ({
     const parts = normalizedName.split(' ').filter(Boolean);
     if (parts.length >= 2) {
       const first = parts[0][0] || '';
-      const last = parts.at(-1)[0] || '';
+      const last = parts.at(-1)?.[0] ?? '';
       initials = `${first}${last}`;
     } else {
       initials = normalizedName.slice(0, 2);
@@ -196,12 +221,13 @@ export const generateAvatarPlaceholder = ({
 
   initials = initials.toUpperCase();
 
-  const backgroundColor = seed ? getColorFromId(seed) : null;
+  const backgroundColor = seed ? '#13c2c2' : null;
 
   return { initials: initials || null, backgroundColor, seed };
 };
 
 /* eslint-disable max-lines */
+/** Check if a string is a base64 data URL. */
 export const isDataUrl = (value: string) => {
   return typeof value === 'string' && value.startsWith('data:image/');
 };
@@ -225,8 +251,7 @@ function decodeBase64(
 /** Convert a data URL to a Blob object. */
 export const dataUrlToBlob = (dataUrl: string) => {
   const arr = dataUrl.split(',');
-  const mimeMatch = arr[0]?.match(/:(.*?);/);
-  const mime = mimeMatch?.[1] ?? 'image/png';
+  const mime = arr[0]?.split(';')[0]?.split(':')[1] ?? 'image/png';
   const base64String = arr[1];
 
   interface BufferLike {
@@ -314,13 +339,13 @@ export const mapAddress = (address: Address[]) => {
   if (!address || address.length === 0) return '-';
 
   const addr = address[0];
-  const parts = [addr.line[0], addr.district, addr.city, addr.postalCode];
+  const parts = [addr.line?.[0], addr.district, addr.city, addr.postalCode];
 
   return parts.filter(Boolean).join(', ');
 };
 
 /** Calculate age from a birth date string. */
-export const findAge = (birthDateStr: string) => {
+export const findAge = (birthDateStr: string): string => {
   const birthdate = new Date(birthDateStr);
   const today = new Date();
 
@@ -338,7 +363,7 @@ export const findAge = (birthDateStr: string) => {
     age--;
   }
 
-  return age;
+  return String(age);
 };
 
 /** Get UTC day range from local dates. */
@@ -355,59 +380,59 @@ export const getUtcDayRange = (startLocalDate: Date, endLocalDate?: Date) => {
   return { utcStart, utcEnd };
 };
 
+// eslint-disable-next-line complexity
+function mergeSessionData(
+  appointment: Appointment,
+  slots: Slot[],
+  patients: Patient[]
+): MergedSession {
+  const ref = appointment.slot?.[0]?.reference;
+  const slotId = ref ? ref.split('/')[1] : null;
+
+  const participant = appointment.participant.find(
+    (p: AppointmentParticipant) => p.actor?.reference?.startsWith('Patient/')
+  );
+  const patientId = participant
+    ? (participant.actor?.reference?.split('/')[1] ?? null)
+    : null;
+
+  const slotData = slots.find(s => s.id === slotId);
+  const patientData = patients.find(p => p.id === patientId);
+  const email = patientData?.telecom?.find(t => t.system === 'email');
+
+  return {
+    appointmentId: appointment.id ?? '',
+    slotStart: slotData?.start ?? null,
+    slotEnd: slotData?.end ?? null,
+    slotStatus: slotData?.status ?? null,
+    appointmentType: appointment.appointmentType?.text ?? null,
+    patientId: patientData?.id ?? '',
+    patientName: patientData?.name ?? [],
+    patientPhoto: patientData?.photo ?? [],
+    patientEmail: email?.value ?? ''
+  };
+}
+
 /** Parse and merge session bundle data. */
 export const parseMergedSessions = (bundle: Bundle): MergedSession[] => {
-  const appointments = bundle.entry
-    .filter(entry => entry.resource.resourceType === 'Appointment')
+  const appointments = (bundle.entry ?? [])
+    .filter(entry => entry.resource?.resourceType === 'Appointment')
     .map(entry => entry.resource as Appointment);
 
-  const slots = bundle.entry
-    .filter(entry => entry.resource.resourceType === 'Slot')
+  const slots = (bundle.entry ?? [])
+    .filter(entry => entry.resource?.resourceType === 'Slot')
     .map(entry => entry.resource as Slot);
 
-  const patients = bundle.entry
-    .filter(entry => entry.resource.resourceType === 'Patient')
+  const patients = (bundle.entry ?? [])
+    .filter(entry => entry.resource?.resourceType === 'Patient')
     .map(entry => entry.resource as Patient);
 
-  const results: MergedSession[] = [];
-
-  appointments.forEach(appointment => {
-    const slotReference = appointment.slot?.[0]?.reference;
-    const slotId = slotReference ? slotReference.split('/')[1] : null;
-
-    const patientParticipant = appointment.participant.find(
-      (participant: AppointmentParticipant) =>
-        participant.actor.reference?.startsWith('Patient/')
-    );
-
-    const patientId = patientParticipant
-      ? patientParticipant.actor.reference.split('/')[1]
-      : null;
-
-    const slotData = slots.find(slot => slot.id === slotId);
-    const patientData = patients.find(patient => patient.id === patientId);
-
-    const patientEmail = patientData.telecom.find(
-      data => data.system === 'email'
-    );
-
-    results.push({
-      appointmentId: appointment.id || null,
-      slotStart: slotData?.start || null,
-      slotEnd: slotData?.end || null,
-      slotStatus: slotData?.status || null,
-      appointmentType: appointment.appointmentType?.text || null,
-      patientId: patientData?.id || null,
-      patientName: patientData.name || null,
-      patientPhoto: patientData?.photo || null,
-      patientEmail: patientEmail.value || null
+  return appointments
+    .map(appointment => mergeSessionData(appointment, slots, patients))
+    .toSorted((a, b) => {
+      if (!a.slotStart || !b.slotStart) return 0;
+      return new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime();
     });
-  });
-
-  return results.sort((a, b) => {
-    if (!a.slotStart || !b.slotStart) return 0;
-    return new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime();
-  });
 };
 
 /** Get display label for a record type. */
@@ -417,8 +442,15 @@ export const getTypeLabel = (type: string) => {
   const types = type.split(',').map(t => t.trim());
 
   // map each to its display label
-  const label = types.map(type => typeMappings[type]?.text).filter(Boolean);
+  const label = types.find(
+    type =>
+      (typeMappings as Record<string, { text: string; category: number }>)[type]
+        ?.text
+  );
 
-  // return the first label (they should all be the same if grouped correctly)
-  return label[0] ?? null;
+  return (
+    (typeMappings as Record<string, { text: string; category: number }>)[
+      label ?? ''
+    ]?.text ?? null
+  );
 };

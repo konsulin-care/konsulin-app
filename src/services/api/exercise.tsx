@@ -1,5 +1,6 @@
 import { getAPI } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
+import { Bundle } from 'fhir/r4';
 
 type ExerciseItem = {
   id: string;
@@ -9,41 +10,34 @@ type ExerciseItem = {
   description: string;
 };
 
+/** Fetch exercise/physiotherapy data from the API. */
 export const useGetExercise = () => {
   return useQuery({
     queryKey: ['exercise'],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(`/fhir/Media`);
+      const response = await API.get<Bundle>('/fhir/Media');
       return response;
     },
     select: (response): ExerciseItem[] => {
-      const entries = response.data.entry || [];
+      const entries = response.data.entry ?? [];
 
-      return entries.map(
-        (entry: {
-          resource: ExerciseItem & {
-            content?: { url?: string; title?: string };
-            note?: Array<{ text: string }>;
-          };
-        }) => {
-          const resource = entry.resource;
+      return entries.map(entry => {
+        const resource = entry.resource as unknown as ExerciseItem & {
+          content?: { url?: string; title?: string };
+          note?: Array<{ text: string }>;
+        };
 
-          return {
-            id: resource.id,
-            url: resource.content?.url ?? '',
-            title: resource.content?.title ?? '',
-            duration: resource.duration
-              ? Math.floor(resource.duration / 60)
-              : 0,
-            description: resource.note
-              ? (resource.note as Array<{ text: string }>)
-                  .map(n => n.text)
-                  .join(' ')
-              : ''
-          };
-        }
-      );
+        return {
+          id: resource.id,
+          url: resource.content?.url ?? '',
+          title: resource.content?.title ?? '',
+          duration: resource.duration ? Math.floor(resource.duration / 60) : 0,
+          description: resource.note
+            ? resource.note.map(n => n.text).join(' ')
+            : ''
+        };
+      });
     }
   });
 };

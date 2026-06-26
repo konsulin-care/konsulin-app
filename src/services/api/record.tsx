@@ -1,7 +1,7 @@
 import { IBundleResponse, IJournal } from '@/types/record';
 import { getUtcDayRange } from '@/utils/helper';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Bundle } from 'fhir/r4';
+import { Bundle, Observation } from 'fhir/r4';
 import { getAPI } from '../api';
 
 type IFilterRecord = {
@@ -10,6 +10,7 @@ type IFilterRecord = {
   endDate: string;
 };
 
+/** Fetch record summaries for a patient within a date range. */
 export const useRecordSummary = () => {
   return useMutation<IBundleResponse[], Error, { patientId: string }>({
     mutationKey: ['record-summary-patient'],
@@ -42,8 +43,8 @@ export const useRecordSummary = () => {
 
       try {
         const API = await getAPI();
-        const response = await API.post('/fhir', payload);
-        return response.data.entry;
+        const response = await API.post<Bundle>('/fhir', payload);
+        return (response.data.entry ?? []) as unknown as IBundleResponse[];
       } catch (error) {
         console.error('Error fetching record summary:', error);
         throw error;
@@ -87,11 +88,11 @@ export const useRecordSummaryQuery = (patientId: string) => {
     queryKey: ['patient-records', patientId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.post(
+      const response = await API.post<Bundle>(
         '/fhir',
         buildRecordBatchPayload(patientId)
       );
-      return response.data.entry as IBundleResponse[];
+      return (response.data.entry ?? []) as IBundleResponse[];
     },
     enabled: Boolean(patientId),
     staleTime: 60 * 1000
@@ -136,8 +137,8 @@ export const useFilterRecordByDate = () => {
 
       try {
         const API = await getAPI();
-        const response = await API.post('/fhir', payload);
-        return response.data.entry;
+        const response = await API.post<Bundle>('/fhir', payload);
+        return (response.data.entry ?? []) as unknown as IBundleResponse[];
       } catch (error) {
         console.error('Error fetching record summary:', error);
         throw error;
@@ -179,7 +180,7 @@ export const useRecordSummaryPractitioner = () => {
 
       try {
         const API = await getAPI();
-        const response = await API.post('/fhir', payload);
+        const response = await API.post<Bundle>('/fhir', payload);
         return response.data;
       } catch (error) {
         console.error('Error fetching record summary:', error);
@@ -227,7 +228,7 @@ export const useFilterRecordPractitionerByDate = () => {
 
       try {
         const API = await getAPI();
-        const response = await API.post('/fhir', payload);
+        const response = await API.post<Bundle>('/fhir', payload);
         return response.data;
       } catch (error) {
         console.error('Error fetching record summary:', error);
@@ -253,7 +254,7 @@ export const useGetSingleRecord = ({
       return response;
     },
     select: response => {
-      return response.data || null;
+      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
     enabled: Boolean(id) && Boolean(resourceType)
   });
@@ -268,7 +269,10 @@ export const useSubmitJournal = () => {
 
       try {
         const API = await getAPI();
-        const response = await API.post('/fhir/Observation', payload);
+        const response = await API.post<Observation>(
+          '/fhir/Observation',
+          payload
+        );
         return response.data;
       } catch (error) {
         console.error('Error fetching record summary:', error);
@@ -285,7 +289,7 @@ export const useUpdateJournal = () => {
     mutationFn: async (journalData: IJournal) => {
       try {
         const API = await getAPI();
-        const response = await API.put(
+        const response = await API.put<Observation>(
           `/fhir/Observation/${journalData.id}`,
           journalData
         );

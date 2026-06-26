@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, max-lines */
+/* eslint-disable max-lines, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterActions from '@/components/shared/filter-actions';
 import FilterCalendar from '@/components/shared/filter-calendar';
@@ -143,6 +143,27 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
     !filter.start_time &&
     !filter.end_time;
 
+  /** Update a single session-filter field by key. */
+  const handleFilterChange = (
+    label: string,
+    value: string | Date | undefined
+  ) => {
+    setFilter(prevState => ({
+      ...prevState,
+      [label]: value
+    }));
+  };
+
+  /** Reset all session filter fields to undefined. */
+  const resetFilter = () => {
+    setFilter({
+      start_date: undefined,
+      end_date: undefined,
+      start_time: undefined,
+      end_time: undefined
+    });
+  };
+
   useEffect(() => {
     if (initialFilter.start_date && initialFilter.end_date) {
       handleFilterChange('start_date', initialFilter.start_date);
@@ -153,6 +174,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
         ...filterContentListPastDate
       ];
 
+      /** Format a Date to yyyy-MM-dd for comparison. */
       const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
 
       const matchedPreset = allPresetDates.some(preset => {
@@ -167,6 +189,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
     }
   }, [initialFilter]);
 
+  /** Open custom date/time filter with default start/end values. */
   const handleCustomFilterOpen = () => {
     if (isInitiaFilterState) {
       handleFilterChange('start_time', '00:00');
@@ -188,22 +211,6 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
 
   const disabledDates =
     type === 'upcoming' ? { before: today } : { after: today };
-
-  const handleFilterChange = (label: string, value: any) => {
-    setFilter(prevState => ({
-      ...prevState,
-      [label]: value
-    }));
-  };
-
-  const resetFilter = () => {
-    setFilter({
-      start_date: undefined,
-      end_date: undefined,
-      start_time: undefined,
-      end_time: undefined
-    });
-  };
 
   useEffect(() => {
     resetFilter();
@@ -256,9 +263,10 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
   );
 
   /** Renders the filter drawer content based on current selection. */
+  /** Render default or custom date/time filter drawer content. */
   const renderDrawerContent = () => {
     switch (whichContent) {
-      case CONTENT_DEFAULT:
+      case CONTENT_DEFAULT: {
         return (
           <div className='flex flex-col'>
             <DrawerTitle className='mx-auto text-[20px] font-bold'>
@@ -287,7 +295,8 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
             />
           </div>
         );
-      case CONTENT_CUSTOM:
+      }
+      case CONTENT_CUSTOM: {
         return (
           <div className='flex flex-col'>
             <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
@@ -330,9 +339,11 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
             </Button>
           </div>
         );
+      }
 
-      default:
+      default: {
         return null;
+      }
     }
   };
 

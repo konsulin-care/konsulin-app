@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unnecessary-type-conversion */
 
 import Avatar from '@/components/general/avatar';
 import PageHeader from '@/components/page-header';
@@ -36,16 +37,18 @@ const AppointmentCard = ({
     ? format(parseISO(appointment.slotStart), 'dd/MM/yyyy')
     : '-/-/-';
   const fullName = mergeNames(
-    appointment.practitionerName,
-    appointment.practitionerQualification
+    appointment.practitionerName ?? [],
+    appointment.practitionerQualification ?? undefined
   );
   const displayName =
     fullName.trim() === '-' ? appointment.practitionerEmail : fullName;
   const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
-    id: appointment.practitionerId,
-    name: displayName,
-    email: appointment.practitionerEmail
+    id: appointment.practitionerId ?? undefined,
+    name: displayName ?? undefined,
+    email: appointment.practitionerEmail ?? undefined
   });
+  const placeholderInitials = initials ?? '';
+  const placeholderBg = backgroundColor ?? '';
   const photoUrl = appointment.practitionerPhoto?.[0]?.url;
 
   return (
@@ -61,8 +64,8 @@ const AppointmentCard = ({
       <div className='flex items-center'>
         <Avatar
           seed={seed}
-          initials={initials}
-          backgroundColor={backgroundColor}
+          initials={placeholderInitials}
+          backgroundColor={placeholderBg}
           photoUrl={photoUrl}
           className='mr-2 text-xs'
           imageClassName='mr-2 self-center'
@@ -71,7 +74,7 @@ const AppointmentCard = ({
         />
         <div className='mr-auto text-[12px] font-bold'>{displayName}</div>
         <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-          {capitalizeFirstLetter(appointment.appointmentType)} Session
+          {capitalizeFirstLetter(appointment.appointmentType ?? '')} Session
         </div>
       </div>
     </Link>
@@ -110,13 +113,16 @@ export default function PatientSchedule({ fhirId }: Props) {
     data: parsedAppointmentsData,
     sessionsFilter,
     keyword: debouncedKeyword,
-    keywordMatcher: (appointment: MergedAppointment, query: string) => {
+    keywordMatcher: (
+      appointment: MergedAppointment,
+      query: string
+    ): boolean => {
       const fullName = mergeNames(
-        appointment.practitionerName,
-        appointment.practitionerQualification
+        appointment.practitionerName ?? [],
+        appointment.practitionerQualification ?? undefined
       )?.toLowerCase();
       const email = appointment.practitionerEmail?.toLowerCase();
-      return (
+      return Boolean(
         fullName?.includes(query.toLowerCase()) ||
         email?.includes(query.toLowerCase())
       );

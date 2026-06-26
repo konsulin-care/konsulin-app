@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterActions from '@/components/shared/filter-actions';
 import FilterCalendar from '@/components/shared/filter-calendar';
@@ -109,21 +109,18 @@ export default function RecordFilter({ onChange }) {
     !filter.type &&
     !filter.isUseCustomDate;
 
-  const handleCustomFilterOpen = () => {
-    handleFilterChange('start_date', today);
-    handleFilterChange('end_date', addDays(today, 7));
-    setIsUseCustomDate(true);
-    handleFilterChange('isUseCustomDate', true);
-    setWhichContent(CONTENT_CUSTOM);
-  };
-
-  const handleFilterChange = (label: string, value: any) => {
+  /** Update a single record-filter field by key. */
+  const handleFilterChange = (
+    label: string,
+    value: string | Date | boolean | undefined
+  ) => {
     setFilter(prevState => ({
       ...prevState,
       [label]: value
     }));
   };
 
+  /** Reset all filter fields and custom date mode. */
   const resetFilter = () => {
     setFilter({
       start_date: undefined,
@@ -134,6 +131,15 @@ export default function RecordFilter({ onChange }) {
     handleFilterChange('isUseCustomDate', false);
   };
 
+  /** Open custom date picker with default 7-day range. */
+  const handleCustomFilterOpen = () => {
+    handleFilterChange('start_date', today);
+    handleFilterChange('end_date', addDays(today, 7));
+    setIsUseCustomDate(true);
+    handleFilterChange('isUseCustomDate', true);
+    setWhichContent(CONTENT_CUSTOM);
+  };
+
   const showBySection = (
     <ShowBySection
       type={filter.type}
@@ -141,9 +147,10 @@ export default function RecordFilter({ onChange }) {
     />
   );
 
+  /** Render default filter content or custom calendar filter based on whichContent. */
   const renderDrawerContent = () => {
     switch (whichContent) {
-      case CONTENT_DEFAULT:
+      case CONTENT_DEFAULT: {
         return (
           <div className='flex flex-col'>
             <DrawerTitle>
@@ -175,7 +182,8 @@ export default function RecordFilter({ onChange }) {
             />
           </div>
         );
-      case CONTENT_CUSTOM:
+      }
+      case CONTENT_CUSTOM: {
         return (
           <div className='flex flex-col'>
             <DrawerTitle>
@@ -208,9 +216,11 @@ export default function RecordFilter({ onChange }) {
             </Button>
           </div>
         );
+      }
 
-      default:
+      default: {
         return null;
+      }
     }
   };
 

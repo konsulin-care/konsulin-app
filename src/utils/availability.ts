@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DayOfWeek, TimeRange, WeeklyAvailability } from '@/types/availability';
-import { PractitionerRole } from 'fhir/r4';
+import { PractitionerRole, type PractitionerRoleAvailableTime } from 'fhir/r4';
 
 /**
  * Day names array using internal DayOfWeek convention (0 = Monday, 6 = Sunday)
@@ -46,7 +45,7 @@ export function toJsDayIndex(dayOfWeek: DayOfWeek): number {
  * Generate a unique ID for a time range
  */
 export function generateTimeRangeId(): string {
-  return `time-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `time-${Date.now()}-${crypto.randomUUID()}`;
 }
 
 /**
@@ -84,8 +83,8 @@ export function initializeWeeklyAvailability(
           if (item.availableStartTime && item.availableEndTime) {
             availability[day][defaultOrgId].push({
               id: generateTimeRangeId(),
-              from: item.availableStartTime.substring(0, 5),
-              to: item.availableEndTime.substring(0, 5)
+              from: item.availableStartTime.slice(0, 5),
+              to: item.availableEndTime.slice(0, 5)
             });
           }
         }
@@ -138,8 +137,8 @@ export function initializeWeeklyAvailabilityFromRoles(
             if (item.availableStartTime && item.availableEndTime) {
               availability[day][orgId].push({
                 id: generateTimeRangeId(),
-                from: item.availableStartTime.substring(0, 5),
-                to: item.availableEndTime.substring(0, 5)
+                from: item.availableStartTime.slice(0, 5),
+                to: item.availableEndTime.slice(0, 5)
               });
             }
           }
@@ -189,8 +188,8 @@ export function hasAvailabilityForDay(
 export function convertToFhirAvailableTimeForOrganization(
   weeklyAvailability: WeeklyAvailability,
   organizationId: string
-): any[] {
-  const result: any[] = [];
+): PractitionerRoleAvailableTime[] {
+  const result: PractitionerRoleAvailableTime[] = [];
 
   // Iterate through each day
   for (let i = 0; i <= 6; i++) {
@@ -218,8 +217,8 @@ export function convertToFhirAvailableTimeForOrganization(
  */
 export function convertToFhirAvailableTime(
   weeklyAvailability: WeeklyAvailability
-): any[] {
-  const result: any[] = [];
+): PractitionerRoleAvailableTime[] {
+  const result: PractitionerRoleAvailableTime[] = [];
 
   // Iterate through each day
   for (let i = 0; i <= 6; i++) {
@@ -249,7 +248,7 @@ export function validateTimeRange(timeRange: TimeRange): {
   error?: string;
 } {
   // Check if times are in HH:mm format
-  const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  const timeRegex = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
   if (!timeRegex.test(timeRange.from)) {
     return { valid: false, error: 'Invalid "from" time format' };

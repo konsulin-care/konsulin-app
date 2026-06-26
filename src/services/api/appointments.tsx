@@ -1,16 +1,23 @@
 import { getUtcDayRange } from '@/utils/helper';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Bundle } from 'fhir/r4';
+import { Bundle, Slot } from 'fhir/r4';
 import { getAPI } from '../api';
 
-export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
+/** Fetch upcoming appointments for a patient relative to a date. */
+export const useGetUpcomingAppointments = ({
+  patientId,
+  dateReference
+}: {
+  patientId: string;
+  dateReference: string;
+}) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
   return useQuery({
     queryKey: ['appointments', patientId, dateReference],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/Appointment?actor=Patient/${patientId}&slot.start=ge${utcStart}&_include=Appointment:actor:PractitionerRole&_include:iterate=PractitionerRole:practitioner&_include=Appointment:slot`
       );
       return response;
@@ -26,12 +33,12 @@ export const useGetUpcomingAppointments = ({ patientId, dateReference }) => {
 };
 
 /** Fetch all appointments for a patient. */
-export const useGetAllAppointments = ({ patientId }) => {
+export const useGetAllAppointments = ({ patientId }: { patientId: string }) => {
   return useQuery({
     queryKey: ['all-appointments', patientId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/Appointment?actor=Patient/${patientId}&_include=Appointment:actor:PractitionerRole&_include:iterate=PractitionerRole:practitioner&_include=Appointment:slot`
       );
       return response;
@@ -44,14 +51,20 @@ export const useGetAllAppointments = ({ patientId }) => {
 };
 
 /** Fetch upcoming sessions for a practitioner from a given date. */
-export const useGetUpcomingSessions = ({ practitionerId, dateReference }) => {
+export const useGetUpcomingSessions = ({
+  practitionerId,
+  dateReference
+}: {
+  practitionerId: string;
+  dateReference: string;
+}) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
   return useQuery({
     queryKey: ['sessions', practitionerId, dateReference],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/Appointment?actor=Practitioner/${practitionerId}&slot.start=ge${utcStart}&_include=Appointment:actor:Patient&_include=Appointment:slot`
       );
       return response;
@@ -67,12 +80,16 @@ export const useGetUpcomingSessions = ({ practitionerId, dateReference }) => {
 };
 
 /** Fetch all sessions for a practitioner. */
-export const useGetAllSessions = ({ practitionerId }) => {
+export const useGetAllSessions = ({
+  practitionerId
+}: {
+  practitionerId: string;
+}) => {
   return useQuery({
     queryKey: ['all-sessions', practitionerId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/Appointment?actor=Practitioner/${practitionerId}&_include=Appointment:actor:Patient&_include=Appointment:slot`
       );
       return response;
@@ -89,14 +106,18 @@ export const useGetTodaySessions = ({
   practitionerId,
   dateReference,
   enabled = true
+}: {
+  practitionerId: string;
+  dateReference: string;
+  enabled?: boolean;
 }) => {
-  const { utcStart, utcEnd } = getUtcDayRange(dateReference);
+  const { utcStart, utcEnd } = getUtcDayRange(new Date(dateReference));
 
   return useQuery({
     queryKey: ['today-sessions', practitionerId, dateReference],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/Appointment?_elements=appointmentType,participant,slot&practitioner=${practitionerId}&slot.start=ge${utcStart}&slot.start=le${utcEnd}&_include=Appointment:patient`
       );
       return response;
@@ -115,8 +136,9 @@ export const useCreateAppointment = () => {
     mutationFn: async (payload: Bundle) => {
       try {
         const API = await getAPI();
-        const response = await API.post('/fhir', payload);
-        return response.data.entry;
+        const response = await API.post<Bundle>('/fhir', payload);
+        const entries = response.data.entry;
+        return entries ?? [];
       } catch (error) {
         console.error('Error when booking an appointment:', error);
         throw error;
@@ -125,7 +147,7 @@ export const useCreateAppointment = () => {
   });
 };
 
-// New unified payment/appointment endpoint
+/** Pay for an appointment via online payment or offline booking. */
 export const usePayAppointment = () => {
   return useMutation({
     mutationKey: ['pay-appointment'],
@@ -140,7 +162,7 @@ export const usePayAppointment = () => {
       try {
         const API = await getAPI();
         const response = await API.post('/api/v1/pay/appointment', payload);
-        return response.data;
+        return response.data; // eslint-disable-line @typescript-eslint/no-unsafe-return
       } catch (error) {
         console.error('Error when paying/booking an appointment:', error);
         throw error;
@@ -150,14 +172,20 @@ export const usePayAppointment = () => {
 };
 
 /** Fetch available slots for a practitioner on a given date. */
-export const useGetPractitionerSlots = ({ practitionerId, dateReference }) => {
+export const useGetPractitionerSlots = ({
+  practitionerId,
+  dateReference
+}: {
+  practitionerId: string;
+  dateReference: string;
+}) => {
   const { utcStart } = getUtcDayRange(new Date(dateReference));
 
   return useQuery({
     queryKey: ['slots', practitionerId, dateReference],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle<Slot>>(
         `/fhir/Slot?_has:Appointment:slot:practitioner=${practitionerId}&start=ge${utcStart}`
       );
       return response;

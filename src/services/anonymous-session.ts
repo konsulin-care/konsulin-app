@@ -1,10 +1,7 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 
-import {
-  ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY,
-  ANONYMOUS_SESSION_IDENTIFIER_SYSTEM
-} from '@/constants/anonymous-session';
-import { STORES, dbSet } from '@/lib/indexeddb';
+import { ANONYMOUS_SESSION_IDENTIFIER_SYSTEM } from '@/constants/anonymous-session';
 import { getAPI } from '@/services/api';
 import { Identifier } from 'fhir/r4';
 
@@ -13,6 +10,7 @@ type AnonymousSessionResponse = {
   guest_id?: string;
 };
 
+/** Decodes the payload of a JWT token without verification. */
 export const decodeJwtPayload = (
   token: string
 ): Record<string, unknown> | null => {
@@ -31,83 +29,12 @@ export const decodeJwtPayload = (
   }
 };
 
-const GUEST_SESSION_RECORD_ID = 'current_guest';
-
-export const getCachedGuestId = async (): Promise<string | null> => {
-  // 1. Check IndexedDB guest_sessions store (singleton key)
-  try {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open('konsulin');
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-    const tx = db.transaction(STORES.guestSessions, 'readonly');
-    const store = tx.objectStore(STORES.guestSessions);
-    const result = await new Promise<{
-      guest_id: string;
-      value: string;
-    } | null>((resolve, reject) => {
-      const req = store.get(GUEST_SESSION_RECORD_ID);
-      req.onsuccess = () => resolve(req.result ?? null);
-      req.onerror = () => reject(req.error);
-    });
-    if (result?.value) {
-      return result.value;
-    }
-  } catch {
-    // fall through
-  }
-
-  // 2. Check meta tag injected by Go SSR base layout
-  if (typeof document !== 'undefined') {
-    const meta = document.querySelector<HTMLMetaElement>(
-      'meta[name="konsulin-guest-id"]'
-    );
-    const content = meta?.getAttribute('content');
-    if (content) return content;
-
-    const guestCookieName = meta?.dataset.cookieName || 'guest_session';
-    const cookiePair = document.cookie
-      .split(';')
-      .map(c => c.trim())
-      .find(c => c.startsWith(guestCookieName + '='));
-    if (cookiePair) {
-      const value = cookiePair.slice(guestCookieName.length + 1);
-      try {
-        const parsed = JSON.parse(decodeURIComponent(value));
-        if (parsed.guestId) return parsed.guestId;
-      } catch {
-        /* not a JSON cookie */
-      }
-    }
-  }
-
-  // 4. Fall back to localStorage (legacy)
-  try {
-    return localStorage.getItem(ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-};
-
-export const cacheGuestId = async (guestId: string) => {
-  try {
-    await dbSet(STORES.guestSessions, {
-      guest_id: GUEST_SESSION_RECORD_ID,
-      value: guestId
-    });
-  } catch {
-    // ignore storage errors
-  }
-  try {
-    localStorage.setItem(ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY, guestId);
-  } catch {
-    // ignore storage errors
-  }
-};
-
+/**
+ * Ensures an anonymous session exists, creating one if needed.
+ * Returns the resolved guest ID from the session token or response body.
+ */
 export const ensureAnonymousSession = async (
-  forceNew: boolean = false
+  forceNew = false
 ): Promise<string> => {
   const API = await getAPI();
   const url = '/api/v1/auth/anonymous-session';
@@ -139,10 +66,10 @@ export const ensureAnonymousSession = async (
     throw new Error('Failed to resolve guest_id from anonymous session');
   }
 
-  cacheGuestId(guestId);
   return guestId;
 };
 
+/** Builds a FHIR Identifier for the anonymous session guest ID. */
 export const buildAnonymousIdentifier = (guestId: string): Identifier => {
   return {
     system: ANONYMOUS_SESSION_IDENTIFIER_SYSTEM,

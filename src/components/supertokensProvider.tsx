@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import React, { useContext, useEffect, useRef } from 'react';
 import SuperTokensReact, { SuperTokensWrapper } from 'supertokens-auth-react';
 
+/** SuperTokens auth provider wrapper initialized from runtime config. */
 export const SuperTokensProviders: React.FC<
   React.PropsWithChildren<object>
 > = ({ children }) => {

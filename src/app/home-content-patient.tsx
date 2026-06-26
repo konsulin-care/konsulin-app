@@ -14,6 +14,7 @@ import { BookText, Building2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useCallback } from 'react';
 
 const RecommendationCardStack = dynamic(
   () => import('@/components/general/home/recommendation-card-stack'),
@@ -55,7 +56,7 @@ function RecordCard({ record }: Readonly<{ record: IRecord }>) {
   const cleanDescription = (result || '-').replaceAll('\n\n', '. ');
 
   const queryParams = new URLSearchParams({
-    category: typeMappings[record.type]?.category,
+    category: String(typeMappings[record.type]?.category ?? ''),
     title
   }).toString();
   const url = `/record?recordId=${recordId}&${queryParams}`;
@@ -95,8 +96,15 @@ export default function HomeContentPatient() {
     refetch: refetchRecords
   } = useRecordSummaryQuery(patientId);
 
+  /** Retry loading records on error. */
+  const handleRetryRecords = useCallback(() => {
+    refetchRecords().catch(() => {
+      /* error already handled by isError state */
+    });
+  }, [refetchRecords]);
+
   const records = recordsBundle
-    ? (parseRecordBundles(recordsBundle) as IRecord[]).sort(
+    ? parseRecordBundles(recordsBundle).toSorted(
         (a, b) =>
           new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
       )
@@ -124,7 +132,7 @@ export default function HomeContentPatient() {
             Failed to load records
           </p>
           <button
-            onClick={() => refetchRecords()}
+            onClick={handleRetryRecords}
             className='text-secondary text-[12px] underline'
           >
             Tap to retry

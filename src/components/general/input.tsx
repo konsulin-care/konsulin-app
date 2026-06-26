@@ -3,6 +3,24 @@ import Image from 'next/image';
 /**
  *
  */
+type InputProps = {
+  outline?: boolean;
+  prefixIcon?: string;
+  suffixIcon?: string;
+  className?: string;
+  width?: number;
+  height?: number;
+  backgroundColor?: string;
+  opacity?: boolean;
+  onShow?: () => void;
+} & React.InputHTMLAttributes<HTMLInputElement>;
+
+/** No-operation function for optional callback defaults. */
+const noop = (): void => undefined;
+
+/**
+ *
+ */
 export default function Input({
   outline,
   prefixIcon,
@@ -12,9 +30,14 @@ export default function Input({
   height = 18,
   backgroundColor = '[#FFFFFF]',
   opacity = true,
-  onShow = () => {},
+  onShow = noop,
   ...props
-}) {
+}: Readonly<InputProps>) {
+  const opacityClass = opacity ? 'opacity-40' : '';
+  const inputClassName = outline
+    ? 'w-full'
+    : `w-full text-sm font-normal text-[#2C2F35] ${opacityClass} outline-none placeholder:text-[#2C2F35]/60 bg-${backgroundColor}`;
+
   return (
     <div className={className}>
       {prefixIcon && (
@@ -25,16 +48,7 @@ export default function Input({
           alt='prefix-icon'
         />
       )}
-      <input
-        className={
-          outline
-            ? 'w-full'
-            : `w-full text-sm font-normal text-[#2C2F35] ${
-                opacity ? 'opacity-40' : ''
-              } outline-none placeholder:text-[#2C2F35]/60 bg-${backgroundColor}`
-        }
-        {...props}
-      />
+      <input className={inputClassName} {...props} />
       {suffixIcon && (
         <button type='button' className='focus:outline-none' onClick={onShow}>
           <Image width={19} height={14} src={suffixIcon} alt='suffix-icon' />

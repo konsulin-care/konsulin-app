@@ -48,8 +48,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# serwist service worker
-sw.js
 
 # agent config
 CLAUDE.md

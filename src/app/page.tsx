@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-floating-promises */
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { useAuth } from '@/context/auth/authContext';

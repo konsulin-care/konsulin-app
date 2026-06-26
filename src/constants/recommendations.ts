@@ -15,7 +15,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
     name: 'dr. Sarah Chen',
     serviceName: 'Smoking-Cessation Counselling',
     specialties: ['addiction', 'substance use'],
-    fee: 500000,
+    fee: 500_000,
     description:
       'Professional counselling to help overcome smoking addiction through evidence-based techniques and personalized support.'
   },
@@ -25,7 +25,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
     name: 'dr. Budi Santoso',
     serviceName: 'Cognitive Behavioral Therapy',
     specialties: ['anxiety', 'depression', 'stress'],
-    fee: 400000,
+    fee: 400_000,
     description:
       'Structured therapy sessions focused on identifying and changing negative thought patterns and behaviors.'
   },
@@ -35,7 +35,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
     name: 'dr. Maya Putri',
     serviceName: 'Child & Adolescent Psychology',
     specialties: ['pediatric', 'developmental'],
-    fee: 450000,
+    fee: 450_000,
     description:
       'Specialized psychological support for children and adolescents addressing developmental and emotional challenges.'
   },
@@ -45,7 +45,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
     name: 'dr. Alex Turner',
     serviceName: 'Neuropsychology Assessment',
     specialties: ['neurology', 'cognitive'],
-    fee: 600000,
+    fee: 600_000,
     description:
       'Comprehensive assessment of cognitive function to evaluate memory, attention, and other neurological processes.'
   },
@@ -55,7 +55,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
     name: 'dr. Rina Wijaya',
     serviceName: 'Marriage & Family Therapy',
     specialties: ['relationship', 'family', 'couples'],
-    fee: 350000,
+    fee: 350_000,
     description:
       'Therapeutic approach that helps couples and families improve communication and resolve conflicts.'
   }

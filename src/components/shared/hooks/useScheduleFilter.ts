@@ -19,7 +19,7 @@ import { useMemo } from 'react';
 /**
  *
  */
-export function useScheduleFilter<T extends { slotStart?: string }>({
+export function useScheduleFilter<T extends { slotStart?: string | null }>({
   data,
   sessionsFilter,
   keyword,
@@ -56,8 +56,8 @@ export function useScheduleFilter<T extends { slotStart?: string }>({
 
       if (
         hasDateFilter &&
-        (isBefore(sessionDate, startOfDay(filterStartDate!)) ||
-          isAfter(sessionDate, endOfDay(filterEndDate!)))
+        (isBefore(sessionDate, startOfDay(filterStartDate)) ||
+          isAfter(sessionDate, endOfDay(filterEndDate)))
       ) {
         return false;
       }
@@ -77,11 +77,7 @@ export function useScheduleFilter<T extends { slotStart?: string }>({
         }
       }
 
-      if (keyword && !keywordMatcher(session, keyword)) {
-        return false;
-      }
-
-      return true;
+      return !keyword || keywordMatcher(session, keyword);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, sessionsFilter, keyword]);
@@ -90,9 +86,9 @@ export function useScheduleFilter<T extends { slotStart?: string }>({
     if (!filteredData) return [];
     return filteredData
       .filter(s => s.slotStart && new Date(s.slotStart) >= getNow())
-      .sort(
+      .toSorted(
         (a, b) =>
-          new Date(a.slotStart!).getTime() - new Date(b.slotStart!).getTime()
+          new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime()
       );
   }, [filteredData]);
 
@@ -100,9 +96,9 @@ export function useScheduleFilter<T extends { slotStart?: string }>({
     if (!filteredData) return [];
     return filteredData
       .filter(s => s.slotStart && new Date(s.slotStart) < getNow())
-      .sort(
+      .toSorted(
         (a, b) =>
-          new Date(b.slotStart!).getTime() - new Date(a.slotStart!).getTime()
+          new Date(b.slotStart).getTime() - new Date(a.slotStart).getTime()
       );
   }, [filteredData]);
 

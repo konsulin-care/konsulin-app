@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -14,9 +15,7 @@ import { useEffect, useState } from 'react';
 
 const today = new Date();
 
-/**
- *
- */
+/** Calendar picker for journal date selection, renders trigger button and drawer. */
 export default function CalendarJournal({ onChange, value }) {
   const [date, setDate] = useState<Date | undefined>(value);
 
@@ -24,6 +23,7 @@ export default function CalendarJournal({ onChange, value }) {
     setDate(value);
   }, [value]);
 
+  /** Handle date selection from calendar, update local and parent state. */
   const handeDateChange = (date: Date) => {
     if (!date) return;
     setDate(date);

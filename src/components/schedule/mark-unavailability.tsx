@@ -25,19 +25,22 @@ import { BundleEntry } from 'fhir/r4';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 
+/** Convert a Date to an ISO 8601 string with timezone offset. */
 function toOffsetISOString(date: Date) {
-  const pad = (n: number) => `${Math.floor(Math.abs(n))}`.padStart(2, '0');
-  const y = date.getFullYear();
-  const m = pad(date.getMonth() + 1);
-  const d = pad(date.getDate());
-  const hh = pad(date.getHours());
-  const mm = pad(date.getMinutes());
-  const ss = pad(date.getSeconds());
+  /** Zero-pad a number to 2 digits for ISO 8601 formatting. */
+  const pad = (value: number) =>
+    `${Math.floor(Math.abs(value))}`.padStart(2, '0');
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
   const tz = -date.getTimezoneOffset();
   const sign = tz >= 0 ? '+' : '-';
   const tzh = pad(Math.trunc(tz / 60));
   const tzm = pad(tz % 60);
-  return `${y}-${m}-${d}T${hh}:${mm}:${ss}${sign}${tzh}:${tzm}`;
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${sign}${tzh}:${tzm}`;
 }
 
 type Props = {
@@ -113,7 +116,10 @@ function UnavailabilityFormBody({
 }>) {
   const roles = (roleEntries || [])
     .map((e: BundleEntry<IPractitionerRoleDetail>) => e.resource)
-    .filter((r: IPractitionerRoleDetail) => r?.active);
+    .filter(
+      (r: IPractitionerRoleDetail | undefined): r is IPractitionerRoleDetail =>
+        r?.active ?? false
+    );
 
   let rolesContent: React.ReactNode;
   if (rolesLoading) {
@@ -121,7 +127,7 @@ function UnavailabilityFormBody({
   } else if (roles?.length) {
     rolesContent = (
       <div className='grid grid-cols-1 gap-2'>
-        {roles.map((r: IPractitionerRoleDetail) => (
+        {roles.map(r => (
           <label key={r.id} className='flex items-center gap-2'>
             <Checkbox
               checked={selectedRoleIds.includes(r.id)}
@@ -291,13 +297,23 @@ function UnavailabilityDialogBody({
   );
 }
 
+/** Extract active practitioner role IDs from bundle entries. */
+export function getActiveRoleIds(
+  entries?: BundleEntry<IPractitionerRoleDetail>[]
+): string[] {
+  const resources = entries?.map(e => e.resource) || [];
+  return resources
+    .filter((r): r is IPractitionerRoleDetail => r?.active ?? false)
+    .map(r => r.id ?? '');
+}
+
 /** Hook managing all state and save logic for the unavailability form. */
 function useMarkUnavailabilityForm() {
   const { state: authState } = useAuth();
   const [open, setOpen] = useState(false);
   const [conflictOpen, setConflictOpen] = useState(false);
 
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [date, setDate] = useState<Date | undefined>();
   const [allDay, setAllDay] = useState(true);
   const [fromTime, setFromTime] = useState('');
   const [toTime, setToTime] = useState('');
@@ -308,14 +324,11 @@ function useMarkUnavailabilityForm() {
     isLoading: rolesLoading,
     refetch,
     data: roleEntries
-  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
-    onSuccess: entries => {
-      const resources = entries?.map(e => e.resource) || [];
-      const active = resources.filter(r => r.active).map(r => r.id);
-      setSelectedRoleIds(active);
-    }
+  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, entries => {
+    setSelectedRoleIds(getActiveRoleIds(entries));
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: markUnavailable, isLoading: saving } =
     useMarkUnavailability();
   const [lastConflicts, setLastConflicts] = useState<
@@ -324,12 +337,13 @@ function useMarkUnavailabilityForm() {
 
   const canSave = useMemo(() => {
     if (!date) return false;
-    if (!selectedRoleIds.length) return false;
+    if (selectedRoleIds.length === 0) return false;
     if (allDay) return true;
     if (!fromTime || !toTime) return false;
     return fromTime < toTime;
   }, [date, allDay, fromTime, toTime, selectedRoleIds]);
 
+  /** Reset form fields to initial defaults. */
   const reset = () => {
     setDate(undefined);
     setAllDay(true);
@@ -340,9 +354,13 @@ function useMarkUnavailabilityForm() {
   };
 
   useEffect(() => {
-    if (open) refetch();
+    if (open)
+      refetch().catch(() => {
+        /* noop */
+      });
   }, [open, refetch]);
 
+  /** Submit the mark-unavailability form, creating a FHIR Schedule resource. */
   const onSave = async () => {
     if (!date) return;
 
@@ -441,7 +459,7 @@ function ConflictAlertDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Conflicts detected</AlertDialogTitle>
           <AlertDialogDescription>
-            {conflicts.length
+            {conflicts.length > 0
               ? conflicts.map(c => (
                   <div key={c.slotId} className='mb-2'>
                     Role: {c.practitionerRoleId}
@@ -491,7 +509,7 @@ export default function MarkUnavailabilityButton({
         date={form.date}
         onDateSelect={form.setDate as (date: Date | undefined) => void}
         allDay={form.allDay}
-        onAllDayChange={v => form.setAllDay(Boolean(v))}
+        onAllDayChange={v => form.setAllDay(Boolean(v))} // eslint-disable-line @typescript-eslint/no-unnecessary-type-conversion
         fromTime={form.fromTime}
         onFromTimeChange={form.setFromTime}
         toTime={form.toTime}
@@ -504,7 +522,9 @@ export default function MarkUnavailabilityButton({
         onReasonChange={form.setReason}
         canSave={form.canSave}
         saving={form.saving}
-        onSave={form.onSave}
+        onSave={() => {
+          form.onSave().catch(console.error);
+        }}
         onCancel={() => {
           form.setOpen(false);
           form.reset();

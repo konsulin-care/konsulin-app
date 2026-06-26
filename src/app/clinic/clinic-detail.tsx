@@ -18,6 +18,11 @@ import {
   parseTime
 } from '@/utils/helper';
 import { format, setHours, setMinutes } from 'date-fns';
+import type {
+  CodeableConcept,
+  ContactPoint,
+  PractitionerRoleAvailableTime
+} from 'fhir/r4';
 import { HeartPulse, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -26,8 +31,33 @@ import { useMemo, useState } from 'react';
 import ClinicFilter from './clinic-filter';
 
 // generates an array of 3-letter weekday abbreviations from given date range
-const generateFilterDays = (start: Date, end: Date) => {
-  const filterDays = [];
+/** Clinic information card showing affiliation and address. */
+function ClinicInfo({ address }: Readonly<{ address: string }>) {
+  return (
+    <div className='card mt-2 border-0 bg-[#F9F9F9] p-4 text-[12px]'>
+      <div className='mb-4 flex items-center gap-2 text-[14px]'>
+        <Image
+          src={'/icons/hospital.svg'}
+          alt='clinic'
+          width={22}
+          height={22}
+        />
+        <div className='font-bold'>Clinic Information</div>
+      </div>
+      <div className='flex justify-between'>
+        <span>Affiliation</span>
+        <span className='font-bold'>Konsulin</span>
+      </div>
+      <div className='mt-2 flex flex-col'>
+        <span>Address</span>
+        <span className='font-bold'>{address}</span>
+      </div>
+    </div>
+  );
+}
+
+const generateFilterDays = (start: Date, end: Date): string[] => {
+  const filterDays: string[] = [];
   const currentDate = new Date(start);
 
   while (currentDate <= new Date(end)) {
@@ -57,7 +87,9 @@ const isSlotAvailable = ({
   practitionerStartTime: Date;
   practitionerEndTime: Date;
 }>) => {
-  const slotDays = slot.daysOfWeek.map((day: string) => day.toLowerCase());
+  const slotDays = (slot.daysOfWeek ?? []).map((day: string) =>
+    day.toLowerCase()
+  );
   const isDayMatch = slotDays.some((day: string) => filterDays.includes(day));
 
   if (!isDayMatch) return false;
@@ -86,7 +118,12 @@ export default function ClinicDetail() {
     newPractitionerData: practitionersData,
     isFetching,
     isLoading
-  } = useClinicById(clinicId);
+  } = useClinicById(clinicId) as unknown as {
+    clinic: import('fhir/r4').BundleEntry | undefined;
+    newPractitionerData: IPractitioner[];
+    isFetching: boolean;
+    isLoading: boolean;
+  };
 
   /** Merge organization address fields into a single string. */
   const mergeAddress = (clinic: IOrganizationResource): string | undefined => {
@@ -116,15 +153,13 @@ export default function ClinicDetail() {
         qualification: practitioner.qualification,
         email: email?.value
       }
-    }).catch(err => console.warn('[IndexedDB]', err));
+    }).catch((err: unknown) => console.warn('[IndexedDB]', err));
   };
 
   const filteredPractitioners = useMemo(() => {
     if (
       !keyword &&
-      Object.keys(practitionerFilter).every(
-        key => practitionerFilter[key] === undefined
-      )
+      Object.values(practitionerFilter).every(val => val === undefined)
     ) {
       return practitionersData;
     }
@@ -150,7 +185,7 @@ export default function ClinicDetail() {
     return practitionersData.filter((practitioner: IPractitioner) => {
       // name filtering
       const fullName = mergeNames(
-        practitioner.name,
+        practitioner.name ?? [],
         practitioner.qualification
       );
       if (!fullName) return false;
@@ -167,13 +202,13 @@ export default function ClinicDetail() {
       // if no date or time filters applied, skip availability filtering
       if (!hasDateFilter && !hasTimeFilter) return true;
 
-      return availableTime.some(slot => {
+      return availableTime.some((slot: PractitionerRoleAvailableTime) => {
         const practitionerStartTime = parseTime(
-          slot.availableStartTime,
+          slot.availableStartTime ?? '00:00:00',
           'HH:mm:ss'
         );
         const practitionerEndTime = parseTime(
-          slot.availableEndTime,
+          slot.availableEndTime ?? '23:59:00',
           'HH:mm:ss'
         );
 
@@ -196,6 +231,7 @@ export default function ClinicDetail() {
     return clinic.resource?.name ?? '-';
   }, [clinic]);
 
+  /** Render practitioner card grid, loading skeleton, or empty state. */
   const renderPractitionerGrid = () => {
     if (isLoading || isFetching || !filteredPractitioners) {
       return <CardLoader />;
@@ -213,11 +249,11 @@ export default function ClinicDetail() {
       <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
         {practitionersData.map((practitioner: IPractitioner) => {
           const displayName = mergeNames(
-            practitioner.name,
+            practitioner.name ?? [],
             practitioner.qualification
           );
-          const email = practitioner.telecom.find(
-            item => item.system === 'email'
+          const email = practitioner.telecom?.find(
+            (item: ContactPoint) => item.system === 'email'
           );
           const { initials, backgroundColor, seed } = generateAvatarPlaceholder(
             {
@@ -226,6 +262,8 @@ export default function ClinicDetail() {
               email: email?.value
             }
           );
+          const placeholderInitials = initials ?? '';
+          const placeholderBg = backgroundColor ?? '';
           const photoUrl = practitioner.photo?.[0]?.url;
 
           return (
@@ -236,8 +274,8 @@ export default function ClinicDetail() {
               <div className='relative flex justify-center'>
                 <Avatar
                   seed={seed}
-                  initials={initials}
-                  backgroundColor={backgroundColor}
+                  initials={placeholderInitials}
+                  backgroundColor={placeholderBg}
                   photoUrl={photoUrl}
                   className='text-2xl'
                 />
@@ -252,14 +290,16 @@ export default function ClinicDetail() {
                 {displayName}
               </div>
               <div className='mt-2 flex flex-wrap justify-center gap-1'>
-                {practitioner.practitionerRole.specialty?.map(specialty => (
-                  <Badge
-                    key={specialty.text}
-                    className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
-                  >
-                    {specialty.text}
-                  </Badge>
-                ))}
+                {practitioner.practitionerRole.specialty?.map(
+                  (specialty: CodeableConcept) => (
+                    <Badge
+                      key={specialty.text}
+                      className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
+                    >
+                      {specialty.text}
+                    </Badge>
+                  )
+                )}
               </div>
               <Link
                 href={`/practitioner?practitionerRoleId=${practitioner.practitionerRole.id}`}
@@ -298,27 +338,11 @@ export default function ClinicDetail() {
           {displayOrganizationName}
         </h3>
 
-        <div className='card mt-2 border-0 bg-[#F9F9F9] p-4 text-[12px]'>
-          <div className='mb-4 flex items-center gap-2 text-[14px]'>
-            <Image
-              src={'/icons/hospital.svg'}
-              alt='clinic'
-              width={22}
-              height={22}
-            />
-            <div className='font-bold'>Clinic Information</div>
-          </div>
-          <div className='flex justify-between'>
-            <span>Affiliation</span>
-            <span className='font-bold'>Konsulin</span>
-          </div>
-          <div className='mt-2 flex flex-col'>
-            <span>Address</span>
-            <span className='font-bold'>
-              {clinic && mergeAddress(clinic.resource as IOrganizationResource)}
-            </span>
-          </div>
-        </div>
+        <ClinicInfo
+          address={
+            clinic ? mergeAddress(clinic.resource as IOrganizationResource) : ''
+          }
+        />
 
         <div className='mt-4 flex gap-4'>
           <InputWithIcon

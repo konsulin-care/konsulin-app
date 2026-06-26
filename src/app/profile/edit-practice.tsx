@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, sonarjs/cognitive-complexity, max-lines, react-hooks/exhaustive-deps, react/jsx-max-depth */
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, sonarjs/cognitive-complexity, max-lines, max-depth, react-hooks/exhaustive-deps */
 import EmptyState from '@/components/general/empty-state';
 import Input from '@/components/general/input';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -25,7 +25,13 @@ import {
 } from '@/services/clinicians';
 import { IPractitionerRoleDetail } from '@/types/practitioner';
 import { mapAddress } from '@/utils/helper';
-import { BundleEntry, CodeableConcept, Schedule } from 'fhir/r4';
+import {
+  Address,
+  BundleEntry,
+  CodeableConcept,
+  Invoice,
+  Schedule
+} from 'fhir/r4';
 import { ChevronDown, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -95,6 +101,7 @@ function getBrowserTimezoneGMT(): string {
  * @param period - Object containing optional ISO 8601 `start` or `end` datetime strings
  * @returns A GMT offset string such as `GMT+7`, `GMT+07:00`, `GMT-05:30`, or `GMT+0` for UTC; `null` if no timezone can be determined
  */
+// eslint-disable-next-line complexity
 function extractTimezoneFromPeriod(period?: {
   start?: string;
   end?: string;
@@ -107,7 +114,7 @@ function extractTimezoneFromPeriod(period?: {
 
   // Try multiple patterns to handle different ISO 8601 formats
   // Pattern 1: Full format with colon: +07:00, -05:30
-  let match = iso.match(/([+-])(\d{2}):(\d{2})(?:\d{3})?$/);
+  let match = /([+-])(\d{2}):(\d{2})(?:\d{3})?$/.exec(iso); // eslint-disable-line security/detect-unsafe-regex
   if (match) {
     const sign = match[1];
     const hours = parseInt(match[2], 10);
@@ -120,10 +127,10 @@ function extractTimezoneFromPeriod(period?: {
   }
 
   // Pattern 2: Format without colon: +07, -05
-  match = iso.match(/([+-])(\d{2})(?:\d{2})?$/);
+  match = /([+-])(\d{2})(?:\d{2})?$/.exec(iso); // eslint-disable-line security/detect-unsafe-regex
   if (match) {
     const sign = match[1];
-    const hours = parseInt(match[2], 10);
+    const hours = Number.parseInt(match[2], 10);
 
     return `GMT${sign}${hours}`;
   }
@@ -143,7 +150,7 @@ function extractTimezoneFromPeriod(period?: {
   ];
 
   for (const pattern of tzPatterns) {
-    match = iso.match(pattern);
+    match = pattern.exec(iso);
     if (match) {
       if (match[0] === 'Z') {
         return 'GMT+0';
@@ -163,8 +170,8 @@ function extractTimezoneFromPeriod(period?: {
         const hoursStr = match[2];
         if (hoursStr.length === 4) {
           // Format: +0700 (4 digits)
-          const hours = parseInt(hoursStr.substring(0, 2), 10);
-          const minutes = parseInt(hoursStr.substring(2, 4), 10);
+          const hours = Number.parseInt(hoursStr.slice(0, 2), 10);
+          const minutes = Number.parseInt(hoursStr.slice(2, 4), 10);
           if (minutes === 0) {
             return `GMT${sign}${hours}`;
           }
@@ -193,14 +200,25 @@ function getTheLatestEntry<T extends { meta?: { lastUpdated?: string } }>(
       item,
       ts: item?.meta?.lastUpdated ? Date.parse(item.meta.lastUpdated) : NaN
     }))
-    .sort((a, b) => (isNaN(b.ts) ? -1 : b.ts) - (isNaN(a.ts) ? -1 : a.ts));
+    .toSorted(
+      (a, b) =>
+        (Number.isNaN(b.ts) ? -1 : b.ts) - (Number.isNaN(a.ts) ? -1 : a.ts)
+    );
   const first = withDates[0];
   if (first && !isNaN(first.ts)) return first.item;
   return arr[0];
 }
 
 /** Input field for a firm's fee. */
-const FeeInput = ({ id, value, onChange }) => {
+const FeeInput = ({
+  id,
+  value,
+  onChange
+}: {
+  id: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) => {
   return (
     <div className='flex w-full items-center justify-between'>
       <label htmlFor={id} className='text-sm font-medium text-gray-700'>
@@ -226,6 +244,13 @@ const SpecialtiesSection = ({
   onTagChange,
   onTagAdd,
   onTagRemove
+}: {
+  id: string;
+  specialties: CodeableConcept[];
+  tagInput: string;
+  onTagChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onTagAdd: (event: React.KeyboardEvent) => void;
+  onTagRemove: (tagIndex: number) => void;
 }) => {
   return (
     <div className='mt-2 flex w-full items-center'>
@@ -276,7 +301,7 @@ const ActiveFirmSection = ({
 }: {
   isLoading: boolean;
   isFetching: boolean;
-  activeFirms: any[];
+  activeFirms: IPractitionerRoleDetail[];
 }) => {
   if (isLoading || isFetching) {
     return (
@@ -299,7 +324,15 @@ const ActiveFirmSection = ({
 };
 
 /** Toggle button content for the collapsible firm card. */
-const CollapsibleToggle = ({ isOpen, onToggle, data }) => (
+const CollapsibleToggle = ({
+  isOpen,
+  onToggle,
+  data
+}: {
+  isOpen: boolean;
+  onToggle: () => void;
+  data: { organizationData: { name?: string; address?: Address[] } };
+}) => (
   <button
     className={`toggle flex w-full items-center justify-between rounded-[25px] p-2 text-left focus:outline-none ${
       isOpen
@@ -322,7 +355,7 @@ const CollapsibleToggle = ({ isOpen, onToggle, data }) => (
       <div className='flex flex-col justify-center gap-1 pl-2'>
         <span className='text-sm'>{data.organizationData.name}</span>
         <span className='text-xs'>
-          {mapAddress(data.organizationData.address)}
+          {mapAddress(data.organizationData.address ?? [])}
         </span>
       </div>
     </div>
@@ -340,7 +373,17 @@ const CollapsibleToggle = ({ isOpen, onToggle, data }) => (
 );
 
 /** Expandable firm card with header and collapsible content. */
-const Collapsible = ({ isOpen, onToggle, children, data }) => (
+const Collapsible = ({
+  isOpen,
+  onToggle,
+  children,
+  data
+}: {
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+  data: { organizationData: { name?: string; address?: Address[] } };
+}) => (
   <div className='collapsible my-4 rounded-[25px] border bg-gray-50'>
     <CollapsibleToggle isOpen={isOpen} onToggle={onToggle} data={data} />
     {isOpen && (
@@ -368,6 +411,29 @@ const CollapsibleItem = ({
   setTagInputs,
   slotConfigs,
   setSlotConfigs
+}: {
+  index: number;
+  firm: IPractitionerRoleDetail;
+  invoice?: Invoice;
+  isOpen: boolean;
+  onToggle: (index: number) => void;
+  tagInputs: string[];
+  handleChangeFee: (index: number, value: string) => void;
+  handleAddTag: (index: number, e: React.KeyboardEvent) => void;
+  handleRemoveTag: (index: number, tagIndex: number) => void;
+  setTagInputs: React.Dispatch<React.SetStateAction<string[]>>;
+  slotConfigs: Record<
+    number,
+    { sessionDuration?: string; bufferTime?: string; timezone?: string }
+  >;
+  setSlotConfigs: React.Dispatch<
+    React.SetStateAction<
+      Record<
+        number,
+        { sessionDuration?: string; bufferTime?: string; timezone?: string }
+      >
+    >
+  >;
 }) => {
   return (
     <Collapsible
@@ -379,7 +445,7 @@ const CollapsibleItem = ({
       <div className='flex flex-col space-y-2'>
         <FeeInput
           id={`fee-${index}`}
-          value={invoice.totalNet.value}
+          value={String(invoice.totalNet.value ?? '')}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             const numberOnly = /^\d*$/;
             if (numberOnly.test(e.target.value)) {
@@ -389,7 +455,7 @@ const CollapsibleItem = ({
         />
         <SpecialtiesSection
           id={`specialty-${index}`}
-          specialties={firm?.specialty}
+          specialties={firm?.specialty ?? []}
           tagInput={tagInputs[index] || ''}
           onTagChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
             setTagInputs((prevTags: string[]) => {
@@ -398,9 +464,7 @@ const CollapsibleItem = ({
               return updatedTags;
             })
           }
-          onTagAdd={(event: React.ChangeEvent<HTMLInputElement>) =>
-            handleAddTag(index, event)
-          }
+          onTagAdd={(event: React.KeyboardEvent) => handleAddTag(index, event)}
           onTagRemove={(tagIndex: number) => handleRemoveTag(index, tagIndex)}
         />
         <div className='flex w-full items-center justify-between'>
@@ -419,17 +483,17 @@ const CollapsibleItem = ({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
               if (value === '') {
-                setSlotConfigs((s: any) => ({
+                setSlotConfigs(s => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), sessionDuration: '' } // NOSONAR - s[index] may be undefined
+                  [index]: { ...s[index], sessionDuration: '' }
                 }));
                 return;
               }
               const numberOnly = /^\d+$/;
               if (numberOnly.test(value) && Number(value) > 0) {
-                setSlotConfigs((s: any) => ({
+                setSlotConfigs(s => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), sessionDuration: value } // NOSONAR - s[index] may be undefined
+                  [index]: { ...s[index], sessionDuration: value }
                 }));
               }
             }}
@@ -451,17 +515,17 @@ const CollapsibleItem = ({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.target.value;
               if (value === '') {
-                setSlotConfigs((s: any) => ({
+                setSlotConfigs(s => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), bufferTime: '' }
+                  [index]: { ...s[index], bufferTime: '' }
                 }));
                 return;
               }
               const numberOnly = /^\d+$/;
               if (numberOnly.test(value)) {
-                setSlotConfigs((s: any) => ({
+                setSlotConfigs(s => ({
                   ...s,
-                  [index]: { ...(s[index] || {}), bufferTime: value } // NOSONAR - s[index] may be undefined
+                  [index]: { ...s[index], bufferTime: value }
                 }));
               }
             }}
@@ -494,12 +558,17 @@ const EditPractice = () => {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
-  const [firmFilter, setFirmFilter] = useState({ city: null });
-  const [tagInputs, setTagInputs] = useState([]);
-  const [firmData, setFirmData] = useState([]);
-  const [invoiceData, setInvoiceData] = useState([]);
+  const [firmFilter, setFirmFilter] = useState<{
+    city: string | null;
+    province_code?: string;
+  }>({ city: null });
+  const [tagInputs, setTagInputs] = useState<string[]>([]);
+  const [firmData, setFirmData] = useState<IPractitionerRoleDetail[]>([]);
+  const [invoiceData, setInvoiceData] = useState<Invoice[]>([]);
   const { state: authState } = useAuth();
-  const [openCollapsibles, setOpenCollapsibles] = useState({});
+  const [openCollapsibles, setOpenCollapsibles] = useState<
+    Record<number, boolean>
+  >({});
   const [isSaving, setIsSaving] = useState(false);
   const [slotConfigs, setSlotConfigs] = useState<
     Record<
@@ -511,41 +580,41 @@ const EditPractice = () => {
   const {
     isLoading: isPractitionerRolesLoading,
     isFetching: isPractitionerRolesFetching
-  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, {
-    onSuccess: data => {
-      const resources = data?.map(entry => entry.resource) || [];
+  } = useGetPractitionerRolesDetail(authState.userInfo.fhirId, data => {
+    const resources = (data?.map(entry => entry.resource) || []).filter(
+      Boolean
+    );
 
-      /* separate invoice data from the main data
-       * because they use different endpoints */
-      const invoiceDataList = [];
-      const firmDataList = [];
+    /* separate invoice data from the main data
+     * because they use different endpoints */
+    const invoiceDataList: Invoice[] = [];
+    const firmDataList: IPractitionerRoleDetail[] = [];
 
-      resources.forEach(resource => {
-        const { invoiceData, id, ...rest } = resource;
+    resources.forEach((resource: IPractitionerRoleDetail) => {
+      const invoiceData = resource.invoiceData;
 
-        const initialInvoice = {
-          resourceType: 'Invoice',
-          status: 'draft',
-          totalNet: {
-            value: 0,
-            currency: 'IDR'
-          },
-          participant: [
-            {
-              actor: {
-                reference: `PractitionerRole/${id}`
-              }
+      const initialInvoice: Invoice = {
+        resourceType: 'Invoice',
+        status: 'draft',
+        totalNet: {
+          value: 0,
+          currency: 'IDR'
+        },
+        participant: [
+          {
+            actor: {
+              reference: `PractitionerRole/${resource.id}`
             }
-          ]
-        };
+          }
+        ]
+      };
 
-        invoiceDataList.push(invoiceData || initialInvoice);
-        firmDataList.push({ id, ...rest });
-      });
+      invoiceDataList.push(invoiceData ?? initialInvoice);
+      firmDataList.push(resource);
+    });
 
-      setInvoiceData(invoiceDataList);
-      setFirmData(firmDataList);
-    }
+    setInvoiceData(invoiceDataList);
+    setFirmData(firmDataList);
   });
 
   const { mutateAsync: updatePractitionerInfo } = useUpdatePractitionerInfo();
@@ -558,9 +627,9 @@ const EditPractice = () => {
         number,
         { sessionDuration?: string; bufferTime?: string; timezone?: string }
       >;
-      firmData.forEach((firm: any, idx: number) => {
+      firmData.forEach((firm: IPractitionerRoleDetail, idx: number) => {
         const firstSchedule = getTheLatestEntry<Schedule>(
-          firm?.scheduleData as Schedule[]
+          firm?.scheduleData as unknown as Schedule[]
         );
         const { slotMinutes, bufferMinutes } = parseScheduleComment(
           firstSchedule?.comment
@@ -585,7 +654,7 @@ const EditPractice = () => {
   useEffect(() => {
     setOpenCollapsibles(prev => {
       const next = { ...prev };
-      firmData.forEach((firm: any, idx: number) => {
+      firmData.forEach((firm: IPractitionerRoleDetail, idx: number) => {
         if (firm.active) {
           next[idx] = true;
         } else if (next[idx] === undefined) {
@@ -677,7 +746,7 @@ const EditPractice = () => {
         invoiceData.map((invoice, index) => {
           const invoicePayload = { ...invoice };
           if (invoicePayload.status === 'draft' && !invoicePayload.id) {
-            invoicePayload.status = 'final';
+            invoicePayload.status = 'final' as unknown as Invoice['status'];
             return createInvoice(invoicePayload);
           } else {
             return updateInvoice(invoicePayload);
@@ -702,7 +771,7 @@ const EditPractice = () => {
       const scheduleUpdateResults = await Promise.allSettled(
         firmData.map(async (firm, index) => {
           const latestSchedule = getTheLatestEntry<Schedule>(
-            firm.scheduleData as Schedule[]
+            firm.scheduleData as unknown as Schedule[]
           );
           if (!latestSchedule) {
             return { skipped: true, index };
@@ -737,16 +806,16 @@ const EditPractice = () => {
               ? [...updatedFirm[index].scheduleData]
               : [];
             const replaceIdx = sArr.findIndex(
-              (s: any) => s?.id === result.value.updated?.id
+              (s: Schedule) => s?.id === result.value.updated?.id
             );
-            if (replaceIdx >= 0) {
-              sArr[replaceIdx] = result.value.updated;
-            } else {
+            if (replaceIdx === -1) {
               sArr.unshift(result.value.updated);
+            } else {
+              sArr[replaceIdx] = result.value.updated;
             }
             updatedFirm[index] = {
               ...updatedFirm[index],
-              scheduleData: sArr
+              scheduleData: sArr as unknown as Schedule
             };
           }
         } else if (result.status === 'rejected') {
@@ -802,7 +871,7 @@ const EditPractice = () => {
   }, []);
 
   const handleAddTag = useCallback(
-    (index: number, e: { key: string; preventDefault: () => void }) => {
+    (index: number, e: React.KeyboardEvent) => {
       const inputValue = tagInputs[index]?.trim();
 
       if (e.key === 'Enter' && inputValue !== '') {
@@ -813,7 +882,7 @@ const EditPractice = () => {
           const currentSpecialties = updatedData[index].specialty || [];
           const alreadyExists = currentSpecialties.some(
             (specialty: CodeableConcept) =>
-              specialty.text.toLowerCase() === inputValue.toLowerCase()
+              (specialty.text ?? '').toLowerCase() === inputValue.toLowerCase()
           );
 
           if (!alreadyExists) {
@@ -851,14 +920,55 @@ const EditPractice = () => {
     });
   }, []);
 
+  /** Search and filter bar for firms. */
+  function FirmSearchSection({
+    searchInput,
+    onSearchChange,
+    onFilterChange
+  }: Readonly<{
+    searchInput: string;
+    onSearchChange: (value: string) => void;
+    onFilterChange: (filter: IFirmFilter) => void;
+  }>) {
+    return (
+      <div className='mt-4 flex items-center gap-4'>
+        <div className='flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
+          <Input
+            className='flex h-[50px] w-[85%] items-center space-x-2 rounded-lg border-none bg-[#F9F9F9] p-4'
+            width={12}
+            height={12}
+            prefixIcon='/icons/search-cyan.svg'
+            placeholder='Search Firm'
+            name='searchInput'
+            id='searchInput'
+            type='text'
+            backgroundColor='[#F9F9F9]'
+            value={searchInput}
+            opacity={false}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              onSearchChange(event.target.value)
+            }
+            outline={false}
+          />
+        </div>
+
+        <FirmFilter
+          onChange={(filter: IFirmFilter) => {
+            onFilterChange(filter);
+          }}
+        />
+      </div>
+    );
+  }
+
   /** Remove a specialty tag at the given index from a firm's specialty list. */
   function handleRemoveTag(index: number, tagIndex: number) {
     setFirmData(prevData => {
       const updatedData = [...prevData];
       updatedData[index] = {
         ...updatedData[index],
-        specialty: updatedData[index].specialty.filter(
-          (_: any, i: any) => i !== tagIndex
+        specialty: (updatedData[index].specialty ?? []).filter(
+          (_: unknown, i: number) => i !== tagIndex
         )
       };
       return updatedData;
@@ -877,36 +987,16 @@ const EditPractice = () => {
             activeFirms={activeFirms}
           />
 
-          <div className='mt-4 flex items-center gap-4'>
-            <div className='flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
-              <Input
-                className='flex h-[50px] w-[85%] items-center space-x-2 rounded-lg border-none bg-[#F9F9F9] p-4'
-                width={12}
-                height={12}
-                prefixIcon='/icons/search-cyan.svg'
-                placeholder='Search Firm'
-                name='searchInput'
-                id='searchInput'
-                type='text'
-                backgroundColor='[#F9F9F9]'
-                value={searchInput}
-                opacity={false}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                  setSearchInput(event.target.value)
-                }
-                outline={false}
-              />
-            </div>
-
-            <FirmFilter
-              onChange={(filter: IFirmFilter) => {
-                setFirmFilter(prevState => ({
-                  ...prevState,
-                  ...filter
-                }));
-              }}
-            />
-          </div>
+          <FirmSearchSection
+            searchInput={searchInput}
+            onSearchChange={setSearchInput}
+            onFilterChange={(filter: IFirmFilter) => {
+              setFirmFilter(prevState => ({
+                ...prevState,
+                ...filter
+              }));
+            }}
+          />
 
           <div>
             {firmFilter.city && (
@@ -917,54 +1007,59 @@ const EditPractice = () => {
           </div>
 
           <div className='flex-1 overflow-y-auto pb-[15px]'>
-            {(() => {
-              if (isPractitionerRolesLoading || isPractitionerRolesFetching) {
+            {
+              // eslint-disable-next-line sonarjs/function-return-type
+              (() => {
+                if (isPractitionerRolesLoading || isPractitionerRolesFetching) {
+                  return (
+                    <Skeleton
+                      count={4}
+                      className='mt-4 h-[60px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
+                    />
+                  );
+                }
+                if (filteredFirmData && filteredFirmData.length > 0) {
+                  return filteredFirmData.map(
+                    (
+                      firm: BundleEntry<IPractitionerRoleDetail>,
+                      index: number
+                    ) => (
+                      <CollapsibleItem
+                        key={firm.id}
+                        index={index}
+                        firm={firm as unknown as IPractitionerRoleDetail}
+                        invoice={invoiceData[index]}
+                        isOpen={openCollapsibles[index] ?? false}
+                        onToggle={handleToggle}
+                        tagInputs={tagInputs}
+                        handleChangeFee={handleChangeFee}
+                        handleAddTag={handleAddTag}
+                        handleRemoveTag={handleRemoveTag}
+                        setTagInputs={setTagInputs}
+                        slotConfigs={slotConfigs}
+                        setSlotConfigs={setSlotConfigs}
+                      />
+                    )
+                  );
+                }
                 return (
-                  <Skeleton
-                    count={4}
-                    className='mt-4 h-[60px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
+                  <EmptyState
+                    className='py-16'
+                    title='No Firms Found'
+                    subtitle='You have no firms registered at the moment'
                   />
                 );
-              }
-              if (filteredFirmData && filteredFirmData.length > 0) {
-                return filteredFirmData.map(
-                  (
-                    firm: BundleEntry<IPractitionerRoleDetail>,
-                    index: number
-                  ) => (
-                    <CollapsibleItem
-                      key={firm.id}
-                      index={index}
-                      firm={firm}
-                      invoice={invoiceData[index]}
-                      isOpen={Boolean(openCollapsibles[index])}
-                      onToggle={handleToggle}
-                      tagInputs={tagInputs}
-                      handleChangeFee={handleChangeFee}
-                      handleAddTag={handleAddTag}
-                      handleRemoveTag={handleRemoveTag}
-                      setTagInputs={setTagInputs}
-                      slotConfigs={slotConfigs}
-                      setSlotConfigs={setSlotConfigs}
-                    />
-                  )
-                );
-              }
-              return (
-                <EmptyState
-                  className='py-16'
-                  title='No Firms Found'
-                  subtitle='You have no firms registered at the moment'
-                />
-              );
-            })()}
+              })()
+            }
           </div>
         </div>
 
         <div className='flex justify-center bg-white px-4 pt-4'>
           <div className='flex w-full max-w-screen-sm items-center justify-center'>
             <Button
-              onClick={handleSubmitFirmsStatus}
+              onClick={() => {
+                handleSubmitFirmsStatus().catch(console.error);
+              }}
               className='bg-secondary w-full rounded-[32px] py-2 font-normal text-white'
               disabled={isSaving}
             >

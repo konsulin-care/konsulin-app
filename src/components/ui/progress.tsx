@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable sonarjs/no-commented-code */
 
 import * as ProgressPrimitive from '@radix-ui/react-progress';
 import * as React from 'react';

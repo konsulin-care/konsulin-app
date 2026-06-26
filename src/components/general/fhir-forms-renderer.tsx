@@ -1,4 +1,4 @@
-/* eslint-disable sonarjs/cognitive-complexity, react/jsx-max-depth */
+/* eslint-disable sonarjs/cognitive-complexity, react/jsx-max-depth, max-lines, complexity, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import PageLoader from '@/components/general/page-loader';
 import { SmartFormShell } from '@/components/general/smart-form-shell';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -64,7 +64,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const {
     mutateAsync: submitQuestionnaire,
-    isLoading: submitQuestionnaireIsLoading
+    isLoading: submitQuestionnaireIsLoading // eslint-disable-line @typescript-eslint/no-deprecated
   } = useSubmitQuestionnaire(questionnaire.id, isAuthenticated);
 
   const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =
@@ -79,8 +79,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         if (saved?.response) {
           setResponse(saved.response);
         }
+        return saved;
       })
-      .catch(err => console.warn('[IndexedDB]', err));
+      .catch((err: unknown) => console.warn('[IndexedDB]', err));
   }, [draftOwnerId, questionnaire.id]);
 
   const handleResponseChange = useDraftAutoSave(
@@ -193,7 +194,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
             ownerId: draftOwnerId,
             serviceRequestId,
             updatedAt: Date.now()
-          }).catch(err => console.warn('[IndexedDB]', err));
+          }).catch((err: unknown) => console.warn('[IndexedDB]', err));
         }
       }
 
@@ -204,12 +205,12 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           questionnaireId: questionnaire.id,
           response: { ...questionnaireResponse, id: submitResult.id },
           updatedAt: Date.now()
-        }).catch(err => console.warn('[IndexedDB]', err));
+        }).catch((err: unknown) => console.warn('[IndexedDB]', err));
       }
 
       handleNavigate(buttonLabel, submitResult.id);
     } catch (error) {
-      console.log('Error message :', error);
+      console.error('Error message :', error);
       toast.error('An error occurred while submitting the questionnaire');
       setIsSubmitting(false);
     }
@@ -244,7 +245,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       {formType !== 'research' && (
         <Button
           className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-          onClick={() => handleSubmitQuestionnaire('result')}
+          onClick={() => {
+            handleSubmitQuestionnaire('result').catch(console.error);
+          }}
           disabled={isSubmitting || isPending}
         >
           {isSubmitting || isPending ? (
@@ -266,7 +269,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
             : 'border-secondary text-secondary bg-transparent hover:bg-gray-100'
         }`}
         onClick={() => {
-          handleSubmitQuestionnaire('close');
+          handleSubmitQuestionnaire('close').catch(console.error);
         }}
       >
         Close
@@ -340,5 +343,4 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     </RendererThemeProvider>
   );
 }
-
 export default FhirFormsRenderer;

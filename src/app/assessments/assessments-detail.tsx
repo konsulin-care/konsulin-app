@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 'use client';
 
 import ContentWraper from '@/components/general/content-wraper';
@@ -45,6 +46,7 @@ export default function AssessmentsDetail() {
       ? ''
       : questionnaire?.[0]?.resource?.title || '-';
 
+  /** Renders loading state, empty state, or the Questionnaire form with participant selector. */
   const renderContent = () => {
     if (questionnaireIsLoading || isAuthLoading || isPatientListLoading) {
       return (

@@ -76,9 +76,19 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 	}
 
 	sess := &session.Session{
-		UserID:          verified.UserID,
-		Roles:           verified.Roles,
-		Role:            verified.Role,
+		UserID: verified.UserID,
+		Roles: func() []string {
+			if len(req.Roles) > 0 {
+				return req.Roles
+			}
+			return verified.Roles
+		}(),
+		Role: func() string {
+			if req.Role != "" {
+				return req.Role
+			}
+			return verified.Role
+		}(),
 		FHIRID:          req.FHIRID,
 		ProfileComplete: req.ProfileComplete,
 		FullName:        req.FullName,

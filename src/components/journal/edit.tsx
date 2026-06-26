@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
 
 import { useJournalForm } from '@/components/shared/hooks/useJournalForm';
 import JournalResponseFields from '@/components/shared/journal-response-fields';
@@ -32,6 +33,7 @@ export default function EditJournal({ journalId }: Props) {
     addResponse,
     removeResponse
   } = useJournalForm();
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useUpdateJournal();
   const { data: journalData, isLoading: isJournalLoading } = useGetSingleRecord(
@@ -42,7 +44,7 @@ export default function EditJournal({ journalId }: Props) {
     if (journalData) {
       setJournalTitle(journalData?.valueString || '');
 
-      if (journalData.note.length !== 0) {
+      if (journalData.note.length > 0) {
         setResponse(
           journalData.note.map(item => ({
             ...item,
@@ -53,6 +55,7 @@ export default function EditJournal({ journalId }: Props) {
     }
   }, [journalData, setJournalTitle, setResponse, nextId]);
 
+  /** Submit journal entry to the API, creating or updating the resource. */
   const handleSubmitJournal = async () => {
     try {
       const payload = {
@@ -66,7 +69,7 @@ export default function EditJournal({ journalId }: Props) {
         code: {
           coding: [
             {
-              system: 'http://loinc.org',
+              system: 'https://loinc.org',
               code: '51855-5',
               display: 'Patient Note'
             }
@@ -90,6 +93,7 @@ export default function EditJournal({ journalId }: Props) {
     }
   };
 
+  /** Format an ISO date string to a human-readable Indonesian locale format. */
   const formattedDate = (date: string) => {
     return format(new Date(date), 'dd MMMM yyyy');
   };
@@ -139,7 +143,9 @@ export default function EditJournal({ journalId }: Props) {
 
       <JournalSubmitButton
         isLoading={isSubmitLoading}
-        onClick={handleSubmitJournal}
+        onClick={() => {
+          handleSubmitJournal().catch(console.error);
+        }}
       />
     </>
   );

@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { getAPI } from '@/services/api';
@@ -60,7 +61,7 @@ function useReloadAnonymousSession(
         /* ignore */
       }
       await ensureAnonymousSession(true);
-    })().catch(err =>
+    })().catch((err: unknown) =>
       console.error('Failed to refresh anonymous session on reload:', err)
     );
   }, [isLoading, isAuthenticated]);
@@ -145,7 +146,7 @@ function handleIntent(
     }
   };
 
-  run();
+  run().catch(console.error);
   return () => {
     isMounted = false;
     abortController.abort();

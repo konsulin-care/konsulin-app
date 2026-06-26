@@ -9,14 +9,15 @@ interface Slide {
   description: string;
 }
 
+/** Carousel displaying horizontal slides with icon, title, and description. */
 const Carousel = ({ slides }: { slides: Slide[] }) => {
   return (
     <div className='w-full'>
       <Swiper
         spaceBetween={0}
         slidesPerView={2}
-        onSlideChange={() => console.log('slide change')}
-        onSwiper={swiper => console.log(swiper)}
+        onSlideChange={undefined}
+        onSwiper={undefined}
       >
         {slides.map((item: Slide) => {
           return (

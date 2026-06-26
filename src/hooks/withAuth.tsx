@@ -14,8 +14,9 @@ export interface IWithAuth {
 function withAuth<T>(
   WrappedComponent: React.ComponentType<T>,
   allowedRoles: string[] = [],
-  allowGuestMode: boolean = false
+  allowGuestMode = false
 ) {
+  /** HOC component that redirects unauthenticated users to /login. */
   const Wrapper: React.FC = (props: T) => {
     const router = useRouter();
     const { state: authState } = useAuth();
@@ -34,7 +35,7 @@ function withAuth<T>(
           router.push(`/auth?redirectToPath=${pathname}`);
         }
       } else if (role && !allowedRoles.includes(role)) {
-        router.push(`/unauthorized`);
+        router.push('/unauthorized');
       } else {
         setIsVerified(true);
       }

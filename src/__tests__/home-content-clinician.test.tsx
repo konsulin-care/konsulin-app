@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import { Bundle } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HomeContentClinician from '../app/home-content-clinician';
 
@@ -51,7 +52,7 @@ describe('HomeContentClinician', () => {
       isLoading: false,
       isError: false,
       refetch: vi.fn()
-    } as unknown as UseQueryResult);
+    } as unknown as UseQueryResult<Bundle | null, Error>);
   });
 
   afterEach(() => {

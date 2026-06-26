@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 'use client';
 
 import InformationDetail from '@/components/profile/information-detail';
@@ -11,7 +12,6 @@ import { findAge, generateAvatarPlaceholder, mapAddress } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
 import type { ContactPoint, Patient } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
 
 type Props = {
   fhirId: string;
@@ -27,22 +27,18 @@ export default function Patient({ fhirId }: Props) {
   const { data: profileData, isLoading: isProfileLoading } = useQuery<Patient>({
     queryKey: ['profile-data', fhirId],
     queryFn: () => getProfileById(fhirId, 'Patient') as Promise<Patient>,
-    enabled: Boolean(fhirId),
-    onError: (error: Error) => {
-      console.error('Error when fetching user profile: ', error);
-      toast.error(error.message);
-    }
+    enabled: Boolean(fhirId)
   });
 
   /** Find a telecom value by system (phone/email). */
   const findTelecom = (system: string) => {
-    const found = profileData.telecom.find(
+    const found = profileData?.telecom?.find(
       (item: ContactPoint) => item.system === system
     );
 
     if (!found) return '-';
 
-    return found.value;
+    return found.value ?? '-';
   };
 
   const age = profileData?.birthDate
@@ -87,12 +83,12 @@ export default function Patient({ fhirId }: Props) {
       ) : (
         <InformationDetail
           isRadiusIcon
-          initials={initials}
-          backgroundColor={backgroundColor}
+          initials={initials ?? ''}
+          backgroundColor={backgroundColor ?? ''}
           seed={seed}
-          iconUrl={profileData?.photo?.[0].url}
-          title={authState.userInfo.fullname}
-          subTitle={authState.userInfo.email}
+          iconUrl={profileData?.photo?.[0]?.url}
+          title={authState.userInfo?.fullname ?? '-'}
+          subTitle={authState.userInfo?.email ?? '-'}
           buttonText='Edit Profile'
           details={profileDetail}
           onEdit={() => router.push('/profile?path=edit-profile')}

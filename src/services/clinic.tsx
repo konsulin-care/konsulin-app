@@ -1,5 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { BundleEntry, PractitionerRole } from 'fhir/r4';
+import {
+  Bundle,
+  BundleEntry,
+  Invoice,
+  Organization,
+  PractitionerRole,
+  Schedule
+} from 'fhir/r4';
 import { useMemo } from 'react';
 import { getAPI } from './api';
 
@@ -15,6 +22,7 @@ export type IUseClinicParams = {
   // days?: String[];
 };
 
+/** List clinics with optional city/name filters. */
 export const useListClinics = ({
   cityFilter,
   nameFilter
@@ -40,26 +48,27 @@ export const useListClinics = ({
     queryKey: ['list-clinics', cityFilter, nameFilter],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(url);
+      const response = await API.get<Bundle<Organization>>(url);
       return response;
     },
-    select: response => response.data.entry || [],
+    select: response => response.data.entry ?? [],
     // Always run to get base clinic list, but only fetch when filters are meaningful
     enabled: true
   });
 };
 
+/** Fetch clinic details by FHIR Organization ID. */
 export const useClinicById = (clinicId: string) => {
   const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ['clinic', clinicId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/PractitionerRole?active=true&organization=${clinicId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner`
       );
       return response;
     },
-    select: response => response.data.entry || null,
+    select: response => response.data.entry ?? null,
     enabled: Boolean(clinicId)
   });
 
@@ -69,21 +78,23 @@ export const useClinicById = (clinicId: string) => {
 
   if (data) {
     clinic = data.find(
-      (item: BundleEntry) => item.resource.resourceType === 'Organization'
+      (item: BundleEntry) => item.resource?.resourceType === 'Organization'
     );
     practitioners = data.filter(
-      (item: BundleEntry) => item.resource.resourceType === 'Practitioner'
+      (item: BundleEntry) => item.resource?.resourceType === 'Practitioner'
     );
     practitionerRoles = data.filter(
-      (item: BundleEntry) => item.resource.resourceType === 'PractitionerRole'
+      (item: BundleEntry) => item.resource?.resourceType === 'PractitionerRole'
     );
   }
 
   const newPractitionerData = practitioners.map((item: BundleEntry) => {
     const practitionerId = item.resource.id;
 
-    const practitionerRoleData = practitionerRoles.find(
-      (item: BundleEntry<PractitionerRole>) =>
+    const practitionerRoleData = (
+      practitionerRoles as BundleEntry<PractitionerRole>[]
+    ).find(
+      item =>
         item.resource.practitioner.reference.split('/')[1] === practitionerId
     );
 
@@ -102,17 +113,25 @@ export const useClinicById = (clinicId: string) => {
   };
 };
 
+export type DetailPractitionerData = Omit<BundleEntry, 'resource'> & {
+  resource: PractitionerRole;
+  invoice?: Invoice;
+  organization?: Organization;
+  schedule?: Schedule;
+};
+
+/** Fetch practitioner detail including schedule, invoice, and organization. */
 export const useDetailPractitioner = (practitionerRoleId: string) => {
   const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ['practitioner-detail', practitionerRoleId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/PractitionerRole?active=true&_id=${practitionerRoleId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
       );
       return response;
     },
-    select: response => response.data.entry || null,
+    select: response => response.data.entry ?? null,
     enabled: Boolean(practitionerRoleId)
   });
 
@@ -120,28 +139,28 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
   let organization: BundleEntry | undefined;
   let invoice: BundleEntry | undefined;
   let schedules: BundleEntry | undefined;
-  let newData = undefined;
+  let newData: DetailPractitionerData | undefined;
 
   if (data) {
     practitionerRole = data.find(
-      (item: BundleEntry) => item.resource.resourceType === 'PractitionerRole'
+      (item: BundleEntry) => item.resource?.resourceType === 'PractitionerRole'
     );
     organization = data.find(
-      (item: BundleEntry) => item.resource.resourceType === 'Organization'
+      (item: BundleEntry) => item.resource?.resourceType === 'Organization'
     );
     invoice = data.find(
-      (item: BundleEntry) => item.resource.resourceType === 'Invoice'
+      (item: BundleEntry) => item.resource?.resourceType === 'Invoice'
     );
     schedules = data.find(
-      (item: BundleEntry) => item.resource.resourceType === 'Schedule'
+      (item: BundleEntry) => item.resource?.resourceType === 'Schedule'
     );
 
     newData = {
       ...practitionerRole,
-      invoice: invoice?.resource,
-      organization: organization?.resource,
-      schedule: schedules?.resource
-    };
+      invoice: invoice?.resource as Invoice | undefined,
+      organization: organization?.resource as Organization | undefined,
+      schedule: schedules?.resource as Schedule | undefined
+    } as DetailPractitionerData;
   }
 
   return {

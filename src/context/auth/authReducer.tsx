@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Roles } from '@/constants/roles';
-import { IStateAuth } from './authTypes';
+import { IActionAuth, IStateAuth } from './authTypes';
 
 export const initialState: IStateAuth = {
   isAuthenticated: false,
@@ -16,9 +15,10 @@ export const initialState: IStateAuth = {
 };
 
 /** Auth reducer handling login, auth-check, and logout actions. */
-export const reducer = (state: IStateAuth, action: any): IStateAuth => {
+export const reducer = (state: IStateAuth, action: IActionAuth): IStateAuth => {
   switch (action.type) {
     case 'login':
+    case 'auth-check': {
       return {
         ...state,
         isAuthenticated: Boolean(
@@ -26,18 +26,13 @@ export const reducer = (state: IStateAuth, action: any): IStateAuth => {
         ),
         userInfo: action.payload
       };
-    case 'auth-check':
-      return {
-        ...state,
-        isAuthenticated: Boolean(
-          action.payload.userId && action.payload.role_name
-        ),
-        userInfo: action.payload
-      };
-    case 'logout':
+    }
+    case 'logout': {
       return initialState;
+    }
 
-    default:
+    default: {
       return state;
+    }
   }
 };

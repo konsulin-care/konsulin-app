@@ -24,7 +24,6 @@ const testJWTPractitioner = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZX
 
 func newAuthCookieServer(t *testing.T) *httptest.Server {
 	t.Helper()
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth/cookie", NewAuthCookieHandler(AuthCookieOptions{
 		CookieName:   "auth",
@@ -89,13 +88,11 @@ func extractSessionFromCookie(t *testing.T, cookie *http.Cookie) *session.Sessio
 func TestPostAuthCookie_setsCookie(t *testing.T) {
 	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
-
 	body := `{"userId":"u1","role_name":"Patient","fhirId":"f1","profile_complete":true,"fullname":"Alice","email":"a@b.com"}`
 	resp := mustPost(t, srv, "/auth/cookie", body, &http.Cookie{
 		Name:  "sAccessToken",
 		Value: testJWT,
 	})
-
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected 200, got %d", resp.StatusCode)
 	}
@@ -105,7 +102,6 @@ func TestPostAuthCookie_setsCookie(t *testing.T) {
 		t.Fatal("expected auth cookie")
 	}
 	sess := extractSessionFromCookie(t, authCookie)
-	// UserID and roles come from the verified JWT, not the request body.
 	if sess.UserID != "test-user" {
 		t.Errorf("expected UserID test-user (verified), got %q", sess.UserID)
 	}
@@ -132,7 +128,6 @@ func TestPostAuthCookie_setsCookie(t *testing.T) {
 func TestPostAuthCookie_missingUserId(t *testing.T) {
 	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
-
 	body := `{"role_name":"Patient"}`
 	resp := mustPost(t, srv, "/auth/cookie", body, &http.Cookie{
 		Name:  "sAccessToken",
@@ -147,7 +142,6 @@ func TestPostAuthCookie_missingUserId(t *testing.T) {
 func TestPostAuthCookie_missingSAccessToken(t *testing.T) {
 	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
-
 	body := `{"userId":"u1","role_name":"Patient"}`
 	resp := mustPost(t, srv, "/auth/cookie", body)
 
@@ -156,29 +150,51 @@ func TestPostAuthCookie_missingSAccessToken(t *testing.T) {
 	}
 }
 
-func TestPostAuthCookie_rolesFromJWTNotBody(t *testing.T) {
-	srv := newAuthCookieServer(t)
-	t.Cleanup(srv.Close)
-
-	body := `{"userId":"u1","role_name":"Admin","roles":["Admin"],"fhirId":"f1"}`
-	resp := mustPost(t, srv, "/auth/cookie", body, &http.Cookie{
-		Name:  "sAccessToken",
-		Value: testJWT,
-	})
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected 200, got %d", resp.StatusCode)
+func TestPostAuthCookie_rolePrecedence(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name      string
+		body      string
+		wantRoles []string
+		wantRole  string
+	}{
+		{
+			name:      "client roles take precedence over JWT",
+			body:      `{"userId":"u1","role_name":"Practitioner","roles":["Practitioner"],"fhirId":"f1"}`,
+			wantRoles: []string{"Practitioner"},
+			wantRole:  "Practitioner",
+		},
+		{
+			name:      "empty roles falls back to JWT st-role",
+			body:      `{"userId":"u1","role_name":"","fhirId":"f1"}`,
+			wantRoles: []string{"Patient"},
+			wantRole:  "Patient",
+		},
 	}
-	authCookie := findCookie(resp, "auth")
-	if authCookie == nil {
-		t.Fatal("expected auth cookie")
-	}
-	sess := extractSessionFromCookie(t, authCookie)
-	// JWT st-role overrides body's Admin claim.
-	if len(sess.Roles) != 1 || sess.Roles[0] != "Patient" {
-		t.Errorf("expected Roles [Patient] (from JWT, body claimed Admin), got %v", sess.Roles)
-	}
-	if sess.Role != "Patient" {
-		t.Errorf("expected Role Patient (from JWT, body claimed Admin), got %q", sess.Role)
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			srv := newAuthCookieServer(t)
+			t.Cleanup(srv.Close)
+			resp := mustPost(t, srv, "/auth/cookie", tc.body, &http.Cookie{
+				Name:  "sAccessToken",
+				Value: testJWT,
+			})
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("expected 200, got %d", resp.StatusCode)
+			}
+			authCookie := findCookie(resp, "auth")
+			if authCookie == nil {
+				t.Fatal("expected auth cookie")
+			}
+			sess := extractSessionFromCookie(t, authCookie)
+			if len(sess.Roles) != len(tc.wantRoles) || sess.Roles[0] != tc.wantRoles[0] {
+				t.Errorf("expected Roles %v, got %v", tc.wantRoles, sess.Roles)
+			}
+			if sess.Role != tc.wantRole {
+				t.Errorf("expected Role %q, got %q", tc.wantRole, sess.Role)
+			}
+		})
 	}
 }
 
@@ -207,32 +223,18 @@ func TestDeleteAuthCookie_clearsCookie(t *testing.T) {
 func TestPostAuthCookie_withAllFields(t *testing.T) {
 	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
-
-	body := `{
-		"userId":"u2",
-		"role_name":"Practitioner",
-		"roles":["Patient","Practitioner"],
-		"fhirId":"f2",
-		"profile_complete":false,
-		"fullname":"Bob",
-		"email":"b@c.com",
-		"phoneNumber":"+62812345678",
-		"profile_picture":"https://example.com/pic.jpg"
-	}`
+	body := `{"userId":"u2","role_name":"Practitioner","roles":["Patient","Practitioner"],"fhirId":"f2","profile_complete":false,"fullname":"Bob","email":"b@c.com","phoneNumber":"+62812345678","profile_picture":"https://example.com/pic.jpg"}`
 	resp := mustPost(t, srv, "/auth/cookie", body, &http.Cookie{
 		Name:  "sAccessToken",
 		Value: testJWTPractitioner,
 	})
-
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected 200, got %d", resp.StatusCode)
 	}
-
 	authCookie := findCookie(resp, "auth")
 	if authCookie == nil {
 		t.Fatal("expected auth cookie")
 	}
-
 	sess := extractSessionFromCookie(t, authCookie)
 	if sess.UserID != "test-user" {
 		t.Errorf("expected UserID test-user (verified), got %q", sess.UserID)
@@ -267,7 +269,6 @@ func TestPostAuthCookie_withAllFields(t *testing.T) {
 func TestAuthCookieHandler_wrongMethod(t *testing.T) {
 	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
-
 	req, err := http.NewRequest(http.MethodPatch, srv.URL+"/auth/cookie", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
@@ -277,7 +278,6 @@ func TestAuthCookieHandler_wrongMethod(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusMethodNotAllowed {
 		t.Errorf("expected 405, got %d", resp.StatusCode)
 	}
@@ -286,12 +286,10 @@ func TestAuthCookieHandler_wrongMethod(t *testing.T) {
 func TestPostAuthCookie_invalidJSON(t *testing.T) {
 	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
-
 	resp := mustPost(t, srv, "/auth/cookie", "not-json", &http.Cookie{
 		Name:  "sAccessToken",
 		Value: testJWT,
 	})
-
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("expected 400, got %d", resp.StatusCode)
 	}

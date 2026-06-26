@@ -45,8 +45,8 @@ export async function updateSchedule(payload: Schedule): Promise<Schedule> {
     throw new Error('Schedule id is required');
   }
   const API = await getAPI();
-  const res = await API.put(`/fhir/Schedule/${payload.id}`, payload);
-  return res.data as Schedule;
+  const res = await API.put<Schedule>(`/fhir/Schedule/${payload.id}`, payload);
+  return res.data;
 }
 
 /**
@@ -59,10 +59,10 @@ export async function updatePractitionerRoleAvailability(
   const API = await getAPI();
 
   // First, fetch the current PractitionerRole
-  const getResponse = await API.get(
+  const getResponse = await API.get<PractitionerRole>(
     `/fhir/PractitionerRole/${practitionerRoleId}`
   );
-  const currentRole = getResponse.data as PractitionerRole;
+  const currentRole = getResponse.data;
 
   // Update the availableTime
   const updatedRole: PractitionerRole = {
@@ -71,12 +71,12 @@ export async function updatePractitionerRoleAvailability(
   };
 
   // Put the updated role
-  const response = await API.put(
+  const response = await API.put<PractitionerRole>(
     `/fhir/PractitionerRole/${practitionerRoleId}`,
     updatedRole
   );
 
-  return response.data as PractitionerRole;
+  return response.data;
 }
 
 /**
@@ -85,7 +85,7 @@ export async function updatePractitionerRoleAvailability(
 export function useUpdateAvailability() {
   return useMutation({
     mutationKey: ['update-availability'],
-    mutationFn: async ({
+    mutationFn: ({
       practitionerRoleId,
       availableTime
     }: {

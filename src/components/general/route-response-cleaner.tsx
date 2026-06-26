@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 
 import { STORES, cursorDeleteAll, dbGet } from '@/lib/indexeddb';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -14,11 +15,12 @@ export default function RouteResponseCleaner() {
   useEffect(() => {
     let cancelled = false;
 
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async () => {
       const saved = await dbGet<{ value: string }>(STORES.uiPreferences, [
         '',
         'skip-response-cleanup'
-      ]).catch(err => {
+      ]).catch((err: unknown) => {
         console.warn('[IndexedDB]', err);
         return null;
       });
@@ -46,14 +48,14 @@ export default function RouteResponseCleaner() {
             !isSkipCleanup
           );
         }
-      ).catch(err => console.warn('[IndexedDB]', err));
+      ).catch((err: unknown) => console.warn('[IndexedDB]', err));
 
       const isOnSoapPage =
         pathname === '/record/edit' || pathname === '/assessments/soap';
       const isOnAuthPage = pathname.includes('/auth');
 
       if (!isOnSoapPage && !isOnAuthPage) {
-        cursorDeleteAll(STORES.soapDrafts, () => true).catch(err =>
+        cursorDeleteAll(STORES.soapDrafts, () => true).catch((err: unknown) =>
           console.warn('[IndexedDB]', err)
         );
       }

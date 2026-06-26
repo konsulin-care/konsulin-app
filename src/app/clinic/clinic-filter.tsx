@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, max-lines */
+/* eslint-disable max-lines, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, complexity */
+/* reason: renderDrawerContent nests date/time filters by design, extracting would over-scatter state */
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterCalendar from '@/components/shared/filter-calendar';
 import FilterCustomTimeInputs from '@/components/shared/filter-custom-time-inputs';
@@ -117,6 +118,30 @@ export default function ClinicFilter({ onChange, type }) {
     !filter.end_time &&
     !filter.city;
 
+  /** Update a single filter field by key. */
+  const handleFilterChange = (
+    label: string,
+    value: string | Date | undefined
+  ) => {
+    setFilter(prevState => ({
+      ...prevState,
+      [label]: value
+    }));
+  };
+
+  /** Reset all filter fields to undefined. */
+  const resetFilter = () => {
+    setFilter({
+      start_date: undefined,
+      end_date: undefined,
+      start_time: undefined,
+      end_time: undefined,
+      city: undefined,
+      province_code: undefined
+    });
+  };
+
+  /** Open the custom date/time filter pane, initializing defaults if no filter is active. */
   const handleCustomFilterOpen = () => {
     if (isInitiaFilterState) {
       handleFilterChange('start_time', '00:00');
@@ -130,32 +155,15 @@ export default function ClinicFilter({ onChange, type }) {
     setWhichContent(CONTENT_CUSTOM);
   };
 
-  const handleFilterChange = (label: string, value: any) => {
-    setFilter(prevState => ({
-      ...prevState,
-      [label]: value
-    }));
-  };
-
-  const resetFilter = () => {
-    setFilter({
-      start_date: undefined,
-      end_date: undefined,
-      start_time: undefined,
-      end_time: undefined,
-      city: undefined,
-      province_code: undefined
-    });
-  };
-
   const { data: listCities, isLoading: cityLoading } = useGetCities(
     Number(filter.province_code || 0)
   );
   const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
 
+  /** Render default or custom date/time filter content based on whichContent state. */
   const renderDrawerContent = () => {
     switch (whichContent) {
-      case CONTENT_DEFAULT:
+      case CONTENT_DEFAULT: {
         return (
           <div className='flex flex-col'>
             <DrawerTitle className='mx-auto text-[20px] font-bold'>
@@ -280,7 +288,8 @@ export default function ClinicFilter({ onChange, type }) {
             </Button>
           </div>
         );
-      case CONTENT_CUSTOM:
+      }
+      case CONTENT_CUSTOM: {
         return (
           <div className='flex flex-col'>
             <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
@@ -323,9 +332,11 @@ export default function ClinicFilter({ onChange, type }) {
             </Button>
           </div>
         );
+      }
 
-      default:
+      default: {
         return null;
+      }
     }
   };
 

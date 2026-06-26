@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Roles } from '@/constants/roles';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -119,7 +120,7 @@ describe('restoreAuthCookie role resolution', () => {
   });
 
   it('falls back to Patient when roles array is undefined', async () => {
-    mockGetClaimValue.mockResolvedValue(undefined);
+    mockGetClaimValue.mockResolvedValue(undefined); // eslint-disable-line unicorn/no-useless-undefined
 
     await restoreAuthCookie(makeSession('pt-2'));
 

@@ -13,8 +13,10 @@ import { parseRecordBundles } from '@/utils/record-parser';
  */
 export default function PatientRecord() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: getRecords, isLoading: isRecordLoading } =
     useRecordSummary();
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: getFilteredRecord, isLoading: isFilteredRecordLoading } =
     useFilterRecordByDate();
   const patientId = authState.userInfo.fhirId;

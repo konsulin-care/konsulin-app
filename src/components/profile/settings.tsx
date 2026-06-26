@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth */
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -12,10 +11,111 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Fragment, useState } from 'react';
 
+/** A single settings menu item — icon, name, and chevron. */
+function MenuItem({
+  name,
+  index,
+  total,
+  onClick
+}: {
+  readonly name: string;
+  readonly index: number;
+  readonly total: number;
+  readonly onClick: () => void;
+}) {
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+  return (
+    <li
+      role='menuitem'
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`flex cursor-pointer items-center justify-between py-4 ${
+        !isFirst && !isLast ? 'border-b border-[#E8E8E8]' : ''
+      } ${isFirst || isLast ? 'border-none' : 'border-t border-[#E8E8E8]'}`}
+    >
+      <Image
+        src={'/icons/settings.svg'}
+        alt='setting-icons'
+        width={24}
+        height={24}
+      />
+      <p className='flex flex-grow justify-start pl-4 font-[#26282C] text-xs font-normal'>
+        {name}
+      </p>
+      <ChevronRightIcon color='#ADB6C7' width={18} height={18} />
+    </li>
+  );
+}
+
+/** Confirmation drawer content with title, description, and action buttons. */
+function ConfirmDrawerContent({
+  title,
+  subTitle,
+  onClose,
+  onConfirm
+}: {
+  readonly title: string;
+  readonly subTitle: string;
+  readonly onClose: () => void;
+  readonly onConfirm: () => void;
+}) {
+  return (
+    <DrawerContent className='mx-auto w-full max-w-screen-sm p-4'>
+      <div className='rounded-t-lg bg-white'>
+        <DrawerTitle className='text-black-100 py-1 text-center text-lg font-bold md:text-xl'>
+          {title.split('\n').map(line => (
+            <Fragment key={line}>
+              {line}
+              <br />
+            </Fragment>
+          ))}
+        </DrawerTitle>
+        <DrawerDescription className='text-center text-xs font-normal text-black opacity-60 md:text-sm'>
+          {subTitle.split('\n').map(line => (
+            <Fragment key={line}>
+              {line}
+              <br />
+            </Fragment>
+          ))}
+        </DrawerDescription>
+        <Button
+          className='border-primary bg-secondary my-4 h-[52px] w-full rounded-full'
+          type='button'
+          onClick={onClose}
+        >
+          <span className='text-sm font-bold text-white'>
+            No, I don&apos;t want to
+          </span>
+        </Button>
+        <Button
+          className='border-opacity-20 mb-4 h-[52px] w-full rounded-full border border-[#2C2F35] bg-white text-sm font-bold'
+          type='button'
+          onClick={onConfirm}
+        >
+          <span className='text-sm font-bold text-[#2C2F35]'>
+            Yes, log me out
+          </span>
+        </Button>
+      </div>
+    </DrawerContent>
+  );
+}
+
 /**
- *
+ * Settings page with list menu and a confirmation drawer for logout/delete.
  */
-export default function Settings({ menus }) {
+export default function Settings({
+  menus
+}: {
+  readonly menus: readonly { readonly name: string; readonly link: string }[];
+}) {
   const router = useRouter();
   const [drawerState, setDrawerState] = useState({
     title: '',
@@ -23,6 +123,7 @@ export default function Settings({ menus }) {
     show: false
   });
 
+  /** Navigate to the given path and close the drawer. */
   function handleClick(path: string) {
     if (path === '/logout') {
       setDrawerState({
@@ -43,6 +144,7 @@ export default function Settings({ menus }) {
     }
   }
 
+  /** Execute logout, clear redirect, and navigate to login page. */
   function confirmLogout() {
     setDrawerState(prevState => ({
       ...prevState,
@@ -52,6 +154,7 @@ export default function Settings({ menus }) {
     router.push('/logout');
   }
 
+  /** Close the logout confirmation drawer. */
   function closeDrawer() {
     setDrawerState(prevState => ({
       ...prevState,
@@ -63,74 +166,27 @@ export default function Settings({ menus }) {
     <>
       <div className='mt-4 w-full rounded-lg bg-white'>
         <ul>
-          {menus.map((item: any, index: number) => {
-            const isFirst = index === 0;
-            const isLast = index === menus.length - 1;
-            return (
-              <div key={item.name} onClick={() => handleClick(item.link)}>
-                <li
-                  className={`flex cursor-pointer items-center justify-between py-4 ${
-                    !isFirst && !isLast ? 'border-b border-[#E8E8E8]' : ''
-                  } ${isFirst || isLast ? 'border-none' : 'border-t border-[#E8E8E8]'}`}
-                >
-                  <Image
-                    src={'/icons/settings.svg'}
-                    alt='setting-icons'
-                    width={24}
-                    height={24}
-                  />
-                  <p className='flex flex-grow justify-start pl-4 font-[#26282C] text-xs font-normal'>
-                    {item.name}
-                  </p>
-                  <ChevronRightIcon color='#ADB6C7' width={18} height={18} />
-                </li>
-              </div>
-            );
-          })}
+          {menus.map((item, index) => (
+            <MenuItem
+              key={item.name}
+              name={item.name}
+              index={index}
+              total={menus.length}
+              onClick={() => handleClick(item.link)}
+            />
+          ))}
         </ul>
       </div>
       <Drawer open={drawerState.show} onClose={closeDrawer}>
         <DrawerTrigger asChild>
           <div />
         </DrawerTrigger>
-        <DrawerContent className='mx-auto w-full max-w-screen-sm p-4'>
-          <div className='rounded-t-lg bg-white'>
-            <DrawerTitle className='text-black-100 py-1 text-center text-lg font-bold md:text-xl'>
-              {drawerState.title.split('\n').map(line => (
-                <Fragment key={line}>
-                  {line}
-                  <br />
-                </Fragment>
-              ))}
-            </DrawerTitle>
-            <DrawerDescription className='text-center text-xs font-normal text-black opacity-60 md:text-sm'>
-              {drawerState.subTitle.split('\n').map(line => (
-                <Fragment key={line}>
-                  {line}
-                  <br />
-                </Fragment>
-              ))}
-            </DrawerDescription>
-            <Button
-              className='border-primary bg-secondary my-4 h-[52px] w-full rounded-full'
-              type='button'
-              onClick={closeDrawer}
-            >
-              <span className='text-sm font-bold text-white'>
-                No, I don't want to
-              </span>
-            </Button>
-            <Button
-              className='border-opacity-20 mb-4 h-[52px] w-full rounded-full border border-[#2C2F35] bg-white text-sm font-bold'
-              type='button'
-              onClick={confirmLogout}
-            >
-              <span className='text-sm font-bold text-[#2C2F35]'>
-                Yes, log me out
-              </span>
-            </Button>
-          </div>
-        </DrawerContent>
+        <ConfirmDrawerContent
+          title={drawerState.title}
+          subTitle={drawerState.subTitle}
+          onClose={closeDrawer}
+          onConfirm={confirmLogout}
+        />
       </Drawer>
     </>
   );

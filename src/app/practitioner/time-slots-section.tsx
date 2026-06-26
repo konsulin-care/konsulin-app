@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -16,12 +16,15 @@ type SlotPill = {
 };
 
 type Props = {
-  bookingState: any;
+  bookingState: IStateBooking;
   isLoading: boolean;
   isError: boolean;
   slotPills: SlotPill[];
   scheduleId: string;
-  handleFilterChange: (label: string, value: any) => void;
+  handleFilterChange: (
+    label: string,
+    value: string | Date | boolean | undefined
+  ) => void;
   setSelectedSlotId: (id: string | null) => void;
 };
 
@@ -35,6 +38,7 @@ export default function TimeSlotsSection({
   handleFilterChange,
   setSelectedSlotId
 }: Readonly<Props>) {
+  /** Render time slot grid, loading state, or empty state. */
   const renderSlots = () => {
     if (isLoading) {
       return (

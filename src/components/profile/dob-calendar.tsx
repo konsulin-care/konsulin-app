@@ -1,22 +1,26 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { addDays } from 'date-fns';
 import { useState } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import styles from './dob-calendar.module.css';
 
-/**
- *
- */
-export default function DobCalendar({ value, onChange }) {
+/** Date-of-birth calendar picker with future-date restriction. */
+export default function DobCalendar({
+  value,
+  onChange
+}: Readonly<{ value: Date | null; onChange: (date: Date) => void }>) {
   const [selectedDate, setSelectedDate] = useState(value);
 
-  const handleDateChange = (date: any) => {
+  /** Handle date selection from calendar, filtering multi-date and null values. */
+  const handleDateChange = (date: Date | Date[] | null) => {
+    if (!date) return;
+    if (Array.isArray(date)) return;
     onChange(date);
     setSelectedDate(date);
   };
 
-  const tileDisabled = ({ date, view }) => {
+  /** Disable tiles for future dates (tomorrow onward). */
+  const tileDisabled = ({ date, view }: { date: Date; view: string }) => {
     if (view === 'month') {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -26,7 +30,8 @@ export default function DobCalendar({ value, onChange }) {
     return false;
   };
 
-  const getTileClassName = ({ date, view }) => {
+  /** Compose tile class names including custom, today, disabled, and selected styles. */
+  const getTileClassName = ({ date, view }: { date: Date; view: string }) => {
     const classes = [styles['custom-tile']];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -55,12 +60,14 @@ export default function DobCalendar({ value, onChange }) {
   return (
     <div className='p-4'>
       <Calendar
-        onChange={value => handleDateChange(value)}
+        onChange={value => {
+          handleDateChange(value);
+        }}
         value={selectedDate}
         prev2Label={null}
         next2Label={null}
         tileDisabled={tileDisabled}
-        className={`${styles['custom-calendar']}`}
+        className={styles['custom-calendar']}
         tileClassName={getTileClassName}
       />
     </div>

@@ -13,7 +13,7 @@ import {
 } from '@/services/api/assessment';
 import { formatQueryTitle } from '@/utils/helper';
 import { saveIntent } from '@/utils/redirect-intent';
-import { QuestionnaireResponseItem } from 'fhir/r4';
+import { QuestionnaireResponse, QuestionnaireResponseItem } from 'fhir/r4';
 import { LinkIcon, NotepadTextIcon, UsersIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -47,12 +47,17 @@ const generateRandomColor = (baseHue: number) => {
 export default function RecordAssessment({ recordId, title }: Props) {
   const router = useRouter();
   const {
-    data: questionnaireResponse,
+    data: questionnaireResponseRaw,
     isLoading: questionnaireResponseIsLoading
-  } = useQuestionnaireResponse({ questionnaireId: recordId, enabled: true });
-  const [scoreList, setScoreList] = useState([]);
+  } = useQuestionnaireResponse({
+    questionnaireId: recordId,
+    enabled: true
+  });
+  const questionnaireResponse =
+    questionnaireResponseRaw as unknown as QuestionnaireResponse | null;
+  const [scoreList, setScoreList] = useState<IScore[]>([]);
   const [currentLocation, setCurrentLocation] = useState<string>('');
-  const [colorMap, setColorMap] = useState({});
+  const [colorMap, setColorMap] = useState<Record<string, string>>({});
   const [polledResultBrief, setPolledResultBrief] = useState<string | null>(
     null
   );
@@ -68,8 +73,9 @@ export default function RecordAssessment({ recordId, title }: Props) {
         if (saved?.value) {
           setColorMap(saved.value);
         }
+        return saved;
       })
-      .catch(err => console.warn('[IndexedDB]', err));
+      .catch((err: unknown) => console.warn('[IndexedDB]', err));
   }, [authState.userInfo.userId]);
 
   useEffect(() => {
@@ -79,7 +85,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
         ownerId,
         prefKey: 'result-table-colors',
         value: colorMap
-      }).catch(err => console.warn('[IndexedDB]', err));
+      }).catch((err: unknown) => console.warn('[IndexedDB]', err));
     }
   }, [colorMap, authState.userInfo.userId]);
 
@@ -126,7 +132,7 @@ export default function RecordAssessment({ recordId, title }: Props) {
         if (subItem.linkId === 'reference') return null;
 
         const score = subItem.answer?.[0]?.valueInteger;
-        const ref = reference?.answer[0]?.valueInteger;
+        const ref = reference?.answer?.[0]?.valueInteger;
 
         if (score && ref) {
           const newScore = score / ref;
@@ -161,25 +167,26 @@ export default function RecordAssessment({ recordId, title }: Props) {
     const poll = async (serviceRequestId: string) => {
       try {
         const API = await getAPI();
-        const res = await API.get(
+        const res = await API.get<{ data: { note?: string } }>(
           `/api/v1/service-request/${serviceRequestId}/result`
         );
 
-        const note = res.data?.data?.note?.trim();
+        const note: string | undefined = res.data?.data?.note?.trim();
 
         if (note && !cancelled) {
           if (!authState.isAuthenticated) return;
           setPolledResultBrief(note);
 
           const interpretationItem = questionnaireResponse.item.find(
-            item => item.linkId === 'interpretation'
+            (item: QuestionnaireResponseItem) =>
+              item.linkId === 'interpretation'
           );
 
           const updatedInterpretationItem = {
             ...interpretationItem,
             item: [
               ...(interpretationItem?.item ?? []).filter(
-                i => i.linkId !== 'result-brief'
+                (i: QuestionnaireResponseItem) => i.linkId !== 'result-brief'
               ),
               {
                 linkId: 'result-brief',
@@ -190,16 +197,17 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
           const updatedQR = {
             ...questionnaireResponse,
-            item: questionnaireResponse.item.map(item =>
-              item.linkId === 'interpretation'
-                ? updatedInterpretationItem
-                : item
+            item: questionnaireResponse.item.map(
+              (item: QuestionnaireResponseItem) =>
+                item.linkId === 'interpretation'
+                  ? updatedInterpretationItem
+                  : item
             )
           };
 
           await API.put(`/fhir/QuestionnaireResponse/${recordId}`, updatedQR);
 
-          dbDelete(STORES.serviceRequests, recordId).catch(err =>
+          dbDelete(STORES.serviceRequests, recordId).catch((err: unknown) =>
             console.warn('[IndexedDB]', err)
           );
           return;
@@ -207,7 +215,9 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
         attempts += 1;
         if (attempts < MAX_ATTEMPTS && !cancelled) {
-          setTimeout(() => poll(serviceRequestId), 1000);
+          setTimeout(() => {
+            poll(serviceRequestId).catch(console.error);
+          }, 1000);
         }
       } catch (err) {
         console.error('[record-assessment] polling error:', err);
@@ -215,16 +225,18 @@ export default function RecordAssessment({ recordId, title }: Props) {
     };
 
     /** Polls for the result brief from the backend service request. */
+    /** Polls for the result brief from the backend service request. */
     const start = async () => {
       if (!questionnaireResponse) return;
       if (!authState.isAuthenticated) return;
 
       const interpretationItem = questionnaireResponse.item.find(
-        item => item.linkId === 'interpretation'
+        (item: QuestionnaireResponseItem) => item.linkId === 'interpretation'
       );
 
       const resultBriefItem = interpretationItem?.item.find(
-        subItem => subItem.linkId === 'result-brief'
+        (subItem: QuestionnaireResponseItem) =>
+          subItem.linkId === 'result-brief'
       );
 
       const existingResult =
@@ -242,10 +254,10 @@ export default function RecordAssessment({ recordId, title }: Props) {
       const serviceRequestId = srRecord?.serviceRequestId;
       if (!serviceRequestId) return;
 
-      poll(serviceRequestId);
+      poll(serviceRequestId).catch(console.error);
     };
 
-    start();
+    start().catch(console.error);
 
     return () => {
       cancelled = true;
@@ -263,11 +275,11 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
     // Otherwise, check persisted QuestionnaireResponse
     const interpretationItem = questionnaireResponse?.item.find(
-      item => item.linkId === 'interpretation'
+      (item: QuestionnaireResponseItem) => item.linkId === 'interpretation'
     );
 
     const resultBriefItem = interpretationItem?.item.find(
-      subItem => subItem.linkId === 'result-brief'
+      (subItem: QuestionnaireResponseItem) => subItem.linkId === 'result-brief'
     );
 
     // No result yet → placeholder

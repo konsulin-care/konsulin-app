@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { Roles } from '@/constants/roles';
 import { MergedAppointment, MergedSession } from '@/types/appointment';
 import { mergeNames } from '@/utils/helper';

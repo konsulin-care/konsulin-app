@@ -1,5 +1,7 @@
+/* eslint-disable max-params */
 import { Roles } from '@/constants/roles';
 import { createProfile, getProfileByIdentifier } from '@/services/profile';
+import type { FHIRProfile } from '@/types/fhir';
 import { mergeNames } from '@/utils/helper';
 import { extractSafeRedirectPath } from '@/utils/redirect-guard';
 import {
@@ -8,9 +10,6 @@ import {
   getRedirectIntent
 } from '@/utils/redirect-intent';
 import { roleToFhirResource } from '@/utils/role-fhir';
-import { Patient, Practitioner } from 'fhir/r4';
-
-type FHIRProfile = Patient | Practitioner | null;
 type RolesParam = string[] | undefined;
 
 /** Fetches a CSRF token from the server for use in POST /auth/cookie requests. */

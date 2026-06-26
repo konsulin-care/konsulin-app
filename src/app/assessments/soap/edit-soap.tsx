@@ -1,13 +1,14 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 
 import Unauthorized from '@/app/unauthorized/page';
 import EmptyState from '@/components/general/empty-state';
-import { usePatientProfile } from '@/components/shared/hooks/usePatientProfile';
 import SoapHeaderCards from '@/components/shared/soap-header-cards';
 import SoapLoadingSpinner from '@/components/shared/soap-loading-spinner';
 import SoapForm from '@/components/soap-report/soap-form';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
+import { usePatientProfile } from '@/hooks/usePatientProfile';
 import { useQuestionnaireSoap } from '@/services/api/assessment';
 import { useGetSingleRecord } from '@/services/api/record';
 import { useEffect, useState } from 'react';

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, max-lines, react/display-name */
+/* eslint-disable max-lines, react/display-name, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
@@ -53,8 +53,7 @@ vi.mock('@tanstack/react-query', async () => {
 
 vi.mock('next/navigation', () => ({
   useRouter: vi.fn(),
-  useSearchParams: vi.fn(),
-  useParams: vi.fn()
+  useSearchParams: vi.fn()
 }));
 
 vi.mock('@/components/ui/button', () => ({
@@ -77,13 +76,17 @@ vi.mock('@/components/ui/calendar-temp', () => ({
     <div data-testid='mock-calendar'>
       <button
         data-testid='calendar-date-btn'
-        onClick={() => onSelect?.(new Date('2026-06-15'))}
+        onClick={() => {
+          onSelect?.(new Date('2026-06-15'));
+        }}
       >
         Select Date
       </button>
       <button
         data-testid='calendar-month-btn'
-        onClick={() => onMonthChange?.(new Date('2026-07-01'))}
+        onClick={() => {
+          onMonthChange?.(new Date('2026-07-01'));
+        }}
       >
         Change Month
       </button>
@@ -173,7 +176,7 @@ import {
   usePayAppointment
 } from '@/services/api/appointments';
 import { useFindAvailability } from '@/services/clinicians';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 function createWrapper(queryClient: QueryClient) {
   return ({ children }: { children: React.ReactNode }) => (
@@ -225,7 +228,6 @@ describe('PractitionerAvailability', () => {
 
     vi.mocked(useRouter).mockReturnValue(mockRouter);
     vi.mocked(useSearchParams).mockReturnValue(mockSearchParams);
-    vi.mocked(useParams).mockReturnValue({ practitionerId: 'test-1' });
     vi.mocked(useAuth).mockReturnValue({
       isLoading: false,
       state: {
@@ -257,6 +259,7 @@ describe('PractitionerAvailability', () => {
       mutateAsync: vi.fn(),
       isLoading: false
     } as any);
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     vi.mocked(useQuery as any).mockReturnValue({ data: null } as any);
   });
 

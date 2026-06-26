@@ -10,7 +10,7 @@ function makeObservation(
     resourceType: 'Observation',
     status: 'final',
     code: {
-      coding: [{ system: 'http://loinc.org', code: '51855-5' }]
+      coding: [{ system: 'https://loinc.org', code: '51855-5' }]
     },
     meta: overrides.lastUpdated
       ? { lastUpdated: overrides.lastUpdated }

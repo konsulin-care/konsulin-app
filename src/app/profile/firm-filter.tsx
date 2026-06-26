@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react/jsx-max-depth */
+/* eslint-disable react/jsx-max-depth, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { FilterIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -39,7 +39,7 @@ export default function FirmFilter({ onChange }) {
   const isInitiaFilterState = !filter.city;
 
   /** Update a single filter field value. */
-  const handleFilterChange = (label: string, value: any) => {
+  const handleFilterChange = (label: string, value: string | undefined) => {
     setFilter(prevState => ({
       ...prevState,
       [label]: value

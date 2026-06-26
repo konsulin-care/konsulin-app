@@ -9,23 +9,33 @@ import { SquareCheckIcon, SquareIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
-const testItems = [
+type TestItem = {
+  readonly id: number;
+  readonly name: string;
+};
+
+const testItems: readonly TestItem[] = [
   { id: 1, name: 'BIG 5 Personality Test' },
   { id: 2, name: 'BIG 4 Personality Test' },
   { id: 3, name: 'BIG 3 Personality Test' }
 ];
 
-/**
- *
- */
-export default function ObjectiveFindingModal({ objectiveFinding, onChange }) {
+/** Objective-finding drawer for selecting psychological test batteries. */
+export default function ObjectiveFindingModal({
+  objectiveFinding,
+  onChange
+}: {
+  readonly objectiveFinding: readonly boolean[];
+  readonly onChange: (items: readonly TestItem[]) => void;
+}) {
   const [selectedTest, setSelectedTest] = useState(objectiveFinding);
 
+  /** Toggle selection state for a test item at the given index. */
   const handleSelectedTest = (index: number) => {
     const newTest = [...selectedTest];
     newTest[index] = !newTest[index];
     setSelectedTest(newTest);
-    onChange(testItems.filter((item, index) => item && newTest[index]));
+    onChange(testItems.filter((_item, index) => newTest[index]));
   };
 
   return (

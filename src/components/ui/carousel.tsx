@@ -117,7 +117,7 @@ const Carousel = React.forwardRef<
           api?.off('select', onSelect);
         };
       }
-      return cleanup;
+      return cleanup; // eslint-disable-line @typescript-eslint/no-unsafe-return
     }, [api, onSelect]);
 
     return (

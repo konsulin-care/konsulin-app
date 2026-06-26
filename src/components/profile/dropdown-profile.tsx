@@ -24,6 +24,7 @@ type DropdownProps = {
   onSelect: (value: DropdownOption) => void;
 };
 
+/** Profile dropdown selector with search and keyboard navigation. */
 const DropdownProfile: React.FC<DropdownProps> = ({
   options,
   value,

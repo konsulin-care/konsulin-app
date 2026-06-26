@@ -10,10 +10,9 @@ import {
 import QRCode from 'react-qr-code';
 import { toast } from 'react-toastify';
 
-/**
- *
- */
-export default function ModalQr({ value }) {
+/** QR modal displaying a `value` prop as QR code content. */
+export default function ModalQr({ value }: { readonly value: string }) {
+  /** Copy current URL to clipboard and show confirmation. */
   const handleCopyToClipboard = () => {
     if (!value) return;
 
@@ -21,8 +20,10 @@ export default function ModalQr({ value }) {
       .writeText(value)
       .then(() => {
         toast.success('URL copied to clipboard');
+        // eslint-disable-next-line sonarjs/no-redundant-jump
+        return;
       })
-      .catch(err => {
+      .catch((err: unknown) => {
         console.error('Error copying to clipboard', err);
         toast.error('Error copying to clipboard');
       });
@@ -48,7 +49,7 @@ export default function ModalQr({ value }) {
             margin: '32px 0'
           }}
           value={value}
-          viewBox={`0 0 256 256`}
+          viewBox='0 0 256 256'
         />
         <DrawerClose
           onClick={handleCopyToClipboard}

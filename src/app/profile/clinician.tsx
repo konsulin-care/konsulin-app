@@ -73,9 +73,38 @@ function DrawerBody({
   );
 }
 
+/** Build profile detail array from practitioner data. */
+function buildProfileDetail(
+  profileData: Practitioner | undefined
+): Array<{ key: string; value: string }> {
+  const age = profileData?.birthDate
+    ? `${format(new Date(profileData.birthDate), 'dd-MM-yyyy')} (${findAge(profileData.birthDate)})`
+    : '-';
+  const gender = profileData?.gender
+    ? `${profileData.gender.charAt(0).toUpperCase()}${profileData.gender.slice(1).toLowerCase()}`
+    : '-';
+  const phone =
+    profileData && Array.isArray(profileData.telecom)
+      ? (profileData.telecom.find(item => item.system === 'phone')?.value ??
+        '-')
+      : '-';
+  const address =
+    profileData && Array.isArray(profileData.address)
+      ? mapAddress(profileData.address)
+      : '-';
+
+  return [
+    { key: 'Birth(Age)', value: age },
+    { key: 'Sex', value: gender },
+    { key: 'Whatsapp', value: phone },
+    { key: 'Address', value: address }
+  ];
+}
+
 /**
  *
  */
+// eslint-disable-next-line complexity
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -103,20 +132,16 @@ export default function Clinician({ fhirId }: Props) {
     useQuery<Practitioner>({
       queryKey: ['profile-data', fhirId],
       queryFn: () =>
-        getProfileById(fhirId, 'Practitioner') as Promise<Practitioner>,
-      onError: (error: Error) => {
-        console.error('Error when fetching user profile: ', error);
-        toast.error(error.message);
-      }
+        getProfileById(fhirId, 'Practitioner') as Promise<Practitioner>
     });
 
   /* get list of practitioner's roles */
   const { refetch, isLoading: isPractitionerRolesLoading } =
-    useGetPractitionerRolesDetail(authState.userInfo?.fhirId, {
-      onSuccess: data => {
-        const resources = data?.map(entry => entry.resource) || [];
-        setPractitionerRolesData(resources);
-      }
+    useGetPractitionerRolesDetail(authState.userInfo?.fhirId ?? '', data => {
+      const resources = (data?.map(entry => entry.resource) || []).filter(
+        Boolean
+      );
+      setPractitionerRolesData(resources);
     });
 
   useUpdatePractitionerInfo();
@@ -169,8 +194,8 @@ export default function Clinician({ fhirId }: Props) {
       }
 
       grouped[organizationName].availability[dayKey].push({
-        fromTime: timeSlot.availableStartTime,
-        toTime: timeSlot.availableEndTime
+        fromTime: timeSlot.availableStartTime ?? '',
+        toTime: timeSlot.availableEndTime ?? ''
       });
     });
   };
@@ -213,38 +238,11 @@ export default function Clinician({ fhirId }: Props) {
       await refetch();
     } catch (error) {
       toast.error('Gagal menyimpan jadwal');
-      console.log('Error when updating availability schedules : ', error);
+      console.error('Error when updating availability schedules : ', error);
     }
   };
 
-  const age = profileData?.birthDate
-    ? `${format(new Date(profileData?.birthDate), 'dd-MM-yyyy')} (${findAge(profileData.birthDate)})`
-    : '-';
-  const gender = profileData?.gender
-    ? profileData.gender.charAt(0).toUpperCase() +
-      profileData.gender.slice(1).toLowerCase()
-    : '-';
-  const phone =
-    profileData && Array.isArray(profileData.telecom)
-      ? profileData.telecom.find(item => item.system === 'phone')?.value || '-'
-      : '-';
-  const address =
-    profileData && Array.isArray(profileData.address)
-      ? mapAddress(profileData.address)
-      : '-';
-
-  const profileDetail = [
-    {
-      key: 'Birth(Age)',
-      value: age
-    },
-    { key: 'Sex', value: gender },
-    { key: 'Whatsapp', value: phone },
-    {
-      key: 'Address',
-      value: address
-    }
-  ];
+  const profileDetail = buildProfileDetail(profileData);
 
   const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
     id: authState.userInfo?.fhirId,
@@ -266,10 +264,10 @@ export default function Clinician({ fhirId }: Props) {
         <div className='my-4'>
           <InformationDetail
             isRadiusIcon
-            initials={initials}
-            backgroundColor={backgroundColor}
+            initials={initials ?? ''}
+            backgroundColor={backgroundColor ?? ''}
             seed={seed}
-            iconUrl={profileData?.photo?.[0].url}
+            iconUrl={profileData?.photo?.[0]?.url}
             title='General Information'
             subTitle={displayName}
             buttonText='Edit Profile'
@@ -316,7 +314,9 @@ export default function Clinician({ fhirId }: Props) {
           <div className='scrollbar-hide my-2 flex-grow overflow-y-auto'>
             <DrawerBody
               selectedPractitionerRoles={selectedPractitionerRoles}
-              onSave={handleSaveSuccess}
+              onSave={() => {
+                handleSaveSuccess().catch(console.error);
+              }}
               onCancel={() => setIsDrawerOpen(false)}
             />
           </div>

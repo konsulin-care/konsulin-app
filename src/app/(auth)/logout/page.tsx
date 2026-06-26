@@ -27,7 +27,7 @@ export default function Logout() {
       await fetch('/auth/cookie', {
         method: 'DELETE',
         headers: { ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) }
-      }).catch(err =>
+      }).catch((err: unknown) =>
         console.error('[auth:cookie] failed to clear auth cookie', err)
       );
       dispatch({ type: 'logout' });
@@ -35,7 +35,7 @@ export default function Logout() {
       window.location.href = '/';
     };
 
-    handleLogout();
+    handleLogout().catch(console.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -147,7 +147,7 @@ function ExpandingOverlay({
 /** Injects marquee keyframe animation into document head once. */
 function useMarqueeAnimation() {
   useEffect(() => {
-    if (document.getElementById('marquee-style')) return;
+    if (document.querySelector('#marquee-style')) return;
     const style = document.createElement('style');
     style.id = 'marquee-style';
     style.textContent = `
@@ -159,7 +159,7 @@ function useMarqueeAnimation() {
         animation: marquee 10s linear infinite;
       }
     `;
-    document.head.appendChild(style);
+    document.head.append(style);
   }, []);
 }
 

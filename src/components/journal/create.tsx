@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 
 import { useJournalForm } from '@/components/shared/hooks/useJournalForm';
 import JournalResponseFields from '@/components/shared/journal-response-fields';
@@ -34,6 +35,7 @@ export default function CreateJournal() {
     addResponse,
     removeResponse
   } = useJournalForm();
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useSubmitJournal();
 
@@ -52,7 +54,7 @@ export default function CreateJournal() {
         code: {
           coding: [
             {
-              system: 'http://loinc.org',
+              system: 'https://loinc.org',
               code: '51855-5',
               display: 'Patient Note'
             }
@@ -76,10 +78,12 @@ export default function CreateJournal() {
     }
   };
 
+  /** Increment selected date by one day. */
   const nextDay = () => {
     setDate(addDays(date, 1));
   };
 
+  /** Decrement selected date by one day. */
   const prevDay = () => {
     setDate(subDays(date, 1));
   };
@@ -127,7 +131,9 @@ export default function CreateJournal() {
 
       <JournalSubmitButton
         isLoading={isSubmitLoading}
-        onClick={handleSubmitJournal}
+        onClick={() => {
+          handleSubmitJournal().catch(console.error);
+        }}
       />
     </>
   );

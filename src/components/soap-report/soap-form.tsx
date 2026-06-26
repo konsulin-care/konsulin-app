@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 
 import PageLoader from '@/components/general/page-loader';
 import { SmartFormShell } from '@/components/general/smart-form-shell';
@@ -52,6 +53,7 @@ export default function SoapForm({
   const titleParam = searchParams?.get('title');
   const categoryParam = searchParams?.get('category');
 
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: submitSoapBundle, isLoading: isSubmitSoapLoading } =
     useSubmitSoapBundle();
 
@@ -91,7 +93,7 @@ export default function SoapForm({
       }
     };
 
-    runBuildForm();
+    runBuildForm().catch(console.error);
   }, [questionnaire, mode, questionnaireResponse, patientId, practitionerId]);
 
   const handleResponseChange = useDraftAutoSave(STORES.soapDrafts, qr => ({
@@ -149,12 +151,12 @@ export default function SoapForm({
             }
           },
           ...observations.map(obs => {
-            // ensure all coding.system is set to "http://loinc.org"
+            // ensure all coding.system is set to loinc.org
             const fixedCode = {
               ...obs.code,
               coding: obs.code.coding?.map(coding => ({
                 ...coding,
-                system: 'http://loinc.org'
+                system: 'https://loinc.org'
               }))
             };
 
@@ -180,14 +182,14 @@ export default function SoapForm({
         toast.success(
           `SOAP berhasil ${mode === 'create' ? 'dikirim' : 'diupdate'}`
         );
-        dbDelete(STORES.soapDrafts, [practitionerId, patientId]).catch(err =>
-          console.warn('[IndexedDB]', err)
+        dbDelete(STORES.soapDrafts, [practitionerId, patientId]).catch(
+          (err: unknown) => console.warn('[IndexedDB]', err)
         );
         router.push('/');
       }
     } catch (error) {
       toast.error('SOAP gagal dikirim');
-      console.log('Error message :', error);
+      console.error('Error message :', error);
       toast.error('An error occurred while submitting the SOAP');
     }
   };
@@ -217,7 +219,7 @@ export default function SoapForm({
             onClick={() => {
               const isValid = handleValidation();
               if (isValid) {
-                handleSubmitSoap();
+                handleSubmitSoap().catch(console.error);
               }
             }}
           >

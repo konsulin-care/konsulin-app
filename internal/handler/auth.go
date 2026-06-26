@@ -16,7 +16,7 @@ import (
 // | sAccessToken      | true     | Lax      | config | -1*    | SuperTokens SDK            |
 // | sRefreshToken     | true     | Lax      | config | -1*    | SuperTokens SDK            |
 // | sIdRefreshToken   | true     | Lax      | config | -1*    | SuperTokens SDK            |
-// | guest_session     | false**  | Lax      | config | 24h    | OptionalAuth middleware    |
+// | anon_session      | true     | Lax      | config | 24h    | Backend API via proxy      |
 // | redirect_intent   | false**  | Lax      | config | 300s   | RequireRole middleware     |
 // | _gorilla_csrf     | true     | Lax      | config | session| CSRF middleware            |
 //

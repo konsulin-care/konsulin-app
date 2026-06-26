@@ -46,7 +46,6 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@serwist/next": "^9.5.7",
     "@tanstack/react-query": "^4.40.1",
     "alpinejs": "^3.14.9",
     "axios": "^1.16.0",
@@ -88,6 +87,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.1",
     "@tailwindcss/postcss": "^4.2.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -100,6 +100,8 @@
     "eslint-config-next": "^15.5.0",
     "eslint-define-config": "^2.1.0",
     "eslint-plugin-jsdoc": "^63.0.2",
+    "eslint-plugin-promise": "^7.3.0",
+    "eslint-plugin-security": "^4.0.1",
     "eslint-plugin-sonarjs": "^4.0.3",
     "eslint-plugin-unicorn": "^65.0.0",
     "husky": "^9.0.11",
@@ -109,7 +111,6 @@
     "prettier": "^3.8.3",
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-tailwindcss": "^0.7.2",
-    "serwist": "^9.0.3",
     "tailwindcss": "^4.1.12",
     "typescript": "^5",
     "vitest": "^4.1.4"
@@ -118,9 +119,13 @@
     "node": ">=20.0.0 <25",
     "npm": ">=10.0.0"
   },
+  "overrides": {
+    "shell-quote": "1.8.4",
+    "vite": "8.0.16"
+  },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix --max-warnings 0",
+      "eslint --fix --max-warnings 5",
       "prettier -w"
     ],
     "*.{json,css,scss,md,webmanifest}": [

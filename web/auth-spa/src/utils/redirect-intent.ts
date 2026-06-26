@@ -9,7 +9,11 @@ export interface Intent {
 const REDIRECT_INTENT_COOKIE = 'redirect_intent';
 // Keep in sync with src/utils/redirect-intent.ts and
 // RequireRole middleware MaxAge=300 (5 min).
-const TTL_MS = 5 * 60 * 1000;
+const COOKIE_TTL_MS = 5 * 60 * 1000;
+
+// localStorage-based intent (matching src/utils/redirect-intent.ts)
+const LOCAL_STORAGE_KEY = 'konsulin.intent';
+const LS_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 // REDIRECT_INTENT_COOKIE is a compile-time constant; static regex avoids false-positive scanner warnings.
 const REDIRECT_INTENT_REGEX = /(?:^|;\s*)redirect_intent=([^;]*)/;
@@ -43,23 +47,48 @@ export function saveIntent(
   payload: { path: string; [key: string]: unknown }
 ): void {
   const intent: Intent = { kind, payload, createdAt: Date.now() };
-  document.cookie = `${REDIRECT_INTENT_COOKIE}=${encodeURIComponent(JSON.stringify(intent))}; Path=/; Max-Age=${TTL_MS / 1000}; SameSite=Lax`;
+  document.cookie = `${REDIRECT_INTENT_COOKIE}=${encodeURIComponent(JSON.stringify(intent))}; Path=/; Max-Age=${COOKIE_TTL_MS / 1000}; SameSite=Lax`;
 }
 
-/** Returns a structured redirect intent if one exists and is not expired. */
+/** Returns a structured redirect intent from cookie. */
 export function getIntent(): Intent | null {
   const raw = readCookie();
   if (!raw?.startsWith('{')) return null;
   try {
     const intent = JSON.parse(raw) as Intent;
     if (!intent.kind || !intent.createdAt) return null;
-    if (Date.now() - intent.createdAt > TTL_MS) {
+    if (Date.now() - intent.createdAt > COOKIE_TTL_MS) {
       clearRedirectIntent();
       return null;
     }
     return intent;
   } catch {
     clearRedirectIntent();
+    return null;
+  }
+}
+
+/** Returns a structured redirect intent from localStorage (written by Next.js app). */
+export function getIntentLocal(): Intent | null {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!raw) return null;
+    const intent = JSON.parse(raw) as Intent;
+    if (!intent.kind || !intent.createdAt) {
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      return null;
+    }
+    if (Date.now() - intent.createdAt > LS_TTL_MS) {
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      return null;
+    }
+    return intent;
+  } catch {
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
     return null;
   }
 }

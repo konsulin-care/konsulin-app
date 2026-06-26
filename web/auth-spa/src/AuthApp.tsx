@@ -16,7 +16,19 @@ import { saveIntent } from './utils/redirect-intent';
 const WHATSAPP_LINK =
   'https://wa.me/6285163181852?text=Request%20login%2C%20authenticate%20me';
 
+/**
+ * Validate that a redirect path is a safe relative URL.
+ * Only allows paths starting with / and containing safe characters.
+ */
+function sanitizePath(path: string | null): string | null {
+  if (!path || typeof path !== 'string') return null;
+  if (!/^\/[a-zA-Z0-9\-_.~/]+$/.test(path)) return null;
+  return path;
+}
+
+/* eslint-disable react/jsx-max-depth */
 // NOSONAR - deep nesting required by SuperTokens provider button spec
+// skipcq: JS-0415 - SuperTokens DOM spec requires this nesting depth
 const orDividerAndWhatsAppFooter = (
   <>
     <div data-supertokens='dividerWithOr'>
@@ -68,9 +80,13 @@ export default function AuthApp() {
   const isRootAuth = pathname === '/auth';
 
   useEffect(() => {
-    if (redirectToPath) {
-      if (redirectToPath.startsWith('/journal')) {
-        saveIntent('journal', { path: redirectToPath });
+    const safePath = sanitizePath(redirectToPath);
+    if (safePath) {
+      if (safePath.startsWith('/journal')) {
+        saveIntent('journal', { path: safePath });
+      }
+      if (safePath.startsWith('/record')) {
+        saveIntent('assessmentResult', { path: safePath });
       }
     }
   }, [redirectToPath]);

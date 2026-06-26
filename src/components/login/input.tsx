@@ -3,14 +3,28 @@ import Image from 'next/image';
 /**
  *
  */
+type InputProps = {
+  outline?: boolean;
+  prefixIcon?: string;
+  suffixIcon?: string;
+  className?: string;
+  onShow?: () => void;
+} & React.InputHTMLAttributes<HTMLInputElement>;
+
+/** No-operation function for optional callback defaults. */
+const noop = (): void => undefined;
+
+/**
+ *
+ */
 export default function Input({
   outline,
   prefixIcon,
   suffixIcon = '',
   className,
-  onShow = () => {},
+  onShow = noop,
   ...props
-}) {
+}: Readonly<InputProps>) {
   return (
     <div className={className}>
       {prefixIcon && (

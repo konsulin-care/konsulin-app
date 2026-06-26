@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- utility module with full IndexedDB abstraction */
+/* eslint-disable max-lines, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unnecessary-type-parameters, unicorn/prefer-includes-over-repeated-comparisons, unicorn/prefer-add-event-listener */
 const DB_NAME = 'konsulin';
 const DB_VERSION = 2;
 
@@ -26,10 +26,55 @@ const STORE_SCHEMAS: { name: StoreName; keyPath: string | string[] }[] = [
   { name: STORES.userProfile, keyPath: 'userId' }
 ];
 
-/** Opens the IndexedDB database, creating object stores on upgrade. */
+/** Cached DB connection promise, reused across calls. */
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+/**
+ * Handles a VersionError from the primary openDB attempt.
+ * Discovers the existing DB version and re-opens at that version.
+ * This is a dev rollback safety: the on-disk version exceeded DB_VERSION.
+ */
+function handleVersionError(
+  resolve: (db: IDBDatabase) => void,
+  reject: (err: unknown) => void
+): void {
+  const discovery = indexedDB.open(DB_NAME);
+  discovery.onsuccess = () => {
+    const existing = discovery.result;
+    const version = existing.version;
+    existing.close();
+
+    const retry = indexedDB.open(DB_NAME, version);
+    retry.onsuccess = () => {
+      const db = retry.result;
+      db.addEventListener('close', () => {
+        dbPromise = null;
+      });
+      db.onversionchange = () => {
+        db.close();
+        dbPromise = null;
+      };
+      resolve(db);
+    };
+    retry.onerror = () => {
+      dbPromise = null;
+      reject(retry.error);
+    };
+  };
+  discovery.onerror = () => {
+    dbPromise = null;
+    reject(discovery.error);
+  };
+}
+
+/** Opens the IndexedDB database, caching the connection for subsequent calls. */
 export function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
+  if (dbPromise !== null) return dbPromise;
+
+  dbPromise = new Promise((resolve, reject) => {
+    // Primary path: single open at DB_VERSION (normal case)
     const request = indexedDB.open(DB_NAME, DB_VERSION);
+
     request.onupgradeneeded = () => {
       const db = request.result;
       for (const schema of STORE_SCHEMAS) {
@@ -38,9 +83,30 @@ export function openDB(): Promise<IDBDatabase> {
         }
       }
     };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      db.addEventListener('close', () => {
+        dbPromise = null;
+      });
+      db.onversionchange = () => {
+        db.close();
+        dbPromise = null;
+      };
+      resolve(db);
+    };
+
+    request.onerror = () => {
+      if (request.error?.name === 'VersionError') {
+        handleVersionError(resolve, reject);
+      } else {
+        dbPromise = null;
+        reject(request.error);
+      }
+    };
   });
+
+  return dbPromise;
 }
 
 /** Returns an object store for the given database and store name. */
@@ -210,6 +276,7 @@ function putWithTransaction<T>(
 
 const MIGRATION_FLAG = 'konsulin_migration_done';
 
+/** Migrates the anonymous guest session ID from localStorage to IndexedDB. */
 async function migrateGuestSessions(
   db: IDBDatabase,
   guestId: string
@@ -218,6 +285,7 @@ async function migrateGuestSessions(
   await putWithTransaction(db, STORES.guestSessions, [{ guest_id: guestId }]);
 }
 
+/** Migrates assessment draft responses from localStorage to IndexedDB. */
 async function migrateAssessmentDrafts(
   db: IDBDatabase,
   ownerId: string
@@ -250,6 +318,7 @@ async function migrateAssessmentDrafts(
   return responseKeys;
 }
 
+/** Migrates service request IDs from localStorage to IndexedDB. */
 async function migrateServiceRequests(
   db: IDBDatabase,
   ownerId: string
@@ -282,6 +351,7 @@ async function migrateServiceRequests(
   return srKeys;
 }
 
+/** Migrates SOAP note drafts from localStorage to IndexedDB. */
 async function migrateSoapDrafts(db: IDBDatabase): Promise<string[]> {
   const soapKeys = Object.keys(localStorage).filter(k =>
     k.startsWith('soap_draft_')
@@ -316,6 +386,7 @@ async function migrateSoapDrafts(db: IDBDatabase): Promise<string[]> {
   return soapKeys;
 }
 
+/** Migrates temporary booking data from localStorage to IndexedDB. */
 async function migrateTempBooking(
   db: IDBDatabase,
   ownerId: string
@@ -336,6 +407,7 @@ async function migrateTempBooking(
   }
 }
 
+/** Migrates UI preference values from localStorage to IndexedDB. */
 async function migrateUiPreferences(
   db: IDBDatabase,
   ownerId: string
@@ -370,6 +442,7 @@ async function migrateUiPreferences(
   await putWithTransaction(db, STORES.uiPreferences, prefValues);
 }
 
+/** Removes migrated keys from localStorage to complete the migration. */
 function cleanupMigratedKeys(
   responseKeys: string[],
   srKeys: string[],
@@ -396,6 +469,7 @@ function cleanupMigratedKeys(
   }
 }
 
+/** Sets the migration completion flag in localStorage. */
 function setMigrationFlag(): void {
   try {
     localStorage.setItem(MIGRATION_FLAG, 'true');

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, unicorn/number-literal-case, unicorn/prefer-https */
 const TEAL = '#13c2c2';
 const PARTNER_COLORS = ['#2c2f35', '#5E81AC', '#08979C'] as const;
 
@@ -26,8 +27,8 @@ function djb2(str: string): number {
 function seeded(hash: number): () => number {
   let seed = hash;
   return () => {
-    seed = Math.trunc(seed * 1103515245 + 12345);
-    return Math.abs(seed) / 0x7fffffff;
+    seed = Math.trunc(seed * 1_103_515_245 + 12_345);
+    return Math.abs(seed) / 0x7f_ff_ff_ff;
   };
 }
 

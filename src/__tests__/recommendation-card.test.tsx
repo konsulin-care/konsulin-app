@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
+/* eslint-disable @next/next/no-img-element, @typescript-eslint/no-unsafe-assignment */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -48,16 +48,16 @@ describe('RecommendationCard', () => {
         recommendation={{ ...BASE_REC, photoUrl: '/photo.jpg' }}
       />
     );
-    const img = screen.getByAltText('dr. Sarah Chen') as HTMLImageElement;
+    const img = screen.getByAltText('dr. Sarah Chen');
     expect(img).toBeDefined();
-    expect(img.src).toContain('/photo.jpg');
+    expect((img as HTMLImageElement).src).toContain('/photo.jpg');
   });
 
   it('renders gradient fallback when photoUrl is empty', () => {
     render(<RecommendationCard {...makeProps({ photoUrl: '' })} />);
-    const img = screen.getByAltText('dr. Sarah Chen') as HTMLImageElement;
+    const img = screen.getByAltText('dr. Sarah Chen');
     expect(img).toBeDefined();
-    expect(img.src).toContain('data:image/svg+xml');
+    expect((img as HTMLImageElement).src).toContain('data:image/svg+xml');
   });
 
   it('renders practitioner name', () => {
@@ -68,7 +68,7 @@ describe('RecommendationCard', () => {
   });
 
   it('renders formatted fee in IDR', () => {
-    render(<RecommendationCard {...makeProps({ fee: 500000 })} />);
+    render(<RecommendationCard {...makeProps({ fee: 500_000 })} />);
     const feeElements = screen.getAllByText(/500\.000/);
     expect(feeElements.length).toBeGreaterThanOrEqual(1);
   });
@@ -163,7 +163,7 @@ describe('RecommendationCard', () => {
 
   it('renders initials based on name', () => {
     render(<RecommendationCard {...makeProps({ photoUrl: '' })} />);
-    const img = screen.getByAltText('dr. Sarah Chen') as HTMLImageElement;
-    expect(img.src).toContain('data:image/svg+xml');
+    const img = screen.getByAltText('dr. Sarah Chen');
+    expect((img as HTMLImageElement).src).toContain('data:image/svg+xml');
   });
 });

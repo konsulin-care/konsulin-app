@@ -26,9 +26,59 @@ type Props = {
   readonly getDescription?: (record: IRecord) => string;
 };
 
-/**
- *
- */
+/** Practitioner info footer with avatar or type badge. */
+function RecordCardFooter({
+  showAvatar,
+  seed,
+  initials,
+  backgroundColor,
+  photoUrl,
+  displayName,
+  recordType,
+  formattedDate
+}: Readonly<{
+  showAvatar: boolean;
+  seed: string;
+  initials: string;
+  backgroundColor: string;
+  photoUrl?: string;
+  displayName: string;
+  recordType: string;
+  formattedDate: string;
+}>) {
+  return (
+    <div className='flex items-center'>
+      {showAvatar ? (
+        <>
+          <Avatar
+            seed={seed}
+            initials={initials}
+            backgroundColor={backgroundColor}
+            photoUrl={photoUrl}
+            height={32}
+            width={32}
+            className='mr-2 text-xs'
+            imageClassName='mr-2 self-center'
+          />
+          <div className='mr-auto text-[12px]'>{displayName}</div>
+        </>
+      ) : (
+        <div className='mr-auto text-[12px]'>
+          <Badge className='flex items-center rounded-full bg-[#08979C] px-[10px] py-[4px]'>
+            <NoteIcon fill='white' width={16} height={16} />
+            <div className='ml-1 text-[10px] text-white'>
+              {typeMappings[recordType]?.text ?? recordType}
+            </div>
+          </Badge>
+        </div>
+      )}
+
+      <div className='text-[10px]'>{formattedDate}</div>
+    </div>
+  );
+}
+
+/** Record card with title, description, and practitioner info. */
 export default function RecordCard({
   record,
   getPractitionerInfo,
@@ -52,7 +102,7 @@ export default function RecordCard({
     : ((record.result as string) || '\\-').replace(/\n\n/g, '. ');
 
   const queryParams = new URLSearchParams({
-    category: typeMappings[record.type]?.category,
+    category: String(typeMappings[record.type]?.category ?? ''),
     title
   }).toString();
   const url = `/record?recordId=${recordId}&${queryParams}`;
@@ -93,34 +143,17 @@ export default function RecordCard({
         </div>
       </div>
       <hr className='w-full' />
-      <div className='flex items-center'>
-        {showAvatar ? (
-          <>
-            <Avatar
-              seed={seed}
-              initials={initials}
-              backgroundColor={backgroundColor}
-              photoUrl={photoUrl}
-              height={32}
-              width={32}
-              className='mr-2 text-xs'
-              imageClassName='mr-2 self-center'
-            />
-            <div className='mr-auto text-[12px]'>{displayName}</div>
-          </>
-        ) : (
-          <div className='mr-auto text-[12px]'>
-            <Badge className='flex items-center rounded-full bg-[#08979C] px-[10px] py-[4px]'>
-              <NoteIcon fill='white' width={16} height={16} />
-              <div className='ml-1 text-[10px] text-white'>
-                {typeMappings[record.type]?.text ?? record.type}
-              </div>
-            </Badge>
-          </div>
-        )}
 
-        <div className='text-[10px]'>{formattedDate}</div>
-      </div>
+      <RecordCardFooter
+        showAvatar={showAvatar}
+        seed={seed}
+        initials={initials}
+        backgroundColor={backgroundColor}
+        photoUrl={photoUrl}
+        displayName={displayName}
+        recordType={record.type}
+        formattedDate={formattedDate}
+      />
     </Link>
   );
 }

@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable max-lines -- component file exceeds 300-line limit */
+
 import Avatar from '@/components/general/avatar';
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -44,24 +46,65 @@ type IPractitionerLocalStorage = {
 };
 
 /** Full-screen loading spinner. */
-const LoadingState = () => (
-  <div className='flex min-h-screen min-w-full items-center justify-center'>
-    <LoadingSpinnerIcon
-      width={56}
-      height={56}
-      className='w-full animate-spin'
-    />
-  </div>
-);
+function LoadingState() {
+  return (
+    <div className='flex min-h-screen min-w-full items-center justify-center'>
+      <LoadingSpinnerIcon
+        width={56}
+        height={56}
+        className='w-full animate-spin'
+      />
+    </div>
+  );
+}
 
 /** Empty state shown when no practitioner is found or data is missing. */
-const EmptyPractitionerState = () => (
-  <EmptyState
-    className='py-16'
-    title='Practitioner Not Found'
-    subtitle='Please return to the clinic page and select a practitioner.'
-  />
-);
+function EmptyPractitionerState() {
+  return (
+    <EmptyState
+      className='py-16'
+      title='Practitioner Not Found'
+      subtitle='Please return to the clinic page and select a practitioner.'
+    />
+  );
+}
+
+/** Practitioner header with avatar, organization badge, and display name. */
+function PractitionerHeader({
+  seed,
+  placeholderInitials,
+  placeholderBg,
+  photoUrl,
+  orgName,
+  displayName
+}: Readonly<{
+  seed: string;
+  placeholderInitials: string;
+  placeholderBg: string;
+  photoUrl?: string;
+  orgName: string;
+  displayName: string;
+}>) {
+  return (
+    <div className='flex flex-col items-center'>
+      <div className='flex flex-col items-center'>
+        <Avatar
+          seed={seed}
+          initials={placeholderInitials}
+          backgroundColor={placeholderBg}
+          photoUrl={photoUrl}
+          className='text-2xl'
+        />
+
+        <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
+          <HeartPulse size={16} color='#08979C' fill='white' />
+          <span className='whitespace-nowrap'>{orgName}</span>
+        </Badge>
+      </div>
+      <h3 className='mt-2 text-center text-[20px] font-bold'>{displayName}</h3>
+    </div>
+  );
+}
 
 /** Trigger card shown inside PractitionerAvailability to reveal the calendar. */
 function AvailabilityTrigger() {
@@ -95,8 +138,9 @@ export default function Practitioner() {
         } else {
           router.push('/clinic');
         }
+        return saved;
       })
-      .catch(err => console.warn('[IndexedDB]', err));
+      .catch((err: unknown) => console.warn('[IndexedDB]', err));
   }, [router]);
 
   useEffect(() => {
@@ -110,11 +154,12 @@ export default function Practitioner() {
         if (saved?.value?.roleId === practitionerRoleId) {
           setPractitionerData(saved.value);
         } else {
-          setPractitionerData(null);
+          setPractitionerData(undefined);
         }
         setPractitionerDataLoading(false);
+        return saved;
       })
-      .catch(err => {
+      .catch((err: unknown) => {
         console.warn('[IndexedDB]', err);
         setPractitionerDataLoading(false);
       });
@@ -132,7 +177,7 @@ export default function Practitioner() {
     isLoading,
     isError,
     isFetching
-  } = useDetailPractitioner(practitionerData?.roleId);
+  } = useDetailPractitioner(practitionerData?.roleId ?? '');
 
   /** Navigate back to home after booking submission. */
   const handleClose = () => {
@@ -143,7 +188,7 @@ export default function Practitioner() {
 
   const displayName = useMemo(() => {
     const name = mergeNames(
-      practitionerData?.name,
+      practitionerData?.name ?? [],
       practitionerData?.qualification
     );
 
@@ -155,8 +200,39 @@ export default function Practitioner() {
     name: displayName,
     email: practitionerData?.email
   });
+  const placeholderInitials = initials ?? '';
+  const placeholderBg = backgroundColor ?? '';
 
   const photoUrl = practitionerData?.photo?.[0]?.url;
+
+  /**
+   * Format fee display string. Safe to call only after detailPractitioner is
+   * verified truthy by the parent guard in renderMainContent.
+   */
+  const renderFeeText = () => {
+    const inv = detailPractitioner?.invoice;
+    if (!inv?.totalNet) return '-';
+    const { value, currency } = inv.totalNet;
+    return `${new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0
+    }).format(value)} / Session`;
+  };
+
+  /**
+   * Render specialty badges. Safe to call only after detailPractitioner is
+   * verified truthy by the parent guard in renderMainContent.
+   */
+  const renderSpecialtyBadges = () => {
+    const specialties = detailPractitioner?.resource?.specialty;
+    if (!specialties?.length) return null;
+    return specialties.map((s: CodeableConcept) => (
+      <Badge key={s.text} className='bg-[#E1E1E1] px-2 py-[2px] font-normal'>
+        {s.text}
+      </Badge>
+    ));
+  };
 
   const drawerFooter = (
     <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
@@ -206,28 +282,6 @@ export default function Practitioner() {
     </>
   );
 
-  const practitionerHeader = (
-    <div className='flex flex-col items-center'>
-      <div className='flex flex-col items-center'>
-        <Avatar
-          seed={seed}
-          initials={initials}
-          backgroundColor={backgroundColor}
-          photoUrl={photoUrl}
-          className='text-2xl'
-        />
-
-        <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
-          <HeartPulse size={16} color='#08979C' fill='white' />
-          <span className='whitespace-nowrap'>
-            {detailPractitioner.organization.name}
-          </span>
-        </Badge>
-      </div>
-      <h3 className='mt-2 text-center text-[20px] font-bold'>{displayName}</h3>
-    </div>
-  );
-
   /** Renders main practitioner content, loading, or empty states. */
   const renderMainContent = () => {
     if (practitionerDataLoading) return <LoadingState />;
@@ -235,20 +289,31 @@ export default function Practitioner() {
     if (isLoading || isFetching) return <LoadingState />;
     if (!detailPractitioner || isError) return <EmptyPractitionerState />;
 
+    const { organization, resource, invoice, schedule } = detailPractitioner;
+    const orgName = organization?.name ?? '';
+    const scheduleId = schedule?.id ?? '';
+
     return (
       <>
-        {practitionerHeader}
+        <PractitionerHeader
+          seed={seed}
+          placeholderInitials={placeholderInitials}
+          placeholderBg={placeholderBg}
+          photoUrl={photoUrl}
+          orgName={orgName}
+          displayName={displayName}
+        />
 
         <PractitionerAvailability
-          practitionerRole={detailPractitioner.resource}
-          scheduleId={detailPractitioner?.schedule?.id}
-          invoice={detailPractitioner.invoice}
+          practitionerRole={resource}
+          scheduleId={scheduleId}
+          invoice={invoice}
           practitionerName={displayName}
-          practitionerOrganizationName={detailPractitioner.organization.name}
+          practitionerOrganizationName={orgName}
           practitionerAvatar={{
             photoUrl,
-            initials,
-            backgroundColor
+            initials: placeholderInitials,
+            backgroundColor: placeholderBg
           }}
         >
           <AvailabilityTrigger />
@@ -262,28 +327,16 @@ export default function Practitioner() {
           <div className='mt-4 flex flex-col space-y-2'>
             <div className='flex justify-between text-[12px]'>
               <span className='mr-2'>Affiliation</span>
-              <span className='font-bold'>
-                {detailPractitioner.organization.name}
-              </span>
+              <span className='font-bold'>{orgName}</span>
             </div>
             <div className='flex justify-between text-[12px]'>
               <span className='mr-2'>Fee</span>
-              <span className='font-bold'>
-                {detailPractitioner.invoice?.totalNet
-                  ? `${new Intl.NumberFormat('id-ID', {
-                      style: 'currency',
-                      currency: detailPractitioner.invoice.totalNet.currency,
-                      minimumFractionDigits: 0
-                    }).format(
-                      detailPractitioner.invoice.totalNet.value
-                    )} / Session`
-                  : '-'}
-              </span>
+              <span className='font-bold'>{renderFeeText()}</span>
             </div>
           </div>
         </div>
 
-        {detailPractitioner.resource.specialty && (
+        {resource?.specialty && (
           <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9]'>
             <div className='flex items-center'>
               <HospitalIcon size={32} color='#13C2C2' className='mr-2' />
@@ -291,17 +344,7 @@ export default function Practitioner() {
             </div>
 
             <div className='mt-4 flex flex-wrap gap-2'>
-              {detailPractitioner.resource.specialty.length > 0 &&
-                detailPractitioner.resource.specialty.map(
-                  (specialty: CodeableConcept) => (
-                    <Badge
-                      key={specialty.text}
-                      className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
-                    >
-                      {specialty.text}
-                    </Badge>
-                  )
-                )}
+              {renderSpecialtyBadges()}
             </div>
           </div>
         )}

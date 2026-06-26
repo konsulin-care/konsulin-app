@@ -1,5 +1,6 @@
 import { Patient, Practitioner } from 'fhir/r4';
 
+/** Check whether a FHIR Patient/Practitioner profile is complete. */
 export const isProfileCompleteFromFHIR = (
   profile: Patient | Practitioner
 ): boolean => {
