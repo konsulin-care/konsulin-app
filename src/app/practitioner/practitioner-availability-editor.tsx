@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
 import AvailabilityEditor from '@/components/availability/availability-editor';
 import DaySelectorNavigation from '@/components/availability/day-selector-navigation';
 import FloatingSaveButton from '@/components/availability/floating-save-button';
 import { useUpdateAvailability } from '@/services/api/schedule';
 import {
   DayOfWeek,
+  OrganizationTimeRanges,
   TimeRange,
   UIOrganization,
   WeeklyAvailability
@@ -248,16 +248,17 @@ export default function PractitionerAvailabilityEditor({
 
   // Function to normalize availability for comparison (ignoring IDs)
   const normalizeAvailability = (avail: WeeklyAvailability) => {
+    const obj = avail as Record<string, OrganizationTimeRanges>;
     const normalized: Record<
       string,
       Record<string, { from: string; to: string }[]>
     > = {};
     for (const day in avail) {
-      if (!Object.prototype.hasOwnProperty.call(avail, day)) continue;
+      if (!Object.hasOwn(obj, day)) continue;
       normalized[day] = {};
-      for (const org in avail[day]) {
-        if (!Object.prototype.hasOwnProperty.call(avail[day], org)) continue;
-        normalized[day][org] = avail[day][org]
+      for (const org in obj[day]) {
+        if (!Object.hasOwn(obj[day], org)) continue;
+        normalized[day][org] = obj[day][org]
           .map(({ from, to }) => ({ from, to }))
           .toSorted(
             (a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to)

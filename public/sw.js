@@ -93,6 +93,7 @@ async function networkFirst(request, cacheName, fallbackUrl) {
       throw new Error('Invalid URL: only http/https URLs are allowed');
     }
 
+    // skipcq: JS-0376 - NOSONAR - URL validated by isValidHttpUrl() guard above
     const response = await fetch(request);
     if (response.ok && request.method === 'GET') {
       const navCache = await caches.open(cacheName);

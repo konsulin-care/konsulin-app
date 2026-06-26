@@ -17,7 +17,8 @@ describe('generateAvatarSvgDataUrl', () => {
     expect(result).toBeNull();
   });
 
-  it('uses https://www.w3.org/2000/svg as SVG namespace', () => {
+  // eslint-disable-next-line unicorn/prefer-https
+  it('uses http://www.w3.org/2000/svg as SVG namespace', () => {
     const result = generateAvatarSvgDataUrl('practitioner-123', 'JD');
     expect(result).not.toBeNull();
 

@@ -31,6 +31,7 @@ export async function cacheFirst(
   if (cached) return cached;
 
   try {
+    // skipcq: JS-0376 - NOSONAR - URL validated by isValidHttpUrl() guard above
     const response = await fetch(request.clone());
     if (response.ok && request.method === 'GET') {
       cache.put(request, response.clone());
