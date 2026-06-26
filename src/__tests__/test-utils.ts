@@ -25,7 +25,7 @@ export type MockCache = ReturnType<typeof createMockCache>;
  *
  */
 export function createMockSelf() {
-  type EventCallback = (event: Record<string, any>) => void;
+  type EventCallback = (event: Record<string, unknown>) => void;
   const handlers: Record<string, EventCallback[] | undefined> = {};
   const listeners: Record<string, EventCallback[] | undefined> = {};
   return {
@@ -82,7 +82,7 @@ export function createMockFetch() {
 /**
  *
  */
-export function createMockEvent(overrides: Record<string, any> = {}) {
+export function createMockEvent(overrides: Record<string, unknown> = {}) {
   return {
     waitUntil: vi.fn(),
     respondWith: vi.fn(),
@@ -122,7 +122,7 @@ export function fireActivate(mockSelf: MockSelf) {
  */
 export function fireFetch(
   mockSelf: MockSelf,
-  request: Record<string, any> = {}
+  request: Record<string, unknown> = {}
 ) {
   const event = createMockEvent({ request });
   const handler = mockSelf.handlers.fetch[0];

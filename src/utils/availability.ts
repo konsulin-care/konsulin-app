@@ -45,7 +45,7 @@ export function toJsDayIndex(dayOfWeek: DayOfWeek): number {
  * Generate a unique ID for a time range
  */
 export function generateTimeRangeId(): string {
-  return `time-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+  return `time-${Date.now()}-${crypto.randomUUID()}`;
 }
 
 /**

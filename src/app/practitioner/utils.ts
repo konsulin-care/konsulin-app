@@ -111,10 +111,7 @@ export function matchesPractitionerFromPath(
 // Helper function to extract slotMinutes from Schedule's comment field
 /** Extract slot duration in minutes from a Schedule's comment field. */
 export function getSlotMinutesText(schedule: unknown): string {
-  if (!schedule) {
-    return '';
-  }
-  if (typeof schedule !== 'object') {
+  if (!schedule || typeof schedule !== 'object') {
     return '';
   }
   const scheduleRecord = schedule as Record<string, unknown>;
