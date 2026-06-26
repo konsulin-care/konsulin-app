@@ -7,8 +7,8 @@ import SchedulePageShell from '@/components/shared/schedule-page-shell';
 import { getNow } from '@/constants/date';
 import { useAuth } from '@/context/auth/authContext';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useGetAllSessions } from '@/services/api/appointments';
 import { IUseClinicParams } from '@/services/clinic';
+import { useAppointments } from '@/services/hooks/useAppointments';
 import { MergedSession } from '@/types/appointment';
 import {
   generateAvatarPlaceholder,
@@ -85,9 +85,13 @@ export default function PractitionerSchedule({ fhirId }: Props) {
   const [sessionsFilter, setSessionsFilter] = useState<IUseClinicParams>({});
   const [selectedTab, setSelectedTab] = useState('upcoming');
 
-  const { data: sessionData, isLoading: isSessionLoading } = useGetAllSessions({
-    practitionerId: fhirId
-  });
+  const {
+    data: pagesData,
+    isLoading: isSessionLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useAppointments('Practitioner', fhirId);
 
   useEffect(() => {
     if (startDateParam && endDateParam) {
@@ -108,12 +112,22 @@ export default function PractitionerSchedule({ fhirId }: Props) {
   const debouncedKeyword = useDebounce(keyword, 500);
 
   const parsedSessionsData = useMemo(() => {
-    if (!sessionData || sessionData?.total === 0 || !authState.isAuthenticated)
+    if (
+      !pagesData?.pages ||
+      pagesData.pages.length === 0 ||
+      !authState.isAuthenticated
+    )
       return null;
 
-    const parsed = parseMergedSessions(sessionData);
-    return parsed;
-  }, [sessionData, authState]);
+    const combined: import('fhir/r4').Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      total: pagesData.pages[0]?.total,
+      entry: pagesData.pages.flatMap(p => p.entry ?? [])
+    };
+
+    return parseMergedSessions(combined);
+  }, [pagesData, authState]);
 
   const { upcoming, past } = useScheduleFilter({
     data: parsedSessionsData,
@@ -150,6 +164,11 @@ export default function PractitionerSchedule({ fhirId }: Props) {
         renderCard={(session: MergedSession) => (
           <SessionCard session={session} />
         )}
+        onLoadMore={() => {
+          void fetchNextPage();
+        }}
+        hasMore={hasNextPage}
+        isLoadingMore={isFetchingNextPage}
       />
     </>
   );

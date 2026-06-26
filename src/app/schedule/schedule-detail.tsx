@@ -5,14 +5,8 @@ import Avatar from '@/components/general/avatar';
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
-import { useAuth } from '@/context/auth/authContext';
-import { useGetAllAppointments } from '@/services/api/appointments';
-import { MergedAppointment } from '@/types/appointment';
-import {
-  generateAvatarPlaceholder,
-  mergeNames,
-  parseMergedAppointments
-} from '@/utils/helper';
+import { useAppointment } from '@/services/hooks/useAppointment';
+import { generateAvatarPlaceholder, mergeNames } from '@/utils/helper';
 import { capitalizeFirstLetter } from '@/utils/validation';
 import { format } from 'date-fns';
 import { HospitalIcon } from 'lucide-react';
@@ -87,26 +81,12 @@ function SessionDetailInfo({
 export default function ScheduleDetail() {
   const searchParams = useSearchParams();
   const appointmentId = searchParams.get('appointmentId') ?? '';
-  const { state: authState } = useAuth();
+
   const {
-    data: upcomingData,
-    isLoading: isUpcomingLoading,
-    isError: isUpcomingError
-  } = useGetAllAppointments({
-    patientId: authState?.userInfo?.fhirId ?? ''
-  });
-
-  const appointmentData = useMemo(() => {
-    if (!upcomingData || upcomingData?.total === 0) return null;
-
-    const parsed = parseMergedAppointments(upcomingData);
-
-    const found = parsed.find(
-      (item: MergedAppointment) => item.appointmentId === appointmentId
-    );
-
-    return found;
-  }, [upcomingData, appointmentId]);
+    data: appointmentData,
+    isLoading,
+    isError
+  } = useAppointment(appointmentId);
 
   const { initials, backgroundColor, displayName, time, date, seed } =
     useMemo(() => {
@@ -152,16 +132,7 @@ export default function ScheduleDetail() {
 
   /** Renders appointment detail or empty/loading states. */
   const renderContent = () => {
-    if (!appointmentData || isUpcomingError) {
-      return (
-        <EmptyState
-          className='py-16'
-          title='Appointment Not Found'
-          subtitle='Please return to the appointment page and select an appointment.'
-        />
-      );
-    }
-    if (isUpcomingLoading) {
+    if (isLoading) {
       return (
         <div className='flex min-h-screen min-w-full items-center justify-center'>
           <LoadingSpinnerIcon
@@ -170,6 +141,15 @@ export default function ScheduleDetail() {
             className='w-full animate-spin'
           />
         </div>
+      );
+    }
+    if (!appointmentData || isError) {
+      return (
+        <EmptyState
+          className='py-16'
+          title='Appointment Not Found'
+          subtitle='Please return to the appointment page and select an appointment.'
+        />
       );
     }
     return (
