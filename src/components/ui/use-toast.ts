@@ -25,6 +25,7 @@ const actionTypes = {
 
 let count = 0;
 
+/** Generate a unique toast ID using an incrementing counter. */
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER;
   return count.toString();
@@ -56,6 +57,7 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
+/** Schedule a toast for removal after TOAST_REMOVE_DELAY. */
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     return;
@@ -138,6 +140,7 @@ const listeners: Array<(state: State) => void> = [];
 
 let memoryState: State = { toasts: [] };
 
+/** Dispatch a toast action to all registered listeners. */
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action);
   listeners.forEach(listener => {

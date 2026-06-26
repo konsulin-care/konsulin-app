@@ -40,6 +40,7 @@ async function postAuthCookie(
   }
 }
 
+/** POST auth cookie data to the backend for a user/role combo. */
 async function postAuthCookieForUser(
   role: string,
   userId: string,
@@ -71,6 +72,7 @@ async function postAuthCookieForUser(
   }
 }
 
+/** Handle first-time login: resolve role, fetch profile, set cookie. */
 async function handleNewUserLogin(
   roles: string[] | undefined,
   userId: string,

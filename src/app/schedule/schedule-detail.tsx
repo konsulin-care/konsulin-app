@@ -49,6 +49,38 @@ function SessionAvatarSection({
   );
 }
 
+/** Session detail card with time, date, and appointment type. */
+function SessionDetailInfo({
+  time,
+  date,
+  appointmentType
+}: Readonly<{ time: string; date: string; appointmentType: string }>) {
+  return (
+    <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>
+      <div className='flex items-center'>
+        <HospitalIcon size={24} color='#13C2C2' className='mr-2' />
+        <span className='text-[12px] font-bold'>Detail Session</span>
+      </div>
+      <div className='mt-4 flex flex-col space-y-2'>
+        <div className='flex justify-between text-[12px]'>
+          <span className='mr-2'>Time</span>
+          <span className='font-bold'>{time}</span>
+        </div>
+        <div className='flex justify-between text-[12px]'>
+          <span className='mr-2'>Date</span>
+          <span className='font-bold'>{date}</span>
+        </div>
+        <div className='flex justify-between text-[12px]'>
+          <span className='mr-2'>Session Type</span>
+          <span className='font-bold'>
+            {capitalizeFirstLetter(appointmentType)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  *
  */
@@ -150,28 +182,11 @@ export default function ScheduleDetail() {
           displayName={displayName}
         />
 
-        <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>
-          <div className='flex items-center'>
-            <HospitalIcon size={24} color='#13C2C2' className='mr-2' />
-            <span className='text-[12px] font-bold'>Detail Session</span>
-          </div>
-          <div className='mt-4 flex flex-col space-y-2'>
-            <div className='flex justify-between text-[12px]'>
-              <span className='mr-2'>Time</span>
-              <span className='font-bold'>{time}</span>
-            </div>
-            <div className='flex justify-between text-[12px]'>
-              <span className='mr-2'>Date</span>
-              <span className='font-bold'>{date}</span>
-            </div>
-            <div className='flex justify-between text-[12px]'>
-              <span className='mr-2'>Session Type</span>
-              <span className='font-bold'>
-                {capitalizeFirstLetter(appointmentData.appointmentType)}
-              </span>
-            </div>
-          </div>
-        </div>
+        <SessionDetailInfo
+          time={time}
+          date={date}
+          appointmentType={appointmentData.appointmentType}
+        />
       </>
     );
   };

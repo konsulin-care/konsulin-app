@@ -28,6 +28,23 @@ interface AssessmentDrawerContentProps {
   router: { push: (url: string, options?: Record<string, unknown>) => void };
 }
 
+/** Description card with brief text rendered as markdown. */
+function DescriptionCard({ text }: Readonly<{ text: string }>) {
+  return (
+    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+      <div className='font-bold'>Brief</div>
+      <hr className='my-4 border-black opacity-10' />
+      <div className='flex flex-wrap gap-[10px] text-sm'>
+        <DrawerDescription>
+          <ReactMarkdown components={customMarkdownComponents}>
+            {text}
+          </ReactMarkdown>
+        </DrawerDescription>
+      </div>
+    </div>
+  );
+}
+
 /** Assessment detail drawer with QR code, description, and action button. */
 export default function AssessmentDrawerContent({
   selectedAssessment,
@@ -146,19 +163,13 @@ export default function AssessmentDrawerContent({
           {selectedAssessment?.title}
         </DrawerTitle>
       </DrawerHeader>
-      <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-        <div className='font-bold'>Brief</div>
-        <hr className='my-4 border-black opacity-10' />
-        <div className='flex flex-wrap gap-[10px] text-sm'>
-          <DrawerDescription>
-            <ReactMarkdown components={customMarkdownComponents}>
-              {selectedAssessment &&
-                'description' in selectedAssessment &&
-                selectedAssessment.description}
-            </ReactMarkdown>
-          </DrawerDescription>
-        </div>
-      </div>
+      <DescriptionCard
+        text={
+          selectedAssessment && 'description' in selectedAssessment
+            ? selectedAssessment.description
+            : ''
+        }
+      />
 
       {selectedAssessment?.resourceType === 'ResearchStudy' && (
         <div>

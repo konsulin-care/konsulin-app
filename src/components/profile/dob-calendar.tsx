@@ -11,6 +11,7 @@ export default function DobCalendar({
 }: Readonly<{ value: Date | null; onChange: (date: Date) => void }>) {
   const [selectedDate, setSelectedDate] = useState(value);
 
+  /** Handle date selection from calendar, filtering multi-date and null values. */
   const handleDateChange = (date: Date | Date[] | null) => {
     if (!date) return;
     if (Array.isArray(date)) return;

@@ -103,6 +103,7 @@ export function validateTimeRanges(times: TimeRange[]) {
   const sortedTimes = times
     .map((time, index) => ({ ...time, index }))
     .toSorted((a, b) => {
+      /** Convert "HH:mm" to total minutes for sorting. */
       const timeToMinutes = (time: string) => {
         const [hours, minutes] = time.split(':').map(Number);
         return hours * 60 + minutes;

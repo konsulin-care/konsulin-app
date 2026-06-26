@@ -49,6 +49,7 @@ export default function PractitionerRecord() {
     }
   });
 
+  /** Extract description text from a record's result field. */
   const getDescription = (record: IRecord): string => {
     if (Array.isArray(record.result)) {
       const found = record.result?.find(

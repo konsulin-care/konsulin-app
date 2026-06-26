@@ -50,6 +50,49 @@ function PendingApprovalsCard() {
   );
 }
 
+/** Clinic overview section showing practitioner count and pending approvals. */
+function ClinicOverviewSection({
+  practitionerCount,
+  isCountError
+}: Readonly<{ practitionerCount: number; isCountError: boolean }>) {
+  return (
+    <section className='p-4'>
+      <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
+        Clinic Overview
+      </h2>
+      <div className='flex flex-col gap-4'>
+        <PractitionerCountCard
+          count={practitionerCount}
+          isError={isCountError}
+        />
+        <PendingApprovalsCard />
+      </div>
+    </section>
+  );
+}
+
+/** Clinic context card showing the active clinic (coming soon). */
+function ClinicContextSection() {
+  return (
+    <section className='p-4'>
+      <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
+        Clinic Context
+      </h2>
+      <div className='card flex items-center gap-4 p-4 opacity-60'>
+        <div className='flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#F8F8F8]'>
+          <Building2 className='h-5 w-5 text-gray-400' />
+        </div>
+        <div className='flex flex-col'>
+          <span className='text-[12px] font-bold'>Active Clinic</span>
+          <span className='text-[10px] text-gray-500'>
+            Clinic switcher coming soon
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /** Admin home page with clinic overview, context, and service management. */
 export default function HomeContentAdmin() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
@@ -89,35 +132,12 @@ export default function HomeContentAdmin() {
 
   return (
     <>
-      <section className='p-4'>
-        <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
-          Clinic Overview
-        </h2>
-        <div className='flex flex-col gap-4'>
-          <PractitionerCountCard
-            count={practitionerCount}
-            isError={isCountError}
-          />
-          <PendingApprovalsCard />
-        </div>
-      </section>
+      <ClinicOverviewSection
+        practitionerCount={practitionerCount}
+        isCountError={isCountError}
+      />
 
-      <section className='p-4'>
-        <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
-          Clinic Context
-        </h2>
-        <div className='card flex items-center gap-4 p-4 opacity-60'>
-          <div className='flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#F8F8F8]'>
-            <Building2 className='h-5 w-5 text-gray-400' />
-          </div>
-          <div className='flex flex-col'>
-            <span className='text-[12px] font-bold'>Active Clinic</span>
-            <span className='text-[10px] text-gray-500'>
-              Clinic switcher coming soon
-            </span>
-          </div>
-        </div>
-      </section>
+      <ClinicContextSection />
 
       <section className='p-4'>
         <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>

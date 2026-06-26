@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable max-lines -- component file exceeds 300-line limit */
+
 import Avatar from '@/components/general/avatar';
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -44,24 +46,65 @@ type IPractitionerLocalStorage = {
 };
 
 /** Full-screen loading spinner. */
-const LoadingState = () => (
-  <div className='flex min-h-screen min-w-full items-center justify-center'>
-    <LoadingSpinnerIcon
-      width={56}
-      height={56}
-      className='w-full animate-spin'
-    />
-  </div>
-);
+function LoadingState() {
+  return (
+    <div className='flex min-h-screen min-w-full items-center justify-center'>
+      <LoadingSpinnerIcon
+        width={56}
+        height={56}
+        className='w-full animate-spin'
+      />
+    </div>
+  );
+}
 
 /** Empty state shown when no practitioner is found or data is missing. */
-const EmptyPractitionerState = () => (
-  <EmptyState
-    className='py-16'
-    title='Practitioner Not Found'
-    subtitle='Please return to the clinic page and select a practitioner.'
-  />
-);
+function EmptyPractitionerState() {
+  return (
+    <EmptyState
+      className='py-16'
+      title='Practitioner Not Found'
+      subtitle='Please return to the clinic page and select a practitioner.'
+    />
+  );
+}
+
+/** Practitioner header with avatar, organization badge, and display name. */
+function PractitionerHeader({
+  seed,
+  placeholderInitials,
+  placeholderBg,
+  photoUrl,
+  orgName,
+  displayName
+}: Readonly<{
+  seed: string;
+  placeholderInitials: string;
+  placeholderBg: string;
+  photoUrl?: string;
+  orgName: string;
+  displayName: string;
+}>) {
+  return (
+    <div className='flex flex-col items-center'>
+      <div className='flex flex-col items-center'>
+        <Avatar
+          seed={seed}
+          initials={placeholderInitials}
+          backgroundColor={placeholderBg}
+          photoUrl={photoUrl}
+          className='text-2xl'
+        />
+
+        <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
+          <HeartPulse size={16} color='#08979C' fill='white' />
+          <span className='whitespace-nowrap'>{orgName}</span>
+        </Badge>
+      </div>
+      <h3 className='mt-2 text-center text-[20px] font-bold'>{displayName}</h3>
+    </div>
+  );
+}
 
 /** Trigger card shown inside PractitionerAvailability to reveal the calendar. */
 function AvailabilityTrigger() {
@@ -250,31 +293,16 @@ export default function Practitioner() {
     const orgName = organization?.name ?? '';
     const scheduleId = schedule?.id ?? '';
 
-    const practitionerHeader = (
-      <div className='flex flex-col items-center'>
-        <div className='flex flex-col items-center'>
-          <Avatar
-            seed={seed}
-            initials={placeholderInitials}
-            backgroundColor={placeholderBg}
-            photoUrl={photoUrl}
-            className='text-2xl'
-          />
-
-          <Badge className='mt-[-15px] flex min-h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
-            <HeartPulse size={16} color='#08979C' fill='white' />
-            <span className='whitespace-nowrap'>{orgName}</span>
-          </Badge>
-        </div>
-        <h3 className='mt-2 text-center text-[20px] font-bold'>
-          {displayName}
-        </h3>
-      </div>
-    );
-
     return (
       <>
-        {practitionerHeader}
+        <PractitionerHeader
+          seed={seed}
+          placeholderInitials={placeholderInitials}
+          placeholderBg={placeholderBg}
+          photoUrl={photoUrl}
+          orgName={orgName}
+          displayName={displayName}
+        />
 
         <PractitionerAvailability
           practitionerRole={resource}

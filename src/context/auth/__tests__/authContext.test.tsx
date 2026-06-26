@@ -308,7 +308,7 @@ describe('Fix 3 - function dependency ordering', () => {
 
     // Find line numbers of each function declaration (1-indexed)
     const findLine = (name: string) =>
-      lines.findIndex(l => l.trim().startsWith('const ' + name + ' =')) + 1;
+      lines.findIndex(l => l.trim().startsWith(`const ${name} =`)) + 1;
 
     const callerLine = findLine('fetchProfileAndLogin');
     const depLines = [

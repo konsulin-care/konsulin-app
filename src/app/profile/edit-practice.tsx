@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, sonarjs/cognitive-complexity, max-lines, max-depth, react-hooks/exhaustive-deps, react/jsx-max-depth */
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, sonarjs/cognitive-complexity, max-lines, max-depth, react-hooks/exhaustive-deps */
 import EmptyState from '@/components/general/empty-state';
 import Input from '@/components/general/input';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -920,6 +920,47 @@ const EditPractice = () => {
     });
   }, []);
 
+  /** Search and filter bar for firms. */
+  function FirmSearchSection({
+    searchInput,
+    onSearchChange,
+    onFilterChange
+  }: Readonly<{
+    searchInput: string;
+    onSearchChange: (value: string) => void;
+    onFilterChange: (filter: IFirmFilter) => void;
+  }>) {
+    return (
+      <div className='mt-4 flex items-center gap-4'>
+        <div className='flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
+          <Input
+            className='flex h-[50px] w-[85%] items-center space-x-2 rounded-lg border-none bg-[#F9F9F9] p-4'
+            width={12}
+            height={12}
+            prefixIcon='/icons/search-cyan.svg'
+            placeholder='Search Firm'
+            name='searchInput'
+            id='searchInput'
+            type='text'
+            backgroundColor='[#F9F9F9]'
+            value={searchInput}
+            opacity={false}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              onSearchChange(event.target.value)
+            }
+            outline={false}
+          />
+        </div>
+
+        <FirmFilter
+          onChange={(filter: IFirmFilter) => {
+            onFilterChange(filter);
+          }}
+        />
+      </div>
+    );
+  }
+
   /** Remove a specialty tag at the given index from a firm's specialty list. */
   function handleRemoveTag(index: number, tagIndex: number) {
     setFirmData(prevData => {
@@ -946,36 +987,16 @@ const EditPractice = () => {
             activeFirms={activeFirms}
           />
 
-          <div className='mt-4 flex items-center gap-4'>
-            <div className='flex w-full items-center justify-between rounded-lg bg-[#F9F9F9]'>
-              <Input
-                className='flex h-[50px] w-[85%] items-center space-x-2 rounded-lg border-none bg-[#F9F9F9] p-4'
-                width={12}
-                height={12}
-                prefixIcon='/icons/search-cyan.svg'
-                placeholder='Search Firm'
-                name='searchInput'
-                id='searchInput'
-                type='text'
-                backgroundColor='[#F9F9F9]'
-                value={searchInput}
-                opacity={false}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                  setSearchInput(event.target.value)
-                }
-                outline={false}
-              />
-            </div>
-
-            <FirmFilter
-              onChange={(filter: IFirmFilter) => {
-                setFirmFilter(prevState => ({
-                  ...prevState,
-                  ...filter
-                }));
-              }}
-            />
-          </div>
+          <FirmSearchSection
+            searchInput={searchInput}
+            onSearchChange={setSearchInput}
+            onFilterChange={(filter: IFirmFilter) => {
+              setFirmFilter(prevState => ({
+                ...prevState,
+                ...filter
+              }));
+            }}
+          />
 
           <div>
             {firmFilter.city && (

@@ -27,6 +27,7 @@ import { toast } from 'react-toastify';
 
 /** Convert a Date to an ISO 8601 string with timezone offset. */
 function toOffsetISOString(date: Date) {
+  /** Zero-pad a number to 2 digits for ISO 8601 formatting. */
   const pad = (value: number) =>
     `${Math.floor(Math.abs(value))}`.padStart(2, '0');
   const year = date.getFullYear();

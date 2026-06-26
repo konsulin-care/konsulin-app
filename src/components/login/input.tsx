@@ -11,6 +11,7 @@ type InputProps = {
   onShow?: () => void;
 } & React.InputHTMLAttributes<HTMLInputElement>;
 
+/** No-operation function for optional callback defaults. */
 const noop = (): void => undefined;
 
 /**

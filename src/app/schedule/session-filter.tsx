@@ -174,6 +174,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
         ...filterContentListPastDate
       ];
 
+      /** Format a Date to yyyy-MM-dd for comparison. */
       const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
 
       const matchedPreset = allPresetDates.some(preset => {

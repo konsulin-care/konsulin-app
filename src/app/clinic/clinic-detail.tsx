@@ -31,6 +31,31 @@ import { useMemo, useState } from 'react';
 import ClinicFilter from './clinic-filter';
 
 // generates an array of 3-letter weekday abbreviations from given date range
+/** Clinic information card showing affiliation and address. */
+function ClinicInfo({ address }: Readonly<{ address: string }>) {
+  return (
+    <div className='card mt-2 border-0 bg-[#F9F9F9] p-4 text-[12px]'>
+      <div className='mb-4 flex items-center gap-2 text-[14px]'>
+        <Image
+          src={'/icons/hospital.svg'}
+          alt='clinic'
+          width={22}
+          height={22}
+        />
+        <div className='font-bold'>Clinic Information</div>
+      </div>
+      <div className='flex justify-between'>
+        <span>Affiliation</span>
+        <span className='font-bold'>Konsulin</span>
+      </div>
+      <div className='mt-2 flex flex-col'>
+        <span>Address</span>
+        <span className='font-bold'>{address}</span>
+      </div>
+    </div>
+  );
+}
+
 const generateFilterDays = (start: Date, end: Date): string[] => {
   const filterDays: string[] = [];
   const currentDate = new Date(start);
@@ -313,27 +338,11 @@ export default function ClinicDetail() {
           {displayOrganizationName}
         </h3>
 
-        <div className='card mt-2 border-0 bg-[#F9F9F9] p-4 text-[12px]'>
-          <div className='mb-4 flex items-center gap-2 text-[14px]'>
-            <Image
-              src={'/icons/hospital.svg'}
-              alt='clinic'
-              width={22}
-              height={22}
-            />
-            <div className='font-bold'>Clinic Information</div>
-          </div>
-          <div className='flex justify-between'>
-            <span>Affiliation</span>
-            <span className='font-bold'>Konsulin</span>
-          </div>
-          <div className='mt-2 flex flex-col'>
-            <span>Address</span>
-            <span className='font-bold'>
-              {clinic && mergeAddress(clinic.resource as IOrganizationResource)}
-            </span>
-          </div>
-        </div>
+        <ClinicInfo
+          address={
+            clinic ? mergeAddress(clinic.resource as IOrganizationResource) : ''
+          }
+        />
 
         <div className='mt-4 flex gap-4'>
           <InputWithIcon
