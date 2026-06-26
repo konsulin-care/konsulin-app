@@ -40,7 +40,7 @@ type DropdownProps = {
 };
 
 /** Button content for the dropdown trigger — shows selected patient and chevron. */
-function TriggerContent({ label }: { label: React.ReactNode }) {
+function TriggerContent({ label }: { readonly label: React.ReactNode }) {
   return (
     <div className='flex w-full items-center justify-between'>
       <span className='text-sm font-normal text-[#2C2F35]'>{label}</span>
@@ -53,7 +53,7 @@ function TriggerContent({ label }: { label: React.ReactNode }) {
 }
 
 /** Dropdown item for creating a new patient. */
-function NewPatientItem({ onClick }: { onClick: () => void }) {
+function NewPatientItem({ onClick }: { readonly onClick: () => void }) {
   return (
     <DropdownItem className='w-full cursor-pointer' onSelect={onClick}>
       <div className='flex w-full items-center justify-start p-1'>
@@ -70,9 +70,9 @@ function PatientOptionItem({
   selected,
   onSelect
 }: {
-  item: DropdownOption;
-  selected: boolean;
-  onSelect: (item: DropdownOption) => void;
+  readonly item: DropdownOption;
+  readonly selected: boolean;
+  readonly onSelect: (item: DropdownOption) => void;
 }) {
   return (
     <DropdownItem

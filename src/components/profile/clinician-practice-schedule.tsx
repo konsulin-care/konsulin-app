@@ -11,12 +11,12 @@ type GroupedAvailability = Record<
 >;
 
 type Props = {
-  groupedByFirmAndDay: GroupedAvailability;
-  onEditSchedule: () => void;
+  readonly groupedByFirmAndDay: GroupedAvailability;
+  readonly onEditSchedule: () => void;
 };
 
 /** Edit schedule button label. */
-function EditScheduleButton({ onClick }: { onClick: () => void }) {
+function EditScheduleButton({ onClick }: { readonly onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -30,7 +30,7 @@ function EditScheduleButton({ onClick }: { onClick: () => void }) {
 }
 
 /** Header section with icon, title, and edit button. */
-function ScheduleHeader({ onEdit }: { onEdit: () => void }) {
+function ScheduleHeader({ onEdit }: { readonly onEdit: () => void }) {
   return (
     <div className='flex w-full items-center justify-between'>
       <div className='flex w-1/2 items-center'>
@@ -58,9 +58,12 @@ function DaySchedule({
   firm,
   timeRanges
 }: {
-  day: string;
-  firm: string;
-  timeRanges: Array<{ fromTime: string; toTime: string }>;
+  readonly day: string;
+  readonly firm: string;
+  readonly timeRanges: Array<{
+    readonly fromTime: string;
+    readonly toTime: string;
+  }>;
 }) {
   const tags = timeRanges.map(
     timeRange => `${day}: ${timeRange.fromTime} - ${timeRange.toTime}`

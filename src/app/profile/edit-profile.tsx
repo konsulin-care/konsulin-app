@@ -264,9 +264,11 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     dispatchAuth,
     queryClient: {
       invalidateQueries: (args: unknown) => {
-        void queryClient.invalidateQueries(
-          args as { queryKey: readonly unknown[] }
-        );
+        queryClient
+          .invalidateQueries(args as { queryKey: readonly unknown[] })
+          .catch(() => {
+            // Silently catch — errors handled by query client retry
+          });
       }
     },
     setDrawerState

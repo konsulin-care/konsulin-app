@@ -236,9 +236,13 @@ export default function PaymentDrawer({
         window.open(response.data.paymentUrl, '_blank');
       }
 
-      void queryClient.invalidateQueries({
-        queryKey: ['find-availability', practitionerRole.id]
-      });
+      queryClient
+        .invalidateQueries({
+          queryKey: ['find-availability', practitionerRole.id]
+        })
+        .catch(() => {
+          // Silently catch — errors handled by query client retry
+        });
       handleFilterChange('isBookingSubmitted', true);
       setPaymentOpen(false);
       setIsOpen(false);
@@ -258,9 +262,13 @@ export default function PaymentDrawer({
         slotId: `Slot/${selectedSlotId}`,
         condition: bookingForm.problem_brief
       });
-      void queryClient.invalidateQueries({
-        queryKey: ['find-availability', practitionerRole.id]
-      });
+      queryClient
+        .invalidateQueries({
+          queryKey: ['find-availability', practitionerRole.id]
+        })
+        .catch(() => {
+          // Silently catch — errors handled by query client retry
+        });
       handleFilterChange('isBookingSubmitted', true);
       setPaymentOpen(false);
       setIsOpen(false);

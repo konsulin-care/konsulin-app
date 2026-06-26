@@ -18,32 +18,39 @@ function MenuItem({
   total,
   onClick
 }: {
-  name: string;
-  index: number;
-  total: number;
-  onClick: () => void;
+  readonly name: string;
+  readonly index: number;
+  readonly total: number;
+  readonly onClick: () => void;
 }) {
   const isFirst = index === 0;
   const isLast = index === total - 1;
   return (
-    <div onClick={onClick}>
-      <li
-        className={`flex cursor-pointer items-center justify-between py-4 ${
-          !isFirst && !isLast ? 'border-b border-[#E8E8E8]' : ''
-        } ${isFirst || isLast ? 'border-none' : 'border-t border-[#E8E8E8]'}`}
-      >
-        <Image
-          src={'/icons/settings.svg'}
-          alt='setting-icons'
-          width={24}
-          height={24}
-        />
-        <p className='flex flex-grow justify-start pl-4 font-[#26282C] text-xs font-normal'>
-          {name}
-        </p>
-        <ChevronRightIcon color='#ADB6C7' width={18} height={18} />
-      </li>
-    </div>
+    <li
+      role='menuitem'
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`flex cursor-pointer items-center justify-between py-4 ${
+        !isFirst && !isLast ? 'border-b border-[#E8E8E8]' : ''
+      } ${isFirst || isLast ? 'border-none' : 'border-t border-[#E8E8E8]'}`}
+    >
+      <Image
+        src={'/icons/settings.svg'}
+        alt='setting-icons'
+        width={24}
+        height={24}
+      />
+      <p className='flex flex-grow justify-start pl-4 font-[#26282C] text-xs font-normal'>
+        {name}
+      </p>
+      <ChevronRightIcon color='#ADB6C7' width={18} height={18} />
+    </li>
   );
 }
 
@@ -54,10 +61,10 @@ function ConfirmDrawerContent({
   onClose,
   onConfirm
 }: {
-  title: string;
-  subTitle: string;
-  onClose: () => void;
-  onConfirm: () => void;
+  readonly title: string;
+  readonly subTitle: string;
+  readonly onClose: () => void;
+  readonly onConfirm: () => void;
 }) {
   return (
     <DrawerContent className='mx-auto w-full max-w-screen-sm p-4'>
