@@ -89,7 +89,7 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 			}
 			return verified.Role
 		}(),
-		FHIRID: req.FHIRID,
+		FHIRID:          req.FHIRID,
 		ProfileComplete: req.ProfileComplete,
 		FullName:        req.FullName,
 		Email:           req.Email,
