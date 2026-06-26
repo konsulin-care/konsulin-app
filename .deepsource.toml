@@ -1,5 +1,11 @@
 version = 1
 
+test_patterns = [
+  "**/__tests__/**",
+  "**/*.test.*",
+  "**/*.spec.*"
+]
+
 [[analyzers]]
 name = "typescript"
   [analyzers.meta]
