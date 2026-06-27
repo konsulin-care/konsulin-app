@@ -17,13 +17,21 @@ import {
   initializeWeeklyAvailabilityFromRoles
 } from '@/utils/availability';
 import { PractitionerRole } from 'fhir/r4';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Props = {
   practitionerRoles?: (PractitionerRole | IPractitionerRoleDetail)[];
   practitionerRole?: PractitionerRole | IPractitionerRoleDetail;
   onSuccess?: () => void;
   onCancel?: () => void;
+  /** When true, skips rendering the internal FloatingSaveButton — used when parent manages save. */
+  hideSaveButton?: boolean;
+  /** Reports dirty state and save handler to parent (for external FAB management). */
+  onDirtyChange?: (
+    dirty: boolean,
+    save: () => Promise<void>,
+    saving: boolean
+  ) => void;
 };
 
 /**
@@ -52,7 +60,9 @@ export default function PractitionerAvailabilityEditor({
   practitionerRoles,
   practitionerRole,
   onSuccess,
-  onCancel
+  onCancel,
+  hideSaveButton = false,
+  onDirtyChange
 }: Props) {
   // Convert single practitionerRole to array for backward compatibility
   const memoizedRolesToUse = useMemo(
@@ -98,6 +108,57 @@ export default function PractitionerAvailabilityEditor({
 
   // Mutation for updating availability
   const { mutateAsync: updateAvailability } = useUpdateAvailability();
+
+  /**
+   * Handle saving all availability changes
+   */
+  const handleSave = async () => {
+    if (!memoizedRolesToUse || memoizedRolesToUse.length === 0) {
+      console.error('At least one PractitionerRole is required');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Update each practitioner role with its organization-specific availability
+      for (const role of memoizedRolesToUse) {
+        // Get the organization ID for this role
+        const orgId = role.organization?.reference || role.id;
+
+        // Convert weekly availability to FHIR availableTime format for this specific organization
+        const availableTime = convertToFhirAvailableTimeForOrganization(
+          weeklyAvailability,
+          orgId
+        );
+
+        await updateAvailability({
+          practitionerRoleId: role.id,
+          availableTime
+        });
+      }
+
+      // Call success callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Failed to update availability:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Stable ref to avoid effect loops from inline handleSave
+  const saveRef = useRef(handleSave);
+  saveRef.current = handleSave;
+
+  // Report dirty state to parent via onDirtyChange callback
+  useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(weeklyAvailabilityDirty, saveRef.current, isSaving);
+    }
+  }, [weeklyAvailabilityDirty, isSaving, onDirtyChange]);
 
   /**
    * Handle adding a time range for a specific organization and day
@@ -164,46 +225,6 @@ export default function PractitionerAvailabilityEditor({
       return newAvailability;
     });
     setWeeklyAvailabilityDirty(true);
-  };
-
-  /**
-   * Handle saving all availability changes
-   */
-  const handleSave = async () => {
-    if (!memoizedRolesToUse || memoizedRolesToUse.length === 0) {
-      console.error('At least one PractitionerRole is required');
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      // Update each practitioner role with its organization-specific availability
-      for (const role of memoizedRolesToUse) {
-        // Get the organization ID for this role
-        const orgId = role.organization?.reference || role.id;
-
-        // Convert weekly availability to FHIR availableTime format for this specific organization
-        const availableTime = convertToFhirAvailableTimeForOrganization(
-          weeklyAvailability,
-          orgId
-        );
-
-        await updateAvailability({
-          practitionerRoleId: role.id,
-          availableTime
-        });
-      }
-
-      // Call success callback if provided
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error) {
-      console.error('Failed to update availability:', error);
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   // Get organizations from practitioner roles
@@ -311,15 +332,17 @@ export default function PractitionerAvailabilityEditor({
         />
       </div>
 
-      {/* Floating Save Button */}
-      <FloatingSaveButton
-        onSave={() => {
-          handleSave().catch(console.error);
-        }}
-        onCancel={onCancel}
-        isSaving={isSaving}
-        hasChanges={hasChanges}
-      />
+      {/* Floating Save Button — hidden when parent manages its own FAB (admin shell) */}
+      {!hideSaveButton && (
+        <FloatingSaveButton
+          onSave={() => {
+            handleSave().catch(console.error);
+          }}
+          onCancel={onCancel}
+          isSaving={isSaving}
+          hasChanges={hasChanges}
+        />
+      )}
     </div>
   );
 }

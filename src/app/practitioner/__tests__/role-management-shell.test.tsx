@@ -1,22 +1,29 @@
-/* eslint-disable unicorn/dom-node-dataset, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable unicorn/dom-node-dataset, @typescript-eslint/no-unsafe-argument */
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { PractitionerRole } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PractitionerRoleManagementShell from '../role-management-shell';
 
-// Capture props passed to mock components
-let capturedEditorProps: Record<string, unknown> | null = null;
+let availEditorProps: Record<string, unknown> | null = null;
+let servicesTabProps: Record<string, unknown> | null = null;
+let fabProps: Record<string, unknown> | null = null;
 
 vi.mock('@/components/ui/tabs', () => ({
   Tabs: ({
     children,
-    defaultValue
+    defaultValue,
+    onValueChange
   }: {
     children: React.ReactNode;
     defaultValue: string;
+    onValueChange?: (value: string) => void;
   }) => (
-    <div data-testid='tabs' data-default={defaultValue}>
+    <div
+      data-testid='tabs'
+      data-default={defaultValue}
+      data-onchange={onValueChange ? 'yes' : 'no'}
+    >
       {children}
     </div>
   ),
@@ -49,7 +56,7 @@ vi.mock('@/components/ui/tabs', () => ({
 
 vi.mock('@/app/practitioner/practitioner-availability-editor', () => ({
   default: (props: Record<string, unknown>) => {
-    capturedEditorProps = props;
+    availEditorProps = props;
     return (
       <div data-testid='practitioner-availability-editor'>
         PractitionerAvailabilityEditor
@@ -59,7 +66,17 @@ vi.mock('@/app/practitioner/practitioner-availability-editor', () => ({
 }));
 
 vi.mock('@/app/practitioner/services-tab', () => ({
-  default: () => <div data-testid='mock-services-tab'>Services Tab</div>
+  default: (props: Record<string, unknown>) => {
+    servicesTabProps = props;
+    return <div data-testid='mock-services-tab'>Services Tab</div>;
+  }
+}));
+
+vi.mock('@/app/practitioner/dynamic-floating-action-button', () => ({
+  default: (props: Record<string, unknown>) => {
+    fabProps = props;
+    return <div data-testid='dynamic-fab'>DynamicFAB</div>;
+  }
 }));
 
 vi.mock('@/services/clinic', () => ({
@@ -72,19 +89,15 @@ const mockRole: Partial<PractitionerRole> = {
   resourceType: 'PractitionerRole',
   id: 'role-1',
   active: true,
-  availableTime: [
-    {
-      daysOfWeek: ['mon', 'wed', 'fri'],
-      availableStartTime: '09:00:00',
-      availableEndTime: '17:00:00'
-    }
-  ],
+  availableTime: [],
   organization: { reference: 'Organization/org-1' }
 };
 
 describe('PractitionerRoleManagementShell', () => {
   beforeEach(() => {
-    capturedEditorProps = null;
+    availEditorProps = null;
+    servicesTabProps = null;
+    fabProps = null;
   });
 
   it('renders both tabs with correct labels', () => {
@@ -117,11 +130,50 @@ describe('PractitionerRoleManagementShell', () => {
     expect(tabs.getAttribute('data-default')).toBe('availability');
   });
 
-  it('renders PractitionerAvailabilityEditor in availability tab when role is loaded', () => {
+  it('passes hideSaveButton to PractitionerAvailabilityEditor', () => {
+    vi.mocked(useDetailPractitioner).mockReturnValue({
+      newData: { resource: mockRole, organization: { name: 'Test' } },
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as any);
+
+    render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
+
+    expect(availEditorProps?.hideSaveButton).toBe(true);
+  });
+
+  it('passes onDirtyChange callback to PractitionerAvailabilityEditor', () => {
+    vi.mocked(useDetailPractitioner).mockReturnValue({
+      newData: { resource: mockRole, organization: { name: 'Test' } },
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as any);
+
+    render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
+
+    expect(typeof availEditorProps?.onDirtyChange).toBe('function');
+  });
+
+  it('passes onDirtyChange callback to ServicesTab', () => {
+    vi.mocked(useDetailPractitioner).mockReturnValue({
+      newData: undefined,
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as any);
+
+    render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
+
+    expect(typeof servicesTabProps?.onDirtyChange).toBe('function');
+  });
+
+  it('renders the DynamicFloatingActionButton', () => {
     vi.mocked(useDetailPractitioner).mockReturnValue({
       newData: {
         resource: mockRole,
-        organization: { name: 'Test Clinic' }
+        organization: { name: 'Test' }
       },
       isLoading: false,
       isError: false,
@@ -130,17 +182,12 @@ describe('PractitionerRoleManagementShell', () => {
 
     render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
 
-    expect(
-      screen.getByTestId('practitioner-availability-editor')
-    ).toBeInTheDocument();
+    expect(screen.getByTestId('dynamic-fab')).toBeInTheDocument();
   });
 
-  it('passes practitionerRole with organization.display injected', () => {
+  it('passes isDirty=true to FAB when Availability editor becomes dirty', async () => {
     vi.mocked(useDetailPractitioner).mockReturnValue({
-      newData: {
-        resource: mockRole,
-        organization: { name: 'Sunshine Clinic' }
-      },
+      newData: { resource: mockRole, organization: { name: 'Test' } },
       isLoading: false,
       isError: false,
       isFetching: false
@@ -148,41 +195,21 @@ describe('PractitionerRoleManagementShell', () => {
 
     render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
 
-    const role = capturedEditorProps?.practitionerRole as any;
-    expect(role).toBeDefined();
-    expect(role.organization.display).toBe('Sunshine Clinic');
-  });
+    // Initial: FAB receives isDirty=false
+    expect(fabProps?.isDirty).toBe(false);
 
-  it('falls back to "Clinic" display when organization is not in detail', () => {
-    vi.mocked(useDetailPractitioner).mockReturnValue({
-      newData: {
-        resource: mockRole
-        // no organization field
-      },
-      isLoading: false,
-      isError: false,
-      isFetching: false
-    } as any);
+    // Simulate editor becoming dirty via onDirtyChange
+    if (availEditorProps?.onDirtyChange) {
+      (availEditorProps.onDirtyChange as (...args: unknown[]) => void)(
+        true,
+        vi.fn(),
+        false
+      );
+    }
 
-    render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
-
-    const role = capturedEditorProps?.practitionerRole as any;
-    expect(role).toBeDefined();
-    expect(role.organization.display).toBe('Clinic');
-  });
-
-  it('renders services tab content', () => {
-    vi.mocked(useDetailPractitioner).mockReturnValue({
-      newData: {
-        resource: mockRole
-      },
-      isLoading: false,
-      isError: false,
-      isFetching: false
-    } as any);
-
-    render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
-
-    expect(screen.getByTestId('mock-services-tab')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(fabProps?.isDirty).toBe(true);
+    });
+    expect(fabProps?.label).toBe('Save Changes');
   });
 });

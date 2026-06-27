@@ -9,6 +9,12 @@ import ServiceFormDrawer from './service-form-drawer';
 
 type Props = {
   practitionerRoleId?: string;
+  /** Reports dirty state and save handler to parent (for external FAB management). */
+  onDirtyChange?: (
+    dirty: boolean,
+    save: () => Promise<void>,
+    saving: boolean
+  ) => void;
 };
 
 /**
@@ -17,7 +23,10 @@ type Props = {
  * Maintains a local copy of services for create/edit/delete operations.
  * "Save All" builds a FHIR transaction bundle and submits via submitFhirBundle.
  */
-export default function ServicesTab({ practitionerRoleId }: Props) {
+export default function ServicesTab({
+  practitionerRoleId,
+  onDirtyChange
+}: Props) {
   const { clinicId, locationId } = useClinicContext();
   const { data: fetchedServices, refetch } =
     usePractitionerRoleHealthcareServices(practitionerRoleId ?? '');
@@ -122,6 +131,13 @@ export default function ServicesTab({ practitionerRoleId }: Props) {
     }
   }, [localServices, practitionerRoleId, refetch]);
 
+  // Report dirty state to parent for dynamic FAB
+  useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(isDirty, handleSaveAll, saveAllLoading);
+    }
+  }, [isDirty, saveAllLoading, onDirtyChange, handleSaveAll]);
+
   if (!localServices || localServices.length === 0) {
     return (
       <div className='py-8 text-center text-sm text-gray-500'>
@@ -191,20 +207,6 @@ export default function ServicesTab({ practitionerRoleId }: Props) {
           </div>
         </div>
       ))}
-
-      {isDirty && (
-        <div className='flex justify-end pt-4'>
-          <button
-            onClick={() => {
-              handleSaveAll().catch(console.error);
-            }}
-            disabled={saveAllLoading}
-            className='bg-primary rounded px-6 py-2 text-sm font-bold text-white disabled:opacity-50'
-          >
-            {saveAllLoading ? 'Saving...' : 'Save All'}
-          </button>
-        </div>
-      )}
 
       <ServiceFormDrawer
         open={drawerOpen}
