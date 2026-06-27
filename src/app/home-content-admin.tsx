@@ -5,17 +5,11 @@ import ActionCard from '@/components/general/action-card';
 import CardLoader from '@/components/general/card-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
+import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Building2,
-  CalendarRange,
-  Clock,
-  Cog,
-  FileText,
-  Users
-} from 'lucide-react';
-import { useCallback } from 'react';
+import { CalendarDays, Clock, Cog, FileText, Users } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 /** Stat card showing the active practitioner count. */
 function PractitionerCountCard({
@@ -30,6 +24,50 @@ function PractitionerCountCard({
       <div>
         <div className='text-[24px] font-bold'>{isError ? '-' : count}</div>
         <div className='text-[12px] text-gray-500'>Active Practitioners</div>
+      </div>
+    </div>
+  );
+}
+
+/** Stat card showing booked appointments today (placeholder until Location connector is built). */
+function BookedAppointmentsTodayCard() {
+  const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
+
+  useEffect(() => {
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_clinic'])
+      .then(saved => {
+        if (saved?.value) setSelectedClinicId(saved.value);
+        return null;
+      })
+      .catch(() => {
+        /* IndexedDB unavailable — remain null */
+      });
+  }, []);
+
+  // Disabled query — when Location infrastructure is ready, replace with:
+  // GET /fhir/Appointment?location=Location/<loc-id>&date=today&status=booked&_summary=count
+  useQuery({
+    queryKey: ['booked-today', selectedClinicId],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get(
+        `/fhir/Appointment?location=Location/&date=today&status=booked&_summary=count`
+      );
+      return response.data?.total ?? 0;
+    },
+    enabled: false // Location ID not available yet
+  });
+
+  return (
+    <div className='card flex items-center gap-4 p-4'>
+      <div className='flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#F0F5FF]'>
+        <CalendarDays className='text-[#2F54EB]' />
+      </div>
+      <div>
+        <div className='text-[24px] font-bold'>-</div>
+        <div className='text-[12px] text-gray-500'>
+          Booked Appointments Today
+        </div>
       </div>
     </div>
   );
@@ -50,50 +88,7 @@ function PendingApprovalsCard() {
   );
 }
 
-/** Clinic overview section showing practitioner count and pending approvals. */
-function ClinicOverviewSection({
-  practitionerCount,
-  isCountError
-}: Readonly<{ practitionerCount: number; isCountError: boolean }>) {
-  return (
-    <section className='p-4'>
-      <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
-        Clinic Overview
-      </h2>
-      <div className='flex flex-col gap-4'>
-        <PractitionerCountCard
-          count={practitionerCount}
-          isError={isCountError}
-        />
-        <PendingApprovalsCard />
-      </div>
-    </section>
-  );
-}
-
-/** Clinic context card showing the active clinic (coming soon). */
-function ClinicContextSection() {
-  return (
-    <section className='p-4'>
-      <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
-        Clinic Context
-      </h2>
-      <div className='card flex items-center gap-4 p-4 opacity-60'>
-        <div className='flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#F8F8F8]'>
-          <Building2 className='h-5 w-5 text-gray-400' />
-        </div>
-        <div className='flex flex-col'>
-          <span className='text-[12px] font-bold'>Active Clinic</span>
-          <span className='text-[10px] text-gray-500'>
-            Clinic switcher coming soon
-          </span>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/** Admin home page with clinic overview, context, and service management. */
+/** Admin home page with stats and service management. */
 export default function HomeContentAdmin() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
@@ -125,19 +120,22 @@ export default function HomeContentAdmin() {
     return (
       <div className='p-4'>
         <Skeleton className='mb-4 h-[100px] w-full bg-[hsl(210,40%,96.1%)]' />
-        <CardLoader item={4} height='h-[60px]' />
+        <CardLoader item={3} height='h-[60px]' />
       </div>
     );
   }
 
   return (
     <>
-      <ClinicOverviewSection
-        practitionerCount={practitionerCount}
-        isCountError={isCountError}
-      />
-
-      <ClinicContextSection />
+      {/* Stat cards — no section title */}
+      <div className='flex flex-col gap-4 p-4'>
+        <PractitionerCountCard
+          count={practitionerCount}
+          isError={isCountError}
+        />
+        <BookedAppointmentsTodayCard />
+        <PendingApprovalsCard />
+      </div>
 
       <section className='p-4'>
         <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
@@ -146,21 +144,9 @@ export default function HomeContentAdmin() {
         <div className='flex flex-col gap-4'>
           <ActionCard
             icon={<Cog />}
-            title='Manage Practitioners'
-            description='View and manage practitioner profiles'
-            href='/practitioner'
-          />
-          <ActionCard
-            icon={<Building2 />}
-            title='Clinic Settings'
+            title='Clinic Details'
             description='Configure clinic information and services'
             href='/clinic'
-          />
-          <ActionCard
-            icon={<CalendarRange />}
-            title='View Schedule'
-            description='Review clinic-wide appointment schedule'
-            href='/schedule'
           />
           <ActionCard
             icon={<FileText />}

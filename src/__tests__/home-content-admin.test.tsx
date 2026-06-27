@@ -12,6 +12,11 @@ vi.mock('@/services/api', () => ({
   getAPI: vi.fn()
 }));
 
+vi.mock('@/lib/indexeddb', () => ({
+  STORES: { uiPreferences: 'ui_preferences' },
+  dbGet: vi.fn().mockResolvedValue(null)
+}));
+
 import { useAuth } from '@/context/auth/authContext';
 import { getAPI } from '@/services/api';
 
@@ -76,16 +81,65 @@ describe('HomeContentAdmin', () => {
     });
   });
 
-  it('renders all management links', async () => {
+  it('does NOT render Clinic Overview title', async () => {
     mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
 
     render(<HomeContentAdmin />, { wrapper });
 
     await waitFor(() => {
-      expect(screen.getByText('Manage Practitioners')).toBeDefined();
+      expect(screen.getByText('5')).toBeDefined();
     });
-    expect(screen.getByText('Clinic Settings')).toBeDefined();
-    expect(screen.getByText('View Schedule')).toBeDefined();
+    expect(screen.queryByText('Clinic Overview')).toBeNull();
+  });
+
+  it('does NOT render Clinic Context section', async () => {
+    mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
+
+    render(<HomeContentAdmin />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('5')).toBeDefined();
+    });
+    expect(screen.queryByText('Clinic Context')).toBeNull();
+    expect(screen.queryByText('Clinic switcher coming soon')).toBeNull();
+  });
+
+  it('renders Booked Appointments Today stat', async () => {
+    mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
+
+    render(<HomeContentAdmin />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('5')).toBeDefined();
+    });
+    expect(screen.getByText('Booked Appointments Today')).toBeDefined();
+  });
+
+  it('renders Pending Approvals stat', async () => {
+    mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
+
+    render(<HomeContentAdmin />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('5')).toBeDefined();
+    });
+    expect(screen.getByText('Pending Approvals')).toBeDefined();
+  });
+
+  it('renders only Clinic Details and Reports in Service Management', async () => {
+    mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
+
+    render(<HomeContentAdmin />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('Service Management')).toBeDefined();
+    });
+    expect(screen.getByText('Clinic Details')).toBeDefined();
     expect(screen.getByText('Reports')).toBeDefined();
+
+    // Old management cards must be absent
+    expect(screen.queryByText('Manage Practitioners')).toBeNull();
+    expect(screen.queryByText('Clinic Settings')).toBeNull();
+    expect(screen.queryByText('View Schedule')).toBeNull();
   });
 });

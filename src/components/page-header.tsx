@@ -8,16 +8,19 @@ import { getNow } from '@/constants/date';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
+import { STORES, dbGet } from '@/lib/indexeddb';
+import { getAPI } from '@/services/api';
 import {
   generateAvatarPlaceholder,
   parseMergedAppointments,
   parseMergedSessions
 } from '@/utils/helper';
+import { useQuery } from '@tanstack/react-query';
 import { isAfter, parseISO } from 'date-fns';
-import { ChevronLeftIcon } from 'lucide-react';
+import { Calendar, ChevronLeftIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface PageHeaderProps {
   pageIndicator?: string;
@@ -99,6 +102,44 @@ export default function PageHeader({
     authState.userInfo?.fullname.trim() === '-'
       ? authState?.userInfo?.email
       : authState?.userInfo?.fullname;
+
+  const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_clinic'])
+      .then(saved => {
+        if (saved?.value) setSelectedClinicId(saved.value);
+        return null;
+      })
+      .catch(() => {
+        /* IndexedDB unavailable */
+      });
+  }, [isAdmin]);
+
+  const { data: clinicName, isLoading: isClinicNameLoading } = useQuery({
+    queryKey: ['clinic-name', selectedClinicId],
+    queryFn: async () => {
+      const API = await getAPI();
+      // Try Location resource first
+      const locResp = await API.get(
+        `/fhir/Location?organization=${selectedClinicId}&_elements=name`
+      );
+      const locName =
+        (
+          locResp.data as
+            | { entry?: { resource?: { name?: string } }[] }
+            | undefined
+        )?.entry?.[0]?.resource?.name ?? '';
+      if (locName) return locName;
+      // Fallback to Organization resource
+      const orgResp = await API.get(
+        `/fhir/Organization/${selectedClinicId}&_elements=name`
+      );
+      return (orgResp.data as { name?: string } | undefined)?.name ?? '-';
+    },
+    enabled: Boolean(isAdmin && selectedClinicId)
+  });
 
   const guestAvatar = useMemo(() => {
     const seed = crypto.randomUUID();
@@ -203,6 +244,36 @@ export default function PageHeader({
               See All
             </Link>
           </div>
+        </>
+      )}
+
+      {isAdmin && (
+        <>
+          {isClinicNameLoading && (
+            <div className='card mt-4 flex items-center border-0 bg-[#F9F9F9] p-4'>
+              <div className='mr-[10pxpx] h-5 w-5 animate-pulse rounded bg-gray-200' />
+              <div className='mr-auto flex flex-col gap-1'>
+                <div className='h-3 w-20 animate-pulse rounded bg-gray-200' />
+                <div className='h-4 w-40 animate-pulse rounded bg-gray-200' />
+              </div>
+            </div>
+          )}
+          {!isClinicNameLoading && clinicName && clinicName !== '-' && (
+            <Link
+              href='/clinic'
+              className='card mt-4 flex items-center border-0 bg-[#F9F9F9]'
+            >
+              <Calendar className='mr-[10px] h-5 w-5 shrink-0 text-black' />
+              <div className='mr-auto flex flex-col'>
+                <span className='text-muted text-[12px]'>
+                  Currently Managing
+                </span>
+                <span className='text-secondary text-left text-[14px] font-bold'>
+                  {clinicName}
+                </span>
+              </div>
+            </Link>
+          )}
         </>
       )}
     </div>
