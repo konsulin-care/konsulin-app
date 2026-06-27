@@ -95,19 +95,56 @@ function PendingApprovalsCard() {
 export default function HomeContentAdmin() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
+  const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    null
+  );
+
+  useEffect(() => {
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_clinic'])
+      .then(saved => {
+        if (saved?.value) setSelectedClinicId(saved.value);
+        return null;
+      })
+      .catch(() => {
+        /* IndexedDB unavailable */
+      });
+  }, []);
+
+  useEffect(() => {
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_location'])
+      .then(saved => {
+        if (saved?.value) setSelectedLocationId(saved.value);
+        return null;
+      })
+      .catch(() => {
+        /* ignore */
+      });
+  }, []);
+
   const {
     data: practitionerCount,
     isLoading: isCountLoading,
     isError: isCountError,
     refetch: refetchCount
   } = useQuery({
-    queryKey: ['practitioner-count'],
+    queryKey: ['practitioner-count', selectedClinicId, selectedLocationId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get('/fhir/Practitioner?_summary=count');
+
+      if (selectedLocationId) {
+        const response = await API.get(
+          `/fhir/Practitioner?_has:PractitionerRole:practitioner:location=Location/${selectedLocationId}&_summary=count`
+        );
+        return response.data?.total ?? 0;
+      }
+
+      const response = await API.get(
+        `/fhir/Practitioner?_has:PractitionerRole:practitioner:organization=Organization/${selectedClinicId}&_summary=count`
+      );
       return response.data?.total ?? 0;
     },
-    enabled: Boolean(authState?.userInfo?.fhirId)
+    enabled: Boolean(authState?.userInfo?.fhirId) && Boolean(selectedClinicId)
   });
 
   /** Retry loading practitioner count on error. */

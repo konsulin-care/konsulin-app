@@ -18,6 +18,7 @@ vi.mock('@/lib/indexeddb', () => ({
 }));
 
 import { useAuth } from '@/context/auth/authContext';
+import { dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 
 const mockAxiosInstance = { get: vi.fn() };
@@ -48,6 +49,12 @@ describe('HomeContentAdmin', () => {
     vi.mocked(getAPI).mockResolvedValue(
       mockAxiosInstance as unknown as AxiosInstance
     );
+    // Default: provide a clinic ID so queries fire
+    vi.mocked(dbGet).mockImplementation((_store, args) => {
+      if (args?.[1] === 'selected_clinic')
+        return Promise.resolve({ value: 'org-1' });
+      return Promise.resolve(null);
+    });
   });
 
   afterEach(() => {
@@ -57,6 +64,60 @@ describe('HomeContentAdmin', () => {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+
+  describe('practitioner count query', () => {
+    it('uses organization-based filter when only clinic is set', async () => {
+      mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
+
+      render(<HomeContentAdmin />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('12')).toBeDefined();
+      });
+
+      const calledUrl = mockAxiosInstance.get.mock.calls[0][0] as string;
+      expect(calledUrl).toContain(
+        '_has:PractitionerRole:practitioner:organization=Organization/org-1'
+      );
+      expect(calledUrl).toContain('_summary=count');
+    });
+
+    it('uses location-based filter when both clinic and location are set', async () => {
+      vi.mocked(dbGet).mockImplementation((_store, args) => {
+        if (args?.[1] === 'selected_clinic')
+          return Promise.resolve({ value: 'org-1' });
+        if (args?.[1] === 'selected_location')
+          return Promise.resolve({ value: 'loc-1' });
+        return Promise.resolve(null);
+      });
+      mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
+
+      render(<HomeContentAdmin />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('5')).toBeDefined();
+      });
+
+      const calledUrl = mockAxiosInstance.get.mock.calls[0][0] as string;
+      expect(calledUrl).toContain(
+        '_has:PractitionerRole:practitioner:location=Location/loc-1'
+      );
+      expect(calledUrl).toContain('_summary=count');
+    });
+
+    it('does not fetch when no clinic is stored', async () => {
+      vi.mocked(dbGet).mockResolvedValue(null);
+      mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
+
+      render(<HomeContentAdmin />, { wrapper });
+
+      // Wait for effects to settle, then verify no fetch occurred
+      await vi.waitFor(() => {
+        // With no clinic ID, query is disabled — loading skeleton shown
+        expect(mockAxiosInstance.get).not.toHaveBeenCalled();
+      });
+    });
+  });
 
   it('renders practitioner count when data loads', async () => {
     mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
@@ -150,7 +211,6 @@ describe('HomeContentAdmin', () => {
     expect(screen.getByText('Clinic Details')).toBeDefined();
     expect(screen.getByText('Reports')).toBeDefined();
 
-    // Old management cards must be absent
     expect(screen.queryByText('Manage Practitioners')).toBeNull();
     expect(screen.queryByText('Clinic Settings')).toBeNull();
     expect(screen.queryByText('View Schedule')).toBeNull();
