@@ -1,10 +1,18 @@
 'use client';
 
-import Avatar from '@/components/general/avatar';
 import { Badge } from '@/components/ui/badge';
+import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
 import { generateAvatarPlaceholder } from '@/utils/helper';
+import Image from 'next/image';
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode
+} from 'react';
 
 interface PractitionerCardProps {
   id: string;
@@ -19,7 +27,7 @@ const HIDDEN_PLACEHOLDER = '___hidden___';
 
 /**
  * Practitioner card for the admin listing view.
- * Layout: avatar left, name/specialty/service right.
+ * Layout: square avatar (full card height) left, name/specialty/service right.
  * Overflown specialties are truncated with a (n+) indicator.
  */
 export function PractitionerCard({
@@ -35,6 +43,7 @@ export function PractitionerCard({
     specialties.length > 0 ? specialties : []
   );
   const [overflowCount, setOverflowCount] = useState(0);
+  const [imgError, setImgError] = useState(false);
 
   const measureOverflow = useCallback(() => {
     const el = containerRef.current;
@@ -80,6 +89,11 @@ export function PractitionerCard({
     name: practitionerName
   });
 
+  const gradientUrl = useMemo(() => {
+    if (!seed || !initials) return null;
+    return generateAvatarSvgDataUrl(seed, initials);
+  }, [seed, initials]);
+
   const displayName =
     practitionerName && practitionerName.trim() !== '-'
       ? practitionerName
@@ -90,23 +104,53 @@ export function PractitionerCard({
       ? healthcareServiceNames.join('; ')
       : 'No healthcare service registered';
 
+  const showPhoto = Boolean(photoUrl) && !imgError;
+
+  let avatarContent: ReactNode;
+  if (showPhoto) {
+    avatarContent = (
+      <Image
+        src={photoUrl}
+        alt={displayName}
+        fill
+        className='object-cover'
+        unoptimized
+        onError={() => setImgError(true)}
+      />
+    );
+  } else if (gradientUrl) {
+    avatarContent = (
+      <Image
+        src={gradientUrl}
+        alt={displayName}
+        fill
+        className='object-cover'
+        unoptimized
+      />
+    );
+  } else {
+    avatarContent = (
+      <div
+        className='flex h-full w-full items-center justify-center text-base font-bold text-white'
+        style={{ backgroundColor: backgroundColor ?? '#13c2c2' }}
+      >
+        {initials}
+      </div>
+    );
+  }
+
   return (
     <Link
       href={`/practitioner?practitionerRoleId=${practitionerRoleId}`}
-      className='card flex items-center border-0 bg-[#F9F9F9] p-4'
+      className='card flex items-stretch overflow-hidden bg-[#F9F9F9] p-0'
     >
-      <Avatar
-        seed={seed}
-        initials={initials ?? ''}
-        backgroundColor={backgroundColor ?? ''}
-        photoUrl={photoUrl}
-        height={48}
-        width={48}
-        className='mr-3 shrink-0 text-base'
-        imageClassName='self-center'
-      />
+      {/* Square avatar spanning full card height */}
+      <div className='relative flex aspect-square shrink-0 items-stretch overflow-hidden bg-[#13c2c2]'>
+        {avatarContent}
+      </div>
 
-      <div className='min-w-0 flex-1'>
+      {/* Practitioner details */}
+      <div className='min-w-0 flex-1 p-4 pl-3'>
         <div className='text-[14px] font-bold text-black'>{displayName}</div>
 
         <div

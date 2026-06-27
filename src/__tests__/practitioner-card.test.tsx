@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-empty-function, sonarjs/slow-regex */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-empty-function, sonarjs/slow-regex */
 
 import { PractitionerCard } from '@/components/practitioner/practitioner-card';
 import { render, screen } from '@testing-library/react';
@@ -17,8 +17,8 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() })
 }));
 
-vi.mock('@/components/general/avatar', () => ({
-  default: (props: any) => <div data-testid='mock-avatar'>{props.initials}</div>
+vi.mock('@/utils/gradientAvatar', () => ({
+  generateAvatarSvgDataUrl: vi.fn(() => 'data:image/svg+xml;mock')
 }));
 
 describe('PractitionerCard', () => {
@@ -76,7 +76,7 @@ describe('PractitionerCard', () => {
     );
   });
 
-  it('renders avatar with initials', () => {
+  it('renders avatar as a square container (no circle)', () => {
     render(
       <PractitionerCard
         id='prac-4'
@@ -88,7 +88,10 @@ describe('PractitionerCard', () => {
       />
     );
 
-    expect(screen.getByTestId('mock-avatar')).toBeDefined();
+    // Avatar container should have aspect-square (square, not circle)
+    const link = screen.getByText('Alice').closest('a');
+    const avatarContainer = link?.querySelector('.aspect-square');
+    expect(avatarContainer).not.toBeNull();
   });
 
   it('renders all items when they fit (JSDOM has infinite width)', () => {
@@ -114,5 +117,37 @@ describe('PractitionerCard', () => {
     expect(screen.getByText('Dermatology')).toBeDefined();
     // No overflow indicator when all fit
     expect(screen.queryByText(/\d+\+/)).toBeNull();
+  });
+
+  it('renders card with items-stretch layout', () => {
+    render(
+      <PractitionerCard
+        id='prac-6'
+        practitionerName='Stretch Test'
+        photoUrl={undefined}
+        specialties={['General']}
+        healthcareServiceNames={[]}
+        practitionerRoleId='role-6'
+      />
+    );
+
+    const link = screen.getByText('Stretch Test').closest('a');
+    expect(link?.className).toContain('items-stretch');
+  });
+
+  it('has overflow-hidden on the card to clip avatar to rounded corners', () => {
+    render(
+      <PractitionerCard
+        id='prac-7'
+        practitionerName='Clip Test'
+        photoUrl={undefined}
+        specialties={['General']}
+        healthcareServiceNames={[]}
+        practitionerRoleId='role-7'
+      />
+    );
+
+    const link = screen.getByText('Clip Test').closest('a');
+    expect(link?.className).toContain('overflow-hidden');
   });
 });
