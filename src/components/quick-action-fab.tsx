@@ -3,6 +3,7 @@
 
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
+import { useFabDirty } from '@/context/fabDirtyContext';
 import { cn } from '@/lib/utils';
 import { BookText, Calendar, HeartPulse, Plus, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -33,12 +34,16 @@ export default function QuickActionFab() {
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
 
+  const { dirtyState } = useFabDirty();
+  const isDirty = dirtyState !== null;
+
   const isGuest = authState?.userInfo?.role_name === Roles.Guest;
 
   useEffect(() => {
     /** Hides or shows FAB based on scroll direction and offset. */
     const handleScroll = () => {
       if (isOpen) return;
+      if (isDirty) return;
 
       const currentY = window.scrollY;
       const delta = currentY - lastScrollY.current;
@@ -58,10 +63,16 @@ export default function QuickActionFab() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isOpen]);
+  }, [isOpen, isDirty]);
 
   const close = useCallback(() => setIsOpen(false), []);
-  const toggle = useCallback(() => setIsOpen(v => !v), []);
+  const toggle = useCallback(() => {
+    if (dirtyState) {
+      void dirtyState.onSave();
+    } else {
+      setIsOpen(v => !v);
+    }
+  }, [dirtyState]);
 
   const handlePillClick = useCallback(
     (href: string) => {
@@ -78,7 +89,7 @@ export default function QuickActionFab() {
 
   return (
     <>
-      {isOpen && (
+      {isOpen && !isDirty && (
         <button
           type='button'
           className='animate-overlay-in fixed inset-0 z-40 bg-black/80'
@@ -91,12 +102,12 @@ export default function QuickActionFab() {
         className={cn(
           'fixed z-50 flex flex-col items-end gap-3 transition-all duration-300',
           'right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]',
-          isVisible
+          isVisible || isDirty
             ? 'translate-y-0 opacity-100'
             : 'pointer-events-none translate-y-[100px] opacity-0'
         )}
       >
-        {isOpen && (
+        {isOpen && !isDirty && (
           <div className='flex flex-col-reverse items-end gap-3'>
             {pills.map(pill => (
               <button
@@ -116,11 +127,18 @@ export default function QuickActionFab() {
         <button
           onClick={toggle}
           className={cn(
-            'flex h-14 w-14 items-center justify-center rounded-full bg-[#13C2C2] text-white shadow-lg transition-transform duration-300 hover:bg-[#0ea5a5]',
-            isOpen ? 'rotate-45' : ''
+            'flex items-center justify-center rounded-full bg-[#13C2C2] text-white shadow-lg transition-all duration-300 hover:bg-[#0ea5a5]',
+            isDirty ? 'h-14 px-6' : 'h-14 w-14',
+            isOpen && !isDirty ? 'rotate-45' : ''
           )}
         >
-          <Plus className='h-6 w-6 transition-transform duration-300' />
+          {isDirty ? (
+            <span className='text-sm font-semibold whitespace-nowrap'>
+              {dirtyState?.label ?? 'Save Changes'}
+            </span>
+          ) : (
+            <Plus className='h-6 w-6 transition-transform duration-300' />
+          )}
         </button>
       </div>
     </>

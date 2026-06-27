@@ -1,21 +1,17 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Roles } from '@/constants/roles';
+import { useAuth } from '@/context/auth/authContext';
+import { useFabDirty } from '@/context/fabDirtyContext';
 import { useDetailPractitioner } from '@/services/clinic';
 import { PractitionerRole } from 'fhir/r4';
-import { useCallback, useState } from 'react';
-import DynamicFloatingActionButton from './dynamic-floating-action-button';
+import { useCallback } from 'react';
 import PractitionerAvailabilityEditor from './practitioner-availability-editor';
 import ServicesTab from './services-tab';
 
 type Props = {
   practitionerRoleId: string;
-};
-
-type DirtyState = {
-  dirty: boolean;
-  save: () => Promise<void>;
-  saving: boolean;
 };
 
 /**
@@ -35,79 +31,65 @@ function enhanceWithOrgDisplay(
 }
 
 /**
- * Two-tab admin management shell for a practitioner role.
+ * Two-tab admin shell for a practitioner role.
  *
- * Availability tab: renders PractitionerAvailabilityEditor (same as /profile).
- * Services tab: manages HealthcareService resources.
- * DynamicFloatingActionButton: single save button at shell level —
- * transforms to "Save Changes" when a tab has unsaved changes.
+ * Sets dirty state on the global FabDirtyContext so QuickActionFab morphs
+ * into a "Save Changes" button when the active tab has unsaved changes.
  */
 export default function PractitionerRoleManagementShell(props: Props) {
   const { newData: detail } = useDetailPractitioner(props.practitionerRoleId);
-  const [activeTab, setActiveTab] = useState('availability');
-  const [availDirty, setAvailDirty] = useState<DirtyState | null>(null);
-  const [svcDirty, setSvcDirty] = useState<DirtyState | null>(null);
+  const { setDirtyState } = useFabDirty();
+  const { state: authState } = useAuth();
 
-  const currentDirty = activeTab === 'availability' ? availDirty : svcDirty;
-
-  // Services tab default action: "Add Service" is triggered from the tab itself
-  const handleDefaultAction = useCallback(() => {
-    // The services tab has inline "Add Service" buttons — no FAB default needed
-  }, []);
-
-  const handleAvailDirtyChange = useCallback(
+  const handleDirtyChange = useCallback(
     (dirty: boolean, save: () => Promise<void>, saving: boolean) => {
-      setAvailDirty(dirty ? { dirty, save, saving } : null);
+      if (dirty) {
+        setDirtyState({
+          isDirty: true,
+          label: 'Save Changes',
+          onSave: save,
+          isSaving: saving
+        });
+      } else {
+        setDirtyState(null);
+      }
     },
-    []
+    [setDirtyState]
   );
 
-  const handleSvcDirtyChange = useCallback(
-    (dirty: boolean, save: () => Promise<void>, saving: boolean) => {
-      setSvcDirty(dirty ? { dirty, save, saving } : null);
-    },
-    []
-  );
+  // Only ClinicAdmin users see the management shell
+  if (authState?.userInfo?.role_name !== Roles.ClinicAdmin) {
+    return null;
+  }
 
   return (
-    <>
-      <Tabs
-        defaultValue='availability'
-        className='w-full'
-        data-role-id={props.practitionerRoleId}
-        onValueChange={setActiveTab}
-      >
-        <TabsList className='grid w-full grid-cols-2'>
-          <TabsTrigger value='availability'>Availability</TabsTrigger>
-          <TabsTrigger value='services'>Services</TabsTrigger>
-        </TabsList>
-        <TabsContent value='availability'>
-          {detail?.resource ? (
-            <PractitionerAvailabilityEditor
-              practitionerRole={enhanceWithOrgDisplay(
-                detail.resource,
-                detail.organization
-              )}
-              hideSaveButton
-              onDirtyChange={handleAvailDirtyChange}
-            />
-          ) : null}
-        </TabsContent>
-        <TabsContent value='services'>
-          <ServicesTab
-            practitionerRoleId={props.practitionerRoleId}
-            onDirtyChange={handleSvcDirtyChange}
+    <Tabs
+      defaultValue='availability'
+      className='w-full'
+      data-role-id={props.practitionerRoleId}
+    >
+      <TabsList className='grid w-full grid-cols-2'>
+        <TabsTrigger value='availability'>Availability</TabsTrigger>
+        <TabsTrigger value='services'>Services</TabsTrigger>
+      </TabsList>
+      <TabsContent value='availability'>
+        {detail?.resource ? (
+          <PractitionerAvailabilityEditor
+            practitionerRole={enhanceWithOrgDisplay(
+              detail.resource,
+              detail.organization
+            )}
+            hideSaveButton
+            onDirtyChange={handleDirtyChange}
           />
-        </TabsContent>
-      </Tabs>
-
-      <DynamicFloatingActionButton
-        isDirty={currentDirty?.dirty ?? false}
-        isSaving={currentDirty?.saving ?? false}
-        label='Save Changes'
-        onSave={currentDirty?.save}
-        onDefaultAction={handleDefaultAction}
-      />
-    </>
+        ) : null}
+      </TabsContent>
+      <TabsContent value='services'>
+        <ServicesTab
+          practitionerRoleId={props.practitionerRoleId}
+          onDirtyChange={handleDirtyChange}
+        />
+      </TabsContent>
+    </Tabs>
   );
 }
