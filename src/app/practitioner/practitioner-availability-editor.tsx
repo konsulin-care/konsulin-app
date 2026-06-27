@@ -89,8 +89,18 @@ export default function PractitionerAvailabilityEditor({
   );
 
   // Update state when stableInitialWeeklyAvailability changes
+  // Uses a ref to track whether the initial data actually changed (new practitioner props)
+  // vs dirty flag transitioning false after save — only reset in the former case.
+  const prevStableRef = useRef(stableInitialWeeklyAvailability);
+
   useEffect(() => {
-    if (!weeklyAvailabilityDirty) {
+    const prevInitial = prevStableRef.current;
+    prevStableRef.current = stableInitialWeeklyAvailability;
+
+    if (
+      !weeklyAvailabilityDirty &&
+      stableInitialWeeklyAvailability !== prevInitial
+    ) {
       setWeeklyAvailability(stableInitialWeeklyAvailability);
       setSelectedDay(getInitialSelectedDay(stableInitialWeeklyAvailability));
     }

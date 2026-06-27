@@ -11,11 +11,19 @@ vi.mock('@/services/api/schedule', () => ({
 
 vi.mock('@/components/availability/availability-editor', () => ({
   default: ({
-    onAddTimeRange
+    onAddTimeRange,
+    weeklyAvailability
   }: {
     onAddTimeRange: (orgId: string, day: number) => void;
+    weeklyAvailability: Record<string, Record<string, unknown[]>>;
   }) => (
     <div data-testid='availability-editor'>
+      <div data-testid='days-with-data'>
+        {Object.entries(weeklyAvailability)
+          .filter(([, orgs]) => orgs['org-1']?.length > 0)
+          .map(([day]) => day)
+          .join(',')}
+      </div>
       <button data-testid='add-mon' onClick={() => onAddTimeRange('org-1', 0)}>
         Add Mon
       </button>
@@ -170,5 +178,47 @@ describe('PractitionerAvailabilityEditor save behaviors', () => {
         call[0] === false && index >= callsBeforeSave
     );
     expect(falseCallsAfterSave.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('preserves availability data visually after save', async () => {
+    let currentSave: (() => Promise<void>) | null = null;
+
+    const onDirtyChange = vi.fn((dirty: boolean, save: () => Promise<void>) => {
+      if (dirty) {
+        currentSave = save;
+      }
+    });
+
+    render(
+      <PractitionerAvailabilityEditor
+        practitionerRole={mockRole as PractitionerRole}
+        hideSaveButton
+        onDirtyChange={onDirtyChange}
+      />
+    );
+
+    // Add Mon and Tue availability
+    fireEvent.click(screen.getByTestId('add-mon'));
+    fireEvent.click(screen.getByTestId('add-tue'));
+    await waitFor(() =>
+      expect(onDirtyChange).toHaveBeenCalledWith(
+        true,
+        expect.any(Function),
+        false
+      )
+    );
+
+    // Before save: both days visible
+    expect(screen.getByTestId('days-with-data').textContent).toBe('0,1');
+
+    // Save
+    // eslint-disable-next-line unicorn/no-useless-undefined -- required by vitest mock types, cannot omit
+    mockMutateAsync.mockResolvedValueOnce(undefined);
+    await (currentSave as () => Promise<void>)();
+    await waitFor(() => Promise.resolve());
+
+    // After save: both days should still be visible
+    // (the reset effect must not wipe weeklyAvailability back to empty initial state)
+    expect(screen.getByTestId('days-with-data').textContent).toBe('0,1');
   });
 });
