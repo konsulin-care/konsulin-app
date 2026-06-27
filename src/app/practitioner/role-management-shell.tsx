@@ -1,6 +1,7 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AvailabilityTab from './availability-tab';
 import ServicesTab from './services-tab';
 
 type Props = {
@@ -26,7 +27,7 @@ export default function PractitionerRoleManagementShell(props: Props) {
         <TabsTrigger value='services'>Services</TabsTrigger>
       </TabsList>
       <TabsContent value='availability'>
-        <div className='py-4'>Availability</div>
+        <AvailabilityTab practitionerRoleId={props.practitionerRoleId} />
       </TabsContent>
       <TabsContent value='services'>
         <ServicesTab practitionerRoleId={props.practitionerRoleId} />

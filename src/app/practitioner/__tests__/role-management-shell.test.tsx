@@ -1,4 +1,4 @@
-/* eslint-disable unicorn/dom-node-dataset */
+/* eslint-disable unicorn/dom-node-dataset, @typescript-eslint/no-unsafe-assignment */
 
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -44,25 +44,28 @@ vi.mock('@/components/ui/tabs', () => ({
   )
 }));
 
-vi.mock('@/services/clinic', async () => {
-  const actual =
-    await vi.importActual<Record<string, unknown>>('@/services/clinic');
-  return {
-    ...actual,
-    useDetailPractitioner: () => ({
-      newData: null,
-      isLoading: false,
-      isError: false,
-      isFetching: false
-    }),
-    usePractitionerRoleHealthcareServices: () => ({
-      data: [],
-      isLoading: false,
-      isError: false,
-      isFetching: false
-    })
-  };
-});
+vi.mock('@/app/practitioner/availability-tab', () => ({
+  default: () => <div data-testid='mock-availability-tab'>Availability Tab</div>
+}));
+
+vi.mock('@/app/practitioner/services-tab', () => ({
+  default: () => <div data-testid='mock-services-tab'>Services Tab</div>
+}));
+
+vi.mock('@/services/clinic', () => ({
+  useDetailPractitioner: () => ({
+    newData: null as any,
+    isLoading: false,
+    isError: false,
+    isFetching: false
+  }),
+  usePractitionerRoleHealthcareServices: () => ({
+    data: [] as any,
+    isLoading: false,
+    isError: false,
+    isFetching: false
+  })
+}));
 
 describe('PractitionerRoleManagementShell', () => {
   it('renders both tabs with correct labels', () => {
