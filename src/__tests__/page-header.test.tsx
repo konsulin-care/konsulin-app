@@ -98,7 +98,7 @@ describe('PageHeader - admin clinic card', () => {
     expect(screen.getByText('Klinik Sehat Cyberjaya')).toBeDefined();
   });
 
-  it('falls back to Organization.name when Location has no entries', async () => {
+  it('falls back to Organization.name with correct query separator', async () => {
     vi.mocked(useAuth).mockReturnValue({
       isLoading: false,
       state: {
@@ -125,6 +125,10 @@ describe('PageHeader - admin clinic card', () => {
       expect(screen.getByText('Currently Managing')).toBeDefined();
     });
     expect(screen.getByText('Konsulin HQ')).toBeDefined();
+
+    // Verify Organization URL uses ? not &
+    const secondCallUrl = mockAxiosInstance.get.mock.calls[1]?.[0] as string;
+    expect(secondCallUrl).toBe('/fhir/Organization/org-456?_elements=name');
   });
 
   it('does NOT render clinic card for patient role', async () => {

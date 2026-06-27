@@ -134,7 +134,7 @@ export default function PageHeader({
       if (locName) return locName;
       // Fallback to Organization resource
       const orgResp = await API.get(
-        `/fhir/Organization/${selectedClinicId}&_elements=name`
+        `/fhir/Organization/${selectedClinicId}?_elements=name`
       );
       return (orgResp.data as { name?: string } | undefined)?.name ?? '-';
     },
