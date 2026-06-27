@@ -15,37 +15,39 @@ import {
   getInitialSelectedDay
 } from '@/utils/availability';
 import type { Bundle } from 'fhir/r4';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 type Props = {
   practitionerRoleId: string;
 };
 
-/**
- * Initialize WeeklyAvailability from a single PractitionerRole's availableTime.
- */
+/** Initialize full 7-day empty weekly structure, optionally from PractitionerRole. */
 function initAvailability(
-  availableTime:
-    | {
-        daysOfWeek?: string[];
-        availableStartTime?: string;
-        availableEndTime?: string;
-      }[]
-    | undefined
+  availableTime?: {
+    daysOfWeek?: string[];
+    availableStartTime?: string;
+    availableEndTime?: string;
+  }[]
 ): WeeklyAvailability {
-  const weekly: WeeklyAvailability = {} as WeeklyAvailability;
-  (
-    ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as unknown as DayOfWeek[]
-  ).forEach(day => {
+  const DAYS = [0, 1, 2, 3, 4, 5, 6] as DayOfWeek[];
+  const weekly = {} as WeeklyAvailability;
+  DAYS.forEach(day => {
     weekly[day] = {};
   });
-
   if (!availableTime) return weekly;
-
   for (const slot of availableTime) {
-    const days = slot.daysOfWeek ?? [];
-    for (const day of days) {
-      const d = day.toLowerCase() as unknown as DayOfWeek;
+    for (const dayStr of slot.daysOfWeek ?? []) {
+      const dayMap: Record<string, DayOfWeek> = {
+        mon: 0,
+        tue: 1,
+        wed: 2,
+        thu: 3,
+        fri: 4,
+        sat: 5,
+        sun: 6
+      };
+      const d = dayMap[dayStr.toLowerCase()];
+      if (d === undefined) continue;
       if (!weekly[d]) weekly[d] = {};
       const orgId = 'current';
       if (!weekly[d][orgId]) weekly[d][orgId] = [];
@@ -56,76 +58,82 @@ function initAvailability(
       });
     }
   }
-
   return weekly;
 }
 
-/**
- * Convert WeeklyAvailability back to FHIR availableTime format for the bundle.
- */
-function weeklyToAvailableTime(
-  weekly: WeeklyAvailability
-): {
+/** Convert WeeklyAvailability to FHIR availableTime. */
+function weeklyToAvailableTime(weekly: WeeklyAvailability): {
   daysOfWeek: string[];
   availableStartTime: string;
   availableEndTime: string;
 }[] {
+  const DAY_NAMES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   const result: {
     daysOfWeek: string[];
     availableStartTime: string;
     availableEndTime: string;
   }[] = [];
-
-  for (const [day, orgRanges] of Object.entries(weekly)) {
+  for (const [dayIdx, orgRanges] of Object.entries(weekly)) {
     for (const ranges of Object.values(orgRanges)) {
       for (const range of ranges) {
         result.push({
-          daysOfWeek: [day],
+          daysOfWeek: [DAY_NAMES[Number(dayIdx)]],
           availableStartTime: `${range.from}:00`,
           availableEndTime: `${range.to}:00`
         });
       }
     }
   }
-
   return result;
 }
 
 /**
- * Availability management tab for the practitioner role shell.
+ * Availability management tab.
  *
- * Uses the same reusable UI components as PractitionerAvailabilityEditor
- * (DaySelectorNavigation, AvailabilityEditor, FloatingSaveButton) but
- * saves via a single FHIR transaction bundle instead of direct PUTs.
+ * Uses DaySelectorNavigation, AvailabilityEditor, FloatingSaveButton.
+ * Saves via a single FHIR transaction bundle (PUT PractitionerRole).
+ * Dirty tracking uses a local override (dirtyAvailability) to avoid
+ * stale-state race conditions between data fetch and render.
  */
 export default function AvailabilityTab({ practitionerRoleId }: Props) {
   const { newData: detail, isLoading } =
     useDetailPractitioner(practitionerRoleId);
 
-  const initialWeekly = useMemo(
-    () =>
-      detail?.resource
-        ? initAvailability(detail.resource.availableTime)
-        : ({} as WeeklyAvailability),
+  // Base availability derived from fetched data — always in sync
+  const baseAvailability = useMemo(
+    () => initAvailability(detail?.resource?.availableTime),
     [detail]
   );
 
-  const [weeklyAvailability, setWeeklyAvailability] =
-    useState<WeeklyAvailability>(initialWeekly);
-  const [selectedDay, setSelectedDay] = useState<DayOfWeek>(
-    getInitialSelectedDay(initialWeekly)
+  // Dirty override: when user edits, switches to dirty state
+  const [dirtyAvailability, setDirtyAvailability] =
+    useState<WeeklyAvailability | null>(null);
+  const [dirtySelectedDay, setDirtySelectedDay] = useState<DayOfWeek | null>(
+    null
   );
   const [isSaving, setIsSaving] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
 
-  // Sync initial state when detail data loads
-  useEffect(() => {
-    if (detail?.resource && !isDirty) {
-      const fresh = initAvailability(detail.resource.availableTime);
-      setWeeklyAvailability(fresh);
-      setSelectedDay(getInitialSelectedDay(fresh));
-    }
-  }, [detail?.resource, isDirty]);
+  // weeklyAvailability is always a full 7-day structure (initAvailability guarantees it)
+  const weeklyAvailability = dirtyAvailability ?? baseAvailability;
+  const defaultDay = getInitialSelectedDay(baseAvailability);
+  const selectedDay = dirtySelectedDay ?? defaultDay;
+  const isDirty = dirtyAvailability !== null;
+
+  const markDirty = useCallback(
+    (update: (prev: WeeklyAvailability) => WeeklyAvailability) => {
+      setDirtyAvailability(prev => {
+        const base = prev ?? baseAvailability;
+        return update(structuredClone(base));
+      });
+      setDirtySelectedDay(prev => prev ?? defaultDay);
+    },
+    [baseAvailability, defaultDay]
+  );
+
+  const handleResetDirty = useCallback(() => {
+    setDirtyAvailability(null);
+    setDirtySelectedDay(null);
+  }, []);
 
   const organizations: UIOrganization[] = useMemo(
     () => [{ id: 'current', name: 'Current Practice' }],
@@ -134,22 +142,17 @@ export default function AvailabilityTab({ practitionerRoleId }: Props) {
 
   const handleAddTimeRange = useCallback(
     (organizationId: string, day: DayOfWeek) => {
-      setWeeklyAvailability(prev => {
-        const next = { ...prev };
-        if (!next[day]) next[day] = {};
-        const orgRanges = next[day][organizationId] || [];
-        next[day] = {
-          ...next[day],
-          [organizationId]: [
-            ...orgRanges,
-            { id: generateTimeRangeId(), from: '09:00', to: '17:00' }
-          ]
-        };
-        return next;
+      markDirty(prev => {
+        if (!prev[day]) prev[day] = {};
+        const orgRanges = prev[day][organizationId] || [];
+        prev[day][organizationId] = [
+          ...orgRanges,
+          { id: generateTimeRangeId(), from: '09:00', to: '17:00' }
+        ];
+        return prev;
       });
-      setIsDirty(true);
     },
-    []
+    [markDirty]
   );
 
   const handleUpdateTimeRange = useCallback(
@@ -160,38 +163,33 @@ export default function AvailabilityTab({ practitionerRoleId }: Props) {
       field: 'from' | 'to',
       value: string
     ) => {
-      setWeeklyAvailability(prev => {
-        const next = { ...prev };
-        const orgRanges = (next[day]?.[organizationId] ?? []).map(r =>
+      markDirty(prev => {
+        const orgRanges = (prev[day]?.[organizationId] ?? []).map(r =>
           r.id === timeRangeId ? { ...r, [field]: value } : r
         );
-        next[day] = { ...next[day], [organizationId]: orgRanges };
-        return next;
+        prev[day] = { ...prev[day], [organizationId]: orgRanges };
+        return prev;
       });
-      setIsDirty(true);
     },
-    []
+    [markDirty]
   );
 
   const handleDeleteTimeRange = useCallback(
     (organizationId: string, day: DayOfWeek, timeRangeId: string) => {
-      setWeeklyAvailability(prev => {
-        const next = { ...prev };
-        const orgRanges = (next[day]?.[organizationId] ?? []).filter(
+      markDirty(prev => {
+        const orgRanges = (prev[day]?.[organizationId] ?? []).filter(
           r => r.id !== timeRangeId
         );
-        next[day] = { ...next[day], [organizationId]: orgRanges };
-        return next;
+        prev[day] = { ...prev[day], [organizationId]: orgRanges };
+        return prev;
       });
-      setIsDirty(true);
     },
-    []
+    [markDirty]
   );
 
   const handleSave = useCallback(async () => {
     if (!detail?.resource?.id) return;
     setIsSaving(true);
-
     try {
       const availableTime = weeklyToAvailableTime(weeklyAvailability);
       const bundle: Bundle = {
@@ -211,28 +209,19 @@ export default function AvailabilityTab({ practitionerRoleId }: Props) {
           }
         ]
       };
-
       await submitFhirBundle(bundle);
-      setIsDirty(false);
+      handleResetDirty();
     } catch (error) {
       console.error('Failed to save availability:', error);
     } finally {
       setIsSaving(false);
     }
-  }, [weeklyAvailability, detail]);
+  }, [weeklyAvailability, detail, handleResetDirty]);
 
   if (isLoading) {
     return (
       <div className='flex items-center justify-center py-12 text-sm text-gray-500'>
         Loading availability...
-      </div>
-    );
-  }
-
-  if (!detail?.resource) {
-    return (
-      <div className='py-8 text-center text-sm text-gray-500'>
-        No schedule data available.
       </div>
     );
   }
@@ -243,10 +232,9 @@ export default function AvailabilityTab({ practitionerRoleId }: Props) {
         <DaySelectorNavigation
           selectedDay={selectedDay}
           weeklyAvailability={weeklyAvailability}
-          onSelectDay={setSelectedDay}
+          onSelectDay={setDirtySelectedDay}
         />
       </div>
-
       <div className='flex-1 overflow-y-auto px-6 py-4'>
         <AvailabilityEditor
           selectedDay={selectedDay}
@@ -257,7 +245,6 @@ export default function AvailabilityTab({ practitionerRoleId }: Props) {
           onDeleteTimeRange={handleDeleteTimeRange}
         />
       </div>
-
       <FloatingSaveButton
         onSave={() => {
           handleSave().catch(console.error);

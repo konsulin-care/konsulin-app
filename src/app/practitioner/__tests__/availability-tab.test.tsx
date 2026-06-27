@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access */
 
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -12,7 +12,16 @@ vi.mock('@/components/availability/day-selector-navigation', () => ({
 }));
 
 vi.mock('@/components/availability/availability-editor', () => ({
-  default: () => <div data-testid='availability-editor'>Editor</div>
+  default: ({ selectedDay, weeklyAvailability }: any) => {
+    // Simulate the real component's access pattern
+    const dayAvail = weeklyAvailability?.[selectedDay];
+    if (dayAvail === undefined) {
+      throw new Error(
+        `weeklyAvailability[${selectedDay}] is undefined — stale state race`
+      );
+    }
+    return <div data-testid='availability-editor'>Editor</div>;
+  }
 }));
 
 vi.mock('@/components/availability/floating-save-button', () => ({
@@ -55,7 +64,7 @@ describe('AvailabilityTab', () => {
     expect(screen.getByTestId('availability-editor')).toBeInTheDocument();
   });
 
-  it('renders save all button', () => {
+  it('does not crash when data loads and editor renders', () => {
     vi.mocked(useDetailPractitioner).mockReturnValue({
       newData: { resource: mockRole },
       isLoading: false,
@@ -65,7 +74,38 @@ describe('AvailabilityTab', () => {
 
     render(<AvailabilityTab practitionerRoleId='role-1' />);
 
+    expect(screen.getByTestId('availability-editor')).toBeInTheDocument();
+    expect(screen.getByTestId('day-selector')).toBeInTheDocument();
     expect(screen.getByTestId('save-all')).toBeInTheDocument();
+  });
+
+  it('renders without crashing when data transitions from loading to loaded', () => {
+    // Simulate loading → loaded transition
+    const mock = vi.mocked(useDetailPractitioner);
+
+    mock.mockReturnValueOnce({
+      newData: undefined,
+      isLoading: true,
+      isError: false,
+      isFetching: true
+    } as any);
+
+    const { rerender } = render(
+      <AvailabilityTab practitionerRoleId='role-1' />
+    );
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+
+    mock.mockReturnValueOnce({
+      newData: { resource: mockRole },
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as any);
+
+    rerender(<AvailabilityTab practitionerRoleId='role-1' />);
+
+    // This would throw if weeklyAvailability[selectedDay] is undefined
+    expect(screen.getByTestId('availability-editor')).toBeInTheDocument();
   });
 
   it('shows loading state when fetching', () => {
