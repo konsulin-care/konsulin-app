@@ -1,0 +1,174 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { PractitionerRole } from 'fhir/r4';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import PractitionerAvailabilityEditor from '../practitioner-availability-editor';
+
+const mockMutateAsync = vi.fn();
+
+vi.mock('@/services/api/schedule', () => ({
+  useUpdateAvailability: () => ({ mutateAsync: mockMutateAsync })
+}));
+
+vi.mock('@/components/availability/availability-editor', () => ({
+  default: ({
+    onAddTimeRange
+  }: {
+    onAddTimeRange: (orgId: string, day: number) => void;
+  }) => (
+    <div data-testid='availability-editor'>
+      <button data-testid='add-mon' onClick={() => onAddTimeRange('org-1', 0)}>
+        Add Mon
+      </button>
+      <button data-testid='add-tue' onClick={() => onAddTimeRange('org-1', 1)}>
+        Add Tue
+      </button>
+    </div>
+  )
+}));
+
+vi.mock('@/components/availability/day-selector-navigation', () => ({
+  default: () => <div data-testid='day-selector' />
+}));
+
+vi.mock('@/components/availability/floating-save-button', () => ({
+  default: () => <div data-testid='floating-save' />
+}));
+
+vi.mock('@/utils/availability', async () => {
+  const actual = await vi.importActual('@/utils/availability');
+  return {
+    ...actual,
+    initializeWeeklyAvailabilityFromRoles: () => ({
+      0: { 'org-1': [] },
+      1: { 'org-1': [] },
+      2: { 'org-1': [] },
+      3: { 'org-1': [] },
+      4: { 'org-1': [] },
+      5: { 'org-1': [] },
+      6: { 'org-1': [] }
+    }),
+    getInitialSelectedDay: () => 0,
+    convertToFhirAvailableTimeForOrganization: (
+      weeklyAvailability: Record<string, Record<string, unknown[]>>
+    ) => {
+      const daysWithData: string[] = [];
+      for (const day of Object.keys(weeklyAvailability)) {
+        const orgEntry = weeklyAvailability[day]?.['org-1'];
+        if (Array.isArray(orgEntry) && orgEntry.length > 0) {
+          daysWithData.push(day);
+        }
+      }
+      return daysWithData;
+    }
+  };
+});
+
+const mockRole: Partial<PractitionerRole> = {
+  resourceType: 'PractitionerRole',
+  id: 'role-1',
+  availableTime: []
+};
+
+describe('PractitionerAvailabilityEditor save behaviors', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('save function uses latest weeklyAvailability across multiple day edits', async () => {
+    let currentSave: (() => Promise<void>) | null = null;
+    let onDirtyChangeCallCount = 0;
+
+    const onDirtyChange = vi.fn((dirty: boolean, save: () => Promise<void>) => {
+      onDirtyChangeCallCount++;
+      if (dirty) {
+        currentSave = save;
+      }
+    });
+
+    render(
+      <PractitionerAvailabilityEditor
+        practitionerRole={mockRole as PractitionerRole}
+        hideSaveButton
+        onDirtyChange={onDirtyChange}
+      />
+    );
+
+    // Step 1: Add Mon time range -> dirty becomes true -> onDirtyChange called with save
+    fireEvent.click(screen.getByTestId('add-mon'));
+    await waitFor(() => expect(onDirtyChange).toHaveBeenCalled());
+
+    const saveAfterMon = currentSave;
+    const callsAfterMon = onDirtyChangeCallCount;
+
+    // Step 2: Add Tue time range -> dirty stays true -> onDirtyChange NOT called again
+    fireEvent.click(screen.getByTestId('add-tue'));
+
+    // Wait for React effects to settle
+    await waitFor(() => Promise.resolve());
+    // The onDirtyChange should not have been called again for dirty=true
+    // because weeklyAvailabilityDirty is already true
+    expect(onDirtyChangeCallCount).toBe(callsAfterMon);
+    // The save function should be the same reference (stale!)
+    expect(currentSave).toBe(saveAfterMon);
+
+    // Step 3: Call the save function — with stale closure it only has Mon data
+    // eslint-disable-next-line unicorn/no-useless-undefined -- required by vitest mock types, cannot omit
+    mockMutateAsync.mockResolvedValueOnce(undefined);
+    await (currentSave as () => Promise<void>)();
+
+    // Step 4: Verify what was sent to updateAvailability
+    // Expecting data for BOTH Mon (0) and Tue (1) if the save function
+    // reads the latest weeklyAvailability at call time
+    expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+    const sentData = mockMutateAsync.mock.calls[0][0] as {
+      availableTime: string[];
+    };
+    expect(sentData.availableTime).toContain('0'); // Mon
+    expect(sentData.availableTime).toContain('1'); // Tue
+  });
+
+  it('calls onDirtyChange with false after successful save', async () => {
+    let currentSave: (() => Promise<void>) | null = null;
+
+    const onDirtyChange = vi.fn((dirty: boolean, save: () => Promise<void>) => {
+      if (dirty) {
+        currentSave = save;
+      }
+    });
+
+    render(
+      <PractitionerAvailabilityEditor
+        practitionerRole={mockRole as PractitionerRole}
+        hideSaveButton
+        onDirtyChange={onDirtyChange}
+      />
+    );
+
+    // Trigger dirty state
+    fireEvent.click(screen.getByTestId('add-mon'));
+    await waitFor(() =>
+      expect(onDirtyChange).toHaveBeenCalledWith(
+        true,
+        expect.any(Function),
+        false
+      )
+    );
+
+    const callsBeforeSave = onDirtyChange.mock.calls.length;
+
+    // Perform save
+    // eslint-disable-next-line unicorn/no-useless-undefined -- required by vitest mock types, cannot omit
+    mockMutateAsync.mockResolvedValueOnce(undefined);
+    await (currentSave as () => Promise<void>)();
+    // Wait for all state updates after save to settle
+    await waitFor(() => Promise.resolve());
+
+    // After save, weeklyAvailabilityDirty should be cleared.
+    // Find a call with false as first arg that happened AFTER save.
+    const falseCallsAfterSave = onDirtyChange.mock.calls.filter(
+      (call: unknown[], index: number) =>
+        call[0] === false && index >= callsBeforeSave
+    );
+    expect(falseCallsAfterSave.length).toBeGreaterThanOrEqual(1);
+  });
+});

@@ -142,6 +142,11 @@ export default function PractitionerAvailabilityEditor({
       if (onSuccess) {
         onSuccess();
       }
+
+      // Mark dirty as cleared and update baseline so subsequent edits
+      // are correctly detected as new unsaved changes.
+      setWeeklyAvailabilityDirty(false);
+      savedBaselineRef.current = structuredClone(weeklyAvailability);
     } catch (error) {
       console.error('Failed to update availability:', error);
     } finally {
@@ -153,10 +158,18 @@ export default function PractitionerAvailabilityEditor({
   const saveRef = useRef(handleSave);
   saveRef.current = handleSave;
 
-  // Report dirty state to parent via onDirtyChange callback
+  // Track the last-saved availability so dirty detection works correctly after save.
+  const savedBaselineRef = useRef<WeeklyAvailability>(
+    stableInitialWeeklyAvailability
+  );
+
+  // Report dirty state to parent via onDirtyChange callback.
+  // Pass a wrapper that reads saveRef.current at call time to avoid stale closures
+  // when the user modifies multiple days before saving (the effect deps don't include
+  // weeklyAvailability, so it won't re-fire when dirty is already true).
   useEffect(() => {
     if (onDirtyChange) {
-      onDirtyChange(weeklyAvailabilityDirty, saveRef.current, isSaving);
+      onDirtyChange(weeklyAvailabilityDirty, () => saveRef.current(), isSaving);
     }
   }, [weeklyAvailabilityDirty, isSaving, onDirtyChange]);
 
@@ -289,17 +302,15 @@ export default function PractitionerAvailabilityEditor({
     return normalized;
   };
 
-  // Check if there are any changes to save
+  // Check if there are any changes to save (against the last-saved baseline)
   const hasChanges = useMemo(() => {
-    // Compare current state with initial state, ignoring generated IDs
+    // Compare current state with last-saved baseline, ignoring generated IDs
     const normalizedCurrent = normalizeAvailability(weeklyAvailability);
-    const normalizedInitial = normalizeAvailability(
-      stableInitialWeeklyAvailability
-    );
+    const normalizedInitial = normalizeAvailability(savedBaselineRef.current);
     return (
       JSON.stringify(normalizedCurrent) !== JSON.stringify(normalizedInitial)
     );
-  }, [weeklyAvailability, stableInitialWeeklyAvailability]);
+  }, [weeklyAvailability]);
 
   return (
     <div className='flex h-full flex-col pb-24 sm:pb-28 md:pb-32'>
