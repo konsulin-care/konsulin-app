@@ -1,10 +1,13 @@
-/* eslint-disable unicorn/dom-node-dataset, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable unicorn/dom-node-dataset, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access */
 
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import type { PractitionerRole } from 'fhir/r4';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PractitionerRoleManagementShell from '../role-management-shell';
 
-// Mock the tabs component used inside
+// Capture props passed to mock components
+let capturedEditorProps: Record<string, unknown> | null = null;
+
 vi.mock('@/components/ui/tabs', () => ({
   Tabs: ({
     children,
@@ -44,8 +47,15 @@ vi.mock('@/components/ui/tabs', () => ({
   )
 }));
 
-vi.mock('@/app/practitioner/availability-tab', () => ({
-  default: () => <div data-testid='mock-availability-tab'>Availability Tab</div>
+vi.mock('@/app/practitioner/practitioner-availability-editor', () => ({
+  default: (props: Record<string, unknown>) => {
+    capturedEditorProps = props;
+    return (
+      <div data-testid='practitioner-availability-editor'>
+        PractitionerAvailabilityEditor
+      </div>
+    );
+  }
 }));
 
 vi.mock('@/app/practitioner/services-tab', () => ({
@@ -53,26 +63,39 @@ vi.mock('@/app/practitioner/services-tab', () => ({
 }));
 
 vi.mock('@/services/clinic', () => ({
-  useDetailPractitioner: () => ({
-    newData: null as any,
-    isLoading: false,
-    isError: false,
-    isFetching: false
-  }),
-  usePractitionerRoleHealthcareServices: () => ({
-    data: [] as any,
-    isLoading: false,
-    isError: false,
-    isFetching: false
-  })
+  useDetailPractitioner: vi.fn()
 }));
 
-describe('PractitionerRoleManagementShell', () => {
-  it('renders both tabs with correct labels', () => {
-    render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
+import { useDetailPractitioner } from '@/services/clinic';
 
-    const tabs = screen.getByTestId('tabs');
-    expect(tabs).toBeDefined();
+const mockRole: Partial<PractitionerRole> = {
+  resourceType: 'PractitionerRole',
+  id: 'role-1',
+  active: true,
+  availableTime: [
+    {
+      daysOfWeek: ['mon', 'wed', 'fri'],
+      availableStartTime: '09:00:00',
+      availableEndTime: '17:00:00'
+    }
+  ],
+  organization: { reference: 'Organization/org-1' }
+};
+
+describe('PractitionerRoleManagementShell', () => {
+  beforeEach(() => {
+    capturedEditorProps = null;
+  });
+
+  it('renders both tabs with correct labels', () => {
+    vi.mocked(useDetailPractitioner).mockReturnValue({
+      newData: undefined,
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as any);
+
+    render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
 
     const triggers = screen.getAllByTestId('tab-trigger');
     expect(triggers).toHaveLength(2);
@@ -81,18 +104,85 @@ describe('PractitionerRoleManagementShell', () => {
   });
 
   it('defaults to the first tab (Availability)', () => {
+    vi.mocked(useDetailPractitioner).mockReturnValue({
+      newData: undefined,
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as any);
+
     render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
 
     const tabs = screen.getByTestId('tabs');
     expect(tabs.getAttribute('data-default')).toBe('availability');
   });
 
-  it('renders content for both tabs', () => {
+  it('renders PractitionerAvailabilityEditor in availability tab when role is loaded', () => {
+    vi.mocked(useDetailPractitioner).mockReturnValue({
+      newData: {
+        resource: mockRole,
+        organization: { name: 'Test Clinic' }
+      },
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as any);
+
     render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
 
-    const contents = screen.getAllByTestId('tab-content');
-    expect(contents).toHaveLength(2);
-    expect(contents[0].getAttribute('data-value')).toBe('availability');
-    expect(contents[1].getAttribute('data-value')).toBe('services');
+    expect(
+      screen.getByTestId('practitioner-availability-editor')
+    ).toBeInTheDocument();
+  });
+
+  it('passes practitionerRole with organization.display injected', () => {
+    vi.mocked(useDetailPractitioner).mockReturnValue({
+      newData: {
+        resource: mockRole,
+        organization: { name: 'Sunshine Clinic' }
+      },
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as any);
+
+    render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
+
+    const role = capturedEditorProps?.practitionerRole as any;
+    expect(role).toBeDefined();
+    expect(role.organization.display).toBe('Sunshine Clinic');
+  });
+
+  it('falls back to "Clinic" display when organization is not in detail', () => {
+    vi.mocked(useDetailPractitioner).mockReturnValue({
+      newData: {
+        resource: mockRole
+        // no organization field
+      },
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as any);
+
+    render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
+
+    const role = capturedEditorProps?.practitionerRole as any;
+    expect(role).toBeDefined();
+    expect(role.organization.display).toBe('Clinic');
+  });
+
+  it('renders services tab content', () => {
+    vi.mocked(useDetailPractitioner).mockReturnValue({
+      newData: {
+        resource: mockRole
+      },
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as any);
+
+    render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
+
+    expect(screen.getByTestId('mock-services-tab')).toBeInTheDocument();
   });
 });

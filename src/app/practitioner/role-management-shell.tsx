@@ -1,7 +1,9 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import AvailabilityTab from './availability-tab';
+import { useDetailPractitioner } from '@/services/clinic';
+import { PractitionerRole } from 'fhir/r4';
+import PractitionerAvailabilityEditor from './practitioner-availability-editor';
 import ServicesTab from './services-tab';
 
 type Props = {
@@ -9,13 +11,32 @@ type Props = {
 };
 
 /**
+ * Inject organization display name from the included Organization resource.
+ * The PractitionerRole only stores `organization.reference`, not `display`.
+ */
+function enhanceWithOrgDisplay(
+  role: PractitionerRole,
+  org?: { name?: string }
+): PractitionerRole {
+  return {
+    ...role,
+    organization: {
+      ...role.organization,
+      display: org?.name ?? 'Clinic'
+    }
+  };
+}
+
+/**
  * Two-tab admin management shell for a practitioner role.
  *
- * Tabs: Availability (weekly schedule) | Services (HealthcareService).
- * Each tab manages its own local edits and has a Save All button that
- * submits a FHIR transaction bundle.
+ * Availability tab: renders PractitionerAvailabilityEditor with the fetched
+ * role (same component used in /profile). Services tab: manages
+ * HealthcareService resources.
  */
 export default function PractitionerRoleManagementShell(props: Props) {
+  const { newData: detail } = useDetailPractitioner(props.practitionerRoleId);
+
   return (
     <Tabs
       defaultValue='availability'
@@ -27,7 +48,14 @@ export default function PractitionerRoleManagementShell(props: Props) {
         <TabsTrigger value='services'>Services</TabsTrigger>
       </TabsList>
       <TabsContent value='availability'>
-        <AvailabilityTab practitionerRoleId={props.practitionerRoleId} />
+        {detail?.resource ? (
+          <PractitionerAvailabilityEditor
+            practitionerRole={enhanceWithOrgDisplay(
+              detail.resource,
+              detail.organization
+            )}
+          />
+        ) : null}
       </TabsContent>
       <TabsContent value='services'>
         <ServicesTab practitionerRoleId={props.practitionerRoleId} />
