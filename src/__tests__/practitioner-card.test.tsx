@@ -153,4 +153,20 @@ describe('PractitionerCard', () => {
     const link = screen.getByText('Clip Test').closest('a');
     expect(link?.className).toContain('overflow-hidden');
   });
+
+  it('has fixed height for uniform card sizing', () => {
+    render(
+      <PractitionerCard
+        id='prac-8'
+        practitionerName='Height Test'
+        photoUrl={undefined}
+        specialties={[]}
+        healthcareServiceNames={[]}
+        practitionerRoleId='role-8'
+      />
+    );
+
+    const link = screen.getByText('Height Test').closest('a');
+    expect(link?.className).toContain('h-[100px]');
+  });
 });

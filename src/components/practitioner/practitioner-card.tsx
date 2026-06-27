@@ -161,7 +161,7 @@ export function PractitionerCard({
     <Link
       ref={cardRef}
       href={`/practitioner?practitionerRoleId=${practitionerRoleId}`}
-      className='card flex items-stretch overflow-hidden bg-[#F9F9F9] p-0'
+      className='card flex h-[100px] items-stretch overflow-hidden bg-[#F9F9F9] p-0'
     >
       {/* Square avatar spanning full card height */}
       <div
