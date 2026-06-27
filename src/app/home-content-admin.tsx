@@ -9,6 +9,7 @@ import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarDays, Clock, Cog, FileText, Users } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
 /** Stat card showing the active practitioner count. */
@@ -17,15 +18,17 @@ function PractitionerCountCard({
   isError
 }: Readonly<{ count: number; isError: boolean }>) {
   return (
-    <div className='card flex items-center gap-4 p-4'>
-      <div className='flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#E6F7F7]'>
-        <Users className='text-[#13C2C2]' />
+    <Link href='/practitioner' className='block'>
+      <div className='card flex items-center gap-4 p-4'>
+        <div className='flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#E6F7F7]'>
+          <Users className='text-[#13C2C2]' />
+        </div>
+        <div>
+          <div className='text-[24px] font-bold'>{isError ? '-' : count}</div>
+          <div className='text-[12px] text-gray-500'>Active Practitioners</div>
+        </div>
       </div>
-      <div>
-        <div className='text-[24px] font-bold'>{isError ? '-' : count}</div>
-        <div className='text-[12px] text-gray-500'>Active Practitioners</div>
-      </div>
-    </div>
+    </Link>
   );
 }
 

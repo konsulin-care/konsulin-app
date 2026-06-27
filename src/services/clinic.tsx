@@ -2,8 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Bundle,
   BundleEntry,
+  HealthcareService,
   Invoice,
   Organization,
+  Practitioner,
   PractitionerRole,
   Schedule
 } from 'fhir/r4';
@@ -170,3 +172,111 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
     isFetching
   };
 };
+
+/**
+ * Return type for usePractitionerListing.
+ */
+export type PractitionerListingEntry = {
+  id: string;
+  practitionerName: string;
+  photoUrl: string | undefined;
+  specialties: string[];
+  healthcareServiceNames: string[];
+  practitionerRoleId: string;
+};
+
+/**
+ * Hook to fetch practitioners for a clinic, with healthcare service names.
+ * Uses location filter when locationId is provided, otherwise falls back to
+ * organization filter.
+ *
+ * @param clinicId - FHIR Organization ID
+ * @param locationId - Optional FHIR Location ID for location-scoped query
+ */
+export function usePractitionerListing(clinicId: string, locationId?: string) {
+  const url = useMemo(() => {
+    const filter = locationId
+      ? `location=Location/${locationId}`
+      : `organization=${clinicId}`;
+
+    return (
+      `/fhir/PractitionerRole?active=true&${filter}` +
+      '&_include=PractitionerRole:practitioner' +
+      '&_include=PractitionerRole:service'
+    );
+  }, [clinicId, locationId]);
+
+  const { data, isLoading, isError, isFetching } = useQuery({
+    queryKey: ['practitioner-listing', clinicId, locationId],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get<Bundle>(url);
+      return response;
+    },
+    select: response => response.data.entry ?? null,
+    enabled: Boolean(clinicId)
+  });
+
+  const practitioners = useMemo(() => {
+    if (!data) return [];
+
+    const practitionerRoles = data.filter(
+      (item: BundleEntry) => item.resource?.resourceType === 'PractitionerRole'
+    ) as BundleEntry<PractitionerRole>[];
+
+    const practitioners = data.filter(
+      (item: BundleEntry) => item.resource?.resourceType === 'Practitioner'
+    ) as BundleEntry<Practitioner>[];
+
+    const healthcareServices = data.filter(
+      (item: BundleEntry) => item.resource?.resourceType === 'HealthcareService'
+    ) as BundleEntry<HealthcareService>[];
+
+    const hsMap = new Map(
+      healthcareServices
+        .filter(hs => hs.resource?.id)
+        .map(hs => [hs.resource.id, hs.resource.name ?? ''])
+    );
+
+    return practitioners
+      .map((item): PractitionerListingEntry | null => {
+        const practitionerId = item.resource.id;
+        const role = practitionerRoles.find(
+          r =>
+            r.resource.practitioner.reference?.split('/')[1] === practitionerId
+        );
+        if (!role) return null;
+
+        const name = item.resource.name?.[0];
+        const practitionerName =
+          [name?.given?.join(' '), name?.family].filter(Boolean).join(' ') ||
+          '-';
+
+        const photoUrl = item.resource.photo?.[0]?.url;
+
+        const specialties: string[] = (
+          role.resource.specialty?.map(s => s.text) ?? []
+        ).filter(Boolean);
+
+        const healthcareServiceNames =
+          role.resource.healthcareService
+            ?.map(ref => {
+              const id = ref.reference?.split('/')[1];
+              return id ? (hsMap.get(id) ?? '') : '';
+            })
+            .filter(Boolean) ?? [];
+
+        return {
+          id: practitionerId,
+          practitionerName,
+          photoUrl,
+          specialties,
+          healthcareServiceNames,
+          practitionerRoleId: role.resource.id
+        };
+      })
+      .filter((entry): entry is PractitionerListingEntry => entry !== null);
+  }, [data]);
+
+  return { practitioners, isLoading, isError, isFetching };
+}

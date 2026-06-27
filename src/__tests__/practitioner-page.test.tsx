@@ -27,7 +27,13 @@ vi.mock('@/lib/indexeddb', () => ({
 }));
 
 vi.mock('@/services/clinic', () => ({
-  useDetailPractitioner: vi.fn()
+  useDetailPractitioner: vi.fn(),
+  usePractitionerListing: vi.fn().mockReturnValue({
+    practitioners: [],
+    isLoading: false,
+    isError: false,
+    isFetching: false
+  })
 }));
 
 vi.mock('@/components/general/avatar', () => ({

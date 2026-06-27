@@ -6,6 +6,7 @@ import Avatar from '@/components/general/avatar';
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
+import { PractitionerCard } from '@/components/practitioner/practitioner-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,7 +19,10 @@ import {
 } from '@/components/ui/drawer';
 import { useBooking } from '@/context/booking/bookingContext';
 import { STORES, dbGet } from '@/lib/indexeddb';
-import { useDetailPractitioner } from '@/services/clinic';
+import {
+  useDetailPractitioner,
+  usePractitionerListing
+} from '@/services/clinic';
 import { generateAvatarPlaceholder, mergeNames } from '@/utils/helper';
 import {
   Attachment,
@@ -126,6 +130,9 @@ export default function Practitioner() {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [selectedClinicId, setSelectedClinicId] = useState<string>('');
+  const [selectedLocationId, setSelectedLocationId] = useState<
+    string | undefined
+  >();
   const [practitionerData, setPractitionerData] =
     useState<IPractitionerLocalStorage>();
   const [practitionerDataLoading, setPractitionerDataLoading] = useState(true);
@@ -135,13 +142,22 @@ export default function Practitioner() {
       .then(saved => {
         if (saved?.value) {
           setSelectedClinicId(saved.value);
-        } else {
-          router.push('/clinic');
         }
-        return saved;
+        return null;
       })
       .catch((err: unknown) => console.warn('[IndexedDB]', err));
-  }, [router]);
+  }, []);
+
+  useEffect(() => {
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_location'])
+      .then(saved => {
+        if (saved?.value) setSelectedLocationId(saved.value);
+        return null;
+      })
+      .catch(() => {
+        /* ignore */
+      });
+  }, []);
 
   useEffect(() => {
     if (!practitionerRoleId) return;
@@ -178,6 +194,11 @@ export default function Practitioner() {
     isError,
     isFetching
   } = useDetailPractitioner(practitionerData?.roleId ?? '');
+
+  const { practitioners, isLoading: isListingLoading } = usePractitionerListing(
+    selectedClinicId,
+    selectedLocationId
+  );
 
   /** Navigate back to home after booking submission. */
   const handleClose = () => {
@@ -258,7 +279,7 @@ export default function Practitioner() {
   const renderDrawerContent = (
     <>
       <DrawerHeader className='mx-auto flex flex-col items-center gap-4 pb-0 text-[20px]'>
-        {/* eslint-disable-next-line react/jsx-max-depth */}
+        {}
         <Image
           className='rounded-[8px] object-cover p-6'
           src={'/images/booking-success.png'}
@@ -267,7 +288,7 @@ export default function Practitioner() {
           style={{ width: 'auto', height: 'auto' }}
           alt='success'
         />
-        {/* eslint-disable-next-line react/jsx-max-depth */}
+        {}
         <DrawerTitle className='mb-2 text-center text-2xl font-bold'>
           Selamat! Anda Telah Berhasil Memesan Sesi Konsultasi
         </DrawerTitle>
@@ -282,8 +303,35 @@ export default function Practitioner() {
     </>
   );
 
+  /** Renders listing of practitioner cards (admin view). */
+  const renderListingContent = () => {
+    if (isListingLoading) return <LoadingState />;
+
+    if (practitioners.length === 0) {
+      return (
+        <EmptyState
+          className='py-16'
+          title='No Practitioners Found'
+          subtitle='Try another clinic.'
+        />
+      );
+    }
+
+    return (
+      <div className='flex flex-col gap-4'>
+        {practitioners.map(p => (
+          <PractitionerCard key={p.id} {...p} />
+        ))}
+      </div>
+    );
+  };
+
   /** Renders main practitioner content, loading, or empty states. */
   const renderMainContent = () => {
+    // Listing mode (admin view)
+    if (!practitionerRoleId) return renderListingContent();
+
+    // Detail mode (existing behavior)
     if (practitionerDataLoading) return <LoadingState />;
     if (!practitionerData) return <EmptyPractitionerState />;
     if (isLoading || isFetching) return <LoadingState />;
@@ -355,19 +403,25 @@ export default function Practitioner() {
   return (
     <>
       <PageHeader
-        pageIndicator={`View ${displayName}`}
-        backRoute={`/clinic?clinicId=${selectedClinicId}`}
+        pageIndicator={
+          practitionerRoleId ? `View ${displayName}` : 'Manage Practitioners'
+        }
+        backRoute={
+          practitionerRoleId ? `/clinic?clinicId=${selectedClinicId}` : '/'
+        }
       />
 
       <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
         {renderMainContent()}
       </div>
 
-      <Drawer open={isOpen} onOpenChange={() => setIsOpen(false)}>
-        <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-          {renderDrawerContent}
-        </DrawerContent>
-      </Drawer>
+      {practitionerRoleId && (
+        <Drawer open={isOpen} onOpenChange={() => setIsOpen(false)}>
+          <DrawerContent className='mx-auto max-w-screen-sm p-4'>
+            {renderDrawerContent}
+          </DrawerContent>
+        </Drawer>
+      )}
     </>
   );
 }

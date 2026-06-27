@@ -69,6 +69,19 @@ describe('HomeContentAdmin', () => {
     expect(screen.getByText('Active Practitioners')).toBeDefined();
   });
 
+  it('links Active Practitioners stat to /practitioner', async () => {
+    mockAxiosInstance.get.mockResolvedValue({ data: { total: 8 } });
+
+    render(<HomeContentAdmin />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('8')).toBeDefined();
+    });
+
+    const link = screen.getByText('Active Practitioners').closest('a');
+    expect(link).toHaveAttribute('href', '/practitioner');
+  });
+
   it('shows retry button on error', async () => {
     mockAxiosInstance.get.mockRejectedValue(new Error('API error'));
 
