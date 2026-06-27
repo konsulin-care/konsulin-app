@@ -186,6 +186,36 @@ export type PractitionerListingEntry = {
 };
 
 /**
+ * Fetch HealthcareService resources linked to a practitioner role.
+ *
+ * Uses the `_include=PractitionerRole:service` search parameter to return
+ * the HealthcareService entries referenced by the PractitionerRole.
+ *
+ * @param practitionerRoleId - PractitionerRole FHIR ID
+ * @returns Query result with HealthcareService[] data
+ */
+export function usePractitionerRoleHealthcareServices(
+  practitionerRoleId: string
+) {
+  return useQuery({
+    queryKey: ['practitioner-healthcare-services', practitionerRoleId],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get<Bundle>(
+        `/fhir/PractitionerRole?_id=${practitionerRoleId}&_include=PractitionerRole:service`
+      );
+      const entries = response.data.entry ?? [];
+      return entries
+        .filter(
+          (e: BundleEntry) => e.resource?.resourceType === 'HealthcareService'
+        )
+        .map((e: BundleEntry) => e.resource as HealthcareService);
+    },
+    enabled: Boolean(practitionerRoleId)
+  });
+}
+
+/**
  * Hook to fetch practitioners for a clinic, with healthcare service names.
  * Uses location filter when locationId is provided, otherwise falls back to
  * organization filter.
