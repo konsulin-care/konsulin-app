@@ -76,7 +76,7 @@ describe('PractitionerCard', () => {
     );
   });
 
-  it('renders avatar as a square container (no circle)', () => {
+  it('renders avatar as a square container sized via inline style', () => {
     render(
       <PractitionerCard
         id='prac-4'
@@ -88,10 +88,13 @@ describe('PractitionerCard', () => {
       />
     );
 
-    // Avatar container should have aspect-square (square, not circle)
+    // Avatar container should have inline width/minWidth (set via JS after mount)
+    // In JSDOM the ResizeObserver never fires, so it falls back to 80
     const link = screen.getByText('Alice').closest('a');
-    const avatarContainer = link?.querySelector('.aspect-square');
+    const avatarContainer = link?.querySelector('[style*="width"]');
     expect(avatarContainer).not.toBeNull();
+    expect((avatarContainer as HTMLElement)?.style.width).toBe('80px');
+    expect((avatarContainer as HTMLElement)?.style.minWidth).toBe('80px');
   });
 
   it('renders all items when they fit (JSDOM has infinite width)', () => {

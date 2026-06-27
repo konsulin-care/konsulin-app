@@ -8,6 +8,7 @@ import Link from 'next/link';
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -38,7 +39,9 @@ export function PractitionerCard({
   healthcareServiceNames,
   practitionerRoleId
 }: PractitionerCardProps) {
+  const cardRef = useRef<HTMLAnchorElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [avatarSize, setAvatarSize] = useState(0);
   const [visibleSpecialties, setVisibleSpecialties] = useState<string[]>(
     specialties.length > 0 ? specialties : []
   );
@@ -104,7 +107,22 @@ export function PractitionerCard({
       ? healthcareServiceNames.join('; ')
       : 'No healthcare service registered';
 
+  // Measure card height and set avatar width to match for a perfect square
+  useLayoutEffect(() => {
+    const el = cardRef.current;
+    const updateSize = () => {
+      setAvatarSize(el?.clientHeight ?? 0);
+    };
+
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    if (el) observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const showPhoto = Boolean(photoUrl) && !imgError;
+
+  const size = avatarSize || 80;
 
   let avatarContent: ReactNode;
   if (showPhoto) {
@@ -141,11 +159,15 @@ export function PractitionerCard({
 
   return (
     <Link
+      ref={cardRef}
       href={`/practitioner?practitionerRoleId=${practitionerRoleId}`}
       className='card flex items-stretch overflow-hidden bg-[#F9F9F9] p-0'
     >
       {/* Square avatar spanning full card height */}
-      <div className='relative flex aspect-square shrink-0 items-stretch overflow-hidden bg-[#13c2c2]'>
+      <div
+        className='relative shrink-0 overflow-hidden bg-[#13c2c2]'
+        style={{ width: size, minWidth: size }}
+      >
         {avatarContent}
       </div>
 
