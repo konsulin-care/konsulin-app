@@ -88,19 +88,20 @@ export default function PractitionerAvailabilityEditor({
     getInitialSelectedDay(stableInitialWeeklyAvailability)
   );
 
-  // Update state when stableInitialWeeklyAvailability changes
-  // Uses a ref to track whether the initial data actually changed (new practitioner props)
-  // vs dirty flag transitioning false after save — only reset in the former case.
-  const prevStableRef = useRef(stableInitialWeeklyAvailability);
+  // Compute a stable data key from stableInitialWeeklyAvailability for deep comparison.
+  // Uses JSON.stringify(weeklyAvailability) via normalizeAvailability to ignore IDs.
+  const initialDataKeyRef = useRef(
+    JSON.stringify(normalizeAvailability(stableInitialWeeklyAvailability))
+  );
 
   useEffect(() => {
-    const prevInitial = prevStableRef.current;
-    prevStableRef.current = stableInitialWeeklyAvailability;
+    const dataKey = JSON.stringify(
+      normalizeAvailability(stableInitialWeeklyAvailability)
+    );
+    const prevDataKey = initialDataKeyRef.current;
+    initialDataKeyRef.current = dataKey;
 
-    if (
-      !weeklyAvailabilityDirty &&
-      stableInitialWeeklyAvailability !== prevInitial
-    ) {
+    if (!weeklyAvailabilityDirty && dataKey !== prevDataKey) {
       setWeeklyAvailability(stableInitialWeeklyAvailability);
       setSelectedDay(getInitialSelectedDay(stableInitialWeeklyAvailability));
     }
@@ -291,7 +292,7 @@ export default function PractitionerAvailabilityEditor({
   }, [memoizedRolesToUse]);
 
   // Function to normalize availability for comparison (ignoring IDs)
-  const normalizeAvailability = (avail: WeeklyAvailability) => {
+  function normalizeAvailability(avail: WeeklyAvailability) {
     const obj = avail as Record<string, OrganizationTimeRanges>;
     const normalized: Record<
       string,
@@ -310,7 +311,7 @@ export default function PractitionerAvailabilityEditor({
       }
     }
     return normalized;
-  };
+  }
 
   // Check if there are any changes to save (against the last-saved baseline)
   const hasChanges = useMemo(() => {

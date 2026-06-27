@@ -221,4 +221,64 @@ describe('PractitionerAvailabilityEditor save behaviors', () => {
     // (the reset effect must not wipe weeklyAvailability back to empty initial state)
     expect(screen.getByTestId('days-with-data').textContent).toBe('0,1');
   });
+
+  it('preserves availability when parent passes new practitionerRole reference after save', async () => {
+    let currentSave: (() => Promise<void>) | null = null;
+
+    const onDirtyChange = vi.fn((dirty: boolean, save: () => Promise<void>) => {
+      if (dirty) {
+        currentSave = save;
+      }
+    });
+
+    const { rerender } = render(
+      <PractitionerAvailabilityEditor
+        practitionerRole={mockRole as PractitionerRole}
+        hideSaveButton
+        onDirtyChange={onDirtyChange}
+      />
+    );
+
+    // Add Mon and Tue
+    fireEvent.click(screen.getByTestId('add-mon'));
+    fireEvent.click(screen.getByTestId('add-tue'));
+    await waitFor(() =>
+      expect(onDirtyChange).toHaveBeenCalledWith(
+        true,
+        expect.any(Function),
+        false
+      )
+    );
+    expect(screen.getByTestId('days-with-data').textContent).toBe('0,1');
+
+    // Save
+    // eslint-disable-next-line unicorn/no-useless-undefined -- required by vitest mock types, cannot omit
+    mockMutateAsync.mockResolvedValueOnce(undefined);
+    await (currentSave as () => Promise<void>)();
+    await waitFor(() => Promise.resolve());
+
+    // After save: data still visible
+    expect(screen.getByTestId('days-with-data').textContent).toBe('0,1');
+
+    // Simulate parent re-render passing a new practitionerRole reference
+    // (same data, new object — exactly what happens when the shell
+    //  re-renders due to FabDirtyContext update after save)
+    const freshMockRole: Partial<PractitionerRole> = {
+      resourceType: 'PractitionerRole',
+      id: 'role-1',
+      availableTime: []
+    };
+    rerender(
+      <PractitionerAvailabilityEditor
+        practitionerRole={freshMockRole as PractitionerRole}
+        hideSaveButton
+        onDirtyChange={onDirtyChange}
+      />
+    );
+    await waitFor(() => Promise.resolve());
+
+    // Data must survive — the reset effect must not treat
+    // identical-data-but-new-reference as "new practitioner"
+    expect(screen.getByTestId('days-with-data').textContent).toBe('0,1');
+  });
 });

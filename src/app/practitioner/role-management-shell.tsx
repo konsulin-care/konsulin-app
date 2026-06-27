@@ -6,7 +6,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useFabDirty } from '@/context/fabDirtyContext';
 import { useDetailPractitioner } from '@/services/clinic';
 import { PractitionerRole } from 'fhir/r4';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import PractitionerAvailabilityEditor from './practitioner-availability-editor';
 import ServicesTab from './services-tab';
 
@@ -57,6 +57,17 @@ export default function PractitionerRoleManagementShell(props: Props) {
     [setDirtyState]
   );
 
+  // Stable prop reference — prevents editor from re-computing
+  // stableInitialWeeklyAvailability and triggering the reset effect
+  // after save when the shell re-renders due to FabDirtyContext changes.
+  const enhancedRole = useMemo(
+    () =>
+      detail?.resource
+        ? enhanceWithOrgDisplay(detail.resource, detail.organization)
+        : undefined,
+    [detail?.resource, detail?.organization]
+  );
+
   // Only ClinicAdmin users see the management shell
   if (authState?.userInfo?.role_name !== Roles.ClinicAdmin) {
     return null;
@@ -73,12 +84,9 @@ export default function PractitionerRoleManagementShell(props: Props) {
         <TabsTrigger value='services'>Services</TabsTrigger>
       </TabsList>
       <TabsContent value='availability'>
-        {detail?.resource ? (
+        {enhancedRole ? (
           <PractitionerAvailabilityEditor
-            practitionerRole={enhanceWithOrgDisplay(
-              detail.resource,
-              detail.organization
-            )}
+            practitionerRole={enhancedRole}
             hideSaveButton
             onDirtyChange={handleDirtyChange}
           />
