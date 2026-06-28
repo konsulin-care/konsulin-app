@@ -140,16 +140,29 @@ export default function ServicesTab({
 
   if (!localServices || localServices.length === 0) {
     return (
-      <div className='py-8 text-center text-sm text-gray-500'>
-        No healthcare services configured.
-        <br />
-        <button
-          onClick={handleAddService}
-          className='text-primary mt-2 underline'
-        >
-          Add Service
-        </button>
-      </div>
+      <>
+        <div className='py-8 text-center text-sm text-gray-500'>
+          No healthcare services configured.
+          <br />
+          <button
+            onClick={handleAddService}
+            className='text-primary mt-2 underline'
+          >
+            Add Service
+          </button>
+        </div>
+        <ServiceFormDrawer
+          open={drawerOpen}
+          onClose={() => {
+            setDrawerOpen(false);
+            setEditingService(undefined);
+          }}
+          onSave={handleDrawerSave}
+          service={editingService}
+          providedBy={`Organization/${clinicId}`}
+          location={`Location/${locationId}`}
+        />
+      </>
     );
   }
 

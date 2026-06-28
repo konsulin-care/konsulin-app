@@ -134,6 +134,17 @@ describe('ServicesTab', () => {
     expect(screen.getByText('create')).toBeInTheDocument();
   });
 
+  it('opens create drawer when add service is clicked in empty state', () => {
+    vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
+      makeMockResult([])
+    );
+    render(<ServicesTab practitionerRoleId='role-1' />);
+    expect(screen.getByText(/no healthcare services/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/add service/i));
+    expect(screen.getByTestId('mock-drawer')).toBeInTheDocument();
+    expect(screen.getByText('create')).toBeInTheDocument();
+  });
+
   it('adds a new service from the drawer and shows save all', async () => {
     vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
       makeMockResult(mockServices)
