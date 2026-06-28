@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/konsulin-care/konsulin-app/internal/client"
 	"github.com/konsulin-care/konsulin-app/internal/session"
 	"github.com/konsulin-care/konsulin-app/web/template/partials"
 )
@@ -43,14 +44,7 @@ func handleRoleSwitch(w http.ResponseWriter, r *http.Request, opts RoleSwitchOpt
 		return
 	}
 
-	valid := false
-	for _, role := range sess.Roles {
-		if role == newRole {
-			valid = true
-			break
-		}
-	}
-	if !valid {
+	if !isRoleInSession(sess.Roles, newRole) && !isRoleInAccessToken(r, newRole) {
 		slog.Warn("role switch: invalid role requested", "requested", newRole, "available", sess.Roles)
 		http.Error(w, "invalid role", http.StatusBadRequest)
 		return
@@ -79,6 +73,37 @@ func handleRoleSwitch(w http.ResponseWriter, r *http.Request, opts RoleSwitchOpt
 
 	w.Header().Set("HX-Redirect", "/")
 	w.WriteHeader(http.StatusOK)
+}
+
+/** Check if a role exists in the session's role list. */
+func isRoleInSession(roles []string, target string) bool {
+	for _, role := range roles {
+		if role == target {
+			return true
+		}
+	}
+	return false
+}
+
+/**
+ * Check if a role exists in the SuperTokens access token JWT.
+ * Used as a fallback when the auth cookie has stale roles.
+ */
+func isRoleInAccessToken(r *http.Request, target string) bool {
+	accessCookie, err := r.Cookie("sAccessToken")
+	if err != nil {
+		return false
+	}
+	verified, verifyErr := client.VerifySession(accessCookie.Value)
+	if verifyErr != nil {
+		return false
+	}
+	for _, role := range verified.Roles {
+		if role == target {
+			return true
+		}
+	}
+	return false
 }
 
 func handleRoleSwitcherPartial(w http.ResponseWriter, r *http.Request) {
