@@ -217,6 +217,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       cachedAt: Date.now()
     });
     dispatch({ type: 'login', payload });
+
+    // Clinic admin: persist Person.managingOrganization as selected_clinic
+    if (role === Roles.ClinicAdmin && result) {
+      const person = result as {
+        managingOrganization?: { reference?: string };
+      };
+      const orgRef = person.managingOrganization?.reference;
+      if (orgRef) {
+        const orgId = orgRef.replace('Organization/', '');
+        await dbSet(STORES.uiPreferences, {
+          ownerId: '',
+          prefKey: 'selected_clinic',
+          value: orgId
+        });
+      }
+    }
   };
 
   /** Dispatch fallback profile when API fetch fails. */

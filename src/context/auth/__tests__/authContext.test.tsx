@@ -82,7 +82,7 @@ vi.mock('@/utils/helper', () => ({
 // ---------------------------------------------------------------------------
 // Import mocked modules
 // ---------------------------------------------------------------------------
-import { dbGet, migrateLocalStorage } from '@/lib/indexeddb';
+import { dbGet, dbSet, migrateLocalStorage } from '@/lib/indexeddb';
 import { getAuthCookieSession, restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
 
@@ -321,5 +321,99 @@ describe('Fix 3 - function dependency ordering', () => {
     for (const [, line] of depLines) {
       expect(line).toBeLessThan(callerLine);
     }
+  });
+});
+
+// =========================================================================
+// Fix 4: Clinic admin managingOrganization stored as selected_clinic
+// =========================================================================
+describe('Fix 4 - clinic admin managingOrganization stored as selected_clinic', () => {
+  const adminCookie = {
+    authenticated: true,
+    role_name: 'Clinic Admin',
+    userId: 'admin-user-1'
+  };
+
+  beforeEach(() => {
+    (getAuthCookieSession as ReturnType<typeof vi.fn>).mockReset();
+    (restoreAuthCookie as ReturnType<typeof vi.fn>).mockReset();
+    (getProfileByIdentifier as ReturnType<typeof vi.fn>).mockReset();
+    mockUseSessionContext.mockReturnValue({
+      doesSessionExist: true,
+      userId: 'admin-user-1',
+      accessTokenPayload: {}
+    });
+    mockGetClaimValue.mockResolvedValue(['Clinic Admin']);
+    (restoreAuthCookie as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+    (dbGet as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(adminCookie)
+      });
+  });
+
+  const expectNoSelectedClinic = () => {
+    const calls = (dbSet as ReturnType<typeof vi.fn>).mock.calls.filter(
+      (c: unknown[]) => c[0] === 'ui_preferences'
+    );
+    for (const c of calls)
+      expect((c[1] as Record<string, unknown>)?.prefKey).not.toBe(
+        'selected_clinic'
+      );
+  };
+
+  it('stores managingOrganization reference as selected_clinic when Person has it', async () => {
+    (getProfileByIdentifier as ReturnType<typeof vi.fn>).mockResolvedValue({
+      resourceType: 'Person',
+      id: 'person-123',
+      managingOrganization: { reference: 'Organization/org-456' },
+      telecom: [{ system: 'email', value: 'admin@clinic.com' }]
+    });
+    renderWithAuthProvider();
+    await waitFor(() => {
+      expect(dbSet).toHaveBeenCalledWith('ui_preferences', {
+        ownerId: '',
+        prefKey: 'selected_clinic',
+        value: 'org-456'
+      });
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-role').textContent).toBe('Clinic Admin');
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true');
+    });
+  });
+
+  it('does NOT store selected_clinic when Person has no managingOrganization', async () => {
+    (getProfileByIdentifier as ReturnType<typeof vi.fn>).mockResolvedValue({
+      resourceType: 'Person',
+      id: 'person-123',
+      telecom: [{ system: 'email', value: 'admin@clinic.com' }]
+    });
+    renderWithAuthProvider();
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true');
+    });
+    expectNoSelectedClinic();
+  });
+
+  it('does NOT store selected_clinic for non-admin roles', async () => {
+    mockGetClaimValue.mockResolvedValue(['Patient']);
+    (getAuthCookieSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      authenticated: true,
+      role_name: 'Patient',
+      userId: 'patient-1'
+    });
+    (getProfileByIdentifier as ReturnType<typeof vi.fn>).mockResolvedValue({
+      resourceType: 'Patient',
+      id: 'patient-123'
+    });
+    renderWithAuthProvider();
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true');
+    });
+    expectNoSelectedClinic();
   });
 });
