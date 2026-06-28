@@ -181,6 +181,7 @@ describe('Practitioner page - listing mode (no practitionerRoleId)', () => {
       practitioners: [
         {
           id: 'prac-1',
+          active: true,
           practitionerName: 'Dr. A',
           photoUrl: undefined,
           specialties: ['Cardiology'],
@@ -189,6 +190,7 @@ describe('Practitioner page - listing mode (no practitionerRoleId)', () => {
         },
         {
           id: 'prac-2',
+          active: true,
           practitionerName: 'Dr. B',
           photoUrl: undefined,
           specialties: ['Neurology'],
@@ -264,6 +266,7 @@ describe('Practitioner page - listing mode (no practitionerRoleId)', () => {
       practitioners: [
         {
           id: 'prac-1',
+          active: true,
           practitionerName: 'Dr. C',
           photoUrl: undefined,
           specialties: ['General'],

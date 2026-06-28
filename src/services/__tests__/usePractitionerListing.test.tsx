@@ -32,6 +32,24 @@ beforeEach(() => {
 });
 
 describe('usePractitionerListing', () => {
+  it('does not filter by active=true in URL', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: { resourceType: 'Bundle', entry: [] }
+    });
+
+    const { result } = renderHook(
+      () => usePractitionerListing('org-1', 'loc-1'),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    const calledUrl = mockAxiosInstance.get.mock.calls[0]?.[0] as string;
+    expect(calledUrl).not.toContain('active=true');
+  });
+
   it('uses location-based URL when locationId is provided', async () => {
     mockAxiosInstance.get.mockResolvedValueOnce({
       data: { resourceType: 'Bundle', entry: [] }
@@ -71,7 +89,7 @@ describe('usePractitionerListing', () => {
     expect(calledUrl).not.toContain('location=');
   });
 
-  it('returns practitioners with healthcare service names', async () => {
+  it('returns active and inactive practitioners with their status', async () => {
     mockAxiosInstance.get.mockResolvedValueOnce({
       data: {
         resourceType: 'Bundle',
@@ -86,14 +104,31 @@ describe('usePractitionerListing', () => {
           },
           {
             resource: {
+              resourceType: 'Practitioner',
+              id: 'prac-2',
+              name: [{ given: ['Jane'], family: 'Smith' }]
+            }
+          },
+          {
+            resource: {
               resourceType: 'PractitionerRole',
               id: 'role-1',
+              active: true,
               practitioner: { reference: 'Practitioner/prac-1' },
               specialty: [{ text: 'Cardiology' }],
               healthcareService: [
                 { reference: 'HealthcareService/hs-1' },
                 { reference: 'HealthcareService/hs-2' }
               ]
+            }
+          },
+          {
+            resource: {
+              resourceType: 'PractitionerRole',
+              id: 'role-2',
+              active: false,
+              practitioner: { reference: 'Practitioner/prac-2' },
+              specialty: [{ text: 'Radiology' }]
             }
           },
           {
@@ -122,17 +157,26 @@ describe('usePractitionerListing', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.practitioners).toHaveLength(1);
-    expect(result.current.practitioners[0].practitionerName).toBe('John Doe');
-    expect(result.current.practitioners[0].photoUrl).toBe(
-      'https://example.com/photo.jpg'
-    );
-    expect(result.current.practitioners[0].specialties).toEqual(['Cardiology']);
-    expect(result.current.practitioners[0].healthcareServiceNames).toEqual([
+    expect(result.current.practitioners).toHaveLength(2);
+
+    // Active practitioner
+    const active = result.current.practitioners.find(p => p.id === 'prac-1');
+    expect(active?.active).toBe(true);
+    expect(active?.practitionerName).toBe('John Doe');
+    expect(active?.photoUrl).toBe('https://example.com/photo.jpg');
+    expect(active?.specialties).toEqual(['Cardiology']);
+    expect(active?.healthcareServiceNames).toEqual([
       'General Consultation',
       'Follow-up Visit'
     ]);
-    expect(result.current.practitioners[0].practitionerRoleId).toBe('role-1');
+    expect(active?.practitionerRoleId).toBe('role-1');
+
+    // Inactive practitioner
+    const inactive = result.current.practitioners.find(p => p.id === 'prac-2');
+    expect(inactive?.active).toBe(false);
+    expect(inactive?.practitionerName).toBe('Jane Smith');
+    expect(inactive?.specialties).toEqual(['Radiology']);
+    expect(inactive?.practitionerRoleId).toBe('role-2');
   });
 
   it('returns empty healthcareServiceNames when no HealthcareService entries in bundle', async () => {

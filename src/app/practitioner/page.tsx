@@ -4,10 +4,11 @@ import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import { PractitionerCard } from '@/components/practitioner/practitioner-card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { usePractitionerListing } from '@/services/clinic';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PractitionerRoleManagementShell from './role-management-shell';
 
 /** Full-screen loading spinner. */
@@ -56,6 +57,18 @@ export default function Practitioner() {
     selectedLocationId
   );
 
+  const [activeTab, setActiveTab] = useState<string>('active');
+
+  const activePractitioners = useMemo(
+    () => practitioners.filter(p => p.active),
+    [practitioners]
+  );
+
+  const inactivePractitioners = useMemo(
+    () => practitioners.filter(p => !p.active),
+    [practitioners]
+  );
+
   /** Renders listing of practitioner cards (admin view). */
   const renderListingContent = () => {
     if (isListingLoading) return <LoadingState />;
@@ -71,11 +84,36 @@ export default function Practitioner() {
     }
 
     return (
-      <div className='flex flex-col gap-4'>
-        {practitioners.map(p => (
-          <PractitionerCard key={p.id} {...p} />
-        ))}
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
+        <TabsList className='grid w-full grid-cols-2 bg-transparent'>
+          <TabsTrigger
+            className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
+            value='active'
+          >
+            Active ({activePractitioners.length})
+          </TabsTrigger>
+          <TabsTrigger
+            className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
+            value='inactive'
+          >
+            Inactive ({inactivePractitioners.length})
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value='active'>
+          <div className='flex flex-col gap-4'>
+            {activePractitioners.map(p => (
+              <PractitionerCard key={p.id} {...p} />
+            ))}
+          </div>
+        </TabsContent>
+        <TabsContent value='inactive'>
+          <div className='flex flex-col gap-4'>
+            {inactivePractitioners.map(p => (
+              <PractitionerCard key={p.id} {...p} />
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
     );
   };
 

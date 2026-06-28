@@ -134,13 +134,13 @@ export default function HomeContentAdmin() {
 
       if (selectedLocationId) {
         const response = await API.get(
-          `/fhir/Practitioner?_has:PractitionerRole:practitioner:location=Location/${selectedLocationId}&_summary=count`
+          `/fhir/Practitioner?_has:PractitionerRole:practitioner:location=Location/${selectedLocationId}&_has:PractitionerRole:practitioner:active=true&_summary=count`
         );
         return response.data?.total ?? 0;
       }
 
       const response = await API.get(
-        `/fhir/Practitioner?_has:PractitionerRole:practitioner:organization=Organization/${selectedClinicId}&_summary=count`
+        `/fhir/Practitioner?_has:PractitionerRole:practitioner:organization=Organization/${selectedClinicId}&_has:PractitionerRole:practitioner:active=true&_summary=count`
       );
       return response.data?.total ?? 0;
     },

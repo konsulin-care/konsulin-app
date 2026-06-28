@@ -66,7 +66,7 @@ describe('HomeContentAdmin', () => {
   );
 
   describe('practitioner count query', () => {
-    it('uses organization-based filter when only clinic is set', async () => {
+    it('uses organization-based filter with active=true when only clinic is set', async () => {
       mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
 
       render(<HomeContentAdmin />, { wrapper });
@@ -79,10 +79,13 @@ describe('HomeContentAdmin', () => {
       expect(calledUrl).toContain(
         '_has:PractitionerRole:practitioner:organization=Organization/org-1'
       );
+      expect(calledUrl).toContain(
+        '_has:PractitionerRole:practitioner:active=true'
+      );
       expect(calledUrl).toContain('_summary=count');
     });
 
-    it('uses location-based filter when both clinic and location are set', async () => {
+    it('uses location-based filter with active=true when both clinic and location are set', async () => {
       vi.mocked(dbGet).mockImplementation((_store, args) => {
         if (args?.[1] === 'selected_clinic')
           return Promise.resolve({ value: 'org-1' });
@@ -101,6 +104,9 @@ describe('HomeContentAdmin', () => {
       const calledUrl = mockAxiosInstance.get.mock.calls[0][0] as string;
       expect(calledUrl).toContain(
         '_has:PractitionerRole:practitioner:location=Location/loc-1'
+      );
+      expect(calledUrl).toContain(
+        '_has:PractitionerRole:practitioner:active=true'
       );
       expect(calledUrl).toContain('_summary=count');
     });

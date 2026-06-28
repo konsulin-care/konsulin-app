@@ -178,6 +178,7 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
  */
 export type PractitionerListingEntry = {
   id: string;
+  active: boolean;
   practitionerName: string;
   photoUrl: string | undefined;
   specialties: string[];
@@ -230,7 +231,7 @@ export function usePractitionerListing(clinicId: string, locationId?: string) {
       : `organization=${clinicId}`;
 
     return (
-      `/fhir/PractitionerRole?active=true&${filter}` +
+      `/fhir/PractitionerRole?${filter}` +
       '&_include=PractitionerRole:practitioner' +
       '&_include=PractitionerRole:service'
     );
@@ -298,6 +299,7 @@ export function usePractitionerListing(clinicId: string, locationId?: string) {
 
         return {
           id: practitionerId,
+          active: role.resource.active ?? false,
           practitionerName,
           photoUrl,
           specialties,
