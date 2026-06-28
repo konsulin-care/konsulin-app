@@ -189,7 +189,7 @@ describe('PageHeader - admin clinic card', () => {
       },
       dispatch: vi.fn()
     });
-    // dbGet returns null — selected_clinic not stored
+    // dbGet returns null — clinic_organization not stored
     // No API mocks needed — query stays disabled
 
     render(<PageHeader />, { wrapper });

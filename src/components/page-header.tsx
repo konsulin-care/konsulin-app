@@ -107,7 +107,7 @@ export default function PageHeader({
 
   useEffect(() => {
     if (!isAdmin) return;
-    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_clinic'])
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'clinic_organization'])
       .then(saved => {
         if (saved?.value) setSelectedClinicId(saved.value);
         return null;

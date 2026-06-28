@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { render, screen, waitFor } from '@testing-library/react';
 import fs from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -331,9 +332,9 @@ describe('Fix 3 - function dependency ordering', () => {
 });
 
 // =========================================================================
-// Fix 4: Clinic admin managingOrganization stored as selected_clinic
+// Fix 4: Clinic admin managingOrganization stored as clinic_organization
 // =========================================================================
-describe('Fix 4 - clinic admin managingOrganization stored as selected_clinic', () => {
+describe('Fix 4 - clinic admin managingOrganization stored as clinic_organization', () => {
   beforeEach(() => {
     mockUseSessionContext.mockReturnValue({
       doesSessionExist: true,
@@ -349,16 +350,17 @@ describe('Fix 4 - clinic admin managingOrganization stored as selected_clinic', 
     mockRestoreCookie.mockResolvedValue(true);
   });
 
-  const expectNoSelectedClinic = () =>
-    mockDbSet.mock.calls
-      .filter((c: unknown[]) => c[0] === 'ui_preferences')
-      .forEach((c: unknown[]) =>
-        expect((c[1] as Record<string, unknown>)?.prefKey).not.toBe(
-          'selected_clinic'
+  const expectNoClinicOrganization = () =>
+    expect(
+      mockDbSet.mock.calls
+        .filter((c: unknown[]) => c[0] === 'ui_preferences')
+        .find(
+          (c: unknown[]) =>
+            (c[1] as Record<string, unknown>)?.prefKey === 'clinic_organization'
         )
-      );
+    ).toBeUndefined();
 
-  it('stores managingOrganization as selected_clinic when Person has it', async () => {
+  it('stores managingOrganization as clinic_organization when Person has it', async () => {
     mockGetProfile.mockResolvedValue({
       resourceType: 'Person',
       id: 'person-123',
@@ -369,7 +371,7 @@ describe('Fix 4 - clinic admin managingOrganization stored as selected_clinic', 
     await waitFor(() => {
       expect(dbSet).toHaveBeenCalledWith('ui_preferences', {
         ownerId: '',
-        prefKey: 'selected_clinic',
+        prefKey: 'clinic_organization',
         value: 'org-456'
       });
       const stored = mockDbSet.mock.calls
@@ -389,7 +391,7 @@ describe('Fix 4 - clinic admin managingOrganization stored as selected_clinic', 
     });
   });
 
-  it('does NOT store selected_clinic when Person has no managingOrganization', async () => {
+  it('does NOT store clinic_organization when Person has no managingOrganization', async () => {
     mockGetProfile.mockResolvedValue({
       resourceType: 'Person',
       id: 'person-123',
@@ -399,10 +401,10 @@ describe('Fix 4 - clinic admin managingOrganization stored as selected_clinic', 
     await waitFor(() =>
       expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
     );
-    expectNoSelectedClinic();
+    expectNoClinicOrganization();
   });
 
-  it('does NOT store selected_clinic for non-admin roles', async () => {
+  it('does NOT store clinic_organization for non-admin roles', async () => {
     mockGetClaimValue.mockResolvedValue(['Patient']);
     mockGetAuthSession.mockResolvedValue({
       authenticated: true,
@@ -417,10 +419,10 @@ describe('Fix 4 - clinic admin managingOrganization stored as selected_clinic', 
     await waitFor(() =>
       expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
     );
-    expectNoSelectedClinic();
+    expectNoClinicOrganization();
   });
 
-  it('stores selected_clinic from cached organizationId when cache is hit', async () => {
+  it('stores clinic_organization from cached organizationId when cache is hit', async () => {
     mockDbGet.mockResolvedValue({
       userId: 'admin-user-1',
       role_name: 'Clinic Admin',
@@ -434,7 +436,7 @@ describe('Fix 4 - clinic admin managingOrganization stored as selected_clinic', 
     await waitFor(() =>
       expect(dbSet).toHaveBeenCalledWith('ui_preferences', {
         ownerId: '',
-        prefKey: 'selected_clinic',
+        prefKey: 'clinic_organization',
         value: 'org-456'
       })
     );
@@ -460,7 +462,7 @@ describe('Fix 4 - clinic admin managingOrganization stored as selected_clinic', 
     await waitFor(() =>
       expect(dbSet).toHaveBeenCalledWith('ui_preferences', {
         ownerId: '',
-        prefKey: 'selected_clinic',
+        prefKey: 'clinic_organization',
         value: 'org-789'
       })
     );
@@ -490,6 +492,6 @@ describe('Fix 4 - clinic admin managingOrganization stored as selected_clinic', 
       expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
     );
     expect(getProfileByIdentifier).not.toHaveBeenCalled();
-    expectNoSelectedClinic();
+    expectNoClinicOrganization();
   });
 });

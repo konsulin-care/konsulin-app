@@ -49,9 +49,9 @@ describe('HomeContentAdmin', () => {
     vi.mocked(getAPI).mockResolvedValue(
       mockAxiosInstance as unknown as AxiosInstance
     );
-    // Default: provide a clinic ID so queries fire
+    // Default: provide an org ID so queries fire
     vi.mocked(dbGet).mockImplementation((_store, args) => {
-      if (args?.[1] === 'selected_clinic')
+      if (args?.[1] === 'clinic_organization')
         return Promise.resolve({ value: 'org-1' });
       return Promise.resolve(null);
     });
@@ -87,7 +87,7 @@ describe('HomeContentAdmin', () => {
 
     it('uses location-based filter with active=true when both clinic and location are set', async () => {
       vi.mocked(dbGet).mockImplementation((_store, args) => {
-        if (args?.[1] === 'selected_clinic')
+        if (args?.[1] === 'clinic_organization')
           return Promise.resolve({ value: 'org-1' });
         if (args?.[1] === 'selected_location')
           return Promise.resolve({ value: 'loc-1' });

@@ -9,9 +9,10 @@ type ClinicContext = {
 };
 
 /**
- * Read the admin's selected clinic and location from IndexedDB.
+ * Read the admin's clinic organization and location from IndexedDB.
  *
- * Reads `selected_clinic` and `selected_location` from `uiPreferences`
+ * Reads `clinic_organization` (the admin's bound org from
+ * Person.managingOrganization) and `selected_location` from `uiPreferences`
  * store once on mount. Returns empty strings when not yet stored.
  */
 export function useClinicContext(): ClinicContext {
@@ -19,7 +20,7 @@ export function useClinicContext(): ClinicContext {
   const [locationId, setLocationId] = useState('');
 
   useEffect(() => {
-    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_clinic'])
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'clinic_organization'])
       .then(saved => {
         if (saved?.value) setClinicId(saved.value);
         return null;

@@ -33,7 +33,7 @@ export default function Practitioner() {
     string | undefined
   >();
   useEffect(() => {
-    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_clinic'])
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'clinic_organization'])
       .then(saved => {
         if (saved?.value) setSelectedClinicId(saved.value);
         return null;

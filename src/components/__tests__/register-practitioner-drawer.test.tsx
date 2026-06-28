@@ -35,9 +35,9 @@ describe('RegisterPractitionerDrawer', () => {
     vi.mocked(getAPI).mockResolvedValue(
       mockAxiosInstance as unknown as AxiosInstance
     );
-    // Default: clinic selected, no location
+    // Default: clinic org set, no location
     vi.mocked(dbGet).mockImplementation((_store, args) => {
-      if (args?.[1] === 'selected_clinic')
+      if (args?.[1] === 'clinic_organization')
         return Promise.resolve({ value: 'org-1' });
       if (args?.[1] === 'selected_location') return Promise.resolve(null);
       return Promise.resolve(null);
@@ -227,7 +227,7 @@ describe('RegisterPractitionerDrawer', () => {
 
   it('includes location param in PractitionerRole query when location exists', async () => {
     vi.mocked(dbGet).mockImplementation((_store, args) => {
-      if (args?.[1] === 'selected_clinic')
+      if (args?.[1] === 'clinic_organization')
         return Promise.resolve({ value: 'org-1' });
       if (args?.[1] === 'selected_location')
         return Promise.resolve({ value: 'loc-1' });

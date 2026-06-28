@@ -17,22 +17,22 @@ describe('useClinicContext', () => {
     vi.resetAllMocks();
   });
 
-  it('reads selected_clinic and selected_location from IndexedDB', async () => {
+  it('reads clinic_organization and selected_location from IndexedDB', async () => {
     vi.mocked(dbGet)
-      .mockResolvedValueOnce({ value: 'clinic-1' }) // selected_clinic
+      .mockResolvedValueOnce({ value: 'org-1' }) // clinic_organization
       .mockResolvedValueOnce({ value: 'loc-1' }); // selected_location
 
     const { result } = renderHook(() => useClinicContext());
 
     await waitFor(() => {
-      expect(result.current.clinicId).toBe('clinic-1');
+      expect(result.current.clinicId).toBe('org-1');
     });
     expect(result.current.locationId).toBe('loc-1');
   });
 
   it('returns empty strings when values are not stored', async () => {
     vi.mocked(dbGet)
-      .mockResolvedValueOnce(null) // selected_clinic
+      .mockResolvedValueOnce(null) // clinic_organization
       .mockResolvedValueOnce(null); // selected_location
 
     const { result } = renderHook(() => useClinicContext());
@@ -53,7 +53,7 @@ describe('useClinicContext', () => {
     });
     expect(dbGet).toHaveBeenCalledWith(STORES.uiPreferences, [
       '',
-      'selected_clinic'
+      'clinic_organization'
     ]);
     expect(dbGet).toHaveBeenCalledWith(STORES.uiPreferences, [
       '',

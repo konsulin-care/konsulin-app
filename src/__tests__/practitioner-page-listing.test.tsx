@@ -171,7 +171,7 @@ describe('Practitioner page - listing mode (no practitionerRoleId)', () => {
   it('renders listing when no practitionerRoleId in URL', async () => {
     vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('') as any);
     vi.mocked(dbGet).mockImplementation((_store, args) => {
-      if (args?.[1] === 'selected_clinic')
+      if (args?.[1] === 'clinic_organization')
         return Promise.resolve({ value: 'org-1' });
       if (args?.[1] === 'selected_location')
         return Promise.resolve({ value: 'loc-1' });
@@ -217,7 +217,7 @@ describe('Practitioner page - listing mode (no practitionerRoleId)', () => {
   it('renders empty state when no practitioners found', async () => {
     vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('') as any);
     vi.mocked(dbGet).mockImplementation((_store, args) => {
-      if (args?.[1] === 'selected_clinic')
+      if (args?.[1] === 'clinic_organization')
         return Promise.resolve({ value: 'org-1' });
       return Promise.resolve(null);
     });
@@ -238,7 +238,7 @@ describe('Practitioner page - listing mode (no practitionerRoleId)', () => {
   it('renders loading state when practitioner listing is loading', () => {
     vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('') as any);
     vi.mocked(dbGet).mockImplementation((_store, args) => {
-      if (args?.[1] === 'selected_clinic')
+      if (args?.[1] === 'clinic_organization')
         return Promise.resolve({ value: 'org-1' });
       return Promise.resolve(null);
     });
@@ -257,7 +257,7 @@ describe('Practitioner page - listing mode (no practitionerRoleId)', () => {
   it('uses clinicId for organization-based query when no location is stored', async () => {
     vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('') as any);
     vi.mocked(dbGet).mockImplementation((_store, args) => {
-      if (args?.[1] === 'selected_clinic')
+      if (args?.[1] === 'clinic_organization')
         return Promise.resolve({ value: 'org-1' });
       // selected_location not stored — return null
       return Promise.resolve(null);

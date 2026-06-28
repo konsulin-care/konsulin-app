@@ -37,7 +37,7 @@ function BookedAppointmentsTodayCard() {
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
   useEffect(() => {
-    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_clinic'])
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'clinic_organization'])
       .then(saved => {
         if (saved?.value) setSelectedClinicId(saved.value);
         return null;
@@ -101,7 +101,7 @@ export default function HomeContentAdmin() {
   );
 
   useEffect(() => {
-    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_clinic'])
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'clinic_organization'])
       .then(saved => {
         if (saved?.value) setSelectedClinicId(saved.value);
         return null;

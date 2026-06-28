@@ -36,7 +36,7 @@ describe('AddLocationDrawer', () => {
       mockAxiosInstance as unknown as AxiosInstance
     );
     vi.mocked(dbGet).mockImplementation((_store, args) => {
-      if (args?.[1] === 'selected_clinic')
+      if (args?.[1] === 'clinic_organization')
         return Promise.resolve({ value: 'org-1' });
       return Promise.resolve(null);
     });

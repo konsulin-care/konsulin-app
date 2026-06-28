@@ -85,10 +85,10 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
       try {
         const API = await getAPI();
 
-        // Read clinic and optional location from IndexedDB
+        // Read clinic org and optional location from IndexedDB
         const clinicPref = await dbGet<{ value: string }>(
           STORES.uiPreferences,
-          ['', 'selected_clinic']
+          ['', 'clinic_organization']
         );
         const locationPref = await dbGet<{ value: string }>(
           STORES.uiPreferences,

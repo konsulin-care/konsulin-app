@@ -53,7 +53,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
 
         const clinicPref = await dbGet<{ value: string }>(
           STORES.uiPreferences,
-          ['', 'selected_clinic']
+          ['', 'clinic_organization']
         );
         const orgId = clinicPref?.value ?? '';
 

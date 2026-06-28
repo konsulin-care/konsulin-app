@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 'use client';
 
 import { Roles } from '@/constants/roles';
@@ -162,10 +163,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .managingOrganization?.reference ?? ''
     ).replace('Organization/', '') || undefined;
 
-  const persistOrgAsSelectedClinic = (orgId: string) =>
+  const persistClinicOrganization = (orgId: string) =>
     dbSet(STORES.uiPreferences, {
       ownerId: '',
-      prefKey: 'selected_clinic',
+      prefKey: 'clinic_organization',
       value: orgId
     });
 
@@ -233,9 +234,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     dispatch({ type: 'login', payload });
 
-    // Clinic admin: persist managingOrganization as selected_clinic
+    // Clinic admin: persist managingOrganization as clinic_organization
     if (role === Roles.ClinicAdmin && organizationId) {
-      await persistOrgAsSelectedClinic(organizationId);
+      await persistClinicOrganization(organizationId);
     }
   };
 
@@ -296,9 +297,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUserId(userId);
       dispatch({ type: 'login', payload: cached });
 
-      // Clinic admin with cached orgId: persist as selected_clinic
+      // Clinic admin with cached orgId: persist as clinic_organization
       if (role === Roles.ClinicAdmin && cached?.organizationId) {
-        await persistOrgAsSelectedClinic(cached.organizationId);
+        await persistClinicOrganization(cached.organizationId);
         return;
       }
       // Non-admin returns; clinic admin without orgId falls through to fresh API fetch
