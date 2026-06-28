@@ -244,4 +244,50 @@ describe('ServicesTab', () => {
     const saveAll = screen.queryByText(/save all/i);
     if (saveAll) fireEvent.click(saveAll);
   });
+
+  it('opens edit drawer with service data when clicking Edit button', () => {
+    vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
+      makeMockResult(mockServices)
+    );
+    render(<ServicesTab practitionerRoleId='role-1' />);
+
+    // Click Edit on the first service card
+    fireEvent.click(screen.getAllByLabelText('Edit service')[0]);
+
+    // Drawer should show 'edit' mode (service prop passed)
+    expect(screen.getByText('edit')).toBeInTheDocument();
+  });
+
+  it('opens edit drawer when clicking anywhere on the service card', () => {
+    vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
+      makeMockResult(mockServices)
+    );
+    render(<ServicesTab practitionerRoleId='role-1' />);
+
+    // Click on the service name (inside the card body, not on any button)
+    fireEvent.click(screen.getByText('General Consultation'));
+
+    // Drawer should show 'edit' mode (service prop passed from card body click)
+    expect(screen.getByText('edit')).toBeInTheDocument();
+  });
+
+  it('removes service card when clicking Delete', () => {
+    vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
+      makeMockResult(mockServices)
+    );
+    render(<ServicesTab practitionerRoleId='role-1' />);
+
+    // Verify both services are visible
+    expect(screen.getByText('General Consultation')).toBeInTheDocument();
+    expect(screen.getByText('Specialist Referral')).toBeInTheDocument();
+
+    // Click Delete on the first service
+    const deleteButtons = screen.getAllByLabelText('Delete service');
+    fireEvent.click(deleteButtons[0]);
+
+    // First service should be gone
+    expect(screen.queryByText('General Consultation')).not.toBeInTheDocument();
+    // Second service should still exist
+    expect(screen.getByText('Specialist Referral')).toBeInTheDocument();
+  });
 });

@@ -4,6 +4,7 @@ import { useClinicContext } from '@/hooks/useClinicContext';
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
 import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
 import type { Bundle, HealthcareService, PractitionerRole } from 'fhir/r4';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ServiceFormDrawer from './service-form-drawer';
 
@@ -168,6 +169,7 @@ export default function ServicesTab({
           </button>
         </div>
         <ServiceFormDrawer
+          key={editingService?.id ?? 'create'}
           open={drawerOpen}
           onClose={() => {
             setDrawerOpen(false);
@@ -199,7 +201,8 @@ export default function ServicesTab({
       {localServices.map((svc: HealthcareService) => (
         <div
           key={svc.id ?? svc.name}
-          className='card rounded-lg border border-gray-200 bg-white p-4'
+          onClick={() => handleEditService(svc)}
+          className='card cursor-pointer rounded-lg border border-gray-200 bg-white p-4'
         >
           <div className='flex items-start justify-between'>
             <div className='flex-1'>
@@ -217,19 +220,25 @@ export default function ServicesTab({
             </div>
             <div className='flex gap-2'>
               <button
-                onClick={() => handleEditService(svc)}
-                className='text-xs text-blue-600 underline'
+                aria-label='Edit service'
+                onClick={e => {
+                  e.stopPropagation();
+                  handleEditService(svc);
+                }}
+                className='text-black'
               >
-                Edit
+                <Pencil size={16} />
               </button>
               {svc.id && (
                 <button
-                  onClick={() => {
-                    if (svc.id) handleDeleteService(svc.id);
+                  aria-label='Delete service'
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleDeleteService(svc.id);
                   }}
                   className='text-xs text-red-600 underline'
                 >
-                  Delete
+                  <Trash2 size={16} className='text-red-500' />
                 </button>
               )}
             </div>
@@ -238,6 +247,7 @@ export default function ServicesTab({
       ))}
 
       <ServiceFormDrawer
+        key={editingService?.id ?? 'create'}
         open={drawerOpen}
         onClose={() => {
           setDrawerOpen(false);
