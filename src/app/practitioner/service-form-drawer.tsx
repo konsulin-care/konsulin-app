@@ -24,27 +24,10 @@ type Props = {
   location?: string;
 };
 
-/** Renders read-only organization and location context block. */
-function ContextInfo({
-  providedBy,
-  location
-}: {
-  providedBy: string;
-  location: string;
-}) {
-  return (
-    <div className='rounded-md bg-gray-50 p-3 text-xs text-gray-600'>
-      <div className='font-medium'>Organization: {providedBy}</div>
-      <div className='font-medium'>Location: {location}</div>
-    </div>
-  );
-}
-
 /**
  * Drawer form for creating or editing a HealthcareService resource.
  *
  * Mode is "edit" when `service` is provided, otherwise "create".
- * `providedBy` and `location` are displayed as read-only context labels.
  */
 export default function ServiceFormDrawer({
   open,
@@ -88,9 +71,6 @@ export default function ServiceFormDrawer({
 
         <div className='space-y-4 px-4'>
           <div className='flex items-center justify-between'>
-            <label htmlFor='service-active' className='text-sm font-medium'>
-              Active
-            </label>
             <Switch
               id='service-active'
               checked={active}
@@ -107,6 +87,7 @@ export default function ServiceFormDrawer({
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder='e.g. General Consultation'
+              className='bg-white'
             />
           </div>
 
@@ -122,14 +103,18 @@ export default function ServiceFormDrawer({
               value={extraDetails}
               onChange={e => setExtraDetails(e.target.value)}
               rows={3}
+              className='bg-white'
             />
           </div>
-
-          <ContextInfo providedBy={providedBy} location={location} />
         </div>
 
         <DrawerFooter>
-          <Button onClick={handleSave} disabled={!name.trim()}>
+          <Button
+            onClick={handleSave}
+            disabled={!name.trim()}
+            variant='secondary'
+            className='text-white'
+          >
             Save
           </Button>
           <Button variant='outline' onClick={onClose}>

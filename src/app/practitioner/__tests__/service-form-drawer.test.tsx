@@ -108,13 +108,6 @@ describe('ServiceFormDrawer', () => {
     expect(textareas[0]).toHaveValue('Standard consultation');
   });
 
-  it('shows providedBy and location as read-only context', () => {
-    render(<ServiceFormDrawer {...defaultProps} />);
-
-    expect(screen.getByText(/Organization\/clinic-1/)).toBeInTheDocument();
-    expect(screen.getByText(/Location\/loc-1/)).toBeInTheDocument();
-  });
-
   it('calls onSave with service data on submit', () => {
     const onSave = vi.fn();
 
