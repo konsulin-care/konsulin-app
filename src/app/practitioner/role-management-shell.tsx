@@ -95,6 +95,7 @@ export default function PractitionerRoleManagementShell(props: Props) {
       <TabsContent value='services'>
         <ServicesTab
           practitionerRoleId={props.practitionerRoleId}
+          practitionerRole={detail?.resource}
           onDirtyChange={handleDirtyChange}
         />
       </TabsContent>

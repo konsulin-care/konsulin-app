@@ -21,7 +21,7 @@ type Props = {
   onSave: (service: HealthcareService) => void;
   service?: HealthcareService;
   providedBy: string;
-  location: string;
+  location?: string;
 };
 
 /** Renders read-only organization and location context block. */
@@ -66,7 +66,7 @@ export default function ServiceFormDrawer({
       name,
       extraDetails: extraDetails || undefined,
       providedBy: { reference: providedBy },
-      location: [{ reference: location }]
+      ...(location ? { location: [{ reference: location }] } : {})
     };
     onSave(resource);
   };

@@ -149,4 +149,29 @@ describe('ServiceFormDrawer', () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('omits location from resource when location prop is undefined', () => {
+    const onSave = vi.fn();
+
+    render(
+      <ServiceFormDrawer
+        {...defaultProps}
+        location={undefined}
+        onSave={onSave}
+      />
+    );
+
+    const inputs = screen.getAllByTestId('input');
+    fireEvent.change(inputs[0], { target: { value: 'No Location Service' } });
+
+    const buttons = screen.getAllByTestId('button');
+    const saveButton = buttons.find(b => b.textContent === 'Save');
+    if (saveButton) fireEvent.click(saveButton);
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    const saved = onSave.mock.calls[0][0] as HealthcareService;
+    expect(saved.location).toBeUndefined();
+    expect(saved.providedBy).toEqual({ reference: 'Organization/clinic-1' });
+    expect(saved.name).toBe('No Location Service');
+  });
 });

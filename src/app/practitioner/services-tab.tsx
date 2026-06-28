@@ -3,7 +3,7 @@
 import { useClinicContext } from '@/hooks/useClinicContext';
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
 import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
-import type { Bundle, HealthcareService } from 'fhir/r4';
+import type { Bundle, HealthcareService, PractitionerRole } from 'fhir/r4';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ServiceFormDrawer from './service-form-drawer';
 
@@ -15,6 +15,10 @@ type Props = {
     save: () => Promise<void>,
     saving: boolean
   ) => void;
+  /** Full PractitionerRole resource to preserve all fields on save.
+   *  When provided, the bundle PUT includes all existing fields (practitioner,
+   *  organization, availableTime, etc.) instead of only healthcareService. */
+  practitionerRole?: PractitionerRole;
 };
 
 /**
@@ -25,7 +29,8 @@ type Props = {
  */
 export default function ServicesTab({
   practitionerRoleId,
-  onDirtyChange
+  onDirtyChange,
+  practitionerRole
 }: Props) {
   const { clinicId, locationId } = useClinicContext();
   const { data: fetchedServices, refetch } =
@@ -73,14 +78,22 @@ export default function ServicesTab({
   };
 
   const handleDrawerSave = (service: HealthcareService) => {
+    // Generate a temp client ID so new services (id: undefined) can be
+    // distinguished in the local array. Without this, findIndex matches
+    // the first service with undefined id and replaces it.
+    const serviceWithId: HealthcareService = {
+      ...service,
+      id: service.id ?? `new-${crypto.randomUUID()}`
+    };
+
     setLocalServices(prev => {
-      const existingIdx = prev.findIndex(s => s.id === service.id);
+      const existingIdx = prev.findIndex(s => s.id === serviceWithId.id);
       if (existingIdx !== -1) {
         const updated = [...prev];
-        updated[existingIdx] = service;
+        updated[existingIdx] = serviceWithId;
         return updated;
       }
-      return [...prev, service];
+      return [...prev, serviceWithId];
     });
     setDrawerOpen(false);
     setEditingService(undefined);
@@ -103,11 +116,14 @@ export default function ServicesTab({
               url: svc.id ? `HealthcareService/${svc.id}` : 'HealthcareService'
             }
           })),
-          // PUT PractitionerRole with updated healthcareService refs
+          // PUT PractitionerRole with updated healthcareService refs,
+          // preserving all existing fields (practitioner, organization, etc.)
           {
             resource: {
-              resourceType: 'PractitionerRole',
-              id: practitionerRoleId,
+              ...(practitionerRole ?? {
+                resourceType: 'PractitionerRole',
+                id: practitionerRoleId
+              }),
               healthcareService: localServices
                 .filter((s): s is HealthcareService & { id: string } =>
                   Boolean(s.id)
@@ -129,7 +145,7 @@ export default function ServicesTab({
     } finally {
       setSaveAllLoading(false);
     }
-  }, [localServices, practitionerRoleId, refetch]);
+  }, [localServices, practitionerRoleId, refetch, practitionerRole]);
 
   // Report dirty state to parent for dynamic FAB
   useEffect(() => {
@@ -160,7 +176,7 @@ export default function ServicesTab({
           onSave={handleDrawerSave}
           service={editingService}
           providedBy={`Organization/${clinicId}`}
-          location={`Location/${locationId}`}
+          location={locationId ? `Location/${locationId}` : undefined}
         />
       </>
     );
@@ -230,7 +246,7 @@ export default function ServicesTab({
         onSave={handleDrawerSave}
         service={editingService}
         providedBy={`Organization/${clinicId}`}
-        location={`Location/${locationId}`}
+        location={locationId ? `Location/${locationId}` : undefined}
       />
     </div>
   );
