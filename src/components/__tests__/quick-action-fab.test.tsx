@@ -1,12 +1,18 @@
 import { FabDirtyProvider, useFabDirty } from '@/context/fabDirtyContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import QuickActionFab from '../quick-action-fab';
 
-// Mock dependencies
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false } }
+});
+
+let mockRole = 'Patient';
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({
-    state: { userInfo: { role_name: 'Patient' } }
+    state: { userInfo: { role_name: mockRole } }
   })
 }));
 
@@ -14,28 +20,43 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() })
 }));
 
+vi.mock('@/lib/indexeddb', () => ({
+  STORES: { uiPreferences: 'ui_preferences' },
+  dbGet: vi.fn().mockResolvedValue(null)
+}));
+
+vi.mock('@/services/api', () => ({
+  getAPI: vi.fn()
+}));
+
+vi.mock('react-toastify', () => ({
+  toast: { success: vi.fn(), error: vi.fn() }
+}));
+
 function TestHarness() {
   const { setDirtyState } = useFabDirty();
   return (
-    <div>
-      <QuickActionFab />
-      <button
-        data-testid='trigger-dirty'
-        onClick={() =>
-          setDirtyState({
-            isDirty: true,
-            label: 'Save Changes',
-            onSave: vi.fn(),
-            isSaving: false
-          })
-        }
-      >
-        Make Dirty
-      </button>
-      <button data-testid='trigger-clean' onClick={() => setDirtyState(null)}>
-        Make Clean
-      </button>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <div>
+        <QuickActionFab />
+        <button
+          data-testid='trigger-dirty'
+          onClick={() =>
+            setDirtyState({
+              isDirty: true,
+              label: 'Save Changes',
+              onSave: vi.fn(),
+              isSaving: false
+            })
+          }
+        >
+          Make Dirty
+        </button>
+        <button data-testid='trigger-clean' onClick={() => setDirtyState(null)}>
+          Make Clean
+        </button>
+      </div>
+    </QueryClientProvider>
   );
 }
 
@@ -48,7 +69,7 @@ function getFabButton(container: HTMLElement): HTMLButtonElement | undefined {
   return buttons[last] || undefined;
 }
 
-describe('QuickActionFab morphing', () => {
+describe('QuickActionFab', () => {
   it('renders as a circle with plus icon by default', () => {
     const { container } = render(
       <FabDirtyProvider>
@@ -121,5 +142,99 @@ describe('QuickActionFab morphing', () => {
       /Self Checkup|Write Journal|View Schedule|Get Recommendation/
     );
     expect(pillsAfter.length).toBe(0);
+  });
+});
+
+describe('QuickActionFab clinic admin', () => {
+  beforeEach(() => {
+    mockRole = 'Clinic Admin';
+  });
+
+  afterEach(() => {
+    mockRole = 'Patient';
+  });
+
+  it('renders Register Practitioner and Add Location pills for ClinicAdmin', () => {
+    const { container } = render(
+      <FabDirtyProvider>
+        <TestHarness />
+      </FabDirtyProvider>
+    );
+
+    const fabButton = getFabButton(container);
+    fireEvent.click(fabButton);
+
+    expect(screen.getByText('Register Practitioner')).toBeDefined();
+    expect(screen.getByText('Add Location')).toBeDefined();
+  });
+
+  it('does not render patient pills for ClinicAdmin', () => {
+    const { container } = render(
+      <FabDirtyProvider>
+        <TestHarness />
+      </FabDirtyProvider>
+    );
+
+    const fabButton = getFabButton(container);
+    fireEvent.click(fabButton);
+
+    expect(screen.queryByText('Self Checkup')).toBeNull();
+    expect(screen.queryByText('Write Journal')).toBeNull();
+    expect(screen.queryByText('View Schedule')).toBeNull();
+    expect(screen.queryByText('Get Recommendation')).toBeNull();
+  });
+
+  it('opens RegisterPractitionerDrawer when Register Practitioner pill is clicked', () => {
+    const { container } = render(
+      <FabDirtyProvider>
+        <TestHarness />
+      </FabDirtyProvider>
+    );
+
+    const fabButton = getFabButton(container);
+    fireEvent.click(fabButton);
+
+    fireEvent.click(screen.getByText('Register Practitioner'));
+
+    // The drawer form should be visible
+    expect(screen.getByLabelText('Name')).toBeDefined();
+    expect(screen.getByLabelText('Email')).toBeDefined();
+  });
+
+  it('opens AddLocationDrawer when Add Location pill is clicked', () => {
+    const { container } = render(
+      <FabDirtyProvider>
+        <TestHarness />
+      </FabDirtyProvider>
+    );
+
+    const fabButton = getFabButton(container);
+    fireEvent.click(fabButton);
+
+    fireEvent.click(screen.getByText('Add Location'));
+
+    // The drawer form should be visible
+    expect(screen.getByLabelText('Longitude')).toBeDefined();
+    expect(screen.getByLabelText('Latitude')).toBeDefined();
+  });
+
+  it('renders patient pills for non-ClinicAdmin roles', () => {
+    mockRole = 'Patient';
+    const { container } = render(
+      <FabDirtyProvider>
+        <TestHarness />
+      </FabDirtyProvider>
+    );
+
+    const fabButton = getFabButton(container);
+    fireEvent.click(fabButton);
+
+    expect(screen.getByText('Self Checkup')).toBeDefined();
+    expect(screen.getByText('Write Journal')).toBeDefined();
+    expect(screen.getByText('View Schedule')).toBeDefined();
+    expect(screen.getByText('Get Recommendation')).toBeDefined();
+
+    expect(screen.queryByText('Register Practitioner')).toBeNull();
+    expect(screen.queryByText('Add Location')).toBeNull();
   });
 });
