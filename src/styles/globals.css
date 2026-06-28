@@ -26,6 +26,7 @@ body {
   .tab-active[data-state='active'] {
     background-color: var(--secondary) !important;
     color: white !important;
+    font-weight: 700 !important;
   }
 
   .btn-soft-gray {

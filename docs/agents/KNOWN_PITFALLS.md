@@ -42,3 +42,16 @@ date: 2026-05-26
 - AEHRC builds form via `useBuildForm()` — ensure Questionnaire JSON
   is fully loaded before mounting the component
 - Admin JS files from aehrc renderer may conflict with HTMX headers
+
+# Tailwind v4 CSS Pitfalls
+
+- `data-[*]:` variants for custom `@layer utilities` classes do NOT
+  generate working CSS in Tailwind v4. The variant modifier is silently
+  ignored at build time.
+- **Fix**: define an explicit class with `!important` that targets the
+  state attribute directly, e.g.
+  `.foo[data-state='active'] { color: var(--secondary) !important; }`
+  and apply it via `className`.
+- This applies to ALL state-driven styling: `data-state`, `aria-*`,
+  or any `[data-*]` attribute — tabs, drawers, modals, accordions.
+  Never use `data-[*]:bg-<custom>` for a `@layer utilities` class.

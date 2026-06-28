@@ -80,16 +80,10 @@ export default function PractitionerRoleManagementShell(props: Props) {
       data-role-id={props.practitionerRoleId}
     >
       <TabsList className='grid w-full grid-cols-2'>
-        <TabsTrigger
-          value='availability'
-          className='data-[state=active]:bg-secondary text-black data-[state=active]:font-bold data-[state=active]:text-white'
-        >
+        <TabsTrigger value='availability' className='tab-active text-black'>
           Availability
         </TabsTrigger>
-        <TabsTrigger
-          value='services'
-          className='data-[state=active]:bg-secondary text-black data-[state=active]:font-bold data-[state=active]:text-white'
-        >
+        <TabsTrigger value='services' className='tab-active text-black'>
           Services
         </TabsTrigger>
       </TabsList>
