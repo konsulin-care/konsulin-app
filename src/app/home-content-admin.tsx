@@ -124,7 +124,7 @@ export default function HomeContentAdmin() {
 
   const {
     data: practitionerCount,
-    isLoading: isCountLoading,
+    isFetching: isCountFetching,
     isError: isCountError,
     refetch: refetchCount
   } = useQuery({
@@ -154,7 +154,7 @@ export default function HomeContentAdmin() {
     });
   }, [refetchCount]);
 
-  const isLoading = isAuthLoading || isCountLoading;
+  const isLoading = isAuthLoading || isCountFetching;
 
   if (isLoading) {
     return (

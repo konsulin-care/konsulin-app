@@ -119,9 +119,26 @@ describe('HomeContentAdmin', () => {
 
       // Wait for effects to settle, then verify no fetch occurred
       await vi.waitFor(() => {
-        // With no clinic ID, query is disabled — loading skeleton shown
+        // With no clinic ID, query is disabled — should render content not skeleton
         expect(mockAxiosInstance.get).not.toHaveBeenCalled();
       });
+    });
+
+    it('renders dashboard content when no clinic is stored (no skeleton)', async () => {
+      vi.mocked(dbGet).mockResolvedValue(null);
+      mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
+
+      render(<HomeContentAdmin />, { wrapper });
+
+      // Service Management should render immediately, not skeleton
+      await waitFor(() => {
+        expect(screen.getByText('Service Management')).toBeDefined();
+      });
+      expect(screen.getByText('Clinic Details')).toBeDefined();
+      expect(screen.getByText('Reports')).toBeDefined();
+      // Booked Appointments and Pending Approvals should render as placeholders
+      expect(screen.getByText('Booked Appointments Today')).toBeDefined();
+      expect(screen.getByText('Pending Approvals')).toBeDefined();
     });
   });
 
@@ -213,9 +230,9 @@ describe('HomeContentAdmin', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Service Management')).toBeDefined();
+      expect(screen.getByText('Clinic Details')).toBeDefined();
+      expect(screen.getByText('Reports')).toBeDefined();
     });
-    expect(screen.getByText('Clinic Details')).toBeDefined();
-    expect(screen.getByText('Reports')).toBeDefined();
 
     expect(screen.queryByText('Manage Practitioners')).toBeNull();
     expect(screen.queryByText('Clinic Settings')).toBeNull();
