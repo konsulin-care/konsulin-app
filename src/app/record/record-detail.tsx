@@ -71,10 +71,7 @@ export default function RecordDetail() {
 
   return (
     <>
-      <PageHeader
-        pageIndicator={pageTitle(category)}
-        backRoute='/assessments'
-      />
+      <PageHeader pageIndicator={pageTitle(category)} />
       <div className='mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] bg-white p-4'>
         {renderContent(category)}
       </div>

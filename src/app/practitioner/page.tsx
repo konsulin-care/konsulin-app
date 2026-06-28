@@ -98,9 +98,6 @@ export default function Practitioner() {
         pageIndicator={
           practitionerRoleId ? 'Manage Practitioner' : 'Manage Practitioners'
         }
-        backRoute={
-          practitionerRoleId ? `/clinic?clinicId=${selectedClinicId}` : '/'
-        }
       />
 
       <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
