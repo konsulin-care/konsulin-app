@@ -156,6 +156,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const extractOrgId = (result: unknown): string | undefined =>
+    (
+      (result as { managingOrganization?: { reference?: string } })
+        .managingOrganization?.reference ?? ''
+    ).replace('Organization/', '') || undefined;
+
+  const persistOrgAsSelectedClinic = (orgId: string) =>
+    dbSet(STORES.uiPreferences, {
+      ownerId: '',
+      prefKey: 'selected_clinic',
+      value: orgId
+    });
+
   /** Resolve user role from auth cookie and SuperTokens claims. */
   const resolveUserRoles = async (): Promise<{
     role: UserRole;
@@ -199,6 +212,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const email = result.telecom?.find(item => item.system === 'email')?.value;
     const profile_complete = isProfileCompleteFromFHIR(result);
+    const organizationId = extractOrgId(result);
 
     const payload = {
       userId,
@@ -208,6 +222,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       profile_picture: result?.photo?.[0]?.url ?? '',
       fullname: mergeNames(result?.name),
       fhirId: result?.id ?? '',
+      organizationId,
       profile_complete
     };
 
@@ -218,20 +233,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     dispatch({ type: 'login', payload });
 
-    // Clinic admin: persist Person.managingOrganization as selected_clinic
-    if (role === Roles.ClinicAdmin && result) {
-      const person = result as {
-        managingOrganization?: { reference?: string };
-      };
-      const orgRef = person.managingOrganization?.reference;
-      if (orgRef) {
-        const orgId = orgRef.replace('Organization/', '');
-        await dbSet(STORES.uiPreferences, {
-          ownerId: '',
-          prefKey: 'selected_clinic',
-          value: orgId
-        });
-      }
+    // Clinic admin: persist managingOrganization as selected_clinic
+    if (role === Roles.ClinicAdmin && organizationId) {
+      await persistOrgAsSelectedClinic(organizationId);
     }
   };
 
@@ -291,7 +295,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (cached?.userId === userId && cached?.role_name === role) {
       setCurrentUserId(userId);
       dispatch({ type: 'login', payload: cached });
-      return;
+
+      // Clinic admin with cached orgId: persist as selected_clinic
+      if (role === Roles.ClinicAdmin && cached?.organizationId) {
+        await persistOrgAsSelectedClinic(cached.organizationId);
+        return;
+      }
+      // Non-admin returns; clinic admin without orgId falls through to fresh API fetch
+      if (role !== Roles.ClinicAdmin) return;
     }
 
     try {
