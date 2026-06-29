@@ -181,47 +181,40 @@ export default function PractitionerFilter({
 
   return (
     <div className='flex flex-col gap-2'>
-      <div className='flex items-center gap-2'>
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <FilterButton />
-          </PopoverTrigger>
-          <PopoverContent align='center' className='w-[90vw] p-4'>
-            <FilterPopoverContent
-              locations={locations}
-              value={value}
-              onStatusChange={handleStatusChange}
-              onLocationSelect={handleLocationSelect}
-              onReset={handleReset}
-              activeCount={activeCount}
-            />
-          </PopoverContent>
-        </Popover>
-
-        {value.status !== 'all' && (
-          <Badge
-            className='cursor-pointer gap-1 px-3 py-1 text-xs'
-            onClick={dismissStatus}
-          >
-            {value.status === 'active' ? 'Active' : 'Inactive'} ×
-          </Badge>
-        )}
-        {value.locationId && (
-          <Badge
-            className='cursor-pointer gap-1 px-3 py-1 text-xs'
-            onClick={dismissLocation}
-          >
-            {locationName} ×
-          </Badge>
-        )}
-      </div>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <FilterButton />
+        </PopoverTrigger>
+        <PopoverContent align='center' className='w-[90vw] p-4'>
+          <FilterPopoverContent
+            locations={locations}
+            value={value}
+            onStatusChange={handleStatusChange}
+            onLocationSelect={handleLocationSelect}
+            onReset={handleReset}
+            activeCount={activeCount}
+          />
+        </PopoverContent>
+      </Popover>
 
       {activeCount > 0 && (
-        <div className='flex items-center gap-1.5 text-xs text-[#13c2c2]'>
-          <span className='flex h-1.5 w-1.5 rounded-full bg-[#13c2c2]' />
-          <span>
-            {activeCount} filter{activeCount > 1 ? 's' : ''} active
-          </span>
+        <div className='flex flex-wrap gap-2'>
+          {value.status !== 'all' && (
+            <Badge
+              className='cursor-pointer gap-1 px-3 py-1 text-xs whitespace-nowrap'
+              onClick={dismissStatus}
+            >
+              {value.status === 'active' ? 'Active' : 'Inactive'} ×
+            </Badge>
+          )}
+          {value.locationId && (
+            <Badge
+              className='cursor-pointer gap-1 px-3 py-1 text-xs whitespace-nowrap'
+              onClick={dismissLocation}
+            >
+              {locationName} ×
+            </Badge>
+          )}
         </div>
       )}
     </div>

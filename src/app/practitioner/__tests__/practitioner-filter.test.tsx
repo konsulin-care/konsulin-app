@@ -129,7 +129,7 @@ describe('PractitionerFilter', () => {
     expect(screen.getByTestId('filter-icon')).toBeDefined();
   });
 
-  it('shows filter count indicator below the row when filters are applied', () => {
+  it('does not show count indicator text when filters are applied', () => {
     const onChange = vi.fn();
     render(
       <PractitionerFilter
@@ -138,31 +138,22 @@ describe('PractitionerFilter', () => {
         onChange={onChange}
       />
     );
-
-    expect(screen.getByText('2 filters active')).toBeDefined();
-  });
-  it('hides filter count indicator when no filters are applied', () => {
-    const onChange = vi.fn();
-    render(
-      <PractitionerFilter
-        locations={defaultLocations}
-        value={{ status: 'all' }}
-        onChange={onChange}
-      />
-    );
     expect(screen.queryByText(/filters? active/)).toBeNull();
   });
 
-  it('shows singular "1 filter active" when one filter is applied', () => {
+  it('verifies badges have whitespace-nowrap class for single-line pills', () => {
     const onChange = vi.fn();
     render(
       <PractitionerFilter
         locations={defaultLocations}
-        value={{ status: 'active' }}
+        value={{ status: 'active', locationId: 'loc-1' }}
         onChange={onChange}
       />
     );
-    expect(screen.getByText('1 filter active')).toBeDefined();
+    const badges = screen.getAllByTestId('badge');
+    badges.forEach(badge => {
+      expect(badge.className).toContain('whitespace-nowrap');
+    });
   });
 
   it('shows active filter chips when filters are applied', () => {
