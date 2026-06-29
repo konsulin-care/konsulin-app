@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Drawer,
   DrawerContent,
@@ -18,10 +17,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { Bundle, Practitioner, PractitionerRole, Schedule } from 'fhir/r4';
 import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
-
-type AdditionalRole = 'Clinic Admin' | 'Researcher';
-
-const ADDITIONAL_ROLES: AdditionalRole[] = ['Clinic Admin', 'Researcher'];
 
 type Props = {
   open: boolean;
@@ -65,16 +60,9 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [additionalRoles, setAdditionalRoles] = useState<AdditionalRole[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isValid = name.trim().length > 0 && email.trim().length > 0;
-
-  const toggleRole = (role: AdditionalRole) => {
-    setAdditionalRoles(prev =>
-      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
-    );
-  };
 
   const handleRegister = useCallback(() => {
     if (!isValid || isSubmitting) return;
@@ -157,7 +145,7 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
               id='prac-name'
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder='Full name'
+              placeholder='Full Name'
               className='bg-white'
               aria-label='Name'
             />
@@ -174,27 +162,6 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
               className='bg-white'
               aria-label='Email'
             />
-          </div>
-
-          <div>
-            <Label className='text-sm font-medium'>Additional Roles</Label>
-            <div className='mt-2 space-y-2'>
-              {ADDITIONAL_ROLES.map(role => (
-                <div key={role} className='flex items-center gap-2'>
-                  <Checkbox
-                    id={`role-${role}`}
-                    checked={additionalRoles.includes(role)}
-                    onCheckedChange={() => toggleRole(role)}
-                  />
-                  <label
-                    htmlFor={`role-${role}`}
-                    className='text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
-                  >
-                    {role}
-                  </label>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 

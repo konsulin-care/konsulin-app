@@ -273,11 +273,10 @@ describe('RegisterPractitionerDrawer', () => {
     expect(locRef).toBe('Location/loc-1');
   });
 
-  it('includes additional roles checkbox options', () => {
+  it('uses "Full Name" placeholder on the name input', () => {
     render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
 
-    expect(screen.getByText('Clinic Admin')).toBeDefined();
-    expect(screen.getByText('Researcher')).toBeDefined();
+    expect(screen.getByPlaceholderText('Full Name')).toBeDefined();
   });
 
   it('shows toast error and keeps drawer open on API failure', async () => {
