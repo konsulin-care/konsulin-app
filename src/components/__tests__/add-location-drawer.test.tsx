@@ -54,6 +54,7 @@ describe('AddLocationDrawer', () => {
     render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
 
     expect(screen.getAllByText('Add Location').length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Location Name')).toBeDefined();
     expect(screen.getByLabelText('Longitude')).toBeDefined();
     expect(screen.getByLabelText('Latitude')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add Location' })).toBeDefined();
@@ -80,7 +81,24 @@ describe('AddLocationDrawer', () => {
     expect(submitBtn).toBeDisabled();
   });
 
-  it('has submit button enabled when valid numbers are provided', () => {
+  it('has submit button enabled when all fields are valid', () => {
+    render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
+
+    fireEvent.change(screen.getByLabelText('Location Name'), {
+      target: { value: 'Main Clinic' }
+    });
+    fireEvent.change(screen.getByLabelText('Longitude'), {
+      target: { value: '106.846' }
+    });
+    fireEvent.change(screen.getByLabelText('Latitude'), {
+      target: { value: '-6.305' }
+    });
+
+    const submitBtn = screen.getByRole('button', { name: 'Add Location' });
+    expect(submitBtn).toBeEnabled();
+  });
+
+  it('has submit button disabled when name is empty but coords are valid', () => {
     render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
 
     fireEvent.change(screen.getByLabelText('Longitude'), {
@@ -91,7 +109,41 @@ describe('AddLocationDrawer', () => {
     });
 
     const submitBtn = screen.getByRole('button', { name: 'Add Location' });
-    expect(submitBtn).toBeEnabled();
+    expect(submitBtn).toBeDisabled();
+  });
+
+  it('has submit button disabled when name exceeds 30 characters', () => {
+    render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
+
+    fireEvent.change(screen.getByLabelText('Location Name'), {
+      target: { value: 'A very long location name that exceeds the limit' }
+    });
+    fireEvent.change(screen.getByLabelText('Longitude'), {
+      target: { value: '106.846' }
+    });
+    fireEvent.change(screen.getByLabelText('Latitude'), {
+      target: { value: '-6.305' }
+    });
+
+    const submitBtn = screen.getByRole('button', { name: 'Add Location' });
+    expect(submitBtn).toBeDisabled();
+  });
+
+  it('has submit button disabled when name contains special characters', () => {
+    render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
+
+    fireEvent.change(screen.getByLabelText('Location Name'), {
+      target: { value: 'Clinic#1!' }
+    });
+    fireEvent.change(screen.getByLabelText('Longitude'), {
+      target: { value: '106.846' }
+    });
+    fireEvent.change(screen.getByLabelText('Latitude'), {
+      target: { value: '-6.305' }
+    });
+
+    const submitBtn = screen.getByRole('button', { name: 'Add Location' });
+    expect(submitBtn).toBeDisabled();
   });
 
   it('calls onClose when Cancel is clicked', () => {
@@ -106,6 +158,9 @@ describe('AddLocationDrawer', () => {
 
     render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
 
+    fireEvent.change(screen.getByLabelText('Location Name'), {
+      target: { value: 'Main Clinic' }
+    });
     fireEvent.change(screen.getByLabelText('Longitude'), {
       target: { value: '106.846' }
     });
@@ -126,6 +181,7 @@ describe('AddLocationDrawer', () => {
 
     const payload = postCall[1] as Record<string, unknown>;
     expect(payload.resourceType).toBe('Location');
+    expect(payload.name).toBe('Main Clinic');
 
     const position = payload.position as Record<string, unknown>;
     expect(position.longitude).toBe(106.846);
@@ -140,6 +196,9 @@ describe('AddLocationDrawer', () => {
 
     render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
 
+    fireEvent.change(screen.getByLabelText('Location Name'), {
+      target: { value: 'Main Clinic' }
+    });
     fireEvent.change(screen.getByLabelText('Longitude'), {
       target: { value: '106.846' }
     });

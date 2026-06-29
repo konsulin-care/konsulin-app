@@ -26,17 +26,25 @@ type Props = {
  * Drawer for adding a new Location to the selected clinic.
  *
  * Reads selected_clinic from IndexedDB for managingOrganization reference.
- * Posts a FHIR Location resource with position (longitude, latitude).
+ * Posts a FHIR Location resource with name and position (longitude, latitude).
  */
 export default function AddLocationDrawer({ open, onClose }: Props) {
   const queryClient = useQueryClient();
+  const [name, setName] = useState('');
   const [longitude, setLongitude] = useState('');
   const [latitude, setLatitude] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const nameTrimmed = name.trim();
+  const nameValid =
+    nameTrimmed.length > 0 &&
+    nameTrimmed.length <= 30 &&
+    /^[a-zA-Z0-9 ]+$/.test(nameTrimmed);
+
   const parsedLon = Number.parseFloat(longitude);
   const parsedLat = Number.parseFloat(latitude);
   const isValid =
+    nameValid &&
     longitude.trim().length > 0 &&
     latitude.trim().length > 0 &&
     !Number.isNaN(parsedLon) &&
@@ -59,6 +67,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
 
         await API.post('/fhir/Location', {
           resourceType: 'Location',
+          name: nameTrimmed,
           position: {
             longitude: parsedLon,
             latitude: parsedLat
@@ -83,7 +92,15 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
     };
 
     void submit();
-  }, [isValid, isSubmitting, parsedLon, parsedLat, queryClient, onClose]);
+  }, [
+    isValid,
+    isSubmitting,
+    nameTrimmed,
+    parsedLon,
+    parsedLat,
+    queryClient,
+    onClose
+  ]);
 
   return (
     <Drawer
@@ -101,6 +118,20 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
         </DrawerHeader>
 
         <div className='space-y-4 px-4'>
+          <div>
+            <Label htmlFor='loc-name'>Location Name</Label>
+            <Input
+              id='loc-name'
+              type='text'
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder='e.g. Main Clinic'
+              className='bg-white'
+              aria-label='Location Name'
+              maxLength={30}
+            />
+          </div>
+
           <div>
             <Label htmlFor='loc-longitude'>Longitude</Label>
             <Input
