@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, react/display-name, @next/next/no-img-element, jsx-a11y/alt-text */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, react/display-name, @next/next/no-img-element, jsx-a11y/alt-text, max-lines */
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -315,5 +315,65 @@ describe('Practitioner page - listing mode (no practitionerRoleId)', () => {
 
     // Called with locationId as undefined
     expect(usePractitionerListing).toHaveBeenCalledWith('org-1', undefined);
+  });
+
+  it('shows filter when empty list but filters are active', async () => {
+    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('') as any);
+    vi.mocked(dbGet).mockImplementation((_s, a) => {
+      if (a?.[1] === 'clinic_organization')
+        return Promise.resolve({ value: 'org-1' });
+      if (a?.[1] === 'practitioner_filter')
+        return Promise.resolve({ value: { status: 'active' } });
+      return Promise.resolve(null);
+    });
+    vi.mocked(usePractitionerListing).mockReturnValue({
+      practitioners: [],
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    });
+
+    render(<Practitioner />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(screen.getByText('No Practitioners Found')).toBeDefined();
+      expect(screen.getByTestId('mock-practitioner-filter')).toBeDefined();
+    });
+  });
+
+  it('shows filtered-empty message when filter yields zero results', async () => {
+    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('') as any);
+    vi.mocked(dbGet).mockImplementation((_s, a) => {
+      if (a?.[1] === 'clinic_organization')
+        return Promise.resolve({ value: 'org-1' });
+      return Promise.resolve(null);
+    });
+    vi.mocked(usePractitionerListing).mockReturnValue({
+      practitioners: [
+        {
+          id: 'p1',
+          practitionerName: 'Dr. Alpha',
+          specialties: ['Cardiology'],
+          active: false,
+          photoUrl: '/photo.jpg',
+          healthcareServiceNames: [],
+          practitionerRoleId: 'pr1'
+        }
+      ],
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    });
+
+    render(<Practitioner />, { wrapper: createWrapper() });
+
+    screen.getByTestId('filter-select-active').click();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-practitioner-filter')).toBeDefined();
+      expect(
+        screen.getByText(/No practitioners match your filters/i)
+      ).toBeDefined();
+    });
   });
 });

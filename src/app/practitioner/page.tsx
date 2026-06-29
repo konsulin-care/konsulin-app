@@ -92,23 +92,50 @@ export default function Practitioner() {
   const renderListingContent = () => {
     if (isListingLoading) return <LoadingState />;
 
+    const hasActiveFilters =
+      filter.status !== 'all' || Boolean(filter.locationId);
+    const showFilter = practitioners.length > 0 || hasActiveFilters;
+
+    // Shared filter component (only rendered when needed)
+    const filterElement = showFilter ? (
+      <PractitionerFilter
+        locations={locations ?? []}
+        value={filter}
+        onChange={handleFilterChange}
+      />
+    ) : null;
+
+    // Clinic has zero practitioners
     if (practitioners.length === 0) {
       return (
-        <EmptyState
-          className='py-16'
-          title='No Practitioners Found'
-          subtitle='Try another clinic.'
-        />
+        <>
+          {filterElement}
+          <EmptyState
+            className='py-16'
+            title='No Practitioners Found'
+            subtitle='Try another clinic.'
+          />
+        </>
+      );
+    }
+
+    // Practitioners exist but filters yield zero results
+    if (filteredPractitioners.length === 0) {
+      return (
+        <>
+          {filterElement}
+          <EmptyState
+            className='py-16'
+            title='No Practitioners Match Your Filters'
+            subtitle='Try adjusting your filter criteria.'
+          />
+        </>
       );
     }
 
     return (
       <>
-        <PractitionerFilter
-          locations={locations ?? []}
-          value={filter}
-          onChange={handleFilterChange}
-        />
+        {filterElement}
         <div className='mt-4 flex flex-col gap-4'>
           {filteredPractitioners.map(p => (
             <PractitionerCard key={p.id} {...p} />
