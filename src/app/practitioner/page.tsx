@@ -4,11 +4,13 @@ import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import { PractitionerCard } from '@/components/practitioner/practitioner-card';
+import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { STORES, dbGet, dbSet } from '@/lib/indexeddb';
 import {
   useOrganizationLocations,
   usePractitionerListing
 } from '@/services/clinic';
+import { SearchIcon } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import PractitionerFilter, { type FilterState } from './practitioner-filter';
@@ -33,6 +35,7 @@ export default function Practitioner() {
   const practitionerRoleId = searchParams.get('practitionerRoleId') ?? '';
   const [selectedClinicId, setSelectedClinicId] = useState<string>('');
   const [filter, setFilter] = useState<FilterState>({ status: 'all' });
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Load clinic selection from IndexedDB
   useEffect(() => {
@@ -80,13 +83,31 @@ export default function Practitioner() {
     filter.locationId
   );
 
-  // Client-side status filter
+  // Fuzzy match: checks if all chars of query appear in order in text
+  const fuzzyMatch = useCallback((query: string, text: string): boolean => {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    const t = text.toLowerCase();
+    let qi = 0;
+    for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+      if (q[qi] === t[ti]) qi++;
+    }
+    return qi === q.length;
+  }, []);
+
+  // Client-side status filter + fuzzy name search
   const filteredPractitioners = useMemo(() => {
-    if (filter.status === 'all') return practitioners;
-    return practitioners.filter(p =>
-      filter.status === 'active' ? p.active : !p.active
-    );
-  }, [practitioners, filter.status]);
+    let result = practitioners;
+    if (filter.status !== 'all') {
+      result = result.filter(p =>
+        filter.status === 'active' ? p.active : !p.active
+      );
+    }
+    if (searchQuery) {
+      result = result.filter(p => fuzzyMatch(searchQuery, p.practitionerName));
+    }
+    return result;
+  }, [practitioners, filter.status, searchQuery, fuzzyMatch]);
 
   /** Renders listing of practitioner cards (admin view). */
   const renderListingContent = () => {
@@ -96,20 +117,29 @@ export default function Practitioner() {
       filter.status !== 'all' || Boolean(filter.locationId);
     const showFilter = practitioners.length > 0 || hasActiveFilters;
 
-    // Shared filter component (only rendered when needed)
-    const filterElement = showFilter ? (
-      <PractitionerFilter
-        locations={locations ?? []}
-        value={filter}
-        onChange={handleFilterChange}
-      />
+    // Shared search + filter bar (only rendered when needed)
+    const filterBar = showFilter ? (
+      <div className='flex items-center gap-2'>
+        <InputWithIcon
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder='Search practitioner...'
+          className='h-[50px] w-full border-0 bg-[#F9F9F9]'
+          startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
+        />
+        <PractitionerFilter
+          locations={locations ?? []}
+          value={filter}
+          onChange={handleFilterChange}
+        />
+      </div>
     ) : null;
 
     // Clinic has zero practitioners
     if (practitioners.length === 0) {
       return (
         <>
-          {filterElement}
+          {filterBar}
           <EmptyState
             className='py-16'
             title='No Practitioners Found'
@@ -123,7 +153,7 @@ export default function Practitioner() {
     if (filteredPractitioners.length === 0) {
       return (
         <>
-          {filterElement}
+          {filterBar}
           <EmptyState
             className='py-16'
             title='No Practitioners Match Your Filters'
@@ -135,7 +165,7 @@ export default function Practitioner() {
 
     return (
       <>
-        {filterElement}
+        {filterBar}
         <div className='mt-4 flex flex-col gap-4'>
           {filteredPractitioners.map(p => (
             <PractitionerCard key={p.id} {...p} />

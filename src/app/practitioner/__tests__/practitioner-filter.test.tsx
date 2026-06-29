@@ -4,7 +4,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import React, { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PractitionerFilter, { FilterButton } from '../practitioner-filter';
-
 // Mock UI components used by the filter
 vi.mock('@/components/ui/popover', () => ({
   Popover: ({ children, open, onOpenChange }: any) => (
@@ -75,7 +74,6 @@ vi.mock('@/components/ui/toggle-group', () => ({
     </button>
   )
 }));
-
 vi.mock('@/components/ui/badge', () => ({
   Badge: ({ children, className, onClick }: any) => (
     <span data-testid='badge' className={className} onClick={onClick}>
@@ -102,14 +100,12 @@ vi.mock('@/components/ui/button', () => {
   MockButton.displayName = 'Button';
   return { Button: MockButton };
 });
-
 vi.mock('@/components/icons', () => ({
   FilterIcon: (props: any) => <svg data-testid='filter-icon' {...props} />,
   LoadingSpinnerIcon: (props: any) => (
     <svg data-testid='loading-spinner-icon' {...props} />
   )
 }));
-
 const defaultLocations = [
   { id: 'loc-1', name: 'Main Clinic' },
   { id: 'loc-2', name: 'Branch A' }
@@ -120,7 +116,7 @@ beforeEach(() => {
 });
 
 describe('PractitionerFilter', () => {
-  it('renders filter button with badge showing active filter count', () => {
+  it('renders filter button with icon', () => {
     const onChange = vi.fn();
     render(
       <PractitionerFilter
@@ -130,12 +126,22 @@ describe('PractitionerFilter', () => {
       />
     );
 
-    // Badge should show 2 (status + location)
-    expect(screen.getByText('2')).toBeDefined();
     expect(screen.getByTestId('filter-icon')).toBeDefined();
   });
 
-  it('shows no badge when no filters are applied (status=all, no location)', () => {
+  it('shows filter count indicator below the row when filters are applied', () => {
+    const onChange = vi.fn();
+    render(
+      <PractitionerFilter
+        locations={defaultLocations}
+        value={{ status: 'active', locationId: 'loc-1' }}
+        onChange={onChange}
+      />
+    );
+
+    expect(screen.getByText('2 filters active')).toBeDefined();
+  });
+  it('hides filter count indicator when no filters are applied', () => {
     const onChange = vi.fn();
     render(
       <PractitionerFilter
@@ -144,9 +150,19 @@ describe('PractitionerFilter', () => {
         onChange={onChange}
       />
     );
+    expect(screen.queryByText(/filters? active/)).toBeNull();
+  });
 
-    // No badge when state is default
-    expect(screen.queryByTestId('badge')).toBeNull();
+  it('shows singular "1 filter active" when one filter is applied', () => {
+    const onChange = vi.fn();
+    render(
+      <PractitionerFilter
+        locations={defaultLocations}
+        value={{ status: 'active' }}
+        onChange={onChange}
+      />
+    );
+    expect(screen.getByText('1 filter active')).toBeDefined();
   });
 
   it('shows active filter chips when filters are applied', () => {
@@ -189,7 +205,6 @@ describe('PractitionerFilter', () => {
       />
     );
 
-    // All status is the default — button text should show "All"
     expect(screen.getByTestId('toggle-all')).toBeDefined();
     expect(screen.getByTestId('toggle-active')).toBeDefined();
     expect(screen.getByTestId('toggle-inactive')).toBeDefined();
@@ -205,7 +220,6 @@ describe('PractitionerFilter', () => {
       />
     );
 
-    // Click on the Active toggle
     fireEvent.click(screen.getByTestId('toggle-active'));
 
     expect(onChange).toHaveBeenCalledWith({ status: 'active' });
@@ -239,12 +253,9 @@ describe('PractitionerFilter', () => {
       />
     );
 
-    // Find the status chip's close button (the "×" is rendered as part of the badge)
     const badges = screen.getAllByTestId('badge');
-    // First badge: status "Active", second: location "Main Clinic"
     fireEvent.click(badges[0]);
 
-    // Should call onChange with status reset to 'all'
     expect(onChange).toHaveBeenCalledWith({
       status: 'all',
       locationId: 'loc-1'
@@ -297,7 +308,7 @@ describe('PractitionerFilter', () => {
 describe('FilterButton (prop forwarding for Radix asChild)', () => {
   it('forwards extra props to the underlying Button', () => {
     const onClick = vi.fn();
-    render(<FilterButton count={0} onClick={onClick} data-foo='bar' />);
+    render(<FilterButton onClick={onClick} data-foo='bar' />);
 
     const btn = screen.getByTestId('filter-button');
     fireEvent.click(btn);
@@ -307,7 +318,7 @@ describe('FilterButton (prop forwarding for Radix asChild)', () => {
 
   it('forwards a ref to the underlying DOM element', () => {
     const ref = React.createRef<HTMLButtonElement>();
-    render(<FilterButton count={0} ref={ref} />);
+    render(<FilterButton ref={ref} />);
 
     expect(ref.current).toBeInstanceOf(HTMLButtonElement);
     expect(ref.current?.tagName).toBe('BUTTON');

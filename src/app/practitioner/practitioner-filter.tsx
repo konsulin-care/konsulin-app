@@ -36,26 +36,16 @@ interface Props {
   onChange: (state: FilterState) => void;
 }
 
-/** Badge positioned absolute top-right on the filter button. */
-function CountBadge({ count }: { count: number }) {
-  if (count <= 0) return null;
-  return (
-    <span className='absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#13c2c2] text-[10px] font-bold text-white'>
-      {count}
-    </span>
-  );
-}
-
-/** Filter icon button with optional count badge. Forwards props and ref for Radix asChild. */
+/** Filter icon button. Forwards props and ref for Radix asChild. */
 export const FilterButton = forwardRef<
   HTMLButtonElement,
-  { count: number } & ComponentPropsWithoutRef<typeof Button>
->(function FilterButton({ count, ...props }, ref) {
+  ComponentPropsWithoutRef<typeof Button>
+>(function FilterButton(props, ref) {
   return (
     <Button
       ref={ref}
       variant='outline'
-      className='relative flex h-[50px] w-[50px] items-center justify-center rounded-lg border-0 bg-[#F9F9F9]'
+      className='flex h-[50px] w-[50px] items-center justify-center rounded-lg border-0 bg-[#F9F9F9]'
       {...props}
     >
       <FilterIcon
@@ -64,7 +54,6 @@ export const FilterButton = forwardRef<
         className='min-h-[20px] min-w-[20px]'
         fill='#13c2c2'
       />
-      <CountBadge count={count} />
     </Button>
   );
 });
@@ -195,7 +184,7 @@ export default function PractitionerFilter({
       <div className='flex items-center gap-2'>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <FilterButton count={activeCount} />
+            <FilterButton />
           </PopoverTrigger>
           <PopoverContent align='center' className='w-[90vw] p-4'>
             <FilterPopoverContent
@@ -226,6 +215,15 @@ export default function PractitionerFilter({
           </Badge>
         )}
       </div>
+
+      {activeCount > 0 && (
+        <div className='flex items-center gap-1.5 text-xs text-[#13c2c2]'>
+          <span className='flex h-1.5 w-1.5 rounded-full bg-[#13c2c2]' />
+          <span>
+            {activeCount} filter{activeCount > 1 ? 's' : ''} active
+          </span>
+        </div>
+      )}
     </div>
   );
 }

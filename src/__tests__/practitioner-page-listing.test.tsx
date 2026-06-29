@@ -100,6 +100,20 @@ vi.mock('@/components/ui/button', () => ({
   )
 }));
 
+vi.mock('@/components/ui/input-with-icon', () => ({
+  InputWithIcon: ({ value, onChange, placeholder, startIcon }: any) => (
+    <div data-testid='mock-input-with-icon'>
+      {startIcon}
+      <input
+        data-testid='mock-search-input'
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+      />
+    </div>
+  )
+}));
+
 vi.mock('@/components/ui/drawer', () => ({
   Drawer: ({ children }: any) => (
     <div data-testid='mock-drawer'>{children}</div>
@@ -129,7 +143,8 @@ vi.mock('lucide-react', () => ({
   ArrowRightIcon: () => <svg data-testid='mock-arrow-right' />,
   CalendarDaysIcon: () => <svg data-testid='mock-calendar-days' />,
   HeartPulse: () => <svg data-testid='mock-heart-pulse' />,
-  HospitalIcon: () => <svg data-testid='mock-hospital' />
+  HospitalIcon: () => <svg data-testid='mock-hospital' />,
+  SearchIcon: () => <svg data-testid='mock-search-icon' />
 }));
 
 vi.mock('@/app/practitioner/practitioner-availability', () => ({

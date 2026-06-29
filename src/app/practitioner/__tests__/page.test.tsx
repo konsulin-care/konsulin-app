@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PractitionerPage from '../page';
@@ -147,7 +147,6 @@ describe('Practitioner page — filters', () => {
   it('shows all practitioners by default (no status filter)', () => {
     render(<PractitionerPage />, { wrapper: Wrapper });
 
-    // Both active and inactive should be visible
     expect(screen.getByText('John Doe')).toBeDefined();
     expect(screen.getByText('Jane Smith')).toBeDefined();
   });
@@ -155,7 +154,6 @@ describe('Practitioner page — filters', () => {
   it('shows only active practitioners when status filter is active', async () => {
     render(<PractitionerPage />, { wrapper: Wrapper });
 
-    // Simulate selecting 'active' status
     screen.getByTestId('filter-select-active').click();
 
     await waitFor(() => {
@@ -211,5 +209,59 @@ describe('Practitioner page — filters', () => {
     render(<PractitionerPage />, { wrapper: Wrapper });
 
     expect(screen.getByTestId('loading-spinner')).toBeDefined();
+  });
+});
+
+describe('Practitioner page — search bar', () => {
+  it('renders a search input next to the filter button', () => {
+    render(<PractitionerPage />, { wrapper: Wrapper });
+
+    const searchInput = screen.getByPlaceholderText('Search practitioner...');
+    expect(searchInput).toBeDefined();
+  });
+
+  it('filters practitioners by name using fuzzy match', async () => {
+    render(<PractitionerPage />, { wrapper: Wrapper });
+
+    // "jd" should fuzzy-match "John Doe"
+    const searchInput = screen.getByPlaceholderText('Search practitioner...');
+    fireEvent.change(searchInput, { target: { value: 'jd' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeDefined();
+      expect(screen.queryByText('Jane Smith')).toBeNull();
+    });
+  });
+
+  it('clearing the search input shows all practitioners again', async () => {
+    render(<PractitionerPage />, { wrapper: Wrapper });
+
+    const searchInput = screen.getByPlaceholderText('Search practitioner...');
+    fireEvent.change(searchInput, { target: { value: 'jd' } });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Jane Smith')).toBeNull();
+    });
+
+    // Clear search
+    fireEvent.change(searchInput, { target: { value: '' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeDefined();
+      expect(screen.getByText('Jane Smith')).toBeDefined();
+    });
+  });
+
+  it('shows empty state when search matches no practitioners', async () => {
+    render(<PractitionerPage />, { wrapper: Wrapper });
+
+    const searchInput = screen.getByPlaceholderText('Search practitioner...');
+    fireEvent.change(searchInput, { target: { value: 'zzz' } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('empty-state')).toHaveTextContent(
+        'No Practitioners Match Your Filters'
+      );
+    });
   });
 });
