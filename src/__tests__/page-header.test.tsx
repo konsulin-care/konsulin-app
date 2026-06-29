@@ -277,9 +277,9 @@ describe('PageHeader - back navigation', () => {
       fireEvent.click(chevron);
     }
 
-    // pathname=/clinic and backAction=/clinic — same route, should use replace
+    // pathname=/clinic and backAction=/clinic — same route, should use replace with trailing slash
     expect(router.replace).toHaveBeenCalledTimes(1);
-    expect(router.replace).toHaveBeenCalledWith('/clinic');
+    expect(router.replace).toHaveBeenCalledWith('/clinic/');
     expect(router.push).not.toHaveBeenCalled();
   });
 

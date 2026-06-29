@@ -197,10 +197,11 @@ export default function PageHeader({
   /** Navigates back using the backAction or browser history. */
   const handleBack = () => {
     if (backAction) {
+      const url = backAction === '/' ? backAction : backAction + '/';
       if (pathname === backAction) {
-        router.replace(backAction);
+        router.replace(url);
       } else {
-        router.push(backAction);
+        router.push(url);
       }
     } else {
       router.back();
