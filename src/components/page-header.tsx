@@ -193,7 +193,7 @@ export default function PageHeader({
   /** Navigates back using the backAction or browser history. */
   const handleBack = () => {
     if (backAction) {
-      router.push(backAction);
+      router.replace(backAction);
     } else {
       router.back();
     }
