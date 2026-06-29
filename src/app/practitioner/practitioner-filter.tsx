@@ -17,6 +17,7 @@ import {
   PopoverTrigger
 } from '@/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import type { ComponentPropsWithoutRef } from 'react';
 import { useState } from 'react';
 
 export interface FilterState {
@@ -45,12 +46,16 @@ function CountBadge({ count }: { count: number }) {
   );
 }
 
-/** Filter icon button with optional count badge. */
-function FilterButton({ count }: { count: number }) {
+/** Filter icon button with optional count badge. Forwards props for Radix asChild. */
+export function FilterButton({
+  count,
+  ...props
+}: { count: number } & ComponentPropsWithoutRef<typeof Button>) {
   return (
     <Button
       variant='outline'
       className='relative flex h-[50px] w-[50px] items-center justify-center rounded-lg border-0 bg-[#F9F9F9]'
+      {...props}
     >
       <FilterIcon
         width={20}

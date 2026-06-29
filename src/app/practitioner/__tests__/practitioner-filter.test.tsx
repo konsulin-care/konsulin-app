@@ -3,7 +3,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import PractitionerFilter from '../practitioner-filter';
+import PractitionerFilter, { FilterButton } from '../practitioner-filter';
 
 // Mock UI components used by the filter
 vi.mock('@/components/ui/popover', () => ({
@@ -284,5 +284,17 @@ describe('PractitionerFilter', () => {
 
     const badge = screen.getByTestId('badge');
     expect(badge.textContent).toContain('Unknown location');
+  });
+});
+
+describe('FilterButton (prop forwarding for Radix asChild)', () => {
+  it('forwards extra props to the underlying Button', () => {
+    const onClick = vi.fn();
+    render(<FilterButton count={0} onClick={onClick} data-foo='bar' />);
+
+    const btn = screen.getByTestId('filter-button');
+    fireEvent.click(btn);
+
+    expect(onClick).toHaveBeenCalled();
   });
 });
