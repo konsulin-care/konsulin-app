@@ -254,7 +254,7 @@ describe('PageHeader - back navigation', () => {
     expect(router.replace).not.toHaveBeenCalled();
   });
 
-  it('calls router.replace for same-route back navigation (/clinic?clinicId=xxx → /clinic)', () => {
+  it('calls router.push for same-route back navigation (/clinic?clinicId=xxx → /clinic)', () => {
     const router = {
       push: vi.fn(),
       back: vi.fn(),
@@ -277,10 +277,10 @@ describe('PageHeader - back navigation', () => {
       fireEvent.click(chevron);
     }
 
-    // pathname=/clinic and backAction=/clinic — same route, should use replace with trailing slash
-    expect(router.replace).toHaveBeenCalledTimes(1);
-    expect(router.replace).toHaveBeenCalledWith('/clinic/');
-    expect(router.push).not.toHaveBeenCalled();
+    // same route should use router.push (not replace) to avoid useSearchParams staleness
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith('/clinic/');
+    expect(router.replace).not.toHaveBeenCalled();
   });
 
   it('calls router.back when no backAction is available', () => {

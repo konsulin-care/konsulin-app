@@ -198,11 +198,7 @@ export default function PageHeader({
   const handleBack = () => {
     if (backAction) {
       const url = backAction === '/' ? backAction : backAction + '/';
-      if (pathname === backAction) {
-        router.replace(url);
-      } else {
-        router.push(url);
-      }
+      router.push(url);
     } else {
       router.back();
     }
