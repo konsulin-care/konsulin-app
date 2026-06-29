@@ -84,7 +84,11 @@ export default function PageHeader({
   backRoute: overrideBackRoute,
   hideUpcomingSession
 }: Readonly<PageHeaderProps>) {
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname =
+    rawPathname.length > 1 && rawPathname.endsWith('/')
+      ? rawPathname.slice(0, -1)
+      : rawPathname;
   const searchParams = useSearchParams();
   const router = useRouter();
   const { state: authState, isLoading: isLoadingAuth } = useAuth();

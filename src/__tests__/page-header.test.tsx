@@ -310,6 +310,35 @@ describe('PageHeader - back navigation', () => {
     expect(router.push).not.toHaveBeenCalled();
   });
 
+  it('handles trailing slash in pathname — /clinic/ triggers router.push("/") not router.back()', () => {
+    // Simulate trailingSlash:true config — usePathname returns /clinic/
+    vi.mocked(usePathname).mockReturnValue('/clinic/');
+    const router = {
+      push: vi.fn(),
+      back: vi.fn(),
+      replace: vi.fn(),
+      forward: vi.fn(),
+      refresh: vi.fn(),
+      prefetch: vi.fn()
+    };
+    vi.mocked(useRouter).mockReturnValue(router);
+
+    render(<PageHeader />, { wrapper });
+
+    const chevron = document.querySelector('.lucide-chevron-left');
+    expect(chevron).not.toBeNull();
+
+    if (chevron) {
+      fireEvent.click(chevron);
+    }
+
+    // Should normalize the pathname and recognize it as a FIRST_LEVEL_ROUTE
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith('/');
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(router.back).not.toHaveBeenCalled();
+  });
+
   it('does not render back chevron on the home page', () => {
     vi.mocked(usePathname).mockReturnValue('/');
 
