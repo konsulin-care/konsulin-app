@@ -228,7 +228,7 @@ describe('PageHeader - back navigation', () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
-  it('calls router.replace instead of router.push when back chevron is clicked', () => {
+  it('calls router.push for cross-route back navigation (/clinic → /)', () => {
     const router = {
       push: vi.fn(),
       back: vi.fn(),
@@ -248,9 +248,38 @@ describe('PageHeader - back navigation', () => {
       fireEvent.click(chevron);
     }
 
-    // Should use replace, not push, to avoid polluting history stack
+    // /clinic → / is cross-route, should use push
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith('/');
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it('calls router.replace for same-route back navigation (/clinic?clinicId=xxx → /clinic)', () => {
+    const router = {
+      push: vi.fn(),
+      back: vi.fn(),
+      replace: vi.fn(),
+      forward: vi.fn(),
+      refresh: vi.fn(),
+      prefetch: vi.fn()
+    };
+    vi.mocked(useRouter).mockReturnValue(router);
+    // Simulate clinic detail view with backRoute override
+    render(
+      <PageHeader pageIndicator='Check Out Clinic' backRoute='/clinic' />,
+      { wrapper }
+    );
+
+    const chevron = document.querySelector('.lucide-chevron-left');
+    expect(chevron).not.toBeNull();
+
+    if (chevron) {
+      fireEvent.click(chevron);
+    }
+
+    // pathname=/clinic and backAction=/clinic — same route, should use replace
     expect(router.replace).toHaveBeenCalledTimes(1);
-    expect(router.replace).toHaveBeenCalledWith('/');
+    expect(router.replace).toHaveBeenCalledWith('/clinic');
     expect(router.push).not.toHaveBeenCalled();
   });
 
