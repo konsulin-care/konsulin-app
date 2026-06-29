@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { ComponentPropsWithoutRef } from 'react';
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 
 export interface FilterState {
   status: 'all' | 'active' | 'inactive';
@@ -46,13 +46,14 @@ function CountBadge({ count }: { count: number }) {
   );
 }
 
-/** Filter icon button with optional count badge. Forwards props for Radix asChild. */
-export function FilterButton({
-  count,
-  ...props
-}: { count: number } & ComponentPropsWithoutRef<typeof Button>) {
+/** Filter icon button with optional count badge. Forwards props and ref for Radix asChild. */
+export const FilterButton = forwardRef<
+  HTMLButtonElement,
+  { count: number } & ComponentPropsWithoutRef<typeof Button>
+>(function FilterButton({ count, ...props }, ref) {
   return (
     <Button
+      ref={ref}
       variant='outline'
       className='relative flex h-[50px] w-[50px] items-center justify-center rounded-lg border-0 bg-[#F9F9F9]'
       {...props}
@@ -66,7 +67,7 @@ export function FilterButton({
       <CountBadge count={count} />
     </Button>
   );
-}
+});
 
 /** Renders a location list using Command combobox. */
 function LocationCombobox({

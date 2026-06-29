@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 
 import { fireEvent, render, screen } from '@testing-library/react';
-import { type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PractitionerFilter, { FilterButton } from '../practitioner-filter';
 
@@ -82,19 +82,24 @@ vi.mock('@/components/ui/badge', () => ({
   )
 }));
 
-vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick, variant, className, ...props }: any) => (
-    <button
-      data-testid='filter-button'
-      onClick={onClick}
-      data-variant={variant}
-      className={className}
-      {...props}
-    >
-      {children}
-    </button>
-  )
-}));
+vi.mock('@/components/ui/button', () => {
+  const MockButton = React.forwardRef<HTMLButtonElement, any>(
+    ({ children, onClick, variant, className, ...props }, ref) => (
+      <button
+        ref={ref}
+        data-testid='filter-button'
+        onClick={onClick}
+        data-variant={variant}
+        className={className}
+        {...props}
+      >
+        {children}
+      </button>
+    )
+  );
+  MockButton.displayName = 'Button';
+  return { Button: MockButton };
+});
 
 vi.mock('@/components/icons', () => ({
   FilterIcon: (props: any) => <svg data-testid='filter-icon' {...props} />,
@@ -296,5 +301,13 @@ describe('FilterButton (prop forwarding for Radix asChild)', () => {
     fireEvent.click(btn);
 
     expect(onClick).toHaveBeenCalled();
+  });
+
+  it('forwards a ref to the underlying DOM element', () => {
+    const ref = React.createRef<HTMLButtonElement>();
+    render(<FilterButton count={0} ref={ref} />);
+
+    expect(ref.current).toBeInstanceOf(HTMLButtonElement);
+    expect(ref.current?.tagName).toBe('BUTTON');
   });
 });
