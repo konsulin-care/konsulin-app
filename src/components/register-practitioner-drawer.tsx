@@ -87,11 +87,8 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
         const locId = locationPref?.value ?? '';
 
         // Step 1: Practitioner
-        const practitionerId = await resolveOrCreatePractitioner(
-          API,
-          email.trim(),
-          name.trim()
-        );
+        const { id: practitionerId, created } =
+          await resolveOrCreatePractitioner(API, email.trim(), name.trim());
 
         // Step 2: PractitionerRole
         const roleId = await resolveOrCreatePractitionerRole(
@@ -104,7 +101,15 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
         // Step 3: Schedule
         await resolveOrCreateSchedule(API, practitionerId, roleId);
 
-        toast.success('Practitioner registered successfully');
+        // Step 4: Send magic link
+        await API.post('/api/v1/auth/magiclink', {
+          email: email.trim(),
+          roles: ['Practitioner', 'Patient']
+        });
+
+        toast.success(
+          created ? 'Practitioner registered successfully' : 'Magic link sent'
+        );
         void queryClient.invalidateQueries({
           queryKey: ['practitioner-count']
         });
@@ -188,13 +193,13 @@ async function resolveOrCreatePractitioner(
   API: Awaited<ReturnType<typeof getAPI>>,
   email: string,
   name: string
-): Promise<string> {
+): Promise<{ id: string; created: boolean }> {
   const searchResponse = await API.get<Bundle>(
     `/fhir/Practitioner?email=${encodeURIComponent(email)}&_elements=name`
   );
 
   const existingId = extractFirstEntryId(searchResponse.data);
-  if (existingId) return existingId;
+  if (existingId) return { id: existingId, created: false };
 
   const parsedName = parseName(name);
   const createResponse = await API.post<Practitioner>('/fhir/Practitioner', {
@@ -210,7 +215,7 @@ async function resolveOrCreatePractitioner(
     ]
   });
 
-  return createResponse.data.id ?? '';
+  return { id: createResponse.data.id ?? '', created: true };
 }
 
 /** Resolve existing PractitionerRole or create one. */

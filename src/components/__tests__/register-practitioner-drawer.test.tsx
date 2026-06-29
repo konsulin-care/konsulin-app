@@ -126,6 +126,8 @@ describe('RegisterPractitionerDrawer', () => {
     mockAxiosInstance.post.mockResolvedValueOnce({
       data: { id: 'sched-1' }
     });
+    // Step 4: POST magic link
+    mockAxiosInstance.post.mockResolvedValueOnce({ data: { ok: true } });
 
     render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
 
@@ -146,7 +148,7 @@ describe('RegisterPractitionerDrawer', () => {
 
     expect(onClose).toHaveBeenCalled();
     expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3);
-    expect(mockAxiosInstance.post).toHaveBeenCalledTimes(3);
+    expect(mockAxiosInstance.post).toHaveBeenCalledTimes(4);
 
     // Verify POST to Practitioner included name and email
     const practitionerPost = mockAxiosInstance.post.mock.calls[0];
@@ -186,6 +188,14 @@ describe('RegisterPractitionerDrawer', () => {
     const actor = schedPayload.actor as Array<Record<string, unknown>>;
     expect(actor).toContainEqual({ reference: 'Practitioner/prac-1' });
     expect(actor).toContainEqual({ reference: 'PractitionerRole/role-1' });
+
+    // Verify POST to magic link
+    const magicLinkPost = mockAxiosInstance.post.mock.calls[3];
+    expect(magicLinkPost[0]).toBe('/api/v1/auth/magiclink');
+    expect(magicLinkPost[1]).toEqual({
+      email: 'aly@clinic.com',
+      roles: ['Practitioner', 'Patient']
+    });
   });
 
   it('uses existing Practitioner and PractitionerRole when they exist', async () => {
@@ -201,6 +211,8 @@ describe('RegisterPractitionerDrawer', () => {
     mockAxiosInstance.get.mockResolvedValueOnce({
       data: { entry: [{ resource: { id: 'sched-1' } }] }
     });
+    // Step 4: POST magic link
+    mockAxiosInstance.post.mockResolvedValueOnce({ data: { ok: true } });
 
     render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
 
@@ -214,15 +226,21 @@ describe('RegisterPractitionerDrawer', () => {
     fireEvent.click(screen.getByText('Register'));
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith(
-        'Practitioner registered successfully'
-      );
+      expect(toast.success).toHaveBeenCalledWith('Magic link sent');
     });
 
-    // Should NOT have made any POST calls
-    expect(mockAxiosInstance.post).not.toHaveBeenCalled();
-    // Should have made 3 GET calls (no POST needed)
+    // Should have made only the magic link POST
+    expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1);
+    // Should have made 3 GET calls
     expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3);
+
+    // Verify POST to magic link
+    const magicLinkPost = mockAxiosInstance.post.mock.calls[0];
+    expect(magicLinkPost[0]).toBe('/api/v1/auth/magiclink');
+    expect(magicLinkPost[1]).toEqual({
+      email: 'aly@clinic.com',
+      roles: ['Practitioner', 'Patient']
+    });
   });
 
   it('includes location param in PractitionerRole query when location exists', async () => {
@@ -246,6 +264,8 @@ describe('RegisterPractitionerDrawer', () => {
     mockAxiosInstance.get.mockResolvedValueOnce({ data: { entry: [] } });
     // Step 3: POST Schedule
     mockAxiosInstance.post.mockResolvedValueOnce({ data: { id: 'sched-1' } });
+    // Step 4: POST magic link
+    mockAxiosInstance.post.mockResolvedValueOnce({ data: { ok: true } });
 
     render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
 
