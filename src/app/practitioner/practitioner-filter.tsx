@@ -197,7 +197,7 @@ export default function PractitionerFilter({
           <PopoverTrigger asChild>
             <FilterButton count={activeCount} />
           </PopoverTrigger>
-          <PopoverContent align='start' className='w-72 p-4'>
+          <PopoverContent align='center' className='w-[90vw] p-4'>
             <FilterPopoverContent
               locations={locations}
               value={value}

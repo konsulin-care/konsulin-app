@@ -14,8 +14,10 @@ vi.mock('@/components/ui/popover', () => ({
         : children}
     </div>
   ),
-  PopoverContent: ({ children }: any) => (
-    <div data-testid='popover-content'>{children}</div>
+  PopoverContent: ({ children, className, align }: any) => (
+    <div data-testid='popover-content' data-align={align} className={className}>
+      {children}
+    </div>
   ),
   PopoverTrigger: ({ children, asChild }: any) =>
     asChild ? (
@@ -309,5 +311,22 @@ describe('FilterButton (prop forwarding for Radix asChild)', () => {
 
     expect(ref.current).toBeInstanceOf(HTMLButtonElement);
     expect(ref.current?.tagName).toBe('BUTTON');
+  });
+});
+
+describe('PopoverContent styling', () => {
+  it('renders with center alignment and 90vw width for balanced margins', () => {
+    const onChange = vi.fn();
+    render(
+      <PractitionerFilter
+        locations={[{ id: '1', name: 'RSCJ' }]}
+        value={{ status: 'all' }}
+        onChange={onChange}
+      />
+    );
+
+    const popoverContent = screen.getByTestId('popover-content');
+    expect(popoverContent.dataset.align).toBe('center');
+    expect(popoverContent.className).toContain('w-[90vw]');
   });
 });
