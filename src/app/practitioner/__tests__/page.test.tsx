@@ -1,4 +1,6 @@
-import { render, screen } from '@testing-library/react';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call */
+
+import { render, screen, waitFor } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PractitionerPage from '../page';
@@ -9,12 +11,14 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/indexeddb', () => ({
   STORES: { uiPreferences: 'ui_preferences' },
-  dbGet: vi.fn().mockResolvedValue(null)
+  dbGet: vi.fn().mockResolvedValue(null),
+  dbSet: vi.fn().mockResolvedValue(null)
 }));
 
 vi.mock('@/services/clinic', () => ({
   usePractitionerListing: vi.fn(),
-  useDetailPractitioner: vi.fn()
+  useDetailPractitioner: vi.fn(),
+  useOrganizationLocations: vi.fn()
 }));
 
 vi.mock('@/components/practitioner/practitioner-card', () => ({
@@ -58,11 +62,34 @@ vi.mock('@/app/practitioner/role-management-shell', () => ({
   )
 }));
 
-import { usePractitionerListing } from '@/services/clinic';
+vi.mock('@/app/practitioner/practitioner-filter', () => ({
+  default: ({ value, onChange }: any) => (
+    <div data-testid='practitioner-filter' data-status={value.status}>
+      <button
+        data-testid='filter-select-active'
+        onClick={() => onChange({ status: 'active' })}
+      >
+        Active
+      </button>
+      <button
+        data-testid='filter-select-all'
+        onClick={() => onChange({ status: 'all' })}
+      >
+        All
+      </button>
+    </div>
+  )
+}));
+
+import {
+  useOrganizationLocations,
+  usePractitionerListing
+} from '@/services/clinic';
 import { useSearchParams } from 'next/navigation';
 
 const mockUseSearchParams = vi.mocked(useSearchParams);
 const mockUsePractitionerListing = vi.mocked(usePractitionerListing);
+const mockUseOrganizationLocations = vi.mocked(useOrganizationLocations);
 
 function mockPractitioners() {
   return [
@@ -102,21 +129,39 @@ beforeEach(() => {
     isError: false,
     isFetching: false
   });
+  mockUseOrganizationLocations.mockReturnValue({
+    locations: [],
+    isLoading: false,
+    isError: false,
+    isFetching: false
+  });
 });
 
-describe('Practitioner page — tabs', () => {
-  it('renders Active and Inactive tabs with counts', () => {
+describe('Practitioner page — filters', () => {
+  it('renders filter component', () => {
     render(<PractitionerPage />, { wrapper: Wrapper });
 
-    expect(screen.getByText('Active (1)')).toBeDefined();
-    expect(screen.getByText('Inactive (1)')).toBeDefined();
+    expect(screen.getByTestId('practitioner-filter')).toBeDefined();
   });
 
-  it('shows active practitioner card on default Active tab', () => {
+  it('shows all practitioners by default (no status filter)', () => {
     render(<PractitionerPage />, { wrapper: Wrapper });
 
-    // Active content is visible; inactive content has hidden attribute
+    // Both active and inactive should be visible
     expect(screen.getByText('John Doe')).toBeDefined();
+    expect(screen.getByText('Jane Smith')).toBeDefined();
+  });
+
+  it('shows only active practitioners when status filter is active', async () => {
+    render(<PractitionerPage />, { wrapper: Wrapper });
+
+    // Simulate selecting 'active' status
+    screen.getByTestId('filter-select-active').click();
+
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeDefined();
+      expect(screen.queryByText('Jane Smith')).toBeNull();
+    });
   });
 
   it('shows PageHeader with Manage Practitioners in listing mode', () => {

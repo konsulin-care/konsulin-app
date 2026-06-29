@@ -21,7 +21,8 @@ vi.mock('@/context/booking/bookingContext', () => ({
 
 vi.mock('@/lib/indexeddb', () => ({
   STORES: { uiPreferences: 'ui_preferences' },
-  dbGet: vi.fn().mockResolvedValue(null)
+  dbGet: vi.fn().mockResolvedValue(null),
+  dbSet: vi.fn().mockResolvedValue(null)
 }));
 
 vi.mock('@/services/clinic', () => ({
@@ -34,6 +35,12 @@ vi.mock('@/services/clinic', () => ({
   usePractitionerRoleHealthcareServices: vi.fn(),
   usePractitionerListing: vi.fn().mockReturnValue({
     practitioners: [],
+    isLoading: false,
+    isError: false,
+    isFetching: false
+  }),
+  useOrganizationLocations: vi.fn().mockReturnValue({
+    locations: [],
     isLoading: false,
     isError: false,
     isFetching: false
@@ -65,6 +72,10 @@ vi.mock('@/app/practitioner/role-management-shell', () => ({
       Admin Shell
     </div>
   )
+}));
+
+vi.mock('@/app/practitioner/practitioner-filter', () => ({
+  default: () => <div data-testid='mock-practitioner-filter' />
 }));
 
 // Static import – mocks are hoisted, so the component gets mocked deps.

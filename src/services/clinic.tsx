@@ -4,6 +4,7 @@ import {
   BundleEntry,
   HealthcareService,
   Invoice,
+  Location,
   Organization,
   Practitioner,
   PractitionerRole,
@@ -311,4 +312,46 @@ export function usePractitionerListing(clinicId: string, locationId?: string) {
   }, [data]);
 
   return { practitioners, isLoading, isError, isFetching };
+}
+
+export interface OrganizationLocation {
+  id: string;
+  name: string;
+}
+
+/**
+ * Fetch Location resources for the current organization.
+ * Used to populate location filter dropdowns on admin pages.
+ *
+ * @param clinicId - FHIR Organization ID
+ * @returns Query result with locations list
+ */
+export function useOrganizationLocations(clinicId: string) {
+  const {
+    data: locations,
+    isLoading,
+    isError,
+    isFetching
+  } = useQuery({
+    queryKey: ['organization-locations', clinicId],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get<Bundle<Location>>(
+        `/fhir/Location?organization=${clinicId}&_elements=name,id`
+      );
+      const entries = response.data.entry ?? [];
+      return entries
+        .filter((e: BundleEntry) => e.resource?.resourceType === 'Location')
+        .map((e: BundleEntry) => {
+          const loc = e.resource as Location;
+          return {
+            id: loc.id ?? '',
+            name: loc.name ?? ''
+          };
+        });
+    },
+    enabled: Boolean(clinicId)
+  });
+
+  return { locations: locations ?? [], isLoading, isError, isFetching };
 }

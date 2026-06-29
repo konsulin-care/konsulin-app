@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, react/display-name, @next/next/no-img-element, jsx-a11y/alt-text */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, react/display-name, @next/next/no-img-element, jsx-a11y/alt-text */
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -31,7 +31,8 @@ vi.mock('@/context/booking/bookingContext', () => ({
 
 vi.mock('@/lib/indexeddb', () => ({
   STORES: { uiPreferences: 'ui_preferences' },
-  dbGet: vi.fn()
+  dbGet: vi.fn(),
+  dbSet: vi.fn().mockResolvedValue(null)
 }));
 
 vi.mock('@/services/api', () => ({
@@ -44,6 +45,12 @@ vi.mock('@/services/clinic', () => ({
     newData: undefined,
     isLoading: false,
     isError: true,
+    isFetching: false
+  }),
+  useOrganizationLocations: vi.fn().mockReturnValue({
+    locations: [],
+    isLoading: false,
+    isError: false,
     isFetching: false
   })
 }));
@@ -131,6 +138,25 @@ vi.mock('@/app/practitioner/practitioner-availability', () => ({
   )
 }));
 
+vi.mock('@/app/practitioner/practitioner-filter', () => ({
+  default: ({ value, onChange }: any) => (
+    <div data-testid='mock-practitioner-filter' data-status={value.status}>
+      <button
+        data-testid='filter-select-active'
+        onClick={() => onChange({ status: 'active' })}
+      >
+        Active
+      </button>
+      <button
+        data-testid='filter-select-all'
+        onClick={() => onChange({ status: 'all' })}
+      >
+        All
+      </button>
+    </div>
+  )
+}));
+
 import { useAuth } from '@/context/auth/authContext';
 import { dbGet } from '@/lib/indexeddb';
 import { usePractitionerListing } from '@/services/clinic';
@@ -173,8 +199,10 @@ describe('Practitioner page - listing mode (no practitionerRoleId)', () => {
     vi.mocked(dbGet).mockImplementation((_store, args) => {
       if (args?.[1] === 'clinic_organization')
         return Promise.resolve({ value: 'org-1' });
-      if (args?.[1] === 'selected_location')
-        return Promise.resolve({ value: 'loc-1' });
+      if (args?.[1] === 'practitioner_filter')
+        return Promise.resolve({
+          value: { status: 'all', locationId: 'loc-1' }
+        });
       return Promise.resolve(null);
     });
     vi.mocked(usePractitionerListing).mockReturnValue({
@@ -210,7 +238,7 @@ describe('Practitioner page - listing mode (no practitionerRoleId)', () => {
       expect(screen.getByText('Dr. B')).toBeDefined();
     });
 
-    // Verify location-based query was used
+    // Verify location-based query was used from persisted filter
     expect(usePractitionerListing).toHaveBeenCalledWith('org-1', 'loc-1');
   });
 
@@ -254,12 +282,12 @@ describe('Practitioner page - listing mode (no practitionerRoleId)', () => {
     expect(screen.getByTestId('mock-loading-spinner')).toBeDefined();
   });
 
-  it('uses clinicId for organization-based query when no location is stored', async () => {
+  it('uses clinicId for organization-based query when no filter is stored', async () => {
     vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('') as any);
     vi.mocked(dbGet).mockImplementation((_store, args) => {
       if (args?.[1] === 'clinic_organization')
         return Promise.resolve({ value: 'org-1' });
-      // selected_location not stored — return null
+      // practitioner_filter not stored — return null
       return Promise.resolve(null);
     });
     vi.mocked(usePractitionerListing).mockReturnValue({

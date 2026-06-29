@@ -4,11 +4,14 @@ import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import { PractitionerCard } from '@/components/practitioner/practitioner-card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { STORES, dbGet } from '@/lib/indexeddb';
-import { usePractitionerListing } from '@/services/clinic';
+import { STORES, dbGet, dbSet } from '@/lib/indexeddb';
+import {
+  useOrganizationLocations,
+  usePractitionerListing
+} from '@/services/clinic';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import PractitionerFilter, { type FilterState } from './practitioner-filter';
 import PractitionerRoleManagementShell from './role-management-shell';
 
 /** Full-screen loading spinner. */
@@ -29,9 +32,9 @@ export default function Practitioner() {
   const searchParams = useSearchParams();
   const practitionerRoleId = searchParams.get('practitionerRoleId') ?? '';
   const [selectedClinicId, setSelectedClinicId] = useState<string>('');
-  const [selectedLocationId, setSelectedLocationId] = useState<
-    string | undefined
-  >();
+  const [filter, setFilter] = useState<FilterState>({ status: 'all' });
+
+  // Load clinic selection from IndexedDB
   useEffect(() => {
     dbGet<{ value: string }>(STORES.uiPreferences, ['', 'clinic_organization'])
       .then(saved => {
@@ -41,10 +44,14 @@ export default function Practitioner() {
       .catch((err: unknown) => console.warn('[IndexedDB]', err));
   }, []);
 
+  // Load persisted filter from IndexedDB
   useEffect(() => {
-    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_location'])
+    dbGet<{ value: FilterState }>(STORES.uiPreferences, [
+      '',
+      'practitioner_filter'
+    ])
       .then(saved => {
-        if (saved?.value) setSelectedLocationId(saved.value);
+        if (saved?.value) setFilter(saved.value);
         return null;
       })
       .catch(() => {
@@ -52,22 +59,34 @@ export default function Practitioner() {
       });
   }, []);
 
+  // Persist filter to IndexedDB on changes
+  const handleFilterChange = useCallback((newFilter: FilterState) => {
+    setFilter(newFilter);
+    dbSet(STORES.uiPreferences, {
+      ownerId: '',
+      prefKey: 'practitioner_filter',
+      value: newFilter
+    }).catch(() => {
+      /* ignore */
+    });
+  }, []);
+
+  // Fetch locations for the current organization
+  const { locations } = useOrganizationLocations(selectedClinicId);
+
+  // Fetch practitioners with optional location filter
   const { practitioners, isLoading: isListingLoading } = usePractitionerListing(
     selectedClinicId,
-    selectedLocationId
+    filter.locationId
   );
 
-  const [activeTab, setActiveTab] = useState<string>('active');
-
-  const activePractitioners = useMemo(
-    () => practitioners.filter(p => p.active),
-    [practitioners]
-  );
-
-  const inactivePractitioners = useMemo(
-    () => practitioners.filter(p => !p.active),
-    [practitioners]
-  );
+  // Client-side status filter
+  const filteredPractitioners = useMemo(() => {
+    if (filter.status === 'all') return practitioners;
+    return practitioners.filter(p =>
+      filter.status === 'active' ? p.active : !p.active
+    );
+  }, [practitioners, filter.status]);
 
   /** Renders listing of practitioner cards (admin view). */
   const renderListingContent = () => {
@@ -84,36 +103,18 @@ export default function Practitioner() {
     }
 
     return (
-      <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
-        <TabsList className='grid w-full grid-cols-2 bg-transparent'>
-          <TabsTrigger
-            className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
-            value='active'
-          >
-            Active ({activePractitioners.length})
-          </TabsTrigger>
-          <TabsTrigger
-            className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
-            value='inactive'
-          >
-            Inactive ({inactivePractitioners.length})
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value='active'>
-          <div className='flex flex-col gap-4'>
-            {activePractitioners.map(p => (
-              <PractitionerCard key={p.id} {...p} />
-            ))}
-          </div>
-        </TabsContent>
-        <TabsContent value='inactive'>
-          <div className='flex flex-col gap-4'>
-            {inactivePractitioners.map(p => (
-              <PractitionerCard key={p.id} {...p} />
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+      <>
+        <PractitionerFilter
+          locations={locations ?? []}
+          value={filter}
+          onChange={handleFilterChange}
+        />
+        <div className='mt-4 flex flex-col gap-4'>
+          {filteredPractitioners.map(p => (
+            <PractitionerCard key={p.id} {...p} />
+          ))}
+        </div>
+      </>
     );
   };
 
