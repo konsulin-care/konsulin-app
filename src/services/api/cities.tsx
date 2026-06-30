@@ -10,7 +10,8 @@ export const useGetProvinces = () => {
       const response = await axios.get('/api/provinces');
       return response.data;
     },
-    select: response => response || []
+    select: (response: { id: string; name: string }[] | null | undefined) =>
+      (response || []).map(p => ({ code: p.id, name: p.name }))
   });
 };
 
@@ -24,7 +25,8 @@ export const useGetCities = (provinceCode: number) => {
       return Array.isArray(response.data) ? response.data : [];
     },
     enabled: provinceCode !== undefined && provinceCode !== null,
-    select: response => response || []
+    select: (response: { id: string; name: string }[] | null | undefined) =>
+      (response || []).map(c => ({ code: c.id, name: c.name }))
   });
 };
 
@@ -38,6 +40,7 @@ export const useGetDistricts = (cityCode: number) => {
       return Array.isArray(response.data) ? response.data : [];
     },
     enabled: cityCode !== undefined && cityCode !== null,
-    select: response => response || []
+    select: (response: { id: string; name: string }[] | null | undefined) =>
+      (response || []).map(d => ({ code: d.id, name: d.name }))
   });
 };
