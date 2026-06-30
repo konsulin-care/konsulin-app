@@ -150,6 +150,13 @@ describe('ServiceFormDrawer', () => {
     expect(screen.getByLabelText('Fee')).toBeInTheDocument();
   });
 
+  it('shows name placeholder without e.g. prefix', () => {
+    render(<ServiceFormDrawer {...defaultProps} />);
+
+    const nameInput = screen.getByLabelText('Name');
+    expect(nameInput).toHaveAttribute('placeholder', 'General Consultation');
+  });
+
   it('pre-fills fee from existing service extension in edit mode', () => {
     const existing: HealthcareService = {
       resourceType: 'HealthcareService',

@@ -114,7 +114,7 @@ export default function ServiceFormDrawer({
               id='service-name'
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder='e.g. General Consultation'
+              placeholder='General Consultation'
               className='bg-white'
             />
           </div>

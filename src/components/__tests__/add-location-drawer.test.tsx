@@ -60,6 +60,33 @@ describe('AddLocationDrawer', () => {
     expect(screen.getByRole('button', { name: 'Add Location' })).toBeDefined();
   });
 
+  it('shows name placeholder without e.g. prefix', () => {
+    render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
+
+    expect(screen.getByLabelText('Location Name')).toHaveAttribute(
+      'placeholder',
+      'Main Clinic'
+    );
+  });
+
+  it('shows longitude placeholder without e.g. prefix', () => {
+    render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
+
+    expect(screen.getByLabelText('Longitude')).toHaveAttribute(
+      'placeholder',
+      '106.846'
+    );
+  });
+
+  it('shows latitude placeholder without e.g. prefix', () => {
+    render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
+
+    expect(screen.getByLabelText('Latitude')).toHaveAttribute(
+      'placeholder',
+      '-6.305'
+    );
+  });
+
   it('has submit button disabled when inputs are empty', () => {
     render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
 

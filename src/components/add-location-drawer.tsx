@@ -125,7 +125,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
               type='text'
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder='e.g. Main Clinic'
+              placeholder='Main Clinic'
               className='bg-white'
               aria-label='Location Name'
               maxLength={30}
@@ -139,7 +139,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
               type='number'
               value={longitude}
               onChange={e => setLongitude(e.target.value)}
-              placeholder='e.g. 106.846'
+              placeholder='106.846'
               className='bg-white'
               aria-label='Longitude'
               step='any'
@@ -153,7 +153,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
               type='number'
               value={latitude}
               onChange={e => setLatitude(e.target.value)}
-              placeholder='e.g. -6.305'
+              placeholder='-6.305'
               className='bg-white'
               aria-label='Latitude'
               step='any'
