@@ -176,10 +176,9 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
         // Step 3: Schedule
         await resolveOrCreateSchedule(API, practitionerId, roleId);
 
-        // Step 4: Send magic link
-        await API.post('/api/v1/auth/magiclink', {
-          email: email.trim(),
-          roles: ['Practitioner', 'Patient']
+        // Step 4: Assign role via organization endpoint
+        await API.post(`/api/v1/organizations/${orgId}/roles`, {
+          email: email.trim()
         });
 
         toast.success(

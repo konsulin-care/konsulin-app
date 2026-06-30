@@ -177,11 +177,9 @@ describe('RegisterPractitionerDrawer', () => {
     expect(actor).toContainEqual({ reference: 'Practitioner/prac-1' });
     expect(actor).toContainEqual({ reference: 'PractitionerRole/role-1' });
 
-    const magicLinkPost = mockAxiosInstance.post.mock.calls[3];
-    expect(magicLinkPost[1]).toEqual({
-      email: 'aly@clinic.com',
-      roles: ['Practitioner', 'Patient']
-    });
+    const orgRolesPost = mockAxiosInstance.post.mock.calls[3];
+    expect(orgRolesPost[0]).toBe('/api/v1/organizations/org-1/roles');
+    expect(orgRolesPost[1]).toEqual({ email: 'aly@clinic.com' });
   });
 
   it('uses existing Practitioner/PractitionerRole when they exist', async () => {
