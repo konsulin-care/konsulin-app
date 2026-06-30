@@ -33,7 +33,7 @@ export default function ServicesTab({
   onDirtyChange,
   practitionerRole
 }: Props) {
-  const { clinicId, locationId } = useClinicContext();
+  const { clinicId } = useClinicContext();
   const { data: fetchedServices, refetch } =
     usePractitionerRoleHealthcareServices(practitionerRoleId ?? '');
 
@@ -59,7 +59,8 @@ export default function ServicesTab({
       return (
         s.name !== f.name ||
         s.active !== f.active ||
-        s.extraDetails !== f.extraDetails
+        s.extraDetails !== f.extraDetails ||
+        JSON.stringify(s.extension) !== JSON.stringify(f.extension)
       );
     });
   }, [localServices, fetchedServices]);
@@ -178,7 +179,7 @@ export default function ServicesTab({
           onSave={handleDrawerSave}
           service={editingService}
           providedBy={`Organization/${clinicId}`}
-          location={locationId ? `Location/${locationId}` : undefined}
+          location={undefined}
         />
       </>
     );
@@ -256,7 +257,7 @@ export default function ServicesTab({
         onSave={handleDrawerSave}
         service={editingService}
         providedBy={`Organization/${clinicId}`}
-        location={locationId ? `Location/${locationId}` : undefined}
+        location={undefined}
       />
     </div>
   );

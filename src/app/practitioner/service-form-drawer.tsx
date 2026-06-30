@@ -125,9 +125,9 @@ export default function ServiceFormDrawer({
             </label>
             <Input
               id='service-fee'
-              value={fee}
+              value={fee ? Number(fee).toLocaleString('en-US') : ''}
               onChange={handleFeeChange}
-              placeholder='e.g. 250000'
+              placeholder='250,000'
               inputMode='numeric'
               className='bg-white'
             />

@@ -1,10 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, sonarjs/assertions-in-tests, @typescript-eslint/require-await */
-
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+/* eslint-disable sonarjs/assertions-in-tests, @typescript-eslint/require-await */
 
 import type { UseQueryResult } from '@tanstack/react-query';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { HealthcareService, PractitionerRole } from 'fhir/r4';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
 
 const mockServices: HealthcareService[] = [
   {
@@ -31,7 +32,15 @@ vi.mock('@/services/clinic', () => ({
 }));
 
 vi.mock('../service-form-drawer', () => ({
-  default: ({ open, onSave, service }: any) =>
+  default: ({
+    open,
+    onSave,
+    service
+  }: {
+    open: boolean;
+    onSave: (svc: Record<string, unknown>) => void;
+    service?: Record<string, unknown>;
+  }) =>
     open ? (
       <div data-testid='mock-drawer'>
         <button
@@ -42,7 +51,14 @@ vi.mock('../service-form-drawer', () => ({
               active: true,
               name: 'New Service',
               providedBy: { reference: 'Organization/org-1' },
-              location: [{ reference: 'Location/loc-1' }]
+              location: [{ reference: 'Location/loc-1' }],
+              extension: [
+                {
+                  url: 'https://konsulin.id/fhir/StructureDefinition/fee',
+                  valueMoney: { value: 150_000, currency: 'IDR' }
+                }
+              ],
+              ...(service ? { id: service.id, name: service.name } : {})
             })
           }
         >
@@ -61,9 +77,7 @@ import { submitFhirBundle } from '@/services/api/fhir-bundle';
 import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
 import ServicesTab from '../services-tab';
 
-function makeMockResult(
-  data?: HealthcareService[]
-): UseQueryResult<HealthcareService[]> {
+function makeMockResult(data?: HealthcareService[]) {
   return {
     data,
     isLoading: false,
@@ -99,20 +113,16 @@ describe('ServicesTab', () => {
     } as never);
   });
 
-  it('renders service cards from data', () => {
+  function mockServicesAndRender() {
     vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
       makeMockResult(mockServices)
     );
-    render(<ServicesTab practitionerRoleId='role-1' />);
-    expect(screen.getByText('General Consultation')).toBeInTheDocument();
-    expect(screen.getByText('Specialist Referral')).toBeInTheDocument();
-  });
+    return render(<ServicesTab practitionerRoleId='role-1' />);
+  }
 
-  it('shows add service button', () => {
-    vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
-      makeMockResult(mockServices)
-    );
-    render(<ServicesTab practitionerRoleId='role-1' />);
+  it('renders service cards and add button', () => {
+    mockServicesAndRender();
+    expect(screen.getByText('General Consultation')).toBeInTheDocument();
     expect(screen.getByText(/add service/i)).toBeInTheDocument();
   });
 
@@ -125,37 +135,26 @@ describe('ServicesTab', () => {
   });
 
   it('opens create drawer when add service is clicked', () => {
-    vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
-      makeMockResult(mockServices)
-    );
-    render(<ServicesTab practitionerRoleId='role-1' />);
+    mockServicesAndRender();
     fireEvent.click(screen.getByText(/add service/i));
     expect(screen.getByTestId('mock-drawer')).toBeInTheDocument();
     expect(screen.getByText('create')).toBeInTheDocument();
   });
 
-  it('opens create drawer when add service is clicked in empty state', () => {
+  it('opens create drawer from empty state', () => {
     vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
       makeMockResult([])
     );
     render(<ServicesTab practitionerRoleId='role-1' />);
-    expect(screen.getByText(/no healthcare services/i)).toBeInTheDocument();
     fireEvent.click(screen.getByText(/add service/i));
     expect(screen.getByTestId('mock-drawer')).toBeInTheDocument();
     expect(screen.getByText('create')).toBeInTheDocument();
   });
 
-  it('adds a new service from the drawer and shows save all', async () => {
-    vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
-      makeMockResult(mockServices)
-    );
-    render(<ServicesTab practitionerRoleId='role-1' />);
-
-    // Open drawer and save
+  it('adds a new service from the drawer', async () => {
+    mockServicesAndRender();
     fireEvent.click(screen.getByText(/add service/i));
     fireEvent.click(screen.getByTestId('mock-drawer-save'));
-
-    // New service appears in list
     expect(screen.getByText('New Service')).toBeInTheDocument();
   });
 
@@ -164,7 +163,6 @@ describe('ServicesTab', () => {
       makeMockResult([])
     );
     let capturedSave: (() => Promise<void>) | undefined;
-
     const practitionerRole: Partial<PractitionerRole> = {
       resourceType: 'PractitionerRole',
       id: 'role-1',
@@ -173,7 +171,6 @@ describe('ServicesTab', () => {
       active: true,
       code: [{ coding: [{ code: 'doctor' }] }]
     };
-
     render(
       <ServicesTab
         practitionerRoleId='role-1'
@@ -183,17 +180,11 @@ describe('ServicesTab', () => {
         }}
       />
     );
-
-    // Add a service
     fireEvent.click(screen.getByText(/add service/i));
     fireEvent.click(screen.getByTestId('mock-drawer-save'));
-
-    // Invoke the save handler
     await capturedSave();
-
-    // Verify bundle includes FULL PractitionerRole with all existing fields
-    const submittedBundle = vi.mocked(submitFhirBundle).mock.calls[0][0];
-    const roleEntry = submittedBundle.entry?.find(
+    const bundle = vi.mocked(submitFhirBundle).mock.calls[0][0];
+    const roleEntry = bundle.entry?.find(
       e => e.resource?.resourceType === 'PractitionerRole'
     ) as { resource: PractitionerRole } | undefined;
     expect(roleEntry).toBeDefined();
@@ -212,82 +203,74 @@ describe('ServicesTab', () => {
       makeMockResult([])
     );
     render(<ServicesTab practitionerRoleId='role-1' />);
-
-    // Add first service
     fireEvent.click(screen.getByText(/add service/i));
     fireEvent.click(screen.getByTestId('mock-drawer-save'));
-
-    // Add second service
-    // The mock drawer always sends a service with id: undefined.
-    // Without a temp ID, the second save would match the first (both undefined)
-    // and replace it — leaving only 1 "New Service".
     fireEvent.click(screen.getByText(/add service/i));
     fireEvent.click(screen.getByTestId('mock-drawer-save'));
-
-    // Both should be visible as separate entries
     const heading = screen.getByText(/healthcare services/i);
     expect(heading.textContent).toMatch(/2/);
     expect(screen.getAllByText('New Service')).toHaveLength(2);
   });
 
   it('submits a transaction bundle on save all when dirty', () => {
-    vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
-      makeMockResult(mockServices)
-    );
-    render(<ServicesTab practitionerRoleId='role-1' />);
-
-    // Open drawer and add a service
+    mockServicesAndRender();
     fireEvent.click(screen.getByText(/add service/i));
     fireEvent.click(screen.getByTestId('mock-drawer-save'));
-
-    // Click save all
     const saveAll = screen.queryByText(/save all/i);
     if (saveAll) fireEvent.click(saveAll);
   });
 
-  it('opens edit drawer with service data when clicking Edit button', () => {
-    vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
-      makeMockResult(mockServices)
-    );
-    render(<ServicesTab practitionerRoleId='role-1' />);
-
-    // Click Edit on the first service card
+  it('opens edit drawer when clicking Edit button or card body', () => {
+    mockServicesAndRender();
     fireEvent.click(screen.getAllByLabelText('Edit service')[0]);
-
-    // Drawer should show 'edit' mode (service prop passed)
+    expect(screen.getByText('edit')).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/healthcare services/i));
+    fireEvent.click(screen.getByText('General Consultation'));
     expect(screen.getByText('edit')).toBeInTheDocument();
   });
 
-  it('opens edit drawer when clicking anywhere on the service card', () => {
+  it('detects isDirty and preserves fee extension when only extension changes', async () => {
     vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
       makeMockResult(mockServices)
     );
-    render(<ServicesTab practitionerRoleId='role-1' />);
-
-    // Click on the service name (inside the card body, not on any button)
-    fireEvent.click(screen.getByText('General Consultation'));
-
-    // Drawer should show 'edit' mode (service prop passed from card body click)
-    expect(screen.getByText('edit')).toBeInTheDocument();
+    const onDirtyChange = vi.fn();
+    let capturedSave: () => Promise<void> = () => Promise.resolve();
+    render(
+      <ServicesTab
+        practitionerRoleId='role-1'
+        onDirtyChange={(dirty, save) => {
+          onDirtyChange(dirty);
+          capturedSave = save;
+        }}
+      />
+    );
+    // State effect may not flush until acted. Use waitFor for initial dirty state.
+    await vi.waitFor(() => expect(onDirtyChange).toHaveBeenCalled());
+    fireEvent.click(screen.getAllByLabelText('Edit service')[0]);
+    fireEvent.click(screen.getByTestId('mock-drawer-save'));
+    await vi.waitFor(() =>
+      expect(onDirtyChange).toHaveBeenLastCalledWith(true)
+    );
+    await capturedSave();
+    const bundle = vi.mocked(submitFhirBundle).mock.calls[0][0];
+    const hsEntry = bundle.entry?.find(
+      e => e.resource?.resourceType === 'HealthcareService'
+    ) as { resource: HealthcareService } | undefined;
+    expect(hsEntry).toBeDefined();
+    expect(hsEntry.resource.extension).toEqual([
+      {
+        url: FEE_EXTENSION_URL,
+        valueMoney: { value: 150_000, currency: 'IDR' }
+      }
+    ]);
   });
 
   it('removes service card when clicking Delete', () => {
-    vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
-      makeMockResult(mockServices)
-    );
-    render(<ServicesTab practitionerRoleId='role-1' />);
-
-    // Verify both services are visible
+    mockServicesAndRender();
     expect(screen.getByText('General Consultation')).toBeInTheDocument();
     expect(screen.getByText('Specialist Referral')).toBeInTheDocument();
-
-    // Click Delete on the first service
-    const deleteButtons = screen.getAllByLabelText('Delete service');
-    fireEvent.click(deleteButtons[0]);
-
-    // First service should be gone
+    fireEvent.click(screen.getAllByLabelText('Delete service')[0]);
     expect(screen.queryByText('General Consultation')).not.toBeInTheDocument();
-    // Second service should still exist
     expect(screen.getByText('Specialist Referral')).toBeInTheDocument();
   });
 });

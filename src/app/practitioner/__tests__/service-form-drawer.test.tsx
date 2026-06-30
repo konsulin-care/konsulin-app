@@ -167,7 +167,7 @@ describe('ServiceFormDrawer', () => {
     render(<ServiceFormDrawer {...defaultProps} service={existing} />);
 
     const feeInput = screen.getByLabelText('Fee');
-    expect(feeInput).toHaveValue('250000');
+    expect(feeInput).toHaveValue('250,000');
   });
 
   it('includes fee extension on save when fee is entered', () => {
@@ -210,13 +210,20 @@ describe('ServiceFormDrawer', () => {
     expect(saved.extension).toBeUndefined();
   });
 
+  it('shows fee placeholder without e.g. prefix', () => {
+    render(<ServiceFormDrawer {...defaultProps} />);
+
+    const feeInput = screen.getByLabelText('Fee');
+    expect(feeInput).toHaveAttribute('placeholder', '250,000');
+  });
+
   it('accepts only numeric digits for fee input', () => {
     render(<ServiceFormDrawer {...defaultProps} />);
 
     const feeInput = screen.getByLabelText('Fee');
     // Non-numeric characters should be stripped
     fireEvent.change(feeInput, { target: { value: 'abc250def000' } });
-    expect(feeInput).toHaveValue('250000');
+    expect(feeInput).toHaveValue('250,000');
   });
 
   it('omits location from resource when location prop is undefined', () => {
