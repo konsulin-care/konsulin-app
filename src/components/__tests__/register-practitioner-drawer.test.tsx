@@ -164,7 +164,7 @@ describe('RegisterPractitionerDrawer', () => {
     const rolePost = mockAxiosInstance.post.mock.calls[1];
     expect(rolePost[0]).toBe('/fhir/PractitionerRole');
     const rolePayload = rolePost[1] as Record<string, unknown>;
-    expect(rolePayload.active).toBe(false);
+    expect(rolePayload.active).toBe(true);
     expect(
       (rolePayload.organization as Record<string, unknown>).reference
     ).toBe('Organization/org-1');

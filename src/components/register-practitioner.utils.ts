@@ -83,7 +83,7 @@ export async function resolveOrCreatePractitionerRole(
 
   const payload: Record<string, unknown> = {
     resourceType: 'PractitionerRole',
-    active: false,
+    active: true,
     practitioner: {
       reference: `Practitioner/${practitionerId}`
     },
