@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/konsulin-care/konsulin-app/internal/data/wilayah"
 )
@@ -55,26 +56,49 @@ func main() {
 	log.Println("Done!")
 }
 
+// httpClient is a shared HTTP client with a timeout to prevent hangs.
+var httpClient = &http.Client{
+	Timeout: 30 * time.Second,
+}
+
 // fetchJSON fetches a URL and decodes the response as JSON.
+// Retries up to 3 times on transient failures.
 //
 //nolint:gosec,gocritic // Variable URL is intentional. exitAfterDefer for one-shot codegen.
 func fetchJSON[T any](url string) T {
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Fatalf("Failed to fetch %s: %v", url, err)
-	}
-	//nolint:errcheck // Cleanup-only close.
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("Failed to read %s: %v", url, err)
-	}
-
 	var result T
-	if err := json.Unmarshal(body, &result); err != nil {
-		log.Fatalf("Failed to decode %s: %v", url, err)
+	var lastErr error
+
+	for attempt := range 3 {
+		if attempt > 0 {
+			time.Sleep(time.Duration(attempt) * time.Second)
+		}
+
+		resp, err := httpClient.Get(url)
+		if err != nil {
+			lastErr = err
+			log.Printf("Attempt %d: failed to fetch %s: %v", attempt+1, url, err)
+			continue
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if err != nil {
+			lastErr = err
+			log.Printf("Attempt %d: failed to read %s: %v", attempt+1, url, err)
+			continue
+		}
+
+		if err := json.Unmarshal(body, &result); err != nil {
+			lastErr = err
+			log.Printf("Attempt %d: failed to decode %s: %v", attempt+1, url, err)
+			continue
+		}
+
+		return result
 	}
+
+	log.Fatalf("All attempts failed for %s: %v", url, lastErr)
 	return result
 }
 
