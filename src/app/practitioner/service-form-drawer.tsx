@@ -13,7 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type { HealthcareService } from 'fhir/r4';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+
+const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
 
 type Props = {
   open: boolean;
@@ -41,10 +43,36 @@ export default function ServiceFormDrawer({
   const [extraDetails, setExtraDetails] = useState(service?.extraDetails ?? '');
   const [active, setActive] = useState(service?.active ?? true);
 
+  const feeFromService =
+    service?.extension
+      ?.find(ext => ext.url === FEE_EXTENSION_URL)
+      ?.valueMoney?.value?.toString() ?? '';
+
+  const [fee, setFee] = useState(feeFromService);
+
+  const handleFeeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const sanitized = e.target.value.replace(/\D/g, '');
+      setFee(sanitized);
+    },
+    []
+  );
+
   const handleSave = () => {
+    const feeValue = Number(fee);
+    const extension: HealthcareService['extension'] = fee
+      ? [
+          {
+            url: FEE_EXTENSION_URL,
+            valueMoney: { value: feeValue, currency: 'IDR' }
+          }
+        ]
+      : undefined;
+
     const resource: HealthcareService = {
       resourceType: 'HealthcareService',
       ...(service?.id ? { id: service.id } : {}),
+      ...(extension ? { extension } : {}),
       active,
       name,
       extraDetails: extraDetails || undefined,
@@ -87,6 +115,20 @@ export default function ServiceFormDrawer({
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder='e.g. General Consultation'
+              className='bg-white'
+            />
+          </div>
+
+          <div>
+            <label htmlFor='service-fee' className='text-sm font-medium'>
+              Fee
+            </label>
+            <Input
+              id='service-fee'
+              value={fee}
+              onChange={handleFeeChange}
+              placeholder='e.g. 250000'
+              inputMode='numeric'
               className='bg-white'
             />
           </div>

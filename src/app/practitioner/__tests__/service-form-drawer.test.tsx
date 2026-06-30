@@ -73,6 +73,7 @@ vi.mock('@/components/ui/button', () => ({
 import type { HealthcareService } from 'fhir/r4';
 
 describe('ServiceFormDrawer', () => {
+  const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
   const defaultProps = {
     open: true,
     onClose: vi.fn(),
@@ -86,7 +87,7 @@ describe('ServiceFormDrawer', () => {
 
     expect(screen.getByTestId('drawer')).toBeInTheDocument();
     expect(screen.getByTestId('switch')).toBeInTheDocument();
-    expect(screen.getByTestId('input')).toBeInTheDocument();
+    expect(screen.getAllByTestId('input').length).toBeGreaterThanOrEqual(2);
     expect(screen.getByTestId('textarea')).toBeInTheDocument();
   });
 
@@ -141,6 +142,81 @@ describe('ServiceFormDrawer', () => {
     if (cancelButton) fireEvent.click(cancelButton);
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders fee input field', () => {
+    render(<ServiceFormDrawer {...defaultProps} />);
+
+    expect(screen.getByLabelText('Fee')).toBeInTheDocument();
+  });
+
+  it('pre-fills fee from existing service extension in edit mode', () => {
+    const existing: HealthcareService = {
+      resourceType: 'HealthcareService',
+      id: 'svc-1',
+      active: true,
+      name: 'General Consultation',
+      extension: [
+        {
+          url: FEE_EXTENSION_URL,
+          valueMoney: { value: 250_000, currency: 'IDR' }
+        }
+      ]
+    };
+
+    render(<ServiceFormDrawer {...defaultProps} service={existing} />);
+
+    const feeInput = screen.getByLabelText('Fee');
+    expect(feeInput).toHaveValue('250000');
+  });
+
+  it('includes fee extension on save when fee is entered', () => {
+    const onSave = vi.fn();
+    render(<ServiceFormDrawer {...defaultProps} onSave={onSave} />);
+
+    const inputs = screen.getAllByTestId('input');
+    fireEvent.change(inputs[0], { target: { value: 'General Consultation' } });
+
+    const feeInput = screen.getByLabelText('Fee');
+    fireEvent.change(feeInput, { target: { value: '300000' } });
+
+    const buttons = screen.getAllByTestId('button');
+    const saveButton = buttons.find(b => b.textContent === 'Save');
+    if (saveButton) fireEvent.click(saveButton);
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    const saved = onSave.mock.calls[0][0] as HealthcareService;
+    expect(saved.extension).toEqual([
+      {
+        url: FEE_EXTENSION_URL,
+        valueMoney: { value: 300_000, currency: 'IDR' }
+      }
+    ]);
+  });
+
+  it('omits fee extension when fee is not entered', () => {
+    const onSave = vi.fn();
+    render(<ServiceFormDrawer {...defaultProps} onSave={onSave} />);
+
+    const inputs = screen.getAllByTestId('input');
+    fireEvent.change(inputs[0], { target: { value: 'Test Service' } });
+
+    const buttons = screen.getAllByTestId('button');
+    const saveButton = buttons.find(b => b.textContent === 'Save');
+    if (saveButton) fireEvent.click(saveButton);
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    const saved = onSave.mock.calls[0][0] as HealthcareService;
+    expect(saved.extension).toBeUndefined();
+  });
+
+  it('accepts only numeric digits for fee input', () => {
+    render(<ServiceFormDrawer {...defaultProps} />);
+
+    const feeInput = screen.getByLabelText('Fee');
+    // Non-numeric characters should be stripped
+    fireEvent.change(feeInput, { target: { value: 'abc250def000' } });
+    expect(feeInput).toHaveValue('250000');
   });
 
   it('omits location from resource when location prop is undefined', () => {
