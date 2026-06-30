@@ -297,7 +297,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
             <ProfileFormSection
               updateUser={updateUser}
               errors={errors}
-              listProvinces={listProvinces}
+              listProvinces={listProvinces ?? []}
               listCities={listCities ?? []}
               listDistricts={listDistricts ?? []}
               isPhoneBasedUser={isPhoneBasedUser}

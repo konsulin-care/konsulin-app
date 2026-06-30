@@ -33,7 +33,7 @@ type LocationComboboxProps = {
  * Displays formatted location names from the API.
  */
 export default function LocationCombobox({
-  options,
+  options = [],
   value,
   onSelect,
   placeholder,
