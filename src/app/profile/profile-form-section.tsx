@@ -3,6 +3,7 @@
 
 import Input from '@/components/general/input';
 import DropdownProfile from '@/components/profile/dropdown-profile';
+import LocationCombobox from '@/components/shared/location-combobox';
 import { DRAWER_STATE, genderList } from '@/constants/profile';
 import { IWilayahResponse } from '@/types/wilayah';
 import { X } from 'lucide-react';
@@ -175,7 +176,7 @@ export default function ProfileFormSection({
       {errors.gender && (
         <p className='p-4 text-xs text-red-500'>{errors.gender}</p>
       )}
-      <DropdownProfile
+      <LocationCombobox
         options={listProvinces}
         value={updateUser.provinceCode}
         onSelect={handleProvinceSelect}
@@ -187,12 +188,11 @@ export default function ProfileFormSection({
       )}
       {(updateUser.provinceCode || updateUser.city) && (
         <>
-          <DropdownProfile
+          <LocationCombobox
             options={listCities}
             value={updateUser.cityCode}
             onSelect={handleCitySelect}
             placeholder='City'
-            labelPlaceholder={updateUser.city}
             loading={cityLoading}
           />
           {errors.city && (
@@ -202,12 +202,11 @@ export default function ProfileFormSection({
       )}
       {(updateUser.cityCode || updateUser.district) && (
         <>
-          <DropdownProfile
+          <LocationCombobox
             options={listDistricts}
             value={updateUser.districtCode}
             onSelect={handleDistrictSelect}
             placeholder='District'
-            labelPlaceholder={updateUser.district}
             loading={districtLoading}
           />
           {errors.district && (

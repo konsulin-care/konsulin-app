@@ -1,5 +1,6 @@
-/* eslint-disable react/jsx-max-depth, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 import { FilterIcon } from '@/components/icons';
+import LocationCombobox from '@/components/shared/location-combobox';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Drawer,
@@ -8,17 +9,10 @@ import {
   DrawerTitle,
   DrawerTrigger
 } from '@/components/ui/drawer';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useGetCities, useGetProvinces } from '@/services/api/cities';
 import { IUseClinicParams } from '@/services/clinic';
-import { IWilayahResponse } from '@/types/wilayah';
+
 import { useState } from 'react';
 
 export type IFirmFilter = {
@@ -68,43 +62,22 @@ export default function FirmFilter({ onChange }) {
         </span>
       </div>
       <div className='flex flex-wrap gap-[10px]'>
-        <Select
-          onValueChange={e => handleFilterChange('province_code', e)}
-          value={filter.province_code}
-        >
-          <SelectTrigger className='w-full border-none'>
-            <SelectValue placeholder='Select Province' />
-          </SelectTrigger>
-          <SelectContent>
-            {listProvinces &&
-              listProvinces.length > 0 &&
-              !provinceLoading &&
-              listProvinces.map((item: IWilayahResponse) => (
-                <SelectItem key={item.code} value={item.code}>
-                  {item.name}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+        <LocationCombobox
+          options={listProvinces ?? []}
+          value={filter.province_code ?? ''}
+          onSelect={option => handleFilterChange('province_code', option.code)}
+          placeholder='Select Province'
+          loading={provinceLoading}
+        />
 
         {filter.province_code && (
-          <Select
-            value={filter.city}
-            onValueChange={e => handleFilterChange('city', e)}
-          >
-            <SelectTrigger className='w-full border-none'>
-              <SelectValue placeholder='Select City' />
-            </SelectTrigger>
-            <SelectContent>
-              {listCities &&
-                !cityLoading &&
-                listCities.map((item: IWilayahResponse) => (
-                  <SelectItem key={item.name} value={item.name}>
-                    {item.name}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+          <LocationCombobox
+            options={listCities ?? []}
+            value={filter.city ?? ''}
+            onSelect={option => handleFilterChange('city', option.name)}
+            placeholder='Select City'
+            loading={cityLoading}
+          />
         )}
       </div>
     </div>

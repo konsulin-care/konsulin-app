@@ -1,9 +1,10 @@
-/* eslint-disable max-lines, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, complexity */
+/* eslint-disable max-lines, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 /* reason: renderDrawerContent nests date/time filters by design, extracting would over-scatter state */
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterCalendar from '@/components/shared/filter-calendar';
 import FilterCustomTimeInputs from '@/components/shared/filter-custom-time-inputs';
 import FilterDrawerTrigger from '@/components/shared/filter-drawer-trigger';
+import LocationCombobox from '@/components/shared/location-combobox';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -12,17 +13,10 @@ import {
   DrawerTitle,
   DrawerTrigger
 } from '@/components/ui/drawer';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { Roles } from '@/constants/roles';
 import { useGetCities, useGetProvinces } from '@/services/api/cities';
 import { IUseClinicParams } from '@/services/clinic';
-import { IWilayahResponse } from '@/types/wilayah';
+
 import { addDays, endOfWeek, startOfWeek } from 'date-fns';
 import { useState } from 'react';
 const CONTENT_DEFAULT = 0;
@@ -224,43 +218,26 @@ export default function ClinicFilter({ onChange, type }) {
                   </span>
                 </div>
                 <div className='flex flex-wrap gap-[10px]'>
-                  <Select
-                    onValueChange={e => handleFilterChange('province_code', e)}
-                    value={filter.province_code}
-                  >
-                    <SelectTrigger className='w-full border-none'>
-                      <SelectValue placeholder='Select Province' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {listProvinces &&
-                        listProvinces.length > 0 &&
-                        !provinceLoading &&
-                        listProvinces.map((item: IWilayahResponse) => (
-                          <SelectItem key={item.code} value={item.code}>
-                            {item.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  <LocationCombobox
+                    options={listProvinces ?? []}
+                    value={filter.province_code ?? ''}
+                    onSelect={option =>
+                      handleFilterChange('province_code', option.code)
+                    }
+                    placeholder='Select Province'
+                    loading={provinceLoading}
+                  />
 
                   {filter.province_code && (
-                    <Select
-                      value={filter.city}
-                      onValueChange={e => handleFilterChange('city', e)}
-                    >
-                      <SelectTrigger className='w-full border-none'>
-                        <SelectValue placeholder='Select City' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {listCities &&
-                          !cityLoading &&
-                          listCities.map((item: IWilayahResponse) => (
-                            <SelectItem key={item.name} value={item.name}>
-                              {item.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    <LocationCombobox
+                      options={listCities ?? []}
+                      value={filter.city ?? ''}
+                      onSelect={option =>
+                        handleFilterChange('city', option.name)
+                      }
+                      placeholder='Select City'
+                      loading={cityLoading}
+                    />
                   )}
                 </div>
               </div>

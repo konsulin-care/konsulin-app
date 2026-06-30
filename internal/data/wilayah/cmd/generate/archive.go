@@ -132,6 +132,9 @@ func runGenerate() error {
 	log.Printf("Parsed: %d provinces, %d regencies, %d districts, %d villages",
 		len(provinces), len(regencies), len(districts), len(villages))
 
+	log.Println("Normalizing names...")
+	wilayah.NormalizeAllNames(provinces, regencies, districts, villages)
+
 	log.Println("Building indexes...")
 	idx := wilayah.BuildIndexes(provinces, regencies, districts, villages)
 
