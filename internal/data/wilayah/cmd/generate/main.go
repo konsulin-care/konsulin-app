@@ -40,49 +40,49 @@ package wilayah
 // Generated from %s
 var WilayahData = WilayahIndex{
 	Provinces: []Province{
-%s,
+%s
 	},
 	Regencies: []Regency{
-%s,
+%s
 	},
 	Districts: []District{
-%s,
+%s
 	},
 	Villages: []Village{
-%s,
+%s
 	},
 	ProvinceByID: map[string]int{
-%s,
+%s
 	},
 	RegencyByID: map[string]int{
-%s,
+%s
 	},
 	DistrictByID: map[string]int{
-%s,
+%s
 	},
 	VillageByID: map[string]int{
-%s,
+%s
 	},
 	RegenciesByProvince: map[string][]int{
-%s,
+%s
 	},
 	DistrictsByRegency: map[string][]int{
-%s,
+%s
 	},
 	VillagesByDistrict: map[string][]int{
-%s,
+%s
 	},
 	ProvinceByName: map[string][]int{
-%s,
+%s
 	},
 	RegencyByName: map[string][]int{
-%s,
+%s
 	},
 	DistrictByName: map[string][]int{
-%s,
+%s
 	},
 	VillageByName: map[string][]int{
-%s,
+%s
 	},
 }
 `, baseURL,
