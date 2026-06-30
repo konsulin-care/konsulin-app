@@ -125,18 +125,6 @@ export default function PageHeader({
     queryKey: ['clinic-name', selectedClinicId],
     queryFn: async () => {
       const API = await getAPI();
-      // Try Location resource first
-      const locResp = await API.get(
-        `/fhir/Location?organization=${selectedClinicId}&_elements=name`
-      );
-      const locName =
-        (
-          locResp.data as
-            | { entry?: { resource?: { name?: string } }[] }
-            | undefined
-        )?.entry?.[0]?.resource?.name ?? '';
-      if (locName) return locName;
-      // Fallback to Organization resource
       const orgResp = await API.get(
         `/fhir/Organization/${selectedClinicId}?_elements=name`
       );

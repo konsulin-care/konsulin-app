@@ -69,7 +69,7 @@ describe('PageHeader - admin clinic card', () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
-  it('renders clinic name card for admin when clinic data loads', async () => {
+  it('renders clinic name card for admin from Organization resource', async () => {
     vi.mocked(useAuth).mockReturnValue({
       isLoading: false,
       state: {
@@ -85,11 +85,9 @@ describe('PageHeader - admin clinic card', () => {
     });
     // Return a clinic ID from IndexedDB so the query fires
     vi.mocked(dbGet).mockResolvedValueOnce({ value: 'org-123' });
-    // Mock Location query returning a name
+    // Mock Organization query returning the org name
     mockAxiosInstance.get.mockResolvedValueOnce({
-      data: {
-        entry: [{ resource: { name: 'Klinik Sehat Cyberjaya' } }]
-      }
+      data: { name: 'Konsulin HQ' }
     });
 
     render(<PageHeader />, { wrapper });
@@ -97,10 +95,10 @@ describe('PageHeader - admin clinic card', () => {
     await waitFor(() => {
       expect(screen.getByText('Currently Managing')).toBeDefined();
     });
-    expect(screen.getByText('Klinik Sehat Cyberjaya')).toBeDefined();
+    expect(screen.getByText('Konsulin HQ')).toBeDefined();
   });
 
-  it('falls back to Organization.name with correct query separator', async () => {
+  it('queries Organization directly with correct URL and does NOT query Location', async () => {
     vi.mocked(useAuth).mockReturnValue({
       isLoading: false,
       state: {
@@ -116,10 +114,10 @@ describe('PageHeader - admin clinic card', () => {
     });
     // Return a clinic ID so the query fires
     vi.mocked(dbGet).mockResolvedValueOnce({ value: 'org-456' });
-    // Location query returns empty bundle; Organization query returns name
-    mockAxiosInstance.get
-      .mockResolvedValueOnce({ data: { entry: [] } })
-      .mockResolvedValueOnce({ data: { name: 'Konsulin HQ' } });
+    // Single Organization query returns the org name
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: { name: 'Konsulin HQ' }
+    });
 
     render(<PageHeader />, { wrapper });
 
@@ -128,9 +126,10 @@ describe('PageHeader - admin clinic card', () => {
     });
     expect(screen.getByText('Konsulin HQ')).toBeDefined();
 
-    // Verify Organization URL uses ? not &
-    const secondCallUrl = mockAxiosInstance.get.mock.calls[1]?.[0] as string;
-    expect(secondCallUrl).toBe('/fhir/Organization/org-456?_elements=name');
+    // Should make exactly one API call — to Organization, not Location
+    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+    const calledUrl = mockAxiosInstance.get.mock.calls[0][0] as string;
+    expect(calledUrl).toBe('/fhir/Organization/org-456?_elements=name');
   });
 
   it('does NOT render clinic card for patient role', async () => {

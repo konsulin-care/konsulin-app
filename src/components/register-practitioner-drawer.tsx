@@ -137,14 +137,14 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
   }, [open]);
 
   // Fetch locations for the current organization
-  const { locations } = useOrganizationLocations(orgId);
+  const { locations, isLoading } = useOrganizationLocations(orgId);
 
-  // Close drawer if no locations exist (after org ID is loaded)
+  // Close drawer if no locations exist (after org ID is loaded and query finishes)
   useEffect(() => {
-    if (!orgId || locations.length > 0) return;
+    if (!orgId || isLoading || locations.length > 0) return;
     toast.error('No locations found. Please add a location first.');
     onClose();
-  }, [orgId, locations, onClose]);
+  }, [orgId, isLoading, locations, onClose]);
 
   const isValid =
     name.trim().length > 0 &&
