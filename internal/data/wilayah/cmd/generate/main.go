@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/konsulin-care/konsulin-app/internal/data/wilayah"
 )
@@ -31,7 +30,6 @@ func main() {
 	for _, p := range provinces {
 		regencies := fetchJSON[[]wilayah.Regency](baseURL + "/regencies/" + p.ID + ".json")
 		allRegencies = append(allRegencies, regencies...)
-		log.Printf("Downloaded %d regencies for province %s", len(regencies), p.ID)
 
 		for _, r := range regencies {
 			districts := fetchJSON[[]wilayah.District](baseURL + "/districts/" + r.ID + ".json")
@@ -41,11 +39,7 @@ func main() {
 				villages := fetchJSON[[]wilayah.Village](baseURL + "/villages/" + d.ID + ".json")
 				allVillages = append(allVillages, villages...)
 			}
-
-			time.Sleep(50 * time.Millisecond)
 		}
-
-		time.Sleep(100 * time.Millisecond)
 	}
 
 	log.Printf("Total: %d provinces, %d regencies, %d districts, %d villages",
@@ -63,7 +57,7 @@ func main() {
 
 // fetchJSON fetches a URL and decodes the response as JSON.
 //
-//nolint:gosec,gocritic // Variable URL is intentional. exitAfterDefer is acceptable for one-shot codegen.
+//nolint:gosec,gocritic // Variable URL is intentional. exitAfterDefer for one-shot codegen.
 func fetchJSON[T any](url string) T {
 	resp, err := http.Get(url)
 	if err != nil {
