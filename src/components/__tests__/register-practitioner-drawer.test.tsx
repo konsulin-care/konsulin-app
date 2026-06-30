@@ -276,6 +276,23 @@ describe('RegisterPractitionerDrawer', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it('resets form fields when drawer reopens', async () => {
+    const { rerender } = render(
+      <RegisterPractitionerDrawer open onClose={onClose} />,
+      { wrapper }
+    );
+    await fillForm();
+    expect(screen.getByLabelText('Name')).toHaveValue('Aly Lamuri');
+    expect(screen.getByLabelText('Email')).toHaveValue('aly@clinic.com');
+    rerender(<RegisterPractitionerDrawer open={false} onClose={onClose} />);
+    rerender(<RegisterPractitionerDrawer open onClose={onClose} />);
+    await waitFor(() => {
+      expect(screen.getByLabelText('Name')).toHaveValue('');
+    });
+    expect(screen.getByLabelText('Email')).toHaveValue('');
+    expect(screen.getByText('Select location...')).toBeDefined();
+  });
+
   it('does not query practitioner endpoint when org ID is not loaded', () => {
     vi.mocked(dbGet).mockResolvedValue(null);
     render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });

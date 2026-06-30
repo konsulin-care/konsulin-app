@@ -123,6 +123,15 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
     null
   );
 
+  // Reset form fields every time the drawer opens
+  useEffect(() => {
+    if (!open) return;
+    setName('');
+    setEmail('');
+    setSelectedLocationId(null);
+    setIsSubmitting(false);
+  }, [open]);
+
   // Load clinic organization from IndexedDB on mount
   useEffect(() => {
     if (!open) return;
