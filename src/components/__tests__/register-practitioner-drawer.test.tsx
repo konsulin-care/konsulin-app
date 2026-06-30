@@ -74,7 +74,7 @@ describe('RegisterPractitionerDrawer', () => {
     fireEvent.click(screen.getByText('Main Clinic'));
   }
 
-  /** Mock all 4 FHIR pipeline steps to succeed. */
+  /** Mock all 3 FHIR pipeline steps to succeed. */
   function mockSuccessPipeline() {
     mockAxiosInstance.get.mockResolvedValueOnce({ data: { entry: [] } }); // GET Practitioner
     mockAxiosInstance.post.mockResolvedValueOnce({ data: { id: 'prac-1' } }); // POST Practitioner
@@ -82,7 +82,6 @@ describe('RegisterPractitionerDrawer', () => {
     mockAxiosInstance.post.mockResolvedValueOnce({ data: { id: 'role-1' } }); // POST PractitionerRole
     mockAxiosInstance.get.mockResolvedValueOnce({ data: { entry: [] } }); // GET Schedule
     mockAxiosInstance.post.mockResolvedValueOnce({ data: { id: 'sched-1' } }); // POST Schedule
-    mockAxiosInstance.post.mockResolvedValueOnce({ data: { ok: true } }); // magic link
   }
 
   it('renders form fields when open', () => {
@@ -150,7 +149,7 @@ describe('RegisterPractitionerDrawer', () => {
     });
     expect(onClose).toHaveBeenCalled();
     expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3);
-    expect(mockAxiosInstance.post).toHaveBeenCalledTimes(4);
+    expect(mockAxiosInstance.post).toHaveBeenCalledTimes(3);
 
     const practitionerPost = mockAxiosInstance.post.mock.calls[0];
     expect(practitionerPost[0]).toBe('/fhir/Practitioner');
@@ -176,10 +175,6 @@ describe('RegisterPractitionerDrawer', () => {
     >;
     expect(actor).toContainEqual({ reference: 'Practitioner/prac-1' });
     expect(actor).toContainEqual({ reference: 'PractitionerRole/role-1' });
-
-    const orgRolesPost = mockAxiosInstance.post.mock.calls[3];
-    expect(orgRolesPost[0]).toBe('/api/v1/organizations/org-1/roles');
-    expect(orgRolesPost[1]).toEqual({ email: 'aly@clinic.com' });
   });
 
   it('uses existing Practitioner/PractitionerRole when they exist', async () => {
@@ -192,16 +187,17 @@ describe('RegisterPractitionerDrawer', () => {
     mockAxiosInstance.get.mockResolvedValueOnce({
       data: { entry: [{ resource: { id: 'sched-1' } }] }
     });
-    mockAxiosInstance.post.mockResolvedValueOnce({ data: { ok: true } });
 
     render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
     await fillForm();
     fireEvent.click(screen.getByText('Register'));
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith('Magic link sent');
+      expect(toast.success).toHaveBeenCalledWith(
+        'Practitioner already registered'
+      );
     });
-    expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1);
+    expect(mockAxiosInstance.post).toHaveBeenCalledTimes(0);
     expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3);
   });
 
@@ -212,7 +208,6 @@ describe('RegisterPractitionerDrawer', () => {
     mockAxiosInstance.post.mockResolvedValueOnce({ data: { id: 'role-1' } });
     mockAxiosInstance.get.mockResolvedValueOnce({ data: { entry: [] } });
     mockAxiosInstance.post.mockResolvedValueOnce({ data: { id: 'sched-1' } });
-    mockAxiosInstance.post.mockResolvedValueOnce({ data: { ok: true } });
 
     render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
     await fillForm();

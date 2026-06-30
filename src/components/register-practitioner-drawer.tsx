@@ -176,13 +176,10 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
         // Step 3: Schedule
         await resolveOrCreateSchedule(API, practitionerId, roleId);
 
-        // Step 4: Assign role via organization endpoint
-        await API.post(`/api/v1/organizations/${orgId}/roles`, {
-          email: email.trim()
-        });
-
         toast.success(
-          created ? 'Practitioner registered successfully' : 'Magic link sent'
+          created
+            ? 'Practitioner registered successfully'
+            : 'Practitioner already registered'
         );
         void queryClient.invalidateQueries({
           queryKey: ['practitioner-count']
