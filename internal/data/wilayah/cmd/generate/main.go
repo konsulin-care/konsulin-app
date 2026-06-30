@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -16,8 +15,10 @@ import (
 
 const baseURL = "https://raw.githubusercontent.com/emsifa/api-wilayah-indonesia/master/static/api"
 
-// outputPath is the path where data.go is written. Overridden in tests.
-var outputPath = path.Join("internal", "data", "wilayah", "data.go")
+// outputPath is the path where data.go is written.
+// The Go generate tool runs in the package directory, so a bare filename is correct.
+// Overridden in tests.
+var outputPath = "data.go"
 
 func main() {
 	log.Println("Downloading province data...")
