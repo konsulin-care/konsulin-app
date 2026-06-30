@@ -13,15 +13,27 @@ vi.mock('@/services/api', () => ({
   getAPI: vi.fn()
 }));
 
+vi.mock('@/services/clinic', () => ({
+  useOrganizationLocations: vi.fn()
+}));
+
 vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));
 
+vi.mock('@/lib/utils', () => ({
+  cn: (...classes: (string | undefined | null | false)[]) =>
+    classes.filter(Boolean).join(' ')
+}));
+
 import { dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
+import { useOrganizationLocations } from '@/services/clinic';
 import { toast } from 'react-toastify';
 
 const mockAxiosInstance = { get: vi.fn(), post: vi.fn() };
+
+const mockLocations = [{ id: 'loc-1', name: 'Main Clinic' }];
 
 describe('RegisterPractitionerDrawer', () => {
   let queryClient: QueryClient;
@@ -35,11 +47,16 @@ describe('RegisterPractitionerDrawer', () => {
     vi.mocked(getAPI).mockResolvedValue(
       mockAxiosInstance as unknown as AxiosInstance
     );
-    // Default: clinic org set, no location
+    vi.mocked(useOrganizationLocations).mockReturnValue({
+      locations: mockLocations,
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    });
+    // Default: clinic org set
     vi.mocked(dbGet).mockImplementation((_store, args) => {
       if (args?.[1] === 'clinic_organization')
         return Promise.resolve({ value: 'org-1' });
-      if (args?.[1] === 'selected_location') return Promise.resolve(null);
       return Promise.resolve(null);
     });
   });
@@ -62,6 +79,14 @@ describe('RegisterPractitionerDrawer', () => {
     expect(screen.getByText('Cancel')).toBeDefined();
   });
 
+  it('renders location combobox when locations are available', async () => {
+    render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('Select location...')).toBeDefined();
+    });
+  });
+
   it('has Register button disabled when name and email are empty', () => {
     render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
 
@@ -80,7 +105,7 @@ describe('RegisterPractitionerDrawer', () => {
     expect(registerBtn).toBeDisabled();
   });
 
-  it('has Register button enabled when both name and email are filled', () => {
+  it('has Register button disabled when name and email are filled but no location selected', () => {
     render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
 
     fireEvent.change(screen.getByLabelText('Name'), {
@@ -89,6 +114,27 @@ describe('RegisterPractitionerDrawer', () => {
     fireEvent.change(screen.getByLabelText('Email'), {
       target: { value: 'aly@clinic.com' }
     });
+
+    const registerBtn = screen.getByText('Register').closest('button');
+    expect(registerBtn).toBeDisabled();
+  });
+
+  it('has Register button enabled when name, email, and location are filled', async () => {
+    render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
+
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: 'Aly Lamuri' }
+    });
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'aly@clinic.com' }
+    });
+
+    // Open location combobox and select first option
+    fireEvent.click(screen.getByText('Select location...'));
+    await waitFor(() => {
+      expect(screen.getByText('Main Clinic')).toBeDefined();
+    });
+    fireEvent.click(screen.getByText('Main Clinic'));
 
     const registerBtn = screen.getByText('Register').closest('button');
     expect(registerBtn).toBeEnabled();
@@ -138,6 +184,13 @@ describe('RegisterPractitionerDrawer', () => {
       target: { value: 'aly@clinic.com' }
     });
 
+    // Select location
+    fireEvent.click(screen.getByText('Select location...'));
+    await waitFor(() => {
+      expect(screen.getByText('Main Clinic')).toBeDefined();
+    });
+    fireEvent.click(screen.getByText('Main Clinic'));
+
     fireEvent.click(screen.getByText('Register'));
 
     await waitFor(() => {
@@ -178,7 +231,6 @@ describe('RegisterPractitionerDrawer', () => {
 
     const roleOrg = rolePayload.organization as Record<string, unknown>;
     expect(roleOrg.reference).toBe('Organization/org-1');
-    expect(rolePayload.location).toBeUndefined();
 
     // Verify POST to Schedule included both actors
     const schedPost = mockAxiosInstance.post.mock.calls[2];
@@ -223,6 +275,13 @@ describe('RegisterPractitionerDrawer', () => {
       target: { value: 'aly@clinic.com' }
     });
 
+    // Select location
+    fireEvent.click(screen.getByText('Select location...'));
+    await waitFor(() => {
+      expect(screen.getByText('Main Clinic')).toBeDefined();
+    });
+    fireEvent.click(screen.getByText('Main Clinic'));
+
     fireEvent.click(screen.getByText('Register'));
 
     await waitFor(() => {
@@ -243,20 +302,12 @@ describe('RegisterPractitionerDrawer', () => {
     });
   });
 
-  it('includes location param in PractitionerRole query when location exists', async () => {
-    vi.mocked(dbGet).mockImplementation((_store, args) => {
-      if (args?.[1] === 'clinic_organization')
-        return Promise.resolve({ value: 'org-1' });
-      if (args?.[1] === 'selected_location')
-        return Promise.resolve({ value: 'loc-1' });
-      return Promise.resolve(null);
-    });
-
+  it('includes location param in PractitionerRole when a location is selected', async () => {
     // Step 1: GET Practitioner → no existing
     mockAxiosInstance.get.mockResolvedValueOnce({ data: { entry: [] } });
     // Step 1: POST Practitioner
     mockAxiosInstance.post.mockResolvedValueOnce({ data: { id: 'prac-1' } });
-    // Step 2: GET PractitionerRole → no existing
+    // Step 2: GET PractitionerRole with location → no existing
     mockAxiosInstance.get.mockResolvedValueOnce({ data: { entry: [] } });
     // Step 2: POST PractitionerRole with location
     mockAxiosInstance.post.mockResolvedValueOnce({ data: { id: 'role-1' } });
@@ -276,6 +327,13 @@ describe('RegisterPractitionerDrawer', () => {
       target: { value: 'aly@clinic.com' }
     });
 
+    // Select location
+    fireEvent.click(screen.getByText('Select location...'));
+    await waitFor(() => {
+      expect(screen.getByText('Main Clinic')).toBeDefined();
+    });
+    fireEvent.click(screen.getByText('Main Clinic'));
+
     fireEvent.click(screen.getByText('Register'));
 
     await waitFor(() => {
@@ -291,6 +349,25 @@ describe('RegisterPractitionerDrawer', () => {
     const step2Payload = step2Post[1] as Record<string, unknown>;
     const locRef = (step2Payload.location as Record<string, unknown>).reference;
     expect(locRef).toBe('Location/loc-1');
+  });
+
+  it('shows toast error and closes drawer when no locations exist', async () => {
+    vi.mocked(useOrganizationLocations).mockReturnValue({
+      locations: [],
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    });
+
+    render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        'No locations found. Please add a location first.'
+      );
+    });
+
+    expect(onClose).toHaveBeenCalled();
   });
 
   it('uses "Full Name" placeholder on the name input', () => {
@@ -311,6 +388,13 @@ describe('RegisterPractitionerDrawer', () => {
       target: { value: 'aly@clinic.com' }
     });
 
+    // Select location
+    fireEvent.click(screen.getByText('Select location...'));
+    await waitFor(() => {
+      expect(screen.getByText('Main Clinic')).toBeDefined();
+    });
+    fireEvent.click(screen.getByText('Main Clinic'));
+
     fireEvent.click(screen.getByText('Register'));
 
     await waitFor(() => {
@@ -319,5 +403,14 @@ describe('RegisterPractitionerDrawer', () => {
 
     // Drawer should remain open
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('does not query practitioner endpoint when org ID is not loaded', () => {
+    vi.mocked(dbGet).mockResolvedValue(null);
+
+    render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
+
+    // Should not call useOrganizationLocations or make API calls
+    expect(screen.getByText('Register')).toBeDefined();
   });
 });

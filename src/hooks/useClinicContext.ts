@@ -5,19 +5,19 @@ import { useEffect, useState } from 'react';
 
 type ClinicContext = {
   clinicId: string;
+  /** @deprecated Always empty string. No longer persisted. */
   locationId: string;
 };
 
 /**
- * Read the admin's clinic organization and location from IndexedDB.
+ * Read the admin's clinic organization from IndexedDB.
  *
  * Reads `clinic_organization` (the admin's bound org from
- * Person.managingOrganization) and `selected_location` from `uiPreferences`
- * store once on mount. Returns empty strings when not yet stored.
+ * Person.managingOrganization) from `uiPreferences` store once on mount.
+ * Returns empty strings when not yet stored.
  */
 export function useClinicContext(): ClinicContext {
   const [clinicId, setClinicId] = useState('');
-  const [locationId, setLocationId] = useState('');
 
   useEffect(() => {
     dbGet<{ value: string }>(STORES.uiPreferences, ['', 'clinic_organization'])
@@ -30,16 +30,5 @@ export function useClinicContext(): ClinicContext {
       });
   }, []);
 
-  useEffect(() => {
-    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_location'])
-      .then(saved => {
-        if (saved?.value) setLocationId(saved.value);
-        return null;
-      })
-      .catch(() => {
-        /* ignore */
-      });
-  }, []);
-
-  return { clinicId, locationId };
+  return { clinicId, locationId: '' };
 }

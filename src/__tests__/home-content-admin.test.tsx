@@ -66,7 +66,26 @@ describe('HomeContentAdmin', () => {
   );
 
   describe('practitioner count query', () => {
-    it('uses organization-based filter with active=true when only clinic is set', async () => {
+    it('does not read selected_location from IndexedDB', async () => {
+      mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
+
+      render(<HomeContentAdmin />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('12')).toBeDefined();
+      });
+
+      // Should only read clinic_organization
+      const clinicCalls = vi
+        .mocked(dbGet)
+        .mock.calls.filter(([, args]) => args?.[1] === 'clinic_organization');
+      const locationCalls = vi
+        .mocked(dbGet)
+        .mock.calls.filter(([, args]) => args?.[1] === 'selected_location');
+      expect(clinicCalls.length).toBeGreaterThanOrEqual(1);
+      expect(locationCalls).toHaveLength(0);
+    });
+    it('uses organization-based filter with active=true', async () => {
       mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
 
       render(<HomeContentAdmin />, { wrapper });
@@ -78,32 +97,6 @@ describe('HomeContentAdmin', () => {
       const calledUrl = mockAxiosInstance.get.mock.calls[0][0] as string;
       expect(calledUrl).toContain(
         '_has:PractitionerRole:practitioner:organization=Organization/org-1'
-      );
-      expect(calledUrl).toContain(
-        '_has:PractitionerRole:practitioner:active=true'
-      );
-      expect(calledUrl).toContain('_summary=count');
-    });
-
-    it('uses location-based filter with active=true when both clinic and location are set', async () => {
-      vi.mocked(dbGet).mockImplementation((_store, args) => {
-        if (args?.[1] === 'clinic_organization')
-          return Promise.resolve({ value: 'org-1' });
-        if (args?.[1] === 'selected_location')
-          return Promise.resolve({ value: 'loc-1' });
-        return Promise.resolve(null);
-      });
-      mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
-
-      render(<HomeContentAdmin />, { wrapper });
-
-      await waitFor(() => {
-        expect(screen.getByText('5')).toBeDefined();
-      });
-
-      const calledUrl = mockAxiosInstance.get.mock.calls[0][0] as string;
-      expect(calledUrl).toContain(
-        '_has:PractitionerRole:practitioner:location=Location/loc-1'
       );
       expect(calledUrl).toContain(
         '_has:PractitionerRole:practitioner:active=true'

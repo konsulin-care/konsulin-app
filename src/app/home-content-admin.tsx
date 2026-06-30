@@ -96,9 +96,6 @@ export default function HomeContentAdmin() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
-    null
-  );
 
   useEffect(() => {
     dbGet<{ value: string }>(STORES.uiPreferences, ['', 'clinic_organization'])
@@ -111,34 +108,15 @@ export default function HomeContentAdmin() {
       });
   }, []);
 
-  useEffect(() => {
-    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'selected_location'])
-      .then(saved => {
-        if (saved?.value) setSelectedLocationId(saved.value);
-        return null;
-      })
-      .catch(() => {
-        /* ignore */
-      });
-  }, []);
-
   const {
     data: practitionerCount,
     isFetching: isCountFetching,
     isError: isCountError,
     refetch: refetchCount
   } = useQuery({
-    queryKey: ['practitioner-count', selectedClinicId, selectedLocationId],
+    queryKey: ['practitioner-count', selectedClinicId],
     queryFn: async () => {
       const API = await getAPI();
-
-      if (selectedLocationId) {
-        const response = await API.get(
-          `/fhir/Practitioner?_has:PractitionerRole:practitioner:location=Location/${selectedLocationId}&_has:PractitionerRole:practitioner:active=true&_summary=count`
-        );
-        return response.data?.total ?? 0;
-      }
-
       const response = await API.get(
         `/fhir/Practitioner?_has:PractitionerRole:practitioner:organization=Organization/${selectedClinicId}&_has:PractitionerRole:practitioner:active=true&_summary=count`
       );

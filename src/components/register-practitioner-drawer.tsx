@@ -2,6 +2,14 @@
 
 import { Button } from '@/components/ui/button';
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from '@/components/ui/command';
+import {
   Drawer,
   DrawerContent,
   DrawerDescription,
@@ -11,58 +19,137 @@ import {
 } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover';
 import { STORES, dbGet } from '@/lib/indexeddb';
+import { cn } from '@/lib/utils';
 import { getAPI } from '@/services/api';
+import { useOrganizationLocations } from '@/services/clinic';
 import { useQueryClient } from '@tanstack/react-query';
-import type { Bundle, Practitioner, PractitionerRole, Schedule } from 'fhir/r4';
-import { useCallback, useState } from 'react';
+import { Check, ChevronDown } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
+import {
+  resolveOrCreatePractitioner,
+  resolveOrCreatePractitionerRole,
+  resolveOrCreateSchedule
+} from './register-practitioner.utils';
 
 type Props = {
   open: boolean;
   onClose: () => void;
 };
 
-type PractitionerName = {
-  use: string;
-  family: string;
-  given: string[];
-};
+type LocationOption = { id: string; name: string };
 
-/**
- * Parse full name into FHIR HumanName parts.
- * Last space-separated token becomes family name, rest become given names.
- */
-function parseName(fullName: string): PractitionerName {
-  const parts = fullName.trim().split(/\s+/);
-  const given = parts.slice(0, -1);
-  const family = parts.at(-1) ?? '';
-  return {
-    use: 'official',
-    family,
-    given: given.length > 0 ? given : [family]
-  };
-}
+/** Combobox for selecting an organization Location. */
+function LocationCombobox({
+  locations,
+  selectedId,
+  onSelect
+}: {
+  locations: LocationOption[];
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedName = locations.find(l => l.id === selectedId)?.name;
 
-/** Extract first entry ID from a FHIR Bundle search response. */
-function extractFirstEntryId(data: Bundle | undefined): string | null {
-  const entry = data?.entry?.[0]?.resource;
-  return entry?.id ?? null;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant='outline'
+          role='combobox'
+          aria-expanded={open}
+          className={cn(
+            'h-10 w-full justify-between bg-white px-3 text-sm font-normal',
+            !selectedId && 'text-muted-foreground'
+          )}
+        >
+          {selectedName ?? 'Select location...'}
+          <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className='w-[var(--radix-popover-trigger-width)] p-0'>
+        <Command>
+          <CommandInput placeholder='Select location...' />
+          <CommandList>
+            <CommandEmpty>No locations found</CommandEmpty>
+            <CommandGroup>
+              {locations.map(loc => (
+                <CommandItem
+                  key={loc.id}
+                  value={loc.id}
+                  onSelect={currentValue => {
+                    onSelect(currentValue === selectedId ? null : currentValue);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      'mr-2 h-4 w-4',
+                      selectedId === loc.id ? 'opacity-100' : 'opacity-0'
+                    )}
+                  />
+                  {loc.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 /**
  * Drawer for registering a new practitioner via FHIR pipeline.
  *
  * 3-step process: Practitioner → PractitionerRole → Schedule.
- * Reads selected_clinic and selected_location from IndexedDB.
+ * Reads clinic_organization from IndexedDB and fetches Location resources
+ * via useOrganizationLocations. Admin must select a location for registration.
  */
 export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [orgId, setOrgId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    null
+  );
 
-  const isValid = name.trim().length > 0 && email.trim().length > 0;
+  // Load clinic organization from IndexedDB on mount
+  useEffect(() => {
+    if (!open) return;
+    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'clinic_organization'])
+      .then(saved => {
+        if (saved?.value) setOrgId(saved.value);
+        return null;
+      })
+      .catch(() => {
+        /* IndexedDB unavailable */
+      });
+  }, [open]);
+
+  // Fetch locations for the current organization
+  const { locations } = useOrganizationLocations(orgId);
+
+  // Close drawer if no locations exist (after org ID is loaded)
+  useEffect(() => {
+    if (!orgId || locations.length > 0) return;
+    toast.error('No locations found. Please add a location first.');
+    onClose();
+  }, [orgId, locations, onClose]);
+
+  const isValid =
+    name.trim().length > 0 &&
+    email.trim().length > 0 &&
+    Boolean(selectedLocationId);
 
   const handleRegister = useCallback(() => {
     if (!isValid || isSubmitting) return;
@@ -72,19 +159,7 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
     const register = async () => {
       try {
         const API = await getAPI();
-
-        // Read clinic org and optional location from IndexedDB
-        const clinicPref = await dbGet<{ value: string }>(
-          STORES.uiPreferences,
-          ['', 'clinic_organization']
-        );
-        const locationPref = await dbGet<{ value: string }>(
-          STORES.uiPreferences,
-          ['', 'selected_location']
-        );
-
-        const orgId = clinicPref?.value ?? '';
-        const locId = locationPref?.value ?? '';
+        const locId = selectedLocationId ?? '';
 
         // Step 1: Practitioner
         const { id: practitionerId, created } =
@@ -126,7 +201,16 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
     };
 
     void register();
-  }, [isValid, isSubmitting, email, name, queryClient, onClose]);
+  }, [
+    isValid,
+    isSubmitting,
+    email,
+    name,
+    selectedLocationId,
+    orgId,
+    queryClient,
+    onClose
+  ]);
 
   return (
     <Drawer
@@ -168,6 +252,15 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
               aria-label='Email'
             />
           </div>
+
+          <div>
+            <Label>Location</Label>
+            <LocationCombobox
+              locations={locations}
+              selectedId={selectedLocationId}
+              onSelect={setSelectedLocationId}
+            />
+          </div>
         </div>
 
         <DrawerFooter>
@@ -186,105 +279,4 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
       </DrawerContent>
     </Drawer>
   );
-}
-
-/** Resolve existing Practitioner by email or create one. */
-async function resolveOrCreatePractitioner(
-  API: Awaited<ReturnType<typeof getAPI>>,
-  email: string,
-  name: string
-): Promise<{ id: string; created: boolean }> {
-  const searchResponse = await API.get<Bundle>(
-    `/fhir/Practitioner?email=${encodeURIComponent(email)}&_elements=name`
-  );
-
-  const existingId = extractFirstEntryId(searchResponse.data);
-  if (existingId) return { id: existingId, created: false };
-
-  const parsedName = parseName(name);
-  const createResponse = await API.post<Practitioner>('/fhir/Practitioner', {
-    resourceType: 'Practitioner',
-    active: true,
-    name: [parsedName],
-    telecom: [
-      {
-        system: 'email',
-        value: email,
-        use: 'work'
-      }
-    ]
-  });
-
-  return { id: createResponse.data.id ?? '', created: true };
-}
-
-/** Resolve existing PractitionerRole or create one. */
-async function resolveOrCreatePractitionerRole(
-  API: Awaited<ReturnType<typeof getAPI>>,
-  practitionerId: string,
-  orgId: string,
-  locId: string
-): Promise<string> {
-  const params: string[] = [
-    `organization=Organization/${orgId}`,
-    `practitioner=Practitioner/${practitionerId}`
-  ];
-
-  if (locId) {
-    params.push(`location=Location/${locId}`);
-  }
-
-  const searchResponse = await API.get<Bundle>(
-    `/fhir/PractitionerRole?${params.join('&')}`
-  );
-
-  const existingId = extractFirstEntryId(searchResponse.data);
-  if (existingId) return existingId;
-
-  const payload: Record<string, unknown> = {
-    resourceType: 'PractitionerRole',
-    active: false,
-    practitioner: {
-      reference: `Practitioner/${practitionerId}`
-    },
-    organization: {
-      reference: `Organization/${orgId}`
-    }
-  };
-
-  if (locId) {
-    payload.location = {
-      reference: `Location/${locId}`
-    };
-  }
-
-  const createResponse = await API.post<PractitionerRole>(
-    '/fhir/PractitionerRole',
-    payload
-  );
-  return createResponse.data.id ?? '';
-}
-
-/** Resolve existing Schedule or create one. */
-async function resolveOrCreateSchedule(
-  API: Awaited<ReturnType<typeof getAPI>>,
-  practitionerId: string,
-  roleId: string
-): Promise<string> {
-  const searchResponse = await API.get<Bundle>(
-    `/fhir/Schedule?actor=PractitionerRole/${roleId}`
-  );
-
-  const existingId = extractFirstEntryId(searchResponse.data);
-  if (existingId) return existingId;
-
-  const createResponse = await API.post<Schedule>('/fhir/Schedule', {
-    resourceType: 'Schedule',
-    actor: [
-      { reference: `Practitioner/${practitionerId}` },
-      { reference: `PractitionerRole/${roleId}` }
-    ]
-  });
-
-  return createResponse.data.id ?? '';
 }

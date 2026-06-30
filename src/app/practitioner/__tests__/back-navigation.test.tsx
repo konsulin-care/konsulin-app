@@ -46,6 +46,12 @@ vi.mock('@/services/clinic', () => ({
     isError: false,
     isFetching: false
   }),
+  useOrganizationLocations: vi.fn().mockReturnValue({
+    locations: [],
+    isLoading: false,
+    isError: false,
+    isFetching: false
+  }),
   usePractitionerRoleHealthcareServices: vi.fn()
 }));
 

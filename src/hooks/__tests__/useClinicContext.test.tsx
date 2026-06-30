@@ -17,47 +17,37 @@ describe('useClinicContext', () => {
     vi.resetAllMocks();
   });
 
-  it('reads clinic_organization and selected_location from IndexedDB', async () => {
-    vi.mocked(dbGet)
-      .mockResolvedValueOnce({ value: 'org-1' }) // clinic_organization
-      .mockResolvedValueOnce({ value: 'loc-1' }); // selected_location
+  it('reads clinic_organization from IndexedDB', async () => {
+    vi.mocked(dbGet).mockResolvedValueOnce({ value: 'org-1' });
 
     const { result } = renderHook(() => useClinicContext());
 
     await waitFor(() => {
       expect(result.current.clinicId).toBe('org-1');
     });
-    expect(result.current.locationId).toBe('loc-1');
   });
 
-  it('returns empty strings when values are not stored', async () => {
-    vi.mocked(dbGet)
-      .mockResolvedValueOnce(null) // clinic_organization
-      .mockResolvedValueOnce(null); // selected_location
+  it('returns empty clinicId when value is not stored', async () => {
+    vi.mocked(dbGet).mockResolvedValueOnce(null);
 
     const { result } = renderHook(() => useClinicContext());
 
     await waitFor(() => {
       expect(result.current.clinicId).toBe('');
     });
-    expect(result.current.locationId).toBe('');
   });
 
-  it('queries IndexedDB with correct keys', async () => {
+  it('queries IndexedDB with clinic_organization key', async () => {
     vi.mocked(dbGet).mockResolvedValue(null);
 
     renderHook(() => useClinicContext());
 
     await waitFor(() => {
-      expect(dbGet).toHaveBeenCalledTimes(2);
+      expect(dbGet).toHaveBeenCalledTimes(1);
     });
     expect(dbGet).toHaveBeenCalledWith(STORES.uiPreferences, [
       '',
       'clinic_organization'
-    ]);
-    expect(dbGet).toHaveBeenCalledWith(STORES.uiPreferences, [
-      '',
-      'selected_location'
     ]);
   });
 });
