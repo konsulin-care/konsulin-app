@@ -4,6 +4,7 @@ import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import { PractitionerCard } from '@/components/practitioner/practitioner-card';
+import { Badge } from '@/components/ui/badge';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { STORES, dbGet, dbSet } from '@/lib/indexeddb';
 import {
@@ -83,6 +84,22 @@ export default function Practitioner() {
     filter.locationId
   );
 
+  const activeFilterCount =
+    (filter.status === 'all' ? 0 : 1) + (filter.locationId ? 1 : 0);
+
+  const locationName = filter.locationId
+    ? (locations?.find(l => l.id === filter.locationId)?.name ??
+      'Unknown location')
+    : '';
+
+  const dismissStatus = useCallback(() => {
+    handleFilterChange({ ...filter, status: 'all' });
+  }, [filter, handleFilterChange]);
+
+  const dismissLocation = useCallback(() => {
+    handleFilterChange({ status: filter.status });
+  }, [filter, handleFilterChange]);
+
   // Fuzzy match: checks if all chars of query appear in order in text
   const fuzzyMatch = useCallback((query: string, text: string): boolean => {
     if (!query) return true;
@@ -119,19 +136,41 @@ export default function Practitioner() {
 
     // Shared search + filter bar (only rendered when needed)
     const filterBar = showFilter ? (
-      <div className='flex items-center gap-2'>
-        <InputWithIcon
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          placeholder='Search practitioner...'
-          className='h-[50px] w-full border-0 bg-[#F9F9F9]'
-          startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
-        />
-        <PractitionerFilter
-          locations={locations ?? []}
-          value={filter}
-          onChange={handleFilterChange}
-        />
+      <div className='flex flex-col gap-2'>
+        <div className='flex items-center gap-2'>
+          <InputWithIcon
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder='Search practitioner...'
+            className='h-[50px] w-full border-0 bg-[#F9F9F9]'
+            startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
+          />
+          <PractitionerFilter
+            locations={locations ?? []}
+            value={filter}
+            onChange={handleFilterChange}
+          />
+        </div>
+        {activeFilterCount > 0 && (
+          <div className='flex flex-wrap gap-2' data-testid='filter-badges'>
+            {filter.status !== 'all' && (
+              <Badge
+                className='cursor-pointer gap-1 px-3 py-1 text-xs whitespace-nowrap'
+                onClick={dismissStatus}
+              >
+                {filter.status === 'active' ? 'Active' : 'Inactive'} ×
+              </Badge>
+            )}
+            {filter.locationId && (
+              <Badge
+                className='cursor-pointer gap-1 px-3 py-1 text-xs whitespace-nowrap'
+                onClick={dismissLocation}
+              >
+                {locationName} ×
+              </Badge>
+            )}
+          </div>
+        )}
       </div>
     ) : null;
 

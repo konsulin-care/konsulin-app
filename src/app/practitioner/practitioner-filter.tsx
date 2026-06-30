@@ -1,7 +1,6 @@
 'use client';
 
 import { FilterIcon } from '@/components/icons';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -137,8 +136,8 @@ function FilterPopoverContent({
 
 /**
  * Practitioner filter — popover with status toggles and location combobox.
- * Renders a filter button with active-count badge and dismissible chips
- * for applied filters.
+ * Renders only the filter button with popover.
+ * Badges are rendered by the parent page to span full layout width.
  */
 export default function PractitionerFilter({
   locations,
@@ -149,9 +148,6 @@ export default function PractitionerFilter({
 
   const activeCount =
     (value.status === 'all' ? 0 : 1) + (value.locationId ? 1 : 0);
-
-  const locationName =
-    locations.find(l => l.id === value.locationId)?.name ?? 'Unknown location';
 
   const handleStatusChange = (newStatus: string) => {
     if (newStatus.length > 0) {
@@ -164,59 +160,26 @@ export default function PractitionerFilter({
     setOpen(false);
   };
 
-  const dismissStatus = () => {
-    onChange({ ...value, status: 'all' });
-  };
-
-  const dismissLocation = () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { locationId, ...rest } = value;
-    onChange(rest as FilterState);
-  };
-
   const handleReset = () => {
     onChange({ status: 'all' });
     setOpen(false);
   };
 
   return (
-    <div className='flex flex-col gap-2'>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <FilterButton />
-        </PopoverTrigger>
-        <PopoverContent align='center' className='w-[90vw] p-4'>
-          <FilterPopoverContent
-            locations={locations}
-            value={value}
-            onStatusChange={handleStatusChange}
-            onLocationSelect={handleLocationSelect}
-            onReset={handleReset}
-            activeCount={activeCount}
-          />
-        </PopoverContent>
-      </Popover>
-
-      {activeCount > 0 && (
-        <div className='flex flex-wrap gap-2'>
-          {value.status !== 'all' && (
-            <Badge
-              className='cursor-pointer gap-1 px-3 py-1 text-xs whitespace-nowrap'
-              onClick={dismissStatus}
-            >
-              {value.status === 'active' ? 'Active' : 'Inactive'} ×
-            </Badge>
-          )}
-          {value.locationId && (
-            <Badge
-              className='cursor-pointer gap-1 px-3 py-1 text-xs whitespace-nowrap'
-              onClick={dismissLocation}
-            >
-              {locationName} ×
-            </Badge>
-          )}
-        </div>
-      )}
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <FilterButton />
+      </PopoverTrigger>
+      <PopoverContent align='center' className='w-[90vw] p-4'>
+        <FilterPopoverContent
+          locations={locations}
+          value={value}
+          onStatusChange={handleStatusChange}
+          onLocationSelect={handleLocationSelect}
+          onReset={handleReset}
+          activeCount={activeCount}
+        />
+      </PopoverContent>
+    </Popover>
   );
 }

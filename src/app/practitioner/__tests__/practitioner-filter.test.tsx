@@ -74,14 +74,6 @@ vi.mock('@/components/ui/toggle-group', () => ({
     </button>
   )
 }));
-vi.mock('@/components/ui/badge', () => ({
-  Badge: ({ children, className, onClick }: any) => (
-    <span data-testid='badge' className={className} onClick={onClick}>
-      {children}
-    </span>
-  )
-}));
-
 vi.mock('@/components/ui/button', () => {
   const MockButton = React.forwardRef<HTMLButtonElement, any>(
     ({ children, onClick, variant, className, ...props }, ref) => (
@@ -127,63 +119,6 @@ describe('PractitionerFilter', () => {
     );
 
     expect(screen.getByTestId('filter-icon')).toBeDefined();
-  });
-
-  it('does not show count indicator text when filters are applied', () => {
-    const onChange = vi.fn();
-    render(
-      <PractitionerFilter
-        locations={defaultLocations}
-        value={{ status: 'active', locationId: 'loc-1' }}
-        onChange={onChange}
-      />
-    );
-    expect(screen.queryByText(/filters? active/)).toBeNull();
-  });
-
-  it('verifies badges have whitespace-nowrap class for single-line pills', () => {
-    const onChange = vi.fn();
-    render(
-      <PractitionerFilter
-        locations={defaultLocations}
-        value={{ status: 'active', locationId: 'loc-1' }}
-        onChange={onChange}
-      />
-    );
-    const badges = screen.getAllByTestId('badge');
-    badges.forEach(badge => {
-      expect(badge.className).toContain('whitespace-nowrap');
-    });
-  });
-
-  it('shows active filter chips when filters are applied', () => {
-    const onChange = vi.fn();
-    render(
-      <PractitionerFilter
-        locations={defaultLocations}
-        value={{ status: 'active', locationId: 'loc-1' }}
-        onChange={onChange}
-      />
-    );
-
-    const badges = screen.getAllByTestId('badge');
-    const badgeTexts = badges.map(b => b.textContent);
-    expect(badgeTexts.some(t => t?.includes('Active'))).toBe(true);
-    expect(badgeTexts.some(t => t?.includes('Main Clinic'))).toBe(true);
-  });
-
-  it('shows no chips when no filters are applied', () => {
-    const onChange = vi.fn();
-    render(
-      <PractitionerFilter
-        locations={defaultLocations}
-        value={{ status: 'all' }}
-        onChange={onChange}
-      />
-    );
-
-    const badges = screen.queryAllByTestId('badge');
-    expect(badges.length).toBe(0);
   });
 
   it('opens popover with toggle group for status', () => {
@@ -234,25 +169,6 @@ describe('PractitionerFilter', () => {
     });
   });
 
-  it('dismisses a filter chip and calls onChange with cleared value', () => {
-    const onChange = vi.fn();
-    render(
-      <PractitionerFilter
-        locations={defaultLocations}
-        value={{ status: 'active', locationId: 'loc-1' }}
-        onChange={onChange}
-      />
-    );
-
-    const badges = screen.getAllByTestId('badge');
-    fireEvent.click(badges[0]);
-
-    expect(onChange).toHaveBeenCalledWith({
-      status: 'all',
-      locationId: 'loc-1'
-    });
-  });
-
   it('reset button clears all filters', () => {
     const onChange = vi.fn();
     render(
@@ -266,33 +182,6 @@ describe('PractitionerFilter', () => {
     fireEvent.click(screen.getByText('Reset filters'));
 
     expect(onChange).toHaveBeenCalledWith({ status: 'all' });
-  });
-
-  it('shows location name in chip when location filter is applied', () => {
-    const onChange = vi.fn();
-    render(
-      <PractitionerFilter
-        locations={defaultLocations}
-        value={{ status: 'all', locationId: 'loc-2' }}
-        onChange={onChange}
-      />
-    );
-
-    expect(screen.getByText('Branch A')).toBeDefined();
-  });
-
-  it('shows "Unknown location" in chip when locationId not in list', () => {
-    const onChange = vi.fn();
-    render(
-      <PractitionerFilter
-        locations={defaultLocations}
-        value={{ status: 'all', locationId: 'unknown-id' }}
-        onChange={onChange}
-      />
-    );
-
-    const badge = screen.getByTestId('badge');
-    expect(badge.textContent).toContain('Unknown location');
   });
 });
 

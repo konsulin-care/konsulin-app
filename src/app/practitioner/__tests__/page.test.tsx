@@ -212,6 +212,37 @@ describe('Practitioner page — filters', () => {
   });
 });
 
+describe('Practitioner page — filter badges below search row', () => {
+  it('shows no badges when no filters are active', () => {
+    render(<PractitionerPage />, { wrapper: Wrapper });
+    expect(screen.queryByText('Active ×')).toBeNull();
+  });
+
+  it('shows filter badge below search row when status filter is active', async () => {
+    render(<PractitionerPage />, { wrapper: Wrapper });
+
+    fireEvent.click(screen.getByTestId('filter-select-active'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Active ×')).toBeDefined();
+    });
+  });
+
+  it('removes filter badge when filter is cleared', async () => {
+    render(<PractitionerPage />, { wrapper: Wrapper });
+
+    fireEvent.click(screen.getByTestId('filter-select-active'));
+    await waitFor(() => {
+      expect(screen.getByText('Active ×')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByTestId('filter-select-all'));
+    await waitFor(() => {
+      expect(screen.queryByText('Active ×')).toBeNull();
+    });
+  });
+});
+
 describe('Practitioner page — search bar', () => {
   it('renders a search input next to the filter button', () => {
     render(<PractitionerPage />, { wrapper: Wrapper });
