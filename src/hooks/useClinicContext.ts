@@ -25,8 +25,8 @@ export function useClinicContext(): ClinicContext {
         if (saved?.value) setClinicId(saved.value);
         return null;
       })
-      .catch(() => {
-        /* IndexedDB unavailable */
+      .catch((err: unknown) => {
+        console.warn('IndexedDB unavailable:', err);
       });
   }, []);
 

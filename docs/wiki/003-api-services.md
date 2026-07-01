@@ -14,15 +14,15 @@ proxy through Go BFF at `/proxy/fhir/*` which injects `sAccessToken` as
 
 # Service Organization
 
-| File                          | Contents                                            |
-| ----------------------------- | --------------------------------------------------- |
-| `src/services/api.tsx`        | Axios singleton, interceptors                       |
-| `src/services/api-error.ts`   | Error parsing                                       |
-| `src/services/api/`           | Domain-specific API hooks (appointments, schedule)  |
-| `src/services/hooks/`         | React Query hooks (useAppointments, useAppointment) |
-| `src/services/clinic.tsx`     | Clinic/practitioner queries                         |
-| `src/services/clinicians.tsx` | Practitioner availability queries                   |
-| `src/services/profile.tsx`    | Profile CRUD                                        |
+| File                        | Contents                                            |
+| --------------------------- | --------------------------------------------------- |
+| `@/services/api.tsx`        | Axios singleton, interceptors                       |
+| `@/services/api-error.ts`   | Error parsing                                       |
+| `@/services/api/`           | Domain-specific API hooks (appointments, schedule)  |
+| `@/services/hooks/`         | React Query hooks (useAppointments, useAppointment) |
+| `@/services/clinic.tsx`     | Clinic/practitioner queries                         |
+| `@/services/clinicians.tsx` | Practitioner availability queries                   |
+| `@/services/profile.tsx`    | Profile CRUD                                        |
 
 # Patterns
 

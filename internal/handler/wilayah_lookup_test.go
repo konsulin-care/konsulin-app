@@ -61,8 +61,8 @@ func TestLookupHandler_Regency(t *testing.T) {
 	}
 }
 
-func TestLookupHandler_District(t *testing.T) {
-	result := lookupOK(t, "3204050")
+func assertDayeuhkolot(t *testing.T, result map[string]any) {
+	t.Helper()
 	if result["id"] != "3204050" {
 		t.Errorf("expected id '3204050', got %v", result["id"])
 	}
@@ -84,6 +84,17 @@ func TestLookupHandler_District(t *testing.T) {
 	if p2["id"] != "3204" || p2["name"] != "KABUPATEN BANDUNG" || p2["level"] != "regency" {
 		t.Errorf("second parent mismatch: %v", p2)
 	}
+}
+
+func TestLookupHandler_District(t *testing.T) {
+	result := lookupOK(t, "3204050")
+	assertDayeuhkolot(t, result)
+}
+
+func TestLookupHandler_DistrictLegacy6Digit(t *testing.T) {
+	// 6-digit legacy ID should resolve to the same district as 7-digit canonical.
+	result := lookupOK(t, "320405")
+	assertDayeuhkolot(t, result)
 }
 
 func TestLookupHandler_Village(t *testing.T) {

@@ -228,4 +228,44 @@ describe('computeFreeIntervals', () => {
     // All slots should be available since the 'free' slot doesn't block
     expect(result).toHaveLength(4); // 09:00, 09:30, 10:00, 10:30
   });
+
+  it(
+    'returns empty intervals when durationMinutes is zero',
+    { timeout: 2000 },
+    () => {
+      const availableTime: PractitionerRoleAvailableTime[] = [
+        {
+          daysOfWeek: ['mon'],
+          availableStartTime: '09:00',
+          availableEndTime: '12:00'
+        }
+      ];
+      const result = computeFreeIntervals(availableTime, [], 0, new Date(date));
+      expect(result).toEqual([]);
+    }
+  );
+
+  it('returns empty intervals when durationMinutes is negative', () => {
+    const availableTime: PractitionerRoleAvailableTime[] = [
+      {
+        daysOfWeek: ['mon'],
+        availableStartTime: '09:00',
+        availableEndTime: '12:00'
+      }
+    ];
+    const result = computeFreeIntervals(availableTime, [], -30, new Date(date));
+    expect(result).toEqual([]);
+  });
+
+  it('returns empty intervals when durationMinutes is NaN', () => {
+    const availableTime: PractitionerRoleAvailableTime[] = [
+      {
+        daysOfWeek: ['mon'],
+        availableStartTime: '09:00',
+        availableEndTime: '12:00'
+      }
+    ];
+    const result = computeFreeIntervals(availableTime, [], NaN, new Date(date));
+    expect(result).toEqual([]);
+  });
 });

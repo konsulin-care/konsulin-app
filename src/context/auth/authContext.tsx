@@ -157,11 +157,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const extractOrgId = (result: unknown): string | undefined =>
-    (
-      (result as { managingOrganization?: { reference?: string } })
-        .managingOrganization?.reference ?? ''
-    ).replace('Organization/', '') || undefined;
+  const extractOrgId = (result: unknown): string | undefined => {
+    if (!result || typeof result !== 'object') return undefined;
+    const obj = result as Record<string, unknown>;
+    const mgmtOrg = obj.managingOrganization;
+    if (!mgmtOrg || typeof mgmtOrg !== 'object') return undefined;
+    const ref = (mgmtOrg as Record<string, unknown>).reference;
+    return typeof ref === 'string'
+      ? ref.replace('Organization/', '') || undefined
+      : undefined;
+  };
 
   const persistClinicOrganization = (orgId: string) =>
     dbSet(STORES.uiPreferences, {
@@ -188,8 +193,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         prefKey: `fhirId_map_${userId}`,
         value: map
       });
-    } catch {
-      // Non-critical: fhirId map persistence failure
+    } catch (err) {
+      console.warn('fhirId map persistence failed:', err);
     }
   };
 

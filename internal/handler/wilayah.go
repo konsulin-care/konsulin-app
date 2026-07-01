@@ -139,12 +139,32 @@ func (h *WilayahHandler) Villages(w http.ResponseWriter, r *http.Request) {
 func (h *WilayahHandler) Lookup(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
+	// Normalize 6-digit legacy district IDs to 7-digit canonical format.
+	// The canonical format is regency (4 chars) + district sequence (3 chars).
+	// Legacy codes dropped the trailing digit (typically 0 for the primary entry).
+	if len(id) == 6 {
+		// Try the two most common paddings first (fast path).
+		if _, ok := h.index.DistrictByID[id+"0"]; ok {
+			id = id + "0"
+		} else if _, ok := h.index.DistrictByID[id+"1"]; ok {
+			id = id + "1"
+		} else {
+			// Fallback: search for any 7-digit key starting with the legacy ID.
+			for canonical := range h.index.DistrictByID {
+				if strings.HasPrefix(canonical, id) {
+					id = canonical
+					break
+				}
+			}
+		}
+	}
+
 	switch len(id) {
 	case 2:
 		h.lookupProvince(w, id)
 	case 4:
 		h.lookupRegency(w, id)
-	case 6, 7:
+	case 7:
 		h.lookupDistrict(w, id)
 	case 10:
 		h.lookupVillage(w, id)

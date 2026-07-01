@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/konsulin-care/konsulin-app/internal/data/wilayah"
 )
@@ -18,15 +19,21 @@ import (
 const archiveURL = "https://github.com/emsifa/api-wilayah-indonesia/archive/refs/heads/master.zip"
 
 // downloadArchive fetches the full repository archive as a zip file.
-//
-//nolint:gosec // URL is a known constant.
 func downloadArchive(url string) ([]byte, error) {
-	resp, err := http.Get(url)
+	client := &http.Client{Timeout: 60 * time.Second}
+	resp, err := client.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("download %s: %w", url, err)
 	}
-	//nolint:errcheck // Cleanup-only close.
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("close response body: %v", cerr)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("download %s: unexpected status %d", url, resp.StatusCode)
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -102,6 +109,7 @@ func isJSONInDir(base, dir, suffix string) bool {
 func appendParsed[T any](items []T, content []byte) []T {
 	var parsed []T
 	if err := json.Unmarshal(content, &parsed); err != nil {
+		log.Printf("parse JSON: %v (content length: %d)", err, len(content))
 		return items
 	}
 	return append(items, parsed...)

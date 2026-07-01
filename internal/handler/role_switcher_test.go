@@ -103,26 +103,13 @@ func newBackendServer(t *testing.T, expectedRole string, called *bool) *httptest
 	}))
 }
 
-func verifyCookiesForwarded(t *testing.T, resp *http.Response) {
-	t.Helper()
-	for _, c := range resp.Header.Values("Set-Cookie") {
-		if strings.HasPrefix(c, "sAccessToken=") {
-			return
-		}
-	}
-	t.Error("expected sAccessToken Set-Cookie to be forwarded")
-}
-
 func TestRoleSwitchActiveRoleInJWT(t *testing.T) {
-	var called bool
-	backend := newBackendServer(t, "Clinic Admin", &called)
-	defer backend.Close()
-
+	// Access token fallback has been removed for security.
+	// Role must now be present in the server-signed session cookie.
 	srv := newRoleSwitchServer(t, RoleSwitchOptions{
-		CookieName:     "auth",
-		CookieSecure:   false,
-		CookieSecret:   cookieTestSecret,
-		BackendBaseURL: backend.URL,
+		CookieName:   "auth",
+		CookieSecure: false,
+		CookieSecret: cookieTestSecret,
 	})
 	defer srv.Close()
 
@@ -137,14 +124,11 @@ func TestRoleSwitchActiveRoleInJWT(t *testing.T) {
 		Value: testJWTClinicAdmin,
 	}
 
+	// Role "Clinic Admin" is in JWT but NOT in session cookie → should be rejected
 	resp := mustPostRoleSwitch(t, srv, "Clinic Admin", authCookie, jwtCookie)
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected 200 OK, got %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", resp.StatusCode)
 	}
-	if !called {
-		t.Error("expected backend to be called for active-role claim update")
-	}
-	verifyCookiesForwarded(t, resp)
 }
 
 func TestRoleSwitchActiveRoleInCookie(t *testing.T) {

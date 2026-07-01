@@ -168,7 +168,7 @@ export default function QuickActionFab() {
   const [showAddLocation, setShowAddLocation] = useState(false);
 
   const { dirtyState } = useFabDirty();
-  const isDirty = dirtyState !== null;
+  const isDirty = dirtyState?.isDirty ?? false;
 
   const isVisible = useScrollVisibility(isOpen, isDirty);
 
@@ -179,6 +179,7 @@ export default function QuickActionFab() {
   const close = useCallback(() => setIsOpen(false), []);
   const toggle = useCallback(() => {
     if (dirtyState) {
+      if (dirtyState.isSaving) return;
       Promise.resolve(dirtyState.onSave()).catch(() => {
         /* errors handled internally */
       });

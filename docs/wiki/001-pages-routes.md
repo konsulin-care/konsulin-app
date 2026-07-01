@@ -15,19 +15,19 @@ segments use query params instead of path segments
 
 # Route Map
 
-| Route                | Purpose                      | Component                                   |
-| -------------------- | ---------------------------- | ------------------------------------------- |
-| `/`                  | Home (role-aware)            | `src/app/page.tsx` (role dispatch)          |
-| `/auth/*`            | SuperTokens auth             | `src/app/auth/` (React SDK)                 |
-| `/schedule`          | Appointment list/detail      | `src/app/schedule/page.tsx` (role dispatch) |
-| `/schedule?id=X`     | Appointment detail           | `src/app/schedule/schedule-detail.tsx`      |
-| `/practitioner?id=X` | Practitioner profile/booking | `src/app/practitioner/`                     |
-| `/clinic*`           | Clinic listing/detail        | `src/app/clinic/`                           |
-| `/profile*`          | User profile                 | `src/app/profile/`                          |
-| `/record*`           | Medical records              | `src/app/record/`                           |
-| `/journal*`          | Notes                        | `src/app/journal/`                          |
-| `/assessments*`      | Questionnaires (AEHRC SPA)   | `src/app/assessments/`                      |
-| `/message`           | Messaging                    | `src/app/message/`                          |
+| Route                | Purpose                      | Component                                 |
+| -------------------- | ---------------------------- | ----------------------------------------- |
+| `/`                  | Home (role-aware)            | `@/app/page.tsx` (role dispatch)          |
+| `/auth/*`            | SuperTokens auth             | `@/app/auth/` (React SDK)                 |
+| `/schedule`          | Appointment list/detail      | `@/app/schedule/page.tsx` (role dispatch) |
+| `/schedule?id=X`     | Appointment detail           | `@/app/schedule/schedule-detail.tsx`      |
+| `/practitioner?id=X` | Practitioner profile/booking | `@/app/practitioner/`                     |
+| `/clinic*`           | Clinic listing/detail        | `@/app/clinic/`                           |
+| `/profile*`          | User profile                 | `@/app/profile/`                          |
+| `/record*`           | Medical records              | `@/app/record/`                           |
+| `/journal*`          | Notes                        | `@/app/journal/`                          |
+| `/assessments*`      | Questionnaires (AEHRC SPA)   | `@/app/assessments/`                      |
+| `/message`           | Messaging                    | `@/app/message/`                          |
 
 # Business Rules
 

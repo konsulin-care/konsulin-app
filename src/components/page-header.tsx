@@ -128,7 +128,12 @@ export default function PageHeader({
       const orgResp = await API.get(
         `/fhir/Organization/${selectedClinicId}?_elements=name`
       );
-      return (orgResp.data as { name?: string } | undefined)?.name ?? '-';
+      const data: unknown = orgResp.data;
+      const name =
+        data && typeof data === 'object' && 'name' in data
+          ? (data as Record<string, unknown>).name
+          : undefined;
+      return typeof name === 'string' && name ? name : '-';
     },
     enabled: Boolean(isAdmin && selectedClinicId)
   });

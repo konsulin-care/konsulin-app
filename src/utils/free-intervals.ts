@@ -188,6 +188,9 @@ function partitionIntoIntervals(
   durationMinutes: number,
   dateStr: string
 ): BookableInterval[] {
+  if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+    return [];
+  }
   const result: BookableInterval[] = [];
 
   for (const fr of freeRanges) {

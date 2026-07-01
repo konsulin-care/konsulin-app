@@ -1,15 +1,18 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
+import type { Appointment } from 'fhir/r4';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useUpdateAppointmentStatus } from '../useUpdateAppointmentStatus';
 
-const mockAPI = vi.fn();
+const mockGet = vi.fn();
+const mockPut = vi.fn();
 
 vi.mock('@/services/api', () => ({
   getAPI: vi.fn(() =>
     Promise.resolve({
-      put: mockAPI
+      get: mockGet,
+      put: mockPut
     })
   )
 }));
@@ -29,11 +32,23 @@ describe('useUpdateAppointmentStatus', () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } }
     });
-    mockAPI.mockReset();
+    mockGet.mockReset();
+    mockPut.mockReset();
   });
 
-  it('sends PUT request with status to correct URL', async () => {
-    mockAPI.mockResolvedValueOnce({ data: {} });
+  it('fetches current appointment then PUTs full resource', async () => {
+    const existingAppointment = {
+      resourceType: 'Appointment' as const,
+      id: 'appt-1',
+      status: 'booked' as Appointment['status'],
+      start: '2026-07-06T09:00:00.000Z',
+      end: '2026-07-06T10:00:00.000Z',
+      participant: []
+    };
+    mockGet.mockResolvedValueOnce({ data: existingAppointment });
+    mockPut.mockResolvedValueOnce({
+      data: { ...existingAppointment, status: 'fulfilled' }
+    });
 
     const { result } = renderHook(() => useUpdateAppointmentStatus(), {
       wrapper: createWrapper(queryClient)
@@ -42,19 +57,43 @@ describe('useUpdateAppointmentStatus', () => {
     result.current.mutate({ id: 'appt-1', status: 'fulfilled' });
 
     await waitFor(() => {
-      expect(mockAPI).toHaveBeenCalled();
+      expect(mockGet).toHaveBeenCalledOnce();
+      expect(mockPut).toHaveBeenCalledOnce();
     });
 
-    const callArgs = mockAPI.mock.calls[0] as [string, Record<string, string>];
-    const url = callArgs[0];
-    const body = callArgs[1];
-    expect(url).toBe('/fhir/Appointment/appt-1');
-    expect(body).toEqual({ status: 'fulfilled' });
+    const getUrl = mockGet.mock.calls[0][0] as string;
+    const putUrl = mockPut.mock.calls[0][0] as string;
+    const putBody = mockPut.mock.calls[0][1] as Appointment;
+
+    expect(getUrl).toBe('/fhir/Appointment/appt-1');
+    expect(putUrl).toBe('/fhir/Appointment/appt-1');
+    // PUT body should be the full resource with updated status
+    expect(putBody).toEqual({
+      resourceType: 'Appointment',
+      id: 'appt-1',
+      status: 'fulfilled',
+      start: '2026-07-06T09:00:00.000Z',
+      end: '2026-07-06T10:00:00.000Z',
+      participant: []
+    });
   });
 
   it('returns success on successful update', async () => {
-    mockAPI.mockResolvedValueOnce({
-      data: { id: 'appt-1', status: 'fulfilled' }
+    mockGet.mockResolvedValueOnce({
+      data: {
+        resourceType: 'Appointment',
+        id: 'appt-1',
+        status: 'booked',
+        participant: []
+      }
+    });
+    mockPut.mockResolvedValueOnce({
+      data: {
+        resourceType: 'Appointment',
+        id: 'appt-1',
+        status: 'fulfilled',
+        participant: []
+      }
     });
 
     const { result } = renderHook(() => useUpdateAppointmentStatus(), {
@@ -68,16 +107,39 @@ describe('useUpdateAppointmentStatus', () => {
     });
 
     expect(result.current.data).toBeDefined();
+    expect(result.current.data?.status).toBe('fulfilled');
   });
 
-  it('handles error on failed update', async () => {
-    mockAPI.mockRejectedValueOnce(new Error('Network error'));
+  it('handles error on failed GET', async () => {
+    mockGet.mockRejectedValueOnce(new Error('Network error'));
 
     const { result } = renderHook(() => useUpdateAppointmentStatus(), {
       wrapper: createWrapper(queryClient)
     });
 
-    result.current.mutate({ id: 'appt-1', status: 'invalid-status' });
+    result.current.mutate({ id: 'appt-1', status: 'fulfilled' });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+  });
+
+  it('handles error on failed PUT', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: {
+        resourceType: 'Appointment',
+        id: 'appt-1',
+        status: 'booked',
+        participant: []
+      }
+    });
+    mockPut.mockRejectedValueOnce(new Error('Update failed'));
+
+    const { result } = renderHook(() => useUpdateAppointmentStatus(), {
+      wrapper: createWrapper(queryClient)
+    });
+
+    result.current.mutate({ id: 'appt-1', status: 'fulfilled' });
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true);
