@@ -50,7 +50,7 @@ export default function PopularAssessment() {
       </div>
 
       <div className='mt-2 flex flex-col gap-2 py-4'>
-        <Link href={`/assessments?assessmentsId=${selectedAssessment?.id}`}>
+        <Link href={`/assessments?id=${selectedAssessment?.id}`}>
           <Button className='bg-secondary h-full w-full rounded-xl p-4 text-white'>
             Start Test
           </Button>

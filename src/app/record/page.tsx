@@ -9,9 +9,9 @@ import RecordList from './record-list';
  */
 export default function RecordPage() {
   const searchParams = useSearchParams();
-  const recordId = searchParams.get('recordId');
+  const id = searchParams.get('id');
 
-  if (recordId) {
+  if (id) {
     return <RecordDetail />;
   }
 

@@ -210,8 +210,8 @@ beforeEach(() => {
   vi.mocked(dbGet).mockResolvedValue(null);
 });
 
-describe('Practitioner page - listing mode (no practitionerRoleId)', () => {
-  it('renders listing when no practitionerRoleId in URL', async () => {
+describe('Practitioner page - listing mode (no id)', () => {
+  it('renders listing when no id in URL', async () => {
     vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('') as any);
     vi.mocked(dbGet).mockImplementation((_store, args) => {
       if (args?.[1] === 'clinic_organization')

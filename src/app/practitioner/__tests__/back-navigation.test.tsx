@@ -145,9 +145,9 @@ describe('Practitioner page - backRoute behavior', () => {
     });
   });
 
-  it('does NOT pass backRoute in detail mode (with practitionerRoleId)', async () => {
+  it('does NOT pass backRoute in detail mode (with id)', async () => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('practitionerRoleId=role-123') as any
+      new URLSearchParams('id=role-123') as any
     );
 
     render(<Practitioner />, { wrapper: createWrapper() });
@@ -161,7 +161,7 @@ describe('Practitioner page - backRoute behavior', () => {
     expect(header).toHaveAttribute('data-indicator', 'Manage Practitioner');
   });
 
-  it('does NOT pass backRoute in listing mode (without practitionerRoleId)', async () => {
+  it('does NOT pass backRoute in listing mode (without id)', async () => {
     vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('') as any);
 
     render(<Practitioner />, { wrapper: createWrapper() });

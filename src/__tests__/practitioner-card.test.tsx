@@ -72,7 +72,7 @@ describe('PractitionerCard', () => {
     const link = screen.getByText('Dr. Who').closest('a');
     expect(link).toHaveAttribute(
       'href',
-      '/practitioner?practitionerRoleId=role-3'
+      '/practitioner?id=role-3'
     );
   });
 

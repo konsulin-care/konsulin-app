@@ -56,7 +56,7 @@ describe('RecordDetail - back navigation', () => {
 
   it('renders assessment result page without backRoute', () => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('recordId=resp-123&category=1&title=PHQ-9') as any
+      new URLSearchParams('id=resp-123&category=1&title=PHQ-9') as any
     );
 
     render(<RecordDetail />);
@@ -68,7 +68,7 @@ describe('RecordDetail - back navigation', () => {
 
   it('renders exercise result page without backRoute', () => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('recordId=resp-456&category=2&title=Push-ups') as any
+      new URLSearchParams('id=resp-456&category=2&title=Push-ups') as any
     );
 
     render(<RecordDetail />);
@@ -80,7 +80,7 @@ describe('RecordDetail - back navigation', () => {
 
   it('renders SOAP detail page without backRoute', () => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('recordId=soap-789&category=3&title=SOAP-Note') as any
+      new URLSearchParams('id=soap-789&category=3&title=SOAP-Note') as any
     );
 
     render(<RecordDetail />);
@@ -93,7 +93,7 @@ describe('RecordDetail - back navigation', () => {
   it('renders journal detail page without backRoute', () => {
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams(
-        'recordId=journ-111&category=4&title=My-Journal'
+        'id=journ-111&category=4&title=My-Journal'
       ) as any
     );
 
@@ -106,7 +106,7 @@ describe('RecordDetail - back navigation', () => {
 
   it('renders Notfound for invalid category', () => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('recordId=resp-123&category=99&title=Test') as any
+      new URLSearchParams('id=resp-123&category=99&title=Test') as any
     );
 
     render(<RecordDetail />);
@@ -116,7 +116,7 @@ describe('RecordDetail - back navigation', () => {
 
   it('renders Notfound for empty title', () => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('recordId=resp-123&category=1&title=') as any
+      new URLSearchParams('id=resp-123&category=1&title=') as any
     );
 
     render(<RecordDetail />);

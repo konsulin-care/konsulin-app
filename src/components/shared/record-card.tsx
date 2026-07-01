@@ -105,7 +105,7 @@ export default function RecordCard({
     category: String(typeMappings[record.type]?.category ?? ''),
     title
   }).toString();
-  const url = `/record?recordId=${recordId}&${queryParams}`;
+  const url = `/record?id=${recordId}&${queryParams}`;
 
   const { displayName, email } = getPractitionerInfo(record);
   const { initials, backgroundColor, seed } = generateAvatarPlaceholder({

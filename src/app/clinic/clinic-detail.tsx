@@ -103,7 +103,7 @@ const isSlotAvailable = ({
 /** Clinic detail page showing practitioners, filters, and booking. */
 export default function ClinicDetail() {
   const searchParams = useSearchParams();
-  const clinicId = searchParams.get('clinicId') ?? '';
+  const id = searchParams.get('id') ?? '';
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -118,7 +118,7 @@ export default function ClinicDetail() {
     newPractitionerData: practitionersData,
     isFetching,
     isLoading
-  } = useClinicById(clinicId) as unknown as {
+  } = useClinicById(id) as unknown as {
     clinic: import('fhir/r4').BundleEntry | undefined;
     newPractitionerData: IPractitioner[];
     isFetching: boolean;
@@ -302,7 +302,7 @@ export default function ClinicDetail() {
                 )}
               </div>
               <Link
-                href={`/practitioner?practitionerRoleId=${practitioner.practitionerRole.id}`}
+                href={`/practitioner?id=${practitioner.practitionerRole.id}`}
                 className='mt-auto w-full'
               >
                 <Button

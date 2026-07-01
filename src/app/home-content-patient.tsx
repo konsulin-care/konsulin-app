@@ -59,7 +59,7 @@ function RecordCard({ record }: Readonly<{ record: IRecord }>) {
     category: String(typeMappings[record.type]?.category ?? ''),
     title
   }).toString();
-  const url = `/record?recordId=${recordId}&${queryParams}`;
+  const url = `/record?id=${recordId}&${queryParams}`;
 
   return (
     <Link href={url} className='card flex flex-col gap-2 p-4'>

@@ -55,8 +55,8 @@ vi.mock('@/components/icons', () => ({
 }));
 
 vi.mock('@/app/practitioner/role-management-shell', () => ({
-  default: ({ practitionerRoleId }: { practitionerRoleId: string }) => (
-    <div data-testid='role-management-shell' data-role-id={practitionerRoleId}>
+  default: ({ id }: { id: string }) => (
+    <div data-testid='role-management-shell' data-role-id={id}>
       Management
     </div>
   )

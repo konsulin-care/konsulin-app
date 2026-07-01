@@ -33,7 +33,7 @@ function LoadingState() {
 /** Practitioner page — listing mode (admin) for all practitioners in a clinic. */
 export default function Practitioner() {
   const searchParams = useSearchParams();
-  const practitionerRoleId = searchParams.get('practitionerRoleId') ?? '';
+  const id = searchParams.get('id') ?? '';
   const [selectedClinicId, setSelectedClinicId] = useState<string>('');
   const [filter, setFilter] = useState<FilterState>({ status: 'all' });
   const [searchQuery, setSearchQuery] = useState('');
@@ -217,12 +217,12 @@ export default function Practitioner() {
   /** Renders main practitioner content, loading, or empty states. */
   const renderMainContent = () => {
     // Listing mode (admin view)
-    if (!practitionerRoleId) return renderListingContent();
+    if (!id) return renderListingContent();
 
     // Detail mode — admin management tabs
     return (
       <PractitionerRoleManagementShell
-        practitionerRoleId={practitionerRoleId}
+        practitionerRoleId={id}
       />
     );
   };
@@ -231,7 +231,7 @@ export default function Practitioner() {
     <>
       <PageHeader
         pageIndicator={
-          practitionerRoleId ? 'Manage Practitioner' : 'Manage Practitioners'
+          id ? 'Manage Practitioner' : 'Manage Practitioners'
         }
       />
 

@@ -8,25 +8,25 @@ import {
 } from '../utils';
 
 describe('matchesPractitionerFromPath', () => {
-  it('returns true when path has matching practitionerRoleId', () => {
+  it('returns true when path has matching id', () => {
     expect(
       matchesPractitionerFromPath(
-        '/practitioner?practitionerRoleId=role-123',
+        '/practitioner?id=role-123',
         'role-123'
       )
     ).toBe(true);
   });
 
-  it('returns false when practitionerRoleId differs', () => {
+  it('returns false when id differs', () => {
     expect(
       matchesPractitionerFromPath(
-        '/practitioner?practitionerRoleId=role-456',
+        '/practitioner?id=role-456',
         'role-123'
       )
     ).toBe(false);
   });
 
-  it('returns false when path has no practitionerRoleId param', () => {
+  it('returns false when path has no id param', () => {
     expect(
       matchesPractitionerFromPath('/practitioner?other=1', 'role-123')
     ).toBe(false);
@@ -39,7 +39,7 @@ describe('matchesPractitionerFromPath', () => {
   it('handles paths with additional query params', () => {
     expect(
       matchesPractitionerFromPath(
-        '/practitioner?practitionerRoleId=role-789&isOpen=true',
+        '/practitioner?id=role-789&isOpen=true',
         'role-789'
       )
     ).toBe(true);
@@ -48,7 +48,7 @@ describe('matchesPractitionerFromPath', () => {
   it('handles relative paths without origin', () => {
     expect(
       matchesPractitionerFromPath(
-        '/practitioner?practitionerRoleId=role-abc',
+        '/practitioner?id=role-abc',
         'role-abc'
       )
     ).toBe(true);
@@ -131,7 +131,7 @@ describe('getTimeSlots', () => {
 describe('isAppointmentPayload', () => {
   it('returns true for a valid AppointmentPayload object', () => {
     const valid = {
-      path: '/practitioner?practitionerRoleId=role-1',
+      path: '/practitioner?id=role-1',
       slot: { date: '2026-06-15', startTime: '09:00', slotId: 'slot-1' },
       formData: { session_type: 'offline', problem_brief: 'test issue' }
     };
@@ -215,7 +215,7 @@ describe('isAppointmentPayload', () => {
 
   it('allows missing slotId (accessed conditionally)', () => {
     const withoutSlotId = {
-      path: '/practitioner?practitionerRoleId=role-1',
+      path: '/practitioner?id=role-1',
       slot: { date: '2026-06-15', startTime: '09:00' },
       formData: { session_type: 'offline', problem_brief: 'test' }
     };

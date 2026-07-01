@@ -88,7 +88,7 @@ import Practitioner from '@/app/practitioner/page';
 let mockSearchParams: any;
 
 beforeEach(() => {
-  mockSearchParams = new URLSearchParams('practitionerRoleId=test-role-id');
+  mockSearchParams = new URLSearchParams('id=test-role-id');
   vi.mocked(useSearchParams).mockReturnValue(mockSearchParams);
   vi.mocked(useBooking).mockReturnValue({
     state: { isBookingSubmitted: false },
@@ -105,7 +105,7 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('Practitioner page – detail (admin) mode', () => {
-  it('renders the admin management shell when practitionerRoleId is present', () => {
+  it('renders the admin management shell when id is present', () => {
     render(<Practitioner />);
 
     expect(screen.getByTestId('mock-shell')).toBeInTheDocument();

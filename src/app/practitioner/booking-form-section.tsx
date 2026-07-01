@@ -127,7 +127,7 @@ export default function BookingFormSection({
           disabled={isPending}
           onClick={() => {
             saveIntent('appointment', {
-              path: `/practitioner?practitionerRoleId=${practitionerRole.id}`,
+              path: `/practitioner?id=${practitionerRole.id}`,
               slot: {
                 date: bookingState.date,
                 startTime: bookingState.startTime,

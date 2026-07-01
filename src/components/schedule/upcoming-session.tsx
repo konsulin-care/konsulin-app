@@ -41,7 +41,7 @@ function SessionCard({
     return fullName.trim() === '-' ? email : fullName;
   })();
   const href = isPatient
-    ? `/schedule?appointmentId=${session.appointmentId}`
+    ? `/schedule?id=${session.appointmentId}`
     : `/record?patientId=${(session as MergedSession).patientId}`;
 
   return (

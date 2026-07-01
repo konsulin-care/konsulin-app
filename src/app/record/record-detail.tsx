@@ -14,7 +14,7 @@ import RecordSoap from './record-soap';
  */
 export default function RecordDetail() {
   const searchParams = useSearchParams();
-  const recordId = searchParams.get('recordId') ?? '';
+  const id = searchParams.get('id') ?? '';
   const category = Number(searchParams.get('category'));
   const titleParam = searchParams.get('title');
   const formattedTitle = formatTitle(titleParam);
@@ -52,16 +52,16 @@ export default function RecordDetail() {
   const renderContent = (category: number) => {
     switch (category) {
       case 1: {
-        return <RecordAssessment recordId={recordId} title={formattedTitle} />;
+        return <RecordAssessment recordId={id} title={formattedTitle} />;
       }
       case 2: {
         return <RecordExercise />;
       }
       case 3: {
-        return <RecordSoap soapId={recordId} title={titleParam} />;
+        return <RecordSoap soapId={id} title={titleParam} />;
       }
       case 4: {
-        return <RecordJournal journalId={recordId} />;
+        return <RecordJournal journalId={id} />;
       }
       default: {
         return null;

@@ -80,13 +80,13 @@ function SessionDetailInfo({
  */
 export default function ScheduleDetail() {
   const searchParams = useSearchParams();
-  const appointmentId = searchParams.get('appointmentId') ?? '';
+  const id = searchParams.get('id') ?? '';
 
   const {
     data: appointmentData,
     isLoading,
     isError
-  } = useAppointment(appointmentId);
+  } = useAppointment(id);
 
   const { initials, backgroundColor, displayName, time, date, seed } =
     useMemo(() => {
