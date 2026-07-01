@@ -17,13 +17,21 @@ import {
   initializeWeeklyAvailabilityFromRoles
 } from '@/utils/availability';
 import { PractitionerRole } from 'fhir/r4';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Props = {
   practitionerRoles?: (PractitionerRole | IPractitionerRoleDetail)[];
   practitionerRole?: PractitionerRole | IPractitionerRoleDetail;
   onSuccess?: () => void;
   onCancel?: () => void;
+  /** When true, skips rendering the internal FloatingSaveButton — used when parent manages save. */
+  hideSaveButton?: boolean;
+  /** Reports dirty state and save handler to parent (for external FAB management). */
+  onDirtyChange?: (
+    dirty: boolean,
+    save: () => Promise<void>,
+    saving: boolean
+  ) => void;
 };
 
 /**
@@ -52,7 +60,9 @@ export default function PractitionerAvailabilityEditor({
   practitionerRoles,
   practitionerRole,
   onSuccess,
-  onCancel
+  onCancel,
+  hideSaveButton = false,
+  onDirtyChange
 }: Props) {
   // Convert single practitionerRole to array for backward compatibility
   const memoizedRolesToUse = useMemo(
@@ -78,9 +88,20 @@ export default function PractitionerAvailabilityEditor({
     getInitialSelectedDay(stableInitialWeeklyAvailability)
   );
 
-  // Update state when stableInitialWeeklyAvailability changes
+  // Compute a stable data key from stableInitialWeeklyAvailability for deep comparison.
+  // Uses JSON.stringify(weeklyAvailability) via normalizeAvailability to ignore IDs.
+  const initialDataKeyRef = useRef(
+    JSON.stringify(normalizeAvailability(stableInitialWeeklyAvailability))
+  );
+
   useEffect(() => {
-    if (!weeklyAvailabilityDirty) {
+    const dataKey = JSON.stringify(
+      normalizeAvailability(stableInitialWeeklyAvailability)
+    );
+    const prevDataKey = initialDataKeyRef.current;
+    initialDataKeyRef.current = dataKey;
+
+    if (!weeklyAvailabilityDirty && dataKey !== prevDataKey) {
       setWeeklyAvailability(stableInitialWeeklyAvailability);
       setSelectedDay(getInitialSelectedDay(stableInitialWeeklyAvailability));
     }
@@ -98,6 +119,70 @@ export default function PractitionerAvailabilityEditor({
 
   // Mutation for updating availability
   const { mutateAsync: updateAvailability } = useUpdateAvailability();
+
+  /**
+   * Handle saving all availability changes
+   */
+  const handleSave = async () => {
+    if (memoizedRolesToUse.length === 0) {
+      console.error('At least one PractitionerRole is required');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Update each practitioner role with its organization-specific availability
+      for (const role of memoizedRolesToUse) {
+        // Get the organization ID for this role
+        const orgId = role.organization?.reference || role.id;
+
+        // Convert weekly availability to FHIR availableTime format for this specific organization
+        const availableTime = convertToFhirAvailableTimeForOrganization(
+          weeklyAvailability,
+          orgId
+        );
+
+        await updateAvailability({
+          practitionerRoleId: role.id,
+          availableTime
+        });
+      }
+
+      // Call success callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+
+      // Mark dirty as cleared and update baseline so subsequent edits
+      // are correctly detected as new unsaved changes.
+      setWeeklyAvailabilityDirty(false);
+      savedBaselineRef.current = structuredClone(weeklyAvailability);
+    } catch (error) {
+      console.error('Failed to update availability:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Stable ref to avoid effect loops from inline handleSave
+  const saveRef = useRef(handleSave);
+  saveRef.current = handleSave;
+
+  // Track the last-saved availability so dirty detection works correctly after save.
+  const savedBaselineRef = useRef<WeeklyAvailability>(
+    stableInitialWeeklyAvailability
+  );
+
+  // Report dirty state to parent via onDirtyChange callback.
+  // Pass a wrapper that reads saveRef.current at call time to avoid stale closures
+  // when the user modifies multiple days before saving (the effect deps don't include
+  // weeklyAvailability, so it won't re-fire when dirty is already true).
+  useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(weeklyAvailabilityDirty, () => saveRef.current(), isSaving);
+    }
+  }, [weeklyAvailabilityDirty, isSaving, onDirtyChange]);
 
   /**
    * Handle adding a time range for a specific organization and day
@@ -166,46 +251,6 @@ export default function PractitionerAvailabilityEditor({
     setWeeklyAvailabilityDirty(true);
   };
 
-  /**
-   * Handle saving all availability changes
-   */
-  const handleSave = async () => {
-    if (!memoizedRolesToUse || memoizedRolesToUse.length === 0) {
-      console.error('At least one PractitionerRole is required');
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      // Update each practitioner role with its organization-specific availability
-      for (const role of memoizedRolesToUse) {
-        // Get the organization ID for this role
-        const orgId = role.organization?.reference || role.id;
-
-        // Convert weekly availability to FHIR availableTime format for this specific organization
-        const availableTime = convertToFhirAvailableTimeForOrganization(
-          weeklyAvailability,
-          orgId
-        );
-
-        await updateAvailability({
-          practitionerRoleId: role.id,
-          availableTime
-        });
-      }
-
-      // Call success callback if provided
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error) {
-      console.error('Failed to update availability:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   // Get organizations from practitioner roles
   const organizations: UIOrganization[] = useMemo(() => {
     const orgs: UIOrganization[] = [];
@@ -247,7 +292,7 @@ export default function PractitionerAvailabilityEditor({
   }, [memoizedRolesToUse]);
 
   // Function to normalize availability for comparison (ignoring IDs)
-  const normalizeAvailability = (avail: WeeklyAvailability) => {
+  function normalizeAvailability(avail: WeeklyAvailability) {
     const obj = avail as Record<string, OrganizationTimeRanges>;
     const normalized: Record<
       string,
@@ -266,19 +311,17 @@ export default function PractitionerAvailabilityEditor({
       }
     }
     return normalized;
-  };
+  }
 
-  // Check if there are any changes to save
+  // Check if there are any changes to save (against the last-saved baseline)
   const hasChanges = useMemo(() => {
-    // Compare current state with initial state, ignoring generated IDs
+    // Compare current state with last-saved baseline, ignoring generated IDs
     const normalizedCurrent = normalizeAvailability(weeklyAvailability);
-    const normalizedInitial = normalizeAvailability(
-      stableInitialWeeklyAvailability
-    );
+    const normalizedInitial = normalizeAvailability(savedBaselineRef.current);
     return (
       JSON.stringify(normalizedCurrent) !== JSON.stringify(normalizedInitial)
     );
-  }, [weeklyAvailability, stableInitialWeeklyAvailability]);
+  }, [weeklyAvailability]);
 
   return (
     <div className='flex h-full flex-col pb-24 sm:pb-28 md:pb-32'>
@@ -311,15 +354,17 @@ export default function PractitionerAvailabilityEditor({
         />
       </div>
 
-      {/* Floating Save Button */}
-      <FloatingSaveButton
-        onSave={() => {
-          handleSave().catch(console.error);
-        }}
-        onCancel={onCancel}
-        isSaving={isSaving}
-        hasChanges={hasChanges}
-      />
+      {/* Floating Save Button — hidden when parent manages its own FAB (admin shell) */}
+      {!hideSaveButton && (
+        <FloatingSaveButton
+          onSave={() => {
+            handleSave().catch(console.error);
+          }}
+          onCancel={onCancel}
+          isSaving={isSaving}
+          hasChanges={hasChanges}
+        />
+      )}
     </div>
   );
 }

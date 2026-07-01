@@ -23,6 +23,7 @@ const mockPatient: Patient = {
       line: ['Jl. Sudirman No. 1'],
       city: 'Jakarta',
       district: 'Central Jakarta',
+      state: 'DKI Jakarta',
       postalCode: '10110'
     }
   ],
@@ -145,6 +146,7 @@ describe('parseFhirProfile', () => {
     expect(result.addresses).toEqual(['Jl. Sudirman No. 1']);
     expect(result.city).toBe('Jakarta');
     expect(result.district).toBe('Central Jakarta');
+    expect(result.province).toBe('DKI Jakarta');
     expect(result.postalCode).toBe('10110');
   });
 
@@ -162,6 +164,7 @@ describe('parseFhirProfile', () => {
     expect(result.lastName).toBe('');
     expect(result.addresses).toEqual([]);
     expect(result.city).toBe('');
+    expect(result.province).toBe('');
     expect(result.userId).toBe('');
   });
 

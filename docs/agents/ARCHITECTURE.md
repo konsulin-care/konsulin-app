@@ -50,23 +50,23 @@ Backend API (Go + SuperTokens Go SDK)
 
 # Key Decisions
 
-| Decision                         | ADR                                              |
-| -------------------------------- | ------------------------------------------------ |
-| Go BFF + Next.js static frontend | `@docs/ADR/015-go-bff-static-nextjs.md`          |
-| Anonymous session consolidation  | `@docs/ADR/016-anon-session-consolidation.md`    |
-| Client-side data layer           | `@docs/ADR/013-client-side-data-layer.md`        |
-| SSR upcoming session             | `@docs/ADR/014-ssr-upcoming-session.md`          |
-| Backend FHIR compliance          | `@docs/ADR/002-backend-fhir-compliance.md`       |
-| Recommendation shaping           | `@docs/ADR/003-recommendation-shaping.md`        |
-| Dynamic scheduling               | `@docs/ADR/004-dynamic-scheduling.md`            |
-| Unified practitioner calendar    | `@docs/ADR/005-unified-practitioner-calendar.md` |
-| Recommendation-first patient UX  | `@docs/ADR/006-recommendation-first-ux.md`       |
-| Pricing model                    | `@docs/ADR/007-pricing-model.md`                 |
-| Role context switching           | `@docs/ADR/008-role-context-switching.md`        |
-| Clinic context selection         | `@docs/ADR/009-clinic-context-selection.md`      |
-| Offline assessment (AEHRC SPA)   | `@docs/ADR/010-offline-assessment-support.md`    |
-| Timeline-based PHR rendering     | `@docs/ADR/011-timeline-based-phr-rendering.md`  |
-| Runtime configuration (env vars) | `@docs/ADR/012-runtime-configuration.md`         |
+| Decision                              | ADR                                                      |
+| ------------------------------------- | -------------------------------------------------------- |
+| Go BFF + Next.js static frontend      | `@docs/ADR/015-go-bff-static-nextjs.md`                  |
+| Anonymous session consolidation       | `@docs/ADR/016-anon-session-consolidation.md`            |
+| Client-side data layer                | `@docs/ADR/013-client-side-data-layer.md`                |
+| SSR upcoming session                  | `@docs/ADR/014-ssr-upcoming-session.md`                  |
+| Backend FHIR compliance               | `@docs/ADR/002-backend-fhir-compliance.md`               |
+| Recommendation shaping                | `@docs/ADR/003-recommendation-shaping.md`                |
+| Client-side free interval computation | `@docs/ADR/017-client-side-free-interval-computation.md` |
+| Unified practitioner calendar         | `@docs/ADR/005-unified-practitioner-calendar.md`         |
+| Recommendation-first patient UX       | `@docs/ADR/006-recommendation-first-ux.md`               |
+| Pricing model                         | `@docs/ADR/007-pricing-model.md`                         |
+| Role context switching                | `@docs/ADR/008-role-context-switching.md`                |
+| Clinic context selection              | `@docs/ADR/009-clinic-context-selection.md`              |
+| Offline assessment (AEHRC SPA)        | `@docs/ADR/010-offline-assessment-support.md`            |
+| Timeline-based PHR rendering          | `@docs/ADR/011-timeline-based-phr-rendering.md`          |
+| Runtime configuration (env vars)      | `@docs/ADR/012-runtime-configuration.md`                 |
 
 # Data Flow
 
@@ -85,8 +85,9 @@ Backend API (Go + SuperTokens Go SDK)
 
 # Superseded Decisions
 
-| Decision                        | Superseded By       |
-| ------------------------------- | ------------------- |
-| Go SSR + Chi + templ + HTMX     | ADR-015             |
-| Three Islands client-side layer | ADR-014 (→ ADR-015) |
-| SSR upcoming session            | ADR-015             |
+| Decision                          | Superseded By       |
+| --------------------------------- | ------------------- |
+| Go SSR + Chi + templ + HTMX       | ADR-015             |
+| Three Islands client-side layer   | ADR-014 (→ ADR-015) |
+| SSR upcoming session              | ADR-015             |
+| Backend-side interval computation | ADR-017             |

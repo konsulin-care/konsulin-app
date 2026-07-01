@@ -6,6 +6,7 @@ import QuickActionFab from '@/components/quick-action-fab';
 import { SuperTokensProviders } from '@/components/supertokensProvider';
 import { AuthProvider } from '@/context/auth/authContext';
 import { BookingProvider } from '@/context/booking/bookingContext';
+import { FabDirtyProvider } from '@/context/fabDirtyContext';
 import { ProfileProvider } from '@/context/profile/profileContext';
 import '@/styles/globals.css';
 import '@/styles/index.scss';
@@ -141,8 +142,10 @@ export default function RootLayout({
           <NextTopLoader showSpinner={false} color='#13c2c2' />
           <ToastContainer {...toastConfig} />
           <ProfileCompletenessModal />
-          <PageContent>{children}</PageContent>
-          <QuickActionFab />
+          <FabDirtyProvider>
+            <PageContent>{children}</PageContent>
+            <QuickActionFab />
+          </FabDirtyProvider>
         </AppProviders>
       </body>
     </html>

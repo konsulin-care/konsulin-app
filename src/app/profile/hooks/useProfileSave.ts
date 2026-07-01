@@ -1,4 +1,4 @@
-/* eslint-disable complexity */
+/* eslint-disable complexity, max-lines */
 'use client';
 
 import type { ContactPoint, Identifier, Patient, Practitioner } from 'fhir/r4';
@@ -6,6 +6,7 @@ import { useRef } from 'react';
 import { toast } from 'react-toastify';
 
 import { DRAWER_STATE } from '@/constants/profile';
+import { dbSet, STORES } from '@/lib/indexeddb';
 import { getProfileById, modifyProfile } from '@/services/profile';
 import { findIdentifierValue, mergeNames } from '@/utils/helper';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
@@ -13,6 +14,8 @@ import { validateEmail } from '@/utils/validation';
 
 import type { IActionAuth } from '@/context/auth/authTypes';
 import type { FHIRProfile } from '@/types/fhir';
+import { getClaimValue } from 'supertokens-auth-react/recipe/session';
+import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 import type { ICustomProfile } from '../edit-profile';
 
 type UseProfileSaveParams = {
@@ -201,6 +204,7 @@ export function useProfileSave({
           type: 'physical',
           line: updateUser.addresses,
           district: updateUser.district,
+          state: updateUser.province,
           city: updateUser.city,
           postalCode: updateUser.postalCode,
           country: 'ID'
@@ -284,9 +288,11 @@ export function useProfileSave({
               )
             : mergeNames((result as Patient).name);
 
+        const superTokensRoles = await getClaimValue({ claim: UserRoleClaim });
         const authPayload = {
           userId: existing.userId,
-          roles: existing.roles || [existing.role_name || 'Patient'],
+          roles: superTokensRoles ??
+            existing.roles ?? [existing.role_name || 'Patient'],
           role_name: existing.role_name,
           email: updateUser.email || existing.email,
           phoneNumber: updateUser.phone || existing.phoneNumber,
@@ -317,6 +323,10 @@ export function useProfileSave({
         }
         clearDraft();
         dispatchAuth({ type: 'auth-check', payload: authPayload });
+        void dbSet(STORES.userProfile, {
+          ...authPayload,
+          cachedAt: Date.now()
+        });
         queryClient.invalidateQueries({ queryKey: ['profile-data', fhirId] });
         setDrawerState(DRAWER_STATE.SUCCESS);
       } catch (error) {

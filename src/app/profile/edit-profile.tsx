@@ -1,6 +1,6 @@
 'use client';
 /* eslint-disable consistent-return */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, max-lines */
+/* eslint-disable max-lines */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import ImageUploader from '@/components/profile/image-uploader';
 import { DRAWER_STATE } from '@/constants/profile';
@@ -166,6 +166,45 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     Number(updateUser.cityCode)
   );
 
+  /** Effect A: Match province name to code when province list loads. */
+  useEffect(() => {
+    if (isLoading || provinceLoading) return;
+    if (!listProvinces?.length) return;
+    if (!updateUser.province || updateUser.provinceCode) return;
+
+    const matched = listProvinces.find(p => p.name === updateUser.province);
+    if (matched) {
+      setUpdateUser(prev => ({ ...prev, provinceCode: matched.code }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, provinceLoading, listProvinces, updateUser.province]);
+
+  /** Effect B: Match city name to code when city list loads. */
+  useEffect(() => {
+    if (isLoading || cityLoading) return;
+    if (!listCities?.length) return;
+    if (!updateUser.city || updateUser.cityCode) return;
+
+    const matched = listCities.find(c => c.name === updateUser.city);
+    if (matched) {
+      setUpdateUser(prev => ({ ...prev, cityCode: matched.code }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, cityLoading, listCities, updateUser.city]);
+
+  /** Effect C: Match district name to code when district list loads. */
+  useEffect(() => {
+    if (isLoading || districtLoading) return;
+    if (!listDistricts?.length) return;
+    if (!updateUser.district || updateUser.districtCode) return;
+
+    const matched = listDistricts.find(d => d.name === updateUser.district);
+    if (matched) {
+      setUpdateUser(prev => ({ ...prev, districtCode: matched.code }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, districtLoading, listDistricts, updateUser.district]);
+
   /** Check if a string is a valid URL. */
   const isValidUrl = (url: string): boolean => {
     try {
@@ -297,7 +336,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
             <ProfileFormSection
               updateUser={updateUser}
               errors={errors}
-              listProvinces={listProvinces}
+              listProvinces={listProvinces ?? []}
               listCities={listCities ?? []}
               listDistricts={listDistricts ?? []}
               isPhoneBasedUser={isPhoneBasedUser}

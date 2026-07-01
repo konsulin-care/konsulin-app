@@ -1,32 +1,33 @@
 ---
 title: Pages & Routes Assessment
-description: Next.js App Router pages, middleware, server actions, API routes
+description: Current React SPA route patterns for the frontend
 domain: frontend
-action: replace
-dependencies: []
+action: current
+date: 2026-06-30
 ---
 
 # Summary
 
-25 route groups in Next.js App Router pattern. Every page component
-uses React (JSX, hooks, client components). All routing logic is
-Next.js-specific and must be replaced with Chi router + templ templates.
+All pages are React SPA components served as static export by Go BFF.
+No Go SSR, no templ, no Node.js in production (ADR-015). Dynamic route
+segments use query params instead of path segments
+(e.g. `/schedule?id=X` instead of `/schedule/[id]`).
 
 # Route Map
 
-| Route             | Purpose                 | Go SSR replacement               |
-| ----------------- | ----------------------- | -------------------------------- |
-| `/`               | Home (role-aware)       | Chi handler + templ              |
-| `/auth/*`         | SuperTokens auth        | React SPA (assessment page only) |
-| `/clinic*`        | Clinic listing/detail   | Chi handler + templ              |
-| `/assessments*`   | Questionnaires          | React SPA (AEHRC)                |
-| `/schedule*`      | Appointment views       | Chi handler + templ              |
-| `/practitioner/*` | Profiles & availability | Chi handler + templ              |
-| `/profile*`       | User profile            | Chi handler + templ              |
-| `/record*`        | Medical records         | Chi handler + templ              |
-| `/journal*`       | Notes                   | Chi handler + templ              |
-| `/message`        | Messaging               | Chi handler + templ              |
-| `api/*`           | Next.js API routes      | Go proxy/handler                 |
+| Route                | Purpose                      | Component                                 |
+| -------------------- | ---------------------------- | ----------------------------------------- |
+| `/`                  | Home (role-aware)            | `@/app/page.tsx` (role dispatch)          |
+| `/auth/*`            | SuperTokens auth             | `@/app/auth/` (React SDK)                 |
+| `/schedule`          | Appointment list/detail      | `@/app/schedule/page.tsx` (role dispatch) |
+| `/schedule?id=X`     | Appointment detail           | `@/app/schedule/schedule-detail.tsx`      |
+| `/practitioner?id=X` | Practitioner profile/booking | `@/app/practitioner/`                     |
+| `/clinic*`           | Clinic listing/detail        | `@/app/clinic/`                           |
+| `/profile*`          | User profile                 | `@/app/profile/`                          |
+| `/record*`           | Medical records              | `@/app/record/`                           |
+| `/journal*`          | Notes                        | `@/app/journal/`                          |
+| `/assessments*`      | Questionnaires (AEHRC SPA)   | `@/app/assessments/`                      |
+| `/message`           | Messaging                    | `@/app/message/`                          |
 
 # Business Rules
 
@@ -34,4 +35,4 @@ Next.js-specific and must be replaced with Chi router + templ templates.
 - Role-based access (patient vs practitioner routes)
 - Return URL preservation on redirect to login
 - Offline fallback page (`/~offline`)
-- Server action for setting auth cookies
+- All data fetching via React Query through Go BFF proxy

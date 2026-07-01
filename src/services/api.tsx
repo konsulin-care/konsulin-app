@@ -13,6 +13,7 @@ export interface UserProfile {
   fullname?: string;
   profile_picture?: string;
   fhirId?: string;
+  organizationId?: string;
   profile_complete?: boolean;
   cachedAt?: number;
 }

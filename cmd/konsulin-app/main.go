@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/konsulin-care/konsulin-app/internal/config"
+	"github.com/konsulin-care/konsulin-app/internal/data/wilayah"
 	"github.com/konsulin-care/konsulin-app/internal/handler"
 	appmw "github.com/konsulin-care/konsulin-app/internal/middleware"
 	"github.com/konsulin-care/konsulin-app/internal/session"
@@ -152,9 +153,10 @@ func routes(cfg *config.Config) (http.Handler, error) {
 
 	// Role switcher — GET returns partial, POST updates session cookie.
 	r.HandleFunc("/auth/role/switch", handler.NewRoleSwitchHandler(handler.RoleSwitchOptions{
-		CookieName:   cfg.AuthCookieName,
-		CookieSecure: cfg.CookieSecure,
-		CookieSecret: cfg.SessionCookieSecret,
+		CookieName:     cfg.AuthCookieName,
+		CookieSecure:   cfg.CookieSecure,
+		CookieSecret:   cfg.SessionCookieSecret,
+		BackendBaseURL: cfg.APIURL,
 	}))
 
 	// Protected Next.js pages (mirrors old middleware.ts route list).
@@ -184,6 +186,16 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	}, "Practitioner")
 	r.With(authGuard, roleGuard).Handle("/assessments/soap", proxy)
 	r.With(authGuard, roleGuard).Handle("/assessments/soap/*", proxy)
+
+	// Wilayah region data — serve from pre-built index, skip proxy.
+	wh := handler.NewWilayahHandler(&wilayah.WilayahData)
+	r.Get("/api/provinces", wh.Provinces)
+	r.Get("/api/provinces/search", wh.ProvinceSearch)
+	r.Get("/api/regencies/{provinceId}", wh.Regencies)
+	r.Get("/api/regencies/search", wh.RegencySearch)
+	r.Get("/api/districts/{regencyId}", wh.Districts)
+	r.Get("/api/villages/{districtId}", wh.Villages)
+	r.Get("/api/lookup/{id}", wh.Lookup)
 
 	// All unmatched routes — proxy without auth (public pages, _next/static, etc.).
 	r.NotFound(proxy.ServeHTTP)

@@ -60,13 +60,14 @@ function extractName(data: Patient | Practitioner) {
   };
 }
 
-/** Extract first address line from FHIR Patient/Practitioner resource. */
+/** Extract address fields including province (state) from FHIR resource. */
 function extractAddress(data: Patient | Practitioner) {
   const addresses = data.address?.[0];
   return {
     addresses: addresses?.line ?? [],
     city: addresses?.city ?? '',
     district: addresses?.district ?? '',
+    province: addresses?.state ?? '',
     postalCode: addresses?.postalCode ?? ''
   };
 }
@@ -95,8 +96,7 @@ export const parseFhirProfile = (data: Patient | Practitioner) => {
     ...extractTelecom(data),
     cityCode: '',
     districtCode: '',
-    provinceCode: '',
-    province: ''
+    provinceCode: ''
   };
 };
 

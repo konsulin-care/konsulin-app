@@ -12,7 +12,13 @@ vi.mock('@/services/api', () => ({
   getAPI: vi.fn()
 }));
 
+vi.mock('@/lib/indexeddb', () => ({
+  STORES: { uiPreferences: 'ui_preferences' },
+  dbGet: vi.fn().mockResolvedValue(null)
+}));
+
 import { useAuth } from '@/context/auth/authContext';
+import { dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 
 const mockAxiosInstance = { get: vi.fn() };
@@ -43,6 +49,12 @@ describe('HomeContentAdmin', () => {
     vi.mocked(getAPI).mockResolvedValue(
       mockAxiosInstance as unknown as AxiosInstance
     );
+    // Default: provide an org ID so queries fire
+    vi.mocked(dbGet).mockImplementation((_store, args) => {
+      if (args?.[1] === 'clinic_organization')
+        return Promise.resolve({ value: 'org-1' });
+      return Promise.resolve(null);
+    });
   });
 
   afterEach(() => {
@@ -53,6 +65,76 @@ describe('HomeContentAdmin', () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
+  describe('practitioner count query', () => {
+    it('does not read selected_location from IndexedDB', async () => {
+      mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
+
+      render(<HomeContentAdmin />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('12')).toBeDefined();
+      });
+
+      // Should only read clinic_organization
+      const clinicCalls = vi
+        .mocked(dbGet)
+        .mock.calls.filter(([, args]) => args?.[1] === 'clinic_organization');
+      const locationCalls = vi
+        .mocked(dbGet)
+        .mock.calls.filter(([, args]) => args?.[1] === 'selected_location');
+      expect(clinicCalls.length).toBeGreaterThanOrEqual(1);
+      expect(locationCalls).toHaveLength(0);
+    });
+    it('uses organization-based filter with active=true', async () => {
+      mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
+
+      render(<HomeContentAdmin />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('12')).toBeDefined();
+      });
+
+      const calledUrl = mockAxiosInstance.get.mock.calls[0][0] as string;
+      expect(calledUrl).toContain(
+        '_has:PractitionerRole:practitioner:organization=Organization/org-1'
+      );
+      expect(calledUrl).toContain(
+        '_has:PractitionerRole:practitioner:active=true'
+      );
+      expect(calledUrl).toContain('_summary=count');
+    });
+
+    it('does not fetch when no clinic is stored', async () => {
+      vi.mocked(dbGet).mockResolvedValue(null);
+      mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
+
+      render(<HomeContentAdmin />, { wrapper });
+
+      // Wait for effects to settle, then verify no fetch occurred
+      await vi.waitFor(() => {
+        // With no clinic ID, query is disabled — should render content not skeleton
+        expect(mockAxiosInstance.get).not.toHaveBeenCalled();
+      });
+    });
+
+    it('renders dashboard content when no clinic is stored (no skeleton)', async () => {
+      vi.mocked(dbGet).mockResolvedValue(null);
+      mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
+
+      render(<HomeContentAdmin />, { wrapper });
+
+      // Service Management should render immediately, not skeleton
+      await waitFor(() => {
+        expect(screen.getByText('Service Management')).toBeDefined();
+      });
+      expect(screen.getByText('Clinic Details')).toBeDefined();
+      expect(screen.getByText('Reports')).toBeDefined();
+      // Booked Appointments and Pending Approvals should render as placeholders
+      expect(screen.getByText('Booked Appointments Today')).toBeDefined();
+      expect(screen.getByText('Pending Approvals')).toBeDefined();
+    });
+  });
+
   it('renders practitioner count when data loads', async () => {
     mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
 
@@ -62,6 +144,19 @@ describe('HomeContentAdmin', () => {
       expect(screen.getByText('12')).toBeDefined();
     });
     expect(screen.getByText('Active Practitioners')).toBeDefined();
+  });
+
+  it('links Active Practitioners stat to /practitioner', async () => {
+    mockAxiosInstance.get.mockResolvedValue({ data: { total: 8 } });
+
+    render(<HomeContentAdmin />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('8')).toBeDefined();
+    });
+
+    const link = screen.getByText('Active Practitioners').closest('a');
+    expect(link).toHaveAttribute('href', '/practitioner');
   });
 
   it('shows retry button on error', async () => {
@@ -76,16 +171,64 @@ describe('HomeContentAdmin', () => {
     });
   });
 
-  it('renders all management links', async () => {
+  it('does NOT render Clinic Overview title', async () => {
     mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
 
     render(<HomeContentAdmin />, { wrapper });
 
     await waitFor(() => {
-      expect(screen.getByText('Manage Practitioners')).toBeDefined();
+      expect(screen.getByText('5')).toBeDefined();
     });
-    expect(screen.getByText('Clinic Settings')).toBeDefined();
-    expect(screen.getByText('View Schedule')).toBeDefined();
-    expect(screen.getByText('Reports')).toBeDefined();
+    expect(screen.queryByText('Clinic Overview')).toBeNull();
+  });
+
+  it('does NOT render Clinic Context section', async () => {
+    mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
+
+    render(<HomeContentAdmin />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('5')).toBeDefined();
+    });
+    expect(screen.queryByText('Clinic Context')).toBeNull();
+    expect(screen.queryByText('Clinic switcher coming soon')).toBeNull();
+  });
+
+  it('renders Booked Appointments Today stat', async () => {
+    mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
+
+    render(<HomeContentAdmin />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('5')).toBeDefined();
+    });
+    expect(screen.getByText('Booked Appointments Today')).toBeDefined();
+  });
+
+  it('renders Pending Approvals stat', async () => {
+    mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
+
+    render(<HomeContentAdmin />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('5')).toBeDefined();
+    });
+    expect(screen.getByText('Pending Approvals')).toBeDefined();
+  });
+
+  it('renders only Clinic Details and Reports in Service Management', async () => {
+    mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
+
+    render(<HomeContentAdmin />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('Service Management')).toBeDefined();
+      expect(screen.getByText('Clinic Details')).toBeDefined();
+      expect(screen.getByText('Reports')).toBeDefined();
+    });
+
+    expect(screen.queryByText('Manage Practitioners')).toBeNull();
+    expect(screen.queryByText('Clinic Settings')).toBeNull();
+    expect(screen.queryByText('View Schedule')).toBeNull();
   });
 });

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 'use client';
 
 import { Roles } from '@/constants/roles';
@@ -156,6 +157,63 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const extractOrgId = (result: unknown): string | undefined => {
+    if (!result || typeof result !== 'object') return undefined;
+    const obj = result as Record<string, unknown>;
+    const mgmtOrg = obj.managingOrganization;
+    if (!mgmtOrg || typeof mgmtOrg !== 'object') return undefined;
+    const ref = (mgmtOrg as Record<string, unknown>).reference;
+    return typeof ref === 'string'
+      ? ref.replace('Organization/', '') || undefined
+      : undefined;
+  };
+
+  const persistClinicOrganization = (orgId: string) =>
+    dbSet(STORES.uiPreferences, {
+      ownerId: '',
+      prefKey: 'clinic_organization',
+      value: orgId
+    });
+
+  /** Persist the fhirId for one role in a per-role map (multi-role support). */
+  const persistFhirIdForRole = async (
+    userId: string,
+    role: string,
+    fhirId: string
+  ): Promise<void> => {
+    try {
+      const existing = await dbGet<{ value: Record<string, string> }>(
+        STORES.uiPreferences,
+        ['', `fhirId_map_${userId}`]
+      );
+      const map = existing?.value ?? {};
+      map[role] = fhirId;
+      await dbSet(STORES.uiPreferences, {
+        ownerId: '',
+        prefKey: `fhirId_map_${userId}`,
+        value: map
+      });
+    } catch (err) {
+      console.warn('fhirId map persistence failed:', err);
+    }
+  };
+
+  /** Read stored fhirId for a role, or undefined if absent. */
+  const getStoredFhirIdForRole = async (
+    userId: string,
+    role: string
+  ): Promise<string | undefined> => {
+    try {
+      const existing = await dbGet<{ value: Record<string, string> }>(
+        STORES.uiPreferences,
+        ['', `fhirId_map_${userId}`]
+      );
+      return existing?.value?.[role];
+    } catch {
+      return undefined;
+    }
+  };
+
   /** Resolve user role from auth cookie and SuperTokens claims. */
   const resolveUserRoles = async (): Promise<{
     role: UserRole;
@@ -194,11 +252,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       };
       await dbSet(STORES.userProfile, { ...payload, cachedAt: Date.now() });
       dispatch({ type: 'login', payload });
+      await persistFhirIdForRole(userId, role, '');
       return;
     }
 
     const email = result.telecom?.find(item => item.system === 'email')?.value;
     const profile_complete = isProfileCompleteFromFHIR(result);
+    const organizationId = extractOrgId(result);
 
     const payload = {
       userId,
@@ -208,6 +268,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       profile_picture: result?.photo?.[0]?.url ?? '',
       fullname: mergeNames(result?.name),
       fhirId: result?.id ?? '',
+      organizationId,
       profile_complete
     };
 
@@ -217,12 +278,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       cachedAt: Date.now()
     });
     dispatch({ type: 'login', payload });
+    await persistFhirIdForRole(userId, role, result?.id ?? '');
+
+    // Clinic admin: persist managingOrganization as clinic_organization
+    if (role === Roles.ClinicAdmin && organizationId) {
+      await persistClinicOrganization(organizationId);
+    }
   };
 
   /** Dispatch fallback profile when API fetch fails. */
-  const fallbackProfileOnError = async (userId: string): Promise<void> => {
+  const fallbackProfileOnError = async (
+    userId: string,
+    role?: string
+  ): Promise<void> => {
     const fallbackCookie = await getAuthCookieSession();
     if (fallbackCookie?.authenticated && fallbackCookie?.role_name) {
+      // Prefer stored per-role fhirId over stale auth cookie value
+      const storedFhirId = role
+        ? await getStoredFhirIdForRole(userId, role)
+        : undefined;
+      const resolvedFhirId = storedFhirId ?? fallbackCookie.fhirId ?? '';
       const payload = {
         userId,
         role_name: fallbackCookie.role_name,
@@ -230,7 +305,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: fallbackCookie.email ?? '',
         fullname: fallbackCookie.fullname ?? '',
         profile_picture: fallbackCookie.profile_picture ?? '',
-        fhirId: fallbackCookie.fhirId ?? '',
+        fhirId: resolvedFhirId,
         profile_complete: fallbackCookie.profile_complete ?? false
       };
       dispatch({ type: 'login', payload });
@@ -275,14 +350,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (cached?.userId === userId && cached?.role_name === role) {
       setCurrentUserId(userId);
       dispatch({ type: 'login', payload: cached });
-      return;
+
+      // Clinic admin with cached orgId: persist as clinic_organization
+      if (role === Roles.ClinicAdmin && cached?.organizationId) {
+        await persistClinicOrganization(cached.organizationId);
+        return;
+      }
+      // Non-admin returns; clinic admin without orgId falls through to fresh API fetch
+      if (role !== Roles.ClinicAdmin) return;
     }
 
     try {
       await fetchAndDispatchProfile(userId, role, superTokensRoles);
     } catch (error) {
       console.error('Error fetching session:', error);
-      await fallbackProfileOnError(userId);
+      await fallbackProfileOnError(userId, role);
     }
   };
 

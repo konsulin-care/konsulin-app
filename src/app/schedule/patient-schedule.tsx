@@ -7,8 +7,8 @@ import { useScheduleFilter } from '@/components/shared/hooks/useScheduleFilter';
 import SchedulePageShell from '@/components/shared/schedule-page-shell';
 import { useAuth } from '@/context/auth/authContext';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useGetAllAppointments } from '@/services/api/appointments';
 import { IUseClinicParams } from '@/services/clinic';
+import { useAppointments } from '@/services/hooks/useAppointments';
 import { MergedAppointment } from '@/types/appointment';
 import {
   generateAvatarPlaceholder,
@@ -90,24 +90,33 @@ export default function PatientSchedule({ fhirId }: Props) {
   const [sessionsFilter, setSessionsFilter] = useState<IUseClinicParams>({});
   const [selectedTab, setSelectedTab] = useState('upcoming');
 
-  const { data: upcomingData, isLoading: isUpcomingLoading } =
-    useGetAllAppointments({
-      patientId: fhirId
-    });
+  const {
+    data: pagesData,
+    isLoading: isAppointmentsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useAppointments('Patient', fhirId);
 
   const debouncedKeyword = useDebounce(keyword, 500);
 
   const parsedAppointmentsData = useMemo(() => {
     if (
-      !upcomingData ||
-      upcomingData?.total === 0 ||
+      !pagesData?.pages ||
+      pagesData.pages.length === 0 ||
       !authState.isAuthenticated
     )
       return null;
 
-    const parsed = parseMergedAppointments(upcomingData);
-    return parsed;
-  }, [upcomingData, authState]);
+    const combined: import('fhir/r4').Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      total: pagesData.pages[0]?.total,
+      entry: pagesData.pages.flatMap(p => p.entry ?? [])
+    };
+
+    return parseMergedAppointments(combined);
+  }, [pagesData, authState]);
 
   const { upcoming, past } = useScheduleFilter({
     data: parsedAppointmentsData,
@@ -144,12 +153,19 @@ export default function PatientSchedule({ fhirId }: Props) {
         }}
         selectedTab={selectedTab}
         onTabChange={setSelectedTab}
-        isLoading={isUpcomingLoading}
+        isLoading={isAppointmentsLoading}
         upcoming={upcoming}
         past={past}
         renderCard={(appointment: MergedAppointment) => (
           <AppointmentCard appointment={appointment} />
         )}
+        onLoadMore={() => {
+          fetchNextPage().catch(() => {
+            /* handled by react-query internally */
+          });
+        }}
+        hasMore={hasNextPage}
+        isLoadingMore={isFetchingNextPage}
       />
     </>
   );

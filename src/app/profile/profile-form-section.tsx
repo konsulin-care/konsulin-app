@@ -3,11 +3,12 @@
 
 import Input from '@/components/general/input';
 import DropdownProfile from '@/components/profile/dropdown-profile';
+import LocationCombobox from '@/components/shared/location-combobox';
 import { DRAWER_STATE, genderList } from '@/constants/profile';
 import { IWilayahResponse } from '@/types/wilayah';
 import { X } from 'lucide-react';
 import Image from 'next/image';
-import { useMemo } from 'react';
+
 import { PhoneInput } from 'react-international-phone';
 import type { ICustomProfile } from './edit-profile';
 
@@ -62,11 +63,6 @@ export default function ProfileFormSection({
   formatDate,
   setDrawerState
 }: Readonly<ProfileFormSectionProps>) {
-  const addressKeys = useMemo(
-    () => (updateUser.addresses ?? []).map(() => crypto.randomUUID()),
-    [updateUser.addresses]
-  );
-
   return (
     <div className='flex flex-grow flex-col space-y-4'>
       <Input
@@ -175,7 +171,7 @@ export default function ProfileFormSection({
       {errors.gender && (
         <p className='p-4 text-xs text-red-500'>{errors.gender}</p>
       )}
-      <DropdownProfile
+      <LocationCombobox
         options={listProvinces}
         value={updateUser.provinceCode}
         onSelect={handleProvinceSelect}
@@ -187,12 +183,11 @@ export default function ProfileFormSection({
       )}
       {(updateUser.provinceCode || updateUser.city) && (
         <>
-          <DropdownProfile
+          <LocationCombobox
             options={listCities}
             value={updateUser.cityCode}
             onSelect={handleCitySelect}
             placeholder='City'
-            labelPlaceholder={updateUser.city}
             loading={cityLoading}
           />
           {errors.city && (
@@ -202,12 +197,11 @@ export default function ProfileFormSection({
       )}
       {(updateUser.cityCode || updateUser.district) && (
         <>
-          <DropdownProfile
+          <LocationCombobox
             options={listDistricts}
             value={updateUser.districtCode}
             onSelect={handleDistrictSelect}
             placeholder='District'
-            labelPlaceholder={updateUser.district}
             loading={districtLoading}
           />
           {errors.district && (
@@ -216,7 +210,9 @@ export default function ProfileFormSection({
         </>
       )}
       {updateUser.addresses?.map((addr: string, index: number) => (
-        <div key={addressKeys[index]} className='mb-2 flex items-center gap-2'>
+        // Addresses have no stable ID; index is the only unique identifier.
+        /* eslint-disable-next-line react/no-array-index-key */
+        <div key={index} className='mb-2 flex items-center gap-2'>
           <Input
             width={24}
             height={24}

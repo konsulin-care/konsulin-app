@@ -2,6 +2,7 @@
 
 import SessionFilter from '@/app/schedule/session-filter';
 import EmptyState from '@/components/general/empty-state';
+import { LoadingSpinnerIcon } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { IUseClinicParams } from '@/services/clinic';
 import { format } from 'date-fns';
 import { SearchIcon } from 'lucide-react';
-import { Fragment, ReactNode } from 'react';
+import { Fragment, ReactNode, useEffect, useRef } from 'react';
 
 type Props<T> = {
   readonly keyword: string;
@@ -19,10 +20,64 @@ type Props<T> = {
   readonly selectedTab: string;
   readonly onTabChange: (value: string) => void;
   readonly isLoading: boolean;
-  readonly upcoming: T[];
-  readonly past: T[];
+  readonly upcoming: readonly T[];
+  readonly past: readonly T[];
   readonly renderCard: (item: T) => ReactNode;
+  readonly onLoadMore?: () => void;
+  readonly hasMore?: boolean;
+  readonly isLoadingMore?: boolean;
 };
+
+/**
+ *
+ */
+/** Sentinel at bottom of scroll area to trigger next page load. */
+function InfiniteScrollSentinel({
+  onLoadMore,
+  hasMore,
+  isLoadingMore
+}: {
+  readonly onLoadMore?: () => void;
+  readonly hasMore?: boolean;
+  readonly isLoadingMore?: boolean;
+}) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !onLoadMore || !hasMore) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0]?.isIntersecting && !isLoadingMore) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+    /* eslint consistent-return: off -- useEffect cleanup pattern */
+  }, [hasMore, isLoadingMore, onLoadMore]);
+
+  if (!hasMore) return null;
+
+  return (
+    <div ref={sentinelRef} className='h-4'>
+      {isLoadingMore && (
+        <div className='flex justify-center py-4'>
+          <LoadingSpinnerIcon width={24} height={24} className='animate-spin' />
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  *
@@ -37,7 +92,10 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
   isLoading,
   upcoming,
   past,
-  renderCard
+  renderCard,
+  onLoadMore,
+  hasMore,
+  isLoadingMore
 }: Props<T>) {
   return (
     <div className='mt-[-24px] rounded-[16px] bg-white pb-20'>
@@ -133,6 +191,12 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
               </TabsContent>
             </>
           )}
+
+          <InfiniteScrollSentinel
+            onLoadMore={onLoadMore}
+            hasMore={hasMore}
+            isLoadingMore={isLoadingMore}
+          />
         </Tabs>
       </div>
     </div>

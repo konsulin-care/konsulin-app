@@ -1,35 +1,33 @@
 ---
 title: API Services Assessment
-description: Axios singleton, react-query hooks, error handling
+description: Axios singleton, TanStack React Query hooks, Go BFF proxy
 domain: frontend
-action: replace
-dependencies: []
+action: current
+date: 2026-06-30
 ---
 
 # Summary
 
-HTTP client layer using axios + react-query. Business logic in
-service files is framework-agnostic and port-worthy to Go.
-react-query hooks are React-specific and must be removed.
+HTTP client layer using Axios + TanStack React Query. All FHIR API calls
+proxy through Go BFF at `/proxy/fhir/*` which injects `sAccessToken` as
+`Authorization: Bearer`. No Go SSR — Go BFF is transparent proxy only.
 
-# File Inventory
+# Service Organization
 
-| File                   | Contents                           | Fate                                |
-| ---------------------- | ---------------------------------- | ----------------------------------- |
-| `api.tsx`              | axios singleton, interceptors      | Port HTTP logic to Go               |
-| `api-error.ts`         | Error parsing                      | Port to Go                          |
-| `auth.ts`              | Cookie restoration                 | Replace — Go reads cookies directly |
-| `clinic.tsx`           | react-query hooks for clinic data  | Port query logic to Go handlers     |
-| `clinicians.tsx`       | react-query hooks for availability | Port query logic to Go handlers     |
-| `profile.tsx`          | Profile CRUD + react-query         | Port to Go services                 |
-| `api/appointments.tsx` | Appointment CRUD                   | Port to Go handlers                 |
-| `api/assessment.tsx`   | Questionnaire submit               | Port to Go proxy                    |
-| `api/schedule.ts`      | Schedule management                | Port to Go handlers                 |
+| File                        | Contents                                            |
+| --------------------------- | --------------------------------------------------- |
+| `@/services/api.tsx`        | Axios singleton, interceptors                       |
+| `@/services/api-error.ts`   | Error parsing                                       |
+| `@/services/api/`           | Domain-specific API hooks (appointments, schedule)  |
+| `@/services/hooks/`         | React Query hooks (useAppointments, useAppointment) |
+| `@/services/clinic.tsx`     | Clinic/practitioner queries                         |
+| `@/services/clinicians.tsx` | Practitioner availability queries                   |
+| `@/services/profile.tsx`    | Profile CRUD                                        |
 
-# Business Rules
+# Patterns
 
-- Auth token attached to every request via axios interceptor
-- Error responses trigger toast + redirect on token expiry
-- Anonymous sessions for unauthenticated assessment
-- FHIR API calls need proper content-type headers
-- Idempotent POST for questionnaire submission
+- **Data fetching**: `useQuery` / `useInfiniteQuery` with `/fhir/` path
+- **Mutations**: `useMutation` with success invalidation
+- **Pagination**: Cursor-based via `Bundle.link[rel=next]` with `pageToken`
+- **Auth**: `sAccessToken` cookie attached by Go BFF, not client-side
+- **Anonymous sessions**: For unauthenticated assessment flow

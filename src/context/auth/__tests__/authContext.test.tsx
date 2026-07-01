@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { render, screen, waitFor } from '@testing-library/react';
 import fs from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -82,9 +83,19 @@ vi.mock('@/utils/helper', () => ({
 // ---------------------------------------------------------------------------
 // Import mocked modules
 // ---------------------------------------------------------------------------
-import { dbGet, migrateLocalStorage } from '@/lib/indexeddb';
+import { dbGet, dbSet, migrateLocalStorage } from '@/lib/indexeddb';
 import { getAuthCookieSession, restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
+
+// ---------------------------------------------------------------------------
+// Type helpers — avoid repeating `as ReturnType<typeof vi.fn>`
+// ---------------------------------------------------------------------------
+const mockGetAuthSession = getAuthCookieSession as ReturnType<typeof vi.fn>;
+const mockRestoreCookie = restoreAuthCookie as ReturnType<typeof vi.fn>;
+const mockGetProfile = getProfileByIdentifier as ReturnType<typeof vi.fn>;
+const mockDbGet = dbGet as ReturnType<typeof vi.fn>;
+const mockDbSet = dbSet as ReturnType<typeof vi.fn>;
+const mockMigrate = migrateLocalStorage as ReturnType<typeof vi.fn>;
 
 // ---------------------------------------------------------------------------
 // Test observer component
@@ -139,10 +150,8 @@ beforeEach(() => {
     accessTokenPayload: {}
   });
   mockGetClaimValue.mockResolvedValue(['Patient']);
-  (migrateLocalStorage as ReturnType<typeof vi.fn>).mockResolvedValue(
-    undefined // eslint-disable-line unicorn/no-useless-undefined
-  );
-  (dbGet as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+  mockMigrate.mockResolvedValue(undefined); // eslint-disable-line unicorn/no-useless-undefined
+  mockDbGet.mockResolvedValue(null);
 });
 
 // =========================================================================
@@ -151,7 +160,7 @@ beforeEach(() => {
 describe('Fix 1 - stale cookie deletion short-circuit', () => {
   it('does NOT redirect when stale cookie DELETE returns non-OK', async () => {
     // GIVEN: stale auth cookie exists but SuperTokens session is gone
-    (getAuthCookieSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+    mockGetAuthSession.mockResolvedValue({
       authenticated: true,
       role_name: 'Patient',
       email: 'test@example.com'
@@ -184,7 +193,7 @@ describe('Fix 1 - stale cookie deletion short-circuit', () => {
 
   it('does NOT redirect when stale cookie DELETE request throws', async () => {
     // GIVEN: stale auth cookie exists
-    (getAuthCookieSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+    mockGetAuthSession.mockResolvedValue({
       authenticated: true,
       role_name: 'Patient',
       email: 'test@example.com'
@@ -228,14 +237,14 @@ describe('Fix 2 - fetchProfileAndLogin fallback on early error', () => {
       accessTokenPayload: {}
     });
     mockGetClaimValue.mockResolvedValue(['Patient']);
-    (restoreAuthCookie as ReturnType<typeof vi.fn>).mockResolvedValue(true);
-    (dbGet as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    mockRestoreCookie.mockResolvedValue(true);
+    mockDbGet.mockResolvedValue(null);
   });
 
   it('dispatches fallback auth when resolveUserRoles throws', async () => {
     // GIVEN: getAuthCookieSession throws on the first call (inside resolveUserRoles)
     // and returns fallback data on the second call (inside fallbackProfileOnError)
-    (getAuthCookieSession as ReturnType<typeof vi.fn>)
+    mockGetAuthSession
       .mockRejectedValueOnce(new Error('IndexedDB read failure'))
       .mockResolvedValueOnce({
         authenticated: true,
@@ -265,16 +274,14 @@ describe('Fix 2 - fetchProfileAndLogin fallback on early error', () => {
 
   it('does NOT throw when dbGet fails (caught internally)', async () => {
     // GIVEN: resolveUserRoles succeeds
-    (getAuthCookieSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+    mockGetAuthSession.mockResolvedValue({
       authenticated: true,
       role_name: 'Patient',
       userId: 'user-1'
     });
 
     // AND: dbGet throws (simulating IndexedDB failure)
-    (dbGet as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('IndexedDB unavailable')
-    );
+    mockDbGet.mockRejectedValue(new Error('IndexedDB unavailable'));
 
     // WHEN: the auth provider mounts
     renderWithAuthProvider();
@@ -321,5 +328,170 @@ describe('Fix 3 - function dependency ordering', () => {
     for (const [, line] of depLines) {
       expect(line).toBeLessThan(callerLine);
     }
+  });
+});
+
+// =========================================================================
+// Fix 4: Clinic admin managingOrganization stored as clinic_organization
+// =========================================================================
+describe('Fix 4 - clinic admin managingOrganization stored as clinic_organization', () => {
+  beforeEach(() => {
+    mockUseSessionContext.mockReturnValue({
+      doesSessionExist: true,
+      userId: 'admin-user-1',
+      accessTokenPayload: {}
+    });
+    mockGetClaimValue.mockResolvedValue(['Clinic Admin']);
+    mockGetAuthSession.mockResolvedValue({
+      authenticated: true,
+      role_name: 'Clinic Admin',
+      userId: 'admin-user-1'
+    });
+    mockRestoreCookie.mockResolvedValue(true);
+  });
+
+  const expectNoClinicOrganization = () =>
+    expect(
+      mockDbSet.mock.calls
+        .filter((c: unknown[]) => c[0] === 'ui_preferences')
+        .find(
+          (c: unknown[]) =>
+            (c[1] as Record<string, unknown>)?.prefKey === 'clinic_organization'
+        )
+    ).toBeUndefined();
+
+  it('stores managingOrganization as clinic_organization when Person has it', async () => {
+    mockGetProfile.mockResolvedValue({
+      resourceType: 'Person',
+      id: 'person-123',
+      managingOrganization: { reference: 'Organization/org-456' },
+      telecom: [{ system: 'email', value: 'admin@clinic.com' }]
+    });
+    renderWithAuthProvider();
+    await waitFor(() => {
+      expect(dbSet).toHaveBeenCalledWith('ui_preferences', {
+        ownerId: '',
+        prefKey: 'clinic_organization',
+        value: 'org-456'
+      });
+      const stored = mockDbSet.mock.calls
+        .filter((c: unknown[]) => c[0] === 'user_profile')
+        .find(
+          (c: unknown[]) =>
+            (c[1] as Record<string, unknown>)?.userId === 'admin-user-1'
+        );
+      expect(stored).toBeDefined();
+      expect((stored?.[1] as Record<string, unknown>)?.organizationId).toBe(
+        'org-456'
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-role').textContent).toBe('Clinic Admin');
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true');
+    });
+  });
+
+  it('does NOT store clinic_organization when Person has no managingOrganization', async () => {
+    mockGetProfile.mockResolvedValue({
+      resourceType: 'Person',
+      id: 'person-123',
+      telecom: [{ system: 'email', value: 'admin@clinic.com' }]
+    });
+    renderWithAuthProvider();
+    await waitFor(() =>
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
+    );
+    expectNoClinicOrganization();
+  });
+
+  it('does NOT store clinic_organization for non-admin roles', async () => {
+    mockGetClaimValue.mockResolvedValue(['Patient']);
+    mockGetAuthSession.mockResolvedValue({
+      authenticated: true,
+      role_name: 'Patient',
+      userId: 'patient-1'
+    });
+    mockGetProfile.mockResolvedValue({
+      resourceType: 'Patient',
+      id: 'patient-123'
+    });
+    renderWithAuthProvider();
+    await waitFor(() =>
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
+    );
+    expectNoClinicOrganization();
+  });
+
+  it('stores clinic_organization from cached organizationId when cache is hit', async () => {
+    mockDbGet.mockResolvedValue({
+      userId: 'admin-user-1',
+      role_name: 'Clinic Admin',
+      organizationId: 'org-456',
+      email: 'admin@clinic.com',
+      fullname: 'Admin User',
+      profile_complete: true
+    });
+    mockGetClaimValue.mockResolvedValue(['Clinic Admin']);
+    renderWithAuthProvider();
+    await waitFor(() =>
+      expect(dbSet).toHaveBeenCalledWith('ui_preferences', {
+        ownerId: '',
+        prefKey: 'clinic_organization',
+        value: 'org-456'
+      })
+    );
+    expect(getProfileByIdentifier).not.toHaveBeenCalled();
+  });
+
+  it('skips cache and fetches fresh when clinic admin cache lacks organizationId', async () => {
+    mockDbGet.mockResolvedValue({
+      userId: 'admin-user-1',
+      role_name: 'Clinic Admin',
+      email: 'admin@clinic.com',
+      fullname: 'Admin User',
+      profile_complete: true
+    });
+    mockGetProfile.mockResolvedValue({
+      resourceType: 'Person',
+      id: 'person-123',
+      managingOrganization: { reference: 'Organization/org-789' }
+    });
+    mockGetClaimValue.mockResolvedValue(['Clinic Admin']);
+    renderWithAuthProvider();
+    await waitFor(() => expect(getProfileByIdentifier).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(dbSet).toHaveBeenCalledWith('ui_preferences', {
+        ownerId: '',
+        prefKey: 'clinic_organization',
+        value: 'org-789'
+      })
+    );
+  });
+
+  it('uses cached profile for non-admin roles without extra fetch', async () => {
+    mockUseSessionContext.mockReturnValue({
+      doesSessionExist: true,
+      userId: 'patient-1',
+      accessTokenPayload: {}
+    });
+    mockDbGet.mockResolvedValue({
+      userId: 'patient-1',
+      role_name: 'Patient',
+      email: 'patient@test.com',
+      fullname: 'Test Patient',
+      profile_complete: true
+    });
+    mockGetClaimValue.mockResolvedValue(['Patient']);
+    mockGetAuthSession.mockResolvedValue({
+      authenticated: true,
+      role_name: 'Patient',
+      userId: 'patient-1'
+    });
+    renderWithAuthProvider();
+    await waitFor(() =>
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
+    );
+    expect(getProfileByIdentifier).not.toHaveBeenCalled();
+    expectNoClinicOrganization();
   });
 });

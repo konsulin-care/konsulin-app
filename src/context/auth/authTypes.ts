@@ -12,6 +12,7 @@ export interface IStateUserInfo {
   phoneNumber?: string;
   profile_picture?: string;
   fhirId?: string;
+  organizationId?: string;
   profile_complete?: boolean;
 }
 

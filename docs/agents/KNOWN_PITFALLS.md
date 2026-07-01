@@ -42,3 +42,37 @@ date: 2026-05-26
 - AEHRC builds form via `useBuildForm()` — ensure Questionnaire JSON
   is fully loaded before mounting the component
 - Admin JS files from aehrc renderer may conflict with HTMX headers
+
+# Tailwind v4 CSS Pitfalls
+
+- `data-[*]:` variants for custom `@layer utilities` classes do NOT
+  generate working CSS in Tailwind v4. The variant modifier is silently
+  ignored at build time.
+- **Fix**: define an explicit class with `!important` that targets the
+  state attribute directly, e.g.
+  `.foo[data-state='active'] { color: var(--secondary) !important; }`
+  and apply it via `className`.
+- This applies to ALL state-driven styling: `data-state`, `aria-*`,
+  or any `[data-*]` attribute — tabs, drawers, modals, accordions.
+  Never use `data-[*]:bg-<custom>` for a `@layer utilities` class.
+
+# TypeScript/React Pitfalls
+
+- **Void-returning arrow shorthands in JSX** — `onClick={e => handler(e)}`
+  implicitly returns `undefined` when the handler returns `void`. Always
+  use braces: `onClick={e => { handler(e); }}`.
+- **Redundant null checks on initialized state** — `useState<T>([])`
+  guarantees the value is always an array. A guard like
+  `if (!items || items.length === 0)` has a dead `!items` branch.
+  Trust your initializer: `if (items.length === 0)`.
+- **Local variable `children` shadows React concept** — rename to
+  `childElements`, `items`, or `slots` to avoid confusion with React's
+  `children` prop.
+- **Dynamic property access without prototype guard** — writing
+  `obj[key] = val` where `key` could be `__proto__` or `constructor`
+  risks prototype pollution. Use `Map<K, V>` for dynamic-key maps, or
+  guard writes with `Object.hasOwn(obj, key)` before assignment.
+- **Stale-closure safety nets vs. redundant checks** — in `useEffect`
+  cleanup/observer callbacks, re-checking a condition already guarded
+  at effect scope is redundant. Remove the redundant check or accept
+  the lint warning explicitly with a comment.

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -11,9 +12,10 @@ import (
 )
 
 type RoleSwitchOptions struct {
-	CookieName   string
-	CookieSecure bool
-	CookieSecret string
+	CookieName     string
+	CookieSecure   bool
+	CookieSecret   string
+	BackendBaseURL string
 }
 
 func NewRoleSwitchHandler(opts RoleSwitchOptions) http.HandlerFunc {
@@ -43,14 +45,7 @@ func handleRoleSwitch(w http.ResponseWriter, r *http.Request, opts RoleSwitchOpt
 		return
 	}
 
-	valid := false
-	for _, role := range sess.Roles {
-		if role == newRole {
-			valid = true
-			break
-		}
-	}
-	if !valid {
+	if !isRoleInSession(sess.Roles, newRole) {
 		slog.Warn("role switch: invalid role requested", "requested", newRole, "available", sess.Roles)
 		http.Error(w, "invalid role", http.StatusBadRequest)
 		return
@@ -77,8 +72,50 @@ func handleRoleSwitch(w http.ResponseWriter, r *http.Request, opts RoleSwitchOpt
 		MaxAge:   int((2 * time.Hour).Seconds()),
 	})
 
+	setActiveRoleClaim(w, r, opts, newRole)
+
 	w.Header().Set("HX-Redirect", "/")
 	w.WriteHeader(http.StatusOK)
+}
+
+/** Push the active role into the SuperTokens session so the backend sees it. */
+func setActiveRoleClaim(w http.ResponseWriter, r *http.Request, opts RoleSwitchOptions, role string) {
+	if opts.BackendBaseURL == "" {
+		return
+	}
+	body := strings.NewReader(fmt.Sprintf(`{"role":%q}`, role))
+	// BackendBaseURL comes from server configuration, not user input — safe.
+	//nolint:gosec
+	req, err := http.NewRequest(http.MethodPost, opts.BackendBaseURL+"/api/v1/auth/active-role", body)
+	if err != nil {
+		slog.Warn("role switch: build active-role request failed", "err", err)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Cookie", r.Header.Get("Cookie"))
+	req.Header.Set("rid", "anti-csrf")
+	resp, err := backendProxyClient.Do(req)
+	if err != nil {
+		slog.Warn("role switch: active-role backend call failed", "err", err)
+		return
+	}
+	defer func() { _ = resp.Body.Close() }()
+	for _, c := range resp.Header.Values("Set-Cookie") {
+		w.Header().Add("Set-Cookie", c)
+	}
+	if resp.StatusCode >= 300 {
+		slog.Warn("role switch: active-role backend rejected", "status", resp.StatusCode)
+	}
+}
+
+/** Check if a role exists in the session's role list. */
+func isRoleInSession(roles []string, target string) bool {
+	for _, role := range roles {
+		if role == target {
+			return true
+		}
+	}
+	return false
 }
 
 func handleRoleSwitcherPartial(w http.ResponseWriter, r *http.Request) {
