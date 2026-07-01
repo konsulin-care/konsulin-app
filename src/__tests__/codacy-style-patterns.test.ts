@@ -117,6 +117,37 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
     });
   });
 
+  describe('internal/handler/role_switcher.go', () => {
+    const { lines } = readFile('internal/handler/role_switcher.go');
+
+    it('nolint references correct gosec rule G107 for SSRF suppression', () => {
+      // Find the nolint comment near line 88 that suppresses the
+      // active-role HTTP request SSRF flag.
+      const nolintIdx = lines.findIndex(
+        l => l.includes('nolint:gosec') && l.includes('BackendBaseURL')
+      );
+      expect(nolintIdx).toBeGreaterThanOrEqual(0);
+      const comment = lines[nolintIdx];
+      // Must reference G107 (SSRF), not G404 (math/rand).
+      expect(comment).toContain('G107');
+      expect(comment).not.toContain('G404');
+    });
+  });
+
+  describe('services-tab.tsx (bracket-notation)', () => {
+    const { content } = readFile('src/app/practitioner/services-tab.tsx');
+
+    it('uses .at() instead of bracket notation for fetchedServices[i]', () => {
+      // Line 58 originally: const f = fetchedServices[i];
+      expect(content).not.toContain('fetchedServices[i]');
+    });
+
+    it('uses .with() or .splice() instead of bracket notation for updated[existingIdx]', () => {
+      // Line 95 originally: updated[existingIdx] = serviceWithId;
+      expect(content).not.toContain('updated[existingIdx]');
+    });
+  });
+
   describe('fhirIdMap.ts', () => {
     const { lines } = readFile('src/context/auth/fhirIdMap.ts');
 

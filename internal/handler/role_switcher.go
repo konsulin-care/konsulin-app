@@ -85,7 +85,7 @@ func setActiveRoleClaim(w http.ResponseWriter, r *http.Request, opts RoleSwitchO
 		return
 	}
 	body := strings.NewReader(fmt.Sprintf(`{"role":%q}`, role))
-	//nolint:gosec // G404: configurable, trusted backend URL.
+	//nolint:gosec // G107: BackendBaseURL is from server configuration, not user input.
 	req, err := http.NewRequest(http.MethodPost, opts.BackendBaseURL+"/api/v1/auth/active-role", body)
 	if err != nil {
 		slog.Warn("role switch: build active-role request failed", "err", err)

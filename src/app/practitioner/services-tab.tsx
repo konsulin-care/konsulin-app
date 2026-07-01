@@ -55,7 +55,7 @@ export default function ServicesTab({
     if (!fetchedServices) return localServices.length > 0;
     if (localServices.length !== fetchedServices.length) return true;
     return localServices.some((s, i) => {
-      const f = fetchedServices[i];
+      const f = fetchedServices.at(i);
       return (
         s.name !== f.name ||
         s.active !== f.active ||
@@ -91,9 +91,7 @@ export default function ServicesTab({
     setLocalServices(prev => {
       const existingIdx = prev.findIndex(s => s.id === serviceWithId.id);
       if (existingIdx !== -1) {
-        const updated = [...prev];
-        updated[existingIdx] = serviceWithId;
-        return updated;
+        return prev.with(existingIdx, serviceWithId);
       }
       return [...prev, serviceWithId];
     });
