@@ -20,6 +20,31 @@ function isValidRoleKey(key: string): boolean {
   return !BANNED_KEYS.has(key) && !key.startsWith('__');
 }
 
+/** Safely read a role key from the map, guarding against prototype pollution. */
+function getRoleValue(
+  map: Record<string, string>,
+  role: string
+): string | undefined {
+  // Allow banned keys that already exist (backward compat for stored data).
+  if (!Object.hasOwn(map, role) && !isValidRoleKey(role)) {
+    throw new TypeError(`Invalid role key: ${role}`);
+  }
+  return map[role];
+}
+
+/** Safely set a role key in the map, guarding against prototype pollution. */
+function setRoleValue(
+  map: Record<string, string>,
+  role: string,
+  value: string
+): void {
+  // Allow overwriting banned keys that already exist.
+  if (!Object.hasOwn(map, role) && !isValidRoleKey(role)) {
+    throw new TypeError(`Invalid role key: ${role}`);
+  }
+  map[role] = value;
+}
+
 /** Build the compound key for a user's fhirId map in uiPreferences. */
 function mapKey(userId: string): string {
   return `${FHIR_ID_MAP_PREFIX}${userId}`;
@@ -55,11 +80,7 @@ export async function storeFhirIdForRole(
   fhirId: string
 ): Promise<void> {
   const existing = await getFhirIdMap(userId);
-  // Guard against prototype pollution — role keys must be safe.
-  if (!Object.hasOwn(existing, role) && !isValidRoleKey(role)) {
-    throw new TypeError(`Invalid role key: ${role}`);
-  }
-  existing[role] = fhirId;
+  setRoleValue(existing, role, fhirId);
   await storeFhirIdMap(userId, existing);
 }
 
@@ -69,9 +90,5 @@ export async function getFhirIdForRole(
   role: string
 ): Promise<string | undefined> {
   const map = await getFhirIdMap(userId);
-  // Guard against prototype pollution — role keys must be safe.
-  if (!Object.hasOwn(map, role) && !isValidRoleKey(role)) {
-    throw new TypeError(`Invalid role key: ${role}`);
-  }
-  return map[role];
+  return getRoleValue(map, role);
 }

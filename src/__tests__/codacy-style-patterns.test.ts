@@ -149,24 +149,61 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
   describe('fhirIdMap.ts', () => {
     const { lines } = readFile('src/context/auth/fhirIdMap.ts');
 
-    it('guards dynamic property write with Object.hasOwn', () => {
+    it('uses setRoleValue helper for dynamic property writes', () => {
+      const writeIdx = lines.findIndex(
+        l => l.includes('setRoleValue(existing, role, fhirId)')
+      );
+      expect(writeIdx).toBeGreaterThanOrEqual(0);
+    });
+
+    it('uses getRoleValue helper for dynamic property reads', () => {
+      const readIdx = lines.findIndex(
+        l => l.includes('getRoleValue(map, role)')
+      );
+      expect(readIdx).toBeGreaterThanOrEqual(0);
+    });
+
+    it('getRoleValue guards with Object.hasOwn + isValidRoleKey before property access', () => {
+      const fnStart = lines.findIndex(l =>
+        l.includes('function getRoleValue')
+      );
+      expect(fnStart).toBeGreaterThanOrEqual(0);
+      const body = lines.slice(fnStart, fnStart + 10);
+      expect(body.some(l => l.includes('Object.hasOwn'))).toBe(true);
+      expect(body.some(l => l.includes('isValidRoleKey(role)'))).toBe(true);
+      expect(body.some(l => l.includes('return map[role]'))).toBe(true);
+    });
+
+    it('setRoleValue guards with Object.hasOwn + isValidRoleKey before property write', () => {
+      const fnStart = lines.findIndex(l =>
+        l.includes('function setRoleValue')
+      );
+      expect(fnStart).toBeGreaterThanOrEqual(0);
+      const body = lines.slice(fnStart, fnStart + 10);
+      expect(body.some(l => l.includes('Object.hasOwn'))).toBe(true);
+      expect(body.some(l => l.includes('isValidRoleKey(role)'))).toBe(true);
+      expect(body.some(l => l.includes('map[role] = value'))).toBe(true);
+    });
+
+    it('no direct dynamic property write in exported functions', () => {
       const writeIdx = lines.findIndex(
         l => l.includes('existing[') && l.includes('] = fhirId')
       );
-      expect(writeIdx).toBeGreaterThanOrEqual(0);
-      const guard = lines
-        .slice(0, writeIdx)
-        .findLast(l => l.includes('Object.hasOwn'));
-      expect(guard).toBeDefined();
+      expect(writeIdx).toBe(-1);
     });
 
-    it('guards dynamic property read with Object.hasOwn', () => {
-      const readIdx = lines.findIndex(l => l.includes('return map['));
-      expect(readIdx).toBeGreaterThanOrEqual(0);
-      const guard = lines
-        .slice(0, readIdx)
-        .findLast(l => l.includes('Object.hasOwn'));
-      expect(guard).toBeDefined();
+    it('no direct dynamic property read in exported functions', () => {
+      // Private helpers may use map[role] — only check exported function bodies.
+      const exportStart = lines.findIndex(l =>
+        l.includes('export async function storeFhirIdForRole')
+      );
+      expect(exportStart).toBeGreaterThanOrEqual(0);
+      // From the first exported function onward, there should be no 'return map['.
+      const exportedLines = lines.slice(exportStart);
+      const readIdx = exportedLines.findIndex(l =>
+        l.includes('return map[')
+      );
+      expect(readIdx).toBe(-1);
     });
   });
 });
