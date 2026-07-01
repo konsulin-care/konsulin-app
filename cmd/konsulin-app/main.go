@@ -153,9 +153,10 @@ func routes(cfg *config.Config) (http.Handler, error) {
 
 	// Role switcher — GET returns partial, POST updates session cookie.
 	r.HandleFunc("/auth/role/switch", handler.NewRoleSwitchHandler(handler.RoleSwitchOptions{
-		CookieName:   cfg.AuthCookieName,
-		CookieSecure: cfg.CookieSecure,
-		CookieSecret: cfg.SessionCookieSecret,
+		CookieName:     cfg.AuthCookieName,
+		CookieSecure:   cfg.CookieSecure,
+		CookieSecret:   cfg.SessionCookieSecret,
+		BackendBaseURL: cfg.APIURL,
 	}))
 
 	// Protected Next.js pages (mirrors old middleware.ts route list).
