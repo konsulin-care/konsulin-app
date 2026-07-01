@@ -43,6 +43,12 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
     it('uses braces in onClick for handleEditService', () => {
       expect(content).not.toContain('onClick={() => handleEditService(svc)}');
     });
+
+    it('uses braces in onClick for handleDeleteService', () => {
+      expect(content).not.toContain(
+        "onClick={() => handleDeleteService(svc.id)}"
+      );
+    });
   });
 
   describe('add-location-drawer.tsx', () => {
@@ -69,6 +75,13 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
         l => l.includes('const children') && l.includes('el.children')
       );
       expect(childrenVar).toBe(-1);
+    });
+
+    it('renames items to childElements for overflow measurement', () => {
+      const itemsVar = lines.findIndex(
+        l => l.includes('const items') && l.includes('el.children')
+      );
+      expect(itemsVar).toBe(-1);
     });
 
     it('uses braces in useEffect cleanup for observer.disconnect', () => {
@@ -168,7 +181,7 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
         l.includes('function getRoleValue')
       );
       expect(fnStart).toBeGreaterThanOrEqual(0);
-      const body = lines.slice(fnStart, fnStart + 10);
+      const body = lines.slice(fnStart, fnStart + 12);
       expect(body.some(l => l.includes('Object.hasOwn'))).toBe(true);
       expect(body.some(l => l.includes('isValidRoleKey(role)'))).toBe(true);
       expect(body.some(l => l.includes('return map[role]'))).toBe(true);
@@ -179,7 +192,7 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
         l.includes('function setRoleValue')
       );
       expect(fnStart).toBeGreaterThanOrEqual(0);
-      const body = lines.slice(fnStart, fnStart + 10);
+      const body = lines.slice(fnStart, fnStart + 12);
       expect(body.some(l => l.includes('Object.hasOwn'))).toBe(true);
       expect(body.some(l => l.includes('isValidRoleKey(role)'))).toBe(true);
       expect(body.some(l => l.includes('map[role] = value'))).toBe(true);

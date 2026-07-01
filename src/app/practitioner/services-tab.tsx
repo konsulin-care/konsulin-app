@@ -231,7 +231,7 @@ export default function ServicesTab({
             <button
               type='button'
               aria-label='Delete service'
-              onClick={() => handleDeleteService(svc.id)}
+              onClick={() => { handleDeleteService(svc.id); }}
               className='absolute right-4 top-4 bg-transparent border-none p-0 text-xs text-red-600 underline'
             >
               <Trash2 size={16} className='text-red-500' />

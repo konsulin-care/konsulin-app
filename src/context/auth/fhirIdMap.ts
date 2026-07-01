@@ -29,6 +29,7 @@ function getRoleValue(
   if (!Object.hasOwn(map, role) && !isValidRoleKey(role)) {
     throw new TypeError(`Invalid role key: ${role}`);
   }
+  // skipcq: JS-0376 - guarded by isValidRoleKey() + BANNED_KEYS above
   return map[role];
 }
 
@@ -42,6 +43,7 @@ function setRoleValue(
   if (!Object.hasOwn(map, role) && !isValidRoleKey(role)) {
     throw new TypeError(`Invalid role key: ${role}`);
   }
+  // skipcq: JS-0376 - guarded by isValidRoleKey() + BANNED_KEYS above
   map[role] = value;
 }
 

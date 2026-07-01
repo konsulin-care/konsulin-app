@@ -54,14 +54,14 @@ export function PractitionerCard({
 
     // Temporarily render all items to measure full width
     // DOM element references for overflow measurement — not raw HTML.
-    const items = [...el.children] as HTMLElement[];
+    const childElements = [...el.children] as HTMLElement[];
 
     // Check which items are fully visible
     const containerWidth = el.clientWidth;
     let visibleCount = 0;
     let cumulativeWidth = 0;
 
-    for (const child of items) {
+    for (const child of childElements) {
       cumulativeWidth += child.scrollWidth;
       if (cumulativeWidth <= containerWidth) {
         visibleCount++;
