@@ -160,7 +160,9 @@ export default function PatientSchedule({ fhirId }: Props) {
           <AppointmentCard appointment={appointment} />
         )}
         onLoadMore={() => {
-          void fetchNextPage();
+          fetchNextPage().catch(() => {
+            /* handled by react-query internally */
+          });
         }}
         hasMore={hasNextPage}
         isLoadingMore={isFetchingNextPage}

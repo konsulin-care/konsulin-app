@@ -39,8 +39,8 @@ import {
 } from './register-practitioner.utils';
 
 type Props = {
-  open: boolean;
-  onClose: () => void;
+  readonly open: boolean;
+  readonly onClose: () => void;
 };
 
 type LocationOption = { id: string; name: string };
@@ -51,9 +51,9 @@ function LocationCombobox({
   selectedId,
   onSelect
 }: {
-  locations: LocationOption[];
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
+  readonly locations: readonly LocationOption[];
+  readonly selectedId: string | null;
+  readonly onSelect: (id: string | null) => void;
 }) {
   const [open, setOpen] = useState(false);
   const selectedName = locations.find(l => l.id === selectedId)?.name;
@@ -190,9 +190,13 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
             ? 'Practitioner registered successfully'
             : 'Practitioner already registered'
         );
-        void queryClient.invalidateQueries({
-          queryKey: ['practitioner-count']
-        });
+        queryClient
+          .invalidateQueries({
+            queryKey: ['practitioner-count']
+          })
+          .catch(() => {
+            /* cache invalidation best-effort */
+          });
         onClose();
       } catch (err) {
         const message =
@@ -205,7 +209,9 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
       }
     };
 
-    void register();
+    register().catch(() => {
+      /* errors handled inside register */
+    });
   }, [
     isValid,
     isSubmitting,

@@ -102,8 +102,8 @@ function PillButtons({
   pills,
   onPillClick
 }: {
-  pills: Pill[];
-  onPillClick: (pill: Pill) => void;
+  readonly pills: readonly Pill[];
+  readonly onPillClick: (pill: Pill) => void;
 }) {
   return (
     <div className='flex flex-col-reverse items-end gap-3'>
@@ -130,10 +130,10 @@ function FabToggleButton({
   dirtyLabel,
   onToggle
 }: {
-  isOpen: boolean;
-  isDirty: boolean;
-  dirtyLabel: string | undefined;
-  onToggle: () => void;
+  readonly isOpen: boolean;
+  readonly isDirty: boolean;
+  readonly dirtyLabel: string | undefined;
+  readonly onToggle: () => void;
 }) {
   return (
     <button
@@ -179,7 +179,9 @@ export default function QuickActionFab() {
   const close = useCallback(() => setIsOpen(false), []);
   const toggle = useCallback(() => {
     if (dirtyState) {
-      void dirtyState.onSave();
+      Promise.resolve(dirtyState.onSave()).catch(() => {
+        /* errors handled internally */
+      });
     } else {
       setIsOpen(v => !v);
     }

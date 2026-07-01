@@ -22,12 +22,12 @@ import { useCallback, useState } from 'react';
 const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
 
 type Props = {
-  open: boolean;
-  onClose: () => void;
-  onSave: (service: HealthcareService) => void;
-  service?: HealthcareService;
-  providedBy: string;
-  location?: string;
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly onSave: (service: HealthcareService) => void;
+  readonly service?: HealthcareService;
+  readonly providedBy: string;
+  readonly location?: string;
 };
 
 /** Form fields for name, fee, duration, extra details. */
@@ -43,16 +43,16 @@ function FormFields({
   active,
   onActiveChange
 }: {
-  name: string;
-  onNameChange: (v: string) => void;
-  fee: string;
-  onFeeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  duration: string;
-  onDurationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  extraDetails: string;
-  onExtraDetailsChange: (v: string) => void;
-  active: boolean;
-  onActiveChange: (v: boolean) => void;
+  readonly name: string;
+  readonly onNameChange: (v: string) => void;
+  readonly fee: string;
+  readonly onFeeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readonly duration: string;
+  readonly onDurationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readonly extraDetails: string;
+  readonly onExtraDetailsChange: (v: string) => void;
+  readonly active: boolean;
+  readonly onActiveChange: (v: boolean) => void;
 }) {
   return (
     <div className='space-y-4 px-4'>

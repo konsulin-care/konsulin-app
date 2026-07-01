@@ -22,7 +22,11 @@ const FabDirtyContext = createContext<FabDirtyContextType>({
 });
 
 /** Wraps children with FabDirtyContext.Provider. */
-export function FabDirtyProvider({ children }: { children: React.ReactNode }) {
+export function FabDirtyProvider({
+  children
+}: {
+  readonly children: React.ReactNode;
+}) {
   const [dirtyState, setDirtyState] = useState<FabDirtyState | null>(null);
   const value = useMemo(() => ({ dirtyState, setDirtyState }), [dirtyState]);
   return (

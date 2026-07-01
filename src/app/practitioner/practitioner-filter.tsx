@@ -30,9 +30,9 @@ interface LocationOption {
 }
 
 interface Props {
-  locations: LocationOption[];
-  value: FilterState;
-  onChange: (state: FilterState) => void;
+  readonly locations: readonly LocationOption[];
+  readonly value: FilterState;
+  readonly onChange: (state: FilterState) => void;
 }
 
 /** Filter icon button. Forwards props and ref for Radix asChild. */
@@ -62,8 +62,8 @@ function LocationCombobox({
   locations,
   onSelect
 }: {
-  locations: LocationOption[];
-  onSelect: (id: string) => void;
+  readonly locations: readonly LocationOption[];
+  readonly onSelect: (id: string) => void;
 }) {
   return (
     <Command>
@@ -91,17 +91,17 @@ function FilterPopoverContent({
   onReset,
   activeCount
 }: {
-  locations: LocationOption[];
-  value: FilterState;
-  onStatusChange: (status: string) => void;
-  onLocationSelect: (id: string) => void;
-  onReset: () => void;
-  activeCount: number;
+  readonly locations: readonly LocationOption[];
+  readonly value: FilterState;
+  readonly onStatusChange: (status: string) => void;
+  readonly onLocationSelect: (id: string) => void;
+  readonly onReset: () => void;
+  readonly activeCount: number;
 }) {
   return (
     <div className='space-y-4'>
       <div>
-        <label className='mb-2 block text-sm font-medium'>Status</label>
+        <span className='mb-2 block text-sm font-medium'>Status</span>
         <ToggleGroup
           type='single'
           value={value.status === 'all' ? '' : value.status}
@@ -116,7 +116,7 @@ function FilterPopoverContent({
       </div>
 
       <div>
-        <label className='mb-2 block text-sm font-medium'>Location</label>
+        <span className='mb-2 block text-sm font-medium'>Location</span>
         <LocationCombobox locations={locations} onSelect={onLocationSelect} />
       </div>
 

@@ -6,10 +6,12 @@ import (
 	"github.com/konsulin-care/konsulin-app/internal/data/wilayah"
 )
 
+const errNotFound = "not found"
+
 func (h *WilayahHandler) lookupProvince(w http.ResponseWriter, id string) {
 	idx, ok := h.index.ProvinceByID[id]
 	if !ok {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": errNotFound})
 		return
 	}
 	p := h.index.Provinces[idx]
@@ -24,7 +26,7 @@ func (h *WilayahHandler) lookupProvince(w http.ResponseWriter, id string) {
 func (h *WilayahHandler) lookupRegency(w http.ResponseWriter, id string) {
 	idx, ok := h.index.RegencyByID[id]
 	if !ok {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": errNotFound})
 		return
 	}
 	r := h.index.Regencies[idx]
@@ -44,7 +46,7 @@ func (h *WilayahHandler) lookupRegency(w http.ResponseWriter, id string) {
 func (h *WilayahHandler) lookupDistrict(w http.ResponseWriter, id string) {
 	idx, ok := h.index.DistrictByID[id]
 	if !ok {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": errNotFound})
 		return
 	}
 	d := h.index.Districts[idx]
@@ -71,7 +73,7 @@ func (h *WilayahHandler) buildDistrictParents(d wilayah.District) []parentEntry 
 func (h *WilayahHandler) lookupVillage(w http.ResponseWriter, id string) {
 	idx, ok := h.index.VillageByID[id]
 	if !ok {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": errNotFound})
 		return
 	}
 	v := h.index.Villages[idx]

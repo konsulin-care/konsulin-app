@@ -141,7 +141,7 @@ describe('QuickActionFab', () => {
     const pillsAfter = screen.queryAllByText(
       /Self Checkup|Write Journal|View Schedule|Get Recommendation/
     );
-    expect(pillsAfter.length).toBe(0);
+    expect(pillsAfter).toHaveLength(0);
   });
 });
 

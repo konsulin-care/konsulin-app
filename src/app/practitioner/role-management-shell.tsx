@@ -11,7 +11,7 @@ import PractitionerAvailabilityEditor from './practitioner-availability-editor';
 import ServicesTab from './services-tab';
 
 type Props = {
-  practitionerRoleId: string;
+  readonly practitionerRoleId: string;
 };
 
 /**

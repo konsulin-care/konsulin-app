@@ -16,12 +16,12 @@ import {
 } from 'react';
 
 interface PractitionerCardProps {
-  id: string;
-  practitionerName: string;
-  photoUrl: string | undefined;
-  specialties: string[];
-  healthcareServiceNames: string[];
-  practitionerRoleId: string;
+  readonly id: string;
+  readonly practitionerName: string;
+  readonly photoUrl: string | undefined;
+  readonly specialties: string[];
+  readonly healthcareServiceNames: string[];
+  readonly practitionerRoleId: string;
 }
 
 const HIDDEN_PLACEHOLDER = '___hidden___';

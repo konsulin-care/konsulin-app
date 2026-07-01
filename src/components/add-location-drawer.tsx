@@ -78,9 +78,13 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
         });
 
         toast.success('Location added successfully');
-        void queryClient.invalidateQueries({
-          queryKey: ['practitioner-count']
-        });
+        queryClient
+          .invalidateQueries({
+            queryKey: ['practitioner-count']
+          })
+          .catch(() => {
+            /* cache invalidation best-effort */
+          });
         onClose();
       } catch (err) {
         const message =
@@ -91,7 +95,9 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
       }
     };
 
-    void submit();
+    submit().catch(() => {
+      /* errors handled inside submit */
+    });
   }, [
     isValid,
     isSubmitting,

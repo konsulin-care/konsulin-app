@@ -20,11 +20,11 @@ import { Check, ChevronDown, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
 type LocationComboboxProps = {
-  options: IWilayahResponse[];
-  value: string;
-  onSelect: (option: IWilayahResponse) => void;
-  placeholder: string;
-  loading?: boolean;
+  readonly options: readonly IWilayahResponse[];
+  readonly value: string;
+  readonly onSelect: (option: IWilayahResponse) => void;
+  readonly placeholder: string;
+  readonly loading?: boolean;
 };
 
 /**

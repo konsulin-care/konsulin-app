@@ -20,8 +20,8 @@ type Props<T> = {
   readonly selectedTab: string;
   readonly onTabChange: (value: string) => void;
   readonly isLoading: boolean;
-  readonly upcoming: T[];
-  readonly past: T[];
+  readonly upcoming: readonly T[];
+  readonly past: readonly T[];
   readonly renderCard: (item: T) => ReactNode;
   readonly onLoadMore?: () => void;
   readonly hasMore?: boolean;

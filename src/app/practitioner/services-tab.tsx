@@ -9,9 +9,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import ServiceFormDrawer from './service-form-drawer';
 
 type Props = {
-  practitionerRoleId?: string;
+  readonly practitionerRoleId?: string;
   /** Reports dirty state and save handler to parent (for external FAB management). */
-  onDirtyChange?: (
+  readonly onDirtyChange?: (
     dirty: boolean,
     save: () => Promise<void>,
     saving: boolean
@@ -19,7 +19,7 @@ type Props = {
   /** Full PractitionerRole resource to preserve all fields on save.
    *  When provided, the bundle PUT includes all existing fields (practitioner,
    *  organization, availableTime, etc.) instead of only healthcareService. */
-  practitionerRole?: PractitionerRole;
+  readonly practitionerRole?: PractitionerRole;
 };
 
 /**
@@ -202,7 +202,12 @@ export default function ServicesTab({
       {localServices.map((svc: HealthcareService) => (
         <div
           key={svc.id ?? svc.name}
+          role='button'
+          tabIndex={0}
           onClick={() => handleEditService(svc)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') handleEditService(svc);
+          }}
           className='card cursor-pointer rounded-lg border border-gray-200 bg-white p-4'
         >
           <div className='flex items-start justify-between'>
