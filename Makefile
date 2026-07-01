@@ -108,6 +108,9 @@ build-go: update-js css-templ templ-gen build-auth-spa
 run: update-js css-templ templ-gen
 	go run ./cmd/konsulin-app
 
+data-wilayah:
+	go generate ./internal/data/wilayah/
+
 update-js:
 	cp node_modules/htmx.org/dist/htmx.min.js web/static/js/htmx.min.js
 	cp node_modules/alpinejs/dist/cdn.min.js web/static/js/alpine.min.js
