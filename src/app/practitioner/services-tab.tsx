@@ -156,7 +156,7 @@ export default function ServicesTab({
     }
   }, [isDirty, saveAllLoading, onDirtyChange, handleSaveAll]);
 
-  if (!localServices || localServices.length === 0) {
+  if (localServices.length === 0) {
     return (
       <>
         <div className='py-8 text-center text-sm text-gray-500'>
@@ -204,7 +204,9 @@ export default function ServicesTab({
           key={svc.id ?? svc.name}
           role='button'
           tabIndex={0}
-          onClick={() => handleEditService(svc)}
+          onClick={() => {
+            handleEditService(svc);
+          }}
           onKeyDown={e => {
             if (e.key === 'Enter') handleEditService(svc);
           }}

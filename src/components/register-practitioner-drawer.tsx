@@ -244,7 +244,9 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
             <Input
               id='prac-name'
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={e => {
+                setName(e.target.value);
+              }}
               placeholder='Full Name'
               className='bg-white'
               aria-label='Name'
@@ -257,7 +259,9 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
               id='prac-email'
               type='email'
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={e => {
+                setEmail(e.target.value);
+              }}
               placeholder='email@clinic.com'
               className='bg-white'
               aria-label='Email'

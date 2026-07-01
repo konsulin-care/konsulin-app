@@ -53,14 +53,14 @@ export function PractitionerCard({
     if (!el || specialties.length === 0) return;
 
     // Temporarily render all items to measure full width
-    const children = [...el.children] as HTMLElement[];
+    const childElements = [...el.children] as HTMLElement[];
 
     // Check which items are fully visible
     const containerWidth = el.clientWidth;
     let visibleCount = 0;
     let cumulativeWidth = 0;
 
-    for (const child of children) {
+    for (const child of childElements) {
       cumulativeWidth += child.scrollWidth;
       if (cumulativeWidth <= containerWidth) {
         visibleCount++;
@@ -84,7 +84,9 @@ export function PractitionerCard({
     measureOverflow();
     const observer = new ResizeObserver(measureOverflow);
     if (containerRef.current) observer.observe(containerRef.current);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [measureOverflow]);
 
   const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
@@ -117,7 +119,9 @@ export function PractitionerCard({
     updateSize();
     const observer = new ResizeObserver(updateSize);
     if (el) observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   const showPhoto = Boolean(photoUrl) && !imgError;
@@ -133,7 +137,9 @@ export function PractitionerCard({
         fill
         className='object-cover'
         unoptimized
-        onError={() => setImgError(true)}
+        onError={() => {
+          setImgError(true);
+        }}
       />
     );
   } else if (gradientUrl) {

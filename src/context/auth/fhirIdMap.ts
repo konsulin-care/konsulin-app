@@ -37,6 +37,9 @@ export async function storeFhirIdForRole(
   fhirId: string
 ): Promise<void> {
   const existing = await getFhirIdMap(userId);
+  if (!Object.hasOwn(existing, role) && role.startsWith('__')) {
+    throw new TypeError(`Invalid role key: ${role}`);
+  }
   existing[role] = fhirId;
   await storeFhirIdMap(userId, existing);
 }
@@ -47,5 +50,8 @@ export async function getFhirIdForRole(
   role: string
 ): Promise<string | undefined> {
   const map = await getFhirIdMap(userId);
+  if (!Object.hasOwn(map, role) && role.startsWith('__')) {
+    throw new TypeError(`Invalid role key: ${role}`);
+  }
   return map[role];
 }

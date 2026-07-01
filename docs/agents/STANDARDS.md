@@ -29,6 +29,22 @@ Each domain has a focused document under `@docs/agents/`.
   `.foo[data-state='active']`). Do NOT use Tailwind `data-[*]:`
   variant modifiers — they silently fail for custom utilities.
 
+# JavaScript/TypeScript Standards
+
+- **Event handlers**: wrap void-returning calls in braces —
+  `onClick={e => { handler(e); }}`, not `onClick={e => handler(e)}`.
+  The shorthand form implicitly returns `undefined` and triggers
+  `no-confusing-void-expression` in type-aware linters.
+- **State guards**: avoid redundant null checks on state initialized
+  with a non-null default (`useState<T>([])`). Trust the initializer.
+- **Dynamic keys**: use `Map<K, V>` instead of `Record<K, V>` when
+  the key set is dynamic. This prevents prototype pollution via
+  `__proto__` or `constructor` keys.
+- **Hook cleanup**: `useEffect` cleanup functions that call a void
+  method should use braces: `return () => { observer.disconnect(); }`.
+- **Naming**: avoid `children` as a local variable name in React
+  components — it shadows the built-in `ReactNode` prop.
+
 # FHIR Standards
 
 - Use strict R4 resource types as Go structs

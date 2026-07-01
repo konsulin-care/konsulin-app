@@ -71,7 +71,9 @@ function FormFields({
         <Input
           id='service-name'
           value={name}
-          onChange={e => onNameChange(e.target.value)}
+          onChange={e => {
+            onNameChange(e.target.value);
+          }}
           placeholder='General Consultation'
           className='bg-white'
         />
@@ -112,7 +114,9 @@ function FormFields({
         <Textarea
           id='service-extra-details'
           value={extraDetails}
-          onChange={e => onExtraDetailsChange(e.target.value)}
+          onChange={e => {
+            onExtraDetailsChange(e.target.value);
+          }}
           rows={3}
           className='bg-white'
         />

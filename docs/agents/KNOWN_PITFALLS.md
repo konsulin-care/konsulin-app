@@ -55,3 +55,24 @@ date: 2026-05-26
 - This applies to ALL state-driven styling: `data-state`, `aria-*`,
   or any `[data-*]` attribute — tabs, drawers, modals, accordions.
   Never use `data-[*]:bg-<custom>` for a `@layer utilities` class.
+
+# TypeScript/React Pitfalls
+
+- **Void-returning arrow shorthands in JSX** — `onClick={e => handler(e)}`
+  implicitly returns `undefined` when the handler returns `void`. Always
+  use braces: `onClick={e => { handler(e); }}`.
+- **Redundant null checks on initialized state** — `useState<T>([])`
+  guarantees the value is always an array. A guard like
+  `if (!items || items.length === 0)` has a dead `!items` branch.
+  Trust your initializer: `if (items.length === 0)`.
+- **Local variable `children` shadows React concept** — rename to
+  `childElements`, `items`, or `slots` to avoid confusion with React's
+  `children` prop.
+- **Dynamic property access without prototype guard** — writing
+  `obj[key] = val` where `key` could be `__proto__` or `constructor`
+  risks prototype pollution. Use `Map<K, V>` for dynamic-key maps, or
+  guard writes with `Object.hasOwn(obj, key)` before assignment.
+- **Stale-closure safety nets vs. redundant checks** — in `useEffect`
+  cleanup/observer callbacks, re-checking a condition already guarded
+  at effect scope is redundant. Remove the redundant check or accept
+  the lint warning explicitly with a comment.

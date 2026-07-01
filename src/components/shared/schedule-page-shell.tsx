@@ -51,7 +51,7 @@ function InfiniteScrollSentinel({
 
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0]?.isIntersecting && hasMore && !isLoadingMore) {
+        if (entries[0]?.isIntersecting && !isLoadingMore) {
           onLoadMore();
         }
       },
@@ -60,7 +60,9 @@ function InfiniteScrollSentinel({
 
     observer.observe(node);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
     /* eslint consistent-return: off -- useEffect cleanup pattern */
   }, [hasMore, isLoadingMore, onLoadMore]);
 
