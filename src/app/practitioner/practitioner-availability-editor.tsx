@@ -124,7 +124,7 @@ export default function PractitionerAvailabilityEditor({
    * Handle saving all availability changes
    */
   const handleSave = async () => {
-    if (!memoizedRolesToUse || memoizedRolesToUse.length === 0) {
+    if (memoizedRolesToUse.length === 0) {
       console.error('At least one PractitionerRole is required');
       return;
     }
