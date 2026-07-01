@@ -198,47 +198,46 @@ export default function ServicesTab({
       </div>
 
       {localServices.map((svc: HealthcareService) => (
-        <button
-          type='button'
-          key={svc.id ?? svc.name}
-          aria-label='Edit service'
-          onClick={() => {
-            handleEditService(svc);
-          }}
-          className='card w-full cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left'
-        >
-          <div className='flex items-start justify-between'>
-            <div className='flex-1'>
-              <div className='text-sm font-bold'>
-                {svc.active !== false && (
-                  <span className='mr-2 inline-block h-2 w-2 rounded-full bg-green-500' />
-                )}
-                {svc.name}
-              </div>
-              {svc.extraDetails && (
-                <div className='mt-1 text-xs text-gray-500'>
-                  {svc.extraDetails}
+        <div key={svc.id ?? svc.name} className='relative'>
+          <button
+            type='button'
+            aria-label='Edit service'
+            onClick={() => {
+              handleEditService(svc);
+            }}
+            className='card w-full cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left'
+          >
+            <div className='flex items-start justify-between'>
+              <div className='flex-1'>
+                <div className='text-sm font-bold'>
+                  {svc.active !== false && (
+                    <span className='mr-2 inline-block h-2 w-2 rounded-full bg-green-500' />
+                  )}
+                  {svc.name}
                 </div>
-              )}
+                {svc.extraDetails && (
+                  <div className='mt-1 text-xs text-gray-500'>
+                    {svc.extraDetails}
+                  </div>
+                )}
+              </div>
+              <div className='flex gap-2'>
+                <Pencil size={16} />
+              </div>
             </div>
-            <div className='flex gap-2'>
-              <Pencil size={16} />
-              {svc.id && (
-                <button
-                  type='button'
-                  aria-label='Delete service'
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleDeleteService(svc.id);
-                  }}
-                  className='cursor-pointer bg-transparent border-none p-0 text-xs text-red-600 underline'
-                >
-                  <Trash2 size={16} className='text-red-500' />
-                </button>
-              )}
-            </div>
-          </div>
-        </button>
+          </button>
+
+          {svc.id && (
+            <button
+              type='button'
+              aria-label='Delete service'
+              onClick={() => handleDeleteService(svc.id)}
+              className='absolute right-4 top-4 bg-transparent border-none p-0 text-xs text-red-600 underline'
+            >
+              <Trash2 size={16} className='text-red-500' />
+            </button>
+          )}
+        </div>
       ))}
 
       <ServiceFormDrawer

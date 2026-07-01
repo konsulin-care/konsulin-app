@@ -276,6 +276,15 @@ describe('ServicesTab', () => {
     }
   });
 
+  it('does not nest button inside another button', () => {
+    mockServicesAndRender();
+    const allButtons = screen.getAllByRole('button');
+    for (const btn of allButtons) {
+      // No <button> descendant should exist inside any <button>
+      expect(btn.querySelector('button')).toBeNull();
+    }
+  });
+
   it('removes service card when clicking Delete', () => {
     mockServicesAndRender();
     expect(screen.getByText('General Consultation')).toBeInTheDocument();
