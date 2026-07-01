@@ -294,4 +294,57 @@ describe('useProfileSave', () => {
       expect(dbSet).not.toHaveBeenCalled();
     });
   });
+
+  describe('FHIR address payload', () => {
+    it('includes state (province) in the FHIR address', async () => {
+      const mockUpdateProfile = vi.fn().mockResolvedValue({
+        id: 'patient-1',
+        resourceType: 'Patient'
+      } as Patient);
+
+      const { result } = renderHook(() =>
+        useProfileSave({
+          updateUser: {
+            ...BASE_PROFILE,
+            firstName: 'John',
+            lastName: 'Doe',
+            fhirId: 'patient-1',
+            userId: 'user-1',
+            phone: '+628123456789',
+            province: 'DKI Jakarta',
+            city: 'Jakarta',
+            district: 'Central Jakarta',
+            addresses: ['Jl. Sudirman No. 1'],
+            postalCode: '10110'
+          },
+          fhirId: 'patient-1',
+          fhirRole: 'Patient',
+          authState: {
+            userInfo: {
+              userId: 'user-1',
+              role_name: 'Patient',
+              email: 'john@example.com',
+              fhirId: 'patient-1'
+            }
+          },
+          resolvePhotoUrl: vi.fn().mockResolvedValue(''),
+          isValidUrl: vi.fn().mockReturnValue(true),
+          updateProfile: mockUpdateProfile,
+          clearDraft: vi.fn(),
+          dispatchAuth: vi.fn(),
+          queryClient: { invalidateQueries: vi.fn() },
+          setDrawerState: vi.fn()
+        })
+      );
+
+      await act(async () => {
+        await result.current.handleEditSave();
+      });
+
+      const payload = (
+        mockUpdateProfile.mock.calls[0]?.[0] as { payload: Patient } | undefined
+      )?.payload;
+      expect(payload?.address?.[0]?.state).toBe('DKI Jakarta');
+    });
+  });
 });

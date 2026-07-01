@@ -8,7 +8,7 @@ import { DRAWER_STATE, genderList } from '@/constants/profile';
 import { IWilayahResponse } from '@/types/wilayah';
 import { X } from 'lucide-react';
 import Image from 'next/image';
-import { useMemo } from 'react';
+
 import { PhoneInput } from 'react-international-phone';
 import type { ICustomProfile } from './edit-profile';
 
@@ -63,11 +63,6 @@ export default function ProfileFormSection({
   formatDate,
   setDrawerState
 }: Readonly<ProfileFormSectionProps>) {
-  const addressKeys = useMemo(
-    () => (updateUser.addresses ?? []).map(() => crypto.randomUUID()),
-    [updateUser.addresses]
-  );
-
   return (
     <div className='flex flex-grow flex-col space-y-4'>
       <Input
@@ -215,7 +210,8 @@ export default function ProfileFormSection({
         </>
       )}
       {updateUser.addresses?.map((addr: string, index: number) => (
-        <div key={addressKeys[index]} className='mb-2 flex items-center gap-2'>
+        /* eslint-disable-next-line react/no-array-index-key */
+        <div key={index} className='mb-2 flex items-center gap-2'>
           <Input
             width={24}
             height={24}

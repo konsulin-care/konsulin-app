@@ -204,6 +204,7 @@ export function useProfileSave({
           type: 'physical',
           line: updateUser.addresses,
           district: updateUser.district,
+          state: updateUser.province,
           city: updateUser.city,
           postalCode: updateUser.postalCode,
           country: 'ID'
