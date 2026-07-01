@@ -87,7 +87,7 @@ describe('ProfileFormSection', () => {
     const addressInputs = container.querySelectorAll(
       'input[name^="addresses-"]'
     );
-    expect(addressInputs.length).toBe(2);
+    expect(addressInputs).toHaveLength(2);
   });
 
   it('uses index as key — no crypto.randomUUID dependency', () => {

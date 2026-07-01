@@ -198,17 +198,14 @@ export default function ServicesTab({
       </div>
 
       {localServices.map((svc: HealthcareService) => (
-        <div
+        <button
+          type='button'
           key={svc.id ?? svc.name}
-          role='button'
-          tabIndex={0}
+          aria-label='Edit service'
           onClick={() => {
             handleEditService(svc);
           }}
-          onKeyDown={e => {
-            if (e.key === 'Enter') handleEditService(svc);
-          }}
-          className='card cursor-pointer rounded-lg border border-gray-200 bg-white p-4'
+          className='card w-full cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left'
         >
           <div className='flex items-start justify-between'>
             <div className='flex-1'>
@@ -225,31 +222,27 @@ export default function ServicesTab({
               )}
             </div>
             <div className='flex gap-2'>
-              <button
-                aria-label='Edit service'
-                onClick={e => {
-                  e.stopPropagation();
-                  handleEditService(svc);
-                }}
-                className='text-black'
-              >
-                <Pencil size={16} />
-              </button>
+              <Pencil size={16} />
               {svc.id && (
-                <button
+                <span
+                  role='button'
+                  tabIndex={0}
                   aria-label='Delete service'
                   onClick={e => {
                     e.stopPropagation();
                     handleDeleteService(svc.id);
                   }}
-                  className='text-xs text-red-600 underline'
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') handleDeleteService(svc.id);
+                  }}
+                  className='cursor-pointer text-xs text-red-600 underline'
                 >
                   <Trash2 size={16} className='text-red-500' />
-                </button>
+                </span>
               )}
             </div>
           </div>
-        </div>
+        </button>
       ))}
 
       <ServiceFormDrawer

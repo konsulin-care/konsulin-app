@@ -18,8 +18,8 @@ import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
 
 type Props = {
-  open: boolean;
-  onClose: () => void;
+  readonly open: boolean;
+  readonly onClose: () => void;
 };
 
 /**

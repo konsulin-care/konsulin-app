@@ -165,7 +165,9 @@ export default function PractitionerSchedule({ fhirId }: Props) {
           <SessionCard session={session} />
         )}
         onLoadMore={() => {
-          void fetchNextPage();
+          fetchNextPage().catch(() => {
+            /* ignore */
+          });
         }}
         hasMore={hasNextPage}
         isLoadingMore={isFetchingNextPage}

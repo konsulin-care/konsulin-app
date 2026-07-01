@@ -37,9 +37,9 @@ function InfiniteScrollSentinel({
   hasMore,
   isLoadingMore
 }: {
-  onLoadMore?: () => void;
-  hasMore?: boolean;
-  isLoadingMore?: boolean;
+  readonly onLoadMore?: () => void;
+  readonly hasMore?: boolean;
+  readonly isLoadingMore?: boolean;
 }) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
