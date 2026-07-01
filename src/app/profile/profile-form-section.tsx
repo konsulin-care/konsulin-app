@@ -210,6 +210,7 @@ export default function ProfileFormSection({
         </>
       )}
       {updateUser.addresses?.map((addr: string, index: number) => (
+        // Addresses have no stable ID; index is the only unique identifier.
         /* eslint-disable-next-line react/no-array-index-key */
         <div key={index} className='mb-2 flex items-center gap-2'>
           <Input

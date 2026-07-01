@@ -95,6 +95,54 @@ describe('storeFhirIdForRole', () => {
       value: { Patient: 'new-pt' }
     });
   });
+
+  it('rejects __proto__ key', async () => {
+    mockDbGet.mockResolvedValue(null);
+    await expect(
+      storeFhirIdForRole('user-1', '__proto__', 'polluted')
+    ).rejects.toThrow(TypeError);
+    expect(mockDbSet).not.toHaveBeenCalled();
+  });
+
+  it('rejects constructor key', async () => {
+    mockDbGet.mockResolvedValue(null);
+    await expect(
+      storeFhirIdForRole('user-1', 'constructor', 'polluted')
+    ).rejects.toThrow(TypeError);
+    expect(mockDbSet).not.toHaveBeenCalled();
+  });
+
+  it('rejects prototype key', async () => {
+    mockDbGet.mockResolvedValue(null);
+    await expect(
+      storeFhirIdForRole('user-1', 'prototype', 'polluted')
+    ).rejects.toThrow(TypeError);
+    expect(mockDbSet).not.toHaveBeenCalled();
+  });
+
+  it('rejects toString key', async () => {
+    mockDbGet.mockResolvedValue(null);
+    await expect(
+      storeFhirIdForRole('user-1', 'toString', 'polluted')
+    ).rejects.toThrow(TypeError);
+    expect(mockDbSet).not.toHaveBeenCalled();
+  });
+
+  it('rejects __-prefixed custom key', async () => {
+    mockDbGet.mockResolvedValue(null);
+    await expect(
+      storeFhirIdForRole('user-1', '__custom', 'polluted')
+    ).rejects.toThrow(TypeError);
+    expect(mockDbSet).not.toHaveBeenCalled();
+  });
+
+  it('allows a role already present even if it is a banned key', async () => {
+    mockDbGet.mockResolvedValue({
+      value: { constructor: 'ct-999' }
+    });
+    await storeFhirIdForRole('user-1', 'constructor', 'ct-888');
+    expect(mockDbSet).toHaveBeenCalled();
+  });
 });
 
 describe('getFhirIdForRole', () => {
@@ -116,5 +164,44 @@ describe('getFhirIdForRole', () => {
   it('returns undefined when no map exists', async () => {
     mockDbGet.mockResolvedValue(null);
     expect(await getFhirIdForRole('user-1', 'Patient')).toBeUndefined();
+  });
+
+  it('rejects __proto__ key', async () => {
+    mockDbGet.mockResolvedValue(null);
+    await expect(
+      getFhirIdForRole('user-1', '__proto__')
+    ).rejects.toThrow(TypeError);
+  });
+
+  it('rejects constructor key', async () => {
+    mockDbGet.mockResolvedValue(null);
+    await expect(
+      getFhirIdForRole('user-1', 'constructor')
+    ).rejects.toThrow(TypeError);
+  });
+
+  it('rejects prototype key', async () => {
+    mockDbGet.mockResolvedValue(null);
+    await expect(
+      getFhirIdForRole('user-1', 'prototype')
+    ).rejects.toThrow(TypeError);
+  });
+
+  it('allows a legitimate role key', async () => {
+    mockDbGet.mockResolvedValue({
+      value: { Practitioner: 'prac-456' }
+    });
+    await expect(
+      getFhirIdForRole('user-1', 'Practitioner')
+    ).resolves.toBe('prac-456');
+  });
+
+  it('allows retrieving a banned key if already stored', async () => {
+    mockDbGet.mockResolvedValue({
+      value: { constructor: 'ct-999' }
+    });
+    await expect(
+      getFhirIdForRole('user-1', 'constructor')
+    ).resolves.toBe('ct-999');
   });
 });

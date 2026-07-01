@@ -53,6 +53,7 @@ export function PractitionerCard({
     if (!el || specialties.length === 0) return;
 
     // Temporarily render all items to measure full width
+    // DOM element references for overflow measurement — not raw HTML.
     const childElements = [...el.children] as HTMLElement[];
 
     // Check which items are fully visible

@@ -2,6 +2,24 @@ import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
 
 const FHIR_ID_MAP_PREFIX = 'fhirId_map_';
 
+/** Keys that could cause prototype pollution if used as dynamic object keys. */
+const BANNED_KEYS = new Set([
+  '__proto__',
+  'constructor',
+  'prototype',
+  'toString',
+  'valueOf',
+  'hasOwnProperty',
+  'toLocaleString',
+  'isPrototypeOf',
+  'propertyIsEnumerable'
+]);
+
+/** Check if a role key is safe to use as an object property. */
+function isValidRoleKey(key: string): boolean {
+  return !BANNED_KEYS.has(key) && !key.startsWith('__');
+}
+
 /** Build the compound key for a user's fhirId map in uiPreferences. */
 function mapKey(userId: string): string {
   return `${FHIR_ID_MAP_PREFIX}${userId}`;
@@ -37,7 +55,8 @@ export async function storeFhirIdForRole(
   fhirId: string
 ): Promise<void> {
   const existing = await getFhirIdMap(userId);
-  if (!Object.hasOwn(existing, role) && role.startsWith('__')) {
+  // Guard against prototype pollution — role keys must be safe.
+  if (!Object.hasOwn(existing, role) && !isValidRoleKey(role)) {
     throw new TypeError(`Invalid role key: ${role}`);
   }
   existing[role] = fhirId;
@@ -50,7 +69,8 @@ export async function getFhirIdForRole(
   role: string
 ): Promise<string | undefined> {
   const map = await getFhirIdMap(userId);
-  if (!Object.hasOwn(map, role) && role.startsWith('__')) {
+  // Guard against prototype pollution — role keys must be safe.
+  if (!Object.hasOwn(map, role) && !isValidRoleKey(role)) {
     throw new TypeError(`Invalid role key: ${role}`);
   }
   return map[role];
