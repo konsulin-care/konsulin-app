@@ -18,9 +18,9 @@ mutations with automatic list invalidation. No Go SSR. Aligned with ADR-015.
 - `GET /journal` — entry list with `useQuery` pagination
 - `GET /journal/new` — create form (React Hook Form)
 - `POST /journal` — create via `useMutation` to `/proxy/fhir/Observation`
-- `GET /journal/:id/edit` — edit form pre-filled via `useQuery`
-- `POST /journal/:id` — update (status: `amended`) via `useMutation`
-- `DELETE /journal/:id` — delete via `useMutation`
+- `GET /journal/edit?id=<id>` — edit form pre-filled via `useQuery`
+- `POST /journal?id=<id>` — update (status: `amended`) via `useMutation`
+- `DELETE /journal?id=<id>` — delete via `useMutation`
 - List refresh via `queryClient.invalidateQueries` after mutations
 
 # FHIR Observation Mapping
@@ -39,7 +39,7 @@ mutations with automatic list invalidation. No Go SSR. Aligned with ADR-015.
 
 - [ ] Create `src/app/journal/page.tsx` — entry list with pagination via `useQuery`
 - [ ] Create `src/app/journal/new/page.tsx` — create form with React Hook Form
-- [ ] Create `src/app/journal/[id]/edit/page.tsx` — edit form, pre-filled via `useQuery`
+- [ ] Create `src/app/journal/edit/page.tsx` — edit form, pre-filled via `useQuery`
 - [ ] Add React Query hooks: `useJournals(patientId)`, `useJournal(id)`, `useCreateJournal()`, `useUpdateJournal()`, `useDeleteJournal()`
 - [ ] Observation construction as pure function — build FHIR payload from form values
 - [ ] Wire `onSuccess` callbacks: `queryClient.invalidateQueries({ queryKey: ['journals'] })`

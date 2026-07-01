@@ -25,7 +25,7 @@ Aligned with ADR-015.
 # Implementation Steps
 
 - [ ] Create `src/app/record/page.tsx` — role-dispatch timeline with `useInfiniteQuery`
-- [ ] Create `src/app/record/[recordId]/page.tsx` — record detail (category-dispatch: assessment/soap/journal)
+- [ ] Create `src/app/record/page.tsx` — record detail (category-dispatch: assessment/soap/journal, detail via `useSearchParams`)
 - [ ] Add React Query hooks: `useRecords(patientId)`, `useRecordDetail(id)`
 - [ ] Implement infinite scroll — Intersection Observer on sentinel element triggers `fetchNextPage`
 - [ ] Group records by category client-side (`resource.resourceType` mapping)

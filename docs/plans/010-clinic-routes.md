@@ -17,7 +17,7 @@ to server cookie via fetch POST. Aligned with ADR-015.
 # Goals
 
 - `GET /clinic` — clinic listing with search (React state + `useQuery`)
-- `GET /clinic/:id` — clinic detail with services and practitioners
+- `GET /clinic?id=<id>` — clinic detail with services and practitioners
 - `GET /clinic/manage` — admin dashboard for selected clinic context
 - Clinic context switcher — React component + React Context provider + cookie sync
 - FHIR: Organization, HealthcareService, PractitionerRole
@@ -25,7 +25,7 @@ to server cookie via fetch POST. Aligned with ADR-015.
 # Implementation Steps
 
 - [ ] Create `src/app/clinic/page.tsx` — clinic card grid with search
-- [ ] Create `src/app/clinic/[clinicId]/page.tsx` — clinic info + services + practitioners
+- [ ] Create `src/app/clinic/page.tsx` — clinic info + services + practitioners (detail via `useSearchParams`)
 - [ ] Create `src/app/clinic/manage/page.tsx` — admin dashboard (practitioner counts, pending approvals)
 - [ ] Create `src/contexts/ClinicContext.tsx` — React context for active clinic ID
 - [ ] Create clinic context switcher component — dropdown dispatches `POST /context/clinic` to set cookie, updates React context

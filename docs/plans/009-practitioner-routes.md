@@ -16,16 +16,16 @@ No Go SSR. Aligned with ADR-015.
 # Goals
 
 - `GET /practitioner` — card grid with search and specialty filter (React state + `useQuery`)
-- `GET /practitioner/:id` — detailed profile with services via `useQuery`
-- `GET /practitioner/:id/availability` — weekly availability schedule
+- `GET /practitioner?id=<id>` — detailed profile with services via `useQuery`
+- `GET /practitioner/availability?id=<id>` — weekly availability schedule
 - FHIR resources: Practitioner, PractitionerRole, HealthcareService
 - Filter/search via React state (debounced input + query param change)
 
 # Implementation Steps
 
 - [ ] Create `src/app/practitioner/page.tsx` — card grid with search bar and specialty filter
-- [ ] Create `src/app/practitioner/[practitionerId]/page.tsx` — profile with service list
-- [ ] Create `src/app/practitioner/[practitionerId]/availability/page.tsx` — weekly availability view
+- [ ] Create `src/app/practitioner/page.tsx` — profile with service list (detail via `useSearchParams`)
+- [ ] Create `src/app/practitioner/availability/page.tsx` — weekly availability view
 - [ ] Add React Query hooks: `usePractitioners(search, specialty)`, `usePractitionerDetail(id)`, `usePractitionerAvailability(id)`
 - [ ] Filter state managed via React state + URL search params; debounced input triggers refetch
 - [ ] Write `src/app/practitioner/__tests__/practitioner.test.tsx` — mock fetch, test search and detail flow

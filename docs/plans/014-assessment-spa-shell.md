@@ -17,7 +17,7 @@ with ADR-015.
 # Goals
 
 - `GET /assessments` — Next.js page renders SPA shell for assessment browse centre
-- `GET /assessments/{id}` — Next.js page renders SPA shell for fill questionnaire (patient or practitioner-on-behalf)
+- `GET /assessments?id=<id>` — Next.js page renders SPA shell for fill questionnaire (patient or practitioner-on-behalf)
 - `GET /assessments/soap` — Next.js page renders SPA shell (practitioner-only SOAP)
 - Practitioner selects patient via participant dropdown component
 - SOAP uses AEHRC Smart Forms + `extractObservationBased()` to produce Observation resources
@@ -30,8 +30,7 @@ with ADR-015.
 
 # Implementation Steps
 
-- [ ] Create `src/app/assessments/page.tsx` — SPA shell for assessment browse centre
-- [ ] Create `src/app/assessments/[id]/page.tsx` — SPA shell with participant selector component
+- [ ] Create `src/app/assessments/page.tsx` — SPA shell: browse centre (no query) or fill questionnaire (with `?id=<id>`)
 - [ ] Create `src/app/assessments/soap/page.tsx` — SPA shell with practitioner-only guard
 - [ ] Create participant-selector React component (fetches today's sessions, allows patient search)
 - [ ] Add auth guard in `src/app/assessments/soap/page.tsx` — redirect non-Practitioner roles
@@ -88,7 +87,7 @@ with ADR-015.
 
 1. Visit `/assessments` — assessment centre loads, browse questionnaires
 2. Click a questionnaire — form renders with all items
-3. Login as practitioner, visit `/assessments/{id}` — participant dropdown appears
+3. Login as practitioner, visit `/assessments?id=<id>` — participant dropdown appears
 4. Select patient, fill form on their behalf — submission references patient as subject
 5. Visit `/assessments/soap` — SOAP form loads (practitioner-only)
 6. Select patient, fill SOAP, submit — QuestionnaireResponse + Observations created
