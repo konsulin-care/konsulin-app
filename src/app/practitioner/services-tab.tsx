@@ -224,21 +224,17 @@ export default function ServicesTab({
             <div className='flex gap-2'>
               <Pencil size={16} />
               {svc.id && (
-                <span
-                  role='button'
-                  tabIndex={0}
+                <button
+                  type='button'
                   aria-label='Delete service'
                   onClick={e => {
                     e.stopPropagation();
                     handleDeleteService(svc.id);
                   }}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') handleDeleteService(svc.id);
-                  }}
-                  className='cursor-pointer text-xs text-red-600 underline'
+                  className='cursor-pointer bg-transparent border-none p-0 text-xs text-red-600 underline'
                 >
                   <Trash2 size={16} className='text-red-500' />
-                </span>
+                </button>
               )}
             </div>
           </div>

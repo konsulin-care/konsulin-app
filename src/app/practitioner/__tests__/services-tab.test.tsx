@@ -265,6 +265,17 @@ describe('ServicesTab', () => {
     ]);
   });
 
+  it('uses native button element for delete trigger (accessibility)', () => {
+    mockServicesAndRender();
+    const deleteButtons = screen.getAllByLabelText('Delete service');
+    for (const btn of deleteButtons) {
+      expect(btn.tagName).toBe('BUTTON');
+      expect(btn).toHaveAttribute('type', 'button');
+      expect(btn).not.toHaveAttribute('role');
+      expect(btn).not.toHaveAttribute('tabindex');
+    }
+  });
+
   it('removes service card when clicking Delete', () => {
     mockServicesAndRender();
     expect(screen.getByText('General Consultation')).toBeInTheDocument();
