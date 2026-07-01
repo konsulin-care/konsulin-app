@@ -6,6 +6,7 @@ import { useRef } from 'react';
 import { toast } from 'react-toastify';
 
 import { DRAWER_STATE } from '@/constants/profile';
+import { dbSet, STORES } from '@/lib/indexeddb';
 import { getProfileById, modifyProfile } from '@/services/profile';
 import { findIdentifierValue, mergeNames } from '@/utils/helper';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
@@ -321,6 +322,10 @@ export function useProfileSave({
         }
         clearDraft();
         dispatchAuth({ type: 'auth-check', payload: authPayload });
+        void dbSet(STORES.userProfile, {
+          ...authPayload,
+          cachedAt: Date.now()
+        });
         queryClient.invalidateQueries({ queryKey: ['profile-data', fhirId] });
         setDrawerState(DRAWER_STATE.SUCCESS);
       } catch (error) {
