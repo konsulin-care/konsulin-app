@@ -1,12 +1,15 @@
 'use client';
 
+import { useMemo } from 'react';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { isOwnedRole } from '@/utils/practitioner-ownership';
+import { getServiceDuration } from '@/utils/fhir/service-duration';
 import { useSearchParams } from 'next/navigation';
-import PatientAvailability from '../patient-availability';
+import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
+import PractitionerAvailability from '../practitioner-availability';
 import PractitionerRoleManagementShell from '../role-management-shell';
 
 /**
@@ -14,14 +17,28 @@ import PractitionerRoleManagementShell from '../role-management-shell';
  *
  * - ClinicAdmin: availability + services management shell
  * - Practitioner: same shell, but gated by role ownership
- * - Patient: calendar-based free-slot display
+ * - Patient: page variant of PractitionerAvailability with dynamic duration
  */
 export default function AvailabilityPage() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id') ?? '';
-  const { state: authState, isLoading } = useAuth();
+  const serviceId = searchParams.get('service') ?? '';
+  const { state: authState, isLoading: isAuthLoading } = useAuth();
 
-  if (isLoading) {
+  const { data: services, isLoading: isServicesLoading } =
+    usePractitionerRoleHealthcareServices(id);
+
+  // Extract duration from the selected healthcare service
+  const serviceDuration = useMemo(() => {
+    if (!services || services.length === 0) return 60;
+    const selectedService = serviceId
+      ? services.find((s: { id?: string }) => s.id === serviceId)
+      : services[0];
+    if (!selectedService) return 60;
+    return getServiceDuration(selectedService) ?? 60;
+  }, [services, serviceId]);
+
+  if (isAuthLoading) {
     return (
       <div className='flex min-h-[40vh] items-center justify-center'>
         <LoadingSpinnerIcon
@@ -58,12 +75,26 @@ export default function AvailabilityPage() {
     </>
   );
 
-  /** Render patient-facing availability calendar. */
+  /** Render patient-facing availability calendar with dynamic duration. */
   const renderPatientView = () => (
     <>
       <PageHeader pageIndicator='Availability' />
       <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
-        <PatientAvailability practitionerRoleId={id} />
+        {isServicesLoading ? (
+          <div className='flex min-h-[30vh] items-center justify-center'>
+            <LoadingSpinnerIcon
+              width={40}
+              height={40}
+              className='w-full animate-spin'
+            />
+          </div>
+        ) : (
+          <PractitionerAvailability
+            variant='page'
+            practitionerRoleId={id}
+            durationMinutes={serviceDuration}
+          />
+        )}
       </div>
     </>
   );
