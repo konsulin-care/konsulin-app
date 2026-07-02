@@ -3,7 +3,6 @@ import {
   Bundle,
   BundleEntry,
   HealthcareService,
-  Invoice,
   Location,
   Organization,
   Practitioner,
@@ -118,19 +117,20 @@ export const useClinicById = (clinicId: string) => {
 
 export type DetailPractitionerData = Omit<BundleEntry, 'resource'> & {
   resource: PractitionerRole;
-  invoice?: Invoice;
+  location?: Location;
   organization?: Organization;
   schedule?: Schedule;
+  healthcareServices: HealthcareService[];
 };
 
-/** Fetch practitioner detail including schedule, invoice, and organization. */
+/** Fetch practitioner detail including schedule, services, and location. */
 export const useDetailPractitioner = (practitionerRoleId: string) => {
   const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ['practitioner-detail', practitionerRoleId],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get<Bundle>(
-        `/fhir/PractitionerRole?active=true&_id=${practitionerRoleId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
+        `/fhir/PractitionerRole?active=true&_id=${practitionerRoleId}&_include=PractitionerRole:organization&_include=PractitionerRole:location&_include=PractitionerRole:practitioner&_include=PractitionerRole:service&_revinclude=Schedule:actor`
       );
       return response;
     },
@@ -140,7 +140,7 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
 
   let practitionerRole: BundleEntry | undefined;
   let organization: BundleEntry | undefined;
-  let invoice: BundleEntry | undefined;
+  let location: BundleEntry | undefined;
   let schedules: BundleEntry | undefined;
   let newData: DetailPractitionerData | undefined;
 
@@ -151,18 +151,26 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
     organization = data.find(
       (item: BundleEntry) => item.resource?.resourceType === 'Organization'
     );
-    invoice = data.find(
-      (item: BundleEntry) => item.resource?.resourceType === 'Invoice'
+    location = data.find(
+      (item: BundleEntry) => item.resource?.resourceType === 'Location'
     );
     schedules = data.find(
       (item: BundleEntry) => item.resource?.resourceType === 'Schedule'
     );
 
+    const healthcareServices = data
+      .filter(
+        (item: BundleEntry) =>
+          item.resource?.resourceType === 'HealthcareService'
+      )
+      .map((item: BundleEntry) => item.resource as HealthcareService);
+
     newData = {
       ...practitionerRole,
-      invoice: invoice?.resource as Invoice | undefined,
+      location: location?.resource as Location | undefined,
       organization: organization?.resource as Organization | undefined,
-      schedule: schedules?.resource as Schedule | undefined
+      schedule: schedules?.resource as Schedule | undefined,
+      healthcareServices
     } as DetailPractitionerData;
   }
 

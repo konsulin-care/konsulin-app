@@ -18,17 +18,25 @@ vi.mock('@/components/icons', () => ({
   CheckCircleIcon: () => <div data-testid='check-icon' />
 }));
 
-import {
-  useDetailPractitioner,
-  usePractitionerRoleHealthcareServices
-} from '@/services/clinic';
+import { useDetailPractitioner } from '@/services/clinic';
 
 const mockUseDetailPractitioner = vi.mocked(useDetailPractitioner);
-const mockUsePractitionerRoleHealthcareServices = vi.mocked(
-  usePractitionerRoleHealthcareServices
-);
 
 const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
+
+const baseLocation = {
+  name: 'Jakarta Heart Clinic - Menteng',
+  id: 'loc-1',
+  address: [
+    {
+      line: ['Jl. Cimandiri No. 10'],
+      city: 'Kota Adm. Jakarta Pusat',
+      district: 'Menteng',
+      postalCode: '16127',
+      country: 'ID'
+    }
+  ]
+};
 
 const baseOrganization = {
   name: 'Jakarta Heart Clinic',
@@ -71,38 +79,37 @@ const baseServices = [
   }
 ];
 
+function buildNewData(overrides: Record<string, unknown> = {}) {
+  return {
+    resource: {
+      id: 'role-123',
+      practitioner: {
+        reference: 'Practitioner/prac-1',
+        display: 'Dr. Sarah Chen'
+      },
+      specialty: [{ text: 'Cardiology' }, { text: 'Internal Medicine' }],
+      organization: {
+        reference: 'Organization/org-1',
+        display: 'Jakarta Heart Clinic'
+      }
+    },
+    location: baseLocation,
+    organization: baseOrganization,
+    healthcareServices: baseServices,
+    ...overrides
+  };
+}
+
 describe('PatientDetail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     mockUseDetailPractitioner.mockReturnValue({
-      newData: {
-        resource: {
-          id: 'role-123',
-          practitioner: {
-            reference: 'Practitioner/prac-1',
-            display: 'Dr. Sarah Chen'
-          },
-          specialty: [{ text: 'Cardiology' }, { text: 'Internal Medicine' }],
-          organization: {
-            reference: 'Organization/org-1',
-            display: 'Jakarta Heart Clinic'
-          }
-        },
-        organization: baseOrganization,
-        invoice: { totalGross: { value: 500000, currency: 'IDR' } }
-      },
+      newData: buildNewData(),
       isLoading: false,
       isError: false,
       isFetching: false
     } as unknown as ReturnType<typeof useDetailPractitioner>);
-
-    mockUsePractitionerRoleHealthcareServices.mockReturnValue({
-      data: baseServices,
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn()
-    } as unknown as ReturnType<typeof usePractitionerRoleHealthcareServices>);
   });
 
   it('renders practitioner name as the primary heading', () => {
@@ -122,13 +129,46 @@ describe('PatientDetail', () => {
     expect(screen.getByText('Location')).toBeInTheDocument();
   });
 
-  it('renders organization name in location', () => {
+  it('renders location name when location is available', () => {
+    render(<PatientDetail practitionerRoleId='role-123' />);
+    expect(
+      screen.getByText('Jakarta Heart Clinic - Menteng')
+    ).toBeInTheDocument();
+  });
+
+  it('renders full address from Location resource', () => {
+    render(<PatientDetail practitionerRoleId='role-123' />);
+    expect(
+      screen.getByText(
+        'Jl. Cimandiri No. 10, Menteng, Kota Adm. Jakarta Pusat, 16127'
+      )
+    ).toBeInTheDocument();
+  });
+
+  it('falls back to organization name when location is missing', () => {
+    mockUseDetailPractitioner.mockReturnValue({
+      newData: buildNewData({ location: undefined }),
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as unknown as ReturnType<typeof useDetailPractitioner>);
+
     render(<PatientDetail practitionerRoleId='role-123' />);
     expect(screen.getByText('Jakarta Heart Clinic')).toBeInTheDocument();
   });
 
-  it('renders full address from organization', () => {
+  it('falls back to organization address when location has no address', () => {
+    mockUseDetailPractitioner.mockReturnValue({
+      newData: buildNewData({
+        location: { name: 'Branch', address: [] }
+      }),
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as unknown as ReturnType<typeof useDetailPractitioner>);
+
     render(<PatientDetail practitionerRoleId='role-123' />);
+    expect(screen.getByText('Branch')).toBeInTheDocument();
     expect(
       screen.getByText(
         'Jl. Cimandiri No. 10, Menteng, Kota Adm. Jakarta Pusat, 16127'
@@ -190,38 +230,40 @@ describe('PatientDetail', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('shows empty services state when no services', () => {
-    mockUsePractitionerRoleHealthcareServices.mockReturnValue({
-      data: [],
+  it('shows empty services state when healthcareServices is empty', () => {
+    mockUseDetailPractitioner.mockReturnValue({
+      newData: buildNewData({ healthcareServices: [] }),
       isLoading: false,
       isError: false,
-      refetch: vi.fn()
-    } as unknown as ReturnType<typeof usePractitionerRoleHealthcareServices>);
+      isFetching: false
+    } as unknown as ReturnType<typeof useDetailPractitioner>);
 
     render(<PatientDetail practitionerRoleId='role-123' />);
     expect(screen.getByText('No services listed')).toBeInTheDocument();
   });
 
   it('filters out inactive healthcare services', () => {
-    mockUsePractitionerRoleHealthcareServices.mockReturnValue({
-      data: [
-        ...baseServices,
-        {
-          id: 'hs-3',
-          name: 'Inactive Service',
-          active: false,
-          extension: [
-            {
-              url: FEE_EXTENSION_URL,
-              valueMoney: { value: 100000, currency: 'IDR' }
-            }
-          ]
-        }
-      ],
+    mockUseDetailPractitioner.mockReturnValue({
+      newData: buildNewData({
+        healthcareServices: [
+          ...baseServices,
+          {
+            id: 'hs-3',
+            name: 'Inactive Service',
+            active: false,
+            extension: [
+              {
+                url: FEE_EXTENSION_URL,
+                valueMoney: { value: 100000, currency: 'IDR' }
+              }
+            ]
+          }
+        ]
+      }),
       isLoading: false,
       isError: false,
-      refetch: vi.fn()
-    } as unknown as ReturnType<typeof usePractitionerRoleHealthcareServices>);
+      isFetching: false
+    } as unknown as ReturnType<typeof useDetailPractitioner>);
 
     render(<PatientDetail practitionerRoleId='role-123' />);
     expect(screen.getByText('General Checkup')).toBeInTheDocument();

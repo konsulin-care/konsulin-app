@@ -28,9 +28,11 @@ export default function Practitioner() {
   const role = authState?.userInfo?.role_name;
   const fhirId = authState?.userInfo?.fhirId ?? '';
 
-  // Fetch practitioner's own roles (for Practitioner role)
+  // Fetch practitioner's own roles. Empty for Patient — the hook has
+  // enabled: Boolean(practitionerId), so it won't fire when empty.
+  const queryFhirId = role === Roles.Patient ? '' : fhirId;
   const { data: ownRoles, isLoading: isRolesLoading } =
-    useGetPractitionerRolesDetail(fhirId);
+    useGetPractitionerRolesDetail(queryFhirId);
 
   // Store owned PractitionerRole IDs on successful fetch
   useEffect(() => {

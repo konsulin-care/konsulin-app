@@ -251,6 +251,9 @@ describe('Practitioner page — filters', () => {
       'Manage Practitioner'
     );
     expect(screen.getByTestId('patient-detail')).toBeDefined();
+    // Hook is called unconditionally but with empty identifier, so the
+    // underlying query (enabled: Boolean) never fires for Patient.
+    expect(mockUseGetPractitionerRolesDetail).toHaveBeenCalledWith('');
   });
 
   it('shows empty state when no practitioners exist', () => {
