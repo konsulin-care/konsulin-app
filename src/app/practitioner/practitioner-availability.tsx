@@ -2,16 +2,22 @@
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
+import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { STORES, dbDelete, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import {
   useCreateAppointment,
   usePayAppointment
 } from '@/services/api/appointments';
-import { useFindAvailability } from '@/services/clinicians';
+import { useDetailPractitioner } from '@/services/clinic';
+import {
+  useFindAvailability,
+  useBusySlotsByPractitioner,
+  computeFreeSlots
+} from '@/services/clinicians';
 import { clearIntent, getIntent, saveIntent } from '@/utils/redirect-intent';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { addDays, format, isBefore, parseISO } from 'date-fns';
+import { addDays, format, isBefore, parseISO, startOfDay } from 'date-fns';
 import { BundleEntry, Invoice, PractitionerRole, Slot } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState, useTransition } from 'react';
@@ -38,9 +44,11 @@ type TempBookingData = {
 };
 
 type Props = {
-  children: ReactNode;
-  practitionerRole: PractitionerRole;
-  scheduleId: string;
+  // Drawer mode props
+  children?: ReactNode;
+  practitionerRole?: PractitionerRole;
+  scheduleId?: string;
+  // Common props
   invoice?: Invoice;
   practitionerName?: string;
   practitionerOrganizationName?: string;
@@ -49,22 +57,29 @@ type Props = {
     initials?: string;
     backgroundColor?: string;
   };
+  // Page mode props
+  variant?: 'drawer' | 'page';
+  practitionerRoleId?: string;
+  durationMinutes?: number;
 };
 
 /**
  * Render availability UI and booking/payment flows for a practitioner's role.
  *
- * Renders a calendar of available dates, selectable time-slot pills, a booking drawer
- * and a payment drawer that handle booking form state, validation, authentication redirects,
- * and payment actions.
+ * In drawer mode (default), wraps content in a Drawer with trigger children.
+ * In page mode, renders content directly, fetching practitioner data
+ * internally and computing free slots dynamically based on service duration.
  *
- * @param children - Trigger element(s) that open the booking drawer when clicked
- * @param practitionerRole - FHIR PractitionerRole containing availability (period, availableTime, id)
- * @param scheduleId - Optional Schedule ID used to enable slot selection and booking actions
- * @param invoice - Optional invoice object used to display total and perform payment actions
- * @param practitionerName - Optional practitioner display name shown in the payment drawer
- * @param practitionerOrganizationName - Optional organization name shown in the payment drawer
- * @param practitionerAvatar - Optional avatar data (photoUrl, initials, backgroundColor) shown in the payment drawer
+ * @param children - Trigger element(s) that open the booking drawer when clicked (drawer mode)
+ * @param practitionerRole - FHIR PractitionerRole with availability (drawer mode)
+ * @param scheduleId - Schedule ID used to enable slot selection (drawer mode)
+ * @param invoice - Optional invoice object for payment display
+ * @param practitionerName - Practitioner display name shown in payment drawer
+ * @param practitionerOrganizationName - Organization name shown in payment drawer
+ * @param practitionerAvatar - Avatar data (photoUrl, initials, backgroundColor)
+ * @param variant - 'drawer' (default) or 'page'
+ * @param practitionerRoleId - PractitionerRole ID for internal fetch (page mode)
+ * @param durationMinutes - Service duration for free-slot computation (page mode, default 60)
  * @returns The component's rendered booking and payment interface (JSX)
  */
 export default function PractitionerAvailability({
@@ -74,10 +89,14 @@ export default function PractitionerAvailability({
   invoice,
   practitionerName,
   practitionerOrganizationName,
-  practitionerAvatar
+  practitionerAvatar,
+  variant = 'drawer',
+  practitionerRoleId,
+  durationMinutes = 60
 }: Props) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const isPageMode = variant === 'page';
   const router = useRouter();
   const searchParams = useSearchParams();
   const isOpenParam = searchParams.get('isOpen');
@@ -103,6 +122,27 @@ export default function PractitionerAvailability({
   const patientId = authState?.userInfo?.fhirId;
   const isAuthenticated = authState?.isAuthenticated;
 
+  // Page mode: fetch practitioner detail internally
+  const { newData: detail, isLoading: isDetailLoading } =
+    useDetailPractitioner(isPageMode ? practitionerRoleId ?? '' : '');
+
+  const practitionerId = isPageMode
+    ? detail?.practitioner?.id ?? ''
+    : '';
+
+  const [pageDate, setPageDate] = useState<Date>(startOfDay(new Date()));
+
+  // Effective practitioner role: from prop (drawer) or fetched (page)
+  const effectiveRole = isPageMode
+    ? (detail?.resource as PractitionerRole | undefined)
+    : practitionerRole;
+
+  const effectiveAvailableTime = effectiveRole?.availableTime ?? [];
+  const effectiveRoleId = effectiveRole?.id ?? '';
+  const effectiveScheduleId = isPageMode
+    ? (detail?.schedule?.id ?? '')
+    : (scheduleId ?? '');
+
   /** Update a single booking information field (problem brief, etc.). */
   const handleBookingInformationChange = (key: string, value: string) => {
     setBookingInformation(prevState => ({
@@ -112,8 +152,8 @@ export default function PractitionerAvailability({
   };
 
   const listAvailableDate = getAvailableDays(
-    practitionerRole.availableTime ?? [],
-    bookingState.date
+    effectiveAvailableTime,
+    isPageMode ? pageDate : bookingState.date
   );
 
   /** Check if a given date exists in the available days array. */
@@ -180,17 +220,20 @@ export default function PractitionerAvailability({
 
   // Derive practitioner timezone offset from PractitionerRole.period.start (e.g., +07:00)
   const practitionerTzOffset = useMemo(() => {
-    const iso = practitionerRole.period?.start || practitionerRole.period?.end;
+    const role = effectiveRole;
+    if (!role) return 'Z';
+    const iso = role.period?.start || role.period?.end;
     if (typeof iso === 'string') {
       const match = iso.match(/([+-]\d{2}:\d{2}|Z)$/);
       return match ? match[1] : 'Z';
     }
     return 'Z';
-  }, [practitionerRole.period?.start, practitionerRole.period?.end]);
+  }, [effectiveRole]);
 
   // Build practitioner-TZ day window strings and day cache key
+  const selectedDate = isPageMode ? pageDate : bookingState.date;
   const { startFrom, startTo, dayKey } = useMemo(() => {
-    if (!bookingState.date) {
+    if (!selectedDate) {
       return {
         startFrom: undefined,
         startTo: undefined,
@@ -201,7 +244,7 @@ export default function PractitionerAvailability({
         dayKey?: string;
       };
     }
-    const dayStr = format(bookingState.date, 'yyyy-MM-dd');
+    const dayStr = format(selectedDate, 'yyyy-MM-dd');
     const start = `${dayStr}T00:00:00${practitionerTzOffset}`;
     const end = `${dayStr}T23:59:59${practitionerTzOffset}`;
     return {
@@ -209,28 +252,46 @@ export default function PractitionerAvailability({
       startTo: end,
       dayKey: `${dayStr}${practitionerTzOffset}`
     };
-  }, [bookingState.date, practitionerTzOffset]);
+  }, [selectedDate, practitionerTzOffset]);
 
+  const isDrawerMode = !isPageMode;
+
+  // Drawer mode: fetch real FHIR Slot resources
   const {
     data: schedule,
     isLoading,
     isError
   } = useFindAvailability({
-    practitionerRoleId: practitionerRole.id,
+    practitionerRoleId: effectiveRoleId || practitionerRole?.id || '',
     startFrom,
     startTo,
     dayKey
   });
 
+  // Page mode: cross-role busy slot query
+  const dateStr = useMemo(
+    () => (pageDate ? format(pageDate, 'yyyy-MM-dd') : ''),
+    [pageDate]
+  );
+
+  const { data: busySlots, isLoading: isBusySlotsLoading } =
+    useBusySlotsByPractitioner(practitionerId, dateStr);
+
+  // Compute free slots for page mode
+  const computedFreeSlots = useMemo(() => {
+    if (!isPageMode || !selectedDate || !busySlots) return [];
+    return computeFreeSlots(effectiveAvailableTime, busySlots, selectedDate, durationMinutes);
+  }, [isPageMode, selectedDate, busySlots, effectiveAvailableTime, durationMinutes]);
+
   // Fetch Schedule by ID with caching (only when authenticated)
   const { data: scheduleById } = useQuery({
-    queryKey: ['schedule-by-id', scheduleId],
+    queryKey: ['schedule-by-id', effectiveScheduleId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(`/fhir/Schedule/${scheduleId}`);
+      const response = await API.get(`/fhir/Schedule/${effectiveScheduleId}`);
       return response.data || null;
     },
-    enabled: Boolean(scheduleId) && (isAuthenticated ?? false),
+    enabled: Boolean(effectiveScheduleId) && (isAuthenticated ?? false),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false
@@ -320,8 +381,21 @@ export default function PractitionerAvailability({
       });
   }
 
-  /** Restore booking state from available sources when the modal opens. */
+  /** Set initial date for page mode. */
   useEffect(() => {
+    if (!isPageMode) return;
+    const initialDate = isDateAvailable(today, listAvailableDate)
+      ? today
+      : getNextAvailableDate(today, listAvailableDate);
+    if (!pageDate || pageDate.getTime() !== initialDate.getTime()) {
+      setPageDate(initialDate);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPageMode]);
+
+  /** Restore booking state from available sources when the modal opens (drawer mode only). */
+  useEffect(() => {
+    if (isPageMode) return;
     const userId = authState?.userInfo?.userId;
     if (isOpenParam === 'true' && !userId) return;
     if (tryRestoreFromIntent()) return;
@@ -333,6 +407,7 @@ export default function PractitionerAvailability({
   }, [isOpenParam, authState?.userInfo?.userId]);
 
   useEffect(() => {
+    if (isPageMode) return;
     if (isOpenParam !== 'true') {
       const initialDate = isDateAvailable(today, listAvailableDate)
         ? today
@@ -348,13 +423,28 @@ export default function PractitionerAvailability({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpenParam]);
 
-  // Map FHIR Slots to pill items with disabled state
+  // Slot pills: from real FHIR slots (drawer) or computed free windows (page)
   const slotPills = useMemo(() => {
+    if (isPageMode) {
+      // Page mode: map computed free windows to pill format
+      if (!computedFreeSlots || computedFreeSlots.length === 0) return [];
+      return computedFreeSlots.map(fs => ({
+        id: `free-${fs.start}-${fs.end}`,
+        displayLabel: fs.start,
+        value: fs.start,
+        start: parseISO(`1970-01-01T${fs.start}:00`),
+        end: parseISO(`1970-01-01T${fs.end}:00`),
+        disabled: false,
+        status: 'free'
+      }));
+    }
+
+    // Drawer mode: map real FHIR Slot resources
     if (!schedule || !Array.isArray(schedule))
       return [] as Array<{
         id: string;
         displayLabel: string;
-        value: string; // HH:mm start time used for booking state
+        value: string;
         start: Date;
         end: Date;
         disabled: boolean;
@@ -384,7 +474,7 @@ export default function PractitionerAvailability({
     });
 
     return mapped.toSorted((a, b) => a.start.getTime() - b.start.getTime());
-  }, [schedule]);
+  }, [isPageMode, schedule, computedFreeSlots]);
 
   useEffect(() => {
     if (errorForm) {
@@ -475,38 +565,63 @@ export default function PractitionerAvailability({
     }
   };
 
+  const effectiveBookingState = isPageMode
+    ? ({
+        date: pageDate,
+        startTime: bookingState.startTime ?? '',
+        hasUserChosenDate: false
+      } as IStateBooking)
+    : bookingState;
+
+  const effectiveHandleFilterChange = isPageMode
+    ? (label: string, value: string | Date | boolean | undefined) => {
+        if (label === 'date' && value instanceof Date) {
+          setPageDate(value);
+        }
+        if (label === 'startTime' && typeof value === 'string') {
+          dispatch({
+            type: 'UPDATE_BOOKING_INFO',
+            payload: { startTime: value }
+          });
+        }
+      }
+    : handleFilterChange;
+
+  const slotLoading = isPageMode ? isBusySlotsLoading || isDetailLoading : isLoading;
+  const slotError = isPageMode ? false : isError;
+
   const bookingContent = (
     <div className='flex h-full flex-col'>
       <BookingCalendar
-        bookingState={bookingState}
-        handleFilterChange={handleFilterChange}
+        bookingState={effectiveBookingState}
+        handleFilterChange={effectiveHandleFilterChange}
         resetData={resetData}
         listAvailableDate={listAvailableDate}
-        availableTime={practitionerRole.availableTime ?? []}
+        availableTime={effectiveAvailableTime}
         today={today}
       />
       <TimeSlotsSection
-        bookingState={bookingState}
-        isLoading={isLoading}
-        isError={isError}
+        bookingState={effectiveBookingState}
+        isLoading={slotLoading}
+        isError={slotError}
         slotPills={slotPills}
-        scheduleId={scheduleId}
-        handleFilterChange={handleFilterChange}
-        setSelectedSlotId={setSelectedSlotId}
+        scheduleId={isPageMode ? '' : effectiveScheduleId}
+        handleFilterChange={effectiveHandleFilterChange}
+        setSelectedSlotId={isPageMode ? () => {} : setSelectedSlotId}
       />
       <BookingFormSection
         bookingForm={bookingForm}
-        bookingState={bookingState}
+        bookingState={effectiveBookingState}
         errorForm={errorForm}
         handleBookingInformationChange={handleBookingInformationChange}
         handleSubmitForm={handleSubmitForm}
-        scheduleId={scheduleId}
+        scheduleId={isPageMode ? '' : effectiveScheduleId}
         isCreateAppointmentLoading={isCreateAppointmentLoading}
         isPaying={isPaying}
         isAuthenticated={isAuthenticated}
         isPending={isPending}
-        practitionerRole={practitionerRole}
-        selectedSlotId={selectedSlotId}
+        practitionerRole={effectiveRole ?? ({} as PractitionerRole)}
+        selectedSlotId={isPageMode ? null : selectedSlotId}
         scheduleById={scheduleById}
         router={router}
         saveIntent={saveIntent}
@@ -515,6 +630,34 @@ export default function PractitionerAvailability({
       />
     </div>
   );
+
+  if (isPageMode) {
+    return (
+      <>
+        <div className='flex flex-col px-1'>
+          {bookingContent}
+        </div>
+        <PaymentDrawer
+          paymentOpen={paymentOpen}
+          setPaymentOpen={setPaymentOpen}
+          practitionerAvatar={practitionerAvatar}
+          practitionerOrganizationName={practitionerOrganizationName}
+          practitionerName={practitionerName}
+          bookingState={effectiveBookingState}
+          invoice={invoice}
+          isPaying={isPaying}
+          patientId={patientId ?? ''}
+          selectedSlotId={null}
+          bookingForm={bookingForm}
+          practitionerRole={effectiveRole ?? ({} as PractitionerRole)}
+          payAppointment={payAppointment}
+          queryClient={queryClient}
+          handleFilterChange={effectiveHandleFilterChange}
+          setIsOpen={setIsOpen}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -544,7 +687,7 @@ export default function PractitionerAvailability({
         patientId={patientId ?? ''}
         selectedSlotId={selectedSlotId}
         bookingForm={bookingForm}
-        practitionerRole={practitionerRole}
+        practitionerRole={practitionerRole as PractitionerRole}
         payAppointment={payAppointment}
         queryClient={queryClient}
         handleFilterChange={handleFilterChange}
