@@ -241,7 +241,7 @@ function minutesOverlap(
 }
 
 /**
- * Given availableTime, busy slots, and a date, compute free 60-min windows.
+ * Given availableTime, busy slots, and a date, compute free windows.
  *
  * Compares time-of-day using minutes-from-midnight to avoid timezone issues.
  * Busy slot ISO strings are parsed for their time-of-day component only.
@@ -249,12 +249,14 @@ function minutesOverlap(
  * @param availableTime - PractitionerRole.availableTime array
  * @param busySlots - Busy slot objects with start/end ISO strings
  * @param date - Target date (used only for day-of-week)
- * @returns Array of free 60-min slots with HH:mm start/end
+ * @param durationMinutes - Duration of each free slot in minutes (default 60)
+ * @returns Array of free slots with HH:mm start/end
  */
 export function computeFreeSlots(
   availableTime: PractitionerRoleAvailableTime[],
   busySlots: Array<{ start: string; end: string }>,
-  date: Date
+  date: Date,
+  durationMinutes: number = 60
 ): Array<{ start: string; end: string }> {
   const dayLabel = DAY_LABELS[date.getDay()];
 
@@ -276,27 +278,44 @@ export function computeFreeSlots(
   for (const window of matchingWindows) {
     if (!window.availableStartTime || !window.availableEndTime) continue;
 
-    const startHour = parseInt(window.availableStartTime.split(':')[0], 10);
-    const endHour = parseInt(window.availableEndTime.split(':')[0], 10);
+    const startMinutes = timeToMinutes(window.availableStartTime);
+    const endMinutes = timeToMinutes(window.availableEndTime);
 
-    // Generate candidate 60-min slots
-    for (let h = startHour; h < endHour; h++) {
-      const slotStart = h * 60;
-      const slotEnd = (h + 1) * 60;
+    // Generate candidate slots of durationMinutes length
+    let cursor = startMinutes;
+    while (cursor + durationMinutes <= endMinutes) {
+      const slotStart = cursor;
+      const slotEnd = cursor + durationMinutes;
 
       const isOccupied = busyRanges.some(b =>
         minutesOverlap(b.start, b.end, slotStart, slotEnd)
       );
 
       if (!isOccupied) {
-        const startStr = `${String(h).padStart(2, '0')}:00`;
-        const endStr = `${String(h + 1).padStart(2, '0')}:00`;
-        freeSlots.push({ start: startStr, end: endStr });
+        freeSlots.push({
+          start: minutesToTimeStr(slotStart),
+          end: minutesToTimeStr(slotEnd)
+        });
       }
+
+      cursor += durationMinutes;
     }
   }
 
   return freeSlots;
+}
+
+/** Convert 'HH:mm' time string to minutes-from-midnight. */
+function timeToMinutes(timeStr: string): number {
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + (m ?? 0);
+}
+
+/** Convert minutes-from-midnight to 'HH:mm' string. */
+function minutesToTimeStr(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
 /**
