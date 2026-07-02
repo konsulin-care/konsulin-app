@@ -7,6 +7,7 @@ import { SuperTokensProviders } from '@/components/supertokensProvider';
 import { AuthProvider } from '@/context/auth/authContext';
 import { BookingProvider } from '@/context/booking/bookingContext';
 import { FabDirtyProvider } from '@/context/fabDirtyContext';
+import { FabSelectionProvider } from '@/context/fabSelectionContext';
 import { ProfileProvider } from '@/context/profile/profileContext';
 import '@/styles/globals.css';
 import '@/styles/index.scss';
@@ -143,8 +144,10 @@ export default function RootLayout({
           <ToastContainer {...toastConfig} />
           <ProfileCompletenessModal />
           <FabDirtyProvider>
-            <PageContent>{children}</PageContent>
-            <QuickActionFab />
+            <FabSelectionProvider>
+              <PageContent>{children}</PageContent>
+              <QuickActionFab />
+            </FabSelectionProvider>
           </FabDirtyProvider>
         </AppProviders>
       </body>
