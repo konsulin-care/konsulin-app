@@ -119,6 +119,7 @@ export type DetailPractitionerData = Omit<BundleEntry, 'resource'> & {
   resource: PractitionerRole;
   location?: Location;
   organization?: Organization;
+  practitioner?: Practitioner;
   schedule?: Schedule;
   healthcareServices: HealthcareService[];
 };
@@ -141,6 +142,7 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
   let practitionerRole: BundleEntry | undefined;
   let organization: BundleEntry | undefined;
   let location: BundleEntry | undefined;
+  let practitioner: BundleEntry | undefined;
   let schedules: BundleEntry | undefined;
   let newData: DetailPractitionerData | undefined;
 
@@ -153,6 +155,9 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
     );
     location = data.find(
       (item: BundleEntry) => item.resource?.resourceType === 'Location'
+    );
+    practitioner = data.find(
+      (item: BundleEntry) => item.resource?.resourceType === 'Practitioner'
     );
     schedules = data.find(
       (item: BundleEntry) => item.resource?.resourceType === 'Schedule'
@@ -169,6 +174,7 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
       ...practitionerRole,
       location: location?.resource as Location | undefined,
       organization: organization?.resource as Organization | undefined,
+      practitioner: practitioner?.resource as Practitioner | undefined,
       schedule: schedules?.resource as Schedule | undefined,
       healthcareServices
     } as DetailPractitionerData;
