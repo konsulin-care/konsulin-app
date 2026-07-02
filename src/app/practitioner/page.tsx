@@ -150,7 +150,16 @@ export default function Practitioner() {
     return <PractitionerRoleManagementShell practitionerRoleId={id} />;
   };
 
-  const pageTitle = id ? 'Manage Practitioner' : 'Manage Practitioners';
+  // For patient detail mode, don't show a generic header — the practitioner
+  // name serves as the primary heading inside PatientDetail.
+  let pageTitle: string | undefined;
+  if (role === Roles.Patient && id) {
+    pageTitle = undefined;
+  } else if (id) {
+    pageTitle = 'Manage Practitioner';
+  } else {
+    pageTitle = 'Manage Practitioners';
+  }
 
   return (
     <>

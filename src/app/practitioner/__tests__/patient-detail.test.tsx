@@ -105,9 +105,10 @@ describe('PatientDetail', () => {
     } as unknown as ReturnType<typeof usePractitionerRoleHealthcareServices>);
   });
 
-  it('renders practitioner name', () => {
+  it('renders practitioner name as the primary heading', () => {
     render(<PatientDetail practitionerRoleId='role-123' />);
-    expect(screen.getByText('Dr. Sarah Chen')).toBeInTheDocument();
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading).toHaveTextContent('Dr. Sarah Chen');
   });
 
   it('renders specialty badges', () => {
@@ -141,10 +142,10 @@ describe('PatientDetail', () => {
     expect(screen.getByText('Heart Screening')).toBeInTheDocument();
   });
 
-  it('shows green active dot for active services', () => {
+  it('does not show green active dot for services', () => {
     render(<PatientDetail practitionerRoleId='role-123' />);
     const dots = document.querySelectorAll('.bg-green-500');
-    expect(dots.length).toBeGreaterThanOrEqual(2);
+    expect(dots.length).toBe(0);
   });
 
   it('shows fee formatted as IDR for each healthcare service', () => {
@@ -201,9 +202,30 @@ describe('PatientDetail', () => {
     expect(screen.getByText('No services listed')).toBeInTheDocument();
   });
 
-  it('renders healthcare service cards with admin-style layout', () => {
+  it('filters out inactive healthcare services', () => {
+    mockUsePractitionerRoleHealthcareServices.mockReturnValue({
+      data: [
+        ...baseServices,
+        {
+          id: 'hs-3',
+          name: 'Inactive Service',
+          active: false,
+          extension: [
+            {
+              url: FEE_EXTENSION_URL,
+              valueMoney: { value: 100000, currency: 'IDR' }
+            }
+          ]
+        }
+      ],
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn()
+    } as unknown as ReturnType<typeof usePractitionerRoleHealthcareServices>);
+
     render(<PatientDetail practitionerRoleId='role-123' />);
-    const cards = document.querySelectorAll('.border-gray-200');
-    expect(cards.length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('General Checkup')).toBeInTheDocument();
+    expect(screen.getByText('Heart Screening')).toBeInTheDocument();
+    expect(screen.queryByText('Inactive Service')).not.toBeInTheDocument();
   });
 });

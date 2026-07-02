@@ -74,7 +74,7 @@ export default function PatientDetail({ practitionerRoleId }: Props) {
     <div className='flex flex-col gap-4'>
       {/* Header: name + specialties */}
       <div>
-        <h2 className='text-lg font-bold text-black'>{practitionerName}</h2>
+        <h1 className='text-xl font-bold text-black'>{practitionerName}</h1>
         <div className='mt-2 flex flex-wrap gap-1'>
           {specialties.map(s => (
             <Badge key={s} className='bg-[#E1E1E1] text-[11px] text-black'>
@@ -106,36 +106,35 @@ export default function PatientDetail({ practitionerRoleId }: Props) {
         </div>
         {services && services.length > 0 ? (
           <div className='flex flex-col gap-2'>
-            {services.map((svc: HealthcareService) => {
-              const fee = getFeeFromHealthcareService(svc);
-              return (
-                <div
-                  key={svc.id}
-                  className='rounded-lg border border-gray-200 bg-white p-4'
-                >
-                  <div className='flex items-start justify-between'>
-                    <div className='flex-1'>
-                      <div className='text-sm font-bold'>
-                        {svc.active !== false && (
-                          <span className='mr-2 inline-block h-2 w-2 rounded-full bg-green-500' />
+            {services
+              .filter((svc: HealthcareService) => svc.active !== false)
+              .map((svc: HealthcareService) => {
+                const fee = getFeeFromHealthcareService(svc);
+                return (
+                  <div
+                    key={svc.id}
+                    className='rounded-lg border border-gray-200 bg-white p-4'
+                  >
+                    <div className='flex items-start justify-between'>
+                      <div className='flex-1'>
+                        <div className='text-sm font-bold'>
+                          {svc.name}
+                        </div>
+                        {svc.extraDetails && (
+                          <div className='mt-1 text-xs text-gray-500'>
+                            {svc.extraDetails}
+                          </div>
                         )}
-                        {svc.name}
                       </div>
-                      {svc.extraDetails && (
-                        <div className='mt-1 text-xs text-gray-500'>
-                          {svc.extraDetails}
+                      {fee && (
+                        <div className='shrink-0 text-sm font-bold text-[#13C2C2]'>
+                          {formatFee(fee)}
                         </div>
                       )}
                     </div>
-                    {fee && (
-                      <div className='shrink-0 text-sm font-bold text-[#13C2C2]'>
-                        {formatFee(fee)}
-                      </div>
-                    )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         ) : (
           <div className='text-sm text-gray-500'>No services listed</div>
