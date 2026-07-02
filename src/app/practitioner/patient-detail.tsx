@@ -4,6 +4,13 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { useDetailPractitioner } from '@/services/clinic';
 import { getFeeFromHealthcareService } from '@/utils/fhir/fee';
+import { getServiceDuration } from '@/utils/fhir/service-duration';
+import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
+import { generateAvatarPlaceholder } from '@/utils/helper';
+import { Clock, DollarSign } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 import type { HealthcareService, Location, Money, Organization } from 'fhir/r4';
 
 type Props = {
@@ -11,7 +18,7 @@ type Props = {
 };
 
 /**
- * Format an Organization address as a single-line string.
+ * Format an address as a single-line string.
  */
 function formatAddress(address: {
   line?: string[];
@@ -35,26 +42,76 @@ function formatFee(fee: Money): string {
   return `Rp ${formatted}`;
 }
 
-/** Practitioner name + specialty badges. */
-function LocationHeader({
+/** Practitioner identity section with avatar, name, and specialty badges. */
+function PractitionerIdentity({
+  practitionerId,
   name,
+  photoUrl,
   specialties
 }: {
+  practitionerId: string;
   name: string;
+  photoUrl?: string;
   specialties: string[];
 }) {
+  const maxVisibleBadges = 3;
+  const overflowCount =
+    specialties.length > maxVisibleBadges
+      ? specialties.length - maxVisibleBadges
+      : 0;
+  const visibleBadges =
+    overflowCount > 0
+      ? specialties.slice(0, maxVisibleBadges)
+      : specialties;
+
+  const { initials, seed } = useMemo(
+    () => generateAvatarPlaceholder({ id: practitionerId, name }),
+    [practitionerId, name]
+  );
+
+  const gradientUrl = useMemo(
+    () => (seed ? generateAvatarSvgDataUrl(seed, initials ?? '') : null),
+    [seed, initials]
+  );
+
   return (
-    <div>
-      <h1 className='text-xl font-bold text-black'>{name}</h1>
-      {specialties.length > 0 && (
-        <div className='mt-2 flex flex-wrap gap-1'>
-          {specialties.map(s => (
-            <Badge key={s} className='bg-[#E1E1E1] text-[11px] text-black'>
-              {s}
-            </Badge>
-          ))}
-        </div>
-      )}
+    <div className='flex items-center gap-3'>
+      <div className='h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#13c2c2]'>
+        {gradientUrl ? (
+          <Image
+            src={gradientUrl}
+            alt={name}
+            width={48}
+            height={48}
+            className='object-cover'
+            unoptimized
+          />
+        ) : (
+          <div className='flex h-full w-full items-center justify-center text-sm font-bold text-white'>
+            {initials}
+          </div>
+        )}
+      </div>
+      <div className='min-w-0 flex-1'>
+        <h1 className='text-xl font-bold text-black'>{name}</h1>
+        {specialties.length > 0 && (
+          <div className='mt-1 flex flex-wrap items-center gap-1'>
+            {visibleBadges.map(s => (
+              <Badge
+                key={s}
+                className='bg-[#E1E1E1] px-2 py-[2px] text-[11px] font-normal text-black'
+              >
+                {s}
+              </Badge>
+            ))}
+            {overflowCount > 0 && (
+              <span className='text-[11px] text-gray-500'>
+                ({overflowCount}+)
+              </span>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -85,9 +142,13 @@ function ClinicLocationSection({
 
 /** Healthcare service cards with fee and details. */
 function HealthcareServicesSection({
-  services
+  services,
+  practitionerRoleId,
+  onNavigate
 }: {
   services: HealthcareService[];
+  practitionerRoleId: string;
+  onNavigate: (url: string) => void;
 }) {
   return (
     <div>
@@ -100,26 +161,35 @@ function HealthcareServicesSection({
             .filter((svc: HealthcareService) => svc.active !== false)
             .map((svc: HealthcareService) => {
               const fee = getFeeFromHealthcareService(svc);
+              const duration = getServiceDuration(svc);
               return (
                 <div
                   key={svc.id}
-                  className='rounded-lg border border-gray-200 bg-white p-4'
+                  onClick={() =>
+                    onNavigate(
+                      `/practitioner/availability?id=${practitionerRoleId}&service=${svc.id}`
+                    )
+                  }
+                  className='cursor-pointer rounded-lg border border-gray-200 bg-white p-4'
                 >
-                  <div className='flex items-start justify-between'>
-                    <div className='flex-1'>
-                      <div className='text-sm font-bold'>{svc.name}</div>
-                      {svc.extraDetails && (
-                        <div className='mt-1 text-xs text-gray-500'>
-                          {svc.extraDetails}
-                        </div>
-                      )}
+                  <div className='text-sm font-bold text-black'>{svc.name}</div>
+                  {fee && (
+                    <div className='mt-1 flex items-center gap-1 text-sm font-bold text-gray-500'>
+                      <DollarSign size={14} />
+                      {formatFee(fee)}
                     </div>
-                    {fee && (
-                      <div className='shrink-0 text-sm font-bold text-[#13C2C2]'>
-                        {formatFee(fee)}
-                      </div>
-                    )}
-                  </div>
+                  )}
+                  {duration != null && (
+                    <div className='mt-1 flex items-center gap-1 text-sm text-gray-500'>
+                      <Clock size={14} />
+                      {duration} min
+                    </div>
+                  )}
+                  {svc.extraDetails && (
+                    <div className='mt-2 text-xs text-gray-500'>
+                      {svc.extraDetails}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -134,12 +204,13 @@ function HealthcareServicesSection({
 /**
  * Patient-facing practitioner detail page.
  *
- * Shows name, specialty badges, full clinic location (name + address),
- * and healthcare service cards with fees and details.
+ * Shows avatar, name, specialty badges, full clinic location (name + address),
+ * and healthcare service cards with fees, duration, and booking navigation.
  */
 export default function PatientDetail({ practitionerRoleId }: Props) {
   const { newData: detail, isLoading } =
     useDetailPractitioner(practitionerRoleId);
+  const router = useRouter();
 
   const services = detail?.healthcareServices ?? [];
 
@@ -157,9 +228,16 @@ export default function PatientDetail({ practitionerRoleId }: Props) {
 
   if (!detail) return null;
 
-  const practitionerName =
-    detail.resource.practitioner?.display ?? 'Practitioner';
+  // Name from included Practitioner resource, fallback to display, then 'Practitioner'
+  const practitionerName = (() => {
+    if (detail.practitioner?.name?.[0]?.text) {
+      return detail.practitioner.name[0].text;
+    }
+    return detail.resource.practitioner?.display ?? 'Practitioner';
+  })();
+
   const specialties = detail.resource.specialty?.map(s => s.text) ?? [];
+  const practitionerId = detail.practitioner?.id ?? detail.resource.id ?? '';
 
   // Type narrowing through DetailPractitionerData is safe.
   const location: Location | undefined = detail.location;
@@ -176,14 +254,27 @@ export default function PatientDetail({ practitionerRoleId }: Props) {
       | { line?: string[]; district?: string; city?: string; postalCode?: string }
       | undefined);
 
+  /** Navigate to availability page for a specific service. */
+  const handleNavigate = (url: string) => {
+    router.push(url);
+  };
+
   return (
     <div className='flex flex-col gap-4'>
-      <LocationHeader name={practitionerName} specialties={specialties} />
+      <PractitionerIdentity
+        practitionerId={practitionerId}
+        name={practitionerName}
+        specialties={specialties}
+      />
       <ClinicLocationSection
         orgOrLocation={displayOrg}
         address={displayAddress}
       />
-      <HealthcareServicesSection services={services} />
+      <HealthcareServicesSection
+        services={services}
+        practitionerRoleId={practitionerRoleId}
+        onNavigate={handleNavigate}
+      />
     </div>
   );
 }

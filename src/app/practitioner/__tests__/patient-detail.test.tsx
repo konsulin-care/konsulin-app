@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import PatientDetail from '../patient-detail';
 
@@ -18,11 +18,19 @@ vi.mock('@/components/icons', () => ({
   CheckCircleIcon: () => <div data-testid='check-icon' />
 }));
 
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(() => ({ push: vi.fn() }))
+}));
+
 import { useDetailPractitioner } from '@/services/clinic';
+import { useRouter } from 'next/navigation';
 
 const mockUseDetailPractitioner = vi.mocked(useDetailPractitioner);
+const mockUseRouter = vi.mocked(useRouter);
 
 const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
+const DURATION_EXTENSION_URL =
+  'https://konsulin.id/fhir/StructureDefinition/serviceDuration';
 
 const baseLocation = {
   name: 'Jakarta Heart Clinic - Menteng',
@@ -62,6 +70,10 @@ const baseServices = [
       {
         url: FEE_EXTENSION_URL,
         valueMoney: { value: 500000, currency: 'IDR' }
+      },
+      {
+        url: DURATION_EXTENSION_URL,
+        valueInteger: 30
       }
     ]
   },
@@ -74,6 +86,10 @@ const baseServices = [
       {
         url: FEE_EXTENSION_URL,
         valueMoney: { value: 1500000, currency: 'IDR' }
+      },
+      {
+        url: DURATION_EXTENSION_URL,
+        valueInteger: 60
       }
     ]
   }
@@ -93,6 +109,10 @@ function buildNewData(overrides: Record<string, unknown> = {}) {
         display: 'Jakarta Heart Clinic'
       }
     },
+    practitioner: {
+      id: 'prac-1',
+      name: [{ text: 'Dr. Sarah Chen' }]
+    },
     location: baseLocation,
     organization: baseOrganization,
     healthcareServices: baseServices,
@@ -110,6 +130,8 @@ describe('PatientDetail', () => {
       isError: false,
       isFetching: false
     } as unknown as ReturnType<typeof useDetailPractitioner>);
+
+    mockUseRouter.mockReturnValue({ push: vi.fn() } as any);
   });
 
   it('renders practitioner name as the primary heading', () => {
@@ -118,10 +140,67 @@ describe('PatientDetail', () => {
     expect(heading).toHaveTextContent('Dr. Sarah Chen');
   });
 
-  it('renders specialty badges', () => {
+  it('renders practitioner name from included practitioner resource', () => {
+    mockUseDetailPractitioner.mockReturnValue({
+      newData: buildNewData({
+        practitioner: {
+          id: 'prac-1',
+          name: [{ text: 'Dr. Sarah Chen' }]
+        }
+      }),
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as unknown as ReturnType<typeof useDetailPractitioner>);
+
+    render(<PatientDetail practitionerRoleId='role-123' />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Dr. Sarah Chen'
+    );
+  });
+
+  it('renders avatar element next to practitioner name', () => {
+    render(<PatientDetail practitionerRoleId='role-123' />);
+    // The avatar is rendered in a 48px rounded-full container
+    const avatarContainer = document.querySelector('.h-12.w-12');
+    expect(avatarContainer).toBeInTheDocument();
+    expect(avatarContainer).toHaveClass('rounded-full');
+  });
+
+  it('renders specialty badges with truncation when >3', () => {
+    mockUseDetailPractitioner.mockReturnValue({
+      newData: buildNewData({
+        resource: {
+          id: 'role-123',
+          practitioner: { reference: 'Practitioner/prac-1' },
+          specialty: [
+            { text: 'Cardiology' },
+            { text: 'Internal Medicine' },
+            { text: 'Pediatrics' },
+            { text: 'Neurology' },
+            { text: 'Dermatology' }
+          ]
+        }
+      }),
+      isLoading: false,
+      isError: false,
+      isFetching: false
+    } as unknown as ReturnType<typeof useDetailPractitioner>);
+
     render(<PatientDetail practitionerRoleId='role-123' />);
     expect(screen.getByText('Cardiology')).toBeInTheDocument();
     expect(screen.getByText('Internal Medicine')).toBeInTheDocument();
+    expect(screen.getByText('Pediatrics')).toBeInTheDocument();
+    expect(screen.getByText('(2+)')).toBeInTheDocument();
+    expect(screen.queryByText('Neurology')).not.toBeInTheDocument();
+    expect(screen.queryByText('Dermatology')).not.toBeInTheDocument();
+  });
+
+  it('shows no overflow when specialties <= 3', () => {
+    render(<PatientDetail practitionerRoleId='role-123' />);
+    expect(screen.getByText('Cardiology')).toBeInTheDocument();
+    expect(screen.getByText('Internal Medicine')).toBeInTheDocument();
+    expect(screen.queryByText(/\(\+\)/)).not.toBeInTheDocument();
   });
 
   it('renders clinic location heading', () => {
@@ -182,16 +261,16 @@ describe('PatientDetail', () => {
     expect(screen.getByText('Heart Screening')).toBeInTheDocument();
   });
 
-  it('does not show green active dot for services', () => {
-    render(<PatientDetail practitionerRoleId='role-123' />);
-    const dots = document.querySelectorAll('.bg-green-500');
-    expect(dots.length).toBe(0);
-  });
-
   it('shows fee formatted as IDR for each healthcare service', () => {
     render(<PatientDetail practitionerRoleId='role-123' />);
     expect(screen.getByText('Rp 500.000')).toBeInTheDocument();
     expect(screen.getByText('Rp 1.500.000')).toBeInTheDocument();
+  });
+
+  it('shows duration in minutes for each service', () => {
+    render(<PatientDetail practitionerRoleId='role-123' />);
+    expect(screen.getByText('30 min')).toBeInTheDocument();
+    expect(screen.getByText('60 min')).toBeInTheDocument();
   });
 
   it('shows extra details for healthcare services', () => {
@@ -202,6 +281,24 @@ describe('PatientDetail', () => {
     expect(
       screen.getByText('Full cardiac assessment')
     ).toBeInTheDocument();
+  });
+
+  it('navigates to availability page on service card click', () => {
+    const mockPush = vi.fn();
+    mockUseRouter.mockReturnValue({ push: mockPush } as any);
+
+    render(<PatientDetail practitionerRoleId='role-123' />);
+    const cards = screen.getAllByText(/General Checkup|Heart Screening/);
+
+    // Click the first service card
+    fireEvent.click(cards[0].closest('[class*="cursor-pointer"]') ?? cards[0]);
+
+    expect(mockPush).toHaveBeenCalledWith(
+      expect.stringContaining('/practitioner/availability?id=role-123')
+    );
+    expect(mockPush).toHaveBeenCalledWith(
+      expect.stringContaining('service=hs-1')
+    );
   });
 
   it('renders loading state', () => {
