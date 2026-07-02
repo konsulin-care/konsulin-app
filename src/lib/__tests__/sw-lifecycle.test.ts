@@ -309,6 +309,36 @@ describe('fetch cache failure resilience', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Fetch event — top-level error recovery
+// ---------------------------------------------------------------------------
+describe('fetch error recovery', () => {
+  it('wraps handler in top-level try-catch that falls back to fetch', async () => {
+    {
+      // URL parsing failure: new URL('') throws
+      const event = fireFetch(mockSelf, { url: '' });
+
+      // The async IIFE's try-catch falls back to fetch(event.request)
+      expect(event.respondWith).toHaveBeenCalled();
+      const promiseArg = event.respondWith.mock.calls[0][0];
+      await expect(promiseArg).resolves.toBeInstanceOf(Response);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it('cross-origin requests still bypass SW after refactor', () => {
+    // Same test as 'ignores cross-origin requests' — verify refactor
+    // didn't break the bypass.
+    const event = fireFetch(mockSelf, {
+      url: 'https://other.com/page'
+    });
+
+    expect(event.respondWith).not.toHaveBeenCalled();
+    expect(mockCaches.open).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // sw-register.js — extracted from dangerouslySetInnerHTML
 // ---------------------------------------------------------------------------
 describe('sw-register.js', () => {
@@ -343,8 +373,8 @@ describe('sw-register.js', () => {
 describe('defense-in-depth URL validation', () => {
   it('networkFirst returns 503 for non-http URLs', async () => {
     const patchedCode = SW_CODE.replace(
-      'async function networkFirst(request, cacheName, fallbackUrl) {',
-      'self.__testNetworkFirst = async function networkFirst(request, cacheName, fallbackUrl) {'
+      'async function networkFirst (request, cacheName, fallbackUrl) {',
+      'self.__testNetworkFirst = async function networkFirst (request, cacheName, fallbackUrl) {'
     );
 
     const captureSelf = createMockSelf() as MockSelf & {

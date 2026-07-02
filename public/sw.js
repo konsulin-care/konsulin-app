@@ -97,7 +97,7 @@ async function networkFirst (request, cacheName, fallbackUrl) {
     const response = await fetch(request)
     if (response.ok && request.method === 'GET') {
       const navCache = await caches.open(cacheName)
-      navCache.put(request, response.clone())
+      await navCache.put(request, response.clone())
     }
     return response
   } catch {
@@ -119,32 +119,36 @@ async function networkFirst (request, cacheName, fallbackUrl) {
 }
 
 self.addEventListener('fetch', function (event) {
-  const request = event.request
-  const url = new URL(request.url)
+  // Parse URL once. If parsing fails (e.g., malformed URL), parsed stays
+  // undefined and the async IIFE handles it in its own try-catch.
+  let parsed
+  try { parsed = new URL(event.request.url) } catch { /* fall through */ }
 
-  if (!isSameOrigin(url)) return
+  // Skip cross-origin requests — let the browser handle them directly.
+  if (parsed && !isSameOrigin(parsed)) return
 
-  // Non-GET requests (POST, DELETE, etc.) bypass caching entirely.
-  // The Cache API only supports GET, so caching would throw.
-  if (request.method !== 'GET') {
-    event.respondWith(fetch(request))
-    return
-  }
+  event.respondWith(
+    (async function () {
+      try {
+        const request = event.request
+        const url = parsed ?? new URL(request.url)
 
-  if (isProxyApi(url.pathname)) {
-    event.respondWith(fetch(request))
-    return
-  }
+        // Non-GET requests bypass caching entirely.
+        if (request.method !== 'GET') return fetch(request)
 
-  if (request.mode === 'navigate') {
-    event.respondWith(networkFirst(request, NAV_CACHE, OFFLINE_URL))
-    return
-  }
+        if (isProxyApi(url.pathname)) return fetch(request)
 
-  if (isStaticAsset(url.pathname)) {
-    event.respondWith(networkFirst(request, STATIC_CACHE))
-    return
-  }
+        if (request.mode === 'navigate')
+          return await networkFirst(request, NAV_CACHE, OFFLINE_URL)
 
-  event.respondWith(networkFirst(request, NAV_CACHE))
+        if (isStaticAsset(url.pathname))
+          return await networkFirst(request, STATIC_CACHE)
+
+        return await networkFirst(request, NAV_CACHE)
+      } catch (err) {
+        console.warn('[SW] fetch handler error:', err)
+        return fetch(event.request)
+      }
+    })()
+  )
 })
