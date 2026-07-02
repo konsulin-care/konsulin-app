@@ -158,3 +158,25 @@ describe('Practitioner page – detail (admin) mode', () => {
     );
   });
 });
+
+describe('Practitioner page – detail (patient) mode', () => {
+  beforeEach(() => {
+    vi.mocked(useAuth).mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: Roles.Patient, fhirId: '' }
+      },
+      dispatch: vi.fn()
+    });
+  });
+
+  it('shows View Provided Services page indicator for patient detail', () => {
+    mockSearchParams.set('id', 'role-123');
+    render(<Practitioner />);
+
+    expect(screen.getByTestId('mock-page-header')).toHaveTextContent(
+      'View Provided Services'
+    );
+  });
+});

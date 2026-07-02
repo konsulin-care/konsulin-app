@@ -152,11 +152,9 @@ export default function Practitioner() {
     return <PractitionerRoleManagementShell practitionerRoleId={id} />;
   };
 
-  // For patient detail mode, don't show a generic header — the practitioner
-  // name serves as the primary heading inside PatientDetail.
   let pageTitle: string | undefined;
   if (role === Roles.Patient && id) {
-    pageTitle = undefined;
+    pageTitle = 'View Provided Services';
   } else if (id) {
     pageTitle = 'Manage Practitioner';
   } else {
