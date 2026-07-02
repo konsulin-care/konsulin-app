@@ -348,3 +348,39 @@ export function usePractitionerSlots(
     enabled: Boolean(practitionerRoleId) && Boolean(date)
   });
 }
+
+/**
+ * Hook to fetch busy slots for a practitioner across all roles.
+ *
+ * Queries Slot resources by Practitioner ID (not PractitionerRole)
+ * to get all occupied slots regardless of which role they belong to.
+ * Returns array of {start, end} ISO strings.
+ *
+ * @param practitionerId - FHIR Practitioner ID
+ * @param date - ISO date string (e.g. '2026-07-02')
+ * @returns Query result with Array<{start: string; end: string}>
+ */
+export function useBusySlotsByPractitioner(
+  practitionerId: string,
+  date: string
+) {
+  return useQuery({
+    queryKey: ['practitioner-busy-slots', practitionerId, date],
+    queryFn: async () => {
+      const API = await getAPI();
+      const geParam = encodeURIComponent(`${date}T00:00:00Z`);
+      const leParam = encodeURIComponent(`${date}T23:59:59Z`);
+      const response = await API.get<Bundle>(
+        `/fhir/Slot?schedule.actor=Practitioner/${practitionerId}` +
+          `&start=ge${geParam}&start=le${leParam}&status:not=free`
+      );
+      return response.data.entry ?? [];
+    },
+    select: (entries: BundleEntry[]) =>
+      entries
+        .filter(e => e.resource?.resourceType === 'Slot')
+        .map(e => (e.resource as Slot))
+        .map(s => ({ start: s.start, end: s.end })),
+    enabled: Boolean(practitionerId) && Boolean(date)
+  });
+}
