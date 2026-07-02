@@ -6,16 +6,43 @@ import {
   useDetailPractitioner,
   usePractitionerRoleHealthcareServices
 } from '@/services/clinic';
+import { getFeeFromHealthcareService } from '@/utils/fhir/fee';
+import type { HealthcareService, Money } from 'fhir/r4';
 
 type Props = {
   readonly practitionerRoleId: string;
 };
 
 /**
+ * Format an Organization address as a single-line string.
+ */
+function formatAddress(address: {
+  line?: string[];
+  district?: string;
+  city?: string;
+  postalCode?: string;
+}): string {
+  const parts: string[] = [];
+  if (address.line) parts.push(...address.line);
+  if (address.district) parts.push(address.district);
+  if (address.city) parts.push(address.city);
+  if (address.postalCode) parts.push(address.postalCode);
+  return parts.join(', ');
+}
+
+/**
+ * Format fee as Indonesian Rupiah string.
+ */
+function formatFee(fee: Money): string {
+  const formatted = (fee.value ?? 0).toLocaleString('id-ID');
+  return `Rp ${formatted}`;
+}
+
+/**
  * Patient-facing practitioner detail page.
  *
- * Shows name, specialty badges, clinic location, and a list of
- * healthcare services with fees (from Invoice).
+ * Shows name, specialty badges, full clinic location (name + address),
+ * and healthcare service cards with active indicator, fee, and details.
  */
 export default function PatientDetail({ practitionerRoleId }: Props) {
   const { newData: detail, isLoading } =
@@ -40,7 +67,8 @@ export default function PatientDetail({ practitionerRoleId }: Props) {
   const practitionerName =
     detail.resource.practitioner?.display ?? 'Practitioner';
   const specialties = detail.resource.specialty?.map(s => s.text) ?? [];
-  const orgName = detail.organization?.name ?? '';
+  const organization = detail.organization;
+  const orgAddress = organization?.address?.[0];
 
   return (
     <div className='flex flex-col gap-4'>
@@ -57,10 +85,17 @@ export default function PatientDetail({ practitionerRoleId }: Props) {
       </div>
 
       {/* Clinic location */}
-      {orgName && (
+      {organization && (
         <div>
           <div className='text-sm text-gray-500'>Location</div>
-          <div className='text-sm font-medium text-black'>{orgName}</div>
+          <div className='text-sm font-medium text-black'>
+            {organization.name}
+          </div>
+          {orgAddress && (
+            <div className='mt-1 text-xs text-gray-500'>
+              {formatAddress(orgAddress)}
+            </div>
+          )}
         </div>
       )}
 
@@ -71,19 +106,36 @@ export default function PatientDetail({ practitionerRoleId }: Props) {
         </div>
         {services && services.length > 0 ? (
           <div className='flex flex-col gap-2'>
-            {services.map(svc => (
-              <div
-                key={svc.id}
-                className='flex items-center justify-between rounded-lg bg-[#F9F9F9] p-3'
-              >
-                <span className='text-sm text-black'>{svc.name}</span>
-                {svc.extraDetails && (
-                  <span className='text-sm font-bold text-[#13C2C2]'>
-                    {svc.extraDetails}
-                  </span>
-                )}
-              </div>
-            ))}
+            {services.map((svc: HealthcareService) => {
+              const fee = getFeeFromHealthcareService(svc);
+              return (
+                <div
+                  key={svc.id}
+                  className='rounded-lg border border-gray-200 bg-white p-4'
+                >
+                  <div className='flex items-start justify-between'>
+                    <div className='flex-1'>
+                      <div className='text-sm font-bold'>
+                        {svc.active !== false && (
+                          <span className='mr-2 inline-block h-2 w-2 rounded-full bg-green-500' />
+                        )}
+                        {svc.name}
+                      </div>
+                      {svc.extraDetails && (
+                        <div className='mt-1 text-xs text-gray-500'>
+                          {svc.extraDetails}
+                        </div>
+                      )}
+                    </div>
+                    {fee && (
+                      <div className='shrink-0 text-sm font-bold text-[#13C2C2]'>
+                        {formatFee(fee)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className='text-sm text-gray-500'>No services listed</div>
