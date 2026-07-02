@@ -14,6 +14,8 @@ type Props = {
   listAvailableDate: Date[];
   availableTime: PractitionerRoleAvailableTime[];
   today: Date;
+  /** Skip DrawerTitle / DrawerDescription when used outside a drawer context. */
+  hideHeader?: boolean;
 };
 
 /** Calendar-based date picker showing practitioner availability. */
@@ -23,15 +25,18 @@ export default function BookingCalendar({
   resetData,
   listAvailableDate,
   availableTime,
-  today
+  today,
+  hideHeader = false
 }: Readonly<Props>) {
   return (
     <>
-      <DrawerTitle className='mx-auto text-[20px] font-bold'>
-        See Availability
-      </DrawerTitle>
+      {!hideHeader && (
+        <DrawerTitle className='mx-auto text-[20px] font-bold'>
+          See Availability
+        </DrawerTitle>
+      )}
       <div className='mt-4 flex w-full flex-col justify-center'>
-        <DrawerDescription />
+        {!hideHeader && <DrawerDescription />}
         <Calendar
           defaultMonth={bookingState.date}
           mode='single'

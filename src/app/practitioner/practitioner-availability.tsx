@@ -597,6 +597,7 @@ export default function PractitionerAvailability({
         listAvailableDate={listAvailableDate}
         availableTime={effectiveAvailableTime}
         today={today}
+        hideHeader={isPageMode}
       />
       <TimeSlotsSection
         bookingState={effectiveBookingState}
