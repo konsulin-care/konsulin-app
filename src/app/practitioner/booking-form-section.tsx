@@ -1,14 +1,6 @@
-/* eslint-disable react/jsx-max-depth */
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button, buttonVariants } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+
 import { Textarea } from '@/components/ui/textarea';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { cn, conjunction } from '@/lib/utils';
@@ -24,6 +16,7 @@ type Props = {
   handleBookingInformationChange: (key: string, value: string) => void;
   handleSubmitForm: () => void;
   scheduleId: string;
+  hideCta?: boolean;
   isCreateAppointmentLoading: boolean;
   isPaying: boolean;
   isAuthenticated: boolean;
@@ -37,21 +30,7 @@ type Props = {
   setIsOpen: (open: boolean) => void;
 };
 
-const sessionTypeSelect = (
-  <Select disabled>
-    <SelectTrigger className='w-[50%] text-[12px] text-[#2C2F35]'>
-      <SelectValue placeholder='Offline' />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectGroup className='text-[12px] text-[#2C2F35]'>
-        <SelectItem value='online'>Online</SelectItem>
-        <SelectItem value='offline'>Offline</SelectItem>
-      </SelectGroup>
-    </SelectContent>
-  </Select>
-);
-
-/** Booking form with session type, problem brief, and submit handler. */
+/** Booking form with problem brief and submit handler. */
 export default function BookingFormSection({
   bookingForm,
   bookingState,
@@ -69,15 +48,13 @@ export default function BookingFormSection({
   router,
   saveIntent,
   startTransition,
-  setIsOpen
+  setIsOpen,
+  hideCta = false
 }: Readonly<Props>) {
   return (
     <>
       {bookingState.startTime && (
         <>
-          <div className='text-[12px] font-bold'>Session Type</div>
-          <div className='mt-2 flex space-x-4'>{sessionTypeSelect}</div>
-
           <div className='mt-4 text-[12px] font-bold'>Problem Brief</div>
           <div className='mt-2 mb-4'>
             <Textarea
@@ -98,71 +75,75 @@ export default function BookingFormSection({
         </>
       )}
 
-      {isAuthenticated ? (
-        <Button
-          className='bg-secondary mt-auto rounded-xl text-white disabled:opacity-50'
-          onClick={handleSubmitForm}
-          disabled={
-            isCreateAppointmentLoading ||
-            isPaying ||
-            !scheduleId ||
-            !bookingState.startTime ||
-            !bookingForm.problem_brief?.trim()
-          }
-        >
-          {isCreateAppointmentLoading || isPaying ? (
-            <LoadingSpinnerIcon
-              stroke='white'
-              width={20}
-              height={20}
-              className='animate-spin'
-            />
+      {!hideCta && (
+        <>
+          {isAuthenticated ? (
+            <Button
+              className='bg-secondary mt-auto rounded-xl text-white disabled:opacity-50'
+              onClick={handleSubmitForm}
+              disabled={
+                isCreateAppointmentLoading ||
+                isPaying ||
+                !scheduleId ||
+                !bookingState.startTime ||
+                !bookingForm.problem_brief?.trim()
+              }
+            >
+              {isCreateAppointmentLoading || isPaying ? (
+                <LoadingSpinnerIcon
+                  stroke='white'
+                  width={20}
+                  height={20}
+                  className='animate-spin'
+                />
+              ) : (
+                `Book Now${getSlotMinutesText(scheduleById)}`
+              )}
+            </Button>
           ) : (
-            `Jadwalkan Sesi${getSlotMinutesText(scheduleById)}`
-          )}
-        </Button>
-      ) : (
-        <Button
-          className='bg-secondary mt-auto w-full rounded-[32px] py-2 text-[14px] font-bold text-white'
-          disabled={isPending}
-          onClick={() => {
-            saveIntent('appointment', {
-              path: `/practitioner?id=${practitionerRole.id}`,
-              slot: {
-                date: bookingState.date,
-                startTime: bookingState.startTime,
-                slotId: selectedSlotId
-              },
-              formData: bookingForm
-            });
+            <Button
+              className='bg-secondary mt-auto w-full rounded-[32px] py-2 text-[14px] font-bold text-white'
+              disabled={isPending}
+              onClick={() => {
+                saveIntent('appointment', {
+                  path: `/practitioner?id=${practitionerRole.id}`,
+                  slot: {
+                    date: bookingState.date,
+                    startTime: bookingState.startTime,
+                    slotId: selectedSlotId
+                  },
+                  formData: bookingForm
+                });
 
-            startTransition(() => {
-              router.push('/auth');
-            });
-          }}
-        >
-          {isPending ? (
-            <LoadingSpinnerIcon
-              stroke='white'
-              width={20}
-              height={20}
-              className='animate-spin'
-            />
-          ) : (
-            'Silakan Daftar atau Masuk untuk Booking'
+                startTransition(() => {
+                  router.push('/auth');
+                });
+              }}
+            >
+              {isPending ? (
+                <LoadingSpinnerIcon
+                  stroke='white'
+                  width={20}
+                  height={20}
+                  className='animate-spin'
+                />
+              ) : (
+                'Silakan Daftar atau Masuk untuk Booking'
+              )}
+            </Button>
           )}
-        </Button>
+          <Button
+            onClick={() => setIsOpen(false)}
+            variant='outline'
+            className={cn(
+              buttonVariants({ variant: 'outline' }),
+              'mt-2 w-full rounded-xl border-0'
+            )}
+          >
+            Batalkan
+          </Button>
+        </>
       )}
-      <Button
-        onClick={() => setIsOpen(false)}
-        variant='outline'
-        className={cn(
-          buttonVariants({ variant: 'outline' }),
-          'mt-2 w-full rounded-xl border-0'
-        )}
-      >
-        Batalkan
-      </Button>
     </>
   );
 }

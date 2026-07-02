@@ -291,7 +291,9 @@ describe('PractitionerAvailability', () => {
       { wrapper: createWrapper(queryClient) }
     );
     expect(screen.getByTestId('trigger-child')).toBeDefined();
-    expect(screen.getByText('Book Now')).toBeDefined();
+    // "Book Now" now appears both in the trigger child and the CTA button
+    const bookNowElements = screen.getAllByText('Book Now');
+    expect(bookNowElements.length).toBeGreaterThanOrEqual(1);
   });
 
   it('opens drawer when trigger is clicked', () => {
@@ -339,8 +341,9 @@ describe('PractitionerAvailability', () => {
       { wrapper: createWrapper(queryClient) }
     );
     fireEvent.click(screen.getByTestId('mock-drawer-trigger'));
-    expect(screen.getByTestId('mock-select')).toBeDefined();
+    // Session type select was removed; textarea remains
     expect(screen.getByTestId('mock-textarea')).toBeDefined();
+    expect(screen.queryByTestId('mock-select')).toBeNull();
   });
 
   it('shows login button when user is not authenticated', () => {

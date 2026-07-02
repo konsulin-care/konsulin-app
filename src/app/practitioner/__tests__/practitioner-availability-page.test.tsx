@@ -17,6 +17,10 @@ vi.mock('@/services/api', () => ({
   getAPI: vi.fn()
 }));
 
+vi.mock('@/context/fabDirtyContext', () => ({
+  useFabDirty: vi.fn()
+}));
+
 vi.mock('@/services/api/appointments', () => ({
   useCreateAppointment: vi.fn(() => ({ isLoading: false, mutateAsync: vi.fn() })),
   usePayAppointment: vi.fn(() => ({ isLoading: false, mutateAsync: vi.fn() }))
@@ -55,11 +59,25 @@ vi.mock('../booking-calendar', () => ({
 }));
 
 vi.mock('../time-slots-section', () => ({
-  default: () => <div data-testid='time-slots-section'>Time Slots</div>
+  default: (props: any) => (
+    <div
+      data-testid='time-slots-section'
+      data-schedule-id={props.scheduleId}
+    >
+      Time Slots
+    </div>
+  )
 }));
 
 vi.mock('../booking-form-section', () => ({
-  default: () => <div data-testid='booking-form-section'>Booking Form</div>
+  default: (props: any) => (
+    <div
+      data-testid='booking-form-section'
+      data-hide-cta={props.hideCta}
+    >
+      Booking Form
+    </div>
+  )
 }));
 
 vi.mock('../payment-drawer', () => ({
@@ -83,7 +101,8 @@ vi.mock('@/services/clinic', () => ({
   useDetailPractitioner: vi.fn(() => ({
     newData: {
       resource: { id: 'role-123', availableTime: [] },
-      practitioner: { id: 'prac-1', name: [{ text: 'Dr. Test' }] }
+      practitioner: { id: 'prac-1', name: [{ text: 'Dr. Test' }] },
+      schedule: { id: 'sched-123' }
     },
     isLoading: false
   }))
@@ -91,6 +110,7 @@ vi.mock('@/services/clinic', () => ({
 
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
+import { useFabDirty } from '@/context/fabDirtyContext';
 import PractitionerAvailability from '../practitioner-availability';
 
 function createWrapper() {
@@ -126,6 +146,11 @@ beforeEach(() => {
     data: null,
     isLoading: false
   } as any);
+
+  vi.mocked(useFabDirty).mockReturnValue({
+    dirtyState: null,
+    setDirtyState: vi.fn()
+  } as any);
 });
 
 describe('PractitionerAvailability page variant', () => {
@@ -159,6 +184,65 @@ describe('PractitionerAvailability page variant', () => {
     );
 
     // In drawer mode, trigger content should be rendered
+    expect(screen.getByTestId('trigger-content')).toBeInTheDocument();
+  });
+
+  it('passes effectiveScheduleId to TimeSlotsSection in page mode', () => {
+    render(
+      <PractitionerAvailability
+        variant='page'
+        practitionerRoleId='role-123'
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    const timeSlotsSection = screen.getByTestId('time-slots-section');
+    // scheduleId should be truthy (from detail.schedule.id), not empty string
+    expect(timeSlotsSection.dataset.scheduleId).not.toBe('');
+  });
+
+  it('passes hideCta=true to BookingFormSection in page mode', () => {
+    render(
+      <PractitionerAvailability
+        variant='page'
+        practitionerRoleId='role-123'
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    const bookingFormSection = screen.getByTestId('booking-form-section');
+    expect(bookingFormSection.dataset.hideCta).toBe('true');
+  });
+
+  it('calls setDirtyState with null on mount in page mode (form not ready)', () => {
+    render(
+      <PractitionerAvailability
+        variant='page'
+        practitionerRoleId='role-123'
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    const { setDirtyState } = vi.mocked(useFabDirty)();
+    // setDirtyState should have been called, at minimum with null (form not valid)
+    expect(setDirtyState).toHaveBeenCalled();
+    expect(setDirtyState).toHaveBeenCalledWith(null);
+  });
+
+  it('does not crash when FabDirtyContext is available in drawer variant', () => {
+    render(
+      <PractitionerAvailability
+        practitionerRole={
+          { id: 'role-123', availableTime: [] } as any
+        }
+        scheduleId='sched-1'
+      >
+        <div data-testid='trigger-content'>Trigger</div>
+      </PractitionerAvailability>,
+      { wrapper: createWrapper() }
+    );
+
+    // Should render without crashing — trigger content is visible
     expect(screen.getByTestId('trigger-content')).toBeInTheDocument();
   });
 });

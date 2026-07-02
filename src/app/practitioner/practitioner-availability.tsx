@@ -2,6 +2,7 @@
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
+import { useFabDirty } from '@/context/fabDirtyContext';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { STORES, dbDelete, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
@@ -20,7 +21,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { addDays, format, isBefore, parseISO, startOfDay } from 'date-fns';
 import { BundleEntry, Invoice, PractitionerRole, Slot } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ReactNode, useEffect, useMemo, useState, useTransition } from 'react';
+import { ReactNode, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import BookingCalendar from './booking-calendar';
 import BookingFormSection from './booking-form-section';
 import PaymentDrawer from './payment-drawer';
@@ -112,6 +113,7 @@ export default function PractitionerAvailability({
     problem_brief: ''
   });
   const [errorForm, setErrorForm] = useState<string[] | null>(null);
+  const { setDirtyState } = useFabDirty();
   const queryClient = useQueryClient();
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { isLoading: isCreateAppointmentLoading } = useCreateAppointment();
@@ -563,6 +565,33 @@ export default function PractitionerAvailability({
     }
   };
 
+  // Ref keeps the latest handleSubmitForm closure for the FAB's onSave
+  const handleSubmitFormRef = useRef(handleSubmitForm);
+  handleSubmitFormRef.current = handleSubmitForm;
+
+  const isFormValid =
+    isPageMode &&
+    Boolean(bookingState.startTime) &&
+    Boolean(bookingForm.problem_brief.trim());
+
+  // Sync FAB dirty state to show "Book Now" when form is ready in page mode
+  useEffect(() => {
+    if (isPageMode && isFormValid) {
+      setDirtyState({
+        isDirty: true,
+        label: 'Book Now',
+        onSave: () => handleSubmitFormRef.current(),
+        isSaving: false
+      });
+    } else {
+      setDirtyState(null);
+    }
+
+    return () => {
+      setDirtyState(null);
+    };
+  }, [isFormValid, isPageMode, setDirtyState]);
+
   const effectiveBookingState = isPageMode
     ? ({
         date: pageDate,
@@ -604,9 +633,9 @@ export default function PractitionerAvailability({
         isLoading={slotLoading}
         isError={slotError}
         slotPills={slotPills}
-        scheduleId={isPageMode ? '' : effectiveScheduleId}
+        scheduleId={effectiveScheduleId}
         handleFilterChange={effectiveHandleFilterChange}
-        setSelectedSlotId={isPageMode ? () => { /* page mode: no slot selection */ } : setSelectedSlotId}
+        setSelectedSlotId={setSelectedSlotId}
       />
       <BookingFormSection
         bookingForm={bookingForm}
@@ -614,7 +643,8 @@ export default function PractitionerAvailability({
         errorForm={errorForm}
         handleBookingInformationChange={handleBookingInformationChange}
         handleSubmitForm={handleSubmitForm}
-        scheduleId={isPageMode ? '' : effectiveScheduleId}
+        scheduleId={effectiveScheduleId}
+        hideCta={isPageMode}
         isCreateAppointmentLoading={isCreateAppointmentLoading}
         isPaying={isPaying}
         isAuthenticated={isAuthenticated}
