@@ -4,6 +4,7 @@ import { useClinicContext } from '@/hooks/useClinicContext';
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
 import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
 import { useFabSelection } from '@/context/fabSelectionContext';
+import ServiceCard from '@/components/practitioner/service-card';
 import type { Bundle, HealthcareService, PractitionerRole } from 'fhir/r4';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ServiceFormDrawer from './service-form-drawer';
@@ -255,33 +256,15 @@ export default function ServicesTab({
         const isSelected = svc.id ? selectedIds.has(svc.id) : false;
         return (
           <div key={svc.id ?? svc.name} className='relative'>
-            <button
-              type='button'
+            <ServiceCard
+              service={svc}
+              isSelected={isSelected}
               onClick={() => handleCardClick(svc)}
               onContextMenu={e => handleContextMenu(e, svc)}
               onTouchStart={e => handleTouchStart(e, svc)}
               onTouchMove={handleTouchMove}
               onTouchEnd={() => handleTouchEnd(svc)}
-              className={`card w-full cursor-pointer rounded-lg border p-4 text-left ${
-                isSelected
-                  ? 'border-primary-500 ring-2 ring-primary-500 bg-primary-50'
-                  : 'border-gray-200 bg-white'
-              }`}
-            >
-              <div className='flex items-start justify-between'>
-                <div className='flex-1'>
-                  <div className='text-sm font-bold'>
-                    {svc.active !== false && (
-                      <span className='mr-2 inline-block h-2 w-2 rounded-full bg-green-500' />
-                    )}
-                    {svc.name}
-                  </div>
-                  {svc.extraDetails && (
-                    <div className='mt-1 text-xs text-gray-500'>{svc.extraDetails}</div>
-                  )}
-                </div>
-              </div>
-            </button>
+            />
           </div>
         );
       })}

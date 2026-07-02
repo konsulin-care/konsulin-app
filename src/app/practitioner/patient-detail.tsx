@@ -5,16 +5,14 @@
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { useDetailPractitioner } from '@/services/clinic';
-import { getFeeFromHealthcareService } from '@/utils/fhir/fee';
-import { getServiceDuration } from '@/utils/fhir/service-duration';
 import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
 import { generateAvatarPlaceholder } from '@/utils/helper';
-import { Clock, Coins } from 'lucide-react';
+import ServiceCard from '@/components/practitioner/service-card';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useMemo } from 'react';
-import type { HealthcareService, Money } from 'fhir/r4';
+import type { HealthcareService } from 'fhir/r4';
 
 type Props = {
   readonly practitionerRoleId: string;
@@ -35,14 +33,6 @@ function formatAddress(address: {
   if (address.city) parts.push(address.city);
   if (address.postalCode) parts.push(address.postalCode);
   return parts.join(', ');
-}
-
-/**
- * Format fee as Indonesian Rupiah string.
- */
-function formatFee(fee: Money): string {
-  const formatted = (fee.value ?? 0).toLocaleString('id-ID');
-  return `Rp ${formatted}`;
 }
 
 /** Practitioner identity section with avatar, name, and specialty badges. */
@@ -151,49 +141,29 @@ function HealthcareServicesSection({
   practitionerRoleId: string;
   onNavigate: (url: string) => void;
 }) {
+  const activeServices = useMemo(
+    () => services.filter((svc: HealthcareService) => svc.active !== false),
+    [services]
+  );
+
   return (
     <div>
       <div className='mb-2 text-sm font-bold text-black'>
         Healthcare Services
       </div>
-      {services.length > 0 ? (
+      {activeServices.length > 0 ? (
         <div className='flex flex-col gap-2'>
-          {services
-            .filter((svc: HealthcareService) => svc.active !== false)
-            .map((svc: HealthcareService) => {
-              const fee = getFeeFromHealthcareService(svc);
-              const duration = getServiceDuration(svc);
-              return (
-                <div
-                  key={svc.id}
-                  onClick={() =>
-                    onNavigate(
-                      `/practitioner/availability?id=${practitionerRoleId}&service=${svc.id}`
-                    )
-                  }
-                  className='cursor-pointer rounded-lg border border-gray-200 bg-white p-4'
-                >
-                  <div className='text-sm font-bold text-black'>{svc.name}</div>
-                  {fee && (
-                    <div className='mt-1 flex items-center gap-1 text-sm font-bold text-gray-500'>
-                      <Coins size={14} />
-                      {formatFee(fee)}
-                    </div>
-                  )}
-                  {duration != null && (
-                    <div className='mt-1 flex items-center gap-1 text-sm text-gray-500'>
-                      <Clock size={14} />
-                      {duration} min
-                    </div>
-                  )}
-                  {svc.extraDetails && (
-                    <div className='mt-2 text-xs text-gray-500'>
-                      {svc.extraDetails}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+          {activeServices.map((svc: HealthcareService) => (
+            <ServiceCard
+              key={svc.id}
+              service={svc}
+              onClick={() =>
+                onNavigate(
+                  `/practitioner/availability?id=${practitionerRoleId}&service=${svc.id}`
+                )
+              }
+            />
+          ))}
         </div>
       ) : (
         <div className='text-sm text-gray-500'>No services listed</div>
