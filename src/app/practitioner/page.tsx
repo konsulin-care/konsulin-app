@@ -1,242 +1,162 @@
 'use client';
 
-import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
+import dynamic from 'next/dynamic';
 import PageHeader from '@/components/page-header';
-import { PractitionerCard } from '@/components/practitioner/practitioner-card';
-import { Badge } from '@/components/ui/badge';
-import { InputWithIcon } from '@/components/ui/input-with-icon';
-import { STORES, dbGet, dbSet } from '@/lib/indexeddb';
-import {
-  useOrganizationLocations,
-  usePractitionerListing
-} from '@/services/clinic';
-import { SearchIcon } from 'lucide-react';
+import { Roles } from '@/constants/roles';
+import { useAuth } from '@/context/auth/authContext';
+import { useGetPractitionerRolesDetail } from '@/services/clinicians';
+import type { IPractitionerRoleDetail } from '@/types/practitioner';
+import { storeOwnedRoleIds } from '@/utils/practitioner-ownership';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import PractitionerFilter, { type FilterState } from './practitioner-filter';
+import { useEffect, useMemo } from 'react';
+import AdminListing from './admin-listing';
+import PatientDetail from './patient-detail';
 import PractitionerRoleManagementShell from './role-management-shell';
+import PractitionerWorkingLocationCard from './practitioner-working-location-card';
 
-/** Full-screen loading spinner. */
-function LoadingState() {
-  return (
-    <div className='flex min-h-screen min-w-full items-center justify-center'>
-      <LoadingSpinnerIcon
-        width={56}
-        height={56}
-        className='w-full animate-spin'
-      />
-    </div>
-  );
-}
+const RecommendationCardStack = dynamic(
+  () => import('@/components/general/home/recommendation-card-stack'),
+  { ssr: false }
+);
 
-/** Practitioner page — listing mode (admin) for all practitioners in a clinic. */
+/** Practitioner page — role-aware listing and detail dispatch. */
 export default function Practitioner() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id') ?? '';
-  const [selectedClinicId, setSelectedClinicId] = useState<string>('');
-  const [filter, setFilter] = useState<FilterState>({ status: 'all' });
-  const [searchQuery, setSearchQuery] = useState('');
+  const { state: authState, isLoading: isAuthLoading } = useAuth();
+  const role = authState?.userInfo?.role_name;
+  const fhirId = authState?.userInfo?.fhirId ?? '';
 
-  // Load clinic selection from IndexedDB
+  // Fetch practitioner's own roles (for Practitioner role)
+  const { data: ownRoles, isLoading: isRolesLoading } =
+    useGetPractitionerRolesDetail(fhirId);
+
+  // Store owned PractitionerRole IDs on successful fetch
   useEffect(() => {
-    dbGet<{ value: string }>(STORES.uiPreferences, ['', 'clinic_organization'])
-      .then(saved => {
-        if (saved?.value) setSelectedClinicId(saved.value);
-        return null;
+    if (ownRoles && ownRoles.length > 0) {
+      const ids = ownRoles.map(r => r.resource?.id).filter(Boolean);
+      storeOwnedRoleIds(ids);
+    }
+  }, [ownRoles]);
+
+  // Build working location cards data for Practitioner role
+  const workingLocations = useMemo(() => {
+    if (!ownRoles) return [];
+    return ownRoles
+      .map(entry => {
+        const role = entry.resource as IPractitionerRoleDetail | undefined;
+        if (!role || !role.id) return null;
+
+        // Use enriched organizationData.name if available
+        const orgName = role.organizationData?.name ??
+          role.organization?.display ??
+          'Clinic';
+
+        // Extract unique day labels from availableTime
+        const dayLabels = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        const shortDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const daySet = new Set<string>();
+        for (const at of role.availableTime ?? []) {
+          for (const d of at.daysOfWeek ?? []) {
+            const idx = dayLabels.indexOf(d);
+            if (idx !== -1) daySet.add(shortDays[idx]);
+          }
+        }
+        const workingDays =
+          daySet.size > 0 ? [...daySet] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+
+        // Try to get service display names from references
+        const healthcareServiceNames =
+          role.healthcareService
+            ?.map(h => h.display)
+            .filter((n): n is string => Boolean(n)) ?? [];
+
+        return {
+          practitionerRoleId: role.id,
+          locationName: orgName,
+          workingDays,
+          healthcareServiceNames
+        };
       })
-      .catch((err: unknown) => console.warn('[IndexedDB]', err));
-  }, []);
+      .filter(Boolean);
+  }, [ownRoles]);
 
-  // Load persisted filter from IndexedDB
-  useEffect(() => {
-    dbGet<{ value: FilterState }>(STORES.uiPreferences, [
-      '',
-      'practitioner_filter'
-    ])
-      .then(saved => {
-        if (saved?.value) setFilter(saved.value);
-        return null;
-      })
-      .catch(() => {
-        /* ignore */
-      });
-  }, []);
-
-  // Persist filter to IndexedDB on changes
-  const handleFilterChange = useCallback((newFilter: FilterState) => {
-    setFilter(newFilter);
-    dbSet(STORES.uiPreferences, {
-      ownerId: '',
-      prefKey: 'practitioner_filter',
-      value: newFilter
-    }).catch(() => {
-      /* ignore */
-    });
-  }, []);
-
-  // Fetch locations for the current organization
-  const { locations } = useOrganizationLocations(selectedClinicId);
-
-  // Fetch practitioners with optional location filter
-  const { practitioners, isLoading: isListingLoading } = usePractitionerListing(
-    selectedClinicId,
-    filter.locationId
-  );
-
-  const activeFilterCount =
-    (filter.status === 'all' ? 0 : 1) + (filter.locationId ? 1 : 0);
-
-  const locationName = filter.locationId
-    ? (locations?.find(l => l.id === filter.locationId)?.name ??
-      'Unknown location')
-    : '';
-
-  const dismissStatus = useCallback(() => {
-    handleFilterChange({ ...filter, status: 'all' });
-  }, [filter, handleFilterChange]);
-
-  const dismissLocation = useCallback(() => {
-    handleFilterChange({ status: filter.status });
-  }, [filter, handleFilterChange]);
-
-  // Fuzzy match: checks if all chars of query appear in order in text
-  const fuzzyMatch = useCallback((query: string, text: string): boolean => {
-    if (!query) return true;
-    const q = query.toLowerCase();
-    const t = text.toLowerCase();
-    let qi = 0;
-    for (let ti = 0; ti < t.length && qi < q.length; ti++) {
-      if (q[qi] === t[ti]) qi++;
-    }
-    return qi === q.length;
-  }, []);
-
-  // Client-side status filter + fuzzy name search
-  const filteredPractitioners = useMemo(() => {
-    let result = practitioners;
-    if (filter.status !== 'all') {
-      result = result.filter(p =>
-        filter.status === 'active' ? p.active : !p.active
-      );
-    }
-    if (searchQuery) {
-      result = result.filter(p => fuzzyMatch(searchQuery, p.practitionerName));
-    }
-    return result;
-  }, [practitioners, filter.status, searchQuery, fuzzyMatch]);
-
-  /** Renders listing of practitioner cards (admin view). */
-  const renderListingContent = () => {
-    if (isListingLoading) return <LoadingState />;
-
-    const hasActiveFilters =
-      filter.status !== 'all' || Boolean(filter.locationId);
-    const showFilter = practitioners.length > 0 || hasActiveFilters;
-
-    // Shared search + filter bar (only rendered when needed)
-    const filterBar = showFilter ? (
-      <div className='flex flex-col gap-2'>
-        <div className='flex items-center gap-2'>
-          <InputWithIcon
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder='Search practitioner...'
-            className='h-[50px] w-full border-0 bg-[#F9F9F9]'
-            startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
-          />
-          <PractitionerFilter
-            locations={locations ?? []}
-            value={filter}
-            onChange={handleFilterChange}
-          />
-        </div>
-        {activeFilterCount > 0 && (
-          <div className='flex flex-wrap gap-2' data-testid='filter-badges'>
-            {filter.status !== 'all' && (
-              <Badge
-                className='cursor-pointer gap-1 px-3 py-1 text-xs whitespace-nowrap'
-                onClick={dismissStatus}
-              >
-                {filter.status === 'active' ? 'Active' : 'Inactive'} ×
-              </Badge>
-            )}
-            {filter.locationId && (
-              <Badge
-                className='cursor-pointer gap-1 px-3 py-1 text-xs whitespace-nowrap'
-                onClick={dismissLocation}
-              >
-                {locationName} ×
-              </Badge>
-            )}
-          </div>
-        )}
-      </div>
-    ) : null;
-
-    // Clinic has zero practitioners
-    if (practitioners.length === 0) {
-      return (
-        <>
-          {filterBar}
-          <EmptyState
-            className='py-16'
-            title='No Practitioners Found'
-            subtitle='Try another clinic.'
-          />
-        </>
-      );
-    }
-
-    // Practitioners exist but filters yield zero results
-    if (filteredPractitioners.length === 0) {
-      return (
-        <>
-          {filterBar}
-          <EmptyState
-            className='py-16'
-            title='No Practitioners Match Your Filters'
-            subtitle='Try adjusting your filter criteria.'
-          />
-        </>
-      );
-    }
-
+  if (isAuthLoading) {
     return (
-      <>
-        {filterBar}
-        <div className='mt-4 flex flex-col gap-4'>
-          {filteredPractitioners.map(p => (
-            <PractitionerCard key={p.id} {...p} />
+      <div className='flex min-h-[40vh] items-center justify-center'>
+        <LoadingSpinnerIcon
+          width={56}
+          height={56}
+          className='w-full animate-spin'
+        />
+      </div>
+    );
+  }
+
+  /** Handle click on recommendation card (patient booking). */
+  const handleBook = (practitionerId: string) => {
+    // Placeholder: plan 017 will integrate booking flow
+    window.location.href = `/practitioner?id=${practitionerId}`;
+  };
+
+  /** Render content for the listing mode (no id param). */
+  const renderListing = () => {
+    if (role === Roles.ClinicAdmin) {
+      return <AdminListing />;
+    }
+
+    if (role === Roles.Practitioner) {
+      if (isRolesLoading) {
+        return (
+          <div className='flex min-h-[30vh] items-center justify-center'>
+            <LoadingSpinnerIcon
+              width={40}
+              height={40}
+              className='w-full animate-spin'
+            />
+          </div>
+        );
+      }
+
+      if (workingLocations.length === 0) {
+        return (
+          <div className='flex min-h-[30vh] items-center justify-center text-sm text-gray-500'>
+            No working locations found
+          </div>
+        );
+      }
+
+      return (
+        <div className='flex flex-col gap-4'>
+          {workingLocations.map(loc => (
+            <PractitionerWorkingLocationCard key={loc.practitionerRoleId} {...loc} />
           ))}
         </div>
-      </>
-    );
+      );
+    }
+
+    // Patient — show recommended practitioners (placeholder)
+    return <RecommendationCardStack onBook={handleBook} />;
   };
 
-  /** Renders main practitioner content, loading, or empty states. */
-  const renderMainContent = () => {
-    // Listing mode (admin view)
-    if (!id) return renderListingContent();
+  /** Render content for detail mode (id param present). */
+  const renderDetail = () => {
+    if (role === Roles.Patient) {
+      return <PatientDetail practitionerRoleId={id} />;
+    }
 
-    // Detail mode — admin management tabs
-    return (
-      <PractitionerRoleManagementShell
-        practitionerRoleId={id}
-      />
-    );
+    // Admin or Practitioner
+    return <PractitionerRoleManagementShell practitionerRoleId={id} />;
   };
+
+  const pageTitle = id ? 'Manage Practitioner' : 'Manage Practitioners';
 
   return (
     <>
-      <PageHeader
-        pageIndicator={
-          id ? 'Manage Practitioner' : 'Manage Practitioners'
-        }
-      />
-
+      <PageHeader pageIndicator={pageTitle} />
       <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
-        {renderMainContent()}
+        {id ? renderDetail() : renderListing()}
       </div>
     </>
   );

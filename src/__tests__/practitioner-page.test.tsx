@@ -4,7 +4,9 @@ import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useBooking } from '@/context/booking/bookingContext';
+import { useAuth } from '@/context/auth/authContext';
 import { useSearchParams } from 'next/navigation';
+import { Roles } from '@/constants/roles';
 
 // ---------------------------------------------------------------------------
 // Mocks – vi.mock is hoisted so these run before any import
@@ -17,6 +19,31 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/context/booking/bookingContext', () => ({
   useBooking: vi.fn()
+}));
+
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: vi.fn()
+}));
+
+vi.mock('@/services/clinicians', () => ({
+  useGetPractitionerRolesDetail: vi.fn().mockReturnValue({
+    data: undefined,
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn()
+  })
+}));
+
+vi.mock('@/utils/practitioner-ownership', () => ({
+  storeOwnedRoleIds: vi.fn()
+}));
+
+vi.mock('@/constants/roles', () => ({
+  Roles: {
+    ClinicAdmin: 'Clinic Admin',
+    Practitioner: 'Practitioner',
+    Patient: 'Patient'
+  }
 }));
 
 vi.mock('@/lib/indexeddb', () => ({
@@ -94,6 +121,14 @@ beforeEach(() => {
     state: { isBookingSubmitted: false },
     dispatch: vi.fn()
   });
+  vi.mocked(useAuth).mockReturnValue({
+    isLoading: false,
+    state: {
+      isAuthenticated: true,
+      userInfo: { role_name: Roles.ClinicAdmin, fhirId: '' }
+    },
+    dispatch: vi.fn()
+  });
 });
 
 afterEach(() => {
@@ -118,6 +153,8 @@ describe('Practitioner page – detail (admin) mode', () => {
   it('passes the correct page header for detail mode', () => {
     render(<Practitioner />);
 
-    expect(screen.getByTestId('mock-page-header')).toBeInTheDocument();
+    expect(screen.getByTestId('mock-page-header')).toHaveTextContent(
+      'Manage Practitioner'
+    );
   });
 });

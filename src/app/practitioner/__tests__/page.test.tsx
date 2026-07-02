@@ -9,16 +9,30 @@ vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn()
 }));
 
-vi.mock('@/lib/indexeddb', () => ({
-  STORES: { uiPreferences: 'ui_preferences' },
-  dbGet: vi.fn().mockResolvedValue(null),
-  dbSet: vi.fn().mockResolvedValue(null)
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: vi.fn()
 }));
 
 vi.mock('@/services/clinic', () => ({
   usePractitionerListing: vi.fn(),
   useDetailPractitioner: vi.fn(),
   useOrganizationLocations: vi.fn()
+}));
+
+vi.mock('@/services/clinicians', () => ({
+  useGetPractitionerRolesDetail: vi.fn()
+}));
+
+vi.mock('@/utils/practitioner-ownership', () => ({
+  storeOwnedRoleIds: vi.fn()
+}));
+
+vi.mock('@/constants/roles', () => ({
+  Roles: {
+    ClinicAdmin: 'Clinic Admin',
+    Practitioner: 'Practitioner',
+    Patient: 'Patient'
+  }
 }));
 
 vi.mock('@/components/practitioner/practitioner-card', () => ({
@@ -55,8 +69,8 @@ vi.mock('@/components/icons', () => ({
 }));
 
 vi.mock('@/app/practitioner/role-management-shell', () => ({
-  default: ({ id }: { id: string }) => (
-    <div data-testid='role-management-shell' data-role-id={id}>
+  default: ({ practitionerRoleId }: { practitionerRoleId: string }) => (
+    <div data-testid='role-management-shell' data-role-id={practitionerRoleId}>
       Management
     </div>
   )
@@ -85,11 +99,18 @@ import {
   useOrganizationLocations,
   usePractitionerListing
 } from '@/services/clinic';
+import { useGetPractitionerRolesDetail } from '@/services/clinicians';
+import { useAuth } from '@/context/auth/authContext';
 import { useSearchParams } from 'next/navigation';
+import { Roles } from '@/constants/roles';
 
 const mockUseSearchParams = vi.mocked(useSearchParams);
+const mockUseAuth = vi.mocked(useAuth);
 const mockUsePractitionerListing = vi.mocked(usePractitionerListing);
 const mockUseOrganizationLocations = vi.mocked(useOrganizationLocations);
+const mockUseGetPractitionerRolesDetail = vi.mocked(
+  useGetPractitionerRolesDetail
+);
 
 function mockPractitioners() {
   return [
@@ -120,21 +141,41 @@ function Wrapper({ children }: { children: ReactNode }) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+
+  // Default to ClinicAdmin role for admin listing tests
+  mockUseAuth.mockReturnValue({
+    isLoading: false,
+    state: {
+      isAuthenticated: true,
+      userInfo: { role_name: Roles.ClinicAdmin, fhirId: '' }
+    },
+    dispatch: vi.fn()
+  });
+
   mockUseSearchParams.mockReturnValue({
     get: vi.fn().mockReturnValue(null)
   } as unknown as ReturnType<typeof useSearchParams>);
+
   mockUsePractitionerListing.mockReturnValue({
     practitioners: mockPractitioners(),
     isLoading: false,
     isError: false,
     isFetching: false
   });
+
   mockUseOrganizationLocations.mockReturnValue({
     locations: [],
     isLoading: false,
     isError: false,
     isFetching: false
   });
+
+  mockUseGetPractitionerRolesDetail.mockReturnValue({
+    data: undefined,
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn()
+  } as unknown as ReturnType<typeof useGetPractitionerRolesDetail>);
 });
 
 describe('Practitioner page — filters', () => {
