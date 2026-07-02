@@ -10,11 +10,11 @@ import {
   usePayAppointment
 } from '@/services/api/appointments';
 import { useDetailPractitioner } from '@/services/clinic';
+import { useFindAvailability } from '@/services/clinicians';
 import {
-  useFindAvailability,
   useBusySlotsByPractitioner,
   computeFreeSlots
-} from '@/services/clinicians';
+} from '@/services/slots';
 import { clearIntent, getIntent, saveIntent } from '@/utils/redirect-intent';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { addDays, format, isBefore, parseISO, startOfDay } from 'date-fns';
@@ -134,7 +134,7 @@ export default function PractitionerAvailability({
 
   // Effective practitioner role: from prop (drawer) or fetched (page)
   const effectiveRole = isPageMode
-    ? (detail?.resource as PractitionerRole | undefined)
+    ? detail?.resource
     : practitionerRole;
 
   const effectiveAvailableTime = effectiveRole?.availableTime ?? [];
@@ -253,8 +253,6 @@ export default function PractitionerAvailability({
       dayKey: `${dayStr}${practitionerTzOffset}`
     };
   }, [selectedDate, practitionerTzOffset]);
-
-  const isDrawerMode = !isPageMode;
 
   // Drawer mode: fetch real FHIR Slot resources
   const {
@@ -607,7 +605,7 @@ export default function PractitionerAvailability({
         slotPills={slotPills}
         scheduleId={isPageMode ? '' : effectiveScheduleId}
         handleFilterChange={effectiveHandleFilterChange}
-        setSelectedSlotId={isPageMode ? () => {} : setSelectedSlotId}
+        setSelectedSlotId={isPageMode ? () => { /* page mode: no slot selection */ } : setSelectedSlotId}
       />
       <BookingFormSection
         bookingForm={bookingForm}
@@ -687,7 +685,7 @@ export default function PractitionerAvailability({
         patientId={patientId ?? ''}
         selectedSlotId={selectedSlotId}
         bookingForm={bookingForm}
-        practitionerRole={practitionerRole as PractitionerRole}
+        practitionerRole={practitionerRole}
         payAppointment={payAppointment}
         queryClient={queryClient}
         handleFilterChange={handleFilterChange}

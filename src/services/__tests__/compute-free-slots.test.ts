@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeFreeSlots } from '../clinicians';
+import { computeFreeSlots } from '../slots';
 
 describe('computeFreeSlots', () => {
   const availableTime = [

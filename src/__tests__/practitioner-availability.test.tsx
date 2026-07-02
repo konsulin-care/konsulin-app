@@ -23,7 +23,10 @@ vi.mock('@/services/api', () => ({
 }));
 
 vi.mock('@/services/clinicians', () => ({
-  useFindAvailability: vi.fn(),
+  useFindAvailability: vi.fn()
+}));
+
+vi.mock('@/services/slots', () => ({
   useBusySlotsByPractitioner: vi.fn(() => ({ data: [], isLoading: false })),
   computeFreeSlots: vi.fn(() => [])
 }));

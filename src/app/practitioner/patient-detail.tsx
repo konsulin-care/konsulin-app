@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment -- FHIR Address contains any-typed extension */
+
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { useDetailPractitioner } from '@/services/clinic';
@@ -7,11 +9,12 @@ import { getFeeFromHealthcareService } from '@/utils/fhir/fee';
 import { getServiceDuration } from '@/utils/fhir/service-duration';
 import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
 import { generateAvatarPlaceholder } from '@/utils/helper';
-import { Clock, DollarSign } from 'lucide-react';
+import { Clock, Coins } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useMemo } from 'react';
-import type { HealthcareService, Location, Money, Organization } from 'fhir/r4';
+import type { HealthcareService, Money } from 'fhir/r4';
 
 type Props = {
   readonly practitionerRoleId: string;
@@ -46,12 +49,10 @@ function formatFee(fee: Money): string {
 function PractitionerIdentity({
   practitionerId,
   name,
-  photoUrl,
   specialties
 }: {
   practitionerId: string;
   name: string;
-  photoUrl?: string;
   specialties: string[];
 }) {
   const maxVisibleBadges = 3;
@@ -175,7 +176,7 @@ function HealthcareServicesSection({
                   <div className='text-sm font-bold text-black'>{svc.name}</div>
                   {fee && (
                     <div className='mt-1 flex items-center gap-1 text-sm font-bold text-gray-500'>
-                      <DollarSign size={14} />
+                      <Coins size={14} />
                       {formatFee(fee)}
                     </div>
                   )}
@@ -202,6 +203,19 @@ function HealthcareServicesSection({
 }
 
 /**
+ * Extract practitioner name from detail: prefer included Practitioner resource,
+ * fallback to display reference, then default to 'Practitioner'.
+ */
+function getPractitionerName(
+  detail: import('@/services/clinic').DetailPractitionerData
+): string {
+  if (detail.practitioner?.name?.[0]?.text) {
+    return detail.practitioner.name[0].text;
+  }
+  return detail.resource.practitioner?.display ?? 'Practitioner';
+}
+
+/**
  * Patient-facing practitioner detail page.
  *
  * Shows avatar, name, specialty badges, full clinic location (name + address),
@@ -211,8 +225,6 @@ export default function PatientDetail({ practitionerRoleId }: Props) {
   const { newData: detail, isLoading } =
     useDetailPractitioner(practitionerRoleId);
   const router = useRouter();
-
-  const services = detail?.healthcareServices ?? [];
 
   if (isLoading) {
     return (
@@ -228,33 +240,34 @@ export default function PatientDetail({ practitionerRoleId }: Props) {
 
   if (!detail) return null;
 
-  // Name from included Practitioner resource, fallback to display, then 'Practitioner'
-  const practitionerName = (() => {
-    if (detail.practitioner?.name?.[0]?.text) {
-      return detail.practitioner.name[0].text;
-    }
-    return detail.resource.practitioner?.display ?? 'Practitioner';
-  })();
+  return (
+    <PatientDetailBody
+      detail={detail}
+      practitionerRoleId={practitionerRoleId}
+      router={router}
+    />
+  );
+}
 
+/** Renders the main body of the patient detail page. */
+function PatientDetailBody({
+  detail,
+  practitionerRoleId,
+  router
+}: {
+  detail: import('@/services/clinic').DetailPractitionerData;
+  practitionerRoleId: string;
+  router: AppRouterInstance;
+}) {
+  const services = detail.healthcareServices ?? [];
+  const practitionerName = getPractitionerName(detail);
   const specialties = detail.resource.specialty?.map(s => s.text) ?? [];
   const practitionerId = detail.practitioner?.id ?? detail.resource.id ?? '';
+  const displayOrg = detail.location ?? detail.organization;
+  const firstAddr =
+    detail.location?.address?.[0] ?? detail.organization?.address?.[0];
+  const displayAddress = firstAddr;
 
-  // Type narrowing through DetailPractitionerData is safe.
-  const location: Location | undefined = detail.location;
-  const organization: Organization | undefined = detail.organization;
-  const displayOrg = location ?? organization;
-  // Cast through safe type — FHIR Address includes any-typed extension.
-  const displayAddress:
-    | { line?: string[]; district?: string; city?: string; postalCode?: string }
-    | undefined =
-    location?.address?.[0] as
-      | { line?: string[]; district?: string; city?: string; postalCode?: string }
-      | undefined
-    ?? (organization?.address?.[0] as
-      | { line?: string[]; district?: string; city?: string; postalCode?: string }
-      | undefined);
-
-  /** Navigate to availability page for a specific service. */
   const handleNavigate = (url: string) => {
     router.push(url);
   };

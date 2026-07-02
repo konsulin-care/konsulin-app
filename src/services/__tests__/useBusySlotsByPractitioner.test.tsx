@@ -5,7 +5,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { type AxiosInstance } from 'axios';
 import { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useBusySlotsByPractitioner } from '../clinicians';
+import { useBusySlotsByPractitioner } from '../slots';
 
 vi.mock('@/services/api', () => ({
   getAPI: vi.fn()
@@ -115,7 +115,7 @@ describe('useBusySlotsByPractitioner', () => {
     expect(result.current.data).toEqual([]);
   });
 
-  it('is disabled when practitionerId is empty', async () => {
+  it('is disabled when practitionerId is empty', () => {
     const { result } = renderHook(
       () => useBusySlotsByPractitioner('', dateStr),
       { wrapper: createWrapper() }
@@ -125,7 +125,7 @@ describe('useBusySlotsByPractitioner', () => {
     expect(mockAxiosInstance.get).not.toHaveBeenCalled();
   });
 
-  it('is disabled when dateStr is empty', async () => {
+  it('is disabled when dateStr is empty', () => {
     const { result } = renderHook(
       () => useBusySlotsByPractitioner(practitionerId, ''),
       { wrapper: createWrapper() }
