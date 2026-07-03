@@ -81,7 +81,7 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 			return
 		}
 
-		fhirURL := baseURL + "/proxy/fhir"
+		fhirURL := baseURL + "/fhir"
 		fhirReq, err := http.NewRequest(http.MethodPost, fhirURL, strings.NewReader(string(bundleBody)))
 		if err != nil {
 			slog.Error("relay/booking: failed to create FHIR request", "err", err)

@@ -11,7 +11,7 @@ import (
 // testRelayBackend returns a test FHIR server that handles transaction bundles.
 func testRelayBackend() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/proxy/fhir" && r.Method == http.MethodPost {
+		if r.URL.Path == "/fhir" && r.Method == http.MethodPost {
 			var bundle map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&bundle); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
