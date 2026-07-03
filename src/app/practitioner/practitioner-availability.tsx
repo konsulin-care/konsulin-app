@@ -267,11 +267,14 @@ export default function PractitionerAvailability({
   const { data: busySlots, isLoading: isBusySlotsLoading } =
     useBusySlotsByPractitioner(practitionerId, dateStr);
 
-  // Compute free slots for both modes
+  // Compute free slots for both modes (converts to browser's local timezone)
   const computedFreeSlots = useMemo(() => {
     if (!selectedDate || !busySlots) return [];
-    return computeFreeSlots(effectiveAvailableTime, busySlots, selectedDate, durationMinutes);
-  }, [selectedDate, busySlots, effectiveAvailableTime, durationMinutes]);
+    return computeFreeSlots(
+      effectiveAvailableTime, busySlots, selectedDate, durationMinutes,
+      practitionerTzOffset
+    );
+  }, [selectedDate, busySlots, effectiveAvailableTime, durationMinutes, practitionerTzOffset]);
 
   // Fetch Schedule by ID with caching (only when authenticated)
   const { data: scheduleById } = useQuery({
@@ -496,6 +499,15 @@ export default function PractitionerAvailability({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingState.date, bookingState.startTime, slotPills, listAvailableDate]);
 
+  /** Return the browser's timezone offset as '+HH:MM' string. */
+  function getBrowserTzOffset(): string {
+    const offset = -new Date().getTimezoneOffset();
+    const sign = offset >= 0 ? '+' : '-';
+    const hours = Math.floor(Math.abs(offset) / 60);
+    const mins = Math.abs(offset) % 60;
+    return `${sign}${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+  }
+
   /** Build the relay booking payload from form state. */
   function buildRelayPayload(
     date: Date,
@@ -503,6 +515,7 @@ export default function PractitionerAvailability({
     endTimeStr: string
   ) {
     const dateStr = format(date, 'yyyy-MM-dd');
+    const userTzOffset = getBrowserTzOffset();
     const orgId = propOrganizationId || (isPageMode ? detail?.organization?.id : '') || '';
     return {
       patientId: `Patient/${patientId ?? ''}`,
@@ -514,7 +527,7 @@ export default function PractitionerAvailability({
       date: dateStr,
       startTime,
       endTime: endTimeStr,
-      timezone: practitionerTzOffset,
+      timezone: userTzOffset,
       condition: bookingForm.problem_brief
     };
   }

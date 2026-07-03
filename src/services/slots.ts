@@ -2,12 +2,53 @@ import { getAPI } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
 import type { Bundle, BundleEntry, PractitionerRoleAvailableTime, Slot } from 'fhir/r4';
 
-/** Extract minutes-from-midnight from an ISO 8601 time string. */
-function toMinutes(iso: string): number {
-  // ISO format: 2026-07-02T10:00:00+07:00 or 2026-07-02T10:00:00Z
-  const timePart = iso.split('T')[1] ?? '00:00:00';
-  const [h, m] = timePart.split(':').map(Number);
-  return h * 60 + m;
+/**
+ * Parse a timezone offset string like "+07:00" or "Z" into total minutes.
+ * Returns positive for east of UTC, negative for west.
+ *
+ * @param tzOffset - Timezone offset string, e.g. "+07:00", "-05:00", or "Z"
+ * @returns Offset in minutes (e.g. 420 for +07:00)
+ */
+export function parseTzOffset(tzOffset: string): number {
+  if (tzOffset === 'Z' || !tzOffset) return 0;
+  const match = tzOffset.match(/^([+-])(\d{2}):(\d{2})$/);
+  if (!match) return 0;
+  const sign = match[1] === '+' ? 1 : -1;
+  return sign * (parseInt(match[2], 10) * 60 + parseInt(match[3], 10));
+}
+
+/**
+ * Convert an ISO 8601 datetime string to minutes-from-midnight
+ * in the runtime's local timezone.
+ *
+ * @param iso - ISO 8601 string (e.g. "2026-07-02T10:00:00+07:00")
+ * @returns Minutes since midnight in local timezone
+ */
+function toLocalMinutes(iso: string): number {
+  const d = new Date(iso);
+  return d.getHours() * 60 + d.getMinutes();
+}
+
+/**
+ * Convert a practitioner's local time string (HH:mm) to minutes-from-midnight
+ * in the runtime's local timezone, using the practitioner's timezone offset.
+ *
+ * @param timeStr - Practitioner local time string like "09:00"
+ * @param date - Target date used to anchor the conversion
+ * @param practitionerTzMinutes - Practitioner's timezone offset in minutes
+ * @returns Minutes since midnight in the local timezone
+ */
+function practitionerToLocalMinutes(
+  timeStr: string,
+  date: Date,
+  practitionerTzMinutes: number
+): number {
+  const [h, m] = timeStr.split(':').map(Number);
+  const utcDate = new Date(Date.UTC(
+    date.getFullYear(), date.getMonth(), date.getDate(), h, m, 0
+  ));
+  utcDate.setMinutes(utcDate.getMinutes() - practitionerTzMinutes);
+  return utcDate.getHours() * 60 + utcDate.getMinutes();
 }
 
 /** Check whether [bStart, bEnd) overlaps (cStart, cEnd) using minute-of-day. */
@@ -38,20 +79,22 @@ const DAY_LABELS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 /**
  * Given availableTime, busy slots, and a date, compute free windows.
  *
- * Compares time-of-day using minutes-from-midnight to avoid timezone issues.
- * Busy slot ISO strings are parsed for their time-of-day component only.
+ * Converts all times to the browser's local timezone before comparing,
+ * so free slots are displayed in the user's local time.
  *
  * @param availableTime - PractitionerRole.availableTime array
  * @param busySlots - Busy slot objects with start/end ISO strings
- * @param date - Target date (used only for day-of-week)
+ * @param date - Target date (used for day-of-week and timezone conversion)
  * @param durationMinutes - Duration of each free slot in minutes (default 60)
- * @returns Array of free slots with HH:mm start/end
+ * @param practitionerTzOffset - Practitioner's timezone offset like "+07:00" or "Z" (default 'Z')
+ * @returns Array of free slots with HH:mm start/end in local timezone
  */
 export function computeFreeSlots(
   availableTime: PractitionerRoleAvailableTime[],
   busySlots: Array<{ start: string; end: string }>,
   date: Date,
-  durationMinutes = 60
+  durationMinutes = 60,
+  practitionerTzOffset = 'Z'
 ): Array<{ start: string; end: string }> {
   const dayLabel = DAY_LABELS[date.getDay()];
 
@@ -62,10 +105,12 @@ export function computeFreeSlots(
 
   if (matchingWindows.length === 0) return [];
 
-  // Parse busy slot time-of-day into minutes-from-midnight
+  const tzMinutes = parseTzOffset(practitionerTzOffset);
+
+  // Parse busy slots to local minutes-from-midnight
   const busyRanges = busySlots.map(s => ({
-    start: toMinutes(s.start),
-    end: toMinutes(s.end)
+    start: toLocalMinutes(s.start),
+    end: toLocalMinutes(s.end)
   }));
 
   const freeSlots: Array<{ start: string; end: string }> = [];
@@ -73,8 +118,12 @@ export function computeFreeSlots(
   for (const window of matchingWindows) {
     if (!window.availableStartTime || !window.availableEndTime) continue;
 
-    const startMinutes = timeToMinutes(window.availableStartTime);
-    const endMinutes = timeToMinutes(window.availableEndTime);
+    const startMinutes = practitionerToLocalMinutes(
+      window.availableStartTime, date, tzMinutes
+    );
+    const endMinutes = practitionerToLocalMinutes(
+      window.availableEndTime, date, tzMinutes
+    );
 
     // Generate candidate slots of durationMinutes length
     let cursor = startMinutes;
