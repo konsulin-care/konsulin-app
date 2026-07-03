@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
 import type { PractitionerRole } from 'fhir/r4';
@@ -52,41 +52,45 @@ describe('BookingFormSection', () => {
     expect(screen.queryByPlaceholderText('Offline')).not.toBeInTheDocument();
   });
 
-  it('renders Problem Brief textarea', () => {
-    render(<BookingFormSection {...defaultProps} />);
+  it('renders health concern label with practitioner name', () => {
+    render(
+      <BookingFormSection
+        {...defaultProps}
+        practitionerGivenName='Sarah'
+      />
+    );
 
-    expect(screen.getByText('Problem Brief')).toBeInTheDocument();
     expect(
-      screen.getByPlaceholderText('Type your message here.')
+      screen.getByText(/what should sarah know/i)
     ).toBeInTheDocument();
   });
 
-  it('hides CTA buttons and Batalkan when hideCta is true', () => {
-    render(
-      <BookingFormSection {...defaultProps} hideCta={true} />
-    );
-
-    expect(screen.queryByRole('button', { name: /book now/i })).not.toBeInTheDocument();
-    expect(screen.queryByText('Batalkan')).not.toBeInTheDocument();
-  });
-
-  it('shows CTA buttons and Batalkan when hideCta is false', () => {
-    render(
-      <BookingFormSection {...defaultProps} hideCta={false} />
-    );
-
-    expect(screen.getByRole('button', { name: /book now/i })).toBeInTheDocument();
-    expect(screen.getByText('Batalkan')).toBeInTheDocument();
-  });
-
-  it('shows CTA buttons and Batalkan by default (hideCta undefined)', () => {
+  it('renders health concern label with fallback when given name not provided', () => {
     render(<BookingFormSection {...defaultProps} />);
 
-    expect(screen.getByRole('button', { name: /book now/i })).toBeInTheDocument();
-    expect(screen.getByText('Batalkan')).toBeInTheDocument();
+    expect(
+      screen.getByText(/what should the doctor know/i)
+    ).toBeInTheDocument();
   });
 
-  it('does not render form fields when no startTime selected', () => {
+  it('shows mandatory asterisk next to the label', () => {
+    render(<BookingFormSection {...defaultProps} />);
+
+    const asterisk = screen.getByText('*');
+    expect(asterisk).toBeInTheDocument();
+    expect(asterisk.className).toContain('text-destructive');
+  });
+
+  it('has mental health focused placeholder', () => {
+    render(<BookingFormSection {...defaultProps} />);
+
+    const textarea = screen.getByPlaceholderText(
+      /anxiety|depressed mood|sleep|racing thoughts|mental health/i
+    );
+    expect(textarea).toBeInTheDocument();
+  });
+
+  it('renders health concern textarea even without selected time slot', () => {
     render(
       <BookingFormSection
         {...defaultProps}
@@ -94,12 +98,41 @@ describe('BookingFormSection', () => {
       />
     );
 
-    // Problem Brief textarea is inside startTime conditional
-    expect(screen.queryByText('Problem Brief')).not.toBeInTheDocument();
-    // CTA button is always rendered (outside startTime conditional), just disabled
+    // Textarea should be visible even when no time slot is selected
+    expect(
+      screen.getByText(/what should the doctor know/i)
+    ).toBeInTheDocument();
+
+    // CTA button is still rendered, just disabled
     const button = screen.queryByRole('button', { name: /book now/i });
     expect(button).toBeInTheDocument();
     expect(button).toBeDisabled();
+  });
+
+  it('applies bg-white class to textarea', () => {
+    render(<BookingFormSection {...defaultProps} />);
+
+    const textarea = screen.getByPlaceholderText(
+      /anxiety|depressed mood|sleep|racing thoughts|mental health/i
+    );
+    expect(textarea.className).toContain('bg-white');
+  });
+
+  it('textarea value is synced with bookingForm.problem_brief', () => {
+    render(
+      <BookingFormSection
+        {...defaultProps}
+        bookingForm={{
+          ...defaultBookingForm,
+          problem_brief: 'Feeling anxious for 2 weeks'
+        }}
+      />
+    );
+
+    const textarea = screen.getByPlaceholderText(
+      /anxiety|depressed mood|sleep|racing thoughts|mental health/i
+    );
+    expect(textarea).toHaveValue('Feeling anxious for 2 weeks');
   });
 
   it('shows login prompt when not authenticated', () => {
@@ -127,5 +160,30 @@ describe('BookingFormSection', () => {
     expect(
       screen.getByText(/lengkapi problem brief dan tipe session/i)
     ).toBeInTheDocument();
+  });
+
+  it('hides CTA buttons and Batalkan when hideCta is true', () => {
+    render(
+      <BookingFormSection {...defaultProps} hideCta={true} />
+    );
+
+    expect(screen.queryByRole('button', { name: /book now/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Batalkan')).not.toBeInTheDocument();
+  });
+
+  it('shows CTA buttons and Batalkan when hideCta is false', () => {
+    render(
+      <BookingFormSection {...defaultProps} hideCta={false} />
+    );
+
+    expect(screen.getByRole('button', { name: /book now/i })).toBeInTheDocument();
+    expect(screen.getByText('Batalkan')).toBeInTheDocument();
+  });
+
+  it('shows CTA buttons and Batalkan by default (hideCta undefined)', () => {
+    render(<BookingFormSection {...defaultProps} />);
+
+    expect(screen.getByRole('button', { name: /book now/i })).toBeInTheDocument();
+    expect(screen.getByText('Batalkan')).toBeInTheDocument();
   });
 });

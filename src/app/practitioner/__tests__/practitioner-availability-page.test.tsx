@@ -53,7 +53,7 @@ vi.mock('@tanstack/react-query', async () => {
 
 import { useQuery } from '@tanstack/react-query';
 
-// Mock sub-components to simplify testing
+// Mock sub-components to simplify testing — pass through practitionerGivenName
 vi.mock('../booking-calendar', () => ({
   default: () => <div data-testid='booking-calendar'>Calendar</div>
 }));
@@ -74,6 +74,7 @@ vi.mock('../booking-form-section', () => ({
     <div
       data-testid='booking-form-section'
       data-hide-cta={props.hideCta}
+      data-practitioner-given-name={props.practitionerGivenName ?? ''}
     >
       Booking Form
     </div>
@@ -101,7 +102,10 @@ vi.mock('@/services/clinic', () => ({
   useDetailPractitioner: vi.fn(() => ({
     newData: {
       resource: { id: 'role-123', availableTime: [] },
-      practitioner: { id: 'prac-1', name: [{ text: 'Dr. Test' }] },
+      practitioner: {
+        id: 'prac-1',
+        name: [{ text: 'Dr. Test', given: ['Test'] }]
+      },
       schedule: { id: 'sched-123' }
     },
     isLoading: false
@@ -111,6 +115,7 @@ vi.mock('@/services/clinic', () => ({
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
 import { useFabDirty } from '@/context/fabDirtyContext';
+import { useDetailPractitioner } from '@/services/clinic';
 import PractitionerAvailability from '../practitioner-availability';
 
 function createWrapper() {
@@ -212,6 +217,62 @@ describe('PractitionerAvailability page variant', () => {
 
     const bookingFormSection = screen.getByTestId('booking-form-section');
     expect(bookingFormSection.dataset.hideCta).toBe('true');
+  });
+
+  it('applies pb-24 to page wrapper for FAB clearance', () => {
+    render(
+      <PractitionerAvailability
+        variant='page'
+        practitionerRoleId='role-123'
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    // Navigate up from a child to find the pb-24 wrapper
+    const calendarEl = screen.getByTestId('booking-calendar');
+    // booking-calendar > parent (flex h-full flex-col) > grandparent (flex flex-col px-1 pb-24)
+    const wrapperDiv = calendarEl.parentElement?.parentElement;
+    expect(wrapperDiv?.className).toContain('pb-24');
+  });
+
+  it('passes practitioner given name to BookingFormSection', () => {
+    render(
+      <PractitionerAvailability
+        variant='page'
+        practitionerRoleId='role-123'
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    const bookingFormSection = screen.getByTestId('booking-form-section');
+    expect(bookingFormSection.dataset.practitionerGivenName).toBe('Test');
+  });
+
+  it('passes empty practitionerGivenName when practitioner has no given name', () => {
+    // Override the mock to return practitioner without `given`
+    vi.mocked(useDetailPractitioner).mockReturnValueOnce({
+      newData: {
+        resource: { id: 'role-456', availableTime: [] },
+        practitioner: {
+          id: 'prac-2',
+          name: [{ text: 'Dr. No Given Name' }]
+        },
+        schedule: { id: 'sched-456' }
+      },
+      isLoading: false
+    });
+
+    render(
+      <PractitionerAvailability
+        variant='page'
+        practitionerRoleId='role-456'
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    const bookingFormSection = screen.getByTestId('booking-form-section');
+    // When no given name, the prop should fall back to an empty string or not be passed
+    expect(bookingFormSection.dataset.practitionerGivenName).toBe('');
   });
 
   it('calls setDirtyState with null on mount in page mode (form not ready)', () => {

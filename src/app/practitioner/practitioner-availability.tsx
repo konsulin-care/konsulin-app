@@ -132,6 +132,11 @@ export default function PractitionerAvailability({
     ? detail?.practitioner?.id ?? ''
     : '';
 
+  // Extract practitioner's first given name for the personalized label
+  const practitionerGivenName = isPageMode
+    ? detail?.practitioner?.name?.[0]?.given?.[0]
+    : undefined;
+
   const [pageDate, setPageDate] = useState<Date>(startOfDay(new Date()));
 
   // Effective practitioner role: from prop (drawer) or fetched (page)
@@ -213,10 +218,9 @@ export default function PractitionerAvailability({
     return date;
   };
 
-  /** Reset the booking form state (time, problem brief, errors). */
+  /** Reset time slot and errors, but preserve problem brief text. */
   const resetData = () => {
     handleFilterChange('startTime', null);
-    handleBookingInformationChange('problem_brief', '');
     setErrorForm(null);
   };
 
@@ -656,6 +660,7 @@ export default function PractitionerAvailability({
         saveIntent={saveIntent}
         startTransition={startTransition}
         setIsOpen={setIsOpen}
+        practitionerGivenName={practitionerGivenName}
       />
     </div>
   );
@@ -663,7 +668,7 @@ export default function PractitionerAvailability({
   if (isPageMode) {
     return (
       <>
-        <div className='flex flex-col px-1'>
+        <div className='flex flex-col px-1 pb-24'>
           {bookingContent}
         </div>
         <PaymentDrawer

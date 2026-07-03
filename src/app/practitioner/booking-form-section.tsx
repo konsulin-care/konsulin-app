@@ -28,6 +28,8 @@ type Props = {
   saveIntent: (kind: string, payload: Record<string, unknown>) => void;
   startTransition: TransitionStartFunction;
   setIsOpen: (open: boolean) => void;
+  /** First given name of the practitioner for personalized label. */
+  practitionerGivenName?: string;
 };
 
 /** Booking form with problem brief and submit handler. */
@@ -49,30 +51,31 @@ export default function BookingFormSection({
   saveIntent,
   startTransition,
   setIsOpen,
-  hideCta = false
+  hideCta = false,
+  practitionerGivenName
 }: Readonly<Props>) {
+  const label = `What should ${practitionerGivenName ?? 'the doctor'} know?`;
   return (
     <>
-      {bookingState.startTime && (
-        <>
-          <div className='mt-4 text-[12px] font-bold'>Problem Brief</div>
-          <div className='mt-2 mb-4'>
-            <Textarea
-              value={bookingForm.problem_brief}
-              onChange={e =>
-                handleBookingInformationChange('problem_brief', e.target.value)
-              }
-              placeholder='Type your message here.'
-              className='w-full resize-none text-[12px] text-[#2C2F35]'
-            />
-          </div>
+      <div className='mt-4 text-[12px] font-bold'>
+        {label}
+        <span className='text-destructive ml-0.5'>*</span>
+      </div>
+      <div className='mt-2 mb-4'>
+        <Textarea
+          value={bookingForm.problem_brief}
+          onChange={e =>
+            handleBookingInformationChange('problem_brief', e.target.value)
+          }
+          placeholder='e.g., anxiety attacks for 1 week, persistent low mood since last month, trouble sleeping with racing thoughts'
+          className='w-full resize-none bg-white text-[12px] text-[#2C2F35]'
+        />
+      </div>
 
-          {errorForm && (
-            <div className='text-destructive mb-4 text-sm'>
-              {`Lengkapi ${conjunction(errorForm)}.`}
-            </div>
-          )}
-        </>
+      {errorForm && (
+        <div className='text-destructive mb-4 text-sm'>
+          {`Lengkapi ${conjunction(errorForm)}.`}
+        </div>
       )}
 
       {!hideCta && (
