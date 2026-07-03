@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
@@ -137,5 +137,51 @@ describe('PaymentDrawer', () => {
     buttons.forEach(button => {
       expect(button).toBeDisabled();
     });
+  });
+
+  it('includes healthcareServiceId in online payment payload', () => {
+    const payAppointment = vi.fn().mockResolvedValue({ data: {} });
+    const invoice = { id: 'inv-1', totalNet: { value: 150000, currency: 'IDR' } } as Invoice;
+
+    render(
+      <PaymentDrawer
+        {...baseProps}
+        payAppointment={payAppointment}
+        healthcareServiceId='hs-456'
+        invoice={invoice}
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    fireEvent.click(screen.getByText('Pay Now'));
+
+    expect(payAppointment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        healthcareServiceId: 'HealthcareService/hs-456'
+      })
+    );
+  });
+
+  it('includes healthcareServiceId in offline payment payload', () => {
+    const payAppointment = vi.fn().mockResolvedValue({ data: {} });
+    const invoice = { id: 'inv-2', totalNet: { value: 150000, currency: 'IDR' } } as Invoice;
+
+    render(
+      <PaymentDrawer
+        {...baseProps}
+        payAppointment={payAppointment}
+        healthcareServiceId='hs-789'
+        invoice={invoice}
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    fireEvent.click(screen.getByText('Pay Later'));
+
+    expect(payAppointment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        healthcareServiceId: 'HealthcareService/hs-789'
+      })
+    );
   });
 });

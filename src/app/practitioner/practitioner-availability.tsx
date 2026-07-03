@@ -684,6 +684,7 @@ export default function PractitionerAvailability({
           selectedSlotId={selectedSlotId}
           bookingForm={bookingForm}
           practitionerRole={effectiveRole ?? ({} as PractitionerRole)}
+          healthcareServiceId={propHealthcareServiceId ?? ''}
           payAppointment={payAppointment}
           queryClient={queryClient}
           handleFilterChange={effectiveHandleFilterChange}
@@ -723,6 +724,7 @@ export default function PractitionerAvailability({
         selectedSlotId={selectedSlotId}
         bookingForm={bookingForm}
         practitionerRole={practitionerRole}
+        healthcareServiceId={propHealthcareServiceId ?? ''}
         payAppointment={payAppointment}
         queryClient={queryClient}
         handleFilterChange={handleFilterChange}

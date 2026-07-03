@@ -205,6 +205,7 @@ export const usePayAppointment = () => {
       practitionerRoleId: string; // e.g., "PractitionerRole/789"
       slotId: string; // e.g., "Slot/abc"
       condition: string;
+      healthcareServiceId: string; // e.g., "HealthcareService/hs-456"
     }) => {
       try {
         const API = await getAPI();

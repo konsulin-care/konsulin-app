@@ -15,6 +15,7 @@ type PayAppointmentPayload = {
   readonly practitionerRoleId: string;
   readonly slotId: string;
   readonly condition: string;
+  readonly healthcareServiceId: string;
 };
 
 type PayAppointmentResponse = {
@@ -46,6 +47,7 @@ type Props = {
   selectedSlotId: string | null;
   bookingForm: { session_type: string; problem_brief: string };
   practitionerRole: PractitionerRole;
+  healthcareServiceId?: string;
   payAppointment: PayAppointmentFn;
   queryClient: QueryClient;
   handleFilterChange: (
@@ -206,6 +208,7 @@ export default function PaymentDrawer({
   selectedSlotId,
   bookingForm,
   practitionerRole,
+  healthcareServiceId,
   payAppointment,
   queryClient,
   handleFilterChange,
@@ -227,7 +230,8 @@ export default function PaymentDrawer({
         useOnlinePayment: true,
         practitionerRoleId: `PractitionerRole/${practitionerRole.id}`,
         slotId: `Slot/${selectedSlotId}`,
-        condition: bookingForm.problem_brief
+        condition: bookingForm.problem_brief,
+        healthcareServiceId: `HealthcareService/${healthcareServiceId ?? ''}`
       });
 
       if (response?.data?.paymentUrl) {
@@ -258,7 +262,8 @@ export default function PaymentDrawer({
         useOnlinePayment: false,
         practitionerRoleId: `PractitionerRole/${practitionerRole.id}`,
         slotId: `Slot/${selectedSlotId}`,
-        condition: bookingForm.problem_brief
+        condition: bookingForm.problem_brief,
+        healthcareServiceId: `HealthcareService/${healthcareServiceId ?? ''}`
       });
       queryClient
         .invalidateQueries({

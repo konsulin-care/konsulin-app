@@ -8,7 +8,7 @@ vi.mock('../api', () => ({
 }));
 
 import { getAPI } from '../api';
-import { useRelayBooking } from '../api/appointments';
+import { usePayAppointment, useRelayBooking } from '../api/appointments';
 
 function createWrapper(): ({ children }: { children: ReactNode }) => React.JSX.Element {
   const queryClient = new QueryClient({
@@ -62,5 +62,36 @@ describe('useRelayBooking', () => {
     expect(response.invoiceId).toBe('Invoice/inv-012');
     expect(response.fee).toEqual({ value: 150_000, currency: 'IDR' });
     expect(response.healthcareServiceName).toBe('General Consultation');
+  });
+});
+
+describe('usePayAppointment', () => {
+  it('includes healthcareServiceId in the POST payload', async () => {
+    const mockPost = vi.fn().mockResolvedValue({
+      data: { paymentUrl: 'https://payment.example.com/url' }
+    });
+    vi.mocked(getAPI).mockResolvedValue(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      { post: mockPost } as any
+    );
+
+    const { result } = renderHook(() => usePayAppointment(), {
+      wrapper: createWrapper()
+    });
+
+    const payload = {
+      patientId: 'Patient/pat-1',
+      invoiceId: 'Invoice/inv-1',
+      useOnlinePayment: true,
+      practitionerRoleId: 'PractitionerRole/pr-123',
+      slotId: 'Slot/slot-789',
+      condition: 'anxiety',
+      healthcareServiceId: 'HealthcareService/hs-456'
+    };
+
+    await result.current.mutateAsync(payload);
+
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/pay/appointment', payload);
+    expect(getAPI).toHaveBeenCalledWith();
   });
 });
