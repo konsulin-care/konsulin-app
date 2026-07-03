@@ -339,6 +339,131 @@ describe('PatientDetail', () => {
     expect(screen.getByText('No services listed')).toBeInTheDocument();
   });
 
+  describe('getPractitionerName fallback logic', () => {
+    it('constructs name from given and family when name.text is missing', () => {
+      mockUseDetailPractitioner.mockReturnValue({
+        newData: buildNewData({
+          practitioner: {
+            id: 'prac-1',
+            name: [
+              { use: 'official' as const, family: 'Lamuri', given: ['Aly'] }
+            ]
+          },
+          resource: {
+            id: 'role-123',
+            practitioner: { reference: 'Practitioner/prac-1' },
+            specialty: [{ text: 'Cardiology' }],
+            organization: { reference: 'Organization/org-1' }
+          }
+        }),
+        isLoading: false,
+        isError: false,
+        isFetching: false
+      } as unknown as ReturnType<typeof useDetailPractitioner>);
+
+      render(<PatientDetail practitionerRoleId='role-123' />);
+      expect(
+        screen.getByRole('heading', { level: 1 })
+      ).toHaveTextContent('Aly Lamuri');
+    });
+
+    it('uses only family when given is empty', () => {
+      mockUseDetailPractitioner.mockReturnValue({
+        newData: buildNewData({
+          practitioner: {
+            id: 'prac-1',
+            name: [
+              { use: 'official' as const, family: 'Lamuri', given: [] }
+            ]
+          },
+          resource: {
+            id: 'role-123',
+            practitioner: { reference: 'Practitioner/prac-1' },
+            specialty: [{ text: 'Cardiology' }],
+            organization: { reference: 'Organization/org-1' }
+          }
+        }),
+        isLoading: false,
+        isError: false,
+        isFetching: false
+      } as unknown as ReturnType<typeof useDetailPractitioner>);
+
+      render(<PatientDetail practitionerRoleId='role-123' />);
+      expect(
+        screen.getByRole('heading', { level: 1 })
+      ).toHaveTextContent('Lamuri');
+    });
+
+    it('uses display when practitioner resource is missing', () => {
+      mockUseDetailPractitioner.mockReturnValue({
+        newData: buildNewData({
+          practitioner: undefined,
+          resource: {
+            id: 'role-123',
+            practitioner: {
+              reference: 'Practitioner/prac-1',
+              display: 'Dr. Display Name'
+            },
+            specialty: [{ text: 'Cardiology' }],
+            organization: { reference: 'Organization/org-1' }
+          }
+        }),
+        isLoading: false,
+        isError: false,
+        isFetching: false
+      } as unknown as ReturnType<typeof useDetailPractitioner>);
+
+      render(<PatientDetail practitionerRoleId='role-123' />);
+      expect(
+        screen.getByRole('heading', { level: 1 })
+      ).toHaveTextContent('Dr. Display Name');
+    });
+
+    it('falls back to Practitioner when no name data exists', () => {
+      mockUseDetailPractitioner.mockReturnValue({
+        newData: buildNewData({
+          practitioner: undefined,
+          resource: {
+            id: 'role-123',
+            practitioner: { reference: 'Practitioner/prac-1' },
+            specialty: [{ text: 'Cardiology' }],
+            organization: { reference: 'Organization/org-1' }
+          }
+        }),
+        isLoading: false,
+        isError: false,
+        isFetching: false
+      } as unknown as ReturnType<typeof useDetailPractitioner>);
+
+      render(<PatientDetail practitionerRoleId='role-123' />);
+      expect(
+        screen.getByRole('heading', { level: 1 })
+      ).toHaveTextContent('Practitioner');
+    });
+
+    it('falls back to Practitioner when name array is empty', () => {
+      mockUseDetailPractitioner.mockReturnValue({
+        newData: buildNewData({
+          practitioner: { id: 'prac-1', name: [] },
+          resource: {
+            id: 'role-123',
+            practitioner: { reference: 'Practitioner/prac-1' },
+            specialty: [{ text: 'Cardiology' }],
+            organization: { reference: 'Organization/org-1' }
+          }
+        }),
+        isLoading: false,
+        isError: false,
+        isFetching: false
+      } as unknown as ReturnType<typeof useDetailPractitioner>);
+
+      render(<PatientDetail practitionerRoleId='role-123' />);
+      expect(
+        screen.getByRole('heading', { level: 1 })
+      ).toHaveTextContent('Practitioner');
+    });
+  });
+
   it('filters out inactive healthcare services', () => {
     mockUseDetailPractitioner.mockReturnValue({
       newData: buildNewData({

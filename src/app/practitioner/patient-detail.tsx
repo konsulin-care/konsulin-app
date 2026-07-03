@@ -173,14 +173,19 @@ function HealthcareServicesSection({
 }
 
 /**
- * Extract practitioner name from detail: prefer included Practitioner resource,
- * fallback to display reference, then default to 'Practitioner'.
+ * Extract practitioner name from detail:
+ * 1. Prefer included Practitioner resource name[0].text
+ * 2. Construct from name[0].given + family
+ * 3. Use PractitionerRole's practitioner.display
+ * 4. Fallback to 'Practitioner'
  */
 function getPractitionerName(
   detail: import('@/services/clinic').DetailPractitionerData
 ): string {
-  if (detail.practitioner?.name?.[0]?.text) {
-    return detail.practitioner.name[0].text;
+  const name = detail.practitioner?.name?.[0];
+  if (name?.text) return name.text;
+  if (name?.given?.length || name?.family) {
+    return [...(name.given ?? []), name.family].filter(Boolean).join(' ');
   }
   return detail.resource.practitioner?.display ?? 'Practitioner';
 }
