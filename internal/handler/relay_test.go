@@ -8,9 +8,30 @@ import (
 	"testing"
 )
 
-// testRelayBackend returns a test FHIR server that handles transaction bundles.
+// testRelayBackend returns a test FHIR server that serves HealthcareService
+// and handles transaction bundles.
 func testRelayBackend() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Handle HealthcareService GET
+		if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/fhir/HealthcareService/") {
+			w.Header().Set("Content-Type", "application/fhir+json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"resourceType": "HealthcareService",
+				"id":           "hs-456",
+				"extension": []map[string]any{
+					{
+						"url": "https://konsulin.id/fhir/StructureDefinition/fee",
+						"valueMoney": map[string]any{
+							"value":    150000,
+							"currency": "IDR",
+						},
+					},
+				},
+			})
+			return
+		}
+
 		if r.URL.Path == "/fhir" && r.Method == http.MethodPost {
 			var bundle map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&bundle); err != nil {
@@ -32,25 +53,25 @@ func testRelayBackend() *httptest.Server {
 					{
 						"response": map[string]any{
 							"status":   "200 OK",
-							"location": "PractitionerRole/pr-123/_history/1",
+							"location": "http://localhost:8080/fhir/PractitionerRole/pr-123/_history/1",
 						},
 					},
 					{
 						"response": map[string]any{
 							"status":   "200 OK",
-							"location": "HealthcareService/hs-456/_history/1",
+							"location": "http://localhost:8080/fhir/HealthcareService/hs-456/_history/1",
 						},
 					},
 					{
 						"response": map[string]any{
 							"status":   "201 Created",
-							"location": "Slot/slot-789/_history/1",
+							"location": "http://localhost:8080/fhir/Slot/slot-789/_history/1",
 						},
 					},
 					{
 						"response": map[string]any{
 							"status":   "201 Created",
-							"location": "Invoice/inv-012/_history/1",
+							"location": "http://localhost:8080/fhir/Invoice/inv-012/_history/1",
 						},
 					},
 				},
@@ -196,15 +217,33 @@ func TestRelayBooking_bundleHasCorrectResources(t *testing.T) {
 	var capturedBundle map[string]any
 
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Handle HealthcareService GET
+		if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/fhir/HealthcareService/") {
+			w.Header().Set("Content-Type", "application/fhir+json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"resourceType": "HealthcareService",
+				"id":           "hs-456",
+				"extension": []map[string]any{
+					{
+						"url": "https://konsulin.id/fhir/StructureDefinition/fee",
+						"valueMoney": map[string]any{
+							"value":    150000,
+							"currency": "IDR",
+						},
+					},
+				},
+			})
+			return
+		}
+
 		_ = json.NewDecoder(r.Body).Decode(&capturedBundle)
 		respBundle := map[string]any{
 			"resourceType": "Bundle",
 			"type":         "transaction-response",
 			"entry": []map[string]any{
-				{"response": map[string]any{"status": "200 OK", "location": "PractitionerRole/pr-123/_history/1"}},
-				{"response": map[string]any{"status": "200 OK", "location": "HealthcareService/hs-456/_history/1"}},
-				{"response": map[string]any{"status": "201 Created", "location": "Slot/slot-789/_history/1"}},
-				{"response": map[string]any{"status": "201 Created", "location": "Invoice/inv-012/_history/1"}},
+				{"response": map[string]any{"status": "201 Created", "location": "http://localhost:8080/fhir/Slot/slot-789/_history/1"}},
+				{"response": map[string]any{"status": "201 Created", "location": "http://localhost:8080/fhir/Invoice/inv-012/_history/1"}},
 			},
 		}
 		w.Header().Set("Content-Type", "application/fhir+json")
@@ -247,35 +286,23 @@ func TestRelayBooking_bundleHasCorrectResources(t *testing.T) {
 	if !ok {
 		t.Fatal("expected entry array")
 	}
-	if len(entries) != 4 {
-		t.Fatalf("expected 4 entries, got %d", len(entries))
+	if len(entries) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(entries))
 	}
 
 	entry0 := entries[0].(map[string]any)
 	req0 := entry0["request"].(map[string]any)
-	if req0["method"] != "GET" || req0["url"] != "PractitionerRole/pr-123" {
-		t.Errorf("entry 0: expected GET PractitionerRole/pr-123, got %v %v", req0["method"], req0["url"])
+	if req0["method"] != "POST" || req0["url"] != "Slot" {
+		t.Errorf("entry 0: expected POST Slot, got %v %v", req0["method"], req0["url"])
 	}
 
 	entry1 := entries[1].(map[string]any)
 	req1 := entry1["request"].(map[string]any)
-	if req1["method"] != "GET" || req1["url"] != "HealthcareService/hs-456" {
-		t.Errorf("entry 1: expected GET HealthcareService/hs-456, got %v %v", req1["method"], req1["url"])
+	if req1["method"] != "POST" || req1["url"] != "Invoice" {
+		t.Errorf("entry 1: expected POST Invoice, got %v %v", req1["method"], req1["url"])
 	}
 
-	entry2 := entries[2].(map[string]any)
-	req2 := entry2["request"].(map[string]any)
-	if req2["method"] != "POST" || req2["url"] != "Slot" {
-		t.Errorf("entry 2: expected POST Slot, got %v %v", req2["method"], req2["url"])
-	}
-
-	entry3 := entries[3].(map[string]any)
-	req3 := entry3["request"].(map[string]any)
-	if req3["method"] != "POST" || req3["url"] != "Invoice" {
-		t.Errorf("entry 3: expected POST Invoice, got %v %v", req3["method"], req3["url"])
-	}
-
-	slotResource := entry2["resource"].(map[string]any)
+	slotResource := entry0["resource"].(map[string]any)
 	if slotResource["status"] != "busy-tentative" {
 		t.Errorf("expected Slot status=busy-tentative, got %v", slotResource["status"])
 	}
@@ -283,12 +310,19 @@ func TestRelayBooking_bundleHasCorrectResources(t *testing.T) {
 		t.Errorf("expected Slot schedule=Schedule/sched-1")
 	}
 
-	invoiceResource := entry3["resource"].(map[string]any)
+	invoiceResource := entry1["resource"].(map[string]any)
 	if invoiceResource["status"] != "issued" {
 		t.Errorf("expected Invoice status=issued, got %v", invoiceResource["status"])
 	}
-	if invoiceResource["totalNet"] == nil {
+	totalNet := invoiceResource["totalNet"].(map[string]any)
+	if totalNet == nil {
 		t.Error("expected Invoice.totalNet")
+	}
+	if totalNet["value"] != float64(150000) {
+		t.Errorf("expected Invoice.totalNet.value=150000, got %v", totalNet["value"])
+	}
+	if totalNet["currency"] != "IDR" {
+		t.Errorf("expected Invoice.totalNet.currency=IDR, got %v", totalNet["currency"])
 	}
 	if invoiceResource["subject"].(map[string]any)["reference"] != "Patient/pat-1" {
 		t.Errorf("expected Invoice subject=Patient/pat-1")
@@ -332,12 +366,33 @@ func TestRelayBooking_forwardsAuthToken(t *testing.T) {
 
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedAuth = r.Header.Get("Authorization")
+
+		// Handle HealthcareService GET
+		if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/fhir/HealthcareService/") {
+			w.Header().Set("Content-Type", "application/fhir+json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"resourceType": "HealthcareService",
+				"id":           "hs-456",
+				"extension": []map[string]any{
+					{
+						"url": "https://konsulin.id/fhir/StructureDefinition/fee",
+						"valueMoney": map[string]any{
+							"value":    150000,
+							"currency": "IDR",
+						},
+					},
+				},
+			})
+			return
+		}
+
 		respBundle := map[string]any{
 			"resourceType": "Bundle",
 			"type":         "transaction-response",
 			"entry": []map[string]any{
-				{"response": map[string]any{"status": "200 OK", "location": "Slot/slot-789/_history/1"}},
-				{"response": map[string]any{"status": "200 OK", "location": "Invoice/inv-012/_history/1"}},
+				{"response": map[string]any{"status": "200 OK", "location": "http://localhost:8080/fhir/Slot/slot-789/_history/1"}},
+				{"response": map[string]any{"status": "200 OK", "location": "http://localhost:8080/fhir/Invoice/inv-012/_history/1"}},
 			},
 		}
 		w.Header().Set("Content-Type", "application/fhir+json")
@@ -395,12 +450,33 @@ func TestRelayBooking_skipsAuthWhenNoCookie(t *testing.T) {
 
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedAuth = r.Header.Get("Authorization")
+
+		// Handle HealthcareService GET
+		if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/fhir/HealthcareService/") {
+			w.Header().Set("Content-Type", "application/fhir+json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"resourceType": "HealthcareService",
+				"id":           "hs-456",
+				"extension": []map[string]any{
+					{
+						"url": "https://konsulin.id/fhir/StructureDefinition/fee",
+						"valueMoney": map[string]any{
+							"value":    150000,
+							"currency": "IDR",
+						},
+					},
+				},
+			})
+			return
+		}
+
 		respBundle := map[string]any{
 			"resourceType": "Bundle",
 			"type":         "transaction-response",
 			"entry": []map[string]any{
-				{"response": map[string]any{"status": "200 OK", "location": "Slot/slot-789/_history/1"}},
-				{"response": map[string]any{"status": "200 OK", "location": "Invoice/inv-012/_history/1"}},
+				{"response": map[string]any{"status": "200 OK", "location": "http://localhost:8080/fhir/Slot/slot-789/_history/1"}},
+				{"response": map[string]any{"status": "200 OK", "location": "http://localhost:8080/fhir/Invoice/inv-012/_history/1"}},
 			},
 		}
 		w.Header().Set("Content-Type", "application/fhir+json")

@@ -521,7 +521,9 @@ export default function PractitionerAvailability({
 
   /** Validate the form, create a FHIR Slot, then open payment drawer. */
   const handleSubmitForm = async () => {
-    const { date, startTime } = bookingState;
+    const { date: contextDate, startTime } = bookingState;
+    // Page mode stores date in pageDate local state, not bookingState context
+    const date = isPageMode ? pageDate : contextDate;
     const requiredData = {
       'Problem Brief': bookingForm.problem_brief,
       'Tanggal Appointment': date,

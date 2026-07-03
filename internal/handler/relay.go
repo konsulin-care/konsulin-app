@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -71,7 +72,22 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 			"endTime", req.EndTime,
 		)
 
-		bundle := buildRelayBundle(req)
+		// Fetch HealthcareService to get the authoritative fee.
+		authToken := ""
+		if c, err := r.Cookie("sAccessToken"); err == nil && c.Value != "" {
+			authToken = "Bearer " + c.Value
+		}
+
+		fee, err := fetchHealthcareServiceFee(baseURL, req.HealthcareServiceID, authToken)
+		if err != nil {
+			slog.Error("relay/booking: failed to fetch HealthcareService fee", "err", err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadGateway)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to fetch service fee"})
+			return
+		}
+
+		bundle := buildRelayBundle(req, fee)
 		bundleBody, err := json.Marshal(bundle)
 		if err != nil {
 			slog.Error("relay/booking: failed to marshal bundle", "err", err)
@@ -93,8 +109,8 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 		fhirReq.Header.Set("Content-Type", "application/fhir+json")
 
 		// Forward auth token from client session — same as backend proxy.
-		if c, err := r.Cookie("sAccessToken"); err == nil && c.Value != "" {
-			fhirReq.Header.Set("Authorization", "Bearer "+c.Value)
+		if authToken != "" {
+			fhirReq.Header.Set("Authorization", authToken)
 		}
 
 		resp, err := relayFHIRClient.Do(fhirReq)
@@ -124,7 +140,7 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 			return
 		}
 
-		result := parseRelayResponse(fhirResp, req.HealthcareServiceID)
+		result := parseRelayResponse(fhirResp, req.HealthcareServiceID, fee)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(result)
@@ -166,37 +182,18 @@ func validateRelayBooking(req relayBookingRequest) string {
 }
 
 // buildRelayBundle constructs a FHIR transaction bundle that:
-//   - GETs PractitionerRole and HealthcareService resources
 //   - POSTs a busy-tentative Slot
-//   - POSTs an issued Invoice with the fee from HealthcareService
-func buildRelayBundle(req relayBookingRequest) map[string]any {
+//   - POSTs an issued Invoice with the given fee
+func buildRelayBundle(req relayBookingRequest, fee feeObj) map[string]any {
 	startISO := fmt.Sprintf("%sT%s:00%s", req.Date, req.StartTime, req.Timezone)
 	endISO := fmt.Sprintf("%sT%s:00%s", req.Date, req.EndTime, req.Timezone)
 	now := time.Now().Format(time.RFC3339)
 
-	// Fee extension value — the BFF extracts this from the HealthcareService
-	// response. For now we use a placeholder; in production the fee is read
-	// from the HealthcareService's extension.
-	// The actual amount comes from: HealthcareService.extension where
-	// url = "https://konsulin.id/fhir/StructureDefinition/fee"
-	feeValue := 150000
-
+	// Use the fee fetched from HealthcareService.
 	return map[string]any{
 		"resourceType": "Bundle",
 		"type":         "transaction",
 		"entry": []map[string]any{
-			{
-				"request": map[string]any{
-					"method": "GET",
-					"url":    req.PractitionerRoleID,
-				},
-			},
-			{
-				"request": map[string]any{
-					"method": "GET",
-					"url":    req.HealthcareServiceID,
-				},
-			},
 			{
 				"request": map[string]any{
 					"method": "POST",
@@ -240,13 +237,73 @@ func buildRelayBundle(req relayBookingRequest) map[string]any {
 						"reference": req.OrganizationID,
 					},
 					"totalNet": map[string]any{
-						"value":    feeValue,
-						"currency": "IDR",
+						"value":    fee.Value,
+						"currency": fee.Currency,
 					},
 				},
 			},
 		},
 	}
+}
+
+// constFeeExtensionURL is the FHIR extension URL for service fee.
+const constFeeExtensionURL = "https://konsulin.id/fhir/StructureDefinition/fee"
+
+// fetchHealthcareServiceFee fetches the HealthcareService resource and extracts
+// the fee from its extension.
+func fetchHealthcareServiceFee(baseURL, healthcareServiceID, authToken string) (feeObj, error) {
+	hsURL := baseURL + "/fhir/" + healthcareServiceID
+	req, err := http.NewRequest(http.MethodGet, hsURL, http.NoBody)
+	if err != nil {
+		return feeObj{}, fmt.Errorf("create request: %w", err)
+	}
+	req.Header.Set("Accept", "application/fhir+json")
+	if authToken != "" {
+		req.Header.Set("Authorization", authToken)
+	}
+
+	resp, err := relayFHIRClient.Do(req)
+	if err != nil {
+		return feeObj{}, fmt.Errorf("get HealthcareService: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode >= 400 {
+		return feeObj{}, fmt.Errorf("HealthcareService returned status %d", resp.StatusCode)
+	}
+
+	var hs map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&hs); err != nil {
+		return feeObj{}, fmt.Errorf("decode HealthcareService: %w", err)
+	}
+
+	extensions, ok := hs["extension"].([]any)
+	if !ok {
+		return feeObj{}, fmt.Errorf("no extension on HealthcareService")
+	}
+
+	for _, ext := range extensions {
+		e, ok := ext.(map[string]any)
+		if !ok {
+			continue
+		}
+		if e["url"] != constFeeExtensionURL {
+			continue
+		}
+		valueMoney, ok := e["valueMoney"].(map[string]any)
+		if !ok {
+			continue
+		}
+
+		value, _ := valueMoney["value"].(float64)
+		currency, _ := valueMoney["currency"].(string)
+		if currency == "" {
+			currency = "IDR"
+		}
+		return feeObj{Value: int(value), Currency: currency}, nil
+	}
+
+	return feeObj{}, fmt.Errorf("fee extension not found on HealthcareService")
 }
 
 // relayResponse is the JSON response sent back to the client.
@@ -262,15 +319,15 @@ type feeObj struct {
 	Currency string `json:"currency"`
 }
 
-// parseRelayResponse extracts Slot ID, Invoice ID, fee, and service name
-// from the FHIR transaction-response bundle.
-func parseRelayResponse(fhirResp map[string]any, serviceID string) relayResponse {
+// parseRelayResponse extracts Slot ID, Invoice ID from the FHIR transaction-response
+// bundle and returns the response with the pre-fetched fee.
+func parseRelayResponse(fhirResp map[string]any, serviceID string, fee feeObj) relayResponse {
 	entries, ok := fhirResp["entry"].([]any)
 	if !ok {
 		return relayResponse{
 			SlotID:               "",
 			InvoiceID:            "",
-			Fee:                  feeObj{Value: 150000, Currency: "IDR"},
+			Fee:                  fee,
 			HealthcareServiceName: stripResourceType(serviceID),
 		}
 	}
@@ -290,20 +347,42 @@ func parseRelayResponse(fhirResp map[string]any, serviceID string) relayResponse
 			continue
 		}
 
-		if strings.HasPrefix(location, "Slot/") {
-			// Extract ID before /_history
-			slotID = extractFHIRID(location)
-		} else if strings.HasPrefix(location, "Invoice/") {
-			invoiceID = extractFHIRID(location)
+		localized := normalizeLocation(location)
+		if strings.HasPrefix(localized, "Slot/") {
+			slotID = extractFHIRID(localized)
+		} else if strings.HasPrefix(localized, "Invoice/") {
+			invoiceID = extractFHIRID(localized)
 		}
 	}
 
 	return relayResponse{
 		SlotID:               slotID,
 		InvoiceID:            invoiceID,
-		Fee:                  feeObj{Value: 150000, Currency: "IDR"},
+		Fee:                  fee,
 		HealthcareServiceName: stripResourceType(serviceID),
 	}
+}
+
+// normalizeLocation converts a FHIR location to a relative resource path.
+// Input: "http://localhost:8080/fhir/Slot/slot-789/_history/1"
+// Output: "Slot/slot-789/_history/1"
+// Relative paths are returned unchanged.
+func normalizeLocation(location string) string {
+	if !strings.HasPrefix(location, "http://") && !strings.HasPrefix(location, "https://") {
+		return location
+	}
+
+	u, err := url.Parse(location)
+	if err != nil {
+		return location
+	}
+
+	// Find the resource type segment (Slot, Invoice, etc.) in the path
+	path := strings.TrimPrefix(u.Path, "/")
+	for _, prefix := range []string{"fhir/"} {
+		path = strings.TrimPrefix(path, prefix)
+	}
+	return path
 }
 
 // extractFHIRID extracts the resource ID from a FHIR location string.
