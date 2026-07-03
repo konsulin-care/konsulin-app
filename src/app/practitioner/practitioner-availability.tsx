@@ -8,7 +8,7 @@ import { STORES, dbDelete, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import {
   useCreateAppointment,
-  useCreateSlot,
+  useRelayBooking,
   usePayAppointment
 } from '@/services/api/appointments';
 import { useDetailPractitioner } from '@/services/clinic';
@@ -64,6 +64,9 @@ type Props = {
   variant?: 'drawer' | 'page';
   practitionerRoleId?: string;
   durationMinutes?: number;
+  healthcareServiceId?: string;
+  healthcareServiceName?: string;
+  organizationId?: string;
 };
 
 /**
@@ -95,7 +98,10 @@ export default function PractitionerAvailability({
   practitionerAvatar,
   variant = 'drawer',
   practitionerRoleId,
-  durationMinutes = 60
+  durationMinutes = 60,
+  healthcareServiceId: propHealthcareServiceId,
+  healthcareServiceName: propHealthcareServiceName,
+  organizationId: propOrganizationId
 }: Props) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -122,7 +128,9 @@ export default function PractitionerAvailability({
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: payAppointment, isLoading: isPaying } =
     usePayAppointment();
-  const { mutateAsync: createSlot } = useCreateSlot();
+  const { mutateAsync: relayBooking } =
+    useRelayBooking();
+  const [relayInvoice, setRelayInvoice] = useState<Invoice | null>(null);
 
   const patientId = authState?.userInfo?.fhirId;
   const isAuthenticated = authState?.isAuthenticated;
@@ -488,6 +496,29 @@ export default function PractitionerAvailability({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingState.date, bookingState.startTime, slotPills, listAvailableDate]);
 
+  /** Build the relay booking payload from form state. */
+  function buildRelayPayload(
+    date: Date,
+    startTime: string,
+    endTimeStr: string
+  ) {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const orgId = propOrganizationId || (isPageMode ? detail?.organization?.id : '') || '';
+    return {
+      patientId: `Patient/${patientId ?? ''}`,
+      practitionerRoleId: `PractitionerRole/${effectiveRole?.id ?? practitionerRoleId ?? ''}`,
+      practitionerId: `Practitioner/${practitionerId}`,
+      healthcareServiceId: `HealthcareService/${propHealthcareServiceId ?? ''}`,
+      scheduleId: `Schedule/${effectiveScheduleId}`,
+      organizationId: `Organization/${orgId}`,
+      date: dateStr,
+      startTime,
+      endTime: endTimeStr,
+      timezone: practitionerTzOffset,
+      condition: bookingForm.problem_brief
+    };
+  }
+
   /** Validate the form, create a FHIR Slot, then open payment drawer. */
   const handleSubmitForm = async () => {
     const { date, startTime } = bookingState;
@@ -510,25 +541,21 @@ export default function PractitionerAvailability({
     }
 
     try {
-      // Compose ISO datetime strings with practitioner timezone
-      const dateStr = format(date, 'yyyy-MM-dd');
       const startMinutes = timeToMinutes(startTime);
       const endMinutes = startMinutes + durationMinutes;
       const endTimeStr = minutesToTimeStr(endMinutes);
-      const startIso = `${dateStr}T${startTime}:00${practitionerTzOffset}`;
-      const endIso = `${dateStr}T${endTimeStr}:00${practitionerTzOffset}`;
 
-      // Create a real FHIR Slot resource
-      const createdSlot = await createSlot({
-        scheduleReference: `Schedule/${effectiveScheduleId}`,
-        start: startIso,
-        end: endIso
+      const payload = buildRelayPayload(date, startTime, endTimeStr);
+      const response = await relayBooking(payload);
+
+      setSelectedSlotId(response.slotId);
+      setRelayInvoice({
+        resourceType: 'Invoice',
+        id: response.invoiceId.replace('Invoice/', ''),
+        status: 'issued',
+        totalNet: response.fee
       });
 
-      // Use the real Slot ID for payment
-      setSelectedSlotId(createdSlot.id);
-
-      // Open payment option modal
       setPaymentOpen(true);
     } catch {
       // Errors handled by API interceptor
@@ -647,9 +674,9 @@ export default function PractitionerAvailability({
           practitionerAvatar={practitionerAvatar}
           practitionerOrganizationName={practitionerOrganizationName}
           practitionerName={practitionerName}
-          healthcareServiceNames={healthcareServiceNames}
+          healthcareServiceName={propHealthcareServiceName ?? healthcareServiceNames[0] ?? 'Consultation'}
           bookingState={effectiveBookingState}
-          invoice={invoice}
+          invoice={relayInvoice ?? invoice}
           isPaying={isPaying}
           patientId={patientId ?? ''}
           selectedSlotId={selectedSlotId}
@@ -686,7 +713,7 @@ export default function PractitionerAvailability({
         practitionerAvatar={practitionerAvatar}
         practitionerOrganizationName={practitionerOrganizationName}
         practitionerName={practitionerName}
-        healthcareServiceNames={healthcareServiceNames}
+        healthcareServiceName={healthcareServiceNames[0] ?? 'Consultation'}
         bookingState={bookingState}
         invoice={invoice}
         isPaying={isPaying}

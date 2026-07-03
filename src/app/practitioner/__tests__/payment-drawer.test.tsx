@@ -99,12 +99,11 @@ describe('PaymentDrawer', () => {
     render(
       <PaymentDrawer
         {...baseProps}
-        healthcareServiceNames={['General Checkup', 'Counselling']}
+        healthcareServiceName='General Checkup'
       />,
       { wrapper: createWrapper() }
     );
     expect(screen.getByText(/General Checkup/)).toBeInTheDocument();
-    expect(screen.getByText(/Counselling/)).toBeInTheDocument();
   });
 
   it('renders date and time in a combined line', () => {

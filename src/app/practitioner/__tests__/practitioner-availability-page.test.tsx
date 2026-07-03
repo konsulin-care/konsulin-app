@@ -23,7 +23,7 @@ vi.mock('@/context/fabDirtyContext', () => ({
 
 vi.mock('@/services/api/appointments', () => ({
   useCreateAppointment: vi.fn(() => ({ isLoading: false, mutateAsync: vi.fn() })),
-  useCreateSlot: vi.fn(() => ({ isLoading: false, mutateAsync: vi.fn() })),
+  useRelayBooking: vi.fn(() => ({ isLoading: false, mutateAsync: vi.fn() })),
   usePayAppointment: vi.fn(() => ({ isLoading: false, mutateAsync: vi.fn() }))
 }));
 

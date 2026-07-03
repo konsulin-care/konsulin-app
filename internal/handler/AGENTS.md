@@ -29,3 +29,11 @@ description: HTTP handlers — one per route group, thin delegation to service l
 - Pass CSRF token via `@ctx.Inject()` for all POST/PUT/DELETE
 - Handler files: `clinic.go`, `schedule.go`, `assessment.go`, `profile.go`, `record.go`, `auth.go`
 - `assessment.go` proxies to the React SPA shell; it serves HTML with `<div id="aehrc-root">` mount point
+
+## Relay Routes (`/api/v1/relay/`)
+
+- Relay handlers orchestrate FHIR resources server-side — client sends identifiers only, never raw FHIR payloads
+- Always log each relay request with: endpoint, practitionerRoleId, patientId, timestamp
+- Always construct FHIR transaction bundles; never write individual FHIR resources
+- Extract authoritative data (fee, duration) from FHIR resources, not from client input
+- Relay handlers live in `relay.go`, one function per endpoint

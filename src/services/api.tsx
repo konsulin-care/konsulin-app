@@ -19,6 +19,7 @@ export interface UserProfile {
 }
 
 let apiInstance: AxiosInstance | null = null;
+let apiDirectInstance: AxiosInstance | null = null;
 let currentUserId: string | null = null;
 
 /** Returns the current user ID set during auth. */
@@ -32,14 +33,21 @@ export function setCurrentUserId(id: string | null) {
 }
 
 /**
+ * Get or create a singleton Axios instance.
  *
+ * @param options - Optional. Set `{ proxy: false }` to create an instance that
+ *   targets the Go BFF directly (no `/proxy` prefix). Defaults to `{ proxy: true }`.
+ * @returns A Promise resolving to the Axios instance.
  */
-export function getAPI(): Promise<AxiosInstance> {
-  if (apiInstance) return Promise.resolve(apiInstance);
+export function getAPI(options?: { proxy?: boolean }): Promise<AxiosInstance> {
+  const useProxy = options?.proxy ?? true;
+
+  if (useProxy && apiInstance) return Promise.resolve(apiInstance);
+  if (!useProxy && apiDirectInstance) return Promise.resolve(apiDirectInstance);
 
   // eslint-disable-next-line import/no-named-as-default-member
-  apiInstance = axios.create({
-    baseURL: '/proxy',
+  const instance = axios.create({
+    baseURL: useProxy ? '/proxy' : '',
     headers: {
       'Content-Type': 'application/json'
     }
@@ -48,7 +56,20 @@ export function getAPI(): Promise<AxiosInstance> {
   // Authorization header injected by Go SSR proxy (reads sAccessToken cookie).
   // SuperTokens SDK global interceptors handle 401 + token refresh automatically.
 
-  apiInstance.interceptors.response.use(
+  setupResponseInterceptor(instance);
+
+  if (useProxy) {
+    apiInstance = instance;
+  } else {
+    apiDirectInstance = instance;
+  }
+
+  return Promise.resolve(instance);
+}
+
+/** Attach the shared response interceptor to an Axios instance. */
+function setupResponseInterceptor(instance: AxiosInstance) {
+  instance.interceptors.response.use(
     response => response,
     error => {
       const { errorMessage, isExpiredToken, isMissingToken } =
@@ -98,8 +119,6 @@ export function getAPI(): Promise<AxiosInstance> {
       return Promise.reject(new Error(error));
     }
   );
-
-  return Promise.resolve(apiInstance);
 }
 
 /** Performs an API request and returns the response data. */

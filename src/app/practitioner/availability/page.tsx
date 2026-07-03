@@ -38,6 +38,15 @@ export default function AvailabilityPage() {
     return getServiceDuration(selectedService) ?? 60;
   }, [services, serviceId]);
 
+  // Extract selected service name for display
+  const selectedServiceName = useMemo(() => {
+    if (!services || services.length === 0) return '';
+    const selectedService = serviceId
+      ? services.find((s: { id?: string }) => s.id === serviceId)
+      : services[0];
+    return selectedService?.name ?? '';
+  }, [services, serviceId]);
+
   if (isAuthLoading) {
     return (
       <div className='flex min-h-[40vh] items-center justify-center'>
@@ -93,6 +102,8 @@ export default function AvailabilityPage() {
             variant='page'
             practitionerRoleId={id}
             durationMinutes={serviceDuration}
+            healthcareServiceId={serviceId}
+            healthcareServiceName={selectedServiceName}
           />
         )}
       </div>

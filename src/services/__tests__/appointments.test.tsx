@@ -8,53 +8,59 @@ vi.mock('../api', () => ({
 }));
 
 import { getAPI } from '../api';
-import { useCreateSlot } from '../api/appointments';
+import { useRelayBooking } from '../api/appointments';
 
-function createWrapper() {
+function createWrapper(): ({ children }: { children: ReactNode }) => React.JSX.Element {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } }
   });
-  return ({ children }: { children: ReactNode }) => (
+  const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+  Wrapper.displayName = 'TestWrapper';
+  return Wrapper;
 }
 
-describe('useCreateSlot', () => {
-  it('posts a Slot resource to /fhir/Slot with correct payload', async () => {
+describe('useRelayBooking', () => {
+  it('posts to /api/v1/relay/booking with correct payload', async () => {
     const mockPost = vi.fn().mockResolvedValue({
       data: {
-        resourceType: 'Slot',
-        id: 'slot-123',
-        status: 'busy-tentative',
-        schedule: { reference: 'Schedule/sched-1' },
-        start: '2026-07-15T10:00:00+07:00',
-        end: '2026-07-15T10:30:00+07:00'
+        slotId: 'Slot/slot-789',
+        invoiceId: 'Invoice/inv-012',
+        fee: { value: 150_000, currency: 'IDR' },
+        healthcareServiceName: 'General Consultation'
       }
     });
-    vi.mocked(getAPI).mockResolvedValue({
-      post: mockPost
-    } as any);
+    vi.mocked(getAPI).mockResolvedValue(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      { post: mockPost } as any
+    );
 
-    const { result } = renderHook(() => useCreateSlot(), {
+    const { result } = renderHook(() => useRelayBooking(), {
       wrapper: createWrapper()
     });
 
     const payload = {
-      scheduleReference: 'Schedule/sched-1',
-      start: '2026-07-15T10:00:00+07:00',
-      end: '2026-07-15T10:30:00+07:00'
+      patientId: 'Patient/pat-1',
+      practitionerRoleId: 'PractitionerRole/pr-123',
+      practitionerId: 'Practitioner/prac-1',
+      healthcareServiceId: 'HealthcareService/hs-456',
+      scheduleId: 'Schedule/sched-1',
+      organizationId: 'Organization/org-1',
+      date: '2026-07-15',
+      startTime: '10:00',
+      endTime: '10:30',
+      timezone: '+07:00',
+      condition: 'anxiety'
     };
 
     const response = await result.current.mutateAsync(payload);
 
-    expect(mockPost).toHaveBeenCalledWith('/fhir/Slot', {
-      resourceType: 'Slot',
-      status: 'busy-tentative',
-      schedule: { reference: 'Schedule/sched-1' },
-      start: '2026-07-15T10:00:00+07:00',
-      end: '2026-07-15T10:30:00+07:00'
-    });
-    expect(response.id).toBe('slot-123');
-    expect(response.status).toBe('busy-tentative');
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/relay/booking', payload);
+    expect(getAPI).toHaveBeenCalledWith({ proxy: false });
+    expect(response.slotId).toBe('Slot/slot-789');
+    expect(response.invoiceId).toBe('Invoice/inv-012');
+    expect(response.fee).toEqual({ value: 150_000, currency: 'IDR' });
+    expect(response.healthcareServiceName).toBe('General Consultation');
   });
 });

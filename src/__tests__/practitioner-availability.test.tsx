@@ -29,7 +29,7 @@ vi.mock('@/services/clinicians', () => ({
 vi.mock('@/services/api/appointments', () => ({
   useCreateAppointment: vi.fn(),
   usePayAppointment: vi.fn(),
-  useCreateSlot: vi.fn()
+  useRelayBooking: vi.fn()
 }));
 
 vi.mock('@/services/slots', () => ({
@@ -199,7 +199,7 @@ import {
   usePayAppointment
 } from '@/services/api/appointments';
 import { useFindAvailability } from '@/services/clinicians';
-import { useCreateSlot } from '@/services/api/appointments';
+import { useRelayBooking } from '@/services/api/appointments';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function createWrapper(queryClient: QueryClient) {
@@ -283,8 +283,13 @@ describe('PractitionerAvailability', () => {
       mutateAsync: vi.fn(),
       isLoading: false
     } as any);
-    vi.mocked(useCreateSlot).mockReturnValue({
-      mutateAsync: vi.fn().mockResolvedValue({ id: 'created-slot-1' }),
+    vi.mocked(useRelayBooking).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue({
+        slotId: 'Slot/created-slot-1',
+        invoiceId: 'Invoice/created-inv-1',
+        fee: { value: 150000, currency: 'IDR' },
+        healthcareServiceName: 'General Consultation'
+      }),
       isLoading: false
     } as any);
     // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -431,10 +436,15 @@ describe('PractitionerAvailability', () => {
     expect(screen.getByText('No available time slots')).toBeDefined();
   });
 
-  it('creates a Slot via useCreateSlot when booking form is submitted', async () => {
-    const mockCreateSlotMutateAsync = vi.fn().mockResolvedValue({ id: 'created-slot-1' });
-    vi.mocked(useCreateSlot).mockReturnValue({
-      mutateAsync: mockCreateSlotMutateAsync,
+  it('creates a booking via useRelayBooking when form is submitted', async () => {
+    const mockRelayMutateAsync = vi.fn().mockResolvedValue({
+      slotId: 'Slot/created-slot-1',
+      invoiceId: 'Invoice/created-inv-1',
+      fee: { value: 150000, currency: 'IDR' },
+      healthcareServiceName: 'General Consultation'
+    });
+    vi.mocked(useRelayBooking).mockReturnValue({
+      mutateAsync: mockRelayMutateAsync,
       isLoading: false
     } as any);
 
@@ -479,13 +489,17 @@ describe('PractitionerAvailability', () => {
       expect(payNowElements.length).toBeGreaterThan(0);
     });
 
-    // Verify useCreateSlot was called with correct parameters
-    expect(mockCreateSlotMutateAsync).toHaveBeenCalledTimes(1);
-    const callArgs = mockCreateSlotMutateAsync.mock.calls[0][0];
-    expect(callArgs).toHaveProperty('scheduleReference');
-    expect(callArgs).toHaveProperty('start');
-    expect(callArgs).toHaveProperty('end');
-    expect(callArgs.scheduleReference).toContain('Schedule/');
+    // Verify useRelayBooking was called with correct parameters
+    expect(mockRelayMutateAsync).toHaveBeenCalledTimes(1);
+    const callArgs = mockRelayMutateAsync.mock.calls[0][0];
+    expect(callArgs).toHaveProperty('patientId');
+    expect(callArgs).toHaveProperty('practitionerRoleId');
+    expect(callArgs).toHaveProperty('scheduleId');
+    expect(callArgs).toHaveProperty('date');
+    expect(callArgs).toHaveProperty('startTime');
+    expect(callArgs).toHaveProperty('endTime');
+    expect(callArgs).toHaveProperty('timezone');
+    expect(callArgs).toHaveProperty('condition');
   });
 
   it('handles date selection via Calendar', () => {

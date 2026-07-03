@@ -197,6 +197,11 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	r.Get("/api/villages/{districtId}", wh.Villages)
 	r.Get("/api/lookup/{id}", wh.Lookup)
 
+	// Relay routes — BFF handles FHIR orchestration, not proxied.
+	r.Post("/api/v1/relay/booking", handler.NewRelayBookingHandler(handler.RelayBookingOptions{
+		BackendBaseURL: cfg.APIURL,
+	}))
+
 	// All unmatched routes — proxy without auth (public pages, _next/static, etc.).
 	r.NotFound(proxy.ServeHTTP)
 

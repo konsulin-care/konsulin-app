@@ -37,8 +37,8 @@ type Props = {
   };
   practitionerOrganizationName?: string;
   practitionerName?: string;
-  /** Names of the healthcare services being booked. */
-  healthcareServiceNames?: string[];
+  /** Name of the healthcare service being booked. */
+  healthcareServiceName?: string;
   bookingState: IStateBooking;
   invoice?: Invoice;
   isPaying: boolean;
@@ -198,7 +198,7 @@ export default function PaymentDrawer({
   practitionerAvatar,
   practitionerOrganizationName,
   practitionerName,
-  healthcareServiceNames,
+  healthcareServiceName,
   bookingState,
   invoice,
   isPaying,
@@ -275,7 +275,7 @@ export default function PaymentDrawer({
     }
   };
 
-  const serviceNames = healthcareServiceNames?.join(', ') ?? 'Consultation';
+  const serviceNames = healthcareServiceName ?? 'Consultation';
   const dateFormatted = bookingState?.date
     ? format(bookingState.date, 'dd MMMM yyyy')
     : '-/-/-';

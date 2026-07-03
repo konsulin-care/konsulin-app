@@ -148,35 +148,47 @@ export const useCreateAppointment = () => {
 };
 
 /**
- * Payload for creating a FHIR Slot resource.
+ * Payload for the relay booking endpoint.
  */
-export type CreateSlotPayload = {
-  /** Schedule reference (e.g., 'Schedule/{id}') */
-  readonly scheduleReference: string;
-  /** ISO datetime with offset (e.g., '2026-07-15T10:00:00+07:00') */
-  readonly start: string;
-  /** ISO datetime with offset (e.g., '2026-07-15T10:30:00+07:00') */
-  readonly end: string;
+export type RelayBookingPayload = {
+  readonly patientId: string;
+  readonly practitionerRoleId: string;
+  readonly practitionerId: string;
+  readonly healthcareServiceId: string;
+  readonly scheduleId: string;
+  readonly organizationId: string;
+  readonly date: string;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly timezone: string;
+  readonly condition: string;
 };
 
 /**
- * Create a FHIR Slot resource via POST.
- *
- * Creates a busy-tentative Slot linked to the given Schedule.
- * Returns the created Slot resource with its server-assigned ID.
+ * Response from the relay booking endpoint.
  */
-export const useCreateSlot = () => {
+export type RelayBookingResponse = {
+  readonly slotId: string;
+  readonly invoiceId: string;
+  readonly fee: { value: number; currency: string };
+  readonly healthcareServiceName: string;
+};
+
+/**
+ * Relay a booking request to the BFF — creates Slot + Invoice server-side.
+ *
+ * The client sends identifiers only; the BFF constructs the FHIR transaction
+ * bundle and returns the created resource IDs and authoritative fee.
+ */
+export const useRelayBooking = () => {
   return useMutation({
-    mutationKey: ['create-slot'],
-    mutationFn: async (payload: CreateSlotPayload) => {
-      const API = await getAPI();
-      const response = await API.post<Slot>('/fhir/Slot', {
-        resourceType: 'Slot',
-        status: 'busy-tentative',
-        schedule: { reference: payload.scheduleReference },
-        start: payload.start,
-        end: payload.end
-      });
+    mutationKey: ['relay-booking'],
+    mutationFn: async (payload: RelayBookingPayload) => {
+      const API = await getAPI({ proxy: false });
+      const response = await API.post<RelayBookingResponse>(
+        '/api/v1/relay/booking',
+        payload
+      );
       return response.data;
     }
   });
