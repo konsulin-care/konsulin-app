@@ -170,13 +170,25 @@ export default function ServicesTab({
         resourceType: 'Bundle',
         type: 'transaction',
         entry: [
-          ...localServices.map(svc => ({
-            resource: svc,
-            request: {
-              method: svc.id ? ('PUT' as const) : ('POST' as const),
-              url: svc.id ? `HealthcareService/${svc.id}` : 'HealthcareService'
+          ...localServices.map(svc => {
+            const isNew = svc.id?.startsWith('new-');
+            if (isNew) {
+              const { id, ...bodyWithoutId } = svc;
+              const uuid = id.replace('new-', '');
+              return {
+                fullUrl: `urn:uuid:${uuid}`,
+                resource: bodyWithoutId,
+                request: { method: 'POST' as const, url: 'HealthcareService' } as const
+              };
             }
-          })),
+            return {
+              resource: svc,
+              request: {
+                method: 'PUT' as const,
+                url: `HealthcareService/${svc.id}`
+              }
+            };
+          }),
           {
             resource: {
               ...(practitionerRole ?? {
@@ -187,7 +199,11 @@ export default function ServicesTab({
                 .filter((s): s is HealthcareService & { id: string } =>
                   Boolean(s.id)
                 )
-                .map(s => ({ reference: `HealthcareService/${s.id}` }))
+                .map(s => ({
+                  reference: s.id.startsWith('new-')
+                    ? `urn:uuid:${s.id.replace('new-', '')}`
+                    : `HealthcareService/${s.id}`
+                }))
             } as unknown as HealthcareService,
             request: {
               method: 'PUT' as const,

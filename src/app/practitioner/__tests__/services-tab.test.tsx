@@ -136,6 +136,37 @@ describe('ServicesTab', () => {
     expect(screen.getByText('New Service')).toBeInTheDocument();
   });
 
+  it('submits new services as POST and existing as PUT in the transaction bundle', async () => {
+    vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(makeMockResult(mockServices));
+    let capturedSave: (() => Promise<void>) | undefined;
+    render(<ServicesTab practitionerRoleId='role-1' onDirtyChange={(_dirty, save) => { capturedSave = save; }} />);
+    fireEvent.click(screen.getByText(/add service/i));
+    fireEvent.click(screen.getByTestId('mock-drawer-save'));
+    await vi.waitFor(() => expect(capturedSave).toBeDefined());
+    await capturedSave();
+    const bundle = vi.mocked(submitFhirBundle).mock.calls[0][0];
+    const hsEntries = (bundle.entry?.filter(
+      e => e.resource?.resourceType === 'HealthcareService'
+    ) ?? []) as {
+      resource: HealthcareService;
+      request: { method: string; url: string };
+      fullUrl?: string;
+    }[];
+    const putEntry = hsEntries.find(e => e.request.method === 'PUT');
+    expect(putEntry?.request.url).toMatch(/^HealthcareService\/svc-/);
+    expect(putEntry?.fullUrl).toBeUndefined();
+    const postEntry = hsEntries.find(e => e.request.method === 'POST');
+    expect(postEntry?.request.url).toBe('HealthcareService');
+    expect(postEntry?.fullUrl).toMatch(/^urn:uuid:[0-9a-f-]+$/);
+    expect(postEntry?.resource.id).toBeUndefined();
+    const roleEntry = bundle.entry?.find(
+      e => e.resource?.resourceType === 'PractitionerRole'
+    ) as { resource: { healthcareService: { reference: string }[] } } | undefined;
+    const refs = roleEntry?.resource.healthcareService ?? [];
+    expect(refs.some(r => r.reference.startsWith('urn:uuid:'))).toBe(true);
+    expect(refs.some(r => r.reference.startsWith('HealthcareService/'))).toBe(true);
+  });
+
   it('submits bundle with full practitioner role preserving existing fields', async () => {
     vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(makeMockResult([]));
     let capturedSave: (() => Promise<void>) | undefined;

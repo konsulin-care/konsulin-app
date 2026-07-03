@@ -14,8 +14,9 @@ const DURATION_EXTENSION_URL =
  */
 export function getServiceDuration(hs: HealthcareService): number | null {
   const ext = hs.extension?.find(e => e.url === DURATION_EXTENSION_URL);
-  if (ext?.valueInteger == null) return null;
-  return ext.valueInteger;
+  if (ext?.valueDuration?.value != null) return ext.valueDuration.value;
+  if (ext?.valueInteger != null) return ext.valueInteger;
+  return null;
 }
 
 /**
@@ -39,7 +40,15 @@ export function setServiceDuration(
     ...hs,
     extension: [
       ...otherExtensions,
-      { url: DURATION_EXTENSION_URL, valueInteger: durationMinutes }
+      {
+        url: DURATION_EXTENSION_URL,
+        valueDuration: {
+          value: durationMinutes,
+          // eslint-disable-next-line unicorn/prefer-https
+          system: 'http://unitsofmeasure.org',
+          code: 'min'
+        }
+      }
     ]
   };
 }
