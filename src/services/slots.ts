@@ -21,13 +21,13 @@ function minutesOverlap(
 }
 
 /** Convert 'HH:mm' time string to minutes-from-midnight. */
-function timeToMinutes(timeStr: string): number {
+export function timeToMinutes(timeStr: string): number {
   const [h, m] = timeStr.split(':').map(Number);
   return h * 60 + (m ?? 0);
 }
 
 /** Convert minutes-from-midnight to 'HH:mm' string. */
-function minutesToTimeStr(minutes: number): string {
+export function minutesToTimeStr(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;

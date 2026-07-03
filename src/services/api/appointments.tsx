@@ -147,6 +147,41 @@ export const useCreateAppointment = () => {
   });
 };
 
+/**
+ * Payload for creating a FHIR Slot resource.
+ */
+export type CreateSlotPayload = {
+  /** Schedule reference (e.g., 'Schedule/{id}') */
+  readonly scheduleReference: string;
+  /** ISO datetime with offset (e.g., '2026-07-15T10:00:00+07:00') */
+  readonly start: string;
+  /** ISO datetime with offset (e.g., '2026-07-15T10:30:00+07:00') */
+  readonly end: string;
+};
+
+/**
+ * Create a FHIR Slot resource via POST.
+ *
+ * Creates a busy-tentative Slot linked to the given Schedule.
+ * Returns the created Slot resource with its server-assigned ID.
+ */
+export const useCreateSlot = () => {
+  return useMutation({
+    mutationKey: ['create-slot'],
+    mutationFn: async (payload: CreateSlotPayload) => {
+      const API = await getAPI();
+      const response = await API.post<Slot>('/fhir/Slot', {
+        resourceType: 'Slot',
+        status: 'busy-tentative',
+        schedule: { reference: payload.scheduleReference },
+        start: payload.start,
+        end: payload.end
+      });
+      return response.data;
+    }
+  });
+};
+
 /** Pay for an appointment via online payment or offline booking. */
 export const usePayAppointment = () => {
   return useMutation({

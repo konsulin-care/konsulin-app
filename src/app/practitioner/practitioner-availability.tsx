@@ -8,18 +8,20 @@ import { STORES, dbDelete, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import {
   useCreateAppointment,
+  useCreateSlot,
   usePayAppointment
 } from '@/services/api/appointments';
 import { useDetailPractitioner } from '@/services/clinic';
-import { useFindAvailability } from '@/services/clinicians';
 import {
+  timeToMinutes,
+  minutesToTimeStr,
   useBusySlotsByPractitioner,
   computeFreeSlots
 } from '@/services/slots';
 import { clearIntent, getIntent, saveIntent } from '@/utils/redirect-intent';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { addDays, format, isBefore, parseISO, startOfDay } from 'date-fns';
-import { BundleEntry, Invoice, PractitionerRole, Slot } from 'fhir/r4';
+import { addDays, format, parseISO, startOfDay } from 'date-fns';
+import { Invoice, PractitionerRole } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import BookingCalendar from './booking-calendar';
@@ -120,6 +122,7 @@ export default function PractitionerAvailability({
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: payAppointment, isLoading: isPaying } =
     usePayAppointment();
+  const { mutateAsync: createSlot } = useCreateSlot();
 
   const patientId = authState?.userInfo?.fhirId;
   const isAuthenticated = authState?.isAuthenticated;
@@ -130,12 +133,20 @@ export default function PractitionerAvailability({
 
   const practitionerId = isPageMode
     ? detail?.practitioner?.id ?? ''
-    : '';
+    : (practitionerRole?.practitioner?.reference?.replace('Practitioner/', '') ?? '');
 
   // Extract practitioner's first given name for the personalized label
   const practitionerGivenName = isPageMode
     ? detail?.practitioner?.name?.[0]?.given?.[0]
     : undefined;
+
+  // Healthcare service names for display in payment drawer
+  const healthcareServiceNames = useMemo(() => {
+    if (isPageMode) {
+      return detail?.healthcareServices?.map(s => s.name).filter(Boolean) ?? [];
+    }
+    return practitionerRole?.healthcareService?.map(h => h.display).filter(Boolean) ?? [];
+  }, [isPageMode, detail, practitionerRole]);
 
   const [pageDate, setPageDate] = useState<Date>(startOfDay(new Date()));
 
@@ -145,7 +156,6 @@ export default function PractitionerAvailability({
     : practitionerRole;
 
   const effectiveAvailableTime = effectiveRole?.availableTime ?? [];
-  const effectiveRoleId = effectiveRole?.id ?? '';
   const effectiveScheduleId = isPageMode
     ? (detail?.schedule?.id ?? '')
     : (scheduleId ?? '');
@@ -236,56 +246,24 @@ export default function PractitionerAvailability({
     return 'Z';
   }, [effectiveRole]);
 
-  // Build practitioner-TZ day window strings and day cache key
+  // Selected date unified across modes
   const selectedDate = isPageMode ? pageDate : bookingState.date;
-  const { startFrom, startTo, dayKey } = useMemo(() => {
-    if (!selectedDate) {
-      return {
-        startFrom: undefined,
-        startTo: undefined,
-        dayKey: undefined
-      } as {
-        startFrom?: string;
-        startTo?: string;
-        dayKey?: string;
-      };
-    }
-    const dayStr = format(selectedDate, 'yyyy-MM-dd');
-    const start = `${dayStr}T00:00:00${practitionerTzOffset}`;
-    const end = `${dayStr}T23:59:59${practitionerTzOffset}`;
-    return {
-      startFrom: start,
-      startTo: end,
-      dayKey: `${dayStr}${practitionerTzOffset}`
-    };
-  }, [selectedDate, practitionerTzOffset]);
 
-  // Drawer mode: fetch real FHIR Slot resources
-  const {
-    data: schedule,
-    isLoading,
-    isError
-  } = useFindAvailability({
-    practitionerRoleId: effectiveRoleId || practitionerRole?.id || '',
-    startFrom,
-    startTo,
-    dayKey
-  });
-
-  // Page mode: cross-role busy slot query
+  // Cross-mode: compute date string for slot queries
   const dateStr = useMemo(
-    () => (pageDate ? format(pageDate, 'yyyy-MM-dd') : ''),
-    [pageDate]
+    () => (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''),
+    [selectedDate]
   );
 
+  // Fetch busy slots across all practitioner roles
   const { data: busySlots, isLoading: isBusySlotsLoading } =
     useBusySlotsByPractitioner(practitionerId, dateStr);
 
-  // Compute free slots for page mode
+  // Compute free slots for both modes
   const computedFreeSlots = useMemo(() => {
-    if (!isPageMode || !selectedDate || !busySlots) return [];
+    if (!selectedDate || !busySlots) return [];
     return computeFreeSlots(effectiveAvailableTime, busySlots, selectedDate, durationMinutes);
-  }, [isPageMode, selectedDate, busySlots, effectiveAvailableTime, durationMinutes]);
+  }, [selectedDate, busySlots, effectiveAvailableTime, durationMinutes]);
 
   // Fetch Schedule by ID with caching (only when authenticated)
   const { data: scheduleById } = useQuery({
@@ -427,58 +405,19 @@ export default function PractitionerAvailability({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpenParam]);
 
-  // Slot pills: from real FHIR slots (drawer) or computed free windows (page)
+  // Slot pills: map computed free windows to pill format (both modes)
   const slotPills = useMemo(() => {
-    if (isPageMode) {
-      // Page mode: map computed free windows to pill format
-      if (!computedFreeSlots || computedFreeSlots.length === 0) return [];
-      return computedFreeSlots.map(fs => ({
-        id: `free-${fs.start}-${fs.end}`,
-        displayLabel: fs.start,
-        value: fs.start,
-        start: parseISO(`1970-01-01T${fs.start}:00`),
-        end: parseISO(`1970-01-01T${fs.end}:00`),
-        disabled: false,
-        status: 'free'
-      }));
-    }
-
-    // Drawer mode: map real FHIR Slot resources
-    if (!schedule || !Array.isArray(schedule))
-      return [] as Array<{
-        id: string;
-        displayLabel: string;
-        value: string;
-        start: Date;
-        end: Date;
-        disabled: boolean;
-        status: string;
-      }>;
-
-    const entries = schedule.filter(
-      (entry: BundleEntry) => entry.resource?.resourceType === 'Slot'
-    ) as BundleEntry<Slot>[];
-
-    const now = new Date();
-    const mapped = entries.map(entry => {
-      const slotStart = parseISO(entry.resource.start);
-      const slotEnd = parseISO(entry.resource.end);
-      const status = entry.resource.status;
-      const disabledByStatus = status !== 'free';
-      const disabledByPast = isBefore(slotStart, now);
-      return {
-        id: entry.resource.id,
-        displayLabel: `${format(slotStart, 'HH:mm')}`,
-        value: `${format(slotStart, 'HH:mm')}`,
-        start: slotStart,
-        end: slotEnd,
-        disabled: disabledByStatus || disabledByPast,
-        status
-      };
-    });
-
-    return mapped.toSorted((a, b) => a.start.getTime() - b.start.getTime());
-  }, [isPageMode, schedule, computedFreeSlots]);
+    if (!computedFreeSlots || computedFreeSlots.length === 0) return [];
+    return computedFreeSlots.map(fs => ({
+      id: `free-${fs.start}-${fs.end}`,
+      displayLabel: fs.start,
+      value: fs.start,
+      start: parseISO(`1970-01-01T${fs.start}:00`),
+      end: parseISO(`1970-01-01T${fs.end}:00`),
+      disabled: false,
+      status: 'free'
+    }));
+  }, [computedFreeSlots]);
 
   useEffect(() => {
     if (errorForm) {
@@ -549,8 +488,8 @@ export default function PractitionerAvailability({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingState.date, bookingState.startTime, slotPills, listAvailableDate]);
 
-  /** Validate and submit the booking form, triggering payment. */
-  const handleSubmitForm = () => {
+  /** Validate the form, create a FHIR Slot, then open payment drawer. */
+  const handleSubmitForm = async () => {
     const { date, startTime } = bookingState;
     const requiredData = {
       'Problem Brief': bookingForm.problem_brief,
@@ -563,9 +502,36 @@ export default function PractitionerAvailability({
 
     if (emptyField.length > 0) {
       setErrorForm(emptyField.map(item => item[0]));
-    } else {
-      // Open payment option modal instead of client-side FHIR bundle submit
+      return;
+    }
+
+    if (!date || !startTime || !effectiveScheduleId) {
+      return;
+    }
+
+    try {
+      // Compose ISO datetime strings with practitioner timezone
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const startMinutes = timeToMinutes(startTime);
+      const endMinutes = startMinutes + durationMinutes;
+      const endTimeStr = minutesToTimeStr(endMinutes);
+      const startIso = `${dateStr}T${startTime}:00${practitionerTzOffset}`;
+      const endIso = `${dateStr}T${endTimeStr}:00${practitionerTzOffset}`;
+
+      // Create a real FHIR Slot resource
+      const createdSlot = await createSlot({
+        scheduleReference: `Schedule/${effectiveScheduleId}`,
+        start: startIso,
+        end: endIso
+      });
+
+      // Use the real Slot ID for payment
+      setSelectedSlotId(createdSlot.id);
+
+      // Open payment option modal
       setPaymentOpen(true);
+    } catch {
+      // Errors handled by API interceptor
     }
   };
 
@@ -618,8 +584,8 @@ export default function PractitionerAvailability({
       }
     : handleFilterChange;
 
-  const slotLoading = isPageMode ? isBusySlotsLoading || isDetailLoading : isLoading;
-  const slotError = isPageMode ? false : isError;
+  const slotLoading = isBusySlotsLoading || isDetailLoading;
+  const slotError = false;
 
   const bookingContent = (
     <div className='flex h-full flex-col'>
@@ -646,7 +612,11 @@ export default function PractitionerAvailability({
         bookingState={effectiveBookingState}
         errorForm={errorForm}
         handleBookingInformationChange={handleBookingInformationChange}
-        handleSubmitForm={handleSubmitForm}
+        handleSubmitForm={() => {
+          handleSubmitForm().catch(() => {
+            // Errors handled by API interceptor
+          });
+        }}
         scheduleId={effectiveScheduleId}
         hideCta={isPageMode}
         isCreateAppointmentLoading={isCreateAppointmentLoading}
@@ -677,11 +647,12 @@ export default function PractitionerAvailability({
           practitionerAvatar={practitionerAvatar}
           practitionerOrganizationName={practitionerOrganizationName}
           practitionerName={practitionerName}
+          healthcareServiceNames={healthcareServiceNames}
           bookingState={effectiveBookingState}
           invoice={invoice}
           isPaying={isPaying}
           patientId={patientId ?? ''}
-          selectedSlotId={null}
+          selectedSlotId={selectedSlotId}
           bookingForm={bookingForm}
           practitionerRole={effectiveRole ?? ({} as PractitionerRole)}
           payAppointment={payAppointment}
@@ -715,6 +686,7 @@ export default function PractitionerAvailability({
         practitionerAvatar={practitionerAvatar}
         practitionerOrganizationName={practitionerOrganizationName}
         practitionerName={practitionerName}
+        healthcareServiceNames={healthcareServiceNames}
         bookingState={bookingState}
         invoice={invoice}
         isPaying={isPaying}

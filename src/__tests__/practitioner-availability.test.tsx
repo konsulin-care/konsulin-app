@@ -1,6 +1,6 @@
 /* eslint-disable max-lines, react/display-name, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -26,7 +26,22 @@ vi.mock('@/services/clinicians', () => ({
   useFindAvailability: vi.fn()
 }));
 
+vi.mock('@/services/api/appointments', () => ({
+  useCreateAppointment: vi.fn(),
+  usePayAppointment: vi.fn(),
+  useCreateSlot: vi.fn()
+}));
+
 vi.mock('@/services/slots', () => ({
+  timeToMinutes: (timeStr: string) => {
+    const [h, m] = timeStr.split(':').map(Number);
+    return h * 60 + (m ?? 0);
+  },
+  minutesToTimeStr: (minutes: number) => {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  },
   useBusySlotsByPractitioner: vi.fn(() => ({ data: [], isLoading: false })),
   computeFreeSlots: vi.fn(() => [])
 }));
@@ -37,11 +52,6 @@ vi.mock('@/services/clinic', () => ({
     isLoading: false,
     isError: false
   }))
-}));
-
-vi.mock('@/services/api/appointments', () => ({
-  useCreateAppointment: vi.fn(),
-  usePayAppointment: vi.fn()
 }));
 
 vi.mock('@/lib/indexeddb', () => ({
@@ -189,6 +199,7 @@ import {
   usePayAppointment
 } from '@/services/api/appointments';
 import { useFindAvailability } from '@/services/clinicians';
+import { useCreateSlot } from '@/services/api/appointments';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function createWrapper(queryClient: QueryClient) {
@@ -270,6 +281,10 @@ describe('PractitionerAvailability', () => {
     } as any);
     vi.mocked(usePayAppointment).mockReturnValue({
       mutateAsync: vi.fn(),
+      isLoading: false
+    } as any);
+    vi.mocked(useCreateSlot).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue({ id: 'created-slot-1' }),
       isLoading: false
     } as any);
     // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -401,13 +416,8 @@ describe('PractitionerAvailability', () => {
     expect(screen.getByText('No available time slots')).toBeDefined();
   });
 
-  it('shows error state when fetch fails', () => {
-    vi.mocked(useFindAvailability).mockReturnValue({
-      data: null,
-      isLoading: false,
-      isError: true
-    } as any);
-
+  it('shows empty state when computed free slots are empty', () => {
+    // computeFreeSlots is already mocked to return [] from the module mock
     render(
       <PractitionerAvailability
         practitionerRole={mockPractitionerRole}
@@ -418,7 +428,64 @@ describe('PractitionerAvailability', () => {
       { wrapper: createWrapper(queryClient) }
     );
     fireEvent.click(screen.getByTestId('mock-drawer-trigger'));
-    expect(screen.getByText('Unable to load available slots')).toBeDefined();
+    expect(screen.getByText('No available time slots')).toBeDefined();
+  });
+
+  it('creates a Slot via useCreateSlot when booking form is submitted', async () => {
+    const mockCreateSlotMutateAsync = vi.fn().mockResolvedValue({ id: 'created-slot-1' });
+    vi.mocked(useCreateSlot).mockReturnValue({
+      mutateAsync: mockCreateSlotMutateAsync,
+      isLoading: false
+    } as any);
+
+    // Set booking state with a start time so form is valid
+    vi.mocked(useBooking).mockReturnValue({
+      state: {
+        ...mockBookingState,
+        startTime: '09:00',
+        date: new Date('2026-06-15')
+      },
+      dispatch: mockBookingDispatch
+    });
+
+    render(
+      <PractitionerAvailability
+        practitionerRole={mockPractitionerRole}
+        scheduleId='schedule-1'
+      >
+        <div data-testid='trigger-child'>Book Now</div>
+      </PractitionerAvailability>,
+      { wrapper: createWrapper(queryClient) }
+    );
+
+    // Open the drawer
+    fireEvent.click(screen.getByTestId('trigger-child'));
+
+    // Fill in the problem brief textarea
+    const textarea = screen.getByTestId('mock-textarea');
+    fireEvent.change(textarea, { target: { value: 'Anxiety symptoms' } });
+
+    // Find the submit button (mock-button that contains "Book Now")
+    const buttons = screen.getAllByTestId('mock-button');
+    const submitButton = buttons.find(b => b.textContent?.includes('Book Now'));
+    expect(submitButton).toBeTruthy();
+    expect(submitButton).not.toBeDisabled();
+    fireEvent.click(submitButton!);
+
+    // Wait for async handleSubmitForm to complete
+    // Payment drawer should open — verify by checking for Pay Now text
+    await waitFor(() => {
+      const payNowElements = screen.getAllByText('Pay Now');
+      expect(payNowElements.length).toBeGreaterThan(0);
+    });
+
+    // Verify useCreateSlot was called with correct parameters
+    expect(mockCreateSlotMutateAsync).toHaveBeenCalledTimes(1);
+    const callArgs = mockCreateSlotMutateAsync.mock.calls[0][0];
+    expect(callArgs).toHaveProperty('scheduleReference');
+    expect(callArgs).toHaveProperty('start');
+    expect(callArgs).toHaveProperty('end');
+    expect(callArgs.scheduleReference).toContain('Schedule/');
   });
 
   it('handles date selection via Calendar', () => {
