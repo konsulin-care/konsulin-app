@@ -303,8 +303,8 @@ func TestRelayBooking_bundleHasCorrectResources(t *testing.T) {
 	}
 
 	slotResource := entry0["resource"].(map[string]any)
-	if slotResource["status"] != "busy-tentative" {
-		t.Errorf("expected Slot status=busy-tentative, got %v", slotResource["status"])
+	if slotResource["status"] != "free" {
+		t.Errorf("expected Slot status=free, got %v", slotResource["status"])
 	}
 	if slotResource["schedule"].(map[string]any)["reference"] != "Schedule/sched-1" {
 		t.Errorf("expected Slot schedule=Schedule/sched-1")

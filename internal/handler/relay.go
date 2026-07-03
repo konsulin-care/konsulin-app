@@ -201,7 +201,7 @@ func buildRelayBundle(req relayBookingRequest, fee feeObj) map[string]any {
 				},
 				"resource": map[string]any{
 					"resourceType": "Slot",
-					"status":       "busy-tentative",
+					"status":       "free",
 					"schedule": map[string]any{
 						"reference": req.ScheduleID,
 					},

@@ -550,7 +550,7 @@ export default function PractitionerAvailability({
       const payload = buildRelayPayload(date, startTime, endTimeStr);
       const response = await relayBooking(payload);
 
-      setSelectedSlotId(response.slotId);
+      setSelectedSlotId(response.slotId.replace('Slot/', ''));
       setRelayInvoice({
         resourceType: 'Invoice',
         id: response.invoiceId.replace('Invoice/', ''),
