@@ -62,6 +62,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 			"/health",
 			"/static/",
 			"/api/v1/auth/",
+			"/api/v1/relay/",
 		},
 	})
 	r.Use(csrfMw)

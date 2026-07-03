@@ -28,6 +28,7 @@ func testCSRFRouter() *chi.Mux {
 		ExemptPrefixes: []string{
 			"/exempt",
 			"/health",
+			"/api/v1/relay/",
 		},
 	}))
 	r.Get("/form", func(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +40,9 @@ func testCSRFRouter() *chi.Mux {
 		w.WriteHeader(http.StatusOK)
 	})
 	r.Post("/exempt", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	r.Post("/api/v1/relay/booking", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 	return r
@@ -87,6 +91,19 @@ func TestCSRF_POST_withValidToken_returns200(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		t.Errorf("expected 200, got %d: %s", resp.StatusCode, string(body))
+	}
+}
+
+func TestCSRF_relayEndpointExemptFromCSRF(t *testing.T) {
+	server := newTestServer(t, testCSRFRouter())
+	resp, err := http.Post(server.URL+"/api/v1/relay/booking", "application/json", http.NoBody)
+	if err != nil {
+		t.Fatalf("POST failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Errorf("expected 200 for exempt relay path, got %d: %s", resp.StatusCode, string(body))
 	}
 }
 
