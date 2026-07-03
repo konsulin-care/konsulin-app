@@ -92,6 +92,11 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 		}
 		fhirReq.Header.Set("Content-Type", "application/fhir+json")
 
+		// Forward auth token from client session — same as backend proxy.
+		if c, err := r.Cookie("sAccessToken"); err == nil && c.Value != "" {
+			fhirReq.Header.Set("Authorization", "Bearer "+c.Value)
+		}
+
 		resp, err := relayFHIRClient.Do(fhirReq)
 		if err != nil {
 			slog.Error("relay/booking: backend unreachable", "err", err)
