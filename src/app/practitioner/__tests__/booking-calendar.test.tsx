@@ -5,7 +5,7 @@ import type { IStateBooking } from '@/context/booking/bookingTypes';
 import type { PractitionerRoleAvailableTime } from 'fhir/r4';
 
 vi.mock('@/components/ui/calendar-temp', () => ({
-  Calendar: ({ components }: any) => {
+  Calendar: ({ components, onSelect }: any) => {
     const DayButton = components?.DayButton;
     const testDate = new Date('2026-07-04');
     return (
@@ -17,6 +17,12 @@ vi.mock('@/components/ui/calendar-temp', () => ({
             children='4'
           />
         )}
+        <button
+          data-testid='select-date-btn'
+          onClick={() => onSelect?.(new Date('2026-07-15'))}
+        >
+          Select Day
+        </button>
       </div>
     );
   }
@@ -90,6 +96,30 @@ describe('BookingCalendar', () => {
       />
     );
     expect(container.querySelector('.flex.flex-col.gap-1')).toBeNull();
+  });
+
+  it('renders day dots below the date number in a flex-col container', () => {
+    const dayDots = new Map<string, string[]>();
+    dayDots.set('2026-07-04', ['#13C2C2']);
+
+    const { container } = render(
+      <BookingCalendar
+        bookingState={mockBookingState}
+        handleFilterChange={mockHandleChange}
+        resetData={mockReset}
+        listAvailableDate={[new Date('2026-07-15')]}
+        availableTime={mockAvailableTime}
+        today={new Date('2026-07-01')}
+        dayDots={dayDots}
+      />
+    );
+
+    const dotContainer = container.querySelector(
+      '.flex.flex-col.items-center'
+    );
+    expect(dotContainer).toBeDefined();
+    const dot = dotContainer?.querySelector('[role="listitem"]');
+    expect(dot).toBeDefined();
   });
 
   it('passes dayDots to DayButton component', () => {

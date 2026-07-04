@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,6 +17,24 @@ vi.mock('@/components/ui/skeleton', () => ({
   Skeleton: ({ className }: { className?: string }) => (
     <div data-testid='mock-skeleton' className={className} />
   )
+}));
+
+let triggerDaySelect: ((date: Date) => void) | null = null;
+
+vi.mock('@/app/practitioner/booking-calendar', () => ({
+  default: (props: any) => {
+    // Expose the handleFilterChange to trigger day selection in tests
+    triggerDaySelect = (date: Date) => {
+      props.handleFilterChange('date', date);
+    };
+    return (
+      <div data-testid='mock-booking-calendar'>
+        {(props.colorLegend ?? []).map((entry: any) => (
+          <div key={entry.name}>{entry.name}</div>
+        ))}
+      </div>
+    );
+  }
 }));
 
 import { useAuth } from '@/context/auth/authContext';
@@ -42,6 +62,8 @@ describe('PractitionerDashboard', () => {
     });
     vi.mocked(usePractitionerDashboard).mockReturnValue({
       sessions: [],
+      daySessions: [],
+      isDayLoading: false,
       dayDots: new Map(),
       colorLegend: [],
       availableTime: [],
@@ -67,6 +89,8 @@ describe('PractitionerDashboard', () => {
     expect(callArgs.monthStart.getMinutes()).toBe(0);
     expect(callArgs.monthStart.getSeconds()).toBe(0);
     expect(callArgs.monthStart.getMilliseconds()).toBe(0);
+    // monthStart should be the 1st of the current month
+    expect(callArgs.monthStart.getDate()).toBe(1);
   });
 
   it('passes stable monthStart across re-renders', () => {
@@ -87,6 +111,8 @@ describe('PractitionerDashboard', () => {
   it('shows loading skeleton when data is loading', () => {
     vi.mocked(usePractitionerDashboard).mockReturnValue({
       sessions: [],
+      daySessions: [],
+      isDayLoading: false,
       dayDots: new Map(),
       colorLegend: [],
       availableTime: [],
@@ -107,9 +133,44 @@ describe('PractitionerDashboard', () => {
     expect(screen.getByText('Select a day to view appointments')).toBeDefined();
   });
 
+  it('shows daySessions when a day is selected', () => {
+    const mockSession = {
+      appointmentId: 'day-appt-1',
+      appointmentType: 'Follow-up',
+      slotStart: '2026-07-15T02:00:00.000Z',
+      slotEnd: '2026-07-15T02:30:00.000Z',
+      slotStatus: 'free',
+      patientId: 'pat-1',
+      patientName: [{ given: ['John'], family: 'Doe' }],
+      patientPhoto: [],
+      patientEmail: 'john@test.com',
+      locationId: 'loc-1',
+      locationName: 'Clinic A',
+      healthcareServiceName: 'Service'
+    };
+    vi.mocked(usePractitionerDashboard).mockReturnValue({
+      sessions: [],
+      daySessions: [mockSession],
+      isDayLoading: false,
+      dayDots: new Map(),
+      colorLegend: [],
+      availableTime: [],
+      listAvailableDate: [new Date('2026-07-15')],
+      isLoading: false
+    });
+    render(<PractitionerDashboard />, { wrapper });
+    // Trigger day selection via the exposed callback
+    act(() => {
+      triggerDaySelect?.(new Date('2026-07-15'));
+    });
+    expect(screen.getByText('John Doe')).toBeDefined();
+  });
+
   it('renders color legend when available', () => {
     vi.mocked(usePractitionerDashboard).mockReturnValue({
       sessions: [],
+      daySessions: [],
+      isDayLoading: false,
       dayDots: new Map(),
       colorLegend: [{ color: '#13C2C2', name: 'Clinic A' }],
       availableTime: [],

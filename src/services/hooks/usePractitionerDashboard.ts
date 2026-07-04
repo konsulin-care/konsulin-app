@@ -5,8 +5,8 @@ import type { MergedSession } from '@/types/appointment';
 import { getAvailableDays } from '@/app/practitioner/utils';
 import { parseMergedSessions } from '@/utils/helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
+import { useEffect, useMemo } from 'react';
 import type {
   Appointment,
   Bundle,
@@ -32,10 +32,13 @@ type UsePractitionerDashboardParams = {
   practitionerId: string | undefined;
   monthStart: Date;
   monthEnd: Date;
+  selectedDate?: Date | null;
 };
 
 type UsePractitionerDashboardReturn = {
   sessions: MergedSession[];
+  daySessions: MergedSession[];
+  isDayLoading: boolean;
   dayDots: Map<string, string[]>;
   colorLegend: ColorEntry[];
   availableTime: PractitionerRole['availableTime'];
@@ -145,6 +148,46 @@ function useMonthQuery(
   });
 }
 
+/** Query D: full day-scoped appointment data with all includes for card rendering. */
+function useDayQuery(
+  practitionerId: string | undefined,
+  selectedDate: Date | undefined | null
+) {
+  const dayStart = selectedDate
+    ? new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate()
+      )
+    : undefined;
+  const dayEnd = selectedDate
+    ? new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate(),
+        23,
+        59,
+        59,
+        999
+      )
+    : undefined;
+
+  const dayStartISO = dayStart?.toISOString();
+  const dayEndISO = dayEnd?.toISOString();
+
+  return useQuery({
+    queryKey: ['dashboard-day', practitionerId, dayStartISO],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get<Bundle>(
+        `/fhir/Appointment?actor=Practitioner/${practitionerId}&slot.start=ge${dayStartISO}&slot.start=le${dayEndISO}&_include=Appointment:actor:Patient&_include=Appointment:slot:Slot&_include=Appointment:actor:Location&_include=Appointment:actor:HealthcareService&_count=50`
+      );
+      return response.data;
+    },
+    enabled: Boolean(practitionerId) && Boolean(selectedDate)
+  });
+}
+
 /** Fetch PractitionerRole resources, cached with staleTime: Infinity. */
 function useRoleQuery(
   practitionerId: string | undefined,
@@ -197,16 +240,18 @@ function useRoleQuery(
  *
  * Uses a lightweight month query to derive day dots, color legend, and
  * calendar availability from PractitionerRole + Location resources.
- * Full appointment data is fetched per selected day.
+ * Full appointment data is fetched per selected day for card rendering.
  *
  * @param practitionerId - FHIR Practitioner ID
- * @param monthStart - Start of visible month (today constrained upstream)
+ * @param monthStart - Start of visible month
  * @param monthEnd - End of visible month
+ * @param selectedDate - Selected day for full appointment details
  */
 export function usePractitionerDashboard({
   practitionerId,
   monthStart,
-  monthEnd
+  monthEnd,
+  selectedDate
 }: UsePractitionerDashboardParams): UsePractitionerDashboardReturn {
   const utcStart = monthStart.toISOString();
   const utcEnd = monthEnd.toISOString();
@@ -215,6 +260,12 @@ export function usePractitionerDashboard({
   const monthData = monthQuery.data;
 
   const { data: roles } = useRoleQuery(practitionerId, monthData);
+
+  // Query D: full day data when a day is selected
+  const dayQuery = useDayQuery(practitionerId, selectedDate);
+  const daySessions = dayQuery.data
+    ? parseMergedSessions(dayQuery.data)
+    : [];
 
   // Compute available days from aggregated PractitionerRole availableTime
   const availableTime = (roles ?? []).flatMap(
@@ -234,9 +285,10 @@ export function usePractitionerDashboard({
 
   const sessions = monthData ? parseMergedSessions(monthData) : [];
 
-
   return {
     sessions,
+    daySessions,
+    isDayLoading: dayQuery.isLoading,
     dayDots,
     colorLegend,
     availableTime,

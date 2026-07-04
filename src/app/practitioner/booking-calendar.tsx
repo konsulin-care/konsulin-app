@@ -27,6 +27,8 @@ type Props = {
   dayDots?: Map<string, string[]>;
   /** Color legend entries for locations. */
   colorLegend?: ColorLegendEntry[];
+  /** Called when the user navigates to a different month. */
+  parentOnMonthChange?: (month: Date) => void;
 };
 
 /** Calendar-based date picker showing practitioner availability. */
@@ -39,7 +41,8 @@ export default function BookingCalendar({
   today,
   hideHeader = false,
   dayDots,
-  colorLegend
+  colorLegend,
+  parentOnMonthChange
 }: Readonly<Props>) {
   const customComponents = dayDots
     ? {
@@ -53,9 +56,10 @@ export default function BookingCalendar({
           const dots = dayDots.get(dateKey);
           return (
             <DayButton day={day} modifiers={modifiers} {...rest}>
-              {children}
-              {dots && dots.length > 0 && (
-                <div className='flex justify-center gap-0.5'>
+              <div className='flex flex-col items-center gap-0.5'>
+                <span>{children}</span>
+                {dots && dots.length > 0 && (
+                  <div className='flex justify-center gap-0.5'>
                   {dots.slice(0, 3).map(color => (
                     <div
                       key={color}
@@ -66,6 +70,7 @@ export default function BookingCalendar({
                   ))}
                 </div>
               )}
+              </div>
             </DayButton>
           );
         }
@@ -93,6 +98,7 @@ export default function BookingCalendar({
           }}
           onMonthChange={month => {
             if (!month) return;
+            parentOnMonthChange?.(month);
             // Update available dates for the new month
             const newAvailableDays = getAvailableDays(availableTime, month);
             // Find the first available date in the new month

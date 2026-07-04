@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { Bundle } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { format } from 'date-fns';
 import { usePractitionerDashboard } from '../usePractitionerDashboard';
 
 vi.mock('@/services/api', () => ({
@@ -146,6 +147,60 @@ describe('usePractitionerDashboard', () => {
     expect(result.current.colorLegend).toHaveLength(2);
     expect(result.current.colorLegend![0].name).toBe('Clinic A');
     expect(result.current.colorLegend![1].name).toBe('Clinic B');
+  });
+
+  it('fires day query when selectedDate is provided', async () => {
+    const { result } = renderHook(
+      () =>
+        usePractitionerDashboard({
+          practitionerId: 'pract-1',
+          monthStart: new Date('2026-07-01'),
+          monthEnd: new Date('2026-07-31'),
+          selectedDate: new Date('2026-07-04')
+        }),
+      { wrapper: createWrapper(queryClient) }
+    );
+
+    // Wait for day query to fire and resolve
+    await waitFor(() => {
+      expect(result.current.isDayLoading).toBe(false);
+    });
+
+    // Verify the day query URL contains the correct date
+    const dateStr = format(
+      new Date('2026-07-04'),
+      "yyyy-MM-dd'T'00:"
+    );
+    const dayCalls = mockGet.mock.calls.filter(
+      (call: unknown) =>
+        typeof (call as any[])[0] === 'string' &&
+        (call as any[])[0].includes('/fhir/Appointment') &&
+        (call as any[])[0].includes(`slot.start=ge${dateStr}`)
+    );
+    expect(dayCalls.length).toBeGreaterThanOrEqual(1);
+
+    // Verify day sessions are returned
+    expect(result.current.daySessions).toBeDefined();
+    expect(result.current.daySessions.length).toBeGreaterThan(0);
+  });
+
+  it('does not fire day query when selectedDate is not provided', async () => {
+    const { result } = renderHook(
+      () =>
+        usePractitionerDashboard({
+          practitionerId: 'pract-1',
+          monthStart: new Date('2026-07-01'),
+          monthEnd: new Date('2026-07-31')
+        }),
+      { wrapper: createWrapper(queryClient) }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.daySessions).toBeDefined();
+    expect(result.current.daySessions).toHaveLength(0);
   });
 
   it('computes available days from merged PractitionerRole availableTime', async () => {
