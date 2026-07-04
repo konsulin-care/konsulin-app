@@ -28,8 +28,6 @@ type relayBookingRequest struct {
 	Condition           string `json:"condition"`
 }
 
-
-
 // relayFHIRClient is the HTTP client used to POST FHIR bundles to the backend.
 var relayFHIRClient = &http.Client{Timeout: 30 * time.Second}
 
@@ -308,9 +306,9 @@ func fetchHealthcareServiceFee(baseURL, healthcareServiceID, authToken string) (
 
 // relayResponse is the JSON response sent back to the client.
 type relayResponse struct {
-	SlotID               string `json:"slotId"`
-	InvoiceID            string `json:"invoiceId"`
-	Fee                  feeObj `json:"fee"`
+	SlotID                string `json:"slotId"`
+	InvoiceID             string `json:"invoiceId"`
+	Fee                   feeObj `json:"fee"`
 	HealthcareServiceName string `json:"healthcareServiceName"`
 }
 
@@ -325,9 +323,9 @@ func parseRelayResponse(fhirResp map[string]any, serviceID string, fee feeObj) r
 	entries, ok := fhirResp["entry"].([]any)
 	if !ok {
 		return relayResponse{
-			SlotID:               "",
-			InvoiceID:            "",
-			Fee:                  fee,
+			SlotID:                "",
+			InvoiceID:             "",
+			Fee:                   fee,
 			HealthcareServiceName: stripResourceType(serviceID),
 		}
 	}
@@ -356,9 +354,9 @@ func parseRelayResponse(fhirResp map[string]any, serviceID string, fee feeObj) r
 	}
 
 	return relayResponse{
-		SlotID:               slotID,
-		InvoiceID:            invoiceID,
-		Fee:                  fee,
+		SlotID:                slotID,
+		InvoiceID:             invoiceID,
+		Fee:                   fee,
 		HealthcareServiceName: stripResourceType(serviceID),
 	}
 }

@@ -138,11 +138,9 @@ self.addEventListener('fetch', function (event) {
 
         if (isProxyApi(url.pathname)) return fetch(request)
 
-        if (request.mode === 'navigate')
-          return await networkFirst(request, NAV_CACHE, OFFLINE_URL)
+        if (request.mode === 'navigate') { return await networkFirst(request, NAV_CACHE, OFFLINE_URL) }
 
-        if (isStaticAsset(url.pathname))
-          return await networkFirst(request, STATIC_CACHE)
+        if (isStaticAsset(url.pathname)) { return await networkFirst(request, STATIC_CACHE) }
 
         return await networkFirst(request, NAV_CACHE)
       } catch (err) {
