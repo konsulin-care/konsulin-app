@@ -1,8 +1,15 @@
 import { Calendar } from '@/components/ui/calendar-temp';
 import { DrawerDescription, DrawerTitle } from '@/components/ui/drawer';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
+import { format } from 'date-fns';
+import { DayButton } from 'react-day-picker';
 import type { PractitionerRoleAvailableTime } from 'fhir/r4';
 import { getAvailableDays } from './utils';
+
+type ColorLegendEntry = {
+  color: string;
+  name: string;
+};
 
 type Props = {
   bookingState: IStateBooking;
@@ -16,6 +23,10 @@ type Props = {
   today: Date;
   /** Skip DrawerTitle / DrawerDescription when used outside a drawer context. */
   hideHeader?: boolean;
+  /** Per-day dot colors, keyed by YYYY-MM-DD date string. */
+  dayDots?: Map<string, string[]>;
+  /** Color legend entries for locations. */
+  colorLegend?: ColorLegendEntry[];
 };
 
 /** Calendar-based date picker showing practitioner availability. */
@@ -26,8 +37,41 @@ export default function BookingCalendar({
   listAvailableDate,
   availableTime,
   today,
-  hideHeader = false
+  hideHeader = false,
+  dayDots,
+  colorLegend
 }: Readonly<Props>) {
+  const customComponents = dayDots
+    ? {
+        DayButton: (props: {
+          day: { date: Date };
+          modifiers: Record<string, boolean>;
+          children?: React.ReactNode;
+        }) => {
+          const { day, modifiers, children, ...rest } = props;
+          const dateKey = format(day.date, 'yyyy-MM-dd');
+          const dots = dayDots.get(dateKey);
+          return (
+            <DayButton day={day} modifiers={modifiers} {...rest}>
+              {children}
+              {dots && dots.length > 0 && (
+                <div className='flex justify-center gap-0.5'>
+                  {dots.slice(0, 3).map(color => (
+                    <div
+                      key={color}
+                      role='listitem'
+                      className='h-1 w-1 rounded-full'
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              )}
+            </DayButton>
+          );
+        }
+      }
+    : undefined;
+
   return (
     <>
       {!hideHeader && (
@@ -64,7 +108,23 @@ export default function BookingCalendar({
               availableDate => availableDate.getTime() === date.getTime()
             )
           }
+          components={customComponents}
         />
+        {colorLegend && colorLegend.length > 0 && (
+          <div className='mt-4 flex flex-col gap-1'>
+            {colorLegend.map(entry => (
+              <div key={entry.name} className='flex items-center gap-2'>
+                <div
+                  className='h-2 w-2 rounded-full'
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className='text-[11px] text-gray-600'>
+                  {entry.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </>
   );

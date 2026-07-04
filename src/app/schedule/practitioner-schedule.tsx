@@ -1,7 +1,7 @@
 'use client';
 
-import Avatar from '@/components/general/avatar';
 import PageHeader from '@/components/page-header';
+import SessionCard from '@/components/schedule/session-card';
 import { useScheduleFilter } from '@/components/shared/hooks/useScheduleFilter';
 import SchedulePageShell from '@/components/shared/schedule-page-shell';
 import { getNow } from '@/constants/date';
@@ -11,65 +11,15 @@ import { IUseClinicParams } from '@/services/clinic';
 import { useAppointments } from '@/services/hooks/useAppointments';
 import { MergedSession } from '@/types/appointment';
 import {
-  generateAvatarPlaceholder,
   mergeNames,
   parseMergedSessions
 } from '@/utils/helper';
-import { capitalizeFirstLetter } from '@/utils/validation';
-import { endOfDay, format, parseISO } from 'date-fns';
-import Link from 'next/link';
+import { endOfDay } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 type Props = {
   readonly fhirId: string;
-};
-
-/** Card displaying a single session entry. */
-const SessionCard = ({ session }: { session: MergedSession }) => {
-  const sessionStartTime = session.slotStart
-    ? format(parseISO(session.slotStart), 'HH:mm')
-    : '-:-';
-  const sessionDate = session.slotStart
-    ? format(parseISO(session.slotStart), 'dd/MM/yyyy')
-    : '-/-/-';
-  const fullName = mergeNames(session.patientName);
-  const displayName = fullName.trim() === '-' ? session.patientEmail : fullName;
-  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
-    id: session.patientId,
-    name: displayName,
-    email: session.patientEmail
-  });
-  const photoUrl = session.patientPhoto?.[0]?.url;
-
-  return (
-    <Link
-      href={`/record?patientId=${session.patientId}`}
-      className='card mt-4 flex flex-col gap-2 p-4'
-    >
-      <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-        {sessionStartTime} - {sessionDate}
-      </div>
-
-      <hr className='w-full' />
-      <div className='flex items-center'>
-        <Avatar
-          seed={seed}
-          initials={initials}
-          backgroundColor={backgroundColor}
-          photoUrl={photoUrl}
-          className='mr-2 text-xs'
-          imageClassName='mr-2 self-center'
-          height={32}
-          width={32}
-        />
-        <div className='mr-auto text-[12px] font-bold'>{displayName}</div>
-        <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-          {capitalizeFirstLetter(session.appointmentType)} Session
-        </div>
-      </div>
-    </Link>
-  );
 };
 
 /**

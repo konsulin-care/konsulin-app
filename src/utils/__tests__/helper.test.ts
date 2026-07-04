@@ -1,6 +1,6 @@
-import type { Patient } from 'fhir/r4';
+import type { Bundle, Patient } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
-import { generateAvatarPlaceholder, parseFhirProfile } from '../helper';
+import { generateAvatarPlaceholder, parseFhirProfile, parseMergedSessions } from '../helper';
 
 const mockPatient: Patient = {
   resourceType: 'Patient',
@@ -124,6 +124,253 @@ describe('generateAvatarPlaceholder', () => {
 
     expect(result.initials).toBe('TE');
     expect(result.seed).toBe('id-1');
+  });
+});
+
+describe('parseMergedSessions', () => {
+  it('extracts location and healthcare service from bundle', () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      entry: [
+        {
+          resource: {
+            resourceType: 'Appointment',
+            id: 'appt-1',
+            start: '2026-07-04T09:00:00+07:00',
+            slot: [{ reference: 'Slot/slot-1' }],
+            participant: [
+              {
+                actor: { reference: 'PractitionerRole/role-1' },
+                status: 'accepted'
+              },
+              {
+                actor: { reference: 'Patient/pat-1' },
+                status: 'accepted'
+              },
+              {
+                actor: { reference: 'Location/loc-1' },
+                status: 'accepted'
+              },
+              {
+                actor: { reference: 'HealthcareService/hs-1' },
+                status: 'accepted'
+              }
+            ]
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Slot',
+            id: 'slot-1',
+            start: '2026-07-04T09:00:00+07:00',
+            end: '2026-07-04T09:30:00+07:00',
+            status: 'free'
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Patient',
+            id: 'pat-1',
+            name: [{ given: ['John'], family: 'Doe' }],
+            telecom: [{ system: 'email', value: 'john@test.com' }]
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Location',
+            id: 'loc-1',
+            name: 'Clinic A'
+          }
+        },
+        {
+          resource: {
+            resourceType: 'HealthcareService',
+            id: 'hs-1',
+            name: 'General Consultation'
+          }
+        }
+      ]
+    };
+
+    const result = parseMergedSessions(bundle);
+    expect(result).toHaveLength(1);
+    expect(result[0].locationId).toBe('loc-1');
+    expect(result[0].locationName).toBe('Clinic A');
+    expect(result[0].healthcareServiceName).toBe('General Consultation');
+  });
+
+  it('handles bundle with no location or healthcare service', () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      entry: [
+        {
+          resource: {
+            resourceType: 'Appointment',
+            id: 'appt-2',
+            start: '2026-07-04T10:00:00+07:00',
+            slot: [{ reference: 'Slot/slot-2' }],
+            participant: [
+              {
+                actor: { reference: 'Patient/pat-2' },
+                status: 'accepted'
+              }
+            ]
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Slot',
+            id: 'slot-2',
+            start: '2026-07-04T10:00:00+07:00',
+            end: '2026-07-04T10:30:00+07:00',
+            status: 'free'
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Patient',
+            id: 'pat-2',
+            name: [{ given: ['Jane'], family: 'Smith' }],
+            telecom: [{ system: 'email', value: 'jane@test.com' }]
+          }
+        }
+      ]
+    };
+
+    const result = parseMergedSessions(bundle);
+    expect(result).toHaveLength(1);
+    expect(result[0].locationId).toBeUndefined();
+    expect(result[0].locationName).toBeUndefined();
+    expect(result[0].healthcareServiceName).toBeUndefined();
+  });
+
+  it('extracts location name from alias when name is absent', () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      entry: [
+        {
+          resource: {
+            resourceType: 'Appointment',
+            id: 'appt-3',
+            start: '2026-07-04T11:00:00+07:00',
+            slot: [{ reference: 'Slot/slot-3' }],
+            participant: [
+              {
+                actor: { reference: 'Patient/pat-3' },
+                status: 'accepted'
+              },
+              {
+                actor: { reference: 'Location/loc-3' },
+                status: 'accepted'
+              }
+            ]
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Slot',
+            id: 'slot-3',
+            start: '2026-07-04T11:00:00+07:00',
+            end: '2026-07-04T11:30:00+07:00',
+            status: 'free'
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Patient',
+            id: 'pat-3',
+            name: [{ given: ['Bob'] }],
+            telecom: [{ system: 'email', value: 'bob@test.com' }]
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Location',
+            id: 'loc-3',
+            alias: ['Clinic B']
+          }
+        }
+      ]
+    };
+
+    const result = parseMergedSessions(bundle);
+    expect(result[0].locationId).toBe('loc-3');
+    expect(result[0].locationName).toBe('Clinic B');
+  });
+
+  it('sorts sessions by slotStart ascending', () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      entry: [
+        {
+          resource: {
+            resourceType: 'Appointment',
+            id: 'appt-early',
+            start: '2026-07-04T08:00:00+07:00',
+            slot: [{ reference: 'Slot/slot-early' }],
+            participant: [
+              { actor: { reference: 'Patient/pat-1' }, status: 'accepted' }
+            ]
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Appointment',
+            id: 'appt-late',
+            start: '2026-07-04T10:00:00+07:00',
+            slot: [{ reference: 'Slot/slot-late' }],
+            participant: [
+              { actor: { reference: 'Patient/pat-2' }, status: 'accepted' }
+            ]
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Slot',
+            id: 'slot-early',
+            start: '2026-07-04T08:00:00+07:00',
+            end: '2026-07-04T08:30:00+07:00',
+            status: 'free'
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Slot',
+            id: 'slot-late',
+            start: '2026-07-04T10:00:00+07:00',
+            end: '2026-07-04T10:30:00+07:00',
+            status: 'free'
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Patient',
+            id: 'pat-1',
+            name: [{ given: ['Alice'] }],
+            telecom: [{ system: 'email', value: 'a@t.com' }]
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Patient',
+            id: 'pat-2',
+            name: [{ given: ['Bob'] }],
+            telecom: [{ system: 'email', value: 'b@t.com' }]
+          }
+        }
+      ]
+    };
+
+    const result = parseMergedSessions(bundle);
+    expect(result).toHaveLength(2);
+    expect(result[0].appointmentId).toBe('appt-early');
+    expect(result[1].appointmentId).toBe('appt-late');
+  });
+
+  it('returns empty array for empty bundle', () => {
+    const bundle: Bundle = { resourceType: 'Bundle', entry: [] };
+    const result = parseMergedSessions(bundle);
+    expect(result).toEqual([]);
   });
 });
 
