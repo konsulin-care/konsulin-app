@@ -290,6 +290,7 @@ describe('QuickActionFab clinic admin', () => {
     const fabButton = getFabButton(container);
     fireEvent.click(fabButton);
 
+    expect(screen.getByText('Set Availability')).toBeDefined();
     expect(screen.getByText('View Schedule')).toBeDefined();
     expect(screen.getByText('Health Screening')).toBeDefined();
     expect(screen.getByText('S.O.A.P.')).toBeDefined();

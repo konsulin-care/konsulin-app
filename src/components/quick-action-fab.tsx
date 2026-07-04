@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import {
   BookText,
   Calendar,
+  ClipboardClock,
   HeartPulse,
   MapPin,
   Plus,
@@ -62,24 +63,31 @@ const patientPills: Pill[] = [
 
 const practitionerPills: Pill[] = [
   {
+    label: 'Set Availability',
+    href: '/practitioner',
+    icon: ClipboardClock,
+    delay: 0,
+    action: 'navigate'
+  },
+  {
     label: 'View Schedule',
     href: '/schedule',
     icon: Calendar,
-    delay: 0,
+    delay: 50,
     action: 'navigate'
   },
   {
     label: 'Health Screening',
     href: '/assessments',
     icon: HeartPulse,
-    delay: 50,
+    delay: 100,
     action: 'navigate'
   },
   {
     label: 'S.O.A.P.',
     href: '/assessments/soap',
     icon: BookText,
-    delay: 100,
+    delay: 150,
     action: 'navigate'
   }
 ];
