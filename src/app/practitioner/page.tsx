@@ -36,7 +36,7 @@ export default function Practitioner() {
 
   // Store owned PractitionerRole IDs on successful fetch
   useEffect(() => {
-    if (ownRoles && ownRoles.length > 0) {
+    if (ownRoles?.length > 0) {
       const ids = ownRoles.map(r => r.resource?.id).filter(Boolean);
       storeOwnedRoleIds(ids);
     }
@@ -99,7 +99,7 @@ export default function Practitioner() {
   /** Handle click on recommendation card (patient booking). */
   const handleBook = (practitionerId: string) => {
     // Placeholder: plan 017 will integrate booking flow
-    window.location.href = `/practitioner?id=${practitionerId}`;
+    globalThis.location.href = `/practitioner?id=${practitionerId}`;
   };
 
   /** Render content for the listing mode (no id param). */

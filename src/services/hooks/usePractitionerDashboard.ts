@@ -50,7 +50,7 @@ function getLocationColor(locationId: string | null): string {
   if (!locationId) return '#D9D9D9';
   let hash = 0;
   for (let i = 0; i < locationId.length; i++) {
-    hash = locationId.charCodeAt(i) + ((hash << 5) - hash);
+    hash = (locationId.codePointAt(i) ?? 0) + ((hash << 5) - hash);
   }
   return LOCATION_COLORS[Math.abs(hash) % LOCATION_COLORS.length];
 }

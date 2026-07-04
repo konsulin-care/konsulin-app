@@ -41,9 +41,9 @@ function PractitionerIdentity({
   name,
   specialties
 }: {
-  practitionerId: string;
-  name: string;
-  specialties: string[];
+  readonly practitionerId: string;
+  readonly name: string;
+  readonly specialties: string[];
 }) {
   const maxVisibleBadges = 3;
   const overflowCount =
@@ -112,8 +112,8 @@ function ClinicLocationSection({
   orgOrLocation,
   address
 }: {
-  orgOrLocation: { name?: string; address?: Array<{ line?: string[]; district?: string; city?: string; postalCode?: string }> } | undefined;
-  address: { line?: string[]; district?: string; city?: string; postalCode?: string } | undefined;
+  readonly orgOrLocation: { name?: string; address?: Array<{ line?: string[]; district?: string; city?: string; postalCode?: string }> } | undefined;
+  readonly address: { line?: string[]; district?: string; city?: string; postalCode?: string } | undefined;
 }) {
   if (!orgOrLocation) return null;
   return (
@@ -137,9 +137,9 @@ function HealthcareServicesSection({
   practitionerRoleId,
   onNavigate
 }: {
-  services: HealthcareService[];
-  practitionerRoleId: string;
-  onNavigate: (url: string) => void;
+  readonly services: HealthcareService[];
+  readonly practitionerRoleId: string;
+  readonly onNavigate: (url: string) => void;
 }) {
   const activeServices = useMemo(
     () => services.filter((svc: HealthcareService) => svc.active !== false),
@@ -230,9 +230,9 @@ function PatientDetailBody({
   practitionerRoleId,
   router
 }: {
-  detail: import('@/services/clinic').DetailPractitionerData;
-  practitionerRoleId: string;
-  router: AppRouterInstance;
+  readonly detail: import('@/services/clinic').DetailPractitionerData;
+  readonly practitionerRoleId: string;
+  readonly router: AppRouterInstance;
 }) {
   const services = detail.healthcareServices ?? [];
   const practitionerName = getPractitionerName(detail);

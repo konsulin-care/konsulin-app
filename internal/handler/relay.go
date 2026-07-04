@@ -31,6 +31,12 @@ type relayBookingRequest struct {
 // relayFHIRClient is the HTTP client used to POST FHIR bundles to the backend.
 var relayFHIRClient = &http.Client{Timeout: 30 * time.Second}
 
+// Duplicated literal constants to satisfy SonarQube maintainability rules.
+const (
+	contentTypeJSON     = "application/json"
+	headerContentType   = "Content-Type"
+)
+
 // NewRelayBookingHandler creates a handler for POST /api/v1/relay/booking.
 // It receives booking intent from the client, constructs a FHIR transaction
 // bundle, POSTs it to the backend, and returns the created Slot and Invoice IDs.
@@ -39,24 +45,18 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed"})
+			sendError(w, http.StatusMethodNotAllowed, "method not allowed")
 			return
 		}
 
 		var req relayBookingRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid JSON body"})
+			sendError(w, http.StatusBadRequest, "invalid JSON body")
 			return
 		}
 
 		if missing := validateRelayBooking(req); missing != "" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "missing required field: " + missing})
+			sendError(w, http.StatusBadRequest, "missing required field: "+missing)
 			return
 		}
 
@@ -79,9 +79,7 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 		fee, err := fetchHealthcareServiceFee(baseURL, req.HealthcareServiceID, authToken)
 		if err != nil {
 			slog.Error("relay/booking: failed to fetch HealthcareService fee", "err", err)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadGateway)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to fetch service fee"})
+			sendError(w, http.StatusBadGateway, "failed to fetch service fee")
 			return
 		}
 
@@ -89,60 +87,62 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 		bundleBody, err := json.Marshal(bundle)
 		if err != nil {
 			slog.Error("relay/booking: failed to marshal bundle", "err", err)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "internal error"})
+			sendError(w, http.StatusInternalServerError, "internal error")
 			return
 		}
 
-		fhirURL := baseURL + "/fhir"
-		fhirReq, err := http.NewRequest(http.MethodPost, fhirURL, strings.NewReader(string(bundleBody)))
+		fhirResp, err := postFHIRBundle(baseURL, bundleBody, authToken)
 		if err != nil {
-			slog.Error("relay/booking: failed to create FHIR request", "err", err)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "internal error"})
-			return
-		}
-		fhirReq.Header.Set("Content-Type", "application/fhir+json")
-
-		// Forward auth token from client session — same as backend proxy.
-		if authToken != "" {
-			fhirReq.Header.Set("Authorization", authToken)
-		}
-
-		resp, err := relayFHIRClient.Do(fhirReq)
-		if err != nil {
-			slog.Error("relay/booking: backend unreachable", "err", err)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadGateway)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "backend unreachable"})
-			return
-		}
-		defer func() { _ = resp.Body.Close() }()
-
-		if resp.StatusCode >= 400 {
-			slog.Error("relay/booking: backend error", "status", resp.StatusCode)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadGateway)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "backend error"})
-			return
-		}
-
-		var fhirResp map[string]any
-		if err := json.NewDecoder(resp.Body).Decode(&fhirResp); err != nil {
-			slog.Error("relay/booking: failed to decode FHIR response", "err", err)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadGateway)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid FHIR response"})
+			slog.Error("relay/booking: backend error", "err", err)
+			sendError(w, http.StatusBadGateway, err.Error())
 			return
 		}
 
 		result := parseRelayResponse(fhirResp, req.HealthcareServiceID, fee)
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(headerContentType, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(result)
 	}
+}
+
+// sendError writes a JSON error response with the standard ErrorBody structure.
+func sendError(w http.ResponseWriter, status int, message string) {
+	w.Header().Set(headerContentType, contentTypeJSON)
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": message})
+}
+
+// postFHIRBundle marshals the bundle body into a FHIR POST request, sends it
+// to the backend, and returns the decoded response body.
+func postFHIRBundle(baseURL string, bundleBody []byte, authToken string) (map[string]any, error) {
+	fhirURL := baseURL + "/fhir"
+	fhirReq, err := http.NewRequest(http.MethodPost, fhirURL, strings.NewReader(string(bundleBody)))
+	if err != nil {
+		return nil, fmt.Errorf("create FHIR request: %w", err)
+	}
+	fhirReq.Header.Set(headerContentType, "application/fhir+json")
+
+	// Forward auth token from client session — same as backend proxy.
+	if authToken != "" {
+		fhirReq.Header.Set("Authorization", authToken)
+	}
+
+	resp, err := relayFHIRClient.Do(fhirReq)
+	if err != nil {
+		return nil, fmt.Errorf("backend unreachable")
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("backend error")
+	}
+
+	var fhirResp map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&fhirResp); err != nil {
+		return nil, fmt.Errorf("invalid FHIR response")
+	}
+
+	return fhirResp, nil
 }
 
 func validateRelayBooking(req relayBookingRequest) string {

@@ -380,9 +380,8 @@ export default function PractitionerAvailability({
     const initialDate = isDateAvailable(today, listAvailableDate)
       ? today
       : getNextAvailableDate(today, listAvailableDate);
-    if (!pageDate || pageDate.getTime() !== initialDate.getTime()) {
-      setPageDate(initialDate);
-    }
+    if (pageDate?.getTime() === initialDate.getTime()) return;
+    setPageDate(initialDate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPageMode]);
 

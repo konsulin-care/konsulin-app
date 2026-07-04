@@ -2,9 +2,10 @@ import { Calendar } from '@/components/ui/calendar-temp';
 import { DrawerDescription, DrawerTitle } from '@/components/ui/drawer';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { format } from 'date-fns';
-import { DayButton } from 'react-day-picker';
+import { DayButton, type CalendarDay } from 'react-day-picker';
 import type { PractitionerRoleAvailableTime } from 'fhir/r4';
 import { getAvailableDays } from './utils';
+import { useMemo } from 'react';
 
 type ColorLegendEntry = {
   color: string;
@@ -31,6 +32,45 @@ type Props = {
   parentOnMonthChange?: (month: Date) => void;
 };
 
+/** Dot indicators for a single day in the calendar. */
+function DayDots({ dots }: { readonly dots: string[] }) {
+  return (
+    <ul className='flex justify-center gap-0.5'>
+      {dots.slice(0, 3).map(color => (
+        <li
+          key={color}
+          className='h-1 w-1 rounded-full'
+          style={{ backgroundColor: color }}
+        />
+      ))}
+    </ul>
+  );
+}
+
+/** DayButton with colored dot indicators for location-based availability. */
+function DayButtonWithDots({
+  day,
+  modifiers,
+  children,
+  dayDots
+}: {
+  readonly day: CalendarDay;
+  readonly modifiers: Record<string, boolean>;
+  readonly children?: React.ReactNode;
+  readonly dayDots: Map<string, string[]>;
+}) {
+  const dateKey = format(day.date, 'yyyy-MM-dd');
+  const dots = dayDots.get(dateKey);
+  return (
+    <DayButton day={day} modifiers={modifiers}>
+      <div className='flex flex-col items-center gap-0.5'>
+        <span>{children}</span>
+        {dots && dots.length > 0 && <DayDots dots={dots} />}
+      </div>
+    </DayButton>
+  );
+}
+
 /** Calendar-based date picker showing practitioner availability. */
 export default function BookingCalendar({
   bookingState,
@@ -44,38 +84,26 @@ export default function BookingCalendar({
   colorLegend,
   parentOnMonthChange
 }: Readonly<Props>) {
-  const customComponents = dayDots
-    ? {
-        DayButton: (props: {
-          day: { date: Date };
-          modifiers: Record<string, boolean>;
-          children?: React.ReactNode;
-        }) => {
-          const { day, modifiers, children, ...rest } = props;
-          const dateKey = format(day.date, 'yyyy-MM-dd');
-          const dots = dayDots.get(dateKey);
-          return (
-            <DayButton day={day} modifiers={modifiers} {...rest}>
-              <div className='flex flex-col items-center gap-0.5'>
-                <span>{children}</span>
-                {dots && dots.length > 0 && (
-                  <div className='flex justify-center gap-0.5'>
-                  {dots.slice(0, 3).map(color => (
-                    <div
-                      key={color}
-                      role='listitem'
-                      className='h-1 w-1 rounded-full'
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                </div>
-              )}
-              </div>
-            </DayButton>
-          );
-        }
-      }
-    : undefined;
+  const customComponents = useMemo(() => {
+    if (!dayDots) {
+      // eslint-disable-next-line unicorn/no-useless-undefined -- consistent-return requires explicit value
+      return undefined;
+    }
+    const DayButtonComp = (props: {
+      day: CalendarDay;
+      modifiers: Record<string, boolean>;
+      children?: React.ReactNode;
+    }) => (
+      <DayButtonWithDots
+        day={props.day}
+        modifiers={props.modifiers}
+        dayDots={dayDots}
+      >
+        {props.children}
+      </DayButtonWithDots>
+    );
+    return { DayButton: DayButtonComp };
+  }, [dayDots]);
 
   return (
     <>

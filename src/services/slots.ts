@@ -11,10 +11,10 @@ import type { Bundle, BundleEntry, PractitionerRoleAvailableTime, Slot } from 'f
  */
 export function parseTzOffset(tzOffset: string): number {
   if (tzOffset === 'Z' || !tzOffset) return 0;
-  const match = tzOffset.match(/^([+-])(\d{2}):(\d{2})$/);
+  const match = /^([+-])(\d{2}):(\d{2})$/.exec(tzOffset);
   if (!match) return 0;
   const sign = match[1] === '+' ? 1 : -1;
-  return sign * (parseInt(match[2], 10) * 60 + parseInt(match[3], 10));
+  return sign * (Number.parseInt(match[2], 10) * 60 + Number.parseInt(match[3], 10));
 }
 
 /**

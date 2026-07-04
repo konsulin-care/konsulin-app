@@ -87,6 +87,64 @@ func testRelayBackend() *httptest.Server {
 	}))
 }
 
+// assertBundleEntries validates the FHIR transaction bundle structure and values.
+func assertBundleEntries(t *testing.T, capturedBundle map[string]any) {
+	t.Helper()
+
+	if capturedBundle["resourceType"] != "Bundle" {
+		t.Errorf("expected Bundle, got %v", capturedBundle["resourceType"])
+	}
+	if capturedBundle["type"] != "transaction" {
+		t.Errorf("expected transaction, got %v", capturedBundle["type"])
+	}
+
+	entries, ok := capturedBundle["entry"].([]any)
+	if !ok {
+		t.Fatal("expected entry array")
+	}
+	if len(entries) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(entries))
+	}
+
+	entry0 := entries[0].(map[string]any)
+	req0 := entry0["request"].(map[string]any)
+	if req0["method"] != "POST" || req0["url"] != "Slot" {
+		t.Errorf("entry 0: expected POST Slot, got %v %v", req0["method"], req0["url"])
+	}
+
+	entry1 := entries[1].(map[string]any)
+	req1 := entry1["request"].(map[string]any)
+	if req1["method"] != "POST" || req1["url"] != "Invoice" {
+		t.Errorf("entry 1: expected POST Invoice, got %v %v", req1["method"], req1["url"])
+	}
+
+	slotResource := entry0["resource"].(map[string]any)
+	if slotResource["status"] != "free" {
+		t.Errorf("expected Slot status=free, got %v", slotResource["status"])
+	}
+	if slotResource["schedule"].(map[string]any)["reference"] != "Schedule/sched-1" {
+		t.Errorf("expected Slot schedule=Schedule/sched-1")
+	}
+
+	invoiceResource := entry1["resource"].(map[string]any)
+	if invoiceResource["status"] != "issued" {
+		t.Errorf("expected Invoice status=issued, got %v", invoiceResource["status"])
+	}
+	totalNet := invoiceResource["totalNet"].(map[string]any)
+	if totalNet == nil {
+		t.Error("expected Invoice.totalNet")
+	}
+	if totalNet["value"] != float64(150000) {
+		t.Errorf("expected Invoice.totalNet.value=150000, got %v", totalNet["value"])
+	}
+	if totalNet["currency"] != "IDR" {
+		t.Errorf("expected Invoice.totalNet.currency=IDR, got %v", totalNet["currency"])
+	}
+	if invoiceResource["subject"].(map[string]any)["reference"] != "Patient/pat-1" {
+		t.Errorf("expected Invoice subject=Patient/pat-1")
+	}
+}
+
 func newRelayServer(t *testing.T) string {
 	t.Helper()
 	backend := testRelayBackend()
@@ -270,63 +328,14 @@ func TestRelayBooking_bundleHasCorrectResources(t *testing.T) {
 		"condition": "anxiety"
 	}`
 
-	_, err := http.Post(srv.URL, "application/json", strings.NewReader(body))
+	resp, err := http.Post(srv.URL, "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer resp.Body.Close()
 
-	if capturedBundle["resourceType"] != "Bundle" {
-		t.Errorf("expected Bundle, got %v", capturedBundle["resourceType"])
-	}
-	if capturedBundle["type"] != "transaction" {
-		t.Errorf("expected transaction, got %v", capturedBundle["type"])
-	}
+	assertBundleEntries(t, capturedBundle)
 
-	entries, ok := capturedBundle["entry"].([]any)
-	if !ok {
-		t.Fatal("expected entry array")
-	}
-	if len(entries) != 2 {
-		t.Fatalf("expected 2 entries, got %d", len(entries))
-	}
-
-	entry0 := entries[0].(map[string]any)
-	req0 := entry0["request"].(map[string]any)
-	if req0["method"] != "POST" || req0["url"] != "Slot" {
-		t.Errorf("entry 0: expected POST Slot, got %v %v", req0["method"], req0["url"])
-	}
-
-	entry1 := entries[1].(map[string]any)
-	req1 := entry1["request"].(map[string]any)
-	if req1["method"] != "POST" || req1["url"] != "Invoice" {
-		t.Errorf("entry 1: expected POST Invoice, got %v %v", req1["method"], req1["url"])
-	}
-
-	slotResource := entry0["resource"].(map[string]any)
-	if slotResource["status"] != "free" {
-		t.Errorf("expected Slot status=free, got %v", slotResource["status"])
-	}
-	if slotResource["schedule"].(map[string]any)["reference"] != "Schedule/sched-1" {
-		t.Errorf("expected Slot schedule=Schedule/sched-1")
-	}
-
-	invoiceResource := entry1["resource"].(map[string]any)
-	if invoiceResource["status"] != "issued" {
-		t.Errorf("expected Invoice status=issued, got %v", invoiceResource["status"])
-	}
-	totalNet := invoiceResource["totalNet"].(map[string]any)
-	if totalNet == nil {
-		t.Error("expected Invoice.totalNet")
-	}
-	if totalNet["value"] != float64(150000) {
-		t.Errorf("expected Invoice.totalNet.value=150000, got %v", totalNet["value"])
-	}
-	if totalNet["currency"] != "IDR" {
-		t.Errorf("expected Invoice.totalNet.currency=IDR, got %v", totalNet["currency"])
-	}
-	if invoiceResource["subject"].(map[string]any)["reference"] != "Patient/pat-1" {
-		t.Errorf("expected Invoice subject=Patient/pat-1")
-	}
 }
 
 func TestRelayBooking_invalidMethod(t *testing.T) {
