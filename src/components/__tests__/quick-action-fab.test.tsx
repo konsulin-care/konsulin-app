@@ -282,4 +282,22 @@ describe('QuickActionFab clinic admin', () => {
     expect(screen.queryByText('Register Practitioner')).toBeNull();
     expect(screen.queryByText('Add Location')).toBeNull();
   });
+
+  it('renders practitioner pills for Practitioner role', () => {
+    mockRole = 'Practitioner';
+    const { container } = renderClinicAdminFab();
+
+    const fabButton = getFabButton(container);
+    fireEvent.click(fabButton);
+
+    expect(screen.getByText('View Schedule')).toBeDefined();
+    expect(screen.getByText('Health Screening')).toBeDefined();
+    expect(screen.getByText('S.O.A.P.')).toBeDefined();
+
+    expect(screen.queryByText('Self Checkup')).toBeNull();
+    expect(screen.queryByText('Write Journal')).toBeNull();
+    expect(screen.queryByText('Get Recommendation')).toBeNull();
+    expect(screen.queryByText('Register Practitioner')).toBeNull();
+    expect(screen.queryByText('Add Location')).toBeNull();
+  });
 });

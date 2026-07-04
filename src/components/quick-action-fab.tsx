@@ -60,6 +60,30 @@ const patientPills: Pill[] = [
   }
 ];
 
+const practitionerPills: Pill[] = [
+  {
+    label: 'View Schedule',
+    href: '/schedule',
+    icon: Calendar,
+    delay: 0,
+    action: 'navigate'
+  },
+  {
+    label: 'Health Screening',
+    href: '/assessments',
+    icon: HeartPulse,
+    delay: 50,
+    action: 'navigate'
+  },
+  {
+    label: 'S.O.A.P.',
+    href: '/assessments/soap',
+    icon: BookText,
+    delay: 100,
+    action: 'navigate'
+  }
+];
+
 const adminPills: Pill[] = [
   {
     label: 'Register Practitioner',
@@ -202,8 +226,17 @@ export default function QuickActionFab() {
 
   const roleName = authState?.userInfo?.role_name;
   const isGuest = roleName === Roles.Guest;
+  const isPractitioner = roleName === Roles.Practitioner;
   const isAdmin = roleName === Roles.ClinicAdmin;
-  const pills = isAdmin ? adminPills : patientPills;
+
+  let pills: Pill[];
+  if (isAdmin) {
+    pills = adminPills;
+  } else if (isPractitioner) {
+    pills = practitionerPills;
+  } else {
+    pills = patientPills;
+  }
 
   const close = useCallback(() => setIsOpen(false), []);
   const toggle = useCallback(() => {
