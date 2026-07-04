@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PractitionerDashboard from '../app/practitioner-dashboard';
 
@@ -57,6 +57,32 @@ describe('PractitionerDashboard', () => {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+
+  it('passes midnight monthStart to the hook', () => {
+    render(<PractitionerDashboard />, { wrapper });
+
+    const callArgs =
+      vi.mocked(usePractitionerDashboard).mock.calls[0][0];
+    expect(callArgs.monthStart.getHours()).toBe(0);
+    expect(callArgs.monthStart.getMinutes()).toBe(0);
+    expect(callArgs.monthStart.getSeconds()).toBe(0);
+    expect(callArgs.monthStart.getMilliseconds()).toBe(0);
+  });
+
+  it('passes stable monthStart across re-renders', () => {
+    const { rerender } = render(<PractitionerDashboard />, { wrapper });
+
+    const firstCallArgs =
+      vi.mocked(usePractitionerDashboard).mock.calls[0][0];
+
+    // Force a re-render by re-rendering the component
+    rerender(<PractitionerDashboard />);
+
+    const secondCallArgs =
+      vi.mocked(usePractitionerDashboard).mock.calls[1][0];
+    expect(secondCallArgs.monthStart).toBe(firstCallArgs.monthStart);
+    expect(secondCallArgs.monthStart.getHours()).toBe(0);
+  });
 
   it('shows loading skeleton when data is loading', () => {
     vi.mocked(usePractitionerDashboard).mockReturnValue({

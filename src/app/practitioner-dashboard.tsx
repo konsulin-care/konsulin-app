@@ -8,7 +8,7 @@ import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { usePractitionerDashboard } from '@/services/hooks/usePractitionerDashboard';
 import { format } from 'date-fns';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 function renderDayContent(
   selectedDate: Date | null,
@@ -51,17 +51,22 @@ export default function PractitionerDashboard() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const practitionerId = authState?.userInfo?.fhirId;
 
-  const today = new Date();
-  const monthStart = today;
-  const monthEnd = new Date(
-    today.getFullYear(),
-    today.getMonth() + 1,
-    0,
-    23,
-    59,
-    59,
-    999
-  );
+  const { today, monthStart, monthEnd } = useMemo(() => {
+    const now = new Date();
+    return {
+      today: now,
+      monthStart: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+      monthEnd: new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999
+      )
+    };
+  }, []);
 
   const {
     sessions,
