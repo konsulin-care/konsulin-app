@@ -35,7 +35,7 @@ describe('useBusySlotsByPractitioner', () => {
   const practitionerId = 'prac-123';
   const dateStr = '2026-07-02';
 
-  it('queries slots by Practitioner ID with status:not=free filter', async () => {
+  it('queries slots by Practitioner ID with explicit busy statuses filter', async () => {
     mockAxiosInstance.get.mockResolvedValueOnce({
       data: { resourceType: 'Bundle', entry: [] }
     });
@@ -51,7 +51,7 @@ describe('useBusySlotsByPractitioner', () => {
 
     const calledUrl = mockAxiosInstance.get.mock.calls[0]?.[0] as string;
     expect(calledUrl).toContain('schedule.actor=Practitioner/prac-123');
-    expect(calledUrl).toContain('status:not=free');
+    expect(calledUrl).toContain('status=busy,busy-unavailable,busy-tentative');
     expect(calledUrl).toContain('start=ge2026-07-02T00%3A00%3A00Z');
     expect(calledUrl).toContain('start=le2026-07-02T23%3A59%3A59Z');
   });

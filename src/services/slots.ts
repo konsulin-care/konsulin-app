@@ -152,8 +152,9 @@ export function computeFreeSlots(
 /**
  * Hook to fetch busy slots for a practitioner role on a given date.
  *
- * Queries Slot resources with status:not=free to get all occupied slots
- * (busy, busy-unavailable, busy-tentative).
+ * Queries Slot resources with explicit non-free statuses
+ * (busy, busy-unavailable, busy-tentative) since Blaze does not
+ * support the :not search modifier.
  */
 export function usePractitionerSlots(
   practitionerRoleId: string,
@@ -167,7 +168,7 @@ export function usePractitionerSlots(
       const leParam = encodeURIComponent(`${date}T23:59:59Z`);
       const response = await API.get<Bundle>(
         `/fhir/Slot?schedule.actor=PractitionerRole/${practitionerRoleId}` +
-          `&start=ge${geParam}&start=le${leParam}&status:not=free`
+          `&start=ge${geParam}&start=le${leParam}&status=busy,busy-unavailable,busy-tentative`
       );
       return response.data.entry ?? [];
     },
@@ -202,7 +203,7 @@ export function useBusySlotsByPractitioner(
       const leParam = encodeURIComponent(`${date}T23:59:59Z`);
       const response = await API.get<Bundle>(
         `/fhir/Slot?schedule.actor=Practitioner/${practitionerId}` +
-          `&start=ge${geParam}&start=le${leParam}&status:not=free`
+          `&start=ge${geParam}&start=le${leParam}&status=busy,busy-unavailable,busy-tentative`
       );
       return response.data.entry ?? [];
     },
