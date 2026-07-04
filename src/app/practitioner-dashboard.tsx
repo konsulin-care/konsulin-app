@@ -2,6 +2,7 @@
 
 import BookingCalendar from '@/app/practitioner/booking-calendar';
 import SessionCard from '@/components/schedule/session-card';
+import type { MergedSession } from '@/types/appointment';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
@@ -12,7 +13,7 @@ import { useMemo, useState } from 'react';
 
 function renderDayContent(
   selectedDate: Date | null,
-  selectedSessions: { appointmentId: string; slotStart: string | null }[]
+  selectedSessions: MergedSession[]
 ): ReactNode {
   if (!selectedDate) {
     return (

@@ -288,7 +288,7 @@ export function usePractitionerDashboard({
   return {
     sessions,
     daySessions,
-    isDayLoading: dayQuery.isLoading,
+    isDayLoading: dayQuery.isFetching,
     dayDots,
     colorLegend,
     availableTime,
