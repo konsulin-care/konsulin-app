@@ -119,19 +119,15 @@ async function networkFirst (request, cacheName, fallbackUrl) {
 }
 
 self.addEventListener('fetch', function (event) {
-  // Parse URL once. If parsing fails (e.g., malformed URL), parsed stays
-  // undefined and the async IIFE handles it in its own try-catch.
-  let parsed
-  try { parsed = new URL(event.request.url) } catch { /* fall through */ }
+  const url = new URL(event.request.url)
 
   // Skip cross-origin requests — let the browser handle them directly.
-  if (parsed && !isSameOrigin(parsed)) return
+  if (!isSameOrigin(url)) return
 
   event.respondWith(
     (async function () {
       try {
         const request = event.request
-        const url = parsed ?? new URL(request.url)
 
         // Non-GET requests bypass caching entirely.
         if (request.method !== 'GET') return fetch(request)

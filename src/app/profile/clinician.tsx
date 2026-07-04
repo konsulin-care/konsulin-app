@@ -96,7 +96,7 @@ export default function Clinician({ fhirId }: Props) {
     });
 
   /* get list of practitioner's roles */
-  const { refetch, isLoading: isPractitionerRolesLoading } =
+  const { isLoading: isPractitionerRolesLoading } =
     useGetPractitionerRolesDetail(authState.userInfo?.fhirId ?? '', data => {
       const resources = (data?.map(entry => entry.resource) || []).filter(
         Boolean
