@@ -7,10 +7,10 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 beforeAll(() => {
   // Polyfill ResizeObserver for JSDOM
   global.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as any;
+    observe(_this?: unknown) {}
+    unobserve(_this?: unknown) {}
+    disconnect(_this?: unknown) {}
+  };
 });
 
 vi.mock('next/navigation', () => ({

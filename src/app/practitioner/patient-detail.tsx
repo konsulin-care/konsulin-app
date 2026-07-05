@@ -243,6 +243,7 @@ function PatientDetailBody({
     detail.location?.address?.[0] ?? detail.organization?.address?.[0];
   const displayAddress = firstAddr;
 
+  /** Navigate to the given URL using router. */
   const handleNavigate = (url: string) => {
     router.push(url);
   };

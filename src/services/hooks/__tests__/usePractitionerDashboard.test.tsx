@@ -143,10 +143,10 @@ describe('usePractitionerDashboard', () => {
     expect(dots).toBeDefined();
     expect(dots).toHaveLength(2);
 
-    expect(result.current.colorLegend).toBeDefined();
-    expect(result.current.colorLegend).toHaveLength(2);
-    expect(result.current.colorLegend![0].name).toBe('Clinic A');
-    expect(result.current.colorLegend![1].name).toBe('Clinic B');
+    const colorLegend = result.current.colorLegend as NonNullable<typeof result.current.colorLegend>;
+    expect(colorLegend).toHaveLength(2);
+    expect(colorLegend[0].name).toBe('Clinic A');
+    expect(colorLegend[1].name).toBe('Clinic B');
   });
 
   it('fires day query when selectedDate is provided', async () => {

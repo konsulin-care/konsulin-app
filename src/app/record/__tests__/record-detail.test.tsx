@@ -48,6 +48,7 @@ vi.mock('@/utils/helper', () => ({
 }));
 
 import { useSearchParams } from 'next/navigation';
+import RecordDetail from '../record-detail';
 
 describe('RecordDetail - back navigation', () => {
   beforeEach(() => {
@@ -124,6 +125,3 @@ describe('RecordDetail - back navigation', () => {
     expect(screen.getByTestId('mock-notfound')).toBeInTheDocument();
   });
 });
-
-// Need to import after mocks are set up
-import RecordDetail from '../record-detail';

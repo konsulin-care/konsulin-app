@@ -57,6 +57,7 @@ function getLocalTimezoneISO(): string {
   const now = new Date();
   const offset = -now.getTimezoneOffset();
   const sign = offset >= 0 ? '+' : '-';
+  /** Pad a number with leading zero to 2 digits. */
   const pad = (n: number) => String(Math.floor(Math.abs(n))).padStart(2, '0');
   const tzHours = pad(offset / 60);
   const tzMinutes = pad(offset % 60);

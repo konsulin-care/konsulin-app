@@ -1,7 +1,7 @@
 /* eslint-disable react/display-name, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
 
 import { render, screen } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -51,8 +51,6 @@ vi.mock('@tanstack/react-query', async () => {
     useQuery: vi.fn()
   };
 });
-
-import { useQuery } from '@tanstack/react-query';
 
 // Mock sub-components to simplify testing — pass through practitionerGivenName
 vi.mock('../booking-calendar', () => ({

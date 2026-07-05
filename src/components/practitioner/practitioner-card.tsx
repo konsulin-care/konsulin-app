@@ -113,6 +113,7 @@ export function PractitionerCard({
   // Measure card height and set avatar width to match for a perfect square
   useLayoutEffect(() => {
     const el = cardRef.current;
+    /** Read card height and set avatar width to match. */
     const updateSize = () => {
       setAvatarSize(el?.clientHeight ?? 0);
     };

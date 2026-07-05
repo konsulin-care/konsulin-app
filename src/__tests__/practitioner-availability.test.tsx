@@ -34,13 +34,13 @@ vi.mock('@/services/api/appointments', () => ({
 
 vi.mock('@/services/slots', () => ({
   timeToMinutes: (timeStr: string) => {
-    const [h, m] = timeStr.split(':').map(Number);
-    return h * 60 + (m ?? 0);
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + (minutes ?? 0);
   },
   minutesToTimeStr: (minutes: number) => {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
   },
   useBusySlotsByPractitioner: vi.fn(() => ({ data: [], isLoading: false })),
   computeFreeSlots: vi.fn(() => [])
@@ -196,10 +196,10 @@ import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
 import {
   useCreateAppointment,
-  usePayAppointment
+  usePayAppointment,
+  useRelayBooking
 } from '@/services/api/appointments';
 import { useFindAvailability } from '@/services/clinicians';
-import { useRelayBooking } from '@/services/api/appointments';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function createWrapper(queryClient: QueryClient) {
@@ -480,7 +480,8 @@ describe('PractitionerAvailability', () => {
     const submitButton = buttons.find(b => b.textContent?.includes('Book Now'));
     expect(submitButton).toBeTruthy();
     expect(submitButton).not.toBeDisabled();
-    fireEvent.click(submitButton!);
+    const btn = submitButton as HTMLElement;
+    fireEvent.click(btn);
 
     // Wait for async handleSubmitForm to complete
     // Payment drawer should open — verify by checking for Pay Now text

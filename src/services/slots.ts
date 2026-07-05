@@ -25,8 +25,8 @@ export function parseTzOffset(tzOffset: string): number {
  * @returns Minutes since midnight in local timezone
  */
 function toLocalMinutes(iso: string): number {
-  const d = new Date(iso);
-  return d.getHours() * 60 + d.getMinutes();
+  const date = new Date(iso);
+  return date.getHours() * 60 + date.getMinutes();
 }
 
 /**
@@ -43,9 +43,9 @@ function practitionerToLocalMinutes(
   date: Date,
   practitionerTzMinutes: number
 ): number {
-  const [h, m] = timeStr.split(':').map(Number);
+  const [hours, minutes] = timeStr.split(':').map(Number);
   const utcDate = new Date(Date.UTC(
-    date.getFullYear(), date.getMonth(), date.getDate(), h, m, 0
+    date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes, 0
   ));
   utcDate.setMinutes(utcDate.getMinutes() - practitionerTzMinutes);
   return utcDate.getHours() * 60 + utcDate.getMinutes();
@@ -63,15 +63,15 @@ function minutesOverlap(
 
 /** Convert 'HH:mm' time string to minutes-from-midnight. */
 export function timeToMinutes(timeStr: string): number {
-  const [h, m] = timeStr.split(':').map(Number);
-  return h * 60 + (m ?? 0);
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + (minutes ?? 0);
 }
 
 /** Convert minutes-from-midnight to 'HH:mm' string. */
 export function minutesToTimeStr(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 }
 
 const DAY_LABELS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];

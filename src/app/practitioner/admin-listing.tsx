@@ -103,13 +103,13 @@ export default function AdminListing() {
   // Fuzzy match
   const fuzzyMatch = useCallback((query: string, text: string): boolean => {
     if (!query) return true;
-    const q = query.toLowerCase();
-    const t = text.toLowerCase();
-    let qi = 0;
-    for (let ti = 0; ti < t.length && qi < q.length; ti++) {
-      if (q[qi] === t[ti]) qi++;
+    const queryLower = query.toLowerCase();
+    const textLower = text.toLowerCase();
+    let queryIndex = 0;
+    for (let textIndex = 0; textIndex < textLower.length && queryIndex < queryLower.length; textIndex++) {
+      if (queryLower[queryIndex] === textLower[textIndex]) queryIndex++;
     }
-    return qi === q.length;
+    return queryIndex === queryLower.length;
   }, []);
 
   const filteredPractitioners = useMemo(() => {

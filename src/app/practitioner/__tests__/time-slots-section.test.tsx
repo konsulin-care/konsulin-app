@@ -47,7 +47,7 @@ describe('TimeSlotsSection', () => {
   });
 
   it('renders loading spinner when isLoading', () => {
-    render(<TimeSlotsSection {...defaultProps} isLoading={true} />);
+    render(<TimeSlotsSection {...defaultProps} isLoading />);
 
     expect(screen.queryByRole('button', { name: '10:00' })).not.toBeInTheDocument();
     // Loading spinner should be visible — it's an SVG with animate-spin class
@@ -62,7 +62,7 @@ describe('TimeSlotsSection', () => {
   });
 
   it('renders error state when isError is true', () => {
-    render(<TimeSlotsSection {...defaultProps} isError={true} />);
+    render(<TimeSlotsSection {...defaultProps} isError />);
 
     expect(screen.getByText(/unable to load available slots/i)).toBeInTheDocument();
   });

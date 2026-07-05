@@ -111,6 +111,7 @@ function useScrollVisibility(isOpen: boolean, isDirty: boolean) {
   const lastScrollY = useRef(0);
 
   useEffect(() => {
+    /** Toggle FAB visibility based on scroll direction. */
     const handleScroll = () => {
       if (isOpen || isDirty) return;
       const currentY = window.scrollY;

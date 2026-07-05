@@ -313,16 +313,14 @@ describe('fetch cache failure resilience', () => {
 // ---------------------------------------------------------------------------
 describe('fetch error recovery', () => {
   it('wraps handler in top-level try-catch that falls back to fetch', async () => {
-    {
-      // URL parsing failure: new URL('') throws
-      const event = fireFetch(mockSelf, { url: '' });
+    // URL parsing failure: new URL('') throws
+    const event = fireFetch(mockSelf, { url: '' });
 
-      // The async IIFE's try-catch falls back to fetch(event.request)
-      expect(event.respondWith).toHaveBeenCalled();
-      const promiseArg = event.respondWith.mock.calls[0][0];
-      await expect(promiseArg).resolves.toBeInstanceOf(Response);
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-    }
+    // The async IIFE's try-catch falls back to fetch(event.request)
+    expect(event.respondWith).toHaveBeenCalled();
+    const promiseArg = event.respondWith.mock.calls[0][0];
+    await expect(promiseArg).resolves.toBeInstanceOf(Response);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
   it('cross-origin requests still bypass SW after refactor', () => {

@@ -56,6 +56,7 @@ function ClinicInfo({ address }: Readonly<{ address: string }>) {
   );
 }
 
+/** Generate array of weekday short names between start and end dates. */
 const generateFilterDays = (start: Date, end: Date): string[] => {
   const filterDays: string[] = [];
   const currentDate = new Date(start);

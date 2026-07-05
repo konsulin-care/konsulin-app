@@ -14,8 +14,9 @@ vi.mock('@/components/ui/calendar-temp', () => ({
           <DayButton
             day={{ date: testDate }}
             modifiers={{}}
-            children='4'
-          />
+          >
+            4
+          </DayButton>
         )}
         <button
           data-testid='select-date-btn'

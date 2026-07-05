@@ -46,6 +46,7 @@ type UsePractitionerDashboardReturn = {
   isLoading: boolean;
 };
 
+/** Deterministically pick a color from a palette for a location ID. */
 function getLocationColor(locationId: string | null): string {
   if (!locationId) return '#D9D9D9';
   let hash = 0;

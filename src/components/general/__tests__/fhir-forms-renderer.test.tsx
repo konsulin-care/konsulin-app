@@ -159,7 +159,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}
-        isAuthenticated={true}
+        isAuthenticated
         patientId='pat-1'
       />
     );
@@ -207,7 +207,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}
-        isAuthenticated={true}
+        isAuthenticated
         patientId='pat-1'
       />
     );

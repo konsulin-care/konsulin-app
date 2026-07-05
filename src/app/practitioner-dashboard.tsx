@@ -11,6 +11,7 @@ import { format, startOfMonth, endOfMonth } from 'date-fns';
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 
+/** Render appointment summary or placeholder for the selected day. */
 function renderDayContent(
   selectedDate: Date | null,
   selectedSessions: MergedSession[]
@@ -91,10 +92,12 @@ export default function PractitionerDashboard() {
 
   const selectedSessions = selectedDate ? daySessions : [];
 
+  /** Update selected date from calendar day picker. */
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date ?? null);
   };
 
+  /** Update the displayed month when user navigates calendar. */
   const handleMonthChange = (month: Date) => {
     setDisplayMonth(month);
   };

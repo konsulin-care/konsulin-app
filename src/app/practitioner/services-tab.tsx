@@ -51,13 +51,13 @@ export default function ServicesTab({
   const isDirty = useMemo(() => {
     if (!fetchedServices) return localServices.length > 0;
     if (localServices.length !== fetchedServices.length) return true;
-    return localServices.some((s, i) => {
-      const f = fetchedServices.at(i);
+    return localServices.some((localService, i) => {
+      const fetchedService = fetchedServices.at(i);
       return (
-        s.name !== f.name ||
-        s.active !== f.active ||
-        s.extraDetails !== f.extraDetails ||
-        JSON.stringify(s.extension) !== JSON.stringify(f.extension)
+        localService.name !== fetchedService.name ||
+        localService.active !== fetchedService.active ||
+        localService.extraDetails !== fetchedService.extraDetails ||
+        JSON.stringify(localService.extension) !== JSON.stringify(fetchedService.extension)
       );
     });
   }, [localServices, fetchedServices]);
@@ -144,11 +144,13 @@ export default function ServicesTab({
     }
   }, [inSelectionMode, selectedIds, setSelectionState, handleSelectionDelete, handleSelectionCancel]);
 
+  /** Open the service form drawer in create mode. */
   const handleAddService = () => {
     setEditingService(undefined);
     setDrawerOpen(true);
   };
 
+  /** Save or update a healthcare service in local state. */
   const handleDrawerSave = (service: HealthcareService) => {
     const serviceWithId: HealthcareService = {
       ...service,

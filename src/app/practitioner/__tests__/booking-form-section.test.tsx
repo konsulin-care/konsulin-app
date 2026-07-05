@@ -164,7 +164,7 @@ describe('BookingFormSection', () => {
 
   it('hides CTA buttons and Batalkan when hideCta is true', () => {
     render(
-      <BookingFormSection {...defaultProps} hideCta={true} />
+      <BookingFormSection {...defaultProps} hideCta />
     );
 
     expect(screen.queryByRole('button', { name: /book now/i })).not.toBeInTheDocument();
