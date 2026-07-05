@@ -23,19 +23,23 @@ export interface PractitionerRoleResult {
  * @param practitionerRole - Passed role object in drawer mode
  * @param scheduleId - Schedule ID in drawer mode
  */
+// eslint-disable-next-line complexity
 export function usePractitionerRole(
   isPageMode: boolean,
   practitionerRoleId?: string,
   practitionerRole?: PractitionerRole,
   scheduleId?: string
 ): PractitionerRoleResult {
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const { newData: detail, isLoading: isDetailLoading } =
-    useDetailPractitioner(isPageMode ? practitionerRoleId ?? '' : '');
+  const { newData: detail, isLoading: isDetailLoading } = useDetailPractitioner(
+    isPageMode ? (practitionerRoleId ?? '') : ''
+  );
 
   const practitionerId = isPageMode
-    ? detail?.practitioner?.id ?? ''
-    : (practitionerRole?.practitioner?.reference?.replace('Practitioner/', '') ?? '');
+    ? (detail?.practitioner?.id ?? '')
+    : (practitionerRole?.practitioner?.reference?.replace(
+        'Practitioner/',
+        ''
+      ) ?? '');
 
   const practitionerGivenName = isPageMode
     ? detail?.practitioner?.name?.[0]?.given?.[0]
@@ -45,7 +49,11 @@ export function usePractitionerRole(
     if (isPageMode) {
       return detail?.healthcareServices?.map(s => s.name).filter(Boolean) ?? [];
     }
-    return practitionerRole?.healthcareService?.map(h => h.display).filter(Boolean) ?? [];
+    return (
+      practitionerRole?.healthcareService
+        ?.map(h => h.display)
+        .filter(Boolean) ?? []
+    );
   }, [isPageMode, detail, practitionerRole]);
 
   const effectiveRole = isPageMode ? detail?.resource : practitionerRole;
@@ -71,7 +79,7 @@ export function usePractitionerRole(
     practitionerId,
     practitionerGivenName,
     healthcareServiceNames,
-    effectiveRole: effectiveRole as PractitionerRole | undefined,
+    effectiveRole,
     effectiveAvailableTime,
     effectiveScheduleId,
     practitionerTzOffset
