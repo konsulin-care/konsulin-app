@@ -11,7 +11,7 @@ import {
   useRelayBooking,
   usePayAppointment
 } from '@/services/api/appointments';
-import { useDetailPractitioner } from '@/services/clinic';
+import { usePractitionerRole } from './hooks/usePractitionerRole';
 import {
   timeToMinutes,
   minutesToTimeStr,
@@ -139,38 +139,19 @@ export default function PractitionerAvailability({
   const patientId = authState?.userInfo?.fhirId;
   const isAuthenticated = authState?.isAuthenticated;
 
-  // Page mode: fetch practitioner detail internally
-  const { newData: detail, isLoading: isDetailLoading } =
-    useDetailPractitioner(isPageMode ? practitionerRoleId ?? '' : '');
-
-  const practitionerId = isPageMode
-    ? detail?.practitioner?.id ?? ''
-    : (practitionerRole?.practitioner?.reference?.replace('Practitioner/', '') ?? '');
-
-  // Extract practitioner's first given name for the personalized label
-  const practitionerGivenName = isPageMode
-    ? detail?.practitioner?.name?.[0]?.given?.[0]
-    : undefined;
-
-  // Healthcare service names for display in payment drawer
-  const healthcareServiceNames = useMemo(() => {
-    if (isPageMode) {
-      return detail?.healthcareServices?.map(s => s.name).filter(Boolean) ?? [];
-    }
-    return practitionerRole?.healthcareService?.map(h => h.display).filter(Boolean) ?? [];
-  }, [isPageMode, detail, practitionerRole]);
+  const {
+    detail,
+    isDetailLoading,
+    practitionerId,
+    practitionerGivenName,
+    healthcareServiceNames,
+    effectiveRole,
+    effectiveAvailableTime,
+    effectiveScheduleId,
+    practitionerTzOffset
+  } = usePractitionerRole(isPageMode, practitionerRoleId, practitionerRole, scheduleId);
 
   const [pageDate, setPageDate] = useState<Date>(startOfDay(new Date()));
-
-  // Effective practitioner role: from prop (drawer) or fetched (page)
-  const effectiveRole = isPageMode
-    ? detail?.resource
-    : practitionerRole;
-
-  const effectiveAvailableTime = effectiveRole?.availableTime ?? [];
-  const effectiveScheduleId = isPageMode
-    ? (detail?.schedule?.id ?? '')
-    : (scheduleId ?? '');
 
   /** Update a single booking information field (problem brief, etc.). */
   const handleBookingInformationChange = (key: string, value: string) => {
@@ -204,17 +185,6 @@ export default function PractitionerAvailability({
     setErrorForm(null);
   };
 
-  // Derive practitioner timezone offset from PractitionerRole.period.start (e.g., +07:00)
-  const practitionerTzOffset = useMemo(() => {
-    const role = effectiveRole;
-    if (!role) return 'Z';
-    const iso = role.period?.start || role.period?.end;
-    if (typeof iso === 'string') {
-      const match = iso.match(/([+-]\d{2}:\d{2}|Z)$/);
-      return match ? match[1] : 'Z';
-    }
-    return 'Z';
-  }, [effectiveRole]);
 
   // Selected date unified across modes
   const selectedDate = isPageMode ? pageDate : bookingState.date;
