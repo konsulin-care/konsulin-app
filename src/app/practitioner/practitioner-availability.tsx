@@ -8,15 +8,9 @@ import { STORES, dbDelete, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import {
   useCreateAppointment,
-  usePayAppointment,
-  useRelayBooking
+  usePayAppointment
 } from '@/services/api/appointments';
-import {
-  computeFreeSlots,
-  minutesToTimeStr,
-  timeToMinutes,
-  useBusySlotsByPractitioner
-} from '@/services/slots';
+import { computeFreeSlots, useBusySlotsByPractitioner } from '@/services/slots';
 import { saveIntent } from '@/utils/redirect-intent';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { addDays, format, parseISO, startOfDay } from 'date-fns';
@@ -27,13 +21,13 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   useTransition
 } from 'react';
 import BookingCalendar from './booking-calendar';
 import { getNextAvailableDate, isDateAvailable } from './booking-date-utils';
 import BookingFormSection from './booking-form-section';
+import { useBookingForm } from './hooks/use-booking-form';
 import { useBookingRestoration } from './hooks/use-booking-restoration';
 import { usePractitionerRole } from './hooks/usePractitionerRole';
 import PaymentDrawer from './payment-drawer';
@@ -114,11 +108,6 @@ export default function PractitionerAvailability({
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const { state: bookingState, dispatch } = useBooking();
   const { state: authState } = useAuth();
-  const [bookingForm, setBookingInformation] = useState({
-    session_type: 'offline',
-    problem_brief: ''
-  });
-  const [errorForm, setErrorForm] = useState<string[] | null>(null);
   const { setDirtyState } = useFabDirty();
   const queryClient = useQueryClient();
   // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -126,8 +115,6 @@ export default function PractitionerAvailability({
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: payAppointment, isLoading: isPaying } =
     usePayAppointment();
-  const { mutateAsync: relayBooking } = useRelayBooking();
-  const [relayInvoice, setRelayInvoice] = useState<Invoice | null>(null);
 
   const patientId = authState?.userInfo?.fhirId;
   const isAuthenticated = authState?.isAuthenticated;
@@ -151,13 +138,29 @@ export default function PractitionerAvailability({
 
   const [pageDate, setPageDate] = useState<Date>(startOfDay(new Date()));
 
-  /** Update a single booking information field (problem brief, etc.). */
-  const handleBookingInformationChange = (key: string, value: string) => {
-    setBookingInformation(prevState => ({
-      ...prevState,
-      [key]: value
-    }));
-  };
+  const {
+    bookingForm,
+    setBookingInformation,
+    errorForm,
+    relayInvoice,
+    handleBookingInformationChange,
+    handleSubmitForm,
+    handleSubmitFormRef,
+    setErrorForm
+  } = useBookingForm({
+    isPageMode,
+    effectiveScheduleId,
+    practitionerId,
+    durationMinutes,
+    propHealthcareServiceId,
+    propOrganizationId,
+    detail,
+    effectiveRole,
+    pageDate,
+    patientId,
+    setSelectedSlotId,
+    setPaymentOpen
+  });
 
   const listAvailableDate = getAvailableDays(
     effectiveAvailableTime,
@@ -265,6 +268,7 @@ export default function PractitionerAvailability({
       .catch(() => {
         // Best-effort load — ignore errors
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const practitionerRoleIdStr = practitionerRole?.id ?? '';
@@ -320,19 +324,6 @@ export default function PractitionerAvailability({
       status: 'free'
     }));
   }, [computedFreeSlots]);
-
-  useEffect(() => {
-    if (errorForm) {
-      if (
-        bookingState?.date &&
-        bookingState?.startTime &&
-        bookingForm.session_type &&
-        bookingForm.problem_brief
-      )
-        setErrorForm(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookingForm, bookingState.date, bookingState.startTime]);
 
   /* validate the selected date and time:
    * if the selected date is unavailable, set the next available date and reset the time.
@@ -390,89 +381,6 @@ export default function PractitionerAvailability({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingState.date, bookingState.startTime, slotPills, listAvailableDate]);
 
-  /** Return the browser's timezone offset as '+HH:MM' string. */
-  function getBrowserTzOffset(): string {
-    const offset = -new Date().getTimezoneOffset();
-    const sign = offset >= 0 ? '+' : '-';
-    const hours = Math.floor(Math.abs(offset) / 60);
-    const mins = Math.abs(offset) % 60;
-    return `${sign}${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-  }
-
-  /** Build the relay booking payload from form state. */
-  function buildRelayPayload(
-    date: Date,
-    startTime: string,
-    endTimeStr: string
-  ) {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const userTzOffset = getBrowserTzOffset();
-    const orgId =
-      propOrganizationId || (isPageMode ? detail?.organization?.id : '') || '';
-    return {
-      patientId: `Patient/${patientId ?? ''}`,
-      practitionerRoleId: `PractitionerRole/${effectiveRole?.id ?? practitionerRoleId ?? ''}`,
-      practitionerId: `Practitioner/${practitionerId}`,
-      healthcareServiceId: `HealthcareService/${propHealthcareServiceId ?? ''}`,
-      scheduleId: `Schedule/${effectiveScheduleId}`,
-      organizationId: `Organization/${orgId}`,
-      date: dateStr,
-      startTime,
-      endTime: endTimeStr,
-      timezone: userTzOffset,
-      condition: bookingForm.problem_brief
-    };
-  }
-
-  /** Validate the form, create a FHIR Slot, then open payment drawer. */
-  const handleSubmitForm = async () => {
-    const { date: contextDate, startTime } = bookingState;
-    // Page mode stores date in pageDate local state, not bookingState context
-    const date = isPageMode ? pageDate : contextDate;
-    const requiredData = {
-      'Problem Brief': bookingForm.problem_brief,
-      'Tanggal Appointment': date,
-      'Jam Appointment': startTime,
-      'Tipe Session': bookingForm.session_type
-    };
-
-    const emptyField = Object.entries(requiredData).filter(item => !item[1]);
-
-    if (emptyField.length > 0) {
-      setErrorForm(emptyField.map(item => item[0]));
-      return;
-    }
-
-    if (!date || !startTime || !effectiveScheduleId) {
-      return;
-    }
-
-    try {
-      const startMinutes = timeToMinutes(startTime);
-      const endMinutes = startMinutes + durationMinutes;
-      const endTimeStr = minutesToTimeStr(endMinutes);
-
-      const payload = buildRelayPayload(date, startTime, endTimeStr);
-      const response = await relayBooking(payload);
-
-      setSelectedSlotId(response.slotId.replace('Slot/', ''));
-      setRelayInvoice({
-        resourceType: 'Invoice',
-        id: response.invoiceId.replace('Invoice/', ''),
-        status: 'issued',
-        totalNet: response.fee
-      });
-
-      setPaymentOpen(true);
-    } catch {
-      // Errors handled by API interceptor
-    }
-  };
-
-  // Ref keeps the latest handleSubmitForm closure for the FAB's onSave
-  const handleSubmitFormRef = useRef(handleSubmitForm);
-  handleSubmitFormRef.current = handleSubmitForm;
-
   const isFormValid =
     isPageMode &&
     Boolean(bookingState.startTime) &&
@@ -494,6 +402,7 @@ export default function PractitionerAvailability({
     return () => {
       setDirtyState(null);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFormValid, isPageMode, setDirtyState]);
 
   const effectiveBookingState = isPageMode
