@@ -119,7 +119,8 @@ async function networkFirst (request, cacheName, fallbackUrl) {
 }
 
 self.addEventListener('fetch', function (event) {
-  const url = new URL(event.request.url)
+  const url = parseUrl(event.request.url)
+  if (!url) return event.respondWith(fetch(event.request))
 
   // Skip cross-origin requests — let the browser handle them directly.
   if (!isSameOrigin(url)) return
