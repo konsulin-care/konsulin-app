@@ -37,42 +37,42 @@ mutations with automatic list invalidation. No Go SSR. Aligned with ADR-015.
 
 # Implementation Steps
 
-- [ ] Create `src/app/journal/page.tsx` — entry list with pagination via `useQuery`
-- [ ] Create `src/app/journal/new/page.tsx` — create form with React Hook Form
-- [ ] Create `src/app/journal/edit/page.tsx` — edit form, pre-filled via `useQuery`
+- [ ] Create `@/journal/page.tsx` — entry list with pagination via `useQuery`
+- [ ] Create `@/journal/new/page.tsx` — create form with React Hook Form
+- [ ] Create `@/journal/edit/page.tsx` — edit form, pre-filled via `useQuery`
 - [ ] Add React Query hooks: `useJournals(patientId)`, `useJournal(id)`, `useCreateJournal()`, `useUpdateJournal()`, `useDeleteJournal()`
 - [ ] Observation construction as pure function — build FHIR payload from form values
 - [ ] Wire `onSuccess` callbacks: `queryClient.invalidateQueries({ queryKey: ['journals'] })`
-- [ ] Write `src/app/journal/__tests__/journal.test.tsx` — mock fetch, test CRUD flow
+- [ ] Write `@/journal/__tests__/journal.test.tsx` — mock fetch, test CRUD flow
 
 # Reference
 
-@src/app/journal/page.tsx:
+@@/journal/page.tsx:
 
 - Journal page: renders header + CreateJournal component
 - Keep: same page layout in React
 
-@src/components/journal/create.tsx:
+@@/components/journal/create.tsx:
 
 - Create journal: builds Observation payload with LOINC 51855-5, POST to /fhir/Observation
 - Keep: same Observation construction; adapt to `useMutation('/proxy/fhir/Observation')`
 
-@src/components/journal/edit.tsx:
+@@/components/journal/edit.tsx:
 
 - Edit journal: fetches Observation by ID, updates with status="amended"
 - Keep: same logic; adapt to `useMutation('/proxy/fhir/Observation/{id}')`
 
-@src/services/api/record.tsx (useSubmitJournal, useUpdateJournal):
+@@/services/api/record.tsx (useSubmitJournal, useUpdateJournal):
 
 - Journal API: POST /fhir/Observation, PUT /fhir/Observation/{id}
 - Adapt: wrap with React Query hooks using `/proxy/fhir/` base path
 
-@src/types/record.ts (IJournal):
+@/types/record.ts (IJournal):
 
 - Journal type: valueString, note[], effectiveDateTime, status, code.coding, subject, performer
 - Keep: same TypeScript type
 
-@src/app/record/[recordId]/record-journal.tsx:
+@@/record/[recordId]/record-journal.tsx:
 
 - Journal entry display: title (valueString), body (note[]), date (effectiveDateTime)
 - Keep: same display in React component

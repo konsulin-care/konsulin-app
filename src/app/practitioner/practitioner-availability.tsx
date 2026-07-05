@@ -95,8 +95,12 @@ export default function PractitionerAvailability({
   healthcareServiceName: propHealthcareServiceName,
   organizationId: propOrganizationId
 }: Props) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Stable date reference — only changes at midnight.
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
   const isPageMode = variant === 'page';
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -291,8 +295,7 @@ export default function PractitionerAvailability({
       : getNextAvailableDate(today, listAvailableDate);
     if (pageDate?.getTime() === initialDate.getTime()) return;
     setPageDate(initialDate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPageMode]);
+  }, [isPageMode, today, listAvailableDate, pageDate, setPageDate]);
 
   useEffect(() => {
     if (isPageMode) return;

@@ -1,10 +1,10 @@
 'use client';
 
+import ServiceCard from '@/components/practitioner/service-card';
+import { useFabSelection } from '@/context/fabSelectionContext';
 import { useClinicContext } from '@/hooks/useClinicContext';
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
 import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
-import { useFabSelection } from '@/context/fabSelectionContext';
-import ServiceCard from '@/components/practitioner/service-card';
 import type { Bundle, HealthcareService, PractitionerRole } from 'fhir/r4';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ServiceFormDrawer from './service-form-drawer';
@@ -57,7 +57,8 @@ export default function ServicesTab({
         localService.name !== fetchedService.name ||
         localService.active !== fetchedService.active ||
         localService.extraDetails !== fetchedService.extraDetails ||
-        JSON.stringify(localService.extension) !== JSON.stringify(fetchedService.extension)
+        JSON.stringify(localService.extension) !==
+          JSON.stringify(fetchedService.extension)
       );
     });
   }, [localServices, fetchedServices]);
@@ -94,14 +95,20 @@ export default function ServicesTab({
   );
 
   const clearLongPress = useCallback(() => {
-    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
   }, []);
 
   const handleTouchStart = useCallback(
     (_e: React.TouchEvent, svc: HealthcareService) => {
       isLongPress.current = false;
       clearLongPress();
-      longPressTimer.current = setTimeout(() => { isLongPress.current = true; toggleSelection(svc.id); }, 500);
+      longPressTimer.current = setTimeout(() => {
+        isLongPress.current = true;
+        toggleSelection(svc.id);
+      }, 500);
     },
     [clearLongPress, toggleSelection]
   );
@@ -124,13 +131,14 @@ export default function ServicesTab({
   );
 
   const handleSelectionDelete = useCallback(() => {
-    setLocalServices(prev =>
-      prev.filter(s => !selectedIds.has(s.id ?? ''))
-    );
+    setLocalServices(prev => prev.filter(s => !selectedIds.has(s.id ?? '')));
     setSelectedIds(new Set());
   }, [selectedIds]);
 
-  const handleSelectionCancel = useCallback(() => setSelectedIds(new Set()), []);
+  const handleSelectionCancel = useCallback(
+    () => setSelectedIds(new Set()),
+    []
+  );
 
   useEffect(() => {
     if (inSelectionMode) {
@@ -142,7 +150,13 @@ export default function ServicesTab({
     } else {
       setSelectionState(null);
     }
-  }, [inSelectionMode, selectedIds, setSelectionState, handleSelectionDelete, handleSelectionCancel]);
+  }, [
+    inSelectionMode,
+    selectedIds,
+    setSelectionState,
+    handleSelectionDelete,
+    handleSelectionCancel
+  ]);
 
   /** Open the service form drawer in create mode. */
   const handleAddService = () => {
@@ -158,7 +172,9 @@ export default function ServicesTab({
     };
     setLocalServices(prev => {
       const idx = prev.findIndex(s => s.id === serviceWithId.id);
-      return idx === -1 ? [...prev, serviceWithId] : prev.with(idx, serviceWithId);
+      return idx === -1
+        ? [...prev, serviceWithId]
+        : prev.with(idx, serviceWithId);
     });
     setDrawerOpen(false);
     setEditingService(undefined);
@@ -180,7 +196,10 @@ export default function ServicesTab({
               return {
                 fullUrl: `urn:uuid:${uuid}`,
                 resource: bodyWithoutId,
-                request: { method: 'POST' as const, url: 'HealthcareService' } as const
+                request: {
+                  method: 'POST' as const,
+                  url: 'HealthcareService'
+                } as const
               };
             }
             return {
@@ -206,7 +225,7 @@ export default function ServicesTab({
                     ? `urn:uuid:${s.id.replace('new-', '')}`
                     : `HealthcareService/${s.id}`
                 }))
-            } as unknown as HealthcareService,
+            },
             request: {
               method: 'PUT' as const,
               url: `PractitionerRole/${practitionerRoleId}`
@@ -216,7 +235,9 @@ export default function ServicesTab({
       };
       await submitFhirBundle(bundle);
       await refetch();
-    } catch { /* errors handled internally */ } finally {
+    } catch (err) {
+      console.warn('[services-tab] save failed', err);
+    } finally {
       setSaveAllLoading(false);
     }
   }, [localServices, practitionerRoleId, refetch, practitionerRole]);
@@ -231,14 +252,20 @@ export default function ServicesTab({
         <div className='py-8 text-center text-sm text-gray-500'>
           No healthcare services configured.
           <br />
-          <button onClick={handleAddService} className='text-primary mt-2 underline'>
+          <button
+            onClick={handleAddService}
+            className='text-primary mt-2 underline'
+          >
             Add Service
           </button>
         </div>
         <ServiceFormDrawer
           key={editingService?.id ?? 'create'}
           open={drawerOpen}
-          onClose={() => { setDrawerOpen(false); setEditingService(undefined); }}
+          onClose={() => {
+            setDrawerOpen(false);
+            setEditingService(undefined);
+          }}
           onSave={handleDrawerSave}
           service={editingService}
           providedBy={`Organization/${clinicId}`}
@@ -254,7 +281,10 @@ export default function ServicesTab({
         {inSelectionMode ? (
           <h3 className='text-sm font-bold'>
             {selectedIds.size} selected —{' '}
-            <button onClick={handleSelectionCancel} className='text-primary underline'>
+            <button
+              onClick={handleSelectionCancel}
+              className='text-primary underline'
+            >
               Cancel
             </button>
           </h3>
@@ -264,7 +294,10 @@ export default function ServicesTab({
           </h3>
         )}
         {!inSelectionMode && (
-          <button onClick={handleAddService} className='text-primary text-sm underline'>
+          <button
+            onClick={handleAddService}
+            className='text-primary text-sm underline'
+          >
             + Add Service
           </button>
         )}
@@ -290,7 +323,10 @@ export default function ServicesTab({
       <ServiceFormDrawer
         key={editingService?.id ?? 'create'}
         open={drawerOpen}
-        onClose={() => { setDrawerOpen(false); setEditingService(undefined); }}
+        onClose={() => {
+          setDrawerOpen(false);
+          setEditingService(undefined);
+        }}
         onSave={handleDrawerSave}
         service={editingService}
         providedBy={`Organization/${clinicId}`}

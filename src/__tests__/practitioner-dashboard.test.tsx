@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,14 +20,17 @@ vi.mock('@/components/ui/skeleton', () => ({
 let triggerDaySelect: ((date: Date) => void) | null = null;
 
 vi.mock('@/app/practitioner/booking-calendar', () => ({
-  default: (props: any) => {
+  default: (props: {
+    handleFilterChange: (key: string, val: unknown) => void;
+    colorLegend?: Array<{ name: string }>;
+  }) => {
     // Expose the handleFilterChange to trigger day selection in tests
     triggerDaySelect = (date: Date) => {
       props.handleFilterChange('date', date);
     };
     return (
       <div data-testid='mock-booking-calendar'>
-        {(props.colorLegend ?? []).map((entry: any) => (
+        {(props.colorLegend ?? []).map((entry: { name: string }) => (
           <div key={entry.name}>{entry.name}</div>
         ))}
       </div>
@@ -83,8 +84,7 @@ describe('PractitionerDashboard', () => {
   it('passes midnight monthStart to the hook', () => {
     render(<PractitionerDashboard />, { wrapper });
 
-    const callArgs =
-      vi.mocked(usePractitionerDashboard).mock.calls[0][0];
+    const callArgs = vi.mocked(usePractitionerDashboard).mock.calls[0][0];
     expect(callArgs.monthStart.getHours()).toBe(0);
     expect(callArgs.monthStart.getMinutes()).toBe(0);
     expect(callArgs.monthStart.getSeconds()).toBe(0);
@@ -96,14 +96,12 @@ describe('PractitionerDashboard', () => {
   it('passes stable monthStart across re-renders', () => {
     const { rerender } = render(<PractitionerDashboard />, { wrapper });
 
-    const firstCallArgs =
-      vi.mocked(usePractitionerDashboard).mock.calls[0][0];
+    const firstCallArgs = vi.mocked(usePractitionerDashboard).mock.calls[0][0];
 
     // Force a re-render by re-rendering the component
     rerender(<PractitionerDashboard />);
 
-    const secondCallArgs =
-      vi.mocked(usePractitionerDashboard).mock.calls[1][0];
+    const secondCallArgs = vi.mocked(usePractitionerDashboard).mock.calls[1][0];
     expect(secondCallArgs.monthStart).toBe(firstCallArgs.monthStart);
     expect(secondCallArgs.monthStart.getHours()).toBe(0);
   });

@@ -14,6 +14,82 @@ import { SearchIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import PractitionerFilter, { type FilterState } from './practitioner-filter';
 
+/** Shared fuzzy-match logic. */
+function fuzzyMatch(query: string, text: string): boolean {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  const t = text.toLowerCase();
+  let qi = 0;
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (q[qi] === t[ti]) qi++;
+  }
+  return qi === q.length;
+}
+
+interface FilterBarProps {
+  searchQuery: string;
+  setSearchQuery: (v: string) => void;
+  locations: Array<{ id: string; name: string }>;
+  filter: FilterState;
+  handleFilterChange: (f: FilterState) => void;
+  activeFilterCount: number;
+  locationName: string;
+  dismissStatus: () => void;
+  dismissLocation: () => void;
+}
+
+/** Filter bar with search, filter dropdown, and active filter badges. */
+function FilterBar({
+  searchQuery,
+  setSearchQuery,
+  locations,
+  filter,
+  handleFilterChange,
+  activeFilterCount,
+  locationName,
+  dismissStatus,
+  dismissLocation
+}: FilterBarProps) {
+  return (
+    <div className='flex flex-col gap-2'>
+      <div className='flex items-center gap-2'>
+        <InputWithIcon
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder='Search practitioner...'
+          className='h-[50px] w-full border-0 bg-[#F9F9F9]'
+          startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
+        />
+        <PractitionerFilter
+          locations={locations}
+          value={filter}
+          onChange={handleFilterChange}
+        />
+      </div>
+      {activeFilterCount > 0 && (
+        <div className='flex flex-wrap gap-2' data-testid='filter-badges'>
+          {filter.status !== 'all' && (
+            <Badge
+              className='cursor-pointer gap-1 px-3 py-1 text-xs whitespace-nowrap'
+              onClick={dismissStatus}
+            >
+              {filter.status === 'active' ? 'Active' : 'Inactive'} ×
+            </Badge>
+          )}
+          {filter.locationId && (
+            <Badge
+              className='cursor-pointer gap-1 px-3 py-1 text-xs whitespace-nowrap'
+              onClick={dismissLocation}
+            >
+              {locationName} ×
+            </Badge>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Full-screen loading spinner. */
 function LoadingState() {
   return (
@@ -58,9 +134,7 @@ export default function AdminListing() {
         if (saved?.value) setFilter(saved.value);
         return null;
       })
-      .catch(() => {
-        /* ignore */
-      });
+      .catch((err: unknown) => console.warn('[IndexedDB]', err));
   }, []);
 
   // Persist filter to IndexedDB on changes
@@ -70,9 +144,7 @@ export default function AdminListing() {
       ownerId: '',
       prefKey: 'practitioner_filter',
       value: newFilter
-    }).catch(() => {
-      /* ignore */
-    });
+    }).catch((err: unknown) => console.warn('[IndexedDB]', err));
   }, []);
 
   // Fetch locations for the current organization
@@ -100,18 +172,6 @@ export default function AdminListing() {
     handleFilterChange({ status: filter.status });
   }, [filter, handleFilterChange]);
 
-  // Fuzzy match
-  const fuzzyMatch = useCallback((query: string, text: string): boolean => {
-    if (!query) return true;
-    const queryLower = query.toLowerCase();
-    const textLower = text.toLowerCase();
-    let queryIndex = 0;
-    for (let textIndex = 0; textIndex < textLower.length && queryIndex < queryLower.length; textIndex++) {
-      if (queryLower[queryIndex] === textLower[textIndex]) queryIndex++;
-    }
-    return queryIndex === queryLower.length;
-  }, []);
-
   const filteredPractitioners = useMemo(() => {
     let result = practitioners;
     if (filter.status !== 'all') {
@@ -123,51 +183,27 @@ export default function AdminListing() {
       result = result.filter(p => fuzzyMatch(searchQuery, p.practitionerName));
     }
     return result;
-  }, [practitioners, filter.status, searchQuery, fuzzyMatch]);
+  }, [practitioners, filter.status, searchQuery]);
 
   if (isListingLoading) return <LoadingState />;
 
-  const hasActiveFilters =
-    filter.status !== 'all' || Boolean(filter.locationId);
-  const showFilter = practitioners.length > 0 || hasActiveFilters;
+  const showFilter =
+    practitioners.length > 0 ||
+    filter.status !== 'all' ||
+    Boolean(filter.locationId);
 
   const filterBar = showFilter ? (
-    <div className='flex flex-col gap-2'>
-      <div className='flex items-center gap-2'>
-        <InputWithIcon
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          placeholder='Search practitioner...'
-          className='h-[50px] w-full border-0 bg-[#F9F9F9]'
-          startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
-        />
-        <PractitionerFilter
-          locations={locations ?? []}
-          value={filter}
-          onChange={handleFilterChange}
-        />
-      </div>
-      {activeFilterCount > 0 && (
-        <div className='flex flex-wrap gap-2' data-testid='filter-badges'>
-          {filter.status !== 'all' && (
-            <Badge
-              className='cursor-pointer gap-1 px-3 py-1 text-xs whitespace-nowrap'
-              onClick={dismissStatus}
-            >
-              {filter.status === 'active' ? 'Active' : 'Inactive'} ×
-            </Badge>
-          )}
-          {filter.locationId && (
-            <Badge
-              className='cursor-pointer gap-1 px-3 py-1 text-xs whitespace-nowrap'
-              onClick={dismissLocation}
-            >
-              {locationName} ×
-            </Badge>
-          )}
-        </div>
-      )}
-    </div>
+    <FilterBar
+      searchQuery={searchQuery}
+      setSearchQuery={setSearchQuery}
+      locations={locations ?? []}
+      filter={filter}
+      handleFilterChange={handleFilterChange}
+      activeFilterCount={activeFilterCount}
+      locationName={locationName}
+      dismissStatus={dismissStatus}
+      dismissLocation={dismissLocation}
+    />
   ) : null;
 
   if (practitioners.length === 0) {

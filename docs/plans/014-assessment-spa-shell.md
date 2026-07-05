@@ -23,54 +23,54 @@ with ADR-015.
 - SOAP uses AEHRC Smart Forms + `extractObservationBased()` to produce Observation resources
 - SOAP submitted as FHIR transaction Bundle (QuestionnaireResponse + Observation[])
 - Practitioner-only auth guard on `/assessments/soap` via Next.js middleware or page effect
-- React SPA bundles at `src/assessment-spa/` built into Next.js static export
+- React SPA bundles at `@/assessment-spa/` built into Next.js static export
 - Go BFF proxies `/assessments/api/*` to backend FHIR
 - IndexedDB-based draft persistence for offline (ADR-010)
 - Terminology server URL passed from Go config via global JS variable (set in Go `index.html` injection)
 
 # Implementation Steps
 
-- [ ] Create `src/app/assessments/page.tsx` — SPA shell: browse centre (no query) or fill questionnaire (with `?id=<id>`)
-- [ ] Create `src/app/assessments/soap/page.tsx` — SPA shell with practitioner-only guard
+- [ ] Create `@/assessments/page.tsx` — SPA shell: browse centre (no query) or fill questionnaire (with `?id=<id>`)
+- [ ] Create `@/assessments/soap/page.tsx` — SPA shell with practitioner-only guard
 - [ ] Create participant-selector React component (fetches today's sessions, allows patient search)
-- [ ] Add auth guard in `src/app/assessments/soap/page.tsx` — redirect non-Practitioner roles
-- [ ] Ensure React SPA bundles (`src/assessment-spa/`) are built by Next.js pipeline
+- [ ] Add auth guard in `@/assessments/soap/page.tsx` — redirect non-Practitioner roles
+- [ ] Ensure React SPA bundles (`@/assessment-spa/`) are built by Next.js pipeline
 - [ ] Go BFF: register `/assessments/api/*` proxy route (already exists in proxy pattern)
-- [ ] Write `src/app/assessments/__tests__/assessment.test.tsx` — test SPA mount, auth guard, SOAP submission
+- [ ] Write `@/assessments/__tests__/assessment.test.tsx` — test SPA mount, auth guard, SOAP submission
 
 # Reference
 
-@src/app/assessments/page.tsx:
+@@/assessments/page.tsx:
 
 - Assessment centre: browse/search questionnaires, popular/regular/research tabs, QR sharing
 - Keep: same React SPA, served by Next.js page
 
-@src/app/assessments/[assessmentsId]/page.tsx:
+@@/assessments/[assessmentsId]/page.tsx:
 
 - Fill assessment: fetches Questionnaire, FhirFormsRenderer with participant selector for practitioners
 - Keep: same React component; add participant-selector as React component (was templ partial)
 
-@src/app/assessments/soap/page.tsx:
+@@/assessments/soap/page.tsx:
 
 - SOAP creation: fetches SOAP Questionnaire, participant selector, SoapForm renderer
 - Keep: same React rendering; auth guard via React effect or Next.js middleware
 
-@src/app/assessments/soap/participant.tsx:
+@@/assessments/soap/participant.tsx:
 
 - Patient selector: today's sessions list, create new patient by email
 - Keep: participant selector as React component (was templ)
 
-@src/components/soap-report/soap-form.tsx:
+@@/components/soap-report/soap-form.tsx:
 
 - SOAP form: AEHRC buildForm + extractObservationBased, submits FHIR transaction Bundle
 - Keep: client-side React SPA component running in browser
 
-@src/components/general/fhir-forms-renderer.tsx:
+@@/components/general/fhir-forms-renderer.tsx:
 
 - General form renderer: AEHRC BaseRenderer, localStorage draft, submission, interpretation webhook
 - Keep: client-side React SPA component running in browser
 
-@src/services/api/assessment.tsx:
+@@/services/api/assessment.tsx:
 
 - Assessment API: questionnaire CRUD, SOAP submission, search, result brief
 - Adapt: Go BFF proxies /assessments/api/\* to backend FHIR

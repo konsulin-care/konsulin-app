@@ -287,7 +287,7 @@ describe('PractitionerAvailability', () => {
       mutateAsync: vi.fn().mockResolvedValue({
         slotId: 'Slot/created-slot-1',
         invoiceId: 'Invoice/created-inv-1',
-        fee: { value: 150000, currency: 'IDR' },
+        fee: { value: 150_000, currency: 'IDR' },
         healthcareServiceName: 'General Consultation'
       }),
       isLoading: false
@@ -440,7 +440,7 @@ describe('PractitionerAvailability', () => {
     const mockRelayMutateAsync = vi.fn().mockResolvedValue({
       slotId: 'Slot/created-slot-1',
       invoiceId: 'Invoice/created-inv-1',
-      fee: { value: 150000, currency: 'IDR' },
+      fee: { value: 150_000, currency: 'IDR' },
       healthcareServiceName: 'General Consultation'
     });
     vi.mocked(useRelayBooking).mockReturnValue({
@@ -480,8 +480,8 @@ describe('PractitionerAvailability', () => {
     const submitButton = buttons.find(b => b.textContent?.includes('Book Now'));
     expect(submitButton).toBeTruthy();
     expect(submitButton).not.toBeDisabled();
-    const btn = submitButton as HTMLElement;
-    fireEvent.click(btn);
+    // safe: assert(submitButton).toBeTruthy() above guarantees non-null
+    fireEvent.click(submitButton);
 
     // Wait for async handleSubmitForm to complete
     // Payment drawer should open — verify by checking for Pay Now text

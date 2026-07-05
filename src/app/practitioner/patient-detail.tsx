@@ -1,18 +1,16 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment -- FHIR Address contains any-typed extension */
-
 import { LoadingSpinnerIcon } from '@/components/icons';
+import ServiceCard from '@/components/practitioner/service-card';
 import { Badge } from '@/components/ui/badge';
 import { useDetailPractitioner } from '@/services/clinic';
 import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
 import { generateAvatarPlaceholder } from '@/utils/helper';
-import ServiceCard from '@/components/practitioner/service-card';
+import type { HealthcareService } from 'fhir/r4';
+import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useMemo } from 'react';
-import type { HealthcareService } from 'fhir/r4';
 
 type Props = {
   readonly practitionerRoleId: string;
@@ -51,9 +49,7 @@ function PractitionerIdentity({
       ? specialties.length - maxVisibleBadges
       : 0;
   const visibleBadges =
-    overflowCount > 0
-      ? specialties.slice(0, maxVisibleBadges)
-      : specialties;
+    overflowCount > 0 ? specialties.slice(0, maxVisibleBadges) : specialties;
 
   const { initials, seed } = useMemo(
     () => generateAvatarPlaceholder({ id: practitionerId, name }),
@@ -112,16 +108,26 @@ function ClinicLocationSection({
   orgOrLocation,
   address
 }: {
-  readonly orgOrLocation: { name?: string; address?: Array<{ line?: string[]; district?: string; city?: string; postalCode?: string }> } | undefined;
-  readonly address: { line?: string[]; district?: string; city?: string; postalCode?: string } | undefined;
+  readonly orgOrLocation:
+    | {
+        name?: string;
+        address?: Array<{
+          line?: string[];
+          district?: string;
+          city?: string;
+          postalCode?: string;
+        }>;
+      }
+    | undefined;
+  readonly address:
+    | { line?: string[]; district?: string; city?: string; postalCode?: string }
+    | undefined;
 }) {
   if (!orgOrLocation) return null;
   return (
     <div>
       <div className='text-sm text-gray-500'>Location</div>
-      <div className='text-sm font-medium text-black'>
-        {orgOrLocation.name}
-      </div>
+      <div className='text-sm font-medium text-black'>{orgOrLocation.name}</div>
       {address && (
         <div className='mt-1 text-xs text-gray-500'>
           {formatAddress(address)}
@@ -239,8 +245,10 @@ function PatientDetailBody({
   const specialties = detail.resource.specialty?.map(s => s.text) ?? [];
   const practitionerId = detail.practitioner?.id ?? detail.resource.id ?? '';
   const displayOrg = detail.location ?? detail.organization;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- FHIR detail is any-typed
   const firstAddr =
     detail.location?.address?.[0] ?? detail.organization?.address?.[0];
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- FHIR address is any-typed
   const displayAddress = firstAddr;
 
   /** Navigate to the given URL using router. */
@@ -256,7 +264,18 @@ function PatientDetailBody({
         specialties={specialties}
       />
       <ClinicLocationSection
-        orgOrLocation={displayOrg}
+        orgOrLocation={
+          displayOrg as {
+            name?: string;
+            address?: Array<{
+              line?: string[];
+              district?: string;
+              city?: string;
+              postalCode?: string;
+            }>;
+          }
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- FHIR address is any-typed
         address={displayAddress}
       />
       <HealthcareServicesSection
