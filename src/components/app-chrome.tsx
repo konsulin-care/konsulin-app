@@ -1,13 +1,19 @@
-import dynamic from 'next/dynamic';
-import { Suspense, type ReactNode } from 'react';
-import { ToastContainer, ToastContainerProps } from 'react-toastify';
 import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
 import QuickActionFab from '@/components/quick-action-fab';
 import { FabDirtyProvider } from '@/context/fabDirtyContext';
 import { FabSelectionProvider } from '@/context/fabSelectionContext';
+import dynamic from 'next/dynamic';
+import { Suspense, type ReactNode } from 'react';
+import { ToastContainer, ToastContainerProps } from 'react-toastify';
 
-const NextTopLoader = dynamic(() => import('nextjs-toploader'), { ssr: false });
+const NextTopLoader = dynamic(
+  () =>
+    import('nextjs-toploader') as unknown as Promise<
+      React.ComponentType<Record<string, unknown>>
+    >,
+  { ssr: false }
+);
 
 const toastConfig: ToastContainerProps = {
   position: 'top-right',
