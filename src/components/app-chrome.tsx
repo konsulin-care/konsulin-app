@@ -4,14 +4,14 @@ import QuickActionFab from '@/components/quick-action-fab';
 import { FabDirtyProvider } from '@/context/fabDirtyContext';
 import { FabSelectionProvider } from '@/context/fabSelectionContext';
 import dynamic from 'next/dynamic';
-import { Suspense, type ReactNode } from 'react';
+import { Suspense, type ComponentType, type ReactNode } from 'react';
 import { ToastContainer, ToastContainerProps } from 'react-toastify';
 
 const NextTopLoader = dynamic(
   () =>
-    import('nextjs-toploader') as unknown as Promise<
-      React.ComponentType<Record<string, unknown>>
-    >,
+    import('@/components/next-top-loader') as Promise<{
+      default: ComponentType<Record<string, unknown>>;
+    }>,
   { ssr: false }
 );
 

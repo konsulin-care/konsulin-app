@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -8,7 +7,9 @@ vi.mock('next/font/google', () => ({
 }));
 
 vi.mock('next/script', () => ({
-  default: (props: Record<string, unknown>) => <script data-testid='mock-script' {...props} />
+  default: (props: Record<string, unknown>) => (
+    <script data-testid='mock-script' {...props} />
+  )
 }));
 
 vi.mock('@/components/general/route-response-cleaner', () => ({
@@ -16,11 +17,12 @@ vi.mock('@/components/general/route-response-cleaner', () => ({
 }));
 
 vi.mock('@/components/general/query-provider', () => ({
-  default: ({ children }: { children: React.ReactNode }) => <>{children}</>
+  default: ({ children }: { children: React.ReactNode }) => children
 }));
 
 vi.mock('@/components/general/runtime-config-provider', () => ({
-  RuntimeConfigProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
+  RuntimeConfigProvider: ({ children }: { children: React.ReactNode }) =>
+    children
 }));
 
 vi.mock('@/components/general/profile-completeness-modal', () => ({
@@ -32,30 +34,36 @@ vi.mock('@/components/quick-action-fab', () => ({
 }));
 
 vi.mock('@/components/supertokensProvider', () => ({
-  SuperTokensProviders: ({ children }: { children: React.ReactNode }) => <>{children}</>
+  SuperTokensProviders: ({ children }: { children: React.ReactNode }) =>
+    children
 }));
 
 vi.mock('@/context/auth/authContext', () => ({
-  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
 vi.mock('@/context/booking/bookingContext', () => ({
-  BookingProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
+  BookingProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
 vi.mock('@/context/fabDirtyContext', () => ({
-  FabDirtyProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
+  FabDirtyProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
 vi.mock('@/context/fabSelectionContext', () => ({
-  FabSelectionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
+  FabSelectionProvider: ({ children }: { children: React.ReactNode }) =>
+    children
 }));
 
 vi.mock('@/context/profile/profileContext', () => ({
-  ProfileProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
+  ProfileProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
 vi.mock('nextjs-toploader', () => ({
+  default: () => <div data-testid='next-top-loader' />
+}));
+
+vi.mock('@/components/next-top-loader', () => ({
   default: () => <div data-testid='next-top-loader' />
 }));
 
@@ -92,7 +100,9 @@ describe('RootLayout', () => {
     expect(screen.getByTestId('route-response-cleaner')).toBeInTheDocument();
     expect(screen.getByTestId('next-top-loader')).toBeInTheDocument();
     expect(screen.getByTestId('toast-container')).toBeInTheDocument();
-    expect(screen.getByTestId('profile-completeness-modal')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('profile-completeness-modal')
+    ).toBeInTheDocument();
     expect(screen.getByTestId('quick-action-fab')).toBeInTheDocument();
   });
 
