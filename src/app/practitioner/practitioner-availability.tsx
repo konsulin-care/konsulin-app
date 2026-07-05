@@ -34,6 +34,10 @@ import {
   isAppointmentPayload,
   matchesPractitionerFromPath
 } from './utils';
+import {
+  getNextAvailableDate,
+  isDateAvailable
+} from './booking-date-utils';
 
 type TempBookingData = {
   scheduleId: string;
@@ -181,16 +185,6 @@ export default function PractitionerAvailability({
     isPageMode ? pageDate : bookingState.date
   );
 
-  /** Check if a given date exists in the available days array. */
-  const isDateAvailable = (date: Date, availableDays: Date[]): boolean => {
-    return availableDays.some(
-      availableDate =>
-        date.getFullYear() === availableDate.getFullYear() &&
-        date.getMonth() === availableDate.getMonth() &&
-        date.getDate() === availableDate.getDate()
-    );
-  };
-
   /** Dispatch a booking info update to the reducer. */
   const handleFilterChange = (
     label: string,
@@ -202,38 +196,6 @@ export default function PractitionerAvailability({
         [label]: value
       }
     });
-  };
-
-  /** Find the next available date from the given date, incrementing day by day. */
-  const getNextAvailableDate = (
-    currentDate: Date,
-    availableDays: Date[]
-  ): Date => {
-    const date = new Date(currentDate);
-
-    if (availableDays.length === 0) {
-      return date;
-    }
-
-    // Early check: if all dates in availableDays are in the past, just return the input date
-    const now = new Date();
-    let allInPast = true;
-    for (const d of availableDays) {
-      if (d >= now) {
-        allInPast = false;
-        break;
-      }
-    }
-    if (allInPast) {
-      return date;
-    }
-
-    // loop until an available day is found
-    while (!isDateAvailable(date, availableDays)) {
-      date.setDate(date.getDate() + 1);
-    }
-
-    return date;
   };
 
   /** Reset time slot and errors, but preserve problem brief text. */
