@@ -1,0 +1,52 @@
+import dynamic from 'next/dynamic';
+import { Suspense, type ReactNode } from 'react';
+import { ToastContainer, ToastContainerProps } from 'react-toastify';
+import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
+import RouteResponseCleaner from '@/components/general/route-response-cleaner';
+import QuickActionFab from '@/components/quick-action-fab';
+import { FabDirtyProvider } from '@/context/fabDirtyContext';
+import { FabSelectionProvider } from '@/context/fabSelectionContext';
+
+const NextTopLoader = dynamic(() => import('nextjs-toploader'), { ssr: false });
+
+const toastConfig: ToastContainerProps = {
+  position: 'top-right',
+  autoClose: 3000,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true
+};
+
+/** Main page layout wrapper. */
+function PageContent({ children }: Readonly<{ children: ReactNode }>) {
+  return (
+    <div className='flex min-h-screen flex-col'>
+      <div id='modal' />
+      <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
+        {children}
+      </main>
+    </div>
+  );
+}
+
+/** Renders app chrome: top loader, toasts, modals, FAB, and page content. */
+export default function AppChrome({
+  children
+}: Readonly<{ children: ReactNode }>) {
+  return (
+    <>
+      <RouteResponseCleaner />
+      <Suspense fallback={null}>
+        <NextTopLoader showSpinner={false} color='#13c2c2' />
+      </Suspense>
+      <ToastContainer {...toastConfig} />
+      <ProfileCompletenessModal />
+      <FabDirtyProvider>
+        <FabSelectionProvider>
+          <PageContent>{children}</PageContent>
+          <QuickActionFab />
+        </FabSelectionProvider>
+      </FabDirtyProvider>
+    </>
+  );
+}
