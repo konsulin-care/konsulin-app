@@ -15,6 +15,36 @@ import Image from 'next/image';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 
+/** Inner content block of a record card. */
+function RecordCardContent({
+  formattedTitle,
+  cleanDescription
+}: {
+  formattedTitle: string;
+  cleanDescription: string;
+}) {
+  return (
+    <div className='flex'>
+      <div className='mr-2 h-[40px] w-[40px] shrink-0 rounded-full bg-[#F8F8F8] p-2'>
+        <Image
+          className='h-[24px] w-[24px] object-cover'
+          src={'/images/note.svg'}
+          width={24}
+          height={24}
+          alt='note'
+        />
+      </div>
+      <div className='flex w-0 grow flex-col justify-center'>
+        <div className='text-[12px] font-bold'>{formattedTitle}</div>
+        <div className='line-clamp-3 overflow-hidden text-[10px] text-ellipsis'>
+          <ReactMarkdown components={customMarkdownComponents}>
+            {cleanDescription}
+          </ReactMarkdown>
+        </div>
+      </div>
+    </div>
+  );
+}
 type Props = {
   readonly record: IRecord;
   readonly getPractitionerInfo: (r: IRecord) => {
@@ -123,25 +153,7 @@ export default function RecordCard({
       href={url}
       className='card mt-4 flex flex-col gap-2 p-4'
     >
-      <div className='flex'>
-        <div className='mr-2 h-[40px] w-[40px] shrink-0 rounded-full bg-[#F8F8F8] p-2'>
-          <Image
-            className='h-[24px] w-[24px] object-cover'
-            src={'/images/note.svg'}
-            width={24}
-            height={24}
-            alt='note'
-          />
-        </div>
-        <div className='flex w-0 grow flex-col justify-center'>
-          <div className='text-[12px] font-bold'>{formattedTitle}</div>
-          <div className='line-clamp-3 overflow-hidden text-[10px] text-ellipsis'>
-            <ReactMarkdown components={customMarkdownComponents}>
-              {cleanDescription}
-            </ReactMarkdown>
-          </div>
-        </div>
-      </div>
+      <RecordCardContent formattedTitle={formattedTitle} cleanDescription={cleanDescription} />
       <hr className='w-full' />
 
       <RecordCardFooter
