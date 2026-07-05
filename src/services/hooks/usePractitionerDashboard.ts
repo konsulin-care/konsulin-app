@@ -1,12 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
-
+import { getAvailableDays } from '@/app/practitioner/utils';
 import { getAPI } from '@/services/api';
 import type { MergedSession } from '@/types/appointment';
-import { getAvailableDays } from '@/app/practitioner/utils';
 import { parseMergedSessions } from '@/utils/helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { useEffect, useMemo } from 'react';
 import type {
   Appointment,
   Bundle,
@@ -14,6 +11,7 @@ import type {
   Location,
   PractitionerRole
 } from 'fhir/r4';
+import { useEffect, useMemo } from 'react';
 
 type ColorEntry = { color: string; name: string };
 
@@ -80,7 +78,7 @@ type AppointmentLocation = {
 function extractAppointmentLocations(
   bundle: Bundle | undefined
 ): AppointmentLocation[] {
-  return extractResources<Appointment>(bundle, 'Appointment').flatMap(a => ({
+  return extractResources<Appointment>(bundle, 'Appointment').map(a => ({
     date: a.start ? format(new Date(a.start), 'yyyy-MM-dd') : null,
     locationRef: (a.participant ?? []).find(
       (p: Appointment['participant'][number]) =>
@@ -113,7 +111,7 @@ function computeDayVisuals(
     if (locId && !seenLocations.has(locId)) {
       seenLocations.add(locId);
       const loc = locations.find(l => l.id === locId);
-      const name = loc?.name ?? (loc?.alias?.[0] ?? locId);
+      const name = loc?.name ?? loc?.alias?.[0] ?? locId;
       legendMap.set(locId, { color, name });
     }
   }
@@ -213,7 +211,8 @@ function useRoleQuery(
     }
   }, [monthData, practitionerId, queryClient, roleQueryKey]);
 
-  return useQuery<PractitionerRole[]>({
+  return useQuery({
+    // @ts-expect-error: TanStack Query v4 overload not matching TS version
     queryKey: roleQueryKey,
     queryFn: async () => {
       const API = await getAPI();
@@ -264,12 +263,10 @@ export function usePractitionerDashboard({
 
   // Query D: full day data when a day is selected
   const dayQuery = useDayQuery(practitionerId, selectedDate);
-  const daySessions = dayQuery.data
-    ? parseMergedSessions(dayQuery.data)
-    : [];
+  const daySessions = dayQuery.data ? parseMergedSessions(dayQuery.data) : [];
 
   // Compute available days from aggregated PractitionerRole availableTime
-  const availableTime = (roles ?? []).flatMap(
+  const availableTime = ((roles ?? []) as PractitionerRole[]).flatMap(
     r => r.availableTime ?? []
   );
   const listAvailableDate = getAvailableDays(availableTime, monthStart);

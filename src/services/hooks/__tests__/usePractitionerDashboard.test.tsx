@@ -1,8 +1,10 @@
+/* eslint-disable react/display-name */
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { Bundle } from 'fhir/r4';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { format } from 'date-fns';
+import type { Bundle, BundleEntry } from 'fhir/r4';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePractitionerDashboard } from '../usePractitionerDashboard';
 
 vi.mock('@/services/api', () => ({
@@ -24,6 +26,7 @@ const mockAppointmentEntry = (
 ) => ({
   resource: {
     resourceType: 'Appointment',
+    status: 'booked',
     id,
     start,
     slot: [{ reference: 'Slot/slot-1' }],
@@ -36,25 +39,27 @@ const mockAppointmentEntry = (
 
 const mockMonthBundle: Bundle = {
   resourceType: 'Bundle',
+  type: 'searchset',
   total: 2,
   entry: [
     mockAppointmentEntry('appt-1', '2026-07-04T02:00:00.000Z', [
       'Patient/pat-1',
       'Location/loc-1',
       'PractitionerRole/role-1'
-    ]),
+    ]) as unknown as BundleEntry,
     mockAppointmentEntry('appt-2', '2026-07-04T03:00:00.000Z', [
       'Patient/pat-2',
       'Location/loc-2',
       'PractitionerRole/role-2'
-    ]),
+    ]) as unknown as BundleEntry,
     {
       resource: {
         resourceType: 'Slot',
         id: 'slot-1',
         start: '2026-07-04T02:00:00.000Z',
         end: '2026-07-04T02:30:00.000Z',
-        status: 'free'
+        status: 'free',
+        schedule: { reference: 'Schedule/sched-1' }
       }
     },
     {
@@ -113,13 +118,39 @@ describe('usePractitionerDashboard', () => {
       defaultOptions: { queries: { retry: false } }
     });
     mockGet = vi.fn();
-    vi.mocked(getAPI).mockResolvedValue({ get: mockGet, post: vi.fn() } as any);
+    vi.mocked(getAPI).mockResolvedValue({
+      get: mockGet,
+      post: vi.fn()
+    } as unknown as Awaited<ReturnType<typeof getAPI>>);
     // Default mock: month query returns the month bundle
     mockGet.mockResolvedValue({ data: mockMonthBundle });
   });
 
   afterEach(() => {
     queryClient.clear();
+  });
+
+  it('maps each appointment to exactly one dayDot entry (no flattening)', async () => {
+    const { result } = renderHook(
+      () =>
+        usePractitionerDashboard({
+          practitionerId: 'pract-1',
+          monthStart: new Date('2026-07-01'),
+          monthEnd: new Date('2026-07-31')
+        }),
+      { wrapper: createWrapper(queryClient) }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    const dots = result.current.dayDots?.get('2026-07-04');
+    expect(dots).toBeDefined();
+    expect(dots).toHaveLength(2);
+    expect(dots).toEqual(
+      expect.arrayContaining([expect.any(String), expect.any(String)])
+    );
   });
 
   it('returns parsed month data including dayDots and colorLegend', async () => {
@@ -143,7 +174,7 @@ describe('usePractitionerDashboard', () => {
     expect(dots).toBeDefined();
     expect(dots).toHaveLength(2);
 
-    const colorLegend = result.current.colorLegend as NonNullable<typeof result.current.colorLegend>;
+    const colorLegend = result.current.colorLegend;
     expect(colorLegend).toHaveLength(2);
     expect(colorLegend[0].name).toBe('Clinic A');
     expect(colorLegend[1].name).toBe('Clinic B');
@@ -167,16 +198,17 @@ describe('usePractitionerDashboard', () => {
     });
 
     // Verify the day query URL contains the correct date
-    const dateStr = format(
-      new Date('2026-07-04'),
-      "yyyy-MM-dd'T'00:"
-    );
-    const dayCalls = mockGet.mock.calls.filter(
-      (call: unknown) =>
-        typeof (call as any[])[0] === 'string' &&
-        (call as any[])[0].includes('/fhir/Appointment') &&
-        (call as any[])[0].includes(`slot.start=ge${dateStr}`)
-    );
+    const dateStr = format(new Date('2026-07-04'), "yyyy-MM-dd'T'00:");
+    const dayCalls = mockGet.mock.calls
+      .filter(
+        (call: unknown): call is [string, ...unknown[]] =>
+          Array.isArray(call) && typeof call[0] === 'string'
+      )
+      .filter(
+        ([url]) =>
+          url.includes('/fhir/Appointment') &&
+          url.includes(`slot.start=ge${dateStr}`)
+      );
     expect(dayCalls.length).toBeGreaterThanOrEqual(1);
 
     // Verify day sessions are returned
