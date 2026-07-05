@@ -110,6 +110,19 @@ export function matchesPractitionerFromPath(
 
 // Helper function to extract slotMinutes from Schedule's comment field
 /** Extract slot duration in minutes from a Schedule's comment field. */
+/** Temporary booking data stored in IndexedDB for unauthenticated users. */
+export type TempBookingData = {
+  scheduleId: string;
+  sessionType: string;
+  problemBrief: string;
+  practitionerRoleId: string;
+  practitionerAvailableTime: string;
+  date: string;
+  startTime: string;
+  hasUserChosenDate: boolean;
+};
+
+/** Extract slot duration in minutes from a Schedule's comment field. */
 export function getSlotMinutesText(schedule: unknown): string {
   if (!schedule || typeof schedule !== 'object') {
     return '';

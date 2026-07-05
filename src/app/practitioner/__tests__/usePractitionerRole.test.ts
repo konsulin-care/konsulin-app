@@ -1,7 +1,7 @@
-import { renderHook } from '@testing-library/react';
 import { useDetailPractitioner } from '@/services/clinic';
-import { describe, expect, it, vi } from 'vitest';
+import { renderHook } from '@testing-library/react';
 import type { PractitionerRole } from 'fhir/r4';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePractitionerRole } from '../hooks/usePractitionerRole';
 
 vi.mock('@/services/clinic', () => ({
@@ -15,7 +15,13 @@ const mockRole = {
     { display: 'General Checkup' },
     { display: 'Dental Exam' }
   ],
-  availableTime: [{ daysOfWeek: ['mon'], availableStartTime: '09:00', availableEndTime: '17:00' }],
+  availableTime: [
+    {
+      daysOfWeek: ['mon'],
+      availableStartTime: '09:00',
+      availableEndTime: '17:00'
+    }
+  ],
   schedule: { id: 'schedule-1' },
   period: { start: '2026-01-01T00:00:00+07:00' }
 } as unknown as PractitionerRole;
@@ -23,7 +29,13 @@ const mockRole = {
 const mockDetail = {
   resource: {
     id: 'role-detail-1',
-    availableTime: [{ daysOfWeek: ['tue'], availableStartTime: '10:00', availableEndTime: '16:00' }],
+    availableTime: [
+      {
+        daysOfWeek: ['tue'],
+        availableStartTime: '10:00',
+        availableEndTime: '16:00'
+      }
+    ],
     period: { start: '2026-06-01T00:00:00Z' }
   },
   practitioner: { id: 'prac-detail-1', name: [{ given: ['John'] }] },
@@ -47,7 +59,10 @@ describe('usePractitionerRole', () => {
 
     expect(result.current.practitionerId).toBe('prac-1');
     expect(result.current.practitionerGivenName).toBeUndefined();
-    expect(result.current.healthcareServiceNames).toEqual(['General Checkup', 'Dental Exam']);
+    expect(result.current.healthcareServiceNames).toEqual([
+      'General Checkup',
+      'Dental Exam'
+    ]);
     expect(result.current.effectiveRole).toEqual(mockRole);
     expect(result.current.effectiveScheduleId).toBe('schedule-1');
     expect(result.current.effectiveAvailableTime).toHaveLength(1);
@@ -61,13 +76,16 @@ describe('usePractitionerRole', () => {
     } as ReturnType<typeof useDetailPractitioner>);
 
     const { result } = renderHook(() =>
+      // eslint-disable-next-line unicorn/no-useless-undefined, sonarjs/no-undefined-argument
       usePractitionerRole(true, 'role-detail-1', undefined, undefined)
     );
 
     expect(useDetailPractitioner).toHaveBeenCalledWith('role-detail-1');
     expect(result.current.practitionerId).toBe('prac-detail-1');
     expect(result.current.practitionerGivenName).toBe('John');
-    expect(result.current.healthcareServiceNames).toEqual(['Specialist Consult']);
+    expect(result.current.healthcareServiceNames).toEqual([
+      'Specialist Consult'
+    ]);
     expect(result.current.effectiveRole).toEqual(mockDetail.resource);
     expect(result.current.effectiveScheduleId).toBe('schedule-detail-1');
   });
@@ -91,6 +109,7 @@ describe('usePractitionerRole', () => {
 
   it('returns empty practitionerId in page mode when detail is undefined', () => {
     const { result } = renderHook(() =>
+      // eslint-disable-next-line unicorn/no-useless-undefined, sonarjs/no-undefined-argument
       usePractitionerRole(true, 'missing-id', undefined, undefined)
     );
 

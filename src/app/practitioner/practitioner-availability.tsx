@@ -1,54 +1,48 @@
-/* eslint-disable max-lines, react/jsx-max-depth, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
+/* eslint-disable max-lines, react/jsx-max-depth, complexity, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
-import { useFabDirty } from '@/context/fabDirtyContext';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
+import { useFabDirty } from '@/context/fabDirtyContext';
 import { STORES, dbDelete, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import {
   useCreateAppointment,
-  useRelayBooking,
-  usePayAppointment
+  usePayAppointment,
+  useRelayBooking
 } from '@/services/api/appointments';
-import { usePractitionerRole } from './hooks/usePractitionerRole';
 import {
-  timeToMinutes,
+  computeFreeSlots,
   minutesToTimeStr,
-  useBusySlotsByPractitioner,
-  computeFreeSlots
+  timeToMinutes,
+  useBusySlotsByPractitioner
 } from '@/services/slots';
-import { clearIntent, getIntent, saveIntent } from '@/utils/redirect-intent';
+import { saveIntent } from '@/utils/redirect-intent';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { addDays, format, parseISO, startOfDay } from 'date-fns';
 import { Invoice, PractitionerRole } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ReactNode, useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition
+} from 'react';
 import BookingCalendar from './booking-calendar';
+import { getNextAvailableDate, isDateAvailable } from './booking-date-utils';
 import BookingFormSection from './booking-form-section';
+import { useBookingRestoration } from './hooks/use-booking-restoration';
+import { usePractitionerRole } from './hooks/usePractitionerRole';
 import PaymentDrawer from './payment-drawer';
 import TimeSlotsSection from './time-slots-section';
 import {
-  AppointmentPayload,
-  getAvailableDays,
-  isAppointmentPayload,
-  matchesPractitionerFromPath
+  type AppointmentPayload,
+  type TempBookingData,
+  getAvailableDays
 } from './utils';
-import {
-  getNextAvailableDate,
-  isDateAvailable
-} from './booking-date-utils';
-
-type TempBookingData = {
-  scheduleId: string;
-  sessionType: string;
-  problemBrief: string;
-  practitionerRoleId: string;
-  practitionerAvailableTime: string;
-  date: string;
-  startTime: string;
-  hasUserChosenDate: boolean;
-};
 
 type Props = {
   // Drawer mode props
@@ -132,8 +126,7 @@ export default function PractitionerAvailability({
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: payAppointment, isLoading: isPaying } =
     usePayAppointment();
-  const { mutateAsync: relayBooking } =
-    useRelayBooking();
+  const { mutateAsync: relayBooking } = useRelayBooking();
   const [relayInvoice, setRelayInvoice] = useState<Invoice | null>(null);
 
   const patientId = authState?.userInfo?.fhirId;
@@ -149,7 +142,12 @@ export default function PractitionerAvailability({
     effectiveAvailableTime,
     effectiveScheduleId,
     practitionerTzOffset
-  } = usePractitionerRole(isPageMode, practitionerRoleId, practitionerRole, scheduleId);
+  } = usePractitionerRole(
+    isPageMode,
+    practitionerRoleId,
+    practitionerRole,
+    scheduleId
+  );
 
   const [pageDate, setPageDate] = useState<Date>(startOfDay(new Date()));
 
@@ -185,7 +183,6 @@ export default function PractitionerAvailability({
     setErrorForm(null);
   };
 
-
   // Selected date unified across modes
   const selectedDate = isPageMode ? pageDate : bookingState.date;
 
@@ -203,10 +200,19 @@ export default function PractitionerAvailability({
   const computedFreeSlots = useMemo(() => {
     if (!selectedDate || !busySlots) return [];
     return computeFreeSlots(
-      effectiveAvailableTime, busySlots, selectedDate, durationMinutes,
+      effectiveAvailableTime,
+      busySlots,
+      selectedDate,
+      durationMinutes,
       practitionerTzOffset
     );
-  }, [selectedDate, busySlots, effectiveAvailableTime, durationMinutes, practitionerTzOffset]);
+  }, [
+    selectedDate,
+    busySlots,
+    effectiveAvailableTime,
+    durationMinutes,
+    practitionerTzOffset
+  ]);
 
   // Fetch Schedule by ID with caching (only when authenticated)
   const { data: scheduleById } = useQuery({
@@ -222,65 +228,20 @@ export default function PractitionerAvailability({
     refetchOnReconnect: false
   });
 
-  /** Restore booking from sessionStorage (set by auth SPA after login). */
-  function tryRestoreBookingFromSession(): boolean {
-    const stored = sessionStorage.getItem('pending_booking');
-    if (!stored) return false;
-    try {
-      const raw = JSON.parse(stored);
-      if (!isAppointmentPayload(raw)) {
-        sessionStorage.removeItem('pending_booking');
-        return false;
-      }
-      const payload: AppointmentPayload = raw;
-      if (!matchesPractitionerFromPath(payload.path, practitionerRole.id))
-        return false;
-      const { slot, formData } = payload;
-      setBookingInformation(formData);
-      handleFilterChange('date', new Date(slot.date));
-      handleFilterChange('startTime', slot.startTime);
-      handleFilterChange('hasUserChosenDate', true);
-      if (slot.slotId) setSelectedSlotId(slot.slotId);
-      setIsOpen(true);
-      sessionStorage.removeItem('pending_booking');
-      return true;
-    } catch {
-      sessionStorage.removeItem('pending_booking');
-      return false;
-    }
-  }
-
-  /** Try to restore booking from redirect intent. */
-  function tryRestoreFromIntent(): boolean {
-    const intent = getIntent();
-    if (intent?.kind !== 'appointment') return false;
-
-    if (!isAppointmentPayload(intent.payload)) {
-      clearIntent();
-      return false;
-    }
-
-    const payload: AppointmentPayload = intent.payload;
-    if (!matchesPractitionerFromPath(payload.path, practitionerRole.id)) {
-      return false;
-    }
-
+  const onRestoreAppointment = useCallback((payload: AppointmentPayload) => {
     const { slot, formData } = payload;
     setBookingInformation(formData);
     handleFilterChange('date', new Date(slot.date));
     handleFilterChange('startTime', slot.startTime);
     handleFilterChange('hasUserChosenDate', true);
-    if (slot.slotId) {
-      setSelectedSlotId(slot.slotId);
-    }
+    if (slot.slotId) setSelectedSlotId(slot.slotId);
     setIsOpen(true);
-    clearIntent();
-    return true;
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  /** Load temporary booking data from IndexedDB. */
-  function loadTempBookingFromIndexedDB(userId: string): void {
+  const onLoadTempBooking = useCallback((userId: string) => {
     setIsOpen(true);
+
     dbGet<TempBookingData>(STORES.tempBooking, userId)
       .then(parsed => {
         if (parsed) {
@@ -304,7 +265,19 @@ export default function PractitionerAvailability({
       .catch(() => {
         // Best-effort load — ignore errors
       });
-  }
+  }, []);
+
+  const practitionerRoleIdStr = practitionerRole?.id ?? '';
+  const authUserId = authState?.userInfo?.userId;
+
+  useBookingRestoration({
+    isPageMode,
+    isOpenParam,
+    practitionerRoleId: practitionerRoleIdStr,
+    authUserId,
+    onRestoreAppointment,
+    onLoadTempBooking
+  });
 
   /** Set initial date for page mode. */
   useEffect(() => {
@@ -316,19 +289,6 @@ export default function PractitionerAvailability({
     setPageDate(initialDate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPageMode]);
-
-  /** Restore booking state from available sources when the modal opens (drawer mode only). */
-  useEffect(() => {
-    if (isPageMode) return;
-    const userId = authState?.userInfo?.userId;
-    if (isOpenParam === 'true' && !userId) return;
-    if (tryRestoreFromIntent()) return;
-    if (tryRestoreBookingFromSession()) return;
-    if (isOpenParam === 'true' && userId) {
-      loadTempBookingFromIndexedDB(userId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpenParam, authState?.userInfo?.userId]);
 
   useEffect(() => {
     if (isPageMode) return;
@@ -447,7 +407,8 @@ export default function PractitionerAvailability({
   ) {
     const dateStr = format(date, 'yyyy-MM-dd');
     const userTzOffset = getBrowserTzOffset();
-    const orgId = propOrganizationId || (isPageMode ? detail?.organization?.id : '') || '';
+    const orgId =
+      propOrganizationId || (isPageMode ? detail?.organization?.id : '') || '';
     return {
       patientId: `Patient/${patientId ?? ''}`,
       practitionerRoleId: `PractitionerRole/${effectiveRole?.id ?? practitionerRoleId ?? ''}`,
@@ -611,16 +572,18 @@ export default function PractitionerAvailability({
   if (isPageMode) {
     return (
       <>
-        <div className='flex flex-col px-1 pb-24'>
-          {bookingContent}
-        </div>
+        <div className='flex flex-col px-1 pb-24'>{bookingContent}</div>
         <PaymentDrawer
           paymentOpen={paymentOpen}
           setPaymentOpen={setPaymentOpen}
           practitionerAvatar={practitionerAvatar}
           practitionerOrganizationName={practitionerOrganizationName}
           practitionerName={practitionerName}
-          healthcareServiceName={propHealthcareServiceName ?? healthcareServiceNames[0] ?? 'Consultation'}
+          healthcareServiceName={
+            propHealthcareServiceName ??
+            healthcareServiceNames[0] ??
+            'Consultation'
+          }
           bookingState={effectiveBookingState}
           invoice={relayInvoice ?? invoice}
           isPaying={isPaying}
