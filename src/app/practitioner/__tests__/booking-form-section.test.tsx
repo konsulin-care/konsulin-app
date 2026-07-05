@@ -31,7 +31,7 @@ const defaultProps = {
   practitionerRole: { id: 'role-1' } as PractitionerRole,
   selectedSlotId: 'slot-1',
   scheduleById: undefined,
-  router: { push: vi.fn() } as any,
+  router: { push: vi.fn() } as unknown as Pick<ReturnType<typeof useRouter>, 'push'>,
   saveIntent: vi.fn(),
   startTransition: (fn: () => void) => fn(),
   setIsOpen: vi.fn()

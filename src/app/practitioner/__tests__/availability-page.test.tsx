@@ -137,7 +137,7 @@ describe('AvailabilityPage', () => {
       data: [],
       isLoading: false,
       isError: false
-    } as any);
+    } as unknown as ReturnType<typeof usePractitionerRoleHealthcareServices>);
 
     mockGetServiceDuration.mockReturnValue(60);
   });
@@ -202,7 +202,7 @@ describe('AvailabilityPage', () => {
       data: [],
       isLoading: false,
       isError: false
-    } as any);
+    } as unknown as ReturnType<typeof usePractitionerRoleHealthcareServices>);
 
     mockUseAuth.mockReturnValue({
       isLoading: false,

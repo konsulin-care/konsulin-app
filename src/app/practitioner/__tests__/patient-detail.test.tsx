@@ -131,7 +131,7 @@ describe('PatientDetail', () => {
       isFetching: false
     } as unknown as ReturnType<typeof useDetailPractitioner>);
 
-    mockUseRouter.mockReturnValue({ push: vi.fn() } as any);
+    mockUseRouter.mockReturnValue({ push: vi.fn() } as unknown as ReturnType<typeof useRouter>);
   });
 
   it('renders practitioner name as the primary heading', () => {
@@ -285,7 +285,7 @@ describe('PatientDetail', () => {
 
   it('navigates to availability page on service card click', () => {
     const mockPush = vi.fn();
-    mockUseRouter.mockReturnValue({ push: mockPush } as any);
+    mockUseRouter.mockReturnValue({ push: mockPush } as unknown as ReturnType<typeof useRouter>);
 
     render(<PatientDetail practitionerRoleId='role-123' />);
     const cards = screen.getAllByText(/General Checkup|Heart Screening/);

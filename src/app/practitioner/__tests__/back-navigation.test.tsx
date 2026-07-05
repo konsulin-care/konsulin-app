@@ -2,6 +2,12 @@
 
 import { render, screen, waitFor } from '@testing-library/react';
 import { type ReactNode } from 'react';
+
+type MockChildrenProps = { children?: ReactNode };
+type MockEmptyStateProps = Pick<React.ComponentProps<'div'>, 'children'> & {
+  title?: string;
+  subtitle?: string;
+};
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -56,7 +62,7 @@ vi.mock('@/services/clinic', () => ({
 }));
 
 vi.mock('@/components/general/empty-state', () => ({
-  default: ({ title, subtitle }: any) => (
+  default: ({ title, subtitle }: MockEmptyStateProps) => (
     <div data-testid='mock-empty-state'>
       <div>{title}</div>
       <div>{subtitle}</div>
@@ -65,14 +71,14 @@ vi.mock('@/components/general/empty-state', () => ({
 }));
 
 vi.mock('@/components/icons', () => ({
-  LoadingSpinnerIcon: (props: any) => (
+  LoadingSpinnerIcon: (props: Record<string, unknown>) => (
     <svg data-testid='mock-loading-spinner' {...props} />
   )
 }));
 
 // PageHeader mock that exposes backRoute for testing
 vi.mock('@/components/page-header', () => ({
-  default: ({ pageIndicator, backRoute }: any) => (
+  default: ({ pageIndicator, backRoute }: { pageIndicator?: string; backRoute?: string }) => (
     <div
       data-testid='mock-page-header'
       data-back-route={backRoute ?? ''}
@@ -84,7 +90,7 @@ vi.mock('@/components/page-header', () => ({
 }));
 
 vi.mock('@/components/practitioner/practitioner-card', () => ({
-  PractitionerCard: ({ practitionerName, practitionerRoleId }: any) => (
+  PractitionerCard: ({ practitionerName, practitionerRoleId }: { practitionerName?: string; practitionerRoleId?: string }) => (
     <div data-testid='mock-practitioner-card' data-role-id={practitionerRoleId}>
       {practitionerName}
     </div>
@@ -147,7 +153,7 @@ describe('Practitioner page - backRoute behavior', () => {
 
   it('does NOT pass backRoute in detail mode (with id)', async () => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=role-123') as any
+      new URLSearchParams('id=role-123') as unknown as ReturnType<typeof useSearchParams>
     );
 
     render(<Practitioner />, { wrapper: createWrapper() });
@@ -162,7 +168,7 @@ describe('Practitioner page - backRoute behavior', () => {
   });
 
   it('does NOT pass backRoute in listing mode (without id)', async () => {
-    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('') as any);
+    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('') as unknown as ReturnType<typeof useSearchParams>);
 
     render(<Practitioner />, { wrapper: createWrapper() });
 
