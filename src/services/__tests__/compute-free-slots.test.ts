@@ -1,11 +1,12 @@
+import type { PractitionerRoleAvailableTime } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
 import { computeFreeSlots } from '../slots';
 
 describe('computeFreeSlots', () => {
   const TZ_OFFSET = '+07:00';
-  const availableTime = [
+  const availableTime: PractitionerRoleAvailableTime[] = [
     {
-      daysOfWeek: ['mon', 'tue', 'wed', 'thu', 'fri'] as const,
+      daysOfWeek: ['mon', 'tue', 'wed', 'thu', 'fri'],
       availableStartTime: '09:00',
       availableEndTime: '17:00'
     }
@@ -26,7 +27,13 @@ describe('computeFreeSlots', () => {
     const busySlots = [
       { start: '2026-07-02T10:00:00+07:00', end: '2026-07-02T11:00:00+07:00' }
     ];
-    const result = computeFreeSlots(availableTime, busySlots, date, 60, TZ_OFFSET);
+    const result = computeFreeSlots(
+      availableTime,
+      busySlots,
+      date,
+      60,
+      TZ_OFFSET
+    );
     // Busy 10:00-11:00 +07:00 → 03:00-04:00 UTC → slot at 03:00 removed
     // 02:00, 04:00, 05:00, 06:00, 07:00, 08:00, 09:00
     expect(result).toHaveLength(7);
@@ -38,7 +45,13 @@ describe('computeFreeSlots', () => {
     const busySlots = [
       { start: '2026-07-02T10:30:00+07:00', end: '2026-07-02T11:30:00+07:00' }
     ];
-    const result = computeFreeSlots(availableTime, busySlots, date, 60, TZ_OFFSET);
+    const result = computeFreeSlots(
+      availableTime,
+      busySlots,
+      date,
+      60,
+      TZ_OFFSET
+    );
     // Busy 10:30-11:30 +07:00 → 03:30-04:30 UTC
     // 03:00 slot (03:00-04:00) overlaps 03:30-04:30 → removed
     // 04:00 slot (04:00-05:00) overlaps 03:30-04:30 → removed
@@ -53,7 +66,13 @@ describe('computeFreeSlots', () => {
       { start: '2026-07-02T10:00:00+07:00', end: '2026-07-02T11:00:00+07:00' },
       { start: '2026-07-02T14:00:00+07:00', end: '2026-07-02T15:30:00+07:00' }
     ];
-    const result = computeFreeSlots(availableTime, busySlots, date, 60, TZ_OFFSET);
+    const result = computeFreeSlots(
+      availableTime,
+      busySlots,
+      date,
+      60,
+      TZ_OFFSET
+    );
     // Busy1: 10:00-11:00 +07:00 → 03:00-04:00 UTC → removes 03:00
     // Busy2: 14:00-15:30 +07:00 → 07:00-08:30 UTC → removes 07:00, 08:00
     expect(result).toHaveLength(5);
@@ -67,14 +86,14 @@ describe('computeFreeSlots', () => {
   });
 
   it('handles split availability (lunch break)', () => {
-    const splitTime = [
+    const splitTime: PractitionerRoleAvailableTime[] = [
       {
-        daysOfWeek: ['thu'] as const,
+        daysOfWeek: ['thu'],
         availableStartTime: '09:00',
         availableEndTime: '12:00'
       },
       {
-        daysOfWeek: ['thu'] as const,
+        daysOfWeek: ['thu'],
         availableStartTime: '13:00',
         availableEndTime: '17:00'
       }
@@ -88,9 +107,9 @@ describe('computeFreeSlots', () => {
   });
 
   it('returns empty array when day has no matching availableTime', () => {
-    const weekendTime = [
+    const weekendTime: PractitionerRoleAvailableTime[] = [
       {
-        daysOfWeek: ['sat', 'sun'] as const,
+        daysOfWeek: ['sat', 'sun'],
         availableStartTime: '09:00',
         availableEndTime: '12:00'
       }
@@ -103,7 +122,13 @@ describe('computeFreeSlots', () => {
     const busySlots = [
       { start: '2026-07-02T09:00:00+07:00', end: '2026-07-02T17:00:00+07:00' }
     ];
-    const result = computeFreeSlots(availableTime, busySlots, date, 60, TZ_OFFSET);
+    const result = computeFreeSlots(
+      availableTime,
+      busySlots,
+      date,
+      60,
+      TZ_OFFSET
+    );
     // Full-day busy → no free slots
     expect(result).toEqual([]);
   });
@@ -131,7 +156,13 @@ describe('computeFreeSlots', () => {
       const busySlots = [
         { start: '2026-07-02T10:00:00+07:00', end: '2026-07-02T11:00:00+07:00' }
       ];
-      const result = computeFreeSlots(availableTime, busySlots, date, 30, TZ_OFFSET);
+      const result = computeFreeSlots(
+        availableTime,
+        busySlots,
+        date,
+        30,
+        TZ_OFFSET
+      );
       // Busy 10:00-11:00 +07:00 → 03:00-04:00 UTC
       // 03:00-03:30 and 03:30-04:00 excluded. 16 - 2 = 14
       expect(result).toHaveLength(14);
@@ -141,15 +172,21 @@ describe('computeFreeSlots', () => {
     });
 
     it('defaults to 60 minutes when durationMinutes is not provided', () => {
-      const result = computeFreeSlots(availableTime, [], date, undefined, TZ_OFFSET);
+      const result = computeFreeSlots(
+        availableTime,
+        [],
+        date,
+        undefined,
+        TZ_OFFSET
+      );
       expect(result).toHaveLength(8);
       expect(result[0]).toEqual({ start: '02:00', end: '03:00' });
     });
 
     it('handles non-hour-aligned start/end times with durationMinutes=45', () => {
-      const timeWindow = [
+      const timeWindow: PractitionerRoleAvailableTime[] = [
         {
-          daysOfWeek: ['thu'] as const,
+          daysOfWeek: ['thu'],
           availableStartTime: '09:30',
           availableEndTime: '12:15'
         }

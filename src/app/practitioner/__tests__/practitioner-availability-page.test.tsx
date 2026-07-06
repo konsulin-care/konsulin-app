@@ -1,7 +1,11 @@
-/* eslint-disable react/display-name, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
+/* eslint-disable react/display-name, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-deprecated */
 
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery
+} from '@tanstack/react-query';
 import { act, render, screen } from '@testing-library/react';
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -22,7 +26,10 @@ vi.mock('@/context/fabDirtyContext', () => ({
 }));
 
 vi.mock('@/services/api/appointments', () => ({
-  useCreateAppointment: vi.fn(() => ({ isLoading: false, mutateAsync: vi.fn() })),
+  useCreateAppointment: vi.fn(() => ({
+    isLoading: false,
+    mutateAsync: vi.fn()
+  })),
   useRelayBooking: vi.fn(() => ({ isLoading: false, mutateAsync: vi.fn() })),
   usePayAppointment: vi.fn(() => ({ isLoading: false, mutateAsync: vi.fn() }))
 }));
@@ -53,7 +60,9 @@ vi.mock('@tanstack/react-query', async () => {
 });
 
 // Track calendar props for testing
-let capturedHandleFilterChange: ((label: string, value: unknown) => void) | null = null;
+let capturedHandleFilterChange:
+  | ((label: string, value: unknown) => void)
+  | null = null;
 let capturedBookingDate: Date | null = null;
 
 // Mock sub-components to simplify testing — pass through practitionerGivenName
@@ -67,10 +76,7 @@ vi.mock('../booking-calendar', () => ({
 
 vi.mock('../time-slots-section', () => ({
   default: (props: any) => (
-    <div
-      data-testid='time-slots-section'
-      data-schedule-id={props.scheduleId}
-    >
+    <div data-testid='time-slots-section' data-schedule-id={props.scheduleId}>
       Time Slots
     </div>
   )
@@ -187,9 +193,7 @@ describe('PractitionerAvailability page variant', () => {
   it('passes the wrapper children via Drawer in drawer variant', () => {
     render(
       <PractitionerAvailability
-        practitionerRole={
-          { id: 'role-123', availableTime: [] } as any
-        }
+        practitionerRole={{ id: 'role-123', availableTime: [] } as any}
         scheduleId='sched-1'
       >
         <div data-testid='trigger-content'>Trigger</div>
@@ -203,10 +207,7 @@ describe('PractitionerAvailability page variant', () => {
 
   it('passes effectiveScheduleId to TimeSlotsSection in page mode', () => {
     render(
-      <PractitionerAvailability
-        variant='page'
-        practitionerRoleId='role-123'
-      />,
+      <PractitionerAvailability variant='page' practitionerRoleId='role-123' />,
       { wrapper: createWrapper() }
     );
 
@@ -217,10 +218,7 @@ describe('PractitionerAvailability page variant', () => {
 
   it('passes hideCta=true to BookingFormSection in page mode', () => {
     render(
-      <PractitionerAvailability
-        variant='page'
-        practitionerRoleId='role-123'
-      />,
+      <PractitionerAvailability variant='page' practitionerRoleId='role-123' />,
       { wrapper: createWrapper() }
     );
 
@@ -230,10 +228,7 @@ describe('PractitionerAvailability page variant', () => {
 
   it('applies pb-24 to page wrapper for FAB clearance', () => {
     render(
-      <PractitionerAvailability
-        variant='page'
-        practitionerRoleId='role-123'
-      />,
+      <PractitionerAvailability variant='page' practitionerRoleId='role-123' />,
       { wrapper: createWrapper() }
     );
 
@@ -246,10 +241,7 @@ describe('PractitionerAvailability page variant', () => {
 
   it('passes practitioner given name to BookingFormSection', () => {
     render(
-      <PractitionerAvailability
-        variant='page'
-        practitionerRoleId='role-123'
-      />,
+      <PractitionerAvailability variant='page' practitionerRoleId='role-123' />,
       { wrapper: createWrapper() }
     );
 
@@ -261,21 +253,30 @@ describe('PractitionerAvailability page variant', () => {
     // Override the mock to return practitioner without `given`
     vi.mocked(useDetailPractitioner).mockReturnValueOnce({
       newData: {
-        resource: { id: 'role-456', availableTime: [] },
+        resource: {
+          resourceType: 'PractitionerRole',
+          id: 'role-456',
+          availableTime: []
+        },
         practitioner: {
+          resourceType: 'Practitioner',
           id: 'prac-2',
           name: [{ text: 'Dr. No Given Name' }]
         },
-        schedule: { id: 'sched-456' }
+        schedule: {
+          resourceType: 'Schedule',
+          id: 'sched-456',
+          actor: [{ reference: 'PractitionerRole/role-456' }]
+        },
+        healthcareServices: []
       },
-      isLoading: false
+      isLoading: false,
+      isError: false,
+      isFetching: false
     });
 
     render(
-      <PractitionerAvailability
-        variant='page'
-        practitionerRoleId='role-456'
-      />,
+      <PractitionerAvailability variant='page' practitionerRoleId='role-456' />,
       { wrapper: createWrapper() }
     );
 
@@ -286,10 +287,7 @@ describe('PractitionerAvailability page variant', () => {
 
   it('calls setDirtyState with null on mount in page mode (form not ready)', () => {
     render(
-      <PractitionerAvailability
-        variant='page'
-        practitionerRoleId='role-123'
-      />,
+      <PractitionerAvailability variant='page' practitionerRoleId='role-123' />,
       { wrapper: createWrapper() }
     );
 
@@ -301,10 +299,7 @@ describe('PractitionerAvailability page variant', () => {
 
   it('persists selected date when user clicks a different date in page mode', () => {
     render(
-      <PractitionerAvailability
-        variant='page'
-        practitionerRoleId='role-123'
-      />,
+      <PractitionerAvailability variant='page' practitionerRoleId='role-123' />,
       { wrapper: createWrapper() }
     );
 
@@ -321,9 +316,7 @@ describe('PractitionerAvailability page variant', () => {
   it('does not crash when FabDirtyContext is available in drawer variant', () => {
     render(
       <PractitionerAvailability
-        practitionerRole={
-          { id: 'role-123', availableTime: [] } as any
-        }
+        practitionerRole={{ id: 'role-123', availableTime: [] } as any}
         scheduleId='sched-1'
       >
         <div data-testid='trigger-content'>Trigger</div>

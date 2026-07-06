@@ -1,6 +1,6 @@
+import type { AxiosInstance } from 'axios';
 import { describe, expect, it, vi } from 'vitest';
 import { updatePractitionerRoleAvailability } from '../schedule';
-import type { AxiosInstance } from 'axios';
 
 const { mockGet, mockPut } = vi.hoisted(() => ({
   mockGet: vi.fn(),
@@ -8,7 +8,7 @@ const { mockGet, mockPut } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../api', () => ({
-  getAPI: vi.fn<[], Promise<AxiosInstance>>().mockResolvedValue({
+  getAPI: vi.fn<() => Promise<AxiosInstance>>().mockResolvedValue({
     get: mockGet,
     put: mockPut
   } as unknown as AxiosInstance)
@@ -21,11 +21,13 @@ describe('updatePractitionerRoleAvailability', () => {
         resourceType: 'PractitionerRole',
         id: 'role-123',
         active: true,
-        availableTime: [{
-          daysOfWeek: ['mon'],
-          availableStartTime: '09:00',
-          availableEndTime: '17:00'
-        }]
+        availableTime: [
+          {
+            daysOfWeek: ['mon'],
+            availableStartTime: '09:00',
+            availableEndTime: '17:00'
+          }
+        ]
       }
     });
 
@@ -34,7 +36,11 @@ describe('updatePractitionerRoleAvailability', () => {
     });
 
     await updatePractitionerRoleAvailability('role-123', [
-      { daysOfWeek: ['mon'], availableStartTime: '09:00', availableEndTime: '17:00' }
+      {
+        daysOfWeek: ['mon'],
+        availableStartTime: '09:00',
+        availableEndTime: '17:00'
+      }
     ]);
 
     expect(mockPut).toHaveBeenCalledTimes(1);
@@ -43,7 +49,7 @@ describe('updatePractitionerRoleAvailability', () => {
 
     expect(putUrl).toBe('/fhir/PractitionerRole/role-123');
     expect(putBody).toHaveProperty('period');
-    const period = putBody['period'] as Record<string, unknown>;
+    const period = putBody.period as Record<string, unknown>;
     expect(period).toHaveProperty('start');
     expect(typeof period.start).toBe('string');
     // Must include timezone offset (e.g., +07:00, +08:00, -05:00)

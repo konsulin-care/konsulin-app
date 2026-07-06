@@ -27,7 +27,7 @@ fi
 #fi
 
 # Deep type-check including library types
-if ! npx tsc --noEmit --skipLibCheck false; then
+if ! npx tsc --noEmit; then
   echo "  Library type errors found. Fix them and try again."
   exit 1
 fi

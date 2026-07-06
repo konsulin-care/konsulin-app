@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
+import { render, screen } from '@testing-library/react';
 import type { PractitionerRole } from 'fhir/r4';
+import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import { describe, expect, it, vi } from 'vitest';
 import BookingFormSection from '../booking-form-section';
 
 const defaultBookingState: IStateBooking = {
@@ -31,7 +30,14 @@ const defaultProps = {
   practitionerRole: { id: 'role-1' } as PractitionerRole,
   selectedSlotId: 'slot-1',
   scheduleById: undefined,
-  router: { push: vi.fn() } as unknown as Pick<ReturnType<typeof useRouter>, 'push'>,
+  router: {
+    push: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn()
+  } as unknown as AppRouterInstance,
   saveIntent: vi.fn(),
   startTransition: (fn: () => void) => fn(),
   setIsOpen: vi.fn()
@@ -54,15 +60,10 @@ describe('BookingFormSection', () => {
 
   it('renders health concern label with practitioner name', () => {
     render(
-      <BookingFormSection
-        {...defaultProps}
-        practitionerGivenName='Sarah'
-      />
+      <BookingFormSection {...defaultProps} practitionerGivenName='Sarah' />
     );
 
-    expect(
-      screen.getByText(/what should sarah know/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/what should sarah know/i)).toBeInTheDocument();
   });
 
   it('renders health concern label with fallback when given name not provided', () => {
@@ -144,9 +145,7 @@ describe('BookingFormSection', () => {
       />
     );
 
-    expect(
-      screen.getByText(/silakan daftar atau masuk/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/silakan daftar atau masuk/i)).toBeInTheDocument();
   });
 
   it('renders error messages when errorForm is provided', () => {
@@ -163,27 +162,29 @@ describe('BookingFormSection', () => {
   });
 
   it('hides CTA buttons and Batalkan when hideCta is true', () => {
-    render(
-      <BookingFormSection {...defaultProps} hideCta />
-    );
+    render(<BookingFormSection {...defaultProps} hideCta />);
 
-    expect(screen.queryByRole('button', { name: /book now/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /book now/i })
+    ).not.toBeInTheDocument();
     expect(screen.queryByText('Batalkan')).not.toBeInTheDocument();
   });
 
   it('shows CTA buttons and Batalkan when hideCta is false', () => {
-    render(
-      <BookingFormSection {...defaultProps} hideCta={false} />
-    );
+    render(<BookingFormSection {...defaultProps} hideCta={false} />);
 
-    expect(screen.getByRole('button', { name: /book now/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /book now/i })
+    ).toBeInTheDocument();
     expect(screen.getByText('Batalkan')).toBeInTheDocument();
   });
 
   it('shows CTA buttons and Batalkan by default (hideCta undefined)', () => {
     render(<BookingFormSection {...defaultProps} />);
 
-    expect(screen.getByRole('button', { name: /book now/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /book now/i })
+    ).toBeInTheDocument();
     expect(screen.getByText('Batalkan')).toBeInTheDocument();
   });
 });

@@ -1,6 +1,11 @@
+/* eslint-disable max-lines */
 import type { Bundle, Patient } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
-import { generateAvatarPlaceholder, parseFhirProfile, parseMergedSessions } from '../helper';
+import {
+  generateAvatarPlaceholder,
+  parseFhirProfile,
+  parseMergedSessions
+} from '../helper';
 
 const mockPatient: Patient = {
   resourceType: 'Patient',
@@ -131,11 +136,13 @@ describe('parseMergedSessions', () => {
   it('extracts location and healthcare service from bundle', () => {
     const bundle: Bundle = {
       resourceType: 'Bundle',
+      type: 'searchset',
       entry: [
         {
           resource: {
             resourceType: 'Appointment',
             id: 'appt-1',
+            status: 'booked',
             start: '2026-07-04T09:00:00+07:00',
             slot: [{ reference: 'Slot/slot-1' }],
             participant: [
@@ -162,6 +169,7 @@ describe('parseMergedSessions', () => {
           resource: {
             resourceType: 'Slot',
             id: 'slot-1',
+            schedule: { reference: 'Schedule/sched-1' },
             start: '2026-07-04T09:00:00+07:00',
             end: '2026-07-04T09:30:00+07:00',
             status: 'free'
@@ -202,11 +210,13 @@ describe('parseMergedSessions', () => {
   it('handles bundle with no location or healthcare service', () => {
     const bundle: Bundle = {
       resourceType: 'Bundle',
+      type: 'searchset',
       entry: [
         {
           resource: {
             resourceType: 'Appointment',
             id: 'appt-2',
+            status: 'booked',
             start: '2026-07-04T10:00:00+07:00',
             slot: [{ reference: 'Slot/slot-2' }],
             participant: [
@@ -221,6 +231,7 @@ describe('parseMergedSessions', () => {
           resource: {
             resourceType: 'Slot',
             id: 'slot-2',
+            schedule: { reference: 'Schedule/sched-1' },
             start: '2026-07-04T10:00:00+07:00',
             end: '2026-07-04T10:30:00+07:00',
             status: 'free'
@@ -247,11 +258,13 @@ describe('parseMergedSessions', () => {
   it('extracts location name from alias when name is absent', () => {
     const bundle: Bundle = {
       resourceType: 'Bundle',
+      type: 'searchset',
       entry: [
         {
           resource: {
             resourceType: 'Appointment',
             id: 'appt-3',
+            status: 'booked',
             start: '2026-07-04T11:00:00+07:00',
             slot: [{ reference: 'Slot/slot-3' }],
             participant: [
@@ -270,6 +283,7 @@ describe('parseMergedSessions', () => {
           resource: {
             resourceType: 'Slot',
             id: 'slot-3',
+            schedule: { reference: 'Schedule/sched-1' },
             start: '2026-07-04T11:00:00+07:00',
             end: '2026-07-04T11:30:00+07:00',
             status: 'free'
@@ -301,11 +315,13 @@ describe('parseMergedSessions', () => {
   it('sorts sessions by slotStart ascending', () => {
     const bundle: Bundle = {
       resourceType: 'Bundle',
+      type: 'searchset',
       entry: [
         {
           resource: {
             resourceType: 'Appointment',
             id: 'appt-early',
+            status: 'booked',
             start: '2026-07-04T08:00:00+07:00',
             slot: [{ reference: 'Slot/slot-early' }],
             participant: [
@@ -317,6 +333,7 @@ describe('parseMergedSessions', () => {
           resource: {
             resourceType: 'Appointment',
             id: 'appt-late',
+            status: 'booked',
             start: '2026-07-04T10:00:00+07:00',
             slot: [{ reference: 'Slot/slot-late' }],
             participant: [
@@ -328,6 +345,7 @@ describe('parseMergedSessions', () => {
           resource: {
             resourceType: 'Slot',
             id: 'slot-early',
+            schedule: { reference: 'Schedule/sched-1' },
             start: '2026-07-04T08:00:00+07:00',
             end: '2026-07-04T08:30:00+07:00',
             status: 'free'
@@ -337,6 +355,7 @@ describe('parseMergedSessions', () => {
           resource: {
             resourceType: 'Slot',
             id: 'slot-late',
+            schedule: { reference: 'Schedule/sched-1' },
             start: '2026-07-04T10:00:00+07:00',
             end: '2026-07-04T10:30:00+07:00',
             status: 'free'
@@ -368,7 +387,11 @@ describe('parseMergedSessions', () => {
   });
 
   it('returns empty array for empty bundle', () => {
-    const bundle: Bundle = { resourceType: 'Bundle', entry: [] };
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: []
+    };
     const result = parseMergedSessions(bundle);
     expect(result).toEqual([]);
   });
