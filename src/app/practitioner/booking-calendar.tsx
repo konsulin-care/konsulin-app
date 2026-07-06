@@ -58,17 +58,20 @@ function DayButtonWithDots({
   day,
   modifiers,
   children,
-  dayDots
+  dayDots,
+  ...buttonProps
 }: {
   readonly day: CalendarDay;
   readonly modifiers: Record<string, boolean>;
   readonly children?: React.ReactNode;
   readonly dayDots: Map<string, string[]>;
+  // forwarded from react-day-picker: disabled, onClick, tabIndex, aria-label, onBlur, etc.
+  [key: string]: unknown;
 }) {
   const dateKey = format(day.date, 'yyyy-MM-dd');
   const dots = dayDots.get(dateKey);
   return (
-    <DayButton day={day} modifiers={modifiers}>
+    <DayButton day={day} modifiers={modifiers} {...buttonProps}>
       <div className='flex flex-col items-center gap-0.5'>
         <span>{children}</span>
         {dots && dots.length > 0 && <DayDots dots={dots} />}
@@ -101,14 +104,14 @@ export default function BookingCalendar({
       day: CalendarDay;
       modifiers: Record<string, boolean>;
       children?: React.ReactNode;
+      disabled?: boolean;
+      onClick?: React.MouseEventHandler<HTMLButtonElement>;
+      tabIndex?: number;
     }) => (
       <DayButtonWithDots
-        day={props.day}
-        modifiers={props.modifiers}
+        {...props}
         dayDots={dayDots}
-      >
-        {props.children}
-      </DayButtonWithDots>
+      />
     );
     return { DayButton: DayButtonComp };
   }, [dayDots]);

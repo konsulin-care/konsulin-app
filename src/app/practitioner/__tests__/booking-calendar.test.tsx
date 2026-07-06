@@ -8,7 +8,7 @@ let triggerMonthChange: ((month: Date) => void) | null = null;
 
 vi.mock('@/components/ui/calendar-temp', () => ({
   Calendar: ({ components, onSelect, onMonthChange, disabled }: any) => {
-    const DayButton = components?.DayButton;
+    const DayButtonCustom = components?.DayButton;
     const testDate = new Date('2026-07-04');
     triggerMonthChange = onMonthChange ? (month: Date) => onMonthChange(month) : null;
 
@@ -20,13 +20,29 @@ vi.mock('@/components/ui/calendar-temp', () => ({
 
     return (
       <div data-testid='mock-calendar'>
-        {DayButton && (
-          <DayButton
-            day={{ date: testDate }}
-            modifiers={{}}
-          >
-            4
-          </DayButton>
+        {DayButtonCustom && (
+          <>
+            <DayButtonCustom
+              day={{ date: testDate }}
+              modifiers={{}}
+              disabled={true}
+              tabIndex={-1}
+              onClick={() => handleSelect(testDate)}
+              data-testid='custom-day-button-disabled'
+            >
+              4
+            </DayButtonCustom>
+            <DayButtonCustom
+              day={{ date: new Date('2026-07-15') }}
+              modifiers={{}}
+              disabled={undefined}
+              tabIndex={0}
+              onClick={() => handleSelect(new Date('2026-07-15'))}
+              data-testid='custom-day-button-enabled'
+            >
+              15
+            </DayButtonCustom>
+          </>
         )}
         <button
           data-testid='select-date-btn'
@@ -219,6 +235,39 @@ describe('BookingCalendar', () => {
 
     // resetData should still be called (clearing time slots on month nav)
     expect(resetData).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards onClick, disabled, and tabIndex to the DOM button when dayDots are provided', () => {
+    const handleChange = vi.fn();
+    const dayDots = new Map<string, string[]>();
+    dayDots.set('2026-07-04', ['#13C2C2']);
+
+    render(
+      <BookingCalendar
+        bookingState={mockBookingState}
+        handleFilterChange={handleChange}
+        resetData={mockReset}
+        listAvailableDate={[new Date('2026-07-15')]}
+        availableTime={mockAvailableTime}
+        today={new Date('2026-07-01')}
+        dayDots={dayDots}
+        showAllDates={true}
+      />
+    );
+
+    // The disabled button should have disabled attribute
+    const disabledBtn = screen.getByTestId('custom-day-button-disabled');
+    expect(disabledBtn).toBeDefined();
+    expect(disabledBtn.hasAttribute('disabled')).toBe(true);
+
+    // The enabled button should NOT have disabled attribute
+    const enabledBtn = screen.getByTestId('custom-day-button-enabled');
+    expect(enabledBtn).toBeDefined();
+    expect(enabledBtn.hasAttribute('disabled')).toBe(false);
+
+    // Clicking the enabled button should fire the onClick handler
+    act(() => enabledBtn.click());
+    expect(handleChange).toHaveBeenCalledWith('date', expect.any(Date));
   });
 
   it('passes dayDots to DayButton component', () => {
