@@ -59,6 +59,42 @@ const (
 	headerContentType = "Content-Type"
 )
 
+// sendUpstreamError writes the most appropriate HTTP error for a FHIR upstream failure.
+func sendUpstreamError(w http.ResponseWriter, err error) {
+	var ue *upstreamError
+	if errors.As(err, &ue) {
+		sendError(w, ue.StatusCode, ue.Message)
+	} else {
+		sendError(w, http.StatusBadGateway, err.Error())
+	}
+}
+
+// verifySession extracts and verifies the sAccessToken cookie.
+// Returns a Bearer token on success.
+func verifySession(r *http.Request) (string, error) {
+	accessCookie, err := r.Cookie("sAccessToken")
+	if err != nil || accessCookie.Value == "" {
+		return "", errors.New("session required")
+	}
+	if _, err := client.VerifySession(accessCookie.Value); err != nil {
+		return "", errors.New("invalid or expired session")
+	}
+	return "Bearer " + accessCookie.Value, nil
+}
+
+// logRelayRequest logs the incoming relay booking request fields.
+func logRelayRequest(req relayBookingRequest) {
+	slog.Info("relay/booking",
+		"scheduleId", req.ScheduleID,
+		"patientId", req.PatientID,
+		"practitionerRoleId", req.PractitionerRoleID,
+		"healthcareServiceId", req.HealthcareServiceID,
+		"date", req.Date,
+		"startTime", req.StartTime,
+		"endTime", req.EndTime,
+	)
+}
+
 // NewRelayBookingHandler creates a handler for POST /api/v1/relay/booking.
 // It receives booking intent from the client, constructs a FHIR transaction
 // bundle, POSTs it to the backend, and returns the created Slot and Invoice IDs.
@@ -82,27 +118,13 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 			return
 		}
 
-		slog.Info("relay/booking",
-			"scheduleId", req.ScheduleID,
-			"patientId", req.PatientID,
-			"practitionerRoleId", req.PractitionerRoleID,
-			"healthcareServiceId", req.HealthcareServiceID,
-			"date", req.Date,
-			"startTime", req.StartTime,
-			"endTime", req.EndTime,
-		)
+		logRelayRequest(req)
 
-		// Require session token — defense in depth for a state-changing endpoint.
-		accessCookie, err := r.Cookie("sAccessToken")
-		if err != nil || accessCookie.Value == "" {
-			sendError(w, http.StatusUnauthorized, "session required")
+		authToken, err := verifySession(r)
+		if err != nil {
+			sendError(w, http.StatusUnauthorized, err.Error())
 			return
 		}
-		if _, err := client.VerifySession(accessCookie.Value); err != nil {
-			sendError(w, http.StatusUnauthorized, "invalid or expired session")
-			return
-		}
-		authToken := "Bearer " + accessCookie.Value
 
 		fee, err := fetchHealthcareServiceFee(baseURL, req.HealthcareServiceID, authToken)
 		if err != nil {
@@ -111,37 +133,40 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 			return
 		}
 
-		bundle := buildRelayBundle(req, fee)
-		bundleBody, err := json.Marshal(bundle)
+		result, err := relayBundleAndParse(baseURL, req, fee, authToken)
 		if err != nil {
-			slog.Error("relay/booking: failed to marshal bundle", "err", err)
-			sendError(w, http.StatusInternalServerError, "internal error")
-			return
-		}
-
-		fhirResp, err := postFHIRBundle(baseURL, bundleBody, authToken)
-		if err != nil {
-			slog.Error("relay/booking: backend error", "err", err)
-			var ue *upstreamError
-			if errors.As(err, &ue) {
-				sendError(w, ue.StatusCode, ue.Message)
-			} else {
-				sendError(w, http.StatusBadGateway, err.Error())
-			}
-			return
-		}
-
-		result := parseRelayResponse(fhirResp, req.HealthcareServiceID, fee)
-		if result.SlotID == "" || result.InvoiceID == "" {
-			slog.Error("relay/booking: backend returned incomplete response",
-				"slotId", result.SlotID, "invoiceId", result.InvoiceID)
-			sendError(w, http.StatusBadGateway, "backend returned incomplete response")
+			sendUpstreamError(w, err)
 			return
 		}
 		w.Header().Set(headerContentType, contentTypeJSON)
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(result)
 	}
+}
+
+// relayBundleAndParse marshals the bundle, POSTs it to the FHIR backend,
+// parses the transaction response, and validates completeness.
+func relayBundleAndParse(baseURL string, req relayBookingRequest, fee feeObj, authToken string) (relayResponse, error) {
+	bundle := buildRelayBundle(req, fee)
+	bundleBody, err := json.Marshal(bundle)
+	if err != nil {
+		slog.Error("relay/booking: failed to marshal bundle", "err", err)
+		return relayResponse{}, errors.New("internal error")
+	}
+
+	fhirResp, err := postFHIRBundle(baseURL, bundleBody, authToken)
+	if err != nil {
+		slog.Error("relay/booking: backend error", "err", err)
+		return relayResponse{}, err
+	}
+
+	result := parseRelayResponse(fhirResp, req.HealthcareServiceID, fee)
+	if result.SlotID == "" || result.InvoiceID == "" {
+		slog.Error("relay/booking: backend returned incomplete response",
+			"slotId", result.SlotID, "invoiceId", result.InvoiceID)
+		return relayResponse{}, errors.New("backend returned incomplete response")
+	}
+	return result, nil
 }
 
 // sendError writes a JSON error response with the standard ErrorBody structure.

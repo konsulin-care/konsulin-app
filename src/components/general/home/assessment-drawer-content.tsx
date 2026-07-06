@@ -13,9 +13,9 @@ import ReactMarkdown from 'react-markdown';
 /** Assessment drawer content with brief description and start button. */
 export default function AssessmentDrawerContent({
   assessment
-}: {
+}: Readonly<{
   assessment: Questionnaire | null;
-}) {
+}>) {
   return (
     <div className='flex flex-col'>
       <DrawerHeader className='mx-auto text-[20px] font-bold'>

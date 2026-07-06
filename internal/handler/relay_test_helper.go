@@ -97,6 +97,77 @@ func testRelayBackend() *httptest.Server {
 	}))
 }
 
+// assertBundleEntry validates a single entry's request method and URL.
+func assertBundleEntry(t *testing.T, entry any, expectedMethod, expectedURL string) {
+	t.Helper()
+	em, ok := entry.(map[string]any)
+	if !ok {
+		t.Fatal("expected entry map")
+		return
+	}
+	req, ok := em["request"].(map[string]any)
+	if !ok {
+		t.Fatal("expected request map")
+		return
+	}
+	if req["method"] != expectedMethod || req["url"] != expectedURL {
+		t.Errorf("expected %s %s, got %v %v", expectedMethod, expectedURL, req["method"], req["url"])
+	}
+}
+
+// assertSlotResource validates the Slot entry in a transaction bundle.
+func assertSlotResource(t *testing.T, entry any) {
+	t.Helper()
+	slotResource, ok := entry.(map[string]any)["resource"].(map[string]any)
+	if !ok {
+		t.Fatal("expected slot resource map")
+		return
+	}
+	if slotResource["status"] != "free" {
+		t.Errorf("expected Slot status=free, got %v", slotResource["status"])
+	}
+	sched, ok := slotResource["schedule"].(map[string]any)
+	if !ok {
+		t.Fatal("expected schedule map")
+		return
+	}
+	if sched["reference"] != "Schedule/sched-1" {
+		t.Errorf("expected Slot schedule=Schedule/sched-1")
+	}
+}
+
+// assertInvoiceResource validates the Invoice entry in a transaction bundle.
+func assertInvoiceResource(t *testing.T, entry any) {
+	t.Helper()
+	invoiceResource, ok := entry.(map[string]any)["resource"].(map[string]any)
+	if !ok {
+		t.Fatal("expected invoice resource map")
+		return
+	}
+	if invoiceResource["status"] != "issued" {
+		t.Errorf("expected Invoice status=issued, got %v", invoiceResource["status"])
+	}
+	totalNet, ok := invoiceResource["totalNet"].(map[string]any)
+	if !ok {
+		t.Fatal("expected totalNet map")
+		return
+	}
+	if totalNet["value"] != float64(150000) {
+		t.Errorf("expected Invoice.totalNet.value=150000, got %v", totalNet["value"])
+	}
+	if totalNet["currency"] != "IDR" {
+		t.Errorf("expected Invoice.totalNet.currency=IDR, got %v", totalNet["currency"])
+	}
+	subject, ok := invoiceResource["subject"].(map[string]any)
+	if !ok {
+		t.Fatal("expected subject map")
+		return
+	}
+	if subject["reference"] != "Patient/pat-1" {
+		t.Errorf("expected Invoice subject=Patient/pat-1")
+	}
+}
+
 // assertBundleEntries validates the FHIR transaction bundle structure and values.
 func assertBundleEntries(t *testing.T, capturedBundle map[string]any) {
 	t.Helper()
@@ -116,43 +187,10 @@ func assertBundleEntries(t *testing.T, capturedBundle map[string]any) {
 		t.Fatalf("expected 2 entries, got %d", len(entries))
 	}
 
-	entry0 := entries[0].(map[string]any)
-	req0 := entry0["request"].(map[string]any)
-	if req0["method"] != "POST" || req0["url"] != "Slot" {
-		t.Errorf("entry 0: expected POST Slot, got %v %v", req0["method"], req0["url"])
-	}
-
-	entry1 := entries[1].(map[string]any)
-	req1 := entry1["request"].(map[string]any)
-	if req1["method"] != "POST" || req1["url"] != "Invoice" {
-		t.Errorf("entry 1: expected POST Invoice, got %v %v", req1["method"], req1["url"])
-	}
-
-	slotResource := entry0["resource"].(map[string]any)
-	if slotResource["status"] != "free" {
-		t.Errorf("expected Slot status=free, got %v", slotResource["status"])
-	}
-	if slotResource["schedule"].(map[string]any)["reference"] != "Schedule/sched-1" {
-		t.Errorf("expected Slot schedule=Schedule/sched-1")
-	}
-
-	invoiceResource := entry1["resource"].(map[string]any)
-	if invoiceResource["status"] != "issued" {
-		t.Errorf("expected Invoice status=issued, got %v", invoiceResource["status"])
-	}
-	totalNet := invoiceResource["totalNet"].(map[string]any)
-	if totalNet == nil {
-		t.Error("expected Invoice.totalNet")
-	}
-	if totalNet["value"] != float64(150000) {
-		t.Errorf("expected Invoice.totalNet.value=150000, got %v", totalNet["value"])
-	}
-	if totalNet["currency"] != "IDR" {
-		t.Errorf("expected Invoice.totalNet.currency=IDR, got %v", totalNet["currency"])
-	}
-	if invoiceResource["subject"].(map[string]any)["reference"] != "Patient/pat-1" {
-		t.Errorf("expected Invoice subject=Patient/pat-1")
-	}
+	assertBundleEntry(t, entries[0], "POST", "Slot")
+	assertBundleEntry(t, entries[1], "POST", "Invoice")
+	assertSlotResource(t, entries[0])
+	assertInvoiceResource(t, entries[1])
 }
 
 // newRelayServer creates a test server with the relay handler backed by testRelayBackend.

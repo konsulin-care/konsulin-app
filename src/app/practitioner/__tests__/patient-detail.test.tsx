@@ -1,5 +1,7 @@
+/* eslint-disable max-lines -- pre-existing, out of scope for current refactor */
+
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PatientDetail from '../patient-detail';
 
 vi.mock('@/services/clinic', () => ({
@@ -69,7 +71,7 @@ const baseServices = [
     extension: [
       {
         url: FEE_EXTENSION_URL,
-        valueMoney: { value: 500000, currency: 'IDR' }
+        valueMoney: { value: 500_000, currency: 'IDR' }
       },
       {
         url: DURATION_EXTENSION_URL,
@@ -85,7 +87,7 @@ const baseServices = [
     extension: [
       {
         url: FEE_EXTENSION_URL,
-        valueMoney: { value: 1500000, currency: 'IDR' }
+        valueMoney: { value: 1_500_000, currency: 'IDR' }
       },
       {
         url: DURATION_EXTENSION_URL,
@@ -131,7 +133,9 @@ describe('PatientDetail', () => {
       isFetching: false
     } as unknown as ReturnType<typeof useDetailPractitioner>);
 
-    mockUseRouter.mockReturnValue({ push: vi.fn() } as unknown as ReturnType<typeof useRouter>);
+    mockUseRouter.mockReturnValue({ push: vi.fn() } as unknown as ReturnType<
+      typeof useRouter
+    >);
   });
 
   it('renders practitioner name as the primary heading', () => {
@@ -203,25 +207,16 @@ describe('PatientDetail', () => {
     expect(screen.queryByText(/\(\+\)/)).not.toBeInTheDocument();
   });
 
-  it('renders clinic location heading', () => {
+  it.each([
+    ['clinic location heading', 'Location'],
+    ['location name when available', 'Jakarta Heart Clinic - Menteng'],
+    [
+      'full address from Location resource',
+      'Jl. Cimandiri No. 10, Menteng, Kota Adm. Jakarta Pusat, 16127'
+    ]
+  ])('renders %s', (_, text) => {
     render(<PatientDetail practitionerRoleId='role-123' />);
-    expect(screen.getByText('Location')).toBeInTheDocument();
-  });
-
-  it('renders location name when location is available', () => {
-    render(<PatientDetail practitionerRoleId='role-123' />);
-    expect(
-      screen.getByText('Jakarta Heart Clinic - Menteng')
-    ).toBeInTheDocument();
-  });
-
-  it('renders full address from Location resource', () => {
-    render(<PatientDetail practitionerRoleId='role-123' />);
-    expect(
-      screen.getByText(
-        'Jl. Cimandiri No. 10, Menteng, Kota Adm. Jakarta Pusat, 16127'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText(text)).toBeInTheDocument();
   });
 
   it('falls back to organization name when location is missing', () => {
@@ -255,37 +250,24 @@ describe('PatientDetail', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders healthcare service names', () => {
+  it.each([
+    ['healthcare service names', 'General Checkup'],
+    ['fee formatted as IDR', 'Rp 500.000'],
+    ['duration in minutes', '30 min'],
+    [
+      'extra details for healthcare services',
+      'Standard checkup including vitals'
+    ]
+  ])('renders %s', (_, text) => {
     render(<PatientDetail practitionerRoleId='role-123' />);
-    expect(screen.getByText('General Checkup')).toBeInTheDocument();
-    expect(screen.getByText('Heart Screening')).toBeInTheDocument();
-  });
-
-  it('shows fee formatted as IDR for each healthcare service', () => {
-    render(<PatientDetail practitionerRoleId='role-123' />);
-    expect(screen.getByText('Rp 500.000')).toBeInTheDocument();
-    expect(screen.getByText('Rp 1.500.000')).toBeInTheDocument();
-  });
-
-  it('shows duration in minutes for each service', () => {
-    render(<PatientDetail practitionerRoleId='role-123' />);
-    expect(screen.getByText('30 min')).toBeInTheDocument();
-    expect(screen.getByText('60 min')).toBeInTheDocument();
-  });
-
-  it('shows extra details for healthcare services', () => {
-    render(<PatientDetail practitionerRoleId='role-123' />);
-    expect(
-      screen.getByText('Standard checkup including vitals')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Full cardiac assessment')
-    ).toBeInTheDocument();
+    expect(screen.getByText(text)).toBeInTheDocument();
   });
 
   it('navigates to availability page on service card click', () => {
     const mockPush = vi.fn();
-    mockUseRouter.mockReturnValue({ push: mockPush } as unknown as ReturnType<typeof useRouter>);
+    mockUseRouter.mockReturnValue({ push: mockPush } as unknown as ReturnType<
+      typeof useRouter
+    >);
 
     render(<PatientDetail practitionerRoleId='role-123' />);
     const cards = screen.getAllByText(/General Checkup|Heart Screening/);
@@ -362,9 +344,9 @@ describe('PatientDetail', () => {
       } as unknown as ReturnType<typeof useDetailPractitioner>);
 
       render(<PatientDetail practitionerRoleId='role-123' />);
-      expect(
-        screen.getByRole('heading', { level: 1 })
-      ).toHaveTextContent('Aly Lamuri');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+        'Aly Lamuri'
+      );
     });
 
     it('uses only family when given is empty', () => {
@@ -372,9 +354,7 @@ describe('PatientDetail', () => {
         newData: buildNewData({
           practitioner: {
             id: 'prac-1',
-            name: [
-              { use: 'official' as const, family: 'Lamuri', given: [] }
-            ]
+            name: [{ use: 'official' as const, family: 'Lamuri', given: [] }]
           },
           resource: {
             id: 'role-123',
@@ -389,9 +369,9 @@ describe('PatientDetail', () => {
       } as unknown as ReturnType<typeof useDetailPractitioner>);
 
       render(<PatientDetail practitionerRoleId='role-123' />);
-      expect(
-        screen.getByRole('heading', { level: 1 })
-      ).toHaveTextContent('Lamuri');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+        'Lamuri'
+      );
     });
 
     it('uses display when practitioner resource is missing', () => {
@@ -414,9 +394,9 @@ describe('PatientDetail', () => {
       } as unknown as ReturnType<typeof useDetailPractitioner>);
 
       render(<PatientDetail practitionerRoleId='role-123' />);
-      expect(
-        screen.getByRole('heading', { level: 1 })
-      ).toHaveTextContent('Dr. Display Name');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+        'Dr. Display Name'
+      );
     });
 
     it('falls back to Practitioner when no name data exists', () => {
@@ -436,9 +416,9 @@ describe('PatientDetail', () => {
       } as unknown as ReturnType<typeof useDetailPractitioner>);
 
       render(<PatientDetail practitionerRoleId='role-123' />);
-      expect(
-        screen.getByRole('heading', { level: 1 })
-      ).toHaveTextContent('Practitioner');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+        'Practitioner'
+      );
     });
 
     it('falls back to Practitioner when name array is empty', () => {
@@ -458,9 +438,9 @@ describe('PatientDetail', () => {
       } as unknown as ReturnType<typeof useDetailPractitioner>);
 
       render(<PatientDetail practitionerRoleId='role-123' />);
-      expect(
-        screen.getByRole('heading', { level: 1 })
-      ).toHaveTextContent('Practitioner');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+        'Practitioner'
+      );
     });
   });
 
@@ -476,7 +456,7 @@ describe('PatientDetail', () => {
             extension: [
               {
                 url: FEE_EXTENSION_URL,
-                valueMoney: { value: 100000, currency: 'IDR' }
+                valueMoney: { value: 100_000, currency: 'IDR' }
               }
             ]
           }

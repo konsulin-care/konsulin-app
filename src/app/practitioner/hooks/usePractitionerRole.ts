@@ -67,7 +67,7 @@ export function usePractitionerRole(
     if (!role) return 'Z';
     const iso = role.period?.start || role.period?.end;
     if (typeof iso === 'string') {
-      const match = iso.match(/([+-]\d{2}:\d{2}|Z)$/);
+      const match = /([+-]\d{2}:\d{2}|Z)$/.exec(iso);
       return match ? match[1] : 'Z';
     }
     return 'Z';

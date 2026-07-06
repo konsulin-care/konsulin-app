@@ -55,54 +55,21 @@ describe('RecordDetail - back navigation', () => {
     vi.clearAllMocks();
   });
 
-  it('renders assessment result page without backRoute', () => {
+  it.each([
+    [1, 'PHQ-9', 'Assessment Result'],
+    [2, 'Push-ups', 'Exercise Result'],
+    [3, 'SOAP-Note', 'SOAP Detail'],
+    [4, 'My-Journal', 'Journal Detail']
+  ])('renders %s page without backRoute', (category, title, expected) => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=resp-123&category=1&title=PHQ-9') as any
+      new URLSearchParams(`id=xxx&category=${category}&title=${title}`) as any
     );
 
     render(<RecordDetail />);
 
     const header = screen.getByTestId('mock-page-header');
     expect(header).toHaveAttribute('data-back-route', '');
-    expect(header).toHaveAttribute('data-indicator', 'Assessment Result');
-  });
-
-  it('renders exercise result page without backRoute', () => {
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=resp-456&category=2&title=Push-ups') as any
-    );
-
-    render(<RecordDetail />);
-
-    const header = screen.getByTestId('mock-page-header');
-    expect(header).toHaveAttribute('data-back-route', '');
-    expect(header).toHaveAttribute('data-indicator', 'Exercise Result');
-  });
-
-  it('renders SOAP detail page without backRoute', () => {
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=soap-789&category=3&title=SOAP-Note') as any
-    );
-
-    render(<RecordDetail />);
-
-    const header = screen.getByTestId('mock-page-header');
-    expect(header).toHaveAttribute('data-back-route', '');
-    expect(header).toHaveAttribute('data-indicator', 'SOAP Detail');
-  });
-
-  it('renders journal detail page without backRoute', () => {
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams(
-        'id=journ-111&category=4&title=My-Journal'
-      ) as any
-    );
-
-    render(<RecordDetail />);
-
-    const header = screen.getByTestId('mock-page-header');
-    expect(header).toHaveAttribute('data-back-route', '');
-    expect(header).toHaveAttribute('data-indicator', 'Journal Detail');
+    expect(header).toHaveAttribute('data-indicator', expected);
   });
 
   it('renders Notfound for invalid category', () => {

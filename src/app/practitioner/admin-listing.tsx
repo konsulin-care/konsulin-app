@@ -49,7 +49,7 @@ function FilterBar({
   locationName,
   dismissStatus,
   dismissLocation
-}: FilterBarProps) {
+}: Readonly<FilterBarProps>) {
   return (
     <div className='flex flex-col gap-2'>
       <div className='flex items-center gap-2'>

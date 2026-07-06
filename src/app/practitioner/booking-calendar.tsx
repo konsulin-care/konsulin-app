@@ -2,10 +2,10 @@ import { Calendar } from '@/components/ui/calendar-temp';
 import { DrawerDescription, DrawerTitle } from '@/components/ui/drawer';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { format } from 'date-fns';
-import { DayButton, type CalendarDay } from 'react-day-picker';
 import type { PractitionerRoleAvailableTime } from 'fhir/r4';
+import { DayButton, type CalendarDay } from 'react-day-picker';
 
-import { useMemo } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 
 type ColorLegendEntry = {
   color: string;
@@ -37,6 +37,21 @@ type Props = {
    */
   showAllDates?: boolean;
 };
+
+/** Context for passing dayDots to DayButtonComp without nesting component definitions. */
+const DayDotsContext = createContext<Map<string, string[]> | undefined>(
+  undefined
+);
+
+/** DayButton wrapper that reads dayDots from context. */
+function DayButtonComp(props: {
+  readonly day: CalendarDay;
+  readonly modifiers: Record<string, boolean>;
+  readonly children?: React.ReactNode;
+}) {
+  const dayDots = useContext(DayDotsContext);
+  return <DayButtonWithDots {...props} dayDots={dayDots ?? new Map()} />;
+}
 
 /** Dot indicators for a single day in the calendar. */
 function DayDots({ dots }: { readonly dots: string[] }) {
@@ -96,24 +111,7 @@ export default function BookingCalendar({
   showAllDates = false
 }: Readonly<Props>) {
   const customComponents = useMemo(() => {
-    if (!dayDots) {
-      // eslint-disable-next-line unicorn/no-useless-undefined -- consistent-return requires explicit value
-      return undefined;
-    }
-    const DayButtonComp = (props: {
-      day: CalendarDay;
-      modifiers: Record<string, boolean>;
-      children?: React.ReactNode;
-      disabled?: boolean;
-      onClick?: React.MouseEventHandler<HTMLButtonElement>;
-      tabIndex?: number;
-    }) => (
-      <DayButtonWithDots
-        {...props}
-        dayDots={dayDots}
-      />
-    );
-    return { DayButton: DayButtonComp };
+    return dayDots ? { DayButton: DayButtonComp } : undefined;
   }, [dayDots]);
 
   return (
@@ -125,31 +123,35 @@ export default function BookingCalendar({
       )}
       <div className='mt-4 flex w-full flex-col justify-center'>
         {!hideHeader && <DrawerDescription />}
-        <Calendar
-          defaultMonth={bookingState.date}
-          mode='single'
-          selected={bookingState.date}
-          onSelect={date => {
-            if (!date) return;
-            handleFilterChange('date', date);
-            handleFilterChange('hasUserChosenDate', true);
-            resetData();
-          }}
-          onMonthChange={month => {
-            if (!month) return;
-            parentOnMonthChange?.(month);
-            resetData();
-          }}
-          disabled={date => {
-            if (date < today) return true;
-            // When showAllDates is set, skip the listAvailableDate restriction
-            if (!showAllDates && !listAvailableDate.some(
-              ad => ad.getTime() === date.getTime()
-            )) return true;
-            return false;
-          }}
-          components={customComponents}
-        />
+        <DayDotsContext.Provider value={dayDots}>
+          <Calendar
+            defaultMonth={bookingState.date}
+            mode='single'
+            selected={bookingState.date}
+            onSelect={date => {
+              if (!date) return;
+              handleFilterChange('date', date);
+              handleFilterChange('hasUserChosenDate', true);
+              resetData();
+            }}
+            onMonthChange={month => {
+              if (!month) return;
+              parentOnMonthChange?.(month);
+              resetData();
+            }}
+            disabled={date => {
+              if (date < today) return true;
+              // When showAllDates is set, skip the listAvailableDate restriction
+              if (
+                !showAllDates &&
+                !listAvailableDate.some(ad => ad.getTime() === date.getTime())
+              )
+                return true;
+              return false;
+            }}
+            components={customComponents}
+          />
+        </DayDotsContext.Provider>
         {colorLegend && colorLegend.length > 0 && (
           <div className='mt-4 flex flex-col gap-1'>
             {colorLegend.map(entry => (
@@ -158,9 +160,7 @@ export default function BookingCalendar({
                   className='h-2 w-2 rounded-full'
                   style={{ backgroundColor: entry.color }}
                 />
-                <span className='text-[11px] text-gray-600'>
-                  {entry.name}
-                </span>
+                <span className='text-[11px] text-gray-600'>{entry.name}</span>
               </div>
             ))}
           </div>

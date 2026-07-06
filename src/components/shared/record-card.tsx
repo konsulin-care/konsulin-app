@@ -19,10 +19,10 @@ import ReactMarkdown from 'react-markdown';
 function RecordCardContent({
   formattedTitle,
   cleanDescription
-}: {
+}: Readonly<{
   formattedTitle: string;
   cleanDescription: string;
-}) {
+}>) {
   return (
     <div className='flex'>
       <div className='mr-2 h-[40px] w-[40px] shrink-0 rounded-full bg-[#F8F8F8] p-2'>
@@ -153,7 +153,10 @@ export default function RecordCard({
       href={url}
       className='card mt-4 flex flex-col gap-2 p-4'
     >
-      <RecordCardContent formattedTitle={formattedTitle} cleanDescription={cleanDescription} />
+      <RecordCardContent
+        formattedTitle={formattedTitle}
+        cleanDescription={cleanDescription}
+      />
       <hr className='w-full' />
 
       <RecordCardFooter

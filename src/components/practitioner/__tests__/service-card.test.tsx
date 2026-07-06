@@ -35,24 +35,14 @@ const minimalService: HealthcareService = {
 };
 
 describe('ServiceCard', () => {
-  it('renders service name', () => {
+  it.each([
+    ['service name', 'General Consultation'],
+    ['fee formatted as IDR', 'Rp 150.000'],
+    ['duration in minutes', '30 min'],
+    ['extra details', 'Standard checkup']
+  ])('renders %s', (_, text) => {
     render(<ServiceCard service={activeService} />);
-    expect(screen.getByText('General Consultation')).toBeInTheDocument();
-  });
-
-  it('renders fee formatted as IDR', () => {
-    render(<ServiceCard service={activeService} />);
-    expect(screen.getByText('Rp 150.000')).toBeInTheDocument();
-  });
-
-  it('renders duration in minutes', () => {
-    render(<ServiceCard service={activeService} />);
-    expect(screen.getByText('30 min')).toBeInTheDocument();
-  });
-
-  it('renders extra details', () => {
-    render(<ServiceCard service={activeService} />);
-    expect(screen.getByText('Standard checkup')).toBeInTheDocument();
+    expect(screen.getByText(text)).toBeInTheDocument();
   });
 
   it('does not render fee when absent', () => {
@@ -110,7 +100,9 @@ describe('ServiceCard', () => {
 
   it('triggers onContextMenu on right-click', () => {
     const onContextMenu = vi.fn();
-    render(<ServiceCard service={activeService} onContextMenu={onContextMenu} />);
+    render(
+      <ServiceCard service={activeService} onContextMenu={onContextMenu} />
+    );
     const button = screen.getByRole('button');
     fireEvent.contextMenu(button);
     expect(onContextMenu).toHaveBeenCalledOnce();
