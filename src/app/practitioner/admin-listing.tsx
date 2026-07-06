@@ -25,7 +25,8 @@ function fuzzyMatch(query: string, text: string): boolean {
     textIndex < lowerText.length && queryIndex < lowerQuery.length;
     textIndex++
   ) {
-    if (lowerQuery[queryIndex] === lowerText[textIndex]) queryIndex++;
+    if (lowerQuery.charAt(queryIndex) === lowerText.charAt(textIndex))
+      queryIndex++;
   }
   return queryIndex === lowerQuery.length;
 }
@@ -59,7 +60,9 @@ function FilterBar({
       <div className='flex items-center gap-2'>
         <InputWithIcon
           value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
+          onChange={e => {
+            setSearchQuery(e.target.value);
+          }}
           placeholder='Search practitioner...'
           className='h-[50px] w-full border-0 bg-[#F9F9F9]'
           startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
@@ -125,7 +128,9 @@ export default function AdminListing() {
         if (saved?.value) setSelectedClinicId(saved.value);
         return null;
       })
-      .catch((err: unknown) => console.warn('[IndexedDB]', err));
+      .catch((err: unknown) => {
+        console.warn('[IndexedDB]', err);
+      });
   }, []);
 
   // Load persisted filter from IndexedDB
@@ -138,7 +143,9 @@ export default function AdminListing() {
         if (saved?.value) setFilter(saved.value);
         return null;
       })
-      .catch((err: unknown) => console.warn('[IndexedDB]', err));
+      .catch((err: unknown) => {
+        console.warn('[IndexedDB]', err);
+      });
   }, []);
 
   // Persist filter to IndexedDB on changes
@@ -148,7 +155,9 @@ export default function AdminListing() {
       ownerId: '',
       prefKey: 'practitioner_filter',
       value: newFilter
-    }).catch((err: unknown) => console.warn('[IndexedDB]', err));
+    }).catch((err: unknown) => {
+      console.warn('[IndexedDB]', err);
+    });
   }, []);
 
   // Fetch locations for the current organization

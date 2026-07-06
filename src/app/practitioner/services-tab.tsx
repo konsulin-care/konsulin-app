@@ -113,7 +113,9 @@ export default function ServicesTab({
     [clearLongPress, toggleSelection]
   );
 
-  const handleTouchMove = useCallback(() => clearLongPress(), [clearLongPress]);
+  const handleTouchMove = useCallback(() => {
+    clearLongPress();
+  }, [clearLongPress]);
 
   const handleTouchEnd = useCallback(
     (svc: HealthcareService) => {
@@ -135,10 +137,9 @@ export default function ServicesTab({
     setSelectedIds(new Set());
   }, [selectedIds]);
 
-  const handleSelectionCancel = useCallback(
-    () => setSelectedIds(new Set()),
-    []
-  );
+  const handleSelectionCancel = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
 
   useEffect(() => {
     if (inSelectionMode) {
@@ -310,11 +311,19 @@ export default function ServicesTab({
             <ServiceCard
               service={svc}
               isSelected={isSelected}
-              onClick={() => handleCardClick(svc)}
-              onContextMenu={e => handleContextMenu(e, svc)}
-              onTouchStart={e => handleTouchStart(e, svc)}
+              onClick={() => {
+                handleCardClick(svc);
+              }}
+              onContextMenu={e => {
+                handleContextMenu(e, svc);
+              }}
+              onTouchStart={e => {
+                handleTouchStart(e, svc);
+              }}
               onTouchMove={handleTouchMove}
-              onTouchEnd={() => handleTouchEnd(svc)}
+              onTouchEnd={() => {
+                handleTouchEnd(svc);
+              }}
             />
           </div>
         );

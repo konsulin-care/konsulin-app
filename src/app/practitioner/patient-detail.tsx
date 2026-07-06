@@ -163,11 +163,11 @@ function HealthcareServicesSection({
             <ServiceCard
               key={svc.id}
               service={svc}
-              onClick={() =>
+              onClick={() => {
                 onNavigate(
                   `/practitioner/availability?id=${practitionerRoleId}&service=${svc.id}`
-                )
-              }
+                );
+              }}
             />
           ))}
         </div>

@@ -78,7 +78,7 @@ function minutesOverlap(
 /** Convert 'HH:mm' time string to minutes-from-midnight. */
 export function timeToMinutes(timeStr: string): number {
   const [hours, minutes] = timeStr.split(':').map(Number);
-  return hours * 60 + (minutes ?? 0);
+  return hours * 60 + minutes;
 }
 
 /** Convert minutes-from-midnight to 'HH:mm' string. */
