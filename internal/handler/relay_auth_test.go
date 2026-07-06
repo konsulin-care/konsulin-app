@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 )
+
 func TestRelayBooking_forwardsAuthToken(t *testing.T) {
 	var capturedAuth string
 

@@ -219,9 +219,9 @@ func parseRelayResponse(fhirResp map[string]any, serviceID string, fee feeObj) r
 	entries, ok := fhirResp["entry"].([]any)
 	if !ok {
 		return relayResponse{
-			SlotID:               "",
-			InvoiceID:            "",
-			Fee:                  fee,
+			SlotID:                "",
+			InvoiceID:             "",
+			Fee:                   fee,
 			HealthcareServiceName: fee.ServiceName,
 		}
 	}
@@ -250,9 +250,9 @@ func parseRelayResponse(fhirResp map[string]any, serviceID string, fee feeObj) r
 	}
 
 	return relayResponse{
-		SlotID:               slotID,
-		InvoiceID:            invoiceID,
-		Fee:                  fee,
+		SlotID:                slotID,
+		InvoiceID:             invoiceID,
+		Fee:                   fee,
 		HealthcareServiceName: fee.ServiceName,
 	}
 }

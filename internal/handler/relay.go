@@ -32,9 +32,9 @@ type relayBookingRequest struct {
 
 // relayResponse is the JSON response sent back to the client.
 type relayResponse struct {
-	SlotID               string `json:"slotId"`
-	InvoiceID            string `json:"invoiceId"`
-	Fee                  feeObj `json:"fee"`
+	SlotID                string `json:"slotId"`
+	InvoiceID             string `json:"invoiceId"`
+	Fee                   feeObj `json:"fee"`
 	HealthcareServiceName string `json:"healthcareServiceName"`
 }
 
@@ -55,8 +55,8 @@ func (e *upstreamError) Error() string { return e.Message }
 
 // Duplicated literal constants to satisfy SonarQube maintainability rules.
 const (
-	contentTypeJSON     = "application/json"
-	headerContentType   = "Content-Type"
+	contentTypeJSON   = "application/json"
+	headerContentType = "Content-Type"
 )
 
 // NewRelayBookingHandler creates a handler for POST /api/v1/relay/booking.
