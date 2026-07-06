@@ -18,12 +18,16 @@ vi.mock('@/components/ui/skeleton', () => ({
 }));
 
 let triggerDaySelect: ((date: Date) => void) | null = null;
+let capturedToday: Date | null = null;
 
 vi.mock('@/app/practitioner/booking-calendar', () => ({
   default: (props: {
     handleFilterChange: (key: string, val: unknown) => void;
     colorLegend?: Array<{ name: string }>;
+    today: Date;
   }) => {
+    // Capture the today prop for assertions
+    capturedToday = props.today;
     // Expose the handleFilterChange to trigger day selection in tests
     triggerDaySelect = (date: Date) => {
       props.handleFilterChange('date', date);
@@ -91,6 +95,16 @@ describe('PractitionerDashboard', () => {
     expect(callArgs.monthStart.getMilliseconds()).toBe(0);
     // monthStart should be the 1st of the current month
     expect(callArgs.monthStart.getDate()).toBe(1);
+  });
+
+  it('passes today normalized to midnight', () => {
+    render(<PractitionerDashboard />, { wrapper });
+
+    expect(capturedToday).not.toBeNull();
+    expect(capturedToday!.getHours()).toBe(0);
+    expect(capturedToday!.getMinutes()).toBe(0);
+    expect(capturedToday!.getSeconds()).toBe(0);
+    expect(capturedToday!.getMilliseconds()).toBe(0);
   });
 
   it('passes stable monthStart across re-renders', () => {

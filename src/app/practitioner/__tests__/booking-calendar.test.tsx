@@ -1,13 +1,16 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import BookingCalendar from '../booking-calendar';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
 import type { PractitionerRoleAvailableTime } from 'fhir/r4';
 
+let triggerMonthChange: ((month: Date) => void) | null = null;
+
 vi.mock('@/components/ui/calendar-temp', () => ({
-  Calendar: ({ components, onSelect }: any) => {
+  Calendar: ({ components, onSelect, onMonthChange }: any) => {
     const DayButton = components?.DayButton;
     const testDate = new Date('2026-07-04');
+    triggerMonthChange = onMonthChange ? (month: Date) => onMonthChange(month) : null;
     return (
       <div data-testid='mock-calendar'>
         {DayButton && (
@@ -49,6 +52,13 @@ const mockAvailableTime: PractitionerRoleAvailableTime[] = [
 ];
 
 describe('BookingCalendar', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    triggerMonthChange = null;
+  });
   it('renders calendar with default props', () => {
     render(
       <BookingCalendar
@@ -121,6 +131,32 @@ describe('BookingCalendar', () => {
     expect(dotContainer).toBeDefined();
     const dot = dotContainer?.querySelector('[role="listitem"]');
     expect(dot).toBeDefined();
+  });
+
+  it('does not reset date when month changes', () => {
+    const handleChange = vi.fn();
+    const resetData = vi.fn();
+
+    render(
+      <BookingCalendar
+        bookingState={mockBookingState}
+        handleFilterChange={handleChange}
+        resetData={resetData}
+        listAvailableDate={[new Date('2026-07-15')]}
+        availableTime={mockAvailableTime}
+        today={new Date('2026-07-01')}
+      />
+    );
+
+    act(() => {
+      triggerMonthChange?.(new Date('2026-07-01'));
+    });
+
+    // handleFilterChange should NOT have been called with 'date'
+    expect(handleChange).not.toHaveBeenCalledWith('date', expect.any(Date));
+
+    // resetData should still be called (clearing time slots on month nav)
+    expect(resetData).toHaveBeenCalledTimes(1);
   });
 
   it('passes dayDots to DayButton component', () => {

@@ -4,7 +4,7 @@ import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { format } from 'date-fns';
 import { DayButton, type CalendarDay } from 'react-day-picker';
 import type { PractitionerRoleAvailableTime } from 'fhir/r4';
-import { getAvailableDays } from './utils';
+
 import { useMemo } from 'react';
 
 type ColorLegendEntry = {
@@ -77,6 +77,7 @@ export default function BookingCalendar({
   handleFilterChange,
   resetData,
   listAvailableDate,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for Props API compatibility
   availableTime,
   today,
   hideHeader = false,
@@ -127,13 +128,6 @@ export default function BookingCalendar({
           onMonthChange={month => {
             if (!month) return;
             parentOnMonthChange?.(month);
-            // Update available dates for the new month
-            const newAvailableDays = getAvailableDays(availableTime, month);
-            // Find the first available date in the new month
-            const firstAvailable = newAvailableDays.find(day => day >= month);
-            if (firstAvailable) {
-              handleFilterChange('date', firstAvailable);
-            }
             resetData();
           }}
           disabled={date =>

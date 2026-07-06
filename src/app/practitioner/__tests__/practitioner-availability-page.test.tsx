@@ -1,6 +1,6 @@
 /* eslint-disable react/display-name, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -52,9 +52,17 @@ vi.mock('@tanstack/react-query', async () => {
   };
 });
 
+// Track calendar props for testing
+let capturedHandleFilterChange: ((label: string, value: unknown) => void) | null = null;
+let capturedBookingDate: Date | null = null;
+
 // Mock sub-components to simplify testing — pass through practitionerGivenName
 vi.mock('../booking-calendar', () => ({
-  default: () => <div data-testid='booking-calendar'>Calendar</div>
+  default: (props: any) => {
+    capturedHandleFilterChange = props.handleFilterChange ?? null;
+    capturedBookingDate = props.bookingState?.date ?? null;
+    return <div data-testid='booking-calendar'>Calendar</div>;
+  }
 }));
 
 vi.mock('../time-slots-section', () => ({
@@ -128,6 +136,8 @@ function createWrapper() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  capturedHandleFilterChange = null;
+  capturedBookingDate = null;
 
   vi.mocked(useAuth).mockReturnValue({
     state: {
@@ -287,6 +297,25 @@ describe('PractitionerAvailability page variant', () => {
     // setDirtyState should have been called, at minimum with null (form not valid)
     expect(setDirtyState).toHaveBeenCalled();
     expect(setDirtyState).toHaveBeenCalledWith(null);
+  });
+
+  it('persists selected date when user clicks a different date in page mode', () => {
+    render(
+      <PractitionerAvailability
+        variant='page'
+        practitionerRoleId='role-123'
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    // Select a different date via the calendar's handleFilterChange
+    const newDate = new Date('2026-07-15');
+    act(() => {
+      capturedHandleFilterChange?.('date', newDate);
+    });
+
+    // Date should stay as the user-selected date, not revert to today
+    expect(capturedBookingDate?.getTime()).toBe(newDate.getTime());
   });
 
   it('does not crash when FabDirtyContext is available in drawer variant', () => {

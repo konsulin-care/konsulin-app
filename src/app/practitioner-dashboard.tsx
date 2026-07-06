@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { usePractitionerDashboard } from '@/services/hooks/usePractitionerDashboard';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfDay } from 'date-fns';
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 
@@ -53,7 +53,7 @@ export default function PractitionerDashboard() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const practitionerId = authState?.userInfo?.fhirId;
 
-  const today = useMemo(() => new Date(), []);
+  const today = useMemo(() => startOfDay(new Date()), []);
   const [displayMonth, setDisplayMonth] = useState<Date>(today);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 

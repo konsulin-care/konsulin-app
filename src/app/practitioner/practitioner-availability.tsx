@@ -21,6 +21,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition
 } from 'react';
@@ -287,15 +288,25 @@ export default function PractitionerAvailability({
     onLoadTempBooking
   });
 
-  /** Set initial date for page mode. */
+  // Track whether page mode has been initialized with a valid start date.
+  // Using a ref ensures this runs only once on mount, not on every render.
+  const pageDateInitialized = useRef(false);
+
+  /** Set initial date for page mode — runs only once on mount. */
   useEffect(() => {
     if (!isPageMode) return;
+    if (pageDateInitialized.current) return;
+    pageDateInitialized.current = true;
     const initialDate = isDateAvailable(today, listAvailableDate)
       ? today
       : getNextAvailableDate(today, listAvailableDate);
+    // Avoid unnecessary state update if pageDate already matches.
     if (pageDate?.getTime() === initialDate.getTime()) return;
     setPageDate(initialDate);
-  }, [isPageMode, today, listAvailableDate, pageDate, setPageDate]);
+    // pageDate is intentionally excluded from deps to prevent re-initialization
+    // when the user changes the selection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPageMode, today, listAvailableDate]);
 
   useEffect(() => {
     if (isPageMode) return;
