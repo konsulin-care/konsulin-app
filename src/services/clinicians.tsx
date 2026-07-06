@@ -6,7 +6,9 @@ import { AxiosResponse } from 'axios';
 import {
   Bundle,
   BundleEntry,
+  HealthcareService,
   Invoice,
+  Location,
   Organization,
   PractitionerRole,
   Schedule
@@ -181,6 +183,80 @@ export const useUpdatePractitionerInfo = () => {
   });
 };
 
+/**
+ * Return type for useGetPractitionerRoleWorkingLocations.
+ */
+export type PractitionerWorkingLocationData = {
+  practitionerRole: PractitionerRole;
+  location?: Location;
+  healthcareServices: HealthcareService[];
+};
+
+/**
+ * Fetch practitioner's own roles with Location and HealthcareService includes.
+ *
+ * Used by the practitioner listing page to display working location cards
+ * with proper location names and healthcare service descriptions.
+ *
+ * Query:
+ *   /fhir/PractitionerRole?practitioner={id}
+ *   &_include=PractitionerRole:location
+ *   &_include=PractitionerRole:service
+ *
+ * @param practitionerId - FHIR Practitioner ID
+ * @returns Query result with PractitionerWorkingLocationData[]
+ */
+export function useGetPractitionerRoleWorkingLocations(practitionerId: string) {
+  return useQuery({
+    queryKey: ['practitioner-working-locations', practitionerId],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get<Bundle>(
+        `/fhir/PractitionerRole?practitioner=${practitionerId}&_include=PractitionerRole:location&_include=PractitionerRole:service`
+      );
+      return response;
+    },
+    select: response => {
+      const entries = response.data.entry ?? [];
+
+      const practitionerRoles = entries.filter(
+        (e: BundleEntry) => e.resource?.resourceType === 'PractitionerRole'
+      ) as BundleEntry<PractitionerRole>[];
+
+      const locations = entries.filter(
+        (e: BundleEntry) => e.resource?.resourceType === 'Location'
+      ) as BundleEntry<Location>[];
+
+      const healthcareServices = entries.filter(
+        (e: BundleEntry) => e.resource?.resourceType === 'HealthcareService'
+      ) as BundleEntry<HealthcareService>[];
+
+      return practitionerRoles.map((role): PractitionerWorkingLocationData => {
+        const locationRef =
+          role.resource.location?.[0]?.reference?.split('/')[1];
+        const location = locations.find(
+          l => l.resource.id === locationRef
+        )?.resource;
+
+        const hsRefs =
+          role.resource.healthcareService?.map(
+            h => h.reference?.split('/')[1]
+          ) ?? [];
+        const services = healthcareServices
+          .filter(hs => hs.resource.id && hsRefs.includes(hs.resource.id))
+          .map(hs => hs.resource);
+
+        return {
+          practitionerRole: role.resource,
+          location,
+          healthcareServices: services
+        };
+      });
+    },
+    enabled: Boolean(practitionerId)
+  });
+}
+
 /** Mutation hook to create a new invoice for a practitioner role. */
 export const useCreateInvoice = () => {
   return useMutation({
@@ -220,6 +296,6 @@ export const useUpdateInvoice = () => {
 
 export {
   computeFreeSlots,
-  usePractitionerSlots,
-  useBusySlotsByPractitioner
+  useBusySlotsByPractitioner,
+  usePractitionerSlots
 } from './slots';

@@ -1,6 +1,11 @@
 import { getAPI } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
-import type { Bundle, BundleEntry, PractitionerRoleAvailableTime, Slot } from 'fhir/r4';
+import type {
+  Bundle,
+  BundleEntry,
+  PractitionerRoleAvailableTime,
+  Slot
+} from 'fhir/r4';
 
 /**
  * Parse a timezone offset string like "+07:00" or "Z" into total minutes.
@@ -14,7 +19,9 @@ export function parseTzOffset(tzOffset: string): number {
   const match = /^([+-])(\d{2}):(\d{2})$/.exec(tzOffset);
   if (!match) return 0;
   const sign = match[1] === '+' ? 1 : -1;
-  return sign * (Number.parseInt(match[2], 10) * 60 + Number.parseInt(match[3], 10));
+  return (
+    sign * (Number.parseInt(match[2], 10) * 60 + Number.parseInt(match[3], 10))
+  );
 }
 
 /**
@@ -44,9 +51,16 @@ function practitionerToLocalMinutes(
   practitionerTzMinutes: number
 ): number {
   const [hours, minutes] = timeStr.split(':').map(Number);
-  const utcDate = new Date(Date.UTC(
-    date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes, 0
-  ));
+  const utcDate = new Date(
+    Date.UTC(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      hours,
+      minutes,
+      0
+    )
+  );
   utcDate.setMinutes(utcDate.getMinutes() - practitionerTzMinutes);
   return utcDate.getHours() * 60 + utcDate.getMinutes();
 }
@@ -74,7 +88,7 @@ export function minutesToTimeStr(minutes: number): string {
   return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 }
 
-const DAY_LABELS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const DAY_LABELS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
 /**
  * Given availableTime, busy slots, and a date, compute free windows.
@@ -99,8 +113,8 @@ export function computeFreeSlots(
   const dayLabel = DAY_LABELS[date.getDay()];
 
   // Find matching available time windows for this day of week
-  const matchingWindows = availableTime.filter(
-    a => a.daysOfWeek?.includes(dayLabel)
+  const matchingWindows = availableTime.filter(a =>
+    a.daysOfWeek?.includes(dayLabel)
   );
 
   if (matchingWindows.length === 0) return [];
@@ -119,10 +133,14 @@ export function computeFreeSlots(
     if (!window.availableStartTime || !window.availableEndTime) continue;
 
     const startMinutes = practitionerToLocalMinutes(
-      window.availableStartTime, date, tzMinutes
+      window.availableStartTime,
+      date,
+      tzMinutes
     );
     const endMinutes = practitionerToLocalMinutes(
-      window.availableEndTime, date, tzMinutes
+      window.availableEndTime,
+      date,
+      tzMinutes
     );
 
     // Generate candidate slots of durationMinutes length
@@ -156,10 +174,7 @@ export function computeFreeSlots(
  * (busy, busy-unavailable, busy-tentative) since Blaze does not
  * support the :not search modifier.
  */
-export function usePractitionerSlots(
-  practitionerRoleId: string,
-  date: string
-) {
+export function usePractitionerSlots(practitionerRoleId: string, date: string) {
   return useQuery({
     queryKey: ['practitioner-slots', practitionerRoleId, date],
     queryFn: async () => {
@@ -175,7 +190,7 @@ export function usePractitionerSlots(
     select: (entries: BundleEntry[]) =>
       entries
         .filter(e => e.resource?.resourceType === 'Slot')
-        .map(e => (e.resource as Slot))
+        .map(e => e.resource as Slot)
         .map(s => ({ start: s.start, end: s.end })),
     enabled: Boolean(practitionerRoleId) && Boolean(date)
   });
@@ -210,7 +225,7 @@ export function useBusySlotsByPractitioner(
     select: (entries: BundleEntry[]) =>
       entries
         .filter(e => e.resource?.resourceType === 'Slot')
-        .map(e => (e.resource as Slot))
+        .map(e => e.resource as Slot)
         .map(s => ({ start: s.start, end: s.end })),
     enabled: Boolean(practitionerId) && Boolean(date)
   });

@@ -55,6 +55,15 @@ vi.mock('@/services/clinic', () => ({
   })
 }));
 
+vi.mock('@/services/clinicians', () => ({
+  useGetPractitionerRoleWorkingLocations: vi.fn().mockReturnValue({
+    data: undefined,
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn()
+  })
+}));
+
 vi.mock('@/components/general/avatar', () => ({
   default: (props: any) => <div data-testid='mock-avatar'>{props.initials}</div>
 }));

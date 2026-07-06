@@ -1,19 +1,18 @@
 'use client';
 
 import { LoadingSpinnerIcon } from '@/components/icons';
-import dynamic from 'next/dynamic';
 import PageHeader from '@/components/page-header';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
-import { useGetPractitionerRolesDetail } from '@/services/clinicians';
-import type { IPractitionerRoleDetail } from '@/types/practitioner';
+import { useGetPractitionerRoleWorkingLocations } from '@/services/clinicians';
 import { storeOwnedRoleIds } from '@/utils/practitioner-ownership';
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
 import AdminListing from './admin-listing';
 import PatientDetail from './patient-detail';
-import PractitionerRoleManagementShell from './role-management-shell';
 import PractitionerWorkingLocationCard from './practitioner-working-location-card';
+import PractitionerRoleManagementShell from './role-management-shell';
 
 const RecommendationCardStack = dynamic(
   () => import('@/components/general/home/recommendation-card-stack'),
@@ -31,58 +30,50 @@ export default function Practitioner() {
   // Fetch practitioner's own roles. Empty for Patient — the hook has
   // enabled: Boolean(practitionerId), so it won't fire when empty.
   const queryFhirId = role === Roles.Patient ? '' : fhirId;
-  const { data: ownRoles, isLoading: isRolesLoading } =
-    useGetPractitionerRolesDetail(queryFhirId);
+  const { data: workingLocationsData, isLoading: isRolesLoading } =
+    useGetPractitionerRoleWorkingLocations(queryFhirId);
 
   // Store owned PractitionerRole IDs on successful fetch
   useEffect(() => {
-    if (ownRoles?.length > 0) {
-      const ids = ownRoles.map(r => r.resource?.id).filter(Boolean);
+    if (workingLocationsData?.length > 0) {
+      const ids = workingLocationsData
+        .map(item => item.practitionerRole.id)
+        .filter(Boolean);
       storeOwnedRoleIds(ids);
     }
-  }, [ownRoles]);
+  }, [workingLocationsData]);
 
   // Build working location cards data for Practitioner role
   const workingLocations = useMemo(() => {
-    if (!ownRoles) return [];
-    return ownRoles
-      .map(entry => {
-        const role = entry.resource as IPractitionerRoleDetail | undefined;
-        if (!role || !role.id) return null;
+    if (!workingLocationsData) return [];
+    return workingLocationsData.map(item => {
+      const role = item.practitionerRole;
+      const locationName = item.location?.name ?? 'Clinic';
 
-        // Use enriched organizationData.name if available
-        const orgName = role.organizationData?.name ??
-          role.organization?.display ??
-          'Clinic';
-
-        // Extract unique day labels from availableTime
-        const dayLabels = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-        const shortDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const daySet = new Set<string>();
-        for (const at of role.availableTime ?? []) {
-          for (const d of at.daysOfWeek ?? []) {
-            const idx = dayLabels.indexOf(d);
-            if (idx !== -1) daySet.add(shortDays[idx]);
-          }
+      const dayLabels = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+      const shortDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const daySet = new Set<string>();
+      for (const at of role.availableTime ?? []) {
+        for (const d of at.daysOfWeek ?? []) {
+          const idx = dayLabels.indexOf(d);
+          if (idx !== -1) daySet.add(shortDays[idx]);
         }
-        const workingDays =
-          daySet.size > 0 ? [...daySet] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+      }
+      const workingDays =
+        daySet.size > 0 ? [...daySet] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
-        // Try to get service display names from references
-        const healthcareServiceNames =
-          role.healthcareService
-            ?.map(h => h.display)
-            .filter((n): n is string => Boolean(n)) ?? [];
+      const healthcareServiceNames = item.healthcareServices
+        .map(hs => hs.name)
+        .filter(Boolean);
 
-        return {
-          practitionerRoleId: role.id,
-          locationName: orgName,
-          workingDays,
-          healthcareServiceNames
-        };
-      })
-      .filter(Boolean);
-  }, [ownRoles]);
+      return {
+        practitionerRoleId: role.id,
+        locationName,
+        workingDays,
+        healthcareServiceNames
+      };
+    });
+  }, [workingLocationsData]);
 
   if (isAuthLoading) {
     return (
@@ -132,7 +123,10 @@ export default function Practitioner() {
       return (
         <div className='flex flex-col gap-4'>
           {workingLocations.map(loc => (
-            <PractitionerWorkingLocationCard key={loc.practitionerRoleId} {...loc} />
+            <PractitionerWorkingLocationCard
+              key={loc.practitionerRoleId}
+              {...loc}
+            />
           ))}
         </div>
       );

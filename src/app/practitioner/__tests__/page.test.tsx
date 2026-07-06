@@ -20,7 +20,7 @@ vi.mock('@/services/clinic', () => ({
 }));
 
 vi.mock('@/services/clinicians', () => ({
-  useGetPractitionerRolesDetail: vi.fn()
+  useGetPractitionerRoleWorkingLocations: vi.fn()
 }));
 
 vi.mock('@/utils/practitioner-ownership', () => ({
@@ -103,21 +103,21 @@ vi.mock('@/app/practitioner/practitioner-filter', () => ({
   )
 }));
 
+import { Roles } from '@/constants/roles';
+import { useAuth } from '@/context/auth/authContext';
 import {
   useOrganizationLocations,
   usePractitionerListing
 } from '@/services/clinic';
-import { useGetPractitionerRolesDetail } from '@/services/clinicians';
-import { useAuth } from '@/context/auth/authContext';
+import { useGetPractitionerRoleWorkingLocations } from '@/services/clinicians';
 import { useSearchParams } from 'next/navigation';
-import { Roles } from '@/constants/roles';
 
 const mockUseSearchParams = vi.mocked(useSearchParams);
 const mockUseAuth = vi.mocked(useAuth);
 const mockUsePractitionerListing = vi.mocked(usePractitionerListing);
 const mockUseOrganizationLocations = vi.mocked(useOrganizationLocations);
-const mockUseGetPractitionerRolesDetail = vi.mocked(
-  useGetPractitionerRolesDetail
+const mockUseGetPractitionerRoleWorkingLocations = vi.mocked(
+  useGetPractitionerRoleWorkingLocations
 );
 
 function mockPractitioners() {
@@ -178,12 +178,12 @@ beforeEach(() => {
     isFetching: false
   });
 
-  mockUseGetPractitionerRolesDetail.mockReturnValue({
+  mockUseGetPractitionerRoleWorkingLocations.mockReturnValue({
     data: undefined,
     isLoading: false,
     isError: false,
     refetch: vi.fn()
-  } as unknown as ReturnType<typeof useGetPractitionerRolesDetail>);
+  } as unknown as ReturnType<typeof useGetPractitionerRoleWorkingLocations>);
 });
 
 describe('Practitioner page — filters', () => {
@@ -253,7 +253,7 @@ describe('Practitioner page — filters', () => {
     expect(screen.getByTestId('patient-detail')).toBeDefined();
     // Hook is called unconditionally but with empty identifier, so the
     // underlying query (enabled: Boolean) never fires for Patient.
-    expect(mockUseGetPractitionerRolesDetail).toHaveBeenCalledWith('');
+    expect(mockUseGetPractitionerRoleWorkingLocations).toHaveBeenCalledWith('');
   });
 
   it('shows empty state when no practitioners exist', () => {

@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 
 import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useBooking } from '@/context/booking/bookingContext';
-import { useAuth } from '@/context/auth/authContext';
-import { useSearchParams } from 'next/navigation';
 import { Roles } from '@/constants/roles';
+import { useAuth } from '@/context/auth/authContext';
+import { useBooking } from '@/context/booking/bookingContext';
+import { useSearchParams } from 'next/navigation';
 
 // ---------------------------------------------------------------------------
 // Mocks – vi.mock is hoisted so these run before any import
@@ -26,7 +26,7 @@ vi.mock('@/context/auth/authContext', () => ({
 }));
 
 vi.mock('@/services/clinicians', () => ({
-  useGetPractitionerRolesDetail: vi.fn().mockReturnValue({
+  useGetPractitionerRoleWorkingLocations: vi.fn().mockReturnValue({
     data: undefined,
     isLoading: false,
     isError: false,
