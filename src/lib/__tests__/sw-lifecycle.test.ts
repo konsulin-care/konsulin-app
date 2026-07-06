@@ -322,18 +322,6 @@ describe('fetch error recovery', () => {
     await expect(promiseArg).resolves.toBeInstanceOf(Response);
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
-
-  it('cross-origin requests still bypass SW after refactor', () => {
-    // Same test as 'ignores cross-origin requests' — verify refactor
-    // didn't break the bypass.
-    const event = fireFetch(mockSelf, {
-      url: 'https://other.com/page'
-    });
-
-    expect(event.respondWith).not.toHaveBeenCalled();
-    expect(mockCaches.open).not.toHaveBeenCalled();
-    expect(mockFetch).not.toHaveBeenCalled();
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -371,7 +359,7 @@ describe('sw-register.js', () => {
 describe('defense-in-depth URL validation', () => {
   it('networkFirst returns 503 for non-http URLs', async () => {
     const patchedCode = SW_CODE.replace(
-      'async function networkFirst (request, cacheName, fallbackUrl) {',
+      'async function networkFirst(request, cacheName, fallbackUrl) {',
       'self.__testNetworkFirst = async function networkFirst (request, cacheName, fallbackUrl) {'
     );
 
