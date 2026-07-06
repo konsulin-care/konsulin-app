@@ -105,10 +105,11 @@ describe('PractitionerDashboard', () => {
     render(<PractitionerDashboard />, { wrapper });
 
     expect(capturedToday).not.toBeNull();
-    expect(capturedToday!.getHours()).toBe(0);
-    expect(capturedToday!.getMinutes()).toBe(0);
-    expect(capturedToday!.getSeconds()).toBe(0);
-    expect(capturedToday!.getMilliseconds()).toBe(0);
+    const today = capturedToday;
+    expect(today.getHours()).toBe(0);
+    expect(today.getMinutes()).toBe(0);
+    expect(today.getSeconds()).toBe(0);
+    expect(today.getMilliseconds()).toBe(0);
   });
 
   it('passes showAllDates=true to BookingCalendar', () => {

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-empty-function, sonarjs/slow-regex */
+/* eslint-disable @typescript-eslint/no-empty-function, sonarjs/slow-regex */
 
 import { PractitionerCard } from '@/components/practitioner/practitioner-card';
 import { render, screen } from '@testing-library/react';
@@ -7,9 +7,9 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 beforeAll(() => {
   // Polyfill ResizeObserver for JSDOM
   global.ResizeObserver = class {
-    observe(_this?: unknown) {}
-    unobserve(_this?: unknown) {}
-    disconnect(_this?: unknown) {}
+    observe() {}
+    unobserve() {}
+    disconnect() {}
   };
 });
 
@@ -70,10 +70,7 @@ describe('PractitionerCard', () => {
     );
 
     const link = screen.getByText('Dr. Who').closest('a');
-    expect(link).toHaveAttribute(
-      'href',
-      '/practitioner?id=role-3'
-    );
+    expect(link).toHaveAttribute('href', '/practitioner?id=role-3');
   });
 
   it('renders avatar as a square container sized via inline style', () => {

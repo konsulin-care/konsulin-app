@@ -17,13 +17,17 @@ import PractitionerFilter, { type FilterState } from './practitioner-filter';
 /** Shared fuzzy-match logic. */
 function fuzzyMatch(query: string, text: string): boolean {
   if (!query) return true;
-  const q = query.toLowerCase();
-  const t = text.toLowerCase();
-  let qi = 0;
-  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
-    if (q[qi] === t[ti]) qi++;
+  const lowerQuery = query.toLowerCase();
+  const lowerText = text.toLowerCase();
+  let queryIndex = 0;
+  for (
+    let textIndex = 0;
+    textIndex < lowerText.length && queryIndex < lowerQuery.length;
+    textIndex++
+  ) {
+    if (lowerQuery[queryIndex] === lowerText[textIndex]) queryIndex++;
   }
-  return qi === q.length;
+  return queryIndex === lowerQuery.length;
 }
 
 interface FilterBarProps {

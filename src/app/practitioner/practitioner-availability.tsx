@@ -98,9 +98,9 @@ export default function PractitionerAvailability({
 }: Props) {
   // Stable date reference — only changes at midnight.
   const today = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    return todayDate;
   }, []);
   const isPageMode = variant === 'page';
   const router = useRouter();

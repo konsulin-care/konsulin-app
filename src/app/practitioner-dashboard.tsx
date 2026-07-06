@@ -2,12 +2,12 @@
 
 import BookingCalendar from '@/app/practitioner/booking-calendar';
 import SessionCard from '@/components/schedule/session-card';
-import type { MergedSession } from '@/types/appointment';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { usePractitionerDashboard } from '@/services/hooks/usePractitionerDashboard';
-import { format, startOfMonth, endOfMonth, startOfDay } from 'date-fns';
+import type { MergedSession } from '@/types/appointment';
+import { endOfMonth, format, startOfDay, startOfMonth } from 'date-fns';
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 
@@ -126,7 +126,7 @@ export default function PractitionerDashboard() {
         hideHeader
         dayDots={dayDots}
         colorLegend={colorLegend}
-        showAllDates={true}
+        showAllDates
       />
 
       <div className='mt-6'>

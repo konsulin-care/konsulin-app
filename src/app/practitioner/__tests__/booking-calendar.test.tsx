@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
+import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { act, render, screen } from '@testing-library/react';
+import type { PractitionerRoleAvailableTime } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import BookingCalendar from '../booking-calendar';
-import type { IStateBooking } from '@/context/booking/bookingTypes';
-import type { PractitionerRoleAvailableTime } from 'fhir/r4';
 
 let triggerMonthChange: ((month: Date) => void) | null = null;
 
@@ -10,7 +11,9 @@ vi.mock('@/components/ui/calendar-temp', () => ({
   Calendar: ({ components, onSelect, onMonthChange, disabled }: any) => {
     const DayButtonCustom = components?.DayButton;
     const testDate = new Date('2026-07-04');
-    triggerMonthChange = onMonthChange ? (month: Date) => onMonthChange(month) : null;
+    triggerMonthChange = onMonthChange
+      ? (month: Date) => onMonthChange(month)
+      : null;
 
     const handleSelect = (date: Date) => {
       // Only call onSelect if the date is NOT disabled
@@ -139,8 +142,7 @@ describe('BookingCalendar', () => {
   });
 
   it('renders day dots below the date number in a flex-col container', () => {
-    const dayDots = new Map<string, string[]>();
-    dayDots.set('2026-07-04', ['#13C2C2']);
+    const dayDots = new Map<string, string[]>([['2026-07-04', ['#13C2C2']]]);
 
     const { container } = render(
       <BookingCalendar
@@ -154,9 +156,7 @@ describe('BookingCalendar', () => {
       />
     );
 
-    const dotContainer = container.querySelector(
-      '.flex.flex-col.items-center'
-    );
+    const dotContainer = container.querySelector('.flex.flex-col.items-center');
     expect(dotContainer).toBeDefined();
     const dot = dotContainer?.querySelector('[role="listitem"]');
     expect(dot).toBeDefined();
@@ -198,7 +198,7 @@ describe('BookingCalendar', () => {
         listAvailableDate={[new Date('2026-07-15')]}
         availableTime={mockAvailableTime}
         today={new Date('2026-07-01')}
-        showAllDates={true}
+        showAllDates
       />
     );
 
@@ -239,8 +239,7 @@ describe('BookingCalendar', () => {
 
   it('forwards onClick, disabled, and tabIndex to the DOM button when dayDots are provided', () => {
     const handleChange = vi.fn();
-    const dayDots = new Map<string, string[]>();
-    dayDots.set('2026-07-04', ['#13C2C2']);
+    const dayDots = new Map<string, string[]>([['2026-07-04', ['#13C2C2']]]);
 
     render(
       <BookingCalendar
@@ -251,7 +250,7 @@ describe('BookingCalendar', () => {
         availableTime={mockAvailableTime}
         today={new Date('2026-07-01')}
         dayDots={dayDots}
-        showAllDates={true}
+        showAllDates
       />
     );
 
@@ -271,8 +270,9 @@ describe('BookingCalendar', () => {
   });
 
   it('passes dayDots to DayButton component', () => {
-    const dayDots = new Map<string, string[]>();
-    dayDots.set('2026-07-04', ['#13C2C2', '#F5222D']);
+    const dayDots = new Map<string, string[]>([
+      ['2026-07-04', ['#13C2C2', '#F5222D']]
+    ]);
 
     render(
       <BookingCalendar

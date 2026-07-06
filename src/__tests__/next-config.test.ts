@@ -39,7 +39,7 @@ describe('next.config.mjs', () => {
     const hasConditional =
       text.includes('NODE_ENV') &&
       text.includes('output:') &&
-      text.includes(`'export'`) &&
+      text.includes("'export'") &&
       (text.includes('...(process.env.NODE_ENV') ||
         text.includes("...(process.env['NODE_ENV'") ||
         text.includes('...(process.env[`NODE_ENV`'));

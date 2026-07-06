@@ -139,16 +139,11 @@ export default function BookingCalendar({
               parentOnMonthChange?.(month);
               resetData();
             }}
-            disabled={date => {
-              if (date < today) return true;
-              // When showAllDates is set, skip the listAvailableDate restriction
-              if (
-                !showAllDates &&
-                !listAvailableDate.some(ad => ad.getTime() === date.getTime())
-              )
-                return true;
-              return false;
-            }}
+            disabled={date =>
+              date < today ||
+              (!showAllDates &&
+                !listAvailableDate.some(ad => ad.getTime() === date.getTime()))
+            }
             components={customComponents}
           />
         </DayDotsContext.Provider>
