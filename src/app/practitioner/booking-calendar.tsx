@@ -30,6 +30,12 @@ type Props = {
   colorLegend?: ColorLegendEntry[];
   /** Called when the user navigates to a different month. */
   parentOnMonthChange?: (month: Date) => void;
+  /**
+   * When true, enables clicking ALL dates regardless of listAvailableDate.
+   * Used by the practitioner dashboard where viewing any day's schedule
+   * should be allowed. Defaults to false (booking flow).
+   */
+  showAllDates?: boolean;
 };
 
 /** Dot indicators for a single day in the calendar. */
@@ -83,7 +89,8 @@ export default function BookingCalendar({
   hideHeader = false,
   dayDots,
   colorLegend,
-  parentOnMonthChange
+  parentOnMonthChange,
+  showAllDates = false
 }: Readonly<Props>) {
   const customComponents = useMemo(() => {
     if (!dayDots) {
@@ -130,12 +137,14 @@ export default function BookingCalendar({
             parentOnMonthChange?.(month);
             resetData();
           }}
-          disabled={date =>
-            date < today ||
-            !listAvailableDate.some(
-              availableDate => availableDate.getTime() === date.getTime()
-            )
-          }
+          disabled={date => {
+            if (date < today) return true;
+            // When showAllDates is set, skip the listAvailableDate restriction
+            if (!showAllDates && !listAvailableDate.some(
+              ad => ad.getTime() === date.getTime()
+            )) return true;
+            return false;
+          }}
           components={customComponents}
         />
         {colorLegend && colorLegend.length > 0 && (

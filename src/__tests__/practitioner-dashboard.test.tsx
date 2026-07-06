@@ -19,15 +19,18 @@ vi.mock('@/components/ui/skeleton', () => ({
 
 let triggerDaySelect: ((date: Date) => void) | null = null;
 let capturedToday: Date | null = null;
+let capturedShowAllDates: boolean | null = null;
 
 vi.mock('@/app/practitioner/booking-calendar', () => ({
   default: (props: {
     handleFilterChange: (key: string, val: unknown) => void;
     colorLegend?: Array<{ name: string }>;
     today: Date;
+    showAllDates?: boolean;
   }) => {
-    // Capture the today prop for assertions
+    // Capture props for assertions
     capturedToday = props.today;
+    capturedShowAllDates = props.showAllDates ?? null;
     // Expose the handleFilterChange to trigger day selection in tests
     triggerDaySelect = (date: Date) => {
       props.handleFilterChange('date', date);
@@ -53,6 +56,7 @@ describe('PractitionerDashboard', () => {
       defaultOptions: { queries: { retry: false } }
     });
     vi.clearAllMocks();
+    capturedShowAllDates = null;
     vi.mocked(useAuth).mockReturnValue({
       isLoading: false,
       state: {
@@ -105,6 +109,13 @@ describe('PractitionerDashboard', () => {
     expect(capturedToday!.getMinutes()).toBe(0);
     expect(capturedToday!.getSeconds()).toBe(0);
     expect(capturedToday!.getMilliseconds()).toBe(0);
+  });
+
+  it('passes showAllDates=true to BookingCalendar', () => {
+    render(<PractitionerDashboard />, { wrapper });
+
+    // The dashboard should allow clicking all dates for schedule viewing
+    expect(capturedShowAllDates).toBe(true);
   });
 
   it('passes stable monthStart across re-renders', () => {

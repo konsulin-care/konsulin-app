@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-. "$(dirname "$0")/_/h"
+#. "$(dirname -- "$0")/_/husky.sh" # Removed: Will fail in v10.0.0
 
 # Go dependency hygiene — fail push if go mod tidy changes files
 go mod tidy && go mod download

@@ -126,6 +126,7 @@ export default function PractitionerDashboard() {
         hideHeader
         dayDots={dayDots}
         colorLegend={colorLegend}
+        showAllDates={true}
       />
 
       <div className='mt-6'>
