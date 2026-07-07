@@ -1,9 +1,9 @@
-/* eslint-disable sonarjs/assertions-in-tests, @typescript-eslint/require-await */
+/* eslint-disable sonarjs/assertions-in-tests */
 
 import type { UseQueryResult } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { HealthcareService, PractitionerRole } from 'fhir/r4';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
 
@@ -31,16 +31,9 @@ vi.mock('@/services/clinic', () => ({
   usePractitionerRoleHealthcareServices: vi.fn()
 }));
 
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 vi.mock('../service-form-drawer', () => ({
-  default: ({
-    open,
-    onSave,
-    service
-  }: {
-    open: boolean;
-    onSave: (svc: Record<string, unknown>) => void;
-    service?: Record<string, unknown>;
-  }) =>
+  default: ({ open, onSave, service }: Record<string, any>) =>
     open ? (
       <div data-testid='mock-drawer'>
         <button
@@ -54,7 +47,7 @@ vi.mock('../service-form-drawer', () => ({
               location: [{ reference: 'Location/loc-1' }],
               extension: [
                 {
-                  url: 'https://konsulin.id/fhir/StructureDefinition/fee',
+                  url: FEE_EXTENSION_URL,
                   valueMoney: { value: 150_000, currency: 'IDR' }
                 }
               ],
@@ -68,10 +61,9 @@ vi.mock('../service-form-drawer', () => ({
       </div>
     ) : null
 }));
+/* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 
-vi.mock('@/services/api/fhir-bundle', () => ({
-  submitFhirBundle: vi.fn()
-}));
+vi.mock('@/services/api/fhir-bundle', () => ({ submitFhirBundle: vi.fn() }));
 
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
 import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
@@ -134,7 +126,7 @@ describe('ServicesTab', () => {
     expect(screen.getByText(/no healthcare services/i)).toBeInTheDocument();
   });
 
-  it('opens create drawer when add service is clicked', () => {
+  it('opens create drawer from add button', () => {
     mockServicesAndRender();
     fireEvent.click(screen.getByText(/add service/i));
     expect(screen.getByTestId('mock-drawer')).toBeInTheDocument();
@@ -151,11 +143,55 @@ describe('ServicesTab', () => {
     expect(screen.getByText('create')).toBeInTheDocument();
   });
 
-  it('adds a new service from the drawer', async () => {
+  it('adds a new service from the drawer', () => {
     mockServicesAndRender();
     fireEvent.click(screen.getByText(/add service/i));
     fireEvent.click(screen.getByTestId('mock-drawer-save'));
     expect(screen.getByText('New Service')).toBeInTheDocument();
+  });
+
+  it('submits new services as POST and existing as PUT in the transaction bundle', async () => {
+    vi.mocked(usePractitionerRoleHealthcareServices).mockReturnValue(
+      makeMockResult(mockServices)
+    );
+    let capturedSave: (() => Promise<void>) | undefined;
+    render(
+      <ServicesTab
+        practitionerRoleId='role-1'
+        onDirtyChange={(_dirty, save) => {
+          capturedSave = save;
+        }}
+      />
+    );
+    fireEvent.click(screen.getByText(/add service/i));
+    fireEvent.click(screen.getByTestId('mock-drawer-save'));
+    await vi.waitFor(() => expect(capturedSave).toBeDefined());
+    await capturedSave();
+    const bundle = vi.mocked(submitFhirBundle).mock.calls[0][0];
+    const hsEntries = (bundle.entry?.filter(
+      e => e.resource?.resourceType === 'HealthcareService'
+    ) ?? []) as {
+      resource: HealthcareService;
+      request: { method: string; url: string };
+      fullUrl?: string;
+    }[];
+    const putEntry = hsEntries.find(e => e.request.method === 'PUT');
+    expect(putEntry?.request.url).toMatch(/^HealthcareService\/svc-/);
+    expect(putEntry?.fullUrl).toBeUndefined();
+    const postEntry = hsEntries.find(e => e.request.method === 'POST');
+    expect(postEntry?.request.url).toBe('HealthcareService');
+    expect(postEntry?.fullUrl).toMatch(/^urn:uuid:[0-9a-f-]+$/);
+    expect(postEntry?.resource.id).toBeUndefined();
+    const roleEntry = bundle.entry?.find(
+      e => e.resource?.resourceType === 'PractitionerRole'
+    ) as
+      | { resource: { healthcareService: { reference: string }[] } }
+      | undefined;
+    const refs = roleEntry?.resource.healthcareService ?? [];
+    expect(refs.some(r => r.reference.startsWith('urn:uuid:'))).toBe(true);
+    expect(refs.some(r => r.reference.startsWith('HealthcareService/'))).toBe(
+      true
+    );
   });
 
   it('submits bundle with full practitioner role preserving existing fields', async () => {
@@ -187,15 +223,16 @@ describe('ServicesTab', () => {
     const roleEntry = bundle.entry?.find(
       e => e.resource?.resourceType === 'PractitionerRole'
     ) as { resource: PractitionerRole } | undefined;
-    expect(roleEntry).toBeDefined();
-    expect(roleEntry.resource.practitioner).toEqual({
+    expect(roleEntry?.resource.practitioner).toEqual({
       reference: 'Practitioner/prac-1'
     });
-    expect(roleEntry.resource.organization).toEqual({
+    expect(roleEntry?.resource.organization).toEqual({
       reference: 'Organization/org-1'
     });
-    expect(roleEntry.resource.code).toEqual([{ coding: [{ code: 'doctor' }] }]);
-    expect(roleEntry.resource.active).toBe(true);
+    expect(roleEntry?.resource.code).toEqual([
+      { coding: [{ code: 'doctor' }] }
+    ]);
+    expect(roleEntry?.resource.active).toBe(true);
   });
 
   it('preserves multiple new services when adding sequentially', () => {
@@ -207,8 +244,7 @@ describe('ServicesTab', () => {
     fireEvent.click(screen.getByTestId('mock-drawer-save'));
     fireEvent.click(screen.getByText(/add service/i));
     fireEvent.click(screen.getByTestId('mock-drawer-save'));
-    const heading = screen.getByText(/healthcare services/i);
-    expect(heading.textContent).toMatch(/2/);
+    expect(screen.getByText(/healthcare services/i).textContent).toMatch(/2/);
     expect(screen.getAllByText('New Service')).toHaveLength(2);
   });
 
@@ -220,11 +256,8 @@ describe('ServicesTab', () => {
     if (saveAll) fireEvent.click(saveAll);
   });
 
-  it('opens edit drawer when clicking Edit button or card body', () => {
+  it('opens edit drawer when clicking card body', () => {
     mockServicesAndRender();
-    fireEvent.click(screen.getAllByLabelText('Edit service')[0]);
-    expect(screen.getByText('edit')).toBeInTheDocument();
-    fireEvent.click(screen.getByText(/healthcare services/i));
     fireEvent.click(screen.getByText('General Consultation'));
     expect(screen.getByText('edit')).toBeInTheDocument();
   });
@@ -234,7 +267,9 @@ describe('ServicesTab', () => {
       makeMockResult(mockServices)
     );
     const onDirtyChange = vi.fn();
-    let capturedSave: () => Promise<void> = () => Promise.resolve();
+    let capturedSave = async () => {
+      /* placeholder */
+    };
     render(
       <ServicesTab
         practitionerRoleId='role-1'
@@ -244,9 +279,8 @@ describe('ServicesTab', () => {
         }}
       />
     );
-    // State effect may not flush until acted. Use waitFor for initial dirty state.
     await vi.waitFor(() => expect(onDirtyChange).toHaveBeenCalled());
-    fireEvent.click(screen.getAllByLabelText('Edit service')[0]);
+    fireEvent.click(screen.getByText('General Consultation'));
     fireEvent.click(screen.getByTestId('mock-drawer-save'));
     await vi.waitFor(() =>
       expect(onDirtyChange).toHaveBeenLastCalledWith(true)
@@ -256,8 +290,7 @@ describe('ServicesTab', () => {
     const hsEntry = bundle.entry?.find(
       e => e.resource?.resourceType === 'HealthcareService'
     ) as { resource: HealthcareService } | undefined;
-    expect(hsEntry).toBeDefined();
-    expect(hsEntry.resource.extension).toEqual([
+    expect(hsEntry?.resource.extension).toEqual([
       {
         url: FEE_EXTENSION_URL,
         valueMoney: { value: 150_000, currency: 'IDR' }
@@ -265,32 +298,134 @@ describe('ServicesTab', () => {
     ]);
   });
 
-  it('uses native button element for delete trigger (accessibility)', () => {
-    mockServicesAndRender();
-    const deleteButtons = screen.getAllByLabelText('Delete service');
-    for (const btn of deleteButtons) {
-      expect(btn.tagName).toBe('BUTTON');
-      expect(btn).toHaveAttribute('type', 'button');
-      expect(btn).not.toHaveAttribute('role');
-      expect(btn).not.toHaveAttribute('tabindex');
+  describe('selection mode', () => {
+    function expectSelectionCount(count: number) {
+      expect(
+        screen.getByRole('heading', {
+          name: (c: string) => c.startsWith(`${count} selected`)
+        })
+      ).toBeInTheDocument();
     }
+
+    function expectNoSelectionMode() {
+      expect(
+        screen.queryByRole('heading', {
+          name: (c: string) => c.includes('selected')
+        })
+      ).not.toBeInTheDocument();
+    }
+
+    function getCard(name: string) {
+      return screen.getByText(name).closest('button');
+    }
+
+    it('selects a card on right-click', () => {
+      mockServicesAndRender();
+      fireEvent.contextMenu(getCard('General Consultation'));
+      expectSelectionCount(1);
+      expect(screen.getByText(/cancel/i)).toBeInTheDocument();
+    });
+
+    it('shows correct count when multiple cards are selected', () => {
+      mockServicesAndRender();
+      fireEvent.contextMenu(getCard('General Consultation'));
+      fireEvent.contextMenu(getCard('Specialist Referral'));
+      expectSelectionCount(2);
+    });
+
+    it('deselects a card on left-click when in selection mode', () => {
+      mockServicesAndRender();
+      const card = getCard('General Consultation');
+      fireEvent.contextMenu(card);
+      expectSelectionCount(1);
+      fireEvent.click(card);
+      expectNoSelectionMode();
+      expect(screen.getByText(/healthcare services/i)).toBeInTheDocument();
+    });
+
+    it('does not enter selection mode on left-click', () => {
+      mockServicesAndRender();
+      fireEvent.click(getCard('General Consultation'));
+      expect(screen.getByText('edit')).toBeInTheDocument();
+    });
+
+    it('opens edit drawer on left-click in normal mode', () => {
+      mockServicesAndRender();
+      fireEvent.click(screen.getByText('General Consultation'));
+      expect(screen.getByText('edit')).toBeInTheDocument();
+    });
+
+    it('cancels selection mode when clicking Cancel', () => {
+      mockServicesAndRender();
+      fireEvent.contextMenu(getCard('General Consultation'));
+      expectSelectionCount(1);
+      fireEvent.click(screen.getByText(/cancel/i));
+      expectNoSelectionMode();
+      expect(screen.getByText(/healthcare services/i)).toBeInTheDocument();
+    });
+
+    it('does not render edit drawer on right-click', () => {
+      mockServicesAndRender();
+      fireEvent.contextMenu(getCard('General Consultation'));
+      expect(screen.queryByTestId('mock-drawer')).not.toBeInTheDocument();
+    });
   });
 
-  it('does not nest button inside another button', () => {
-    mockServicesAndRender();
-    const allButtons = screen.getAllByRole('button');
-    for (const btn of allButtons) {
-      // No <button> descendant should exist inside any <button>
-      expect(btn.querySelector('button')).toBeNull();
-    }
-  });
+  describe('long-press (mobile)', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      globalThis.TouchEvent = class TouchEvent extends Event {
+        constructor(type: string, options?: EventInit) {
+          super(type, { bubbles: true, cancelable: true, ...options });
+        }
+      } as unknown as typeof TouchEvent;
+    });
 
-  it('removes service card when clicking Delete', () => {
-    mockServicesAndRender();
-    expect(screen.getByText('General Consultation')).toBeInTheDocument();
-    expect(screen.getByText('Specialist Referral')).toBeInTheDocument();
-    fireEvent.click(screen.getAllByLabelText('Delete service')[0]);
-    expect(screen.queryByText('General Consultation')).not.toBeInTheDocument();
-    expect(screen.getByText('Specialist Referral')).toBeInTheDocument();
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    function getCard() {
+      return screen.getByText('General Consultation').closest('button');
+    }
+
+    it('selects a card on long-press', () => {
+      mockServicesAndRender();
+      fireEvent.touchStart(getCard());
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      fireEvent.touchEnd(getCard());
+      expect(
+        screen.getByRole('heading', {
+          name: (c: string) => c.startsWith('1 selected')
+        })
+      ).toBeInTheDocument();
+    });
+
+    it('opens edit drawer on short tap', () => {
+      mockServicesAndRender();
+      fireEvent.touchStart(getCard());
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      fireEvent.touchEnd(getCard());
+      expect(screen.getByText('edit')).toBeInTheDocument();
+    });
+
+    it('cancels long-press on touch move', () => {
+      mockServicesAndRender();
+      fireEvent.touchStart(getCard());
+      fireEvent.touchMove(getCard());
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      fireEvent.touchEnd(getCard());
+      expect(
+        screen.queryByRole('heading', {
+          name: (c: string) => c.includes('selected')
+        })
+      ).not.toBeInTheDocument();
+    });
   });
 });

@@ -53,3 +53,12 @@ Each domain has a focused document under `@docs/agents/`.
 - Cache stable resources (Practitioner, Organization) with TTL
 - Use `_include` to eager-load referenced resources and avoid N+1 queries
 - Use `_summary=count` for list endpoints when only metadata is needed
+- **Bundle resource referencing**: When constructing a FHIR transaction
+  bundle, reference resources created within the same bundle via
+  `urn:uuid:<uuid>` (`fullUrl` on the creating entry). New resources
+  (POST) use a client-generated UUID in `fullUrl` with no `id` in the
+  resource body. Existing resources (PUT) use
+  `HealthcareService/<id>` as both the request URL and reference.
+  Newly-created local resources with a `new-<uuid>` client-generated
+  id strip the `new-` prefix and use the raw UUID for `urn:uuid:`
+  references.

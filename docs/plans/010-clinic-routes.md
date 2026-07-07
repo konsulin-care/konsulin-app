@@ -17,44 +17,44 @@ to server cookie via fetch POST. Aligned with ADR-015.
 # Goals
 
 - `GET /clinic` — clinic listing with search (React state + `useQuery`)
-- `GET /clinic/:id` — clinic detail with services and practitioners
+- `GET /clinic?id=<id>` — clinic detail with services and practitioners
 - `GET /clinic/manage` — admin dashboard for selected clinic context
 - Clinic context switcher — React component + React Context provider + cookie sync
 - FHIR: Organization, HealthcareService, PractitionerRole
 
 # Implementation Steps
 
-- [ ] Create `src/app/clinic/page.tsx` — clinic card grid with search
-- [ ] Create `src/app/clinic/[clinicId]/page.tsx` — clinic info + services + practitioners
-- [ ] Create `src/app/clinic/manage/page.tsx` — admin dashboard (practitioner counts, pending approvals)
-- [ ] Create `src/contexts/ClinicContext.tsx` — React context for active clinic ID
+- [ ] Create `@/clinic/page.tsx` — clinic card grid with search
+- [ ] Create `@/clinic/page.tsx` — clinic info + services + practitioners (detail via `useSearchParams`)
+- [ ] Create `@/clinic/manage/page.tsx` — admin dashboard (practitioner counts, pending approvals)
+- [ ] Create `@/contexts/ClinicContext.tsx` — React context for active clinic ID
 - [ ] Create clinic context switcher component — dropdown dispatches `POST /context/clinic` to set cookie, updates React context
 - [ ] Add React Query hooks: `useClinics(search)`, `useClinicDetail(id)`, `useClinicManagement(id)`
-- [ ] Write `src/app/clinic/__tests__/clinic.test.tsx` — mock fetch, test detail and context switch
+- [ ] Write `@/clinic/__tests__/clinic.test.tsx` — mock fetch, test detail and context switch
 
 # Reference
 
-@src/app/clinic/page.tsx:
+@@/clinic/page.tsx:
 
 - Clinic listing: searchable with city filter
 - Keep: same layout with React state for search/filter
 
-@src/app/clinic/clinic-filter.tsx:
+@@/clinic/clinic-filter.tsx:
 
 - Clinic filter UI: city dropdown, name search
 - Keep: React component; replace fetch with `useQuery('/proxy/fhir/Organization')`
 
-@src/app/clinic/[clinicId]/page.tsx:
+@@/clinic/[clinicId]/page.tsx:
 
 - Clinic detail: practitioners list with roles, organization info
 - Keep: same data layout in React
 
-@src/services/clinic.tsx:
+@@/services/clinic.tsx:
 
 - Clinic API: useListClinics, useClinicById (practitioners with roles), useDetailPractitioner
 - Adapt: wrap with React Query hooks using `/proxy/fhir/` base path
 
-@src/types/organization.ts:
+@/types/organization.ts:
 
 - IOrganizationResource, IOrganizationDetail, IPractitioner, IDetailInvoice
 - Keep: same TypeScript types

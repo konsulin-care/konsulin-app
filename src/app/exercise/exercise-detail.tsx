@@ -10,12 +10,12 @@ import { useSearchParams } from 'next/navigation';
 /** Single exercise detail page with iframe player and description. */
 export default function ExerciseDetail() {
   const searchParams = useSearchParams();
-  const exerciseId = searchParams.get('exerciseId') ?? '';
+  const id = searchParams.get('id') ?? '';
 
   const { data, isLoading: excerciseIsLoading } = useGetExercise();
 
   const excerciseData =
-    Array.isArray(data) && data?.find(item => item?.id === exerciseId);
+    Array.isArray(data) && data?.find(item => item?.id === id);
 
   /** Renders exercise iframe or loading/not-found states. */
   const renderContent = () => {

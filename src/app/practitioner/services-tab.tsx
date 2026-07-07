@@ -1,32 +1,28 @@
 'use client';
 
+import ServiceCard from '@/components/practitioner/service-card';
+import { useFabSelection } from '@/context/fabSelectionContext';
 import { useClinicContext } from '@/hooks/useClinicContext';
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
 import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
 import type { Bundle, HealthcareService, PractitionerRole } from 'fhir/r4';
-import { Pencil, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ServiceFormDrawer from './service-form-drawer';
 
 type Props = {
   readonly practitionerRoleId?: string;
-  /** Reports dirty state and save handler to parent (for external FAB management). */
   readonly onDirtyChange?: (
     dirty: boolean,
     save: () => Promise<void>,
     saving: boolean
   ) => void;
-  /** Full PractitionerRole resource to preserve all fields on save.
-   *  When provided, the bundle PUT includes all existing fields (practitioner,
-   *  organization, availableTime, etc.) instead of only healthcareService. */
   readonly practitionerRole?: PractitionerRole;
 };
 
 /**
- * Tab content for managing HealthcareService resources.
- *
- * Maintains a local copy of services for create/edit/delete operations.
- * "Save All" builds a FHIR transaction bundle and submits via submitFhirBundle.
+ * Tab for managing HealthcareService resources.
+ * Supports multi-select: right-click/long-press to select cards,
+ * then batch-delete via contextual FAB action.
  */
 export default function ServicesTab({
   practitionerRoleId,
@@ -43,57 +39,143 @@ export default function ServicesTab({
     HealthcareService | undefined
   >();
   const [saveAllLoading, setSaveAllLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLongPress = useRef(false);
+  const { setSelectionState } = useFabSelection();
 
-  // Sync local state from fetched data
   useEffect(() => {
-    if (fetchedServices) {
-      setLocalServices(fetchedServices);
-    }
+    if (fetchedServices) setLocalServices(fetchedServices);
   }, [fetchedServices]);
 
   const isDirty = useMemo(() => {
     if (!fetchedServices) return localServices.length > 0;
     if (localServices.length !== fetchedServices.length) return true;
-    return localServices.some((s, i) => {
-      const f = fetchedServices.at(i);
+    return localServices.some((localService, i) => {
+      const fetchedService = fetchedServices.at(i);
       return (
-        s.name !== f.name ||
-        s.active !== f.active ||
-        s.extraDetails !== f.extraDetails ||
-        JSON.stringify(s.extension) !== JSON.stringify(f.extension)
+        localService.name !== fetchedService.name ||
+        localService.active !== fetchedService.active ||
+        localService.extraDetails !== fetchedService.extraDetails ||
+        JSON.stringify(localService.extension) !==
+          JSON.stringify(fetchedService.extension)
       );
     });
   }, [localServices, fetchedServices]);
 
+  const inSelectionMode = selectedIds.size > 0;
+
+  const toggleSelection = useCallback((id: string | undefined) => {
+    if (!id) return;
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleCardClick = useCallback(
+    (svc: HealthcareService) => {
+      if (inSelectionMode) toggleSelection(svc.id);
+      else {
+        setEditingService(svc);
+        setDrawerOpen(true);
+      }
+    },
+    [inSelectionMode, toggleSelection]
+  );
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent, svc: HealthcareService) => {
+      e.preventDefault();
+      toggleSelection(svc.id);
+    },
+    [toggleSelection]
+  );
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  const handleTouchStart = useCallback(
+    (_e: React.TouchEvent, svc: HealthcareService) => {
+      isLongPress.current = false;
+      clearLongPress();
+      longPressTimer.current = setTimeout(() => {
+        isLongPress.current = true;
+        toggleSelection(svc.id);
+      }, 500);
+    },
+    [clearLongPress, toggleSelection]
+  );
+
+  const handleTouchMove = useCallback(() => {
+    clearLongPress();
+  }, [clearLongPress]);
+
+  const handleTouchEnd = useCallback(
+    (svc: HealthcareService) => {
+      clearLongPress();
+      if (!isLongPress.current) {
+        if (inSelectionMode) toggleSelection(svc.id);
+        else {
+          setEditingService(svc);
+          setDrawerOpen(true);
+        }
+      }
+      isLongPress.current = false;
+    },
+    [clearLongPress, inSelectionMode, toggleSelection]
+  );
+
+  const handleSelectionDelete = useCallback(() => {
+    setLocalServices(prev => prev.filter(s => !selectedIds.has(s.id ?? '')));
+    setSelectedIds(new Set());
+  }, [selectedIds]);
+
+  const handleSelectionCancel = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  useEffect(() => {
+    if (inSelectionMode) {
+      setSelectionState({
+        count: selectedIds.size,
+        onDelete: handleSelectionDelete,
+        onCancel: handleSelectionCancel
+      });
+    } else {
+      setSelectionState(null);
+    }
+  }, [
+    inSelectionMode,
+    selectedIds,
+    setSelectionState,
+    handleSelectionDelete,
+    handleSelectionCancel
+  ]);
+
+  /** Open the service form drawer in create mode. */
   const handleAddService = () => {
     setEditingService(undefined);
     setDrawerOpen(true);
   };
 
-  const handleEditService = (svc: HealthcareService) => {
-    setEditingService(svc);
-    setDrawerOpen(true);
-  };
-
-  const handleDeleteService = (id: string) => {
-    setLocalServices(prev => prev.filter(s => s.id !== id));
-  };
-
+  /** Save or update a healthcare service in local state. */
   const handleDrawerSave = (service: HealthcareService) => {
-    // Generate a temp client ID so new services (id: undefined) can be
-    // distinguished in the local array. Without this, findIndex matches
-    // the first service with undefined id and replaces it.
     const serviceWithId: HealthcareService = {
       ...service,
       id: service.id ?? `new-${crypto.randomUUID()}`
     };
-
     setLocalServices(prev => {
-      const existingIdx = prev.findIndex(s => s.id === serviceWithId.id);
-      if (existingIdx !== -1) {
-        return prev.with(existingIdx, serviceWithId);
-      }
-      return [...prev, serviceWithId];
+      const idx = prev.findIndex(s => s.id === serviceWithId.id);
+      return idx === -1
+        ? [...prev, serviceWithId]
+        : prev.with(idx, serviceWithId);
     });
     setDrawerOpen(false);
     setEditingService(undefined);
@@ -102,22 +184,33 @@ export default function ServicesTab({
   const handleSaveAll = useCallback(async () => {
     if (!practitionerRoleId) return;
     setSaveAllLoading(true);
-
     try {
       const bundle: Bundle = {
         resourceType: 'Bundle',
         type: 'transaction',
         entry: [
-          // POST/PUT for each HealthcareService
-          ...localServices.map(svc => ({
-            resource: svc,
-            request: {
-              method: svc.id ? ('PUT' as const) : ('POST' as const),
-              url: svc.id ? `HealthcareService/${svc.id}` : 'HealthcareService'
+          ...localServices.map(svc => {
+            const isNew = svc.id?.startsWith('new-');
+            if (isNew) {
+              const { id, ...bodyWithoutId } = svc;
+              const uuid = id.replace('new-', '');
+              return {
+                fullUrl: `urn:uuid:${uuid}`,
+                resource: bodyWithoutId,
+                request: {
+                  method: 'POST' as const,
+                  url: 'HealthcareService'
+                } as const
+              };
             }
-          })),
-          // PUT PractitionerRole with updated healthcareService refs,
-          // preserving all existing fields (practitioner, organization, etc.)
+            return {
+              resource: svc,
+              request: {
+                method: 'PUT' as const,
+                url: `HealthcareService/${svc.id}`
+              }
+            };
+          }),
           {
             resource: {
               ...(practitionerRole ?? {
@@ -128,8 +221,12 @@ export default function ServicesTab({
                 .filter((s): s is HealthcareService & { id: string } =>
                   Boolean(s.id)
                 )
-                .map(s => ({ reference: `HealthcareService/${s.id}` }))
-            } as unknown as HealthcareService,
+                .map(s => ({
+                  reference: s.id.startsWith('new-')
+                    ? `urn:uuid:${s.id.replace('new-', '')}`
+                    : `HealthcareService/${s.id}`
+                }))
+            },
             request: {
               method: 'PUT' as const,
               url: `PractitionerRole/${practitionerRoleId}`
@@ -137,21 +234,17 @@ export default function ServicesTab({
           }
         ]
       };
-
       await submitFhirBundle(bundle);
       await refetch();
-    } catch (error) {
-      console.error('Failed to save services:', error);
+    } catch (err) {
+      console.warn('[services-tab] save failed', err);
     } finally {
       setSaveAllLoading(false);
     }
   }, [localServices, practitionerRoleId, refetch, practitionerRole]);
 
-  // Report dirty state to parent for dynamic FAB
   useEffect(() => {
-    if (onDirtyChange) {
-      onDirtyChange(isDirty, handleSaveAll, saveAllLoading);
-    }
+    if (onDirtyChange) onDirtyChange(isDirty, handleSaveAll, saveAllLoading);
   }, [isDirty, saveAllLoading, onDirtyChange, handleSaveAll]);
 
   if (localServices.length === 0) {
@@ -186,59 +279,55 @@ export default function ServicesTab({
   return (
     <div className='space-y-3 py-4'>
       <div className='flex items-center justify-between'>
-        <h3 className='text-sm font-bold'>
-          Healthcare Services ({localServices.length})
-        </h3>
-        <button
-          onClick={handleAddService}
-          className='text-primary text-sm underline'
-        >
-          + Add Service
-        </button>
+        {inSelectionMode ? (
+          <h3 className='text-sm font-bold'>
+            {selectedIds.size} selected —{' '}
+            <button
+              onClick={handleSelectionCancel}
+              className='text-primary underline'
+            >
+              Cancel
+            </button>
+          </h3>
+        ) : (
+          <h3 className='text-sm font-bold'>
+            Healthcare Services ({localServices.length})
+          </h3>
+        )}
+        {!inSelectionMode && (
+          <button
+            onClick={handleAddService}
+            className='text-primary text-sm underline'
+          >
+            + Add Service
+          </button>
+        )}
       </div>
 
-      {localServices.map((svc: HealthcareService) => (
-        <div key={svc.id ?? svc.name} className='relative'>
-          <button
-            type='button'
-            aria-label='Edit service'
-            onClick={() => {
-              handleEditService(svc);
-            }}
-            className='card w-full cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left'
-          >
-            <div className='flex items-start justify-between'>
-              <div className='flex-1'>
-                <div className='text-sm font-bold'>
-                  {svc.active !== false && (
-                    <span className='mr-2 inline-block h-2 w-2 rounded-full bg-green-500' />
-                  )}
-                  {svc.name}
-                </div>
-                {svc.extraDetails && (
-                  <div className='mt-1 text-xs text-gray-500'>
-                    {svc.extraDetails}
-                  </div>
-                )}
-              </div>
-              <div className='flex gap-2'>
-                <Pencil size={16} />
-              </div>
-            </div>
-          </button>
-
-          {svc.id && (
-            <button
-              type='button'
-              aria-label='Delete service'
-              onClick={() => { handleDeleteService(svc.id); }}
-              className='absolute right-4 top-4 bg-transparent border-none p-0 text-xs text-red-600 underline'
-            >
-              <Trash2 size={16} className='text-red-500' />
-            </button>
-          )}
-        </div>
-      ))}
+      {localServices.map((svc: HealthcareService) => {
+        const isSelected = svc.id ? selectedIds.has(svc.id) : false;
+        return (
+          <div key={svc.id ?? svc.name} className='relative'>
+            <ServiceCard
+              service={svc}
+              isSelected={isSelected}
+              onClick={() => {
+                handleCardClick(svc);
+              }}
+              onContextMenu={e => {
+                handleContextMenu(e, svc);
+              }}
+              onTouchStart={e => {
+                handleTouchStart(e, svc);
+              }}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={() => {
+                handleTouchEnd(svc);
+              }}
+            />
+          </div>
+        );
+      })}
 
       <ServiceFormDrawer
         key={editingService?.id ?? 'create'}

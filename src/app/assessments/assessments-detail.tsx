@@ -17,10 +17,10 @@ import Participant from './soap/participant';
 /** Assessment detail page: loads and renders a FHIR Questionnaire via AEHRC forms. */
 export default function AssessmentsDetail() {
   const searchParams = useSearchParams();
-  const assessmentsId = searchParams.get('assessmentsId') ?? '';
+  const id = searchParams.get('id') ?? '';
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const { data: questionnaire, isLoading: questionnaireIsLoading } =
-    useQuestionnaire(assessmentsId);
+    useQuestionnaire(id);
   const [participantId, setParticipantId] = useState('');
   const [patientsListToday, setPatientListToday] = useState([]);
 
@@ -33,7 +33,7 @@ export default function AssessmentsDetail() {
 
   useEffect(() => {
     globalThis.window.scrollTo(0, 0);
-  }, [assessmentsId]);
+  }, [id]);
 
   useEffect(() => {
     if (todaySessions.length === 0) return;

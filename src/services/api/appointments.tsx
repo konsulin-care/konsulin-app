@@ -147,6 +147,53 @@ export const useCreateAppointment = () => {
   });
 };
 
+/**
+ * Payload for the relay booking endpoint.
+ */
+export type RelayBookingPayload = {
+  readonly patientId: string;
+  readonly practitionerRoleId: string;
+  readonly practitionerId: string;
+  readonly healthcareServiceId: string;
+  readonly scheduleId: string;
+  readonly organizationId: string;
+  readonly date: string;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly timezone: string;
+  readonly condition: string;
+};
+
+/**
+ * Response from the relay booking endpoint.
+ */
+export type RelayBookingResponse = {
+  readonly slotId: string;
+  readonly invoiceId: string;
+  readonly fee: { value: number; currency: string };
+  readonly healthcareServiceName: string;
+};
+
+/**
+ * Relay a booking request to the BFF — creates Slot + Invoice server-side.
+ *
+ * The client sends identifiers only; the BFF constructs the FHIR transaction
+ * bundle and returns the created resource IDs and authoritative fee.
+ */
+export const useRelayBooking = () => {
+  return useMutation({
+    mutationKey: ['relay-booking'],
+    mutationFn: async (payload: RelayBookingPayload) => {
+      const API = await getAPI({ proxy: false });
+      const response = await API.post<RelayBookingResponse>(
+        '/api/v1/relay/booking',
+        payload
+      );
+      return response.data;
+    }
+  });
+};
+
 /** Pay for an appointment via online payment or offline booking. */
 export const usePayAppointment = () => {
   return useMutation({
@@ -158,6 +205,7 @@ export const usePayAppointment = () => {
       practitionerRoleId: string; // e.g., "PractitionerRole/789"
       slotId: string; // e.g., "Slot/abc"
       condition: string;
+      healthcareServiceId: string; // e.g., "HealthcareService/hs-456"
     }) => {
       try {
         const API = await getAPI();

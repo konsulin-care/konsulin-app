@@ -4,14 +4,17 @@
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFabSelection } from '@/context/fabSelectionContext';
 import { cn } from '@/lib/utils';
 import {
   BookText,
   Calendar,
+  ClipboardClock,
   HeartPulse,
   MapPin,
   Plus,
   Sparkles,
+  Trash2,
   UserPlus
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -58,6 +61,37 @@ const patientPills: Pill[] = [
   }
 ];
 
+const practitionerPills: Pill[] = [
+  {
+    label: 'Set Availability',
+    href: '/practitioner',
+    icon: ClipboardClock,
+    delay: 0,
+    action: 'navigate'
+  },
+  {
+    label: 'View Schedule',
+    href: '/schedule',
+    icon: Calendar,
+    delay: 50,
+    action: 'navigate'
+  },
+  {
+    label: 'Health Screening',
+    href: '/assessments',
+    icon: HeartPulse,
+    delay: 100,
+    action: 'navigate'
+  },
+  {
+    label: 'S.O.A.P.',
+    href: '/assessments/soap',
+    icon: BookText,
+    delay: 150,
+    action: 'navigate'
+  }
+];
+
 const adminPills: Pill[] = [
   {
     label: 'Register Practitioner',
@@ -77,6 +111,7 @@ function useScrollVisibility(isOpen: boolean, isDirty: boolean) {
   const lastScrollY = useRef(0);
 
   useEffect(() => {
+    /** Toggle FAB visibility based on scroll direction. */
     const handleScroll = () => {
       if (isOpen || isDirty) return;
       const currentY = window.scrollY;
@@ -155,10 +190,35 @@ function FabToggleButton({
   );
 }
 
+/** Delete button shown when items are selected in selection mode. */
+function DeleteFabButton({
+  count,
+  onDelete
+}: {
+  readonly count: number;
+  readonly onDelete: () => void;
+}) {
+  return (
+    <button
+      onClick={onDelete}
+      className='flex h-14 items-center gap-2 rounded-full bg-red-500 px-6 text-white shadow-lg transition-all duration-300 hover:bg-red-600'
+    >
+      <Trash2 className='h-5 w-5' />
+      <span className='text-sm font-semibold whitespace-nowrap'>
+        Delete ({count})
+      </span>
+    </button>
+  );
+}
+
 /**
  * Floating action button that shows context-dependent pills.
  * ClinicAdmin sees Register Practitioner and Add Location pills that open drawers.
  * Other roles see navigation pills (Self Checkup, Write Journal, etc.).
+ *
+ * When selection mode is active (via FabSelectionContext), shows a delete
+ * button instead of the speed dial. Selection mode takes priority over
+ * dirty state.
  */
 export default function QuickActionFab() {
   const router = useRouter();
@@ -168,42 +228,63 @@ export default function QuickActionFab() {
   const [showAddLocation, setShowAddLocation] = useState(false);
 
   const { dirtyState } = useFabDirty();
+  const { selectionState } = useFabSelection();
   const isDirty = dirtyState?.isDirty ?? false;
 
   const isVisible = useScrollVisibility(isOpen, isDirty);
 
-  const isGuest = authState?.userInfo?.role_name === Roles.Guest;
-  const isAdmin = authState?.userInfo?.role_name === Roles.ClinicAdmin;
-  const pills = isAdmin ? adminPills : patientPills;
+  const roleName = authState?.userInfo?.role_name;
+  const isGuest = roleName === Roles.Guest;
+  const isPractitioner = roleName === Roles.Practitioner;
+  const isAdmin = roleName === Roles.ClinicAdmin;
+
+  let pills: Pill[];
+  if (isAdmin) {
+    pills = adminPills;
+  } else if (isPractitioner) {
+    pills = practitionerPills;
+  } else {
+    pills = patientPills;
+  }
 
   const close = useCallback(() => setIsOpen(false), []);
   const toggle = useCallback(() => {
-    if (dirtyState) {
-      if (dirtyState.isSaving) return;
-      Promise.resolve(dirtyState.onSave()).catch(() => {
-        /* errors handled internally */
-      });
-    } else {
-      setIsOpen(v => !v);
-    }
+    if (!dirtyState) { setIsOpen(v => !v); return; }
+    if (dirtyState.isSaving) return;
+    Promise.resolve(dirtyState.onSave()).catch(() => { /* handled */ });
   }, [dirtyState]);
 
   const handlePillClick = useCallback(
     (pill: Pill) => {
       close();
-      if (pill.action === 'register-practitioner') {
-        setShowRegisterPrac(true);
-      } else if (pill.action === 'add-location') {
-        setShowAddLocation(true);
-      } else if (isGuest && pill.href && pill.href !== '/assessments') {
+      if (pill.action === 'register-practitioner') { setShowRegisterPrac(true); return; }
+      if (pill.action === 'add-location') { setShowAddLocation(true); return; }
+      if (isGuest && pill.href && pill.href !== '/assessments') {
         document.cookie = `redirect_intent=${encodeURIComponent(pill.href)}; Path=/; Max-Age=300; SameSite=Lax`;
         router.push('/auth');
-      } else if (pill.href) {
-        router.push(pill.href);
+        return;
       }
+      if (pill.href) router.push(pill.href);
     },
     [close, isGuest, router]
   );
+
+  // Render delete button in selection mode — takes priority over everything
+  if (selectionState) {
+    return (
+      <div
+        className={cn(
+          'fixed z-50 flex flex-col items-end gap-3 transition-all duration-300',
+          'right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]'
+        )}
+      >
+        <DeleteFabButton
+          count={selectionState.count}
+          onDelete={selectionState.onDelete}
+        />
+      </div>
+    );
+  }
 
   return (
     <>

@@ -7,7 +7,9 @@ import {
   AppointmentParticipant,
   Bundle,
   BundleEntry,
+  HealthcareService,
   HumanName,
+  Location,
   Patient,
   Practitioner,
   PractitionerQualification,
@@ -384,21 +386,49 @@ export const getUtcDayRange = (startLocalDate: Date, endLocalDate?: Date) => {
 function mergeSessionData(
   appointment: Appointment,
   slots: Slot[],
-  patients: Patient[]
+  patients: Patient[],
+  locations: Location[],
+  healthcareServices: HealthcareService[]
 ): MergedSession {
   const ref = appointment.slot?.[0]?.reference;
   const slotId = ref ? ref.split('/')[1] : null;
 
-  const participant = appointment.participant.find(
+  const patientParticipant = appointment.participant.find(
     (p: AppointmentParticipant) => p.actor?.reference?.startsWith('Patient/')
   );
-  const patientId = participant
-    ? (participant.actor?.reference?.split('/')[1] ?? null)
+  const patientId = patientParticipant
+    ? (patientParticipant.actor?.reference?.split('/')[1] ?? null)
+    : null;
+
+  const locationParticipant = appointment.participant.find(
+    (p: AppointmentParticipant) =>
+      p.actor?.reference?.startsWith('Location/')
+  );
+  const locationId = locationParticipant
+    ? (locationParticipant.actor?.reference?.split('/')[1] ?? null)
+    : null;
+
+  const healthcareServiceParticipant = appointment.participant.find(
+    (p: AppointmentParticipant) =>
+      p.actor?.reference?.startsWith('HealthcareService/')
+  );
+  const healthcareServiceId = healthcareServiceParticipant
+    ? (healthcareServiceParticipant.actor?.reference?.split('/')[1] ?? null)
     : null;
 
   const slotData = slots.find(s => s.id === slotId);
   const patientData = patients.find(p => p.id === patientId);
+  const locationData = locations.find(l => l.id === locationId);
+  const healthcareServiceData = healthcareServices.find(
+    h => h.id === healthcareServiceId
+  );
   const email = patientData?.telecom?.find(t => t.system === 'email');
+
+  const locationName =
+    locationData?.name ??
+    (locationData?.alias && locationData.alias.length > 0
+      ? locationData.alias[0]
+      : undefined);
 
   return {
     appointmentId: appointment.id ?? '',
@@ -409,7 +439,10 @@ function mergeSessionData(
     patientId: patientData?.id ?? '',
     patientName: patientData?.name ?? [],
     patientPhoto: patientData?.photo ?? [],
-    patientEmail: email?.value ?? ''
+    patientEmail: email?.value ?? '',
+    locationId: locationData?.id ?? undefined,
+    locationName,
+    healthcareServiceName: healthcareServiceData?.name ?? undefined
   };
 }
 
@@ -427,8 +460,24 @@ export const parseMergedSessions = (bundle: Bundle): MergedSession[] => {
     .filter(entry => entry.resource?.resourceType === 'Patient')
     .map(entry => entry.resource as Patient);
 
+  const locations = (bundle.entry ?? [])
+    .filter(entry => entry.resource?.resourceType === 'Location')
+    .map(entry => entry.resource as Location);
+
+  const healthcareServices = (bundle.entry ?? [])
+    .filter(entry => entry.resource?.resourceType === 'HealthcareService')
+    .map(entry => entry.resource as HealthcareService);
+
   return appointments
-    .map(appointment => mergeSessionData(appointment, slots, patients))
+    .map(appointment =>
+      mergeSessionData(
+        appointment,
+        slots,
+        patients,
+        locations,
+        healthcareServices
+      )
+    )
     .toSorted((a, b) => {
       if (!a.slotStart || !b.slotStart) return 0;
       return new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime();

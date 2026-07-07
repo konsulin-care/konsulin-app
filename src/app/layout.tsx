@@ -1,22 +1,17 @@
-import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
+import AppChrome from '@/components/app-chrome';
 import QueryProvider from '@/components/general/query-provider';
-import RouteResponseCleaner from '@/components/general/route-response-cleaner';
 import { RuntimeConfigProvider } from '@/components/general/runtime-config-provider';
-import QuickActionFab from '@/components/quick-action-fab';
 import { SuperTokensProviders } from '@/components/supertokensProvider';
 import { AuthProvider } from '@/context/auth/authContext';
 import { BookingProvider } from '@/context/booking/bookingContext';
-import { FabDirtyProvider } from '@/context/fabDirtyContext';
 import { ProfileProvider } from '@/context/profile/profileContext';
 import '@/styles/globals.css';
 import '@/styles/index.scss';
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
-import NextTopLoader from 'nextjs-toploader';
 import React, { Suspense } from 'react';
 import 'react-international-phone/style.css';
-import { ToastContainer, ToastContainerProps } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const inter = Plus_Jakarta_Sans({ subsets: ['latin'] });
@@ -65,14 +60,6 @@ export const viewport: Viewport = {
   themeColor: '#FFFFFF'
 };
 
-const toastConfig: ToastContainerProps = {
-  position: 'top-right',
-  autoClose: 3000,
-  closeOnClick: true,
-  pauseOnHover: true,
-  draggable: true
-};
-
 /** Wraps children in auth, booking, and query providers. */
 function AuthProvidersLayer({
   children
@@ -96,18 +83,6 @@ function OuterProviders({ children }: Readonly<{ children: React.ReactNode }>) {
         <ProfileProvider>{children}</ProfileProvider>
       </SuperTokensProviders>
     </RuntimeConfigProvider>
-  );
-}
-
-/** Main page layout wrapper. */
-function PageContent({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <div className='flex min-h-screen flex-col'>
-      <div id='modal' />
-      <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
-        {children}
-      </main>
-    </div>
   );
 }
 
@@ -138,14 +113,7 @@ export default function RootLayout({
           type='module'
         />
         <AppProviders>
-          <RouteResponseCleaner />
-          <NextTopLoader showSpinner={false} color='#13c2c2' />
-          <ToastContainer {...toastConfig} />
-          <ProfileCompletenessModal />
-          <FabDirtyProvider>
-            <PageContent>{children}</PageContent>
-            <QuickActionFab />
-          </FabDirtyProvider>
+          <AppChrome>{children}</AppChrome>
         </AppProviders>
       </body>
     </html>

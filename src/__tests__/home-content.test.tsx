@@ -11,7 +11,7 @@ vi.mock('@/app/home-content-guest', () => ({
 vi.mock('@/app/home-content-patient', () => ({
   default: () => <div data-testid='patient-content'>Patient</div>
 }));
-vi.mock('@/app/home-content-clinician', () => ({
+vi.mock('@/app/practitioner-dashboard', () => ({
   default: () => <div data-testid='clinician-content'>Clinician</div>
 }));
 vi.mock('@/app/home-content-admin', () => ({

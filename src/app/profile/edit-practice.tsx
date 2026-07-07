@@ -715,7 +715,17 @@ const EditPractice = () => {
       // Update all practitioner info (including active field and specialties)
       const cleanedFirmsData = firmData.map(firm => {
         const { scheduleData, organizationData, ...rest } = firm;
-        return rest;
+        // Ensure period.start is set with browser timezone for backend lock acquisition
+        const now = new Date();
+        const offset = -now.getTimezoneOffset();
+        const sign = offset >= 0 ? '+' : '-';
+        /** Pad a number with leading zero to 2 digits. */
+        const pad = (n: number) => String(Math.floor(Math.abs(n))).padStart(2, '0');
+        const localISO = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}${sign}${pad(offset / 60)}:${pad(offset % 60)}`;
+        return {
+          ...rest,
+          period: { ...rest.period, start: localISO }
+        };
       });
 
       const practitionerUpdateResults = await Promise.allSettled(

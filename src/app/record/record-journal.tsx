@@ -20,7 +20,7 @@ export default function RecordJournal({ journalId }: Props) {
   const searchParams = useSearchParams();
   const titleParam = searchParams?.get('title');
   const categoryParam = searchParams?.get('category');
-  const recordId = searchParams?.get('recordId');
+  const id = searchParams?.get('id');
   const { data: journalData, isLoading } = useGetSingleRecord({
     id: journalId,
     resourceType: 'Observation'
@@ -81,7 +81,7 @@ export default function RecordJournal({ journalId }: Props) {
       <Button
         onClick={() => {
           const queryParams = new URLSearchParams({
-            recordId: recordId ?? journalId,
+            id: id ?? journalId,
             category: categoryParam,
             title: titleParam
           }).toString();

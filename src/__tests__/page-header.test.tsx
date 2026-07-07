@@ -253,7 +253,7 @@ describe('PageHeader - back navigation', () => {
     expect(router.replace).not.toHaveBeenCalled();
   });
 
-  it('calls router.push for same-route back navigation (/clinic?clinicId=xxx → /clinic)', () => {
+  it('calls router.push for same-route back navigation (/clinic?id=xxx → /clinic)', () => {
     const router = {
       push: vi.fn(),
       back: vi.fn(),
@@ -278,7 +278,7 @@ describe('PageHeader - back navigation', () => {
 
     // same route should use router.push (not replace) to avoid useSearchParams staleness
     expect(router.push).toHaveBeenCalledTimes(1);
-    expect(router.push).toHaveBeenCalledWith('/clinic/');
+    expect(router.push).toHaveBeenCalledWith('/clinic');
     expect(router.replace).not.toHaveBeenCalled();
   });
 

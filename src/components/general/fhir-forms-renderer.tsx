@@ -112,7 +112,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           title: questionnaire.title
         }).toString();
 
-        router.replace(`/record?recordId=${responseId}&${query}`);
+        router.replace(`/record?id=${responseId}&${query}`);
         setIsSubmitting(false);
       } else {
         router.push('/assessments');

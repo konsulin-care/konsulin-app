@@ -47,7 +47,7 @@ function getPageIndicator(
       return 'Welcome to Your Dashboard';
     }
     case '/clinic': {
-      if (searchParams.has('clinicId')) return null;
+      if (searchParams.has('id')) return null;
       return 'Book a Session';
     }
     case '/assessments': {
@@ -71,7 +71,7 @@ function getDefaultBackRoute(
   searchParams: URLSearchParams
 ): string | undefined {
   if (pathname === '/') return undefined;
-  if (pathname === '/clinic' && searchParams.has('clinicId')) return '/clinic';
+  if (pathname === '/clinic' && searchParams.has('id')) return '/clinic';
   if (FIRST_LEVEL_ROUTES.has(pathname)) return '/';
   return undefined;
 }
@@ -190,8 +190,7 @@ export default function PageHeader({
   /** Navigates back using the backAction or browser history. */
   const handleBack = () => {
     if (backAction) {
-      const url = backAction === '/' ? backAction : backAction + '/';
-      router.push(url);
+      router.push(backAction);
     } else {
       router.back();
     }

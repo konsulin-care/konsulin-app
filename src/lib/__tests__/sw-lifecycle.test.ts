@@ -309,6 +309,22 @@ describe('fetch cache failure resilience', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Fetch event — top-level error recovery
+// ---------------------------------------------------------------------------
+describe('fetch error recovery', () => {
+  it('wraps handler in top-level try-catch that falls back to fetch', async () => {
+    // URL parsing failure: new URL('') throws
+    const event = fireFetch(mockSelf, { url: '' });
+
+    // The async IIFE's try-catch falls back to fetch(event.request)
+    expect(event.respondWith).toHaveBeenCalled();
+    const promiseArg = event.respondWith.mock.calls[0][0];
+    await expect(promiseArg).resolves.toBeInstanceOf(Response);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // sw-register.js — extracted from dangerouslySetInnerHTML
 // ---------------------------------------------------------------------------
 describe('sw-register.js', () => {
@@ -344,7 +360,7 @@ describe('defense-in-depth URL validation', () => {
   it('networkFirst returns 503 for non-http URLs', async () => {
     const patchedCode = SW_CODE.replace(
       'async function networkFirst(request, cacheName, fallbackUrl) {',
-      'self.__testNetworkFirst = async function networkFirst(request, cacheName, fallbackUrl) {'
+      'self.__testNetworkFirst = async function networkFirst (request, cacheName, fallbackUrl) {'
     );
 
     const captureSelf = createMockSelf() as MockSelf & {

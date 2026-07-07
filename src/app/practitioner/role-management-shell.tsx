@@ -68,8 +68,13 @@ export default function PractitionerRoleManagementShell(props: Props) {
     [detail?.resource, detail?.organization]
   );
 
-  // Only ClinicAdmin users see the management shell
-  if (authState?.userInfo?.role_name !== Roles.ClinicAdmin) {
+  // Only ClinicAdmin and Practitioner roles can access the management shell.
+  // Practitioner access is gated at the parent route (page.tsx / availability/page.tsx)
+  // via ownership check.
+  if (
+    authState?.userInfo?.role_name !== Roles.ClinicAdmin &&
+    authState?.userInfo?.role_name !== Roles.Practitioner
+  ) {
     return null;
   }
 

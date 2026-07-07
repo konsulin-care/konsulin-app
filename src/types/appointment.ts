@@ -23,4 +23,7 @@ export type MergedSession = {
   patientName: HumanName[];
   patientPhoto: Attachment[];
   patientEmail: string;
+  locationId?: string;
+  locationName?: string;
+  healthcareServiceName?: string;
 };

@@ -33,13 +33,12 @@ export default function RouteResponseCleaner() {
         STORES.assessmentDrafts,
         (value: unknown, key: IDBValidKey) => {
           const questionnaireId = Array.isArray(key) ? key[1] : '';
-          const recordId = searchParams.get('recordId');
-          const assessmentsId = searchParams.get('assessmentsId');
+          const id = searchParams.get('id');
           const isOnQuestionnairePage =
-            pathname === '/assessments' && assessmentsId === questionnaireId;
+            pathname === '/assessments' && id === questionnaireId;
           const isOnAuthPage = pathname.includes('/auth');
           const isOnResultPage =
-            pathname === '/record' && recordId && categoryParam === '1';
+            pathname === '/record' && id && categoryParam === '1';
 
           return (
             !isOnQuestionnairePage &&

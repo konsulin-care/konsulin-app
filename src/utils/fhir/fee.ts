@@ -22,3 +22,14 @@ export function getFeeFromHealthcareService(
     currency: ext.valueMoney.currency ?? 'IDR'
   };
 }
+
+/**
+ * Format a fee Money object as an Indonesian Rupiah string (e.g. "Rp 150.000").
+ *
+ * @param fee - The Money object with value and optional currency
+ * @returns Formatted IDR string
+ */
+export function formatFee(fee: Money): string {
+  const formatted = (fee.value ?? 0).toLocaleString('id-ID');
+  return `Rp ${formatted}`;
+}

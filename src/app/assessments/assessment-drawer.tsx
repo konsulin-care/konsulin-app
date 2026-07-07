@@ -66,7 +66,7 @@ export default function AssessmentDrawerContent({
     }
     startTransition(() => {
       router.push(
-        `/assessments?assessmentsId=${
+        `/assessments?id=${
           selectedAssessment?.resourceType === 'ResearchStudy'
             ? researchUrl
             : selectedAssessment?.id

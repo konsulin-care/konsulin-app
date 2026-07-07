@@ -1,8 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 
 import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { Roles } from '@/constants/roles';
+import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
 import { useSearchParams } from 'next/navigation';
 
@@ -17,6 +19,31 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/context/booking/bookingContext', () => ({
   useBooking: vi.fn()
+}));
+
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: vi.fn()
+}));
+
+vi.mock('@/services/clinicians', () => ({
+  useGetPractitionerRoleWorkingLocations: vi.fn().mockReturnValue({
+    data: undefined,
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn()
+  })
+}));
+
+vi.mock('@/utils/practitioner-ownership', () => ({
+  storeOwnedRoleIds: vi.fn()
+}));
+
+vi.mock('@/constants/roles', () => ({
+  Roles: {
+    ClinicAdmin: 'Clinic Admin',
+    Practitioner: 'Practitioner',
+    Patient: 'Patient'
+  }
 }));
 
 vi.mock('@/lib/indexeddb', () => ({
@@ -88,10 +115,18 @@ import Practitioner from '@/app/practitioner/page';
 let mockSearchParams: any;
 
 beforeEach(() => {
-  mockSearchParams = new URLSearchParams('practitionerRoleId=test-role-id');
+  mockSearchParams = new URLSearchParams('id=test-role-id');
   vi.mocked(useSearchParams).mockReturnValue(mockSearchParams);
   vi.mocked(useBooking).mockReturnValue({
     state: { isBookingSubmitted: false },
+    dispatch: vi.fn()
+  });
+  vi.mocked(useAuth).mockReturnValue({
+    isLoading: false,
+    state: {
+      isAuthenticated: true,
+      userInfo: { role_name: Roles.ClinicAdmin, fhirId: '' }
+    },
     dispatch: vi.fn()
   });
 });
@@ -105,7 +140,7 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('Practitioner page – detail (admin) mode', () => {
-  it('renders the admin management shell when practitionerRoleId is present', () => {
+  it('renders the admin management shell when id is present', () => {
     render(<Practitioner />);
 
     expect(screen.getByTestId('mock-shell')).toBeInTheDocument();
@@ -118,6 +153,30 @@ describe('Practitioner page – detail (admin) mode', () => {
   it('passes the correct page header for detail mode', () => {
     render(<Practitioner />);
 
-    expect(screen.getByTestId('mock-page-header')).toBeInTheDocument();
+    expect(screen.getByTestId('mock-page-header')).toHaveTextContent(
+      'Manage Practitioner'
+    );
+  });
+});
+
+describe('Practitioner page – detail (patient) mode', () => {
+  beforeEach(() => {
+    vi.mocked(useAuth).mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: Roles.Patient, fhirId: '' }
+      },
+      dispatch: vi.fn()
+    });
+  });
+
+  it('shows View Provided Services page indicator for patient detail', () => {
+    mockSearchParams.set('id', 'role-123');
+    render(<Practitioner />);
+
+    expect(screen.getByTestId('mock-page-header')).toHaveTextContent(
+      'View Provided Services'
+    );
   });
 });

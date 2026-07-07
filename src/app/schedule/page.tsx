@@ -9,9 +9,9 @@ import ScheduleList from './schedule-list';
  */
 export default function SchedulePage() {
   const searchParams = useSearchParams();
-  const appointmentId = searchParams.get('appointmentId');
+  const id = searchParams.get('id');
 
-  if (appointmentId) {
+  if (id) {
     return <ScheduleDetail />;
   }
 

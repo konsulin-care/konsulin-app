@@ -1,23 +1,17 @@
 /* eslint-disable react/jsx-max-depth */
-import { Button } from '@/components/ui/button';
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
   DrawerTrigger
 } from '@/components/ui/drawer';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { usePopularAssessments } from '@/services/api/assessment';
-import { customMarkdownComponents } from '@/utils/helper';
+import AssessmentDrawerContent from './assessment-drawer-content';
 import { BundleEntry, Questionnaire } from 'fhir/r4';
 import { ChevronRightIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
 import CardLoader from '../card-loader';
 
 /**
@@ -29,38 +23,6 @@ export default function PopularAssessment() {
 
   const [selectedAssessment, setSelectedAssessment] =
     useState<Questionnaire | null>(null);
-
-  const renderDrawerContent = (
-    <div className='flex flex-col'>
-      <DrawerHeader className='mx-auto text-[20px] font-bold'>
-        <DrawerTitle className='text-center text-2xl'>
-          {selectedAssessment?.title}
-        </DrawerTitle>
-      </DrawerHeader>
-      <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-        <div className='font-bold'>Brief</div>
-        <hr className='my-4 border-black opacity-10' />
-        <div className='flex flex-wrap gap-[10px] text-sm'>
-          <DrawerDescription>
-            <ReactMarkdown components={customMarkdownComponents}>
-              {selectedAssessment?.description ?? ''}
-            </ReactMarkdown>
-          </DrawerDescription>
-        </div>
-      </div>
-
-      <div className='mt-2 flex flex-col gap-2 py-4'>
-        <Link href={`/assessments?assessmentsId=${selectedAssessment?.id}`}>
-          <Button className='bg-secondary h-full w-full rounded-xl p-4 text-white'>
-            Start Test
-          </Button>
-        </Link>
-        <DrawerClose className='focus:ring-opacity-50 items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:ring-2 focus:ring-gray-300 focus:outline-none'>
-          Close
-        </DrawerClose>
-      </div>
-    </div>
-  );
 
   return (
     <div className='bg-[#F9F9F9] p-4'>
@@ -106,7 +68,9 @@ export default function PopularAssessment() {
                       </DrawerTrigger>
 
                       <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-                        <div className='mt-4'>{renderDrawerContent}</div>
+                        <div className='mt-4'>
+                          <AssessmentDrawerContent assessment={selectedAssessment} />
+                        </div>
                       </DrawerContent>
                     </Drawer>
                   )

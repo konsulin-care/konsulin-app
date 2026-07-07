@@ -91,8 +91,8 @@ export function isAppointmentPayload(obj: unknown): obj is AppointmentPayload {
 /**
  * Checks whether a stored intent payload path matches the current practitioner.
  *
- * The path is saved as `/practitioner?practitionerRoleId=<id>` by booking-form-section.
- * Parses it as a URL and compares the `practitionerRoleId` query parameter exactly
+ * The path is saved as `/practitioner?id=<id>` by booking-form-section.
+ * Parses it as a URL and compares the `id` query parameter exactly
  * against the provided practitionerRoleId.
  */
 export function matchesPractitionerFromPath(
@@ -102,13 +102,26 @@ export function matchesPractitionerFromPath(
   if (!path || !practitionerRoleId) return false;
   try {
     const url = new URL(path, 'http://localhost');
-    return url.searchParams.get('practitionerRoleId') === practitionerRoleId;
+    return url.searchParams.get('id') === practitionerRoleId;
   } catch {
     return false;
   }
 }
 
 // Helper function to extract slotMinutes from Schedule's comment field
+/** Extract slot duration in minutes from a Schedule's comment field. */
+/** Temporary booking data stored in IndexedDB for unauthenticated users. */
+export type TempBookingData = {
+  scheduleId: string;
+  sessionType: string;
+  problemBrief: string;
+  practitionerRoleId: string;
+  practitionerAvailableTime: string;
+  date: string;
+  startTime: string;
+  hasUserChosenDate: boolean;
+};
+
 /** Extract slot duration in minutes from a Schedule's comment field. */
 export function getSlotMinutesText(schedule: unknown): string {
   if (!schedule || typeof schedule !== 'object') {

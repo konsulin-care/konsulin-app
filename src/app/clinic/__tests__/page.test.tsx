@@ -37,9 +37,9 @@ describe('ClinicPage - scroll to top', () => {
     expect(globalThis.window.scrollTo).toHaveBeenCalledWith(0, 0);
   });
 
-  it('does NOT scroll to top when rendering clinic detail (clinicId present)', () => {
+  it('does NOT scroll to top when rendering clinic detail (id present)', () => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('clinicId=org-123') as unknown as ReturnType<
+      new URLSearchParams('id=org-123') as unknown as ReturnType<
         typeof useSearchParams
       >
     );

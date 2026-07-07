@@ -9,16 +9,30 @@ vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn()
 }));
 
-vi.mock('@/lib/indexeddb', () => ({
-  STORES: { uiPreferences: 'ui_preferences' },
-  dbGet: vi.fn().mockResolvedValue(null),
-  dbSet: vi.fn().mockResolvedValue(null)
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: vi.fn()
 }));
 
 vi.mock('@/services/clinic', () => ({
   usePractitionerListing: vi.fn(),
   useDetailPractitioner: vi.fn(),
   useOrganizationLocations: vi.fn()
+}));
+
+vi.mock('@/services/clinicians', () => ({
+  useGetPractitionerRoleWorkingLocations: vi.fn()
+}));
+
+vi.mock('@/utils/practitioner-ownership', () => ({
+  storeOwnedRoleIds: vi.fn()
+}));
+
+vi.mock('@/constants/roles', () => ({
+  Roles: {
+    ClinicAdmin: 'Clinic Admin',
+    Practitioner: 'Practitioner',
+    Patient: 'Patient'
+  }
 }));
 
 vi.mock('@/components/practitioner/practitioner-card', () => ({
@@ -62,6 +76,14 @@ vi.mock('@/app/practitioner/role-management-shell', () => ({
   )
 }));
 
+vi.mock('@/app/practitioner/patient-detail', () => ({
+  default: ({ practitionerRoleId }: { practitionerRoleId: string }) => (
+    <div data-testid='patient-detail' data-role-id={practitionerRoleId}>
+      Patient Detail
+    </div>
+  )
+}));
+
 vi.mock('@/app/practitioner/practitioner-filter', () => ({
   default: ({ value, onChange }: any) => (
     <div data-testid='practitioner-filter' data-status={value.status}>
@@ -81,15 +103,22 @@ vi.mock('@/app/practitioner/practitioner-filter', () => ({
   )
 }));
 
+import { Roles } from '@/constants/roles';
+import { useAuth } from '@/context/auth/authContext';
 import {
   useOrganizationLocations,
   usePractitionerListing
 } from '@/services/clinic';
+import { useGetPractitionerRoleWorkingLocations } from '@/services/clinicians';
 import { useSearchParams } from 'next/navigation';
 
 const mockUseSearchParams = vi.mocked(useSearchParams);
+const mockUseAuth = vi.mocked(useAuth);
 const mockUsePractitionerListing = vi.mocked(usePractitionerListing);
 const mockUseOrganizationLocations = vi.mocked(useOrganizationLocations);
+const mockUseGetPractitionerRoleWorkingLocations = vi.mocked(
+  useGetPractitionerRoleWorkingLocations
+);
 
 function mockPractitioners() {
   return [
@@ -120,21 +149,41 @@ function Wrapper({ children }: { children: ReactNode }) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+
+  // Default to ClinicAdmin role for admin listing tests
+  mockUseAuth.mockReturnValue({
+    isLoading: false,
+    state: {
+      isAuthenticated: true,
+      userInfo: { role_name: Roles.ClinicAdmin, fhirId: '' }
+    },
+    dispatch: vi.fn()
+  });
+
   mockUseSearchParams.mockReturnValue({
     get: vi.fn().mockReturnValue(null)
   } as unknown as ReturnType<typeof useSearchParams>);
+
   mockUsePractitionerListing.mockReturnValue({
     practitioners: mockPractitioners(),
     isLoading: false,
     isError: false,
     isFetching: false
   });
+
   mockUseOrganizationLocations.mockReturnValue({
     locations: [],
     isLoading: false,
     isError: false,
     isFetching: false
   });
+
+  mockUseGetPractitionerRoleWorkingLocations.mockReturnValue({
+    data: undefined,
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn()
+  } as unknown as ReturnType<typeof useGetPractitionerRoleWorkingLocations>);
 });
 
 describe('Practitioner page — filters', () => {
@@ -170,7 +219,7 @@ describe('Practitioner page — filters', () => {
     );
   });
 
-  it('shows Manage Practitioner header in detail mode', () => {
+  it('shows Manage Practitioner header in detail mode for admin', () => {
     mockUseSearchParams.mockReturnValue({
       get: vi.fn().mockReturnValue('role-1')
     } as unknown as ReturnType<typeof useSearchParams>);
@@ -181,6 +230,30 @@ describe('Practitioner page — filters', () => {
       'Manage Practitioner'
     );
     expect(screen.getByTestId('role-management-shell')).toBeDefined();
+  });
+
+  it('does not show Manage Practitioner header for patient in detail mode', () => {
+    mockUseAuth.mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: Roles.Patient, fhirId: '' }
+      },
+      dispatch: vi.fn()
+    });
+    mockUseSearchParams.mockReturnValue({
+      get: vi.fn().mockReturnValue('role-1')
+    } as unknown as ReturnType<typeof useSearchParams>);
+
+    render(<PractitionerPage />, { wrapper: Wrapper });
+
+    expect(screen.getByTestId('page-header')).not.toHaveTextContent(
+      'Manage Practitioner'
+    );
+    expect(screen.getByTestId('patient-detail')).toBeDefined();
+    // Hook is called unconditionally but with empty identifier, so the
+    // underlying query (enabled: Boolean) never fires for Patient.
+    expect(mockUseGetPractitionerRoleWorkingLocations).toHaveBeenCalledWith('');
   });
 
   it('shows empty state when no practitioners exist', () => {

@@ -24,53 +24,53 @@ Aligned with ADR-015.
 
 # Implementation Steps
 
-- [ ] Create `src/app/record/page.tsx` — role-dispatch timeline with `useInfiniteQuery`
-- [ ] Create `src/app/record/[recordId]/page.tsx` — record detail (category-dispatch: assessment/soap/journal)
+- [ ] Create `@/record/page.tsx` — role-dispatch timeline with `useInfiniteQuery`
+- [ ] Create `@/record/page.tsx` — record detail (category-dispatch: assessment/soap/journal, detail via `useSearchParams`)
 - [ ] Add React Query hooks: `useRecords(patientId)`, `useRecordDetail(id)`
 - [ ] Implement infinite scroll — Intersection Observer on sentinel element triggers `fetchNextPage`
 - [ ] Group records by category client-side (`resource.resourceType` mapping)
 - [ ] Add category filter (React state) — conditions, observations, encounters, assessments
-- [ ] Write `src/app/record/__tests__/record.test.tsx` — mock FHIR bundle, test pagination and grouping
+- [ ] Write `@/record/__tests__/record.test.tsx` — mock FHIR bundle, test pagination and grouping
 
 # Reference
 
-@src/app/record/page.tsx:
+@@/record/page.tsx:
 
 - Records listing: role-based dispatch to patient-record or practitioner-record
 - Keep: same role dispatch in React SPA
 - Adapt: replace manual pagination with `useInfiniteQuery`
 
-@src/app/record/patient-record.tsx:
+@@/record/patient-record.tsx:
 
 - Patient record list: fetches via useRecordSummary, displays by category
 - Keep: same data display; adapt to `useInfiniteQuery` pattern
 
-@src/app/record/practitioner-record.tsx:
+@@/record/practitioner-record.tsx:
 
 - Practitioner's patient record view: filtered with SOAP entries
 - Keep: same practitioner-specific queries
 
-@src/services/api/record.tsx:
+@@/services/api/record.tsx:
 
 - Record API: useRecordSummary, useFilterRecordByDate, useGetSingleRecord
 - Adapt: wrap with React Query hooks using `/proxy/fhir/` base path
 
-@src/app/record/[recordId]/page.tsx:
+@@/record/[recordId]/page.tsx:
 
 - Record detail: dispatches to assessment/soap/exercise/journal by category
 - Keep: same category-based detail dispatch
 
-@src/types/record.ts:
+@/types/record.ts:
 
 - IRecord, ISoapSection, IJournal, IBundleResponse
 - Keep: same TypeScript types
 
-@src/constants/record.ts:
+@/constants/record.ts:
 
 - typeMappings: Patient Note → Self Journal, QuestionnaireResponse → Assessment, Practitioner Note → SOAP
 - Keep: same mapping table in TypeScript
 
-@src/app/record/record-filter.tsx:
+@@/record/record-filter.tsx:
 
 - Record filter: date range, category filter
 - Keep: React component with date inputs; adapt fetch to use filter params

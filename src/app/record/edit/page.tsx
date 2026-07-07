@@ -11,7 +11,7 @@ import { useSearchParams } from 'next/navigation';
  */
 export default function EditRecordDetail() {
   const searchParams = useSearchParams();
-  const recordId = searchParams.get('recordId') ?? '';
+  const id = searchParams.get('id') ?? '';
   const category = Number(searchParams.get('category'));
   const titleParam = searchParams.get('title');
 
@@ -40,10 +40,10 @@ export default function EditRecordDetail() {
   const renderContent = (category: number) => {
     switch (category) {
       case 3: {
-        return <EditSoap soapId={recordId} title={titleParam} />;
+        return <EditSoap soapId={id} title={titleParam} />;
       }
       case 4: {
-        return <EditJournal journalId={recordId} />;
+        return <EditJournal journalId={id} />;
       }
       default: {
         return null;

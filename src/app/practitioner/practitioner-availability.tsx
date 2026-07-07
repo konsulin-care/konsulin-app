@@ -1,46 +1,50 @@
-/* eslint-disable max-lines, react/jsx-max-depth, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
+/* eslint-disable max-lines, react/jsx-max-depth, complexity, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
+import type { IStateBooking } from '@/context/booking/bookingTypes';
+import { useFabDirty } from '@/context/fabDirtyContext';
 import { STORES, dbDelete, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import {
   useCreateAppointment,
   usePayAppointment
 } from '@/services/api/appointments';
-import { useFindAvailability } from '@/services/clinicians';
-import { clearIntent, getIntent, saveIntent } from '@/utils/redirect-intent';
+import { computeFreeSlots, useBusySlotsByPractitioner } from '@/services/slots';
+import { saveIntent } from '@/utils/redirect-intent';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { addDays, format, isBefore, parseISO } from 'date-fns';
-import { BundleEntry, Invoice, PractitionerRole, Slot } from 'fhir/r4';
+import { addDays, format, parseISO, startOfDay } from 'date-fns';
+import { Invoice, PractitionerRole } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ReactNode, useEffect, useMemo, useState, useTransition } from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition
+} from 'react';
 import BookingCalendar from './booking-calendar';
+import { getNextAvailableDate, isDateAvailable } from './booking-date-utils';
 import BookingFormSection from './booking-form-section';
+import { useBookingForm } from './hooks/use-booking-form';
+import { useBookingRestoration } from './hooks/use-booking-restoration';
+import { usePractitionerRole } from './hooks/usePractitionerRole';
 import PaymentDrawer from './payment-drawer';
 import TimeSlotsSection from './time-slots-section';
 import {
-  AppointmentPayload,
-  getAvailableDays,
-  isAppointmentPayload,
-  matchesPractitionerFromPath
+  type AppointmentPayload,
+  type TempBookingData,
+  getAvailableDays
 } from './utils';
 
-type TempBookingData = {
-  scheduleId: string;
-  sessionType: string;
-  problemBrief: string;
-  practitionerRoleId: string;
-  practitionerAvailableTime: string;
-  date: string;
-  startTime: string;
-  hasUserChosenDate: boolean;
-};
-
 type Props = {
-  children: ReactNode;
-  practitionerRole: PractitionerRole;
-  scheduleId: string;
+  // Drawer mode props
+  children?: ReactNode;
+  practitionerRole?: PractitionerRole;
+  scheduleId?: string;
+  // Common props
   invoice?: Invoice;
   practitionerName?: string;
   practitionerOrganizationName?: string;
@@ -49,22 +53,32 @@ type Props = {
     initials?: string;
     backgroundColor?: string;
   };
+  // Page mode props
+  variant?: 'drawer' | 'page';
+  practitionerRoleId?: string;
+  durationMinutes?: number;
+  healthcareServiceId?: string;
+  healthcareServiceName?: string;
+  organizationId?: string;
 };
 
 /**
  * Render availability UI and booking/payment flows for a practitioner's role.
  *
- * Renders a calendar of available dates, selectable time-slot pills, a booking drawer
- * and a payment drawer that handle booking form state, validation, authentication redirects,
- * and payment actions.
+ * In drawer mode (default), wraps content in a Drawer with trigger children.
+ * In page mode, renders content directly, fetching practitioner data
+ * internally and computing free slots dynamically based on service duration.
  *
- * @param children - Trigger element(s) that open the booking drawer when clicked
- * @param practitionerRole - FHIR PractitionerRole containing availability (period, availableTime, id)
- * @param scheduleId - Optional Schedule ID used to enable slot selection and booking actions
- * @param invoice - Optional invoice object used to display total and perform payment actions
- * @param practitionerName - Optional practitioner display name shown in the payment drawer
- * @param practitionerOrganizationName - Optional organization name shown in the payment drawer
- * @param practitionerAvatar - Optional avatar data (photoUrl, initials, backgroundColor) shown in the payment drawer
+ * @param children - Trigger element(s) that open the booking drawer when clicked (drawer mode)
+ * @param practitionerRole - FHIR PractitionerRole with availability (drawer mode)
+ * @param scheduleId - Schedule ID used to enable slot selection (drawer mode)
+ * @param invoice - Optional invoice object for payment display
+ * @param practitionerName - Practitioner display name shown in payment drawer
+ * @param practitionerOrganizationName - Organization name shown in payment drawer
+ * @param practitionerAvatar - Avatar data (photoUrl, initials, backgroundColor)
+ * @param variant - 'drawer' (default) or 'page'
+ * @param practitionerRoleId - PractitionerRole ID for internal fetch (page mode)
+ * @param durationMinutes - Service duration for free-slot computation (page mode, default 60)
  * @returns The component's rendered booking and payment interface (JSX)
  */
 export default function PractitionerAvailability({
@@ -74,10 +88,21 @@ export default function PractitionerAvailability({
   invoice,
   practitionerName,
   practitionerOrganizationName,
-  practitionerAvatar
+  practitionerAvatar,
+  variant = 'drawer',
+  practitionerRoleId,
+  durationMinutes = 60,
+  healthcareServiceId: propHealthcareServiceId,
+  healthcareServiceName: propHealthcareServiceName,
+  organizationId: propOrganizationId
 }: Props) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Stable date reference — only changes at midnight.
+  const today = useMemo(() => {
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    return todayDate;
+  }, []);
+  const isPageMode = variant === 'page';
   const router = useRouter();
   const searchParams = useSearchParams();
   const isOpenParam = searchParams.get('isOpen');
@@ -88,11 +113,7 @@ export default function PractitionerAvailability({
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const { state: bookingState, dispatch } = useBooking();
   const { state: authState } = useAuth();
-  const [bookingForm, setBookingInformation] = useState({
-    session_type: 'offline',
-    problem_brief: ''
-  });
-  const [errorForm, setErrorForm] = useState<string[] | null>(null);
+  const { setDirtyState } = useFabDirty();
   const queryClient = useQueryClient();
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { isLoading: isCreateAppointmentLoading } = useCreateAppointment();
@@ -103,28 +124,53 @@ export default function PractitionerAvailability({
   const patientId = authState?.userInfo?.fhirId;
   const isAuthenticated = authState?.isAuthenticated;
 
-  /** Update a single booking information field (problem brief, etc.). */
-  const handleBookingInformationChange = (key: string, value: string) => {
-    setBookingInformation(prevState => ({
-      ...prevState,
-      [key]: value
-    }));
-  };
-
-  const listAvailableDate = getAvailableDays(
-    practitionerRole.availableTime ?? [],
-    bookingState.date
+  const {
+    detail,
+    isDetailLoading,
+    practitionerId,
+    practitionerGivenName,
+    healthcareServiceNames,
+    effectiveRole,
+    effectiveAvailableTime,
+    effectiveScheduleId,
+    practitionerTzOffset
+  } = usePractitionerRole(
+    isPageMode,
+    practitionerRoleId,
+    practitionerRole,
+    scheduleId
   );
 
-  /** Check if a given date exists in the available days array. */
-  const isDateAvailable = (date: Date, availableDays: Date[]): boolean => {
-    return availableDays.some(
-      availableDate =>
-        date.getFullYear() === availableDate.getFullYear() &&
-        date.getMonth() === availableDate.getMonth() &&
-        date.getDate() === availableDate.getDate()
-    );
-  };
+  const [pageDate, setPageDate] = useState<Date>(startOfDay(new Date()));
+
+  const {
+    bookingForm,
+    setBookingInformation,
+    errorForm,
+    relayInvoice,
+    handleBookingInformationChange,
+    handleSubmitForm,
+    handleSubmitFormRef,
+    setErrorForm
+  } = useBookingForm({
+    isPageMode,
+    effectiveScheduleId,
+    practitionerId,
+    durationMinutes,
+    propHealthcareServiceId,
+    propOrganizationId,
+    detail,
+    effectiveRole,
+    pageDate,
+    patientId,
+    setSelectedSlotId,
+    setPaymentOpen
+  });
+
+  const listAvailableDate = getAvailableDays(
+    effectiveAvailableTime,
+    isPageMode ? pageDate : bookingState.date
+  );
 
   /** Dispatch a booking info update to the reducer. */
   const handleFilterChange = (
@@ -139,162 +185,71 @@ export default function PractitionerAvailability({
     });
   };
 
-  /** Find the next available date from the given date, incrementing day by day. */
-  const getNextAvailableDate = (
-    currentDate: Date,
-    availableDays: Date[]
-  ): Date => {
-    const date = new Date(currentDate);
-
-    if (availableDays.length === 0) {
-      return date;
-    }
-
-    // Early check: if all dates in availableDays are in the past, just return the input date
-    const now = new Date();
-    let allInPast = true;
-    for (const d of availableDays) {
-      if (d >= now) {
-        allInPast = false;
-        break;
-      }
-    }
-    if (allInPast) {
-      return date;
-    }
-
-    // loop until an available day is found
-    while (!isDateAvailable(date, availableDays)) {
-      date.setDate(date.getDate() + 1);
-    }
-
-    return date;
-  };
-
-  /** Reset the booking form state (time, problem brief, errors). */
+  /** Reset time slot and errors, but preserve problem brief text. */
   const resetData = () => {
     handleFilterChange('startTime', null);
-    handleBookingInformationChange('problem_brief', '');
     setErrorForm(null);
   };
 
-  // Derive practitioner timezone offset from PractitionerRole.period.start (e.g., +07:00)
-  const practitionerTzOffset = useMemo(() => {
-    const iso = practitionerRole.period?.start || practitionerRole.period?.end;
-    if (typeof iso === 'string') {
-      const match = iso.match(/([+-]\d{2}:\d{2}|Z)$/);
-      return match ? match[1] : 'Z';
-    }
-    return 'Z';
-  }, [practitionerRole.period?.start, practitionerRole.period?.end]);
+  // Selected date unified across modes
+  const selectedDate = isPageMode ? pageDate : bookingState.date;
 
-  // Build practitioner-TZ day window strings and day cache key
-  const { startFrom, startTo, dayKey } = useMemo(() => {
-    if (!bookingState.date) {
-      return {
-        startFrom: undefined,
-        startTo: undefined,
-        dayKey: undefined
-      } as {
-        startFrom?: string;
-        startTo?: string;
-        dayKey?: string;
-      };
-    }
-    const dayStr = format(bookingState.date, 'yyyy-MM-dd');
-    const start = `${dayStr}T00:00:00${practitionerTzOffset}`;
-    const end = `${dayStr}T23:59:59${practitionerTzOffset}`;
-    return {
-      startFrom: start,
-      startTo: end,
-      dayKey: `${dayStr}${practitionerTzOffset}`
-    };
-  }, [bookingState.date, practitionerTzOffset]);
+  // Cross-mode: compute date string for slot queries
+  const dateStr = useMemo(
+    () => (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''),
+    [selectedDate]
+  );
 
-  const {
-    data: schedule,
-    isLoading,
-    isError
-  } = useFindAvailability({
-    practitionerRoleId: practitionerRole.id,
-    startFrom,
-    startTo,
-    dayKey
-  });
+  // Fetch busy slots across all practitioner roles
+  const { data: busySlots, isLoading: isBusySlotsLoading } =
+    useBusySlotsByPractitioner(practitionerId, dateStr);
+
+  // Compute free slots for both modes (converts to browser's local timezone)
+  const computedFreeSlots = useMemo(() => {
+    if (!selectedDate || !busySlots) return [];
+    return computeFreeSlots(
+      effectiveAvailableTime,
+      busySlots,
+      selectedDate,
+      durationMinutes,
+      practitionerTzOffset
+    );
+  }, [
+    selectedDate,
+    busySlots,
+    effectiveAvailableTime,
+    durationMinutes,
+    practitionerTzOffset
+  ]);
 
   // Fetch Schedule by ID with caching (only when authenticated)
   const { data: scheduleById } = useQuery({
-    queryKey: ['schedule-by-id', scheduleId],
+    queryKey: ['schedule-by-id', effectiveScheduleId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(`/fhir/Schedule/${scheduleId}`);
+      const response = await API.get(`/fhir/Schedule/${effectiveScheduleId}`);
       return response.data || null;
     },
-    enabled: Boolean(scheduleId) && (isAuthenticated ?? false),
+    enabled: Boolean(effectiveScheduleId) && (isAuthenticated ?? false),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false
   });
 
-  /** Restore booking from sessionStorage (set by auth SPA after login). */
-  function tryRestoreBookingFromSession(): boolean {
-    const stored = sessionStorage.getItem('pending_booking');
-    if (!stored) return false;
-    try {
-      const raw = JSON.parse(stored);
-      if (!isAppointmentPayload(raw)) {
-        sessionStorage.removeItem('pending_booking');
-        return false;
-      }
-      const payload: AppointmentPayload = raw;
-      if (!matchesPractitionerFromPath(payload.path, practitionerRole.id))
-        return false;
-      const { slot, formData } = payload;
-      setBookingInformation(formData);
-      handleFilterChange('date', new Date(slot.date));
-      handleFilterChange('startTime', slot.startTime);
-      handleFilterChange('hasUserChosenDate', true);
-      if (slot.slotId) setSelectedSlotId(slot.slotId);
-      setIsOpen(true);
-      sessionStorage.removeItem('pending_booking');
-      return true;
-    } catch {
-      sessionStorage.removeItem('pending_booking');
-      return false;
-    }
-  }
-
-  /** Try to restore booking from redirect intent. */
-  function tryRestoreFromIntent(): boolean {
-    const intent = getIntent();
-    if (intent?.kind !== 'appointment') return false;
-
-    if (!isAppointmentPayload(intent.payload)) {
-      clearIntent();
-      return false;
-    }
-
-    const payload: AppointmentPayload = intent.payload;
-    if (!matchesPractitionerFromPath(payload.path, practitionerRole.id)) {
-      return false;
-    }
-
+  const onRestoreAppointment = useCallback((payload: AppointmentPayload) => {
     const { slot, formData } = payload;
     setBookingInformation(formData);
     handleFilterChange('date', new Date(slot.date));
     handleFilterChange('startTime', slot.startTime);
     handleFilterChange('hasUserChosenDate', true);
-    if (slot.slotId) {
-      setSelectedSlotId(slot.slotId);
-    }
+    if (slot.slotId) setSelectedSlotId(slot.slotId);
     setIsOpen(true);
-    clearIntent();
-    return true;
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  /** Load temporary booking data from IndexedDB. */
-  function loadTempBookingFromIndexedDB(userId: string): void {
+  const onLoadTempBooking = useCallback((userId: string) => {
     setIsOpen(true);
+
     dbGet<TempBookingData>(STORES.tempBooking, userId)
       .then(parsed => {
         if (parsed) {
@@ -318,21 +273,43 @@ export default function PractitionerAvailability({
       .catch(() => {
         // Best-effort load — ignore errors
       });
-  }
-
-  /** Restore booking state from available sources when the modal opens. */
-  useEffect(() => {
-    const userId = authState?.userInfo?.userId;
-    if (isOpenParam === 'true' && !userId) return;
-    if (tryRestoreFromIntent()) return;
-    if (tryRestoreBookingFromSession()) return;
-    if (isOpenParam === 'true' && userId) {
-      loadTempBookingFromIndexedDB(userId);
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpenParam, authState?.userInfo?.userId]);
+  }, []);
+
+  const practitionerRoleIdStr = practitionerRole?.id ?? '';
+  const authUserId = authState?.userInfo?.userId;
+
+  useBookingRestoration({
+    isPageMode,
+    isOpenParam,
+    practitionerRoleId: practitionerRoleIdStr,
+    authUserId,
+    onRestoreAppointment,
+    onLoadTempBooking
+  });
+
+  // Track whether page mode has been initialized with a valid start date.
+  // Using a ref ensures this runs only once on mount, not on every render.
+  const pageDateInitialized = useRef(false);
+
+  /** Set initial date for page mode — runs only once on mount. */
+  useEffect(() => {
+    if (!isPageMode) return;
+    if (pageDateInitialized.current) return;
+    pageDateInitialized.current = true;
+    const initialDate = isDateAvailable(today, listAvailableDate)
+      ? today
+      : getNextAvailableDate(today, listAvailableDate);
+    // Avoid unnecessary state update if pageDate already matches.
+    if (pageDate?.getTime() === initialDate.getTime()) return;
+    setPageDate(initialDate);
+    // pageDate is intentionally excluded from deps to prevent re-initialization
+    // when the user changes the selection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPageMode, today, listAvailableDate]);
 
   useEffect(() => {
+    if (isPageMode) return;
     if (isOpenParam !== 'true') {
       const initialDate = isDateAvailable(today, listAvailableDate)
         ? today
@@ -348,56 +325,19 @@ export default function PractitionerAvailability({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpenParam]);
 
-  // Map FHIR Slots to pill items with disabled state
+  // Slot pills: map computed free windows to pill format (both modes)
   const slotPills = useMemo(() => {
-    if (!schedule || !Array.isArray(schedule))
-      return [] as Array<{
-        id: string;
-        displayLabel: string;
-        value: string; // HH:mm start time used for booking state
-        start: Date;
-        end: Date;
-        disabled: boolean;
-        status: string;
-      }>;
-
-    const entries = schedule.filter(
-      (entry: BundleEntry) => entry.resource?.resourceType === 'Slot'
-    ) as BundleEntry<Slot>[];
-
-    const now = new Date();
-    const mapped = entries.map(entry => {
-      const slotStart = parseISO(entry.resource.start);
-      const slotEnd = parseISO(entry.resource.end);
-      const status = entry.resource.status;
-      const disabledByStatus = status !== 'free';
-      const disabledByPast = isBefore(slotStart, now);
-      return {
-        id: entry.resource.id,
-        displayLabel: `${format(slotStart, 'HH:mm')}`,
-        value: `${format(slotStart, 'HH:mm')}`,
-        start: slotStart,
-        end: slotEnd,
-        disabled: disabledByStatus || disabledByPast,
-        status
-      };
-    });
-
-    return mapped.toSorted((a, b) => a.start.getTime() - b.start.getTime());
-  }, [schedule]);
-
-  useEffect(() => {
-    if (errorForm) {
-      if (
-        bookingState?.date &&
-        bookingState?.startTime &&
-        bookingForm.session_type &&
-        bookingForm.problem_brief
-      )
-        setErrorForm(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookingForm, bookingState.date, bookingState.startTime]);
+    if (!computedFreeSlots || computedFreeSlots.length === 0) return [];
+    return computedFreeSlots.map(fs => ({
+      id: `free-${fs.start}-${fs.end}`,
+      displayLabel: fs.start,
+      value: fs.start,
+      start: parseISO(`1970-01-01T${fs.start}:00`),
+      end: parseISO(`1970-01-01T${fs.end}:00`),
+      disabled: false,
+      status: 'free'
+    }));
+  }, [computedFreeSlots]);
 
   /* validate the selected date and time:
    * if the selected date is unavailable, set the next available date and reset the time.
@@ -455,66 +395,134 @@ export default function PractitionerAvailability({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingState.date, bookingState.startTime, slotPills, listAvailableDate]);
 
-  /** Validate and submit the booking form, triggering payment. */
-  const handleSubmitForm = () => {
-    const { date, startTime } = bookingState;
-    const requiredData = {
-      'Problem Brief': bookingForm.problem_brief,
-      'Tanggal Appointment': date,
-      'Jam Appointment': startTime,
-      'Tipe Session': bookingForm.session_type
-    };
+  const isFormValid =
+    isPageMode &&
+    Boolean(bookingState.startTime) &&
+    Boolean(bookingForm.problem_brief.trim());
 
-    const emptyField = Object.entries(requiredData).filter(item => !item[1]);
-
-    if (emptyField.length > 0) {
-      setErrorForm(emptyField.map(item => item[0]));
+  // Sync FAB dirty state to show "Book Now" when form is ready in page mode
+  useEffect(() => {
+    if (isPageMode && isFormValid) {
+      setDirtyState({
+        isDirty: true,
+        label: 'Book Now',
+        onSave: () => handleSubmitFormRef.current(),
+        isSaving: false
+      });
     } else {
-      // Open payment option modal instead of client-side FHIR bundle submit
-      setPaymentOpen(true);
+      setDirtyState(null);
     }
-  };
+
+    return () => {
+      setDirtyState(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFormValid, isPageMode, setDirtyState]);
+
+  const effectiveBookingState = isPageMode
+    ? ({
+        date: pageDate,
+        startTime: bookingState.startTime ?? '',
+        hasUserChosenDate: false
+      } as IStateBooking)
+    : bookingState;
+
+  const effectiveHandleFilterChange = isPageMode
+    ? (label: string, value: string | Date | boolean | undefined) => {
+        if (label === 'date' && value instanceof Date) {
+          setPageDate(value);
+        }
+        if (label === 'startTime' && typeof value === 'string') {
+          dispatch({
+            type: 'UPDATE_BOOKING_INFO',
+            payload: { startTime: value }
+          });
+        }
+      }
+    : handleFilterChange;
+
+  const slotLoading = isBusySlotsLoading || isDetailLoading;
+  const slotError = false;
 
   const bookingContent = (
     <div className='flex h-full flex-col'>
       <BookingCalendar
-        bookingState={bookingState}
-        handleFilterChange={handleFilterChange}
+        bookingState={effectiveBookingState}
+        handleFilterChange={effectiveHandleFilterChange}
         resetData={resetData}
         listAvailableDate={listAvailableDate}
-        availableTime={practitionerRole.availableTime ?? []}
+        availableTime={effectiveAvailableTime}
         today={today}
+        hideHeader={isPageMode}
       />
       <TimeSlotsSection
-        bookingState={bookingState}
-        isLoading={isLoading}
-        isError={isError}
+        bookingState={effectiveBookingState}
+        isLoading={slotLoading}
+        isError={slotError}
         slotPills={slotPills}
-        scheduleId={scheduleId}
-        handleFilterChange={handleFilterChange}
+        scheduleId={effectiveScheduleId}
+        handleFilterChange={effectiveHandleFilterChange}
         setSelectedSlotId={setSelectedSlotId}
       />
       <BookingFormSection
         bookingForm={bookingForm}
-        bookingState={bookingState}
+        bookingState={effectiveBookingState}
         errorForm={errorForm}
         handleBookingInformationChange={handleBookingInformationChange}
-        handleSubmitForm={handleSubmitForm}
-        scheduleId={scheduleId}
+        handleSubmitForm={() => {
+          handleSubmitForm().catch(() => {
+            // Errors handled by API interceptor
+          });
+        }}
+        scheduleId={effectiveScheduleId}
+        hideCta={isPageMode}
         isCreateAppointmentLoading={isCreateAppointmentLoading}
         isPaying={isPaying}
         isAuthenticated={isAuthenticated}
         isPending={isPending}
-        practitionerRole={practitionerRole}
-        selectedSlotId={selectedSlotId}
+        practitionerRole={effectiveRole ?? ({} as PractitionerRole)}
+        selectedSlotId={isPageMode ? null : selectedSlotId}
         scheduleById={scheduleById}
         router={router}
         saveIntent={saveIntent}
         startTransition={startTransition}
         setIsOpen={setIsOpen}
+        practitionerGivenName={practitionerGivenName}
       />
     </div>
   );
+
+  if (isPageMode) {
+    return (
+      <>
+        <div className='flex flex-col px-1 pb-24'>{bookingContent}</div>
+        <PaymentDrawer
+          paymentOpen={paymentOpen}
+          setPaymentOpen={setPaymentOpen}
+          practitionerAvatar={practitionerAvatar}
+          practitionerOrganizationName={practitionerOrganizationName}
+          practitionerName={practitionerName}
+          healthcareServiceName={
+            propHealthcareServiceName ??
+            healthcareServiceNames[0] ??
+            'Consultation'
+          }
+          bookingState={effectiveBookingState}
+          invoice={relayInvoice ?? invoice}
+          isPaying={isPaying}
+          patientId={patientId ?? ''}
+          selectedSlotId={selectedSlotId}
+          bookingForm={bookingForm}
+          practitionerRole={effectiveRole ?? ({} as PractitionerRole)}
+          healthcareServiceId={propHealthcareServiceId ?? ''}
+          payAppointment={payAppointment}
+          queryClient={queryClient}
+          handleFilterChange={effectiveHandleFilterChange}
+          setIsOpen={setIsOpen}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -538,6 +546,7 @@ export default function PractitionerAvailability({
         practitionerAvatar={practitionerAvatar}
         practitionerOrganizationName={practitionerOrganizationName}
         practitionerName={practitionerName}
+        healthcareServiceName={healthcareServiceNames[0] ?? 'Consultation'}
         bookingState={bookingState}
         invoice={invoice}
         isPaying={isPaying}
@@ -545,6 +554,7 @@ export default function PractitionerAvailability({
         selectedSlotId={selectedSlotId}
         bookingForm={bookingForm}
         practitionerRole={practitionerRole}
+        healthcareServiceId={propHealthcareServiceId ?? ''}
         payAppointment={payAppointment}
         queryClient={queryClient}
         handleFilterChange={handleFilterChange}

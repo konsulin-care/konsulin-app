@@ -7,9 +7,9 @@ import AssessmentsList from './assessments-list';
 /** Assessments root: routes to list or detail view based on query params. */
 export default function AssessmentsPage() {
   const searchParams = useSearchParams();
-  const assessmentsId = searchParams.get('assessmentsId');
+  const id = searchParams.get('id');
 
-  if (assessmentsId) {
+  if (id) {
     return <AssessmentsDetail />;
   }
 

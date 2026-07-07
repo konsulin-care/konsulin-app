@@ -1,16 +1,9 @@
 'use client';
 
-import { LoadingSpinnerIcon } from '@/components/icons';
 import ClinicianPracticeSchedule from '@/components/profile/clinician-practice-schedule';
 import ClinicianUnavailabilityCard from '@/components/profile/clinician-unavailability-card';
 import InformationDetail from '@/components/profile/information-detail';
 import Settings from '@/components/profile/settings';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerTitle
-} from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { settingMenus } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
@@ -24,54 +17,25 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {
   Practitioner,
-  PractitionerRole,
   PractitionerRoleAvailableTime
 } from 'fhir/r4';
 
 import type { IPractitionerRoleDetail } from '@/types/practitioner';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
-import PractitionerAvailabilityEditor from '../practitioner/practitioner-availability-editor';
 
 type Props = {
   fhirId: string;
 };
 
 /**
- * Renders the clinician profile page including general and practice information, availability overview, and an availability editor drawer.
+ * Renders the clinician profile page including general and practice information, and availability overview.
  *
- * Displays practitioner's basic profile details, practice information, availability grouped by organization and day, and controls to edit availability (per-day collapsible editors with time ranges). Handles data fetching, form state for availability editing, validation, and saving changes.
+ * Displays practitioner's basic profile details, practice information, availability grouped by organization and day.
  *
  * @param fhirId - The practitioner's FHIR resource ID used to fetch profile and role data.
  * @returns The JSX element for the Clinician profile page.
  */
-
-/** Content of the availability editor drawer. */
-function DrawerBody({
-  selectedPractitionerRoles,
-  onSave,
-  onCancel
-}: Readonly<{
-  selectedPractitionerRoles: PractitionerRole[];
-  onSave: () => void;
-  onCancel: () => void;
-}>) {
-  if (!selectedPractitionerRoles || selectedPractitionerRoles.length === 0) {
-    return (
-      <div className='flex h-full items-center justify-center'>
-        <LoadingSpinnerIcon width={50} height={50} className='animate-spin' />
-      </div>
-    );
-  }
-  return (
-    <PractitionerAvailabilityEditor
-      practitionerRoles={selectedPractitionerRoles}
-      onSuccess={onSave}
-      onCancel={onCancel}
-    />
-  );
-}
 
 /** Build profile detail array from practitioner data. */
 function buildProfileDetail(
@@ -107,7 +71,6 @@ function buildProfileDetail(
 // eslint-disable-next-line complexity
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [practitionerRolesData, setPractitionerRolesData] = useState<
     IPractitionerRoleDetail[]
   >([]);
@@ -123,9 +86,6 @@ export default function Clinician({ fhirId }: Props) {
     >
   >({});
   const { state: authState, isLoading: isAuthLoading } = useAuth();
-  const [selectedPractitionerRoles, setSelectedPractitionerRoles] = useState<
-    PractitionerRole[]
-  >([]);
 
   /* get practitioner's basic information*/
   const { data: profileData, isLoading: isProfileLoading } =
@@ -136,7 +96,7 @@ export default function Clinician({ fhirId }: Props) {
     });
 
   /* get list of practitioner's roles */
-  const { refetch, isLoading: isPractitionerRolesLoading } =
+  const { isLoading: isPractitionerRolesLoading } =
     useGetPractitionerRolesDetail(authState.userInfo?.fhirId ?? '', data => {
       const resources = (data?.map(entry => entry.resource) || []).filter(
         Boolean
@@ -147,12 +107,6 @@ export default function Clinician({ fhirId }: Props) {
   useUpdatePractitionerInfo();
 
   const activeFirms = practitionerRolesData?.filter(firm => firm.active);
-
-  const handleOpenDrawer = () => {
-    // Set all active practitioner roles for the editor
-    setSelectedPractitionerRoles(activeFirms || []);
-    setIsDrawerOpen(true);
-  };
 
   /* group available time slots by organization and day of week.
    * example structure:
@@ -230,17 +184,7 @@ export default function Clinician({ fhirId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [practitionerRolesData]);
 
-  /** Handle successful availability save and refetch roles. */
-  const handleSaveSuccess = async () => {
-    try {
-      toast.success('Jadwal berhasil disimpan');
-      setIsDrawerOpen(false);
-      await refetch();
-    } catch (error) {
-      toast.error('Gagal menyimpan jadwal');
-      console.error('Error when updating availability schedules : ', error);
-    }
-  };
+
 
   const profileDetail = buildProfileDetail(profileData);
 
@@ -300,28 +244,12 @@ export default function Clinician({ fhirId }: Props) {
 
       <ClinicianPracticeSchedule
         groupedByFirmAndDay={groupedByFirmAndDay}
-        onEditSchedule={handleOpenDrawer}
+        onEditSchedule={() => router.push('/practitioner/availability')}
       />
 
       <ClinicianUnavailabilityCard />
 
       <Settings menus={settingMenus} />
-
-      <Drawer onClose={() => setIsDrawerOpen(false)} open={isDrawerOpen}>
-        <DrawerContent className='mx-auto flex max-h-screen max-w-screen-sm flex-col overflow-y-hidden px-4 py-1'>
-          <DrawerTitle />
-          <DrawerDescription />
-          <div className='scrollbar-hide my-2 flex-grow overflow-y-auto'>
-            <DrawerBody
-              selectedPractitionerRoles={selectedPractitionerRoles}
-              onSave={() => {
-                handleSaveSuccess().catch(console.error);
-              }}
-              onCancel={() => setIsDrawerOpen(false)}
-            />
-          </div>
-        </DrawerContent>
-      </Drawer>
     </>
   );
 }

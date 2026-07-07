@@ -1,4 +1,8 @@
 import { FabDirtyProvider, useFabDirty } from '@/context/fabDirtyContext';
+import {
+  FabSelectionProvider,
+  useFabSelection
+} from '@/context/fabSelectionContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -35,6 +39,7 @@ vi.mock('react-toastify', () => ({
 
 function TestHarness() {
   const { setDirtyState } = useFabDirty();
+  const { setSelectionState } = useFabSelection();
   return (
     <QueryClientProvider client={queryClient}>
       <div>
@@ -55,8 +60,36 @@ function TestHarness() {
         <button data-testid='trigger-clean' onClick={() => setDirtyState(null)}>
           Make Clean
         </button>
+        <button
+          data-testid='trigger-selection'
+          onClick={() =>
+            setSelectionState({
+              count: 2,
+              onDelete: vi.fn(),
+              onCancel: vi.fn()
+            })
+          }
+        >
+          Select 2 Items
+        </button>
+        <button
+          data-testid='clear-selection'
+          onClick={() => setSelectionState(null)}
+        >
+          Clear Selection
+        </button>
       </div>
     </QueryClientProvider>
+  );
+}
+
+function renderFab() {
+  return render(
+    <FabDirtyProvider>
+      <FabSelectionProvider>
+        <TestHarness />
+      </FabSelectionProvider>
+    </FabDirtyProvider>
   );
 }
 
@@ -71,11 +104,7 @@ function getFabButton(container: HTMLElement): HTMLButtonElement | undefined {
 
 describe('QuickActionFab', () => {
   it('renders as a circle with plus icon by default', () => {
-    const { container } = render(
-      <FabDirtyProvider>
-        <TestHarness />
-      </FabDirtyProvider>
-    );
+    const { container } = renderFab();
 
     const fabButton = getFabButton(container);
     expect(fabButton.className).toContain('h-14');
@@ -86,11 +115,7 @@ describe('QuickActionFab', () => {
   });
 
   it('morphs to pill with Save Changes text when dirty', () => {
-    const { container } = render(
-      <FabDirtyProvider>
-        <TestHarness />
-      </FabDirtyProvider>
-    );
+    const { container } = renderFab();
 
     fireEvent.click(screen.getByTestId('trigger-dirty'));
 
@@ -102,11 +127,7 @@ describe('QuickActionFab', () => {
   });
 
   it('reverts to circle after dirty state is cleared', () => {
-    const { container } = render(
-      <FabDirtyProvider>
-        <TestHarness />
-      </FabDirtyProvider>
-    );
+    const { container } = renderFab();
 
     fireEvent.click(screen.getByTestId('trigger-dirty'));
     expect(getFabButton(container).textContent).toContain('Save Changes');
@@ -122,13 +143,9 @@ describe('QuickActionFab', () => {
   });
 
   it('hides pills menu when dirty', () => {
-    const { container } = render(
-      <FabDirtyProvider>
-        <TestHarness />
-      </FabDirtyProvider>
-    );
+    renderFab();
 
-    const fabButton = getFabButton(container);
+    const fabButton = [...document.querySelectorAll<HTMLButtonElement>('button[class*="rounded-full"]')].at(-1);
     fireEvent.click(fabButton);
 
     const pills = screen.queryAllByText(
@@ -143,6 +160,46 @@ describe('QuickActionFab', () => {
     );
     expect(pillsAfter).toHaveLength(0);
   });
+
+  describe('selection mode', () => {
+    it('shows a red delete button with count when items are selected', () => {
+      renderFab();
+      fireEvent.click(screen.getByTestId('trigger-selection'));
+
+      const deleteBtn = screen.getByText('Delete (2)');
+      expect(deleteBtn).toBeInTheDocument();
+
+      const trashIcon = document.querySelector('.lucide-trash-2');
+      expect(trashIcon).toBeTruthy();
+    });
+
+    it('takes priority over dirty state', () => {
+      renderFab();
+
+      fireEvent.click(screen.getByTestId('trigger-dirty'));
+      expect(screen.getByText('Save Changes')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId('trigger-selection'));
+      expect(screen.getByText('Delete (2)')).toBeInTheDocument();
+      expect(screen.queryByText('Save Changes')).not.toBeInTheDocument();
+    });
+
+    it('reverts to normal state after selection is cleared', () => {
+      const { container } = renderFab();
+
+      fireEvent.click(screen.getByTestId('trigger-selection'));
+      expect(screen.getByText('Delete (2)')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId('clear-selection'));
+
+      const fabButton = getFabButton(container);
+      expect(fabButton.className).toContain('h-14');
+      expect(fabButton.className).toContain('w-14');
+
+      const plusIcon = container.querySelector('.lucide-plus');
+      expect(plusIcon).toBeTruthy();
+    });
+  });
 });
 
 describe('QuickActionFab clinic admin', () => {
@@ -154,12 +211,18 @@ describe('QuickActionFab clinic admin', () => {
     mockRole = 'Patient';
   });
 
-  it('renders Register Practitioner and Add Location pills for ClinicAdmin', () => {
-    const { container } = render(
+  function renderClinicAdminFab() {
+    return render(
       <FabDirtyProvider>
-        <TestHarness />
+        <FabSelectionProvider>
+          <TestHarness />
+        </FabSelectionProvider>
       </FabDirtyProvider>
     );
+  }
+
+  it('renders Register Practitioner and Add Location pills for ClinicAdmin', () => {
+    const { container } = renderClinicAdminFab();
 
     const fabButton = getFabButton(container);
     fireEvent.click(fabButton);
@@ -169,11 +232,7 @@ describe('QuickActionFab clinic admin', () => {
   });
 
   it('does not render patient pills for ClinicAdmin', () => {
-    const { container } = render(
-      <FabDirtyProvider>
-        <TestHarness />
-      </FabDirtyProvider>
-    );
+    const { container } = renderClinicAdminFab();
 
     const fabButton = getFabButton(container);
     fireEvent.click(fabButton);
@@ -185,46 +244,32 @@ describe('QuickActionFab clinic admin', () => {
   });
 
   it('opens RegisterPractitionerDrawer when Register Practitioner pill is clicked', () => {
-    const { container } = render(
-      <FabDirtyProvider>
-        <TestHarness />
-      </FabDirtyProvider>
-    );
+    const { container } = renderClinicAdminFab();
 
     const fabButton = getFabButton(container);
     fireEvent.click(fabButton);
 
     fireEvent.click(screen.getByText('Register Practitioner'));
 
-    // The drawer form should be visible
     expect(screen.getByLabelText('Name')).toBeDefined();
     expect(screen.getByLabelText('Email')).toBeDefined();
   });
 
   it('opens AddLocationDrawer when Add Location pill is clicked', () => {
-    const { container } = render(
-      <FabDirtyProvider>
-        <TestHarness />
-      </FabDirtyProvider>
-    );
+    const { container } = renderClinicAdminFab();
 
     const fabButton = getFabButton(container);
     fireEvent.click(fabButton);
 
     fireEvent.click(screen.getByText('Add Location'));
 
-    // The drawer form should be visible
     expect(screen.getByLabelText('Longitude')).toBeDefined();
     expect(screen.getByLabelText('Latitude')).toBeDefined();
   });
 
   it('renders patient pills for non-ClinicAdmin roles', () => {
     mockRole = 'Patient';
-    const { container } = render(
-      <FabDirtyProvider>
-        <TestHarness />
-      </FabDirtyProvider>
-    );
+    const { container } = renderClinicAdminFab();
 
     const fabButton = getFabButton(container);
     fireEvent.click(fabButton);
@@ -234,6 +279,25 @@ describe('QuickActionFab clinic admin', () => {
     expect(screen.getByText('View Schedule')).toBeDefined();
     expect(screen.getByText('Get Recommendation')).toBeDefined();
 
+    expect(screen.queryByText('Register Practitioner')).toBeNull();
+    expect(screen.queryByText('Add Location')).toBeNull();
+  });
+
+  it('renders practitioner pills for Practitioner role', () => {
+    mockRole = 'Practitioner';
+    const { container } = renderClinicAdminFab();
+
+    const fabButton = getFabButton(container);
+    fireEvent.click(fabButton);
+
+    expect(screen.getByText('Set Availability')).toBeDefined();
+    expect(screen.getByText('View Schedule')).toBeDefined();
+    expect(screen.getByText('Health Screening')).toBeDefined();
+    expect(screen.getByText('S.O.A.P.')).toBeDefined();
+
+    expect(screen.queryByText('Self Checkup')).toBeNull();
+    expect(screen.queryByText('Write Journal')).toBeNull();
+    expect(screen.queryByText('Get Recommendation')).toBeNull();
     expect(screen.queryByText('Register Practitioner')).toBeNull();
     expect(screen.queryByText('Add Location')).toBeNull();
   });

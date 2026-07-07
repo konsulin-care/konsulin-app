@@ -159,7 +159,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}
-        isAuthenticated={true}
+        isAuthenticated
         patientId='pat-1'
       />
     );
@@ -198,7 +198,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
 
     // Verify the URL includes the record ID and category
     const replaceUrl = mockReplace.mock.calls[0][0] as string;
-    expect(replaceUrl).toContain('recordId=resp-789');
+    expect(replaceUrl).toContain('id=resp-789');
     expect(replaceUrl).toContain('category=1');
     expect(replaceUrl).toContain('title=PHQ-9');
   });
@@ -207,7 +207,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}
-        isAuthenticated={true}
+        isAuthenticated
         patientId='pat-1'
       />
     );
