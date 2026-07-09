@@ -1,172 +1,178 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 
 import CardLoader from '@/components/general/card-loader';
 import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
-import LoadingSpinnerIcon from '@/components/icons/loading-spinner-icon';
 import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { useAuth } from '@/context/auth/authContext';
 import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
-import { STORES, dbSet } from '@/lib/indexeddb';
-import { getAPI } from '@/services/api';
-import { IUseClinicParams, useListClinics } from '@/services/clinic';
-import { BundleEntry } from 'fhir/r4';
+import { IUseClinicParams } from '@/services/clinic';
+import { getTodayHours, useClinicLocations } from '@/services/clinic-locations';
+import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
+import { type Location } from 'fhir/r4';
 import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import ClinicFilter from './clinic-filter';
 
-/** Card displaying a clinic with image and selection button. */
-function ClinicCard({
-  clinic,
-  onSelect
-}: Readonly<{
-  clinic: BundleEntry;
-  onSelect: (id: string) => void;
-}>) {
+// ---------------------------------------------------------------------------
+// LocationCard
+// ---------------------------------------------------------------------------
+
+function LocationCard({
+  location,
+  onClick
+}: Readonly<{ location: Location; onClick: () => void }>) {
+  const name = location.name ?? 'Clinic';
+  const city = location.address?.city ?? '';
+  const state = location.address?.state ?? '';
+  const cityProvince = [city, state].filter(Boolean).join(', ') || '-';
+  const hours = getTodayHours(location);
+
+  const gradientDataUrl = useMemo(
+    () =>
+      generateAvatarSvgDataUrl(
+        location.id ?? name,
+        name.slice(0, 2).toUpperCase()
+      ),
+    [location.id, name]
+  );
+
   return (
-    <div className='card flex flex-col items-center'>
+    <div
+      className='group relative aspect-square w-full cursor-pointer overflow-hidden rounded-2xl shadow-lg'
+      role='button'
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') onClick();
+      }}
+      data-testid={`location-card-${location.id}`}
+    >
+      {/* Image or gradient fallback */}
       <Image
-        className='h-[100px] w-full rounded-lg object-cover'
-        src='/images/clinic.jpg'
-        alt='clinic'
-        width={158}
-        height={100}
+        src={gradientDataUrl}
+        alt={name}
+        fill
+        className='object-cover'
+        sizes='(max-width: 640px) 100vw, 400px'
+        unoptimized
       />
-      <div className='text-primary mt-2 text-center font-bold'>
-        {clinic.resource?.resourceType === 'Organization' &&
-          clinic.resource?.name}
+
+      {/* Frosted overlay at bottom */}
+      <div className='pointer-events-none absolute right-0 bottom-0 left-0 bg-black/50 backdrop-blur-md'>
+        <div className='px-3 py-2'>
+          <div className='truncate text-sm font-bold text-white'>{name}</div>
+          <div className='truncate text-xs text-white/80'>{cityProvince}</div>
+          <div className='truncate text-xs text-white/80'>{hours}</div>
+        </div>
       </div>
-      <Button
-        onClick={() => onSelect(clinic.resource?.id ?? '')}
-        className='bg-secondary mt-2 w-full rounded-[32px] py-2 font-normal text-white'
-      >
-        View Practitioners
-      </Button>
     </div>
   );
 }
 
-/** Renders a grid of clinic cards. */
-function clinicGrid(clinics: BundleEntry[], onSelect: (id: string) => void) {
+// ---------------------------------------------------------------------------
+// LocationGrid
+// ---------------------------------------------------------------------------
+
+function LocationGrid({
+  locations,
+  onSelect
+}: Readonly<{ locations: Location[]; onSelect: (id: string) => void }>) {
   return (
     <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-      {clinics.map((clinic: BundleEntry) => (
-        <ClinicCard
-          key={clinic.resource?.id ?? ''}
-          clinic={clinic}
-          onSelect={onSelect}
+      {locations.map(loc => (
+        <LocationCard
+          key={loc.id}
+          location={loc}
+          onClick={() => onSelect(loc.id ?? '')}
         />
       ))}
     </div>
   );
 }
 
+// ---------------------------------------------------------------------------
+// ClinicList
+// ---------------------------------------------------------------------------
+
 /**
+ * Role-based clinic listing page.
  *
+ * Patient/Guest: all locations (GET /fhir/Location)
+ * Admin:         locations for managed org (GET /fhir/Location?organization=<orgId>)
+ * Practitioner:  assigned locations (via PractitionerRole _include)
  */
 export default function ClinicList() {
   const router = useRouter();
+  const { state: authState } = useAuth();
+  const role = authState.userInfo.role_name ?? 'Patient';
+  const fhirId = authState.userInfo.fhirId;
+  const orgId = authState.userInfo.organizationId;
+
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const { data: clinics, isLoading: isListClinicsLoading } = useListClinics({
-    cityFilter: clinicFilter.city,
-    nameFilter: '' // Always use empty nameFilter for base clinic list
+  const { data: locations, isLoading } = useClinicLocations({
+    role,
+    fhirId,
+    orgId: orgId || undefined,
+    city: clinicFilter.city
   });
 
-  // Memoize server search function to prevent infinite loops
-  const serverSearchFunction = useCallback(async (term: string) => {
-    try {
-      const API = await getAPI();
-      const response = await API.get(
-        `/fhir/Organization?_elements=name,address&name:contains=${term}`
-      );
-      return response.data.entry || [];
-    } catch (error) {
-      console.error('Clinic search failed:', error);
-      // Return empty array to maintain consistent behavior
-      return [];
+  // Client-side search/filter on locations
+  const serverSearchFunction = useCallback(
+    () => Promise.resolve([] as Location[]),
+    []
+  );
+
+  const searchableLocations = useMemo(() => locations ?? [], [locations]);
+
+  const { filteredData: filteredLocations, isServerSearching } =
+    useSearchWithFallback({
+      data: searchableLocations,
+      searchFields: [{ path: 'name' }, { path: 'address.city' }],
+      serverSearchFunction,
+      searchTerm,
+      debounceDelay: 1000
+    });
+
+  /** Handle card click — navigate for patient/practitioner, notify parent for admin. */
+  const handleSelectLocation = (locationId: string) => {
+    const isAdmin = role === 'Clinic Admin';
+
+    if (isAdmin) {
+      // Admin opens drawer — handled by parent clinic-detail
+      router.push(`/clinic?id=${locationId}`);
+      return;
     }
-  }, []);
 
-  // Always use client-side search for filtering existing data
-  const {
-    filteredData: filteredClinics,
-    isServerSearching,
-    showServerResults,
-    serverData: serverClinics,
-    serverSearchCompleted
-  } = useSearchWithFallback({
-    data: clinics,
-    searchFields: [{ path: 'resource.name' }],
-    serverSearchFunction,
-    searchTerm, // Always use the search term for client-side filtering
-    debounceDelay: 1000
-  });
-
-  /** Save clinic selection in IndexedDB and navigate to detail. */
-  const handleSelectedClinic = (clinicId: string) => {
-    dbSet(STORES.uiPreferences, {
-      ownerId: '',
-      prefKey: 'selected_clinic',
-      value: clinicId
-    }).catch((err: unknown) => console.warn('[IndexedDB]', err));
-    router.push(`/clinic?id=${clinicId}`);
+    router.push(`/clinic?id=${locationId}`);
   };
 
-  /** Renders clinic results, loading, or empty states. */
-  const renderClinicResults = () => {
-    if (isListClinicsLoading) return <CardLoader />;
+  /** Renders filter, search, and location grid. */
+  const renderContent = () => {
+    if (isLoading) return <CardLoader />;
 
-    if (searchTerm) {
-      if (filteredClinics.length > 0) {
-        return clinicGrid(
-          filteredClinics as BundleEntry[],
-          handleSelectedClinic
-        );
-      }
-      if (showServerResults && serverClinics && serverClinics.length > 0) {
-        return clinicGrid(serverClinics as BundleEntry[], handleSelectedClinic);
-      }
-      if (isServerSearching) {
-        return (
-          <div className='flex flex-col items-center justify-center py-16'>
-            <div className='flex items-center gap-2'>
-              <LoadingSpinnerIcon />
-              <span className='text-muted'>
-                No results found, requesting more data to the server
-              </span>
-            </div>
-          </div>
-        );
-      }
-      if (serverSearchCompleted) {
-        return (
-          <EmptyState
-            className='py-16'
-            title='No results found'
-            subtitle='Would you try another search term?'
-          />
-        );
+    const list = searchTerm ? filteredLocations : searchableLocations;
+
+    if (list.length === 0) {
+      if (searchTerm && isServerSearching) {
+        return null; // Let useSearchWithFallback handle the UI
       }
       return (
         <EmptyState
           className='py-16'
           title='No clinics found'
-          subtitle='Try a different search term.'
+          subtitle='Try a different location or search term.'
         />
       );
     }
 
-    if (clinics?.length > 0) {
-      return clinicGrid(clinics, handleSelectedClinic);
-    }
-    return <EmptyState className='py-16' />;
+    return <LocationGrid locations={list} onSelect={handleSelectLocation} />;
   };
 
   return (
@@ -201,7 +207,7 @@ export default function ClinicList() {
             )}
           </div>
 
-          {renderClinicResults()}
+          {renderContent()}
         </div>
       </ContentWraper>
     </>
