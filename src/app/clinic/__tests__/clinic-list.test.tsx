@@ -107,6 +107,13 @@ beforeEach(() => {
   } as unknown as ReturnType<typeof useRouter>);
   globalThis.window.scrollTo = vi.fn();
 
+  // Default: locations exist but empty
+  vi.mocked(useClinicLocations).mockReturnValue({
+    data: [] as Location[],
+    isLoading: false,
+    isSuccess: true
+  } as never);
+
   // Default: no search term, show all data
   vi.mocked(useSearchWithFallback).mockReturnValue({
     filteredData: [],
@@ -339,6 +346,28 @@ describe('ClinicList — cards', () => {
     fireEvent.click(screen.getByTestId('location-card-loc-1'));
 
     expect(mockPush).toHaveBeenCalledWith('/clinic?id=loc-1');
+  });
+
+  it('does not query locations when auth is loading', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: false,
+        userInfo: {
+          role_name: 'Guest',
+          fhirId: undefined,
+          organizationId: undefined
+        }
+      },
+      isLoading: true
+    } as never);
+
+    render(<ClinicList />, { wrapper: createWrapper() });
+
+    // When auth is loading, the hook should receive empty role to disable query
+    const lastCall = vi.mocked(useClinicLocations).mock.calls.at(-1)?.[0];
+    expect(lastCall?.role).toBe('');
+    expect(lastCall?.fhirId).toBeUndefined();
+    expect(lastCall?.orgId).toBeUndefined();
   });
 
   it('uses 4:3 aspect ratio on card', async () => {

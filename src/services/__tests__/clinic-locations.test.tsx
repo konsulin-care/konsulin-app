@@ -296,21 +296,23 @@ describe('useClinicLocations', () => {
     expect(result.current.data).toEqual([]);
   });
 
-  it('handles unknown role gracefully', async () => {
-    const bundle: Bundle = {
-      resourceType: 'Bundle',
-      type: 'searchset',
-      entry: []
-    };
-    mockAxiosInstance.get.mockResolvedValueOnce({ data: bundle });
-
+  it('does not fetch for unknown/empty role', () => {
     const { result } = renderHook(
       () => useClinicLocations({ role: 'UnknownRole' }),
       { wrapper: createWrapper() }
     );
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/fhir/Location');
+    expect(result.current.isFetching).toBe(false);
+    expect(mockAxiosInstance.get).not.toHaveBeenCalled();
+  });
+
+  it('does not fetch for empty role string', () => {
+    const { result } = renderHook(() => useClinicLocations({ role: '' }), {
+      wrapper: createWrapper()
+    });
+
+    expect(result.current.isFetching).toBe(false);
+    expect(mockAxiosInstance.get).not.toHaveBeenCalled();
   });
 });
 

@@ -82,14 +82,7 @@ export function useClinicLocations({
     return base;
   }, [role, fhirId, orgId, city]);
 
-  const isUnknownRole =
-    role !== ROLE_PATIENT &&
-    role !== ROLE_GUEST &&
-    role !== ROLE_ADMIN &&
-    role !== ROLE_PRACTITIONER;
-
   const enabled =
-    isUnknownRole ||
     role === ROLE_PATIENT ||
     role === ROLE_GUEST ||
     (role === ROLE_ADMIN && Boolean(orgId)) ||

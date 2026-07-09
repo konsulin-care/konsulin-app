@@ -104,10 +104,10 @@ function LocationGrid({
  */
 export default function ClinicList() {
   const router = useRouter();
-  const { state: authState } = useAuth();
-  const role = authState.userInfo.role_name ?? 'Patient';
-  const fhirId = authState.userInfo.fhirId;
-  const orgId = authState.userInfo.organizationId;
+  const { state: authState, isLoading: authLoading } = useAuth();
+  const role = authLoading ? '' : (authState.userInfo.role_name ?? 'Patient');
+  const fhirId = authLoading ? undefined : authState.userInfo.fhirId;
+  const orgId = authLoading ? undefined : authState.userInfo.organizationId;
 
   const [clinicFilter, setClinicFilter] = useState<IUseClinicParams>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
