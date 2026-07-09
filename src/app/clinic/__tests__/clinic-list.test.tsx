@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { useAuth } from '@/context/auth/authContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -36,6 +37,20 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
+}));
+
+vi.mock('next/image', () => ({
+  default: ({ src, alt, ...props }: Record<string, unknown>) => {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src as string}
+        alt={alt as string}
+        data-testid='next-image'
+        {...props}
+      />
+    );
+  }
 }));
 
 vi.mock('@/services/clinic-locations', async importOriginal => {
@@ -324,6 +339,126 @@ describe('ClinicList — cards', () => {
     fireEvent.click(screen.getByTestId('location-card-loc-1'));
 
     expect(mockPush).toHaveBeenCalledWith('/clinic?id=loc-1');
+  });
+
+  it('uses 4:3 aspect ratio on card', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: true,
+        userInfo: {
+          role_name: 'Patient',
+          fhirId: undefined,
+          organizationId: undefined
+        }
+      },
+      isLoading: false
+    } as never);
+
+    const locations = [createMockLocation('loc-1', 'Main Clinic', 'Jakarta')];
+    vi.mocked(useClinicLocations).mockReturnValue({
+      data: locations,
+      isLoading: false,
+      isSuccess: true
+    } as never);
+
+    render(<ClinicList />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      const card = screen.getByTestId('location-card-loc-1');
+      expect(card.className).toContain('aspect-[');
+    });
+  });
+
+  it('uses default image instead of gradient', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: true,
+        userInfo: {
+          role_name: 'Patient',
+          fhirId: undefined,
+          organizationId: undefined
+        }
+      },
+      isLoading: false
+    } as never);
+
+    const locations = [createMockLocation('loc-1', 'Main Clinic', 'Jakarta')];
+    vi.mocked(useClinicLocations).mockReturnValue({
+      data: locations,
+      isLoading: false,
+      isSuccess: true
+    } as never);
+
+    render(<ClinicList />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      const img = screen.getByRole('img');
+      expect(img.getAttribute('src')).toBe('/images/clinic.jpg');
+    });
+  });
+
+  it('shows MapPin icon alongside city', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: true,
+        userInfo: {
+          role_name: 'Patient',
+          fhirId: undefined,
+          organizationId: undefined
+        }
+      },
+      isLoading: false
+    } as never);
+
+    vi.useFakeTimers({ now: new Date(2026, 0, 5), toFake: ['Date'] });
+
+    const locations = [createMockLocation('loc-1', 'Main Clinic', 'Jakarta')];
+    vi.mocked(useClinicLocations).mockReturnValue({
+      data: locations,
+      isLoading: false,
+      isSuccess: true
+    } as never);
+
+    const { container } = render(<ClinicList />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      const mapPin = container.querySelector('.lucide-map-pin');
+      expect(mapPin).not.toBeNull();
+    });
+
+    vi.useRealTimers();
+  });
+
+  it('shows Clock icon alongside hours', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: true,
+        userInfo: {
+          role_name: 'Patient',
+          fhirId: undefined,
+          organizationId: undefined
+        }
+      },
+      isLoading: false
+    } as never);
+
+    vi.useFakeTimers({ now: new Date(2026, 0, 5), toFake: ['Date'] });
+
+    const locations = [createMockLocation('loc-1', 'Main Clinic', 'Jakarta')];
+    vi.mocked(useClinicLocations).mockReturnValue({
+      data: locations,
+      isLoading: false,
+      isSuccess: true
+    } as never);
+
+    const { container } = render(<ClinicList />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      const clock = container.querySelector('.lucide-clock');
+      expect(clock).not.toBeNull();
+    });
+
+    vi.useRealTimers();
   });
 
   it('navigates to detail for Clinic Admin role', async () => {

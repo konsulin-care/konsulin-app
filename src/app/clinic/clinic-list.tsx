@@ -10,9 +10,9 @@ import { useAuth } from '@/context/auth/authContext';
 import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
 import { IUseClinicParams } from '@/services/clinic';
 import { getTodayHours, useClinicLocations } from '@/services/clinic-locations';
-import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
+
 import { type Location } from 'fhir/r4';
-import { SearchIcon } from 'lucide-react';
+import { Clock, MapPin, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
@@ -32,18 +32,9 @@ function LocationCard({
   const cityProvince = [city, state].filter(Boolean).join(', ') || '-';
   const hours = getTodayHours(location);
 
-  const gradientDataUrl = useMemo(
-    () =>
-      generateAvatarSvgDataUrl(
-        location.id ?? name,
-        name.slice(0, 2).toUpperCase()
-      ),
-    [location.id, name]
-  );
-
   return (
     <div
-      className='group relative aspect-square w-full cursor-pointer overflow-hidden rounded-2xl shadow-lg'
+      className='group relative aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-2xl shadow-lg'
       role='button'
       tabIndex={0}
       onClick={onClick}
@@ -52,22 +43,27 @@ function LocationCard({
       }}
       data-testid={`location-card-${location.id}`}
     >
-      {/* Image or gradient fallback */}
+      {/* Default image */}
       <Image
-        src={gradientDataUrl}
+        src='/images/clinic.jpg'
         alt={name}
         fill
         className='object-cover'
         sizes='(max-width: 640px) 100vw, 400px'
-        unoptimized
       />
 
       {/* Frosted overlay at bottom */}
       <div className='pointer-events-none absolute right-0 bottom-0 left-0 bg-black/50 backdrop-blur-md'>
         <div className='px-3 py-2'>
           <div className='truncate text-sm font-bold text-white'>{name}</div>
-          <div className='truncate text-xs text-white/80'>{cityProvince}</div>
-          <div className='truncate text-xs text-white/80'>{hours}</div>
+          <div className='flex items-center gap-1 truncate text-xs text-white/80'>
+            <MapPin size={12} />
+            <span className='truncate'>{cityProvince}</span>
+          </div>
+          <div className='flex items-center gap-1 truncate text-xs text-white/80'>
+            <Clock size={12} />
+            <span className='truncate'>{hours}</span>
+          </div>
         </div>
       </div>
     </div>
