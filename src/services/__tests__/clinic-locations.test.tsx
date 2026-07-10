@@ -610,7 +610,7 @@ describe('useClinicLocationPractitioners', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-      '/fhir/PractitionerRole?location=loc-1&_include=PractitionerRole:practitioner&_include=PractitionerRole:service&_include=PractitionerRole:organization&_include=PractitionerRole:location'
+      '/fhir/PractitionerRole?location=loc-1&status=active&_include=PractitionerRole:practitioner&_include=PractitionerRole:service&_include=PractitionerRole:organization&_include=PractitionerRole:location'
     );
   });
 
@@ -624,9 +624,13 @@ describe('useClinicLocationPractitioners', () => {
   });
 
   it('returns empty array when bundle has no entries', async () => {
-    mockAxiosInstance.get.mockResolvedValueOnce({
-      data: { resourceType: 'Bundle', type: 'searchset', entry: [] }
-    });
+    mockAxiosInstance.get
+      .mockResolvedValueOnce({
+        data: { resourceType: 'Bundle', type: 'searchset', entry: [] }
+      })
+      .mockResolvedValueOnce({
+        data: { resourceType: 'Bundle', type: 'searchset', entry: [] }
+      });
 
     const { result } = renderHook(
       () => useClinicLocationPractitioners('loc-1'),
