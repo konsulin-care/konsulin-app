@@ -33,7 +33,13 @@ export function getNextAvailableDate(
 
   // Early check: if all dates in availableDays are in the past, return the input date
   const now = new Date();
-  const allInPast = availableDays.every(d => d < now);
+  const allInPast = availableDays.every(d => {
+    if (d.getFullYear() < now.getFullYear()) return true;
+    if (d.getFullYear() > now.getFullYear()) return false;
+    if (d.getMonth() < now.getMonth()) return true;
+    if (d.getMonth() > now.getMonth()) return false;
+    return d.getDate() < now.getDate();
+  });
   if (allInPast) {
     return date;
   }
