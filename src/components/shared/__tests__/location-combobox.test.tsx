@@ -100,6 +100,29 @@ describe('LocationCombobox', () => {
     });
   });
 
+  it('does not have overflow-hidden on PopoverContent', async () => {
+    render(
+      <LocationCombobox
+        options={[
+          { code: '3173', name: 'Jakarta' },
+          { code: '3201', name: 'Bogor' }
+        ]}
+        value=''
+        onSelect={vi.fn()}
+        placeholder='Select city'
+      />
+    );
+
+    // Open the popover
+    const trigger = screen.getByRole('combobox');
+    fireEvent.click(trigger);
+
+    await waitFor(() => {
+      const popoverContent = screen.getByRole('dialog');
+      expect(popoverContent.className).not.toContain('overflow-hidden');
+    });
+  });
+
   it('shows selected option name on trigger button', () => {
     render(
       <LocationCombobox
