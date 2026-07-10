@@ -610,7 +610,7 @@ describe('useClinicLocationPractitioners', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-      '/fhir/PractitionerRole?location=loc-1&_include=PractitionerRole:practitioner&_include=PractitionerRole:service&_include=PractitionerRole:organization'
+      '/fhir/PractitionerRole?location=loc-1&_include=PractitionerRole:practitioner&_include=PractitionerRole:service&_include=PractitionerRole:organization&_include=PractitionerRole:location'
     );
   });
 

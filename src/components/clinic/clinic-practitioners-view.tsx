@@ -1,185 +1,279 @@
 'use client';
 
-import Avatar from '@/components/general/avatar';
 import CardLoader from '@/components/general/card-loader';
 import EmptyState from '@/components/general/empty-state';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { PractitionerCard } from '@/components/practitioner/practitioner-card';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
-import { STORES, dbSet } from '@/lib/indexeddb';
-import { IUseClinicParams } from '@/services/clinic';
-import { IPractitioner } from '@/types/organization';
-import {
-  generateAvatarPlaceholder,
-  mergeNames,
-  parseTime
-} from '@/utils/helper';
 import {
   type BundleEntry,
-  type CodeableConcept,
-  type ContactPoint
+  type HealthcareService,
+  type Location,
+  type PractitionerRole
 } from 'fhir/r4';
-import { HeartPulse, SearchIcon } from 'lucide-react';
+import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
-/** Generate weekday short names between two dates. */
-const generateFilterDays = (start: Date, end: Date): string[] => {
-  const days: string[] = [];
-  const cur = new Date(start);
-  while (cur <= new Date(end)) {
-    days.push(
-      cur.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase()
-    );
-    cur.setDate(cur.getDate() + 1);
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+const DAY_LABELS: Record<string, string> = {
+  mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri',
+  sat: 'Sat', sun: 'Sun'
+};
+
+/** Build a full address string from a FHIR Location address. */
+function formatAddress(address: Location['address']): string {
+  if (!address) return '';
+  const parts: string[] = [];
+  if (address.line) parts.push(...address.line);
+  if (address.city) parts.push(address.city);
+  if (address.state) {
+    parts.push(address.postalCode
+      ? `${address.state} ${address.postalCode}`
+      : address.state);
+  } else if (address.postalCode) {
+    parts.push(address.postalCode);
   }
-  return days;
-};
+  return parts.join(', ');
+}
 
-/** Check if a slot overlaps with the given filter range. */
-const isSlotAvailable = ({
-  slot,
-  filterDays,
-  filterStartTime,
-  filterEndTime,
-  practitionerStartTime,
-  practitionerEndTime
-}: {
-  slot: { daysOfWeek?: string[] };
-  filterDays: string[];
-  filterStartTime: Date;
-  filterEndTime: Date;
-  practitionerStartTime: Date;
-  practitionerEndTime: Date;
-}) => {
-  const slotDays = (slot.daysOfWeek ?? []).map(d => d.toLowerCase());
-  if (!slotDays.some(d => filterDays.includes(d))) return false;
-  return (
-    practitionerStartTime <= filterEndTime &&
-    practitionerEndTime >= filterStartTime
-  );
-};
+/** Parse Location.hoursOfOperation into sorted day-hour strings. */
+function buildHoursList(hours: Location['hoursOfOperation']): string[] {
+  if (!hours || hours.length === 0) return [];
 
-/** Practitioner card sub-component. */
-function PractitionerCard({
-  p,
-  clinicName
-}: {
-  p: IPractitioner;
-  clinicName: string;
-}) {
-  const displayName = mergeNames(p.name ?? [], p.qualification);
-  const email = p.telecom?.find((t: ContactPoint) => t.system === 'email');
-  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
-    id: p.id,
-    name: displayName,
-    email: email?.value
-  });
-  const photoUrl = p.photo?.[0]?.url;
+  const hoursMap = new Map<string, string>();
 
-  const handleSelect = () => {
-    dbSet(STORES.uiPreferences, {
-      ownerId: '',
-      prefKey: 'selected_practitioner',
-      value: {
-        roleId: p.practitionerRole.id,
-        name: p.name,
-        photo: p.photo,
-        qualification: p.qualification,
-        email: email?.value
+  for (const entry of hours) {
+    if (!entry.daysOfWeek?.length || !entry.openingTime || !entry.closingTime)
+      continue;
+    const timeStr = `${entry.openingTime.slice(0, 5)}-${entry.closingTime.slice(0, 5)}`;
+    for (const day of entry.daysOfWeek) {
+      const label = DAY_LABELS[day.toLowerCase()];
+      if (label) {
+        hoursMap.set(day.toLowerCase(), `${label}: ${timeStr}`);
       }
-    }).catch((err: unknown) => console.warn('[IndexedDB]', err));
-  };
+    }
+  }
+
+  return DAY_ORDER
+    .filter(d => hoursMap.has(d))
+    .map(d => hoursMap.get(d) ?? '');
+}
+
+// ---------------------------------------------------------------------------
+// PractitionerCard mapping
+// ---------------------------------------------------------------------------
+
+interface CardData {
+  id: string;
+  practitionerName: string;
+  photoUrl: string | undefined;
+  specialties: string[];
+  healthcareServiceNames: string[];
+  practitionerRoleId: string;
+}
+
+
+
+/** Extract practitioner display name from a FHIR resource. */
+function getPractitionerName(
+  resource: BundleEntry['resource']
+): string {
+  const name = (resource as { name?: Array<{ given?: string[]; family?: string }> } | undefined)?.name?.[0];
+  return [name?.given?.join(' '), name?.family].filter(Boolean).join(' ') || '-';
+}
+
+/** Extract photo URL from a FHIR resource. */
+function getPhotoUrl(resource: BundleEntry['resource']): string | undefined {
+  return (resource as { photo?: Array<{ url?: string }> } | undefined)?.photo?.[0]?.url;
+}
+
+/** Extract healthcare service names for a practitioner role. */
+function getServiceNames(
+  role: BundleEntry<PractitionerRole>,
+  hsMap: Map<string, string>
+): string[] {
+  const refs = role.resource.healthcareService;
+  if (!refs) return [];
+  return refs
+    .map(ref => {
+      const id = ref.reference?.split('/')[1];
+      return id ? (hsMap.get(id) ?? '') : '';
+    })
+    .filter(Boolean);
+}
+
+/** Map bundle entries to PractitionerCard-compatible data. */
+function mapToCardData(entries: BundleEntry[]): CardData[] {
+  const practitionerRoles = entries.filter(
+    (e): e is BundleEntry<PractitionerRole> =>
+      e.resource?.resourceType === 'PractitionerRole'
+  );
+  const practitioners = entries.filter(
+    e => e.resource?.resourceType === 'Practitioner'
+  );
+  const healthcareServices = entries.filter(
+    (e): e is BundleEntry<HealthcareService> =>
+      e.resource?.resourceType === 'HealthcareService'
+  );
+
+  const hsMap = new Map(
+    healthcareServices
+      .filter(hs => hs.resource?.id)
+      .map(hs => [hs.resource.id, hs.resource.name ?? ''])
+  );
+
+  return practitioners
+    .map(item => {
+      const practitionerId = item.resource?.id;
+      if (!practitionerId) return null;
+
+      const role = practitionerRoles.find(
+        r => r.resource?.practitioner?.reference?.split('/')[1] === practitionerId
+      );
+      if (!role?.resource?.id) return null;
+
+      return {
+        id: practitionerId,
+        practitionerName: getPractitionerName(item.resource),
+        photoUrl: getPhotoUrl(item.resource),
+        specialties: (role.resource.specialty?.map(s => s.text) ?? []).filter(Boolean),
+        healthcareServiceNames: getServiceNames(role, hsMap),
+        practitionerRoleId: role.resource.id
+      };
+    })
+    .filter((entry): entry is CardData => entry !== null);
+}
+
+// ---------------------------------------------------------------------------
+// ClinicHero sub-component
+// ---------------------------------------------------------------------------
+
+/**
+ * Hero banner with clinic photo, full frost overlay, and interaction handlers.
+ *
+ * Left click copies address, right-click/long-press shares URL.
+ */
+function ClinicHero({
+  clinicName,
+  fullAddress,
+  hoursList
+}: {
+  clinicName: string;
+  fullAddress: string;
+  hoursList: string[];
+}) {
+  const isLongPress = useRef(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const copyAddress = useCallback(() => {
+    if (fullAddress) {
+      navigator.clipboard.writeText(fullAddress).catch((e: unknown) => {
+        console.warn('Clipboard write failed', e);
+      });
+    }
+  }, [fullAddress]);
+
+  const shareUrl = useCallback(() => {
+    const url = window.location.href;
+    if (navigator.share) {
+      navigator.share({ url }).catch((e: unknown) => {
+        console.warn('Share failed', e);
+      });
+    } else {
+      navigator.clipboard.writeText(url).catch((e: unknown) => {
+        console.warn('Clipboard write failed', e);
+      });
+    }
+  }, []);
+
+  const handleClick = useCallback(() => {
+    if (isLongPress.current) {
+      isLongPress.current = false;
+      return;
+    }
+    copyAddress();
+  }, [copyAddress]);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    shareUrl();
+  }, [shareUrl]);
+
+  const handleTouchStart = useCallback(() => {
+    isLongPress.current = false;
+    longPressTimer.current = setTimeout(() => {
+      isLongPress.current = true;
+      shareUrl();
+    }, 500);
+  }, [shareUrl]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = undefined;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = undefined;
+    }
+  }, []);
 
   return (
-    <div key={p.id} className='card flex flex-col items-center'>
-      <div className='relative flex justify-center'>
-        <Avatar
-          seed={seed}
-          initials={initials ?? ''}
-          backgroundColor={backgroundColor ?? ''}
-          photoUrl={photoUrl}
-          className='text-2xl'
-        />
-        <Badge className='absolute bottom-0 flex h-[24px] min-w-[100px] justify-center gap-1 bg-[#08979C] font-normal text-white'>
-          <HeartPulse size={16} color='#08979C' fill='white' />
-          <span className='whitespace-nowrap'>{clinicName}</span>
-        </Badge>
+    <div
+      className='relative w-full h-[200px] overflow-hidden rounded-2xl cursor-pointer'
+      onClick={handleClick}
+      onContextMenu={handleContextMenu}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+    >
+      <Image
+        src='/images/clinic.jpg'
+        alt={clinicName}
+        fill
+        className='object-cover'
+        sizes='(max-width: 640px) 100vw, 400px'
+      />
+      <div className='absolute inset-0 bg-black/50 backdrop-blur-md flex p-4'>
+        <div className='flex h-full w-full items-center gap-4'>
+          <div className='flex w-[60%] flex-col justify-center'>
+            <div className='text-lg font-bold text-white truncate'>
+              {clinicName}
+            </div>
+            <div className='mt-1 text-sm text-white/80 truncate'>
+              {fullAddress}
+            </div>
+          </div>
+          <div className='flex w-[40%] flex-col justify-center gap-0.5'>
+            {hoursList.map(h => (
+              <div key={h} className='text-xs text-white/80 truncate'>
+                {h}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-      <div className='text-primary mt-2 text-center font-bold'>
-        {displayName}
-      </div>
-      <div className='mt-2 flex flex-wrap justify-center gap-1'>
-        {p.practitionerRole.specialty?.map((s: CodeableConcept) => (
-          <Badge
-            key={s.text}
-            className='bg-[#E1E1E1] px-2 py-[2px] font-normal'
-          >
-            {s.text}
-          </Badge>
-        ))}
-      </div>
-      <Link
-        href={`/practitioner?id=${p.practitionerRole.id}`}
-        className='mt-auto w-full'
-      >
-        <Button
-          className='btn-soft-gray mt-2 w-full rounded-[32px] py-2 font-normal'
-          onClick={handleSelect}
-        >
-          <b>View Practice Information</b>
-        </Button>
-      </Link>
     </div>
   );
 }
 
-/** Filter practitioners by keyword and date/time filters. */
-function filterPractitioners(
-  data: IPractitioner[],
-  keyword: string,
-  filter: IUseClinicParams
-): IPractitioner[] {
-  const noFilter =
-    !keyword && Object.values(filter).every(v => v === undefined);
-  if (noFilter) return data;
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 
-  const { start_date, end_date, start_time, end_time } = filter;
-  const hasDate = start_date && end_date;
-  const hasTime = start_time || end_time;
-  const filterDays = hasDate ? generateFilterDays(start_date, end_date) : [];
-  const fStart = parseTime(start_time || '00:00', 'HH:mm');
-  const fEnd = parseTime(end_time || '23:59', 'HH:mm');
-  const lowerKW = keyword.trim().toLowerCase();
-
-  return data.filter(p => {
-    const n = mergeNames(p.name ?? [], p.qualification);
-    if (!n || (lowerKW && !n.trim().toLowerCase().includes(lowerKW)))
-      return false;
-    const at = p.practitionerRole.availableTime;
-    if (!at?.length) return false;
-    if (!hasDate && !hasTime) return true;
-    return at.some(slot =>
-      isSlotAvailable({
-        slot,
-        filterDays,
-        filterStartTime: fStart,
-        filterEndTime: fEnd,
-        practitionerStartTime: parseTime(
-          slot.availableStartTime ?? '00:00:00',
-          'HH:mm:ss'
-        ),
-        practitionerEndTime: parseTime(
-          slot.availableEndTime ?? '23:59:00',
-          'HH:mm:ss'
-        )
-      })
-    );
-  });
-}
-
-/** Non-admin clinic detail view: practitioners list with search filter. */
+/**
+ * Non-admin clinic detail view.
+ *
+ * Shows a hero banner with clinic photo, full frost overlay (name, address,
+ * per-day hours), and a practitioner listing below using PractitionerCard.
+ */
 export default function ClinicPractitionersView({
   entries,
   isFetching,
@@ -191,71 +285,45 @@ export default function ClinicPractitionersView({
 }) {
   const [keyword, setKeyword] = useState('');
 
-  const orgEntry = entries?.find(
-    e => e.resource?.resourceType === 'Organization'
-  );
-  const clinicName =
-    ((orgEntry?.resource as unknown as Record<string, unknown>)
-      ?.name as string) ?? '-';
+  const location = useMemo((): Location | undefined => {
+    if (!entries) return undefined;
+    const entry = entries.find(e => e.resource?.resourceType === 'Location');
+    return entry?.resource as Location | undefined;
+  }, [entries]);
 
-  const practitionerRoles =
-    entries?.filter(e => e.resource?.resourceType === 'PractitionerRole') ?? [];
+  const orgEntry = entries?.find(e => e.resource?.resourceType === 'Organization');
+  const orgName = (orgEntry?.resource as unknown as { name?: string })?.name;
 
-  const practitionersData: IPractitioner[] = (entries ?? [])
-    .filter(e => e.resource?.resourceType === 'Practitioner')
-    .map((item: BundleEntry) => {
-      const pid = item.resource?.id;
-      const role = practitionerRoles.find(
-        r =>
-          (
-            r.resource as unknown as { practitioner?: { reference?: string } }
-          )?.practitioner?.reference?.split('/')[1] === pid
-      );
-      return {
-        ...item.resource,
-        practitionerRole: role?.resource ?? {}
-      } as IPractitioner;
-    });
+  const clinicName = location?.name ?? orgName ?? '-';
+  const fullAddress = formatAddress(location?.address);
 
-  /** Filter practitioners by name and availability. */
-  const filteredPractitioners = useMemo(
-    () =>
-      filterPractitioners(practitionersData, keyword, {} as IUseClinicParams),
-    [practitionersData, keyword]
+  const hoursList = useMemo(
+    () => buildHoursList(location?.hoursOfOperation),
+    [location?.hoursOfOperation]
   );
 
-  if (isLoading || isFetching || !filteredPractitioners) return <CardLoader />;
+  const cards = useMemo(() => {
+    if (!entries) return [];
+    return mapToCardData(entries);
+  }, [entries]);
+
+  const filteredCards = useMemo(() => {
+    if (!keyword.trim()) return cards;
+    const lower = keyword.toLowerCase();
+    return cards.filter(c => c.practitionerName.toLowerCase().includes(lower));
+  }, [cards, keyword]);
+
+  if (isLoading || isFetching) return <CardLoader />;
+
+  const showEmptyState = filteredCards.length === 0;
 
   return (
     <div className='mt-[-24px] rounded-[16px] bg-white p-4'>
-      <Image
-        className='h-[124px] w-full rounded-lg object-cover'
-        src='/images/clinic.jpg'
-        width={396}
-        height={124}
-        alt='detail-clinic'
+      <ClinicHero
+        clinicName={clinicName}
+        fullAddress={fullAddress}
+        hoursList={hoursList}
       />
-      <h3 className='mt-2 text-center text-[20px] font-bold'>{clinicName}</h3>
-
-      <div className='card mt-2 border-0 bg-[#F9F9F9] p-4 text-[12px]'>
-        <div className='mb-4 flex items-center gap-2 text-[14px]'>
-          <Image
-            src='/icons/hospital.svg'
-            alt='clinic'
-            width={22}
-            height={22}
-          />
-          <div className='font-bold'>Clinic Information</div>
-        </div>
-        <div className='flex justify-between'>
-          <span>Affiliation</span>
-          <span className='font-bold'>Konsulin</span>
-        </div>
-        <div className='mt-2 flex flex-col'>
-          <span>Address</span>
-          <span className='font-bold'>Jakarta</span>
-        </div>
-      </div>
 
       <div className='mt-4 flex gap-4'>
         <InputWithIcon
@@ -267,16 +335,16 @@ export default function ClinicPractitionersView({
         />
       </div>
 
-      {filteredPractitioners.length === 0 ? (
+      {showEmptyState ? (
         <EmptyState
           className='py-16'
           title='No Practitioners Found'
           subtitle='Try Another Clinic.'
         />
       ) : (
-        <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-          {practitionersData.map((p: IPractitioner) => (
-            <PractitionerCard key={p.id} p={p} clinicName={clinicName} />
+        <div className='mt-4 flex flex-col gap-4'>
+          {filteredCards.map(card => (
+            <PractitionerCard key={card.id} {...card} />
           ))}
         </div>
       )}

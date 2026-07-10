@@ -166,6 +166,7 @@ export function useClinicLocations({
  *   &_include=PractitionerRole:practitioner
  *   &_include=PractitionerRole:service
  *   &_include=PractitionerRole:organization
+ *   &_include=PractitionerRole:location
  */
 export function useClinicLocationPractitioners(locationId: string) {
   return useQuery({
@@ -176,7 +177,8 @@ export function useClinicLocationPractitioners(locationId: string) {
         `/fhir/PractitionerRole?location=${locationId}` +
           '&_include=PractitionerRole:practitioner' +
           '&_include=PractitionerRole:service' +
-          '&_include=PractitionerRole:organization'
+          '&_include=PractitionerRole:organization' +
+          '&_include=PractitionerRole:location'
       );
       return response.data.entry ?? [];
     },
