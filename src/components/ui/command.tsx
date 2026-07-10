@@ -57,13 +57,45 @@ CommandInput.displayName = CommandPrimitive.Input.displayName;
 const CommandList = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.List
-    ref={ref}
-    className={cn('max-h-[300px] overflow-x-hidden overflow-y-auto', className)}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  const innerRef =
+    React.useRef<React.ElementRef<typeof CommandPrimitive.List>>(null);
+
+  React.useEffect(() => {
+    const el = innerRef.current;
+    const stop = (e: Event) => {
+      e.stopPropagation();
+    };
+    if (el) {
+      el.addEventListener('wheel', stop, { passive: true });
+      el.addEventListener('touchmove', stop, { passive: true });
+      return () => {
+        el.removeEventListener('wheel', stop);
+        el.removeEventListener('touchmove', stop);
+      };
+    }
+    // eslint-disable-next-line unicorn/no-useless-undefined
+    return undefined;
+  }, []);
+
+  return (
+    <CommandPrimitive.List
+      ref={node => {
+        innerRef.current = node;
+        if (typeof ref === 'function') {
+          ref(node);
+        } else if (ref) {
+          ref.current = node;
+        }
+      }}
+      className={cn(
+        'max-h-[300px] overflow-x-hidden overflow-y-auto',
+        className
+      )}
+      {...props}
+    />
+  );
+});
 
 CommandList.displayName = CommandPrimitive.List.displayName;
 
