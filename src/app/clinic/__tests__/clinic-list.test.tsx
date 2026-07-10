@@ -16,7 +16,7 @@ vi.mock('@/components/page-header', () => ({
   default: () => <div data-testid='mock-page-header' />
 }));
 
-vi.mock('./clinic-filter', () => ({
+vi.mock('../clinic-filter', () => ({
   default: () => <div data-testid='mock-clinic-filter' />
 }));
 
@@ -39,19 +39,10 @@ vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));
 
-vi.mock('next/image', () => ({
-  default: ({ src, alt, ...props }: Record<string, unknown>) => {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src as string}
-        alt={alt as string}
-        data-testid='next-image'
-        {...props}
-      />
-    );
-  }
-}));
+vi.mock('next/image', async () => {
+  const { createNextImageMock } = await import('@/__tests__/mocks/next-image');
+  return createNextImageMock();
+});
 
 vi.mock('@/services/clinic-locations', async importOriginal => {
   const actual = await importOriginal<Record<string, unknown>>();
