@@ -10,14 +10,12 @@ import {
   type Location,
   type PractitionerRole
 } from 'fhir/r4';
-import { SearchIcon } from 'lucide-react';
+import { Building, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useMemo, useRef, useState } from 'react';
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 const DAY_LABELS: Record<string, string> = {
   mon: 'Mon',
@@ -32,27 +30,23 @@ const DAY_LABELS: Record<string, string> = {
 /** Build a full address string from a FHIR Location address. */
 function formatAddress(address: Location['address']): string {
   if (!address) return '';
-  const parts: string[] = [];
-  if (address.line) parts.push(...address.line);
-  if (address.city) parts.push(address.city);
-  if (address.state) {
-    parts.push(
+  const p: string[] = [];
+  if (address.line) p.push(...address.line);
+  if (address.city) p.push(address.city);
+  if (address.state)
+    p.push(
       address.postalCode
         ? `${address.state} ${address.postalCode}`
         : address.state
     );
-  } else if (address.postalCode) {
-    parts.push(address.postalCode);
-  }
-  return parts.join(', ');
+  else if (address.postalCode) p.push(address.postalCode);
+  return p.join(', ');
 }
 
 /** Parse Location.hoursOfOperation into sorted day-hour strings. */
 function buildHoursList(hours: Location['hoursOfOperation']): string[] {
   if (!hours || hours.length === 0) return [];
-
   const hoursMap = new Map<string, string>();
-
   for (const entry of hours) {
     if (!entry.daysOfWeek?.length || !entry.openingTime || !entry.closingTime)
       continue;
@@ -67,11 +61,9 @@ function buildHoursList(hours: Location['hoursOfOperation']): string[] {
 
   return DAY_ORDER.filter(d => hoursMap.has(d)).map(d => hoursMap.get(d) ?? '');
 }
-
 // ---------------------------------------------------------------------------
 // PractitionerCard mapping
 // ---------------------------------------------------------------------------
-
 interface CardData {
   id: string;
   practitionerName: string;
@@ -83,14 +75,12 @@ interface CardData {
 
 /** Extract practitioner display name from a FHIR resource. */
 function getPractitionerName(resource: BundleEntry['resource']): string {
-  const name = (
+  const n = (
     resource as
       | { name?: Array<{ given?: string[]; family?: string }> }
       | undefined
   )?.name?.[0];
-  return (
-    [name?.given?.join(' '), name?.family].filter(Boolean).join(' ') || '-'
-  );
+  return [n?.given?.join(' '), n?.family].filter(Boolean).join(' ') || '-';
 }
 
 /** Extract photo URL from a FHIR resource. */
@@ -98,7 +88,6 @@ function getPhotoUrl(resource: BundleEntry['resource']): string | undefined {
   return (resource as { photo?: Array<{ url?: string }> } | undefined)
     ?.photo?.[0]?.url;
 }
-
 /** Extract healthcare service names for a practitioner role. */
 function getServiceNames(
   role: BundleEntry<PractitionerRole>,
@@ -158,28 +147,24 @@ function mapToCardData(entries: BundleEntry[]): CardData[] {
     })
     .filter((entry): entry is CardData => entry !== null);
 }
-
 // ---------------------------------------------------------------------------
 // ClinicHero sub-component
 // ---------------------------------------------------------------------------
-
-/**
- * Hero banner with clinic photo, full frost overlay, and interaction handlers.
- *
- * Left click copies address, right-click/long-press shares URL.
- */
+/** Hero banner with clinic photo, full frost overlay, and interaction handlers.
+ * Left click copies address, right-click/long-press shares URL. */
 function ClinicHero({
   clinicName,
   fullAddress,
-  hoursList
+  hoursList,
+  orgName
 }: {
   clinicName: string;
   fullAddress: string;
   hoursList: string[];
+  orgName: string;
 }) {
   const isLongPress = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
-
   const copyAddress = useCallback(() => {
     if (fullAddress) {
       navigator.clipboard.writeText(fullAddress).catch((e: unknown) => {
@@ -187,7 +172,6 @@ function ClinicHero({
       });
     }
   }, [fullAddress]);
-
   const shareUrl = useCallback(() => {
     const url = window.location.href;
     if (navigator.share) {
@@ -200,7 +184,6 @@ function ClinicHero({
       });
     }
   }, []);
-
   const handleClick = useCallback(() => {
     if (isLongPress.current) {
       isLongPress.current = false;
@@ -208,7 +191,6 @@ function ClinicHero({
     }
     copyAddress();
   }, [copyAddress]);
-
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
@@ -216,7 +198,6 @@ function ClinicHero({
     },
     [shareUrl]
   );
-
   const handleTouchStart = useCallback(() => {
     isLongPress.current = false;
     longPressTimer.current = setTimeout(() => {
@@ -224,21 +205,24 @@ function ClinicHero({
       shareUrl();
     }, 500);
   }, [shareUrl]);
-
   const handleTouchEnd = useCallback(() => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = undefined;
     }
   }, []);
-
   const handleTouchMove = useCallback(() => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = undefined;
     }
   }, []);
-
+  const orgRow = <OrgLabel name={orgName} />;
+  const hoursCol = hoursList.map(h => (
+    <div key={h} className='truncate text-xs text-white/80'>
+      {h}
+    </div>
+  ));
   return (
     <div
       className='relative h-[200px] w-full cursor-pointer overflow-hidden rounded-2xl'
@@ -261,16 +245,11 @@ function ClinicHero({
             <div className='truncate text-lg font-bold text-white'>
               {clinicName}
             </div>
-            <div className='mt-1 truncate text-sm text-white/80'>
-              {fullAddress}
-            </div>
+            <div className='mt-1 text-sm text-white/80'>{fullAddress}</div>
+            {orgRow}
           </div>
           <div className='flex w-[40%] flex-col justify-center gap-0.5'>
-            {hoursList.map(h => (
-              <div key={h} className='truncate text-xs text-white/80'>
-                {h}
-              </div>
-            ))}
+            {hoursCol}
           </div>
         </div>
       </div>
@@ -279,15 +258,19 @@ function ClinicHero({
 }
 
 // ---------------------------------------------------------------------------
+// OrgLabel sub-component
+// ---------------------------------------------------------------------------
+const OrgLabel = ({ name }: { name: string }) => (
+  <span className='mt-1 inline-flex items-center gap-1 text-xs text-white/60'>
+    <Building size={12} /> Managed by {name}
+  </span>
+);
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
-
-/**
- * Non-admin clinic detail view.
- *
- * Shows a hero banner with clinic photo, full frost overlay (name, address,
- * per-day hours), and a practitioner listing below using PractitionerCard.
- */
+/** Non-admin clinic detail view. Shows hero banner (name, address, org, hours)
+ * and a practitioner listing below using PractitionerCard. */
 export default function ClinicPractitionersView({
   entries,
   isFetching,
@@ -304,15 +287,12 @@ export default function ClinicPractitionersView({
     const entry = entries.find(e => e.resource?.resourceType === 'Location');
     return entry?.resource as Location | undefined;
   }, [entries]);
-
   const orgEntry = entries?.find(
     e => e.resource?.resourceType === 'Organization'
   );
   const orgName = (orgEntry?.resource as unknown as { name?: string })?.name;
-
   const clinicName = location?.name ?? orgName ?? '-';
   const fullAddress = formatAddress(location?.address);
-
   const hoursList = useMemo(
     () => buildHoursList(location?.hoursOfOperation),
     [location?.hoursOfOperation]
@@ -322,22 +302,20 @@ export default function ClinicPractitionersView({
     if (!entries) return [];
     return mapToCardData(entries);
   }, [entries]);
-
   const filteredCards = useMemo(() => {
     if (!keyword.trim()) return cards;
     const lower = keyword.toLowerCase();
     return cards.filter(c => c.practitionerName.toLowerCase().includes(lower));
   }, [cards, keyword]);
-
   if (isLoading || isFetching) return <CardLoader />;
 
   const showEmptyState = filteredCards.length === 0;
-
   return (
     <div className='mt-[-24px] rounded-[16px] bg-white p-4'>
       <ClinicHero
         clinicName={clinicName}
         fullAddress={fullAddress}
+        orgName={orgName}
         hoursList={hoursList}
       />
 

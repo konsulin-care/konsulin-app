@@ -40,6 +40,8 @@ vi.mock('@/components/general/card-loader', () => ({
   default: () => <div data-testid='mock-card-loader'>Loading...</div>
 }));
 vi.mock('lucide-react', () => ({
+  Building: () => <svg data-testid='mock-building-icon' />,
+  MapPin: () => <svg data-testid='mock-map-pin-icon' />,
   SearchIcon: () => <svg data-testid='mock-search-icon' />
 }));
 vi.mock('@/lib/indexeddb', () => ({
@@ -134,7 +136,7 @@ beforeEach(() => {
   });
 });
 
-const baseEntries = [locEntry()];
+const baseEntries = [locEntry(), orgEntry()];
 function renderView(entries: BundleEntry[] = baseEntries, loading = false) {
   return render(
     <ClinicPractitionersView
@@ -164,14 +166,16 @@ describe('ClinicPractitionersView', () => {
     ).not.toBeNull();
   });
 
-  it('shows clinic name and address in overlay', () => {
+  it('shows clinic name, address and managed-by org in overlay', () => {
     renderView();
     expect(screen.getByText('Konsulin Test Clinic')).toBeDefined();
     expect(
       screen.getByText('Jl. Sudirman No. 123, Jakarta, DKI Jakarta 12940')
     ).toBeDefined();
-    const addr = screen.getByText(/Jl\. Sudirman/);
-    expect(addr.textContent).not.toContain('Jakarta, 12940');
+    expect(screen.getByText(/Managed by/)).toBeDefined();
+    expect(screen.getByText(/Managed by/).textContent).toContain(
+      'Konsulin Test Clinic'
+    );
   });
 
   it('shows per-day hours Monday-first', () => {
@@ -183,6 +187,11 @@ describe('ClinicPractitionersView', () => {
     expect(screen.getByText(/Fri:\s*09:00-17:00/)).toBeDefined();
     expect(screen.getByText(/Sat:\s*09:00-14:00/)).toBeDefined();
     expect(screen.queryByText(/Sun:/)).toBeNull();
+  });
+
+  it('shows Building icon alongside organisation name', () => {
+    renderView();
+    expect(screen.getByTestId('mock-building-icon')).toBeDefined();
   });
 
   it('removes old clinic information section', () => {

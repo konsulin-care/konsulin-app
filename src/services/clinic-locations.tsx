@@ -159,28 +159,41 @@ export function useClinicLocations({
 // ---------------------------------------------------------------------------
 
 /**
- * Fetch bundle entries (practitioner roles, practitioners, services, org)
- * for a given Location.
+ * Fetch bundle entries for a given Location — two-step query.
  *
- * GET /fhir/PractitionerRole?location=<id>
+ * Step 1: GET /fhir/PractitionerRole?location=<id>&status=active
  *   &_include=PractitionerRole:practitioner
  *   &_include=PractitionerRole:service
  *   &_include=PractitionerRole:organization
  *   &_include=PractitionerRole:location
+ *
+ * Step 2 (fallback if step 1 returns nothing):
+ *   GET /fhir/Location?_id=<id>&_include=Location:organization
  */
 export function useClinicLocationPractitioners(locationId: string) {
   return useQuery({
     queryKey: ['clinic-location-practitioners', locationId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get<Bundle>(
-        `/fhir/PractitionerRole?location=${locationId}` +
+
+      // Step 1: try PractitionerRole query with status=active
+      const primaryResponse = await API.get<Bundle>(
+        `/fhir/PractitionerRole?location=${locationId}&status=active` +
           '&_include=PractitionerRole:practitioner' +
           '&_include=PractitionerRole:service' +
           '&_include=PractitionerRole:organization' +
           '&_include=PractitionerRole:location'
       );
-      return response.data.entry ?? [];
+      const primaryEntries = primaryResponse.data.entry ?? [];
+      if (primaryEntries.length > 0) {
+        return primaryEntries;
+      }
+
+      // Step 2: fallback — fetch Location + Organization directly
+      const fallbackResponse = await API.get<Bundle>(
+        `/fhir/Location?_id=${locationId}&_include=Location:organization`
+      );
+      return fallbackResponse.data.entry ?? [];
     },
     enabled: Boolean(locationId)
   });

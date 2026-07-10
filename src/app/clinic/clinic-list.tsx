@@ -58,7 +58,7 @@ function LocationCard({
           <div className='truncate text-sm font-bold text-white'>{name}</div>
           <div className='flex items-center gap-1 truncate text-xs text-white/80'>
             <MapPin size={12} />
-            <span className='truncate'>{cityProvince}</span>
+            <span className='min-w-0 truncate'>{cityProvince}</span>
           </div>
           <div className='flex items-center gap-1 truncate text-xs text-white/80'>
             <Clock size={12} />
