@@ -40,6 +40,32 @@ const ROLE_ADMIN = 'Clinic Admin';
 const ROLE_PRACTITIONER = 'Practitioner';
 
 // ---------------------------------------------------------------------------
+// useListActiveOrganizations
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch active organizations that have at least one active Location.
+ * Returns data shaped as { code, name }[] for LocationCombobox compatibility.
+ *
+ * GET /fhir/Organization?active=true&_has:Location:organization:status=active&_elements=id,name
+ */
+export function useListActiveOrganizations() {
+  return useQuery({
+    queryKey: ['active-organizations'],
+    queryFn: async () => {
+      const API = await getAPI();
+      const url =
+        '/fhir/Organization?active=true&_has:Location:organization:status=active&_elements=id,name';
+      const response = await API.get<Bundle>(url);
+      return (response.data.entry ?? []).map(e => ({
+        code: (e.resource as { id: string }).id,
+        name: (e.resource as { name?: string }).name ?? ''
+      }));
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
 // useClinicLocations
 // ---------------------------------------------------------------------------
 
@@ -48,6 +74,8 @@ export type UseClinicLocationsParams = {
   fhirId?: string;
   orgId?: string;
   city?: string;
+  organization?: string;
+  province?: string;
 };
 
 /**
@@ -61,7 +89,9 @@ export function useClinicLocations({
   role,
   fhirId,
   orgId,
-  city
+  city,
+  organization,
+  province
 }: UseClinicLocationsParams) {
   const url = useMemo(() => {
     let base: string;
@@ -70,17 +100,30 @@ export function useClinicLocations({
       base = `/fhir/Location?organization=${orgId}`;
     } else if (role === ROLE_PRACTITIONER && fhirId) {
       base = `/fhir/PractitionerRole?practitioner=${fhirId}&_include=PractitionerRole:location`;
+      return base;
     } else {
       base = '/fhir/Location';
     }
 
-    if (city && role !== ROLE_PRACTITIONER) {
-      const sep = base.includes('?') ? '&' : '?';
+    // For non-Practitioner roles, append optional filters
+    let sep = base.includes('?') ? '&' : '?';
+
+    if (organization) {
+      base += `${sep}organization=${encodeURIComponent(organization)}`;
+      sep = '&';
+    }
+
+    if (province) {
+      base += `${sep}address-state=${encodeURIComponent(province)}`;
+      sep = '&';
+    }
+
+    if (city) {
       base += `${sep}address-city:contains=${encodeURIComponent(city)}`;
     }
 
     return base;
-  }, [role, fhirId, orgId, city]);
+  }, [role, fhirId, orgId, city, organization, province]);
 
   const enabled =
     role === ROLE_PATIENT ||
@@ -89,7 +132,15 @@ export function useClinicLocations({
     (role === ROLE_PRACTITIONER && Boolean(fhirId));
 
   return useQuery({
-    queryKey: ['clinic-locations', role, fhirId, orgId, city],
+    queryKey: [
+      'clinic-locations',
+      role,
+      fhirId,
+      orgId,
+      city,
+      organization,
+      province
+    ],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get<Bundle>(url);

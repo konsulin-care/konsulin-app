@@ -116,7 +116,9 @@ export default function ClinicList() {
     role,
     fhirId,
     orgId: orgId || undefined,
-    city: clinicFilter.city
+    city: clinicFilter.city,
+    organization: clinicFilter.organization,
+    province: clinicFilter.province
   });
 
   // Client-side search/filter on locations
@@ -185,6 +187,7 @@ export default function ClinicList() {
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />
             <ClinicFilter
+              role={role}
               onChange={(filter: IUseClinicParams) => {
                 setClinicFilter(prevState => ({
                   ...prevState,
@@ -196,9 +199,45 @@ export default function ClinicList() {
           </div>
 
           <div className='flex gap-4'>
+            {clinicFilter.province && (
+              <Badge
+                className='bg-secondary mt-4 cursor-pointer rounded-md px-4 py-[3px] font-normal text-white'
+                onClick={() => {
+                  setClinicFilter(prev => ({
+                    ...prev,
+                    province: undefined,
+                    province_code: undefined,
+                    city: undefined
+                  }));
+                }}
+              >
+                {clinicFilter.province}
+              </Badge>
+            )}
             {clinicFilter.city && (
-              <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
+              <Badge
+                className='bg-secondary mt-4 cursor-pointer rounded-md px-4 py-[3px] font-normal text-white'
+                onClick={() => {
+                  setClinicFilter(prev => ({
+                    ...prev,
+                    city: undefined
+                  }));
+                }}
+              >
                 {clinicFilter.city}
+              </Badge>
+            )}
+            {clinicFilter.organization && (
+              <Badge
+                className='bg-secondary mt-4 cursor-pointer rounded-md px-4 py-[3px] font-normal text-white'
+                onClick={() => {
+                  setClinicFilter(prev => ({
+                    ...prev,
+                    organization: undefined
+                  }));
+                }}
+              >
+                {clinicFilter.organization}
               </Badge>
             )}
           </div>

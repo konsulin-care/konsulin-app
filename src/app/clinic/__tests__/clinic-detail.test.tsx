@@ -14,10 +14,6 @@ vi.mock('@/components/page-header', () => ({
   default: () => <div data-testid='mock-page-header' />
 }));
 
-vi.mock('./clinic-filter', () => ({
-  default: () => <div data-testid='mock-clinic-filter' />
-}));
-
 vi.mock('@/components/ui/drawer', () => ({
   Drawer: ({ children, open }: { children: ReactNode; open?: boolean }) =>
     open ? <div data-testid='mock-drawer'>{children}</div> : null,

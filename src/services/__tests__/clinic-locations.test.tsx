@@ -21,7 +21,8 @@ import type {
 import {
   getTodayHours,
   useClinicLocationPractitioners,
-  useClinicLocations
+  useClinicLocations,
+  useListActiveOrganizations
 } from '../clinic-locations';
 
 // ---------------------------------------------------------------------------
@@ -149,6 +150,65 @@ describe('getTodayHours', () => {
       ]
     };
     expect(getTodayHours(loc)).toBe('Open until 22:30');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useListActiveOrganizations — organization combobox data
+// ---------------------------------------------------------------------------
+
+describe('useListActiveOrganizations', () => {
+  it('fetches active organizations with locations', async () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: [
+        {
+          resource: {
+            resourceType: 'Organization',
+            id: 'org-1',
+            name: 'Klinik A'
+          }
+        }
+      ]
+    };
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: bundle });
+
+    const { result } = renderHook(() => useListActiveOrganizations(), {
+      wrapper: createWrapper()
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/fhir/Organization?active=true&_has:Location:organization:status=active&_elements=id,name'
+    );
+    expect(result.current.data).toEqual([{ code: 'org-1', name: 'Klinik A' }]);
+  });
+
+  it('returns empty array when no organizations found', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: { resourceType: 'Bundle', type: 'searchset', entry: [] }
+    });
+
+    const { result } = renderHook(() => useListActiveOrganizations(), {
+      wrapper: createWrapper()
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual([]);
+  });
+
+  it('handles undefined entry gracefully', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: { resourceType: 'Bundle', type: 'searchset' }
+    });
+
+    const { result } = renderHook(() => useListActiveOrganizations(), {
+      wrapper: createWrapper()
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual([]);
   });
 });
 
@@ -313,6 +373,187 @@ describe('useClinicLocations', () => {
 
     expect(result.current.isFetching).toBe(false);
     expect(mockAxiosInstance.get).not.toHaveBeenCalled();
+  });
+
+  it('includes organization param for Patient role', async () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: []
+    };
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: bundle });
+
+    const { result } = renderHook(
+      () =>
+        useClinicLocations({
+          role: PATIENT,
+          organization: 'org-1'
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/fhir/Location?organization=org-1'
+    );
+  });
+
+  it('includes organization param for Guest role', async () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: []
+    };
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: bundle });
+
+    const { result } = renderHook(
+      () =>
+        useClinicLocations({
+          role: GUEST,
+          organization: 'org-1'
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/fhir/Location?organization=org-1'
+    );
+  });
+
+  it('includes province (address-state) param for Patient role', async () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: []
+    };
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: bundle });
+
+    const { result } = renderHook(
+      () =>
+        useClinicLocations({
+          role: PATIENT,
+          province: 'Aceh'
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/fhir/Location?address-state=Aceh'
+    );
+  });
+
+  it('includes both organization and province params', async () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: []
+    };
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: bundle });
+
+    const { result } = renderHook(
+      () =>
+        useClinicLocations({
+          role: GUEST,
+          organization: 'org-1',
+          province: 'Aceh',
+          city: 'Kabupaten Simeulue'
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/fhir/Location?organization=org-1&address-state=Aceh&address-city:contains=Kabupaten%20Simeulue'
+    );
+  });
+
+  it('includes province for Clinic Admin role', async () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: []
+    };
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: bundle });
+
+    const { result } = renderHook(
+      () =>
+        useClinicLocations({
+          role: ADMIN,
+          orgId: 'org-1',
+          province: 'Aceh'
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/fhir/Location?organization=org-1&address-state=Aceh'
+    );
+  });
+
+  it('does not add organization param for Practitioner role', async () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: [
+        {
+          resource: {
+            resourceType: 'PractitionerRole',
+            id: 'pr-1',
+            practitioner: { reference: 'Practitioner/prac-1' }
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Location',
+            id: 'loc-1',
+            name: 'Downtown Clinic'
+          }
+        }
+      ]
+    };
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: bundle });
+
+    const { result } = renderHook(
+      () =>
+        useClinicLocations({
+          role: PRACTITIONER,
+          fhirId: 'prac-1',
+          organization: 'org-1',
+          province: 'Aceh'
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/fhir/PractitionerRole?practitioner=prac-1&_include=PractitionerRole:location'
+    );
+  });
+
+  it('encodes province name with special characters', async () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: []
+    };
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: bundle });
+
+    const { result } = renderHook(
+      () =>
+        useClinicLocations({
+          role: PATIENT,
+          province: 'Kepulauan Bangka Belitung'
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/fhir/Location?address-state=Kepulauan%20Bangka%20Belitung'
+    );
   });
 });
 

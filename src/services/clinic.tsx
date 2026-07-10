@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { useQuery } from '@tanstack/react-query';
 import {
   Bundle,
@@ -21,6 +22,8 @@ export type IUseClinicParams = {
   end_time?: string;
   city?: string;
   province_code?: string;
+  organization?: string;
+  province?: string;
   // days?: String[];
 };
 

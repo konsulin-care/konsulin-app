@@ -24,6 +24,9 @@ date: 2026-05-26
   carefully for clinic-scoped vs practitioner-scoped scheduling
 - Missing `_summary` parameter returns full resources — use `_summary=count`
   for list endpoints when only metadata needed
+- Blaze FHIR silently ignores the `:contains` modifier on search parameters
+  (e.g., `address-state:contains=Jak` returns ALL resources unfiltered).
+  Use exact match only — no fuzzy/contains search on FHIR search params.
 
 # Offline/PWA Pitfalls
 

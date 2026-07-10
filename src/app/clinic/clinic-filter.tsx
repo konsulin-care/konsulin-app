@@ -1,5 +1,6 @@
-/* eslint-disable max-lines, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
-/* reason: renderDrawerContent nests date/time filters by design, extracting would over-scatter state */
+/* eslint-disable max-lines */
+/* reason: renderDrawerContent nests location, org, and date/time sections
+   in one drawer body — extracting would over-scatter state */
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterCalendar from '@/components/shared/filter-calendar';
 import FilterCustomTimeInputs from '@/components/shared/filter-custom-time-inputs';
@@ -16,9 +17,11 @@ import {
 import { Roles } from '@/constants/roles';
 import { useGetCities, useGetProvinces } from '@/services/api/cities';
 import { IUseClinicParams } from '@/services/clinic';
+import { useListActiveOrganizations } from '@/services/clinic-locations';
 
 import { addDays, endOfWeek, startOfWeek } from 'date-fns';
 import { useState } from 'react';
+
 const CONTENT_DEFAULT = 0;
 const CONTENT_CUSTOM = 1;
 
@@ -27,10 +30,7 @@ const today = new Date();
 const filterContentListDate = [
   {
     label: 'Today',
-    value: {
-      start: today,
-      end: today
-    }
+    value: { start: today, end: today }
   },
   {
     label: 'This Week',
@@ -51,45 +51,42 @@ const filterContentListDate = [
 const filterContentListTime = [
   {
     label: '07:00 - 10:00',
-    value: {
-      start: '07:00',
-      end: '10:00'
-    }
+    value: { start: '07:00', end: '10:00' }
   },
   {
     label: '10:00 - 13:00',
-    value: {
-      start: '10:00',
-      end: '13:00'
-    }
+    value: { start: '10:00', end: '13:00' }
   },
   {
     label: '13:00 - 16:00',
-    value: {
-      start: '13:00',
-      end: '16:00'
-    }
+    value: { start: '13:00', end: '16:00' }
   },
   {
     label: '16:00 - 18:00',
-    value: {
-      start: '16:00',
-      end: '18:00'
-    }
+    value: { start: '16:00', end: '18:00' }
   },
   {
     label: '18:00 - 22:00',
-    value: {
-      start: '18:00',
-      end: '22:00'
-    }
+    value: { start: '18:00', end: '22:00' }
   }
 ];
 
 /**
+ * Role-aware clinic filter drawer.
  *
+ * Patient/Guest:  Location section (province + city) + Organization section
+ * Clinic Admin:   Location section (province + city only)
+ * Practitioner:   Date/Time section only
  */
-export default function ClinicFilter({ onChange, type }) {
+export default function ClinicFilter({
+  onChange,
+  type,
+  role
+}: {
+  onChange: (filter: IUseClinicParams) => void;
+  type: string;
+  role?: string;
+}) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
@@ -102,7 +99,9 @@ export default function ClinicFilter({ onChange, type }) {
     start_time: undefined,
     end_time: undefined,
     city: undefined,
-    province_code: undefined
+    province_code: undefined,
+    organization: undefined,
+    province: undefined
   });
 
   const isInitiaFilterState =
@@ -110,7 +109,9 @@ export default function ClinicFilter({ onChange, type }) {
     !filter.end_date &&
     !filter.start_time &&
     !filter.end_time &&
-    !filter.city;
+    !filter.city &&
+    !filter.province &&
+    !filter.organization;
 
   /** Update a single filter field by key. */
   const handleFilterChange = (
@@ -131,11 +132,13 @@ export default function ClinicFilter({ onChange, type }) {
       start_time: undefined,
       end_time: undefined,
       city: undefined,
-      province_code: undefined
+      province_code: undefined,
+      organization: undefined,
+      province: undefined
     });
   };
 
-  /** Open the custom date/time filter pane, initializing defaults if no filter is active. */
+  /** Open the custom date/time filter pane. */
   const handleCustomFilterOpen = () => {
     if (isInitiaFilterState) {
       handleFilterChange('start_time', '00:00');
@@ -145,7 +148,6 @@ export default function ClinicFilter({ onChange, type }) {
       setIsUseCustomDate(true);
       setIsUseCustomTime(true);
     }
-
     setWhichContent(CONTENT_CUSTOM);
   };
 
@@ -153,8 +155,66 @@ export default function ClinicFilter({ onChange, type }) {
     Number(filter.province_code || 0)
   );
   const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
+  const { data: organizations, isLoading: orgLoading } =
+    useListActiveOrganizations();
 
-  /** Render default or custom date/time filter content based on whichContent state. */
+  const isPatientOrGuest = role === Roles.Patient || role === Roles.Guest;
+
+  /** Render location filter section (province + city). */
+  const renderLocationSection = () => (
+    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+      <div className='mb-4'>
+        <div className='font-bold'>Location</div>
+        <span className='text-muted-foreground text-xs opacity-50'>
+          Select a province first, then optionally select a city.
+        </span>
+      </div>
+      <div className='flex flex-wrap gap-[10px]'>
+        <LocationCombobox
+          options={listProvinces ?? []}
+          value={filter.province_code ?? ''}
+          onSelect={option => {
+            handleFilterChange('province_code', option.code);
+            handleFilterChange('province', option.name);
+          }}
+          placeholder='Select Province'
+          loading={provinceLoading}
+        />
+        {filter.province_code && (
+          <LocationCombobox
+            options={listCities ?? []}
+            value={filter.city ?? ''}
+            onSelect={option => handleFilterChange('city', option.name)}
+            placeholder='Select City'
+            loading={cityLoading}
+          />
+        )}
+      </div>
+    </div>
+  );
+
+  /** Render organization filter section (Patient/Guest only). */
+  const renderOrganizationSection = () => (
+    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+      <div className='mb-4'>
+        <div className='font-bold'>Organization</div>
+        <span className='text-muted-foreground text-xs opacity-50'>
+          Filter by a specific clinic organization.
+        </span>
+      </div>
+      <div className='flex flex-wrap gap-[10px]'>
+        <LocationCombobox
+          options={organizations ?? []}
+          value={filter.organization ?? ''}
+          onSelect={option => handleFilterChange('organization', option.code)}
+          placeholder='Select Organization'
+          loading={orgLoading}
+        />
+      </div>
+    </div>
+  );
+
+  /** Render default or custom date/time filter content. */
   const renderDrawerContent = () => {
     switch (whichContent) {
       case CONTENT_DEFAULT: {
@@ -164,7 +224,8 @@ export default function ClinicFilter({ onChange, type }) {
               Filter & Sort
             </DrawerTitle>
             <DrawerDescription />
-            {type === Roles.Practitioner ? (
+
+            {type === 'practitioner' ? (
               <>
                 <DatePresetFilter
                   presets={filterContentListDate}
@@ -210,37 +271,10 @@ export default function ClinicFilter({ onChange, type }) {
                 </div>
               </>
             ) : (
-              <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-                <div className='mb-4'>
-                  <div className='font-bold'>Location</div>
-                  <span className='text-muted-foreground text-xs opacity-50'>
-                    Please select a province first, then select a city.
-                  </span>
-                </div>
-                <div className='flex flex-wrap gap-[10px]'>
-                  <LocationCombobox
-                    options={listProvinces ?? []}
-                    value={filter.province_code ?? ''}
-                    onSelect={option =>
-                      handleFilterChange('province_code', option.code)
-                    }
-                    placeholder='Select Province'
-                    loading={provinceLoading}
-                  />
-
-                  {filter.province_code && (
-                    <LocationCombobox
-                      options={listCities ?? []}
-                      value={filter.city ?? ''}
-                      onSelect={option =>
-                        handleFilterChange('city', option.name)
-                      }
-                      placeholder='Select City'
-                      loading={cityLoading}
-                    />
-                  )}
-                </div>
-              </div>
+              <>
+                {renderLocationSection()}
+                {isPatientOrGuest && renderOrganizationSection()}
+              </>
             )}
 
             {!isInitiaFilterState && (
@@ -261,7 +295,7 @@ export default function ClinicFilter({ onChange, type }) {
                 onChange(filter);
               }}
             >
-              Terapkan Filter
+              Apply Filter
             </Button>
           </div>
         );
@@ -286,7 +320,6 @@ export default function ClinicFilter({ onChange, type }) {
                 }}
                 disabled={{ before: today }}
               />
-
               <FilterCustomTimeInputs
                 startTime={filter.start_time || ''}
                 endTime={filter.end_time || ''}
@@ -310,7 +343,6 @@ export default function ClinicFilter({ onChange, type }) {
           </div>
         );
       }
-
       default: {
         return null;
       }
