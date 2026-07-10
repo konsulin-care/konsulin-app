@@ -20,8 +20,13 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 const DAY_LABELS: Record<string, string> = {
-  mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri',
-  sat: 'Sat', sun: 'Sun'
+  mon: 'Mon',
+  tue: 'Tue',
+  wed: 'Wed',
+  thu: 'Thu',
+  fri: 'Fri',
+  sat: 'Sat',
+  sun: 'Sun'
 };
 
 /** Build a full address string from a FHIR Location address. */
@@ -31,9 +36,11 @@ function formatAddress(address: Location['address']): string {
   if (address.line) parts.push(...address.line);
   if (address.city) parts.push(address.city);
   if (address.state) {
-    parts.push(address.postalCode
-      ? `${address.state} ${address.postalCode}`
-      : address.state);
+    parts.push(
+      address.postalCode
+        ? `${address.state} ${address.postalCode}`
+        : address.state
+    );
   } else if (address.postalCode) {
     parts.push(address.postalCode);
   }
@@ -58,9 +65,7 @@ function buildHoursList(hours: Location['hoursOfOperation']): string[] {
     }
   }
 
-  return DAY_ORDER
-    .filter(d => hoursMap.has(d))
-    .map(d => hoursMap.get(d) ?? '');
+  return DAY_ORDER.filter(d => hoursMap.has(d)).map(d => hoursMap.get(d) ?? '');
 }
 
 // ---------------------------------------------------------------------------
@@ -76,19 +81,22 @@ interface CardData {
   practitionerRoleId: string;
 }
 
-
-
 /** Extract practitioner display name from a FHIR resource. */
-function getPractitionerName(
-  resource: BundleEntry['resource']
-): string {
-  const name = (resource as { name?: Array<{ given?: string[]; family?: string }> } | undefined)?.name?.[0];
-  return [name?.given?.join(' '), name?.family].filter(Boolean).join(' ') || '-';
+function getPractitionerName(resource: BundleEntry['resource']): string {
+  const name = (
+    resource as
+      | { name?: Array<{ given?: string[]; family?: string }> }
+      | undefined
+  )?.name?.[0];
+  return (
+    [name?.given?.join(' '), name?.family].filter(Boolean).join(' ') || '-'
+  );
 }
 
 /** Extract photo URL from a FHIR resource. */
 function getPhotoUrl(resource: BundleEntry['resource']): string | undefined {
-  return (resource as { photo?: Array<{ url?: string }> } | undefined)?.photo?.[0]?.url;
+  return (resource as { photo?: Array<{ url?: string }> } | undefined)
+    ?.photo?.[0]?.url;
 }
 
 /** Extract healthcare service names for a practitioner role. */
@@ -132,7 +140,8 @@ function mapToCardData(entries: BundleEntry[]): CardData[] {
       if (!practitionerId) return null;
 
       const role = practitionerRoles.find(
-        r => r.resource?.practitioner?.reference?.split('/')[1] === practitionerId
+        r =>
+          r.resource?.practitioner?.reference?.split('/')[1] === practitionerId
       );
       if (!role?.resource?.id) return null;
 
@@ -140,7 +149,9 @@ function mapToCardData(entries: BundleEntry[]): CardData[] {
         id: practitionerId,
         practitionerName: getPractitionerName(item.resource),
         photoUrl: getPhotoUrl(item.resource),
-        specialties: (role.resource.specialty?.map(s => s.text) ?? []).filter(Boolean),
+        specialties: (role.resource.specialty?.map(s => s.text) ?? []).filter(
+          Boolean
+        ),
         healthcareServiceNames: getServiceNames(role, hsMap),
         practitionerRoleId: role.resource.id
       };
@@ -198,10 +209,13 @@ function ClinicHero({
     copyAddress();
   }, [copyAddress]);
 
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    shareUrl();
-  }, [shareUrl]);
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      shareUrl();
+    },
+    [shareUrl]
+  );
 
   const handleTouchStart = useCallback(() => {
     isLongPress.current = false;
@@ -227,7 +241,7 @@ function ClinicHero({
 
   return (
     <div
-      className='relative w-full h-[200px] overflow-hidden rounded-2xl cursor-pointer'
+      className='relative h-[200px] w-full cursor-pointer overflow-hidden rounded-2xl'
       onClick={handleClick}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
@@ -241,19 +255,19 @@ function ClinicHero({
         className='object-cover'
         sizes='(max-width: 640px) 100vw, 400px'
       />
-      <div className='absolute inset-0 bg-black/50 backdrop-blur-md flex p-4'>
+      <div className='absolute inset-0 flex bg-black/50 p-4 backdrop-blur-md'>
         <div className='flex h-full w-full items-center gap-4'>
           <div className='flex w-[60%] flex-col justify-center'>
-            <div className='text-lg font-bold text-white truncate'>
+            <div className='truncate text-lg font-bold text-white'>
               {clinicName}
             </div>
-            <div className='mt-1 text-sm text-white/80 truncate'>
+            <div className='mt-1 truncate text-sm text-white/80'>
               {fullAddress}
             </div>
           </div>
           <div className='flex w-[40%] flex-col justify-center gap-0.5'>
             {hoursList.map(h => (
-              <div key={h} className='text-xs text-white/80 truncate'>
+              <div key={h} className='truncate text-xs text-white/80'>
                 {h}
               </div>
             ))}
@@ -291,7 +305,9 @@ export default function ClinicPractitionersView({
     return entry?.resource as Location | undefined;
   }, [entries]);
 
-  const orgEntry = entries?.find(e => e.resource?.resourceType === 'Organization');
+  const orgEntry = entries?.find(
+    e => e.resource?.resourceType === 'Organization'
+  );
   const orgName = (orgEntry?.resource as unknown as { name?: string })?.name;
 
   const clinicName = location?.name ?? orgName ?? '-';
