@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable max-lines */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
@@ -31,7 +29,7 @@ import {
 
 const mockAxiosInstance = {
   get: vi.fn()
-} as unknown as AxiosInstance;
+};
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -46,7 +44,9 @@ function createWrapper() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(getAPI).mockResolvedValue(mockAxiosInstance);
+  vi.mocked(getAPI).mockResolvedValue(
+    mockAxiosInstance as unknown as AxiosInstance
+  );
 });
 
 afterEach(() => {
@@ -571,7 +571,7 @@ describe('useClinicLocationPractitioners', () => {
   };
 
   const samplePractitioner = {
-    resourceType: 'Practitioner',
+    resourceType: 'Practitioner' as const,
     id: 'prac-1',
     name: [{ given: ['John'], family: 'Doe' }]
   };
@@ -585,7 +585,7 @@ describe('useClinicLocationPractitioners', () => {
   };
 
   const sampleOrganization = {
-    resourceType: 'Organization',
+    resourceType: 'Organization' as const,
     id: 'org-1',
     name: 'Main Clinic'
   };
