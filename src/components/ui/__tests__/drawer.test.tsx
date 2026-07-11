@@ -27,6 +27,11 @@ describe('DrawerContent', () => {
     const drawerEl = document.querySelector('[data-vaul-drawer]');
     expect(drawerEl).toBeInTheDocument();
     expect(drawerEl).toHaveClass('max-h-[85dvh]');
-    expect(drawerEl).toHaveClass('overflow-y-auto');
+    expect(drawerEl).not.toHaveClass('overflow-y-auto');
+
+    // overflow-y-auto is on the inner scroll wrapper, not on [data-vaul-drawer]
+    // (Vaul's ::after pseudo-element on the outer element would otherwise create blank space)
+    const innerWrapper = drawerEl?.lastElementChild;
+    expect(innerWrapper).toHaveClass('overflow-y-auto');
   });
 });
