@@ -119,8 +119,8 @@ function hsEntry(id: string, name: string) {
   } as unknown as BundleEntry;
 }
 
-const mockWriteText = vi.fn().mockResolvedValue();
-const mockShare = vi.fn().mockResolvedValue();
+const mockWriteText = vi.fn().mockResolvedValue(undefined);
+const mockShare = vi.fn().mockResolvedValue(undefined);
 
 beforeEach(() => {
   vi.clearAllMocks();
