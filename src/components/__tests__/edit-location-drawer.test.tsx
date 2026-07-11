@@ -114,16 +114,17 @@ describe('EditLocationDrawer', () => {
     });
 
     await waitFor(() => {
-      const nameInput = screen.getByLabelText('Location Name');
-      expect(nameInput.value).toBe('Cabang Klinik 1');
+      expect(screen.getByLabelText('Location Name')).toHaveValue(
+        'Cabang Klinik 1'
+      );
     });
 
-    expect(screen.getByLabelText('Address').value).toBe(
+    expect(screen.getByLabelText('Address')).toHaveValue(
       'Jl. Simpang Lima No. 3'
     );
 
-    expect(screen.getByLabelText('Longitude').value).toBe('105');
-    expect(screen.getByLabelText('Latitude').value).toBe('-6.3');
+    expect(screen.getByLabelText('Longitude')).toHaveValue(105);
+    expect(screen.getByLabelText('Latitude')).toHaveValue(-6.3);
 
     // Status should match — SwitchField shows "Open" when checked
     expect(screen.getByText('Open')).toBeInTheDocument();
