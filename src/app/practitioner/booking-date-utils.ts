@@ -31,14 +31,13 @@ export function getNextAvailableDate(
     return date;
   }
 
-  // Early check: if all dates in availableDays are in the past, return the input date
-  const now = new Date();
+  // Early check: if all available days are before currentDate, return it unchanged
   const allInPast = availableDays.every(d => {
-    if (d.getFullYear() < now.getFullYear()) return true;
-    if (d.getFullYear() > now.getFullYear()) return false;
-    if (d.getMonth() < now.getMonth()) return true;
-    if (d.getMonth() > now.getMonth()) return false;
-    return d.getDate() < now.getDate();
+    if (d.getFullYear() < currentDate.getFullYear()) return true;
+    if (d.getFullYear() > currentDate.getFullYear()) return false;
+    if (d.getMonth() < currentDate.getMonth()) return true;
+    if (d.getMonth() > currentDate.getMonth()) return false;
+    return d.getDate() < currentDate.getDate();
   });
   if (allInPast) {
     return date;
