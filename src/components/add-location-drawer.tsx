@@ -1,5 +1,6 @@
 'use client';
 
+import LocationFormFields from '@/components/shared/location-form-fields';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -9,12 +10,19 @@ import {
   DrawerHeader,
   DrawerTitle
 } from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
+import {
+  useGetCities,
+  useGetDistricts,
+  useGetProvinces
+} from '@/services/api/cities';
+import { DayOfWeek, TimeRange } from '@/types/availability';
+import { IWilayahResponse } from '@/types/wilayah';
+import { generateTimeRangeId } from '@/utils/availability';
+import { buildFhirHours } from '@/utils/location-hours';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 
 type Props = {
@@ -26,14 +34,40 @@ type Props = {
  * Drawer for adding a new Location to the selected clinic.
  *
  * Reads selected_clinic from IndexedDB for managingOrganization reference.
- * Posts a FHIR Location resource with name and position (longitude, latitude).
+ * Posts a full FHIR Location resource with status, name, address,
+ * position, and hoursOfOperation.
  */
 export default function AddLocationDrawer({ open, onClose }: Props) {
   const queryClient = useQueryClient();
+  const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [name, setName] = useState('');
+  const [addressLine, setAddressLine] = useState('');
+  const [provinceCode, setProvinceCode] = useState('');
+  const [provinceName, setProvinceName] = useState('');
+  const [cityCode, setCityCode] = useState('');
+  const [cityName, setCityName] = useState('');
+  const [districtCode, setDistrictCode] = useState('');
+  const [districtName, setDistrictName] = useState('');
   const [longitude, setLongitude] = useState('');
   const [latitude, setLatitude] = useState('');
+  const [hours, setHours] = useState<Record<DayOfWeek, TimeRange[]>>({
+    0: [],
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+    5: [],
+    6: []
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
+  const { data: listCities, isLoading: cityLoading } = useGetCities(
+    Number(provinceCode)
+  );
+  const { data: listDistricts, isLoading: districtLoading } = useGetDistricts(
+    Number(cityCode)
+  );
 
   const nameTrimmed = name.trim();
   const nameValid =
@@ -49,6 +83,58 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
     latitude.trim().length > 0 &&
     !Number.isNaN(parsedLon) &&
     !Number.isNaN(parsedLat);
+
+  const handleProvinceSelect = useCallback((option: IWilayahResponse) => {
+    setProvinceCode(option.code);
+    setProvinceName(option.name);
+    setCityCode('');
+    setCityName('');
+    setDistrictCode('');
+    setDistrictName('');
+  }, []);
+
+  const handleCitySelect = useCallback((option: IWilayahResponse) => {
+    setCityCode(option.code);
+    setCityName(option.name);
+    setDistrictCode('');
+    setDistrictName('');
+  }, []);
+
+  const handleDistrictSelect = useCallback((option: IWilayahResponse) => {
+    setDistrictCode(option.code);
+    setDistrictName(option.name);
+  }, []);
+
+  const handleAddTimeRange = useCallback((day: DayOfWeek) => {
+    setHours(prev => ({
+      ...prev,
+      [day]: [
+        ...prev[day],
+        { id: generateTimeRangeId(), from: '08:00', to: '17:00' }
+      ]
+    }));
+  }, []);
+
+  const handleUpdateTimeRange = useCallback(
+    (day: DayOfWeek, id: string, field: 'from' | 'to', value: string) => {
+      setHours(prev => ({
+        ...prev,
+        [day]: prev[day].map(tr =>
+          tr.id === id ? { ...tr, [field]: value } : tr
+        )
+      }));
+    },
+    []
+  );
+
+  const handleDeleteTimeRange = useCallback((day: DayOfWeek, id: string) => {
+    setHours(prev => ({
+      ...prev,
+      [day]: prev[day].filter(tr => tr.id !== id)
+    }));
+  }, []);
+
+  const fhirHours = useMemo(() => buildFhirHours(hours), [hours]);
 
   const handleSubmit = useCallback(() => {
     if (!isValid || isSubmitting) return;
@@ -67,11 +153,19 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
 
         await API.post('/fhir/Location', {
           resourceType: 'Location',
+          status,
           name: nameTrimmed,
+          address: {
+            line: [addressLine],
+            city: cityName,
+            district: districtName,
+            state: provinceName
+          },
           position: {
             longitude: parsedLon,
             latitude: parsedLat
           },
+          hoursOfOperation: fhirHours,
           managingOrganization: {
             reference: `Organization/${orgId}`
           }
@@ -101,9 +195,15 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
   }, [
     isValid,
     isSubmitting,
+    status,
     nameTrimmed,
+    addressLine,
+    cityName,
+    districtName,
+    provinceName,
     parsedLon,
     parsedLat,
+    fhirHours,
     queryClient,
     onClose
   ]);
@@ -124,53 +224,34 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
         </DrawerHeader>
 
         <div className='space-y-4 px-4'>
-          <div>
-            <Label htmlFor='loc-name'>Location Name</Label>
-            <Input
-              id='loc-name'
-              type='text'
-              value={name}
-              onChange={e => {
-                setName(e.target.value);
-              }}
-              placeholder='Main Clinic'
-              className='bg-white'
-              aria-label='Location Name'
-              maxLength={30}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor='loc-longitude'>Longitude</Label>
-            <Input
-              id='loc-longitude'
-              type='number'
-              value={longitude}
-              onChange={e => {
-                setLongitude(e.target.value);
-              }}
-              placeholder='106.846'
-              className='bg-white'
-              aria-label='Longitude'
-              step='any'
-            />
-          </div>
-
-          <div>
-            <Label htmlFor='loc-latitude'>Latitude</Label>
-            <Input
-              id='loc-latitude'
-              type='number'
-              value={latitude}
-              onChange={e => {
-                setLatitude(e.target.value);
-              }}
-              placeholder='-6.305'
-              className='bg-white'
-              aria-label='Latitude'
-              step='any'
-            />
-          </div>
+          <LocationFormFields
+            status={status}
+            name={name}
+            addressLine={addressLine}
+            provinceCode={provinceCode}
+            cityCode={cityCode}
+            districtCode={districtCode}
+            longitude={longitude}
+            latitude={latitude}
+            listProvinces={listProvinces ?? []}
+            listCities={listCities ?? []}
+            listDistricts={listDistricts ?? []}
+            provinceLoading={provinceLoading}
+            cityLoading={cityLoading}
+            districtLoading={districtLoading}
+            hours={hours}
+            onStatusChange={setStatus}
+            onNameChange={setName}
+            onAddressLineChange={setAddressLine}
+            onProvinceSelect={handleProvinceSelect}
+            onCitySelect={handleCitySelect}
+            onDistrictSelect={handleDistrictSelect}
+            onLongitudeChange={setLongitude}
+            onLatitudeChange={setLatitude}
+            onAddTimeRange={handleAddTimeRange}
+            onUpdateTimeRange={handleUpdateTimeRange}
+            onDeleteTimeRange={handleDeleteTimeRange}
+          />
         </div>
 
         <DrawerFooter>

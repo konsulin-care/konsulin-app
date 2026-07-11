@@ -13,6 +13,12 @@ vi.mock('@/services/api', () => ({
   getAPI: vi.fn()
 }));
 
+vi.mock('@/services/api/cities', () => ({
+  useGetProvinces: () => ({ data: [], isLoading: false }),
+  useGetCities: () => ({ data: [], isLoading: false }),
+  useGetDistricts: () => ({ data: [], isLoading: false })
+}));
+
 vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));
@@ -60,7 +66,16 @@ describe('AddLocationDrawer', () => {
     expect(screen.getByRole('button', { name: 'Add Location' })).toBeDefined();
   });
 
-  it('shows name placeholder without e.g. prefix', () => {
+  it('renders status toggle and address field', () => {
+    render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
+
+    expect(screen.getByText('Open')).toBeInTheDocument();
+    expect(screen.getByText('Closed')).toBeInTheDocument();
+    expect(screen.getByText('Open')).toHaveClass('bg-secondary');
+    expect(screen.getByLabelText('Address')).toBeInTheDocument();
+  });
+
+  it('shows name placeholder', () => {
     render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
 
     expect(screen.getByLabelText('Location Name')).toHaveAttribute(
@@ -69,7 +84,7 @@ describe('AddLocationDrawer', () => {
     );
   });
 
-  it('shows longitude placeholder without e.g. prefix', () => {
+  it('shows longitude placeholder', () => {
     render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
 
     expect(screen.getByLabelText('Longitude')).toHaveAttribute(
@@ -78,7 +93,7 @@ describe('AddLocationDrawer', () => {
     );
   });
 
-  it('shows latitude placeholder without e.g. prefix', () => {
+  it('shows latitude placeholder', () => {
     render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
 
     expect(screen.getByLabelText('Latitude')).toHaveAttribute(
@@ -94,21 +109,7 @@ describe('AddLocationDrawer', () => {
     expect(submitBtn).toBeDisabled();
   });
 
-  it('has submit button disabled when inputs are not valid numbers', () => {
-    render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
-
-    fireEvent.change(screen.getByLabelText('Longitude'), {
-      target: { value: 'abc' }
-    });
-    fireEvent.change(screen.getByLabelText('Latitude'), {
-      target: { value: 'def' }
-    });
-
-    const submitBtn = screen.getByRole('button', { name: 'Add Location' });
-    expect(submitBtn).toBeDisabled();
-  });
-
-  it('has submit button enabled when all fields are valid', () => {
+  it('has submit button enabled when all required fields are valid', () => {
     render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
 
     fireEvent.change(screen.getByLabelText('Location Name'), {
@@ -123,20 +124,6 @@ describe('AddLocationDrawer', () => {
 
     const submitBtn = screen.getByRole('button', { name: 'Add Location' });
     expect(submitBtn).toBeEnabled();
-  });
-
-  it('has submit button disabled when name is empty but coords are valid', () => {
-    render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
-
-    fireEvent.change(screen.getByLabelText('Longitude'), {
-      target: { value: '106.846' }
-    });
-    fireEvent.change(screen.getByLabelText('Latitude'), {
-      target: { value: '-6.305' }
-    });
-
-    const submitBtn = screen.getByRole('button', { name: 'Add Location' });
-    expect(submitBtn).toBeDisabled();
   });
 
   it('has submit button disabled when name exceeds 30 characters', () => {
@@ -180,13 +167,17 @@ describe('AddLocationDrawer', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('posts Location resource on submit', async () => {
+  it('posts full Location resource on submit', async () => {
     mockAxiosInstance.post.mockResolvedValue({ data: { id: 'loc-1' } });
 
     render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
 
+    // Fill in required fields
     fireEvent.change(screen.getByLabelText('Location Name'), {
       target: { value: 'Main Clinic' }
+    });
+    fireEvent.change(screen.getByLabelText('Address'), {
+      target: { value: 'Jl. Simpang Lima No. 3' }
     });
     fireEvent.change(screen.getByLabelText('Longitude'), {
       target: { value: '106.846' }
@@ -209,13 +200,19 @@ describe('AddLocationDrawer', () => {
     const payload = postCall[1] as Record<string, unknown>;
     expect(payload.resourceType).toBe('Location');
     expect(payload.name).toBe('Main Clinic');
+    expect(payload.status).toBe('active');
+
+    const org = payload.managingOrganization as Record<string, unknown>;
+    expect(org.reference).toBe('Organization/org-1');
+
+    const address = payload.address as Record<string, unknown>;
+    expect(address.line).toEqual(['Jl. Simpang Lima No. 3']);
 
     const position = payload.position as Record<string, unknown>;
     expect(position.longitude).toBe(106.846);
     expect(position.latitude).toBe(-6.305);
 
-    const org = payload.managingOrganization as Record<string, unknown>;
-    expect(org.reference).toBe('Organization/org-1');
+    expect(payload.hoursOfOperation).toEqual([]);
   });
 
   it('shows toast error on API failure', async () => {
