@@ -100,8 +100,10 @@ describe('EditLocationDrawer', () => {
     expect(screen.getByLabelText('Address')).toBeInTheDocument();
     expect(screen.getByLabelText('Longitude')).toBeInTheDocument();
     expect(screen.getByLabelText('Latitude')).toBeInTheDocument();
+
+    // Status uses SwitchField — only active label is shown
     expect(screen.getByText('Open')).toBeInTheDocument();
-    expect(screen.getByText('Closed')).toBeInTheDocument();
+    expect(screen.getByRole('switch')).toBeChecked();
   });
 
   it('pre-fills form fields from fetched location', async () => {
@@ -123,8 +125,9 @@ describe('EditLocationDrawer', () => {
     expect(screen.getByLabelText('Longitude').value).toBe('105');
     expect(screen.getByLabelText('Latitude').value).toBe('-6.3');
 
-    // Status should match
-    expect(screen.getByText('Open')).toHaveClass('bg-secondary');
+    // Status should match — SwitchField shows "Open" when checked
+    expect(screen.getByText('Open')).toBeInTheDocument();
+    expect(screen.getByRole('switch')).toBeChecked();
   });
 
   it('pre-fills hours of operation', async () => {

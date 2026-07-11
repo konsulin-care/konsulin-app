@@ -66,12 +66,12 @@ describe('AddLocationDrawer', () => {
     expect(screen.getByRole('button', { name: 'Add Location' })).toBeDefined();
   });
 
-  it('renders status toggle and address field', () => {
+  it('renders status toggle (SwitchField) and address field', () => {
     render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
 
+    // Status uses SwitchField — only active label shown
     expect(screen.getByText('Open')).toBeInTheDocument();
-    expect(screen.getByText('Closed')).toBeInTheDocument();
-    expect(screen.getByText('Open')).toHaveClass('bg-secondary');
+    expect(screen.getByRole('switch')).toBeChecked();
     expect(screen.getByLabelText('Address')).toBeInTheDocument();
   });
 

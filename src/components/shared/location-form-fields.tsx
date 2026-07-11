@@ -4,7 +4,7 @@ import LocationCombobox from '@/components/shared/location-combobox';
 import LocationHoursEditor from '@/components/shared/location-hours-editor';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { SwitchField } from '@/components/ui/switch-field';
 import { DayOfWeek, TimeRange } from '@/types/availability';
 import { IWilayahResponse } from '@/types/wilayah';
 
@@ -78,36 +78,14 @@ export default function LocationFormFields({
 }: LocationFormFieldsProps) {
   return (
     <div className='space-y-4'>
-      {/* Status toggle */}
-      <div>
-        <Label>Status</Label>
-        <div className='flex gap-2'>
-          <button
-            type='button'
-            onClick={() => onStatusChange('active')}
-            className={cn(
-              'flex-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
-              status === 'active'
-                ? 'bg-secondary text-white'
-                : 'bg-white text-gray-700'
-            )}
-          >
-            Open
-          </button>
-          <button
-            type='button'
-            onClick={() => onStatusChange('inactive')}
-            className={cn(
-              'flex-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
-              status === 'inactive'
-                ? 'bg-secondary text-white'
-                : 'bg-white text-gray-700'
-            )}
-          >
-            Closed
-          </button>
-        </div>
-      </div>
+      <SwitchField
+        checked={status === 'active'}
+        onCheckedChange={(checked: boolean) =>
+          onStatusChange(checked ? 'active' : 'inactive')
+        }
+        label='Open'
+        offLabel='Close'
+      />
 
       {/* Name */}
       <div>
