@@ -417,6 +417,47 @@ describe('ClinicList — cards', () => {
     });
   });
 
+  it('uses image from FHIR locationImage extension when present', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: true,
+        userInfo: {
+          role_name: 'Patient',
+          fhirId: undefined,
+          organizationId: undefined
+        }
+      },
+      isLoading: false
+    } as never);
+
+    const locationWithImage = createMockLocation(
+      'loc-img',
+      'Img Clinic',
+      'Jakarta'
+    );
+    locationWithImage.extension = [
+      {
+        url: 'https://konsulin.id/fhir/StructureDefinition/locationImage',
+        valueUrl: 'https://res.cloudinary.com/test/image/upload/v1/sample.webp'
+      }
+    ];
+
+    vi.mocked(useClinicLocations).mockReturnValue({
+      data: [locationWithImage],
+      isLoading: false,
+      isSuccess: true
+    } as never);
+
+    render(<ClinicList />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      const img = screen.getByRole('img');
+      expect(img.getAttribute('src')).toBe(
+        'https://res.cloudinary.com/test/image/upload/v1/sample.webp'
+      );
+    });
+  });
+
   it('shows MapPin icon alongside city', async () => {
     vi.mocked(useAuth).mockReturnValue({
       state: {

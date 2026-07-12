@@ -10,6 +10,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
 import { IUseClinicParams } from '@/services/clinic';
 import { getTodayHours, useClinicLocations } from '@/services/clinic-locations';
+import { getLocationImageUrl } from '@/utils/fhir/location-image';
 
 import { type Location } from 'fhir/r4';
 import { Clock, MapPin, SearchIcon } from 'lucide-react';
@@ -31,6 +32,7 @@ function LocationCard({
   const state = location.address?.state ?? '';
   const cityProvince = [city, state].filter(Boolean).join(', ') || '-';
   const hours = getTodayHours(location);
+  const imageUrl = getLocationImageUrl(location) ?? '/images/clinic.jpg';
 
   return (
     <div
@@ -43,9 +45,8 @@ function LocationCard({
       }}
       data-testid={`location-card-${location.id}`}
     >
-      {/* Default image */}
       <Image
-        src='/images/clinic.jpg'
+        src={imageUrl}
         alt={name}
         fill
         className='object-cover'

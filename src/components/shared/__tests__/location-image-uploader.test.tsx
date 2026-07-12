@@ -73,13 +73,16 @@ describe('LocationImageUploader', () => {
   });
 
   describe('rendering', () => {
-    it('renders upload prompt when imageUrl is empty', () => {
+    it('renders full-width upload button when imageUrl is empty', () => {
       render(<LocationImageUploader imageUrl='' onImageUrlChange={vi.fn()} />);
 
-      expect(screen.getByText(/upload location image/i)).toBeInTheDocument();
+      const btn = screen.getByRole('button', { name: /upload/i });
+      expect(btn).toBeInTheDocument();
+      expect(btn.className).toContain('w-full');
+      expect(btn.className).toContain('h-32');
     });
 
-    it('renders preview and clear button when imageUrl is set', () => {
+    it('renders full-width preview and clear button when imageUrl is set', () => {
       render(
         <LocationImageUploader
           imageUrl='https://res.cloudinary.com/test/image/upload/v1/sample.webp'
@@ -93,6 +96,12 @@ describe('LocationImageUploader', () => {
         'src',
         'https://res.cloudinary.com/test/image/upload/v1/sample.webp'
       );
+      expect(img.className).toContain('w-full');
+      expect(img.className).toContain('h-48');
+
+      const previewContainer = img.closest('.relative');
+      expect(previewContainer?.className).not.toContain('inline-block');
+
       expect(
         screen.getByRole('button', { name: /clear/i })
       ).toBeInTheDocument();

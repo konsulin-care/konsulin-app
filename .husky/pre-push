@@ -1,40 +1,29 @@
 #!/usr/bin/env sh
 #. "$(dirname -- "$0")/_/husky.sh" # Removed: Will fail in v10.0.0
 
-status=0
-
 # Go dependency hygiene — fail push if go mod tidy changes files
 if ! go mod tidy || ! go mod download; then
   echo "  [FAIL] go mod tidy/download failed."
-  status=1
 fi
 
 if ! git diff --exit-code go.mod go.sum; then
   echo "  [FAIL] go.mod or go.sum changed after 'go mod tidy'. Commit the changes and try again."
-  status=1
 fi
 
 # Full Next.js build — fail push on build error
 if ! npx next build; then
   echo "  [FAIL] Build failed. Fix errors and try again."
-  status=1
+  exit 1
 fi
 
 # Run JS/TS tests — fail push on test failure
 if ! npx vitest run; then
   echo "  [FAIL] Tests failed. Fix them and try again."
-  status=1
+  exit 1
 fi
 
 # Deep type-check including library types
 if ! npx tsc --noEmit; then
   echo "  [FAIL] Type errors found. Fix them and try again."
-  status=1
-fi
-
-# Final gate
-if [ "$status" -ne 0 ]; then
-  echo ""
-  echo "  Pre-push hook failed. Fix all errors above and push again."
   exit 1
 fi

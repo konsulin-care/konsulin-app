@@ -4,6 +4,7 @@ import CardLoader from '@/components/general/card-loader';
 import EmptyState from '@/components/general/empty-state';
 import { PractitionerCard } from '@/components/practitioner/practitioner-card';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { getLocationImageUrl } from '@/utils/fhir/location-image';
 import {
   type BundleEntry,
   type HealthcareService,
@@ -61,9 +62,7 @@ function buildHoursList(hours: Location['hoursOfOperation']): string[] {
 
   return DAY_ORDER.filter(d => hoursMap.has(d)).map(d => hoursMap.get(d) ?? '');
 }
-// ---------------------------------------------------------------------------
-// PractitionerCard mapping
-// ---------------------------------------------------------------------------
+// --- PractitionerCard mapping ---
 interface CardData {
   id: string;
   practitionerName: string;
@@ -147,41 +146,39 @@ function mapToCardData(entries: BundleEntry[]): CardData[] {
     })
     .filter((entry): entry is CardData => entry !== null);
 }
-// ---------------------------------------------------------------------------
-// ClinicHero sub-component
-// ---------------------------------------------------------------------------
+// --- ClinicHero sub-component ---
 /** Hero banner with clinic photo, full frost overlay, and interaction handlers.
  * Left click copies address, right-click/long-press shares URL. */
 function ClinicHero({
   clinicName,
   fullAddress,
   hoursList,
-  orgName
+  orgName,
+  imageUrl
 }: {
   clinicName: string;
   fullAddress: string;
   hoursList: string[];
   orgName: string;
+  imageUrl: string;
 }) {
   const isLongPress = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
   const copyAddress = useCallback(() => {
-    if (fullAddress) {
-      navigator.clipboard.writeText(fullAddress).catch((e: unknown) => {
-        console.warn('Clipboard write failed', e);
-      });
-    }
+    if (fullAddress)
+      navigator.clipboard
+        .writeText(fullAddress)
+        .catch((e: unknown) => console.warn('Clipboard write failed', e));
   }, [fullAddress]);
   const shareUrl = useCallback(() => {
-    const url = window.location.href;
     if (navigator.share) {
-      navigator.share({ url }).catch((e: unknown) => {
-        console.warn('Share failed', e);
-      });
+      navigator
+        .share({ url: window.location.href })
+        .catch((e: unknown) => console.warn('Share failed', e));
     } else {
-      navigator.clipboard.writeText(url).catch((e: unknown) => {
-        console.warn('Clipboard write failed', e);
-      });
+      navigator.clipboard
+        .writeText(window.location.href)
+        .catch((e: unknown) => console.warn('Clipboard write failed', e));
     }
   }, []);
   const handleClick = useCallback(() => {
@@ -205,19 +202,12 @@ function ClinicHero({
       shareUrl();
     }, 500);
   }, [shareUrl]);
-  const handleTouchEnd = useCallback(() => {
+  const clearTimer = useCallback(() => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = undefined;
     }
   }, []);
-  const handleTouchMove = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = undefined;
-    }
-  }, []);
-  const orgRow = <OrgLabel name={orgName} />;
   const hoursCol = hoursList.map(h => (
     <div key={h} className='truncate text-xs text-white/80'>
       {h}
@@ -229,11 +219,11 @@ function ClinicHero({
       onClick={handleClick}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchMove={handleTouchMove}
+      onTouchEnd={clearTimer}
+      onTouchMove={clearTimer}
     >
       <Image
-        src='/images/clinic.jpg'
+        src={imageUrl}
         alt={clinicName}
         fill
         className='object-cover'
@@ -246,7 +236,7 @@ function ClinicHero({
               {clinicName}
             </div>
             <div className='mt-1 text-sm text-white/80'>{fullAddress}</div>
-            {orgRow}
+            <OrgLabel name={orgName} />
           </div>
           <div className='flex w-[40%] flex-col justify-center gap-0.5'>
             {hoursCol}
@@ -257,18 +247,14 @@ function ClinicHero({
   );
 }
 
-// ---------------------------------------------------------------------------
-// OrgLabel sub-component
-// ---------------------------------------------------------------------------
+// --- OrgLabel ---
 const OrgLabel = ({ name }: { name: string }) => (
   <span className='mt-1 inline-flex items-center gap-1 text-xs text-white/60'>
     <Building size={12} /> Managed by {name}
   </span>
 );
 
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
+// --- Main component ---
 /** Non-admin clinic detail view. Shows hero banner (name, address, org, hours)
  * and a practitioner listing below using PractitionerCard. */
 export default function ClinicPractitionersView({
@@ -287,10 +273,17 @@ export default function ClinicPractitionersView({
     const entry = entries.find(e => e.resource?.resourceType === 'Location');
     return entry?.resource as Location | undefined;
   }, [entries]);
-  const orgEntry = entries?.find(
-    e => e.resource?.resourceType === 'Organization'
+  const imageUrl = useMemo(
+    () =>
+      location
+        ? (getLocationImageUrl(location) ?? '/images/clinic.jpg')
+        : '/images/clinic.jpg',
+    [location]
   );
-  const orgName = (orgEntry?.resource as unknown as { name?: string })?.name;
+  const orgName = (
+    entries?.find(e => e.resource?.resourceType === 'Organization')
+      ?.resource as unknown as { name?: string }
+  )?.name;
   const clinicName = location?.name ?? orgName ?? '-';
   const fullAddress = formatAddress(location?.address);
   const hoursList = useMemo(
@@ -298,18 +291,16 @@ export default function ClinicPractitionersView({
     [location?.hoursOfOperation]
   );
 
-  const cards = useMemo(() => {
-    if (!entries) return [];
-    return mapToCardData(entries);
-  }, [entries]);
+  const cards = useMemo(
+    () => (entries ? mapToCardData(entries) : []),
+    [entries]
+  );
   const filteredCards = useMemo(() => {
     if (!keyword.trim()) return cards;
     const lower = keyword.toLowerCase();
     return cards.filter(c => c.practitionerName.toLowerCase().includes(lower));
   }, [cards, keyword]);
   if (isLoading || isFetching) return <CardLoader />;
-
-  const showEmptyState = filteredCards.length === 0;
   return (
     <div className='mt-[-24px] rounded-[16px] bg-white p-4'>
       <ClinicHero
@@ -317,6 +308,7 @@ export default function ClinicPractitionersView({
         fullAddress={fullAddress}
         orgName={orgName}
         hoursList={hoursList}
+        imageUrl={imageUrl}
       />
 
       <div className='mt-4 flex gap-4'>
@@ -329,7 +321,7 @@ export default function ClinicPractitionersView({
         />
       </div>
 
-      {showEmptyState ? (
+      {filteredCards.length === 0 ? (
         <EmptyState
           className='py-16'
           title='No Practitioners Found'

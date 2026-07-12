@@ -107,12 +107,12 @@ export default function LocationImageUploader({
   return (
     <div className='space-y-2'>
       {imageUrl ? (
-        <div className='relative inline-block'>
+        <div className='relative w-full'>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
             alt='Location preview'
-            className='h-32 w-32 rounded-lg object-cover'
+            className='h-48 w-full rounded-lg object-cover'
           />
           <button
             type='button'
@@ -128,7 +128,7 @@ export default function LocationImageUploader({
           type='button'
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className='border-muted-foreground bg-muted text-muted-foreground hover:border-primary flex h-32 w-32 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed text-sm'
+          className='border-muted-foreground bg-muted text-muted-foreground hover:border-primary flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed text-sm'
         >
           {uploading ? (
             <LoadingSpinnerIcon width={24} height={24} />

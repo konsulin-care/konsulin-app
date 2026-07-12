@@ -119,8 +119,8 @@ function hsEntry(id: string, name: string) {
   } as unknown as BundleEntry;
 }
 
-const mockWriteText = vi.fn().mockResolvedValue(undefined);
-const mockShare = vi.fn().mockResolvedValue(undefined);
+const mockWriteText = vi.fn().mockResolvedValue();
+const mockShare = vi.fn().mockResolvedValue();
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -164,6 +164,30 @@ describe('ClinicPractitionersView', () => {
     expect(
       hero?.closest('.relative')?.querySelector('.backdrop-blur-md')
     ).not.toBeNull();
+  });
+
+  it('renders custom image from locationImage extension when present', () => {
+    const entries = [
+      locEntry({
+        extension: [
+          {
+            url: 'https://konsulin.id/fhir/StructureDefinition/locationImage',
+            valueUrl:
+              'https://res.cloudinary.com/test/image/upload/v1/clinic.webp'
+          }
+        ]
+      }),
+      orgEntry()
+    ];
+    renderView(entries);
+    const imgs = screen.getAllByTestId('mock-image');
+    const hero = imgs.find(
+      i =>
+        i.getAttribute('src') ===
+          'https://res.cloudinary.com/test/image/upload/v1/clinic.webp' &&
+        i.getAttribute('alt') === 'Konsulin Test Clinic'
+    );
+    expect(hero).toBeDefined();
   });
 
   it('shows clinic name, address and managed-by org in overlay', () => {
