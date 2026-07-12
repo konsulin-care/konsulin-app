@@ -18,6 +18,12 @@ vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));
 
+vi.mock('@/lib/indexeddb', () => ({
+  STORES: { uiPreferences: 'ui_preferences' },
+  dbGet: vi.fn()
+}));
+
+import { dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 
 const mockAxiosInstance = { get: vi.fn(), put: vi.fn() };
@@ -67,6 +73,11 @@ describe('EditLocationDrawer', () => {
     vi.mocked(getAPI).mockResolvedValue(
       mockAxiosInstance as unknown as AxiosInstance
     );
+    vi.mocked(dbGet).mockImplementation((_store, args) => {
+      if (args?.[1] === 'clinic_organization')
+        return Promise.resolve({ value: 'org-1' });
+      return Promise.resolve(null);
+    });
   });
 
   afterEach(() => {
@@ -241,6 +252,10 @@ describe('EditLocationDrawer', () => {
     const position = payload.position as Record<string, unknown>;
     expect(position.longitude).toBe(105);
     expect(position.latitude).toBe(-6.3);
+
+    expect(payload.managingOrganization).toEqual({
+      reference: 'Organization/org-1'
+    });
   });
 
   it('calls onClose after successful submit', async () => {

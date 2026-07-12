@@ -1,5 +1,4 @@
 'use client';
-
 import LocationFormFields from '@/components/shared/location-form-fields';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +9,7 @@ import {
   DrawerHeader,
   DrawerTitle
 } from '@/components/ui/drawer';
+import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import {
   useGetCities,
@@ -61,12 +61,7 @@ type Props = {
   readonly onClose: () => void;
 };
 
-/**
- * Drawer for editing a full FHIR Location resource.
- *
- * Fetches the complete Location (no _elements filter), pre-fills all
- * form fields, and submits a PUT with all fields.
- */
+/** Drawer for editing a full FHIR Location resource. */
 export default function EditLocationDrawer({ locationId, onClose }: Props) {
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [name, setName] = useState('');
@@ -120,31 +115,33 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     setHours(parseHoursFromFHIR(location.hoursOfOperation));
     setImageUrl(getLocationImageUrl(location) ?? '');
   }, [location, isDataLoaded]);
-
-  // Match province name to code when list loads
+  // Match province/city/district names to codes when lists load
   useEffect(() => {
-    if (!isDataLoaded || provinceCode) return;
-    if (!listProvinces?.length) return;
-    const m = listProvinces.find(p => p.name === provinceName);
-    if (m) setProvinceCode(m.code);
-  }, [isDataLoaded, listProvinces, provinceName, provinceCode]);
-
-  // Match city name to code when list loads
-  useEffect(() => {
-    if (!isDataLoaded || cityCode) return;
-    if (!listCities?.length) return;
-    const m = listCities.find(c => c.name === cityName);
-    if (m) setCityCode(m.code);
-  }, [isDataLoaded, listCities, cityName, cityCode]);
-
-  // Match district name to code when list loads
-  useEffect(() => {
-    if (!isDataLoaded || districtCode) return;
-    if (!listDistricts?.length) return;
-    const m = listDistricts.find(d => d.name === districtName);
-    if (m) setDistrictCode(m.code);
-  }, [isDataLoaded, listDistricts, districtName, districtCode]);
-
+    if (!isDataLoaded) return;
+    if (listProvinces?.length && !provinceCode) {
+      const m = listProvinces.find(p => p.name === provinceName);
+      if (m) setProvinceCode(m.code);
+    }
+    if (listCities?.length && !cityCode) {
+      const m = listCities.find(c => c.name === cityName);
+      if (m) setCityCode(m.code);
+    }
+    if (listDistricts?.length && !districtCode) {
+      const m = listDistricts.find(d => d.name === districtName);
+      if (m) setDistrictCode(m.code);
+    }
+  }, [
+    isDataLoaded,
+    listProvinces,
+    provinceName,
+    provinceCode,
+    listCities,
+    cityName,
+    cityCode,
+    listDistricts,
+    districtName,
+    districtCode
+  ]);
   const nameTrimmed = name.trim();
   const nameValid =
     nameTrimmed.length > 0 &&
@@ -168,19 +165,16 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     setDistrictCode('');
     setDistrictName('');
   }, []);
-
   const handleCitySelect = useCallback((option: IWilayahResponse) => {
     setCityCode(option.code);
     setCityName(option.name);
     setDistrictCode('');
     setDistrictName('');
   }, []);
-
   const handleDistrictSelect = useCallback((option: IWilayahResponse) => {
     setDistrictCode(option.code);
     setDistrictName(option.name);
   }, []);
-
   const handleAddTimeRange = useCallback((day: DayOfWeek) => {
     setHours(prev => ({
       ...prev,
@@ -214,6 +208,11 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
 
   const doSubmit = useCallback(async () => {
     const API = await getAPI();
+    const clinicPref = await dbGet<{ value: string }>(STORES.uiPreferences, [
+      '',
+      'clinic_organization'
+    ]);
+    const orgId = clinicPref?.value ?? '';
 
     let payload: Record<string, unknown> = {
       resourceType: 'Location',
@@ -227,9 +226,11 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
         state: provinceName
       },
       position: { longitude: parsedLon, latitude: parsedLat },
-      hoursOfOperation: fhirHours
+      hoursOfOperation: fhirHours,
+      managingOrganization: {
+        reference: `Organization/${orgId}`
+      }
     };
-
     if (imageUrl) {
       payload = setLocationImageUrl(
         payload as unknown as Parameters<typeof setLocationImageUrl>[0],
@@ -251,25 +252,15 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     imageUrl,
     locationId
   ]);
-
   const handleSubmit = useCallback(() => {
     if (!isValid || isSubmitting) return;
     setIsSubmitting(true);
-
-    const submit = async () => {
-      try {
-        await doSubmit();
-        onClose();
-      } catch {
+    doSubmit()
+      .then(onClose)
+      .finally(() => setIsSubmitting(false))
+      .catch(() => {
         /* handled by API interceptor */
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
-
-    submit().catch(() => {
-      /* errors handled inside */
-    });
+      });
   }, [isValid, isSubmitting, doSubmit, onClose]);
 
   const content =
