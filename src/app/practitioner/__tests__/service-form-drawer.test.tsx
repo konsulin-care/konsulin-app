@@ -39,6 +39,20 @@ vi.mock('@/components/ui/switch', () => ({
   )
 }));
 
+vi.mock('@/components/ui/switch-field', () => ({
+  SwitchField: ({ checked, onCheckedChange, label, offLabel }: any) => (
+    <div data-testid='switch-field'>
+      <input
+        type='checkbox'
+        data-testid='switch'
+        checked={checked}
+        onChange={e => onCheckedChange(e.target.checked)}
+      />
+      <span>{checked ? label : (offLabel ?? label)}</span>
+    </div>
+  )
+}));
+
 vi.mock('@/components/ui/input', () => ({
   Input: ({ value, onChange, id, placeholder }: any) => (
     <input
@@ -231,6 +245,21 @@ describe('ServiceFormDrawer', () => {
     // Non-numeric characters should be stripped
     fireEvent.change(feeInput, { target: { value: 'abc250def000' } });
     expect(feeInput).toHaveValue('250,000');
+  });
+
+  it('shows "Active" label when switch is checked (default)', () => {
+    render(<ServiceFormDrawer {...defaultProps} />);
+
+    expect(screen.getByText('Active')).toBeInTheDocument();
+  });
+
+  it('shows "Inactive" label when switch is unchecked', () => {
+    render(<ServiceFormDrawer {...defaultProps} />);
+
+    const switchInput = screen.getByTestId('switch');
+    fireEvent.click(switchInput);
+
+    expect(screen.getByText('Inactive')).toBeInTheDocument();
   });
 
   it('omits location from resource when location prop is undefined', () => {

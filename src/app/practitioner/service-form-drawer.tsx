@@ -10,7 +10,7 @@ import {
   DrawerTitle
 } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
+import { SwitchField } from '@/components/ui/switch-field';
 import { Textarea } from '@/components/ui/textarea';
 import {
   getServiceDuration,
@@ -56,13 +56,12 @@ function FormFields({
 }) {
   return (
     <div className='space-y-4 px-4'>
-      <div className='flex items-center justify-between'>
-        <Switch
-          id='service-active'
-          checked={active}
-          onCheckedChange={onActiveChange}
-        />
-      </div>
+      <SwitchField
+        checked={active}
+        onCheckedChange={onActiveChange}
+        label='Active'
+        offLabel='Inactive'
+      />
 
       <div>
         <label htmlFor='service-name' className='text-sm font-medium'>

@@ -10,10 +10,10 @@ describe('Switch', () => {
     expect(root).toHaveClass('data-[state=checked]:bg-secondary');
   });
 
-  it('renders with bg-primary (dark gray) track when unchecked', () => {
+  it('renders with bg-gray-400 track when unchecked', () => {
     render(<Switch checked={false} onCheckedChange={vi.fn()} />);
 
     const root = screen.getByRole('switch');
-    expect(root).toHaveClass('data-[state=unchecked]:bg-primary');
+    expect(root).toHaveClass('data-[state=unchecked]:bg-gray-400');
   });
 });
