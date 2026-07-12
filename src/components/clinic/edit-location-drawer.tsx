@@ -232,9 +232,9 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
 
     if (imageUrl) {
       payload = setLocationImageUrl(
-        payload as Parameters<typeof setLocationImageUrl>[0],
+        payload as unknown as Parameters<typeof setLocationImageUrl>[0],
         imageUrl
-      );
+      ) as unknown as Record<string, unknown>;
     }
 
     await API.put(`/fhir/Location/${locationId}`, payload);

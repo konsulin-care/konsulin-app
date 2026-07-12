@@ -175,9 +175,11 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
 
         if (imageUrl) {
           locationPayload = setLocationImageUrl(
-            locationPayload as Parameters<typeof setLocationImageUrl>[0],
+            locationPayload as unknown as Parameters<
+              typeof setLocationImageUrl
+            >[0],
             imageUrl
-          );
+          ) as unknown as Record<string, unknown>;
         }
 
         await API.post('/fhir/Location', locationPayload);

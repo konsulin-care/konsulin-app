@@ -59,6 +59,8 @@ func newTestServer(t *testing.T) *httptest.Server {
 	t.Setenv("TX_URL", "http://test:3300")
 	t.Setenv("SESSION_COOKIE_SECRET", "test-secret")
 	t.Setenv("CSRF_AUTH_KEY", "dev-csrf-auth-key-32-bytes-long!")
+	t.Setenv("CLOUDINARY_CLOUD_NAME", "test-cloud")
+	t.Setenv("CLOUDINARY_UPLOAD_PRESET", "test-preset")
 
 	cfg, err := config.Load()
 	if err != nil {

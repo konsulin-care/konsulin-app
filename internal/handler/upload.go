@@ -42,6 +42,7 @@ func NewUploadHandler(opts UploadOptions) http.HandlerFunc {
 	if cloudURL == "" {
 		cloudURL = fmt.Sprintf("https://api.cloudinary.com/v1_1/%s", opts.CloudinaryCloudName)
 	}
+	uploadURL := cloudURL + "/auto/upload"
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		file, _, err := r.FormFile("file")
@@ -49,40 +50,16 @@ func NewUploadHandler(opts UploadOptions) http.HandlerFunc {
 			writeUploadError(w, "missing file", http.StatusBadRequest)
 			return
 		}
-		defer file.Close()
+		defer func() {
+			if cerr := file.Close(); cerr != nil {
+				slog.Warn("upload: failed to close uploaded file", "err", cerr)
+			}
+		}()
 
-		body, err := buildCloudinaryBody(file, opts.CloudinaryUploadPreset)
-		if err != nil {
-			slog.Error("upload: failed to build multipart body", "err", err)
-			writeUploadError(w, "internal error", http.StatusInternalServerError)
-			return
-		}
-
-		resp, err := uploadHTTPClient.Post(cloudURL+"/auto/upload", body.ContentType, &body.Buffer)
-		if err != nil {
-			slog.Error("upload: cloudinary unreachable", "err", err)
-			writeUploadError(w, "upload service unreachable", http.StatusBadGateway)
-			return
-		}
-		defer resp.Body.Close()
-
-		raw, err := io.ReadAll(resp.Body)
-		if err != nil {
-			slog.Error("upload: failed to read cloudinary response", "err", err)
-			writeUploadError(w, "internal error", http.StatusInternalServerError)
-			return
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			slog.Error("upload: cloudinary error", "status", resp.StatusCode, "body", string(raw))
-			writeUploadError(w, fmt.Sprintf("upload failed: %s", http.StatusText(resp.StatusCode)), http.StatusBadGateway)
-			return
-		}
-
-		url, err := parseCloudinaryResponse(raw)
-		if err != nil {
-			slog.Error("upload: failed to parse cloudinary response", "err", err)
-			writeUploadError(w, "internal error", http.StatusInternalServerError)
+		url, cldErr := uploadToCloudinary(file, uploadURL, opts.CloudinaryUploadPreset)
+		if cldErr != nil {
+			slog.Error("upload: cloudinary upload failed", "err", cldErr.Err, "status", cldErr.StatusCode)
+			writeUploadError(w, cldErr.Message, cldErr.StatusCode)
 			return
 		}
 
@@ -90,6 +67,52 @@ func NewUploadHandler(opts UploadOptions) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(uploadResponse{URL: url})
 	}
+}
+
+// cloudinaryError holds an upload error with its intended HTTP status.
+type cloudinaryError struct {
+	Err        error
+	Message    string
+	StatusCode int
+}
+
+// uploadToCloudinary sends a file to Cloudinary's unsigned upload endpoint
+// and returns the secure URL.
+func uploadToCloudinary(file io.Reader, uploadURL, uploadPreset string) (string, *cloudinaryError) {
+	body, err := buildCloudinaryBody(file, uploadPreset)
+	if err != nil {
+		return "", &cloudinaryError{Err: err, Message: "internal error", StatusCode: http.StatusInternalServerError}
+	}
+
+	resp, err := uploadHTTPClient.Post(uploadURL, body.ContentType, &body.Buffer)
+	if err != nil {
+		return "", &cloudinaryError{Err: err, Message: "upload service unreachable", StatusCode: http.StatusBadGateway}
+	}
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			slog.Warn("upload: failed to close response body", "err", cerr)
+		}
+	}()
+
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", &cloudinaryError{Err: err, Message: "internal error", StatusCode: http.StatusInternalServerError}
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", &cloudinaryError{
+			Err:        fmt.Errorf("cloudinary returned %d", resp.StatusCode),
+			Message:    fmt.Sprintf("upload failed: %s", http.StatusText(resp.StatusCode)),
+			StatusCode: http.StatusBadGateway,
+		}
+	}
+
+	url, err := parseCloudinaryResponse(raw)
+	if err != nil {
+		return "", &cloudinaryError{Err: err, Message: "internal error", StatusCode: http.StatusInternalServerError}
+	}
+
+	return url, nil
 }
 
 // cloudinaryBody holds a pre-built multipart payload and its Content-Type.

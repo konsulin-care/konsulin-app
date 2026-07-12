@@ -25,6 +25,8 @@ type LocationFormFieldsProps = {
   readonly cityLoading: boolean;
   readonly districtLoading: boolean;
   readonly hours: Record<DayOfWeek, TimeRange[]>;
+  readonly imageUrl: string;
+  readonly onImageUrlChange: (url: string) => void;
   readonly onStatusChange: (status: 'active' | 'inactive') => void;
   readonly onNameChange: (name: string) => void;
   readonly onAddressLineChange: (line: string) => void;
@@ -82,7 +84,7 @@ export default function LocationFormFields({
   return (
     <div className='space-y-4'>
       <LocationImageUploader
-        imageUrl={imageUrl as string}
+        imageUrl={imageUrl}
         onImageUrlChange={onImageUrlChange as (url: string) => void}
       />
 
