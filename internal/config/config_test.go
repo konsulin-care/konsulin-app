@@ -290,4 +290,3 @@ func TestLoad_dotenvFile(t *testing.T) {
 		t.Errorf("expected CloudinaryUploadPreset 'from-dotenv-preset', got %q", cfg.CloudinaryUploadPreset)
 	}
 }
-

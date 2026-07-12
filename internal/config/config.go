@@ -38,7 +38,7 @@ type Config struct {
 	CSRFAuthKey                string `json:"csrf_auth_key"`
 	LogLevel                   string `json:"log_level"`
 
-	CloudinaryCloudName   string `json:"cloudinary_cloud_name"`
+	CloudinaryCloudName    string `json:"cloudinary_cloud_name"`
 	CloudinaryUploadPreset string `json:"cloudinary_upload_preset"`
 }
 
@@ -129,7 +129,7 @@ func Load() (*Config, error) {
 		CSRFAuthKey:                env("CSRF_AUTH_KEY", ""),
 		LogLevel:                   env("LOG", "info"),
 
-		CloudinaryCloudName:   cloudinaryCloudName,
+		CloudinaryCloudName:    cloudinaryCloudName,
 		CloudinaryUploadPreset: cloudinaryUploadPreset,
 	}
 	slog.Info("config loaded",
