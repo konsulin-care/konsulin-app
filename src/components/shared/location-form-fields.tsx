@@ -2,6 +2,7 @@
 
 import LocationCombobox from '@/components/shared/location-combobox';
 import LocationHoursEditor from '@/components/shared/location-hours-editor';
+import LocationImageUploader from '@/components/shared/location-image-uploader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SwitchField } from '@/components/ui/switch-field';
@@ -64,6 +65,8 @@ export default function LocationFormFields({
   cityLoading,
   districtLoading,
   hours,
+  imageUrl,
+  onImageUrlChange,
   onStatusChange,
   onNameChange,
   onAddressLineChange,
@@ -78,6 +81,11 @@ export default function LocationFormFields({
 }: LocationFormFieldsProps) {
   return (
     <div className='space-y-4'>
+      <LocationImageUploader
+        imageUrl={imageUrl as string}
+        onImageUrlChange={onImageUrlChange as (url: string) => void}
+      />
+
       <SwitchField
         checked={status === 'active'}
         onCheckedChange={(checked: boolean) =>

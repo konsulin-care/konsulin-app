@@ -27,6 +27,8 @@ func setRequiredEnv(t *testing.T) {
 	t.Setenv("APP_URL", "http://test:3000")
 	t.Setenv("TX_URL", "http://test:3300")
 	t.Setenv("SESSION_COOKIE_SECRET", "test-secret-value")
+	t.Setenv("CLOUDINARY_CLOUD_NAME", "test-cloud")
+	t.Setenv("CLOUDINARY_UPLOAD_PRESET", "test-preset")
 }
 
 func TestLoad_defaultPort(t *testing.T) {
@@ -171,7 +173,50 @@ func TestEnvUnset_clearsRequiredVars(t *testing.T) {
 	}
 }
 
+func TestLoad_cloudinaryConfig(t *testing.T) {
+	setRequiredEnv(t)
+	t.Setenv("CLOUDINARY_CLOUD_NAME", "test-cloud")
+	t.Setenv("CLOUDINARY_UPLOAD_PRESET", "test-preset")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() returned error: %v", err)
+	}
+	if cfg.CloudinaryCloudName != "test-cloud" {
+		t.Errorf("expected CloudinaryCloudName 'test-cloud', got %q", cfg.CloudinaryCloudName)
+	}
+	if cfg.CloudinaryUploadPreset != "test-preset" {
+		t.Errorf("expected CloudinaryUploadPreset 'test-preset', got %q", cfg.CloudinaryUploadPreset)
+	}
+}
+
+func TestLoad_missingCloudinaryCloudNameReturnsError(t *testing.T) {
+	setRequiredEnv(t)
+	saveEnv(t, "CLOUDINARY_CLOUD_NAME")
+	if err := os.Unsetenv("CLOUDINARY_CLOUD_NAME"); err != nil {
+		t.Fatalf("unset CLOUDINARY_CLOUD_NAME: %v", err)
+	}
+	t.Setenv("CLOUDINARY_UPLOAD_PRESET", "test-preset")
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for missing CLOUDINARY_CLOUD_NAME, got nil")
+	}
+}
+
+func TestLoad_missingCloudinaryUploadPresetReturnsError(t *testing.T) {
+	setRequiredEnv(t)
+	saveEnv(t, "CLOUDINARY_UPLOAD_PRESET")
+	if err := os.Unsetenv("CLOUDINARY_UPLOAD_PRESET"); err != nil {
+		t.Fatalf("unset CLOUDINARY_UPLOAD_PRESET: %v", err)
+	}
+	t.Setenv("CLOUDINARY_CLOUD_NAME", "test-cloud")
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for missing CLOUDINARY_UPLOAD_PRESET, got nil")
+	}
+}
+
 func TestLoad_missingRequiredReturnsError(t *testing.T) {
+	setRequiredEnv(t)
 	saveEnv(t, "SESSION_COOKIE_SECRET")
 	if err := os.Unsetenv("SESSION_COOKIE_SECRET"); err != nil {
 		t.Fatalf("unset SESSION_COOKIE_SECRET: %v", err)

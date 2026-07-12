@@ -215,6 +215,11 @@ describe('AddLocationDrawer', () => {
     expect(payload.hoursOfOperation).toEqual([]);
   });
 
+  it('renders LocationImageUploader with upload prompt', () => {
+    render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
+    expect(screen.getByText('Upload location image')).toBeInTheDocument();
+  });
+
   it('shows toast error on API failure', async () => {
     mockAxiosInstance.post.mockRejectedValue(new Error('API error'));
 

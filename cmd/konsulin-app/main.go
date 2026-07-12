@@ -203,6 +203,12 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		BackendBaseURL: cfg.APIURL,
 	}))
 
+	// Media upload — client sends image, BFF uploads to Cloudinary, returns URL.
+	r.Post("/api/media/location", handler.NewUploadHandler(handler.UploadOptions{
+		CloudinaryCloudName:    cfg.CloudinaryCloudName,
+		CloudinaryUploadPreset: cfg.CloudinaryUploadPreset,
+	}))
+
 	// All unmatched routes — proxy without auth (public pages, _next/static, etc.).
 	r.NotFound(proxy.ServeHTTP)
 

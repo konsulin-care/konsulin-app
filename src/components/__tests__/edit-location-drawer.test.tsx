@@ -40,6 +40,12 @@ const baseLocation = {
   managingOrganization: {
     reference: 'Organization/org-1'
   },
+  extension: [
+    {
+      url: 'https://konsulin.id/fhir/StructureDefinition/locationImage',
+      valueUrl: 'https://res.cloudinary.com/test/image/upload/v1/location.webp'
+    }
+  ],
   hoursOfOperation: [
     {
       daysOfWeek: ['mon' as const, 'tue' as const],
@@ -254,6 +260,26 @@ describe('EditLocationDrawer', () => {
     await waitFor(() => {
       expect(onClose).toHaveBeenCalled();
     });
+  });
+
+  it('pre-fills image uploader from location extension', async () => {
+    mockAxiosInstance.get.mockResolvedValue({ data: baseLocation });
+
+    render(<EditLocationDrawer locationId='loc-1' onClose={onClose} />, {
+      wrapper
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('img')).toBeInTheDocument();
+    });
+
+    const img = screen.getByRole('img');
+    expect(img).toHaveAttribute(
+      'src',
+      'https://res.cloudinary.com/test/image/upload/v1/location.webp'
+    );
+
+    expect(screen.getByRole('button', { name: /clear/i })).toBeInTheDocument();
   });
 
   it('calls onClose when cancel is clicked', async () => {

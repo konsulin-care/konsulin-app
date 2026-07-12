@@ -20,6 +20,10 @@ import { DayOfWeek, TimeRange } from '@/types/availability';
 import { IWilayahResponse } from '@/types/wilayah';
 import { generateTimeRangeId } from '@/utils/availability';
 import {
+  getLocationImageUrl,
+  setLocationImageUrl
+} from '@/utils/fhir/location-image';
+import {
   buildFhirHours,
   emptyHoursRecord,
   parseHoursFromFHIR
@@ -77,6 +81,7 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
   const [latitude, setLatitude] = useState('');
   const [hours, setHours] =
     useState<Record<DayOfWeek, TimeRange[]>>(emptyHoursRecord);
+  const [imageUrl, setImageUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
@@ -113,6 +118,7 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     setLongitude(v.longitude);
     setLatitude(v.latitude);
     setHours(parseHoursFromFHIR(location.hoursOfOperation));
+    setImageUrl(getLocationImageUrl(location) ?? '');
   }, [location, isDataLoaded]);
 
   // Match province name to code when list loads
@@ -208,7 +214,8 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
 
   const doSubmit = useCallback(async () => {
     const API = await getAPI();
-    await API.put(`/fhir/Location/${locationId}`, {
+
+    let payload: Record<string, unknown> = {
       resourceType: 'Location',
       id: locationId,
       status,
@@ -221,7 +228,16 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
       },
       position: { longitude: parsedLon, latitude: parsedLat },
       hoursOfOperation: fhirHours
-    });
+    };
+
+    if (imageUrl) {
+      payload = setLocationImageUrl(
+        payload as Parameters<typeof setLocationImageUrl>[0],
+        imageUrl
+      );
+    }
+
+    await API.put(`/fhir/Location/${locationId}`, payload);
   }, [
     status,
     nameTrimmed,
@@ -232,6 +248,7 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     parsedLon,
     parsedLat,
     fhirHours,
+    imageUrl,
     locationId
   ]);
 
@@ -282,6 +299,8 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
             cityLoading={cityLoading}
             districtLoading={districtLoading}
             hours={hours}
+            imageUrl={imageUrl}
+            onImageUrlChange={setImageUrl}
             onStatusChange={setStatus}
             onNameChange={setName}
             onAddressLineChange={setAddressLine}

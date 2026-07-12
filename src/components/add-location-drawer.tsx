@@ -20,6 +20,7 @@ import {
 import { DayOfWeek, TimeRange } from '@/types/availability';
 import { IWilayahResponse } from '@/types/wilayah';
 import { generateTimeRangeId } from '@/utils/availability';
+import { setLocationImageUrl } from '@/utils/fhir/location-image';
 import { buildFhirHours } from '@/utils/location-hours';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
@@ -59,6 +60,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
     5: [],
     6: []
   });
+  const [imageUrl, setImageUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
@@ -151,7 +153,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
         );
         const orgId = clinicPref?.value ?? '';
 
-        await API.post('/fhir/Location', {
+        let locationPayload: Record<string, unknown> = {
           resourceType: 'Location',
           status,
           name: nameTrimmed,
@@ -169,7 +171,16 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
           managingOrganization: {
             reference: `Organization/${orgId}`
           }
-        });
+        };
+
+        if (imageUrl) {
+          locationPayload = setLocationImageUrl(
+            locationPayload as Parameters<typeof setLocationImageUrl>[0],
+            imageUrl
+          );
+        }
+
+        await API.post('/fhir/Location', locationPayload);
 
         toast.success('Location added successfully');
         queryClient
@@ -204,6 +215,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
     parsedLon,
     parsedLat,
     fhirHours,
+    imageUrl,
     queryClient,
     onClose
   ]);
@@ -240,6 +252,8 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
             cityLoading={cityLoading}
             districtLoading={districtLoading}
             hours={hours}
+            imageUrl={imageUrl}
+            onImageUrlChange={setImageUrl}
             onStatusChange={setStatus}
             onNameChange={setName}
             onAddressLineChange={setAddressLine}

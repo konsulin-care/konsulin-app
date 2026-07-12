@@ -36,6 +36,9 @@ type Config struct {
 	AllowUnsignedCookies       bool   `json:"allow_unsigned_cookies"`
 	CSRFAuthKey                string `json:"csrf_auth_key"`
 	LogLevel                   string `json:"log_level"`
+
+	CloudinaryCloudName   string `json:"cloudinary_cloud_name"`
+	CloudinaryUploadPreset string `json:"cloudinary_upload_preset"`
 }
 
 func (c *Config) AuthFullPath() string {
@@ -87,6 +90,14 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	cloudinaryCloudName, err := MustEnv("CLOUDINARY_CLOUD_NAME")
+	if err != nil {
+		return nil, err
+	}
+	cloudinaryUploadPreset, err := MustEnv("CLOUDINARY_UPLOAD_PRESET")
+	if err != nil {
+		return nil, err
+	}
 
 	cfg := &Config{
 		Port:        env("PORT", "8080"),
@@ -112,6 +123,9 @@ func Load() (*Config, error) {
 		AllowUnsignedCookies:       envBool("ALLOW_UNSIGNED_COOKIES", false),
 		CSRFAuthKey:                env("CSRF_AUTH_KEY", ""),
 		LogLevel:                   env("LOG", "info"),
+
+		CloudinaryCloudName:   cloudinaryCloudName,
+		CloudinaryUploadPreset: cloudinaryUploadPreset,
 	}
 	slog.Info("config loaded",
 		"port", cfg.Port,
@@ -125,6 +139,8 @@ func Load() (*Config, error) {
 		"redirect_intent_cookie_name", cfg.RedirectIntentCookieName,
 		"cookie_secure", cfg.CookieSecure,
 		"session_cookie_secret_set", cfg.SessionCookieSecret != "",
+		"cloudinary_cloud_name_set", cfg.CloudinaryCloudName != "",
+		"cloudinary_upload_preset_set", cfg.CloudinaryUploadPreset != "",
 	)
 	return cfg, nil
 }
