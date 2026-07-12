@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/a-h/templ"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -74,6 +75,10 @@ func (c *Config) RuntimeConfigScript() templ.Component {
 }
 
 func Load() (*Config, error) {
+	if err := godotenv.Load(); err != nil {
+		slog.Debug("config: no .env file found, using system env vars")
+	}
+
 	apiURL, err := MustEnv("API_URL")
 	if err != nil {
 		return nil, err
