@@ -294,7 +294,9 @@ describe('EditLocationDrawer', () => {
       'https://res.cloudinary.com/test/image/upload/v1/location.webp'
     );
 
-    expect(screen.getByRole('button', { name: /clear/i })).toBeInTheDocument();
+    const imgButton = screen.getByRole('button', { name: /location preview/i });
+    expect(imgButton).toBeInTheDocument();
+    expect(imgButton).toHaveAttribute('type', 'button');
   });
 
   it('calls onClose when cancel is clicked', async () => {

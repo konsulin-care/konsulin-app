@@ -107,22 +107,19 @@ export default function LocationImageUploader({
   return (
     <div className='space-y-2'>
       {imageUrl ? (
-        <div className='relative w-full'>
+        <button
+          type='button'
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className='w-full'
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
             alt='Location preview'
             className='h-48 w-full rounded-lg object-cover'
           />
-          <button
-            type='button'
-            onClick={() => onImageUrlChange('')}
-            className='bg-destructive absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full text-xs text-white'
-            aria-label='Clear image'
-          >
-            x
-          </button>
-        </div>
+        </button>
       ) : (
         <button
           type='button'

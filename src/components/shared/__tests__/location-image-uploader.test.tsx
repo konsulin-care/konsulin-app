@@ -3,7 +3,7 @@ import LocationImageUploader, {
 } from '@/components/shared/location-image-uploader';
 import { getAPI } from '@/services/api';
 import { fetchCSRFToken } from '@/services/auth';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { type AxiosInstance } from 'axios';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -82,7 +82,7 @@ describe('LocationImageUploader', () => {
       expect(btn.className).toContain('h-32');
     });
 
-    it('renders full-width preview and clear button when imageUrl is set', () => {
+    it('renders image preview without a clear button when imageUrl is set', () => {
       render(
         <LocationImageUploader
           imageUrl='https://res.cloudinary.com/test/image/upload/v1/sample.webp'
@@ -99,12 +99,29 @@ describe('LocationImageUploader', () => {
       expect(img.className).toContain('w-full');
       expect(img.className).toContain('h-48');
 
-      const previewContainer = img.closest('.relative');
-      expect(previewContainer?.className).not.toContain('inline-block');
-
+      // Clear button must NOT be present
       expect(
-        screen.getByRole('button', { name: /clear/i })
-      ).toBeInTheDocument();
+        screen.queryByRole('button', { name: /clear/i })
+      ).not.toBeInTheDocument();
+    });
+
+    it('wraps image preview in a clickable button that does not clear the image on cancel', () => {
+      const onImageUrlChange = vi.fn();
+      render(
+        <LocationImageUploader
+          imageUrl='https://res.cloudinary.com/test/image/upload/v1/sample.webp'
+          onImageUrlChange={onImageUrlChange}
+        />
+      );
+
+      const img = screen.getByRole('img');
+      const parentButton = img.closest('button');
+      expect(parentButton).toBeInTheDocument();
+      expect(parentButton).toHaveAttribute('type', 'button');
+
+      // Clicking the button does not call onImageUrlChange (cancelling retains image)
+      fireEvent.click(parentButton);
+      expect(onImageUrlChange).not.toHaveBeenCalled();
     });
   });
 });
