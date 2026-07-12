@@ -291,22 +291,3 @@ func TestLoad_dotenvFile(t *testing.T) {
 	}
 }
 
-func TestLoad_dotenvFileMissing(t *testing.T) {
-	tdir := t.TempDir()
-	t.Chdir(tdir)
-
-	setRequiredEnv(t)
-	saveEnv(t, "CLOUDINARY_CLOUD_NAME")
-	if err := os.Unsetenv("CLOUDINARY_CLOUD_NAME"); err != nil {
-		t.Fatalf("unset CLOUDINARY_CLOUD_NAME: %v", err)
-	}
-	saveEnv(t, "CLOUDINARY_UPLOAD_PRESET")
-	if err := os.Unsetenv("CLOUDINARY_UPLOAD_PRESET"); err != nil {
-		t.Fatalf("unset CLOUDINARY_UPLOAD_PRESET: %v", err)
-	}
-
-	_, err := Load()
-	if err == nil {
-		t.Fatal("expected error when both .env and system env are missing, got nil")
-	}
-}

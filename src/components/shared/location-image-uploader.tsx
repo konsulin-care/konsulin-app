@@ -2,6 +2,7 @@
 
 import LoadingSpinnerIcon from '@/components/icons/loading-spinner-icon';
 import { getAPI } from '@/services/api';
+import { fetchCSRFToken } from '@/services/auth';
 import { type ChangeEvent, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
@@ -58,12 +59,15 @@ function loadImage(url: string): Promise<HTMLImageElement> {
  * @param file - The processed WEBP file
  * @returns The secure URL returned by the server
  */
-async function uploadImage(file: File): Promise<string> {
+export async function uploadImage(file: File): Promise<string> {
   const fd = new FormData();
   fd.append('file', file);
 
+  const csrfToken = await fetchCSRFToken();
   const API = await getAPI({ proxy: false });
-  const resp = await API.post<{ url: string }>('/api/media/location', fd);
+  const resp = await API.post<{ url: string }>('/api/media/location', fd, {
+    headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {}
+  });
 
   return resp.data.url;
 }
