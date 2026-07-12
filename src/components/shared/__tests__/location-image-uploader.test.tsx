@@ -23,7 +23,7 @@ describe('LocationImageUploader', () => {
   });
 
   describe('uploadImage', () => {
-    it('fetches CSRF token and includes it as X-CSRF-Token header', async () => {
+    it('calls getAPI with proxy:false and multipart:true for file upload', async () => {
       vi.mocked(fetchCSRFToken).mockResolvedValue('test-csrf-token-123');
       vi.mocked(getAPI).mockResolvedValue(
         mockAxiosInstance as unknown as AxiosInstance
@@ -37,6 +37,7 @@ describe('LocationImageUploader', () => {
       });
       const result = await uploadImage(file);
 
+      expect(getAPI).toHaveBeenCalledWith({ proxy: false, multipart: true });
       expect(fetchCSRFToken).toHaveBeenCalledTimes(1);
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         '/api/media/location',
@@ -60,6 +61,7 @@ describe('LocationImageUploader', () => {
       });
       const result = await uploadImage(file);
 
+      expect(getAPI).toHaveBeenCalledWith({ proxy: false, multipart: true });
       expect(fetchCSRFToken).toHaveBeenCalledTimes(1);
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         '/api/media/location',

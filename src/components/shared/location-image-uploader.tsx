@@ -64,7 +64,7 @@ export async function uploadImage(file: File): Promise<string> {
   fd.append('file', file);
 
   const csrfToken = await fetchCSRFToken();
-  const API = await getAPI({ proxy: false });
+  const API = await getAPI({ proxy: false, multipart: true });
   const resp = await API.post<{ url: string }>('/api/media/location', fd, {
     headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {}
   });
