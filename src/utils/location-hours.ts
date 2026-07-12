@@ -63,8 +63,8 @@ export function buildFhirHours(hours: Record<DayOfWeek, TimeRange[]>): {
 
   for (let d = 0; d <= 6; d++) {
     const day = d as DayOfWeek;
-    const ranges = hours[day];
-    if (!ranges || ranges.length === 0) continue;
+    const ranges = hours[day]; // NOSONAR — day is constrained to 0-6
+    if (ranges.length === 0) continue;
 
     ranges.forEach(range => {
       result.push({

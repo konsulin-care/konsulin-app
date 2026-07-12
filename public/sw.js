@@ -49,7 +49,7 @@ self.addEventListener('activate', function (event) {
  * Parse a URL string safely, returning null on invalid input.
  * Avoids try-catch so SonarCloud doesn't flag unhandled exceptions.
  */
-function parseUrl (url) {
+function parseUrl(url) {
   try {
     return new URL(url)
   } catch {
@@ -58,7 +58,7 @@ function parseUrl (url) {
 }
 
 /** Checks if a URL uses http or https protocol. */
-function isValidHttpUrl (url) {
+function isValidHttpUrl(url) {
   const parsed = parseUrl(url)
   return (
     parsed !== null &&
@@ -67,12 +67,12 @@ function isValidHttpUrl (url) {
 }
 
 /** Checks if a URL belongs to the same origin. */
-function isSameOrigin (url) {
+function isSameOrigin(url) {
   return url.origin === self.location.origin // NOSONAR - self is SW global scope
 }
 
 /** Checks if a pathname is a precacheable static asset. */
-function isStaticAsset (pathname) {
+function isStaticAsset(pathname) {
   return (
     pathname.startsWith('/_next/static/') ||
     pathname.startsWith('/favicon/') ||
@@ -82,12 +82,12 @@ function isStaticAsset (pathname) {
 }
 
 /** Checks if a pathname targets the proxy API. */
-function isProxyApi (pathname) {
+function isProxyApi(pathname) {
   return pathname.startsWith('/proxy/')
 }
 
 /** Network-first strategy: tries network, falls back to cache, then to offline fallback URL. */
-async function networkFirst (request, cacheName, fallbackUrl) {
+async function networkFirst(request, cacheName, fallbackUrl) {
   try {
     if (!isValidHttpUrl(request.url)) {
       throw new Error('Invalid URL: only http/https URLs are allowed')

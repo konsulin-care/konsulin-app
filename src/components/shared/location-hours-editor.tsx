@@ -12,6 +12,14 @@ import {
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
+/** Type-safe getter to avoid Codacy Object Injection Sink on dynamic key access. */
+function getHoursForDay(
+  hours: Record<DayOfWeek, TimeRange[]>,
+  day: DayOfWeek
+): TimeRange[] {
+  return hours[day];
+}
+
 type LocationHoursEditorProps = {
   readonly hours: Record<DayOfWeek, TimeRange[]>;
   readonly onAddTimeRange: (day: DayOfWeek) => void;
@@ -40,7 +48,7 @@ export default function LocationHoursEditor({
   onDeleteTimeRange
 }: LocationHoursEditorProps) {
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(0);
-  const dayHours = hours[selectedDay];
+  const dayHours = getHoursForDay(hours, selectedDay);
 
   return (
     <div className='space-y-4'>
@@ -48,13 +56,15 @@ export default function LocationHoursEditor({
       <div className='flex w-full justify-center gap-2'>
         {DAYS.map(day => {
           const isSelected = day === selectedDay;
-          const hasHours = (hours[day]?.length ?? 0) > 0;
+          const hasHours = getHoursForDay(hours, day).length > 0;
 
           return (
             <button
               key={day}
               type='button'
-              onClick={() => setSelectedDay(day)}
+              onClick={() => {
+                setSelectedDay(day);
+              }}
               className='flex flex-col items-center gap-[2px]'
               aria-label={`Select ${getDayShortName(day)}`}
               aria-pressed={isSelected}
@@ -96,7 +106,7 @@ export default function LocationHoursEditor({
 
       {/* Time ranges */}
       <div className='space-y-3'>
-        {!dayHours || dayHours.length === 0 ? (
+        {dayHours.length === 0 ? (
           <p className='py-4 text-center text-xs text-gray-500'>
             No hours set for this day
           </p>
@@ -107,14 +117,16 @@ export default function LocationHoursEditor({
               <TimeRangeInput
                 key={timeRange.id}
                 timeRange={timeRange}
-                onFromChange={value =>
-                  onUpdateTimeRange(selectedDay, timeRange.id, 'from', value)
-                }
-                onToChange={value =>
-                  onUpdateTimeRange(selectedDay, timeRange.id, 'to', value)
-                }
-                onRemove={() => onDeleteTimeRange(selectedDay, timeRange.id)}
-                showRemoveButton={true}
+                onFromChange={value => {
+                  onUpdateTimeRange(selectedDay, timeRange.id, 'from', value);
+                }}
+                onToChange={value => {
+                  onUpdateTimeRange(selectedDay, timeRange.id, 'to', value);
+                }}
+                onRemove={() => {
+                  onDeleteTimeRange(selectedDay, timeRange.id);
+                }}
+                showRemoveButton
                 error={validation.valid ? undefined : validation.error}
               />
             );

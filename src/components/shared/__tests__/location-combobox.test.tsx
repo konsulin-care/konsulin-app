@@ -24,7 +24,7 @@ describe('LocationCombobox', () => {
           value=''
           onSelect={vi.fn()}
           placeholder='Select province'
-          loading={true}
+          loading
         />
       )
     ).not.toThrow();
@@ -50,7 +50,7 @@ describe('LocationCombobox', () => {
         value=''
         onSelect={vi.fn()}
         placeholder='Select province'
-        loading={true}
+        loading
       />
     );
 

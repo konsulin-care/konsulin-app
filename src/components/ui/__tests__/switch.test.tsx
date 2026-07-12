@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 describe('Switch', () => {
   it('renders with bg-secondary (teal) track when checked', () => {
-    render(<Switch checked={true} onCheckedChange={vi.fn()} />);
+    render(<Switch checked onCheckedChange={vi.fn()} />);
 
     const root = screen.getByRole('switch');
     expect(root).toHaveClass('data-[state=checked]:bg-secondary');

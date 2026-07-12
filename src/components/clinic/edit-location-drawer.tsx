@@ -9,32 +9,21 @@ import {
   DrawerHeader,
   DrawerTitle
 } from '@/components/ui/drawer';
+import { useLocationFormState } from '@/hooks/useLocationFormState';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
-import {
-  useGetCities,
-  useGetDistricts,
-  useGetProvinces
-} from '@/services/api/cities';
-import { DayOfWeek, TimeRange } from '@/types/availability';
-import { IWilayahResponse } from '@/types/wilayah';
-import { generateTimeRangeId } from '@/utils/availability';
 import {
   getLocationImageUrl,
   setLocationImageUrl
 } from '@/utils/fhir/location-image';
-import {
-  buildFhirHours,
-  emptyHoursRecord,
-  parseHoursFromFHIR
-} from '@/utils/location-hours';
+import { parseHoursFromFHIR } from '@/utils/location-hours';
 import { useQuery } from '@tanstack/react-query';
 import { type Location } from 'fhir/r4';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 /** Extract Location form values from a FHIR Location resource. */
 function extractValues(location: Location) {
-  const addr = location.address || ({} as Record<string, unknown>);
+  const addr = location.address || {};
   const pos = location.position || {
     longitude: undefined,
     latitude: undefined
@@ -47,12 +36,12 @@ function extractValues(location: Location) {
   return {
     status,
     name,
-    addressLine: (addr.line as string[])?.[0] || '',
-    cityName: (addr.city as string) || '',
-    districtName: (addr.district as string) || '',
-    provinceName: (addr.state as string) || '',
-    longitude: String(pos.longitude || ''),
-    latitude: String(pos.latitude || '')
+    addressLine: addr.line?.[0] || '',
+    cityName: addr.city || '',
+    districtName: addr.district || '',
+    provinceName: addr.state || '',
+    longitude: String(pos.longitude ?? ''),
+    latitude: String(pos.latitude ?? '')
   };
 }
 
@@ -63,22 +52,55 @@ type Props = {
 
 /** Drawer for editing a full FHIR Location resource. */
 export default function EditLocationDrawer({ locationId, onClose }: Props) {
-  const [status, setStatus] = useState<'active' | 'inactive'>('active');
-  const [name, setName] = useState('');
-  const [addressLine, setAddressLine] = useState('');
-  const [provinceCode, setProvinceCode] = useState('');
-  const [provinceName, setProvinceName] = useState('');
-  const [cityCode, setCityCode] = useState('');
-  const [cityName, setCityName] = useState('');
-  const [districtCode, setDistrictCode] = useState('');
-  const [districtName, setDistrictName] = useState('');
-  const [longitude, setLongitude] = useState('');
-  const [latitude, setLatitude] = useState('');
-  const [hours, setHours] =
-    useState<Record<DayOfWeek, TimeRange[]>>(emptyHoursRecord);
-  const [imageUrl, setImageUrl] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  const {
+    status,
+    setStatus,
+    name,
+    setName,
+    addressLine,
+    setAddressLine,
+    provinceCode,
+    setProvinceCode,
+    provinceName,
+    setProvinceName,
+    cityCode,
+    setCityCode,
+    cityName,
+    setCityName,
+    districtCode,
+    setDistrictCode,
+    districtName,
+    setDistrictName,
+    longitude,
+    setLongitude,
+    latitude,
+    setLatitude,
+    hours,
+    setHours,
+    imageUrl,
+    setImageUrl,
+    isSubmitting,
+    setIsSubmitting,
+    listProvinces,
+    provinceLoading,
+    listCities,
+    cityLoading,
+    listDistricts,
+    districtLoading,
+    handleProvinceSelect,
+    handleCitySelect,
+    handleDistrictSelect,
+    handleAddTimeRange,
+    handleUpdateTimeRange,
+    handleDeleteTimeRange,
+    nameTrimmed,
+    isValid,
+    parsedLon,
+    parsedLat,
+    fhirHours
+  } = useLocationFormState();
 
   const { data: location, isLoading } = useQuery({
     queryKey: ['location-detail', locationId],
@@ -90,121 +112,67 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     enabled: Boolean(locationId)
   });
 
-  const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
-  const { data: listCities, isLoading: cityLoading } = useGetCities(
-    Number(provinceCode)
-  );
-  const { data: listDistricts, isLoading: districtLoading } = useGetDistricts(
-    Number(cityCode)
-  );
-
   // Pre-fill form when location data loads
   useEffect(() => {
     if (!location || isDataLoaded) return;
     setIsDataLoaded(true);
 
-    const v = extractValues(location);
-    setStatus(v.status);
-    setName(v.name);
-    setAddressLine(v.addressLine);
-    setCityName(v.cityName);
-    setDistrictName(v.districtName);
-    setProvinceName(v.provinceName);
-    setLongitude(v.longitude);
-    setLatitude(v.latitude);
+    const values = extractValues(location);
+    setStatus(values.status);
+    setName(values.name);
+    setAddressLine(values.addressLine);
+    setCityName(values.cityName);
+    setDistrictName(values.districtName);
+    setProvinceName(values.provinceName);
+    setLongitude(values.longitude);
+    setLatitude(values.latitude);
     setHours(parseHoursFromFHIR(location.hoursOfOperation));
     setImageUrl(getLocationImageUrl(location) ?? '');
-  }, [location, isDataLoaded]);
+  }, [
+    location,
+    isDataLoaded,
+    setStatus,
+    setName,
+    setAddressLine,
+    setCityName,
+    setDistrictName,
+    setProvinceName,
+    setLongitude,
+    setLatitude,
+    setHours,
+    setImageUrl
+  ]);
+
   // Match province/city/district names to codes when lists load
   useEffect(() => {
     if (!isDataLoaded) return;
     if (listProvinces?.length && !provinceCode) {
-      const m = listProvinces.find(p => p.name === provinceName);
-      if (m) setProvinceCode(m.code);
+      const matched = listProvinces.find(p => p.name === provinceName);
+      if (matched) setProvinceCode(matched.code);
     }
     if (listCities?.length && !cityCode) {
-      const m = listCities.find(c => c.name === cityName);
-      if (m) setCityCode(m.code);
+      const matched = listCities.find(c => c.name === cityName);
+      if (matched) setCityCode(matched.code);
     }
     if (listDistricts?.length && !districtCode) {
-      const m = listDistricts.find(d => d.name === districtName);
-      if (m) setDistrictCode(m.code);
+      const matched = listDistricts.find(d => d.name === districtName);
+      if (matched) setDistrictCode(matched.code);
     }
   }, [
     isDataLoaded,
     listProvinces,
     provinceName,
     provinceCode,
+    setProvinceCode,
     listCities,
     cityName,
     cityCode,
+    setCityCode,
     listDistricts,
     districtName,
-    districtCode
+    districtCode,
+    setDistrictCode
   ]);
-  const nameTrimmed = name.trim();
-  const nameValid =
-    nameTrimmed.length > 0 &&
-    nameTrimmed.length <= 30 &&
-    /^[a-zA-Z0-9 ]+$/.test(nameTrimmed);
-
-  const parsedLon = Number.parseFloat(longitude);
-  const parsedLat = Number.parseFloat(latitude);
-  const isValid =
-    nameValid &&
-    longitude.trim().length > 0 &&
-    latitude.trim().length > 0 &&
-    !Number.isNaN(parsedLon) &&
-    !Number.isNaN(parsedLat);
-
-  const handleProvinceSelect = useCallback((option: IWilayahResponse) => {
-    setProvinceCode(option.code);
-    setProvinceName(option.name);
-    setCityCode('');
-    setCityName('');
-    setDistrictCode('');
-    setDistrictName('');
-  }, []);
-  const handleCitySelect = useCallback((option: IWilayahResponse) => {
-    setCityCode(option.code);
-    setCityName(option.name);
-    setDistrictCode('');
-    setDistrictName('');
-  }, []);
-  const handleDistrictSelect = useCallback((option: IWilayahResponse) => {
-    setDistrictCode(option.code);
-    setDistrictName(option.name);
-  }, []);
-  const handleAddTimeRange = useCallback((day: DayOfWeek) => {
-    setHours(prev => ({
-      ...prev,
-      [day]: [
-        ...prev[day],
-        { id: generateTimeRangeId(), from: '08:00', to: '17:00' }
-      ]
-    }));
-  }, []);
-
-  const handleUpdateTimeRange = useCallback(
-    (day: DayOfWeek, id: string, field: 'from' | 'to', value: string) => {
-      setHours(prev => ({
-        ...prev,
-        [day]: prev[day].map(tr =>
-          tr.id === id ? { ...tr, [field]: value } : tr
-        )
-      }));
-    },
-    []
-  );
-
-  const handleDeleteTimeRange = useCallback((day: DayOfWeek, id: string) => {
-    setHours(prev => ({
-      ...prev,
-      [day]: prev[day].filter(tr => tr.id !== id)
-    }));
-  }, []);
-
-  const fhirHours = useMemo(() => buildFhirHours(hours), [hours]);
 
   const doSubmit = useCallback(async () => {
     const API = await getAPI();
@@ -214,7 +182,7 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     ]);
     const orgId = clinicPref?.value ?? '';
 
-    let payload: Record<string, unknown> = {
+    let payload: Location = {
       resourceType: 'Location',
       id: locationId,
       status,
@@ -232,10 +200,7 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
       }
     };
     if (imageUrl) {
-      payload = setLocationImageUrl(
-        payload as unknown as Parameters<typeof setLocationImageUrl>[0],
-        imageUrl
-      ) as unknown as Record<string, unknown>;
+      payload = setLocationImageUrl(payload, imageUrl);
     }
 
     await API.put(`/fhir/Location/${locationId}`, payload);
@@ -252,16 +217,19 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     imageUrl,
     locationId
   ]);
+
   const handleSubmit = useCallback(() => {
     if (!isValid || isSubmitting) return;
     setIsSubmitting(true);
     doSubmit()
       .then(onClose)
-      .finally(() => setIsSubmitting(false))
+      .finally(() => {
+        setIsSubmitting(false);
+      })
       .catch(() => {
         /* handled by API interceptor */
       });
-  }, [isValid, isSubmitting, doSubmit, onClose]);
+  }, [isValid, isSubmitting, doSubmit, onClose, setIsSubmitting]);
 
   const content =
     isLoading || !isDataLoaded ? (

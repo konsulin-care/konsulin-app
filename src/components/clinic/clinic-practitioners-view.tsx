@@ -11,12 +11,10 @@ import {
   type Location,
   type PractitionerRole
 } from 'fhir/r4';
-import { Building, SearchIcon } from 'lucide-react';
+import { SearchIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useMemo, useRef, useState } from 'react';
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+import { HeroHours, HeroInfo } from './clinic-hero';
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 const DAY_LABELS: Record<string, string> = {
   mon: 'Mon',
@@ -27,24 +25,19 @@ const DAY_LABELS: Record<string, string> = {
   sat: 'Sat',
   sun: 'Sun'
 };
-
-/** Build a full address string from a FHIR Location address. */
-function formatAddress(address: Location['address']): string {
-  if (!address) return '';
-  const p: string[] = [];
-  if (address.line) p.push(...address.line);
-  if (address.city) p.push(address.city);
-  if (address.state)
-    p.push(
-      address.postalCode
-        ? `${address.state} ${address.postalCode}`
-        : address.state
+function formatAddress(addr: Location['address']): string {
+  if (!addr) return '';
+  const parts: string[] = [];
+  if (addr.line) parts.push(...addr.line);
+  if (addr.city) parts.push(addr.city);
+  if (addr.state)
+    parts.push(
+      addr.postalCode ? `${addr.state} ${addr.postalCode}` : addr.state
     );
-  else if (address.postalCode) p.push(address.postalCode);
-  return p.join(', ');
+  else if (addr.postalCode) parts.push(addr.postalCode);
+  return parts.join(', ');
 }
 
-/** Parse Location.hoursOfOperation into sorted day-hour strings. */
 function buildHoursList(hours: Location['hoursOfOperation']): string[] {
   if (!hours || hours.length === 0) return [];
   const hoursMap = new Map<string, string>();
@@ -54,15 +47,12 @@ function buildHoursList(hours: Location['hoursOfOperation']): string[] {
     const timeStr = `${entry.openingTime.slice(0, 5)}-${entry.closingTime.slice(0, 5)}`;
     for (const day of entry.daysOfWeek) {
       const label = DAY_LABELS[day.toLowerCase()];
-      if (label) {
-        hoursMap.set(day.toLowerCase(), `${label}: ${timeStr}`);
-      }
+      if (label) hoursMap.set(day.toLowerCase(), `${label}: ${timeStr}`);
     }
   }
-
   return DAY_ORDER.filter(d => hoursMap.has(d)).map(d => hoursMap.get(d) ?? '');
 }
-// --- PractitionerCard mapping ---
+
 interface CardData {
   id: string;
   practitionerName: string;
@@ -72,22 +62,18 @@ interface CardData {
   practitionerRoleId: string;
 }
 
-/** Extract practitioner display name from a FHIR resource. */
-function getPractitionerName(resource: BundleEntry['resource']): string {
+function getPractitionerName(r: BundleEntry['resource']): string {
   const n = (
-    resource as
-      | { name?: Array<{ given?: string[]; family?: string }> }
-      | undefined
+    r as { name?: Array<{ given?: string[]; family?: string }> } | undefined
   )?.name?.[0];
   return [n?.given?.join(' '), n?.family].filter(Boolean).join(' ') || '-';
 }
 
-/** Extract photo URL from a FHIR resource. */
-function getPhotoUrl(resource: BundleEntry['resource']): string | undefined {
-  return (resource as { photo?: Array<{ url?: string }> } | undefined)
-    ?.photo?.[0]?.url;
+function getPhotoUrl(r: BundleEntry['resource']): string | undefined {
+  return (r as { photo?: Array<{ url?: string }> } | undefined)?.photo?.[0]
+    ?.url;
 }
-/** Extract healthcare service names for a practitioner role. */
+
 function getServiceNames(
   role: BundleEntry<PractitionerRole>,
   hsMap: Map<string, string>
@@ -102,7 +88,6 @@ function getServiceNames(
     .filter(Boolean);
 }
 
-/** Map bundle entries to PractitionerCard-compatible data. */
 function mapToCardData(entries: BundleEntry[]): CardData[] {
   const practitionerRoles = entries.filter(
     (e): e is BundleEntry<PractitionerRole> =>
@@ -115,24 +100,20 @@ function mapToCardData(entries: BundleEntry[]): CardData[] {
     (e): e is BundleEntry<HealthcareService> =>
       e.resource?.resourceType === 'HealthcareService'
   );
-
   const hsMap = new Map(
     healthcareServices
       .filter(hs => hs.resource?.id)
       .map(hs => [hs.resource.id, hs.resource.name ?? ''])
   );
-
   return practitioners
     .map(item => {
       const practitionerId = item.resource?.id;
       if (!practitionerId) return null;
-
       const role = practitionerRoles.find(
         r =>
           r.resource?.practitioner?.reference?.split('/')[1] === practitionerId
       );
       if (!role?.resource?.id) return null;
-
       return {
         id: practitionerId,
         practitionerName: getPractitionerName(item.resource),
@@ -146,40 +127,38 @@ function mapToCardData(entries: BundleEntry[]): CardData[] {
     })
     .filter((entry): entry is CardData => entry !== null);
 }
-// --- ClinicHero sub-component ---
-/** Hero banner with clinic photo, full frost overlay, and interaction handlers.
- * Left click copies address, right-click/long-press shares URL. */
+
 function ClinicHero({
   clinicName,
   fullAddress,
   hoursList,
   orgName,
   imageUrl
-}: {
+}: Readonly<{
   clinicName: string;
   fullAddress: string;
   hoursList: string[];
   orgName: string;
   imageUrl: string;
-}) {
+}>) {
   const isLongPress = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
   const copyAddress = useCallback(() => {
     if (fullAddress)
-      navigator.clipboard
-        .writeText(fullAddress)
-        .catch((e: unknown) => console.warn('Clipboard write failed', e));
+      navigator.clipboard.writeText(fullAddress).catch((e: unknown) => {
+        console.warn('Clipboard write failed', e);
+      });
   }, [fullAddress]);
-  const shareUrl = useCallback(() => {
-    if (navigator.share) {
-      navigator
-        .share({ url: window.location.href })
-        .catch((e: unknown) => console.warn('Share failed', e));
-    } else {
-      navigator.clipboard
-        .writeText(window.location.href)
-        .catch((e: unknown) => console.warn('Clipboard write failed', e));
+  const shareUrl = useCallback(async () => {
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ url: window.location.href });
+        return;
+      } catch {
+        // share failed or user cancelled — fall through to clipboard
+      }
     }
+    void navigator.clipboard.writeText(window.location.href);
   }, []);
   const handleClick = useCallback(() => {
     if (isLongPress.current) {
@@ -191,7 +170,7 @@ function ClinicHero({
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      shareUrl();
+      void shareUrl();
     },
     [shareUrl]
   );
@@ -199,7 +178,7 @@ function ClinicHero({
     isLongPress.current = false;
     longPressTimer.current = setTimeout(() => {
       isLongPress.current = true;
-      shareUrl();
+      void shareUrl();
     }, 500);
   }, [shareUrl]);
   const clearTimer = useCallback(() => {
@@ -208,15 +187,15 @@ function ClinicHero({
       longPressTimer.current = undefined;
     }
   }, []);
-  const hoursCol = hoursList.map(h => (
-    <div key={h} className='truncate text-xs text-white/80'>
-      {h}
-    </div>
-  ));
   return (
     <div
       className='relative h-[200px] w-full cursor-pointer overflow-hidden rounded-2xl'
+      role='button'
+      tabIndex={0}
       onClick={handleClick}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') handleClick();
+      }}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
       onTouchEnd={clearTimer}
@@ -231,47 +210,33 @@ function ClinicHero({
       />
       <div className='absolute inset-0 flex bg-black/50 p-4 backdrop-blur-md'>
         <div className='flex h-full w-full items-center gap-4'>
-          <div className='flex w-[60%] flex-col justify-center'>
-            <div className='truncate text-lg font-bold text-white'>
-              {clinicName}
-            </div>
-            <div className='mt-1 text-sm text-white/80'>{fullAddress}</div>
-            <OrgLabel name={orgName} />
-          </div>
-          <div className='flex w-[40%] flex-col justify-center gap-0.5'>
-            {hoursCol}
-          </div>
+          <HeroInfo
+            clinicName={clinicName}
+            fullAddress={fullAddress}
+            orgName={orgName}
+          />
+          <HeroHours hoursList={hoursList} />
         </div>
       </div>
     </div>
   );
 }
 
-// --- OrgLabel ---
-const OrgLabel = ({ name }: { name: string }) => (
-  <span className='mt-1 inline-flex items-center gap-1 text-xs text-white/60'>
-    <Building size={12} /> Managed by {name}
-  </span>
-);
-
-// --- Main component ---
-/** Non-admin clinic detail view. Shows hero banner (name, address, org, hours)
- * and a practitioner listing below using PractitionerCard. */
+/** Non-admin clinic detail view with hero banner and practitioner listing. */
 export default function ClinicPractitionersView({
   entries,
   isFetching,
   isLoading
-}: {
+}: Readonly<{
   entries: BundleEntry[] | undefined;
   isFetching: boolean;
   isLoading: boolean;
-}) {
+}>) {
   const [keyword, setKeyword] = useState('');
-
   const location = useMemo((): Location | undefined => {
     if (!entries) return undefined;
-    const entry = entries.find(e => e.resource?.resourceType === 'Location');
-    return entry?.resource as Location | undefined;
+    return entries.find(e => e.resource?.resourceType === 'Location')
+      ?.resource as Location | undefined;
   }, [entries]);
   const imageUrl = useMemo(
     () =>
@@ -282,7 +247,7 @@ export default function ClinicPractitionersView({
   );
   const orgName = (
     entries?.find(e => e.resource?.resourceType === 'Organization')
-      ?.resource as unknown as { name?: string }
+      ?.resource as { name?: string } | undefined
   )?.name;
   const clinicName = location?.name ?? orgName ?? '-';
   const fullAddress = formatAddress(location?.address);
@@ -314,7 +279,9 @@ export default function ClinicPractitionersView({
       <div className='mt-4 flex gap-4'>
         <InputWithIcon
           value={keyword}
-          onChange={e => setKeyword(e.target.value)}
+          onChange={e => {
+            setKeyword(e.target.value);
+          }}
           placeholder='Search'
           className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
           startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}

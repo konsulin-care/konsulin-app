@@ -18,22 +18,22 @@ type Props = {
  * @returns A processed File (WEBP format, ≤800px longest side)
  */
 async function processImage(file: File): Promise<File> {
-  const img = await loadImage(URL.createObjectURL(file));
+  const image = await loadImage(URL.createObjectURL(file));
 
-  const scale = Math.min(800 / img.width, 800 / img.height, 1);
-  const w = Math.round(img.width * scale);
-  const h = Math.round(img.height * scale);
+  const scale = Math.min(800 / image.width, 800 / image.height, 1);
+  const width = Math.round(image.width * scale);
+  const height = Math.round(image.height * scale);
 
   const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Unable to get canvas context');
-  ctx.drawImage(img, 0, 0, w, h);
+  ctx.drawImage(image, 0, 0, width, height);
 
-  const blob = await new Promise<Blob | null>(resolve =>
-    canvas.toBlob(resolve, 'image/webp', 0.8)
-  );
+  const blob = await new Promise<Blob | null>(resolve => {
+    canvas.toBlob(resolve, 'image/webp', 0.8);
+  });
   if (!blob) throw new Error('Failed to encode image as WEBP');
 
   return new File([blob], 'location.webp', { type: 'image/webp' });
@@ -45,10 +45,12 @@ async function processImage(file: File): Promise<File> {
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const handleLoad = () => resolve(img);
-    const handleError = () => reject(new Error('Failed to load image'));
-    img.addEventListener('load', handleLoad, { once: true });
-    img.addEventListener('error', handleError, { once: true });
+    img.addEventListener('load', () => resolve(img), { once: true });
+    img.addEventListener(
+      'error',
+      () => reject(new Error('Failed to load image')),
+      { once: true }
+    );
     img.src = url;
   });
 }
@@ -86,6 +88,7 @@ export default function LocationImageUploader({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
+  /** Handle file selection: process, upload, update URL. */
   const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;

@@ -5,9 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 describe('SwitchField', () => {
   it('renders the switch with the label text when checked', () => {
     const onChange = vi.fn();
-    render(
-      <SwitchField checked={true} onCheckedChange={onChange} label='Open' />
-    );
+    render(<SwitchField checked onCheckedChange={onChange} label='Open' />);
 
     expect(screen.getByText('Open')).toBeInTheDocument();
     expect(screen.getByRole('switch')).toBeInTheDocument();
@@ -57,7 +55,7 @@ describe('SwitchField', () => {
     const onChange = vi.fn();
     const { container } = render(
       <SwitchField
-        checked={true}
+        checked
         onCheckedChange={onChange}
         label='Open'
         className='custom-class'

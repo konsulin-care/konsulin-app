@@ -119,8 +119,8 @@ function hsEntry(id: string, name: string) {
   } as unknown as BundleEntry;
 }
 
-const mockWriteText = vi.fn().mockResolvedValue(undefined);
-const mockShare = vi.fn().mockResolvedValue(undefined);
+const mockWriteText = vi.fn().mockResolvedValue();
+const mockShare = vi.fn().mockResolvedValue();
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -222,6 +222,19 @@ describe('ClinicPractitionersView', () => {
     renderView();
     expect(screen.queryByText('Clinic Information')).toBeNull();
     expect(screen.queryByText('Affiliation')).toBeNull();
+  });
+
+  it('triggers address copy on Enter key press', () => {
+    renderView();
+    const hero = document.querySelector<HTMLElement>(
+      '[class*="cursor-pointer"]'
+    );
+    expect(hero).not.toBeNull();
+    hero.focus();
+    fireEvent.keyDown(hero, { key: 'Enter', code: 'Enter' });
+    expect(mockWriteText).toHaveBeenCalledWith(
+      'Jl. Sudirman No. 123, Jakarta, DKI Jakarta 12940'
+    );
   });
 
   it('copies address on left click', () => {

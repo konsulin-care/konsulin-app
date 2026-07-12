@@ -10,20 +10,13 @@ import {
   DrawerHeader,
   DrawerTitle
 } from '@/components/ui/drawer';
+import { useLocationFormState } from '@/hooks/useLocationFormState';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
-import {
-  useGetCities,
-  useGetDistricts,
-  useGetProvinces
-} from '@/services/api/cities';
-import { DayOfWeek, TimeRange } from '@/types/availability';
-import { IWilayahResponse } from '@/types/wilayah';
-import { generateTimeRangeId } from '@/utils/availability';
 import { setLocationImageUrl } from '@/utils/fhir/location-image';
-import { buildFhirHours } from '@/utils/location-hours';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo, useState } from 'react';
+import type { Location } from 'fhir/r4';
+import { useCallback } from 'react';
 import { toast } from 'react-toastify';
 
 type Props = {
@@ -40,109 +33,54 @@ type Props = {
  */
 export default function AddLocationDrawer({ open, onClose }: Props) {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<'active' | 'inactive'>('active');
-  const [name, setName] = useState('');
-  const [addressLine, setAddressLine] = useState('');
-  const [provinceCode, setProvinceCode] = useState('');
-  const [provinceName, setProvinceName] = useState('');
-  const [cityCode, setCityCode] = useState('');
-  const [cityName, setCityName] = useState('');
-  const [districtCode, setDistrictCode] = useState('');
-  const [districtName, setDistrictName] = useState('');
-  const [longitude, setLongitude] = useState('');
-  const [latitude, setLatitude] = useState('');
-  const [hours, setHours] = useState<Record<DayOfWeek, TimeRange[]>>({
-    0: [],
-    1: [],
-    2: [],
-    3: [],
-    4: [],
-    5: [],
-    6: []
-  });
-  const [imageUrl, setImageUrl] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
-  const { data: listCities, isLoading: cityLoading } = useGetCities(
-    Number(provinceCode)
-  );
-  const { data: listDistricts, isLoading: districtLoading } = useGetDistricts(
-    Number(cityCode)
-  );
-
-  const nameTrimmed = name.trim();
-  const nameValid =
-    nameTrimmed.length > 0 &&
-    nameTrimmed.length <= 30 &&
-    /^[a-zA-Z0-9 ]+$/.test(nameTrimmed);
-
-  const parsedLon = Number.parseFloat(longitude);
-  const parsedLat = Number.parseFloat(latitude);
-  const isValid =
-    nameValid &&
-    longitude.trim().length > 0 &&
-    latitude.trim().length > 0 &&
-    !Number.isNaN(parsedLon) &&
-    !Number.isNaN(parsedLat);
-
-  const handleProvinceSelect = useCallback((option: IWilayahResponse) => {
-    setProvinceCode(option.code);
-    setProvinceName(option.name);
-    setCityCode('');
-    setCityName('');
-    setDistrictCode('');
-    setDistrictName('');
-  }, []);
-
-  const handleCitySelect = useCallback((option: IWilayahResponse) => {
-    setCityCode(option.code);
-    setCityName(option.name);
-    setDistrictCode('');
-    setDistrictName('');
-  }, []);
-
-  const handleDistrictSelect = useCallback((option: IWilayahResponse) => {
-    setDistrictCode(option.code);
-    setDistrictName(option.name);
-  }, []);
-
-  const handleAddTimeRange = useCallback((day: DayOfWeek) => {
-    setHours(prev => ({
-      ...prev,
-      [day]: [
-        ...prev[day],
-        { id: generateTimeRangeId(), from: '08:00', to: '17:00' }
-      ]
-    }));
-  }, []);
-
-  const handleUpdateTimeRange = useCallback(
-    (day: DayOfWeek, id: string, field: 'from' | 'to', value: string) => {
-      setHours(prev => ({
-        ...prev,
-        [day]: prev[day].map(tr =>
-          tr.id === id ? { ...tr, [field]: value } : tr
-        )
-      }));
-    },
-    []
-  );
-
-  const handleDeleteTimeRange = useCallback((day: DayOfWeek, id: string) => {
-    setHours(prev => ({
-      ...prev,
-      [day]: prev[day].filter(tr => tr.id !== id)
-    }));
-  }, []);
-
-  const fhirHours = useMemo(() => buildFhirHours(hours), [hours]);
+  const {
+    status,
+    setStatus,
+    name,
+    setName,
+    addressLine,
+    setAddressLine,
+    provinceCode,
+    cityCode,
+    districtCode,
+    provinceName,
+    cityName,
+    districtName,
+    longitude,
+    setLongitude,
+    latitude,
+    setLatitude,
+    hours,
+    imageUrl,
+    setImageUrl,
+    isSubmitting,
+    setIsSubmitting,
+    listProvinces,
+    provinceLoading,
+    listCities,
+    cityLoading,
+    listDistricts,
+    districtLoading,
+    handleProvinceSelect,
+    handleCitySelect,
+    handleDistrictSelect,
+    handleAddTimeRange,
+    handleUpdateTimeRange,
+    handleDeleteTimeRange,
+    nameTrimmed,
+    isValid,
+    parsedLon,
+    parsedLat,
+    fhirHours
+  } = useLocationFormState();
 
   const handleSubmit = useCallback(() => {
     if (!isValid || isSubmitting) return;
 
     setIsSubmitting(true);
 
+    /** Submit the new Location to the FHIR API. */
     const submit = async () => {
       try {
         const API = await getAPI();
@@ -153,7 +91,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
         );
         const orgId = clinicPref?.value ?? '';
 
-        let locationPayload: Record<string, unknown> = {
+        let locationPayload: Location = {
           resourceType: 'Location',
           status,
           name: nameTrimmed,
@@ -174,12 +112,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
         };
 
         if (imageUrl) {
-          locationPayload = setLocationImageUrl(
-            locationPayload as unknown as Parameters<
-              typeof setLocationImageUrl
-            >[0],
-            imageUrl
-          ) as unknown as Record<string, unknown>;
+          locationPayload = setLocationImageUrl(locationPayload, imageUrl);
         }
 
         await API.post('/fhir/Location', locationPayload);
@@ -219,7 +152,8 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
     fhirHours,
     imageUrl,
     queryClient,
-    onClose
+    onClose,
+    setIsSubmitting
   ]);
 
   return (

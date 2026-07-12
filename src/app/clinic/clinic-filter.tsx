@@ -82,11 +82,11 @@ export default function ClinicFilter({
   onChange,
   type,
   role
-}: {
+}: Readonly<{
   onChange: (filter: IUseClinicParams) => void;
   type: string;
   role?: string;
-}) {
+}>) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM

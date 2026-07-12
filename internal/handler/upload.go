@@ -13,6 +13,8 @@ import (
 
 var uploadHTTPClient = &http.Client{Timeout: 30 * time.Second}
 
+const errMsgInternal = "internal error"
+
 // UploadOptions configures the upload handler with Cloudinary credentials.
 type UploadOptions struct {
 	CloudinaryCloudName    string
@@ -81,7 +83,7 @@ type cloudinaryError struct {
 func uploadToCloudinary(file io.Reader, uploadURL, uploadPreset string) (string, *cloudinaryError) {
 	body, err := buildCloudinaryBody(file, uploadPreset)
 	if err != nil {
-		return "", &cloudinaryError{Err: err, Message: "internal error", StatusCode: http.StatusInternalServerError}
+		return "", &cloudinaryError{Err: err, Message: errMsgInternal, StatusCode: http.StatusInternalServerError}
 	}
 
 	resp, err := uploadHTTPClient.Post(uploadURL, body.ContentType, &body.Buffer)
@@ -96,7 +98,7 @@ func uploadToCloudinary(file io.Reader, uploadURL, uploadPreset string) (string,
 
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", &cloudinaryError{Err: err, Message: "internal error", StatusCode: http.StatusInternalServerError}
+		return "", &cloudinaryError{Err: err, Message: errMsgInternal, StatusCode: http.StatusInternalServerError}
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -109,7 +111,7 @@ func uploadToCloudinary(file io.Reader, uploadURL, uploadPreset string) (string,
 
 	url, err := parseCloudinaryResponse(raw)
 	if err != nil {
-		return "", &cloudinaryError{Err: err, Message: "internal error", StatusCode: http.StatusInternalServerError}
+		return "", &cloudinaryError{Err: err, Message: errMsgInternal, StatusCode: http.StatusInternalServerError}
 	}
 
 	return url, nil

@@ -17,29 +17,38 @@ export function createNextImageMock() {
   return {
     __esModule: true,
     default: (props: Record<string, unknown>) => {
-      // Collect only standard HTML img attributes, skipping next/image-specific ones
-      const imgProps: Record<string, unknown> = {};
+      const SAFE_ATTRS = new Set([
+        'src',
+        'alt',
+        'className',
+        'style',
+        'width',
+        'height',
+        'id',
+        'title',
+        'lang',
+        'dir',
+        'hidden',
+        'slot',
+        'data-testid',
+        'aria-label',
+        'aria-hidden',
+        'role',
+        'tabIndex',
+        'crossOrigin',
+        'decoding',
+        'referrerPolicy',
+        'sizes',
+        'srcSet',
+        'useMap'
+      ]);
+      const safeProps: Record<string, unknown> = {};
       for (const key of Object.keys(props)) {
-        if (
-          key !== 'fill' &&
-          key !== 'priority' &&
-          key !== 'loading' &&
-          key !== 'placeholder' &&
-          key !== 'blurDataURL' &&
-          key !== 'onLoadingComplete' &&
-          key !== 'onError'
-        ) {
-          imgProps[key] = props[key];
-        }
+        if (SAFE_ATTRS.has(key)) safeProps[key] = props[key];
       }
       return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imgProps.src as string}
-          alt={imgProps.alt as string}
-          data-testid='next-image'
-          {...imgProps}
-        />
+        // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+        <img data-testid='next-image' {...safeProps} />
       );
     }
   };

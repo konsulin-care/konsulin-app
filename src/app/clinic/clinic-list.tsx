@@ -35,14 +35,10 @@ function LocationCard({
   const imageUrl = getLocationImageUrl(location) ?? '/images/clinic.jpg';
 
   return (
-    <div
+    <button
+      type='button'
       className='group relative aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-2xl shadow-lg'
-      role='button'
-      tabIndex={0}
       onClick={onClick}
-      onKeyDown={e => {
-        if (e.key === 'Enter' || e.key === ' ') onClick();
-      }}
       data-testid={`location-card-${location.id}`}
     >
       <Image
@@ -67,7 +63,7 @@ function LocationCard({
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 

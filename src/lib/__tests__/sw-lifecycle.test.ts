@@ -312,15 +312,13 @@ describe('fetch cache failure resilience', () => {
 // Fetch event — top-level error recovery
 // ---------------------------------------------------------------------------
 describe('fetch error recovery', () => {
-  it('wraps handler in top-level try-catch that falls back to fetch', async () => {
+  it('ignores unparseable URLs without calling respondWith', () => {
     // URL parsing failure: new URL('') throws
     const event = fireFetch(mockSelf, { url: '' });
 
-    // The async IIFE's try-catch falls back to fetch(event.request)
-    expect(event.respondWith).toHaveBeenCalled();
-    const promiseArg = event.respondWith.mock.calls[0][0];
-    await expect(promiseArg).resolves.toBeInstanceOf(Response);
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    // Invalid URLs are silently ignored — no respondWith, no fetch
+    expect(event.respondWith).not.toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledTimes(0);
   });
 });
 

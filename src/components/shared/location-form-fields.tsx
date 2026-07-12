@@ -90,9 +90,9 @@ export default function LocationFormFields({
 
       <SwitchField
         checked={status === 'active'}
-        onCheckedChange={(checked: boolean) =>
-          onStatusChange(checked ? 'active' : 'inactive')
-        }
+        onCheckedChange={(checked: boolean) => {
+          onStatusChange(checked ? 'active' : 'inactive');
+        }}
         label='Open'
         offLabel='Close'
       />
@@ -104,7 +104,9 @@ export default function LocationFormFields({
           id='loc-name'
           type='text'
           value={name}
-          onChange={e => onNameChange(e.target.value)}
+          onChange={e => {
+            onNameChange(e.target.value);
+          }}
           placeholder='Main Clinic'
           className='bg-white'
           aria-label='Location Name'
@@ -119,7 +121,9 @@ export default function LocationFormFields({
           id='loc-address'
           type='text'
           value={addressLine}
-          onChange={e => onAddressLineChange(e.target.value)}
+          onChange={e => {
+            onAddressLineChange(e.target.value);
+          }}
           placeholder='Jl. Example No. 1'
           className='bg-white'
           aria-label='Address'
@@ -163,7 +167,9 @@ export default function LocationFormFields({
             id='loc-longitude'
             type='number'
             value={longitude}
-            onChange={e => onLongitudeChange(e.target.value)}
+            onChange={e => {
+              onLongitudeChange(e.target.value);
+            }}
             placeholder='106.846'
             className='bg-white'
             aria-label='Longitude'
@@ -176,7 +182,9 @@ export default function LocationFormFields({
             id='loc-latitude'
             type='number'
             value={latitude}
-            onChange={e => onLatitudeChange(e.target.value)}
+            onChange={e => {
+              onLatitudeChange(e.target.value);
+            }}
             placeholder='-6.305'
             className='bg-white'
             aria-label='Latitude'
