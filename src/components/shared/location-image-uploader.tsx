@@ -18,25 +18,30 @@ type Props = {
  * @returns A processed File (WEBP format, ≤800px longest side)
  */
 async function processImage(file: File): Promise<File> {
-  const image = await loadImage(URL.createObjectURL(file));
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await loadImage(objectUrl);
 
-  const scale = Math.min(800 / image.width, 800 / image.height, 1);
-  const width = Math.round(image.width * scale);
-  const height = Math.round(image.height * scale);
+    const scale = Math.min(800 / image.width, 800 / image.height, 1);
+    const width = Math.round(image.width * scale);
+    const height = Math.round(image.height * scale);
 
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Unable to get canvas context');
-  ctx.drawImage(image, 0, 0, width, height);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Unable to get canvas context');
+    ctx.drawImage(image, 0, 0, width, height);
 
-  const blob = await new Promise<Blob | null>(resolve => {
-    canvas.toBlob(resolve, 'image/webp', 0.8);
-  });
-  if (!blob) throw new Error('Failed to encode image as WEBP');
+    const blob = await new Promise<Blob | null>(resolve => {
+      canvas.toBlob(resolve, 'image/webp', 0.8);
+    });
+    if (!blob) throw new Error('Failed to encode image as WEBP');
 
-  return new File([blob], 'location.webp', { type: 'image/webp' });
+    return new File([blob], 'location.webp', { type: 'image/webp' });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 
 /**
@@ -74,6 +79,50 @@ export async function uploadImage(file: File): Promise<string> {
   return resp.data.url;
 }
 
+/** Preview/upload-toggle button for location image. */
+function LocationImageToggle({
+  imageUrl,
+  uploading,
+  onClick
+}: {
+  imageUrl: string;
+  uploading: boolean;
+  onClick: () => void;
+}) {
+  if (imageUrl) {
+    return (
+      <button
+        type='button'
+        onClick={onClick}
+        disabled={uploading}
+        className='w-full'
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageUrl}
+          alt='Location preview'
+          className='h-48 w-full rounded-lg object-cover'
+        />
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type='button'
+      onClick={onClick}
+      disabled={uploading}
+      className='border-muted-foreground bg-muted text-muted-foreground hover:border-primary flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed text-sm'
+    >
+      {uploading ? (
+        <LoadingSpinnerIcon width={24} height={24} />
+      ) : (
+        <span>Upload location image</span>
+      )}
+    </button>
+  );
+}
+
 /**
  * File picker + preview for location images.
  *
@@ -102,51 +151,24 @@ export default function LocationImageUploader({
       toast.error('Failed to upload image. Please try again.');
     } finally {
       setUploading(false);
-      // Reset input so re-selecting the same file triggers change
       if (inputRef.current) inputRef.current.value = '';
     }
   };
 
   return (
     <div className='space-y-2'>
-      {imageUrl ? (
-        <button
-          type='button'
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className='w-full'
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageUrl}
-            alt='Location preview'
-            className='h-48 w-full rounded-lg object-cover'
-          />
-        </button>
-      ) : (
-        <button
-          type='button'
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className='border-muted-foreground bg-muted text-muted-foreground hover:border-primary flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed text-sm'
-        >
-          {uploading ? (
-            <LoadingSpinnerIcon width={24} height={24} />
-          ) : (
-            <span>Upload location image</span>
-          )}
-        </button>
-      )}
-
+      <LocationImageToggle
+        imageUrl={imageUrl}
+        uploading={uploading}
+        onClick={() => inputRef.current?.click()}
+      />
       <input
         ref={inputRef}
         type='file'
         accept='image/*'
         className='hidden'
         onChange={e => {
-          handleFile(e).catch(() => {
-            /* errors handled inside handleFile */
-          });
+          void handleFile(e);
         }}
       />
     </div>

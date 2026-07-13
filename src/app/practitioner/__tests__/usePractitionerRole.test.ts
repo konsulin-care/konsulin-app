@@ -1,10 +1,10 @@
-import { useDetailPractitioner } from '@/services/clinic';
+import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import { renderHook } from '@testing-library/react';
 import type { PractitionerRole } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePractitionerRole } from '../hooks/usePractitionerRole';
 
-vi.mock('@/services/clinic', () => ({
+vi.mock('@/services/clinic-practitioners', () => ({
   useDetailPractitioner: vi.fn()
 }));
 

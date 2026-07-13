@@ -5,7 +5,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { type AxiosInstance } from 'axios';
 import { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useOrganizationLocations } from '../clinic';
+import { useOrganizationLocations } from '../clinic-practitioners';
 
 vi.mock('@/services/api', () => ({
   getAPI: vi.fn()

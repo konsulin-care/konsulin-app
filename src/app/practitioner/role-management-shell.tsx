@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useFabDirty } from '@/context/fabDirtyContext';
-import { useDetailPractitioner } from '@/services/clinic';
+import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import { PractitionerRole } from 'fhir/r4';
 import { useCallback, useMemo } from 'react';
 import PractitionerAvailabilityEditor from './practitioner-availability-editor';

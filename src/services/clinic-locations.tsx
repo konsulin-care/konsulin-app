@@ -49,7 +49,7 @@ const ROLE_PRACTITIONER = 'Practitioner';
  *
  * GET /fhir/Organization?active=true&_has:Location:organization:status=active&_elements=id,name
  */
-export function useListActiveOrganizations() {
+export function useListActiveOrganizations(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['active-organizations'],
     queryFn: async () => {
@@ -61,7 +61,9 @@ export function useListActiveOrganizations() {
         code: (e.resource as { id: string }).id,
         name: (e.resource as { name?: string }).name ?? ''
       }));
-    }
+    },
+    enabled: options?.enabled ?? true,
+    staleTime: 5 * 60 * 1000
   });
 }
 

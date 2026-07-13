@@ -20,6 +20,7 @@ import { parseHoursFromFHIR } from '@/utils/location-hours';
 import { useQuery } from '@tanstack/react-query';
 import { type Location } from 'fhir/r4';
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
 /** Extract Location form values from a FHIR Location resource. */
 function extractValues(location: Location) {
@@ -226,8 +227,9 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
       .finally(() => {
         setIsSubmitting(false);
       })
-      .catch(() => {
-        /* handled by API interceptor */
+      .catch((err: unknown) => {
+        console.error('Failed to submit location:', err);
+        toast.error('Failed to save location. Please try again.');
       });
   }, [isValid, isSubmitting, doSubmit, onClose, setIsSubmitting]);
 

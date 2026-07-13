@@ -9,7 +9,7 @@ import { STORES, dbGet, dbSet } from '@/lib/indexeddb';
 import {
   useOrganizationLocations,
   usePractitionerListing
-} from '@/services/clinic';
+} from '@/services/clinic-practitioners';
 import { SearchIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import PractitionerFilter, { type FilterState } from './practitioner-filter';

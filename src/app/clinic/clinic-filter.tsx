@@ -151,14 +151,14 @@ export default function ClinicFilter({
     setWhichContent(CONTENT_CUSTOM);
   };
 
+  const isPatientOrGuest = role === Roles.Patient || role === Roles.Guest;
+
   const { data: listCities, isLoading: cityLoading } = useGetCities(
     Number(filter.province_code || 0)
   );
   const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
   const { data: organizations, isLoading: orgLoading } =
-    useListActiveOrganizations();
-
-  const isPatientOrGuest = role === Roles.Patient || role === Roles.Guest;
+    useListActiveOrganizations({ enabled: isPatientOrGuest });
 
   /** Render location filter section (province + city). */
   const renderLocationSection = () => (

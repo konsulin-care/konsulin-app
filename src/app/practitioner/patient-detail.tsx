@@ -3,7 +3,7 @@
 import { LoadingSpinnerIcon } from '@/components/icons';
 import ServiceCard from '@/components/practitioner/service-card';
 import { Badge } from '@/components/ui/badge';
-import { useDetailPractitioner } from '@/services/clinic';
+import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
 import { generateAvatarPlaceholder } from '@/utils/helper';
 import type { HealthcareService } from 'fhir/r4';
@@ -186,7 +186,7 @@ function HealthcareServicesSection({
  * 4. Fallback to 'Practitioner'
  */
 function getPractitionerName(
-  detail: import('@/services/clinic').DetailPractitionerData
+  detail: import('@/services/clinic-practitioners').DetailPractitionerData
 ): string {
   const name = detail.practitioner?.name?.[0];
   if (name?.text) return name.text;
@@ -236,7 +236,7 @@ function PatientDetailBody({
   practitionerRoleId,
   router
 }: {
-  readonly detail: import('@/services/clinic').DetailPractitionerData;
+  readonly detail: import('@/services/clinic-practitioners').DetailPractitionerData;
   readonly practitionerRoleId: string;
   readonly router: AppRouterInstance;
 }) {

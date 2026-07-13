@@ -68,16 +68,17 @@ const CommandList = React.forwardRef<
     const stop = (e: Event) => {
       e.stopPropagation();
     };
-    if (el) {
-      el.addEventListener('wheel', stop, { passive: true });
-      el.addEventListener('touchmove', stop, { passive: true });
-      return () => {
-        el.removeEventListener('wheel', stop);
-        el.removeEventListener('touchmove', stop);
-      };
+    if (!el) {
+      // eslint-disable-next-line unicorn/no-useless-undefined
+      return undefined;
     }
-    // eslint-disable-next-line unicorn/no-useless-undefined
-    return undefined;
+
+    el.addEventListener('wheel', stop, { passive: true });
+    el.addEventListener('touchmove', stop, { passive: true });
+    return () => {
+      el.removeEventListener('wheel', stop);
+      el.removeEventListener('touchmove', stop);
+    };
   }, []);
 
   return (

@@ -24,12 +24,51 @@ type Props = {
   readonly onClose: () => void;
 };
 
+/** Submit a new location to the FHIR API. */
+async function submitNewLocation(params: {
+  status: 'active' | 'inactive';
+  nameTrimmed: string;
+  addressLine: string;
+  cityName: string;
+  districtName: string;
+  provinceName: string;
+  parsedLon: number;
+  parsedLat: number;
+  fhirHours: Location['hoursOfOperation'];
+  imageUrl: string;
+  orgId: string;
+}): Promise<void> {
+  const API = await getAPI();
+
+  let locationPayload: Location = {
+    resourceType: 'Location',
+    status: params.status,
+    name: params.nameTrimmed,
+    address: {
+      line: [params.addressLine],
+      city: params.cityName,
+      district: params.districtName,
+      state: params.provinceName
+    },
+    position: {
+      longitude: params.parsedLon,
+      latitude: params.parsedLat
+    },
+    hoursOfOperation: params.fhirHours,
+    managingOrganization: {
+      reference: `Organization/${params.orgId}`
+    }
+  };
+
+  if (params.imageUrl) {
+    locationPayload = setLocationImageUrl(locationPayload, params.imageUrl);
+  }
+
+  await API.post('/fhir/Location', locationPayload);
+}
+
 /**
  * Drawer for adding a new Location to the selected clinic.
- *
- * Reads selected_clinic from IndexedDB for managingOrganization reference.
- * Posts a full FHIR Location resource with status, name, address,
- * position, and hoursOfOperation.
  */
 export default function AddLocationDrawer({ open, onClose }: Props) {
   const queryClient = useQueryClient();
@@ -75,69 +114,42 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
     fhirHours
   } = useLocationFormState();
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!isValid || isSubmitting) return;
 
     setIsSubmitting(true);
+    try {
+      const clinicPref = await dbGet<{ value: string }>(STORES.uiPreferences, [
+        '',
+        'clinic_organization'
+      ]);
+      const orgId = clinicPref?.value ?? '';
 
-    /** Submit the new Location to the FHIR API. */
-    const submit = async () => {
-      try {
-        const API = await getAPI();
-
-        const clinicPref = await dbGet<{ value: string }>(
-          STORES.uiPreferences,
-          ['', 'clinic_organization']
-        );
-        const orgId = clinicPref?.value ?? '';
-
-        let locationPayload: Location = {
-          resourceType: 'Location',
-          status,
-          name: nameTrimmed,
-          address: {
-            line: [addressLine],
-            city: cityName,
-            district: districtName,
-            state: provinceName
-          },
-          position: {
-            longitude: parsedLon,
-            latitude: parsedLat
-          },
-          hoursOfOperation: fhirHours,
-          managingOrganization: {
-            reference: `Organization/${orgId}`
-          }
-        };
-
-        if (imageUrl) {
-          locationPayload = setLocationImageUrl(locationPayload, imageUrl);
-        }
-
-        await API.post('/fhir/Location', locationPayload);
-
-        toast.success('Location added successfully');
-        queryClient
-          .invalidateQueries({
-            queryKey: ['practitioner-count']
-          })
-          .catch(() => {
-            /* cache invalidation best-effort */
-          });
-        onClose();
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to add location';
-        toast.error(message);
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
-
-    submit().catch(() => {
-      /* errors handled inside submit */
-    });
+      await submitNewLocation({
+        status,
+        nameTrimmed,
+        addressLine,
+        cityName,
+        districtName,
+        provinceName,
+        parsedLon,
+        parsedLat,
+        fhirHours,
+        imageUrl,
+        orgId
+      });
+      toast.success('Location added successfully');
+      void queryClient.invalidateQueries({
+        queryKey: ['practitioner-count']
+      });
+      onClose();
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to add location';
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }, [
     isValid,
     isSubmitting,
@@ -206,7 +218,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
 
         <DrawerFooter>
           <Button
-            onClick={handleSubmit}
+            onClick={() => void handleSubmit()}
             disabled={!isValid || isSubmitting}
             variant='secondary'
             className='text-white'

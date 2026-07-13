@@ -27,7 +27,7 @@ import {
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { cn } from '@/lib/utils';
 import { getAPI } from '@/services/api';
-import { useOrganizationLocations } from '@/services/clinic';
+import { useOrganizationLocations } from '@/services/clinic-practitioners';
 import { useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';

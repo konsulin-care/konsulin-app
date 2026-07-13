@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -47,6 +46,9 @@ func NewUploadHandler(opts UploadOptions) http.HandlerFunc {
 	uploadURL := cloudURL + "/auto/upload"
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Limit request body to 10MB to prevent memory exhaustion.
+		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+
 		file, _, err := r.FormFile("file")
 		if err != nil {
 			writeUploadError(w, "missing file", http.StatusBadRequest)
@@ -81,12 +83,9 @@ type cloudinaryError struct {
 // uploadToCloudinary sends a file to Cloudinary's unsigned upload endpoint
 // and returns the secure URL.
 func uploadToCloudinary(file io.Reader, uploadURL, uploadPreset string) (string, *cloudinaryError) {
-	body, err := buildCloudinaryBody(file, uploadPreset)
-	if err != nil {
-		return "", &cloudinaryError{Err: err, Message: errMsgInternal, StatusCode: http.StatusInternalServerError}
-	}
+	body := buildCloudinaryBody(file, uploadPreset)
 
-	resp, err := uploadHTTPClient.Post(uploadURL, body.ContentType, &body.Buffer)
+	resp, err := uploadHTTPClient.Post(uploadURL, body.ContentType, body.Reader)
 	if err != nil {
 		return "", &cloudinaryError{Err: err, Message: "upload service unreachable", StatusCode: http.StatusBadGateway}
 	}
@@ -117,35 +116,32 @@ func uploadToCloudinary(file io.Reader, uploadURL, uploadPreset string) (string,
 	return url, nil
 }
 
-// cloudinaryBody holds a pre-built multipart payload and its Content-Type.
+// cloudinaryBody holds a streamable multipart payload and its Content-Type.
 type cloudinaryBody struct {
-	Buffer      bytes.Buffer
+	Reader      io.Reader
 	ContentType string
 }
 
-// buildCloudinaryBody constructs a multipart form body for Cloudinary upload.
-func buildCloudinaryBody(file io.Reader, uploadPreset string) (*cloudinaryBody, error) {
-	var buf bytes.Buffer
-	mpw := multipart.NewWriter(&buf)
+// buildCloudinaryBody constructs a streaming multipart form body for Cloudinary upload.
+func buildCloudinaryBody(file io.Reader, uploadPreset string) *cloudinaryBody {
+	pr, pw := io.Pipe()
+	mpw := multipart.NewWriter(pw)
 
-	if err := mpw.WriteField("upload_preset", uploadPreset); err != nil {
-		return nil, err
-	}
+	go func() {
+		defer func() {
+			if cerr := pw.Close(); cerr != nil {
+				slog.Warn("upload: failed to close pipe writer", "err", cerr)
+			}
+		}()
 
-	fw, err := mpw.CreateFormFile("file", "location.webp")
-	if err != nil {
-		return nil, err
-	}
+		// Best-effort writes — pipe will propagate errors to the reader side.
+		_ = mpw.WriteField("upload_preset", uploadPreset)
+		fw, _ := mpw.CreateFormFile("file", "location.webp")
+		_, _ = io.Copy(fw, file)
+		_ = mpw.Close()
+	}()
 
-	if _, err := io.Copy(fw, file); err != nil {
-		return nil, err
-	}
-
-	if err := mpw.Close(); err != nil {
-		return nil, err
-	}
-
-	return &cloudinaryBody{Buffer: buf, ContentType: mpw.FormDataContentType()}, nil
+	return &cloudinaryBody{Reader: pr, ContentType: mpw.FormDataContentType()}
 }
 
 // parseCloudinaryResponse extracts the secure_url from a Cloudinary upload response.

@@ -51,7 +51,7 @@ function LocationCard({
 
       {/* Frosted overlay at bottom */}
       <div className='pointer-events-none absolute right-0 bottom-0 left-0 bg-black/50 backdrop-blur-md'>
-        <div className='px-3 py-2'>
+        <div className='px-3 py-2 text-left'>
           <div className='truncate text-sm font-bold text-white'>{name}</div>
           <div className='flex items-center gap-1 truncate text-xs text-white/80'>
             <MapPin size={12} />
@@ -150,6 +150,7 @@ export default function ClinicList() {
 
   /** Renders filter, search, and location grid. */
   const renderContent = () => {
+    if (authLoading) return <CardLoader />;
     if (isLoading) return <CardLoader />;
 
     const list = searchTerm ? filteredLocations : searchableLocations;

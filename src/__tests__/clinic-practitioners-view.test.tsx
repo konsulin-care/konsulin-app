@@ -1,23 +1,39 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @next/next/no-img-element, jsx-a11y/alt-text */
-
+/* eslint-disable max-lines */
+/* reason: comprehensive integration test for ClinicPractitionersView */
 import ClinicPractitionersView from '@/components/clinic/clinic-practitioners-view';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { type BundleEntry } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('next/image', () => ({
-  default: (props: any) => <img data-testid='mock-image' {...props} />
+  default: (props: React.ComponentPropsWithoutRef<'img'>) => (
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+    <img data-testid='mock-image' {...props} />
+  )
 }));
 vi.mock('@/components/practitioner/practitioner-card', () => ({
-  PractitionerCard: ({ practitionerName, practitionerRoleId }: any) => (
+  PractitionerCard: ({
+    practitionerName,
+    practitionerRoleId
+  }: {
+    practitionerName: string;
+    practitionerRoleId: string;
+  }) => (
     <div data-testid='mock-practitioner-card' data-role-id={practitionerRoleId}>
       {practitionerName}
     </div>
   )
 }));
 vi.mock('@/components/ui/input-with-icon', () => ({
-  InputWithIcon: ({ value, onChange, placeholder }: any) => (
+  InputWithIcon: ({
+    value,
+    onChange,
+    placeholder
+  }: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    placeholder: string;
+  }) => (
     <div data-testid='mock-input-with-icon'>
       <input
         data-testid='mock-search-input'
@@ -29,7 +45,7 @@ vi.mock('@/components/ui/input-with-icon', () => ({
   )
 }));
 vi.mock('@/components/general/empty-state', () => ({
-  default: ({ title, subtitle }: any) => (
+  default: ({ title, subtitle }: { title: string; subtitle: string }) => (
     <div data-testid='mock-empty-state'>
       <div>{title}</div>
       <div>{subtitle}</div>
@@ -48,10 +64,6 @@ vi.mock('@/lib/indexeddb', () => ({
   STORES: { uiPreferences: 'ui_preferences' },
   dbSet: vi.fn().mockResolvedValue(null)
 }));
-
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
 
 function locEntry(overrides: Record<string, unknown> = {}) {
   return {
@@ -118,9 +130,12 @@ function hsEntry(id: string, name: string) {
     resource: { resourceType: 'HealthcareService', id, name }
   } as unknown as BundleEntry;
 }
-
-const mockWriteText = vi.fn().mockResolvedValue();
-const mockShare = vi.fn().mockResolvedValue();
+const mockWriteText = vi
+  .fn<(text: string) => Promise<void>>()
+  .mockResolvedValue();
+const mockShare = vi
+  .fn<(data: { url: string }) => Promise<void>>()
+  .mockResolvedValue();
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -146,11 +161,6 @@ function renderView(entries: BundleEntry[] = baseEntries, loading = false) {
     />
   );
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
 describe('ClinicPractitionersView', () => {
   it('renders hero image with full frost overlay', () => {
     renderView();

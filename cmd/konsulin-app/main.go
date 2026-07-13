@@ -204,7 +204,15 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	}))
 
 	// Media upload — client sends image, BFF uploads to Cloudinary, returns URL.
-	r.Post("/api/media/location", handler.NewUploadHandler(handler.UploadOptions{
+	// Restricted to Clinic Admin role.
+	adminGuard := appmw.RequireRole(appmw.RequireRoleOptions{
+		RedirectIntentCookieName: cfg.RedirectIntentCookieName,
+		AuthPath:                 cfg.AuthPath,
+		UnauthorizedPath:         "/unauthorized",
+		CookieSecure:             cfg.CookieSecure,
+		AppURL:                   cfg.AppURL,
+	}, "Clinic Admin")
+	r.With(authGuard, adminGuard).Post("/api/media/location", handler.NewUploadHandler(handler.UploadOptions{
 		CloudinaryCloudName:    cfg.CloudinaryCloudName,
 		CloudinaryUploadPreset: cfg.CloudinaryUploadPreset,
 	}))

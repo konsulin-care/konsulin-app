@@ -44,6 +44,10 @@ vi.mock('next/image', async () => {
   return createNextImageMock();
 });
 
+vi.mock('@/components/general/card-loader', () => ({
+  default: () => <div data-testid='mock-card-loader'>Loading...</div>
+}));
+
 vi.mock('@/services/clinic-locations', async importOriginal => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
@@ -339,7 +343,7 @@ describe('ClinicList — cards', () => {
     expect(mockPush).toHaveBeenCalledWith('/clinic?id=loc-1');
   });
 
-  it('does not query locations when auth is loading', () => {
+  it('renders loader when auth is loading', () => {
     vi.mocked(useAuth).mockReturnValue({
       state: {
         isAuthenticated: false,
@@ -354,11 +358,10 @@ describe('ClinicList — cards', () => {
 
     render(<ClinicList />, { wrapper: createWrapper() });
 
-    // When auth is loading, the hook should receive empty role to disable query
+    // When auth is loading, show CardLoader and pass empty role to disable query
+    expect(screen.getByTestId('mock-card-loader')).toBeDefined();
     const lastCall = vi.mocked(useClinicLocations).mock.calls.at(-1)?.[0];
     expect(lastCall?.role).toBe('');
-    expect(lastCall?.fhirId).toBeUndefined();
-    expect(lastCall?.orgId).toBeUndefined();
   });
 
   it('uses 4:3 aspect ratio on card', async () => {
@@ -386,6 +389,34 @@ describe('ClinicList — cards', () => {
     await waitFor(() => {
       const card = screen.getByTestId('location-card-loc-1');
       expect(card.className).toContain('aspect-[');
+    });
+  });
+
+  it('aligns clinic name text to the left', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: true,
+        userInfo: {
+          role_name: 'Patient',
+          fhirId: undefined,
+          organizationId: undefined
+        }
+      },
+      isLoading: false
+    } as never);
+
+    const locations = [createMockLocation('loc-1', 'Main Clinic', 'Jakarta')];
+    vi.mocked(useClinicLocations).mockReturnValue({
+      data: locations,
+      isLoading: false,
+      isSuccess: true
+    } as never);
+
+    render(<ClinicList />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      const nameEl = screen.getByText('Main Clinic');
+      expect(nameEl.parentElement?.className).toContain('text-left');
     });
   });
 

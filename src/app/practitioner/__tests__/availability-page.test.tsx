@@ -1,7 +1,7 @@
-import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen } from '@testing-library/react';
 import { type ReactNode } from 'react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AvailabilityPage from '../availability/page';
 
 vi.mock('next/navigation', () => ({
@@ -55,7 +55,7 @@ vi.mock('@/app/practitioner/practitioner-availability', () => ({
   )
 }));
 
-vi.mock('@/services/clinic', () => ({
+vi.mock('@/services/clinic-practitioners', () => ({
   usePractitionerRoleHealthcareServices: vi.fn(),
   useDetailPractitioner: vi.fn(() => ({
     newData: undefined,
@@ -76,12 +76,12 @@ vi.mock('@/constants/roles', () => ({
   }
 }));
 
-import { useSearchParams } from 'next/navigation';
-import { useAuth } from '@/context/auth/authContext';
-import { isOwnedRole } from '@/utils/practitioner-ownership';
-import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
-import { getServiceDuration } from '@/utils/fhir/service-duration';
 import { Roles } from '@/constants/roles';
+import { useAuth } from '@/context/auth/authContext';
+import { usePractitionerRoleHealthcareServices } from '@/services/clinic-practitioners';
+import { getServiceDuration } from '@/utils/fhir/service-duration';
+import { isOwnedRole } from '@/utils/practitioner-ownership';
+import { useSearchParams } from 'next/navigation';
 
 const mockUseSearchParams = vi.mocked(useSearchParams);
 const mockUseAuth = vi.mocked(useAuth);
@@ -114,9 +114,11 @@ function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } }
   });
-  return ({ children }: { children: ReactNode }) => (
+  const TestWrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+  TestWrapper.displayName = 'TestWrapper';
+  return TestWrapper;
 }
 
 describe('AvailabilityPage', () => {

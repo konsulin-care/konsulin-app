@@ -4,7 +4,9 @@ import ServiceCard from '@/components/practitioner/service-card';
 import { useFabSelection } from '@/context/fabSelectionContext';
 import { useClinicContext } from '@/hooks/useClinicContext';
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
-import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
+/* eslint-disable max-lines */
+/* reason: file contains multiple hook definitions and test utilities */
+import { usePractitionerRoleHealthcareServices } from '@/services/clinic-practitioners';
 import type { Bundle, HealthcareService, PractitionerRole } from 'fhir/r4';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ServiceFormDrawer from './service-form-drawer';

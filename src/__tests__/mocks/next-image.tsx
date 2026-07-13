@@ -47,8 +47,8 @@ export function createNextImageMock() {
         if (SAFE_ATTRS.has(key)) safeProps[key] = props[key];
       }
       return (
-        // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-        <img data-testid='next-image' {...safeProps} />
+        // eslint-disable-next-line @next/next/no-img-element
+        <img data-testid='next-image' alt='' {...safeProps} />
       );
     }
   };

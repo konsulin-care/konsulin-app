@@ -1,14 +1,14 @@
 'use client';
 
-import { useMemo } from 'react';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
-import { isOwnedRole } from '@/utils/practitioner-ownership';
+import { usePractitionerRoleHealthcareServices } from '@/services/clinic-practitioners';
 import { getServiceDuration } from '@/utils/fhir/service-duration';
+import { isOwnedRole } from '@/utils/practitioner-ownership';
 import { useSearchParams } from 'next/navigation';
-import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
+import { useMemo } from 'react';
 import PractitionerAvailability from '../practitioner-availability';
 import PractitionerRoleManagementShell from '../role-management-shell';
 

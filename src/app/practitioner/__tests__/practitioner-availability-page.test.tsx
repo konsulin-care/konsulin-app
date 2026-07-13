@@ -111,7 +111,7 @@ vi.mock('@/services/clinicians', () => ({
   computeFreeSlots: vi.fn(() => [])
 }));
 
-vi.mock('@/services/clinic', () => ({
+vi.mock('@/services/clinic-practitioners', () => ({
   useDetailPractitioner: vi.fn(() => ({
     newData: {
       resource: { id: 'role-123', availableTime: [] },
@@ -128,7 +128,7 @@ vi.mock('@/services/clinic', () => ({
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
 import { useFabDirty } from '@/context/fabDirtyContext';
-import { useDetailPractitioner } from '@/services/clinic';
+import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import PractitionerAvailability from '../practitioner-availability';
 
 function createWrapper() {
