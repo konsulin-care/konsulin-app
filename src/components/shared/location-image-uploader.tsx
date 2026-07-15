@@ -84,11 +84,11 @@ function LocationImageToggle({
   imageUrl,
   uploading,
   onClick
-}: {
+}: Readonly<{
   imageUrl: string;
   uploading: boolean;
   onClick: () => void;
-}) {
+}>) {
   if (imageUrl) {
     return (
       <button

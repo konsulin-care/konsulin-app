@@ -201,7 +201,9 @@ function ClinicHero({
         // share failed or user cancelled — fall through to clipboard
       }
     }
-    navigator.clipboard.writeText(window.location.href).catch(() => void 0);
+    navigator.clipboard.writeText(window.location.href).catch(() => {
+      /* clipboard write failed — ignore */
+    });
   }, []);
   const handleClick = useCallback(() => {
     if (isLongPress.current) {
@@ -213,7 +215,9 @@ function ClinicHero({
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      shareUrl().catch(() => void 0);
+      shareUrl().catch(() => {
+        /* share failed — ignore */
+      });
     },
     [shareUrl]
   );
@@ -221,7 +225,9 @@ function ClinicHero({
     isLongPress.current = false;
     longPressTimer.current = setTimeout(() => {
       isLongPress.current = true;
-      shareUrl().catch(() => void 0);
+      shareUrl().catch(() => {
+        /* share failed — ignore */
+      });
     }, 500);
   }, [shareUrl]);
   const clearTimer = useCallback(() => {
@@ -231,14 +237,10 @@ function ClinicHero({
     }
   }, []);
   return (
-    <div
-      className='relative h-[200px] w-full cursor-pointer overflow-hidden rounded-2xl'
-      role='button'
-      tabIndex={0}
+    <button
+      type='button'
+      className='relative h-[200px] w-full overflow-hidden rounded-2xl'
       onClick={handleClick}
-      onKeyDown={e => {
-        if (e.key === 'Enter' || e.key === ' ') handleClick();
-      }}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
       onTouchEnd={clearTimer}
@@ -261,7 +263,7 @@ function ClinicHero({
           <HeroHours hoursList={hoursList} />
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 

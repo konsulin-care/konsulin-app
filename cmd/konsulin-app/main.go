@@ -42,6 +42,7 @@ func (d noDirFS) Open(name string) (http.File, error) {
 }
 
 func routes(cfg *config.Config) (http.Handler, error) {
+	const unauthorizedPath = "/unauthorized"
 	r := chi.NewRouter()
 
 	r.Use(chimw.RequestID)
@@ -167,7 +168,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		CookieSecret:      cfg.SessionCookieSecret,
 		AccessCookieName:  cfg.SessionCookieNameAccess,
 		RefreshCookieName: cfg.SessionCookieNameRefresh,
-		UnauthorizedPath:  "/unauthorized",
+		UnauthorizedPath:  unauthorizedPath,
 		AppURL:            cfg.AppURL,
 	})
 	protectedRoutes := []string{"/message", "/notification", "/journal", "/record", "/profile"}
@@ -181,7 +182,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	roleGuard := appmw.RequireRole(appmw.RequireRoleOptions{
 		RedirectIntentCookieName: cfg.RedirectIntentCookieName,
 		AuthPath:                 cfg.AuthPath,
-		UnauthorizedPath:         "/unauthorized",
+		UnauthorizedPath:         unauthorizedPath,
 		CookieSecure:             cfg.CookieSecure,
 		AppURL:                   cfg.AppURL,
 	}, "Practitioner")
@@ -208,7 +209,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	adminGuard := appmw.RequireRole(appmw.RequireRoleOptions{
 		RedirectIntentCookieName: cfg.RedirectIntentCookieName,
 		AuthPath:                 cfg.AuthPath,
-		UnauthorizedPath:         "/unauthorized",
+		UnauthorizedPath:         unauthorizedPath,
 		CookieSecure:             cfg.CookieSecure,
 		AppURL:                   cfg.AppURL,
 	}, "Clinic Admin")
