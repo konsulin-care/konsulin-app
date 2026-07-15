@@ -37,9 +37,8 @@ export default function ServicesTab({
 
   const [localServices, setLocalServices] = useState<HealthcareService[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [editingService, setEditingService] = useState<
-    HealthcareService | undefined
-  >();
+  const [editingService, setEditingService] =
+    useState<HealthcareService | null>(null);
   const [saveAllLoading, setSaveAllLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -163,7 +162,7 @@ export default function ServicesTab({
 
   /** Open the service form drawer in create mode. */
   const handleAddService = () => {
-    setEditingService(undefined);
+    setEditingService(null);
     setDrawerOpen(true);
   };
 
@@ -180,7 +179,7 @@ export default function ServicesTab({
         : prev.with(idx, serviceWithId);
     });
     setDrawerOpen(false);
-    setEditingService(undefined);
+    setEditingService(null);
   };
 
   const handleSaveAll = useCallback(async () => {
@@ -267,7 +266,7 @@ export default function ServicesTab({
           open={drawerOpen}
           onClose={() => {
             setDrawerOpen(false);
-            setEditingService(undefined);
+            setEditingService(null);
           }}
           onSave={handleDrawerSave}
           service={editingService}
@@ -336,7 +335,7 @@ export default function ServicesTab({
         open={drawerOpen}
         onClose={() => {
           setDrawerOpen(false);
-          setEditingService(undefined);
+          setEditingService(null);
         }}
         onSave={handleDrawerSave}
         service={editingService}

@@ -25,7 +25,7 @@ type Props = {
   readonly open: boolean;
   readonly onClose: () => void;
   readonly onSave: (service: HealthcareService) => void;
-  readonly service?: HealthcareService;
+  readonly service?: HealthcareService | null;
   readonly providedBy: string;
   readonly location?: string;
 };
