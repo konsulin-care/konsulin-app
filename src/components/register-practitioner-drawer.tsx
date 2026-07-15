@@ -1,37 +1,13 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList
-} from '@/components/ui/command';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle
-} from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from '@/components/ui/popover';
+import { Drawer } from '@/components/ui/drawer';
 import { STORES, dbGet } from '@/lib/indexeddb';
-import { cn } from '@/lib/utils';
 import { getAPI } from '@/services/api';
 import { useOrganizationLocations } from '@/services/clinic-practitioners';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
+import RegisterPractitionerDrawerContent from './register-practitioner-drawer/drawer-content';
 import {
   resolveOrCreatePractitioner,
   resolveOrCreatePractitionerRole,
@@ -43,68 +19,7 @@ type Props = {
   readonly onClose: () => void;
 };
 
-type LocationOption = { id: string; name: string };
-
-/** Combobox for selecting an organization Location. */
-function LocationCombobox({
-  locations,
-  selectedId,
-  onSelect
-}: {
-  readonly locations: readonly LocationOption[];
-  readonly selectedId: string | null;
-  readonly onSelect: (id: string | null) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const selectedName = locations.find(l => l.id === selectedId)?.name;
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant='outline'
-          role='combobox'
-          aria-expanded={open}
-          className={cn(
-            'h-10 w-full justify-between bg-white px-3 text-sm font-normal',
-            !selectedId && 'text-muted-foreground'
-          )}
-        >
-          {selectedName ?? 'Select location...'}
-          <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className='w-[var(--radix-popover-trigger-width)] p-0'>
-        <Command>
-          <CommandInput placeholder='Select location...' />
-          <CommandList>
-            <CommandEmpty>No locations found</CommandEmpty>
-            <CommandGroup>
-              {locations.map(loc => (
-                <CommandItem
-                  key={loc.id}
-                  value={loc.id}
-                  onSelect={currentValue => {
-                    onSelect(currentValue === selectedId ? null : currentValue);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      selectedId === loc.id ? 'opacity-100' : 'opacity-0'
-                    )}
-                  />
-                  {loc.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
+export type LocationOption = { id: string; name: string };
 
 /**
  * Drawer for registering a new practitioner via FHIR pipeline.
@@ -165,6 +80,14 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
 
     setIsSubmitting(true);
 
+    /**
+     * Register a new practitioner via 3-step FHIR pipeline.
+     * 1. Create Practitioner resource
+     * 2. Create PractitionerRole linking to organization and location
+     * 3. Create Schedule for the practitioner
+     * Shows toast on success/error, invalidates practitioner count cache.
+     * Errors are caught and displayed via toast.
+     */
     const register = async () => {
       try {
         const API = await getAPI();
@@ -223,6 +146,11 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
     onClose
   ]);
 
+  const locationOptions: LocationOption[] = locations.map(loc => ({
+    id: loc.id ?? '',
+    name: loc.name ?? ''
+  }));
+
   return (
     <Drawer
       open={open}
@@ -230,68 +158,19 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
         if (!o) onClose();
       }}
     >
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>Register Practitioner</DrawerTitle>
-          <DrawerDescription>
-            Add a new practitioner to your clinic.
-          </DrawerDescription>
-        </DrawerHeader>
-
-        <div className='space-y-4 px-4'>
-          <div>
-            <Label htmlFor='prac-name'>Name</Label>
-            <Input
-              id='prac-name'
-              value={name}
-              onChange={e => {
-                setName(e.target.value);
-              }}
-              placeholder='Full Name'
-              className='bg-white'
-              aria-label='Name'
-            />
-          </div>
-
-          <div>
-            <Label htmlFor='prac-email'>Email</Label>
-            <Input
-              id='prac-email'
-              type='email'
-              value={email}
-              onChange={e => {
-                setEmail(e.target.value);
-              }}
-              placeholder='email@clinic.com'
-              className='bg-white'
-              aria-label='Email'
-            />
-          </div>
-
-          <div>
-            <Label>Location</Label>
-            <LocationCombobox
-              locations={locations}
-              selectedId={selectedLocationId}
-              onSelect={setSelectedLocationId}
-            />
-          </div>
-        </div>
-
-        <DrawerFooter>
-          <Button
-            onClick={handleRegister}
-            disabled={!isValid || isSubmitting}
-            variant='secondary'
-            className='text-white'
-          >
-            {isSubmitting ? 'Registering...' : 'Register'}
-          </Button>
-          <Button variant='outline' onClick={onClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-        </DrawerFooter>
-      </DrawerContent>
+      <RegisterPractitionerDrawerContent
+        name={name}
+        email={email}
+        selectedLocationId={selectedLocationId}
+        locations={locationOptions}
+        isSubmitting={isSubmitting}
+        isValid={isValid}
+        onNameChange={setName}
+        onEmailChange={setEmail}
+        onLocationSelect={setSelectedLocationId}
+        onRegister={handleRegister}
+        onClose={onClose}
+      />
     </Drawer>
   );
 }

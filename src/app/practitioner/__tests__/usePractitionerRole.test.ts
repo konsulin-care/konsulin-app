@@ -76,8 +76,7 @@ describe('usePractitionerRole', () => {
     } as ReturnType<typeof useDetailPractitioner>);
 
     const { result } = renderHook(() =>
-      // eslint-disable-next-line unicorn/no-useless-undefined, sonarjs/no-undefined-argument
-      usePractitionerRole(true, 'role-detail-1', undefined, undefined)
+      usePractitionerRole(true, 'role-detail-1')
     );
 
     expect(useDetailPractitioner).toHaveBeenCalledWith('role-detail-1');
@@ -109,8 +108,7 @@ describe('usePractitionerRole', () => {
 
   it('returns empty practitionerId in page mode when detail is undefined', () => {
     const { result } = renderHook(() =>
-      // eslint-disable-next-line unicorn/no-useless-undefined, sonarjs/no-undefined-argument
-      usePractitionerRole(true, 'missing-id', undefined, undefined)
+      usePractitionerRole(true, 'missing-id')
     );
 
     expect(result.current.practitionerId).toBe('');

@@ -25,6 +25,12 @@ const DAY_LABELS: Record<string, string> = {
   sat: 'Sat',
   sun: 'Sun'
 };
+
+/**
+ * Format a FHIR Location address into a display string.
+ * @param addr - The address from a Location resource
+ * @returns Formatted address string (line, city, state, postalCode)
+ */
 function formatAddress(addr: Location['address']): string {
   if (!addr) return '';
   const parts: string[] = [];
@@ -38,6 +44,11 @@ function formatAddress(addr: Location['address']): string {
   return parts.join(', ');
 }
 
+/**
+ * Build a list of formatted hours strings from Location hoursOfOperation.
+ * @param hours - The hoursOfOperation array from a Location resource
+ * @returns Array of formatted strings like "Mon: 09:00-17:00"
+ */
 function buildHoursList(hours: Location['hoursOfOperation']): string[] {
   if (!hours || hours.length === 0) return [];
   const hoursMap = new Map<string, string>();
@@ -62,6 +73,11 @@ interface CardData {
   practitionerRoleId: string;
 }
 
+/**
+ * Extract practitioner name from a BundleEntry resource.
+ * @param r - The resource (Practitioner) from a BundleEntry
+ * @returns Formatted name string (given + family) or "-" if missing
+ */
 function getPractitionerName(r: BundleEntry['resource']): string {
   const n = (
     r as { name?: Array<{ given?: string[]; family?: string }> } | undefined
@@ -69,11 +85,22 @@ function getPractitionerName(r: BundleEntry['resource']): string {
   return [n?.given?.join(' '), n?.family].filter(Boolean).join(' ') || '-';
 }
 
+/**
+ * Extract photo URL from a BundleEntry resource.
+ * @param r - The resource (Practitioner) from a BundleEntry
+ * @returns Photo URL string or undefined if not present
+ */
 function getPhotoUrl(r: BundleEntry['resource']): string | undefined {
   return (r as { photo?: Array<{ url?: string }> } | undefined)?.photo?.[0]
     ?.url;
 }
 
+/**
+ * Get healthcare service names from a PractitionerRole using a lookup map.
+ * @param role - BundleEntry containing a PractitionerRole resource
+ * @param hsMap - Map of HealthcareService id -> name
+ * @returns Array of service names
+ */
 function getServiceNames(
   role: BundleEntry<PractitionerRole>,
   hsMap: Map<string, string>
@@ -88,6 +115,11 @@ function getServiceNames(
     .filter(Boolean);
 }
 
+/**
+ * Map BundleEntry array to practitioner card data for display.
+ * @param entries - Array of BundleEntry resources from FHIR search
+ * @returns Array of CardData objects for PractitionerCard components
+ */
 function mapToCardData(entries: BundleEntry[]): CardData[] {
   const practitionerRoles = entries.filter(
     (e): e is BundleEntry<PractitionerRole> =>
@@ -128,6 +160,17 @@ function mapToCardData(entries: BundleEntry[]): CardData[] {
     .filter((entry): entry is CardData => entry !== null);
 }
 
+/**
+ * Hero banner component for clinic detail view.
+ * Displays clinic image, name, address, hours, and org name.
+ * Handles click (copy address), long-press/context menu (share URL).
+ * @param clinicName - Name of the clinic
+ * @param fullAddress - Formatted full address string
+ * @param hoursList - Array of formatted hours strings
+ * @param orgName - Organization name
+ * @param imageUrl - Clinic image URL
+ * @returns JSX element for the hero section
+ */
 function ClinicHero({
   clinicName,
   fullAddress,
@@ -158,7 +201,7 @@ function ClinicHero({
         // share failed or user cancelled — fall through to clipboard
       }
     }
-    void navigator.clipboard.writeText(window.location.href);
+    navigator.clipboard.writeText(window.location.href).catch(() => void 0);
   }, []);
   const handleClick = useCallback(() => {
     if (isLongPress.current) {
@@ -170,7 +213,7 @@ function ClinicHero({
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      void shareUrl();
+      shareUrl().catch(() => void 0);
     },
     [shareUrl]
   );
@@ -178,7 +221,7 @@ function ClinicHero({
     isLongPress.current = false;
     longPressTimer.current = setTimeout(() => {
       isLongPress.current = true;
-      void shareUrl();
+      shareUrl().catch(() => void 0);
     }, 500);
   }, [shareUrl]);
   const clearTimer = useCallback(() => {

@@ -9,63 +9,14 @@ import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { useAuth } from '@/context/auth/authContext';
 import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
 import { IUseClinicParams } from '@/services/clinic';
-import { getTodayHours, useClinicLocations } from '@/services/clinic-locations';
-import { getLocationImageUrl } from '@/utils/fhir/location-image';
+import { useClinicLocations } from '@/services/clinic-locations';
+import ClinicFilter from './clinic-filter';
+import LocationCard from './location-card';
 
 import { type Location } from 'fhir/r4';
-import { Clock, MapPin, SearchIcon } from 'lucide-react';
-import Image from 'next/image';
+import { SearchIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
-import ClinicFilter from './clinic-filter';
-
-// ---------------------------------------------------------------------------
-// LocationCard
-// ---------------------------------------------------------------------------
-
-function LocationCard({
-  location,
-  onClick
-}: Readonly<{ location: Location; onClick: () => void }>) {
-  const name = location.name ?? 'Clinic';
-  const city = location.address?.city ?? '';
-  const state = location.address?.state ?? '';
-  const cityProvince = [city, state].filter(Boolean).join(', ') || '-';
-  const hours = getTodayHours(location);
-  const imageUrl = getLocationImageUrl(location) ?? '/images/clinic.jpg';
-
-  return (
-    <button
-      type='button'
-      className='group relative aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-2xl shadow-lg'
-      onClick={onClick}
-      data-testid={`location-card-${location.id}`}
-    >
-      <Image
-        src={imageUrl}
-        alt={name}
-        fill
-        className='object-cover'
-        sizes='(max-width: 640px) 100vw, 400px'
-      />
-
-      {/* Frosted overlay at bottom */}
-      <div className='pointer-events-none absolute right-0 bottom-0 left-0 bg-black/50 backdrop-blur-md'>
-        <div className='px-3 py-2 text-left'>
-          <div className='truncate text-sm font-bold text-white'>{name}</div>
-          <div className='flex items-center gap-1 truncate text-xs text-white/80'>
-            <MapPin size={12} />
-            <span className='min-w-0 truncate'>{cityProvince}</span>
-          </div>
-          <div className='flex items-center gap-1 truncate text-xs text-white/80'>
-            <Clock size={12} />
-            <span className='truncate'>{hours}</span>
-          </div>
-        </div>
-      </div>
-    </button>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // LocationGrid

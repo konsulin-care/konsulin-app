@@ -168,7 +168,7 @@ export default function LocationImageUploader({
         accept='image/*'
         className='hidden'
         onChange={e => {
-          void handleFile(e);
+          handleFile(e).catch(() => void 0);
         }}
       />
     </div>

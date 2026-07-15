@@ -1,18 +1,13 @@
-/* eslint-disable react/jsx-max-depth */
-import {
-  Drawer,
-  DrawerContent,
-  DrawerTrigger
-} from '@/components/ui/drawer';
+import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { usePopularAssessments } from '@/services/api/assessment';
-import AssessmentDrawerContent from './assessment-drawer-content';
 import { BundleEntry, Questionnaire } from 'fhir/r4';
 import { ChevronRightIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import CardLoader from '../card-loader';
+import AssessmentDrawerContent from './assessment-drawer-content';
 
 /**
  *
@@ -69,7 +64,9 @@ export default function PopularAssessment() {
 
                       <DrawerContent className='mx-auto max-w-screen-sm p-4'>
                         <div className='mt-4'>
-                          <AssessmentDrawerContent assessment={selectedAssessment} />
+                          <AssessmentDrawerContent
+                            assessment={selectedAssessment}
+                          />
                         </div>
                       </DrawerContent>
                     </Drawer>

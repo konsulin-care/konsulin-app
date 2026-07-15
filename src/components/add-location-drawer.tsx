@@ -139,9 +139,13 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
         orgId
       });
       toast.success('Location added successfully');
-      void queryClient.invalidateQueries({
-        queryKey: ['practitioner-count']
-      });
+      queryClient
+        .invalidateQueries({
+          queryKey: ['practitioner-count']
+        })
+        .catch(() => {
+          /* cache invalidation best-effort */
+        });
       onClose();
     } catch (err) {
       const message =
@@ -218,7 +222,11 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
 
         <DrawerFooter>
           <Button
-            onClick={() => void handleSubmit()}
+            onClick={() => {
+              handleSubmit().catch(() => {
+                /* handled in handleSubmit */
+              });
+            }}
             disabled={!isValid || isSubmitting}
             variant='secondary'
             className='text-white'

@@ -20,7 +20,7 @@ vi.mock('@/components/ui/popover', () => ({
   ),
   PopoverTrigger: ({ children, asChild }: any) =>
     asChild ? (
-      children as ReactNode
+      (children as ReactNode)
     ) : (
       <div data-testid='popover-trigger'>{children}</div>
     )
@@ -216,7 +216,7 @@ describe('PopoverContent styling', () => {
       />
     );
 
-    const popoverContent = screen.getByTestId('popover-content');
+    const popoverContent = screen.getByTestId('filter-popover-content');
     expect(popoverContent.dataset.align).toBe('center');
     expect(popoverContent.className).toContain('w-[90vw]');
   });
