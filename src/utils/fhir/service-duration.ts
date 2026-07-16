@@ -44,8 +44,7 @@ export function setServiceDuration(
         url: DURATION_EXTENSION_URL,
         valueDuration: {
           value: durationMinutes,
-          // eslint-disable-next-line unicorn/prefer-https
-          system: 'http://unitsofmeasure.org',
+          system: 'https://unitsofmeasure.org',
           code: 'min'
         }
       }

@@ -13,8 +13,12 @@ vi.mock('@/components/ui/popover', () => ({
         : children}
     </div>
   ),
-  PopoverContent: ({ children, className, align }: any) => (
-    <div data-testid='popover-content' data-align={align} className={className}>
+  PopoverContent: ({ children, className, align, ...rest }: any) => (
+    <div
+      data-testid={rest['data-testid'] ?? 'popover-content'}
+      data-align={align}
+      className={className}
+    >
       {children}
     </div>
   ),

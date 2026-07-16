@@ -357,7 +357,7 @@ describe('sw-register.js', () => {
 describe('defense-in-depth URL validation', () => {
   it('networkFirst returns 503 for non-http URLs', async () => {
     const patchedCode = SW_CODE.replace(
-      'async function networkFirst(request, cacheName, fallbackUrl) {',
+      'async function networkFirst (request, cacheName, fallbackUrl) {',
       'self.__testNetworkFirst = async function networkFirst (request, cacheName, fallbackUrl) {'
     );
 

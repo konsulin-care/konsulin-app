@@ -239,12 +239,19 @@ function ClinicHero({
   return (
     <button
       type='button'
-      className='relative h-[200px] w-full overflow-hidden rounded-2xl'
+      className='relative h-[200px] w-full cursor-pointer overflow-hidden rounded-2xl'
       onClick={handleClick}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
       onTouchEnd={clearTimer}
       onTouchMove={clearTimer}
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          copyAddress();
+        }
+      }}
+      tabIndex={0}
     >
       <Image
         src={imageUrl}
