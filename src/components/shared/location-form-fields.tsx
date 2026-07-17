@@ -10,7 +10,7 @@ import { DayOfWeek, TimeRange } from '@/types/availability';
 import { IWilayahResponse } from '@/types/wilayah';
 
 type LocationFormFieldsProps = {
-  readonly status: 'active' | 'inactive';
+  readonly status: 'active' | 'inactive' | 'suspended';
   readonly name: string;
   readonly addressLine: string;
   readonly provinceCode: string;
@@ -27,7 +27,9 @@ type LocationFormFieldsProps = {
   readonly hours: Record<DayOfWeek, TimeRange[]>;
   readonly imageUrl: string;
   readonly onImageUrlChange: (url: string) => void;
-  readonly onStatusChange: (status: 'active' | 'inactive') => void;
+  readonly onStatusChange: (
+    status: 'active' | 'inactive' | 'suspended'
+  ) => void;
   readonly onNameChange: (name: string) => void;
   readonly onAddressLineChange: (line: string) => void;
   readonly onProvinceSelect: (option: IWilayahResponse) => void;
