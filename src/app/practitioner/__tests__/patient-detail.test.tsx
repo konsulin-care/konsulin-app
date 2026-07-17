@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PatientDetail from '../patient-detail';
 
-vi.mock('@/services/clinic', () => ({
+vi.mock('@/services/clinic-practitioners', () => ({
   useDetailPractitioner: vi.fn(),
   usePractitionerRoleHealthcareServices: vi.fn()
 }));
@@ -24,7 +24,7 @@ vi.mock('next/navigation', () => ({
   useRouter: vi.fn(() => ({ push: vi.fn() }))
 }));
 
-import { useDetailPractitioner } from '@/services/clinic';
+import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import { useRouter } from 'next/navigation';
 
 const mockUseDetailPractitioner = vi.mocked(useDetailPractitioner);

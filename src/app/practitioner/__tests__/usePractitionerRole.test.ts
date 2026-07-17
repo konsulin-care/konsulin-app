@@ -1,10 +1,10 @@
-import { useDetailPractitioner } from '@/services/clinic';
+import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import { renderHook } from '@testing-library/react';
 import type { PractitionerRole } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePractitionerRole } from '../hooks/usePractitionerRole';
 
-vi.mock('@/services/clinic', () => ({
+vi.mock('@/services/clinic-practitioners', () => ({
   useDetailPractitioner: vi.fn()
 }));
 
@@ -76,8 +76,7 @@ describe('usePractitionerRole', () => {
     } as ReturnType<typeof useDetailPractitioner>);
 
     const { result } = renderHook(() =>
-      // eslint-disable-next-line unicorn/no-useless-undefined, sonarjs/no-undefined-argument
-      usePractitionerRole(true, 'role-detail-1', undefined, undefined)
+      usePractitionerRole(true, 'role-detail-1')
     );
 
     expect(useDetailPractitioner).toHaveBeenCalledWith('role-detail-1');
@@ -109,8 +108,7 @@ describe('usePractitionerRole', () => {
 
   it('returns empty practitionerId in page mode when detail is undefined', () => {
     const { result } = renderHook(() =>
-      // eslint-disable-next-line unicorn/no-useless-undefined, sonarjs/no-undefined-argument
-      usePractitionerRole(true, 'missing-id', undefined, undefined)
+      usePractitionerRole(true, 'missing-id')
     );
 
     expect(result.current.practitionerId).toBe('');

@@ -9,7 +9,9 @@ vi.mock('@/lib/indexeddb', () => ({
   dbGet: vi.fn()
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
-vi.mock('@/services/clinic', () => ({ useOrganizationLocations: vi.fn() }));
+vi.mock('@/services/clinic-practitioners', () => ({
+  useOrganizationLocations: vi.fn()
+}));
 vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));
@@ -20,7 +22,7 @@ vi.mock('@/lib/utils', () => ({
 
 import { dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
-import { useOrganizationLocations } from '@/services/clinic';
+import { useOrganizationLocations } from '@/services/clinic-practitioners';
 import { toast } from 'react-toastify';
 
 const mockAxiosInstance = { get: vi.fn(), post: vi.fn() };

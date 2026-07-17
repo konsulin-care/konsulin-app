@@ -20,6 +20,7 @@ export interface UserProfile {
 
 let apiInstance: AxiosInstance | null = null;
 let apiDirectInstance: AxiosInstance | null = null;
+let apiDirectMultipartInstance: AxiosInstance | null = null;
 let currentUserId: string | null = null;
 
 /** Returns the current user ID set during auth. */
@@ -32,25 +33,42 @@ export function setCurrentUserId(id: string | null) {
   currentUserId = id;
 }
 
+/** Return the cached instance for the given config combination, or null. */
+function getCachedInstance(
+  proxy: boolean,
+  multipart: boolean
+): AxiosInstance | null {
+  if (proxy && !multipart) return apiInstance;
+  if (!proxy && !multipart) return apiDirectInstance;
+  if (!proxy) return apiDirectMultipartInstance;
+  return null;
+}
+
 /**
  * Get or create a singleton Axios instance.
  *
  * @param options - Optional. Set `{ proxy: false }` to create an instance that
- *   targets the Go BFF directly (no `/proxy` prefix). Defaults to `{ proxy: true }`.
+ *   targets the Go BFF directly (no `/proxy` prefix). Set `{ multipart: true }`
+ *   (requires `proxy: false`) to omit the `Content-Type: application/json`
+ *   header so Axios sends FormData as multipart instead of serializing to JSON.
+ *   Defaults to `{ proxy: true, multipart: false }`.
  * @returns A Promise resolving to the Axios instance.
  */
-export function getAPI(options?: { proxy?: boolean }): Promise<AxiosInstance> {
-  const useProxy = options?.proxy ?? true;
+export function getAPI(options?: {
+  proxy?: boolean;
+  multipart?: boolean;
+}): Promise<AxiosInstance> {
+  const opts = options || {};
+  const useProxy = opts.proxy !== false;
+  const useMultipart = opts.multipart === true;
 
-  if (useProxy && apiInstance) return Promise.resolve(apiInstance);
-  if (!useProxy && apiDirectInstance) return Promise.resolve(apiDirectInstance);
+  const cached = getCachedInstance(useProxy, useMultipart);
+  if (cached) return Promise.resolve(cached);
 
   // eslint-disable-next-line import/no-named-as-default-member
   const instance = axios.create({
     baseURL: useProxy ? '/proxy' : '',
-    headers: {
-      'Content-Type': 'application/json'
-    }
+    headers: useMultipart ? {} : { 'Content-Type': 'application/json' }
   });
 
   // Authorization header injected by Go SSR proxy (reads sAccessToken cookie).
@@ -58,10 +76,12 @@ export function getAPI(options?: { proxy?: boolean }): Promise<AxiosInstance> {
 
   setupResponseInterceptor(instance);
 
-  if (useProxy) {
+  if (useProxy && !useMultipart) {
     apiInstance = instance;
-  } else {
+  } else if (!useProxy && !useMultipart) {
     apiDirectInstance = instance;
+  } else if (!useProxy) {
+    apiDirectMultipartInstance = instance;
   }
 
   return Promise.resolve(instance);

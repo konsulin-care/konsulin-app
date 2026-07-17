@@ -29,8 +29,15 @@ func setRequiredEnv(t *testing.T) {
 	t.Setenv("SESSION_COOKIE_SECRET", "test-secret-value")
 }
 
+func setCloudinaryEnv(t *testing.T, cloudName, preset string) {
+	t.Helper()
+	t.Setenv("CLOUDINARY_CLOUD_NAME", cloudName)
+	t.Setenv("CLOUDINARY_UPLOAD_PRESET", preset)
+}
+
 func TestLoad_defaultPort(t *testing.T) {
 	setRequiredEnv(t)
+	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	saveEnv(t, "PORT")
 	if err := os.Unsetenv("PORT"); err != nil {
 		t.Fatalf("unset PORT: %v", err)
@@ -46,6 +53,7 @@ func TestLoad_defaultPort(t *testing.T) {
 
 func TestLoad_customPort(t *testing.T) {
 	setRequiredEnv(t)
+	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	t.Setenv("PORT", "9090")
 	cfg, err := Load()
 	if err != nil {
@@ -58,6 +66,7 @@ func TestLoad_customPort(t *testing.T) {
 
 func TestLoad_defaultAppName(t *testing.T) {
 	setRequiredEnv(t)
+	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	saveEnv(t, "APP_NAME")
 	if err := os.Unsetenv("APP_NAME"); err != nil {
 		t.Fatalf("unset APP_NAME: %v", err)
@@ -73,6 +82,7 @@ func TestLoad_defaultAppName(t *testing.T) {
 
 func TestLoad_customAppName(t *testing.T) {
 	setRequiredEnv(t)
+	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	t.Setenv("APP_NAME", "TestApp")
 	cfg, err := Load()
 	if err != nil {
@@ -85,6 +95,7 @@ func TestLoad_customAppName(t *testing.T) {
 
 func TestLoad_defaultApiBasePath(t *testing.T) {
 	setRequiredEnv(t)
+	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	saveEnv(t, "API_BASE_PATH")
 	if err := os.Unsetenv("API_BASE_PATH"); err != nil {
 		t.Fatalf("unset API_BASE_PATH: %v", err)
@@ -100,6 +111,7 @@ func TestLoad_defaultApiBasePath(t *testing.T) {
 
 func TestLoad_customApiBasePath(t *testing.T) {
 	setRequiredEnv(t)
+	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	t.Setenv("API_BASE_PATH", "/custom/v2")
 	cfg, err := Load()
 	if err != nil {
@@ -112,6 +124,7 @@ func TestLoad_customApiBasePath(t *testing.T) {
 
 func TestLoad_defaultAuthPath(t *testing.T) {
 	setRequiredEnv(t)
+	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	saveEnv(t, "AUTH_PATH")
 	if err := os.Unsetenv("AUTH_PATH"); err != nil {
 		t.Fatalf("unset AUTH_PATH: %v", err)
@@ -127,6 +140,7 @@ func TestLoad_defaultAuthPath(t *testing.T) {
 
 func TestLoad_customAuthPath(t *testing.T) {
 	setRequiredEnv(t)
+	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	t.Setenv("AUTH_PATH", "/signin")
 	cfg, err := Load()
 	if err != nil {
@@ -139,6 +153,7 @@ func TestLoad_customAuthPath(t *testing.T) {
 
 func TestAuthFullPath(t *testing.T) {
 	setRequiredEnv(t)
+	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	t.Setenv("API_BASE_PATH", "/api/v2")
 	t.Setenv("AUTH_PATH", "/login")
 	cfg, err := Load()
@@ -171,7 +186,49 @@ func TestEnvUnset_clearsRequiredVars(t *testing.T) {
 	}
 }
 
+func TestLoad_cloudinaryConfig(t *testing.T) {
+	setRequiredEnv(t)
+	setCloudinaryEnv(t, "test-cloud", "test-preset")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() returned error: %v", err)
+	}
+	if cfg.CloudinaryCloudName != "test-cloud" {
+		t.Errorf("expected CloudinaryCloudName 'test-cloud', got %q", cfg.CloudinaryCloudName)
+	}
+	if cfg.CloudinaryUploadPreset != "test-preset" {
+		t.Errorf("expected CloudinaryUploadPreset 'test-preset', got %q", cfg.CloudinaryUploadPreset)
+	}
+}
+
+func TestLoad_missingCloudinaryCloudNameReturnsError(t *testing.T) {
+	setRequiredEnv(t)
+	saveEnv(t, "CLOUDINARY_CLOUD_NAME")
+	if err := os.Unsetenv("CLOUDINARY_CLOUD_NAME"); err != nil {
+		t.Fatalf("unset CLOUDINARY_CLOUD_NAME: %v", err)
+	}
+	setCloudinaryEnv(t, "", "test-preset")
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for missing CLOUDINARY_CLOUD_NAME, got nil")
+	}
+}
+
+func TestLoad_missingCloudinaryUploadPresetReturnsError(t *testing.T) {
+	setRequiredEnv(t)
+	saveEnv(t, "CLOUDINARY_UPLOAD_PRESET")
+	if err := os.Unsetenv("CLOUDINARY_UPLOAD_PRESET"); err != nil {
+		t.Fatalf("unset CLOUDINARY_UPLOAD_PRESET: %v", err)
+	}
+	setCloudinaryEnv(t, "test-cloud", "")
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for missing CLOUDINARY_UPLOAD_PRESET, got nil")
+	}
+}
+
 func TestLoad_missingRequiredReturnsError(t *testing.T) {
+	setRequiredEnv(t)
 	saveEnv(t, "SESSION_COOKIE_SECRET")
 	if err := os.Unsetenv("SESSION_COOKIE_SECRET"); err != nil {
 		t.Fatalf("unset SESSION_COOKIE_SECRET: %v", err)
@@ -201,5 +258,35 @@ func TestMustEnv_missing(t *testing.T) {
 	_, err := MustEnv("TEST_VAR_MISSING")
 	if err == nil {
 		t.Fatal("expected error for missing env var, got nil")
+	}
+}
+
+func TestLoad_dotenvFile(t *testing.T) {
+	tdir := t.TempDir()
+	envContent := []byte("CLOUDINARY_CLOUD_NAME=from-dotenv\nCLOUDINARY_UPLOAD_PRESET=from-dotenv-preset\n")
+	if err := os.WriteFile(tdir+"/.env", envContent, 0644); err != nil {
+		t.Fatalf("write .env: %v", err)
+	}
+	t.Chdir(tdir)
+
+	setRequiredEnv(t)
+	saveEnv(t, "CLOUDINARY_CLOUD_NAME")
+	if err := os.Unsetenv("CLOUDINARY_CLOUD_NAME"); err != nil {
+		t.Fatalf("unset CLOUDINARY_CLOUD_NAME: %v", err)
+	}
+	saveEnv(t, "CLOUDINARY_UPLOAD_PRESET")
+	if err := os.Unsetenv("CLOUDINARY_UPLOAD_PRESET"); err != nil {
+		t.Fatalf("unset CLOUDINARY_UPLOAD_PRESET: %v", err)
+	}
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() with .env should succeed, got: %v", err)
+	}
+	if cfg.CloudinaryCloudName != "from-dotenv" {
+		t.Errorf("expected CloudinaryCloudName 'from-dotenv', got %q", cfg.CloudinaryCloudName)
+	}
+	if cfg.CloudinaryUploadPreset != "from-dotenv-preset" {
+		t.Errorf("expected CloudinaryUploadPreset 'from-dotenv-preset', got %q", cfg.CloudinaryUploadPreset)
 	}
 }

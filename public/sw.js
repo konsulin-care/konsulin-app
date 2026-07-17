@@ -121,7 +121,6 @@ async function networkFirst (request, cacheName, fallbackUrl) {
 self.addEventListener('fetch', function (event) {
   const url = parseUrl(event.request.url)
   if (!url) {
-    event.respondWith(fetch(event.request))
     return
   }
 

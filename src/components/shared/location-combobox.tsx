@@ -2,22 +2,15 @@
 
 import { Button } from '@/components/ui/button';
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList
-} from '@/components/ui/command';
-import {
   Popover,
   PopoverContent,
   PopoverTrigger
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { IWilayahResponse } from '@/types/wilayah';
-import { Check, ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import LocationComboboxList from './location-combobox/command-list';
 
 type LocationComboboxProps = {
   readonly options: readonly IWilayahResponse[];
@@ -70,33 +63,14 @@ export default function LocationCombobox({
           <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className='w-[var(--radix-popover-trigger-width)] p-0'>
-        <Command>
-          <CommandInput placeholder={placeholder} />
-          <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
-            <CommandGroup>
-              {options.map(option => (
-                <CommandItem
-                  key={option.code}
-                  value={option.code}
-                  onSelect={() => {
-                    onSelect(option);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      value === option.code ? 'opacity-100' : 'opacity-0'
-                    )}
-                  />
-                  {option.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+      <PopoverContent className='w-[var(--radix-popover-trigger-width)] overflow-hidden p-0'>
+        <LocationComboboxList
+          options={options}
+          value={value}
+          placeholder={placeholder}
+          onSelect={onSelect}
+          onClose={() => setOpen(false)}
+        />
       </PopoverContent>
     </Popover>
   );

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/a-h/templ"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -36,6 +37,9 @@ type Config struct {
 	AllowUnsignedCookies       bool   `json:"allow_unsigned_cookies"`
 	CSRFAuthKey                string `json:"csrf_auth_key"`
 	LogLevel                   string `json:"log_level"`
+
+	CloudinaryCloudName    string `json:"cloudinary_cloud_name"`
+	CloudinaryUploadPreset string `json:"cloudinary_upload_preset"`
 }
 
 func (c *Config) AuthFullPath() string {
@@ -71,6 +75,10 @@ func (c *Config) RuntimeConfigScript() templ.Component {
 }
 
 func Load() (*Config, error) {
+	if err := godotenv.Load(); err != nil {
+		slog.Debug("config: no .env file found, using system env vars")
+	}
+
 	apiURL, err := MustEnv("API_URL")
 	if err != nil {
 		return nil, err
@@ -84,6 +92,14 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 	sessionSecret, err := MustEnv("SESSION_COOKIE_SECRET")
+	if err != nil {
+		return nil, err
+	}
+	cloudinaryCloudName, err := MustEnv("CLOUDINARY_CLOUD_NAME")
+	if err != nil {
+		return nil, err
+	}
+	cloudinaryUploadPreset, err := MustEnv("CLOUDINARY_UPLOAD_PRESET")
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +128,9 @@ func Load() (*Config, error) {
 		AllowUnsignedCookies:       envBool("ALLOW_UNSIGNED_COOKIES", false),
 		CSRFAuthKey:                env("CSRF_AUTH_KEY", ""),
 		LogLevel:                   env("LOG", "info"),
+
+		CloudinaryCloudName:    cloudinaryCloudName,
+		CloudinaryUploadPreset: cloudinaryUploadPreset,
 	}
 	slog.Info("config loaded",
 		"port", cfg.Port,
@@ -125,6 +144,8 @@ func Load() (*Config, error) {
 		"redirect_intent_cookie_name", cfg.RedirectIntentCookieName,
 		"cookie_secure", cfg.CookieSecure,
 		"session_cookie_secret_set", cfg.SessionCookieSecret != "",
+		"cloudinary_cloud_name_set", cfg.CloudinaryCloudName != "",
+		"cloudinary_upload_preset_set", cfg.CloudinaryUploadPreset != "",
 	)
 	return cfg, nil
 }

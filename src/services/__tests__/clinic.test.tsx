@@ -16,7 +16,7 @@ vi.mock('@/services/api', async () => {
 
 import { getAPI } from '@/services/api';
 import type { Bundle, HealthcareService } from 'fhir/r4';
-import { usePractitionerRoleHealthcareServices } from '../clinic';
+import { usePractitionerRoleHealthcareServices } from '../clinic-practitioners';
 
 const mockAxiosInstance = {
   get: vi.fn(),

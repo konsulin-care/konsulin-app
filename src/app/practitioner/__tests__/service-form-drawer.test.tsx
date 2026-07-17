@@ -1,34 +1,45 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
-
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ServiceFormDrawer from '../service-form-drawer';
 
 vi.mock('@/components/ui/drawer', () => ({
-  Drawer: ({ children, open }: any) =>
-    open ? <div data-testid='drawer'>{children}</div> : null,
-  DrawerContent: ({ children }: any) => (
+  Drawer: ({
+    children,
+    open
+  }: {
+    children: React.ReactNode;
+    open?: boolean;
+  }) => (open ? <div data-testid='drawer'>{children}</div> : null),
+  DrawerContent: ({ children }: { children: React.ReactNode }) => (
     <div data-testid='drawer-content'>{children}</div>
   ),
-  DrawerHeader: ({ children }: any) => (
+  DrawerHeader: ({ children }: { children: React.ReactNode }) => (
     <div data-testid='drawer-header'>{children}</div>
   ),
-  DrawerTitle: ({ children }: any) => (
+  DrawerTitle: ({ children }: { children: React.ReactNode }) => (
     <div data-testid='drawer-title'>{children}</div>
   ),
-  DrawerDescription: ({ children }: any) => (
+  DrawerDescription: ({ children }: { children: React.ReactNode }) => (
     <div data-testid='drawer-description'>{children}</div>
   ),
-  DrawerFooter: ({ children }: any) => (
+  DrawerFooter: ({ children }: { children: React.ReactNode }) => (
     <div data-testid='drawer-footer'>{children}</div>
   ),
-  DrawerTrigger: ({ children }: any) => (
+  DrawerTrigger: ({ children }: { children: React.ReactNode }) => (
     <div data-testid='drawer-trigger'>{children}</div>
   )
 }));
 
 vi.mock('@/components/ui/switch', () => ({
-  Switch: ({ checked, onCheckedChange, id }: any) => (
+  Switch: ({
+    checked,
+    onCheckedChange,
+    id
+  }: {
+    checked: boolean;
+    onCheckedChange: (checked: boolean) => void;
+    id?: string;
+  }) => (
     <input
       type='checkbox'
       data-testid='switch'
@@ -39,8 +50,42 @@ vi.mock('@/components/ui/switch', () => ({
   )
 }));
 
+vi.mock('@/components/ui/switch-field', () => ({
+  SwitchField: ({
+    checked,
+    onCheckedChange,
+    label,
+    offLabel
+  }: {
+    checked: boolean;
+    onCheckedChange: (checked: boolean) => void;
+    label: string;
+    offLabel?: string;
+  }) => (
+    <div data-testid='switch-field'>
+      <input
+        type='checkbox'
+        data-testid='switch'
+        checked={checked}
+        onChange={e => onCheckedChange(e.target.checked)}
+      />
+      <span>{checked ? label : (offLabel ?? label)}</span>
+    </div>
+  )
+}));
+
 vi.mock('@/components/ui/input', () => ({
-  Input: ({ value, onChange, id, placeholder }: any) => (
+  Input: ({
+    value,
+    onChange,
+    id,
+    placeholder
+  }: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    id?: string;
+    placeholder?: string;
+  }) => (
     <input
       data-testid='input'
       value={value}
@@ -52,7 +97,15 @@ vi.mock('@/components/ui/input', () => ({
 }));
 
 vi.mock('@/components/ui/textarea', () => ({
-  Textarea: ({ value, onChange, id }: any) => (
+  Textarea: ({
+    value,
+    onChange,
+    id
+  }: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    id?: string;
+  }) => (
     <textarea
       data-testid='textarea'
       value={value}
@@ -63,7 +116,15 @@ vi.mock('@/components/ui/textarea', () => ({
 }));
 
 vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick, disabled }: any) => (
+  Button: ({
+    children,
+    onClick,
+    disabled
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+  }) => (
     <button data-testid='button' onClick={onClick} disabled={disabled}>
       {children}
     </button>
@@ -231,6 +292,21 @@ describe('ServiceFormDrawer', () => {
     // Non-numeric characters should be stripped
     fireEvent.change(feeInput, { target: { value: 'abc250def000' } });
     expect(feeInput).toHaveValue('250,000');
+  });
+
+  it('shows "Active" label when switch is checked (default)', () => {
+    render(<ServiceFormDrawer {...defaultProps} />);
+
+    expect(screen.getByText('Active')).toBeInTheDocument();
+  });
+
+  it('shows "Inactive" label when switch is unchecked', () => {
+    render(<ServiceFormDrawer {...defaultProps} />);
+
+    const switchInput = screen.getByTestId('switch');
+    fireEvent.click(switchInput);
+
+    expect(screen.getByText('Inactive')).toBeInTheDocument();
   });
 
   it('omits location from resource when location prop is undefined', () => {

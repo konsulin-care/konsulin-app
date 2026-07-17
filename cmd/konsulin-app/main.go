@@ -42,6 +42,7 @@ func (d noDirFS) Open(name string) (http.File, error) {
 }
 
 func routes(cfg *config.Config) (http.Handler, error) {
+	const unauthorizedPath = "/unauthorized"
 	r := chi.NewRouter()
 
 	r.Use(chimw.RequestID)
@@ -167,7 +168,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		CookieSecret:      cfg.SessionCookieSecret,
 		AccessCookieName:  cfg.SessionCookieNameAccess,
 		RefreshCookieName: cfg.SessionCookieNameRefresh,
-		UnauthorizedPath:  "/unauthorized",
+		UnauthorizedPath:  unauthorizedPath,
 		AppURL:            cfg.AppURL,
 	})
 	protectedRoutes := []string{"/message", "/notification", "/journal", "/record", "/profile"}
@@ -181,7 +182,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	roleGuard := appmw.RequireRole(appmw.RequireRoleOptions{
 		RedirectIntentCookieName: cfg.RedirectIntentCookieName,
 		AuthPath:                 cfg.AuthPath,
-		UnauthorizedPath:         "/unauthorized",
+		UnauthorizedPath:         unauthorizedPath,
 		CookieSecure:             cfg.CookieSecure,
 		AppURL:                   cfg.AppURL,
 	}, "Practitioner")
@@ -201,6 +202,20 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	// Relay routes — BFF handles FHIR orchestration, not proxied.
 	r.Post("/api/v1/relay/booking", handler.NewRelayBookingHandler(handler.RelayBookingOptions{
 		BackendBaseURL: cfg.APIURL,
+	}))
+
+	// Media upload — client sends image, BFF uploads to Cloudinary, returns URL.
+	// Restricted to Clinic Admin role.
+	adminGuard := appmw.RequireRole(appmw.RequireRoleOptions{
+		RedirectIntentCookieName: cfg.RedirectIntentCookieName,
+		AuthPath:                 cfg.AuthPath,
+		UnauthorizedPath:         unauthorizedPath,
+		CookieSecure:             cfg.CookieSecure,
+		AppURL:                   cfg.AppURL,
+	}, "Clinic Admin")
+	r.With(authGuard, adminGuard).Post("/api/media/location", handler.NewUploadHandler(handler.UploadOptions{
+		CloudinaryCloudName:    cfg.CloudinaryCloudName,
+		CloudinaryUploadPreset: cfg.CloudinaryUploadPreset,
 	}))
 
 	// All unmatched routes — proxy without auth (public pages, _next/static, etc.).

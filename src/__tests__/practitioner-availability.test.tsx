@@ -46,7 +46,7 @@ vi.mock('@/services/slots', () => ({
   computeFreeSlots: vi.fn(() => [])
 }));
 
-vi.mock('@/services/clinic', () => ({
+vi.mock('@/services/clinic-practitioners', () => ({
   useDetailPractitioner: vi.fn(() => ({
     newData: undefined,
     isLoading: false,

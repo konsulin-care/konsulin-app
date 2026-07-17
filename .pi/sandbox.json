@@ -1,5 +1,8 @@
 {
   "filesystem": {
     "denyWrite": [".env", ".pi/*", ".husky/**"]
+  },
+  "bash": {
+    "commandWhitelist": ["node"]
   }
 }

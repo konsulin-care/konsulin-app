@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 import { FilterIcon } from '@/components/icons';
 import LocationCombobox from '@/components/shared/location-combobox';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -15,15 +14,19 @@ import { IUseClinicParams } from '@/services/clinic';
 
 import { useState } from 'react';
 
-export type IFirmFilter = {
-  city: string;
-  province_code: string;
-};
+interface FirmFilterProps {
+  onChange: (filter: IUseClinicParams) => void;
+}
+
+/** FirmFilter - A drawer-based filter component for clinic search.
+ * Allows filtering by province and city using LocationCombobox.
+ */
+export type IFirmFilter = IUseClinicParams;
 
 /**
  *
  */
-export default function FirmFilter({ onChange }) {
+export default function FirmFilter({ onChange }: FirmFilterProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [filter, setFilter] = useState<IUseClinicParams>({
     city: undefined,

@@ -14,6 +14,20 @@ describe('getServiceDuration', () => {
     expect(getServiceDuration(hs)).toBeNull();
   });
 
+  it('reads old valueInteger format for backward compatibility', () => {
+    const hs: HealthcareService = {
+      resourceType: 'HealthcareService',
+      name: 'General Consultation',
+      extension: [
+        {
+          url: 'https://konsulin.id/fhir/StructureDefinition/serviceDuration',
+          valueInteger: 30
+        }
+      ]
+    };
+    expect(getServiceDuration(hs)).toBe(30);
+  });
+
   it('returns the duration value from valueDuration', () => {
     const hs: HealthcareService = {
       resourceType: 'HealthcareService',
@@ -23,23 +37,9 @@ describe('getServiceDuration', () => {
           url: 'https://konsulin.id/fhir/StructureDefinition/serviceDuration',
           valueDuration: {
             value: 30,
-            system: 'http://unitsofmeasure.org',
+            system: 'https://unitsofmeasure.org',
             code: 'min'
           }
-        }
-      ]
-    };
-    expect(getServiceDuration(hs)).toBe(30);
-  });
-
-  it('reads old valueInteger format for backward compatibility', () => {
-    const hs: HealthcareService = {
-      resourceType: 'HealthcareService',
-      name: 'General Consultation',
-      extension: [
-        {
-          url: 'https://konsulin.id/fhir/StructureDefinition/serviceDuration',
-          valueInteger: 30
         }
       ]
     };
@@ -81,7 +81,7 @@ describe('setServiceDuration', () => {
         e.url === 'https://konsulin.id/fhir/StructureDefinition/serviceDuration'
     );
     expect(ext?.valueDuration?.value).toBe(45);
-    expect(ext?.valueDuration?.system).toBe('http://unitsofmeasure.org');
+    expect(ext?.valueDuration?.system).toBe('https://unitsofmeasure.org');
     expect(ext?.valueDuration?.code).toBe('min');
   });
 
@@ -94,7 +94,7 @@ describe('setServiceDuration', () => {
           url: 'https://konsulin.id/fhir/StructureDefinition/serviceDuration',
           valueDuration: {
             value: 30,
-            system: 'http://unitsofmeasure.org',
+            system: 'https://unitsofmeasure.org',
             code: 'min'
           }
         }
@@ -106,7 +106,7 @@ describe('setServiceDuration', () => {
         e.url === 'https://konsulin.id/fhir/StructureDefinition/serviceDuration'
     );
     expect(ext?.valueDuration?.value).toBe(60);
-    expect(ext?.valueDuration?.system).toBe('http://unitsofmeasure.org');
+    expect(ext?.valueDuration?.system).toBe('https://unitsofmeasure.org');
     expect(ext?.valueDuration?.code).toBe('min');
     expect(result.extension).toHaveLength(1);
   });
@@ -131,7 +131,9 @@ describe('setServiceDuration', () => {
         e.url === 'https://konsulin.id/fhir/StructureDefinition/serviceDuration'
     );
     expect(durationExt?.valueDuration?.value).toBe(30);
-    expect(durationExt?.valueDuration?.system).toBe('http://unitsofmeasure.org');
+    expect(durationExt?.valueDuration?.system).toBe(
+      'https://unitsofmeasure.org'
+    );
     expect(durationExt?.valueDuration?.code).toBe('min');
     expect(feeExt?.valueMoney?.value).toBe(250_000);
     expect(result.extension).toHaveLength(2);

@@ -1,4 +1,8 @@
 @import 'tailwindcss';
+@theme {
+  --color-primary: #2c2f35;
+  --color-secondary: #13c2c2;
+}
 @import './phone-input.css';
 
 * {

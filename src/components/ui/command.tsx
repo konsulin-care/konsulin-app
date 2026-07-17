@@ -23,6 +23,7 @@ const Command = React.forwardRef<
 ));
 Command.displayName = CommandPrimitive.displayName;
 
+/** Dialog wrapper rendering Command inside a modal. */
 const CommandDialog = ({ children, ...props }: DialogProps) => {
   return (
     <Dialog {...props}>
@@ -39,7 +40,7 @@ const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
-  <div className='flex items-center border-b px-3' cmdk-input-wrapper=''>
+  <div className='flex items-center border-b px-3' data-cmdk-input-wrapper=''>
     <Search className='mr-2 h-4 w-4 shrink-0 opacity-50' />
     <CommandPrimitive.Input
       ref={ref}
@@ -57,13 +58,47 @@ CommandInput.displayName = CommandPrimitive.Input.displayName;
 const CommandList = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.List
-    ref={ref}
-    className={cn('max-h-[300px] overflow-x-hidden overflow-y-auto', className)}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  const innerRef =
+    React.useRef<React.ElementRef<typeof CommandPrimitive.List>>(null);
+
+  React.useEffect(() => {
+    const el = innerRef.current;
+    /** Stop wheel/touch event propagation to prevent outer scrolling. */
+    const stop = (e: Event) => {
+      e.stopPropagation();
+    };
+    if (!el) {
+      // eslint-disable-next-line unicorn/no-useless-undefined
+      return undefined;
+    }
+
+    el.addEventListener('wheel', stop, { passive: true });
+    el.addEventListener('touchmove', stop, { passive: true });
+    return () => {
+      el.removeEventListener('wheel', stop);
+      el.removeEventListener('touchmove', stop);
+    };
+  }, []);
+
+  return (
+    <CommandPrimitive.List
+      ref={node => {
+        innerRef.current = node;
+        if (typeof ref === 'function') {
+          ref(node);
+        } else if (ref) {
+          ref.current = node;
+        }
+      }}
+      className={cn(
+        'max-h-[300px] overflow-x-hidden overflow-y-auto',
+        className
+      )}
+      {...props}
+    />
+  );
+});
 
 CommandList.displayName = CommandPrimitive.List.displayName;
 
@@ -124,6 +159,7 @@ const CommandItem = React.forwardRef<
 
 CommandItem.displayName = CommandPrimitive.Item.displayName;
 
+/** Shortcut key display for command menu items. */
 const CommandShortcut = ({
   className,
   ...props

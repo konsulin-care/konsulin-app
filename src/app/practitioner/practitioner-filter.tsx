@@ -1,15 +1,8 @@
 'use client';
 
 import { FilterIcon } from '@/components/icons';
+import PractitionerLocationCombobox from '@/components/shared/practitioner-location-combobox';
 import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList
-} from '@/components/ui/command';
 import {
   Popover,
   PopoverContent,
@@ -57,31 +50,6 @@ export const FilterButton = forwardRef<
   );
 });
 
-/** Renders a location list using Command combobox. */
-function LocationCombobox({
-  locations,
-  onSelect
-}: {
-  readonly locations: readonly LocationOption[];
-  readonly onSelect: (id: string) => void;
-}) {
-  return (
-    <Command>
-      <CommandInput placeholder='Select location...' />
-      <CommandList>
-        <CommandEmpty>No locations found</CommandEmpty>
-        <CommandGroup>
-          {locations.map(loc => (
-            <CommandItem key={loc.id} value={loc.id} onSelect={onSelect}>
-              {loc.name}
-            </CommandItem>
-          ))}
-        </CommandGroup>
-      </CommandList>
-    </Command>
-  );
-}
-
 /** Content inside the popover: status toggle group + location combobox. */
 function FilterPopoverContent({
   locations,
@@ -117,7 +85,11 @@ function FilterPopoverContent({
 
       <div>
         <span className='mb-2 block text-sm font-medium'>Location</span>
-        <LocationCombobox locations={locations} onSelect={onLocationSelect} />
+        <PractitionerLocationCombobox
+          locations={locations}
+          selectedId={value.locationId ?? null}
+          onSelect={onLocationSelect}
+        />
       </div>
 
       {activeCount > 0 && (
@@ -170,7 +142,11 @@ export default function PractitionerFilter({
       <PopoverTrigger asChild>
         <FilterButton />
       </PopoverTrigger>
-      <PopoverContent align='center' className='w-[90vw] p-4'>
+      <PopoverContent
+        align='center'
+        className='w-[90vw] p-4'
+        data-testid='filter-popover-content'
+      >
         <FilterPopoverContent
           locations={locations}
           value={value}

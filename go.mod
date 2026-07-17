@@ -9,3 +9,5 @@ require (
 	github.com/gorilla/csrf v1.7.3
 	github.com/gorilla/securecookie v1.1.2
 )
+
+require github.com/joho/godotenv v1.5.1

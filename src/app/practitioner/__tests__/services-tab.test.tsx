@@ -27,7 +27,7 @@ const mockServices: HealthcareService[] = [
   }
 ];
 
-vi.mock('@/services/clinic', () => ({
+vi.mock('@/services/clinic-practitioners', () => ({
   usePractitionerRoleHealthcareServices: vi.fn()
 }));
 
@@ -66,7 +66,8 @@ vi.mock('../service-form-drawer', () => ({
 vi.mock('@/services/api/fhir-bundle', () => ({ submitFhirBundle: vi.fn() }));
 
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
-import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
+/* eslint-disable max-lines */
+import { usePractitionerRoleHealthcareServices } from '@/services/clinic-practitioners';
 import ServicesTab from '../services-tab';
 
 function makeMockResult(data?: HealthcareService[]) {

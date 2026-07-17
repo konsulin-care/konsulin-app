@@ -1,3 +1,4 @@
+/* eslint-disable security/detect-non-literal-fs-filename */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -46,7 +47,7 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
 
     it('uses braces in onClick for handleDeleteService', () => {
       expect(content).not.toContain(
-        "onClick={() => handleDeleteService(svc.id)}"
+        'onClick={() => handleDeleteService(svc.id)}'
       );
     });
   });
@@ -135,8 +136,8 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
 
     it('nolint suppresses SSRF for BackendBaseURL request', () => {
       // Find the URL construction line (last occurrence of BackendBaseURL).
-      const urlIdx = lines.findLastIndex(l =>
-        l.includes('BackendBaseURL') && l.includes('/api/v1/')
+      const urlIdx = lines.findLastIndex(
+        l => l.includes('BackendBaseURL') && l.includes('/api/v1/')
       );
       expect(urlIdx).toBeGreaterThanOrEqual(0);
       // The //nolint:gosec comment should be on the line immediately before.
@@ -163,23 +164,21 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
     const { lines } = readFile('src/context/auth/fhirIdMap.ts');
 
     it('uses setRoleValue helper for dynamic property writes', () => {
-      const writeIdx = lines.findIndex(
-        l => l.includes('setRoleValue(existing, role, fhirId)')
+      const writeIdx = lines.findIndex(l =>
+        l.includes('setRoleValue(existing, role, fhirId)')
       );
       expect(writeIdx).toBeGreaterThanOrEqual(0);
     });
 
     it('uses getRoleValue helper for dynamic property reads', () => {
-      const readIdx = lines.findIndex(
-        l => l.includes('getRoleValue(map, role)')
+      const readIdx = lines.findIndex(l =>
+        l.includes('getRoleValue(map, role)')
       );
       expect(readIdx).toBeGreaterThanOrEqual(0);
     });
 
     it('getRoleValue guards with Object.hasOwn + isValidRoleKey before property access', () => {
-      const fnStart = lines.findIndex(l =>
-        l.includes('function getRoleValue')
-      );
+      const fnStart = lines.findIndex(l => l.includes('function getRoleValue'));
       expect(fnStart).toBeGreaterThanOrEqual(0);
       const body = lines.slice(fnStart, fnStart + 12);
       expect(body.some(l => l.includes('Object.hasOwn'))).toBe(true);
@@ -188,9 +187,7 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
     });
 
     it('setRoleValue guards with Object.hasOwn + isValidRoleKey before property write', () => {
-      const fnStart = lines.findIndex(l =>
-        l.includes('function setRoleValue')
-      );
+      const fnStart = lines.findIndex(l => l.includes('function setRoleValue'));
       expect(fnStart).toBeGreaterThanOrEqual(0);
       const body = lines.slice(fnStart, fnStart + 12);
       expect(body.some(l => l.includes('Object.hasOwn'))).toBe(true);
@@ -213,9 +210,7 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
       expect(exportStart).toBeGreaterThanOrEqual(0);
       // From the first exported function onward, there should be no 'return map['.
       const exportedLines = lines.slice(exportStart);
-      const readIdx = exportedLines.findIndex(l =>
-        l.includes('return map[')
-      );
+      const readIdx = exportedLines.findIndex(l => l.includes('return map['));
       expect(readIdx).toBe(-1);
     });
   });

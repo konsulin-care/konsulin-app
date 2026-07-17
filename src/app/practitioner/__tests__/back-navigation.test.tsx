@@ -42,7 +42,7 @@ vi.mock('@/services/api', () => ({
   getAPI: vi.fn()
 }));
 
-vi.mock('@/services/clinic', () => ({
+vi.mock('@/services/clinic-practitioners', () => ({
   usePractitionerListing: vi.fn(),
   useDetailPractitioner: vi.fn().mockReturnValue({
     newData: undefined,
@@ -122,7 +122,7 @@ vi.mock('@/app/practitioner/role-management-shell', () => ({
 
 import { useAuth } from '@/context/auth/authContext';
 import { dbGet } from '@/lib/indexeddb';
-import { usePractitionerListing } from '@/services/clinic';
+import { usePractitionerListing } from '@/services/clinic-practitioners';
 import { useSearchParams } from 'next/navigation';
 
 import Practitioner from '../page';

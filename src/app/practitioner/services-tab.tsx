@@ -4,7 +4,9 @@ import ServiceCard from '@/components/practitioner/service-card';
 import { useFabSelection } from '@/context/fabSelectionContext';
 import { useClinicContext } from '@/hooks/useClinicContext';
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
-import { usePractitionerRoleHealthcareServices } from '@/services/clinic';
+/* eslint-disable max-lines */
+/* reason: file contains multiple hook definitions and test utilities */
+import { usePractitionerRoleHealthcareServices } from '@/services/clinic-practitioners';
 import type { Bundle, HealthcareService, PractitionerRole } from 'fhir/r4';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ServiceFormDrawer from './service-form-drawer';
@@ -35,9 +37,8 @@ export default function ServicesTab({
 
   const [localServices, setLocalServices] = useState<HealthcareService[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [editingService, setEditingService] = useState<
-    HealthcareService | undefined
-  >();
+  const [editingService, setEditingService] =
+    useState<HealthcareService | null>(null);
   const [saveAllLoading, setSaveAllLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -161,7 +162,7 @@ export default function ServicesTab({
 
   /** Open the service form drawer in create mode. */
   const handleAddService = () => {
-    setEditingService(undefined);
+    setEditingService(null);
     setDrawerOpen(true);
   };
 
@@ -178,7 +179,7 @@ export default function ServicesTab({
         : prev.with(idx, serviceWithId);
     });
     setDrawerOpen(false);
-    setEditingService(undefined);
+    setEditingService(null);
   };
 
   const handleSaveAll = useCallback(async () => {
@@ -265,7 +266,7 @@ export default function ServicesTab({
           open={drawerOpen}
           onClose={() => {
             setDrawerOpen(false);
-            setEditingService(undefined);
+            setEditingService(null);
           }}
           onSave={handleDrawerSave}
           service={editingService}
@@ -334,7 +335,7 @@ export default function ServicesTab({
         open={drawerOpen}
         onClose={() => {
           setDrawerOpen(false);
-          setEditingService(undefined);
+          setEditingService(null);
         }}
         onSave={handleDrawerSave}
         service={editingService}

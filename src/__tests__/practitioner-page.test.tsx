@@ -52,7 +52,7 @@ vi.mock('@/lib/indexeddb', () => ({
   dbSet: vi.fn().mockResolvedValue(null)
 }));
 
-vi.mock('@/services/clinic', () => ({
+vi.mock('@/services/clinic-practitioners', () => ({
   useDetailPractitioner: vi.fn().mockReturnValue({
     newData: undefined,
     isLoading: false,

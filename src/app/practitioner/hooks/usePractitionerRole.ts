@@ -1,4 +1,4 @@
-import { useDetailPractitioner } from '@/services/clinic';
+import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import type { PractitionerRole } from 'fhir/r4';
 import { useMemo } from 'react';
 

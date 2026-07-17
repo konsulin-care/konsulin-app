@@ -67,7 +67,7 @@ vi.mock('@/app/practitioner/services-tab', () => ({
   default: () => <div data-testid='mock-services-tab'>Services Tab</div>
 }));
 
-vi.mock('@/services/clinic', () => ({
+vi.mock('@/services/clinic-practitioners', () => ({
   useDetailPractitioner: vi.fn()
 }));
 
@@ -76,7 +76,7 @@ vi.mock('@/context/auth/authContext', () => ({
 }));
 
 import { useAuth } from '@/context/auth/authContext';
-import { useDetailPractitioner } from '@/services/clinic';
+import { useDetailPractitioner } from '@/services/clinic-practitioners';
 
 const mockRole: Partial<PractitionerRole> = {
   resourceType: 'PractitionerRole',

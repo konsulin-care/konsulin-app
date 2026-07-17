@@ -13,7 +13,7 @@ vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));
 
-vi.mock('@/services/clinic', () => ({
+vi.mock('@/services/clinic-practitioners', () => ({
   usePractitionerListing: vi.fn(),
   useDetailPractitioner: vi.fn(),
   useOrganizationLocations: vi.fn()
@@ -108,7 +108,7 @@ import { useAuth } from '@/context/auth/authContext';
 import {
   useOrganizationLocations,
   usePractitionerListing
-} from '@/services/clinic';
+} from '@/services/clinic-practitioners';
 import { useGetPractitionerRoleWorkingLocations } from '@/services/clinicians';
 import { useSearchParams } from 'next/navigation';
 
