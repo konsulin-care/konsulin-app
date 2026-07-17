@@ -64,11 +64,11 @@ describe('getTodayHours', () => {
     name: 'Test Clinic'
   };
 
-  /** Override Date.now so "today" is fixed to a known weekday. */
+  /** Override Date.now so "today" is fixed to a known weekday at 12:00. */
   function mockToday(weekdayIndex: number) {
     // weekdayIndex: 0=Sun, 1=Mon, ..., 6=Sat
-    // Use a Monday 2026-01-05 + offset
-    const base = new Date(2026, 0, 5); // Monday
+    // Use a Monday 2026-01-05 + offset, set time to 12:00 so time check passes
+    const base = new Date(2026, 0, 5, 12, 0, 0); // Monday 12:00
     const target = new Date(base);
     target.setDate(base.getDate() + weekdayIndex - 1);
     vi.useFakeTimers({ now: target, toFake: ['Date'] });
@@ -465,7 +465,7 @@ describe('useClinicLocations', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-      '/fhir/Location?organization=org-1&address-state=Aceh&address-city:contains=Kabupaten%20Simeulue'
+      '/fhir/Location?organization=org-1&address-state=Aceh&address-city=Kabupaten%20Simeulue'
     );
   });
 

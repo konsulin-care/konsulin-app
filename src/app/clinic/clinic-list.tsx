@@ -88,14 +88,6 @@ export default function ClinicList() {
 
   /** Handle card click — navigate for patient/practitioner, notify parent for admin. */
   const handleSelectLocation = (locationId: string) => {
-    const isAdmin = role === 'Clinic Admin';
-
-    if (isAdmin) {
-      // Admin opens drawer — handled by parent clinic-detail
-      router.push(`/clinic?id=${locationId}`);
-      return;
-    }
-
     router.push(`/clinic?id=${locationId}`);
   };
 

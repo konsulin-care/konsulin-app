@@ -11,23 +11,40 @@ import { getAPI } from './api';
  * Determine today's operating hours from Location.hoursOfOperation.
  *
  * @param location - FHIR Location resource with optional hoursOfOperation
- * @returns "Open until {HH:mm}" if open today, or "Closed today"
+ * @returns "Open until {HH:mm}" if currently open, "Opens at {HH:mm}" if not yet open, or "Closed today"
  */
 export function getTodayHours(location: Location): string {
   const hours = location.hoursOfOperation;
-  if (!hours || hours.length === 0) return 'Closed today';
+  if (!hours?.length) return 'Closed today';
 
   const todayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
   const todayName = todayNames[new Date().getDay()];
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
   const entry = hours.find(h =>
     h.daysOfWeek?.some(d => d.toLowerCase() === todayName)
   );
 
-  if (!entry?.closingTime) return 'Closed today';
+  if (!entry?.openingTime || !entry?.closingTime) return 'Closed today';
 
-  const closing = entry.closingTime.split(':').slice(0, 2).join(':');
-  return `Open until ${closing}`;
+  const parseTime = (t: string) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  };
+
+  const open = parseTime(entry.openingTime);
+  const close = parseTime(entry.closingTime);
+  const closingDisplay = entry.closingTime.split(':').slice(0, 2).join(':');
+  const openingDisplay = entry.openingTime.split(':').slice(0, 2).join(':');
+
+  if (currentMinutes >= open && currentMinutes < close) {
+    return `Open until ${closingDisplay}`;
+  }
+  if (currentMinutes < open) {
+    return `Opens at ${openingDisplay}`;
+  }
+  return 'Closed today';
 }
 
 // ---------------------------------------------------------------------------
@@ -121,7 +138,7 @@ export function useClinicLocations({
     }
 
     if (city) {
-      base += `${sep}address-city:contains=${encodeURIComponent(city)}`;
+      base += `${sep}address-city=${encodeURIComponent(city)}`;
     }
 
     return base;
@@ -180,7 +197,7 @@ export function useClinicLocationPractitioners(locationId: string) {
 
       // Step 1: try PractitionerRole query with status=active
       const primaryResponse = await API.get<Bundle>(
-        `/fhir/PractitionerRole?location=${locationId}&status=active` +
+        `/fhir/PractitionerRole?location=${encodeURIComponent(locationId)}&status=active` +
           '&_include=PractitionerRole:practitioner' +
           '&_include=PractitionerRole:service' +
           '&_include=PractitionerRole:organization' +
@@ -193,7 +210,7 @@ export function useClinicLocationPractitioners(locationId: string) {
 
       // Step 2: fallback — fetch Location + Organization directly
       const fallbackResponse = await API.get<Bundle>(
-        `/fhir/Location?_id=${locationId}&_include=Location:organization`
+        `/fhir/Location?_id=${encodeURIComponent(locationId)}&_include=Location:organization`
       );
       return fallbackResponse.data.entry ?? [];
     },

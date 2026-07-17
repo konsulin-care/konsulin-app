@@ -26,7 +26,9 @@ function updateHoursForDay(
  * submit logic and loading/pre-fill behaviour on top of this hook.
  */
 export function useLocationFormState() {
-  const [status, setStatus] = useState<'active' | 'inactive'>('active');
+  const [status, setStatus] = useState<'active' | 'inactive' | 'suspended'>(
+    'active'
+  );
   const [name, setName] = useState('');
   const [addressLine, setAddressLine] = useState('');
   const [provinceCode, setProvinceCode] = useState('');

@@ -228,7 +228,7 @@ describe('ClinicList — cards', () => {
       isLoading: false
     } as never);
 
-    vi.useFakeTimers({ now: new Date(2026, 0, 5), toFake: ['Date'] });
+    vi.useFakeTimers({ now: new Date(2026, 0, 5, 12, 0, 0), toFake: ['Date'] });
 
     const locations = [createMockLocation('loc-1', 'Main Clinic', 'Jakarta')];
     vi.mocked(useClinicLocations).mockReturnValue({

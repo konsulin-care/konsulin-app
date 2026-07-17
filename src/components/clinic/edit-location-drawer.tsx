@@ -30,9 +30,16 @@ function extractValues(location: Location) {
     latitude: undefined
   };
 
-  const status: 'active' | 'inactive' =
-    location.status === 'active' ? 'active' : 'inactive';
+  const status: 'active' | 'inactive' | 'suspended' = [
+    'active',
+    'inactive',
+    'suspended'
+  ].includes(location.status ?? '')
+    ? location.status
+    : 'inactive';
   const name = location.name || '';
+
+  const managingOrg = location.managingOrganization?.reference ?? '';
 
   return {
     status,
@@ -42,7 +49,8 @@ function extractValues(location: Location) {
     districtName: addr.district || '',
     provinceName: addr.state || '',
     longitude: String(pos.longitude ?? ''),
-    latitude: String(pos.latitude ?? '')
+    latitude: String(pos.latitude ?? ''),
+    managingOrg
   };
 }
 
@@ -113,6 +121,8 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     enabled: Boolean(locationId)
   });
 
+  const [managingOrg, setManagingOrg] = useState('');
+
   // Pre-fill form when location data loads
   useEffect(() => {
     if (!location || isDataLoaded) return;
@@ -127,6 +137,7 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     setProvinceName(values.provinceName);
     setLongitude(values.longitude);
     setLatitude(values.latitude);
+    setManagingOrg(values.managingOrg);
     setHours(parseHoursFromFHIR(location.hoursOfOperation));
     setImageUrl(getLocationImageUrl(location) ?? '');
   }, [
@@ -140,6 +151,7 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     setProvinceName,
     setLongitude,
     setLatitude,
+    setManagingOrg,
     setHours,
     setImageUrl
   ]);
@@ -196,9 +208,9 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
       },
       position: { longitude: parsedLon, latitude: parsedLat },
       hoursOfOperation: fhirHours,
-      managingOrganization: {
-        reference: `Organization/${orgId}`
-      }
+      managingOrganization: managingOrg
+        ? { reference: managingOrg }
+        : { reference: `Organization/${orgId}` }
     };
     if (imageUrl) {
       payload = setLocationImageUrl(payload, imageUrl);
@@ -216,7 +228,8 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     parsedLat,
     fhirHours,
     imageUrl,
-    locationId
+    locationId,
+    managingOrg
   ]);
 
   const handleSubmit = useCallback(() => {

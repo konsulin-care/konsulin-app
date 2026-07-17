@@ -26,7 +26,7 @@ type Props = {
 
 /** Submit a new location to the FHIR API. */
 async function submitNewLocation(params: {
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'suspended';
   nameTrimmed: string;
   addressLine: string;
   cityName: string;
@@ -141,7 +141,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
       toast.success('Location added successfully');
       queryClient
         .invalidateQueries({
-          queryKey: ['practitioner-count']
+          queryKey: ['clinic-locations']
         })
         .catch(() => {
           /* cache invalidation best-effort */
