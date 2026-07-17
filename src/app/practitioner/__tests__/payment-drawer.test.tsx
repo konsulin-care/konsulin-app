@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { Invoice } from 'fhir/r4';
+import type { Invoice, PractitionerRole } from 'fhir/r4';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -99,7 +99,10 @@ const baseProps = {
   patientId: 'patient-1',
   selectedSlotId: 'slot-123',
   bookingForm: { session_type: 'offline', problem_brief: 'test issue' },
-  practitionerRole: { id: 'role-1' } as { id: string },
+  practitionerRole: {
+    id: 'role-1',
+    resourceType: 'PractitionerRole'
+  } as PractitionerRole,
   payAppointment: vi.fn(),
   queryClient: new QueryClient(),
   handleFilterChange: vi.fn(),
