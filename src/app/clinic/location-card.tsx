@@ -42,6 +42,7 @@ interface LocationCardImageProps {
   readonly name: string;
 }
 
+/** Renders the clinic location image. */
 function LocationCardImage({ imageUrl, name }: LocationCardImageProps) {
   return (
     <Image
@@ -60,6 +61,7 @@ interface LocationCardOverlayProps {
   readonly hours: string;
 }
 
+/** Renders location name, address, and hours overlay on the card image. */
 function LocationCardOverlay({
   name,
   cityProvince,

@@ -28,6 +28,7 @@ export function getTodayHours(location: Location): string {
 
   if (!entry?.openingTime || !entry?.closingTime) return 'Closed today';
 
+  /** Parse HH:MM(:ss) to total minutes since midnight. */
   const parseTime = (t: string) => {
     const [h, m] = t.split(':').map(Number);
     return h * 60 + m;

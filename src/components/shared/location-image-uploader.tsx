@@ -167,8 +167,8 @@ export default function LocationImageUploader({
         type='file'
         accept='image/*'
         className='hidden'
-        onChange={e => {
-          handleFile(e).catch(() => void 0);
+        onChange={function (e: ChangeEvent<HTMLInputElement>) {
+          void handleFile(e);
         }}
       />
     </div>

@@ -32,6 +32,40 @@ interface PractitionerLocationComboboxProps {
 }
 
 /**
+ * Dropdown list of location options.
+ * Extracted to keep JSX nesting depth ≤ 4 (avoids react/jsx-max-depth violation).
+ */
+function LocationList({
+  locations,
+  onSelect,
+  setOpen
+}: {
+  readonly locations: readonly PractitionerLocationOption[];
+  readonly onSelect: (id: string | null) => void;
+  readonly setOpen: (open: boolean) => void;
+}) {
+  return (
+    <CommandList>
+      <CommandEmpty>No locations found</CommandEmpty>
+      <CommandGroup>
+        {locations.map(loc => (
+          <CommandItem
+            key={loc.id}
+            value={loc.id}
+            onSelect={() => {
+              onSelect(loc.id);
+              setOpen(false);
+            }}
+          >
+            {loc.name}
+          </CommandItem>
+        ))}
+      </CommandGroup>
+    </CommandList>
+  );
+}
+
+/**
  * Combobox for selecting a FHIR Location (practitioner assignment).
  * Uses shadcn Popover + Command for type-to-filter search.
  * Expects Location objects with { id, name } shape from FHIR.
@@ -83,23 +117,11 @@ export default function PractitionerLocationCombobox({
       >
         <Command>
           <CommandInput placeholder={placeholder} />
-          <CommandList>
-            <CommandEmpty>No locations found</CommandEmpty>
-            <CommandGroup>
-              {locations.map(loc => (
-                <CommandItem
-                  key={loc.id}
-                  value={loc.id}
-                  onSelect={() => {
-                    onSelect(loc.id);
-                    setOpen(false);
-                  }}
-                >
-                  {loc.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
+          <LocationList
+            locations={locations}
+            onSelect={onSelect}
+            setOpen={setOpen}
+          />
         </Command>
       </PopoverContent>
     </Popover>
