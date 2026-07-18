@@ -92,7 +92,7 @@ export const parseRecordBundles = (bundles: IBundleResponse[]) => {
 
     for (const entry of bundle.entry) {
       const parsed = processBundleResource(entry.resource);
-      if (parsed) results.push(parsed);
+      if (parsed) results.push(parsed as IRecord);
     }
   }
 

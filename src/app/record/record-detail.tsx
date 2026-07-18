@@ -1,80 +1,147 @@
 'use client';
 
 import Notfound from '@/app/not-found';
-import PageHeader from '@/components/page-header';
-import { formatTitle } from '@/utils/helper';
-import { useSearchParams } from 'next/navigation';
+import { LoadingSpinnerIcon } from '@/components/icons';
+import { useRecordDetail } from '@/hooks/useRecordDetail';
+import type { Observation, QuestionnaireResponse } from 'fhir/r4';
+import { useMemo } from 'react';
 import RecordAssessment from './record-assessment';
-import RecordExercise from './record-exercise';
 import RecordJournal from './record-journal';
 import RecordSoap from './record-soap';
 
+type Props = {
+  resourceType: string;
+  resourceId: string;
+  title: string;
+};
+
 /**
- *
+ * Determine whether an Observation is a patient journal (LOINC 51855-5).
  */
-export default function RecordDetail() {
-  const searchParams = useSearchParams();
-  const id = searchParams.get('id') ?? '';
-  const category = Number(searchParams.get('category'));
-  const titleParam = searchParams.get('title');
-  const formattedTitle = formatTitle(titleParam);
+function isPatientJournal(resource: Observation): boolean {
+  return (
+    resource.code?.coding?.some(
+      c => c.system === 'https://loinc.org' && c.code === '51855-5'
+    ) ?? false
+  );
+}
 
-  const isValidCategory = [1, 2, 3, 4].includes(category);
-  const isValidTitle =
-    typeof titleParam === 'string' && titleParam.trim() !== '';
+/**
+ * Determine whether an Observation is a practitioner note (LOINC 67855-7).
+ */
+function isPractitionerNote(resource: Observation): boolean {
+  return (
+    resource.code?.coding?.some(
+      c => c.system === 'https://loinc.org' && c.code === '67855-7'
+    ) ?? false
+  );
+}
 
-  if (!isValidTitle || !isValidCategory) {
+/**
+ * Determine whether a QuestionnaireResponse is a SOAP note.
+ */
+function isSoapNote(resource: QuestionnaireResponse): boolean {
+  return resource.questionnaire === 'Questionnaire/soap';
+}
+
+const PAGE_TITLES: Record<string, string> = {
+  'QuestionnaireResponse/soap': 'SOAP Detail',
+  'QuestionnaireResponse/assessment': 'Assessment Result',
+  'Observation/journal': 'Journal Detail',
+  'Observation/soap': 'SOAP Detail'
+};
+
+/**
+ * Detail view for a single record.
+ *
+ * Dispatches to the appropriate sub-component based on
+ * the resource type and its content.
+ */
+export default function RecordDetail({
+  resourceType,
+  resourceId,
+  title
+}: Props) {
+  const { data, isLoading, error } = useRecordDetail(
+    resourceType,
+    resourceId || null
+  );
+
+  const pageTitle = useMemo(() => {
+    if (!data) return 'Detail';
+    if (data.resourceType === 'QuestionnaireResponse') {
+      return isSoapNote(data as unknown as QuestionnaireResponse)
+        ? PAGE_TITLES['QuestionnaireResponse/soap']
+        : PAGE_TITLES['QuestionnaireResponse/assessment'];
+    }
+    if (data.resourceType === 'Observation') {
+      if (isPatientJournal(data as unknown as Observation)) {
+        return PAGE_TITLES['Observation/journal'];
+      }
+      if (isPractitionerNote(data as unknown as Observation)) {
+        return PAGE_TITLES['Observation/soap'];
+      }
+    }
+    return 'Detail';
+  }, [data]);
+
+  // Invalid props
+  if (!resourceType || !resourceId) {
     return <Notfound />;
   }
 
-  /** Returns page title based on record category. */
-  const pageTitle = (category: number) => {
-    switch (category) {
-      case 1: {
-        return 'Assessment Result';
-      }
-      case 2: {
-        return 'Exercise Result';
-      }
-      case 3: {
-        return 'SOAP Detail';
-      }
-      case 4: {
-        return 'Journal Detail';
-      }
-      default: {
-        return '';
-      }
-    }
-  };
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className='flex min-h-screen min-w-full items-center justify-center'>
+        <LoadingSpinnerIcon
+          width={56}
+          height={56}
+          className='w-full animate-spin'
+        />
+      </div>
+    );
+  }
 
-  /** Renders the appropriate record component based on category. */
-  const renderContent = (category: number) => {
-    switch (category) {
-      case 1: {
-        return <RecordAssessment recordId={id} title={formattedTitle} />;
+  // Error or no data after loading
+  if (error || !data) {
+    return <Notfound />;
+  }
+
+  /** Render the appropriate sub-component based on resource type. */
+  const renderContent = () => {
+    switch (data.resourceType) {
+      case 'QuestionnaireResponse': {
+        const qr = data as unknown as QuestionnaireResponse;
+        if (isSoapNote(qr)) {
+          return <RecordSoap soapId={resourceId} title={title} />;
+        }
+        return <RecordAssessment recordId={resourceId} title={title} />;
       }
-      case 2: {
-        return <RecordExercise />;
-      }
-      case 3: {
-        return <RecordSoap soapId={id} title={titleParam} />;
-      }
-      case 4: {
-        return <RecordJournal journalId={id} />;
+      case 'Observation': {
+        const obs = data as unknown as Observation;
+        if (isPatientJournal(obs)) {
+          return <RecordJournal journalId={resourceId} />;
+        }
+        if (isPractitionerNote(obs)) {
+          return <RecordSoap soapId={resourceId} title={title} />;
+        }
+        return <Notfound />;
       }
       default: {
-        return null;
+        return <Notfound />;
       }
     }
   };
 
   return (
-    <>
-      <PageHeader pageIndicator={pageTitle(category)} />
-      <div className='mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] bg-white p-4'>
-        {renderContent(category)}
+    <div className='flex grow flex-col space-y-4'>
+      <div className='mx-4 mt-4'>
+        <h1 className='text-lg font-bold'>{pageTitle}</h1>
       </div>
-    </>
+      <div className='flex grow flex-col space-y-4 rounded-t-[16px] bg-white p-4'>
+        {renderContent()}
+      </div>
+    </div>
   );
 }

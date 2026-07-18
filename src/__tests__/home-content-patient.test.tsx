@@ -11,8 +11,8 @@ vi.mock('@/services/api', () => ({
   getAPI: vi.fn()
 }));
 
-vi.mock('@/services/api/record', () => ({
-  useRecordSummaryQuery: vi.fn()
+vi.mock('@/hooks/usePatientRecords', () => ({
+  usePatientRecords: vi.fn()
 }));
 
 vi.mock('next/navigation', () => ({
@@ -20,9 +20,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { useAuth } from '@/context/auth/authContext';
-import { useRecordSummaryQuery } from '@/services/api/record';
-import { type IBundleResponse } from '@/types/record';
-import { type UseQueryResult } from '@tanstack/react-query';
+import type { UseRecordsResult } from '@/hooks/usePatientRecords';
+import { usePatientRecords } from '@/hooks/usePatientRecords';
 
 describe('HomeContentPatient', () => {
   let queryClient: QueryClient;
@@ -47,12 +46,13 @@ describe('HomeContentPatient', () => {
       },
       dispatch: vi.fn()
     });
-    vi.mocked(useRecordSummaryQuery).mockReturnValue({
-      data: null,
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn()
-    } as unknown as UseQueryResult<IBundleResponse[], Error>);
+    vi.mocked(usePatientRecords).mockReturnValue({
+      records: [],
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      isLoading: false
+    } as UseRecordsResult);
   });
 
   afterEach(() => {
@@ -73,5 +73,33 @@ describe('HomeContentPatient', () => {
     render(<HomeContentPatient />, { wrapper });
     expect(screen.getByText('Previous Records')).toBeDefined();
     expect(screen.getByText('See All')).toBeDefined();
+  });
+
+  it('shows at most 5 previous records', () => {
+    const records = Array.from({ length: 8 }, (_, i) => ({
+      type: 'Observation' as const,
+      resourceType: 'Observation',
+      id: `obs-${i}`,
+      title: `Record ${i}`,
+      result: `result ${i}`,
+      lastUpdated: '2024-06-01T00:00:00Z'
+    }));
+
+    vi.mocked(usePatientRecords).mockReturnValue({
+      records,
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      isLoading: false
+    } as UseRecordsResult);
+
+    render(<HomeContentPatient />, { wrapper });
+
+    // Each RecordCard renders a <Link>. Plus one "See All" link.
+    // 5 cards + 1 "See All" = 6 links with href starting with /record
+    const recordLinks = screen
+      .getAllByRole('link')
+      .filter(l => l.getAttribute('href')?.startsWith('/record'));
+    expect(recordLinks).toHaveLength(5);
   });
 });
