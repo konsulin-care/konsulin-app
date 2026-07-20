@@ -52,8 +52,14 @@ export default function RecordTimeline({ patientId }: Props) {
   const patientHook = usePatientRecords(isPatient ? patientId : null);
   const practitionerHook = usePractitionerRecords(isPatient ? null : patientId);
 
-  const { records, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    isPatient ? patientHook : practitionerHook;
+  const {
+    records,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    titlesLoading
+  } = isPatient ? patientHook : practitionerHook;
 
   const [hiddenTypes, setHiddenTypes] = useState<Set<string>>(new Set());
 
@@ -139,7 +145,11 @@ export default function RecordTimeline({ patientId }: Props) {
         <div className='flex flex-col gap-4 px-4 pb-4'>
           {filteredRecords.map(record => (
             <div key={record.id} className='group'>
-              <RecordCard record={record} />
+              <RecordCard
+                record={record}
+                patientId={patientId}
+                titlesLoading={titlesLoading}
+              />
             </div>
           ))}
         </div>

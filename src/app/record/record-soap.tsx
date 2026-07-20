@@ -6,23 +6,22 @@ import PractitionerRecordSoap from './practitioner-record-soap';
 
 type Props = {
   soapId: string;
-  title: string;
 };
 
 /**
  *
  */
-export default function RecordSoap({ soapId, title }: Props) {
+export default function RecordSoap({ soapId }: Props) {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
   const renderContent = (
     <>
       {authState.userInfo.role_name === Roles.Practitioner && (
-        <PractitionerRecordSoap soapId={soapId} title={title} />
+        <PractitionerRecordSoap soapId={soapId} />
       )}
 
       {authState.userInfo.role_name === Roles.Patient && (
-        <PatientRecordSoap soapId={soapId} title={title} />
+        <PatientRecordSoap soapId={soapId} />
       )}
     </>
   );

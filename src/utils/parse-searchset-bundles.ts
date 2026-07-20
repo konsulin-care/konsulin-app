@@ -27,7 +27,7 @@ function extractObservation(resource: Observation): Partial<IRecord> | null {
     return {
       type: 'Patient Note',
       id: `${resource.resourceType}/${resource.id}`,
-      title: resource.valueString ?? '',
+      title: 'Patient Note',
       result: notes,
       lastUpdated: resource.meta?.lastUpdated ?? '',
       practitionerId: practitionerId ?? undefined
@@ -87,9 +87,7 @@ function extractAnswerValue(
 }
 
 /** Extract section values from a questionnaire item section. */
-function extractSectionValues(
-  section: QuestionnaireResponseItem
-): Array<{
+function extractSectionValues(section: QuestionnaireResponseItem): Array<{
   section: string | undefined;
   label: string | undefined;
   value: AnswerPrimitive;
@@ -175,13 +173,40 @@ function extractQuestionnaireResponse(
 // ---- Condition extraction ----
 
 function extractCondition(resource: Condition): Partial<IRecord> {
+  const evidenceBullets =
+    resource.evidence
+      ?.flatMap(e => e.code?.map(c => c.text).filter(Boolean) ?? [])
+      .map(t => `- ${t}`)
+      .join('\n') ?? '';
+
   return {
     type: 'Condition',
     id: `${resource.resourceType}/${resource.id}`,
     title: resource.code?.text ?? '',
-    result: resource.clinicalStatus?.coding?.[0]?.code ?? '',
+    result: evidenceBullets || '\\-',
     lastUpdated: resource.meta?.lastUpdated ?? ''
   };
+}
+
+/** Extract the display-friendly questionnaire ID from a canonical title. */
+export function resolveQuestionnaireTitle(record: IRecord): string {
+  if (record.type !== 'QuestionnaireResponse') return record.title;
+  const parts = record.title.split('/');
+  if (parts.length === 2 && parts[0] === 'Questionnaire') return parts[1];
+  return record.title;
+}
+
+/** Apply title map to a QuestionnaireResponse record if a display title exists. */
+function applyTitleMap(
+  record: IRecord,
+  titleMap?: Record<string, string>
+): IRecord {
+  if (!titleMap) return record;
+  const qId = resolveQuestionnaireTitle(record);
+  if (titleMap[qId]) {
+    return { ...record, title: titleMap[qId] };
+  }
+  return record;
 }
 
 // ---- Bundle parsers ----
@@ -195,7 +220,10 @@ function extractCondition(resource: Condition): Partial<IRecord> {
  */
 export function parseQRBundle(
   bundle: Bundle,
-  opts?: { skipPractitionerAuthored?: boolean }
+  opts?: {
+    skipPractitionerAuthored?: boolean;
+    titleMap?: Record<string, string>;
+  }
 ): IRecord[] {
   if (!bundle?.entry) return [];
 
@@ -213,10 +241,12 @@ export function parseQRBundle(
 
     const parsed = extractQuestionnaireResponse(resource);
     if (parsed) {
-      results.push({
+      const record = {
         ...parsed,
         resourceType: 'QuestionnaireResponse'
-      } as IRecord);
+      } as IRecord;
+
+      results.push(applyTitleMap(record, opts?.titleMap));
     }
   }
 

@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useGetSingleRecord } from '@/services/api/record';
 import { format } from 'date-fns';
 import { FileCheckIcon, NotepadTextIcon } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 type Props = {
   journalId: string;
@@ -17,10 +17,6 @@ type Props = {
  */
 export default function RecordJournal({ journalId }: Props) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const titleParam = searchParams?.get('title');
-  const categoryParam = searchParams?.get('category');
-  const id = searchParams?.get('id');
   const { data: journalData, isLoading } = useGetSingleRecord({
     id: journalId,
     resourceType: 'Observation'
@@ -81,9 +77,7 @@ export default function RecordJournal({ journalId }: Props) {
       <Button
         onClick={() => {
           const queryParams = new URLSearchParams({
-            id: id ?? journalId,
-            category: categoryParam,
-            title: titleParam
+            id: journalId
           }).toString();
           router.push(`/record/edit?${queryParams}`);
         }}

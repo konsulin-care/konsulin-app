@@ -14,7 +14,6 @@ import RecordTimeline from './record-timeline';
  *   /record                              → patient's own timeline
  *   /record?id=<patientId>               → practitioner's patient timeline
  *   /record?id=<patientId>&view=<resourceType>/<resource-id>  → detail view
- *   /record?id=<patientId>&view=<type>/<id>&title=<title>     → detail with title
  */
 export default function RecordPage() {
   const searchParams = useSearchParams();
@@ -38,7 +37,6 @@ export default function RecordPage() {
       <RecordDetail
         resourceType={resourceType ?? ''}
         resourceId={resourceId ?? ''}
-        title={searchParams.get('title') ?? ''}
       />
     );
   }

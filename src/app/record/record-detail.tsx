@@ -12,7 +12,6 @@ import RecordSoap from './record-soap';
 type Props = {
   resourceType: string;
   resourceId: string;
-  title: string;
 };
 
 /**
@@ -57,11 +56,7 @@ const PAGE_TITLES: Record<string, string> = {
  * Dispatches to the appropriate sub-component based on
  * the resource type and its content.
  */
-export default function RecordDetail({
-  resourceType,
-  resourceId,
-  title
-}: Props) {
+export default function RecordDetail({ resourceType, resourceId }: Props) {
   const { data, isLoading, error } = useRecordDetail(
     resourceType,
     resourceId || null
@@ -114,9 +109,9 @@ export default function RecordDetail({
       case 'QuestionnaireResponse': {
         const qr = data as unknown as QuestionnaireResponse;
         if (isSoapNote(qr)) {
-          return <RecordSoap soapId={resourceId} title={title} />;
+          return <RecordSoap soapId={resourceId} />;
         }
-        return <RecordAssessment recordId={resourceId} title={title} />;
+        return <RecordAssessment recordId={resourceId} />;
       }
       case 'Observation': {
         const obs = data as unknown as Observation;
@@ -124,7 +119,7 @@ export default function RecordDetail({
           return <RecordJournal journalId={resourceId} />;
         }
         if (isPractitionerNote(obs)) {
-          return <RecordSoap soapId={resourceId} title={title} />;
+          return <RecordSoap soapId={resourceId} />;
         }
         return <Notfound />;
       }

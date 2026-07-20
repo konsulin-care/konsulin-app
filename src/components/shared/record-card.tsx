@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { typeMappings } from '@/constants/record';
 import type { IRecord } from '@/types/record';
 import { customMarkdownComponents, formatTitle } from '@/utils/helper';
@@ -75,11 +76,13 @@ function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
 function RecordCardContent({
   record,
   formattedTitle,
-  cleanDescription
+  cleanDescription,
+  titleLoading
 }: Readonly<{
   record: IRecord;
   formattedTitle: string;
   cleanDescription: string;
+  titleLoading?: boolean;
 }>) {
   return (
     <div className='flex'>
@@ -87,7 +90,11 @@ function RecordCardContent({
         <RecordCardIcon record={record} />
       </div>
       <div className='flex w-0 grow flex-col justify-center'>
-        <div className='text-[12px] font-bold'>{formattedTitle}</div>
+        {titleLoading ? (
+          <Skeleton className='mb-1 h-[14px] w-3/4' />
+        ) : (
+          <div className='text-[12px] font-bold'>{formattedTitle}</div>
+        )}
         <div className='line-clamp-3 overflow-hidden text-[10px] text-ellipsis'>
           <ReactMarkdown components={customMarkdownComponents}>
             {cleanDescription}
@@ -100,12 +107,14 @@ function RecordCardContent({
 
 type Props = {
   readonly record: IRecord;
+  readonly patientId?: string;
   readonly getPractitionerInfo?: (r: IRecord) => {
     displayName: string;
     email: string;
   };
   readonly formatTitleFor?: string[];
   readonly getDescription?: (record: IRecord) => string;
+  readonly titlesLoading?: boolean;
 };
 
 /** Text-only badge and date. */
@@ -129,8 +138,10 @@ function RecordCardFooter({
 /** Record card with type-based icon/avatar, title, description, and badge. */
 export default function RecordCard({
   record,
+  patientId,
   formatTitleFor = [],
-  getDescription
+  getDescription,
+  titlesLoading = false
 }: Props) {
   const splitTitle = record.title.split('/');
   const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
@@ -139,7 +150,7 @@ export default function RecordCard({
       ? formatTitle(title)
       : title;
 
-  const recordId = record.id.split('/')[1];
+  const resourceId = record.id.split('/')[1] ?? record.id;
 
   const formattedDate = format(new Date(record.lastUpdated), 'dd/MM/yyyy');
 
@@ -147,15 +158,13 @@ export default function RecordCard({
     ? getDescription(record)
     : ((record.result as string) || '\\-').replace(/\n\n/g, '. ');
 
-  const queryParams = new URLSearchParams({
-    category: String(typeMappings[record.type]?.category ?? ''),
-    title
-  }).toString();
-  const url = `/record?id=${recordId}&${queryParams}`;
+  const viewParam = encodeURIComponent(record.id);
+  const base = `/record?view=${viewParam}`;
+  const url = patientId ? `${base}&id=${encodeURIComponent(patientId)}` : base;
 
   return (
     <Link
-      key={recordId}
+      key={resourceId}
       href={url}
       className='card mt-4 flex flex-col gap-2 p-4'
     >
@@ -163,6 +172,7 @@ export default function RecordCard({
         record={record}
         formattedTitle={formattedTitle}
         cleanDescription={cleanDescription}
+        titleLoading={titlesLoading && record.type === 'QuestionnaireResponse'}
       />
       <hr className='w-full' />
 

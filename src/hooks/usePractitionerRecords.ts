@@ -6,12 +6,14 @@ import {
   parseObservationBundle,
   parseQRBundle
 } from '@/utils/parse-searchset-bundles';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { resolveQuestionnaireTitles } from '@/utils/resolve-questionnaire-titles';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import type { Bundle } from 'fhir/r4';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { UseRecordsResult } from './usePatientRecords';
 
 const PAGE_SIZE = 10;
+const noop = (): void => undefined;
 
 /**
  * Convert a Blaze absolute next URL into a relative path.
@@ -62,6 +64,8 @@ function useResourceInfiniteQuery(
 export function usePractitionerRecords(
   patientId: string | null
 ): UseRecordsResult {
+  const queryClient = useQueryClient();
+
   const qrQuery = useResourceInfiniteQuery(
     patientId,
     'QuestionnaireResponse',
@@ -74,7 +78,7 @@ export function usePractitionerRecords(
   );
   const obsQuery = useResourceInfiniteQuery(patientId, 'Observation', 'obs');
 
-  const records = useMemo<IRecord[]>(() => {
+  const mergedRecords = useMemo<IRecord[]>(() => {
     const qrRecords = (qrQuery.data?.pages ?? []).flatMap(p =>
       // Include all QRs (skipPractitionerAuthored: false) for practitioner view
       parseQRBundle(p, { skipPractitionerAuthored: false })
@@ -87,6 +91,36 @@ export function usePractitionerRecords(
     );
     return mergeRecords(qrRecords, condRecords, obsRecords);
   }, [qrQuery.data, condQuery.data, obsQuery.data]);
+
+  const [records, setRecords] = useState<IRecord[]>([]);
+
+  useEffect(() => {
+    setRecords(mergedRecords);
+
+    if (mergedRecords.length === 0 || !patientId) return noop;
+
+    let stale = false;
+
+    async function enrich(): Promise<void> {
+      try {
+        const withTitles = await resolveQuestionnaireTitles(mergedRecords, {
+          queryClient
+        });
+        if (!stale) {
+          setRecords(withTitles);
+          setTitlesLoading(false);
+        }
+      } catch {
+        if (!stale) setTitlesLoading(false);
+      }
+    }
+
+    void enrich();
+
+    return function cleanup(): void {
+      stale = true;
+    };
+  }, [mergedRecords, patientId, queryClient]);
 
   const fetchNextPage = useCallback(() => {
     if (qrQuery.hasNextPage) void qrQuery.fetchNextPage();
@@ -112,11 +146,29 @@ export function usePractitionerRecords(
   const isLoading =
     qrQuery.isLoading || condQuery.isLoading || obsQuery.isLoading;
 
+  // Tracks whether questionnaire titles are still being resolved
+  const [titlesLoading, setTitlesLoading] = useState(false);
+
+  useEffect(() => {
+    if (mergedRecords.length === 0 || !patientId) {
+      setTitlesLoading(false);
+      return;
+    }
+
+    const hasUnresolved = mergedRecords.some(
+      r =>
+        r.type === 'QuestionnaireResponse' &&
+        r.title.startsWith('Questionnaire/')
+    );
+    setTitlesLoading(hasUnresolved);
+  }, [mergedRecords, patientId]);
+
   return {
     records,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading
+    isLoading,
+    titlesLoading
   };
 }

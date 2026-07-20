@@ -6,13 +6,12 @@ import { NotepadTextIcon, UsersIcon } from 'lucide-react';
 
 type Props = {
   soapId: string;
-  title: string;
 };
 
 /**
  *
  */
-export default function PatientRecordSoap({ soapId, title }: Props) {
+export default function PatientRecordSoap({ soapId }: Props) {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const { data: soapData, isLoading: isSoapLoading } = useGetSingleRecord({
     id: soapId,
@@ -40,10 +39,15 @@ export default function PatientRecordSoap({ soapId, title }: Props) {
           <div>{displayName}</div>
         </div>
 
-        <div className='card flex border'>
-          <NotepadTextIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
-          <div>{title}</div>
-        </div>
+        {soapData?.code?.text && (
+          <div className='card flex border'>
+            <NotepadTextIcon
+              className='mr-[10px]'
+              color='hsla(220,9%,19%,0.4)'
+            />
+            <div>{soapData.code.text}</div>
+          </div>
+        )}
       </div>
 
       <div>

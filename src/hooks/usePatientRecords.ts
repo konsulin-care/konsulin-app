@@ -7,6 +7,7 @@ import {
   parseObservationBundle,
   parseQRBundle
 } from '@/utils/parse-searchset-bundles';
+import { resolveQuestionnaireTitles } from '@/utils/resolve-questionnaire-titles';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import type { Bundle, Patient, Practitioner } from 'fhir/r4';
 import type { Dispatch, SetStateAction } from 'react';
@@ -20,6 +21,7 @@ export type UseRecordsResult = {
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   isLoading: boolean;
+  titlesLoading: boolean;
 };
 
 function toFhirPath(url: string): string {
@@ -146,14 +148,31 @@ export function usePatientRecords(patientId: string | null): UseRecordsResult {
 
     let stale = false;
 
-    void enrichProfileData(
-      mergedRecords,
-      patientId,
-      queryClient,
-      setRecords,
-      () => stale
-    ).catch(() => {
-      /* profiles are best-effort */
+    async function enrich(): Promise<void> {
+      // Step 1: resolve questionnaire titles
+      let withTitles = mergedRecords;
+      try {
+        withTitles = await resolveQuestionnaireTitles(mergedRecords, {
+          queryClient
+        });
+      } catch {
+        // title resolution is best-effort
+      }
+      if (stale) return;
+      setTitlesLoading(false);
+
+      // Step 2: enrich with practitioner profiles
+      await enrichProfileData(
+        withTitles,
+        patientId,
+        queryClient,
+        setRecords,
+        () => stale
+      );
+    }
+
+    void enrich().catch(() => {
+      /* enrichment is best-effort */
     });
 
     return function cleanup(): void {
@@ -188,11 +207,29 @@ export function usePatientRecords(patientId: string | null): UseRecordsResult {
   const isLoading =
     qrQuery.isLoading || condQuery.isLoading || obsQuery.isLoading;
 
+  // Tracks whether questionnaire titles are still being resolved
+  const [titlesLoading, setTitlesLoading] = useState(false);
+
+  useEffect(() => {
+    if (mergedRecords.length === 0 || !patientId) {
+      setTitlesLoading(false);
+      return;
+    }
+
+    const hasUnresolved = mergedRecords.some(
+      r =>
+        r.type === 'QuestionnaireResponse' &&
+        r.title.startsWith('Questionnaire/')
+    );
+    setTitlesLoading(hasUnresolved);
+  }, [mergedRecords, patientId]);
+
   return {
     records,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading
+    isLoading,
+    titlesLoading
   };
 }

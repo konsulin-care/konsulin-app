@@ -51,7 +51,8 @@ describe('HomeContentPatient', () => {
       fetchNextPage: vi.fn(),
       hasNextPage: false,
       isFetchingNextPage: false,
-      isLoading: false
+      isLoading: false,
+      titlesLoading: false
     } as UseRecordsResult);
   });
 
@@ -90,7 +91,8 @@ describe('HomeContentPatient', () => {
       fetchNextPage: vi.fn(),
       hasNextPage: false,
       isFetchingNextPage: false,
-      isLoading: false
+      isLoading: false,
+      titlesLoading: false
     } as UseRecordsResult);
 
     render(<HomeContentPatient />, { wrapper });

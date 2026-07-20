@@ -123,4 +123,66 @@ describe('usePractitionerRecords', () => {
     expect(qrUrl).toContain('QuestionnaireResponse');
     expect(qrUrl).not.toContain('author');
   });
+
+  it('resolves titlesLoading to false after QR title resolution', async () => {
+    const apiMock = {
+      get: vi
+        .fn()
+        // QR bundle with one record
+        .mockResolvedValueOnce({
+          data: {
+            resourceType: 'Bundle',
+            type: 'searchset',
+            entry: [
+              {
+                resource: {
+                  resourceType: 'QuestionnaireResponse',
+                  id: 'qr-1',
+                  status: 'completed',
+                  questionnaire: 'Questionnaire/phq2',
+                  meta: { lastUpdated: '2024-06-01T00:00:00Z' }
+                }
+              }
+            ]
+          }
+        })
+        // Condition bundle (empty)
+        .mockResolvedValueOnce({ data: mockBundle() })
+        // Observation bundle (empty)
+        .mockResolvedValueOnce({ data: mockBundle() })
+        // Questionnaire title resolution
+        .mockResolvedValueOnce({
+          data: {
+            resourceType: 'Bundle',
+            type: 'searchset',
+            total: 1,
+            entry: [
+              {
+                resource: {
+                  resourceType: 'Questionnaire',
+                  id: 'phq2',
+                  title: 'Patient Health Questionnaire - 2 Items'
+                }
+              }
+            ]
+          }
+        })
+    };
+    vi.mocked(getAPI).mockResolvedValue(apiMock);
+
+    const { result } = renderHook(() => usePractitionerRecords('pat-1'), {
+      wrapper: TestWrapper
+    });
+
+    // Wait for initial loading to complete
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    // Wait for enrichment to finish (titlesLoading should go false)
+    await waitFor(() => expect(result.current.titlesLoading).toBe(false));
+
+    // Record should have the resolved display title
+    expect(result.current.records[0].title).toBe(
+      'Patient Health Questionnaire - 2 Items'
+    );
+  });
 });

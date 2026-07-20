@@ -86,17 +86,4 @@ describe('RecordPage - routing', () => {
     render(<RecordPage />);
     expect(screen.getByTestId('mock-notfound')).toBeInTheDocument();
   });
-
-  it('passes title query param to detail view', () => {
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=pat-1&view=Observation/obs-1&title=My+Journal')
-    );
-    vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' } },
-      isLoading: false
-    });
-
-    render(<RecordPage />);
-    expect(screen.getByTestId('mock-record-detail')).toBeInTheDocument();
-  });
 });

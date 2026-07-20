@@ -21,7 +21,6 @@ import ReactMarkdown from 'react-markdown';
 
 type Props = {
   recordId: string;
-  title: string;
 };
 
 type IScore = {
@@ -44,7 +43,7 @@ const generateRandomColor = (baseHue: number) => {
 /**
  *
  */
-export default function RecordAssessment({ recordId, title }: Props) {
+export default function RecordAssessment({ recordId }: Props) {
   const router = useRouter();
   const {
     data: questionnaireResponseRaw,
@@ -308,10 +307,14 @@ export default function RecordAssessment({ recordId, title }: Props) {
             : 'Guest'}
         </div>
       )}
-      <div className='card mb-4 flex items-center'>
-        <NotepadTextIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
-        {formatQueryTitle(title)}
-      </div>
+      {questionnaireResponse?.questionnaire && (
+        <div className='card mb-4 flex items-center'>
+          <NotepadTextIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
+          {formatQueryTitle(
+            questionnaireResponse.questionnaire.split('/')[1] ?? ''
+          )}
+        </div>
+      )}
 
       <div className='mb-4'>
         <div className='text-12 text-muted mb-2'>Result Brief</div>

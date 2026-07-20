@@ -22,7 +22,11 @@ export default function HomeContentPatient() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const patientId = authState?.userInfo?.fhirId;
 
-  const { records, isLoading: isRecordsLoading } = usePatientRecords(patientId);
+  const {
+    records,
+    isLoading: isRecordsLoading,
+    titlesLoading
+  } = usePatientRecords(patientId);
 
   /** Navigate to the practitioner booking page. */
   const handleBook = (practitionerId: string) => {
@@ -43,7 +47,11 @@ export default function HomeContentPatient() {
       return (
         <div className='flex flex-col'>
           {records.slice(0, 5).map((record: IRecord) => (
-            <RecordCard key={record.id.split('/')[1]} record={record} />
+            <RecordCard
+              key={record.id.split('/')[1]}
+              record={record}
+              titlesLoading={titlesLoading}
+            />
           ))}
         </div>
       );

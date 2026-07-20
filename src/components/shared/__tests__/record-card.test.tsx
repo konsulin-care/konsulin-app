@@ -86,3 +86,21 @@ describe('RecordCard icon mapping', () => {
     expect(screen.getByTestId('icon-fallback')).toBeInTheDocument();
   });
 });
+
+describe('RecordCard title loading skeleton', () => {
+  it('renders skeleton placeholder when titlesLoading is true for QuestionnaireResponse', () => {
+    render(
+      <RecordCard
+        record={makeRecord({
+          type: 'QuestionnaireResponse',
+          id: 'qr-loading',
+          title: 'Questionnaire/phq9'
+        })}
+        titlesLoading={true}
+      />
+    );
+    // Skeleton div has animate-pulse class from shadcn/ui
+    const skeleton = document.querySelector('.animate-pulse');
+    expect(skeleton).not.toBeNull();
+  });
+});
