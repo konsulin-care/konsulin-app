@@ -225,7 +225,7 @@ export default function RecordFilter({
         setIsOpen(false);
       }}
       open={isOpen}
-      modal={isOpen}
+      modal={true}
     >
       <DrawerTrigger asChild>
         <FilterDrawerTrigger onClick={() => setIsOpen(true)} />
