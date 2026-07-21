@@ -7,6 +7,7 @@ import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
 import { useFabDirty } from '@/context/fabDirtyContext';
 import { useRecordDetail } from '@/hooks/useRecordDetail';
+import { isLoincSystem } from '@/utils/fhir';
 import type { Observation, QuestionnaireResponse } from 'fhir/r4';
 import { UsersIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -25,7 +26,7 @@ type Props = {
 function isPatientJournal(resource: Observation): boolean {
   return (
     resource.code?.coding?.some(
-      c => c.system === 'https://loinc.org' && c.code === '51855-5'
+      c => isLoincSystem(c.system) && c.code === '51855-5'
     ) ?? false
   );
 }
@@ -36,7 +37,7 @@ function isPatientJournal(resource: Observation): boolean {
 function isPractitionerNote(resource: Observation): boolean {
   return (
     resource.code?.coding?.some(
-      c => c.system === 'https://loinc.org' && c.code === '67855-7'
+      c => isLoincSystem(c.system) && c.code === '67855-7'
     ) ?? false
   );
 }

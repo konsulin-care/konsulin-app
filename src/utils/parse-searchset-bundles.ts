@@ -1,4 +1,5 @@
 import type { IRecord, ISoapSection } from '@/types/record';
+import { isLoincSystem } from '@/utils/fhir';
 import type {
   Bundle,
   Coding,
@@ -15,9 +16,7 @@ import type {
 // eslint-disable-next-line complexity
 function extractObservation(resource: Observation): Partial<IRecord> | null {
   const codeList = resource.code?.coding ?? [];
-  const loincCode = codeList.find(
-    (c: Coding) => c.system === 'https://loinc.org'
-  )?.code;
+  const loincCode = codeList.find((c: Coding) => isLoincSystem(c.system))?.code;
 
   const practitionerRef = resource.performer?.[0]?.reference;
   const practitionerId = practitionerRef?.split('/')[1] ?? null;
