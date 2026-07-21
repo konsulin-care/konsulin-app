@@ -115,4 +115,131 @@ describe('LocationCombobox', () => {
 
     expect(screen.getByText('Jakarta')).toBeInTheDocument();
   });
+
+  describe('multi-select mode', () => {
+    it('renders checkboxes when multiple=true', async () => {
+      render(
+        <LocationCombobox
+          multiple
+          options={[
+            { code: 'a', name: 'Option A' },
+            { code: 'b', name: 'Option B' }
+          ]}
+          value={[]}
+          onSelect={vi.fn()}
+          placeholder='Select items'
+        />
+      );
+
+      const trigger = screen.getByRole('combobox');
+      fireEvent.click(trigger);
+
+      await waitFor(() => {
+        expect(screen.getByText('Option A')).toBeInTheDocument();
+        expect(screen.getByText('Option B')).toBeInTheDocument();
+      });
+
+      // Checkboxes should be present
+      const checkboxes = screen.getAllByRole('checkbox');
+      expect(checkboxes).toHaveLength(2);
+    });
+
+    it('toggles values in array without closing popover on select', async () => {
+      const onSelect = vi.fn();
+      render(
+        <LocationCombobox
+          multiple
+          options={[
+            { code: 'a', name: 'Option A' },
+            { code: 'b', name: 'Option B' }
+          ]}
+          value={[]}
+          onSelect={onSelect}
+          placeholder='Select items'
+        />
+      );
+
+      const trigger = screen.getByRole('combobox');
+      fireEvent.click(trigger);
+
+      await waitFor(() => {
+        expect(screen.getByText('Option A')).toBeInTheDocument();
+      });
+
+      // Click first option
+      fireEvent.click(screen.getByText('Option A'));
+
+      // Should call onSelect with ['a']
+      expect(onSelect).toHaveBeenCalledWith(['a']);
+
+      // Popover should still be open — Option B is still visible
+      expect(screen.getByText('Option B')).toBeInTheDocument();
+    });
+
+    it('deselects a value when clicking an already-selected item', async () => {
+      const onSelect = vi.fn();
+      render(
+        <LocationCombobox
+          multiple
+          options={[
+            { code: 'a', name: 'Option A' },
+            { code: 'b', name: 'Option B' }
+          ]}
+          value={['a', 'b']}
+          onSelect={onSelect}
+          placeholder='Select items'
+        />
+      );
+
+      const trigger = screen.getByRole('combobox');
+      fireEvent.click(trigger);
+
+      await waitFor(() => {
+        expect(screen.getByText('Option A')).toBeInTheDocument();
+      });
+
+      // Click already-selected option A
+      fireEvent.click(screen.getByText('Option A'));
+
+      // Should call onSelect with ['b'] (removed 'a')
+      expect(onSelect).toHaveBeenCalledWith(['b']);
+    });
+
+    it('shows comma-separated labels in trigger for multi-select', () => {
+      render(
+        <LocationCombobox
+          multiple
+          options={[
+            { code: 'a', name: 'Option A' },
+            { code: 'b', name: 'Option B' },
+            { code: 'c', name: 'Option C' }
+          ]}
+          value={['a', 'c']}
+          onSelect={vi.fn()}
+          placeholder='Select items'
+        />
+      );
+
+      const trigger = screen.getByRole('combobox');
+      expect(trigger.textContent).toContain('Option A');
+      expect(trigger.textContent).toContain('Option C');
+    });
+
+    it('shows placeholder when no items selected in multi-select mode', () => {
+      render(
+        <LocationCombobox
+          multiple
+          options={[
+            { code: 'a', name: 'Option A' },
+            { code: 'b', name: 'Option B' }
+          ]}
+          value={[]}
+          onSelect={vi.fn()}
+          placeholder='Select items'
+        />
+      );
+
+      expect(screen.getByText('Select items')).toBeInTheDocument();
+    });
+  });
 });

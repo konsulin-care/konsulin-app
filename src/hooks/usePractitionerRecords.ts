@@ -27,26 +27,58 @@ function toFhirPath(url: string): string {
   }
 }
 
-/** Base URL for a resource query with patient filter. */
-function resourceQueryUrl(patientId: string, resourceType: string): string {
-  const base = `/fhir/${resourceType}?patient=${patientId}&_count=${PAGE_SIZE}&_sort=-_lastUpdated`;
-  if (resourceType === 'Observation') {
-    return `${base}&code=http://loinc.org|67855-7,51855-5`;
+/** Append `_lastUpdated` date range to a FHIR query URL if dates are provided. */
+function appendDateParams(
+  url: string,
+  startDate?: string,
+  endDate?: string
+): string {
+  let result = url;
+  if (startDate) {
+    result += `&_lastUpdated=ge${startDate}`;
   }
-  return base;
+  if (endDate) {
+    result += `&_lastUpdated=le${endDate}`;
+  }
+  return result;
+}
+
+/** Base URL for a resource query with patient filter. */
+function resourceQueryUrl(
+  patientId: string,
+  resourceType: string,
+  startDate?: string,
+  endDate?: string
+): string {
+  const base = `/fhir/${resourceType}?patient=${patientId}&_count=${PAGE_SIZE}&_sort=-_lastUpdated`;
+  const withCodes =
+    resourceType === 'Observation'
+      ? `${base}&code=http://loinc.org|67855-7,51855-5`
+      : base;
+  return appendDateParams(withCodes, startDate, endDate);
 }
 
 /** Build an infinite-query config for one FHIR resource type. */
 function useResourceInfiniteQuery(
   patientId: string | null,
   resourceType: string,
-  queryKeySuffix: string
+  queryKeySuffix: string,
+  startDate?: string,
+  endDate?: string
 ) {
   return useInfiniteQuery<Bundle, Error>({
-    queryKey: ['practitioner-records', patientId, queryKeySuffix] as const,
+    queryKey: [
+      'practitioner-records',
+      patientId,
+      queryKeySuffix,
+      startDate,
+      endDate
+    ] as const,
     queryFn: async ({ pageParam }: { pageParam?: string }) => {
       const api = await getAPI();
-      const url = pageParam ?? resourceQueryUrl(patientId, resourceType);
+      const url =
+        pageParam ??
+        resourceQueryUrl(patientId, resourceType, startDate, endDate);
       const { data } = await api.get<Bundle>(url);
       return data;
     },
@@ -64,23 +96,39 @@ function useResourceInfiniteQuery(
  *
  * Same as usePatientRecords but includes all QuestionnaireResponses
  * (including practitioner-authored SOAP notes).
+ *
+ * @param patientId - Patient FHIR ID, or null to disable
+ * @param startDate - ISO date string for `_lastUpdated=ge` filter
+ * @param endDate - ISO date string for `_lastUpdated=le` filter
  */
 export function usePractitionerRecords(
-  patientId: string | null
+  patientId: string | null,
+  startDate?: string,
+  endDate?: string
 ): UseRecordsResult {
   const queryClient = useQueryClient();
 
   const qrQuery = useResourceInfiniteQuery(
     patientId,
     'QuestionnaireResponse',
-    'qr'
+    'qr',
+    startDate,
+    endDate
   );
   const condQuery = useResourceInfiniteQuery(
     patientId,
     'Condition',
-    'condition'
+    'condition',
+    startDate,
+    endDate
   );
-  const obsQuery = useResourceInfiniteQuery(patientId, 'Observation', 'obs');
+  const obsQuery = useResourceInfiniteQuery(
+    patientId,
+    'Observation',
+    'obs',
+    startDate,
+    endDate
+  );
 
   const mergedRecords = useMemo<IRecord[]>(() => {
     const qrRecords = (qrQuery.data?.pages ?? []).flatMap(p =>
