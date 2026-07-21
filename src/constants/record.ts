@@ -9,7 +9,7 @@ export const typeMappings: Record<string, { text: string; category: number }> =
       category: 1
     },
     PractitionerNote: {
-      text: 'SOAP',
+      text: 'Practitioner Note',
       category: 3
     },
     'SOAP Notes': {
