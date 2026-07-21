@@ -212,66 +212,68 @@ export default function RecordTimeline({ patientId }: Props) {
         data-testid='timeline-overlay'
         className='mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] bg-white pb-20'
       >
-        {/* Search + Filter row */}
-        <div className='flex gap-4 px-4 pb-3'>
-          <InputWithIcon
-            value={searchTerm}
-            onChange={event => setSearchTerm(event.target.value)}
-            placeholder='Search records'
-            className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
-            startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
-          />
-          <RecordFilter onChange={handleFilterChange} />
-        </div>
-
-        {/* Active filter badges */}
-        {hasActiveFilters && (
-          <div className='flex flex-wrap gap-2 px-4 pb-3'>
-            {selectedTypes.map(code => (
-              <Badge
-                key={code}
-                className='bg-secondary cursor-pointer rounded-md px-4 py-[3px] font-normal text-white'
-                onClick={() => clearBadge('type', code)}
-              >
-                {typeBadgeLabel(code)}
-              </Badge>
-            ))}
-            {filterParams.start_date && filterParams.end_date && (
-              <Badge
-                className='bg-secondary cursor-pointer rounded-md px-4 py-[3px] font-normal text-white'
-                onClick={() => clearBadge('date')}
-              >
-                <DateBadgeContent
-                  start={filterParams.start_date}
-                  end={filterParams.end_date}
-                />
-              </Badge>
-            )}
+        <div className='w-full p-4'>
+          {/* Search + Filter row */}
+          <div className='flex gap-4'>
+            <InputWithIcon
+              value={searchTerm}
+              onChange={event => setSearchTerm(event.target.value)}
+              placeholder='Search records'
+              className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
+              startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
+            />
+            <RecordFilter onChange={handleFilterChange} />
           </div>
-        )}
 
-        {/* Records list */}
-        <div className='flex flex-col gap-4 px-4 pb-4'>
-          {displayRecords.map(record => (
-            <div key={record.id} className='group'>
-              <RecordCard
-                record={record}
-                patientId={patientId}
-                titlesLoading={titlesLoading}
-              />
+          {/* Active filter badges */}
+          {hasActiveFilters && (
+            <div className='flex flex-wrap gap-2'>
+              {selectedTypes.map(code => (
+                <Badge
+                  key={code}
+                  className='bg-secondary cursor-pointer rounded-md px-4 py-[3px] font-normal text-white'
+                  onClick={() => clearBadge('type', code)}
+                >
+                  {typeBadgeLabel(code)}
+                </Badge>
+              ))}
+              {filterParams.start_date && filterParams.end_date && (
+                <Badge
+                  className='bg-secondary cursor-pointer rounded-md px-4 py-[3px] font-normal text-white'
+                  onClick={() => clearBadge('date')}
+                >
+                  <DateBadgeContent
+                    start={filterParams.start_date}
+                    end={filterParams.end_date}
+                  />
+                </Badge>
+              )}
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* Loading indicator for next page */}
-        {isFetchingNextPage && (
-          <div className='flex justify-center py-4'>
-            <Skeleton className='h-[60px] w-full max-w-md' />
+          {/* Records list */}
+          <div className='flex flex-col gap-4'>
+            {displayRecords.map(record => (
+              <div key={record.id} className='group'>
+                <RecordCard
+                  record={record}
+                  patientId={patientId}
+                  titlesLoading={titlesLoading}
+                />
+              </div>
+            ))}
           </div>
-        )}
 
-        {/* Sentinel for infinite scroll */}
-        {hasNextPage && <div ref={sentinelRef} className='h-1 w-full' />}
+          {/* Loading indicator for next page */}
+          {isFetchingNextPage && (
+            <div className='flex justify-center py-4'>
+              <Skeleton className='h-[60px] w-full max-w-md' />
+            </div>
+          )}
+
+          {/* Sentinel for infinite scroll */}
+          {hasNextPage && <div ref={sentinelRef} className='h-1 w-full' />}
+        </div>
       </div>
     </>
   );
