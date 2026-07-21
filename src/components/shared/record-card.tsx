@@ -1,34 +1,58 @@
 'use client';
 
+import Avatar from '@/components/general/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { typeMappings } from '@/constants/record';
 import type { IRecord } from '@/types/record';
-import { customMarkdownComponents, formatTitle } from '@/utils/helper';
+import {
+  customMarkdownComponents,
+  formatTitle,
+  generateAvatarPlaceholder
+} from '@/utils/helper';
 import { format } from 'date-fns';
+import type { Practitioner } from 'fhir/r4';
 import { FileText, HeartPulse, Microscope } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 
+/** Build display name from a FHIR Practitioner name. */
+function getPractitionerName(profile: Practitioner | undefined): string | null {
+  const name = profile?.name?.[0];
+  if (!name) return null;
+  const prefix = name.prefix?.[0] ?? '';
+  const given = (name.given ?? []).join(' ');
+  const family = name.family ?? '';
+  return [prefix, given, family].filter(Boolean).join(' ');
+}
+
 /** Icon or avatar for the card's icon slot, based on record type. */
 function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
   // Practitioner photo avatar
   if (record.type === 'PractitionerNote') {
-    const url = record.practitionerProfile?.photo?.[0]?.url;
-    if (url) {
+    const profile = record.practitionerProfile;
+    if (profile) {
+      const { initials, seed, backgroundColor } = generateAvatarPlaceholder({
+        id: profile.id,
+        name: getPractitionerName(profile) ?? ''
+      });
       return (
-        <Image
-          className='h-[24px] w-[24px] rounded-full object-cover'
-          src={url}
-          width={24}
+        <Avatar
+          photoUrl={profile.photo?.[0]?.url}
+          initials={initials ?? ''}
+          backgroundColor={backgroundColor ?? '#13c2c2'}
+          seed={seed}
           height={24}
-          alt=''
-          unoptimized
+          width={24}
+          imageClassName='rounded-full object-cover'
+          className='h-6 w-6'
         />
       );
     }
-    return <FileText className='h-5 w-5 text-gray-500' />;
+    return (
+      <FileText data-testid='icon-fallback' className='h-5 w-5 text-gray-500' />
+    );
   }
 
   // Patient photo avatar
@@ -143,12 +167,18 @@ export default function RecordCard({
   getDescription,
   titlesLoading = false
 }: Props) {
-  const splitTitle = record.title.split('/');
-  const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
+  // PractitionerNote uses a dynamic title instead of the formatted coding display
   const formattedTitle =
-    formatTitleFor.length === 0 || formatTitleFor.includes(record.type)
-      ? formatTitle(title)
-      : title;
+    record.type === 'PractitionerNote'
+      ? `Notes from ${getPractitionerName(record.practitionerProfile) ?? 'Practitioner'}`
+      : (() => {
+          const splitTitle = record.title.split('/');
+          const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
+          return formatTitleFor.length === 0 ||
+            formatTitleFor.includes(record.type)
+            ? formatTitle(title)
+            : title;
+        })();
 
   const resourceId = record.id.split('/')[1] ?? record.id;
 

@@ -25,7 +25,7 @@ function extractObservation(resource: Observation): Partial<IRecord> | null {
   if (loincCode === '51855-5') {
     const notes = (resource.note ?? []).map(n => n.text).join('\n\n');
     return {
-      type: 'Patient Note',
+      type: 'PatientNote',
       id: `${resource.resourceType}/${resource.id}`,
       title: 'Patient Note',
       result: notes,
@@ -36,7 +36,7 @@ function extractObservation(resource: Observation): Partial<IRecord> | null {
 
   if (loincCode === '67855-7') {
     return {
-      type: 'Practitioner Note',
+      type: 'PractitionerNote',
       id: `${resource.resourceType}/${resource.id}`,
       title: codeList[0]?.display ?? '',
       result: resource.valueString ?? '',

@@ -1,6 +1,6 @@
 export const typeMappings: Record<string, { text: string; category: number }> =
   {
-    'Patient Note': {
+    PatientNote: {
       text: 'Self Journal',
       category: 4
     },
@@ -8,7 +8,7 @@ export const typeMappings: Record<string, { text: string; category: number }> =
       text: 'Assessment',
       category: 1
     },
-    'Practitioner Note': {
+    PractitionerNote: {
       text: 'SOAP',
       category: 3
     },

@@ -34,7 +34,11 @@ function toFhirPath(url: string): string {
 }
 
 function resourceQueryUrl(patientId: string, resourceType: string): string {
-  return `/fhir/${resourceType}?patient=${patientId}&_count=${PAGE_SIZE}&_sort=-_lastUpdated`;
+  const base = `/fhir/${resourceType}?patient=${patientId}&_count=${PAGE_SIZE}&_sort=-_lastUpdated`;
+  if (resourceType === 'Observation') {
+    return `${base}&code=http://loinc.org|67855-7,51855-5`;
+  }
+  return base;
 }
 
 function useResourceInfiniteQuery(
@@ -225,11 +229,11 @@ export function usePatientRecords(patientId: string | null): UseRecordsResult {
   }, [mergedRecords, patientId]);
 
   return {
-    records,
+    records: patientId ? records : [],
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading,
-    titlesLoading
+    isLoading: Boolean(patientId) ? isLoading : false,
+    titlesLoading: patientId ? titlesLoading : false
   };
 }

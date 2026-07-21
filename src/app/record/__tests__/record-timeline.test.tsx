@@ -142,7 +142,7 @@ describe('RecordTimeline', () => {
 
     vi.mocked(usePatientRecords).mockReturnValue({
       records: [
-        makeRecord({ id: 'obs-1', type: 'Patient Note' }),
+        makeRecord({ id: 'obs-1', type: 'PatientNote' }),
         makeRecord({ id: 'qr-1', type: 'QuestionnaireResponse' })
       ],
       fetchNextPage: vi.fn(),
@@ -166,7 +166,7 @@ describe('RecordTimeline', () => {
 
     vi.mocked(usePatientRecords).mockReturnValue({
       records: [
-        makeRecord({ id: 'obs-1', type: 'Patient Note' }),
+        makeRecord({ id: 'obs-1', type: 'PatientNote' }),
         makeRecord({ id: 'qr-1', type: 'QuestionnaireResponse' })
       ],
       fetchNextPage: vi.fn(),
@@ -191,7 +191,7 @@ describe('RecordTimeline', () => {
 
     vi.mocked(usePatientRecords).mockReturnValue({
       records: [
-        makeRecord({ id: 'obs-1', type: 'Patient Note' }),
+        makeRecord({ id: 'obs-1', type: 'PatientNote' }),
         makeRecord({ id: 'qr-1', type: 'QuestionnaireResponse' })
       ],
       fetchNextPage: vi.fn(),
@@ -207,6 +207,7 @@ describe('RecordTimeline', () => {
 
     const cards = screen.getAllByTestId('record-card');
     expect(cards).toHaveLength(1);
-    expect(cards[0].textContent).toBe('QuestionnaireResponse');
+    // Clicking "Assessment" hides QuestionnaireResponse, leaving PatientNote
+    expect(cards[0].textContent).toBe('PatientNote');
   });
 });

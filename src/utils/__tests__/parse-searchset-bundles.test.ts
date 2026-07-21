@@ -195,12 +195,9 @@ describe('parseQRBundle', () => {
     expect(result).toHaveLength(2);
   });
 
-  it('returns empty array for null/undefined input', () => {
+  it('returns empty array for null/undefined/empty input', () => {
     expect(parseQRBundle(null as unknown as Bundle)).toEqual([]);
     expect(parseQRBundle(undefined as unknown as Bundle)).toEqual([]);
-  });
-
-  it('returns empty array for empty bundle', () => {
     expect(
       parseQRBundle({
         resourceType: 'Bundle',
@@ -297,7 +294,7 @@ describe('parseObservationBundle', () => {
     ]);
     const result = parseObservationBundle(b);
     expect(result).toHaveLength(1);
-    expect(result[0].type).toBe('Patient Note');
+    expect(result[0].type).toBe('PatientNote');
     expect(result[0].title).toBe('Patient Note');
   });
 
@@ -307,7 +304,7 @@ describe('parseObservationBundle', () => {
     ]);
     const result = parseObservationBundle(b);
     expect(result).toHaveLength(1);
-    expect(result[0].type).toBe('Practitioner Note');
+    expect(result[0].type).toBe('PractitionerNote');
   });
 
   it('parses other LOINCs as generic Observation', () => {

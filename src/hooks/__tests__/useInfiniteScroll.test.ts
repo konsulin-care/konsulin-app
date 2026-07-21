@@ -5,14 +5,24 @@ import { useInfiniteScroll } from '../useInfiniteScroll';
 
 describe('useInfiniteScroll', () => {
   let originalIntersectionObserver: typeof IntersectionObserver;
+  let capturedCallback:
+    | ((entries: IntersectionObserverEntry[]) => void)
+    | undefined;
+
+  class MockIntersectionObserver {
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+    constructor(cb: (entries: IntersectionObserverEntry[]) => void) {
+      capturedCallback = cb;
+    }
+  }
 
   beforeEach(() => {
     originalIntersectionObserver = globalThis.IntersectionObserver;
-    globalThis.IntersectionObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      unobserve: vi.fn(),
-      disconnect: vi.fn()
-    }));
+    capturedCallback = undefined;
+    globalThis.IntersectionObserver =
+      MockIntersectionObserver as unknown as typeof IntersectionObserver;
   });
 
   afterEach(() => {
@@ -26,59 +36,26 @@ describe('useInfiniteScroll', () => {
     expect(result.current).toHaveProperty('current');
   });
 
-  it('creates an IntersectionObserver when sentinel ref is attached to DOM', () => {
-    const onLoadMore = vi.fn();
-    const { result, rerender } = renderHook(
-      ({ onLoad }) => useInfiniteScroll(onLoad),
-      { initialProps: { onLoad: onLoadMore } }
-    );
-
-    // Initially no observer because ref is null
-    expect(globalThis.IntersectionObserver).not.toHaveBeenCalled();
-    expect(result.current.current).toBeNull();
-
-    // Simulate sentinel div being attached
-    result.current.current = document.createElement('div');
-    rerender({ onLoad: onLoadMore });
-
-    expect(globalThis.IntersectionObserver).toHaveBeenCalled();
-  });
-
   it('calls onLoadMore when sentinel becomes visible', () => {
     const onLoadMore = vi.fn();
-    let callback: (entries: IntersectionObserverEntry[]) => void = () => {
-      /* placeholder */
-    };
-
-    globalThis.IntersectionObserver = vi.fn().mockImplementation(cb => {
-      callback = cb as (entries: IntersectionObserverEntry[]) => void;
-      return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
-    });
 
     const { result, rerender } = renderHook(
-      ({ onLoad }) => useInfiniteScroll(onLoad),
-      { initialProps: { onLoad: onLoadMore } }
+      ({ onLoad, enabled }) => useInfiniteScroll(onLoad, { enabled }),
+      { initialProps: { onLoad: onLoadMore, enabled: false } }
     );
 
-    // Attach sentinel
+    // Attach sentinel then enable — effect re-runs when enabled flips
     result.current.current = document.createElement('div');
-    rerender({ onLoad: onLoadMore });
+    rerender({ onLoad: onLoadMore, enabled: true });
 
-    // Simulate intersection
-    callback([{ isIntersecting: true } as IntersectionObserverEntry]);
+    // Simulate intersection via captured callback
+    expect(capturedCallback).toBeDefined();
+    capturedCallback([{ isIntersecting: true } as IntersectionObserverEntry]);
     expect(onLoadMore).toHaveBeenCalled();
   });
 
   it('does not call onLoadMore when disabled', () => {
     const onLoadMore = vi.fn();
-    let callback: (entries: IntersectionObserverEntry[]) => void = () => {
-      /* placeholder */
-    };
-
-    globalThis.IntersectionObserver = vi.fn().mockImplementation(cb => {
-      callback = cb as (entries: IntersectionObserverEntry[]) => void;
-      return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
-    });
 
     const { result, rerender } = renderHook(
       ({ onLoad, enabled }) => useInfiniteScroll(onLoad, { enabled }),
@@ -88,7 +65,7 @@ describe('useInfiniteScroll', () => {
     result.current.current = document.createElement('div');
     rerender({ onLoad: onLoadMore, enabled: false });
 
-    callback([{ isIntersecting: true } as IntersectionObserverEntry]);
+    capturedCallback?.([{ isIntersecting: true } as IntersectionObserverEntry]);
     expect(onLoadMore).not.toHaveBeenCalled();
   });
 });

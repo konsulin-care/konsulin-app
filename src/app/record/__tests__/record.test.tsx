@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ---- Mocks ----
 vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn(),
+  usePathname: vi.fn(() => '/record'),
   useRouter: vi.fn(() => ({ back: vi.fn(), replace: vi.fn() }))
 }));
 

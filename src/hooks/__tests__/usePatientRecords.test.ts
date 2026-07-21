@@ -188,6 +188,24 @@ describe('usePatientRecords', () => {
     expect(result.current.records).toEqual([]);
   });
 
+  it('filters Observation query to Practitioner Note + Patient Journal LOINC codes', async () => {
+    const apiMock = {
+      get: vi.fn().mockResolvedValue({ data: mockBundle() })
+    };
+    vi.mocked(getAPI).mockResolvedValue(apiMock);
+
+    const { result } = renderHook(() => usePatientRecords('pat-1'), {
+      wrapper: TestWrapper
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const obsUrl = apiMock.get.mock.calls[2][0] as string;
+    expect(obsUrl).toContain('Observation');
+    expect(obsUrl).toContain('code=http://loinc.org|67855-7,51855-5');
+    expect(obsUrl).not.toContain('$everything');
+  });
+
   it('exposes fetchNextPage and hasNextPage controls', async () => {
     const apiMock = {
       get: vi.fn().mockResolvedValue({

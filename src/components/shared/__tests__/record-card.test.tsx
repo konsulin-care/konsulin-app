@@ -69,11 +69,77 @@ describe('RecordCard icon mapping', () => {
         })}
       />
     );
-    const imgs = screen.getAllByRole('img');
-    expect(imgs.length).toBeGreaterThan(0);
+    const img = screen.getByAltText('practitioner');
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute('src', 'https://example.com/doc.jpg');
   });
 
-  it('renders FileText for PractitionerNote without photo', () => {
+  it('renders algorithmic avatar for PractitionerNote with profile but no photo', () => {
+    const practitionerProfile = {
+      id: 'prac-2',
+      resourceType: 'Practitioner',
+      name: [{ given: ['Jane'], family: 'Smith' }]
+    };
+    render(
+      <RecordCard
+        record={makeRecord({
+          type: 'PractitionerNote',
+          id: 'prac-note-2',
+          practitionerId: 'prac-2',
+          practitionerProfile: practitionerProfile as never
+        })}
+      />
+    );
+    // Should NOT show FileText icon when profile exists but no photo
+    expect(screen.queryByTestId('icon-fallback')).not.toBeInTheDocument();
+    // Should show the Avatar component with initials from name
+    const img = screen.getByAltText('practitioner');
+    expect(img).toBeInTheDocument();
+    // Should use an SVG data URL (algorithmic avatar)
+    expect(img.getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
+  });
+
+  it('renders FileText for PractitionerNote without profile', () => {
+    render(
+      <RecordCard
+        record={makeRecord({
+          type: 'PractitionerNote',
+          id: 'prac-note-3',
+          practitionerId: 'prac-1'
+        })}
+      />
+    );
+    expect(screen.getByTestId('icon-fallback')).toBeInTheDocument();
+  });
+});
+
+describe('RecordCard practitioner note title', () => {
+  it('shows "Notes from" with practitioner display name when profile exists', () => {
+    const practitionerProfile = {
+      id: 'prac-1',
+      resourceType: 'Practitioner',
+      name: [
+        {
+          prefix: ['Dr.'],
+          given: ['Jane'],
+          family: 'Smith'
+        }
+      ]
+    };
+    render(
+      <RecordCard
+        record={makeRecord({
+          type: 'PractitionerNote',
+          id: 'prac-note-1',
+          practitionerId: 'prac-1',
+          practitionerProfile: practitionerProfile as never
+        })}
+      />
+    );
+    expect(screen.getByText('Notes from Dr. Jane Smith')).toBeInTheDocument();
+  });
+
+  it('falls back to "Notes from Practitioner" when profile is missing', () => {
     render(
       <RecordCard
         record={makeRecord({
@@ -83,7 +149,23 @@ describe('RecordCard icon mapping', () => {
         })}
       />
     );
-    expect(screen.getByTestId('icon-fallback')).toBeInTheDocument();
+    expect(screen.getByText('Notes from Practitioner')).toBeInTheDocument();
+  });
+
+  it('shows valueString as the card description', () => {
+    render(
+      <RecordCard
+        record={makeRecord({
+          type: 'PractitionerNote',
+          id: 'prac-note-3',
+          practitionerId: 'prac-1',
+          result: 'Patient reports feeling better today.'
+        })}
+      />
+    );
+    expect(
+      screen.getByText('Patient reports feeling better today.')
+    ).toBeInTheDocument();
   });
 });
 

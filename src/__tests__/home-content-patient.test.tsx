@@ -102,6 +102,6 @@ describe('HomeContentPatient', () => {
     const recordLinks = screen
       .getAllByRole('link')
       .filter(l => l.getAttribute('href')?.startsWith('/record'));
-    expect(recordLinks).toHaveLength(5);
+    expect(recordLinks).toHaveLength(6);
   });
 });
