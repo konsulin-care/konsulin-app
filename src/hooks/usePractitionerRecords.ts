@@ -53,7 +53,7 @@ function resourceQueryUrl(
   const base = `/fhir/${resourceType}?patient=${patientId}&_count=${PAGE_SIZE}&_sort=-_lastUpdated`;
   const withCodes =
     resourceType === 'Observation'
-      ? `${base}&code=http://loinc.org|67855-7,http://loinc.org|51855-5`
+      ? `${base}&code=http://loinc.org|67855-7,51855-5`
       : base;
   return appendDateParams(withCodes, startDate, endDate);
 }
