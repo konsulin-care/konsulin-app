@@ -8,23 +8,18 @@ vi.mock('next/navigation', () => ({
   usePathname: vi.fn(() => '/record'),
   useRouter: vi.fn(() => ({ back: vi.fn(), replace: vi.fn() }))
 }));
-
 vi.mock('@/hooks/useRecordDetail', () => ({
   useRecordDetail: vi.fn()
 }));
-
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));
-
 vi.mock('@/app/not-found', () => ({
   default: () => <div data-testid='mock-notfound'>Not Found</div>
 }));
-
 vi.mock('@/app/record/record-assessment', () => ({
   default: () => <div data-testid='mock-record-assessment'>Assessment</div>
 }));
-
 vi.mock('@/app/record/record-soap', () => ({
   default: (props: Record<string, unknown>) => (
     <div data-testid='mock-record-soap'>
@@ -35,23 +30,18 @@ vi.mock('@/app/record/record-soap', () => ({
     </div>
   )
 }));
-
 vi.mock('@/app/record/record-journal', () => ({
   default: () => <div data-testid='mock-record-journal'>Journal</div>
 }));
-
 vi.mock('@/app/record/record-condition', () => ({
   default: () => <div data-testid='mock-record-condition'>Condition</div>
 }));
-
 vi.mock('@/components/page-header', () => ({
   default: () => <div data-testid='mock-page-header'>Header</div>
 }));
-
 vi.mock('@/context/fabDirtyContext', () => ({
   useFabDirty: vi.fn()
 }));
-
 vi.mock('@/components/general/modal-qr', () => ({
   default: () => <div data-testid='mock-modal-qr'>QR</div>
 }));
@@ -170,7 +160,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
 
     expect(mockSetDirtyState).toHaveBeenCalledWith(null);
   });
-
   it('renders RecordAssessment for non-SOAP QuestionnaireResponse', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -187,7 +176,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     );
     expect(screen.getByTestId('mock-record-assessment')).toBeInTheDocument();
   });
-
   it('renders RecordSoap for SOAP QuestionnaireResponse', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -204,7 +192,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     );
     expect(screen.getByTestId('mock-record-soap')).toBeInTheDocument();
   });
-
   it('renders RecordJournal for Observation LOINC 51855-5', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -219,7 +206,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
     expect(screen.getByTestId('mock-record-journal')).toBeInTheDocument();
   });
-
   it('renders RecordSoap for Observation LOINC 67855-7', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -234,7 +220,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     render(<RecordDetail resourceType='Observation' resourceId='obs-2' />);
     expect(screen.getByTestId('mock-record-soap')).toBeInTheDocument();
   });
-
   it('renders RecordCondition for Condition resource type', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -249,7 +234,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     render(<RecordDetail resourceType='Condition' resourceId='cond-1' />);
     expect(screen.getByTestId('mock-record-condition')).toBeInTheDocument();
   });
-
   it('passes onPractitionerNameChange to RecordSoap for Practitioner Note', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -266,7 +250,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       screen.getByTestId('practitioner-name-callback')
     ).toBeInTheDocument();
   });
-
   it('renders Notfound for unknown resourceType', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: null,
@@ -277,12 +260,10 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     render(<RecordDetail resourceType='UnknownType' resourceId='x' />);
     expect(screen.getByTestId('mock-notfound')).toBeInTheDocument();
   });
-
   it('renders Notfound when resourceId is empty', () => {
     render(<RecordDetail resourceType='Observation' resourceId='' />);
     expect(screen.getByTestId('mock-notfound')).toBeInTheDocument();
   });
-
   it('renders patient display name from auth context', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -299,7 +280,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     );
     expect(screen.getByText('John Doe')).toBeInTheDocument();
   });
-
   it('renders email when fullname is empty', () => {
     vi.mocked(useAuth).mockReturnValue({
       state: {
@@ -324,7 +304,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     );
     expect(screen.getByText('test@example.com')).toBeInTheDocument();
   });
-
   it('skips patient name when user is not authenticated', () => {
     vi.mocked(useAuth).mockReturnValue({
       state: {
