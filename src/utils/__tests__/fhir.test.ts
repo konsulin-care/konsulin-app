@@ -19,7 +19,7 @@ describe('isLoincSystem', () => {
   });
 
   it('returns false for undefined', () => {
-    expect(isLoincSystem()).toBe(false);
+    expect(isLoincSystem(undefined)).toBe(false);
   });
 
   it('returns false for null', () => {

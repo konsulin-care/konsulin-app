@@ -22,7 +22,7 @@ vi.mock('react-qr-code', () => ({
 
 // Mock clipboard utility — jsdom's navigator.clipboard is not mockable
 vi.mock('@/utils/clipboard', () => ({
-  writeClipboard: vi.fn().mockResolvedValue()
+  writeClipboard: vi.fn().mockResolvedValue(undefined)
 }));
 
 import { writeClipboard } from '@/utils/clipboard';

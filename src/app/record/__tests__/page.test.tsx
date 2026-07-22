@@ -40,7 +40,8 @@ describe('RecordPage - routing', () => {
         isAuthenticated: true,
         userInfo: { role_name: 'Patient', fhirId: 'pat-1' }
       },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     render(<RecordPage />);
@@ -56,7 +57,8 @@ describe('RecordPage - routing', () => {
         isAuthenticated: true,
         userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' }
       },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     render(<RecordPage />);
@@ -74,7 +76,8 @@ describe('RecordPage - routing', () => {
         isAuthenticated: true,
         userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' }
       },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     render(<RecordPage />);
@@ -90,7 +93,8 @@ describe('RecordPage - routing', () => {
         isAuthenticated: true,
         userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' }
       },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     render(<RecordPage />);
@@ -106,7 +110,8 @@ describe('RecordPage - routing', () => {
         isAuthenticated: false,
         userInfo: { role_name: 'Guest', fhirId: null }
       },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     render(<RecordPage />);

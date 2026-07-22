@@ -79,7 +79,8 @@ describe('RecordTimeline', () => {
   it('calls usePatientRecords when user role is Patient', () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     render(<RecordTimeline patientId='pat-1' />);
@@ -102,7 +103,8 @@ describe('RecordTimeline', () => {
         isAuthenticated: true,
         userInfo: { role_name: 'Practitioner' }
       },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     render(<RecordTimeline patientId='pat-1' />);
@@ -118,7 +120,8 @@ describe('RecordTimeline', () => {
   it('shows loading skeleton when isLoading is true', () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     vi.mocked(usePatientRecords).mockReturnValue({
@@ -142,7 +145,8 @@ describe('RecordTimeline', () => {
   it('shows empty state when no records', () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     render(<RecordTimeline patientId='pat-1' />);
@@ -154,7 +158,8 @@ describe('RecordTimeline', () => {
   it('renders records from the hook', () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     vi.mocked(usePatientRecords).mockReturnValue({
@@ -179,7 +184,8 @@ describe('RecordTimeline', () => {
   it('renders search input and filter button in the toolbar', () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     vi.mocked(usePatientRecords).mockReturnValue({
@@ -205,7 +211,8 @@ describe('RecordTimeline', () => {
   it('renders all records by default when no filters are active', () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     vi.mocked(usePatientRecords).mockReturnValue({
@@ -229,7 +236,8 @@ describe('RecordTimeline', () => {
   it('wraps content in a padded container inside the overlay (matching clinic page)', () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     vi.mocked(usePatientRecords).mockReturnValue({

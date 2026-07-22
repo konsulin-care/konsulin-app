@@ -23,7 +23,7 @@ vi.mock('@/lib/indexeddb', () => ({
     uiPreferences: 'uiPreferences',
     serviceRequests: 'serviceRequests'
   },
-  dbGet: vi.fn().mockResolvedValue(),
+  dbGet: vi.fn().mockResolvedValue(undefined),
   dbSet: vi.fn(),
   dbDelete: vi.fn()
 }));

@@ -70,7 +70,8 @@ describe('Record page — integration scenarios', () => {
         isAuthenticated: true,
         userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' }
       },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     vi.mocked(getAPI).mockResolvedValue({
