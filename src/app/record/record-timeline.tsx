@@ -20,11 +20,14 @@ import type { IRecordParams } from './record-filter';
 import RecordFilter from './record-filter';
 
 type Props = {
-  patientId: string;
+  readonly patientId: string;
 };
 
 /** Date range badge content. */
-function DateBadgeContent({ start, end }: { start: Date; end: Date }) {
+function DateBadgeContent({
+  start,
+  end
+}: Readonly<{ start: Date; end: Date }>) {
   if (start === end) return <>{format(start, 'dd MMM yy')}</>;
   return (
     <>

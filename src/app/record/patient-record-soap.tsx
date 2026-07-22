@@ -3,7 +3,7 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import { useAuth } from '@/context/auth/authContext';
 import { useGetSingleRecord } from '@/services/api/record';
 import { getProfileById } from '@/services/profile';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 type Props = {
   soapId: string;
@@ -43,21 +43,17 @@ export default function PatientRecordSoap({
     resourceType: 'Observation'
   });
 
-  const [, setPractitionerName] = useState<string>('Practitioner');
-
   useEffect(() => {
     if (!soapData) return;
 
     const performerRef: string | undefined = soapData.performer?.[0]?.reference;
     if (!performerRef) {
-      setPractitionerName('Practitioner');
       onPractitionerNameChange?.('Practitioner');
       return;
     }
 
     const practitionerId = performerRef.split('/')[1];
     if (!practitionerId) {
-      setPractitionerName('Practitioner');
       onPractitionerNameChange?.('Practitioner');
       return;
     }
@@ -74,10 +70,8 @@ export default function PatientRecordSoap({
             }>;
           }
         );
-        setPractitionerName(name);
         onPractitionerNameChange?.(name);
       } catch {
-        setPractitionerName('Practitioner');
         onPractitionerNameChange?.('Practitioner');
       }
     };

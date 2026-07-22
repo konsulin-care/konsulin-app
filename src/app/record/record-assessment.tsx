@@ -19,8 +19,8 @@ import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 type Props = {
-  recordId: string;
-  onTitleChange?: (title: string) => void;
+  readonly recordId: string;
+  readonly onTitleChange?: (title: string) => void;
 };
 
 type IScore = {

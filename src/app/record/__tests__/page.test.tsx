@@ -31,57 +31,40 @@ describe('RecordPage - routing', () => {
     vi.clearAllMocks();
   });
 
-  it('shows patient timeline when no searchParams and role is Patient', () => {
+  it.each([
+    {
+      name: 'patient timeline when role is Patient',
+      params: '',
+      auth: { role_name: 'Patient', fhirId: 'pat-1' } as const,
+      expected: 'mock-record-timeline'
+    },
+    {
+      name: 'practitioner timeline when id param is present',
+      params: 'id=pat-2',
+      auth: { role_name: 'Practitioner', fhirId: 'dr-1' } as const,
+      expected: 'mock-record-timeline'
+    },
+    {
+      name: 'detail view when id and view params are present',
+      params: 'id=pat-1&view=Observation/obs-1',
+      auth: { role_name: 'Practitioner', fhirId: 'dr-1' } as const,
+      expected: 'mock-record-detail'
+    }
+  ])('shows $name', ({ params, auth, expected }) => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('') as unknown as ReadonlyURLSearchParams
+      new URLSearchParams(params) as unknown as ReadonlyURLSearchParams
     );
     vi.mocked(useAuth).mockReturnValue({
       state: {
         isAuthenticated: true,
-        userInfo: { role_name: 'Patient', fhirId: 'pat-1' }
+        userInfo: auth
       },
       isLoading: false,
       dispatch: vi.fn()
     });
 
     render(<RecordPage />);
-    expect(screen.getByTestId('mock-record-timeline')).toBeInTheDocument();
-  });
-
-  it('shows practitioner timeline when id param is present', () => {
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=pat-2') as unknown as ReadonlyURLSearchParams
-    );
-    vi.mocked(useAuth).mockReturnValue({
-      state: {
-        isAuthenticated: true,
-        userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' }
-      },
-      isLoading: false,
-      dispatch: vi.fn()
-    });
-
-    render(<RecordPage />);
-    expect(screen.getByTestId('mock-record-timeline')).toBeInTheDocument();
-  });
-
-  it('shows detail view when id and view params are present', () => {
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams(
-        'id=pat-1&view=Observation/obs-1'
-      ) as unknown as ReadonlyURLSearchParams
-    );
-    vi.mocked(useAuth).mockReturnValue({
-      state: {
-        isAuthenticated: true,
-        userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' }
-      },
-      isLoading: false,
-      dispatch: vi.fn()
-    });
-
-    render(<RecordPage />);
-    expect(screen.getByTestId('mock-record-detail')).toBeInTheDocument();
+    expect(screen.getByTestId(expected)).toBeInTheDocument();
   });
 
   it('shows NotFound when no patient context is available', () => {

@@ -5,8 +5,8 @@ import PatientRecordSoap from './patient-record-soap';
 import PractitionerRecordSoap from './practitioner-record-soap';
 
 type Props = {
-  soapId: string;
-  onPractitionerNameChange?: (name: string) => void;
+  readonly soapId: string;
+  readonly onPractitionerNameChange?: (name: string) => void;
 };
 
 /**

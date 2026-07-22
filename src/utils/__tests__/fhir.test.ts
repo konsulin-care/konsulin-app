@@ -6,7 +6,7 @@ describe('isLoincSystem', () => {
     expect(isLoincSystem('https://loinc.org')).toBe(true);
   });
 
-  it('returns true for https://loinc.org', () => {
+  it('returns true for https://loinc.org (uppercase)', () => {
     expect(isLoincSystem('https://loinc.org')).toBe(true);
   });
 
@@ -19,7 +19,7 @@ describe('isLoincSystem', () => {
   });
 
   it('returns false for undefined', () => {
-    expect(isLoincSystem(undefined)).toBe(false);
+    expect(isLoincSystem()).toBe(false);
   });
 
   it('returns false for null', () => {

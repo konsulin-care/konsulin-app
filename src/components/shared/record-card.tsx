@@ -131,10 +131,6 @@ function RecordCardContent({
 type Props = {
   readonly record: IRecord;
   readonly patientId?: string;
-  readonly getPractitionerInfo?: (r: IRecord) => {
-    displayName: string;
-    email: string;
-  };
   readonly formatTitleFor?: string[];
   readonly getDescription?: (record: IRecord) => string;
   readonly titlesLoading?: boolean;

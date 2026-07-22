@@ -7,7 +7,7 @@ import type { Condition } from 'fhir/r4';
 import { Microscope } from 'lucide-react';
 
 type Props = {
-  conditionId: string;
+  readonly conditionId: string;
 };
 
 /**

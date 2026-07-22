@@ -12,9 +12,9 @@ import QRCode from 'react-qr-code';
 import { toast } from 'react-toastify';
 
 type Props = {
-  value: string;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  readonly value: string;
+  readonly open?: boolean;
+  readonly onOpenChange?: (open: boolean) => void;
 };
 
 /** QR modal displaying a `value` prop as QR code content. */

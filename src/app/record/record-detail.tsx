@@ -23,8 +23,8 @@ import RecordJournal from './record-journal';
 import RecordSoap from './record-soap';
 
 type Props = {
-  resourceType: string;
-  resourceId: string;
+  readonly resourceType: string;
+  readonly resourceId: string;
 };
 
 /**
@@ -126,12 +126,12 @@ function computeDisplayName(authState: {
 /** Patient identity bar shown at the top of the detail view. */
 function PatientIdentityBar({
   authState
-}: {
+}: Readonly<{
   authState: {
     isAuthenticated?: boolean;
     userInfo?: { fullname?: string; email?: string };
   };
-}) {
+}>) {
   if (!authState?.isAuthenticated) return null;
   const displayName = computeDisplayName(authState);
   if (!displayName) return null;
