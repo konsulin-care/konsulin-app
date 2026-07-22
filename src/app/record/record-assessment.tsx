@@ -1,6 +1,3 @@
-/* eslint-disable max-lines */
-import ModalQr from '@/components/general/modal-qr';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
@@ -11,17 +8,19 @@ import {
   RESULT_BRIEF_PLACEHOLDER,
   useQuestionnaireResponse
 } from '@/services/api/assessment';
-import { formatQueryTitle } from '@/utils/helper';
-import { saveIntent } from '@/utils/redirect-intent';
-import { QuestionnaireResponse, QuestionnaireResponseItem } from 'fhir/r4';
-import { LinkIcon, NotepadTextIcon, UsersIcon } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Questionnaire,
+  QuestionnaireResponse,
+  QuestionnaireResponseItem
+} from 'fhir/r4';
+import { NotepadTextIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 type Props = {
-  recordId: string;
-  title: string;
+  readonly recordId: string;
+  readonly onTitleChange?: (title: string) => void;
 };
 
 type IScore = {
@@ -44,8 +43,7 @@ const generateRandomColor = (baseHue: number) => {
 /**
  *
  */
-export default function RecordAssessment({ recordId, title }: Props) {
-  const router = useRouter();
+export default function RecordAssessment({ recordId, onTitleChange }: Props) {
   const {
     data: questionnaireResponseRaw,
     isLoading: questionnaireResponseIsLoading
@@ -56,12 +54,11 @@ export default function RecordAssessment({ recordId, title }: Props) {
   const questionnaireResponse =
     questionnaireResponseRaw as unknown as QuestionnaireResponse | null;
   const [scoreList, setScoreList] = useState<IScore[]>([]);
-  const [currentLocation, setCurrentLocation] = useState<string>('');
   const [colorMap, setColorMap] = useState<Record<string, string>>({});
   const [polledResultBrief, setPolledResultBrief] = useState<string | null>(
     null
   );
-  const { state: authState, isLoading: isAuthLoading } = useAuth();
+  const { state: authState } = useAuth();
 
   useEffect(() => {
     const ownerId = authState.userInfo.userId || 'guest';
@@ -104,11 +101,6 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
     return randomColor;
   };
-
-  useEffect(() => {
-    const fullUrl = window.location.href;
-    setCurrentLocation(fullUrl);
-  }, []);
 
   /** Extracts and calculates score data from questionnaire response. */
   const scoreData = () => {
@@ -264,6 +256,27 @@ export default function RecordAssessment({ recordId, title }: Props) {
     };
   }, [questionnaireResponse, recordId, authState.isAuthenticated]);
 
+  // Fetch questionnaire title for page header and display
+  const questionnaireId = questionnaireResponse?.questionnaire?.split('/')[1];
+  const { data: questionnaireTitle } = useQuery<string | undefined>({
+    queryKey: ['questionnaire', questionnaireId, 'title'],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get<Questionnaire>(
+        `/fhir/Questionnaire/${questionnaireId}?_elements=title`
+      );
+      return response.data.title ?? questionnaireId;
+    },
+    enabled: Boolean(questionnaireId)
+  });
+
+  // Push the resolved title up to RecordDetail
+  useEffect(() => {
+    if (questionnaireTitle && onTitleChange) {
+      onTitleChange(questionnaireTitle);
+    }
+  }, [questionnaireTitle, onTitleChange]);
+
   const getResultBrief = () => {
     // Guest users: no webhook, no polling, no PUT
     if (!authState.isAuthenticated) {
@@ -292,26 +305,14 @@ export default function RecordAssessment({ recordId, title }: Props) {
 
   return (
     <>
-      <div className='mb-4'>
-        <div className='text-muted text-[14px] font-bold'>
-          Assessment Details
-        </div>
-        <div className='text-muted text-[10px]'>Assessment - User</div>
-      </div>
-      {isAuthLoading ? (
-        <Skeleton className='!mt-0 h-[60px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
-      ) : (
-        <div className='card !mt-0 mb-4 flex items-center'>
-          <UsersIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
-          {authState.isAuthenticated && authState.userInfo
-            ? authState.userInfo.fullname || authState.userInfo.email
-            : 'Guest'}
+      {questionnaireResponse?.questionnaire && (
+        <div className='card mb-4 flex items-center'>
+          <NotepadTextIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
+          {questionnaireTitle ??
+            questionnaireResponse.questionnaire.split('/')[1] ??
+            ''}
         </div>
       )}
-      <div className='card mb-4 flex items-center'>
-        <NotepadTextIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
-        {formatQueryTitle(title)}
-      </div>
 
       <div className='mb-4'>
         <div className='text-12 text-muted mb-2'>Result Brief</div>
@@ -348,36 +349,6 @@ export default function RecordAssessment({ recordId, title }: Props) {
               );
             })}
           </div>
-        )}
-      </div>
-
-      <div className='mb-4 flex items-center space-x-2 rounded-lg bg-[#F9F9F9] p-4'>
-        <LinkIcon />
-        <div className='flex grow flex-col'>
-          <span className='text-muted text-[10px]'>Share the Result</span>
-          <span className='text-[14px] font-bold'>QR Code</span>
-        </div>
-        <ModalQr value={currentLocation} />
-      </div>
-
-      <div className='text-m !mt-auto flex flex-col gap-3'>
-        {authState.isAuthenticated ? (
-          <Button className='bg-secondary h-full w-full rounded-xl p-4 text-white'>
-            Request Analysis
-          </Button>
-        ) : (
-          <Button
-            className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-            onClick={() => {
-              saveIntent('assessmentResult', {
-                path: window.location.pathname + window.location.search,
-                responseId: recordId
-              });
-              router.push('/auth');
-            }}
-          >
-            Save Result
-          </Button>
         )}
       </div>
     </>

@@ -77,3 +77,4 @@ Agentic contributions MUST NOT introduce:
 - Full directory map: READ `@docs/agents/PROJECT_STRUCTURE.md`
 - System design and decisions: READ `@docs/agents/ARCHITECTURE.md`
 - Document templates: READ `@docs/templates/`
+- FAB transformation patterns: READ `@docs/agents/fab-patterns.md`

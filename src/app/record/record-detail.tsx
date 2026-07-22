@@ -1,80 +1,318 @@
 'use client';
 
 import Notfound from '@/app/not-found';
+import ModalQr from '@/components/general/modal-qr';
+import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
-import { formatTitle } from '@/utils/helper';
-import { useSearchParams } from 'next/navigation';
+import { useAuth } from '@/context/auth/authContext';
+import { useFabDirty } from '@/context/fabDirtyContext';
+import { useRecordDetail } from '@/hooks/useRecordDetail';
+import { isLoincSystem } from '@/utils/fhir';
+import type { Observation, QuestionnaireResponse } from 'fhir/r4';
+import { UsersIcon } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode
+} from 'react';
 import RecordAssessment from './record-assessment';
-import RecordExercise from './record-exercise';
+import RecordCondition from './record-condition';
 import RecordJournal from './record-journal';
 import RecordSoap from './record-soap';
+
+type Props = {
+  readonly resourceType: string;
+  readonly resourceId: string;
+};
+
+/**
+ * Determine whether an Observation is a patient journal (LOINC 51855-5).
+ */
+function isPatientJournal(resource: Observation): boolean {
+  return (
+    resource.code?.coding?.some(
+      c => isLoincSystem(c.system) && c.code === '51855-5'
+    ) ?? false
+  );
+}
+
+/**
+ * Determine whether an Observation is a practitioner note (LOINC 67855-7).
+ */
+function isPractitionerNote(resource: Observation): boolean {
+  return (
+    resource.code?.coding?.some(
+      c => isLoincSystem(c.system) && c.code === '67855-7'
+    ) ?? false
+  );
+}
+
+/**
+ * Determine whether a QuestionnaireResponse is a SOAP note.
+ */
+function isSoapNote(resource: QuestionnaireResponse): boolean {
+  return resource.questionnaire === 'Questionnaire/soap';
+}
+
+type RenderHandler = (props: {
+  resourceId: string;
+  data: Record<string, unknown>;
+  onTitleChange?: (title: string) => void;
+  onPractitionerNameChange?: (name: string) => void;
+}) => ReactNode;
+
+// --- Named renderer functions ---
 
 /**
  *
  */
-export default function RecordDetail() {
-  const searchParams = useSearchParams();
-  const id = searchParams.get('id') ?? '';
-  const category = Number(searchParams.get('category'));
-  const titleParam = searchParams.get('title');
-  const formattedTitle = formatTitle(titleParam);
+export function renderCondition({
+  resourceId
+}: {
+  readonly resourceId: string;
+}): ReactNode {
+  return <RecordCondition conditionId={resourceId} />;
+}
 
-  const isValidCategory = [1, 2, 3, 4].includes(category);
-  const isValidTitle =
-    typeof titleParam === 'string' && titleParam.trim() !== '';
+/**
+ *
+ */
+export function renderQuestionnaireResponse({
+  resourceId,
+  data,
+  onTitleChange
+}: {
+  readonly resourceId: string;
+  readonly data: Record<string, unknown>;
+  readonly onTitleChange?: (title: string) => void;
+}): ReactNode {
+  const qr = data as unknown as QuestionnaireResponse;
+  if (isSoapNote(qr)) {
+    return <RecordSoap soapId={resourceId} />;
+  }
+  return (
+    <RecordAssessment recordId={resourceId} onTitleChange={onTitleChange} />
+  );
+}
 
-  if (!isValidTitle || !isValidCategory) {
+/**
+ *
+ */
+export function renderObservation({
+  resourceId,
+  data,
+  onPractitionerNameChange
+}: {
+  readonly resourceId: string;
+  readonly data: Record<string, unknown>;
+  readonly onPractitionerNameChange?: (name: string) => void;
+}): ReactNode {
+  const obs = data as unknown as Observation;
+  if (isPatientJournal(obs)) {
+    return <RecordJournal journalId={resourceId} />;
+  }
+  if (isPractitionerNote(obs)) {
+    return (
+      <RecordSoap
+        soapId={resourceId}
+        onPractitionerNameChange={onPractitionerNameChange}
+      />
+    );
+  }
+  return <Notfound />;
+}
+
+// --- Maps (Codacy-safe: .get() is a method call, not property access) ---
+
+const RESOURCE_RENDERERS = new Map<string, RenderHandler>([
+  ['Condition', renderCondition],
+  ['QuestionnaireResponse', renderQuestionnaireResponse],
+  ['Observation', renderObservation]
+]);
+
+// --- Named title resolver functions ---
+
+/**
+ *
+ */
+export function conditionTitle(): string {
+  return 'Condition Detail';
+}
+
+/**
+ *
+ */
+export function questionnaireResponseTitle(
+  data: Record<string, unknown>
+): string {
+  if (isSoapNote(data as unknown as QuestionnaireResponse)) {
+    return 'SOAP Detail';
+  }
+  return 'Assessment Result';
+}
+
+/**
+ *
+ */
+export function observationTitle(data: Record<string, unknown>): string {
+  if (isPatientJournal(data as unknown as Observation)) {
+    return 'Journal Detail';
+  }
+  if (isPractitionerNote(data as unknown as Observation)) {
+    return 'SOAP Detail';
+  }
+  return 'Detail';
+}
+
+const RESOURCE_TITLES = new Map<
+  string,
+  (data: Record<string, unknown>) => string
+>([
+  ['Condition', conditionTitle],
+  ['QuestionnaireResponse', questionnaireResponseTitle],
+  ['Observation', observationTitle]
+]);
+
+/**
+/** Compute the display name from auth state. */
+function computeDisplayName(authState: {
+  userInfo?: { fullname?: string; email?: string };
+}): string | undefined {
+  const fullname = authState?.userInfo?.fullname;
+  if (fullname && fullname.trim() !== '-') return fullname;
+  return authState?.userInfo?.email;
+}
+
+/** Patient identity bar shown at the top of the detail view. */
+function PatientIdentityBar({
+  authState
+}: Readonly<{
+  authState: {
+    isAuthenticated?: boolean;
+    userInfo?: { fullname?: string; email?: string };
+  };
+}>) {
+  if (!authState?.isAuthenticated) return null;
+  const displayName = computeDisplayName(authState);
+  if (!displayName) return null;
+  return (
+    <div className='mb-4 flex items-center rounded-xl border p-4'>
+      <UsersIcon className='mr-[10px] shrink-0' color='hsla(220,9%,19%,0.4)' />
+      <div className='text-sm font-medium text-[#2c2f35]'>{displayName}</div>
+    </div>
+  );
+}
+
+/** Compute the page title based on resource data. */
+function computePageTitle(data: Record<string, unknown> | undefined): string {
+  if (!data) return 'Detail';
+  const resolver = RESOURCE_TITLES.get(data.resourceType as string);
+  return resolver ? resolver(data) : 'Detail';
+}
+
+/**
+ * Detail view for a single record.
+ *
+ * Dispatches to the appropriate sub-component based on
+ * the resource type and its content.
+ */
+export default function RecordDetail({ resourceType, resourceId }: Props) {
+  const { data, isLoading, error } = useRecordDetail(
+    resourceType,
+    resourceId || null
+  );
+  const { state: authState } = useAuth();
+
+  const [dynamicTitle, setDynamicTitle] = useState<string | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<string>('');
+  const [qrOpen, setQrOpen] = useState(false);
+
+  const { setDirtyState } = useFabDirty();
+
+  const handlePractitionerNameChange = useCallback((name: string) => {
+    setDynamicTitle(`Notes from ${name}`);
+  }, []);
+
+  const pageTitle = useMemo(() => computePageTitle(data), [data]);
+
+  // Capture current URL for sharing
+  useEffect(() => {
+    setCurrentLocation(window.location.href);
+  }, []);
+
+  // Set FAB to "Share Record" for all valid resource detail views
+  useEffect(() => {
+    if (!data || error) {
+      setDirtyState(null);
+    } else {
+      setDirtyState({
+        isDirty: true,
+        label: 'Share Record',
+        onSave: () => {
+          const shareUrl = currentLocation || window.location.href;
+          if (typeof navigator.share === 'function') {
+            navigator.share({ url: shareUrl }).catch(() => {
+              /* user cancelled — do nothing */
+            });
+          } else {
+            setQrOpen(true);
+          }
+        },
+        isSaving: false
+      });
+    }
+
+    return () => setDirtyState(null);
+  }, [data, error, setDirtyState, currentLocation]);
+
+  // Invalid props
+  if (!resourceType || !resourceId) {
     return <Notfound />;
   }
 
-  /** Returns page title based on record category. */
-  const pageTitle = (category: number) => {
-    switch (category) {
-      case 1: {
-        return 'Assessment Result';
-      }
-      case 2: {
-        return 'Exercise Result';
-      }
-      case 3: {
-        return 'SOAP Detail';
-      }
-      case 4: {
-        return 'Journal Detail';
-      }
-      default: {
-        return '';
-      }
-    }
-  };
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className='flex min-h-screen min-w-full items-center justify-center'>
+        <LoadingSpinnerIcon
+          width={56}
+          height={56}
+          className='w-full animate-spin'
+        />
+      </div>
+    );
+  }
 
-  /** Renders the appropriate record component based on category. */
-  const renderContent = (category: number) => {
-    switch (category) {
-      case 1: {
-        return <RecordAssessment recordId={id} title={formattedTitle} />;
-      }
-      case 2: {
-        return <RecordExercise />;
-      }
-      case 3: {
-        return <RecordSoap soapId={id} title={titleParam} />;
-      }
-      case 4: {
-        return <RecordJournal journalId={id} />;
-      }
-      default: {
-        return null;
-      }
-    }
+  // Error or no data after loading
+  if (error || !data) {
+    return <Notfound />;
+  }
+
+  /** Render the appropriate sub-component based on resource type. */
+  const renderContent = (): ReactNode => {
+    const renderer = RESOURCE_RENDERERS.get(data.resourceType as string);
+    return renderer ? (
+      renderer({
+        resourceId,
+        data,
+        onTitleChange: setDynamicTitle,
+        onPractitionerNameChange: handlePractitionerNameChange
+      })
+    ) : (
+      <Notfound />
+    );
   };
 
   return (
     <>
-      <PageHeader pageIndicator={pageTitle(category)} />
-      <div className='mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] bg-white p-4'>
-        {renderContent(category)}
+      <PageHeader pageIndicator={dynamicTitle ?? pageTitle} />
+      <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
+        <PatientIdentityBar authState={authState} />
+        {renderContent()}
       </div>
+      <ModalQr value={currentLocation} open={qrOpen} onOpenChange={setQrOpen} />
     </>
   );
 }

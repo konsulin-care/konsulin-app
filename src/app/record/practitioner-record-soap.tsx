@@ -11,13 +11,12 @@ import { useEffect, useState } from 'react';
 
 type Props = {
   readonly soapId: string;
-  readonly title: string;
 };
 
 /**
  *
  */
-export default function PractitionerRecordSoap({ soapId, title }: Props) {
+export default function PractitionerRecordSoap({ soapId }: Props) {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
   const [patientId, setPatientId] = useState('');
@@ -57,7 +56,10 @@ export default function PractitionerRecordSoap({ soapId, title }: Props) {
 
   return (
     <div className='flex flex-col gap-5'>
-      <SoapHeaderCards displayName={displayName} title={title} />
+      <SoapHeaderCards
+        displayName={displayName}
+        title={soapData?.questionnaire?.split('/')[1] ?? ''}
+      />
       <SoapForm
         questionnaire={questionnaireData}
         patientId={patientId}

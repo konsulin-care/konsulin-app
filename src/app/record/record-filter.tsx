@@ -1,8 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterActions from '@/components/shared/filter-actions';
 import FilterCalendar from '@/components/shared/filter-calendar';
 import FilterDrawerTrigger from '@/components/shared/filter-drawer-trigger';
+import type { ComboboxOption } from '@/components/shared/location-combobox';
+import LocationCombobox from '@/components/shared/location-combobox';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -12,13 +13,6 @@ import {
   DrawerTrigger
 } from '@/components/ui/drawer';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import {
   addDays,
   endOfMonth,
   endOfWeek,
@@ -26,6 +20,7 @@ import {
   startOfWeek
 } from 'date-fns';
 import { useState } from 'react';
+
 const CONTENT_DEFAULT = 0;
 const CONTENT_CUSTOM = 1;
 
@@ -55,43 +50,35 @@ const filterContentListDate = [
   }
 ];
 
+/** Record type options for the multi-select combobox. */
+const RECORD_TYPE_OPTIONS: ComboboxOption[] = [
+  { code: 'QuestionnaireResponse', name: 'Assessment' },
+  { code: 'PractitionerNote', name: 'Practitioner Note' },
+  { code: 'SOAP Notes', name: 'SOAP' },
+  { code: 'PatientNote', name: 'Self Journal' },
+  { code: 'Condition', name: 'Condition' },
+  { code: 'Encounter', name: 'Encounter' }
+];
+
 export type IRecordParams = {
   page?: number;
   pageSize?: number;
   query?: string;
   start_date?: Date;
   end_date?: Date;
-  type?: string;
+  /** Selected record type codes. Empty / undefined = show all. */
+  type?: string[];
   isUseCustomDate?: boolean;
 };
 
-/** Dropdown filter for record type. */
-function ShowBySection({
-  type,
-  onTypeChange
-}: Readonly<{ type?: string; onTypeChange: (value: string) => void }>) {
-  return (
-    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-      <div className='mb-4 font-bold'>Show By</div>
-      <Select value={type} onValueChange={onTypeChange}>
-        <SelectTrigger className='w-full border-none'>
-          <SelectValue placeholder='All' />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value='All'>All</SelectItem>
-          <SelectItem value='Patient Note'>Journal</SelectItem>
-          <SelectItem value='QuestionnaireResponse'>Assessment</SelectItem>
-          <SelectItem value='Practitioner Note, SOAP Notes'>SOAP</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
 /**
- *
+ * Record filter drawer with date presets and multi-select record types.
  */
-export default function RecordFilter({ onChange }) {
+export default function RecordFilter({
+  onChange
+}: Readonly<{
+  onChange: (filter: IRecordParams) => void;
+}>) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
@@ -106,13 +93,13 @@ export default function RecordFilter({ onChange }) {
   const isInitiaFilterState =
     !filter.start_date &&
     !filter.end_date &&
-    !filter.type &&
+    (!filter.type || filter.type.length === 0) &&
     !filter.isUseCustomDate;
 
   /** Update a single record-filter field by key. */
   const handleFilterChange = (
     label: string,
-    value: string | Date | boolean | undefined
+    value: string | string[] | Date | boolean | undefined
   ) => {
     setFilter(prevState => ({
       ...prevState,
@@ -140,13 +127,6 @@ export default function RecordFilter({ onChange }) {
     setWhichContent(CONTENT_CUSTOM);
   };
 
-  const showBySection = (
-    <ShowBySection
-      type={filter.type}
-      onTypeChange={(value: string) => handleFilterChange('type', value)}
-    />
-  );
-
   /** Render default filter content or custom calendar filter based on whichContent. */
   const renderDrawerContent = () => {
     switch (whichContent) {
@@ -171,7 +151,21 @@ export default function RecordFilter({ onChange }) {
               }}
               onCustomOpen={handleCustomFilterOpen}
             />
-            {showBySection}
+
+            {/* Multi-select record types */}
+            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+              <div className='mb-4 font-bold'>Show By</div>
+              <LocationCombobox
+                multiple
+                options={RECORD_TYPE_OPTIONS}
+                value={filter.type ?? []}
+                onSelect={(codes: string[]) =>
+                  handleFilterChange('type', codes)
+                }
+                placeholder='All types'
+              />
+            </div>
+
             <FilterActions
               showReset={!isInitiaFilterState}
               onReset={resetFilter}
@@ -231,18 +225,12 @@ export default function RecordFilter({ onChange }) {
         setIsOpen(false);
       }}
       open={isOpen}
-      modal={isOpen}
+      modal
     >
       <DrawerTrigger asChild>
         <FilterDrawerTrigger onClick={() => setIsOpen(true)} />
       </DrawerTrigger>
-      <DrawerContent
-        className='mx-auto max-w-screen-sm p-4'
-        onInteractOutside={() => {
-          setIsOpen(false);
-          onChange(filter);
-        }}
-      >
+      <DrawerContent className='mx-auto max-w-screen-sm p-4'>
         <div className='mt-4'>{renderDrawerContent()}</div>
       </DrawerContent>
     </Drawer>

@@ -1,94 +1,331 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Hoisted mocks
 vi.mock('next/navigation', () => ({
-  useSearchParams: vi.fn(),
-  useRouter: vi.fn().mockReturnValue({ back: vi.fn(), replace: vi.fn() })
+  useSearchParams: vi.fn(() => new URLSearchParams()),
+  usePathname: vi.fn(() => '/record'),
+  useRouter: vi.fn(() => ({ back: vi.fn(), replace: vi.fn() }))
 }));
-
-vi.mock('@/components/page-header', () => ({
-  default: ({ pageIndicator, backRoute }: any) => (
-    <div
-      data-testid='mock-page-header'
-      data-back-route={backRoute ?? ''}
-      data-indicator={pageIndicator}
-    >
-      {pageIndicator}
-    </div>
-  )
+vi.mock('@/hooks/useRecordDetail', () => ({
+  useRecordDetail: vi.fn()
 }));
-
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: vi.fn()
+}));
 vi.mock('@/app/not-found', () => ({
   default: () => <div data-testid='mock-notfound'>Not Found</div>
 }));
-
 vi.mock('@/app/record/record-assessment', () => ({
   default: () => <div data-testid='mock-record-assessment'>Assessment</div>
 }));
-
-vi.mock('@/app/record/record-exercise', () => ({
-  default: () => <div data-testid='mock-record-exercise'>Exercise</div>
-}));
-
 vi.mock('@/app/record/record-soap', () => ({
-  default: () => <div data-testid='mock-record-soap'>SOAP</div>
+  default: (props: Record<string, unknown>) => (
+    <div data-testid='mock-record-soap'>
+      SOAP
+      {typeof props.onPractitionerNameChange === 'function' && (
+        <span data-testid='practitioner-name-callback'>has-callback</span>
+      )}
+    </div>
+  )
 }));
-
 vi.mock('@/app/record/record-journal', () => ({
   default: () => <div data-testid='mock-record-journal'>Journal</div>
 }));
-
-vi.mock('@/utils/helper', () => ({
-  formatTitle: vi
-    .fn()
-    .mockImplementation((title: string) => title?.replace(/-/g, ' ') ?? '')
+vi.mock('@/app/record/record-condition', () => ({
+  default: () => <div data-testid='mock-record-condition'>Condition</div>
+}));
+vi.mock('@/components/page-header', () => ({
+  default: () => <div data-testid='mock-page-header'>Header</div>
+}));
+vi.mock('@/context/fabDirtyContext', () => ({
+  useFabDirty: vi.fn()
+}));
+vi.mock('@/components/general/modal-qr', () => ({
+  default: () => <div data-testid='mock-modal-qr'>QR</div>
 }));
 
-import { useSearchParams } from 'next/navigation';
+import { useAuth } from '@/context/auth/authContext';
+import { useFabDirty } from '@/context/fabDirtyContext';
+import { useRecordDetail } from '@/hooks/useRecordDetail';
 import RecordDetail from '../record-detail';
 
-describe('RecordDetail - back navigation', () => {
+describe('RecordDetail - dispatches by resourceType + content', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: true,
+        userInfo: { fullname: 'John Doe', email: 'john@example.com' }
+      },
+      isLoading: false
+    } as any);
   });
 
-  it.each([
-    [1, 'PHQ-9', 'Assessment Result'],
-    [2, 'Push-ups', 'Exercise Result'],
-    [3, 'SOAP-Note', 'SOAP Detail'],
-    [4, 'My-Journal', 'Journal Detail']
-  ])('renders %s page without backRoute', (category, title, expected) => {
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams(`id=xxx&category=${category}&title=${title}`) as any
+  it('sets FAB dirty state to "Share Record" for any valid resource view', () => {
+    const mockSetDirtyState = vi.fn();
+    vi.mocked(useFabDirty).mockReturnValue({
+      setDirtyState: mockSetDirtyState
+    } as any);
+
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'QuestionnaireResponse',
+        id: 'qr-1',
+        questionnaire: 'Questionnaire/phq9'
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(
+      <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
     );
 
-    render(<RecordDetail />);
-
-    const header = screen.getByTestId('mock-page-header');
-    expect(header).toHaveAttribute('data-back-route', '');
-    expect(header).toHaveAttribute('data-indicator', expected);
+    const shareCall = mockSetDirtyState.mock.calls.find(
+      (c: unknown[]) => (c[0] as { label?: string })?.label === 'Share Record'
+    );
+    expect(shareCall).toBeDefined();
   });
 
-  it('renders Notfound for invalid category', () => {
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=resp-123&category=99&title=Test') as any
+  it('sets FAB dirty state for Practitioner Note view', () => {
+    const mockSetDirtyState = vi.fn();
+    vi.mocked(useFabDirty).mockReturnValue({
+      setDirtyState: mockSetDirtyState
+    } as any);
+
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'Observation',
+        id: 'obs-1',
+        code: { coding: [{ system: 'https://loinc.org', code: '67855-7' }] }
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
+
+    const shareCall = mockSetDirtyState.mock.calls.find(
+      (c: unknown[]) => (c[0] as { label?: string })?.label === 'Share Record'
     );
+    expect(shareCall).toBeDefined();
+  });
 
-    render(<RecordDetail />);
+  it('sets FAB dirty state for Journal view', () => {
+    const mockSetDirtyState = vi.fn();
+    vi.mocked(useFabDirty).mockReturnValue({
+      setDirtyState: mockSetDirtyState
+    } as any);
 
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'Observation',
+        id: 'obs-1',
+        code: { coding: [{ system: 'https://loinc.org', code: '51855-5' }] }
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
+
+    const shareCall = mockSetDirtyState.mock.calls.find(
+      (c: unknown[]) => (c[0] as { label?: string })?.label === 'Share Record'
+    );
+    expect(shareCall).toBeDefined();
+  });
+
+  it('clears FAB dirty state on unmount', () => {
+    const mockSetDirtyState = vi.fn();
+    vi.mocked(useFabDirty).mockReturnValue({
+      setDirtyState: mockSetDirtyState
+    } as any);
+
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'Observation',
+        id: 'obs-1',
+        code: { coding: [{ system: 'https://loinc.org', code: '67855-7' }] }
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    const { unmount } = render(
+      <RecordDetail resourceType='Observation' resourceId='obs-1' />
+    );
+    unmount();
+
+    expect(mockSetDirtyState).toHaveBeenCalledWith(null);
+  });
+  it('renders RecordAssessment for non-SOAP QuestionnaireResponse', () => {
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'QuestionnaireResponse',
+        id: 'qr-1',
+        questionnaire: 'Questionnaire/phq9'
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(
+      <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
+    );
+    expect(screen.getByTestId('mock-record-assessment')).toBeInTheDocument();
+  });
+  it('renders RecordSoap for SOAP QuestionnaireResponse', () => {
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'QuestionnaireResponse',
+        id: 'qr-1',
+        questionnaire: 'Questionnaire/soap'
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(
+      <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
+    );
+    expect(screen.getByTestId('mock-record-soap')).toBeInTheDocument();
+  });
+  it('renders RecordJournal for Observation LOINC 51855-5', () => {
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'Observation',
+        id: 'obs-1',
+        code: { coding: [{ system: 'https://loinc.org', code: '51855-5' }] }
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
+    expect(screen.getByTestId('mock-record-journal')).toBeInTheDocument();
+  });
+  it('renders RecordSoap for Observation LOINC 67855-7', () => {
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'Observation',
+        id: 'obs-2',
+        code: { coding: [{ system: 'https://loinc.org', code: '67855-7' }] }
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(<RecordDetail resourceType='Observation' resourceId='obs-2' />);
+    expect(screen.getByTestId('mock-record-soap')).toBeInTheDocument();
+  });
+  it('renders RecordCondition for Condition resource type', () => {
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'Condition',
+        id: 'cond-1',
+        evidence: [{ code: [{ text: 'wadu' }] }]
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(<RecordDetail resourceType='Condition' resourceId='cond-1' />);
+    expect(screen.getByTestId('mock-record-condition')).toBeInTheDocument();
+  });
+  it('passes onPractitionerNameChange to RecordSoap for Practitioner Note', () => {
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'Observation',
+        id: 'obs-2',
+        code: { coding: [{ system: 'https://loinc.org', code: '67855-7' }] }
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(<RecordDetail resourceType='Observation' resourceId='obs-2' />);
+    expect(
+      screen.getByTestId('practitioner-name-callback')
+    ).toBeInTheDocument();
+  });
+  it('renders Notfound for unknown resourceType', () => {
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: null,
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(<RecordDetail resourceType='UnknownType' resourceId='x' />);
     expect(screen.getByTestId('mock-notfound')).toBeInTheDocument();
   });
-
-  it('renders Notfound for empty title', () => {
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=resp-123&category=1&title=') as any
-    );
-
-    render(<RecordDetail />);
-
+  it('renders Notfound when resourceId is empty', () => {
+    render(<RecordDetail resourceType='Observation' resourceId='' />);
     expect(screen.getByTestId('mock-notfound')).toBeInTheDocument();
+  });
+  it('renders patient display name from auth context', () => {
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'QuestionnaireResponse',
+        id: 'qr-1',
+        questionnaire: 'Questionnaire/phq9'
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(
+      <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
+    );
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+  });
+  it('renders email when fullname is empty', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: true,
+        userInfo: { fullname: '', email: 'test@example.com' }
+      },
+      isLoading: false
+    } as any);
+
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'QuestionnaireResponse',
+        id: 'qr-1',
+        questionnaire: 'Questionnaire/phq9'
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(
+      <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
+    );
+    expect(screen.getByText('test@example.com')).toBeInTheDocument();
+  });
+  it('skips patient name when user is not authenticated', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: false,
+        userInfo: null
+      },
+      isLoading: false
+    } as any);
+
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'QuestionnaireResponse',
+        id: 'qr-1',
+        questionnaire: 'Questionnaire/phq9'
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(
+      <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
+    );
+    expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
   });
 });

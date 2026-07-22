@@ -1,5 +1,7 @@
 import { FilterIcon } from '@/components/icons';
-import LocationCombobox from '@/components/shared/location-combobox';
+import LocationCombobox, {
+  type ComboboxOption
+} from '@/components/shared/location-combobox';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Drawer,
@@ -68,7 +70,9 @@ export default function FirmFilter({ onChange }: FirmFilterProps) {
         <LocationCombobox
           options={listProvinces ?? []}
           value={filter.province_code ?? ''}
-          onSelect={option => handleFilterChange('province_code', option.code)}
+          onSelect={(option: ComboboxOption) =>
+            handleFilterChange('province_code', option.code)
+          }
           placeholder='Select Province'
           loading={provinceLoading}
         />
@@ -77,7 +81,9 @@ export default function FirmFilter({ onChange }: FirmFilterProps) {
           <LocationCombobox
             options={listCities ?? []}
             value={filter.city ?? ''}
-            onSelect={option => handleFilterChange('city', option.name)}
+            onSelect={(option: ComboboxOption) =>
+              handleFilterChange('city', option.name)
+            }
             placeholder='Select City'
             loading={cityLoading}
           />

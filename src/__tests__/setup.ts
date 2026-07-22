@@ -4,8 +4,10 @@ import '@testing-library/jest-dom';
 globalThis.ResizeObserver = class ResizeObserver {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   observe() {}
+
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   unobserve() {}
+
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   disconnect() {}
 };
@@ -13,3 +15,32 @@ globalThis.ResizeObserver = class ResizeObserver {
 // Polyfill scrollIntoView for cmdk in jsdom
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 Element.prototype.scrollIntoView = () => {};
+
+// Polyfill window.matchMedia for vaul drawer in jsdom
+
+if (!window.matchMedia) {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      addListener: () => {},
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      removeListener: () => {},
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      addEventListener: () => {},
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      removeEventListener: () => {},
+      dispatchEvent: () => false
+    })
+  });
+}
+
+// Polyfill crypto.randomUUID for jsdom
+if (!globalThis.crypto?.randomUUID) {
+  globalThis.crypto = Object.assign({}, globalThis.crypto ?? {}, {
+    randomUUID: () => '00000000-0000-0000-0000-000000000000'
+  }) as Crypto;
+}

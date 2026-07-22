@@ -1,41 +1,123 @@
 'use client';
 
 import Avatar from '@/components/general/avatar';
-import NoteIcon from '@/components/icons/note-icon';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { typeMappings } from '@/constants/record';
-import { IRecord } from '@/types/record';
+import type { IRecord } from '@/types/record';
 import {
   customMarkdownComponents,
   formatTitle,
   generateAvatarPlaceholder
 } from '@/utils/helper';
 import { format } from 'date-fns';
+import type { Practitioner } from 'fhir/r4';
+import { FileText, HeartPulse, Microscope } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 
-/** Inner content block of a record card. */
+/** Build display name from a FHIR Practitioner name. */
+function getPractitionerName(profile: Practitioner | undefined): string | null {
+  const name = profile?.name?.[0];
+  if (!name) return null;
+  const prefix = name.prefix?.[0] ?? '';
+  const given = (name.given ?? []).join(' ');
+  const family = name.family ?? '';
+  return [prefix, given, family].filter(Boolean).join(' ');
+}
+
+/** Icon or avatar for the card's icon slot, based on record type. */
+function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
+  // Practitioner photo avatar
+  if (record.type === 'PractitionerNote') {
+    const profile = record.practitionerProfile;
+    if (profile) {
+      const { initials, seed, backgroundColor } = generateAvatarPlaceholder({
+        id: profile.id,
+        name: getPractitionerName(profile) ?? ''
+      });
+      return (
+        <Avatar
+          photoUrl={profile.photo?.[0]?.url}
+          initials={initials ?? ''}
+          backgroundColor={backgroundColor ?? '#13c2c2'}
+          seed={seed}
+          height={40}
+          width={40}
+          imageClassName='object-cover'
+        />
+      );
+    }
+    return (
+      <FileText data-testid='icon-fallback' className='h-5 w-5 text-gray-500' />
+    );
+  }
+
+  // Patient photo avatar
+  if (record.type === 'PatientNote') {
+    const url = record.patientProfile?.photo?.[0]?.url;
+    if (url) {
+      return (
+        <Image
+          className='h-[40px] w-[40px] rounded-full object-cover'
+          src={url}
+          width={40}
+          height={40}
+          alt=''
+          unoptimized
+        />
+      );
+    }
+    return <FileText className='h-5 w-5 text-gray-500' />;
+  }
+
+  // Icon-based types
+  if (record.type === 'QuestionnaireResponse') {
+    return (
+      <HeartPulse
+        data-testid='icon-assessment'
+        className='h-5 w-5 text-gray-500'
+      />
+    );
+  }
+  if (record.type === 'Condition') {
+    return (
+      <Microscope
+        data-testid='icon-condition'
+        className='h-5 w-5 text-gray-500'
+      />
+    );
+  }
+
+  return (
+    <FileText data-testid='icon-fallback' className='h-5 w-5 text-gray-500' />
+  );
+}
+
+/** Inner content block of a record card (icon + text). */
 function RecordCardContent({
+  record,
   formattedTitle,
-  cleanDescription
+  cleanDescription,
+  titleLoading
 }: Readonly<{
+  record: IRecord;
   formattedTitle: string;
   cleanDescription: string;
+  titleLoading?: boolean;
 }>) {
   return (
     <div className='flex'>
-      <div className='mr-2 h-[40px] w-[40px] shrink-0 rounded-full bg-[#F8F8F8] p-2'>
-        <Image
-          className='h-[24px] w-[24px] object-cover'
-          src={'/images/note.svg'}
-          width={24}
-          height={24}
-          alt='note'
-        />
+      <div className='mr-2 flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
+        <RecordCardIcon record={record} />
       </div>
       <div className='flex w-0 grow flex-col justify-center'>
-        <div className='text-[12px] font-bold'>{formattedTitle}</div>
+        {titleLoading ? (
+          <Skeleton className='mb-1 h-[14px] w-3/4' />
+        ) : (
+          <div className='text-[12px] font-bold'>{formattedTitle}</div>
+        )}
         <div className='line-clamp-3 overflow-hidden text-[10px] text-ellipsis'>
           <ReactMarkdown components={customMarkdownComponents}>
             {cleanDescription}
@@ -45,85 +127,55 @@ function RecordCardContent({
     </div>
   );
 }
+
 type Props = {
   readonly record: IRecord;
-  readonly getPractitionerInfo: (r: IRecord) => {
-    displayName: string;
-    email: string;
-  };
-  readonly showAvatarFor?: string[];
+  readonly patientId?: string;
   readonly formatTitleFor?: string[];
   readonly getDescription?: (record: IRecord) => string;
+  readonly titlesLoading?: boolean;
 };
 
-/** Practitioner info footer with avatar or type badge. */
+/** Text-only badge and date. */
 function RecordCardFooter({
-  showAvatar,
-  seed,
-  initials,
-  backgroundColor,
-  photoUrl,
-  displayName,
   recordType,
   formattedDate
 }: Readonly<{
-  showAvatar: boolean;
-  seed: string;
-  initials: string;
-  backgroundColor: string;
-  photoUrl?: string;
-  displayName: string;
   recordType: string;
   formattedDate: string;
 }>) {
   return (
-    <div className='flex items-center'>
-      {showAvatar ? (
-        <>
-          <Avatar
-            seed={seed}
-            initials={initials}
-            backgroundColor={backgroundColor}
-            photoUrl={photoUrl}
-            height={32}
-            width={32}
-            className='mr-2 text-xs'
-            imageClassName='mr-2 self-center'
-          />
-          <div className='mr-auto text-[12px]'>{displayName}</div>
-        </>
-      ) : (
-        <div className='mr-auto text-[12px]'>
-          <Badge className='flex items-center rounded-full bg-[#08979C] px-[10px] py-[4px]'>
-            <NoteIcon fill='white' width={16} height={16} />
-            <div className='ml-1 text-[10px] text-white'>
-              {typeMappings[recordType]?.text ?? recordType}
-            </div>
-          </Badge>
-        </div>
-      )}
-
-      <div className='text-[10px]'>{formattedDate}</div>
+    <div className='flex items-center justify-between'>
+      <Badge className='rounded-full bg-[#08979C] px-[10px] py-[4px] text-[10px] text-white'>
+        {typeMappings[recordType]?.text ?? recordType}
+      </Badge>
+      <div className='text-[10px] text-gray-500'>{formattedDate}</div>
     </div>
   );
 }
 
-/** Record card with title, description, and practitioner info. */
+/** Record card with type-based icon/avatar, title, description, and badge. */
 export default function RecordCard({
   record,
-  getPractitionerInfo,
-  showAvatarFor = [],
+  patientId,
   formatTitleFor = [],
-  getDescription
+  getDescription,
+  titlesLoading = false
 }: Props) {
-  const splitTitle = record.title.split('/');
-  const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
+  // PractitionerNote uses a dynamic title instead of the formatted coding display
   const formattedTitle =
-    formatTitleFor.length === 0 || formatTitleFor.includes(record.type)
-      ? formatTitle(title)
-      : title;
+    record.type === 'PractitionerNote'
+      ? `Notes from ${getPractitionerName(record.practitionerProfile) ?? 'Practitioner'}`
+      : (() => {
+          const splitTitle = record.title.split('/');
+          const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
+          return formatTitleFor.length === 0 ||
+            formatTitleFor.includes(record.type)
+            ? formatTitle(title)
+            : title;
+        })();
 
-  const recordId = record.id.split('/')[1];
+  const resourceId = record.id.split('/')[1] ?? record.id;
 
   const formattedDate = format(new Date(record.lastUpdated), 'dd/MM/yyyy');
 
@@ -131,41 +183,25 @@ export default function RecordCard({
     ? getDescription(record)
     : ((record.result as string) || '\\-').replace(/\n\n/g, '. ');
 
-  const queryParams = new URLSearchParams({
-    category: String(typeMappings[record.type]?.category ?? ''),
-    title
-  }).toString();
-  const url = `/record?id=${recordId}&${queryParams}`;
-
-  const { displayName, email } = getPractitionerInfo(record);
-  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
-    id: record.practitionerId,
-    name: displayName,
-    email
-  });
-  const photoUrl = record.practitionerProfile?.photo?.[0]?.url;
-
-  const showAvatar = showAvatarFor.includes(record.type);
+  const viewParam = encodeURIComponent(record.id);
+  const base = `/record?view=${viewParam}`;
+  const url = patientId ? `${base}&id=${encodeURIComponent(patientId)}` : base;
 
   return (
     <Link
-      key={recordId}
+      key={resourceId}
       href={url}
       className='card mt-4 flex flex-col gap-2 p-4'
     >
       <RecordCardContent
+        record={record}
         formattedTitle={formattedTitle}
         cleanDescription={cleanDescription}
+        titleLoading={titlesLoading && record.type === 'QuestionnaireResponse'}
       />
       <hr className='w-full' />
 
       <RecordCardFooter
-        showAvatar={showAvatar}
-        seed={seed}
-        initials={initials}
-        backgroundColor={backgroundColor}
-        photoUrl={photoUrl}
-        displayName={displayName}
         recordType={record.type}
         formattedDate={formattedDate}
       />
