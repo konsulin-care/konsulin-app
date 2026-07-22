@@ -10,8 +10,15 @@ import { useRecordDetail } from '@/hooks/useRecordDetail';
 import { isLoincSystem } from '@/utils/fhir';
 import type { Observation, QuestionnaireResponse } from 'fhir/r4';
 import { UsersIcon } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode
+} from 'react';
 import RecordAssessment from './record-assessment';
+import RecordCondition from './record-condition';
 import RecordJournal from './record-journal';
 import RecordSoap from './record-soap';
 
@@ -49,11 +56,61 @@ function isSoapNote(resource: QuestionnaireResponse): boolean {
   return resource.questionnaire === 'Questionnaire/soap';
 }
 
-const PAGE_TITLES: Record<string, string> = {
-  'QuestionnaireResponse/soap': 'SOAP Detail',
-  'QuestionnaireResponse/assessment': 'Assessment Result',
-  'Observation/journal': 'Journal Detail',
-  'Observation/soap': 'SOAP Detail'
+type RenderHandler = (props: {
+  resourceId: string;
+  data: Record<string, unknown>;
+  onTitleChange?: (title: string) => void;
+  onPractitionerNameChange?: (name: string) => void;
+}) => ReactNode;
+
+const RESOURCE_RENDERERS: Record<string, RenderHandler> = {
+  Condition: ({ resourceId }) => <RecordCondition conditionId={resourceId} />,
+  QuestionnaireResponse: ({ resourceId, data, onTitleChange }) => {
+    const qr = data as unknown as QuestionnaireResponse;
+    if (isSoapNote(qr)) {
+      return <RecordSoap soapId={resourceId} />;
+    }
+    return (
+      <RecordAssessment recordId={resourceId} onTitleChange={onTitleChange} />
+    );
+  },
+  Observation: ({ resourceId, data, onPractitionerNameChange }) => {
+    const obs = data as unknown as Observation;
+    if (isPatientJournal(obs)) {
+      return <RecordJournal journalId={resourceId} />;
+    }
+    if (isPractitionerNote(obs)) {
+      return (
+        <RecordSoap
+          soapId={resourceId}
+          onPractitionerNameChange={onPractitionerNameChange}
+        />
+      );
+    }
+    return <Notfound />;
+  }
+};
+
+const RESOURCE_TITLES: Record<
+  string,
+  (data: Record<string, unknown>) => string
+> = {
+  Condition: () => 'Condition Detail',
+  QuestionnaireResponse: data => {
+    if (isSoapNote(data as unknown as QuestionnaireResponse)) {
+      return 'SOAP Detail';
+    }
+    return 'Assessment Result';
+  },
+  Observation: data => {
+    if (isPatientJournal(data as unknown as Observation)) {
+      return 'Journal Detail';
+    }
+    if (isPractitionerNote(data as unknown as Observation)) {
+      return 'SOAP Detail';
+    }
+    return 'Detail';
+  }
 };
 
 /**
@@ -89,21 +146,8 @@ function PatientIdentityBar({
 /** Compute the page title based on resource data. */
 function computePageTitle(data: Record<string, unknown> | undefined): string {
   if (!data) return 'Detail';
-  const resourceType = data.resourceType;
-  if (resourceType === 'QuestionnaireResponse') {
-    return isSoapNote(data as unknown as QuestionnaireResponse)
-      ? PAGE_TITLES['QuestionnaireResponse/soap']
-      : PAGE_TITLES['QuestionnaireResponse/assessment'];
-  }
-  if (resourceType === 'Observation') {
-    if (isPatientJournal(data as unknown as Observation)) {
-      return PAGE_TITLES['Observation/journal'];
-    }
-    if (isPractitionerNote(data as unknown as Observation)) {
-      return PAGE_TITLES['Observation/soap'];
-    }
-  }
-  return 'Detail';
+  const resolver = RESOURCE_TITLES[data.resourceType as string];
+  return resolver ? resolver(data) : 'Detail';
 }
 
 /**
@@ -185,39 +229,18 @@ export default function RecordDetail({ resourceType, resourceId }: Props) {
   }
 
   /** Render the appropriate sub-component based on resource type. */
-  const renderContent = () => {
-    switch (data.resourceType) {
-      case 'QuestionnaireResponse': {
-        const qr = data as unknown as QuestionnaireResponse;
-        if (isSoapNote(qr)) {
-          return <RecordSoap soapId={resourceId} />;
-        }
-        return (
-          <RecordAssessment
-            recordId={resourceId}
-            onTitleChange={setDynamicTitle}
-          />
-        );
-      }
-      case 'Observation': {
-        const obs = data as unknown as Observation;
-        if (isPatientJournal(obs)) {
-          return <RecordJournal journalId={resourceId} />;
-        }
-        if (isPractitionerNote(obs)) {
-          return (
-            <RecordSoap
-              soapId={resourceId}
-              onPractitionerNameChange={handlePractitionerNameChange}
-            />
-          );
-        }
-        return <Notfound />;
-      }
-      default: {
-        return <Notfound />;
-      }
-    }
+  const renderContent = (): ReactNode => {
+    const renderer = RESOURCE_RENDERERS[data.resourceType as string];
+    return renderer ? (
+      renderer({
+        resourceId,
+        data,
+        onTitleChange: setDynamicTitle,
+        onPractitionerNameChange: handlePractitionerNameChange
+      })
+    ) : (
+      <Notfound />
+    );
   };
 
   return (

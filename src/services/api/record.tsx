@@ -244,7 +244,7 @@ export const useGetSingleRecord = ({
   resourceType
 }: {
   id: string;
-  resourceType: 'Observation' | 'QuestionnaireResponse';
+  resourceType: 'Observation' | 'QuestionnaireResponse' | 'Condition';
 }) => {
   return useQuery({
     queryKey: ['single-record', id],

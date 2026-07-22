@@ -40,6 +40,10 @@ vi.mock('@/app/record/record-journal', () => ({
   default: () => <div data-testid='mock-record-journal'>Journal</div>
 }));
 
+vi.mock('@/app/record/record-condition', () => ({
+  default: () => <div data-testid='mock-record-condition'>Condition</div>
+}));
+
 vi.mock('@/components/page-header', () => ({
   default: () => <div data-testid='mock-page-header'>Header</div>
 }));
@@ -229,6 +233,21 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
 
     render(<RecordDetail resourceType='Observation' resourceId='obs-2' />);
     expect(screen.getByTestId('mock-record-soap')).toBeInTheDocument();
+  });
+
+  it('renders RecordCondition for Condition resource type', () => {
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'Condition',
+        id: 'cond-1',
+        evidence: [{ code: [{ text: 'wadu' }] }]
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(<RecordDetail resourceType='Condition' resourceId='cond-1' />);
+    expect(screen.getByTestId('mock-record-condition')).toBeInTheDocument();
   });
 
   it('passes onPractitionerNameChange to RecordSoap for Practitioner Note', () => {
