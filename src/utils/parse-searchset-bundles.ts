@@ -172,11 +172,10 @@ function extractQuestionnaireResponse(
 // ---- Condition extraction ----
 
 function extractCondition(resource: Condition): Partial<IRecord> {
-  const evidenceBullets =
-    resource.evidence
-      ?.flatMap(e => e.code?.map(c => c.text).filter(Boolean) ?? [])
-      .map(t => `- ${t}`)
-      .join('\n') ?? '';
+  const evidenceBullets = (resource.evidence ?? [])
+    .flatMap(e => e.code?.map(c => c.text).filter(Boolean) ?? [])
+    .map(t => `- ${t}`)
+    .join('\n');
 
   return {
     type: 'Condition',

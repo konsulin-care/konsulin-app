@@ -35,7 +35,7 @@ describe('parseQRBundle edge cases', () => {
 });
 
 describe('parseConditionBundle edge cases', () => {
-  it('returns a record even for Condition with no evidence', () => {
+  it('does not throw when Condition has no evidence field', () => {
     const cond: Condition = {
       resourceType: 'Condition',
       id: 'cond-min',
@@ -49,10 +49,36 @@ describe('parseConditionBundle edge cases', () => {
       type: 'searchset',
       entry: [{ resource: cond }]
     } as Bundle;
+
+    expect(() => parseConditionBundle(b)).not.toThrow();
+
     const result = parseConditionBundle(b);
     expect(result).toHaveLength(1);
-    expect(result[0]).toBeTruthy();
     expect(result[0].type).toBe('Condition');
+    expect(result[0].result).toBe('\\-');
+  });
+
+  it('does not throw when Condition has evidence set to undefined explicitly', () => {
+    const cond: Condition = {
+      resourceType: 'Condition',
+      id: 'cond-undef-evidence',
+      subject: { reference: 'Patient/pat-1' },
+      code: { text: 'Test' },
+      clinicalStatus: { coding: [{ code: 'active' }] },
+      evidence: undefined,
+      meta: { lastUpdated: '2024-06-01T00:00:00Z' }
+    } as unknown as Condition;
+    const b: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: [{ resource: cond }]
+    } as Bundle;
+
+    expect(() => parseConditionBundle(b)).not.toThrow();
+
+    const result = parseConditionBundle(b);
+    expect(result).toHaveLength(1);
+    expect(result[0].result).toBe('\\-');
   });
 });
 
