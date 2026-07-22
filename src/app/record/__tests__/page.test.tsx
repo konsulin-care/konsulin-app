@@ -22,6 +22,7 @@ vi.mock('@/app/not-found', () => ({
 }));
 
 import { useAuth } from '@/context/auth/authContext';
+import type { ReadonlyURLSearchParams } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import RecordPage from '../page';
 
@@ -31,9 +32,14 @@ describe('RecordPage - routing', () => {
   });
 
   it('shows patient timeline when no searchParams and role is Patient', () => {
-    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams(''));
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('') as unknown as ReadonlyURLSearchParams
+    );
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Patient', fhirId: 'pat-1' } },
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'Patient', fhirId: 'pat-1' }
+      },
       isLoading: false
     });
 
@@ -42,9 +48,14 @@ describe('RecordPage - routing', () => {
   });
 
   it('shows practitioner timeline when id param is present', () => {
-    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('id=pat-2'));
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('id=pat-2') as unknown as ReadonlyURLSearchParams
+    );
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' } },
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' }
+      },
       isLoading: false
     });
 
@@ -54,10 +65,15 @@ describe('RecordPage - routing', () => {
 
   it('shows detail view when id and view params are present', () => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=pat-1&view=Observation/obs-1')
+      new URLSearchParams(
+        'id=pat-1&view=Observation/obs-1'
+      ) as unknown as ReadonlyURLSearchParams
     );
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' } },
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' }
+      },
       isLoading: false
     });
 
@@ -66,9 +82,14 @@ describe('RecordPage - routing', () => {
   });
 
   it('shows NotFound when no patient context is available', () => {
-    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams(''));
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('') as unknown as ReadonlyURLSearchParams
+    );
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' } },
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' }
+      },
       isLoading: false
     });
 
@@ -77,9 +98,14 @@ describe('RecordPage - routing', () => {
   });
 
   it('shows NotFound when id param is missing and user is not a Patient', () => {
-    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams(''));
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('') as unknown as ReadonlyURLSearchParams
+    );
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Guest', fhirId: null } },
+      state: {
+        isAuthenticated: false,
+        userInfo: { role_name: 'Guest', fhirId: null }
+      },
       isLoading: false
     });
 

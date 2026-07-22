@@ -62,7 +62,8 @@ describe('RecordTimeline', () => {
       fetchNextPage: vi.fn(),
       hasNextPage: false,
       isFetchingNextPage: false,
-      isLoading: false
+      isLoading: false,
+      titlesLoading: false
     });
 
     vi.mocked(usePractitionerRecords).mockReturnValue({
@@ -70,13 +71,14 @@ describe('RecordTimeline', () => {
       fetchNextPage: vi.fn(),
       hasNextPage: false,
       isFetchingNextPage: false,
-      isLoading: false
+      isLoading: false,
+      titlesLoading: false
     });
   });
 
   it('calls usePatientRecords when user role is Patient', () => {
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Patient' } },
+      state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
       isLoading: false
     });
 
@@ -96,7 +98,10 @@ describe('RecordTimeline', () => {
 
   it('calls usePractitionerRecords when user role is Practitioner', () => {
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Practitioner' } },
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'Practitioner' }
+      },
       isLoading: false
     });
 
@@ -112,7 +117,7 @@ describe('RecordTimeline', () => {
 
   it('shows loading skeleton when isLoading is true', () => {
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Patient' } },
+      state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
       isLoading: false
     });
 
@@ -121,7 +126,8 @@ describe('RecordTimeline', () => {
       fetchNextPage: vi.fn(),
       hasNextPage: false,
       isFetchingNextPage: false,
-      isLoading: true
+      isLoading: true,
+      titlesLoading: false
     });
 
     render(<RecordTimeline patientId='pat-1' />);
@@ -135,7 +141,7 @@ describe('RecordTimeline', () => {
 
   it('shows empty state when no records', () => {
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Patient' } },
+      state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
       isLoading: false
     });
 
@@ -147,7 +153,7 @@ describe('RecordTimeline', () => {
 
   it('renders records from the hook', () => {
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Patient' } },
+      state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
       isLoading: false
     });
 
@@ -159,7 +165,8 @@ describe('RecordTimeline', () => {
       fetchNextPage: vi.fn(),
       hasNextPage: false,
       isFetchingNextPage: false,
-      isLoading: false
+      isLoading: false,
+      titlesLoading: false
     });
 
     render(<RecordTimeline patientId='pat-1' />);
@@ -171,7 +178,7 @@ describe('RecordTimeline', () => {
 
   it('renders search input and filter button in the toolbar', () => {
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Patient' } },
+      state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
       isLoading: false
     });
 
@@ -183,7 +190,8 @@ describe('RecordTimeline', () => {
       fetchNextPage: vi.fn(),
       hasNextPage: false,
       isFetchingNextPage: false,
-      isLoading: false
+      isLoading: false,
+      titlesLoading: false
     });
 
     render(<RecordTimeline patientId='pat-1' />);
@@ -196,7 +204,7 @@ describe('RecordTimeline', () => {
 
   it('renders all records by default when no filters are active', () => {
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Patient' } },
+      state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
       isLoading: false
     });
 
@@ -208,7 +216,8 @@ describe('RecordTimeline', () => {
       fetchNextPage: vi.fn(),
       hasNextPage: false,
       isFetchingNextPage: false,
-      isLoading: false
+      isLoading: false,
+      titlesLoading: false
     });
 
     render(<RecordTimeline patientId='pat-1' />);
@@ -219,7 +228,7 @@ describe('RecordTimeline', () => {
 
   it('wraps content in a padded container inside the overlay (matching clinic page)', () => {
     vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Patient' } },
+      state: { isAuthenticated: true, userInfo: { role_name: 'Patient' } },
       isLoading: false
     });
 
@@ -228,7 +237,8 @@ describe('RecordTimeline', () => {
       fetchNextPage: vi.fn(),
       hasNextPage: false,
       isFetchingNextPage: false,
-      isLoading: false
+      isLoading: false,
+      titlesLoading: false
     });
 
     render(<RecordTimeline patientId='pat-1' />);

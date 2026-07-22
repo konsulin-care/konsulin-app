@@ -45,7 +45,8 @@ describe('useInfiniteScroll', () => {
     );
 
     // Attach sentinel then enable — effect re-runs when enabled flips
-    result.current.current = document.createElement('div');
+    (result.current as { current: HTMLElement | null }).current =
+      document.createElement('div');
     rerender({ onLoad: onLoadMore, enabled: true });
 
     // Simulate intersection via captured callback
@@ -62,7 +63,8 @@ describe('useInfiniteScroll', () => {
       { initialProps: { onLoad: onLoadMore, enabled: false } }
     );
 
-    result.current.current = document.createElement('div');
+    (result.current as { current: HTMLElement | null }).current =
+      document.createElement('div');
     rerender({ onLoad: onLoadMore, enabled: false });
 
     capturedCallback?.([{ isIntersecting: true } as IntersectionObserverEntry]);

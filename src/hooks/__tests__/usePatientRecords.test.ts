@@ -45,7 +45,7 @@ describe('usePatientRecords', () => {
     const apiMock = {
       get: vi.fn().mockResolvedValue({ data: mockBundle() })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePatientRecords('pat-1'), {
       wrapper: TestWrapper
@@ -68,20 +68,20 @@ describe('usePatientRecords', () => {
       name: [{ given: ['Dr'], family: 'Smith' }],
       telecom: [{ system: 'email', value: 'dr@test.com' }],
       photo: [{ url: 'https://example.com/photo.jpg' }]
-    };
+    } as const;
     const mockPatientProfile = {
       id: 'pat-1',
       resourceType: 'Patient',
       name: [{ given: ['John'], family: 'Doe' }],
       photo: [{ url: 'https://example.com/patient.jpg' }]
-    };
+    } as const;
 
     vi.mocked(getProfileById).mockImplementation((id, type) => {
       if (id === 'prac-1' && type === 'Practitioner') {
-        return Promise.resolve(mockPracProfile);
+        return Promise.resolve(mockPracProfile as never);
       }
       if (id === 'pat-1' && type === 'Patient') {
-        return Promise.resolve(mockPatientProfile);
+        return Promise.resolve(mockPatientProfile as never);
       }
       return Promise.reject(new Error('unknown profile'));
     });
@@ -129,7 +129,7 @@ describe('usePatientRecords', () => {
         }
       })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePatientRecords('pat-1'), {
       wrapper: TestWrapper
@@ -165,7 +165,7 @@ describe('usePatientRecords', () => {
     const apiMock = {
       get: vi.fn().mockResolvedValue({ data: mockBundle() })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePatientRecords('pat-1'), {
       wrapper: TestWrapper
@@ -192,7 +192,7 @@ describe('usePatientRecords', () => {
     const apiMock = {
       get: vi.fn().mockResolvedValue({ data: mockBundle() })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePatientRecords('pat-1'), {
       wrapper: TestWrapper
@@ -219,7 +219,7 @@ describe('usePatientRecords', () => {
         })
       })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePatientRecords('pat-1'), {
       wrapper: TestWrapper
@@ -249,7 +249,7 @@ describe('usePatientRecords', () => {
         .mockResolvedValueOnce({ data: mockBundle() })
         .mockResolvedValueOnce({ data: mockBundle() })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePatientRecords('pat-1'), {
       wrapper: TestWrapper
@@ -264,7 +264,7 @@ describe('usePatientRecords', () => {
     const apiMock = {
       get: vi.fn().mockResolvedValue({ data: mockBundle() })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePatientRecords('pat-1'), {
       wrapper: TestWrapper
@@ -280,10 +280,10 @@ describe('usePatientRecords', () => {
       id: 'pat-1',
       resourceType: 'Patient',
       name: [{ given: ['John'], family: 'Doe' }]
-    };
+    } as const;
     vi.mocked(getProfileById).mockImplementation((id, type) => {
       if (id === 'pat-1' && type === 'Patient') {
-        return Promise.resolve(mockPatientProfile);
+        return Promise.resolve(mockPatientProfile as never);
       }
       return Promise.reject(new Error('unknown profile'));
     });
@@ -331,7 +331,7 @@ describe('usePatientRecords', () => {
           }
         })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePatientRecords('pat-1'), {
       wrapper: TestWrapper

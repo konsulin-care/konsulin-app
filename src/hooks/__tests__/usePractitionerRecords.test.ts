@@ -40,7 +40,7 @@ describe('usePractitionerRecords', () => {
     const apiMock = {
       get: vi.fn().mockResolvedValue({ data: mockBundle() })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePractitionerRecords('pat-1'), {
       wrapper: TestWrapper
@@ -60,7 +60,7 @@ describe('usePractitionerRecords', () => {
     const apiMock = {
       get: vi.fn().mockResolvedValue({ data: mockBundle() })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePractitionerRecords('pat-1'), {
       wrapper: TestWrapper
@@ -86,7 +86,7 @@ describe('usePractitionerRecords', () => {
     const apiMock = {
       get: vi.fn().mockResolvedValue({ data: mockBundle() })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePractitionerRecords('pat-1'), {
       wrapper: TestWrapper
@@ -112,7 +112,7 @@ describe('usePractitionerRecords', () => {
         })
       })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePractitionerRecords('pat-1'), {
       wrapper: TestWrapper
@@ -128,7 +128,7 @@ describe('usePractitionerRecords', () => {
     const apiMock = {
       get: vi.fn().mockResolvedValue({ data: mockBundle() })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePractitionerRecords('pat-1'), {
       wrapper: TestWrapper
@@ -185,7 +185,7 @@ describe('usePractitionerRecords', () => {
           }
         })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(() => usePractitionerRecords('pat-1'), {
       wrapper: TestWrapper

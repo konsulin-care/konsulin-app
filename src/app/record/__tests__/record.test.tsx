@@ -42,6 +42,7 @@ vi.mock('@/app/record/record-journal', () => ({
 
 import { useAuth } from '@/context/auth/authContext';
 import { getAPI } from '@/services/api';
+import type { ReadonlyURLSearchParams } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import RecordPage from '../page';
 
@@ -66,6 +67,7 @@ describe('Record page — integration scenarios', () => {
 
     vi.mocked(useAuth).mockReturnValue({
       state: {
+        isAuthenticated: true,
         userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' }
       },
       isLoading: false
@@ -75,11 +77,13 @@ describe('Record page — integration scenarios', () => {
       get: vi.fn().mockResolvedValue({
         data: { resourceType: 'Bundle', type: 'searchset', entry: [] }
       })
-    });
+    } as never);
   });
 
   it('1. renders all categories from mixed $everything Bundle', async () => {
-    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('id=pat-1'));
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('id=pat-1') as unknown as ReadonlyURLSearchParams
+    );
 
     vi.mocked(getAPI).mockResolvedValue({
       get: vi.fn().mockResolvedValue({
@@ -112,7 +116,7 @@ describe('Record page — integration scenarios', () => {
           }
         ])
       })
-    });
+    } as never);
 
     render(
       <Wrapper>
@@ -125,7 +129,9 @@ describe('Record page — integration scenarios', () => {
   });
 
   it('2. shows empty state when Bundle has no entries', async () => {
-    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('id=pat-1'));
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('id=pat-1') as unknown as ReadonlyURLSearchParams
+    );
 
     render(
       <Wrapper>
@@ -141,7 +147,7 @@ describe('Record page — integration scenarios', () => {
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams(
         'id=pat-1&view=QuestionnaireResponse/qr-1&title=PHQ-9'
-      )
+      ) as unknown as ReadonlyURLSearchParams
     );
 
     vi.mocked(getAPI).mockResolvedValue({
@@ -152,7 +158,7 @@ describe('Record page — integration scenarios', () => {
           questionnaire: 'Questionnaire/phq9'
         }
       })
-    });
+    } as never);
 
     render(
       <Wrapper>
@@ -166,7 +172,9 @@ describe('Record page — integration scenarios', () => {
 
   it('4. detail dispatches Observation LOINC 51855-5 to RecordJournal', async () => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=pat-1&view=Observation/obs-1&title=My+Journal')
+      new URLSearchParams(
+        'id=pat-1&view=Observation/obs-1&title=My+Journal'
+      ) as unknown as ReadonlyURLSearchParams
     );
 
     vi.mocked(getAPI).mockResolvedValue({
@@ -179,7 +187,7 @@ describe('Record page — integration scenarios', () => {
           }
         }
       })
-    });
+    } as never);
 
     render(
       <Wrapper>
@@ -193,7 +201,9 @@ describe('Record page — integration scenarios', () => {
 
   it('5. detail dispatches Observation LOINC 67855-7 to RecordSoap', async () => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=pat-1&view=Observation/obs-2&title=Note')
+      new URLSearchParams(
+        'id=pat-1&view=Observation/obs-2&title=Note'
+      ) as unknown as ReadonlyURLSearchParams
     );
 
     vi.mocked(getAPI).mockResolvedValue({
@@ -206,7 +216,7 @@ describe('Record page — integration scenarios', () => {
           }
         }
       })
-    });
+    } as never);
 
     render(
       <Wrapper>
@@ -219,7 +229,9 @@ describe('Record page — integration scenarios', () => {
   });
 
   it('6. pagination: no next page when Bundle has no link[rel=next]', async () => {
-    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('id=pat-1'));
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('id=pat-1') as unknown as ReadonlyURLSearchParams
+    );
 
     vi.mocked(getAPI).mockResolvedValue({
       get: vi.fn().mockResolvedValue({
@@ -241,7 +253,7 @@ describe('Record page — integration scenarios', () => {
           }))
         }
       })
-    });
+    } as never);
 
     render(
       <Wrapper>
@@ -254,7 +266,9 @@ describe('Record page — integration scenarios', () => {
   });
 
   it('7. practitioner timeline includes SOAP notes', async () => {
-    vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams('id=pat-1'));
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('id=pat-1') as unknown as ReadonlyURLSearchParams
+    );
 
     vi.mocked(getAPI).mockResolvedValue({
       get: vi.fn().mockResolvedValue({
@@ -283,7 +297,7 @@ describe('Record page — integration scenarios', () => {
           }
         ])
       })
-    });
+    } as never);
 
     render(
       <Wrapper>

@@ -32,7 +32,7 @@ describe('useRecordDetail', () => {
         data: { resourceType: 'Observation', id: 'obs-1', status: 'final' }
       })
     };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     const { result } = renderHook(
       () => useRecordDetail('Observation', 'obs-1'),
@@ -48,7 +48,7 @@ describe('useRecordDetail', () => {
 
   it('does not fetch when resourceId is null', async () => {
     const apiMock = { get: vi.fn() };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     renderHook(() => useRecordDetail('Observation', null), {
       wrapper: createWrapper()
@@ -60,7 +60,7 @@ describe('useRecordDetail', () => {
 
   it('does not fetch when resourceType is empty', async () => {
     const apiMock = { get: vi.fn() };
-    vi.mocked(getAPI).mockResolvedValue(apiMock);
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
 
     renderHook(() => useRecordDetail('', 'obs-1'), {
       wrapper: createWrapper()
