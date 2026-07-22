@@ -49,7 +49,7 @@ describe('mergeRecords', () => {
   });
 
   it('deduplicates by resourceType/id', () => {
-    const a: IRecord[] = [
+    const recordsA: IRecord[] = [
       {
         type: 'QR',
         resourceType: 'QuestionnaireResponse',
@@ -59,7 +59,7 @@ describe('mergeRecords', () => {
         lastUpdated: '2024-06-01T00:00:00Z'
       }
     ];
-    const b: IRecord[] = [
+    const recordsB: IRecord[] = [
       {
         type: 'QR',
         resourceType: 'QuestionnaireResponse',
@@ -69,7 +69,7 @@ describe('mergeRecords', () => {
         lastUpdated: '2024-06-01T00:00:00Z'
       }
     ];
-    const merged = mergeRecords(a, b);
+    const merged = mergeRecords(recordsA, recordsB);
     expect(merged).toHaveLength(1);
   });
 
@@ -80,7 +80,7 @@ describe('mergeRecords', () => {
   });
 
   it('uses stable tie-breaker by id when timestamps are equal', () => {
-    const a: IRecord[] = [
+    const recordsA: IRecord[] = [
       {
         type: 'A',
         resourceType: 'TypeA',
@@ -98,7 +98,7 @@ describe('mergeRecords', () => {
         lastUpdated: '2024-06-01T00:00:00Z'
       }
     ];
-    const b: IRecord[] = [
+    const recordsB: IRecord[] = [
       {
         type: 'B',
         resourceType: 'TypeB',
@@ -108,7 +108,7 @@ describe('mergeRecords', () => {
         lastUpdated: '2024-06-01T00:00:00Z'
       }
     ];
-    const merged = mergeRecords(a, b);
+    const merged = mergeRecords(recordsA, recordsB);
     expect(merged).toHaveLength(3);
     expect(merged[0].id).toBe('TypeA/a-1');
     expect(merged[1].id).toBe('TypeA/a-2');

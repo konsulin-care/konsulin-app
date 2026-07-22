@@ -35,6 +35,7 @@ function DateBadgeContent({
     </>
   );
 }
+/** Flatten a FHIR value field into a display string. */
 function flattenResult(v: unknown): string {
   if (typeof v === 'string') return v;
   if (Array.isArray(v)) {

@@ -16,9 +16,7 @@ export type UseRecordsResult = {
   titlesLoading: boolean;
 };
 
-/**
- *
- */
+/** Convert a FHIR absolute URL to a relative path. */
 export function toFhirPath(url: string): string {
   try {
     const parsed = new URL(url);
@@ -44,9 +42,7 @@ export function appendDateParams(
   return result;
 }
 
-/**
- *
- */
+/** Build a FHIR search URL for a resource type with optional date filters. */
 export function resourceQueryUrl(
   patientId: string,
   resourceType: string,
@@ -61,9 +57,7 @@ export function resourceQueryUrl(
   return appendDateParams(withCodes, startDate, endDate);
 }
 
-/**
- *
- */
+/** Infinite query hook that paginates a FHIR resource search. */
 export function useResourceInfiniteQuery(
   patientId: string | null,
   resourceType: string,
@@ -86,13 +80,11 @@ export function useResourceInfiniteQuery(
       if (!next?.url) return undefined;
       return toFhirPath(next.url);
     },
-    enabled: Boolean(patientId)
+    enabled: patientId != null
   });
 }
 
-/**
- *
- */
+/** Enrich records with practitioner and patient profile data from FHIR. */
 export async function enrichProfileData(
   records: IRecord[],
   patientId: string,
@@ -140,7 +132,5 @@ export async function enrichProfileData(
   );
 }
 
-/**
- *
- */
+/** No-op function for hooks that need a stable callback default. */
 export const noop = (): void => undefined;

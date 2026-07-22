@@ -54,11 +54,11 @@ export async function resolveQuestionnaireTitles(
 
     // Seed individual cache entries from batch response
     for (const entry of data.entry ?? []) {
-      const q = entry.resource as Questionnaire;
-      if (q?.id) {
+      const questionnaire = entry.resource as Questionnaire;
+      if (questionnaire?.id) {
         queryClient.setQueryData(
-          ['questionnaire', q.id, 'title'],
-          q.title ?? q.id
+          ['questionnaire', questionnaire.id, 'title'],
+          questionnaire.title ?? questionnaire.id
         );
       }
     }

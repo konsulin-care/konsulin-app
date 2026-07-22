@@ -58,6 +58,7 @@ export default function PatientRecordSoap({
       return;
     }
 
+    /** Fetch the practitioner name from the performer reference. */
     const fetchProfile = async () => {
       try {
         const profile = await getProfileById(practitionerId, 'Practitioner');
@@ -75,7 +76,9 @@ export default function PatientRecordSoap({
         onPractitionerNameChange?.('Practitioner');
       }
     };
-    void fetchProfile();
+    fetchProfile().catch(() => {
+      /* best-effort */
+    });
   }, [soapData, onPractitionerNameChange]);
 
   return isAuthLoading || isSoapLoading ? (

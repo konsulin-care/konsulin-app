@@ -22,7 +22,7 @@ vi.mock('react-qr-code', () => ({
 
 // Mock clipboard utility — jsdom's navigator.clipboard is not mockable
 vi.mock('@/utils/clipboard', () => ({
-  writeClipboard: vi.fn().mockResolvedValue(undefined)
+  writeClipboard: vi.fn().mockResolvedValue()
 }));
 
 import { writeClipboard } from '@/utils/clipboard';
@@ -76,18 +76,14 @@ describe('ModalQr', () => {
   });
 
   it('copies value to clipboard when Copy Link is clicked', async () => {
-    render(
-      <ModalQr value='https://test.url' open={true} onOpenChange={noop} />
-    );
+    render(<ModalQr value='https://test.url' open onOpenChange={noop} />);
     const user = userEvent.setup();
     await user.click(screen.getByText('Copy Link'));
     expect(vi.mocked(writeClipboard)).toHaveBeenCalledWith('https://test.url');
   });
 
   it('shows success toast on clipboard copy', async () => {
-    render(
-      <ModalQr value='https://test.url' open={true} onOpenChange={noop} />
-    );
+    render(<ModalQr value='https://test.url' open onOpenChange={noop} />);
     const user = userEvent.setup();
     await user.click(screen.getByText('Copy Link'));
     expect(toast.success).toHaveBeenCalledWith('Link copied to clipboard');
@@ -95,7 +91,7 @@ describe('ModalQr', () => {
 
   it('closes drawer even when value is empty', async () => {
     const onOpenChange = vi.fn();
-    render(<ModalQr value='' open={true} onOpenChange={onOpenChange} />);
+    render(<ModalQr value='' open onOpenChange={onOpenChange} />);
     const user = userEvent.setup();
     await user.click(screen.getByText('Copy Link'));
     expect(onOpenChange).toHaveBeenCalledWith(false);

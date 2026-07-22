@@ -78,6 +78,7 @@ export function useRecords(
   }, [qrQuery.data, condQuery.data, obsQuery.data, skipPractitionerAuthored]);
 
   const [records, setRecords] = useState<IRecord[]>([]);
+  const [titlesLoading, setTitlesLoading] = useState(false);
 
   useEffect(() => {
     setRecords(mergedRecords);
@@ -85,6 +86,7 @@ export function useRecords(
 
     let stale = false;
 
+    /** Resolve questionnaire titles and optionally enrich practitioner profiles. */
     async function enrich(): Promise<void> {
       let withTitles = mergedRecords;
       try {
@@ -110,7 +112,7 @@ export function useRecords(
       }
     }
 
-    void enrich().catch(() => {
+    enrich().catch(() => {
       /* enrichment is best-effort */
     });
 
@@ -121,9 +123,18 @@ export function useRecords(
 
   const fetchNextPage = useCallback(
     function fetchNextPage(): void {
-      if (qrQuery.hasNextPage) void qrQuery.fetchNextPage();
-      if (condQuery.hasNextPage) void condQuery.fetchNextPage();
-      if (obsQuery.hasNextPage) void obsQuery.fetchNextPage();
+      if (qrQuery.hasNextPage)
+        qrQuery.fetchNextPage().catch(() => {
+          /* suppress */
+        });
+      if (condQuery.hasNextPage)
+        condQuery.fetchNextPage().catch(() => {
+          /* suppress */
+        });
+      if (obsQuery.hasNextPage)
+        obsQuery.fetchNextPage().catch(() => {
+          /* suppress */
+        });
     },
     [qrQuery, condQuery, obsQuery]
   );
@@ -138,8 +149,6 @@ export function useRecords(
 
   const isLoading =
     qrQuery.isLoading || condQuery.isLoading || obsQuery.isLoading;
-
-  const [titlesLoading, setTitlesLoading] = useState(false);
 
   useEffect(() => {
     if (mergedRecords.length === 0 || !patientId) {

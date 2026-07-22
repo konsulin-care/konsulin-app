@@ -16,8 +16,8 @@ function qrBundle(
     authorRef?: string;
   }>
 ): Bundle {
-  const entry = items.map(i => {
-    const item = i.isSoap
+  const entry = items.map(input => {
+    const item = input.isSoap
       ? [
           {
             linkId: 'subjective',
@@ -44,13 +44,13 @@ function qrBundle(
         ];
     const qr: QuestionnaireResponse = {
       resourceType: 'QuestionnaireResponse',
-      id: i.id,
+      id: input.id,
       status: 'completed',
-      questionnaire: i.questionnaire,
+      questionnaire: input.questionnaire,
       subject: { reference: 'Patient/pat-1' },
-      meta: { lastUpdated: i.lastUpdated },
+      meta: { lastUpdated: input.lastUpdated },
       item,
-      ...(i.authorRef ? { author: { reference: i.authorRef } } : {})
+      ...(input.authorRef ? { author: { reference: input.authorRef } } : {})
     } as QuestionnaireResponse;
     return { resource: qr };
   });
@@ -59,7 +59,7 @@ function qrBundle(
 
 describe('parseQRBundle', () => {
   it('parses SOAP QuestionnaireResponse as SOAP Notes', () => {
-    const b = qrBundle([
+    const bundle = qrBundle([
       {
         id: 'qr-1',
         lastUpdated: '2024-06-01T00:00:00Z',
@@ -67,14 +67,14 @@ describe('parseQRBundle', () => {
         isSoap: true
       }
     ]);
-    const result = parseQRBundle(b);
+    const result = parseQRBundle(bundle);
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('SOAP Notes');
     expect(result[0].resourceType).toBe('QuestionnaireResponse');
   });
 
   it('parses assessment QuestionnaireResponse', () => {
-    const b = qrBundle([
+    const bundle = qrBundle([
       {
         id: 'qr-2',
         lastUpdated: '2024-06-01T00:00:00Z',
@@ -82,14 +82,14 @@ describe('parseQRBundle', () => {
         isSoap: false
       }
     ]);
-    const result = parseQRBundle(b);
+    const result = parseQRBundle(bundle);
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('QuestionnaireResponse');
     expect(result[0].resourceType).toBe('QuestionnaireResponse');
   });
 
   it('skips practitioner-authored QRs when skipPractitionerAuthored is true', () => {
-    const b = qrBundle([
+    const bundle = qrBundle([
       {
         id: 'qr-p',
         lastUpdated: '2024-06-01T00:00:00Z',
@@ -105,13 +105,13 @@ describe('parseQRBundle', () => {
         authorRef: 'Practitioner/dr-1'
       }
     ]);
-    const result = parseQRBundle(b, { skipPractitionerAuthored: true });
+    const result = parseQRBundle(bundle, { skipPractitionerAuthored: true });
     expect(result).toHaveLength(1);
     expect(result[0].id).toContain('qr-p');
   });
 
   it('includes practitioner-authored QRs by default', () => {
-    const b = qrBundle([
+    const bundle = qrBundle([
       {
         id: 'qr-p',
         lastUpdated: '2024-06-01T00:00:00Z',
@@ -127,7 +127,7 @@ describe('parseQRBundle', () => {
         authorRef: 'Practitioner/dr-1'
       }
     ]);
-    const result = parseQRBundle(b);
+    const result = parseQRBundle(bundle);
     expect(result).toHaveLength(2);
   });
 

@@ -6,7 +6,8 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('next/image', () => ({
-  default: (props: Record<string, unknown>) => <img {...props} />
+  // eslint-disable-next-line @next/next/no-img-element
+  default: (props: Record<string, unknown>) => <img {...props} alt='' />
 }));
 
 vi.mock('@/utils/helper', () => ({

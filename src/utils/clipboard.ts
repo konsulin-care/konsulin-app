@@ -5,6 +5,6 @@
  * don't depend on the browser API directly, making the operation
  * mockable in tests.
  */
-export async function writeClipboard(value: string): Promise<void> {
+export function writeClipboard(value: string): Promise<void> {
   return navigator.clipboard.writeText(value);
 }
