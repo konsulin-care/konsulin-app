@@ -181,7 +181,7 @@ function extractCondition(resource: Condition): Partial<IRecord> {
     type: 'Condition',
     id: `${resource.resourceType}/${resource.id}`,
     title: resource.code?.text ?? '',
-    result: evidenceBullets || String.raw`\-`,
+    result: evidenceBullets,
     lastUpdated: resource.meta?.lastUpdated ?? ''
   };
 }

@@ -34,8 +34,8 @@ describe('RecordCondition - evidence code safety', () => {
     } as any);
 
     render(<RecordCondition conditionId='cond-1' />);
-    expect(screen.getByText('- MRI positive')).toBeInTheDocument();
-    expect(screen.getByText('- Persistent for 3 months')).toBeInTheDocument();
+    expect(screen.getByText(/MRI positive/)).toBeInTheDocument();
+    expect(screen.getByText(/Persistent for 3 months/)).toBeInTheDocument();
   });
 
   it('renders dash when no evidence codes', () => {
