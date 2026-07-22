@@ -5,7 +5,9 @@ import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterCalendar from '@/components/shared/filter-calendar';
 import FilterCustomTimeInputs from '@/components/shared/filter-custom-time-inputs';
 import FilterDrawerTrigger from '@/components/shared/filter-drawer-trigger';
-import LocationCombobox from '@/components/shared/location-combobox';
+import LocationCombobox, {
+  type ComboboxOption
+} from '@/components/shared/location-combobox';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -173,7 +175,7 @@ export default function ClinicFilter({
         <LocationCombobox
           options={listProvinces ?? []}
           value={filter.province_code ?? ''}
-          onSelect={option => {
+          onSelect={(option: ComboboxOption) => {
             handleFilterChange('province_code', option.code);
             handleFilterChange('province', option.name);
           }}
@@ -184,7 +186,9 @@ export default function ClinicFilter({
           <LocationCombobox
             options={listCities ?? []}
             value={filter.city ?? ''}
-            onSelect={option => handleFilterChange('city', option.name)}
+            onSelect={(option: ComboboxOption) =>
+              handleFilterChange('city', option.name)
+            }
             placeholder='Select City'
             loading={cityLoading}
           />
@@ -206,7 +210,9 @@ export default function ClinicFilter({
         <LocationCombobox
           options={organizations ?? []}
           value={filter.organization ?? ''}
-          onSelect={option => handleFilterChange('organization', option.code)}
+          onSelect={(option: ComboboxOption) =>
+            handleFilterChange('organization', option.code)
+          }
           placeholder='Select Organization'
           loading={orgLoading}
         />

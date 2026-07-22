@@ -23,6 +23,7 @@ vi.mock('@/lib/indexeddb', () => ({
     uiPreferences: 'uiPreferences',
     serviceRequests: 'serviceRequests'
   },
+  // eslint-disable-next-line unicorn/no-useless-undefined
   dbGet: vi.fn().mockResolvedValue(undefined),
   dbSet: vi.fn(),
   dbDelete: vi.fn()
