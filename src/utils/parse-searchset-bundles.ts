@@ -173,7 +173,7 @@ function extractQuestionnaireResponse(
 
 function extractCondition(resource: Condition): Partial<IRecord> {
   const evidenceBullets = (resource.evidence ?? [])
-    .flatMap(e => e.code?.map(c => c.text).filter(Boolean) ?? [])
+    .flatMap(e => (e.code ?? []).map(c => c.text).filter(Boolean))
     .map(t => `- ${t}`)
     .join('\n');
 

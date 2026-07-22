@@ -36,7 +36,7 @@ export default function RecordCondition({ conditionId }: Props) {
   const condition = conditionData as unknown as Condition;
   const evidenceBullets =
     condition.evidence
-      ?.flatMap(e => e.code?.map(c => c.text).filter(Boolean) ?? [])
+      ?.flatMap(e => (e.code ?? []).map(c => c.text).filter(Boolean))
       .map(t => `- ${t}`)
       .join('\n') ?? '';
 

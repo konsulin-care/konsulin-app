@@ -77,7 +77,8 @@ export default function RecordJournal({ journalId }: Props) {
       <Button
         onClick={() => {
           const queryParams = new URLSearchParams({
-            id: journalId
+            id: journalId,
+            category: '4'
           }).toString();
           router.push(`/record/edit?${queryParams}`);
         }}

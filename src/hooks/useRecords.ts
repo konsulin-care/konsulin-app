@@ -149,6 +149,7 @@ export function useRecords(
 
   const isLoading =
     qrQuery.isLoading || condQuery.isLoading || obsQuery.isLoading;
+  const error = qrQuery.error ?? condQuery.error ?? obsQuery.error;
 
   useEffect(() => {
     if (mergedRecords.length === 0 || !patientId) {
@@ -170,6 +171,7 @@ export function useRecords(
     hasNextPage,
     isFetchingNextPage,
     isLoading: patientId ? isLoading : false,
+    error: patientId ? error : null,
     titlesLoading: patientId ? titlesLoading : false
   };
 }

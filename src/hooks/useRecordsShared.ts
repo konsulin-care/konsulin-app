@@ -14,6 +14,7 @@ export type UseRecordsResult = {
   isFetchingNextPage: boolean;
   isLoading: boolean;
   titlesLoading: boolean;
+  error: Error | null;
 };
 
 /** Convert a FHIR absolute URL to a relative path. */

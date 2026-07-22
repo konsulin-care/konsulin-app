@@ -25,7 +25,8 @@ export default function HomeContentPatient() {
   const {
     records,
     isLoading: isRecordsLoading,
-    titlesLoading
+    titlesLoading,
+    error
   } = usePatientRecords(patientId);
 
   /** Navigate to the practitioner booking page. */
@@ -40,6 +41,19 @@ export default function HomeContentPatient() {
         <div className='space-y-3'>
           <Skeleton className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
           <Skeleton className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+        </div>
+      );
+    }
+    if (error) {
+      return (
+        <div className='rounded-lg bg-red-50 p-4 text-center'>
+          <p className='text-[12px] text-red-600'>Failed to load records.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className='mt-2 text-[12px] text-red-700 underline'
+          >
+            Tap to retry
+          </button>
         </div>
       );
     }
