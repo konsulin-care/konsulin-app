@@ -43,10 +43,9 @@ function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
           initials={initials ?? ''}
           backgroundColor={backgroundColor ?? '#13c2c2'}
           seed={seed}
-          height={24}
-          width={24}
-          imageClassName='rounded-full object-cover'
-          className='h-6 w-6'
+          height={40}
+          width={40}
+          imageClassName='object-cover'
         />
       );
     }
@@ -61,10 +60,10 @@ function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
     if (url) {
       return (
         <Image
-          className='h-[24px] w-[24px] rounded-full object-cover'
+          className='h-[40px] w-[40px] rounded-full object-cover'
           src={url}
-          width={24}
-          height={24}
+          width={40}
+          height={40}
           alt=''
           unoptimized
         />

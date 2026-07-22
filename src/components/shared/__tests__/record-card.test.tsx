@@ -53,7 +53,7 @@ describe('RecordCard icon mapping', () => {
     expect(screen.getByTestId('icon-fallback')).toBeInTheDocument();
   });
 
-  it('renders practitioner photo for PractitionerNote with photo', () => {
+  it('renders practitioner photo for PractitionerNote with photo at 40x40', () => {
     const practitionerProfile = {
       id: 'prac-1',
       resourceType: 'Practitioner',
@@ -72,6 +72,8 @@ describe('RecordCard icon mapping', () => {
     const img = screen.getByAltText('practitioner');
     expect(img).toBeInTheDocument();
     expect(img).toHaveAttribute('src', 'https://example.com/doc.jpg');
+    expect(img).toHaveAttribute('width', '40');
+    expect(img).toHaveAttribute('height', '40');
   });
 
   it('renders algorithmic avatar for PractitionerNote with profile but no photo', () => {
@@ -97,6 +99,8 @@ describe('RecordCard icon mapping', () => {
     expect(img).toBeInTheDocument();
     // Should use an SVG data URL (algorithmic avatar)
     expect(img.getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
+    expect(img).toHaveAttribute('width', '40');
+    expect(img).toHaveAttribute('height', '40');
   });
 
   it('renders FileText for PractitionerNote without profile', () => {
@@ -110,6 +114,27 @@ describe('RecordCard icon mapping', () => {
       />
     );
     expect(screen.getByTestId('icon-fallback')).toBeInTheDocument();
+  });
+
+  it('renders patient photo for PatientNote with photo at 40x40', () => {
+    render(
+      <RecordCard
+        record={makeRecord({
+          type: 'PatientNote',
+          id: 'patient-note-1',
+          patientProfile: {
+            photo: [{ url: 'https://example.com/patient.jpg' }]
+          } as never
+        })}
+      />
+    );
+    const imgs = screen.getAllByRole('img');
+    const patientImg = imgs.find(
+      img => img.getAttribute('src') === 'https://example.com/patient.jpg'
+    );
+    expect(patientImg).toBeInTheDocument();
+    expect(patientImg).toHaveAttribute('width', '40');
+    expect(patientImg).toHaveAttribute('height', '40');
   });
 });
 
