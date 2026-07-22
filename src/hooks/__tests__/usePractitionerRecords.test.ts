@@ -96,9 +96,7 @@ describe('usePractitionerRecords', () => {
 
     const obsUrl = apiMock.get.mock.calls[2][0] as string;
     expect(obsUrl).toContain('Observation');
-    expect(obsUrl).toContain(
-      'code=http://loinc.org|67855-7,http://loinc.org|51855-5'
-    );
+    expect(obsUrl).toContain('code=http://loinc.org|67855-7,51855-5');
   });
 
   it('exposes fetchNextPage and hasNextPage controls', async () => {
