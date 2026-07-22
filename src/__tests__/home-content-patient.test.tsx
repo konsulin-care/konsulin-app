@@ -52,7 +52,8 @@ describe('HomeContentPatient', () => {
       hasNextPage: false,
       isFetchingNextPage: false,
       isLoading: false,
-      titlesLoading: false
+      titlesLoading: false,
+      error: null
     } as UseRecordsResult);
   });
 
@@ -92,7 +93,8 @@ describe('HomeContentPatient', () => {
       hasNextPage: false,
       isFetchingNextPage: false,
       isLoading: false,
-      titlesLoading: false
+      titlesLoading: false,
+      error: null
     } as UseRecordsResult);
 
     render(<HomeContentPatient />, { wrapper });

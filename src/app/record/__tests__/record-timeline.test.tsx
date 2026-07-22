@@ -63,7 +63,8 @@ describe('RecordTimeline', () => {
       hasNextPage: false,
       isFetchingNextPage: false,
       isLoading: false,
-      titlesLoading: false
+      titlesLoading: false,
+      error: null
     });
 
     vi.mocked(usePractitionerRecords).mockReturnValue({
@@ -72,7 +73,8 @@ describe('RecordTimeline', () => {
       hasNextPage: false,
       isFetchingNextPage: false,
       isLoading: false,
-      titlesLoading: false
+      titlesLoading: false,
+      error: null
     });
   });
 
@@ -130,7 +132,8 @@ describe('RecordTimeline', () => {
       hasNextPage: false,
       isFetchingNextPage: false,
       isLoading: true,
-      titlesLoading: false
+      titlesLoading: false,
+      error: null
     });
 
     render(<RecordTimeline patientId='pat-1' />);
@@ -171,7 +174,8 @@ describe('RecordTimeline', () => {
       hasNextPage: false,
       isFetchingNextPage: false,
       isLoading: false,
-      titlesLoading: false
+      titlesLoading: false,
+      error: null
     });
 
     render(<RecordTimeline patientId='pat-1' />);
@@ -197,7 +201,8 @@ describe('RecordTimeline', () => {
       hasNextPage: false,
       isFetchingNextPage: false,
       isLoading: false,
-      titlesLoading: false
+      titlesLoading: false,
+      error: null
     });
 
     render(<RecordTimeline patientId='pat-1' />);
@@ -224,7 +229,8 @@ describe('RecordTimeline', () => {
       hasNextPage: false,
       isFetchingNextPage: false,
       isLoading: false,
-      titlesLoading: false
+      titlesLoading: false,
+      error: null
     });
 
     render(<RecordTimeline patientId='pat-1' />);
@@ -246,7 +252,8 @@ describe('RecordTimeline', () => {
       hasNextPage: false,
       isFetchingNextPage: false,
       isLoading: false,
-      titlesLoading: false
+      titlesLoading: false,
+      error: null
     });
 
     render(<RecordTimeline patientId='pat-1' />);
