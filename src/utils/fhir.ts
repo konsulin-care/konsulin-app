@@ -9,5 +9,5 @@
  */
 export function isLoincSystem(system: string | undefined | null): boolean {
   if (!system) return false;
-  return system.replace(/^https?:\/\//, '').toLowerCase() === 'loinc.org';
+  return system.replace(/^https?:\/\//i, '').toLowerCase() === 'loinc.org';
 }

@@ -2,7 +2,6 @@ import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 
 vi.mock('next/link', () => ({
   default: ({ children, href }: { children: ReactElement; href: string }) => (
@@ -83,8 +82,16 @@ describe('RecordTimeline', () => {
 
     render(<RecordTimeline patientId='pat-1' />);
 
-    expect(usePatientRecords).toHaveBeenCalledWith('pat-1');
-    expect(usePractitionerRecords).toHaveBeenCalledWith(null);
+    expect(usePatientRecords).toHaveBeenCalledWith(
+      'pat-1',
+      undefined,
+      undefined
+    );
+    expect(usePractitionerRecords).toHaveBeenCalledWith(
+      null,
+      undefined,
+      undefined
+    );
   });
 
   it('calls usePractitionerRecords when user role is Practitioner', () => {
@@ -95,8 +102,12 @@ describe('RecordTimeline', () => {
 
     render(<RecordTimeline patientId='pat-1' />);
 
-    expect(usePractitionerRecords).toHaveBeenCalledWith('pat-1');
-    expect(usePatientRecords).toHaveBeenCalledWith(null);
+    expect(usePractitionerRecords).toHaveBeenCalledWith(
+      'pat-1',
+      undefined,
+      undefined
+    );
+    expect(usePatientRecords).toHaveBeenCalledWith(null, undefined, undefined);
   });
 
   it('shows loading skeleton when isLoading is true', () => {
@@ -158,7 +169,7 @@ describe('RecordTimeline', () => {
     expect(screen.getByTestId('timeline-overlay')).toBeInTheDocument();
   });
 
-  it('shows category filter pills for available types', () => {
+  it('renders search input and filter button in the toolbar', () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { userInfo: { role_name: 'Patient' } },
       isLoading: false
@@ -177,13 +188,13 @@ describe('RecordTimeline', () => {
 
     render(<RecordTimeline patientId='pat-1' />);
 
-    expect(screen.getByText(/journal/i)).toBeInTheDocument();
-    expect(screen.getByText(/assessment/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search records')).toBeInTheDocument();
+    // Filter button is the only button in the record toolbar
+    const filterButton = screen.getByRole('button');
+    expect(filterButton).toBeInTheDocument();
   });
 
-  it('filters records when a category pill is clicked', async () => {
-    const user = userEvent.setup();
-
+  it('renders all records by default when no filters are active', () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { userInfo: { role_name: 'Patient' } },
       isLoading: false
@@ -202,13 +213,8 @@ describe('RecordTimeline', () => {
 
     render(<RecordTimeline patientId='pat-1' />);
 
-    const assessmentButton = screen.getByText(/assessment/i);
-    await user.click(assessmentButton);
-
     const cards = screen.getAllByTestId('record-card');
-    expect(cards).toHaveLength(1);
-    // Clicking "Assessment" hides QuestionnaireResponse, leaving PatientNote
-    expect(cards[0].textContent).toBe('PatientNote');
+    expect(cards).toHaveLength(2);
   });
 
   it('wraps content in a padded container inside the overlay (matching clinic page)', () => {

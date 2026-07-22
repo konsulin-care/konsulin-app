@@ -11,7 +11,26 @@ vi.mock('next/image', () => ({
 
 vi.mock('@/utils/helper', () => ({
   customMarkdownComponents: {},
-  formatTitle: (t: string) => t
+  formatTitle: (t: string) => t,
+  generateAvatarPlaceholder: ({
+    id,
+    name
+  }: {
+    id?: string;
+    name?: string;
+    email?: string;
+    userId?: string;
+  }) => ({
+    initials: name
+      ? name
+          .split(' ')
+          .map((s: string) => s[0])
+          .join('')
+          .toUpperCase()
+      : null,
+    backgroundColor: '#13c2c2',
+    seed: id ?? name ?? ''
+  })
 }));
 
 import type { IRecord } from '@/types/record';
@@ -117,7 +136,7 @@ describe('RecordCard icon mapping', () => {
   });
 
   it('renders patient photo for PatientNote with photo at 40x40', () => {
-    render(
+    const { container } = render(
       <RecordCard
         record={makeRecord({
           type: 'PatientNote',
@@ -128,11 +147,12 @@ describe('RecordCard icon mapping', () => {
         })}
       />
     );
-    const imgs = screen.getAllByRole('img');
-    const patientImg = imgs.find(
-      img => img.getAttribute('src') === 'https://example.com/patient.jpg'
-    );
+    const patientImg = container.querySelector('img');
     expect(patientImg).toBeInTheDocument();
+    expect(patientImg).toHaveAttribute(
+      'src',
+      'https://example.com/patient.jpg'
+    );
     expect(patientImg).toHaveAttribute('width', '40');
     expect(patientImg).toHaveAttribute('height', '40');
   });
