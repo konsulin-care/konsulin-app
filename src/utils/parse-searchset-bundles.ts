@@ -14,7 +14,7 @@ import type {
 
 /** Extract a Patient Note or Practitioner Note from an Observation. */
 // eslint-disable-next-line complexity
-function extractObservation(resource: Observation): Partial<IRecord> | null {
+function extractObservation(resource: Observation): Partial<IRecord> {
   const codeList = resource.code?.coding ?? [];
   const loincCode = codeList.find((c: Coding) => isLoincSystem(c.system))?.code;
 
@@ -238,15 +238,12 @@ export function parseQRBundle(
       if (authorRef?.startsWith('Practitioner/')) continue;
     }
 
-    const parsed = extractQuestionnaireResponse(resource);
-    if (parsed) {
-      const record = {
-        ...parsed,
-        resourceType: 'QuestionnaireResponse'
-      } as IRecord;
+    const record = {
+      ...extractQuestionnaireResponse(resource),
+      resourceType: 'QuestionnaireResponse'
+    } as IRecord;
 
-      results.push(applyTitleMap(record, opts?.titleMap));
-    }
+    results.push(applyTitleMap(record, opts?.titleMap));
   }
 
   return results;
@@ -264,13 +261,10 @@ export function parseConditionBundle(bundle: Bundle): IRecord[] {
     const resource = entry.resource;
     if (resource?.resourceType !== 'Condition' || !resource.id) continue;
 
-    const parsed = extractCondition(resource);
-    if (parsed) {
-      results.push({
-        ...parsed,
-        resourceType: 'Condition'
-      } as IRecord);
-    }
+    results.push({
+      ...extractCondition(resource),
+      resourceType: 'Condition'
+    } as IRecord);
   }
 
   return results;
@@ -288,13 +282,10 @@ export function parseObservationBundle(bundle: Bundle): IRecord[] {
     const resource = entry.resource;
     if (resource?.resourceType !== 'Observation' || !resource.id) continue;
 
-    const parsed = extractObservation(resource);
-    if (parsed) {
-      results.push({
-        ...parsed,
-        resourceType: 'Observation'
-      } as IRecord);
-    }
+    results.push({
+      ...extractObservation(resource),
+      resourceType: 'Observation'
+    } as IRecord);
   }
 
   return results;
