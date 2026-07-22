@@ -55,7 +55,7 @@ describe('parseConditionBundle edge cases', () => {
     const result = parseConditionBundle(b);
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('Condition');
-    expect(result[0].result).toBe('\\-');
+    expect(result[0].result).toBe('');
   });
 
   it('does not throw when Condition has evidence set to undefined explicitly', () => {
@@ -78,7 +78,7 @@ describe('parseConditionBundle edge cases', () => {
 
     const result = parseConditionBundle(b);
     expect(result).toHaveLength(1);
-    expect(result[0].result).toBe('\\-');
+    expect(result[0].result).toBe('');
   });
 });
 
