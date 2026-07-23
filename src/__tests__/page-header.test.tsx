@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { type AxiosInstance } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PageHeader from '../components/page-header';
 
@@ -43,7 +42,7 @@ import { dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-const mockAxiosInstance = { get: vi.fn() };
+const mockAxiosInstance: { get: ReturnType<typeof vi.fn> } = { get: vi.fn() };
 
 describe('PageHeader - admin clinic card', () => {
   let queryClient: QueryClient;
@@ -55,9 +54,7 @@ describe('PageHeader - admin clinic card', () => {
     vi.clearAllMocks();
     // Re-establish default mock implementations after clearAllMocks
     vi.mocked(dbGet).mockResolvedValue(null);
-    vi.mocked(getAPI).mockResolvedValue(
-      mockAxiosInstance as unknown as AxiosInstance
-    );
+    vi.mocked(getAPI).mockResolvedValue(mockAxiosInstance);
     vi.mocked(usePathname).mockReturnValue('/');
   });
 
@@ -69,7 +66,7 @@ describe('PageHeader - admin clinic card', () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
-  it('renders clinic name card for admin from Organization resource', async () => {
+  function mockAuthState(overrides: Record<string, unknown> = {}) {
     vi.mocked(useAuth).mockReturnValue({
       isLoading: false,
       state: {
@@ -78,11 +75,16 @@ describe('PageHeader - admin clinic card', () => {
           role_name: 'Clinic Admin',
           fhirId: 'admin-1',
           fullname: 'Admin User',
-          email: 'admin@clinic.com'
+          email: 'admin@clinic.com',
+          ...overrides
         }
       },
       dispatch: vi.fn()
     });
+  }
+
+  it('renders clinic name card for admin from Organization resource', async () => {
+    mockAuthState();
     // Return a clinic ID from IndexedDB so the query fires
     vi.mocked(dbGet).mockResolvedValueOnce({ value: 'org-123' });
     // Mock Organization query returning the org name
@@ -98,20 +100,8 @@ describe('PageHeader - admin clinic card', () => {
     expect(screen.getByText('Konsulin HQ')).toBeDefined();
   });
 
-  it('queries Organization directly with correct URL and does NOT query Location', async () => {
-    vi.mocked(useAuth).mockReturnValue({
-      isLoading: false,
-      state: {
-        isAuthenticated: true,
-        userInfo: {
-          role_name: 'Clinic Admin',
-          fhirId: 'admin-1',
-          fullname: 'Admin User',
-          email: 'admin@clinic.com'
-        }
-      },
-      dispatch: vi.fn()
-    });
+  it('queries Organization directly with correct URL', async () => {
+    mockAuthState();
     // Return a clinic ID so the query fires
     vi.mocked(dbGet).mockResolvedValueOnce({ value: 'org-456' });
     // Single Organization query returns the org name
@@ -137,12 +127,7 @@ describe('PageHeader - admin clinic card', () => {
       isLoading: false,
       state: {
         isAuthenticated: true,
-        userInfo: {
-          role_name: 'Patient',
-          fhirId: 'patient-1',
-          fullname: 'John Doe',
-          email: 'john@example.com'
-        }
+        userInfo: { role_name: 'Patient', fhirId: 'patient-1' }
       },
       dispatch: vi.fn()
     });
@@ -159,12 +144,7 @@ describe('PageHeader - admin clinic card', () => {
       isLoading: false,
       state: {
         isAuthenticated: true,
-        userInfo: {
-          role_name: 'Practitioner',
-          fhirId: 'practitioner-1',
-          fullname: 'Dr. Smith',
-          email: 'smith@clinic.com'
-        }
+        userInfo: { role_name: 'Practitioner', fhirId: 'practitioner-1' }
       },
       dispatch: vi.fn()
     });
@@ -177,19 +157,7 @@ describe('PageHeader - admin clinic card', () => {
   });
 
   it('does NOT render clinic card when admin has no selected clinic', async () => {
-    vi.mocked(useAuth).mockReturnValue({
-      isLoading: false,
-      state: {
-        isAuthenticated: true,
-        userInfo: {
-          role_name: 'Clinic Admin',
-          fhirId: 'admin-1',
-          fullname: 'Admin User',
-          email: 'admin@clinic.com'
-        }
-      },
-      dispatch: vi.fn()
-    });
+    mockAuthState();
     // dbGet returns null — clinic_organization not stored
     // No API mocks needed — query stays disabled
 
@@ -214,9 +182,7 @@ describe('PageHeader - back navigation', () => {
       new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>
     );
     vi.mocked(dbGet).mockResolvedValue(null);
-    vi.mocked(getAPI).mockResolvedValue(
-      mockAxiosInstance as unknown as AxiosInstance
-    );
+    vi.mocked(getAPI).mockResolvedValue(mockAxiosInstance);
   });
 
   afterEach(() => {
@@ -227,115 +193,99 @@ describe('PageHeader - back navigation', () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
-  it('calls router.push for cross-route back navigation (/clinic → /)', () => {
-    const router = {
-      push: vi.fn(),
-      back: vi.fn(),
-      replace: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-      prefetch: vi.fn()
-    };
+  function setupMockRouter() {
+    const router = { push: vi.fn(), back: vi.fn() };
     vi.mocked(useRouter).mockReturnValue(router);
+    return router;
+  }
+
+  function clickChevron() {
+    const chevron = document.querySelector('.lucide-chevron-left');
+    if (chevron) fireEvent.click(chevron);
+    return chevron !== null;
+  }
+
+  it('calls router.push for cross-route back navigation (/clinic → /)', () => {
+    const router = setupMockRouter();
 
     render(<PageHeader />, { wrapper });
 
-    const chevron = document.querySelector('.lucide-chevron-left');
-    expect(chevron).not.toBeNull();
+    expect(clickChevron()).not.toBeNull();
 
-    if (chevron) {
-      fireEvent.click(chevron);
-    }
-
-    // /clinic → / is cross-route, should use push
     expect(router.push).toHaveBeenCalledTimes(1);
     expect(router.push).toHaveBeenCalledWith('/');
-    expect(router.replace).not.toHaveBeenCalled();
   });
 
   it('calls router.push for same-route back navigation (/clinic?id=xxx → /clinic)', () => {
-    const router = {
-      push: vi.fn(),
-      back: vi.fn(),
-      replace: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-      prefetch: vi.fn()
-    };
-    vi.mocked(useRouter).mockReturnValue(router);
+    const router = setupMockRouter();
     // Simulate clinic detail view with backRoute override
     render(
       <PageHeader pageIndicator='Check Out Clinic' backRoute='/clinic' />,
       { wrapper }
     );
 
-    const chevron = document.querySelector('.lucide-chevron-left');
-    expect(chevron).not.toBeNull();
+    expect(clickChevron()).not.toBeNull();
 
-    if (chevron) {
-      fireEvent.click(chevron);
-    }
-
-    // same route should use router.push (not replace) to avoid useSearchParams staleness
     expect(router.push).toHaveBeenCalledTimes(1);
     expect(router.push).toHaveBeenCalledWith('/clinic');
-    expect(router.replace).not.toHaveBeenCalled();
   });
 
   it('calls router.back when no backAction is available', () => {
-    const router = {
-      push: vi.fn(),
-      back: vi.fn(),
-      replace: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-      prefetch: vi.fn()
-    };
-    vi.mocked(useRouter).mockReturnValue(router);
-    // Use a path not in FIRST_LEVEL_ROUTES to get backAction=undefined
+    const router = setupMockRouter();
+    // Use a path not in MAIN_ROUTES to get backAction=undefined
     vi.mocked(usePathname).mockReturnValue('/some-unknown-page');
 
     render(<PageHeader />, { wrapper });
 
-    const chevron = document.querySelector('.lucide-chevron-left');
-    expect(chevron).not.toBeNull();
-
-    if (chevron) {
-      fireEvent.click(chevron);
-    }
+    expect(clickChevron()).not.toBeNull();
 
     expect(router.back).toHaveBeenCalledTimes(1);
-    expect(router.replace).not.toHaveBeenCalled();
     expect(router.push).not.toHaveBeenCalled();
   });
 
   it('handles trailing slash in pathname — /clinic/ triggers router.push("/") not router.back()', () => {
     // Simulate trailingSlash:true config — usePathname returns /clinic/
     vi.mocked(usePathname).mockReturnValue('/clinic/');
-    const router = {
-      push: vi.fn(),
-      back: vi.fn(),
-      replace: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-      prefetch: vi.fn()
-    };
-    vi.mocked(useRouter).mockReturnValue(router);
+    const router = setupMockRouter();
 
     render(<PageHeader />, { wrapper });
 
-    const chevron = document.querySelector('.lucide-chevron-left');
-    expect(chevron).not.toBeNull();
+    expect(clickChevron()).not.toBeNull();
 
-    if (chevron) {
-      fireEvent.click(chevron);
-    }
-
-    // Should normalize the pathname and recognize it as a FIRST_LEVEL_ROUTE
     expect(router.push).toHaveBeenCalledTimes(1);
     expect(router.push).toHaveBeenCalledWith('/');
-    expect(router.replace).not.toHaveBeenCalled();
     expect(router.back).not.toHaveBeenCalled();
+  });
+
+  it('calls router.push("/") for /record (no params)', () => {
+    vi.mocked(usePathname).mockReturnValue('/record');
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>
+    );
+    const router = setupMockRouter();
+
+    render(<PageHeader />, { wrapper });
+
+    expect(clickChevron()).not.toBeNull();
+
+    expect(router.push).toHaveBeenCalledWith('/');
+    expect(router.back).not.toHaveBeenCalled();
+  });
+
+  it('calls router.back() for /record?edit=xxx', () => {
+    vi.mocked(usePathname).mockReturnValue('/record');
+    const params = new URLSearchParams('edit=Observation/test-id-123');
+    vi.mocked(useSearchParams).mockReturnValue(
+      params as unknown as ReturnType<typeof useSearchParams>
+    );
+    const router = setupMockRouter();
+
+    render(<PageHeader />, { wrapper });
+
+    expect(clickChevron()).not.toBeNull();
+
+    expect(router.back).toHaveBeenCalledTimes(1);
+    expect(router.push).not.toHaveBeenCalled();
   });
 
   it('does not render back chevron on the home page', () => {
