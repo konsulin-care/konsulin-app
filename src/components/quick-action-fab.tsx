@@ -13,23 +13,20 @@ import {
   ClipboardClock,
   HeartPulse,
   MapPin,
-  Plus,
   Sparkles,
-  Trash2,
   UserPlus
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AddLocationDrawer from './add-location-drawer';
+import {
+  CustomMenuPills,
+  DeleteFabButton,
+  FabToggleButton,
+  type CustomAction,
+  type Pill
+} from './fab-shared';
 import RegisterPractitionerDrawer from './register-practitioner-drawer';
-
-type Pill = {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  delay: number;
-  action: 'navigate' | 'register-practitioner' | 'add-location';
-  href?: string;
-};
 
 const patientPills: Pill[] = [
   {
@@ -125,6 +122,7 @@ function useScrollVisibility(isOpen: boolean, isDirty: boolean) {
   return isVisible;
 }
 
+/** Render a list of speed-dial pill buttons. */
 function PillButtons({
   pills,
   onPillClick
@@ -147,92 +145,6 @@ function PillButtons({
         </button>
       ))}
     </div>
-  );
-}
-
-function FabToggleButton({
-  isOpen,
-  isDirty,
-  dirtyLabel,
-  icon: Icon,
-  onToggle
-}: {
-  readonly isOpen: boolean;
-  readonly isDirty: boolean;
-  readonly dirtyLabel: string | undefined;
-  readonly icon?: React.ComponentType<{ className?: string }>;
-  readonly onToggle: () => void;
-}) {
-  const ToggleIcon = Icon ?? Plus;
-  return (
-    <button
-      onClick={onToggle}
-      className={cn(
-        'flex items-center justify-center rounded-full bg-[#13C2C2] text-white shadow-lg transition-all duration-300 hover:bg-[#0ea5a5]',
-        isDirty ? 'h-14 px-6' : 'h-14 w-14',
-        isOpen && !isDirty ? 'rotate-45' : ''
-      )}
-    >
-      {isDirty && !Icon ? (
-        <span className='text-sm font-semibold whitespace-nowrap'>
-          {dirtyLabel ?? 'Save Changes'}
-        </span>
-      ) : (
-        <ToggleIcon className='h-6 w-6 transition-transform duration-300' />
-      )}
-    </button>
-  );
-}
-
-function CustomMenuPills({
-  actions,
-  onAction
-}: {
-  readonly actions: readonly {
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    onAction: () => void;
-  }[];
-  readonly onAction: (action: {
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    onAction: () => void;
-  }) => void;
-}) {
-  return (
-    <div className='flex flex-col-reverse items-end gap-3'>
-      {actions.map(action => (
-        <button
-          key={action.label}
-          type='button'
-          onClick={() => onAction(action)}
-          className='animate-pill-in inline-flex items-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-medium text-[#2c2f35] shadow-lg transition-colors hover:bg-gray-50'
-        >
-          <action.icon className='h-4 w-4' />
-          {action.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function DeleteFabButton({
-  count,
-  onDelete
-}: {
-  readonly count: number;
-  readonly onDelete: () => void;
-}) {
-  return (
-    <button
-      onClick={onDelete}
-      className='flex h-14 items-center gap-2 rounded-full bg-red-500 px-6 text-white shadow-lg transition-all duration-300 hover:bg-red-600'
-    >
-      <Trash2 className='h-5 w-5' />
-      <span className='text-sm font-semibold whitespace-nowrap'>
-        Delete ({count})
-      </span>
-    </button>
   );
 }
 
@@ -275,11 +187,7 @@ function FabContent({
   readonly close: () => void;
   readonly toggle: () => void;
   readonly handlePillClick: (pill: Pill) => void;
-  readonly handleCustomAction: (action: {
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    onAction: () => void;
-  }) => void;
+  readonly handleCustomAction: (action: CustomAction) => void;
   readonly showRegisterPrac: boolean;
   readonly showAddLocation: boolean;
   readonly setShowRegisterPrac: (v: boolean) => void;
@@ -334,7 +242,8 @@ function FabContent({
 }
 
 /**
- *
+ * Global floating action button with three modes:
+ * selection (delete), dirty (save), speed-dial (navigation).
  */
 export default function QuickActionFab() {
   const router = useRouter();
@@ -388,11 +297,7 @@ export default function QuickActionFab() {
   );
 
   const handleCustomAction = useCallback(
-    (action: {
-      label: string;
-      icon: React.ComponentType<{ className?: string }>;
-      onAction: () => void;
-    }) => {
+    (action: CustomAction) => {
       close();
       action.onAction();
     },

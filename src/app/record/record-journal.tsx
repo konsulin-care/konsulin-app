@@ -1,12 +1,10 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetSingleRecord } from '@/services/api/record';
 import { format } from 'date-fns';
-import { FileCheckIcon, NotepadTextIcon } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { FileCheckIcon } from 'lucide-react';
 
 type Props = {
   journalId: string;
@@ -16,7 +14,6 @@ type Props = {
  *
  */
 export default function RecordJournal({ journalId }: Props) {
-  const router = useRouter();
   const { data: journalData, isLoading } = useGetSingleRecord({
     id: journalId,
     resourceType: 'Observation'
@@ -55,33 +52,16 @@ export default function RecordJournal({ journalId }: Props) {
         </div>
       </div>
 
-      <div className='card flex border'>
-        <NotepadTextIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
-        <div>{journalData.valueString}</div>
-      </div>
+      <div className='text-[20px] font-bold'>{journalData.valueString}</div>
 
-      {journalData.note.map((item: { text: string }) => {
-        return (
-          <div key={item.text}>
-            <div className='text-muted mb-2 text-[12px]'>
-              Write anything here
-            </div>
-
-            <div className='card flex text-[14px]'>
-              <div>{item.text}</div>
-            </div>
-          </div>
-        );
-      })}
-
-      <Button
-        onClick={() => {
-          router.push(`/record?edit=Observation/${journalId}`);
-        }}
-        className='bg-secondary !mt-auto w-full rounded-full p-4 text-[14px] text-white'
-      >
-        Edit Journal
-      </Button>
+      {journalData.note.map((item: { text: string }) => (
+        <p
+          key={item.text.slice(0, 32) || 'note'}
+          className='text-[14px] leading-relaxed text-gray-700'
+        >
+          {item.text}
+        </p>
+      ))}
     </>
   );
 }
