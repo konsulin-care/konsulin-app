@@ -10,6 +10,7 @@ import { useFabDirty } from '@/context/fabDirtyContext';
 import { useGetSingleRecord, useUpdateJournal } from '@/services/api/record';
 import { format } from 'date-fns';
 import { FileCheckIcon, NotepadTextIcon, SavePen } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
@@ -39,6 +40,7 @@ export default function EditJournal({ journalId }: Props) {
   const { data: journalData, isLoading: isJournalLoading } = useGetSingleRecord(
     { id: journalId, resourceType: 'Observation' }
   );
+  const router = useRouter();
   const { setDirtyState } = useFabDirty();
   const initialValues = useRef({ title: '', notes: [] as { text: string }[] });
 
@@ -64,12 +66,22 @@ export default function EditJournal({ journalId }: Props) {
 
   /** Submit journal entry to the API, creating or updating the resource. */
   const handleSubmitJournal = useCallback(async () => {
+    const hasChanges =
+      journalTitle !== initialValues.current.title ||
+      JSON.stringify(response.map(({ text }) => ({ text }))) !==
+        JSON.stringify(initialValues.current.notes);
+
+    if (!hasChanges) {
+      router.push(`/record?view=Observation/${journalId}`);
+      return;
+    }
+
     try {
       const payload = {
         id: journalId,
         valueString: journalTitle,
         resourceType: 'Observation',
-        note: response.map(({ ...rest }) => rest),
+        note: response.map(({ text }) => ({ text })),
         effectiveDateTime: journalData.effectiveDateTime,
         status: 'amended',
         code: {
@@ -104,26 +116,18 @@ export default function EditJournal({ journalId }: Props) {
     journalTitle,
     response,
     journalData,
-    setIsOpen
+    setIsOpen,
+    router
   ]);
 
   useEffect(() => {
-    const hasChanges =
-      journalTitle !== initialValues.current.title ||
-      JSON.stringify(response.map(({ ...rest }) => rest)) !==
-        JSON.stringify(initialValues.current.notes);
-
-    if (hasChanges) {
-      setDirtyState({
-        isDirty: true,
-        label: 'Save Journal',
-        icon: SavePen,
-        onSave: () => handleSubmitJournal(),
-        isSaving: isSubmitLoading
-      });
-    } else {
-      setDirtyState(null);
-    }
+    setDirtyState({
+      isDirty: true,
+      label: 'Save Journal',
+      icon: SavePen,
+      onSave: () => handleSubmitJournal(),
+      isSaving: isSubmitLoading
+    });
 
     return () => setDirtyState(null);
   }, [
