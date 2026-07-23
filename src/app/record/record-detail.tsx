@@ -1,5 +1,5 @@
 'use client';
-/* eslint-disable max-lines */
+
 import Notfound from '@/app/not-found';
 import ModalQr from '@/components/general/modal-qr';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -8,10 +8,9 @@ import { useAuth } from '@/context/auth/authContext';
 import { useFabDirty } from '@/context/fabDirtyContext';
 import { useFabMenu } from '@/context/fabMenuContext';
 import { useRecordDetail } from '@/hooks/useRecordDetail';
-import { useDeleteJournal } from '@/services/api/record';
 import { isLoincSystem } from '@/utils/fhir';
 import type { Observation, QuestionnaireResponse } from 'fhir/r4';
-import { PenLine, Repeat2, SquarePen, Trash2, UsersIcon } from 'lucide-react';
+import { PenLine, Repeat2, UsersIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
   useCallback,
@@ -212,7 +211,6 @@ export default function RecordDetail({ resourceType, resourceId }: Props) {
   const router = useRouter();
   const { setDirtyState } = useFabDirty();
   const { setMenuState } = useFabMenu();
-  const { mutateAsync: deleteJournal } = useDeleteJournal();
 
   const handlePractitionerNameChange = useCallback((name: string) => {
     setDynamicTitle(`Notes from ${name}`);
@@ -234,53 +232,27 @@ export default function RecordDetail({ resourceType, resourceId }: Props) {
     return obs.subject?.reference === patientRef;
   }, [data, authState.userInfo?.fhirId]);
 
-  // Set FAB state: custom menu for own journals, dirty+icon for other records
+  // Set FAB state: edit for own journals, default FAB for non-own journals
   useEffect(() => {
-    if (!data || error) {
+    const isNonOwnJournal =
+      data?.resourceType === 'Observation' &&
+      !isOwnJournal &&
+      isPatientJournal(data as unknown as Observation);
+
+    if (!data || error || isNonOwnJournal) {
       setDirtyState(null);
       setMenuState(null);
     } else if (isOwnJournal) {
-      setDirtyState(null);
-      setMenuState({
-        icon: SquarePen,
-        actions: [
-          {
-            label: 'Delete',
-            icon: Trash2,
-            onAction: async () => {
-              if (window.confirm('Delete this journal entry?')) {
-                try {
-                  await deleteJournal(resourceId);
-                } catch {
-                  /* error handled by toast inside mutation */
-                }
-              }
-            }
-          },
-          {
-            label: 'Edit',
-            icon: PenLine,
-            onAction: () => {
-              router.push(`/record?edit=Observation/${resourceId}`);
-            }
-          },
-          {
-            label: 'Share Record',
-            icon: Repeat2,
-            onAction: () => {
-              const shareUrl = currentLocation || window.location.href;
-              if (typeof navigator.share === 'function') {
-                navigator.share({ url: shareUrl }).catch(() => {
-                  /* user cancelled — do nothing */
-                });
-              } else {
-                setQrOpen(true);
-              }
-            }
-          }
-        ]
+      setDirtyState({
+        isDirty: true,
+        label: 'Edit',
+        icon: PenLine,
+        onSave: () => router.push(`/record?edit=Observation/${resourceId}`),
+        isSaving: false
       });
-    } else if (!isOwnJournal) {
+      setMenuState(null);
+    } else {
+      // Other resources — share record
       setMenuState(null);
       setDirtyState({
         isDirty: true,
@@ -312,8 +284,7 @@ export default function RecordDetail({ resourceType, resourceId }: Props) {
     setMenuState,
     currentLocation,
     resourceId,
-    router,
-    deleteJournal
+    router
   ]);
 
   // Invalid props

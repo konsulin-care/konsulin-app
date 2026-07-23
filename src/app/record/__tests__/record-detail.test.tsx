@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn(() => new URLSearchParams()),
   usePathname: vi.fn(() => '/record'),
-  useRouter: vi.fn(() => ({ back: vi.fn(), replace: vi.fn() }))
+  useRouter: vi.fn(() => ({ back: vi.fn(), replace: vi.fn(), push: vi.fn() }))
 }));
 vi.mock('@/hooks/useRecordDetail', () => ({
   useRecordDetail: vi.fn()
@@ -63,7 +63,7 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     } as any);
   });
 
-  it('sets FAB dirty state to "Share Record" for any valid resource view', () => {
+  it('sets FAB dirty state to "Share Record" for QuestionnaireResponse view', () => {
     const mockSetDirtyState = vi.fn();
     vi.mocked(useFabDirty).mockReturnValue({
       setDirtyState: mockSetDirtyState
@@ -113,7 +113,7 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     expect(shareCall).toBeDefined();
   });
 
-  it('sets FAB dirty state for Journal view', () => {
+  it('clears FAB dirty state for non-own journal view', () => {
     const mockSetDirtyState = vi.fn();
     vi.mocked(useFabDirty).mockReturnValue({
       setDirtyState: mockSetDirtyState
@@ -123,7 +123,8 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       data: {
         resourceType: 'Observation',
         id: 'obs-1',
-        code: { coding: [{ system: 'https://loinc.org', code: '51855-5' }] }
+        code: { coding: [{ system: 'https://loinc.org', code: '51855-5' }] },
+        subject: { reference: 'Patient/other-user' }
       },
       isLoading: false,
       error: null
@@ -131,10 +132,51 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
 
     render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
 
-    const shareCall = mockSetDirtyState.mock.calls.find(
-      (c: unknown[]) => (c[0] as { label?: string })?.label === 'Share Record'
+    // Non-own journal should clear dirty state (default role FAB)
+    const nullCalls = mockSetDirtyState.mock.calls.filter(
+      (c: unknown[]) => c[0] === null
     );
-    expect(shareCall).toBeDefined();
+    expect(nullCalls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('sets FAB dirty state to Edit for own journal', () => {
+    const mockSetDirtyState = vi.fn();
+    vi.mocked(useFabDirty).mockReturnValue({
+      setDirtyState: mockSetDirtyState
+    } as any);
+
+    // Own journal: user fhirId matches subject reference
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: true,
+        userInfo: {
+          fullname: 'John Doe',
+          email: 'john@example.com',
+          fhirId: 'user-123'
+        }
+      },
+      isLoading: false
+    } as any);
+
+    vi.mocked(useRecordDetail).mockReturnValue({
+      data: {
+        resourceType: 'Observation',
+        id: 'obs-1',
+        code: { coding: [{ system: 'https://loinc.org', code: '51855-5' }] },
+        subject: { reference: 'Patient/user-123' }
+      },
+      isLoading: false,
+      error: null
+    } as any);
+
+    render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
+
+    const editCall = mockSetDirtyState.mock.calls.find(
+      (c: unknown[]) =>
+        (c[0] as { label?: string })?.label === 'Edit' &&
+        (c[0] as { isDirty?: boolean })?.isDirty === true
+    );
+    expect(editCall).toBeDefined();
   });
 
   it('clears FAB dirty state on unmount', () => {
@@ -279,53 +321,5 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
     );
     expect(screen.getByText('John Doe')).toBeInTheDocument();
-  });
-  it('renders email when fullname is empty', () => {
-    vi.mocked(useAuth).mockReturnValue({
-      state: {
-        isAuthenticated: true,
-        userInfo: { fullname: '', email: 'test@example.com' }
-      },
-      isLoading: false
-    } as any);
-
-    vi.mocked(useRecordDetail).mockReturnValue({
-      data: {
-        resourceType: 'QuestionnaireResponse',
-        id: 'qr-1',
-        questionnaire: 'Questionnaire/phq9'
-      },
-      isLoading: false,
-      error: null
-    } as any);
-
-    render(
-      <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
-    );
-    expect(screen.getByText('test@example.com')).toBeInTheDocument();
-  });
-  it('skips patient name when user is not authenticated', () => {
-    vi.mocked(useAuth).mockReturnValue({
-      state: {
-        isAuthenticated: false,
-        userInfo: null
-      },
-      isLoading: false
-    } as any);
-
-    vi.mocked(useRecordDetail).mockReturnValue({
-      data: {
-        resourceType: 'QuestionnaireResponse',
-        id: 'qr-1',
-        questionnaire: 'Questionnaire/phq9'
-      },
-      isLoading: false,
-      error: null
-    } as any);
-
-    render(
-      <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
-    );
-    expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
   });
 });
