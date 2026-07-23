@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 type JournalResponse = {
   readonly id: number;
@@ -23,9 +23,9 @@ export function useJournalForm() {
     });
   };
 
-  const addResponse = () => {
+  const addResponse = useCallback(() => {
     setResponse(prev => [...prev, { id: nextId.current++, text: '' }]);
-  };
+  }, []);
 
   const removeResponse = (index: number) => {
     setResponse(prev => prev.filter((_, i) => i !== index));

@@ -39,7 +39,9 @@ export default function CreateJournal() {
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useSubmitJournal();
 
-  useEffect(addResponse, [addResponse]);
+  useEffect(() => {
+    addResponse();
+  }, [addResponse]);
 
   /** Submits a journal entry to the server. */
   const handleSubmitJournal = async () => {

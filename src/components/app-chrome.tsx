@@ -2,6 +2,7 @@ import ProfileCompletenessModal from '@/components/general/profile-completeness-
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
 import QuickActionFab from '@/components/quick-action-fab';
 import { FabDirtyProvider } from '@/context/fabDirtyContext';
+import { FabMenuProvider } from '@/context/fabMenuContext';
 import { FabSelectionProvider } from '@/context/fabSelectionContext';
 import dynamic from 'next/dynamic';
 import { Suspense, type ComponentType, type ReactNode } from 'react';
@@ -49,8 +50,10 @@ export default function AppChrome({
       <ProfileCompletenessModal />
       <FabDirtyProvider>
         <FabSelectionProvider>
-          <PageContent>{children}</PageContent>
-          <QuickActionFab />
+          <FabMenuProvider>
+            <PageContent>{children}</PageContent>
+            <QuickActionFab />
+          </FabMenuProvider>
         </FabSelectionProvider>
       </FabDirtyProvider>
     </>

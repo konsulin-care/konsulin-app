@@ -5,6 +5,7 @@ import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useSearchParams } from 'next/navigation';
 import RecordDetail from './record-detail';
+import RecordEdit from './record-edit';
 import RecordTimeline from './record-timeline';
 
 /**
@@ -14,6 +15,7 @@ import RecordTimeline from './record-timeline';
  *   /record                              → patient's own timeline
  *   /record?id=<patientId>               → practitioner's patient timeline
  *   /record?id=<patientId>&view=<resourceType>/<resource-id>  → detail view
+ *   /record?edit=<resourceType>/<resource-id>                → edit form
  */
 export default function RecordPage() {
   const searchParams = useSearchParams();
@@ -21,6 +23,7 @@ export default function RecordPage() {
 
   const paramPatientId = searchParams.get('id');
   const view = searchParams.get('view');
+  const edit = searchParams.get('edit');
 
   // Resolve patientId: URL param takes precedence, fall back to auth context
   const patientId =
@@ -35,6 +38,18 @@ export default function RecordPage() {
 
     return (
       <RecordDetail
+        resourceType={resourceType ?? ''}
+        resourceId={resourceId ?? ''}
+      />
+    );
+  }
+
+  // Edit view: requires patient context + edit param
+  if (patientId && edit) {
+    const [resourceType, resourceId] = edit.split('/');
+
+    return (
+      <RecordEdit
         resourceType={resourceType ?? ''}
         resourceId={resourceId ?? ''}
       />

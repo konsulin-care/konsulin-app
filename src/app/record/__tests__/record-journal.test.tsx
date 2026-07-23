@@ -57,8 +57,6 @@ describe('RecordJournal - edit navigation', () => {
     const editButton = screen.getByText('Edit Journal');
     fireEvent.click(editButton);
 
-    expect(mockPush).toHaveBeenCalledWith(
-      '/record/edit?id=journal-1&category=4'
-    );
+    expect(mockPush).toHaveBeenCalledWith('/record?edit=Observation/journal-1');
   });
 });

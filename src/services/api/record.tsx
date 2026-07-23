@@ -1,15 +1,14 @@
+/* eslint-disable max-lines */
 import { IBundleResponse, IJournal } from '@/types/record';
 import { getUtcDayRange } from '@/utils/helper';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bundle, Observation } from 'fhir/r4';
 import { getAPI } from '../api';
-
 type IFilterRecord = {
   patientId: string;
   startDate: string;
   endDate: string;
 };
-
 /** Fetch record summaries for a patient within a date range. */
 export const useRecordSummary = () => {
   return useMutation<IBundleResponse[], Error, { patientId: string }>({
@@ -40,7 +39,6 @@ export const useRecordSummary = () => {
           }
         ]
       };
-
       try {
         const API = await getAPI();
         const response = await API.post<Bundle>('/fhir', payload);
@@ -52,7 +50,6 @@ export const useRecordSummary = () => {
     }
   });
 };
-
 /** Build a FHIR batch bundle for fetching patient records. */
 function buildRecordBatchPayload(patientId: string) {
   return {
@@ -81,7 +78,6 @@ function buildRecordBatchPayload(patientId: string) {
     ]
   };
 }
-
 /** Query patient record summary (QuestionnaireResponse + Observations). */
 export const useRecordSummaryQuery = (patientId: string) => {
   return useQuery({
@@ -98,7 +94,6 @@ export const useRecordSummaryQuery = (patientId: string) => {
     staleTime: 60 * 1000
   });
 };
-
 /** Filter patient records by date range. */
 export const useFilterRecordByDate = () => {
   return useMutation<IBundleResponse[], Error, IFilterRecord>({
@@ -108,7 +103,6 @@ export const useFilterRecordByDate = () => {
         new Date(startDate),
         new Date(endDate)
       );
-
       const payload = {
         type: 'batch',
         resourceType: 'Bundle',
@@ -134,7 +128,6 @@ export const useFilterRecordByDate = () => {
           }
         ]
       };
-
       try {
         const API = await getAPI();
         const response = await API.post<Bundle>('/fhir', payload);
@@ -146,7 +139,6 @@ export const useFilterRecordByDate = () => {
     }
   });
 };
-
 /** Fetch patient records from a practitioner perspective. */
 export const useRecordSummaryPractitioner = () => {
   return useMutation<Bundle, Error, { patientId: string }>({
@@ -177,7 +169,6 @@ export const useRecordSummaryPractitioner = () => {
           }
         ]
       };
-
       try {
         const API = await getAPI();
         const response = await API.post<Bundle>('/fhir', payload);
@@ -189,7 +180,6 @@ export const useRecordSummaryPractitioner = () => {
     }
   });
 };
-
 /** Filter practitioner-view records by date range. */
 export const useFilterRecordPractitionerByDate = () => {
   return useMutation<Bundle, Error, IFilterRecord>({
@@ -199,7 +189,6 @@ export const useFilterRecordPractitionerByDate = () => {
         new Date(startDate),
         new Date(endDate)
       );
-
       const payload = {
         type: 'batch',
         resourceType: 'Bundle',
@@ -225,7 +214,6 @@ export const useFilterRecordPractitionerByDate = () => {
           }
         ]
       };
-
       try {
         const API = await getAPI();
         const response = await API.post<Bundle>('/fhir', payload);
@@ -237,7 +225,6 @@ export const useFilterRecordPractitionerByDate = () => {
     }
   });
 };
-
 /** Fetch a single record by ID and resource type. */
 export const useGetSingleRecord = ({
   id,
@@ -259,9 +246,10 @@ export const useGetSingleRecord = ({
     enabled: Boolean(id) && Boolean(resourceType)
   });
 };
-
 /** Submit a new journal entry (Observation). */
 export const useSubmitJournal = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: ['journal'],
     mutationFn: async (journalData: IJournal) => {
@@ -278,12 +266,16 @@ export const useSubmitJournal = () => {
         console.error('Error fetching record summary:', error);
         throw error;
       }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['journals'] });
     }
   });
 };
-
 /** Update an existing journal entry (Observation). */
 export const useUpdateJournal = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: ['journal-update'],
     mutationFn: async (journalData: IJournal) => {
@@ -298,6 +290,29 @@ export const useUpdateJournal = () => {
         console.error('Error fetching record summary:', error);
         throw error;
       }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['journals'] });
+    }
+  });
+};
+/** Delete a journal entry (Observation). */
+export const useDeleteJournal = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ['journal-delete'],
+    mutationFn: async (id: string) => {
+      try {
+        const API = await getAPI();
+        await API.delete(`/fhir/Observation/${id}`);
+      } catch (error) {
+        console.error('Error deleting journal:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['journals'] });
     }
   });
 };
