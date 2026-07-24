@@ -8,13 +8,18 @@ describe('CalendarBase', () => {
     expect(container.querySelector('.rdp-root')).toBeInTheDocument();
   });
 
-  it('renders custom Nav with chevron buttons', () => {
-    render(<CalendarBase mode='single' defaultMonth={new Date(2026, 6, 1)} />);
-    // lucide ChevronLeft and ChevronRight render as SVG elements in the custom nav
-    const chevrons = document.querySelectorAll(
-      'svg.lucide-chevron-left, svg.lucide-chevron-right'
+  it('renders with data-nav-layout="around" and default navigation buttons', () => {
+    const { container } = render(
+      <CalendarBase mode='single' defaultMonth={new Date(2026, 6, 1)} />
     );
-    expect(chevrons.length).toBeGreaterThanOrEqual(1);
+    const root = container.querySelector('.rdp-root');
+    expect(root).toHaveAttribute('data-nav-layout', 'around');
+
+    // Default rdp nav buttons render (not the custom absolute-positioned ones)
+    const prevBtn = document.querySelector('.rdp-button_previous');
+    const nextBtn = document.querySelector('.rdp-button_next');
+    expect(prevBtn).toBeInTheDocument();
+    expect(nextBtn).toBeInTheDocument();
   });
 
   it('forwards className to the root element', () => {
@@ -27,25 +32,36 @@ describe('CalendarBase', () => {
 
   it('accepts mode="single" and handles onSelect callback', () => {
     const onSelect = vi.fn();
-    render(<CalendarBase mode='single' onSelect={onSelect} />);
+    render(
+      <CalendarBase
+        mode='single'
+        onSelect={onSelect}
+        defaultMonth={new Date(2026, 6, 1)}
+      />
+    );
 
-    // react-day-picker renders buttons with aria-label containing day number
-    const dayButton = document.querySelector('button[aria-label]');
-    if (dayButton) {
-      fireEvent.click(dayButton);
-      expect(onSelect).toHaveBeenCalledOnce();
-    }
+    // Click a specific day button using rdp's .rdp-day_button class
+    const dayButtons = document.querySelectorAll('.rdp-day_button');
+    expect(dayButtons.length).toBeGreaterThan(0);
+    fireEvent.click(dayButtons[0]);
+    expect(onSelect).toHaveBeenCalledOnce();
   });
 
   it('accepts mode="range" and handles onSelect callback', () => {
     const onSelect = vi.fn();
-    render(<CalendarBase mode='range' onSelect={onSelect} />);
+    render(
+      <CalendarBase
+        mode='range'
+        onSelect={onSelect}
+        defaultMonth={new Date(2026, 6, 1)}
+      />
+    );
 
-    const dayButton = document.querySelector('button[aria-label]');
-    if (dayButton) {
-      fireEvent.click(dayButton);
-      expect(onSelect).toHaveBeenCalledOnce();
-    }
+    // Click a specific day button using rdp's .rdp-day_button class
+    const dayButtons = document.querySelectorAll('.rdp-day_button');
+    expect(dayButtons.length).toBeGreaterThan(0);
+    fireEvent.click(dayButtons[0]);
+    expect(onSelect).toHaveBeenCalledOnce();
   });
 
   it('accepts disabled matchers and disables dates', () => {
