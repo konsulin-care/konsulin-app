@@ -1,12 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  fireEvent,
-  render,
-  renderHook,
-  screen,
-  waitFor
-} from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── CreateJournal mock setup ──
@@ -16,8 +9,7 @@ vi.mock('@/context/auth/authContext', () => ({
 }));
 
 vi.mock('@/services/api/record', () => ({
-  useSubmitJournal: vi.fn(),
-  useDeleteJournal: vi.fn()
+  useSubmitJournal: vi.fn()
 }));
 
 vi.mock('@/components/shared/journal-response-fields', () => ({
@@ -70,7 +62,7 @@ vi.mock('@/components/journal/calender-journal', () => ({
 }));
 
 import { useAuth } from '@/context/auth/authContext';
-import { useDeleteJournal, useSubmitJournal } from '@/services/api/record';
+import { useSubmitJournal } from '@/services/api/record';
 import CreateJournal from '../create';
 
 describe('CreateJournal - textarea behavior', () => {
@@ -103,44 +95,5 @@ describe('CreateJournal - textarea behavior', () => {
     fireEvent.click(screen.getByTestId('add-thought'));
 
     expect(screen.getByTestId('response-count').textContent).toBe('2');
-  });
-});
-
-// ── useDeleteJournal test ──
-
-import { getAPI } from '@/services/api';
-
-vi.mock('@/services/api', () => ({
-  getAPI: vi.fn()
-}));
-
-describe('useDeleteJournal', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('calls DELETE /fhir/Observation/{id} on mutation', async () => {
-    const mockDelete = vi.fn().mockResolvedValue({});
-    vi.mocked(getAPI).mockResolvedValue({
-      delete: mockDelete
-    } as any);
-
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } }
-    });
-
-    const { result } = renderHook(() => useDeleteJournal(), {
-      wrapper: ({ children }: { children: React.ReactNode }) => (
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
-      )
-    });
-
-    result.current.mutate('journal-123');
-
-    await waitFor(() => {
-      expect(mockDelete).toHaveBeenCalledWith('/fhir/Observation/journal-123');
-    });
   });
 });

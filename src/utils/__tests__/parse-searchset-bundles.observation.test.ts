@@ -33,14 +33,19 @@ function obsBundle(
 }
 
 describe('parseObservationBundle', () => {
-  it('parses LOINC 51855-5 as Patient Note with static title', () => {
+  it('parses LOINC 51855-5 as Patient Note with dynamic title (valueString)', () => {
     const b = obsBundle([
-      { loinc: '51855-5', id: 'obs-1', lastUpdated: '2024-06-01T00:00:00Z' }
+      {
+        loinc: '51855-5',
+        id: 'obs-1',
+        lastUpdated: '2024-06-01T00:00:00Z',
+        valueString: 'Feeling unwell today'
+      }
     ]);
     const result = parseObservationBundle(b);
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('PatientNote');
-    expect(result[0].title).toBe('Patient Note');
+    expect(result[0].title).toBe('Feeling unwell today');
   });
 
   it('parses LOINC 67855-7 as Practitioner Note', () => {
