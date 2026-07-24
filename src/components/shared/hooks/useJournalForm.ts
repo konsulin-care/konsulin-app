@@ -10,9 +10,16 @@ type JournalResponse = {
 /**
  *
  */
-export function useJournalForm() {
-  const nextId = useRef(0);
-  const [response, setResponse] = useState<JournalResponse[]>([]);
+export function useJournalForm(initialResponses = 0) {
+  const nextId = useRef(initialResponses);
+  const [response, setResponse] = useState<JournalResponse[]>(
+    initialResponses > 0
+      ? Array.from({ length: initialResponses }, (_, i) => ({
+          id: i,
+          text: ''
+        }))
+      : []
+  );
   const [journalTitle, setJournalTitle] = useState('');
 
   const handleResponseChange = (index: number, value: string) => {
