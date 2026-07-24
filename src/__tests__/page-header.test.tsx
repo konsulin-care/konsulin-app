@@ -40,6 +40,7 @@ vi.mock('@/components/general/avatar', () => ({
 import { useAuth } from '@/context/auth/authContext';
 import { dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
+import type { AxiosInstance } from 'axios';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 const mockAxiosInstance: { get: ReturnType<typeof vi.fn> } = { get: vi.fn() };
@@ -54,7 +55,9 @@ describe('PageHeader - admin clinic card', () => {
     vi.clearAllMocks();
     // Re-establish default mock implementations after clearAllMocks
     vi.mocked(dbGet).mockResolvedValue(null);
-    vi.mocked(getAPI).mockResolvedValue(mockAxiosInstance);
+    vi.mocked(getAPI).mockResolvedValue(
+      mockAxiosInstance as unknown as AxiosInstance
+    );
     vi.mocked(usePathname).mockReturnValue('/');
   });
 
@@ -182,7 +185,9 @@ describe('PageHeader - back navigation', () => {
       new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>
     );
     vi.mocked(dbGet).mockResolvedValue(null);
-    vi.mocked(getAPI).mockResolvedValue(mockAxiosInstance);
+    vi.mocked(getAPI).mockResolvedValue(
+      mockAxiosInstance as unknown as AxiosInstance
+    );
   });
 
   afterEach(() => {
@@ -194,7 +199,14 @@ describe('PageHeader - back navigation', () => {
   );
 
   function setupMockRouter() {
-    const router = { push: vi.fn(), back: vi.fn() };
+    const router = {
+      push: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+      refresh: vi.fn(),
+      replace: vi.fn(),
+      prefetch: vi.fn()
+    };
     vi.mocked(useRouter).mockReturnValue(router);
     return router;
   }
