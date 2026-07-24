@@ -12,8 +12,8 @@ export type CalendarBaseProps = React.ComponentProps<typeof DayPicker>;
  * Base calendar component wrapping react-day-picker v9.
  *
  * Uses the default CSS grid layout from `react-day-picker/style.css` with
- * `data-nav-layout="around"` to render navigation buttons beside the month
- * caption (centered between chevrons).
+ * `navLayout="around"` to render navigation buttons on either side of the
+ * month caption (centered between chevrons).
  * Accepts all DayPicker props — `mode`, `selected`, `onSelect`, `disabled`,
  * `components`, `className`, `classNames`, etc.
  */
@@ -26,7 +26,7 @@ function CalendarBase({ className, ...props }: CalendarBaseProps) {
           '--rdp-accent-color': '#0ABDC3'
         } as React.CSSProperties
       }
-      data-nav-layout='around'
+      navLayout='around'
       modifiersClassNames={{
         selected: 'bg-[#0ABDC3] text-[#ECEFF4] font-bold',
         today: 'font-extrabold'

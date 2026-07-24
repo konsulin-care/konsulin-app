@@ -8,18 +8,28 @@ describe('CalendarBase', () => {
     expect(container.querySelector('.rdp-root')).toBeInTheDocument();
   });
 
-  it('renders with data-nav-layout="around" and default navigation buttons', () => {
+  it('renders nav buttons beside the month caption with navLayout="around"', () => {
     const { container } = render(
       <CalendarBase mode='single' defaultMonth={new Date(2026, 6, 1)} />
     );
+
+    // data-nav-layout attribute is set on the root
     const root = container.querySelector('.rdp-root');
     expect(root).toHaveAttribute('data-nav-layout', 'around');
 
-    // Default rdp nav buttons render (not the custom absolute-positioned ones)
-    const prevBtn = document.querySelector('.rdp-button_previous');
-    const nextBtn = document.querySelector('.rdp-button_next');
+    // Default .rdp-nav should NOT be present — it's replaced by inline buttons
+    expect(container.querySelector('.rdp-nav')).not.toBeInTheDocument();
+
+    // Instead, prev/next buttons render directly inside .rdp-month
+    const prevBtn = container.querySelector('.rdp-button_previous');
+    const nextBtn = container.querySelector('.rdp-button_next');
     expect(prevBtn).toBeInTheDocument();
     expect(nextBtn).toBeInTheDocument();
+
+    // Buttons are children of .rdp-month, not .rdp-nav
+    const month = container.querySelector('.rdp-month');
+    expect(month?.contains(prevBtn)).toBe(true);
+    expect(month?.contains(nextBtn)).toBe(true);
   });
 
   it('forwards className to the root element', () => {
