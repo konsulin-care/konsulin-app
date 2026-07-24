@@ -7,8 +7,8 @@ import BookingCalendar from '../booking-calendar';
 
 let triggerMonthChange: ((month: Date) => void) | null = null;
 
-vi.mock('@/components/ui/calendar-temp', () => ({
-  Calendar: ({ components, onSelect, onMonthChange, disabled }: any) => {
+vi.mock('@/components/ui/calendar-base', () => ({
+  CalendarBase: ({ components, onSelect, onMonthChange, disabled }: any) => {
     const DayButtonCustom = components?.DayButton;
     const testDate = new Date('2026-07-04');
     triggerMonthChange = onMonthChange

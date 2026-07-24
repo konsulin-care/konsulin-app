@@ -11,7 +11,7 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar-temp';
+import { CalendarBase } from '@/components/ui/calendar-base';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -153,7 +153,7 @@ function UnavailabilityFormBody({
       <div className='flex flex-col gap-2'>
         <div className='text-center text-xs font-bold'>Date</div>
         <div className='flex w-full justify-center'>
-          <Calendar
+          <CalendarBase
             mode='single'
             selected={date}
             onSelect={onDateSelect}

@@ -1,4 +1,4 @@
-import { Calendar } from '@/components/ui/calendar-temp';
+import { CalendarBase } from '@/components/ui/calendar-base';
 import { DrawerDescription, DrawerTitle } from '@/components/ui/drawer';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { format } from 'date-fns';
@@ -124,7 +124,7 @@ export default function BookingCalendar({
       <div className='mt-4 flex w-full flex-col justify-center'>
         {!hideHeader && <DrawerDescription />}
         <DayDotsContext.Provider value={dayDots}>
-          <Calendar
+          <CalendarBase
             defaultMonth={bookingState.date}
             mode='single'
             selected={bookingState.date}

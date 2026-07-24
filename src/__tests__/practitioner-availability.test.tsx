@@ -94,8 +94,8 @@ vi.mock('@/components/ui/button', () => ({
   buttonVariants: () => 'btn-variants-class'
 }));
 
-vi.mock('@/components/ui/calendar-temp', () => ({
-  Calendar: ({ onSelect, onMonthChange }: any) => (
+vi.mock('@/components/ui/calendar-base', () => ({
+  CalendarBase: ({ onSelect, onMonthChange }: any) => (
     <div data-testid='mock-calendar'>
       <button
         data-testid='calendar-date-btn'

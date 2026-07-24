@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import { CalendarBase } from '@/components/ui/calendar-base';
 import {
   Drawer,
   DrawerClose,
@@ -56,19 +56,12 @@ export default function CalendarJournal({ onChange, value }: Props) {
         <DrawerDescription />
         <div className='mt-4 flex flex-col'>
           <div className='mt-4 flex w-full flex-col justify-center'>
-            <Calendar
+            <CalendarBase
               mode='single'
               selected={date}
               onSelect={date => handeDateChange(date)}
               disabled={{ before: today }}
               className='w-full p-0'
-              classNames={{
-                month: 'space-y-8 w-full',
-                head_row: 'flex w-full',
-                day_selected:
-                  'bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground focus:bg-secondary focus:text-secondary-foreground',
-                day_today: 'bg-accent text-accent-foreground font-extrabold'
-              }}
             />
           </div>
           <DrawerClose className='bg-secondary mt-4 w-full rounded-xl p-4 text-center text-white'>
