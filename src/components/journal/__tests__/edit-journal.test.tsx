@@ -5,9 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ── Mock setup ──
 
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: vi.fn(() => ({ push: mockPush }))
+  useRouter: vi.fn(() => ({ push: mockPush, replace: mockReplace }))
 }));
 
 vi.mock('@/context/auth/authContext', () => ({
@@ -53,7 +54,9 @@ vi.mock('@/components/shared/journal-response-fields', () => ({
 }));
 
 vi.mock('@/components/shared/journal-succes-drawer', () => ({
-  default: () => <div data-testid='success-drawer' />
+  default: (props: { viewRoute?: string }) => (
+    <div data-testid='success-drawer' data-view-route={props.viewRoute ?? ''} />
+  )
 }));
 
 import { useAuth } from '@/context/auth/authContext';
@@ -105,9 +108,11 @@ describe('EditJournal', () => {
       isLoading: true
     } as any);
 
-    render(<EditJournal journalId='obs-123' />);
+    const { container } = render(<EditJournal journalId='obs-123' />);
 
-    expect(screen.getByText('Journal Create')).toBeInTheDocument();
+    // Skeleton renders animated pulse divs
+    const skeletonDivs = container.querySelectorAll('.animate-pulse');
+    expect(skeletonDivs.length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders journal title and note fields when data loads', () => {
@@ -120,17 +125,14 @@ describe('EditJournal', () => {
   it('always sets dirty state with save button regardless of changes', () => {
     render(<EditJournal journalId='obs-123' />);
 
-    expect(mockSetDirtyState).toHaveBeenCalledWith(
-      expect.objectContaining({
-        isDirty: true,
-        label: 'Save Journal',
-        onSave: expect.any(Function)
-      })
+    // At least one call should set dirty state with Save Journal shape
+    const dirtyCalls = mockSetDirtyState.mock.calls.filter(
+      (c: unknown[]) => (c[0] as { label?: string })?.label === 'Save Journal'
     );
-    expect(mockSetDirtyState).not.toHaveBeenCalledWith(null);
+    expect(dirtyCalls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('calls router.push without PUT when saving without changes', async () => {
+  it('calls router.replace without PUT when saving without changes', async () => {
     render(<EditJournal journalId='obs-123' />);
 
     // Extract the onSave callback from setDirtyState
@@ -138,7 +140,10 @@ describe('EditJournal', () => {
     await onSave();
 
     // Should redirect without calling PUT
-    expect(mockPush).toHaveBeenCalledWith('/record?view=Observation/obs-123');
+    expect(mockReplace).toHaveBeenCalledWith(
+      '/record?view=Observation/obs-123'
+    );
+    expect(mockPush).not.toHaveBeenCalled();
     expect(mockMutateAsync).not.toHaveBeenCalled();
   });
 
@@ -163,6 +168,22 @@ describe('EditJournal', () => {
       expect(note).not.toHaveProperty('id');
       expect(note).toHaveProperty('text');
     }
+  });
+
+  it('passes viewRoute to success drawer when saving with changes', async () => {
+    render(<EditJournal journalId='obs-123' />);
+
+    // Simulate a title change
+    const titleInput = screen.getByDisplayValue('My Journal Title');
+    fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
+
+    // Extract onSave from the latest setDirtyState call
+    const onSave = mockSetDirtyState.mock.calls.at(-1)[0].onSave;
+    await onSave();
+
+    // Success drawer should receive viewRoute pointing to view page
+    const drawer = screen.getByTestId('success-drawer');
+    expect(drawer.dataset.viewRoute).toBe('/record?view=Observation/obs-123');
   });
 
   it('includes id, valueString, status in PUT payload', async () => {

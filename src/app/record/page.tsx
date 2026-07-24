@@ -8,6 +8,11 @@ import RecordDetail from './record-detail';
 import RecordEdit from './record-edit';
 import RecordTimeline from './record-timeline';
 
+/** Compute the back route for the detail view page. */
+function computeViewBackRoute(paramPatientId: string | null): string {
+  return paramPatientId ? `/record?id=${paramPatientId}` : '/record';
+}
+
 /**
  * Record page route handler.
  *
@@ -35,11 +40,13 @@ export default function RecordPage() {
   // Detail view: requires patient context + view param
   if (patientId && view) {
     const [resourceType, resourceId] = view.split('/');
+    const viewBackRoute = computeViewBackRoute(paramPatientId);
 
     return (
       <RecordDetail
         resourceType={resourceType ?? ''}
         resourceId={resourceId ?? ''}
+        backRoute={viewBackRoute}
       />
     );
   }

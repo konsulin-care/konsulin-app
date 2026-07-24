@@ -34,6 +34,7 @@ export default function EditJournal({ journalId }: Props) {
     addResponse,
     removeResponse
   } = useJournalForm();
+  const viewRoute = `/record?view=Observation/${journalId}`;
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useUpdateJournal();
@@ -72,7 +73,7 @@ export default function EditJournal({ journalId }: Props) {
         JSON.stringify(initialValues.current.notes);
 
     if (!hasChanges) {
-      router.push(`/record?view=Observation/${journalId}`);
+      router.replace(`/record?view=Observation/${journalId}`);
       return;
     }
 
@@ -201,7 +202,11 @@ export default function EditJournal({ journalId }: Props) {
         journalContent
       )}
 
-      <JournalSuccessDrawer isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <JournalSuccessDrawer
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        viewRoute={viewRoute}
+      />
     </>
   );
 }

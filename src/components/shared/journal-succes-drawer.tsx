@@ -15,12 +15,17 @@ import { useRouter } from 'next/navigation';
 type Props = {
   readonly isOpen: boolean;
   readonly onClose: () => void;
+  readonly viewRoute?: string;
 };
 
 /**
  *
  */
-export default function JournalSuccessDrawer({ isOpen, onClose }: Props) {
+export default function JournalSuccessDrawer({
+  isOpen,
+  onClose,
+  viewRoute
+}: Props) {
   const router = useRouter();
 
   return (
@@ -47,7 +52,7 @@ export default function JournalSuccessDrawer({ isOpen, onClose }: Props) {
         <DrawerFooter className='sticky bottom-0 mt-2 flex flex-col gap-4 bg-white text-gray-600'>
           <Button
             className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-            onClick={() => router.push('/record')}
+            onClick={() => router.push(viewRoute ?? '/record')}
           >
             Back
           </Button>

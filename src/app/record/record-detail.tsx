@@ -26,6 +26,7 @@ import RecordSoap from './record-soap';
 type Props = {
   readonly resourceType: string;
   readonly resourceId: string;
+  readonly backRoute?: string;
 };
 /** Check if Observation is a patient journal (LOINC 51855-5). */
 function isPatientJournal(resource: Observation): boolean {
@@ -197,7 +198,11 @@ function computePageTitle(data: Record<string, unknown> | undefined): string {
 /**
  *
  */
-export default function RecordDetail({ resourceType, resourceId }: Props) {
+export default function RecordDetail({
+  resourceType,
+  resourceId,
+  backRoute
+}: Props) {
   const { data, isLoading, error } = useRecordDetail(
     resourceType,
     resourceId || null
@@ -326,7 +331,10 @@ export default function RecordDetail({ resourceType, resourceId }: Props) {
 
   return (
     <>
-      <PageHeader pageIndicator={dynamicTitle ?? pageTitle} />
+      <PageHeader
+        pageIndicator={dynamicTitle ?? pageTitle}
+        backRoute={backRoute}
+      />
       <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
         <PatientIdentityBar authState={authState} />
         {renderContent()}

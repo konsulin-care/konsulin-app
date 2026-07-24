@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,12 +7,8 @@ vi.mock('next/navigation', () => ({
   usePathname: vi.fn(() => '/record'),
   useRouter: vi.fn(() => ({ back: vi.fn(), replace: vi.fn(), push: vi.fn() }))
 }));
-vi.mock('@/hooks/useRecordDetail', () => ({
-  useRecordDetail: vi.fn()
-}));
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: vi.fn()
-}));
+vi.mock('@/hooks/useRecordDetail', () => ({ useRecordDetail: vi.fn() }));
+vi.mock('@/context/auth/authContext', () => ({ useAuth: vi.fn() }));
 vi.mock('@/app/not-found', () => ({
   default: () => <div data-testid='mock-notfound'>Not Found</div>
 }));
@@ -39,9 +34,7 @@ vi.mock('@/app/record/record-condition', () => ({
 vi.mock('@/components/page-header', () => ({
   default: () => <div data-testid='mock-page-header'>Header</div>
 }));
-vi.mock('@/context/fabDirtyContext', () => ({
-  useFabDirty: vi.fn()
-}));
+vi.mock('@/context/fabDirtyContext', () => ({ useFabDirty: vi.fn() }));
 vi.mock('@/components/general/modal-qr', () => ({
   default: () => <div data-testid='mock-modal-qr'>QR</div>
 }));
@@ -68,7 +61,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     vi.mocked(useFabDirty).mockReturnValue({
       setDirtyState: mockSetDirtyState
     } as any);
-
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
         resourceType: 'QuestionnaireResponse',
@@ -78,11 +70,9 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       isLoading: false,
       error: null
     } as any);
-
     render(
       <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
     );
-
     const shareCall = mockSetDirtyState.mock.calls.find(
       (c: unknown[]) => (c[0] as { label?: string })?.label === 'Share Record'
     );
@@ -94,7 +84,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     vi.mocked(useFabDirty).mockReturnValue({
       setDirtyState: mockSetDirtyState
     } as any);
-
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
         resourceType: 'Observation',
@@ -104,9 +93,7 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       isLoading: false,
       error: null
     } as any);
-
     render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
-
     const shareCall = mockSetDirtyState.mock.calls.find(
       (c: unknown[]) => (c[0] as { label?: string })?.label === 'Share Record'
     );
@@ -118,7 +105,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     vi.mocked(useFabDirty).mockReturnValue({
       setDirtyState: mockSetDirtyState
     } as any);
-
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
         resourceType: 'Observation',
@@ -129,10 +115,7 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       isLoading: false,
       error: null
     } as any);
-
     render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
-
-    // Non-own journal should clear dirty state (default role FAB)
     const nullCalls = mockSetDirtyState.mock.calls.filter(
       (c: unknown[]) => c[0] === null
     );
@@ -144,8 +127,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     vi.mocked(useFabDirty).mockReturnValue({
       setDirtyState: mockSetDirtyState
     } as any);
-
-    // Own journal: user fhirId matches subject reference
     vi.mocked(useAuth).mockReturnValue({
       state: {
         isAuthenticated: true,
@@ -157,7 +138,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       },
       isLoading: false
     } as any);
-
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
         resourceType: 'Observation',
@@ -168,9 +148,7 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       isLoading: false,
       error: null
     } as any);
-
     render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
-
     const editCall = mockSetDirtyState.mock.calls.find(
       (c: unknown[]) =>
         (c[0] as { label?: string })?.label === 'Edit' &&
@@ -184,7 +162,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     vi.mocked(useFabDirty).mockReturnValue({
       setDirtyState: mockSetDirtyState
     } as any);
-
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
         resourceType: 'Observation',
@@ -194,14 +171,13 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       isLoading: false,
       error: null
     } as any);
-
     const { unmount } = render(
       <RecordDetail resourceType='Observation' resourceId='obs-1' />
     );
     unmount();
-
     expect(mockSetDirtyState).toHaveBeenCalledWith(null);
   });
+
   it('renders RecordAssessment for non-SOAP QuestionnaireResponse', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -212,12 +188,12 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       isLoading: false,
       error: null
     } as any);
-
     render(
       <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
     );
     expect(screen.getByTestId('mock-record-assessment')).toBeInTheDocument();
   });
+
   it('renders RecordSoap for SOAP QuestionnaireResponse', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -228,12 +204,12 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       isLoading: false,
       error: null
     } as any);
-
     render(
       <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
     );
     expect(screen.getByTestId('mock-record-soap')).toBeInTheDocument();
   });
+
   it('renders RecordJournal for Observation LOINC 51855-5', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -244,10 +220,10 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       isLoading: false,
       error: null
     } as any);
-
     render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
     expect(screen.getByTestId('mock-record-journal')).toBeInTheDocument();
   });
+
   it('renders RecordSoap for Observation LOINC 67855-7', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -258,10 +234,10 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       isLoading: false,
       error: null
     } as any);
-
     render(<RecordDetail resourceType='Observation' resourceId='obs-2' />);
     expect(screen.getByTestId('mock-record-soap')).toBeInTheDocument();
   });
+
   it('renders RecordCondition for Condition resource type', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -272,10 +248,10 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       isLoading: false,
       error: null
     } as any);
-
     render(<RecordDetail resourceType='Condition' resourceId='cond-1' />);
     expect(screen.getByTestId('mock-record-condition')).toBeInTheDocument();
   });
+
   it('passes onPractitionerNameChange to RecordSoap for Practitioner Note', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -286,26 +262,27 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       isLoading: false,
       error: null
     } as any);
-
     render(<RecordDetail resourceType='Observation' resourceId='obs-2' />);
     expect(
       screen.getByTestId('practitioner-name-callback')
     ).toBeInTheDocument();
   });
+
   it('renders Notfound for unknown resourceType', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: null,
       isLoading: false,
       error: null
     } as any);
-
     render(<RecordDetail resourceType='UnknownType' resourceId='x' />);
     expect(screen.getByTestId('mock-notfound')).toBeInTheDocument();
   });
+
   it('renders Notfound when resourceId is empty', () => {
     render(<RecordDetail resourceType='Observation' resourceId='' />);
     expect(screen.getByTestId('mock-notfound')).toBeInTheDocument();
   });
+
   it('renders patient display name from auth context', () => {
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
@@ -316,7 +293,6 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       isLoading: false,
       error: null
     } as any);
-
     render(
       <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
     );
