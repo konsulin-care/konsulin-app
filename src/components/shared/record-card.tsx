@@ -192,7 +192,7 @@ export default function RecordCard({
 
   const cleanDescription = getDescription
     ? getDescription(record)
-    : ((record.result as string) || '\\-').replace(/\n\n/g, '. ');
+    : (record.result as string) || '\\-';
 
   const viewParam = encodeURIComponent(record.id);
   const base = `/record?view=${viewParam}`;

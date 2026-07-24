@@ -12,9 +12,30 @@ vi.mock('@/services/api/record', () => ({
 }));
 
 vi.mock('react-markdown', () => ({
-  default: ({ children }: { children: string }) => (
-    <div data-testid='markdown'>{children}</div>
-  )
+  default: ({
+    children,
+    components
+  }: {
+    children: string;
+    components?: unknown;
+  }) => {
+    // When no custom components are passed, simulate paragraph rendering
+    const hasCustomComponents = components !== undefined;
+    if (hasCustomComponents) {
+      return <div data-testid='markdown'>{children}</div>;
+    }
+    // Default rendering: split by \n\n into <p> elements
+    const paragraphs = children.split('\n\n').filter(Boolean);
+    return (
+      <div data-testid='markdown'>
+        {paragraphs.map((p: string) => (
+          <p key={p} data-testid={`paragraph-${p}`}>
+            {p}
+          </p>
+        ))}
+      </div>
+    );
+  }
 }));
 
 import { useGetSingleRecord } from '@/services/api/record';
@@ -145,7 +166,11 @@ describe('RecordJournal', () => {
     render(<RecordJournal journalId='journal-1' />);
 
     const markdown = screen.getByTestId('markdown');
-    expect(markdown.textContent).toBe('First para\n\nSecond para');
+    // Each note entry becomes its own <p> element
+    const paragraphs = markdown.querySelectorAll('p');
+    expect(paragraphs).toHaveLength(2);
+    expect(paragraphs[0].textContent).toBe('First para');
+    expect(paragraphs[1].textContent).toBe('Second para');
   });
 
   it('does not render created date when effectiveDateTime is missing', () => {

@@ -3,7 +3,7 @@
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetSingleRecord } from '@/services/api/record';
-import { customMarkdownComponents } from '@/utils/helper';
+
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 
@@ -59,9 +59,7 @@ export default function RecordJournal({ journalId }: Props) {
       )}
 
       <div className='mt-4'>
-        <ReactMarkdown components={customMarkdownComponents}>
-          {content}
-        </ReactMarkdown>
+        <ReactMarkdown>{content}</ReactMarkdown>
       </div>
     </div>
   );
