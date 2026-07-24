@@ -109,6 +109,7 @@ describe('QuickActionFab', () => {
     const fabButton = getFabButton(container);
     expect(fabButton.className).toContain('h-14');
     expect(fabButton.className).toContain('w-14');
+    expect(fabButton).toHaveAttribute('type', 'button');
 
     const plusIcon = container.querySelector('.lucide-plus');
     expect(plusIcon).toBeTruthy();
@@ -145,7 +146,11 @@ describe('QuickActionFab', () => {
   it('hides pills menu when dirty', () => {
     renderFab();
 
-    const fabButton = [...document.querySelectorAll<HTMLButtonElement>('button[class*="rounded-full"]')].at(-1);
+    const fabButton = [
+      ...document.querySelectorAll<HTMLButtonElement>(
+        'button[class*="rounded-full"]'
+      )
+    ].at(-1);
     fireEvent.click(fabButton);
 
     const pills = screen.queryAllByText(
@@ -166,8 +171,9 @@ describe('QuickActionFab', () => {
       renderFab();
       fireEvent.click(screen.getByTestId('trigger-selection'));
 
-      const deleteBtn = screen.getByText('Delete (2)');
+      const deleteBtn = screen.getByText('Delete (2)').closest('button');
       expect(deleteBtn).toBeInTheDocument();
+      expect(deleteBtn).toHaveAttribute('type', 'button');
 
       const trashIcon = document.querySelector('.lucide-trash-2');
       expect(trashIcon).toBeTruthy();

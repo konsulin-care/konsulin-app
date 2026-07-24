@@ -56,6 +56,7 @@ export function FabToggleButton({
   const ToggleIcon = Icon ?? Plus;
   return (
     <button
+      type='button'
       onClick={onToggle}
       className={cn(
         'flex items-center justify-center rounded-full bg-[#13C2C2] text-white shadow-lg transition-all duration-300 hover:bg-[#0ea5a5]',
@@ -112,6 +113,7 @@ export function DeleteFabButton({
 }) {
   return (
     <button
+      type='button'
       onClick={onDelete}
       className='flex h-14 items-center gap-2 rounded-full bg-red-500 px-6 text-white shadow-lg transition-all duration-300 hover:bg-red-600'
     >

@@ -26,6 +26,13 @@ function getPractitionerName(profile: Practitioner | undefined): string | null {
   return [prefix, given, family].filter(Boolean).join(' ');
 }
 
+/** Extract display name from a Patient profile. */
+function getPatientName(profile: Patient | Practitioner): string {
+  const name = profile.name?.[0];
+  if (!name) return '';
+  return [name.given?.join(' '), name.family].filter(Boolean).join(' ');
+}
+
 /** Icon or avatar for the card's icon slot, based on record type. */
 function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
   /** Build an <Avatar> from a FHIR profile with generated fallback. */
@@ -48,13 +55,6 @@ function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
         imageClassName='object-cover'
       />
     );
-  }
-
-  /** Extract display name from a Patient profile. */
-  function getPatientName(profile: Patient | Practitioner): string {
-    const name = profile.name?.[0];
-    if (!name) return '';
-    return [name.given?.join(' '), name.family].filter(Boolean).join(' ');
   }
 
   // Practitioner photo avatar
@@ -192,7 +192,7 @@ export default function RecordCard({
 
   const cleanDescription = getDescription
     ? getDescription(record)
-    : (record.result as string) || '\\-';
+    : (record.result as string) || '-';
 
   const viewParam = encodeURIComponent(record.id);
   const base = `/record?view=${viewParam}`;

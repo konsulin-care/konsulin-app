@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 try {
+  // NOSONAR: dev-only lint script, PATH is inherited from CI
   const out = execSync(
     'node node_modules/.bin/eslint --max-warnings 5 src/app/record/',
     {
