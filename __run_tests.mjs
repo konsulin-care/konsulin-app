@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execSync } from 'node:child_process'
 try {
   const result = execSync(
     'node node_modules/.bin/vitest run --reporter verbose src/app/record/__tests__/record-journal.test.tsx src/app/record/__tests__/record-detail.test.tsx',
@@ -7,9 +7,9 @@ try {
       encoding: 'utf8',
       timeout: 120000
     }
-  );
-  console.log(result);
+  )
+  console.log(result)
 } catch (err) {
-  console.log(err.stdout);
-  console.log(err.stderr);
+  console.log(err.stdout)
+  console.log(err.stderr)
 }
