@@ -131,6 +131,14 @@ describe('QuickActionFab', () => {
     expect(plusIcon).toBeTruthy();
   });
 
+  it('has accessible label on collapsed button', () => {
+    const { container } = renderFab();
+
+    const fabButton = getFabButton(container);
+    // Non-dirty, non-open (collapsed) state should have aria-label
+    expect(fabButton).toHaveAttribute('aria-label', 'Open menu');
+  });
+
   it('morphs to pill with Save Changes text when dirty', () => {
     const { container } = renderFab();
 

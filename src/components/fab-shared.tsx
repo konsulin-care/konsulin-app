@@ -57,6 +57,7 @@ export function FabToggleButton({
     <button
       type='button'
       onClick={onToggle}
+      aria-label={!isDirty && !isOpen ? 'Open menu' : undefined}
       className={cn(
         'flex items-center justify-center rounded-full bg-[#13C2C2] text-white shadow-lg transition-all duration-300 hover:bg-[#0ea5a5]',
         isDirty ? 'h-14' : 'h-14 w-14',
