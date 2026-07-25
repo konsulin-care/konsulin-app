@@ -220,6 +220,19 @@ describe('EditJournal', () => {
     ]);
   });
 
+  it('includes effectiveDateTime from journalData in PUT payload', async () => {
+    render(<EditJournal journalId='obs-123' />);
+
+    const titleInput = screen.getByDisplayValue('My Journal Title');
+    fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
+
+    const onSave = mockSetDirtyState.mock.calls.at(-1)[0].onSave;
+    await onSave();
+
+    const payload = mockMutateAsync.mock.calls[0][0];
+    expect(payload.effectiveDateTime).toBe('2026-07-22T10:00:00Z');
+  });
+
   it('preserves user edits when journalData refetches', () => {
     const { rerender } = render(<EditJournal journalId='obs-123' />);
 

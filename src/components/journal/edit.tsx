@@ -86,7 +86,7 @@ export default function EditJournal({ journalId }: Props) {
         valueString: journalTitle,
         resourceType: 'Observation',
         note: response.map(({ text }) => ({ text })),
-        effectiveDateTime: journalData.effectiveDateTime,
+        effectiveDateTime: journalData?.effectiveDateTime,
         status: 'amended',
         code: {
           coding: [
