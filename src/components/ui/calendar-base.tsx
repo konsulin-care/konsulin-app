@@ -1,12 +1,12 @@
 'use client';
 
-import * as React from 'react';
+import { type ComponentProps, type CSSProperties } from 'react';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
 
 import { cn } from '@/lib/utils';
 
-export type CalendarBaseProps = React.ComponentProps<typeof DayPicker>;
+export type CalendarBaseProps = ComponentProps<typeof DayPicker>;
 
 /**
  * Base calendar component wrapping react-day-picker v9.
@@ -24,7 +24,7 @@ function CalendarBase({ className, ...props }: CalendarBaseProps) {
       style={
         {
           '--rdp-accent-color': '#0ABDC3'
-        } as React.CSSProperties
+        } as CSSProperties
       }
       navLayout='around'
       modifiersClassNames={{

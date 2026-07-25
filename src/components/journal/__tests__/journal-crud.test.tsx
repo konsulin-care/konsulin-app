@@ -44,7 +44,7 @@ vi.mock('@/components/shared/journal-response-fields', () => ({
       </button>
       {response.length > 1 && (
         <button
-          data-testid={`remove-0`}
+          data-testid='remove-0'
           onClick={() => onRemove(0)}
           type='button'
         >

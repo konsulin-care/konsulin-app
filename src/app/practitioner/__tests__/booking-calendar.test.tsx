@@ -28,7 +28,7 @@ vi.mock('@/components/ui/calendar-base', () => ({
             <DayButtonCustom
               day={{ date: testDate }}
               modifiers={{}}
-              disabled={true}
+              disabled
               tabIndex={-1}
               onClick={() => handleSelect(testDate)}
               data-testid='custom-day-button-disabled'

@@ -30,19 +30,23 @@ import RegisterPractitionerDrawer from './register-practitioner-drawer';
 function useScrollVisibility(isOpen: boolean, isDirty: boolean) {
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
+
+  /** Toggle FAB visibility based on scroll direction and offset threshold. */
+  const handleScroll = useCallback(() => {
+    if (isOpen || isDirty) return;
+    const currentY = window.scrollY;
+    const delta = currentY - lastScrollY.current;
+    if (Math.abs(delta) < SCROLL_THRESHOLD) return;
+    if (delta > 0 && currentY > SCROLL_HIDE_OFFSET) setIsVisible(false);
+    else if (delta < 0) setIsVisible(true);
+    lastScrollY.current = currentY;
+  }, [isOpen, isDirty]);
+
   useEffect(() => {
-    const handleScroll = () => {
-      if (isOpen || isDirty) return;
-      const currentY = window.scrollY;
-      const delta = currentY - lastScrollY.current;
-      if (Math.abs(delta) < SCROLL_THRESHOLD) return;
-      if (delta > 0 && currentY > SCROLL_HIDE_OFFSET) setIsVisible(false);
-      else if (delta < 0) setIsVisible(true);
-      lastScrollY.current = currentY;
-    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isOpen, isDirty]);
+  }, [handleScroll]);
+
   return isVisible;
 }
 

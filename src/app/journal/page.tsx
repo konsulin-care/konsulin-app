@@ -9,6 +9,7 @@ import { useEffect, useMemo } from 'react';
 import Session from 'supertokens-auth-react/recipe/session';
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 
+/** Parse raw UserRoleClaim value into a string array of role names. */
 function parseRoles(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   const roles: string[] = [];

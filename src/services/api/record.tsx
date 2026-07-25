@@ -267,8 +267,8 @@ export const useSubmitJournal = () => {
         throw error;
       }
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['journals'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['journals'] });
     }
   });
 };
@@ -291,10 +291,10 @@ export const useUpdateJournal = () => {
         throw error;
       }
     },
-    onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: ['journals'] });
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ['journals'] });
       if (variables.id) {
-        void queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
           queryKey: ['single-record', variables.id]
         });
       }
@@ -316,9 +316,9 @@ export const useDeleteJournal = () => {
         throw error;
       }
     },
-    onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: ['journals'] });
-      void queryClient.invalidateQueries({
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ['journals'] });
+      await queryClient.invalidateQueries({
         queryKey: ['single-record', variables]
       });
     }

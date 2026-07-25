@@ -36,6 +36,17 @@ function PageContent({ children }: Readonly<{ children: ReactNode }>) {
   );
 }
 
+/** Nested provider chain isolated to reduce JSX depth. */
+function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
+  return (
+    <FabDirtyProvider>
+      <FabSelectionProvider>
+        <FabMenuProvider>{children}</FabMenuProvider>
+      </FabSelectionProvider>
+    </FabDirtyProvider>
+  );
+}
+
 /** Renders app chrome: top loader, toasts, modals, FAB, and page content. */
 export default function AppChrome({
   children
@@ -48,14 +59,10 @@ export default function AppChrome({
       </Suspense>
       <ToastContainer {...toastConfig} />
       <ProfileCompletenessModal />
-      <FabDirtyProvider>
-        <FabSelectionProvider>
-          <FabMenuProvider>
-            <PageContent>{children}</PageContent>
-            <QuickActionFab />
-          </FabMenuProvider>
-        </FabSelectionProvider>
-      </FabDirtyProvider>
+      <AppProviders>
+        <PageContent>{children}</PageContent>
+        <QuickActionFab />
+      </AppProviders>
     </>
   );
 }
