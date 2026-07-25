@@ -172,6 +172,7 @@ function computeDisplayName(authState: {
   return authState?.userInfo?.email;
 }
 
+/** Render a bar showing the authenticated patient's display name. */
 function PatientIdentityBar({
   authState
 }: Readonly<{
@@ -190,6 +191,7 @@ function PatientIdentityBar({
     </div>
   );
 }
+/** Resolve the page title using the resource type's title resolver, falling back to 'Detail'. */
 function computePageTitle(data: Record<string, unknown> | undefined): string {
   if (!data) return 'Detail';
   const resolver = RESOURCE_TITLES.get(data.resourceType as string);

@@ -34,7 +34,7 @@ function obsBundle(
 
 describe('parseObservationBundle', () => {
   it('parses LOINC 51855-5 as Patient Note with dynamic title (valueString)', () => {
-    const b = obsBundle([
+    const bundle = obsBundle([
       {
         loinc: '51855-5',
         id: 'obs-1',
@@ -42,26 +42,26 @@ describe('parseObservationBundle', () => {
         valueString: 'Feeling unwell today'
       }
     ]);
-    const result = parseObservationBundle(b);
+    const result = parseObservationBundle(bundle);
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('PatientNote');
     expect(result[0].title).toBe('Feeling unwell today');
   });
 
   it('parses LOINC 67855-7 as Practitioner Note', () => {
-    const b = obsBundle([
+    const bundle = obsBundle([
       { loinc: '67855-7', id: 'obs-2', lastUpdated: '2024-06-01T00:00:00Z' }
     ]);
-    const result = parseObservationBundle(b);
+    const result = parseObservationBundle(bundle);
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('PractitionerNote');
   });
 
   it('parses other LOINCs as generic Observation', () => {
-    const b = obsBundle([
+    const bundle = obsBundle([
       { loinc: '12345-6', id: 'obs-3', lastUpdated: '2024-06-01T00:00:00Z' }
     ]);
-    const result = parseObservationBundle(b);
+    const result = parseObservationBundle(bundle);
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('Observation');
   });

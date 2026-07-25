@@ -7,18 +7,16 @@ import { useFabDirty, type FabDirtyState } from '@/context/fabDirtyContext';
 import { useFabMenu, type FabMenuState } from '@/context/fabMenuContext';
 import { useFabSelection } from '@/context/fabSelectionContext';
 import { cn } from '@/lib/utils';
-import {
-  BookText,
-  Calendar,
-  ClipboardClock,
-  HeartPulse,
-  MapPin,
-  Sparkles,
-  UserPlus
-} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AddLocationDrawer from './add-location-drawer';
+import {
+  adminPills,
+  patientPills,
+  practitionerPills,
+  SCROLL_HIDE_OFFSET,
+  SCROLL_THRESHOLD
+} from './fab-pills';
 import {
   CustomMenuPills,
   DeleteFabButton,
@@ -28,81 +26,7 @@ import {
 } from './fab-shared';
 import RegisterPractitionerDrawer from './register-practitioner-drawer';
 
-const patientPills: Pill[] = [
-  {
-    label: 'Self Checkup',
-    href: '/assessments',
-    icon: HeartPulse,
-    delay: 0,
-    action: 'navigate'
-  },
-  {
-    label: 'Write Journal',
-    href: '/journal',
-    icon: BookText,
-    delay: 50,
-    action: 'navigate'
-  },
-  {
-    label: 'View Schedule',
-    href: '/schedule',
-    icon: Calendar,
-    delay: 100,
-    action: 'navigate'
-  },
-  {
-    label: 'Get Recommendation',
-    href: '/recommendation',
-    icon: Sparkles,
-    delay: 150,
-    action: 'navigate'
-  }
-];
-
-const practitionerPills: Pill[] = [
-  {
-    label: 'Set Availability',
-    href: '/practitioner',
-    icon: ClipboardClock,
-    delay: 0,
-    action: 'navigate'
-  },
-  {
-    label: 'View Schedule',
-    href: '/schedule',
-    icon: Calendar,
-    delay: 50,
-    action: 'navigate'
-  },
-  {
-    label: 'Health Screening',
-    href: '/assessments',
-    icon: HeartPulse,
-    delay: 100,
-    action: 'navigate'
-  },
-  {
-    label: 'S.O.A.P.',
-    href: '/assessments/soap',
-    icon: BookText,
-    delay: 150,
-    action: 'navigate'
-  }
-];
-
-const adminPills: Pill[] = [
-  {
-    label: 'Register Practitioner',
-    icon: UserPlus,
-    delay: 0,
-    action: 'register-practitioner'
-  },
-  { label: 'Add Location', icon: MapPin, delay: 50, action: 'add-location' }
-];
-
-const SCROLL_THRESHOLD = 10;
-const SCROLL_HIDE_OFFSET = 100;
-
+/** Hide/show the FAB based on scroll direction and offset. */
 function useScrollVisibility(isOpen: boolean, isDirty: boolean) {
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -148,12 +72,14 @@ function PillButtons({
   );
 }
 
+/** Redirect guest users to auth with intent cookie, unless target is /assessments. */
 function redirectGuestIfNeeded(pill: Pill, isGuest: boolean): boolean {
   if (!isGuest || !pill.href || pill.href === '/assessments') return false;
   document.cookie = `redirect_intent=${encodeURIComponent(pill.href)}; Path=/; Max-Age=300; SameSite=Lax`;
   return true;
 }
 
+/** Get the appropriate set of pills for the user's role. */
 function getRolePills(roleName: string | undefined): Pill[] {
   if (roleName === Roles.ClinicAdmin) return adminPills;
   if (roleName === Roles.Practitioner) return practitionerPills;
@@ -178,6 +104,7 @@ interface FabContentProps {
   readonly setShowAddLocation: (v: boolean) => void;
 }
 
+/** Render the FAB content: overlay, speed-dial pills, custom menu, toggle button, drawers. */
 function FabContent({
   isOpen,
   isDirty,

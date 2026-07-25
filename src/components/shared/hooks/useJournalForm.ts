@@ -22,6 +22,7 @@ export function useJournalForm(initialResponses = 0) {
   );
   const [journalTitle, setJournalTitle] = useState('');
 
+  /** Update the response text at the given index. */
   const handleResponseChange = (index: number, value: string) => {
     setResponse(prev => {
       const next = [...prev];
@@ -34,6 +35,7 @@ export function useJournalForm(initialResponses = 0) {
     setResponse(prev => [...prev, { id: nextId.current++, text: '' }]);
   }, []);
 
+  /** Remove the response at the given index. */
   const removeResponse = (index: number) => {
     setResponse(prev => prev.filter((_, i) => i !== index));
   };

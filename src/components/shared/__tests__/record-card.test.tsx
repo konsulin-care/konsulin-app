@@ -238,7 +238,7 @@ describe('RecordCard title loading skeleton', () => {
           id: 'qr-loading',
           title: 'Questionnaire/phq9'
         })}
-        titlesLoading={true}
+        titlesLoading
       />
     );
     // Skeleton div has animate-pulse class from shadcn/ui

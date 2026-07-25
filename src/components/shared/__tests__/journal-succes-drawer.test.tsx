@@ -42,7 +42,7 @@ describe('JournalSuccessDrawer', () => {
   });
 
   it('renders when isOpen is true', () => {
-    render(<JournalSuccessDrawer isOpen={true} onClose={vi.fn()} />);
+    render(<JournalSuccessDrawer isOpen onClose={vi.fn()} />);
     expect(screen.getByTestId('mock-drawer')).toBeInTheDocument();
   });
 
@@ -54,7 +54,7 @@ describe('JournalSuccessDrawer', () => {
   it('navigates to viewRoute when provided and Back is clicked', () => {
     render(
       <JournalSuccessDrawer
-        isOpen={true}
+        isOpen
         onClose={vi.fn()}
         viewRoute='/record?view=Observation/obs-123'
       />
@@ -65,7 +65,7 @@ describe('JournalSuccessDrawer', () => {
   });
 
   it('navigates to /record when no viewRoute is provided and Back is clicked', () => {
-    render(<JournalSuccessDrawer isOpen={true} onClose={vi.fn()} />);
+    render(<JournalSuccessDrawer isOpen onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByText('Back'));
     expect(mockPush).toHaveBeenCalledWith('/record');
