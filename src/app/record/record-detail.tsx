@@ -6,10 +6,12 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
 import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFabMenu } from '@/context/fabMenuContext';
 import { useRecordDetail } from '@/hooks/useRecordDetail';
 import { isLoincSystem } from '@/utils/fhir';
 import type { Observation, QuestionnaireResponse } from 'fhir/r4';
-import { UsersIcon } from 'lucide-react';
+import { PenLine, Repeat2, UsersIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import {
   useCallback,
   useEffect,
@@ -21,15 +23,12 @@ import RecordAssessment from './record-assessment';
 import RecordCondition from './record-condition';
 import RecordJournal from './record-journal';
 import RecordSoap from './record-soap';
-
 type Props = {
   readonly resourceType: string;
   readonly resourceId: string;
+  readonly backRoute?: string;
 };
-
-/**
- * Determine whether an Observation is a patient journal (LOINC 51855-5).
- */
+/** Check if Observation is a patient journal (LOINC 51855-5). */
 function isPatientJournal(resource: Observation): boolean {
   return (
     resource.code?.coding?.some(
@@ -38,9 +37,7 @@ function isPatientJournal(resource: Observation): boolean {
   );
 }
 
-/**
- * Determine whether an Observation is a practitioner note (LOINC 67855-7).
- */
+/** Check if Observation is a practitioner note (LOINC 67855-7). */
 function isPractitionerNote(resource: Observation): boolean {
   return (
     resource.code?.coding?.some(
@@ -49,9 +46,7 @@ function isPractitionerNote(resource: Observation): boolean {
   );
 }
 
-/**
- * Determine whether a QuestionnaireResponse is a SOAP note.
- */
+/** Check if QuestionnaireResponse is a SOAP note. */
 function isSoapNote(resource: QuestionnaireResponse): boolean {
   return resource.questionnaire === 'Questionnaire/soap';
 }
@@ -62,8 +57,6 @@ type RenderHandler = (props: {
   onTitleChange?: (title: string) => void;
   onPractitionerNameChange?: (name: string) => void;
 }) => ReactNode;
-
-// --- Named renderer functions ---
 
 /**
  *
@@ -124,15 +117,11 @@ export function renderObservation({
   return <Notfound />;
 }
 
-// --- Maps (Codacy-safe: .get() is a method call, not property access) ---
-
 const RESOURCE_RENDERERS = new Map<string, RenderHandler>([
   ['Condition', renderCondition],
   ['QuestionnaireResponse', renderQuestionnaireResponse],
   ['Observation', renderObservation]
 ]);
-
-// --- Named title resolver functions ---
 
 /**
  *
@@ -174,8 +163,6 @@ const RESOURCE_TITLES = new Map<
   ['QuestionnaireResponse', questionnaireResponseTitle],
   ['Observation', observationTitle]
 ]);
-
-/**
 /** Compute the display name from auth state. */
 function computeDisplayName(authState: {
   userInfo?: { fullname?: string; email?: string };
@@ -185,7 +172,7 @@ function computeDisplayName(authState: {
   return authState?.userInfo?.email;
 }
 
-/** Patient identity bar shown at the top of the detail view. */
+/** Render a bar showing the authenticated patient's display name. */
 function PatientIdentityBar({
   authState
 }: Readonly<{
@@ -204,21 +191,20 @@ function PatientIdentityBar({
     </div>
   );
 }
-
-/** Compute the page title based on resource data. */
+/** Resolve the page title using the resource type's title resolver, falling back to 'Detail'. */
 function computePageTitle(data: Record<string, unknown> | undefined): string {
   if (!data) return 'Detail';
   const resolver = RESOURCE_TITLES.get(data.resourceType as string);
   return resolver ? resolver(data) : 'Detail';
 }
-
 /**
- * Detail view for a single record.
  *
- * Dispatches to the appropriate sub-component based on
- * the resource type and its content.
  */
-export default function RecordDetail({ resourceType, resourceId }: Props) {
+export default function RecordDetail({
+  resourceType,
+  resourceId,
+  backRoute
+}: Props) {
   const { data, isLoading, error } = useRecordDetail(
     resourceType,
     resourceId || null
@@ -229,7 +215,9 @@ export default function RecordDetail({ resourceType, resourceId }: Props) {
   const [currentLocation, setCurrentLocation] = useState<string>('');
   const [qrOpen, setQrOpen] = useState(false);
 
+  const router = useRouter();
   const { setDirtyState } = useFabDirty();
+  const { setMenuState } = useFabMenu();
 
   const handlePractitionerNameChange = useCallback((name: string) => {
     setDynamicTitle(`Notes from ${name}`);
@@ -242,14 +230,41 @@ export default function RecordDetail({ resourceType, resourceId }: Props) {
     setCurrentLocation(window.location.href);
   }, []);
 
-  // Set FAB to "Share Record" for all valid resource detail views
+  // Check if resource is the current patient's own journal
+  const isOwnJournal = useMemo(() => {
+    if (data?.resourceType !== 'Observation') return false;
+    const obs = data as unknown as Observation;
+    if (!isPatientJournal(obs)) return false;
+    const patientRef = `Patient/${authState.userInfo?.fhirId}`;
+    return obs.subject?.reference === patientRef;
+  }, [data, authState.userInfo?.fhirId]);
+
+  // Set FAB state: edit for own journals, default FAB for non-own journals
   useEffect(() => {
-    if (!data || error) {
+    const isNonOwnJournal =
+      data?.resourceType === 'Observation' &&
+      !isOwnJournal &&
+      isPatientJournal(data as unknown as Observation);
+
+    if (!data || error || isNonOwnJournal) {
       setDirtyState(null);
+      setMenuState(null);
+    } else if (isOwnJournal) {
+      setDirtyState({
+        isDirty: true,
+        label: 'Edit',
+        icon: PenLine,
+        onSave: () => router.push(`/record?edit=Observation/${resourceId}`),
+        isSaving: false
+      });
+      setMenuState(null);
     } else {
+      // Other resources — share record
+      setMenuState(null);
       setDirtyState({
         isDirty: true,
         label: 'Share Record',
+        icon: Repeat2,
         onSave: () => {
           const shareUrl = currentLocation || window.location.href;
           if (typeof navigator.share === 'function') {
@@ -264,8 +279,20 @@ export default function RecordDetail({ resourceType, resourceId }: Props) {
       });
     }
 
-    return () => setDirtyState(null);
-  }, [data, error, setDirtyState, currentLocation]);
+    return () => {
+      setDirtyState(null);
+      setMenuState(null);
+    };
+  }, [
+    data,
+    error,
+    isOwnJournal,
+    setDirtyState,
+    setMenuState,
+    currentLocation,
+    resourceId,
+    router
+  ]);
 
   // Invalid props
   if (!resourceType || !resourceId) {
@@ -284,7 +311,6 @@ export default function RecordDetail({ resourceType, resourceId }: Props) {
       </div>
     );
   }
-
   // Error or no data after loading
   if (error || !data) {
     return <Notfound />;
@@ -307,7 +333,10 @@ export default function RecordDetail({ resourceType, resourceId }: Props) {
 
   return (
     <>
-      <PageHeader pageIndicator={dynamicTitle ?? pageTitle} />
+      <PageHeader
+        pageIndicator={dynamicTitle ?? pageTitle}
+        backRoute={backRoute}
+      />
       <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
         <PatientIdentityBar authState={authState} />
         {renderContent()}

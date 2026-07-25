@@ -213,6 +213,20 @@ describe('RecordCard practitioner note title', () => {
       screen.getByText('Patient reports feeling better today.')
     ).toBeInTheDocument();
   });
+
+  it('does not append extra dots to multi-entry patient note', () => {
+    render(
+      <RecordCard
+        record={makeRecord({
+          type: 'PatientNote',
+          id: 'patient-note-multi',
+          result: 'First paragraph.\n\nSecond paragraph.'
+        })}
+      />
+    );
+    // Text should NOT contain double dots from newline replacement
+    expect(screen.queryByText(/\.\./)).not.toBeInTheDocument();
+  });
 });
 
 describe('RecordCard title loading skeleton', () => {
@@ -224,7 +238,7 @@ describe('RecordCard title loading skeleton', () => {
           id: 'qr-loading',
           title: 'Questionnaire/phq9'
         })}
-        titlesLoading={true}
+        titlesLoading
       />
     );
     // Skeleton div has animate-pulse class from shadcn/ui

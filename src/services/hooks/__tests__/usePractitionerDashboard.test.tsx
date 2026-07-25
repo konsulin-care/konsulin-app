@@ -235,6 +235,46 @@ describe('usePractitionerDashboard', () => {
     expect(result.current.daySessions).toHaveLength(0);
   });
 
+  it('keeps isLoading false when month changes (keepPreviousData)', async () => {
+    const { result, rerender } = renderHook(
+      ({ monthStart, monthEnd }: { monthStart: Date; monthEnd: Date }) =>
+        usePractitionerDashboard({
+          practitionerId: 'pract-1',
+          monthStart,
+          monthEnd
+        }),
+      {
+        initialProps: {
+          monthStart: new Date('2026-07-01'),
+          monthEnd: new Date('2026-07-31')
+        },
+        wrapper: createWrapper(queryClient)
+      }
+    );
+
+    // Wait for initial month query to complete
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    const callsBefore = mockGet.mock.calls.length;
+    expect(callsBefore).toBeGreaterThanOrEqual(1);
+
+    // Simulate month navigation: change monthStart/monthEnd
+    rerender({
+      monthStart: new Date('2026-08-01'),
+      monthEnd: new Date('2026-08-31')
+    });
+
+    // isLoading must stay false — keepPreviousData keeps old data as placeholder
+    expect(result.current.isLoading).toBe(false);
+
+    // A new API call should be in-flight for the new month
+    await waitFor(() => {
+      expect(mockGet.mock.calls.length).toBeGreaterThan(callsBefore);
+    });
+  });
+
   it('computes available days from merged PractitionerRole availableTime', async () => {
     const { result } = renderHook(
       () =>

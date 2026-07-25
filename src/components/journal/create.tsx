@@ -3,19 +3,20 @@
 
 import { useJournalForm } from '@/components/shared/hooks/useJournalForm';
 import JournalResponseFields from '@/components/shared/journal-response-fields';
-import JournalSubmitButton from '@/components/shared/journal-submit-button';
 import JournalSuccessDrawer from '@/components/shared/journal-succes-drawer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
+import { useFabDirty } from '@/context/fabDirtyContext';
 import { useSubmitJournal } from '@/services/api/record';
 import { addDays, subDays } from 'date-fns';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  NotepadTextIcon
+  NotepadTextIcon,
+  SavePen
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import CalendarJournal from './calender-journal';
 const today = new Date();
@@ -34,15 +35,14 @@ export default function CreateJournal() {
     handleResponseChange,
     addResponse,
     removeResponse
-  } = useJournalForm();
+  } = useJournalForm(1);
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useSubmitJournal();
-
-  useEffect(addResponse, [addResponse]);
+  const { setDirtyState } = useFabDirty();
 
   /** Submits a journal entry to the server. */
-  const handleSubmitJournal = async () => {
+  const handleSubmitJournal = useCallback(async () => {
     try {
       const payload = {
         valueString: journalTitle,
@@ -76,7 +76,35 @@ export default function CreateJournal() {
       console.error('Error when submitting journal: ', error);
       toast.error(error.message);
     }
-  };
+  }, [authState, submitJournal, journalTitle, response, date, setIsOpen]);
+
+  useEffect(() => {
+    const titleReady = journalTitle.trim().length >= 3;
+    const contentWords = response
+      .flatMap(r => r.text.trim().split(/\s+/))
+      .filter(Boolean).length;
+    const contentReady = contentWords >= 2;
+
+    if (titleReady && contentReady) {
+      setDirtyState({
+        isDirty: true,
+        label: 'Save Journal',
+        icon: SavePen,
+        onSave: () => handleSubmitJournal(),
+        isSaving: isSubmitLoading
+      });
+    } else {
+      setDirtyState(null);
+    }
+
+    return () => setDirtyState(null);
+  }, [
+    journalTitle,
+    response,
+    isSubmitLoading,
+    setDirtyState,
+    handleSubmitJournal
+  ]);
 
   /** Increment selected date by one day. */
   const nextDay = () => {
@@ -129,12 +157,7 @@ export default function CreateJournal() {
         onAdd={addResponse}
       />
 
-      <JournalSubmitButton
-        isLoading={isSubmitLoading}
-        onClick={() => {
-          handleSubmitJournal().catch(console.error);
-        }}
-      />
+      {/* Save handled via FAB dirty state */}
     </>
   );
 

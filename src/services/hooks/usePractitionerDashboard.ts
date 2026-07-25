@@ -143,6 +143,7 @@ function useMonthQuery(
       return response.data;
     },
     staleTime: 30_000,
+    keepPreviousData: true,
     enabled: Boolean(practitionerId)
   });
 }

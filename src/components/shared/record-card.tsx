@@ -11,9 +11,8 @@ import {
   generateAvatarPlaceholder
 } from '@/utils/helper';
 import { format } from 'date-fns';
-import type { Practitioner } from 'fhir/r4';
+import type { Patient, Practitioner } from 'fhir/r4';
 import { FileText, HeartPulse, Microscope } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 
@@ -27,26 +26,43 @@ function getPractitionerName(profile: Practitioner | undefined): string | null {
   return [prefix, given, family].filter(Boolean).join(' ');
 }
 
+/** Extract display name from a Patient profile. */
+function getPatientName(profile: Patient | Practitioner): string {
+  const name = profile.name?.[0];
+  if (!name) return '';
+  return [name.given?.join(' '), name.family].filter(Boolean).join(' ');
+}
+
 /** Icon or avatar for the card's icon slot, based on record type. */
 function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
+  /** Build an <Avatar> from a FHIR profile with generated fallback. */
+  function renderProfileAvatar(
+    profile: Patient | Practitioner,
+    getName: (p: Patient | Practitioner) => string
+  ) {
+    const { initials, seed, backgroundColor } = generateAvatarPlaceholder({
+      id: profile.id,
+      name: getName(profile) ?? ''
+    });
+    return (
+      <Avatar
+        photoUrl={profile.photo?.[0]?.url}
+        initials={initials ?? ''}
+        backgroundColor={backgroundColor ?? '#13c2c2'}
+        seed={seed}
+        height={40}
+        width={40}
+        imageClassName='object-cover'
+      />
+    );
+  }
+
   // Practitioner photo avatar
   if (record.type === 'PractitionerNote') {
-    const profile = record.practitionerProfile;
-    if (profile) {
-      const { initials, seed, backgroundColor } = generateAvatarPlaceholder({
-        id: profile.id,
-        name: getPractitionerName(profile) ?? ''
-      });
-      return (
-        <Avatar
-          photoUrl={profile.photo?.[0]?.url}
-          initials={initials ?? ''}
-          backgroundColor={backgroundColor ?? '#13c2c2'}
-          seed={seed}
-          height={40}
-          width={40}
-          imageClassName='object-cover'
-        />
+    if (record.practitionerProfile) {
+      return renderProfileAvatar(
+        record.practitionerProfile,
+        p => getPractitionerName(p as Practitioner) ?? ''
       );
     }
     return (
@@ -56,20 +72,12 @@ function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
 
   // Patient photo avatar
   if (record.type === 'PatientNote') {
-    const url = record.patientProfile?.photo?.[0]?.url;
-    if (url) {
-      return (
-        <Image
-          className='h-[40px] w-[40px] rounded-full object-cover'
-          src={url}
-          width={40}
-          height={40}
-          alt=''
-          unoptimized
-        />
-      );
+    if (record.patientProfile) {
+      return renderProfileAvatar(record.patientProfile, getPatientName);
     }
-    return <FileText className='h-5 w-5 text-gray-500' />;
+    return (
+      <FileText data-testid='icon-fallback' className='h-5 w-5 text-gray-500' />
+    );
   }
 
   // Icon-based types
@@ -162,18 +170,21 @@ export default function RecordCard({
   getDescription,
   titlesLoading = false
 }: Props) {
-  // PractitionerNote uses a dynamic title instead of the formatted coding display
-  const formattedTitle =
-    record.type === 'PractitionerNote'
-      ? `Notes from ${getPractitionerName(record.practitionerProfile) ?? 'Practitioner'}`
-      : (() => {
-          const splitTitle = record.title.split('/');
-          const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
-          return formatTitleFor.length === 0 ||
-            formatTitleFor.includes(record.type)
-            ? formatTitle(title)
-            : title;
-        })();
+  /** Compute the formatted title based on record type. */
+  const formattedTitle = (() => {
+    if (record.type === 'PractitionerNote') {
+      return `Notes from ${getPractitionerName(record.practitionerProfile) ?? 'Practitioner'}`;
+    }
+    if (record.type === 'PatientNote') {
+      return record.title;
+    }
+    const splitTitle = record.title.split('/');
+    const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
+    if (formatTitleFor.length === 0 || formatTitleFor.includes(record.type)) {
+      return formatTitle(title);
+    }
+    return title;
+  })();
 
   const resourceId = record.id.split('/')[1] ?? record.id;
 
@@ -181,7 +192,7 @@ export default function RecordCard({
 
   const cleanDescription = getDescription
     ? getDescription(record)
-    : ((record.result as string) || '\\-').replace(/\n\n/g, '. ');
+    : (record.result as string) || '-';
 
   const viewParam = encodeURIComponent(record.id);
   const base = `/record?view=${viewParam}`;

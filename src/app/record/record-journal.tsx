@@ -1,91 +1,66 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetSingleRecord } from '@/services/api/record';
+
 import { format } from 'date-fns';
-import { FileCheckIcon, NotepadTextIcon } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
 
 type Props = {
   journalId: string;
 };
 
+/** Formats a date string to readable format. */
+function formattedDate(date: string): string {
+  return format(new Date(date), 'dd MMMM yyyy');
+}
+
 /**
- *
+ * Renders a single journal entry with title, dates, and markdown content.
  */
 export default function RecordJournal({ journalId }: Props) {
-  const router = useRouter();
   const { data: journalData, isLoading } = useGetSingleRecord({
     id: journalId,
     resourceType: 'Observation'
   });
 
-  /** Formats a date string to readable format. */
-  const formattedDate = (date: string) => {
-    return format(new Date(date), 'dd MMMM yyyy');
-  };
+  if (isLoading || !journalData) {
+    return (
+      <div className='flex flex-col gap-4'>
+        <Skeleton
+          count={3}
+          className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
+        />
+      </div>
+    );
+  }
 
-  return isLoading || !journalData ? (
-    <div className='flex flex-col gap-4'>
-      <Skeleton
-        count={3}
-        className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
-      />
+  const title = journalData.valueString ?? '';
+  const content = (journalData.note ?? [])
+    .map((item: { text: string }) => item.text)
+    .join('\n\n');
+  const effectiveDateTime: string | undefined = journalData.effectiveDateTime;
+  const lastUpdated: string | undefined = journalData.meta?.lastUpdated;
+
+  return (
+    <div className='mb-4 rounded-xl border p-4'>
+      <p className='text-[14px] font-bold text-[#2c2f35]'>{title}</p>
+
+      {effectiveDateTime && (
+        <p className='mt-2 text-xs text-gray-500'>
+          Created: {formattedDate(effectiveDateTime)}
+        </p>
+      )}
+      {lastUpdated && (
+        <p className='text-xs text-gray-500'>
+          Updated: {formattedDate(lastUpdated)}
+        </p>
+      )}
+
+      <div className='mt-4'>
+        <ReactMarkdown>{content}</ReactMarkdown>
+      </div>
     </div>
-  ) : (
-    <>
-      <div className='card flex items-center bg-[hsla(0,0%,98%,1)]'>
-        <FileCheckIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
-
-        <div className='flex grow flex-col'>
-          <span className='text-muted text-[10px]'>Journal Create</span>
-          <span className='text-[14px] font-bold'>
-            {journalData.effectiveDateTime &&
-              formattedDate(journalData.effectiveDateTime)}
-          </span>
-        </div>
-        <div className='flex flex-col'>
-          <span className='text-muted text-right text-[10px]'>Last Edit</span>
-          <span className='text-right text-[14px] font-bold'>
-            {journalData.meta.lastUpdated &&
-              formattedDate(journalData.meta.lastUpdated)}
-          </span>
-        </div>
-      </div>
-
-      <div className='card flex border'>
-        <NotepadTextIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
-        <div>{journalData.valueString}</div>
-      </div>
-
-      {journalData.note.map((item: { text: string }) => {
-        return (
-          <div key={item.text}>
-            <div className='text-muted mb-2 text-[12px]'>
-              Write anything here
-            </div>
-
-            <div className='card flex text-[14px]'>
-              <div>{item.text}</div>
-            </div>
-          </div>
-        );
-      })}
-
-      <Button
-        onClick={() => {
-          const queryParams = new URLSearchParams({
-            id: journalId,
-            category: '4'
-          }).toString();
-          router.push(`/record/edit?${queryParams}`);
-        }}
-        className='bg-secondary !mt-auto w-full rounded-full p-4 text-[14px] text-white'
-      >
-        Edit Journal
-      </Button>
-    </>
   );
 }

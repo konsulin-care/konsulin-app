@@ -7,6 +7,7 @@ export type FabDirtyState = {
   label: string;
   onSave: () => void | Promise<void>;
   isSaving: boolean;
+  icon?: React.ComponentType<{ className?: string }>;
 };
 
 type FabDirtyContextType = {

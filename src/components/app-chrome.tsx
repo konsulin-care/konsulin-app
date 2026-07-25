@@ -2,6 +2,7 @@ import ProfileCompletenessModal from '@/components/general/profile-completeness-
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
 import QuickActionFab from '@/components/quick-action-fab';
 import { FabDirtyProvider } from '@/context/fabDirtyContext';
+import { FabMenuProvider } from '@/context/fabMenuContext';
 import { FabSelectionProvider } from '@/context/fabSelectionContext';
 import dynamic from 'next/dynamic';
 import { Suspense, type ComponentType, type ReactNode } from 'react';
@@ -35,6 +36,17 @@ function PageContent({ children }: Readonly<{ children: ReactNode }>) {
   );
 }
 
+/** Nested provider chain isolated to reduce JSX depth. */
+function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
+  return (
+    <FabDirtyProvider>
+      <FabSelectionProvider>
+        <FabMenuProvider>{children}</FabMenuProvider>
+      </FabSelectionProvider>
+    </FabDirtyProvider>
+  );
+}
+
 /** Renders app chrome: top loader, toasts, modals, FAB, and page content. */
 export default function AppChrome({
   children
@@ -47,12 +59,10 @@ export default function AppChrome({
       </Suspense>
       <ToastContainer {...toastConfig} />
       <ProfileCompletenessModal />
-      <FabDirtyProvider>
-        <FabSelectionProvider>
-          <PageContent>{children}</PageContent>
-          <QuickActionFab />
-        </FabSelectionProvider>
-      </FabDirtyProvider>
+      <AppProviders>
+        <PageContent>{children}</PageContent>
+        <QuickActionFab />
+      </AppProviders>
     </>
   );
 }

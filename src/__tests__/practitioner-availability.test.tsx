@@ -94,8 +94,8 @@ vi.mock('@/components/ui/button', () => ({
   buttonVariants: () => 'btn-variants-class'
 }));
 
-vi.mock('@/components/ui/calendar-temp', () => ({
-  Calendar: ({ onSelect, onMonthChange }: any) => (
+vi.mock('@/components/ui/calendar-base', () => ({
+  CalendarBase: ({ onSelect, onMonthChange }: any) => (
     <div data-testid='mock-calendar'>
       <button
         data-testid='calendar-date-btn'
@@ -108,7 +108,7 @@ vi.mock('@/components/ui/calendar-temp', () => ({
       <button
         data-testid='calendar-month-btn'
         onClick={() => {
-          onMonthChange?.(new Date('2026-07-01'));
+          onMonthChange?.(new Date('2026-08-01'));
         }}
       >
         Change Month
@@ -199,7 +199,9 @@ import {
   usePayAppointment,
   useRelayBooking
 } from '@/services/api/appointments';
+import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import { useFindAvailability } from '@/services/clinicians';
+import { useBusySlotsByPractitioner } from '@/services/slots';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function createWrapper(queryClient: QueryClient) {
@@ -522,5 +524,37 @@ describe('PractitionerAvailability', () => {
     fireEvent.click(screen.getByTestId('mock-drawer-trigger'));
     fireEvent.click(screen.getByTestId('calendar-date-btn'));
     expect(mockBookingDispatch).toHaveBeenCalled();
+  });
+
+  it('auto-selects earliest available date when month changes in page mode', () => {
+    vi.mocked(useDetailPractitioner).mockReturnValue({
+      newData: {
+        resource: {
+          availableTime: [
+            { daysOfWeek: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] }
+          ]
+        },
+        practitioner: { id: 'prac-1' },
+        schedule: { id: 'schedule-1' }
+      },
+      isLoading: false,
+      isError: false
+    } as any);
+
+    render(
+      <PractitionerAvailability
+        variant='page'
+        practitionerRoleId='role-1'
+        durationMinutes={60}
+      />,
+      { wrapper: createWrapper(queryClient) }
+    );
+
+    fireEvent.click(screen.getByTestId('calendar-month-btn'));
+
+    expect(vi.mocked(useBusySlotsByPractitioner)).toHaveBeenCalledWith(
+      'prac-1',
+      '2026-08-01'
+    );
   });
 });

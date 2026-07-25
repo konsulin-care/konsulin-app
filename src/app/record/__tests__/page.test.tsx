@@ -10,7 +10,14 @@ vi.mock('@/context/auth/authContext', () => ({
 }));
 
 vi.mock('@/app/record/record-detail', () => ({
-  default: () => <div data-testid='mock-record-detail'>Detail</div>
+  default: (props: { backRoute?: string }) => (
+    <div
+      data-testid='mock-record-detail'
+      data-back-route={props.backRoute ?? ''}
+    >
+      Detail
+    </div>
+  )
 }));
 
 vi.mock('@/app/record/record-timeline', () => ({
@@ -49,6 +56,12 @@ describe('RecordPage - routing', () => {
       params: 'id=pat-1&view=Observation/obs-1',
       auth: { role_name: 'Practitioner', fhirId: 'dr-1' } as const,
       expected: 'mock-record-detail'
+    },
+    {
+      name: 'patient own detail view',
+      params: 'view=Observation/obs-1',
+      auth: { role_name: 'Patient', fhirId: 'pat-1' } as const,
+      expected: 'mock-record-detail'
     }
   ])('shows $name', ({ params, auth, expected }) => {
     vi.mocked(useSearchParams).mockReturnValue(
@@ -65,6 +78,48 @@ describe('RecordPage - routing', () => {
 
     render(<RecordPage />);
     expect(screen.getByTestId(expected)).toBeInTheDocument();
+  });
+
+  it('passes backRoute=/record for patient self-view (no id param)', () => {
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams(
+        'view=Observation/obs-1'
+      ) as unknown as ReadonlyURLSearchParams
+    );
+    const mockDispatch = vi.fn() as unknown as React.Dispatch<unknown>;
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'Patient', fhirId: 'pat-1' }
+      },
+      isLoading: false,
+      dispatch: mockDispatch
+    });
+
+    render(<RecordPage />);
+    const detail = screen.getByTestId('mock-record-detail');
+    expect(detail.dataset.backRoute).toBe('/record');
+  });
+
+  it('passes backRoute=/record?id=pat-1 for practitioner view (with id param)', () => {
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams(
+        'id=pat-1&view=Observation/obs-1'
+      ) as unknown as ReadonlyURLSearchParams
+    );
+    const mockDispatch = vi.fn() as unknown as React.Dispatch<unknown>;
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'Practitioner', fhirId: 'dr-1' }
+      },
+      isLoading: false,
+      dispatch: mockDispatch
+    });
+
+    render(<RecordPage />);
+    const detail = screen.getByTestId('mock-record-detail');
+    expect(detail.dataset.backRoute).toBe('/record?id=pat-1');
   });
 
   it('shows NotFound when no patient context is available', () => {

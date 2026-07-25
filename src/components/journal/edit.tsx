@@ -3,14 +3,15 @@
 
 import { useJournalForm } from '@/components/shared/hooks/useJournalForm';
 import JournalResponseFields from '@/components/shared/journal-response-fields';
-import JournalSubmitButton from '@/components/shared/journal-submit-button';
 import JournalSuccessDrawer from '@/components/shared/journal-succes-drawer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
+import { useFabDirty } from '@/context/fabDirtyContext';
 import { useGetSingleRecord, useUpdateJournal } from '@/services/api/record';
 import { format } from 'date-fns';
-import { FileCheckIcon, NotepadTextIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { FileCheckIcon, NotepadTextIcon, SavePen } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
 type Props = {
@@ -21,7 +22,7 @@ type Props = {
  *
  */
 export default function EditJournal({ journalId }: Props) {
-  const { state: authState, isLoading: isAuthLoading } = useAuth();
+  const { isLoading: isAuthLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const {
     response,
@@ -33,15 +34,22 @@ export default function EditJournal({ journalId }: Props) {
     addResponse,
     removeResponse
   } = useJournalForm();
+  const viewRoute = `/record?view=Observation/${journalId}`;
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
     useUpdateJournal();
   const { data: journalData, isLoading: isJournalLoading } = useGetSingleRecord(
     { id: journalId, resourceType: 'Observation' }
   );
+  const router = useRouter();
+  const { setDirtyState } = useFabDirty();
+  const initialValues = useRef({ title: '', notes: [] as { text: string }[] });
+
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (journalData) {
+    if (journalData && !initialized.current) {
+      initialized.current = true;
       setJournalTitle(journalData?.valueString || '');
 
       if (journalData.note.length > 0) {
@@ -52,19 +60,33 @@ export default function EditJournal({ journalId }: Props) {
           }))
         );
       }
+
+      initialValues.current = {
+        title: journalData.valueString ?? '',
+        notes: (journalData.note ?? []).map(n => ({ text: n.text }))
+      };
     }
   }, [journalData, setJournalTitle, setResponse, nextId]);
 
   /** Submit journal entry to the API, creating or updating the resource. */
-  const handleSubmitJournal = async () => {
+  const handleSubmitJournal = useCallback(async () => {
+    const hasChanges =
+      journalTitle !== initialValues.current.title ||
+      JSON.stringify(response.map(({ text }) => ({ text }))) !==
+        JSON.stringify(initialValues.current.notes);
+
+    if (!hasChanges) {
+      router.replace(`/record?view=Observation/${journalId}`);
+      return;
+    }
+
     try {
       const payload = {
         id: journalId,
         valueString: journalTitle,
         resourceType: 'Observation',
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        note: response.map(({ id, ...rest }) => rest),
-        effectiveDateTime: journalData.effectiveDateTime,
+        note: response.map(({ text }) => ({ text })),
+        effectiveDateTime: journalData?.effectiveDateTime,
         status: 'amended',
         code: {
           coding: [
@@ -75,14 +97,8 @@ export default function EditJournal({ journalId }: Props) {
             }
           ]
         },
-        subject: {
-          reference: `Patient/${authState.userInfo.fhirId}`
-        },
-        performer: [
-          {
-            reference: `Patient/${authState.userInfo.fhirId}`
-          }
-        ]
+        subject: journalData?.subject,
+        performer: journalData?.performer
       };
 
       await submitJournal(payload);
@@ -91,7 +107,33 @@ export default function EditJournal({ journalId }: Props) {
       console.error('Error when updating journal: ', error);
       toast.error(error.message);
     }
-  };
+  }, [
+    submitJournal,
+    journalId,
+    journalTitle,
+    response,
+    journalData,
+    setIsOpen,
+    router
+  ]);
+
+  useEffect(() => {
+    setDirtyState({
+      isDirty: true,
+      label: 'Save Journal',
+      icon: SavePen,
+      onSave: () => handleSubmitJournal(),
+      isSaving: isSubmitLoading
+    });
+
+    return () => setDirtyState(null);
+  }, [
+    journalTitle,
+    response,
+    isSubmitLoading,
+    setDirtyState,
+    handleSubmitJournal
+  ]);
 
   /** Format an ISO date string to a human-readable Indonesian locale format. */
   const formattedDate = (date: string) => {
@@ -141,12 +183,7 @@ export default function EditJournal({ journalId }: Props) {
         onAdd={addResponse}
       />
 
-      <JournalSubmitButton
-        isLoading={isSubmitLoading}
-        onClick={() => {
-          handleSubmitJournal().catch(console.error);
-        }}
-      />
+      {/* Save handled via FAB dirty state */}
     </>
   );
 
@@ -161,7 +198,11 @@ export default function EditJournal({ journalId }: Props) {
         journalContent
       )}
 
-      <JournalSuccessDrawer isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <JournalSuccessDrawer
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        viewRoute={viewRoute}
+      />
     </>
   );
 }

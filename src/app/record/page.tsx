@@ -5,7 +5,13 @@ import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useSearchParams } from 'next/navigation';
 import RecordDetail from './record-detail';
+import RecordEdit from './record-edit';
 import RecordTimeline from './record-timeline';
+
+/** Compute the back route for the detail view page. */
+function computeViewBackRoute(paramPatientId: string | null): string {
+  return paramPatientId ? `/record?id=${paramPatientId}` : '/record';
+}
 
 /**
  * Record page route handler.
@@ -14,6 +20,7 @@ import RecordTimeline from './record-timeline';
  *   /record                              → patient's own timeline
  *   /record?id=<patientId>               → practitioner's patient timeline
  *   /record?id=<patientId>&view=<resourceType>/<resource-id>  → detail view
+ *   /record?edit=<resourceType>/<resource-id>                → edit form
  */
 export default function RecordPage() {
   const searchParams = useSearchParams();
@@ -21,6 +28,7 @@ export default function RecordPage() {
 
   const paramPatientId = searchParams.get('id');
   const view = searchParams.get('view');
+  const edit = searchParams.get('edit');
 
   // Resolve patientId: URL param takes precedence, fall back to auth context
   const patientId =
@@ -32,9 +40,23 @@ export default function RecordPage() {
   // Detail view: requires patient context + view param
   if (patientId && view) {
     const [resourceType, resourceId] = view.split('/');
+    const viewBackRoute = computeViewBackRoute(paramPatientId);
 
     return (
       <RecordDetail
+        resourceType={resourceType ?? ''}
+        resourceId={resourceId ?? ''}
+        backRoute={viewBackRoute}
+      />
+    );
+  }
+
+  // Edit view: requires patient context + edit param
+  if (patientId && edit) {
+    const [resourceType, resourceId] = edit.split('/');
+
+    return (
+      <RecordEdit
         resourceType={resourceType ?? ''}
         resourceId={resourceId ?? ''}
       />

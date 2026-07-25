@@ -57,6 +57,22 @@ function TestHarness() {
         >
           Make Dirty
         </button>
+        <button
+          data-testid='trigger-dirty-not'
+          onClick={() =>
+            setDirtyState({
+              isDirty: false,
+              label: 'Save Changes',
+              icon: vi.fn() as unknown as React.ComponentType<{
+                className?: string;
+              }>,
+              onSave: vi.fn(),
+              isSaving: false
+            })
+          }
+        >
+          Make Dirty (not really)
+        </button>
         <button data-testid='trigger-clean' onClick={() => setDirtyState(null)}>
           Make Clean
         </button>
@@ -109,9 +125,18 @@ describe('QuickActionFab', () => {
     const fabButton = getFabButton(container);
     expect(fabButton.className).toContain('h-14');
     expect(fabButton.className).toContain('w-14');
+    expect(fabButton).toHaveAttribute('type', 'button');
 
     const plusIcon = container.querySelector('.lucide-plus');
     expect(plusIcon).toBeTruthy();
+  });
+
+  it('has accessible label on collapsed button', () => {
+    const { container } = renderFab();
+
+    const fabButton = getFabButton(container);
+    // Non-dirty, non-open (collapsed) state should have aria-label
+    expect(fabButton).toHaveAttribute('aria-label', 'Open menu');
   });
 
   it('morphs to pill with Save Changes text when dirty', () => {
@@ -145,7 +170,11 @@ describe('QuickActionFab', () => {
   it('hides pills menu when dirty', () => {
     renderFab();
 
-    const fabButton = [...document.querySelectorAll<HTMLButtonElement>('button[class*="rounded-full"]')].at(-1);
+    const fabButton = [
+      ...document.querySelectorAll<HTMLButtonElement>(
+        'button[class*="rounded-full"]'
+      )
+    ].at(-1);
     fireEvent.click(fabButton);
 
     const pills = screen.queryAllByText(
@@ -161,13 +190,62 @@ describe('QuickActionFab', () => {
     expect(pillsAfter).toHaveLength(0);
   });
 
+  it('shows speed-dial and Plus icon when dirtyState exists but isDirty is false', () => {
+    const { container } = renderFab();
+
+    // Set dirtyState with isDirty=false and a non-default icon
+    fireEvent.click(screen.getByTestId('trigger-dirty-not'));
+
+    // Should show Plus icon (not the dirty icon)
+    const plusIcon = container.querySelector('.lucide-plus');
+    expect(plusIcon).toBeTruthy();
+
+    // Click FAB — should open speed-dial, not save
+    const fabButton = getFabButton(container);
+    fireEvent.click(fabButton);
+
+    const pills = screen.queryAllByText(
+      /Self Checkup|Write Journal|View Schedule|Get Recommendation/
+    );
+    expect(pills.length).toBeGreaterThan(0);
+  });
+
+  it('shows Plus icon in non-dirty mode even when dirty icon is set', () => {
+    const { container } = renderFab();
+
+    // Simulate a dirtyState with isDirty=false but icon=SavePen (as Bug C)
+    // We directly test FabToggleButton behavior via the dirtyState mechanism
+    fireEvent.click(screen.getByTestId('trigger-dirty-not'));
+
+    // Must show Plus icon, never the dirty icon
+    const plusIcon = container.querySelector('.lucide-plus');
+    expect(plusIcon).toBeTruthy();
+
+    const savePenIcon = container.querySelector('.lucide-save-pen');
+    expect(savePenIcon).toBeFalsy();
+  });
+
+  it('shows dirty icon in dirty mode', () => {
+    const { container } = renderFab();
+
+    fireEvent.click(screen.getByTestId('trigger-dirty'));
+
+    // Dirty button shows as text label, not a standalone icon
+    const fabButton = getFabButton(container);
+    expect(fabButton.textContent).toContain('Save Changes');
+
+    const plusIcon = container.querySelector('.lucide-plus');
+    expect(plusIcon).toBeFalsy();
+  });
+
   describe('selection mode', () => {
     it('shows a red delete button with count when items are selected', () => {
       renderFab();
       fireEvent.click(screen.getByTestId('trigger-selection'));
 
-      const deleteBtn = screen.getByText('Delete (2)');
+      const deleteBtn = screen.getByText('Delete (2)').closest('button');
       expect(deleteBtn).toBeInTheDocument();
+      expect(deleteBtn).toHaveAttribute('type', 'button');
 
       const trashIcon = document.querySelector('.lucide-trash-2');
       expect(trashIcon).toBeTruthy();

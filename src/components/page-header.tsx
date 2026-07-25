@@ -28,8 +28,9 @@ interface PageHeaderProps {
   hideUpcomingSession?: boolean;
 }
 
-const FIRST_LEVEL_ROUTES = new Set([
+const MAIN_ROUTES = new Set([
   '/clinic',
+  '/record',
   '/assessments',
   '/profile',
   '/recommendation',
@@ -71,8 +72,9 @@ function getDefaultBackRoute(
   searchParams: URLSearchParams
 ): string | undefined {
   if (pathname === '/') return undefined;
-  if (pathname === '/clinic' && searchParams.has('id')) return '/clinic';
-  if (FIRST_LEVEL_ROUTES.has(pathname)) return '/';
+  if (MAIN_ROUTES.has(pathname)) {
+    return searchParams.toString() ? undefined : '/';
+  }
   return undefined;
 }
 
