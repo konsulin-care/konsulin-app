@@ -77,23 +77,23 @@ describe('CalendarBase', () => {
 
   it('accepts disabled matchers and disables dates', () => {
     const onSelect = vi.fn();
-    // Disable all dates before today
+    // Disable dates before July 15, 2026 — days 1-14 are disabled
     render(
       <CalendarBase
         mode='single'
         onSelect={onSelect}
-        disabled={{ before: new Date() }}
+        defaultMonth={new Date(2026, 6, 1)}
+        disabled={{ before: new Date(2026, 6, 15) }}
       />
     );
 
-    // Find a disabled day button (past dates should have aria-disabled)
-    const disabledButton = document.querySelector(
-      'button[aria-disabled="true"]'
+    // Find a disabled day button (rdp v9 sets disabled attr on DayButton)
+    const disabledButton = document.querySelector<HTMLButtonElement>(
+      '.rdp-day_button[disabled]'
     );
-    if (disabledButton) {
-      fireEvent.click(disabledButton);
-      expect(onSelect).not.toHaveBeenCalled();
-    }
+    expect(disabledButton).toBeTruthy();
+    fireEvent.click(disabledButton);
+    expect(onSelect).not.toHaveBeenCalled();
   });
 
   it('accepts custom components prop (DayButton override)', () => {
