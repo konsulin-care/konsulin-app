@@ -10,7 +10,7 @@ import type { HealthcareService } from 'fhir/r4';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo } from 'react';
 
 type Props = {
   readonly practitionerRoleId: string;
@@ -37,13 +37,11 @@ function formatAddress(address: {
 function PractitionerIdentity({
   practitionerId,
   name,
-  specialties,
-  photoUrl
+  specialties
 }: {
   readonly practitionerId: string;
   readonly name: string;
   readonly specialties: string[];
-  readonly photoUrl?: string;
 }) {
   const maxVisibleBadges = 3;
   const overflowCount =
@@ -52,8 +50,6 @@ function PractitionerIdentity({
       : 0;
   const visibleBadges =
     overflowCount > 0 ? specialties.slice(0, maxVisibleBadges) : specialties;
-
-  const [imgError, setImgError] = useState(false);
 
   const { initials, seed } = useMemo(
     () => generateAvatarPlaceholder({ id: practitionerId, name }),
@@ -65,46 +61,23 @@ function PractitionerIdentity({
     [seed, initials]
   );
 
-  const showPhoto = Boolean(photoUrl) && !imgError;
-
-  let avatar: ReactNode;
-  if (showPhoto) {
-    avatar = (
-      <Image
-        src={photoUrl}
-        alt={name}
-        width={48}
-        height={48}
-        className='rounded-full object-cover'
-        unoptimized
-        onError={() => {
-          setImgError(true);
-        }}
-      />
-    );
-  } else if (gradientUrl) {
-    avatar = (
-      <Image
-        src={gradientUrl}
-        alt={name}
-        width={48}
-        height={48}
-        className='object-cover'
-        unoptimized
-      />
-    );
-  } else {
-    avatar = (
-      <div className='flex h-full w-full items-center justify-center rounded-full bg-[#13c2c2] text-sm font-bold text-white'>
-        {initials}
-      </div>
-    );
-  }
-
   return (
     <div className='flex items-center gap-3'>
-      <div className='h-12 w-12 shrink-0 overflow-hidden rounded-full'>
-        {avatar}
+      <div className='h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#13c2c2]'>
+        {gradientUrl ? (
+          <Image
+            src={gradientUrl}
+            alt={name}
+            width={48}
+            height={48}
+            className='object-cover'
+            unoptimized
+          />
+        ) : (
+          <div className='flex h-full w-full items-center justify-center text-sm font-bold text-white'>
+            {initials}
+          </div>
+        )}
       </div>
       <div className='min-w-0 flex-1'>
         <h1 className='text-xl font-bold text-black'>{name}</h1>
@@ -269,7 +242,7 @@ function PatientDetailBody({
 }) {
   const services = detail.healthcareServices ?? [];
   const practitionerName = getPractitionerName(detail);
-  const specialties = (detail.resource.specialty ?? []).map(s => s.text);
+  const specialties = detail.resource.specialty?.map(s => s.text) ?? [];
   const practitionerId = detail.practitioner?.id ?? detail.resource.id ?? '';
   const displayOrg = detail.location ?? detail.organization;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- FHIR detail is any-typed
@@ -277,7 +250,6 @@ function PatientDetailBody({
     detail.location?.address?.[0] ?? detail.organization?.address?.[0];
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- FHIR address is any-typed
   const displayAddress = firstAddr;
-  const photoUrl = detail.practitioner?.photo?.[0]?.url;
 
   /** Navigate to the given URL using router. */
   const handleNavigate = (url: string) => {
@@ -290,7 +262,6 @@ function PatientDetailBody({
         practitionerId={practitionerId}
         name={practitionerName}
         specialties={specialties}
-        photoUrl={photoUrl}
       />
       <ClinicLocationSection
         orgOrLocation={

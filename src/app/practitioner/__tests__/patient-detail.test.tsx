@@ -444,6 +444,88 @@ describe('PatientDetail', () => {
     });
   });
 
+  describe('practitioner photo avatar', () => {
+    const photoUrl = 'https://example.com/avatar.jpg';
+
+    it('renders photo image when practitioner has a photo URL', () => {
+      mockUseDetailPractitioner.mockReturnValue({
+        newData: buildNewData({
+          practitioner: {
+            id: 'prac-1',
+            name: [{ text: 'Dr. Sarah Chen' }],
+            photo: [{ url: photoUrl }]
+          }
+        }),
+        isLoading: false,
+        isError: false,
+        isFetching: false
+      } as unknown as ReturnType<typeof useDetailPractitioner>);
+
+      render(<PatientDetail practitionerRoleId='role-123' />);
+      const avatarContainer = document.querySelector('.h-12.w-12');
+      expect(avatarContainer).toBeInTheDocument();
+      const img = avatarContainer?.querySelector('img');
+      expect(img).toBeInTheDocument();
+      expect(img?.getAttribute('src')).toBe(photoUrl);
+    });
+
+    it('falls back to gradient avatar when no photo URL is available', () => {
+      render(<PatientDetail practitionerRoleId='role-123' />);
+      const avatarContainer = document.querySelector('.h-12.w-12');
+      expect(avatarContainer).toBeInTheDocument();
+      const img = avatarContainer?.querySelector('img');
+      expect(img).toBeInTheDocument();
+      // Gradient avatar uses a data URI
+      expect(img?.getAttribute('src')).toContain('data:image/svg+xml');
+    });
+
+    it('does not render green background on container when photo is shown', () => {
+      mockUseDetailPractitioner.mockReturnValue({
+        newData: buildNewData({
+          practitioner: {
+            id: 'prac-1',
+            name: [{ text: 'Dr. Sarah Chen' }],
+            photo: [{ url: photoUrl }]
+          }
+        }),
+        isLoading: false,
+        isError: false,
+        isFetching: false
+      } as unknown as ReturnType<typeof useDetailPractitioner>);
+
+      render(<PatientDetail practitionerRoleId='role-123' />);
+      const avatarContainer = document.querySelector('.h-12.w-12');
+      expect(avatarContainer).toBeInTheDocument();
+      expect(avatarContainer).not.toHaveClass('bg-[#13c2c2]');
+    });
+
+    it('falls back to gradient avatar when photo image fails to load', () => {
+      mockUseDetailPractitioner.mockReturnValue({
+        newData: buildNewData({
+          practitioner: {
+            id: 'prac-1',
+            name: [{ text: 'Dr. Sarah Chen' }],
+            photo: [{ url: photoUrl }]
+          }
+        }),
+        isLoading: false,
+        isError: false,
+        isFetching: false
+      } as unknown as ReturnType<typeof useDetailPractitioner>);
+
+      render(<PatientDetail practitionerRoleId='role-123' />);
+      const avatarContainer = document.querySelector('.h-12.w-12');
+      const img = avatarContainer?.querySelector('img');
+      expect(img?.getAttribute('src')).toBe(photoUrl);
+
+      fireEvent.error(img as HTMLElement);
+
+      // After error, should fall back to gradient data URI
+      const gradientImg = avatarContainer?.querySelector('img');
+      expect(gradientImg?.getAttribute('src')).toContain('data:image/svg+xml');
+    });
+  });
+
   it('filters out inactive healthcare services', () => {
     mockUseDetailPractitioner.mockReturnValue({
       newData: buildNewData({
