@@ -12,8 +12,6 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 
-const today = new Date();
-
 type Props = {
   readonly value?: Date;
   readonly onChange: (date: Date) => void;
@@ -60,7 +58,6 @@ export default function CalendarJournal({ onChange, value }: Props) {
               mode='single'
               selected={date}
               onSelect={date => handeDateChange(date)}
-              disabled={{ before: today }}
               className='w-full p-0'
             />
           </div>
