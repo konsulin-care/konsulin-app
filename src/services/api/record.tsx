@@ -291,8 +291,13 @@ export const useUpdateJournal = () => {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ['journals'] });
+      if (variables.id) {
+        void queryClient.invalidateQueries({
+          queryKey: ['single-record', variables.id]
+        });
+      }
     }
   });
 };
@@ -311,8 +316,11 @@ export const useDeleteJournal = () => {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ['journals'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['single-record', variables]
+      });
     }
   });
 };
