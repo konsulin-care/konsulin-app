@@ -219,4 +219,28 @@ describe('EditJournal', () => {
       { reference: 'Patient/original-owner' }
     ]);
   });
+
+  it('preserves user edits when journalData refetches', () => {
+    const { rerender } = render(<EditJournal journalId='obs-123' />);
+
+    // Initial data loaded
+    expect(screen.getByDisplayValue('My Journal Title')).toBeInTheDocument();
+
+    // User edits the title
+    fireEvent.change(screen.getByDisplayValue('My Journal Title'), {
+      target: { value: 'User edited' }
+    });
+
+    // Simulate refetch with different data
+    vi.mocked(useGetSingleRecord).mockReturnValue({
+      data: { ...MOCK_JOURNAL_DATA, valueString: 'Refetched title' },
+      isLoading: false
+    } as any);
+
+    // Force re-render — the hook returns different data
+    rerender(<EditJournal journalId='obs-123' />);
+
+    // User edits must survive the refetch
+    expect(screen.getByDisplayValue('User edited')).toBeInTheDocument();
+  });
 });

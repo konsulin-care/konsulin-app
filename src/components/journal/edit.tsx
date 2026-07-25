@@ -45,8 +45,11 @@ export default function EditJournal({ journalId }: Props) {
   const { setDirtyState } = useFabDirty();
   const initialValues = useRef({ title: '', notes: [] as { text: string }[] });
 
+  const initialized = useRef(false);
+
   useEffect(() => {
-    if (journalData) {
+    if (journalData && !initialized.current) {
+      initialized.current = true;
       setJournalTitle(journalData?.valueString || '');
 
       if (journalData.note.length > 0) {
