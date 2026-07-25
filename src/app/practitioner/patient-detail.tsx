@@ -65,10 +65,8 @@ function PractitionerIdentity({
     [seed, initials]
   );
 
-  const showPhoto = Boolean(photoUrl) && !imgError;
-
   let avatar: ReactNode;
-  if (showPhoto) {
+  if (photoUrl && !imgError) {
     avatar = (
       <Image
         src={photoUrl}

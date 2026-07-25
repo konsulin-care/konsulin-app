@@ -3,6 +3,6 @@
     "denyWrite": [".env", ".pi/*", ".husky/**"]
   },
   "bash": {
-    "commandWhitelist": ["node", "gh"]
+    "commandWhitelist": ["node"]
   }
 }
