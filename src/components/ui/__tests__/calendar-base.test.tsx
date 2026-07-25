@@ -1,4 +1,5 @@
 import { fireEvent, render } from '@testing-library/react';
+import type { DayButtonProps } from 'react-day-picker';
 import { describe, expect, it, vi } from 'vitest';
 import { CalendarBase } from '../calendar-base';
 
@@ -96,16 +97,8 @@ describe('CalendarBase', () => {
   });
 
   it('accepts custom components prop (DayButton override)', () => {
-    const CustomDayButton = ({
-      children,
-      ...props
-    }: {
-      readonly children?: React.ReactNode;
-      readonly [key: string]: unknown;
-    }) => (
-      <button type='button' data-testid='custom-day-button' {...props}>
-        {children}
-      </button>
+    const CustomDayButton = (props: DayButtonProps) => (
+      <button type='button' data-testid='custom-day-button' {...props} />
     );
 
     render(
