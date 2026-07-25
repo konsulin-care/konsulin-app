@@ -7,7 +7,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useGetTodaySessions } from '@/services/api/appointments';
 import { mergeNames, parseMergedSessions } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
-import { Calendar, Dumbbell, FileText } from 'lucide-react';
+import { Calendar, FileText } from 'lucide-react';
 import { useMemo } from 'react';
 
 type SessionRowData = {
@@ -97,15 +97,6 @@ export default function HomeContentClinician() {
     />
   );
 
-  const exerciseLink = (
-    <ActionCard
-      icon={<Dumbbell className='h-5 w-5 text-gray-600' />}
-      title='Health Exercise Resources'
-      description='Help your patient with curated exercises'
-      href='/exercise'
-    />
-  );
-
   if (isLoading) {
     return (
       <div className='p-4'>
@@ -182,10 +173,7 @@ export default function HomeContentClinician() {
         <div className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
           Quick Actions
         </div>
-        <div className='flex flex-col gap-4'>
-          {soapReportLink}
-          {exerciseLink}
-        </div>
+        <div className='flex flex-col gap-4'>{soapReportLink}</div>
       </div>
     </>
   );

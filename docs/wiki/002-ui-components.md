@@ -19,7 +19,7 @@ spacing) port to new Tailwind config.
 | --------------------------------------- | ----- | ------------------- |
 | `ui/` (accordion, button, dialog, etc.) | 49    | Replace with templ  |
 | `general/` (avatar, loader, QR, etc.)   | 16    | Replace with templ  |
-| `icons/` (SVG components)               | 9     | Port to static SVGs |
+| `icons/` (SVG components)               | 8     | Port to static SVGs |
 | `availability/` (editor, time-range)    | 5     | Replace with templ  |
 | `schedule/` (mark-unavailability)       | 2     | Replace with templ  |
 | `profile/` (collapsible, settings)      | 10    | Replace with templ  |

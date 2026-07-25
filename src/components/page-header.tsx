@@ -34,8 +34,7 @@ const MAIN_ROUTES = new Set([
   '/assessments',
   '/profile',
   '/recommendation',
-  '/schedule',
-  '/exercise'
+  '/schedule'
 ]);
 
 /** Returns the page title based on current route. */
