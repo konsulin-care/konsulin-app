@@ -6,25 +6,38 @@ import {
   DrawerTitle,
   DrawerTrigger
 } from '@/components/ui/drawer';
-import { ChevronRightIcon } from 'lucide-react';
-import Image from 'next/image';
+import {
+  ChevronRightIcon,
+  LogOut,
+  Trash2,
+  type LucideIcon
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Fragment, useState } from 'react';
 
-/** A single settings menu item — icon, name, and chevron. */
+const ICON_MAP: Record<string, LucideIcon> = {
+  logout: LogOut,
+  trash2: Trash2
+};
+
+/** A single menu item — icon, name, and chevron. */
 function MenuItem({
   name,
+  icon,
   index,
   total,
   onClick
 }: {
   readonly name: string;
+  readonly icon?: string;
   readonly index: number;
   readonly total: number;
   readonly onClick: () => void;
 }) {
   const isFirst = index === 0;
   const isLast = index === total - 1;
+  const IconComponent = icon ? ICON_MAP[icon] : null;
+
   return (
     <li
       role='menuitem'
@@ -40,12 +53,7 @@ function MenuItem({
         !isFirst && !isLast ? 'border-b border-[#E8E8E8]' : ''
       } ${isFirst || isLast ? 'border-none' : 'border-t border-[#E8E8E8]'}`}
     >
-      <Image
-        src={'/icons/settings.svg'}
-        alt='setting-icons'
-        width={24}
-        height={24}
-      />
+      {IconComponent && <IconComponent size={24} className='text-[#13C2C2]' />}
       <p className='flex flex-grow justify-start pl-4 font-[#26282C] text-xs font-normal'>
         {name}
       </p>
@@ -109,12 +117,16 @@ function ConfirmDrawerContent({
 }
 
 /**
- * Settings page with list menu and a confirmation drawer for logout/delete.
+ * Profile actions menu with list of account actions and a confirmation drawer.
  */
-export default function Settings({
+export default function ProfileActions({
   menus
 }: {
-  readonly menus: readonly { readonly name: string; readonly link: string }[];
+  readonly menus: readonly {
+    readonly name: string;
+    readonly link: string;
+    readonly icon?: string;
+  }[];
 }) {
   const router = useRouter();
   const [drawerState, setDrawerState] = useState({
@@ -170,6 +182,7 @@ export default function Settings({
             <MenuItem
               key={item.name}
               name={item.name}
+              icon={item.icon}
               index={index}
               total={menus.length}
               onClick={() => handleClick(item.link)}

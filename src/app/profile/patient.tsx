@@ -2,7 +2,7 @@
 'use client';
 
 import InformationDetail from '@/components/profile/information-detail';
-import Settings from '@/components/profile/settings';
+import ProfileActions from '@/components/profile/ProfileActions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { settingMenus } from '@/constants/profile';
 import { Roles } from '@/constants/roles';
@@ -96,7 +96,7 @@ export default function Patient({ fhirId }: Props) {
         />
       )}
 
-      <Settings menus={settingMenus} />
+      <ProfileActions menus={settingMenus} />
     </>
   );
 }

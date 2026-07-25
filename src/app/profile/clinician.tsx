@@ -3,7 +3,7 @@
 import ClinicianPracticeSchedule from '@/components/profile/clinician-practice-schedule';
 import ClinicianUnavailabilityCard from '@/components/profile/clinician-unavailability-card';
 import InformationDetail from '@/components/profile/information-detail';
-import Settings from '@/components/profile/settings';
+import ProfileActions from '@/components/profile/ProfileActions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { settingMenus } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
@@ -15,10 +15,7 @@ import { getProfileById } from '@/services/profile';
 import { findAge, generateAvatarPlaceholder, mapAddress } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import {
-  Practitioner,
-  PractitionerRoleAvailableTime
-} from 'fhir/r4';
+import { Practitioner, PractitionerRoleAvailableTime } from 'fhir/r4';
 
 import type { IPractitionerRoleDetail } from '@/types/practitioner';
 import { useRouter } from 'next/navigation';
@@ -184,8 +181,6 @@ export default function Clinician({ fhirId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [practitionerRolesData]);
 
-
-
   const profileDetail = buildProfileDetail(profileData);
 
   const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
@@ -249,7 +244,7 @@ export default function Clinician({ fhirId }: Props) {
 
       <ClinicianUnavailabilityCard />
 
-      <Settings menus={settingMenus} />
+      <ProfileActions menus={settingMenus} />
     </>
   );
 }
