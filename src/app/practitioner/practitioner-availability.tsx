@@ -191,6 +191,21 @@ export default function PractitionerAvailability({
     setErrorForm(null);
   };
 
+  /** When the calendar navigates to a new month: auto-select the earliest
+   *  available date so the Slot query fires and dates are clickable. */
+  const handleMonthChange = useCallback(
+    (month: Date) => {
+      if (!isPageMode || effectiveAvailableTime.length === 0) return;
+      const daysInNewMonth = getAvailableDays(effectiveAvailableTime, month);
+      const earliest = daysInNewMonth
+        .filter(d => d >= today)
+        .toSorted((a, b) => a.getTime() - b.getTime())[0];
+      if (earliest) setPageDate(earliest);
+      // resetData() is called by BookingCalendar's onMonthChange after this.
+    },
+    [isPageMode, effectiveAvailableTime, today]
+  );
+
   // Selected date unified across modes
   const selectedDate = isPageMode ? pageDate : bookingState.date;
 
@@ -454,6 +469,7 @@ export default function PractitionerAvailability({
         availableTime={effectiveAvailableTime}
         today={today}
         hideHeader={isPageMode}
+        parentOnMonthChange={handleMonthChange}
       />
       <TimeSlotsSection
         bookingState={effectiveBookingState}
