@@ -70,6 +70,6 @@ describe('CalendarJournal', () => {
     const disabledButtons = document.querySelectorAll(
       '.rdp-day_button[aria-disabled="true"]'
     );
-    expect(disabledButtons.length).toBe(0);
+    expect(disabledButtons).toHaveLength(0);
   });
 });
