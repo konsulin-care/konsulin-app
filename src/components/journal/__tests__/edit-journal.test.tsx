@@ -68,7 +68,9 @@ const MOCK_JOURNAL_DATA = {
   valueString: 'My Journal Title',
   note: [{ text: 'First note content' }, { text: 'Second note content' }],
   effectiveDateTime: '2026-07-22T10:00:00Z',
-  meta: { lastUpdated: '2026-07-22T10:30:00Z' }
+  meta: { lastUpdated: '2026-07-22T10:30:00Z' },
+  subject: { reference: 'Patient/original-owner' },
+  performer: [{ reference: 'Patient/original-owner' }]
 };
 
 describe('EditJournal', () => {
@@ -200,5 +202,21 @@ describe('EditJournal', () => {
     expect(payload.resourceType).toBe('Observation');
     expect(payload.status).toBe('amended');
     expect(payload.valueString).toBe('Updated Title');
+  });
+
+  it('preserves original subject/performer from journalData in payload', async () => {
+    render(<EditJournal journalId='obs-123' />);
+
+    const titleInput = screen.getByDisplayValue('My Journal Title');
+    fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
+
+    const onSave = mockSetDirtyState.mock.calls.at(-1)[0].onSave;
+    await onSave();
+
+    const payload = mockMutateAsync.mock.calls[0][0];
+    expect(payload.subject).toEqual({ reference: 'Patient/original-owner' });
+    expect(payload.performer).toEqual([
+      { reference: 'Patient/original-owner' }
+    ]);
   });
 });

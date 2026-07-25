@@ -22,7 +22,7 @@ type Props = {
  *
  */
 export default function EditJournal({ journalId }: Props) {
-  const { state: authState, isLoading: isAuthLoading } = useAuth();
+  const { isLoading: isAuthLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const {
     response,
@@ -94,14 +94,8 @@ export default function EditJournal({ journalId }: Props) {
             }
           ]
         },
-        subject: {
-          reference: `Patient/${authState.userInfo.fhirId}`
-        },
-        performer: [
-          {
-            reference: `Patient/${authState.userInfo.fhirId}`
-          }
-        ]
+        subject: journalData?.subject,
+        performer: journalData?.performer
       };
 
       await submitJournal(payload);
@@ -111,7 +105,6 @@ export default function EditJournal({ journalId }: Props) {
       toast.error(error.message);
     }
   }, [
-    authState,
     submitJournal,
     journalId,
     journalTitle,
