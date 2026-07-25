@@ -26,7 +26,7 @@ function extractObservation(resource: Observation): Partial<IRecord> {
     return {
       type: 'PatientNote',
       id: `${resource.resourceType}/${resource.id}`,
-      title: resource.valueString ?? '',
+      title: resource.valueString ?? 'Patient Note',
       result: notes,
       lastUpdated: resource.meta?.lastUpdated ?? '',
       practitionerId: practitionerId ?? undefined

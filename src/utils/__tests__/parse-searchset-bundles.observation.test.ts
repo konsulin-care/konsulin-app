@@ -48,6 +48,20 @@ describe('parseObservationBundle', () => {
     expect(result[0].title).toBe('Feeling unwell today');
   });
 
+  it('uses static "Patient Note" label when LOINC 51855-5 has no valueString', () => {
+    const bundle = obsBundle([
+      {
+        loinc: '51855-5',
+        id: 'obs-4',
+        lastUpdated: '2024-06-01T00:00:00Z'
+      }
+    ]);
+    const result = parseObservationBundle(bundle);
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe('PatientNote');
+    expect(result[0].title).toBe('Patient Note');
+  });
+
   it('parses LOINC 67855-7 as Practitioner Note', () => {
     const bundle = obsBundle([
       { loinc: '67855-7', id: 'obs-2', lastUpdated: '2024-06-01T00:00:00Z' }
