@@ -79,13 +79,23 @@ export default function CreateJournal() {
   }, [authState, submitJournal, journalTitle, response, date, setIsOpen]);
 
   useEffect(() => {
-    setDirtyState({
-      isDirty: journalTitle.length > 0 || response.some(r => r.text.length > 0),
-      label: 'Save Journal',
-      icon: SavePen,
-      onSave: () => handleSubmitJournal(),
-      isSaving: isSubmitLoading
-    });
+    const titleReady = journalTitle.trim().length >= 3;
+    const contentWords = response
+      .flatMap(r => r.text.trim().split(/\s+/))
+      .filter(Boolean).length;
+    const contentReady = contentWords >= 2;
+
+    if (titleReady && contentReady) {
+      setDirtyState({
+        isDirty: true,
+        label: 'Save Journal',
+        icon: SavePen,
+        onSave: () => handleSubmitJournal(),
+        isSaving: isSubmitLoading
+      });
+    } else {
+      setDirtyState(null);
+    }
 
     return () => setDirtyState(null);
   }, [

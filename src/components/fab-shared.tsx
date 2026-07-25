@@ -53,7 +53,6 @@ export function FabToggleButton({
   readonly icon?: ComponentType<{ className?: string }>;
   readonly onToggle: () => void;
 }) {
-  const ToggleIcon = Icon ?? Plus;
   return (
     <button
       type='button'
@@ -72,7 +71,7 @@ export function FabToggleButton({
           </span>
         </div>
       ) : (
-        <ToggleIcon className='h-6 w-6 transition-transform duration-300' />
+        <Plus className='h-6 w-6 transition-transform duration-300' />
       )}
     </button>
   );

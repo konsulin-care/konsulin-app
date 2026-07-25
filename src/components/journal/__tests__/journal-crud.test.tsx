@@ -161,14 +161,42 @@ describe('CreateJournal', () => {
     expect(screen.queryByTestId('submit-button')).not.toBeInTheDocument();
   });
 
-  it('sets dirty state with SaveJournal shape when title is typed', () => {
+  it('sets dirtyState to null when title is less than 3 characters', () => {
+    render(<CreateJournal />);
+
+    const titleInput = screen.getByPlaceholderText('Journal Title');
+    fireEvent.change(titleInput, { target: { value: 'ab' } });
+
+    // Wait for React state updates
+    const lastCall = mockSetDirtyState.mock.calls.at(-1);
+    expect(lastCall[0]).toBeNull();
+  });
+
+  it('sets dirtyState to null when content has fewer than 2 words', () => {
+    render(<CreateJournal />);
+
+    // Title meets threshold but content has only 1 word
+    const titleInput = screen.getByPlaceholderText('Journal Title');
+    fireEvent.change(titleInput, { target: { value: 'My Day' } });
+
+    const contentInput = screen.getByTestId('response-0');
+    fireEvent.change(contentInput, { target: { value: 'oneword' } });
+
+    const lastCall = mockSetDirtyState.mock.calls.at(-1);
+    expect(lastCall[0]).toBeNull();
+  });
+
+  it('sets dirtyState with SaveJournal shape when title ≥3 chars AND content ≥2 words', () => {
     render(<CreateJournal />);
 
     const titleInput = screen.getByPlaceholderText('Journal Title');
     fireEvent.change(titleInput, { target: { value: 'My Day' } });
 
+    const contentInput = screen.getByTestId('response-0');
+    fireEvent.change(contentInput, { target: { value: 'two words' } });
+
     const dirtyCalls = mockSetDirtyState.mock.calls.filter(
-      (c: unknown[]) => (c[0] as { label?: string })?.label === 'Save Journal'
+      (c: unknown[]) => c[0] !== null
     );
     expect(dirtyCalls.length).toBeGreaterThanOrEqual(1);
     const latest = dirtyCalls.at(-1)[0] as {
@@ -183,26 +211,26 @@ describe('CreateJournal', () => {
     expect(latest.isSaving).toBe(false);
   });
 
-  it('sets isDirty=false when title and responses are empty', () => {
+  it('sets dirtyState to null when title and responses are empty', () => {
     render(<CreateJournal />);
 
-    const allCalls = mockSetDirtyState.mock.calls.map(
-      c => c[0] as { isDirty: boolean }
-    );
-    const lastCall = allCalls.at(-1);
-    expect(lastCall?.isDirty).toBe(false);
+    const lastCall = mockSetDirtyState.mock.calls.at(-1);
+    expect(lastCall[0]).toBeNull();
   });
 
-  it('calls submitJournal when onSave is triggered', async () => {
+  it('calls submitJournal when onSave is triggered with valid content', async () => {
     render(<CreateJournal />);
 
-    // Type something so dirty state has a valid onSave
+    // Type both title and content to meet thresholds
     const titleInput = screen.getByPlaceholderText('Journal Title');
     fireEvent.change(titleInput, { target: { value: 'My Day' } });
 
-    // Find the latest setDirtyState call with a label
+    const contentInput = screen.getByTestId('response-0');
+    fireEvent.change(contentInput, { target: { value: 'two words' } });
+
+    // Find the latest setDirtyState call that is not null
     const dirtyCalls = mockSetDirtyState.mock.calls.filter(
-      (c: unknown[]) => (c[0] as { label?: string })?.label === 'Save Journal'
+      (c: unknown[]) => c[0] !== null
     );
     const onSave = (dirtyCalls.at(-1)[0] as { onSave: () => Promise<void> })
       .onSave;
@@ -219,7 +247,7 @@ describe('CreateJournal', () => {
     expect(payload.valueString).toBe('My Day');
     expect(payload.resourceType).toBe('Observation');
     expect(payload.status).toBe('final');
-    expect(payload.note).toEqual([{ text: '' }]);
+    expect(payload.note).toEqual([{ text: 'two words' }]);
   });
 
   it('cleans up dirty state on unmount', () => {

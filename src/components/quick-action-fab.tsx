@@ -160,6 +160,24 @@ function getRolePills(roleName: string | undefined): Pill[] {
   return patientPills;
 }
 
+interface FabContentProps {
+  readonly isOpen: boolean;
+  readonly isDirty: boolean;
+  readonly isMenuMode: boolean;
+  readonly isVisible: boolean;
+  readonly menuState: FabMenuState;
+  readonly pills: Pill[];
+  readonly dirtyState: FabDirtyState | null;
+  readonly close: () => void;
+  readonly toggle: () => void;
+  readonly handlePillClick: (pill: Pill) => void;
+  readonly handleCustomAction: (action: CustomAction) => void;
+  readonly showRegisterPrac: boolean;
+  readonly showAddLocation: boolean;
+  readonly setShowRegisterPrac: (v: boolean) => void;
+  readonly setShowAddLocation: (v: boolean) => void;
+}
+
 function FabContent({
   isOpen,
   isDirty,
@@ -176,23 +194,7 @@ function FabContent({
   showAddLocation,
   setShowRegisterPrac,
   setShowAddLocation
-}: {
-  readonly isOpen: boolean;
-  readonly isDirty: boolean;
-  readonly isMenuMode: boolean;
-  readonly isVisible: boolean;
-  readonly menuState: FabMenuState;
-  readonly pills: Pill[];
-  readonly dirtyState: FabDirtyState | null;
-  readonly close: () => void;
-  readonly toggle: () => void;
-  readonly handlePillClick: (pill: Pill) => void;
-  readonly handleCustomAction: (action: CustomAction) => void;
-  readonly showRegisterPrac: boolean;
-  readonly showAddLocation: boolean;
-  readonly setShowRegisterPrac: (v: boolean) => void;
-  readonly setShowAddLocation: (v: boolean) => void;
-}) {
+}: FabContentProps) {
   return (
     <>
       {isOpen && !isDirty && (
@@ -266,7 +268,7 @@ export default function QuickActionFab() {
 
   const close = useCallback(() => setIsOpen(false), []);
   const toggle = useCallback(() => {
-    if (isMenuMode || !dirtyState) {
+    if (isMenuMode || !dirtyState?.isDirty) {
       setIsOpen(v => !v);
       return;
     }
