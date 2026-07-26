@@ -18,6 +18,7 @@ export function usePatientProfile(fhirId: string) {
   });
 
   const profileDetail = useMemo(() => {
+    /** Finds a telecom value for the given FHIR system (e.g., 'phone'). */
     const findTelecom = (system: string) =>
       profileData?.telecom?.find((item: ContactPoint) => item.system === system)
         ?.value ?? '-';

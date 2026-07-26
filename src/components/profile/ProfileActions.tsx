@@ -14,6 +14,7 @@ import {
   useAccountAction
 } from './hooks/useAccountAction';
 
+/** Menu item row with optional icon, name label, and click handler. */
 function MenuItem({
   name,
   icon,
@@ -55,6 +56,7 @@ function MenuItem({
   );
 }
 
+/** Confirmation drawer with title, subtitle, and confirm/cancel buttons. */
 function ConfirmDrawerContent({
   title,
   subTitle,

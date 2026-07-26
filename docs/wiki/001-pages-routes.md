@@ -27,7 +27,6 @@ segments use query params instead of path segments
 | `/record*`           | Medical records              | `@/app/record/`                           |
 | `/journal*`          | Notes                        | `@/app/journal/`                          |
 | `/assessments*`      | Questionnaires (AEHRC SPA)   | `@/app/assessments/`                      |
-| ~~`/message`~~       | ~~Messaging~~ (removed)      | —                                         |
 
 # Business Rules
 

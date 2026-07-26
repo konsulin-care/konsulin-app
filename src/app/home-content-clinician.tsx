@@ -64,6 +64,7 @@ function ScheduleSection({
   readonly isError: boolean;
   readonly onRetry: () => void;
 }) {
+  /** Renders schedule content based on error, empty, or list state. */
   const renderContent = () => {
     if (isError) {
       return (

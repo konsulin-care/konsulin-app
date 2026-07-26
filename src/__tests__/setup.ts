@@ -3,13 +3,11 @@ import '@testing-library/jest-dom';
 // Polyfill ResizeObserver for cmdk (Command component) in jsdom
 globalThis.ResizeObserver = class ResizeObserver {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  observe() {}
-
+  observe = () => {};
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  unobserve() {}
-
+  unobserve = () => {};
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  disconnect() {}
+  disconnect = () => {};
 };
 
 // Polyfill scrollIntoView for cmdk in jsdom
