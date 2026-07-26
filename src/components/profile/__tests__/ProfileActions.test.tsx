@@ -5,6 +5,18 @@ import { describe, expect, it, vi } from 'vitest';
 
 const mockPush = vi.fn();
 
+describe('jsdom polyfills for vaul', () => {
+  it('should provide setPointerCapture on Element prototype', () => {
+    const el = document.createElement('div');
+    expect(() => el.setPointerCapture(1)).not.toThrow();
+  });
+
+  it('should provide releasePointerCapture on Element prototype', () => {
+    const el = document.createElement('div');
+    expect(() => el.releasePointerCapture(1)).not.toThrow();
+  });
+});
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush })
 }));

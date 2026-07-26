@@ -44,3 +44,9 @@ if (!globalThis.crypto?.randomUUID) {
     randomUUID: () => '00000000-0000-0000-0000-000000000000'
   }) as Crypto;
 }
+
+// Polyfill setPointerCapture/releasePointerCapture for vaul in jsdom
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+Element.prototype.setPointerCapture = () => {};
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+Element.prototype.releasePointerCapture = () => {};
