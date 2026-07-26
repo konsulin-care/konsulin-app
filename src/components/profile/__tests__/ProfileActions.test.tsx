@@ -1,7 +1,7 @@
 import ProfileActions from '@/components/profile/ProfileActions';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockPush = vi.fn();
 
@@ -27,7 +27,6 @@ const menus = [
 ];
 
 describe('ProfileActions', () => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   beforeEach(() => {
     mockPush.mockClear();
   });

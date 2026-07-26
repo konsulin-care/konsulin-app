@@ -38,29 +38,30 @@ describe('useClinicianSchedule', () => {
       dispatch: vi.fn()
     } as never);
 
-    vi.mocked(useGetPractitionerRolesDetail).mockImplementation(
-      (_fhirId: string, onData: (data: { resource: unknown }[]) => void) => {
-        // Defer callback so state update doesn't happen during render.
-        setTimeout(() => {
-          onData([
-            {
-              resource: {
-                active: true,
-                organizationData: { name: 'Clinic A' },
-                availableTime: [
-                  {
-                    daysOfWeek: ['mon', 'wed'],
-                    availableStartTime: '09:00',
-                    availableEndTime: '12:00'
-                  }
-                ]
-              }
+    vi.mocked(useGetPractitionerRolesDetail).mockImplementation(((
+      _fhirId: string,
+      onData: (data: { resource: unknown }[]) => void
+    ) => {
+      // Defer callback so state update doesn't happen during render.
+      setTimeout(() => {
+        onData([
+          {
+            resource: {
+              active: true,
+              organizationData: { name: 'Clinic A' },
+              availableTime: [
+                {
+                  daysOfWeek: ['mon', 'wed'],
+                  availableStartTime: '09:00',
+                  availableEndTime: '12:00'
+                }
+              ]
             }
-          ]);
-        }, 0);
-        return { isLoading: false, isError: false, refetch: vi.fn() };
-      }
-    );
+          }
+        ]);
+      }, 0);
+      return { isLoading: false, isError: false, refetch: vi.fn() };
+    }) as never);
   });
 
   afterEach(() => {
