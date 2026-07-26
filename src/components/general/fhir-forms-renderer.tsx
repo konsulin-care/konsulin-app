@@ -60,7 +60,10 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const draftOwnerId = props.ownerId || practitionerId || patientId || '';
 
-  const isBuilding = useBuildForm(questionnaire, response);
+  const isBuilding = useBuildForm({
+    questionnaire,
+    questionnaireResponse: response
+  });
 
   const {
     mutateAsync: submitQuestionnaire,

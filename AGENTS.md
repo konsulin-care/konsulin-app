@@ -78,3 +78,4 @@ Agentic contributions MUST NOT introduce:
 - System design and decisions: READ `@docs/agents/ARCHITECTURE.md`
 - Document templates: READ `@docs/templates/`
 - FAB transformation patterns: READ `@docs/agents/fab-patterns.md`
+- Frontend auth guards: READ `@src/components/auth/AGENTS.md`

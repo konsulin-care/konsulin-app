@@ -16,7 +16,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@aehrc/smart-forms-renderer": "^0.45.1",
+    "@aehrc/smart-forms-renderer": "^1.4.0",
     "@hookform/resolvers": "^5.2.2",
     "@next/font": "^14.2.15",
     "@radix-ui/react-accordion": "^1.2.12",

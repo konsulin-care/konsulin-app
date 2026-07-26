@@ -11,6 +11,7 @@ import { dbDelete, dbGet, STORES } from '@/lib/indexeddb';
 import { useSubmitSoapBundle } from '@/services/api/assessment';
 import {
   buildForm,
+  destroyForm,
   extractObservationBased,
   getResponse,
   RendererThemeProvider
@@ -79,12 +80,13 @@ export default function SoapForm({
           finalResponse = saved?.draft ?? questionnaireResponse ?? null;
         }
 
-        await buildForm(
+        destroyForm();
+        await buildForm({
           questionnaire,
-          finalResponse,
-          mode === 'view',
-          process.env.NEXT_PUBLIC_TX_URL
-        );
+          questionnaireResponse: finalResponse,
+          readOnly: mode === 'view',
+          terminologyServerUrl: process.env.NEXT_PUBLIC_TX_URL
+        });
       } catch (err) {
         setIsBuilding(false);
         toast.error(err);
