@@ -73,6 +73,7 @@ function ScheduleSection({
             Failed to load schedule
           </p>
           <button
+            type='button'
             onClick={onRetry}
             className='text-secondary text-[12px] underline'
           >

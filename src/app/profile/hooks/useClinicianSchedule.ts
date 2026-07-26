@@ -68,7 +68,7 @@ export function useClinicianSchedule() {
     if (!Array.isArray(activeFirms)) return;
     const newGrouped: GroupedSchedule = {};
     activeFirms.forEach(role => {
-      if (!role || !role.organizationData) return;
+      if (!role?.organizationData) return;
       const orgName = role.organizationData.name || '';
       if (Array.isArray(role.availableTime)) {
         role.availableTime.forEach(
