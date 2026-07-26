@@ -41,10 +41,9 @@ export const medalLists = [
 ];
 
 export const settingMenus = [
-  { name: 'Settings', link: '/settings' },
-  { name: 'Delete Account', link: '/remove-account' },
-  { name: 'Log out', link: '/logout' }
-];
+  { name: 'Delete Account', link: '/remove-account', icon: 'trash2' },
+  { name: 'Log out', link: '/logout', icon: 'logout' }
+] as const;
 
 export const genderList = [
   {

@@ -73,9 +73,9 @@ describe('HomeContentClinician', () => {
     expect(screen.getByText('No sessions scheduled for today')).toBeDefined();
   });
 
-  it('renders quick action links', () => {
+  it('renders quick action links without exercise card', () => {
     render(<HomeContentClinician />, { wrapper });
     expect(screen.getByText('SOAP Report')).toBeDefined();
-    expect(screen.getByText('Health Exercise Resources')).toBeDefined();
+    expect(screen.queryByText('Health Exercise Resources')).toBeNull();
   });
 });

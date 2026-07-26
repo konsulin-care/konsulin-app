@@ -3,39 +3,20 @@
 import ClinicianPracticeSchedule from '@/components/profile/clinician-practice-schedule';
 import ClinicianUnavailabilityCard from '@/components/profile/clinician-unavailability-card';
 import InformationDetail from '@/components/profile/information-detail';
-import Settings from '@/components/profile/settings';
+import ProfileActions from '@/components/profile/ProfileActions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { settingMenus } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
-import {
-  useGetPractitionerRolesDetail,
-  useUpdatePractitionerInfo
-} from '@/services/clinicians';
+import { useUpdatePractitionerInfo } from '@/services/clinicians';
 import { getProfileById } from '@/services/profile';
 import { findAge, generateAvatarPlaceholder, mapAddress } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import {
-  Practitioner,
-  PractitionerRoleAvailableTime
-} from 'fhir/r4';
-
-import type { IPractitionerRoleDetail } from '@/types/practitioner';
+import type { Practitioner } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useClinicianSchedule } from './hooks/useClinicianSchedule';
 
-type Props = {
-  fhirId: string;
-};
-
-/**
- * Renders the clinician profile page including general and practice information, and availability overview.
- *
- * Displays practitioner's basic profile details, practice information, availability grouped by organization and day.
- *
- * @param fhirId - The practitioner's FHIR resource ID used to fetch profile and role data.
- * @returns The JSX element for the Clinician profile page.
- */
+type Props = { fhirId: string };
 
 /** Build profile detail array from practitioner data. */
 function buildProfileDetail(
@@ -56,7 +37,6 @@ function buildProfileDetail(
     profileData && Array.isArray(profileData.address)
       ? mapAddress(profileData.address)
       : '-';
-
   return [
     { key: 'Birth(Age)', value: age },
     { key: 'Sex', value: gender },
@@ -65,191 +45,131 @@ function buildProfileDetail(
   ];
 }
 
-/**
- *
- */
-// eslint-disable-next-line complexity
+/** General information section with loading skeleton. */
+function GeneralInfoSection({
+  loading,
+  profileData,
+  profileDetail,
+  initials,
+  backgroundColor,
+  seed,
+  displayName,
+  onEdit
+}: {
+  readonly loading: boolean;
+  readonly profileData?: Practitioner;
+  readonly profileDetail: Array<{ key: string; value: string }>;
+  readonly initials: string;
+  readonly backgroundColor: string;
+  readonly seed: string;
+  readonly displayName: string;
+  readonly onEdit: () => void;
+}) {
+  if (loading) {
+    return (
+      <Skeleton className='my-4 h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+    );
+  }
+  return (
+    <div className='my-4'>
+      <InformationDetail
+        isRadiusIcon
+        initials={initials}
+        backgroundColor={backgroundColor}
+        seed={seed}
+        iconUrl={profileData?.photo?.[0]?.url}
+        title='General Information'
+        subTitle={displayName}
+        buttonText='Edit Profile'
+        details={profileDetail}
+        onEdit={onEdit}
+        role='clinician'
+      />
+    </div>
+  );
+}
+
+/** Practice information section with loading skeleton. */
+function PracticeInfoSection({
+  loading,
+  activeFirms,
+  onEdit
+}: {
+  readonly loading: boolean;
+  readonly activeFirms: unknown[];
+  readonly onEdit: () => void;
+}) {
+  if (loading) {
+    return (
+      <Skeleton className='h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+    );
+  }
+  return (
+    <InformationDetail
+      initials=''
+      backgroundColor=''
+      isRadiusIcon={false}
+      iconUrl='/icons/hospital.svg'
+      title='Practice Information'
+      buttonText='Edit Detail'
+      details={activeFirms}
+      onEdit={onEdit}
+      role='clinician'
+      isEditPractice
+    />
+  );
+}
+
+/** Clinician profile page with info, schedule, and actions. */
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
-  const [practitionerRolesData, setPractitionerRolesData] = useState<
-    IPractitionerRoleDetail[]
-  >([]);
-  const [groupedByFirmAndDay, setGroupedByFirmAndDay] = useState<
-    Record<
-      string,
-      {
-        availability: Record<
-          string,
-          Array<{ fromTime: string; toTime: string }>
-        >;
-      }
-    >
-  >({});
   const { state: authState, isLoading: isAuthLoading } = useAuth();
-
-  /* get practitioner's basic information*/
   const { data: profileData, isLoading: isProfileLoading } =
     useQuery<Practitioner>({
       queryKey: ['profile-data', fhirId],
       queryFn: () =>
         getProfileById(fhirId, 'Practitioner') as Promise<Practitioner>
     });
-
-  /* get list of practitioner's roles */
-  const { isLoading: isPractitionerRolesLoading } =
-    useGetPractitionerRolesDetail(authState.userInfo?.fhirId ?? '', data => {
-      const resources = (data?.map(entry => entry.resource) || []).filter(
-        Boolean
-      );
-      setPractitionerRolesData(resources);
-    });
+  const { groupedByFirmAndDay, isPractitionerRolesLoading, activeFirms } =
+    useClinicianSchedule();
 
   useUpdatePractitionerInfo();
 
-  const activeFirms = practitionerRolesData?.filter(firm => firm.active);
-
-  /* group available time slots by organization and day of week.
-   * example structure:
-   * {
-   *   "Org A": {
-   *     availability: {
-   *       Monday: [{ fromTime: "09:00", toTime: "12:00" }, ...],
-   *       Tuesday: [...],
-   *     }
-   *   },
-   *   ...
-   * }
-   */
-  const processTimeSlot = (
-    timeSlot: PractitionerRoleAvailableTime,
-    organizationName: string,
-    grouped: Record<
-      string,
-      {
-        availability: Record<
-          string,
-          Array<{ fromTime: string; toTime: string }>
-        >;
-      }
-    >
-  ) => {
-    if (!Array.isArray(timeSlot.daysOfWeek)) return;
-    timeSlot.daysOfWeek.forEach((day: string) => {
-      const dayKey = day.charAt(0).toUpperCase() + day.slice(1);
-
-      if (!grouped[organizationName]) {
-        grouped[organizationName] = {
-          availability: {}
-        };
-      }
-
-      if (!grouped[organizationName].availability[dayKey]) {
-        grouped[organizationName].availability[dayKey] = [];
-      }
-
-      grouped[organizationName].availability[dayKey].push({
-        fromTime: timeSlot.availableStartTime ?? '',
-        toTime: timeSlot.availableEndTime ?? ''
-      });
-    });
-  };
-
-  useEffect(() => {
-    if (!Array.isArray(activeFirms)) return;
-
-    const newGroupedByFirmAndDay: Record<
-      string,
-      {
-        availability: Record<
-          string,
-          Array<{ fromTime: string; toTime: string }>
-        >;
-      }
-    > = {};
-
-    activeFirms.forEach(role => {
-      if (!role) return;
-      const organizationName = role.organizationData?.name || '';
-
-      if (Array.isArray(role.availableTime)) {
-        role.availableTime.forEach(
-          (timeSlot: PractitionerRoleAvailableTime) => {
-            processTimeSlot(timeSlot, organizationName, newGroupedByFirmAndDay);
-          }
-        );
-      }
-    });
-
-    setGroupedByFirmAndDay(newGroupedByFirmAndDay);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [practitionerRolesData]);
-
-
-
   const profileDetail = buildProfileDetail(profileData);
-
   const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
     id: authState.userInfo?.fhirId,
     name: authState.userInfo?.fullname,
     email: authState.userInfo?.email
   });
-
   const displayName =
     !authState.userInfo?.fullname || authState.userInfo?.fullname.trim() === '-'
-      ? authState.userInfo?.email
-      : authState.userInfo?.fullname;
+      ? (authState.userInfo?.email ?? '')
+      : authState.userInfo.fullname;
 
   return (
     <>
-      {/* display practitioner's basic information */}
-      {isProfileLoading || isAuthLoading ? (
-        <Skeleton className='my-4 h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
-      ) : (
-        <div className='my-4'>
-          <InformationDetail
-            isRadiusIcon
-            initials={initials ?? ''}
-            backgroundColor={backgroundColor ?? ''}
-            seed={seed}
-            iconUrl={profileData?.photo?.[0]?.url}
-            title='General Information'
-            subTitle={displayName}
-            buttonText='Edit Profile'
-            details={profileDetail}
-            onEdit={() => router.push('/profile?path=edit-profile')}
-            role='clinician'
-          />
-        </div>
-      )}
-
+      <GeneralInfoSection
+        loading={isProfileLoading || isAuthLoading}
+        profileData={profileData}
+        profileDetail={profileDetail}
+        initials={initials ?? ''}
+        backgroundColor={backgroundColor ?? ''}
+        seed={seed}
+        displayName={displayName}
+        onEdit={() => router.push('/profile?path=edit-profile')}
+      />
       <div className='my-4' />
-
-      {/* display practitioner's practice information */}
-      {isPractitionerRolesLoading ? (
-        <Skeleton className='h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
-      ) : (
-        <InformationDetail
-          initials=''
-          backgroundColor=''
-          isRadiusIcon={false}
-          iconUrl='/icons/hospital.svg'
-          title='Practice Information'
-          buttonText='Edit Detail'
-          details={activeFirms}
-          onEdit={() => router.push('/profile?path=edit-practice')}
-          role='clinician'
-          isEditPractice
-        />
-      )}
-
+      <PracticeInfoSection
+        loading={isPractitionerRolesLoading}
+        activeFirms={activeFirms}
+        onEdit={() => router.push('/profile?path=edit-practice')}
+      />
       <ClinicianPracticeSchedule
         groupedByFirmAndDay={groupedByFirmAndDay}
         onEditSchedule={() => router.push('/practitioner/availability')}
       />
-
       <ClinicianUnavailabilityCard />
-
-      <Settings menus={settingMenus} />
+      <ProfileActions menus={settingMenus} />
     </>
   );
 }

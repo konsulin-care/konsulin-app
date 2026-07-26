@@ -1,16 +1,19 @@
 import '@testing-library/jest-dom';
 
 // Polyfill ResizeObserver for cmdk (Command component) in jsdom
+/* eslint-disable sonarjs/void-use */
 globalThis.ResizeObserver = class ResizeObserver {
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  observe() {}
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  unobserve() {}
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  disconnect() {}
+  observe = () => {
+    void this;
+  };
+  unobserve = () => {
+    void this;
+  };
+  disconnect = () => {
+    void this;
+  };
 };
+/* eslint-enable sonarjs/void-use */
 
 // Polyfill scrollIntoView for cmdk in jsdom
 // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -44,3 +47,9 @@ if (!globalThis.crypto?.randomUUID) {
     randomUUID: () => '00000000-0000-0000-0000-000000000000'
   }) as Crypto;
 }
+
+// Polyfill setPointerCapture/releasePointerCapture for vaul in jsdom
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+Element.prototype.setPointerCapture = () => {};
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+Element.prototype.releasePointerCapture = () => {};

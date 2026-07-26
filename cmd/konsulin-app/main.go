@@ -171,7 +171,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		UnauthorizedPath:  unauthorizedPath,
 		AppURL:            cfg.AppURL,
 	})
-	protectedRoutes := []string{"/message", "/notification", "/journal", "/record", "/profile"}
+	protectedRoutes := []string{"/journal", "/record", "/profile"}
 	for _, p := range protectedRoutes {
 		p := p
 		r.With(authGuard).Handle(p, proxy)

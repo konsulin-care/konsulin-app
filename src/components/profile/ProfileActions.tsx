@@ -7,24 +7,31 @@ import {
   DrawerTrigger
 } from '@/components/ui/drawer';
 import { ChevronRightIcon } from 'lucide-react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { Fragment, useState } from 'react';
+import { Fragment } from 'react';
+import {
+  ICON_MAP,
+  type IconKey,
+  useAccountAction
+} from './hooks/useAccountAction';
 
-/** A single settings menu item — icon, name, and chevron. */
+/** Menu item row with optional icon, name label, and click handler. */
 function MenuItem({
   name,
+  icon,
   index,
   total,
   onClick
 }: {
   readonly name: string;
+  readonly icon?: IconKey;
   readonly index: number;
   readonly total: number;
   readonly onClick: () => void;
 }) {
   const isFirst = index === 0;
   const isLast = index === total - 1;
+  const IconComponent = icon ? ICON_MAP[icon] : null;
+
   return (
     <li
       role='menuitem'
@@ -40,12 +47,7 @@ function MenuItem({
         !isFirst && !isLast ? 'border-b border-[#E8E8E8]' : ''
       } ${isFirst || isLast ? 'border-none' : 'border-t border-[#E8E8E8]'}`}
     >
-      <Image
-        src={'/icons/settings.svg'}
-        alt='setting-icons'
-        width={24}
-        height={24}
-      />
+      {IconComponent && <IconComponent size={24} className='text-[#13C2C2]' />}
       <p className='flex flex-grow justify-start pl-4 font-[#26282C] text-xs font-normal'>
         {name}
       </p>
@@ -54,15 +56,17 @@ function MenuItem({
   );
 }
 
-/** Confirmation drawer content with title, description, and action buttons. */
+/** Confirmation drawer with title, subtitle, and confirm/cancel buttons. */
 function ConfirmDrawerContent({
   title,
   subTitle,
+  confirmText,
   onClose,
   onConfirm
 }: {
   readonly title: string;
   readonly subTitle: string;
+  readonly confirmText: string;
   readonly onClose: () => void;
   readonly onConfirm: () => void;
 }) {
@@ -100,7 +104,7 @@ function ConfirmDrawerContent({
           onClick={onConfirm}
         >
           <span className='text-sm font-bold text-[#2C2F35]'>
-            Yes, log me out
+            {confirmText}
           </span>
         </Button>
       </div>
@@ -108,59 +112,23 @@ function ConfirmDrawerContent({
   );
 }
 
-/**
- * Settings page with list menu and a confirmation drawer for logout/delete.
- */
-export default function Settings({
+/** Profile actions menu with list of account actions and a confirmation drawer. */
+export default function ProfileActions({
   menus
 }: {
-  readonly menus: readonly { readonly name: string; readonly link: string }[];
+  readonly menus: readonly {
+    readonly name: string;
+    readonly link: string;
+    readonly icon?: IconKey;
+  }[];
 }) {
-  const router = useRouter();
-  const [drawerState, setDrawerState] = useState({
-    title: '',
-    subTitle: '',
-    show: false
-  });
-
-  /** Navigate to the given path and close the drawer. */
-  function handleClick(path: string) {
-    if (path === '/logout') {
-      setDrawerState({
-        title: 'Apakah Anda Yakin Untuk Keluar Akun',
-        subTitle:
-          'Note that you need to login again in the\nfuture and the notification will not appears if you log out',
-        show: true
-      });
-    } else if (path === '/remove-account') {
-      setDrawerState({
-        title: 'Apakah Anda Yakin Untuk Hapus Akun',
-        subTitle:
-          'Note that you cannot retrieve any data from\nthis account in the app if you delete your account.',
-        show: true
-      });
-    } else {
-      router.push(path);
-    }
-  }
-
-  /** Execute logout, clear redirect, and navigate to login page. */
-  function confirmLogout() {
-    setDrawerState(prevState => ({
-      ...prevState,
-      show: false
-    }));
-
-    router.push('/logout');
-  }
-
-  /** Close the logout confirmation drawer. */
-  function closeDrawer() {
-    setDrawerState(prevState => ({
-      ...prevState,
-      show: false
-    }));
-  }
+  const {
+    drawerState,
+    confirmText,
+    handleMenuClick,
+    confirmAction,
+    closeDrawer
+  } = useAccountAction();
 
   return (
     <>
@@ -170,9 +138,10 @@ export default function Settings({
             <MenuItem
               key={item.name}
               name={item.name}
+              icon={item.icon}
               index={index}
               total={menus.length}
-              onClick={() => handleClick(item.link)}
+              onClick={() => handleMenuClick(item.link)}
             />
           ))}
         </ul>
@@ -184,8 +153,9 @@ export default function Settings({
         <ConfirmDrawerContent
           title={drawerState.title}
           subTitle={drawerState.subTitle}
+          confirmText={confirmText}
           onClose={closeDrawer}
-          onConfirm={confirmLogout}
+          onConfirm={confirmAction}
         />
       </Drawer>
     </>
