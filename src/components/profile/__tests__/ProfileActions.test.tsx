@@ -3,8 +3,10 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+const mockPush = vi.fn();
+
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() })
+  useRouter: () => ({ push: mockPush })
 }));
 
 const menus = [
@@ -13,6 +15,11 @@ const menus = [
 ];
 
 describe('ProfileActions', () => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  beforeEach(() => {
+    mockPush.mockClear();
+  });
+
   it('renders all menu items by name', () => {
     render(<ProfileActions menus={menus} />);
     expect(screen.getByText('Delete Account')).toBeInTheDocument();
@@ -40,8 +47,34 @@ describe('ProfileActions', () => {
       const menuItem = screen.getByText(name);
       await user.click(menuItem);
 
-      // Drawer title should be visible
       expect(screen.getByText(/Apakah Anda Yakin/i)).toBeInTheDocument();
     }
   );
+
+  describe('confirm action navigation', () => {
+    it.each([
+      {
+        name: 'Log out',
+        expectedPath: '/logout',
+        expectedBtn: 'Yes, log me out'
+      },
+      {
+        name: 'Delete Account',
+        expectedPath: '/remove-account',
+        expectedBtn: 'Yes, delete my account'
+      }
+    ])(
+      'routes to $expectedPath and shows "$expectedBtn" button when $name confirm is clicked',
+      async ({ name, expectedPath, expectedBtn }) => {
+        const user = userEvent.setup();
+        render(<ProfileActions menus={menus} />);
+
+        await user.click(screen.getByText(name));
+        expect(screen.getByText(expectedBtn)).toBeInTheDocument();
+
+        await user.click(screen.getByText(expectedBtn));
+        expect(mockPush).toHaveBeenCalledWith(expectedPath);
+      }
+    );
+  });
 });

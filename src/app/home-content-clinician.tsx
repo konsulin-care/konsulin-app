@@ -1,21 +1,28 @@
 'use client';
+
 /* eslint-disable @typescript-eslint/no-misused-promises */
 
 import ActionCard from '@/components/general/action-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/context/auth/authContext';
-import { useGetTodaySessions } from '@/services/api/appointments';
-import { mergeNames, parseMergedSessions } from '@/utils/helper';
 import { format, parseISO } from 'date-fns';
 import { Calendar, FileText } from 'lucide-react';
-import { useMemo } from 'react';
+import {
+  type SessionRowData,
+  useTodaySchedule
+} from './hooks/useTodaySchedule';
 
-type SessionRowData = {
-  slotStart?: string;
-  slotEnd?: string;
-  appointmentId?: string;
-  displayPatientName: string;
-};
+/** Skeleton placeholder shown during loading. */
+function ScheduleSkeleton() {
+  return (
+    <div className='p-4'>
+      <Skeleton className='mb-4 h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+      <div className='flex gap-4'>
+        <Skeleton className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+        <Skeleton className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+      </div>
+    </div>
+  );
+}
 
 /** Row displaying a single session with time and status. */
 function SessionRow({ session }: Readonly<{ session: SessionRowData }>) {
@@ -47,78 +54,25 @@ function SessionRow({ session }: Readonly<{ session: SessionRowData }>) {
   );
 }
 
-/** Clinician home page showing today's schedule and quick actions. */
-export default function HomeContentClinician() {
-  const { state: authState, isLoading: isAuthLoading } = useAuth();
-  const practitionerId = authState?.userInfo?.fhirId;
-
-  const {
-    data: sessionData,
-    isLoading: isSessionsLoading,
-    isError: isSessionsError,
-    refetch: refetchSessions
-  } = useGetTodaySessions({
-    practitionerId,
-    dateReference: format(new Date(), 'yyyy-MM-dd'),
-    enabled: !isAuthLoading && Boolean(practitionerId)
-  });
-
-  const sessions = useMemo(() => {
-    if (!sessionData || sessionData.total === 0) return [];
-
-    const parsed = parseMergedSessions(sessionData);
-
-    const enriched = parsed
-      .filter(session => session.slotStart && session.slotEnd)
-      .map(session => {
-        const patientName = mergeNames(session.patientName);
-        return {
-          ...session,
-          displayPatientName:
-            patientName.trim() === '-' ? session.patientEmail : patientName
-        };
-      });
-
-    enriched.sort((a, b) => {
-      return parseISO(a.slotStart).getTime() - parseISO(b.slotStart).getTime();
-    });
-
-    return enriched;
-  }, [sessionData]);
-
-  const isLoading = isAuthLoading || isSessionsLoading;
-
-  const soapReportLink = (
-    <ActionCard
-      icon={<FileText className='h-5 w-5 text-gray-600' />}
-      title='SOAP Report'
-      description='Record your session notes'
-      href='/assessments/soap'
-    />
-  );
-
-  if (isLoading) {
-    return (
-      <div className='p-4'>
-        <Skeleton className='mb-4 h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
-        <div className='flex gap-4'>
-          <Skeleton className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
-          <Skeleton className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
-        </div>
-      </div>
-    );
-  }
-
-  /** Renders schedule content, loading, or error states. */
-  const renderScheduleContent = () => {
-    if (isSessionsError) {
+/** Renders schedule content with error, empty, or list states. */
+function ScheduleSection({
+  sessions,
+  isError,
+  onRetry
+}: {
+  readonly sessions: readonly SessionRowData[];
+  readonly isError: boolean;
+  readonly onRetry: () => void;
+}) {
+  const renderContent = () => {
+    if (isError) {
       return (
         <div className='p-6 text-center'>
           <p className='mb-2 text-[12px] text-gray-500'>
             Failed to load schedule
           </p>
           <button
-            onClick={() => refetchSessions()}
+            onClick={onRetry}
             className='text-secondary text-[12px] underline'
           >
             Tap to retry
@@ -139,42 +93,65 @@ export default function HomeContentClinician() {
     return (
       <div className='divide-y divide-gray-100'>
         {sessions.map((session, idx) => (
-          <SessionRow
-            key={session.appointmentId || idx}
-            session={session as SessionRowData}
-          />
+          <SessionRow key={session.appointmentId || idx} session={session} />
         ))}
       </div>
     );
   };
 
   return (
+    <div className='p-4'>
+      <div className='mb-2 flex items-center gap-2'>
+        <Calendar className='h-4 w-4 text-[#13C2C2]' />
+        <span className='text-[14px] font-bold text-[#2C2F3599]'>
+          Today&apos;s Schedule
+        </span>
+      </div>
+      <div className='overflow-hidden rounded-lg bg-[#F9F9F9]'>
+        {renderContent()}
+      </div>
+      <div className='mt-1 text-right text-[10px] text-gray-400'>
+        Full calendar view coming soon
+      </div>
+    </div>
+  );
+}
+
+/** Quick actions section with SOAP report link. */
+function QuickActionsSection() {
+  const soapReportLink = (
+    <ActionCard
+      icon={<FileText className='h-5 w-5 text-gray-600' />}
+      title='SOAP Report'
+      description='Record your session notes'
+      href='/assessments/soap'
+    />
+  );
+
+  return (
+    <div className='p-4 pt-0'>
+      <div className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
+        Quick Actions
+      </div>
+      <div className='flex flex-col gap-4'>{soapReportLink}</div>
+    </div>
+  );
+}
+
+/** Clinician home page showing today's schedule and quick actions. */
+export default function HomeContentClinician() {
+  const { sessions, isLoading, isError, refetch } = useTodaySchedule();
+
+  if (isLoading) return <ScheduleSkeleton />;
+
+  return (
     <>
-      {/* PRIMARY: Today's Schedule Calendar Stub */}
-      <div className='p-4'>
-        <div className='mb-2 flex items-center gap-2'>
-          <Calendar className='h-4 w-4 text-[#13C2C2]' />
-          <span className='text-[14px] font-bold text-[#2C2F3599]'>
-            Today&apos;s Schedule
-          </span>
-        </div>
-
-        <div className='overflow-hidden rounded-lg bg-[#F9F9F9]'>
-          {renderScheduleContent()}
-        </div>
-
-        <div className='mt-1 text-right text-[10px] text-gray-400'>
-          Full calendar view coming soon
-        </div>
-      </div>
-
-      {/* SECONDARY: Quick Actions */}
-      <div className='p-4 pt-0'>
-        <div className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
-          Quick Actions
-        </div>
-        <div className='flex flex-col gap-4'>{soapReportLink}</div>
-      </div>
+      <ScheduleSection
+        sessions={sessions}
+        isError={isError}
+        onRetry={refetch}
+      />
+      <QuickActionsSection />
     </>
   );
 }
