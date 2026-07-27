@@ -2,8 +2,9 @@
 
 import { useCardSwipe } from '@/hooks/useCardSwipe';
 import { useQuestionFocus } from '@/hooks/useQuestionFocus';
+import { injectCardStyles } from '@/lib/injectCardStyles';
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useInsertionEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 
 import { CardDomMapper } from './card-dom-mapper';
@@ -29,6 +30,7 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
     totalFocusable,
     cardStates,
     focusableLinkIds,
+    displayItemLinkIds,
     isRequired,
     isAnswered
   } = useQuestionFocus();
@@ -95,6 +97,55 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
     }
   }, [swipeDirection, handleNext, handlePrevious]);
 
+  /**
+   * Handle click on inactive cards to navigate to that question.
+   * Walks up from event.target to find .card-answered or .card-future.
+   */
+  const handleCardClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      let target = event.target as HTMLElement | null;
+      while (target && target !== containerRef.current) {
+        if (
+          target.classList.contains('card-answered') ||
+          target.classList.contains('card-future')
+        ) {
+          const linkId = target.dataset.linkId;
+          if (linkId) {
+            const index = focusableLinkIds.indexOf(linkId);
+            if (index !== -1) {
+              goToCard(index);
+            }
+          }
+          break;
+        }
+        target = target.parentElement;
+      }
+    },
+    [focusableLinkIds, goToCard]
+  );
+
+  /** Inject dynamic card-stack styles into document head. */
+  useInsertionEffect(() => {
+    const activeLinkId =
+      activeCardIndex >= 0 && activeCardIndex < focusableLinkIds.length
+        ? focusableLinkIds[activeCardIndex]
+        : null;
+
+    const answeredLinkIds = focusableLinkIds.filter(
+      id => cardStates[id] === 'answered'
+    );
+    const futureLinkIds = focusableLinkIds.filter(
+      id => cardStates[id] === 'future'
+    );
+
+    return injectCardStyles({
+      activeLinkId,
+      answeredLinkIds,
+      futureLinkIds,
+      displayItemLinkIds
+    });
+  }, [activeCardIndex, focusableLinkIds, cardStates, displayItemLinkIds]);
+
   const isFirstCard = activeCardIndex <= 0;
   const isLastCard = activeCardIndex >= totalFocusable - 1;
 
@@ -112,6 +163,7 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
       <div
         ref={containerRef}
         className='card-stack-viewport'
+        onClick={handleCardClick}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}

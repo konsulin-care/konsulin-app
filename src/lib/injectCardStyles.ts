@@ -18,6 +18,8 @@ interface CardStyleParams {
 export function buildCardStyles(params: CardStyleParams): string {
   const hasActive = params.activeLinkId !== null;
 
+  const secondaryColor = 'var(--color-secondary, #13c2c2)';
+
   return `
 .card-stack-viewport {
   display: flex;
@@ -40,36 +42,43 @@ export function buildCardStyles(params: CardStyleParams): string {
 }
 
 .card-answered {
-  max-height: 56px;
-  opacity: 0.45;
-  overflow: hidden;
-  scale: 0.92;
-  border-left: 3px solid #ccc;
-  margin-bottom: -12px;
-  pointer-events: none;
+  opacity: 0.5;
+  scale: 0.95;
+  border-right: 3px solid ${secondaryColor};
 }
 
 ${
   hasActive
     ? `.card-active {
-  max-height: none;
   opacity: 1;
   scale: 1;
-  border-left: 4px solid #229954;
+  border-right: 4px solid ${secondaryColor};
   box-shadow: 0 8px 32px rgba(0,0,0,0.1);
   z-index: 2;
+}
+
+.card-active .MuiSvgIcon-colorSuccess {
+  color: ${secondaryColor} !important;
 }`
     : ''
 }
 
 .card-future {
-  max-height: 56px;
-  opacity: 0.45;
-  overflow: hidden;
-  scale: 0.92;
-  border-left: 3px solid #ccc;
-  margin-top: -12px;
-  pointer-events: none;
+  opacity: 0.5;
+  scale: 0.95;
+  border-right: 3px solid #ccc;
+}
+
+/* Hide answer options on peek cards */
+.card-answered .MuiRadioGroup-root,
+.card-future .MuiRadioGroup-root {
+  display: none;
+}
+
+/* Hide SyncIcon on peek cards (border serves as indicator) */
+.card-answered .MuiSvgIcon-colorSuccess,
+.card-future .MuiSvgIcon-colorSuccess {
+  display: none;
 }
 
 .card-display-item {
