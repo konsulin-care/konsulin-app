@@ -10,7 +10,7 @@ import { getAPI } from '@/services/api';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
 import Image from 'next/image';
 
-import AssessmentThemeProvider from '@/components/general/assessment-theme-provider';
+import { QuestionFocusTracker } from '@/components/general/question-focus-tracker';
 import {
   Drawer,
   DrawerContent,
@@ -21,7 +21,11 @@ import {
 } from '@/components/ui/drawer';
 import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import type { RendererConfig } from '@aehrc/smart-forms-renderer';
-import { getResponse, useBuildForm } from '@aehrc/smart-forms-renderer';
+import {
+  getResponse,
+  RendererThemeProvider,
+  useBuildForm
+} from '@aehrc/smart-forms-renderer';
 import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
@@ -318,7 +322,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   }
 
   return (
-    <AssessmentThemeProvider>
+    <RendererThemeProvider>
       <SmartFormShell
         className='custom-smart-form'
         onChange={handleResponseChange}
@@ -354,7 +358,8 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           {renderDrawerContent}
         </DrawerContent>
       </Drawer>
-    </AssessmentThemeProvider>
+      <QuestionFocusTracker />
+    </RendererThemeProvider>
   );
 }
 export default FhirFormsRenderer;

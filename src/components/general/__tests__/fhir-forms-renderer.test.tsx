@@ -12,12 +12,13 @@ vi.mock('next/navigation', () => ({
   })
 }));
 
-vi.mock('@/components/general/assessment-theme-provider', () => ({
-  default: ({ children }: any) => <>{children}</>
+vi.mock('@/components/general/question-focus-tracker', () => ({
+  QuestionFocusTracker: () => null
 }));
 
 vi.mock('@aehrc/smart-forms-renderer', () => ({
   getResponse: vi.fn(),
+  RendererThemeProvider: ({ children }: any) => <>{children}</>,
   useBuildForm: vi.fn().mockReturnValue(false)
 }));
 
