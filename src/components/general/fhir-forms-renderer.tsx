@@ -19,6 +19,7 @@ import {
   DrawerTitle
 } from '@/components/ui/drawer';
 import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
+import type { RendererConfig } from '@aehrc/smart-forms-renderer';
 import {
   getResponse,
   RendererThemeProvider,
@@ -60,9 +61,19 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const draftOwnerId = props.ownerId || practitionerId || patientId || '';
 
+  const rendererConfigOptions: RendererConfig = {
+    itemResponsive: {
+      labelBreakpoints: { xs: 12, md: 12 },
+      fieldBreakpoints: { xs: 12, md: 12 },
+      columnGapPixels: 24,
+      rowGapPixels: 4
+    }
+  };
+
   const isBuilding = useBuildForm({
     questionnaire,
-    questionnaireResponse: response
+    questionnaireResponse: response,
+    rendererConfigOptions
   });
 
   const {
