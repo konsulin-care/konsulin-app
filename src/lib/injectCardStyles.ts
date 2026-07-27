@@ -22,12 +22,23 @@ export function buildCardStyles(params: CardStyleParams): string {
 
   return `
 .card-stack-viewport {
+  padding: 0 16px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   overflow-y: auto;
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.card-stack-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.card-stack-viewport [data-test="q-item-choice-radio-answer-option-box"] {
+  max-width: 100% !important;
 }
 
 .card-stack-viewport [id^="label-"] {
@@ -35,6 +46,7 @@ export function buildCardStyles(params: CardStyleParams): string {
 }
 
 .card-question-container {
+  padding: 12px 16px;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   scroll-snap-align: center;
   scroll-margin: 48px 0;

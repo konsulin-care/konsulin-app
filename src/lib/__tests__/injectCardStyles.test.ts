@@ -176,6 +176,77 @@ describe('buildCardStyles', () => {
       // Old scale was 0.92, new scale is 0.95
       expect(css).toContain('scale: 0.95');
     });
+
+    it('adds padding to card-question-container', () => {
+      const css = buildCardStyles({
+        activeLinkId: 'q1',
+        answeredLinkIds: ['q0'],
+        futureLinkIds: ['q2'],
+        displayItemLinkIds: []
+      });
+
+      expect(css).toContain('.card-question-container');
+      expect(css).toContain('padding: 12px 16px');
+    });
+
+    it('adds padding to card-stack-viewport', () => {
+      const css = buildCardStyles({
+        activeLinkId: 'q1',
+        answeredLinkIds: ['q0'],
+        futureLinkIds: ['q2'],
+        displayItemLinkIds: []
+      });
+
+      expect(css).toContain('.card-stack-viewport');
+      expect(css).toContain('padding: 0 16px');
+    });
+
+    it('hides scrollbar on card-stack-viewport', () => {
+      const css = buildCardStyles({
+        activeLinkId: 'q1',
+        answeredLinkIds: ['q0'],
+        futureLinkIds: ['q2'],
+        displayItemLinkIds: []
+      });
+
+      expect(css).toContain('scrollbar-width: none');
+      expect(css).toContain('-ms-overflow-style: none');
+    });
+
+    it('overrides FullWidthFormComponentBox maxWidth to fix right gap asymmetry', () => {
+      const css = buildCardStyles({
+        activeLinkId: 'q1',
+        answeredLinkIds: ['q0'],
+        futureLinkIds: ['q2'],
+        displayItemLinkIds: []
+      });
+
+      expect(css).toMatch(
+        /data-test="q-item-choice-radio-answer-option-box"[^}]*max-width:\s*100%\s*!important/
+      );
+    });
+
+    it('does not reset MuiCard-root padding', () => {
+      const css = buildCardStyles({
+        activeLinkId: 'q1',
+        answeredLinkIds: ['q0'],
+        futureLinkIds: ['q2'],
+        displayItemLinkIds: []
+      });
+
+      expect(css).not.toMatch(/\.MuiCard-root[^}]*padding:\s*0\s*!important/);
+    });
+
+    it('does not add overflow-x hidden to card-stack-viewport', () => {
+      const css = buildCardStyles({
+        activeLinkId: 'q1',
+        answeredLinkIds: ['q0'],
+        futureLinkIds: ['q2'],
+        displayItemLinkIds: []
+      });
+
+      expect(css).not.toContain('overflow-x: hidden');
+    });
   });
 });
 
