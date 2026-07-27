@@ -97,32 +97,90 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
     }
   }, [swipeDirection, handleNext, handlePrevious]);
 
+  /** Track origin for visit-and-return when clicking unanswered future cards. */
+  const originIndexRef = useRef<number | null>(null);
+  const returnLinkIdRef = useRef<string | null>(null);
+
   /**
-   * Handle click on inactive cards to navigate to that question.
-   * Walks up from event.target to find .card-answered or .card-future.
+   * Process a click on a focusable card.
+   * - Past cards (index < active): direct navigation
+   * - Future cards (index > active): blocked if current is required,
+   *   else navigate + save origin for visit-and-return
+   * - Active card: no-op
+   */
+  const processCardClick = useCallback(
+    (linkId: string, target: HTMLElement) => {
+      if (target.classList.contains('card-active')) {
+        return;
+      }
+
+      const clickedIndex = focusableLinkIds.indexOf(linkId);
+
+      if (clickedIndex < activeCardIndex) {
+        goToCard(clickedIndex);
+        return;
+      }
+
+      if (clickedIndex > activeCardIndex) {
+        const currentLinkId = focusableLinkIds[activeCardIndex];
+        if (
+          currentLinkId &&
+          isRequired(currentLinkId) &&
+          !isAnswered(currentLinkId)
+        ) {
+          toast.error("Can't skip required question");
+          return;
+        }
+
+        if (cardStates[linkId] !== 'answered') {
+          originIndexRef.current = activeCardIndex;
+          returnLinkIdRef.current = linkId;
+        }
+        goToCard(clickedIndex);
+      }
+    },
+    [
+      focusableLinkIds,
+      activeCardIndex,
+      goToCard,
+      isRequired,
+      isAnswered,
+      cardStates
+    ]
+  );
+
+  /**
+   * Handle click on inactive cards.
+   * Walks up from event.target to find an element with `data-link-id`.
    */
   const handleCardClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       let target = event.target as HTMLElement | null;
       while (target && target !== containerRef.current) {
-        if (
-          target.classList.contains('card-answered') ||
-          target.classList.contains('card-future')
-        ) {
-          const linkId = target.dataset.linkId;
-          if (linkId) {
-            const index = focusableLinkIds.indexOf(linkId);
-            if (index !== -1) {
-              goToCard(index);
-            }
-          }
+        const linkId = target.dataset.linkId;
+        if (linkId && focusableLinkIds.includes(linkId)) {
+          processCardClick(linkId, target);
           break;
         }
         target = target.parentElement;
       }
     },
-    [focusableLinkIds, goToCard]
+    [focusableLinkIds, processCardClick]
   );
+
+  /** Visit-and-return: when the visited card becomes answered, return to origin. */
+  useEffect(() => {
+    if (
+      returnLinkIdRef.current &&
+      cardStates[returnLinkIdRef.current] === 'answered'
+    ) {
+      if (originIndexRef.current !== null) {
+        goToCard(originIndexRef.current);
+      }
+      originIndexRef.current = null;
+      returnLinkIdRef.current = null;
+    }
+  }, [cardStates, goToCard]);
 
   /** Inject dynamic card-stack styles into document head. */
   useInsertionEffect(() => {
@@ -146,16 +204,6 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
     });
   }, [activeCardIndex, focusableLinkIds, cardStates, displayItemLinkIds]);
 
-  const isFirstCard = activeCardIndex <= 0;
-  const isLastCard = activeCardIndex >= totalFocusable - 1;
-
-  /** Determine if Skip should be shown for the next card. */
-  const showSkip = !isLastCard;
-  const nextLinkId = showSkip ? focusableLinkIds[activeCardIndex + 1] : null;
-  const skipIsBlocked = nextLinkId
-    ? isRequired(nextLinkId) && !isAnswered(nextLinkId)
-    : false;
-
   return (
     <div>
       <CardDomMapper containerRef={containerRef} />
@@ -174,31 +222,6 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
       {/* Progress indicator */}
       <div className='mt-2 text-center text-sm text-gray-500'>
         Question {answeredCount + 1} of {totalFocusable}
-      </div>
-
-      {/* Navigation buttons */}
-      <div className='mt-3 flex justify-between px-2'>
-        {isFirstCard ? (
-          <div />
-        ) : (
-          <button
-            type='button'
-            className='rounded border px-4 py-2 text-sm'
-            onClick={handlePrevious}
-          >
-            Previous
-          </button>
-        )}
-
-        {showSkip && !skipIsBlocked ? (
-          <button
-            type='button'
-            className='rounded border px-4 py-2 text-sm'
-            onClick={handleNext}
-          >
-            Skip
-          </button>
-        ) : null}
       </div>
     </div>
   );
