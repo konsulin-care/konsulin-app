@@ -27,7 +27,7 @@ import {
 } from '@aehrc/smart-forms-renderer';
 import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { toast } from 'react-toastify';
 
 interface FhirFormsRendererProps {
@@ -61,14 +61,17 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const draftOwnerId = props.ownerId || practitionerId || patientId || '';
 
-  const rendererConfigOptions: RendererConfig = {
-    itemResponsive: {
-      labelBreakpoints: { xs: 12, md: 12 },
-      fieldBreakpoints: { xs: 12, md: 12 },
-      columnGapPixels: 24,
-      rowGapPixels: 4
-    }
-  };
+  const rendererConfigOptions: RendererConfig = useMemo(
+    () => ({
+      itemResponsive: {
+        labelBreakpoints: { xs: 12, md: 12 },
+        fieldBreakpoints: { xs: 12, md: 12 },
+        columnGapPixels: 24,
+        rowGapPixels: 4
+      }
+    }),
+    []
+  );
 
   const isBuilding = useBuildForm({
     questionnaire,

@@ -184,6 +184,8 @@ export const useQuestionnaire = (questionnaireId: number | string) => {
       );
       return response;
     },
+    staleTime: 30_000,
+    retry: 1,
     select: response => {
       return response.data.entry ?? null;
     }

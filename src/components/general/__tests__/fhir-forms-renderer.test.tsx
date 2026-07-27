@@ -108,7 +108,7 @@ vi.mock('@/constants/roles', () => ({
 
 import { useRequiredValidation } from '@/hooks/useRequiredValidation';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
-import { getResponse } from '@aehrc/smart-forms-renderer';
+import { getResponse, useBuildForm } from '@aehrc/smart-forms-renderer';
 import type { Questionnaire } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
 import FhirFormsRenderer from '../fhir-forms-renderer';
@@ -120,6 +120,80 @@ const mockQuestionnaire: Questionnaire = {
   status: 'active',
   item: [{ linkId: 'q1', text: 'Question 1', type: 'string' }]
 };
+
+describe('FhirFormsRenderer - loading state', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useRouter).mockReturnValue({
+      push: vi.fn(),
+      replace: vi.fn(),
+      back: vi.fn()
+    } as any);
+    vi.mocked(useSubmitQuestionnaire).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue({ id: 'resp-789' }),
+      isLoading: false
+    } as any);
+    vi.mocked(useRequiredValidation).mockReturnValue({
+      requiredItemEmpty: 0,
+      checkRequiredIsEmpty: vi.fn(),
+      invalidItems: {}
+    } as any);
+  });
+
+  it('shows PageLoader while useBuildForm returns true', () => {
+    vi.mocked(useBuildForm).mockReturnValue(true);
+
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated
+        patientId='pat-1'
+      />
+    );
+
+    expect(screen.getByTestId('mock-page-loader')).toBeInTheDocument();
+    expect(screen.queryByTestId('mock-smart-form')).not.toBeInTheDocument();
+  });
+
+  it('renders SmartFormShell when useBuildForm returns false', () => {
+    vi.mocked(useBuildForm).mockReturnValue(false);
+
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated
+        patientId='pat-1'
+      />
+    );
+
+    expect(screen.getByTestId('mock-smart-form')).toBeInTheDocument();
+    expect(screen.queryByTestId('mock-page-loader')).not.toBeInTheDocument();
+  });
+
+  it('passes rendererConfigOptions with full-width stacked layout', () => {
+    vi.mocked(useBuildForm).mockReturnValue(false);
+
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated
+        patientId='pat-1'
+      />
+    );
+
+    const lastCallOptions = vi.mocked(useBuildForm).mock.calls[0][0];
+    const config = lastCallOptions.rendererConfigOptions;
+
+    expect(config.itemResponsive?.labelBreakpoints).toEqual({
+      xs: 12,
+      md: 12
+    });
+    expect(config.itemResponsive?.fieldBreakpoints).toEqual({
+      xs: 12,
+      md: 12
+    });
+  });
+});
 
 describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
   const mockPush = vi.fn();
