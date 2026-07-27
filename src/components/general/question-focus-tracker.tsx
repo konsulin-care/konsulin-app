@@ -37,7 +37,11 @@ function getCardContainer(labelId: string): HTMLElement | null {
  * Renders nothing — only injects a `<style>` element and toggles DOM classes.
  */
 export function QuestionFocusTracker() {
-  const { activeLinkId } = useQuestionFocus();
+  const { activeCardIndex, focusableLinkIds } = useQuestionFocus();
+  const activeLinkId =
+    activeCardIndex >= 0 && activeCardIndex < focusableLinkIds.length
+      ? focusableLinkIds[activeCardIndex]
+      : null;
   const currentPageIndex = useQuestionnaireStore.use.currentPageIndex();
 
   /* Inject focus styles once on mount */

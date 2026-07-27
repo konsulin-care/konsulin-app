@@ -19,6 +19,10 @@ globalThis.ResizeObserver = class ResizeObserver {
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 Element.prototype.scrollIntoView = () => {};
 
+// Polyfill scrollTo for card stack in jsdom
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+Element.prototype.scrollTo = () => {};
+
 // Polyfill window.matchMedia for vaul drawer in jsdom
 
 if (!window.matchMedia) {

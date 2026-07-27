@@ -1,268 +1,354 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
+import type { Questionnaire, QuestionnaireItem } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Questionnaire, QuestionnaireResponseItem } from 'fhir/r4';
-
-const {
-  mockSourceQuestionnaire,
-  mockCurrentPageIndex,
-  mockUpdatableResponseItems
-} = vi.hoisted(() => ({
-  mockSourceQuestionnaire: vi.fn<() => Questionnaire>(),
-  mockCurrentPageIndex: vi.fn<() => number>().mockReturnValue(0),
-  mockUpdatableResponseItems:
-    vi.fn<() => Record<string, QuestionnaireResponseItem[]>>()
-}));
+const { mockSourceQuestionnaire, mockItemMap, mockUpdatableResponseItems } =
+  vi.hoisted(() => ({
+    mockSourceQuestionnaire: vi.fn<() => Questionnaire>(),
+    mockItemMap: vi.fn<() => Record<string, QuestionnaireItem>>(),
+    mockUpdatableResponseItems: vi.fn<() => Record<string, any[]>>()
+  }));
 
 vi.mock('@aehrc/smart-forms-renderer', () => ({
   useQuestionnaireStore: Object.assign(vi.fn(), {
-    use: {
-      sourceQuestionnaire: mockSourceQuestionnaire,
-      currentPageIndex: mockCurrentPageIndex
-    }
+    use: { sourceQuestionnaire: mockSourceQuestionnaire, itemMap: mockItemMap }
   }),
   useQuestionnaireResponseStore: Object.assign(vi.fn(), {
-    use: {
-      updatableResponseItems: mockUpdatableResponseItems
-    }
+    use: { updatableResponseItems: mockUpdatableResponseItems }
   })
 }));
 
 import { useQuestionFocus } from '../useQuestionFocus';
 
-function answered(linkId: string): QuestionnaireResponseItem {
-  return { linkId, text: linkId, answer: [{ valueString: 'yes' }] };
-}
+const focusable = (
+  linkId: string,
+  o?: Partial<QuestionnaireItem>
+): QuestionnaireItem => ({
+  linkId,
+  text: linkId,
+  type: 'choice',
+  required: true,
+  ...o
+});
+const nonRequired = (
+  linkId: string,
+  o?: Partial<QuestionnaireItem>
+): QuestionnaireItem => ({
+  linkId,
+  text: linkId,
+  type: 'choice',
+  required: false,
+  ...o
+});
+const display = (
+  linkId: string,
+  o?: Partial<QuestionnaireItem>
+): QuestionnaireItem => ({ linkId, text: linkId, type: 'display', ...o });
+const readOnly = (
+  linkId: string,
+  o?: Partial<QuestionnaireItem>
+): QuestionnaireItem => ({
+  linkId,
+  text: linkId,
+  type: 'choice',
+  required: true,
+  readOnly: true,
+  ...o
+});
+const answered = (linkId: string): any => ({
+  linkId,
+  text: linkId,
+  answer: [{ valueString: 'yes' }]
+});
+const unanswered = (linkId: string): any => ({ linkId, text: linkId });
 
-function unanswered(linkId: string): QuestionnaireResponseItem {
-  return { linkId, text: linkId };
-}
+const toItemMap = (
+  items: QuestionnaireItem[]
+): Record<string, QuestionnaireItem> => {
+  const map: Record<string, QuestionnaireItem> = {};
+  for (const item of items) {
+    map[item.linkId] = item;
+    if (item.item) Object.assign(map, toItemMap(item.item));
+  }
+  return map;
+};
 
 describe('useQuestionFocus', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCurrentPageIndex.mockReturnValue(0);
+    mockItemMap.mockReturnValue({});
   });
 
-  it('returns first question as active when no answers exist', () => {
+  it('sets activeCardIndex to 0 when no answers exist', () => {
+    const items = [focusable('q1'), focusable('q2')];
     mockSourceQuestionnaire.mockReturnValue({
       resourceType: 'Questionnaire',
       id: 'test',
       status: 'active',
-      item: [
-        { linkId: 'q1', text: 'Q1', type: 'string' },
-        { linkId: 'q2', text: 'Q2', type: 'string' }
-      ]
+      item: items
     });
+    mockItemMap.mockReturnValue(toItemMap(items));
     mockUpdatableResponseItems.mockReturnValue({
       q1: [unanswered('q1')],
       q2: [unanswered('q2')]
     });
-
     const { result } = renderHook(() => useQuestionFocus());
-
-    expect(result.current.activeLinkId).toBe('q1');
-    expect(result.current.answeredCount).toBe(0);
-    expect(result.current.totalCount).toBe(2);
-    expect(result.current.linkIds).toEqual(['q1', 'q2']);
+    expect(result.current.activeCardIndex).toBe(0);
+    expect(result.current.totalFocusable).toBe(2);
+    expect(result.current.totalAnswerable).toBe(2);
   });
 
-  it('returns second question as active when first is answered', () => {
+  it('sets activeCardIndex to first unanswered focusable index', () => {
+    const items = [focusable('q1'), focusable('q2'), focusable('q3')];
     mockSourceQuestionnaire.mockReturnValue({
       resourceType: 'Questionnaire',
       id: 'test',
       status: 'active',
-      item: [
-        { linkId: 'q1', text: 'Q1', type: 'choice' },
-        { linkId: 'q2', text: 'Q2', type: 'choice' }
-      ]
+      item: items
     });
+    mockItemMap.mockReturnValue(toItemMap(items));
     mockUpdatableResponseItems.mockReturnValue({
       q1: [answered('q1')],
-      q2: [unanswered('q2')]
+      q2: [unanswered('q2')],
+      q3: [unanswered('q3')]
     });
-
     const { result } = renderHook(() => useQuestionFocus());
-
-    expect(result.current.activeLinkId).toBe('q2');
-    expect(result.current.answeredCount).toBe(1);
+    expect(result.current.activeCardIndex).toBe(1);
+    expect(result.current.totalFocusable).toBe(3);
   });
 
-  it('returns null when all questions are answered', () => {
+  it('sets activeCardIndex to -1 when all focusable items answered', () => {
+    const items = [focusable('q1'), focusable('q2')];
     mockSourceQuestionnaire.mockReturnValue({
       resourceType: 'Questionnaire',
       id: 'test',
       status: 'active',
-      item: [
-        { linkId: 'q1', text: 'Q1', type: 'string' },
-        { linkId: 'q2', text: 'Q2', type: 'string' }
-      ]
+      item: items
     });
+    mockItemMap.mockReturnValue(toItemMap(items));
     mockUpdatableResponseItems.mockReturnValue({
       q1: [answered('q1')],
       q2: [answered('q2')]
     });
-
     const { result } = renderHook(() => useQuestionFocus());
-
-    expect(result.current.activeLinkId).toBeNull();
-    expect(result.current.answeredCount).toBe(2);
+    expect(result.current.activeCardIndex).toBe(-1);
+    expect(result.current.totalFocusable).toBe(2);
   });
 
-  it('skips display items', () => {
+  it('excludes display items from focus count', () => {
+    const items = [display('inst'), focusable('q1'), focusable('q2')];
     mockSourceQuestionnaire.mockReturnValue({
       resourceType: 'Questionnaire',
       id: 'test',
       status: 'active',
-      item: [
-        { linkId: 'inst', text: 'Instruction', type: 'display' },
-        { linkId: 'q1', text: 'Q1', type: 'string' }
-      ]
+      item: items
     });
+    mockItemMap.mockReturnValue(toItemMap(items));
     mockUpdatableResponseItems.mockReturnValue({
       inst: [unanswered('inst')],
-      q1: [unanswered('q1')]
+      q1: [unanswered('q1')],
+      q2: [unanswered('q2')]
     });
-
     const { result } = renderHook(() => useQuestionFocus());
-
-    expect(result.current.activeLinkId).toBe('q1');
-    expect(result.current.totalCount).toBe(1);
+    expect(result.current.totalFocusable).toBe(2);
+    expect(result.current.totalAnswerable).toBe(2);
+    expect(result.current.displayItemLinkIds).toEqual(['inst']);
   });
 
-  it('skips group items (groups are containers, not answerable)', () => {
+  it('excludes readOnly items from focus count', () => {
+    const items = [focusable('q1'), readOnly('score'), focusable('q2')];
     mockSourceQuestionnaire.mockReturnValue({
       resourceType: 'Questionnaire',
       id: 'test',
       status: 'active',
-      item: [
-        { linkId: 'g1', text: 'Group', type: 'group' },
-        { linkId: 'q1', text: 'Q1', type: 'string' }
-      ]
+      item: items
     });
-    mockUpdatableResponseItems.mockReturnValue({
-      q1: [unanswered('q1')]
-    });
-
-    const { result } = renderHook(() => useQuestionFocus());
-
-    expect(result.current.activeLinkId).toBe('q1');
-    expect(result.current.totalCount).toBe(1);
-  });
-
-  it('skips readOnly items', () => {
-    mockSourceQuestionnaire.mockReturnValue({
-      resourceType: 'Questionnaire',
-      id: 'test',
-      status: 'active',
-      item: [
-        { linkId: 'q1', text: 'Q1', type: 'string' },
-        { linkId: 'score', text: 'Score', type: 'integer', readOnly: true }
-      ]
-    });
+    mockItemMap.mockReturnValue(toItemMap(items));
     mockUpdatableResponseItems.mockReturnValue({
       q1: [unanswered('q1')],
-      score: [unanswered('score')]
+      score: [unanswered('score')],
+      q2: [unanswered('q2')]
     });
-
     const { result } = renderHook(() => useQuestionFocus());
-
-    expect(result.current.activeLinkId).toBe('q1');
-    expect(result.current.totalCount).toBe(1);
+    expect(result.current.totalFocusable).toBe(2);
+    expect(result.current.totalAnswerable).toBe(3);
   });
 
-  it('recursively walks nested groups', () => {
+  it('excludes non-required items from focus count', () => {
+    const items = [focusable('q1'), nonRequired('q2'), focusable('q3')];
     mockSourceQuestionnaire.mockReturnValue({
       resourceType: 'Questionnaire',
       id: 'test',
       status: 'active',
-      item: [
-        {
-          linkId: 'g1',
-          text: 'Group 1',
-          type: 'group',
-          item: [
-            { linkId: 'q1', text: 'Q1', type: 'string' },
-            { linkId: 'q2', text: 'Q2', type: 'string' }
-          ]
-        },
-        {
-          linkId: 'g2',
-          text: 'Group 2',
-          type: 'group',
-          item: [
-            {
-              linkId: 'sg',
-              text: 'Sub',
-              type: 'group',
-              item: [{ linkId: 'q3', text: 'Q3', type: 'string' }]
-            }
-          ]
-        }
-      ]
+      item: items
     });
+    mockItemMap.mockReturnValue(toItemMap(items));
     mockUpdatableResponseItems.mockReturnValue({
       q1: [unanswered('q1')],
       q2: [unanswered('q2')],
       q3: [unanswered('q3')]
     });
-
     const { result } = renderHook(() => useQuestionFocus());
-
-    expect(result.current.activeLinkId).toBe('q1');
-    expect(result.current.totalCount).toBe(3);
-    expect(result.current.linkIds).toEqual(['q1', 'q2', 'q3']);
+    expect(result.current.totalFocusable).toBe(2);
+    expect(result.current.totalAnswerable).toBe(3);
   });
 
-  it('counts answered items correctly with mixed answers', () => {
+  it('computes correct cardStates for answered/active/future', () => {
+    const items = [focusable('q1'), focusable('q2'), focusable('q3')];
     mockSourceQuestionnaire.mockReturnValue({
       resourceType: 'Questionnaire',
       id: 'test',
       status: 'active',
-      item: [
-        { linkId: 'q1', text: 'Q1', type: 'choice' },
-        { linkId: 'q2', text: 'Q2', type: 'choice' },
-        { linkId: 'q3', text: 'Q3', type: 'choice' }
-      ]
+      item: items
     });
+    mockItemMap.mockReturnValue(toItemMap(items));
     mockUpdatableResponseItems.mockReturnValue({
       q1: [answered('q1')],
       q2: [unanswered('q2')],
-      q3: [answered('q3')]
+      q3: [unanswered('q3')]
     });
-
     const { result } = renderHook(() => useQuestionFocus());
-
-    expect(result.current.answeredCount).toBe(2);
-    expect(result.current.activeLinkId).toBe('q2');
+    expect(result.current.cardStates).toEqual({
+      q1: 'answered',
+      q2: 'active',
+      q3: 'future'
+    });
   });
 
-  it('handles items with nested content in groups', () => {
+  it('computes cardStates with all answered', () => {
+    const items = [focusable('q1'), focusable('q2')];
     mockSourceQuestionnaire.mockReturnValue({
       resourceType: 'Questionnaire',
       id: 'test',
       status: 'active',
-      item: [
-        { linkId: 'q1', text: 'Q1', type: 'string' },
-        {
-          linkId: 'g1',
-          text: 'Group',
-          type: 'group',
-          item: [
-            { linkId: 'q2', text: 'Q2', type: 'choice' },
-            { linkId: 'q3', text: 'Q3', type: 'choice' }
-          ]
-        }
-      ]
+      item: items
     });
+    mockItemMap.mockReturnValue(toItemMap(items));
+    mockUpdatableResponseItems.mockReturnValue({
+      q1: [answered('q1')],
+      q2: [answered('q2')]
+    });
+    const { result } = renderHook(() => useQuestionFocus());
+    expect(result.current.cardStates).toEqual({
+      q1: 'answered',
+      q2: 'answered'
+    });
+    expect(result.current.activeCardIndex).toBe(-1);
+  });
+
+  it('setActiveCardIndex advances and retreats correctly', () => {
+    const items = [focusable('q1'), focusable('q2'), focusable('q3')];
+    mockSourceQuestionnaire.mockReturnValue({
+      resourceType: 'Questionnaire',
+      id: 'test',
+      status: 'active',
+      item: items
+    });
+    mockItemMap.mockReturnValue(toItemMap(items));
     mockUpdatableResponseItems.mockReturnValue({
       q1: [unanswered('q1')],
       q2: [unanswered('q2')],
       q3: [unanswered('q3')]
     });
-
     const { result } = renderHook(() => useQuestionFocus());
+    expect(result.current.activeCardIndex).toBe(0);
+    act(() => {
+      result.current.setActiveCardIndex(1);
+    });
+    expect(result.current.activeCardIndex).toBe(1);
+    act(() => {
+      result.current.setActiveCardIndex(2);
+    });
+    expect(result.current.activeCardIndex).toBe(2);
+  });
 
-    expect(result.current.linkIds).toEqual(['q1', 'q2', 'q3']);
+  it('setActiveCardIndex retreats backward correctly', () => {
+    const items = [focusable('q1'), focusable('q2'), focusable('q3')];
+    mockSourceQuestionnaire.mockReturnValue({
+      resourceType: 'Questionnaire',
+      id: 'test',
+      status: 'active',
+      item: items
+    });
+    mockItemMap.mockReturnValue(toItemMap(items));
+    mockUpdatableResponseItems.mockReturnValue({
+      q1: [answered('q1')],
+      q2: [unanswered('q2')],
+      q3: [unanswered('q3')]
+    });
+    const { result } = renderHook(() => useQuestionFocus());
+    expect(result.current.activeCardIndex).toBe(1);
+    act(() => {
+      result.current.setActiveCardIndex(0);
+    });
+    expect(result.current.activeCardIndex).toBe(0);
+  });
+
+  it('cardStates updates after answering a question', () => {
+    const items = [focusable('q1'), focusable('q2')];
+    mockSourceQuestionnaire.mockReturnValue({
+      resourceType: 'Questionnaire',
+      id: 'test',
+      status: 'active',
+      item: items
+    });
+    mockItemMap.mockReturnValue(toItemMap(items));
+    mockUpdatableResponseItems.mockReturnValue({
+      q1: [unanswered('q1')],
+      q2: [unanswered('q2')]
+    });
+    const { result, rerender } = renderHook(() => useQuestionFocus());
+    expect(result.current.cardStates).toEqual({ q1: 'active', q2: 'future' });
+    mockUpdatableResponseItems.mockReturnValue({
+      q1: [answered('q1')],
+      q2: [unanswered('q2')]
+    });
+    rerender();
+    expect(result.current.cardStates).toEqual({ q1: 'answered', q2: 'active' });
+    expect(result.current.activeCardIndex).toBe(1);
+  });
+
+  it('isRequired and isAnswered return correct values', () => {
+    const items = [focusable('q1'), nonRequired('q2')];
+    mockSourceQuestionnaire.mockReturnValue({
+      resourceType: 'Questionnaire',
+      id: 'test',
+      status: 'active',
+      item: items
+    });
+    mockItemMap.mockReturnValue(toItemMap(items));
+    mockUpdatableResponseItems.mockReturnValue({
+      q1: [answered('q1')],
+      q2: [unanswered('q2')]
+    });
+    const { result } = renderHook(() => useQuestionFocus());
+    expect(result.current.isRequired('q1')).toBe(true);
+    expect(result.current.isRequired('q2')).toBe(false);
+    expect(result.current.isAnswered('q1')).toBe(true);
+    expect(result.current.isAnswered('q2')).toBe(false);
+  });
+
+  it('focusableLinkIds includes only required non-readOnly items', () => {
+    const items = [
+      focusable('q1'),
+      nonRequired('q2'),
+      readOnly('q3'),
+      focusable('q4')
+    ];
+    mockSourceQuestionnaire.mockReturnValue({
+      resourceType: 'Questionnaire',
+      id: 'test',
+      status: 'active',
+      item: items
+    });
+    mockItemMap.mockReturnValue(toItemMap(items));
+    mockUpdatableResponseItems.mockReturnValue({
+      q1: [unanswered('q1')],
+      q2: [unanswered('q2')],
+      q3: [unanswered('q3')],
+      q4: [unanswered('q4')]
+    });
+    const { result } = renderHook(() => useQuestionFocus());
+    expect(result.current.focusableLinkIds).toEqual(['q1', 'q4']);
   });
 });

@@ -10,7 +10,8 @@ import { getAPI } from '@/services/api';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
 import Image from 'next/image';
 
-import { QuestionFocusTracker } from '@/components/general/question-focus-tracker';
+import { AssessmentThemeProvider } from '@/components/general/assessment-theme-provider';
+import { CardStackContainer } from '@/components/general/card-stack-container';
 import {
   Drawer,
   DrawerContent,
@@ -21,11 +22,7 @@ import {
 } from '@/components/ui/drawer';
 import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import type { RendererConfig } from '@aehrc/smart-forms-renderer';
-import {
-  getResponse,
-  RendererThemeProvider,
-  useBuildForm
-} from '@aehrc/smart-forms-renderer';
+import { getResponse, useBuildForm } from '@aehrc/smart-forms-renderer';
 import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
@@ -322,44 +319,45 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   }
 
   return (
-    <RendererThemeProvider>
-      <SmartFormShell
-        className='custom-smart-form'
-        onChange={handleResponseChange}
-      />
-      <div className='flex-flex-col mt-4 px-2'>
-        {requiredItemEmpty > 0 ? (
-          <div className='text-destructive mb-2 w-full text-sm'>
-            Terdapat {requiredItemEmpty} pertanyaan wajib yang belum terisi, yuk
-            dilengkapi dulu!
-          </div>
-        ) : (
-          ''
-        )}
-        <Button
-          disabled={
-            submitQuestionnaireIsLoading ||
-            requiredItemEmpty > 0 ||
-            (role === Roles.Practitioner && !patientId)
-          }
-          className='bg-secondary w-full text-white'
-          onClick={handleValidation}
-        >
-          {submitQuestionnaireIsLoading ? (
-            <LoadingSpinnerIcon stroke='white' />
+    <AssessmentThemeProvider>
+      <CardStackContainer>
+        <SmartFormShell
+          className='custom-smart-form'
+          onChange={handleResponseChange}
+        />
+        <div className='flex-flex-col mt-4 px-2'>
+          {requiredItemEmpty > 0 ? (
+            <div className='text-destructive mb-2 w-full text-sm'>
+              Terdapat {requiredItemEmpty} pertanyaan wajib yang belum terisi,
+              yuk dilengkapi dulu!
+            </div>
           ) : (
-            'Kirim'
+            ''
           )}
-        </Button>
-      </div>
+          <Button
+            disabled={
+              submitQuestionnaireIsLoading ||
+              requiredItemEmpty > 0 ||
+              (role === Roles.Practitioner && !patientId)
+            }
+            className='bg-secondary w-full text-white'
+            onClick={handleValidation}
+          >
+            {submitQuestionnaireIsLoading ? (
+              <LoadingSpinnerIcon stroke='white' />
+            ) : (
+              'Kirim'
+            )}
+          </Button>
+        </div>
+      </CardStackContainer>
 
       <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
         <DrawerContent className='mx-auto max-w-screen-sm p-4'>
           {renderDrawerContent}
         </DrawerContent>
       </Drawer>
-      <QuestionFocusTracker />
-    </RendererThemeProvider>
+    </AssessmentThemeProvider>
   );
 }
 export default FhirFormsRenderer;

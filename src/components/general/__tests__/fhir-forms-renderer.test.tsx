@@ -12,13 +12,38 @@ vi.mock('next/navigation', () => ({
   })
 }));
 
-vi.mock('@/components/general/question-focus-tracker', () => ({
-  QuestionFocusTracker: () => null
+vi.mock('@/components/general/card-dom-mapper', () => ({
+  CardDomMapper: () => null
+}));
+
+vi.mock('@/hooks/useQuestionFocus', () => ({
+  useQuestionFocus: () => ({
+    activeCardIndex: 0,
+    setActiveCardIndex: vi.fn(),
+    totalFocusable: 1,
+    totalAnswerable: 1,
+    cardStates: { q1: 'active' },
+    displayItemLinkIds: [],
+    focusableLinkIds: ['q1'],
+    isRequired: vi.fn().mockReturnValue(true),
+    isAnswered: vi.fn().mockReturnValue(false)
+  })
+}));
+
+vi.mock('@/hooks/useCardSwipe', () => ({
+  useCardSwipe: () => ({
+    swipeDirection: null,
+    onTouchStart: vi.fn(),
+    onTouchMove: vi.fn(),
+    onTouchEnd: vi.fn()
+  })
 }));
 
 vi.mock('@aehrc/smart-forms-renderer', () => ({
   getResponse: vi.fn(),
   RendererThemeProvider: ({ children }: any) => <>{children}</>,
+  rendererThemeOptions: {},
+  rendererThemeComponentOverrides: vi.fn(() => ({})),
   useBuildForm: vi.fn().mockReturnValue(false)
 }));
 
@@ -196,6 +221,26 @@ describe('FhirFormsRenderer - loading state', () => {
       xs: 12,
       md: 12
     });
+  });
+
+  it('renders CardStackContainer wrapping the form', () => {
+    vi.mocked(useBuildForm).mockReturnValue(false);
+
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated
+        patientId='pat-1'
+      />
+    );
+
+    // CardStackContainer renders card-stack-viewport
+    const viewport = document.querySelector('.card-stack-viewport');
+    expect(viewport).toBeInTheDocument();
+    // Form should be inside the viewport
+    expect(
+      viewport?.querySelector('[data-testid="mock-smart-form"]')
+    ).not.toBeNull();
   });
 });
 

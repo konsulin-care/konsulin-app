@@ -5,32 +5,30 @@ import {
   useQuestionnaireStore
 } from '@aehrc/smart-forms-renderer';
 import type { QuestionnaireItem } from 'fhir/r4';
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface QuestionFocusResult {
-  activeLinkId: string | null;
-  answeredCount: number;
-  totalCount: number;
-  linkIds: string[];
+  activeCardIndex: number;
+  setActiveCardIndex: (index: number) => void;
+  totalFocusable: number;
+  totalAnswerable: number;
+  cardStates: Record<string, 'answered' | 'active' | 'future' | 'skipped'>;
+  displayItemLinkIds: string[];
+  focusableLinkIds: string[];
+  isRequired: (linkId: string) => boolean;
+  isAnswered: (linkId: string) => boolean;
 }
 
-function isAnswerable(item: QuestionnaireItem): boolean {
-  if (item.type === 'display') return false;
-  if (item.type === 'group') return false;
-  if (item.readOnly) return false;
-  return true;
-}
-
-/** Recursively collect leaf-level answerable questionnaire items. */
-function collectAnswerableItems(
+/** Recursively collect all leaf items in document order. */
+function flattenItems(
   items: QuestionnaireItem[] | undefined
 ): QuestionnaireItem[] {
   if (!items) return [];
   const result: QuestionnaireItem[] = [];
   for (const item of items) {
     if (item.type === 'group' && item.item) {
-      result.push(...collectAnswerableItems(item.item));
-    } else if (isAnswerable(item)) {
+      result.push(...flattenItems(item.item));
+    } else {
       result.push(item);
     }
   }
@@ -38,50 +36,140 @@ function collectAnswerableItems(
 }
 
 /**
- * Hook that subscribes to the renderer's stores and computes which question
- * the participant should focus on — the earliest unanswered leaf-level item.
+ * Hook that subscribes to renderer stores and computes card stack state.
  *
- * Skips `display`, `group`, and `readOnly` items.
- *
- * @returns `activeLinkId` (null when all answered), answer counts, and ordered link IDs
+ * Tracks which question card is active, which are answered, and which are
+ * yet to come. Only required, non-readOnly items count as focusable.
  */
 export function useQuestionFocus(): QuestionFocusResult {
   const sourceQuestionnaire = useQuestionnaireStore.use.sourceQuestionnaire();
+  const itemMap = useQuestionnaireStore.use.itemMap();
   const updatableResponseItems =
     useQuestionnaireResponseStore.use.updatableResponseItems();
 
-  const answerableItems = useMemo(
-    () => collectAnswerableItems(sourceQuestionnaire?.item),
+  const allLeafItems = useMemo(
+    () => flattenItems(sourceQuestionnaire?.item),
     [sourceQuestionnaire]
   );
 
-  const linkIds = useMemo(
-    () => answerableItems.map(item => item.linkId),
-    [answerableItems]
+  const { displayItemLinkIds, focusableLinkIds, otherAnswerableLinkIds } =
+    useMemo(() => {
+      const display: string[] = [];
+      const focusable: string[] = [];
+      const other: string[] = [];
+
+      for (const item of allLeafItems) {
+        const props = itemMap[item.linkId];
+        if (props?.type === 'display') {
+          display.push(item.linkId);
+        } else if (props?.type === 'group') {
+          continue;
+        } else if (props?.required && !props?.readOnly) {
+          focusable.push(item.linkId);
+        } else {
+          other.push(item.linkId);
+        }
+      }
+
+      return {
+        displayItemLinkIds: display,
+        focusableLinkIds: focusable,
+        otherAnswerableLinkIds: other
+      };
+    }, [allLeafItems, itemMap]);
+
+  /** Compute the first unanswered focusable index. */
+  const firstUnansweredFocusIndex = useMemo(() => {
+    for (const [i, linkId] of focusableLinkIds.entries()) {
+      const responseItems = updatableResponseItems[linkId];
+      const hasAns =
+        responseItems?.some(
+          (qri: { answer?: unknown[] }) =>
+            Array.isArray(qri?.answer) && qri.answer.length > 0
+        ) ?? false;
+      if (!hasAns) return i;
+    }
+    return -1;
+  }, [focusableLinkIds, updatableResponseItems]);
+
+  const hasAnswer = useCallback(
+    (linkId: string): boolean => {
+      const responseItems = updatableResponseItems[linkId];
+      return (
+        responseItems?.some(
+          (qri: { answer?: unknown[] }) =>
+            Array.isArray(qri?.answer) && qri.answer.length > 0
+        ) ?? false
+      );
+    },
+    [updatableResponseItems]
   );
 
-  return useMemo(() => {
-    let answeredCount = 0;
-    let activeLinkId: string | null = null;
+  const isRequired = useCallback(
+    (linkId: string): boolean => {
+      const props = itemMap[linkId];
+      return props?.required === true && !props?.readOnly;
+    },
+    [itemMap]
+  );
 
-    for (const item of answerableItems) {
-      const responseItems = updatableResponseItems[item.linkId];
-      const hasAnswer =
-        responseItems?.some(qri => qri.answer && qri.answer.length > 0) ??
-        false;
+  /** Active card index. Initialized from first unanswered focusable. */
+  const [activeCardIndex, setActiveCardIndex] = useState<number>(
+    firstUnansweredFocusIndex
+  );
 
-      if (hasAnswer) {
-        answeredCount++;
-      } else if (activeLinkId === null) {
-        activeLinkId = item.linkId;
+  /** Track previous data-driven index to detect data changes for auto-advance. */
+  const prevDataIndex = useRef<number>(firstUnansweredFocusIndex);
+
+  /* Auto-advance when answer data changes */
+  useEffect(() => {
+    if (
+      firstUnansweredFocusIndex >= 0 &&
+      firstUnansweredFocusIndex !== prevDataIndex.current
+    ) {
+      prevDataIndex.current = firstUnansweredFocusIndex;
+      setActiveCardIndex(firstUnansweredFocusIndex);
+    }
+    // Only re-run when data-driven index changes
+  }, [firstUnansweredFocusIndex, setActiveCardIndex]);
+
+  const cardStates = useMemo(() => {
+    const states: Record<string, 'answered' | 'active' | 'future' | 'skipped'> =
+      {};
+
+    for (const [i, linkId] of focusableLinkIds.entries()) {
+      if (hasAnswer(linkId)) {
+        states[linkId] = 'answered';
+      } else if (i === activeCardIndex) {
+        states[linkId] = 'active';
+      } else if (activeCardIndex >= 0 && i < activeCardIndex) {
+        states[linkId] = 'skipped';
+      } else {
+        states[linkId] = 'future';
       }
     }
 
-    return {
-      activeLinkId,
-      answeredCount,
-      totalCount: answerableItems.length,
-      linkIds
-    };
-  }, [answerableItems, updatableResponseItems, linkIds]);
+    for (const linkId of otherAnswerableLinkIds) {
+      states[linkId] = hasAnswer(linkId) ? 'answered' : 'skipped';
+    }
+
+    return states;
+  }, [focusableLinkIds, otherAnswerableLinkIds, activeCardIndex, hasAnswer]);
+
+  const totalAnswerable = useMemo(
+    () => focusableLinkIds.length + otherAnswerableLinkIds.length,
+    [focusableLinkIds, otherAnswerableLinkIds]
+  );
+
+  return {
+    activeCardIndex,
+    setActiveCardIndex,
+    totalFocusable: focusableLinkIds.length,
+    totalAnswerable,
+    cardStates,
+    displayItemLinkIds,
+    focusableLinkIds,
+    isRequired,
+    isAnswered: hasAnswer
+  };
 }

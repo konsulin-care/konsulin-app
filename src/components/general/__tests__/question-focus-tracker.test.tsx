@@ -2,9 +2,21 @@ import { render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockUseQuestionFocus, mockCurrentPageIndex } = vi.hoisted(() => ({
-  mockUseQuestionFocus: vi.fn<() => { activeLinkId: string | null }>(),
+  mockUseQuestionFocus: vi.fn<() => any>(),
   mockCurrentPageIndex: vi.fn<() => number>().mockReturnValue(0)
 }));
+
+const defaultFocusMock = {
+  activeCardIndex: -1,
+  focusableLinkIds: [],
+  totalFocusable: 0,
+  totalAnswerable: 0,
+  cardStates: {},
+  displayItemLinkIds: [],
+  isRequired: vi.fn().mockReturnValue(false),
+  isAnswered: vi.fn().mockReturnValue(false),
+  setActiveCardIndex: vi.fn()
+};
 
 vi.mock('@/hooks/useQuestionFocus', () => ({
   useQuestionFocus: mockUseQuestionFocus
@@ -61,10 +73,9 @@ function createDisplayCard(linkId: string): HTMLElement {
 describe('QuestionFocusTracker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseQuestionFocus.mockReturnValue({ activeLinkId: null });
+    mockUseQuestionFocus.mockReturnValue(defaultFocusMock);
     mockCurrentPageIndex.mockReturnValue(0);
 
-    // Remove any leftover style elements from previous tests
     document.head.querySelectorAll('style').forEach(el => el.remove());
   });
 
@@ -87,6 +98,12 @@ describe('QuestionFocusTracker', () => {
     const card2 = createCard('label-q2');
     document.body.append(card1, card2);
 
+    mockUseQuestionFocus.mockReturnValue({
+      ...defaultFocusMock,
+      activeCardIndex: 0,
+      focusableLinkIds: ['q1', 'q2']
+    });
+
     render(<QuestionFocusTracker />);
 
     await waitFor(() => {
@@ -102,6 +119,12 @@ describe('QuestionFocusTracker', () => {
     const questionCard = createCard('label-q1');
     const displayCard = createDisplayCard('inst');
     document.body.append(questionCard, displayCard);
+
+    mockUseQuestionFocus.mockReturnValue({
+      ...defaultFocusMock,
+      activeCardIndex: 0,
+      focusableLinkIds: ['q1']
+    });
 
     render(<QuestionFocusTracker />);
 
@@ -119,7 +142,11 @@ describe('QuestionFocusTracker', () => {
     const card2 = createCard('label-q2');
     document.body.append(card1, card2);
 
-    mockUseQuestionFocus.mockReturnValue({ activeLinkId: 'q1' });
+    mockUseQuestionFocus.mockReturnValue({
+      ...defaultFocusMock,
+      activeCardIndex: 0,
+      focusableLinkIds: ['q1', 'q2']
+    });
 
     const { rerender } = render(<QuestionFocusTracker />);
 
@@ -128,7 +155,11 @@ describe('QuestionFocusTracker', () => {
       expect(card2.classList.contains('question-card--active')).toBe(false);
     });
 
-    mockUseQuestionFocus.mockReturnValue({ activeLinkId: 'q2' });
+    mockUseQuestionFocus.mockReturnValue({
+      ...defaultFocusMock,
+      activeCardIndex: 1,
+      focusableLinkIds: ['q1', 'q2']
+    });
 
     rerender(<QuestionFocusTracker />);
 
@@ -144,7 +175,12 @@ describe('QuestionFocusTracker', () => {
   it('removes all injected classes on unmount', async () => {
     const card = createCard('label-q1');
     document.body.append(card);
-    mockUseQuestionFocus.mockReturnValue({ activeLinkId: 'q1' });
+
+    mockUseQuestionFocus.mockReturnValue({
+      ...defaultFocusMock,
+      activeCardIndex: 0,
+      focusableLinkIds: ['q1']
+    });
 
     const { unmount } = render(<QuestionFocusTracker />);
 
