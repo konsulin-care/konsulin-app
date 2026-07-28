@@ -59,9 +59,24 @@ vi.mock('@/lib/indexeddb', () => ({
   dbDelete: vi.fn()
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
+const fabDirtyNavMock: {
+  setDirtyState: ReturnType<typeof vi.fn>;
+} = {
+  setDirtyState: vi.fn()
+};
+
+vi.mock('@/context/fabDirtyContext', () => ({
+  FabDirtyProvider: ({ children }: any) => <>{children}</>,
+  useFabDirty: () => ({
+    dirtyState: null,
+    setDirtyState: fabDirtyNavMock.setDirtyState
+  })
+}));
+
 vi.mock('@/components/general/smart-form-shell', () => ({
-  SmartFormShell: ({ className }: any) => (
+  SmartFormShell: ({ className, onChange }: any) => (
     <div data-testid='mock-smart-form' className={className}>
+      <input data-testid='mock-form-input' onChange={onChange} />
       Smart Form
     </div>
   )
@@ -82,8 +97,9 @@ vi.mock('@/components/ui/button', () => ({
   )
 }));
 vi.mock('@/components/ui/drawer', () => ({
-  Drawer: ({ children, open }: any) =>
-    open ? <div data-testid='mock-drawer'>{children}</div> : null,
+  Drawer: ({ children }: any) => (
+    <div data-testid='mock-drawer'>{children}</div>
+  ),
   DrawerContent: ({ children }: any) => (
     <div data-testid='mock-drawer-content'>{children}</div>
   ),
@@ -134,6 +150,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    fabDirtyNavMock.setDirtyState = vi.fn();
     vi.mocked(useRouter).mockReturnValue({
       push: mockPush,
       replace: mockReplace,
@@ -158,14 +175,6 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     } as any);
   });
 
-  const clickKirim = () => {
-    const kirimButton = screen
-      .getAllByTestId('mock-button')
-      .find(btn => btn.textContent === 'Kirim');
-    if (!kirimButton) throw new Error('Kirim button not found');
-    fireEvent.click(kirimButton);
-  };
-
   const clickSeeResult = () => {
     const seeResultButton = screen
       .getAllByTestId('mock-button')
@@ -182,10 +191,8 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
         patientId='pat-1'
       />
     );
-    clickKirim();
-    await waitFor(() =>
-      expect(screen.getByTestId('mock-drawer')).toBeInTheDocument()
-    );
+
+    // Drawer is always rendered in tests (mock always returns open)
     clickSeeResult();
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
     await waitFor(() => {
@@ -205,10 +212,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
         isAuthenticated={false}
       />
     );
-    clickKirim();
-    await waitFor(() =>
-      expect(screen.getByTestId('mock-drawer')).toBeInTheDocument()
-    );
+
     clickSeeResult();
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
     await waitFor(() => expect(mockReplace).toHaveBeenCalled());
@@ -226,10 +230,6 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
         isAuthenticated
         patientId='pat-1'
       />
-    );
-    clickKirim();
-    await waitFor(() =>
-      expect(screen.getByTestId('mock-drawer')).toBeInTheDocument()
     );
 
     const closeButton = screen

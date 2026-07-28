@@ -109,6 +109,7 @@ interface FabContentProps {
 }
 
 /** Render the FAB content: overlay, speed-dial pills, custom menu, toggle button, drawers. */
+// eslint-disable-next-line complexity
 function FabContent({
   isOpen,
   isDirty,
@@ -126,9 +127,18 @@ function FabContent({
   setShowRegisterPrac,
   setShowAddLocation
 }: FabContentProps) {
+  const showOverlay = isOpen && isDirty === false;
+  const isFabVisible = isVisible || isDirty || isMenuMode;
+  const fabClassName = isFabVisible
+    ? 'translate-y-0 opacity-100'
+    : 'pointer-events-none translate-y-[100px] opacity-0';
+  const showCustomMenu = isMenuMode && isOpen;
+  const showSpeedDial = isOpen && isDirty === false && isMenuMode === false;
+  const fabIcon = isMenuMode ? menuState?.icon : dirtyState?.icon;
+
   return (
     <>
-      {isOpen && !isDirty && (
+      {showOverlay && (
         <button
           type='button'
           className='animate-overlay-in fixed inset-0 z-40 bg-black/40'
@@ -140,25 +150,24 @@ function FabContent({
         className={cn(
           'fixed z-50 flex flex-col items-end gap-3 transition-all duration-300',
           'right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]',
-          isVisible || isDirty || isMenuMode
-            ? 'translate-y-0 opacity-100'
-            : 'pointer-events-none translate-y-[100px] opacity-0'
+          fabClassName
         )}
       >
-        {isMenuMode && isOpen && (
+        {showCustomMenu && (
           <CustomMenuPills
             actions={menuState.actions}
             onAction={handleCustomAction}
           />
         )}
-        {!isMenuMode && isOpen && !isDirty && (
+        {showSpeedDial && (
           <PillButtons pills={pills} onPillClick={handlePillClick} />
         )}
         <FabToggleButton
           isOpen={isOpen}
           isDirty={isDirty}
           dirtyLabel={dirtyState?.label}
-          icon={isMenuMode ? menuState?.icon : dirtyState?.icon}
+          icon={fabIcon}
+          disabled={dirtyState?.disabled}
           onToggle={toggle}
         />
       </div>
@@ -203,6 +212,7 @@ export default function QuickActionFab() {
       setIsOpen(v => !v);
       return;
     }
+    if (dirtyState.disabled) return;
     if (!dirtyState.isSaving)
       Promise.resolve(dirtyState.onSave()).catch(() => {
         /* handled */

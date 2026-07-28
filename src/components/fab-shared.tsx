@@ -45,23 +45,29 @@ export function FabToggleButton({
   isDirty,
   dirtyLabel,
   icon: Icon,
-  onToggle
+  onToggle,
+  disabled
 }: {
   readonly isOpen: boolean;
   readonly isDirty: boolean;
   readonly dirtyLabel: string | undefined;
   readonly icon?: ComponentType<{ className?: string }>;
   readonly onToggle: () => void;
+  readonly disabled?: boolean;
 }) {
   return (
     <button
       type='button'
       onClick={onToggle}
+      disabled={disabled}
       aria-label={!isDirty && !isOpen ? 'Open menu' : undefined}
       className={cn(
-        'flex items-center justify-center rounded-full bg-[#13C2C2] text-white shadow-lg transition-all duration-300 hover:bg-[#0ea5a5]',
+        'flex items-center justify-center rounded-full bg-[#13C2C2] text-white shadow-lg transition-all duration-300',
         isDirty ? 'h-14' : 'h-14 w-14',
-        isOpen && !isDirty ? 'rotate-45' : ''
+        isOpen && !isDirty ? 'rotate-45' : '',
+        disabled
+          ? 'cursor-not-allowed opacity-50 hover:bg-[#13C2C2]'
+          : 'hover:bg-[#0ea5a5]'
       )}
     >
       {isDirty ? (
