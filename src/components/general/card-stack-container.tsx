@@ -56,8 +56,8 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
    * Center the active card in the viewport.
    *
    * When content overflows (long form), scroll the card into view center.
-   * When content fits without overflow (short form), center the card group
-   * via flexbox so the active card is near the viewport center.
+   * When content fits without overflow (short form), use dynamic padding
+   * to offset the card group so the active card is at the viewport center.
    */
   useEffect(() => {
     const viewport = containerRef.current;
@@ -74,11 +74,24 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
 
     const overflows = viewport.scrollHeight > viewport.clientHeight;
 
+    viewport.style.removeProperty('justify-content');
+
     if (overflows) {
-      viewport.style.justifyContent = '';
+      viewport.style.removeProperty('padding-top');
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
-      viewport.style.justifyContent = 'center';
+      // Measure card position with padding reset, then apply offset to center it
+      viewport.style.paddingTop = '0px';
+      /* eslint-disable-next-line @typescript-eslint/no-unused-expressions -- force reflow */
+      viewport.offsetHeight;
+
+      const cardRect = card.getBoundingClientRect();
+      const viewportRect = viewport.getBoundingClientRect();
+      const cardCenterY = cardRect.top - viewportRect.top + cardRect.height / 2;
+      const viewportCenterY = viewportRect.height / 2;
+      const targetPadding = Math.max(0, viewportCenterY - cardCenterY);
+
+      viewport.style.paddingTop = `${targetPadding}px`;
     }
   }, [activeCardIndex, focusableLinkIds]);
 
@@ -91,6 +104,7 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
       ro = new ResizeObserver(() => {
         if (viewport.scrollHeight > viewport.clientHeight) {
           viewport.style.justifyContent = '';
+          viewport.style.paddingTop = '';
         }
       });
       ro.observe(viewport);
