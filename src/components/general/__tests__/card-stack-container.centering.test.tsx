@@ -38,6 +38,7 @@ describe('CardStackContainer centering', () => {
       onTouchMove: vi.fn(),
       onTouchEnd: vi.fn()
     });
+    vi.spyOn(window, 'scrollTo').mockReturnValue();
   });
 
   function cards() {
@@ -52,36 +53,67 @@ describe('CardStackContainer centering', () => {
     );
   }
 
-  it('centers active card via padding when content does not overflow', () => {
+  it('scrolls the window to center the active card vertically', () => {
     const { rerender } = render(cards());
     const vp = document.querySelector<HTMLElement>('.card-stack-viewport');
 
-    // Ensure no overflow (scrollHeight <= clientHeight)
-    Object.defineProperty(vp, 'scrollHeight', {
-      configurable: true,
-      value: 400
-    });
-    Object.defineProperty(vp, 'clientHeight', {
-      configurable: true,
-      value: 600
-    });
-
-    // Mock viewport getBoundingClientRect
-    vi.spyOn(vp, 'getBoundingClientRect').mockReturnValue({
-      top: 0,
-      bottom: 600,
+    // Mock positions for all cards
+    const q1 = vp.querySelector<HTMLElement>('[data-link-id="q1"]');
+    const q2 = vp.querySelector<HTMLElement>('[data-link-id="q2"]');
+    vi.spyOn(q1, 'getBoundingClientRect').mockReturnValue({
+      top: 200,
+      bottom: 280,
       left: 0,
       right: 300,
       width: 300,
-      height: 600,
+      height: 80,
+      x: 0,
+      y: 0,
+      toJSON: () => ({})
+    });
+    vi.spyOn(q2, 'getBoundingClientRect').mockReturnValue({
+      top: 320,
+      bottom: 400,
+      left: 0,
+      right: 300,
+      width: 300,
+      height: 80,
       x: 0,
       y: 0,
       toJSON: () => ({})
     });
 
-    // Mock the second card (q2) position
-    const card = vp.querySelector<HTMLElement>('[data-link-id="q2"]');
-    vi.spyOn(card, 'getBoundingClientRect').mockReturnValue({
+    Object.defineProperty(window, 'scrollY', {
+      configurable: true,
+      value: 100
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 800
+    });
+    vi.clearAllMocks();
+
+    // Switch to q2 (index 1)
+    mockF.mockReturnValue({
+      ...BASE,
+      activeCardIndex: 1,
+      cardStates: { q1: 'answered', q2: 'active', q3: 'future' }
+    });
+    rerender(cards());
+
+    // cardCenterY = 320 + 80/2 = 360
+    // targetScrollY = 100 + 360 - 800/2 = 60
+    expect(window.scrollTo).toHaveBeenCalledWith({
+      top: 60,
+      behavior: 'smooth'
+    });
+  });
+
+  it('clears leftover inline styles before scrolling', () => {
+    const { rerender } = render(cards());
+    const vp = document.querySelector<HTMLElement>('.card-stack-viewport');
+    const q1 = vp.querySelector<HTMLElement>('[data-link-id="q1"]');
+    vi.spyOn(q1, 'getBoundingClientRect').mockReturnValue({
       top: 200,
       bottom: 280,
       left: 0,
@@ -93,94 +125,43 @@ describe('CardStackContainer centering', () => {
       toJSON: () => ({})
     });
 
-    // Trigger centering effect by changing active to q2 (index 1)
+    // Set stale inline styles
+    vp.style.justifyContent = 'center';
+    vp.style.paddingTop = '40px';
+    const fc = vp.firstElementChild as HTMLElement;
+    fc.style.marginTop = '-30px';
+
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 800
+    });
+    vi.clearAllMocks();
+
+    // Trigger effect with same index (0) via different focusableLinkIds
     mockF.mockReturnValue({
       ...BASE,
-      activeCardIndex: 1,
-      cardStates: { q1: 'answered', q2: 'active', q3: 'future' }
+      focusableLinkIds: ['q1', 'q2', 'q3', 'q4'],
+      totalFocusable: 4,
+      activeCardIndex: 0
     });
     rerender(cards());
 
-    // cardCenterY = 200 - 0 + 80/2 = 240
-    // viewportCenterY = 600 / 2 = 300
-    // targetPadding = 300 - 240 = 60
-    expect(vp.style.paddingTop).toBe('60px');
     expect(vp.style.justifyContent).toBe('');
+    expect(vp.style.paddingTop).toBe('');
+    expect(fc.style.marginTop).toBe('');
   });
 
-  it('clamps padding to zero when card is below viewport center', () => {
-    const { rerender } = render(cards());
-    const vp = document.querySelector<HTMLElement>('.card-stack-viewport');
-
-    Object.defineProperty(vp, 'scrollHeight', {
-      configurable: true,
-      value: 400
-    });
-    Object.defineProperty(vp, 'clientHeight', {
-      configurable: true,
-      value: 600
-    });
-
-    vi.spyOn(vp, 'getBoundingClientRect').mockReturnValue({
-      top: 0,
-      bottom: 600,
-      left: 0,
-      right: 300,
-      width: 300,
-      height: 600,
-      x: 0,
-      y: 0,
-      toJSON: () => ({})
-    });
-
-    // First card (q1) position: already below viewport center
-    const card = vp.querySelector<HTMLElement>('[data-link-id="q1"]');
-    vi.spyOn(card, 'getBoundingClientRect').mockReturnValue({
-      top: 350,
-      bottom: 420,
-      left: 0,
-      right: 300,
-      width: 300,
-      height: 70,
-      x: 0,
-      y: 0,
-      toJSON: () => ({})
-    });
+  it('does nothing when activeCardIndex is out of bounds', () => {
+    render(cards());
+    vi.clearAllMocks();
 
     mockF.mockReturnValue({
       ...BASE,
-      activeCardIndex: 0,
-      cardStates: { q1: 'active', q2: 'future', q3: 'future' }
+      activeCardIndex: 99
     });
-    rerender(cards());
+    render(cards());
 
-    // cardCenterY = 350 - 0 + 70/2 = 385
-    // viewportCenterY = 600 / 2 = 300
-    // targetPadding = 300 - 385 = -85 -> Math.max(0, -85) = 0
-    expect(vp.style.paddingTop).toBe('0px');
-  });
-
-  it('scrolls into view when content overflows', () => {
-    const spy = vi.spyOn(Element.prototype, 'scrollIntoView');
-    const { rerender } = render(cards());
-    const vp = document.querySelector<HTMLElement>('.card-stack-viewport');
-    Object.defineProperty(vp, 'scrollHeight', {
-      configurable: true,
-      value: 500
-    });
-    Object.defineProperty(vp, 'clientHeight', {
-      configurable: true,
-      value: 300
-    });
-    spy.mockClear();
-    mockF.mockReturnValue({
-      ...BASE,
-      activeCardIndex: 2,
-      cardStates: { q1: 'answered', q2: 'answered', q3: 'active' }
-    });
-    rerender(cards());
-    expect(spy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
-    expect(vp.style.justifyContent).toBe('');
-    spy.mockRestore();
+    expect(window.scrollTo).not.toHaveBeenCalled();
   });
 });

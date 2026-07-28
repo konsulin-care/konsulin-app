@@ -53,11 +53,10 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
   );
 
   /**
-   * Center the active card in the viewport.
+   * Center the active card in the viewport by scrolling the page.
    *
-   * When content overflows (long form), scroll the card into view center.
-   * When content fits without overflow (short form), use dynamic padding
-   * to offset the card group so the active card is at the viewport center.
+   * The card-stack-viewport grows with its content (no height constraint),
+   * so overflow never occurs. Page-level scrollTo centers the card on screen.
    */
   useEffect(() => {
     const viewport = containerRef.current;
@@ -72,48 +71,18 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
     );
     if (!card) return;
 
-    const overflows = viewport.scrollHeight > viewport.clientHeight;
-
+    // Clear any leftover inline styles from previous centering strategies
     viewport.style.removeProperty('justify-content');
+    viewport.style.removeProperty('padding-top');
+    const fc = viewport.firstElementChild as HTMLElement | null;
+    if (fc) fc.style.removeProperty('margin-top');
 
-    if (overflows) {
-      viewport.style.removeProperty('padding-top');
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-      // Measure card position with padding reset, then apply offset to center it
-      viewport.style.paddingTop = '0px';
-      /* eslint-disable-next-line @typescript-eslint/no-unused-expressions -- force reflow */
-      viewport.offsetHeight;
-
-      const cardRect = card.getBoundingClientRect();
-      const viewportRect = viewport.getBoundingClientRect();
-      const cardCenterY = cardRect.top - viewportRect.top + cardRect.height / 2;
-      const viewportCenterY = viewportRect.height / 2;
-      const targetPadding = Math.max(0, viewportCenterY - cardCenterY);
-
-      viewport.style.paddingTop = `${targetPadding}px`;
-    }
+    // Scroll the page to center the active card vertically
+    const cardRect = card.getBoundingClientRect();
+    const cardCenterY = cardRect.top + cardRect.height / 2;
+    const targetScrollY = window.scrollY + cardCenterY - window.innerHeight / 2;
+    window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
   }, [activeCardIndex, focusableLinkIds]);
-
-  /** Monitor viewport size and reset inline justify-content when overflow starts. */
-  useEffect(() => {
-    const viewport = containerRef.current;
-    let ro: ResizeObserver | undefined;
-
-    if (viewport) {
-      ro = new ResizeObserver(() => {
-        if (viewport.scrollHeight > viewport.clientHeight) {
-          viewport.style.justifyContent = '';
-          viewport.style.paddingTop = '';
-        }
-      });
-      ro.observe(viewport);
-    }
-
-    return () => {
-      ro?.disconnect();
-    };
-  }, []);
 
   /** Handle swipe up — advance to next card. */
   const handleNext = useCallback(() => {
