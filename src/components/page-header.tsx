@@ -72,7 +72,8 @@ function getDefaultBackRoute(
 ): string | undefined {
   if (pathname === '/') return undefined;
   if (MAIN_ROUTES.has(pathname)) {
-    return searchParams.toString() ? undefined : '/';
+    if (searchParams.toString()) return pathname;
+    return '/';
   }
   return undefined;
 }

@@ -8,9 +8,16 @@ import RecordDetail from './record-detail';
 import RecordEdit from './record-edit';
 import RecordTimeline from './record-timeline';
 
-/** Compute the back route for the detail view page. */
+/** Compute the back route for the detail view. */
 function computeViewBackRoute(paramPatientId: string | null): string {
   return paramPatientId ? `/record?id=${paramPatientId}` : '/record';
+}
+
+/** Compute the back route for the timeline view — /schedule when practitioner views patient record. */
+function computeTimelineBackRoute(
+  paramPatientId: string | null
+): string | undefined {
+  return paramPatientId ? '/schedule' : undefined;
 }
 
 /**
@@ -65,7 +72,12 @@ export default function RecordPage() {
 
   // Timeline view: requires patient context
   if (patientId) {
-    return <RecordTimeline patientId={patientId} />;
+    return (
+      <RecordTimeline
+        patientId={patientId}
+        backRoute={computeTimelineBackRoute(paramPatientId)}
+      />
+    );
   }
 
   // Still loading auth — show nothing yet

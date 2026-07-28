@@ -21,6 +21,7 @@ import RecordFilter from './record-filter';
 
 type Props = {
   readonly patientId: string;
+  readonly backRoute?: string;
 };
 
 /** Date range badge content. */
@@ -45,15 +46,17 @@ function flattenResult(v: unknown): string {
 }
 
 /** Shared page header used by all render branches. */
-function TimelineHeader() {
-  return <PageHeader pageIndicator='Personal Health Records' />;
+function TimelineHeader({ backRoute }: { backRoute?: string }) {
+  return (
+    <PageHeader pageIndicator='Personal Health Records' backRoute={backRoute} />
+  );
 }
 
 /** Skeleton shown while records are loading. */
-function TimelineSkeleton() {
+function TimelineSkeleton({ backRoute }: { backRoute?: string }) {
   return (
     <div data-testid='timeline-skeleton'>
-      <TimelineHeader />
+      <TimelineHeader backRoute={backRoute} />
       <div
         data-testid='timeline-overlay'
         className='mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] bg-white pb-20'
@@ -69,10 +72,10 @@ function TimelineSkeleton() {
 }
 
 /** Empty state when no records exist. */
-function TimelineEmpty() {
+function TimelineEmpty({ backRoute }: { backRoute?: string }) {
   return (
     <>
-      <TimelineHeader />
+      <TimelineHeader backRoute={backRoute} />
       <div
         data-testid='timeline-overlay'
         className='mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] bg-white pb-20'
@@ -90,7 +93,7 @@ function TimelineEmpty() {
  *
  * Replaces the old toggle pills with a search+filter pattern matching /clinic.
  */
-export default function RecordTimeline({ patientId }: Props) {
+export default function RecordTimeline({ patientId, backRoute }: Props) {
   const { state: authState } = useAuth();
   const isPatient = authState.userInfo?.role_name === Roles.Patient;
 
@@ -199,18 +202,21 @@ export default function RecordTimeline({ patientId }: Props) {
 
   // ---- Loading state ----
   if (isLoading) {
-    return <TimelineSkeleton />;
+    return <TimelineSkeleton backRoute={backRoute} />;
   }
 
   // ---- Empty state ----
   if (records.length === 0) {
-    return <TimelineEmpty />;
+    return <TimelineEmpty backRoute={backRoute} />;
   }
 
   // ---- Normal render ----
   return (
     <>
-      <PageHeader pageIndicator='Personal Health Records' />
+      <PageHeader
+        pageIndicator='Personal Health Records'
+        backRoute={backRoute}
+      />
 
       <div
         data-testid='timeline-overlay'
