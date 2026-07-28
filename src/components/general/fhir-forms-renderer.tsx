@@ -122,12 +122,11 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const handleNavigate = (buttonLabel: string, responseId?: string) => {
     startTransition(() => {
       if (buttonLabel === 'result') {
-        const query = new URLSearchParams({
-          category: '1',
-          title: questionnaire.title
-        }).toString();
+        const basePath = patientId
+          ? `/record?id=${patientId}&view=QuestionnaireResponse/${responseId}`
+          : `/record?view=QuestionnaireResponse/${responseId}`;
 
-        router.replace(`/record?id=${responseId}&${query}`);
+        router.replace(basePath);
         setIsSubmitting(false);
       } else {
         router.push('/assessments');
