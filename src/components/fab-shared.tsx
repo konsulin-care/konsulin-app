@@ -66,7 +66,7 @@ export function FabToggleButton({
         isDirty ? 'h-14' : 'h-14 w-14',
         isOpen && !isDirty ? 'rotate-45' : '',
         disabled
-          ? 'cursor-not-allowed opacity-50 hover:bg-[#13C2C2]'
+          ? 'cursor-not-allowed bg-gray-300 text-gray-500 hover:bg-gray-300'
           : 'hover:bg-[#0ea5a5]'
       )}
     >

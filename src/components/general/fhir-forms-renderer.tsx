@@ -9,7 +9,7 @@ import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
 import { useRequiredValidation } from '@/hooks/useRequiredValidation';
 import { getAPI } from '@/services/api';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
-import { HeartPulse } from 'lucide-react';
+import { BookCheck } from 'lucide-react';
 import Image from 'next/image';
 
 import { AssessmentThemeProvider } from '@/components/general/assessment-theme-provider';
@@ -304,7 +304,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       setDirtyState({
         isDirty: true,
         label: 'Submit',
-        icon: HeartPulse,
+        icon: BookCheck,
         onSave: handleValidation,
         isSaving: isSubmitting,
         disabled:

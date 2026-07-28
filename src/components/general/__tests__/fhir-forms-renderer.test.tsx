@@ -141,24 +141,27 @@ function DirtyStateObserver({
   return null;
 }
 
+function setupBeforeEach() {
+  vi.clearAllMocks();
+  vi.mocked(useRouter).mockReturnValue({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn()
+  } as any);
+  vi.mocked(useSubmitQuestionnaire).mockReturnValue({
+    mutateAsync: vi.fn().mockResolvedValue({ id: 'resp-789' }),
+    isLoading: false
+  } as any);
+  vi.mocked(useRequiredValidation).mockReturnValue({
+    requiredItemEmpty: 0,
+    checkRequiredIsEmpty: vi.fn(),
+    invalidItems: {}
+  } as any);
+  vi.mocked(useBuildForm).mockReturnValue(false);
+}
+
 describe('FhirFormsRenderer - loading state', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(useRouter).mockReturnValue({
-      push: vi.fn(),
-      replace: vi.fn(),
-      back: vi.fn()
-    } as any);
-    vi.mocked(useSubmitQuestionnaire).mockReturnValue({
-      mutateAsync: vi.fn().mockResolvedValue({ id: 'resp-789' }),
-      isLoading: false
-    } as any);
-    vi.mocked(useRequiredValidation).mockReturnValue({
-      requiredItemEmpty: 0,
-      checkRequiredIsEmpty: vi.fn(),
-      invalidItems: {}
-    } as any);
-  });
+  beforeEach(setupBeforeEach);
 
   it('shows PageLoader while useBuildForm returns true', () => {
     vi.mocked(useBuildForm).mockReturnValue(true);
@@ -174,7 +177,6 @@ describe('FhirFormsRenderer - loading state', () => {
   });
 
   it('renders SmartFormShell when useBuildForm returns false', () => {
-    vi.mocked(useBuildForm).mockReturnValue(false);
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}
@@ -187,7 +189,6 @@ describe('FhirFormsRenderer - loading state', () => {
   });
 
   it('passes rendererConfigOptions with full-width stacked layout', () => {
-    vi.mocked(useBuildForm).mockReturnValue(false);
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}
@@ -195,20 +196,12 @@ describe('FhirFormsRenderer - loading state', () => {
         patientId='pat-1'
       />
     );
-    const config =
-      vi.mocked(useBuildForm).mock.calls[0][0].rendererConfigOptions;
-    expect(config?.itemResponsive?.labelBreakpoints).toEqual({
-      xs: 12,
-      md: 12
-    });
-    expect(config?.itemResponsive?.fieldBreakpoints).toEqual({
-      xs: 12,
-      md: 12
-    });
+    const cfg = vi.mocked(useBuildForm).mock.calls[0][0].rendererConfigOptions;
+    expect(cfg?.itemResponsive?.labelBreakpoints).toEqual({ xs: 12, md: 12 });
+    expect(cfg?.itemResponsive?.fieldBreakpoints).toEqual({ xs: 12, md: 12 });
   });
 
   it('renders CardStackContainer wrapping the form', () => {
-    vi.mocked(useBuildForm).mockReturnValue(false);
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}
@@ -234,23 +227,8 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
   let lastDirtyState: DirtyState | null | undefined;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    setupBeforeEach();
     lastDirtyState = undefined;
-    vi.mocked(useRouter).mockReturnValue({
-      push: vi.fn(),
-      replace: vi.fn(),
-      back: vi.fn()
-    } as any);
-    vi.mocked(useSubmitQuestionnaire).mockReturnValue({
-      mutateAsync: vi.fn().mockResolvedValue({ id: 'resp-789' }),
-      isLoading: false
-    } as any);
-    vi.mocked(useRequiredValidation).mockReturnValue({
-      requiredItemEmpty: 0,
-      checkRequiredIsEmpty: vi.fn(),
-      invalidItems: {}
-    } as any);
-    vi.mocked(useBuildForm).mockReturnValue(false);
   });
 
   const renderWithObserver = (extraProps?: Record<string, unknown>) =>
@@ -330,6 +308,17 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
       });
     });
     expect(lastDirtyState?.disabled).toBe(true);
+  });
+
+  it('provides icon component in dirty state after form interaction', () => {
+    renderWithObserver();
+    expect(lastDirtyState?.isDirty).not.toBe(true);
+    act(() => {
+      fireEvent.change(screen.getByTestId('mock-form-input'), {
+        target: { value: 'a' }
+      });
+    });
+    expect(typeof lastDirtyState?.icon).toMatch(/function|object/);
   });
 
   it('calls onSave from dirty state opens the drawer', () => {
