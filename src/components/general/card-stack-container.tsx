@@ -52,17 +52,54 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
     [setActiveCardIndex, totalFocusable]
   );
 
-  /** Scroll the active card into view center whenever the active card changes. */
+  /**
+   * Center the active card in the viewport.
+   *
+   * When content overflows (long form), scroll the card into view center.
+   * When content fits without overflow (short form), center the card group
+   * via flexbox so the active card is near the viewport center.
+   */
   useEffect(() => {
+    const viewport = containerRef.current;
+    if (!viewport) return;
+
     if (activeCardIndex < 0 || activeCardIndex >= focusableLinkIds.length)
       return;
     const linkId = focusableLinkIds[activeCardIndex];
     if (!linkId) return;
-    const card = containerRef.current?.querySelector(
+    const card = viewport.querySelector(
       `[data-link-id="${CSS.escape(linkId)}"]`
     );
-    card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!card) return;
+
+    const overflows = viewport.scrollHeight > viewport.clientHeight;
+
+    if (overflows) {
+      viewport.style.justifyContent = '';
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      viewport.style.justifyContent = 'center';
+    }
   }, [activeCardIndex, focusableLinkIds]);
+
+  /** Monitor viewport size and reset inline justify-content when overflow starts. */
+  useEffect(() => {
+    const viewport = containerRef.current;
+    let ro: ResizeObserver | undefined;
+
+    if (viewport) {
+      ro = new ResizeObserver(() => {
+        if (viewport.scrollHeight > viewport.clientHeight) {
+          viewport.style.justifyContent = '';
+        }
+      });
+      ro.observe(viewport);
+    }
+
+    return () => {
+      ro?.disconnect();
+    };
+  }, []);
 
   /** Handle swipe up — advance to next card. */
   const handleNext = useCallback(() => {
