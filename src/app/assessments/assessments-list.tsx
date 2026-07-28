@@ -12,6 +12,7 @@ import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
+import { lazyComponent } from '@/lib/lazy-component';
 import {
   searchQuestionnaires,
   useOngoingResearch,
@@ -30,10 +31,17 @@ import {
   useTransition
 } from 'react';
 
-import AssessmentDrawerContent from './assessment-drawer';
-import BrowseInstrumentsSection from './browse-instruments-section';
-import PopularAssessmentsSection from './popular-assessments-section';
-import ResearchSection from './research-section';
+const AssessmentDrawerContent = lazyComponent(
+  () => import('./assessment-drawer'),
+  { ssr: false }
+);
+const BrowseInstrumentsSection = lazyComponent(
+  () => import('./browse-instruments-section')
+);
+const PopularAssessmentsSection = lazyComponent(
+  () => import('./popular-assessments-section')
+);
+const ResearchSection = lazyComponent(() => import('./research-section'));
 
 /** Check if a bundle entry is a ResearchStudy resource. */
 const isResearchStudy = (

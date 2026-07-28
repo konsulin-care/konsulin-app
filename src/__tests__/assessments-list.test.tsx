@@ -182,6 +182,32 @@ vi.mock('@/components/page-header', () => ({
   default: () => <div data-testid='page-header'>PageHeader</div>
 }));
 
+vi.mock('@/lib/lazy-component', async () => {
+  const mod = await vi.importActual<typeof import('@/lib/lazy-component')>(
+    '@/lib/lazy-component'
+  );
+  const React = await import('react');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const lazyComponent = (
+    loader: () => Promise<{ default: any }>,
+    _options?: any
+  ) => {
+    const LazyComp = React.lazy(loader);
+    // eslint-disable-next-line react/display-name
+    return (props: Record<string, unknown>) =>
+      React.createElement(
+        React.Suspense,
+        {
+          fallback: React.createElement('div', {
+            'data-testid': 'lazy-loading'
+          })
+        },
+        React.createElement(LazyComp, props)
+      );
+  };
+  return { ...mod, lazyComponent };
+});
+
 // ----- data helpers -----
 
 const createQuestionnaireEntry = (
@@ -292,21 +318,27 @@ describe('AssessmentsList', () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
+  /** Wait for lazy components to resolve. */
+  const waitForLoad = () =>
+    waitFor(() => {
+      expect(screen.queryByTestId('lazy-loading')).toBeNull();
+    });
+
   // ------------------------------------------------------------------
   //  1. Renders loading state when research is loading
   // ------------------------------------------------------------------
-  it('renders loading state when research is loading', () => {
+  it('renders loading state when research is loading', async () => {
     vi.mocked(useOngoingResearch).mockReturnValue({
       data: [],
       isLoading: true
     } as any);
 
     render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
 
     // CardLoader appears for the research section
-    expect(screen.getAllByTestId('card-loader').length).toBeGreaterThanOrEqual(
-      1
-    );
+    const cardLoaders = screen.getAllByTestId('card-loader');
+    expect(cardLoaders.length).toBeGreaterThanOrEqual(1);
 
     // Search input still renders
     expect(screen.getByPlaceholderText('Search Assessment')).toBeDefined();
@@ -332,7 +364,7 @@ describe('AssessmentsList', () => {
   // ------------------------------------------------------------------
   //  3. Renders "Ongoing Research" section with title
   // ------------------------------------------------------------------
-  it('renders "Ongoing Research" section with title', () => {
+  it('renders "Ongoing Research" section with title', async () => {
     const researchData = [createResearchEntry('research-1', 'Heart Study')];
     vi.mocked(useOngoingResearch).mockReturnValue({
       data: researchData,
@@ -340,6 +372,7 @@ describe('AssessmentsList', () => {
     } as any);
 
     render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
 
     expect(screen.getByText('Ongoing Research')).toBeDefined();
 
@@ -353,7 +386,7 @@ describe('AssessmentsList', () => {
   // ------------------------------------------------------------------
   //  4. Renders popular assessments when data is available
   // ------------------------------------------------------------------
-  it('renders popular assessments when data is available', () => {
+  it('renders popular assessments when data is available', async () => {
     const popularData = [
       createQuestionnaireEntry('pop-1', 'Popular Test 1'),
       createQuestionnaireEntry('pop-2', 'Popular Test 2')
@@ -364,6 +397,7 @@ describe('AssessmentsList', () => {
     } as any);
 
     render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
 
     expect(screen.getByText('Popular Assessment')).toBeDefined();
     expect(screen.getByText('Popular Test 1')).toBeDefined();
@@ -379,7 +413,7 @@ describe('AssessmentsList', () => {
   // ------------------------------------------------------------------
   //  5. Renders regular/browse assessments when data is available
   // ------------------------------------------------------------------
-  it('renders regular/browse assessments when data is available', () => {
+  it('renders regular/browse assessments when data is available', async () => {
     const regularData = [
       createQuestionnaireEntry('reg-1', 'Regular Test 1'),
       createQuestionnaireEntry('reg-2', 'Regular Test 2')
@@ -390,6 +424,7 @@ describe('AssessmentsList', () => {
     } as any);
 
     render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
 
     expect(screen.getByText('Browse Instruments')).toBeDefined();
     expect(screen.getByText('Regular Test 1')).toBeDefined();
@@ -399,9 +434,10 @@ describe('AssessmentsList', () => {
   // ------------------------------------------------------------------
   //  6. Shows empty state when no research data
   // ------------------------------------------------------------------
-  it('shows empty state when no research data', () => {
+  it('shows empty state when no research data', async () => {
     // research data is already [] from beforeEach, loading is false
     render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
 
     // Empty state for research
     expect(screen.getByTestId('empty-state-title')).toBeDefined();
@@ -419,9 +455,10 @@ describe('AssessmentsList', () => {
   // ------------------------------------------------------------------
   //  7. Shows empty state when no popular assessments
   // ------------------------------------------------------------------
-  it('shows empty state when no popular assessments', () => {
+  it('shows empty state when no popular assessments', async () => {
     // popularAssessments defaults to [] in beforeEach
     render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
 
     // The section heading still renders
     expect(screen.getByText('Popular Assessment')).toBeDefined();
@@ -442,6 +479,7 @@ describe('AssessmentsList', () => {
     } as any);
 
     render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
 
     // Initially the drawer is closed
     const drawer = screen.getByTestId('drawer');
@@ -483,6 +521,7 @@ describe('AssessmentsList', () => {
     vi.mocked(useSearchParams).mockReturnValue(params as any);
 
     render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
 
     // Drawer should be open from the URL effect
     await waitFor(() => {
