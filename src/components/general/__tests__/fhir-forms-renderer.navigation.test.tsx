@@ -55,7 +55,7 @@ vi.mock('@/lib/indexeddb', () => ({
     serviceRequests: 'service_requests'
   },
   dbGet: vi.fn().mockResolvedValue(null),
-  dbSet: vi.fn().mockResolvedValue(),
+  dbSet: vi.fn().mockReturnValue(Promise.resolve()),
   dbDelete: vi.fn()
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));

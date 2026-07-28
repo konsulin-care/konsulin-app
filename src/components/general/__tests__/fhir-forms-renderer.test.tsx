@@ -55,7 +55,7 @@ vi.mock('@/lib/indexeddb', () => ({
     serviceRequests: 'service_requests'
   },
   dbGet: vi.fn().mockResolvedValue(null),
-  dbSet: vi.fn().mockResolvedValue(),
+  dbSet: vi.fn().mockReturnValue(Promise.resolve()),
   dbDelete: vi.fn()
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
@@ -225,15 +225,13 @@ describe('FhirFormsRenderer - loading state', () => {
 });
 
 describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
-  let lastDirtyState:
-    | {
-        isDirty?: boolean;
-        label?: string;
-        disabled?: boolean;
-        onSave?: () => void;
-      }
-    | null
-    | undefined;
+  type DirtyState = {
+    isDirty?: boolean;
+    label?: string;
+    disabled?: boolean;
+    onSave?: () => void;
+  };
+  let lastDirtyState: DirtyState | null | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -266,12 +264,7 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
         />
         <DirtyStateObserver
           onDirtyState={s => {
-            lastDirtyState = s as {
-              isDirty?: boolean;
-              label?: string;
-              disabled?: boolean;
-              onSave?: () => void;
-            } | null;
+            lastDirtyState = s as DirtyState | null;
           }}
         />
       </FabDirtyProvider>

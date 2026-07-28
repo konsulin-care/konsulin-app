@@ -12,8 +12,8 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } }
 });
 let mockRole = 'Patient';
-let disabledOnSave: ReturnType<typeof vi.fn>;
-let enabledOnSave: ReturnType<typeof vi.fn>;
+let disabledOnSave: () => void;
+let enabledOnSave: () => void;
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({ state: { userInfo: { role_name: mockRole } } })
@@ -139,8 +139,7 @@ describe('QuickActionFab', () => {
   it('renders as a circle with plus icon by default', () => {
     const { container } = renderFab();
     const fabButton = getFabButton(container);
-    expect(fabButton.className).toContain('h-14');
-    expect(fabButton.className).toContain('w-14');
+    expect(fabButton.className).toMatch(/h-14.*w-14/);
     expect(fabButton).toHaveAttribute('type', 'button');
     expect(container.querySelector('.lucide-plus')).toBeTruthy();
   });
@@ -163,8 +162,7 @@ describe('QuickActionFab', () => {
     expect(getFabButton(container).textContent).toContain('Save Changes');
     fireEvent.click(screen.getByTestId('trigger-clean'));
     const fabButton = getFabButton(container);
-    expect(fabButton.className).toContain('h-14');
-    expect(fabButton.className).toContain('w-14');
+    expect(fabButton.className).toMatch(/h-14.*w-14/);
     expect(container.querySelector('.lucide-plus')).toBeTruthy();
   });
 
@@ -230,8 +228,7 @@ describe('QuickActionFab', () => {
       fireEvent.click(screen.getByTestId('trigger-selection'));
       expect(screen.getByText('Delete (2)')).toBeInTheDocument();
       fireEvent.click(screen.getByTestId('clear-selection'));
-      expect(getFabButton(container).className).toContain('h-14');
-      expect(getFabButton(container).className).toContain('w-14');
+      expect(getFabButton(container).className).toMatch(/h-14.*w-14/);
       expect(container.querySelector('.lucide-plus')).toBeTruthy();
     });
   });

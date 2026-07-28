@@ -53,10 +53,10 @@ describe('PractitionerRoute', () => {
       ({
         accessDeniedScreen: AccessDenied
       }: {
-        accessDeniedScreen: React.ComponentType;
+        accessDeniedScreen?: React.ComponentType;
       }) => (
         <div data-testid='session-auth'>
-          <AccessDenied />
+          {AccessDenied ? <AccessDenied /> : null}
         </div>
       )
     );
