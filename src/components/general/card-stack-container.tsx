@@ -48,38 +48,28 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
     (index: number) => {
       if (index < 0 || index >= totalFocusable) return;
       setActiveCardIndex(index);
-
-      // Scroll the viewport to snap to the new active card
-      containerRef.current?.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
     },
     [setActiveCardIndex, totalFocusable]
   );
+
+  /** Scroll the active card into view center whenever the active card changes. */
+  useEffect(() => {
+    if (activeCardIndex < 0 || activeCardIndex >= focusableLinkIds.length)
+      return;
+    const linkId = focusableLinkIds[activeCardIndex];
+    if (!linkId) return;
+    const card = containerRef.current?.querySelector(
+      `[data-link-id="${CSS.escape(linkId)}"]`
+    );
+    card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [activeCardIndex, focusableLinkIds]);
 
   /** Handle swipe up — advance to next card. */
   const handleNext = useCallback(() => {
     const nextIndex = activeCardIndex + 1;
     if (nextIndex >= totalFocusable) return;
-
-    const nextLinkId = focusableLinkIds[nextIndex];
-
-    // Check if the next card is required and unanswered
-    if (nextLinkId && isRequired(nextLinkId) && !isAnswered(nextLinkId)) {
-      toast.error("Can't skip required question");
-      return;
-    }
-
     goToCard(nextIndex);
-  }, [
-    activeCardIndex,
-    totalFocusable,
-    focusableLinkIds,
-    isRequired,
-    isAnswered,
-    goToCard
-  ]);
+  }, [activeCardIndex, totalFocusable, goToCard]);
 
   /** Handle swipe down — go to previous card. */
   const handlePrevious = useCallback(() => {
