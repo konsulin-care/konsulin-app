@@ -218,8 +218,16 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		CloudinaryUploadPreset: cfg.CloudinaryUploadPreset,
 	}))
 
-	// All unmatched routes — proxy without auth (public pages, _next/static, etc.).
-	r.NotFound(proxy.ServeHTTP)
+	// Serve Next.js static export (out/) directly when it exists.
+	// When absent (e.g., development), fall back to the reverse proxy.
+	outDir := filepath.Join(wd, "out")
+	if stat, err := os.Stat(outDir); err == nil && stat.IsDir() {
+		outFS := http.FileServer(http.Dir(outDir))
+		r.NotFound(outFS.ServeHTTP)
+	} else {
+		// All unmatched routes — proxy without auth (public pages, _next/static, etc.).
+		r.NotFound(proxy.ServeHTTP)
+	}
 
 	return r, nil
 }
