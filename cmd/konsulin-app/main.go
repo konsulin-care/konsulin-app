@@ -136,13 +136,6 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		TXURL:       cfg.TXURL,
 	}))
 
-	// /auth/* — serve Go SSR shell; redirect authenticated users to /
-	r.Route("/auth", func(r chi.Router) {
-		r.Use(appmw.RedirectAuthenticated(cfg.AuthCookieName, cfg.SessionCookieSecret, "/"))
-		r.Get("/", handler.NewAuthPageHandler(cfg))
-		r.Get("/*", handler.NewAuthPageHandler(cfg))
-	})
-
 	// Backend API proxy — adds Bearer token from sAccessToken cookie.
 	r.Handle("/proxy/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
 		BackendBaseURL: cfg.APIURL,

@@ -211,6 +211,7 @@ func TestDeleteAuthCookie_clearsCookie(t *testing.T) {
 	authCookie := findCookie(resp, "auth")
 	if authCookie == nil {
 		t.Fatal("expected auth cookie in response")
+		return
 	}
 	if authCookie.Value != "" {
 		t.Errorf("expected empty cookie value, got %q", authCookie.Value)
