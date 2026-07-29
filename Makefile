@@ -1,5 +1,5 @@
 .PHONY: deps test-go test-js test fmt-go check-fmt-go check-file-length
-.PHONY: lint-go-cognitive lint-go check-go dev dev-go dev-next
+.PHONY: lint-go-cognitive lint-go check-go dev dev-go dev-next serve build-next
 .PHONY: build-go run docker-check
 
 # Dependencies
@@ -61,11 +61,15 @@ docker-check:
 	  echo "  hadolint not available (run mise install)"; \
 	fi
 
+# Build Next.js static export
+build-next:
+	npm run build
+
 # Ports
 GO_PORT ?= 3000
 NEXT_PORT ?= 8000
 
-# Development
+# Development: hot reload mode (Next.js dev server + Go BFF proxy)
 dev:
 	@echo "Go BFF on :$(GO_PORT)  |  Next.js on :$(NEXT_PORT)"
 	@trap 'kill 0' EXIT; \
@@ -74,12 +78,20 @@ dev:
 	  npm run dev -- -p $(NEXT_PORT) & \
 	  wait
 
+# Go BFF only (requires NEXTJS_URL to proxy to Next.js)
 dev-go:
 	export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3300} NEXTJS_URL=http://localhost:$(NEXT_PORT) SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
 	go run ./cmd/konsulin-app
 
+# Next.js dev server standalone (open separate terminal)
 dev-next:
 	npm run dev -- -p $(NEXT_PORT)
+
+# Production-like: build Next.js statically, then serve via Go BFF
+serve: build-next
+	@echo "Go BFF on :$(GO_PORT) serving static out/"
+	@export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3200} SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
+	  go run ./cmd/konsulin-app
 
 # Build
 build-go:
