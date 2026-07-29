@@ -100,6 +100,29 @@ async function tryRevalidateChunkCache(error: ChunkError): Promise<void> {
 }
 
 /**
+ * Safely extracts the actual default export from a dynamically imported module,
+ * handling CJS/ESM interop where webpack wraps CJS `module.exports` in a nested
+ * `{ default: { default: Component } }` structure.
+ *
+ * Priority: `mod.default?.default` → `mod.default` → `mod`.
+ *
+ * @param mod - The resolved module object from `import()`.
+ * @returns The actual component or value.
+ */
+export function resolveCjsDefaultExport(mod: unknown): unknown {
+  if (!mod) return mod;
+  const d = (mod as Record<string, unknown>).default;
+  if (
+    d &&
+    typeof d === 'object' &&
+    'default' in (d as Record<string, unknown>)
+  ) {
+    return (d as Record<string, unknown>).default;
+  }
+  return d === undefined ? mod : d;
+}
+
+/**
  * Typed wrapper around `next/dynamic` with chunk retry and consistent skeleton.
  *
  * Automatically retries chunk loading up to 3 times when a chunk fails to load

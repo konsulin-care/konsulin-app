@@ -21,7 +21,11 @@ vi.mock('next/dynamic', () => {
 });
 
 import type { ComponentType } from 'react';
-import { lazyComponent, withChunkRetry } from '../lib/lazy-component';
+import {
+  lazyComponent,
+  resolveCjsDefaultExport,
+  withChunkRetry
+} from '../lib/lazy-component';
 
 type ComponentWithCapture = ReturnType<typeof lazyComponent> & {
   _capturedOptions?: { ssr?: boolean; loading?: () => React.ReactNode };
@@ -128,5 +132,43 @@ describe('withChunkRetry', () => {
 
     expect(loader).toHaveBeenCalledTimes(1);
     expect(result).toHaveProperty('default');
+  });
+});
+
+describe('resolveCjsDefaultExport', () => {
+  const TestComponent = () => null;
+
+  it('extracts default from a normal ESM module object', () => {
+    const mod = { default: TestComponent };
+    expect(resolveCjsDefaultExport(mod)).toBe(TestComponent);
+  });
+
+  it('unwraps nested default from CJS webpack interop', () => {
+    const mod = { default: { default: TestComponent } };
+    expect(resolveCjsDefaultExport(mod)).toBe(TestComponent);
+  });
+
+  it('unwraps nested default with __esModule flag', () => {
+    const mod = {
+      default: {
+        default: TestComponent,
+        __esModule: true,
+        useTopLoader: () => null
+      }
+    };
+    expect(resolveCjsDefaultExport(mod)).toBe(TestComponent);
+  });
+
+  it('falls back to module itself when no default exists', () => {
+    const mod = TestComponent;
+    expect(resolveCjsDefaultExport(mod)).toBe(TestComponent);
+  });
+
+  it('returns null for null input', () => {
+    expect(resolveCjsDefaultExport(null)).toBeNull();
+  });
+
+  it('returns undefined for undefined input', () => {
+    expect(resolveCjsDefaultExport()).toBeUndefined();
   });
 });

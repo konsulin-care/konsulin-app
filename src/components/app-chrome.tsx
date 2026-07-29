@@ -2,15 +2,18 @@ import ProfileCompletenessModal from '@/components/general/profile-completeness-
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
 import QuickActionFab from '@/components/quick-action-fab';
 import { FabProvider } from '@/context/fabContext';
+import { resolveCjsDefaultExport } from '@/lib/lazy-component';
 import dynamic from 'next/dynamic';
 import { Suspense, type ComponentType, type ReactNode } from 'react';
 import { ToastContainer, ToastContainerProps } from 'react-toastify';
 
 const NextTopLoader = dynamic(
   () =>
-    import('nextjs-toploader') as Promise<{
-      default: ComponentType<Record<string, unknown>>;
-    }>,
+    import('nextjs-toploader').then(mod => ({
+      default: resolveCjsDefaultExport(mod) as ComponentType<
+        Record<string, unknown>
+      >
+    })),
   { ssr: false }
 );
 
