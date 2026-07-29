@@ -261,7 +261,7 @@ func TestTryBackendLogout_emptyBackend(t *testing.T) {
 	tryBackendLogout(r, "", false)
 }
 
-func TestHTMXProtectedRoute_redirectsViaHeader(t *testing.T) {
+func TestProtectedRoute_redirectsToAuth(t *testing.T) {
 	r := newAuthRouter()
 	r.Get("/profile", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -272,17 +272,16 @@ func TestHTMXProtectedRoute_redirectsViaHeader(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
-	req.Header.Set("HX-Request", "true")
 
 	resp := testDo(t, req)
 
-	assertStatus(t, resp, http.StatusOK)
+	assertStatus(t, resp, http.StatusFound)
 
-	hxRedirect := resp.Header.Get("HX-Redirect")
-	if hxRedirect == "" {
-		t.Fatal("expected HX-Redirect header")
+	location := resp.Header.Get("Location")
+	if location == "" {
+		t.Fatal("expected Location header")
 	}
-	if !strings.Contains(hxRedirect, "/auth?redirectToPath=") {
-		t.Errorf("expected HX-Redirect to contain /auth?redirectToPath=, got %s", hxRedirect)
+	if !strings.Contains(location, "/auth?redirectToPath=") {
+		t.Errorf("expected Location to contain /auth?redirectToPath=, got %s", location)
 	}
 }

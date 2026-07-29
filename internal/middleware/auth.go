@@ -84,16 +84,9 @@ func redirectMissingSession(w http.ResponseWriter, r *http.Request, opts AuthGua
 	slog.Debug("auth guard: no valid session", "path", path)
 	redirectURL := redirectURLForPath(path, opts.AuthPath, opts.AppURL)
 
-	if isHTMX(r) {
-		w.Header().Set(hxRedirectHeader, redirectURL)
-		w.WriteHeader(http.StatusOK)
-	} else {
-		//nolint:gosec // G710: redirectURL validated by redirectURLForPath via ValidateRedirectPath
-		http.Redirect(w, r, redirectURL, http.StatusFound)
-	}
+	//nolint:gosec // G710: redirectURL validated by redirectURLForPath via ValidateRedirectPath
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
-
-const hxRedirectHeader = "HX-Redirect"
 
 func redirectURLForPath(path, authPath, appURL string) string {
 	if validated, ok := session.ValidateRedirectPath(path, appURL); ok {
@@ -150,21 +143,11 @@ func redirectToUnauthorized(w http.ResponseWriter, r *http.Request, opts Require
 	if unauthorizedPath == "" {
 		unauthorizedPath = "/unauthorized"
 	}
-	if isHTMX(r) {
-		w.Header().Set(hxRedirectHeader, unauthorizedPath)
-		w.WriteHeader(http.StatusOK)
-	} else {
-		http.Redirect(w, r, unauthorizedPath, http.StatusFound)
-	}
+	http.Redirect(w, r, unauthorizedPath, http.StatusFound)
 }
 
 func redirectToAuth(w http.ResponseWriter, r *http.Request, opts RequireRoleOptions) {
-	if isHTMX(r) {
-		w.Header().Set(hxRedirectHeader, opts.AuthPath)
-		w.WriteHeader(http.StatusOK)
-	} else {
-		http.Redirect(w, r, opts.AuthPath, http.StatusFound)
-	}
+	http.Redirect(w, r, opts.AuthPath, http.StatusFound)
 }
 
 func containsRole(roles []string, role string) bool {
@@ -201,8 +184,4 @@ func isSkippedPath(path string, opts AuthGuardOptions) bool {
 		}
 	}
 	return false
-}
-
-func isHTMX(r *http.Request) bool {
-	return r.Header.Get("HX-Request") == "true"
 }

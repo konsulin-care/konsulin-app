@@ -62,6 +62,7 @@ func TestOptionalAuth_noCookies_guestFallback(t *testing.T) {
 	gotSession := getSession()
 	if gotSession == nil {
 		t.Fatal("expected session to be set")
+		return
 	}
 	if gotSession.Role != "Guest" {
 		t.Errorf("expected Role Guest, got %q", gotSession.Role)
@@ -86,6 +87,7 @@ func TestOptionalAuth_authCookie_realSession(t *testing.T) {
 	gotSession := getSession()
 	if gotSession == nil {
 		t.Fatal("expected session to be set")
+		return
 	}
 	if gotSession.UserID != "u1" {
 		t.Errorf("expected UserID u1, got %q", gotSession.UserID)
@@ -109,6 +111,7 @@ func TestOptionalAuth_anonCookie_guestSession(t *testing.T) {
 	gotSession := getSession()
 	if gotSession == nil {
 		t.Fatal("expected session to be set")
+		return
 	}
 	if gotSession.Role != "Guest" {
 		t.Errorf("expected Role Guest, got %q", gotSession.Role)
@@ -143,6 +146,7 @@ func TestOptionalAuth_authCookieOverridesAnon(t *testing.T) {
 	gotSession := getSession()
 	if gotSession == nil {
 		t.Fatal("expected session to be set")
+		return
 	}
 	if gotSession.UserID != "u1" {
 		t.Errorf("expected UserID u1, got %q", gotSession.UserID)
