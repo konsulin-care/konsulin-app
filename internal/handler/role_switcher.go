@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/konsulin-care/konsulin-app/internal/session"
-	"github.com/konsulin-care/konsulin-app/web/template/partials"
 )
 
 type RoleSwitchOptions struct {
@@ -24,10 +23,7 @@ func NewRoleSwitchHandler(opts RoleSwitchOptions) http.HandlerFunc {
 			handleRoleSwitch(w, r, opts)
 			return
 		}
-		if r.Method == http.MethodGet {
-			handleRoleSwitcherPartial(w, r)
-			return
-		}
+
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
@@ -74,7 +70,6 @@ func handleRoleSwitch(w http.ResponseWriter, r *http.Request, opts RoleSwitchOpt
 
 	setActiveRoleClaim(w, r, opts, newRole)
 
-	w.Header().Set("HX-Redirect", "/")
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -118,21 +113,3 @@ func isRoleInSession(roles []string, target string) bool {
 	return false
 }
 
-func handleRoleSwitcherPartial(w http.ResponseWriter, r *http.Request) {
-	sess, ok := session.SessionFromContext(r.Context())
-	if !ok || sess == nil {
-		http.Error(w, "no session", http.StatusUnauthorized)
-		return
-	}
-
-	if len(sess.Roles) <= 1 {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/html")
-	if err := partials.RoleSwitcher(sess.Role, sess.Roles).Render(r.Context(), w); err != nil {
-		slog.Error("role switcher partial: render failed", "err", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
-	}
-}
