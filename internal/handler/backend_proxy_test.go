@@ -134,8 +134,8 @@ func testBackendProxyHeaderCase(t *testing.T, authHeader, cookie, accessCookieNa
 		BackendBaseURL:   backend.URL,
 		AccessCookieName: accessCookieName,
 		CookieMappings: []HeaderCookieMapping{
-			{HeaderName: "st-access-token", CookieName: "st-access-token", HTTPOnly: true},
-			{HeaderName: "st-refresh-token", CookieName: "st-refresh-token", HTTPOnly: true},
+			{HeaderName: "st-access-token", CookieName: "sAccessToken", HTTPOnly: true},
+			{HeaderName: "st-refresh-token", CookieName: "sRefreshToken", HTTPOnly: true},
 			{HeaderName: "front-token", CookieName: "sFrontToken", HTTPOnly: false},
 		},
 	})

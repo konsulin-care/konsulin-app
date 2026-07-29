@@ -114,9 +114,9 @@ func Load() (*Config, error) {
 		TXURL:       txURL,
 
 		AuthCookieName:             env("AUTH_COOKIE_NAME", "auth"),
-		SessionCookieNameAccess:    env("SESSION_COOKIE_NAME_ACCESS", "st-access-token"),
-		SessionCookieNameRefresh:   env("SESSION_COOKIE_NAME_REFRESH", "st-refresh-token"),
-		SessionCookieNameIDRefresh: env("SESSION_COOKIE_NAME_ID_REFRESH", "st-id-refresh-token"),
+		SessionCookieNameAccess:    env("SESSION_COOKIE_NAME_ACCESS", "sAccessToken"),
+		SessionCookieNameRefresh:   env("SESSION_COOKIE_NAME_REFRESH", "sRefreshToken"),
+		SessionCookieNameIDRefresh: env("SESSION_COOKIE_NAME_ID_REFRESH", "sIdRefreshToken"),
 		SessionCookieSecret:        sessionSecret,
 
 		AnonSessionCookieName:    env("ANON_SESSION_COOKIE_NAME", "anon_session"),
