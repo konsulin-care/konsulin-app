@@ -1,5 +1,5 @@
 .PHONY: deps test-go test-js test fmt-go check-fmt-go check-file-length
-.PHONY: lint-go-cognitive lint-go check-go css-templ dev dev-go dev-next
+.PHONY: lint-go-cognitive lint-go check-go dev dev-go dev-next
 .PHONY: build-go run docker-check
 
 # Dependencies
@@ -8,7 +8,7 @@ deps:
 	go mod download
 
 # Testing
-test-go: templ-gen
+test-go:
 	go test ./... -count=1
 
 test-js:
@@ -61,51 +61,31 @@ docker-check:
 	  echo "  hadolint not available (run mise install)"; \
 	fi
 
-# Tailwind CSS for templ templates
-TAILWIND = ./node_modules/.bin/tailwindcss
-TAILWIND_INPUT = web/static/css/templ-input.css
-TAILWIND_OUTPUT = web/static/css/output.css
-TAILWIND_CONTENT = "web/template/**/*.templ"
-
-css-templ:
-	$(TAILWIND) -i $(TAILWIND_INPUT) -o $(TAILWIND_OUTPUT) --content $(TAILWIND_CONTENT)
-
-# Templ code generation
-templ-gen:
-	templ generate
-
 # Ports
 GO_PORT ?= 3000
 NEXT_PORT ?= 8000
 
 # Development
-dev: css-templ templ-gen build-auth-spa-dev
-	@echo "Go SSR on :$(GO_PORT)  |  Next.js on :$(NEXT_PORT)"
+dev:
+	@echo "Go BFF on :$(GO_PORT)  |  Next.js on :$(NEXT_PORT)"
 	@trap 'kill 0' EXIT; \
 	  export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3300} NEXTJS_URL=http://localhost:$(NEXT_PORT) SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
 	  go run ./cmd/konsulin-app & \
 	  npm run dev -- -p $(NEXT_PORT) & \
 	  wait
 
-dev-go: css-templ templ-gen
+dev-go:
 	export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3300} NEXTJS_URL=http://localhost:$(NEXT_PORT) SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
 	go run ./cmd/konsulin-app
 
 dev-next:
 	npm run dev -- -p $(NEXT_PORT)
 
-# Auth SPA build
-build-auth-spa-dev:
-	cd web && npm run build:auth-spa
-
-build-auth-spa:
-	cd web && npm ci && npm run build
-
 # Build
-build-go: css-templ templ-gen build-auth-spa
+build-go:
 	go build -o konsulin-app ./cmd/konsulin-app
 
-run: css-templ templ-gen
+run:
 	go run ./cmd/konsulin-app
 
 data-wilayah:
