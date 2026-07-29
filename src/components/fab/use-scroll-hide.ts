@@ -13,6 +13,12 @@ export function useScrollHide(isInteractive: boolean): boolean {
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
 
+  // When entering interactive mode, reset visibility so the FAB
+  // reappears even if it was hidden by scrolling before the mode change.
+  useEffect(() => {
+    if (isInteractive) setIsVisible(true);
+  }, [isInteractive]);
+
   const handleScroll = useCallback(() => {
     if (isInteractive) return;
     const currentY = window.scrollY;
