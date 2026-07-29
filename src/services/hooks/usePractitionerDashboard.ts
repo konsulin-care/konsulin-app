@@ -2,7 +2,11 @@ import { getAvailableDays } from '@/app/practitioner/utils';
 import { getAPI } from '@/services/api';
 import type { MergedSession } from '@/types/appointment';
 import { parseMergedSessions } from '@/utils/helper';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient
+} from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type {
   Appointment,
@@ -133,7 +137,7 @@ function useMonthQuery(
   utcStart: string,
   utcEnd: string
 ) {
-  return useQuery({
+  return useQuery<Bundle>({
     queryKey: ['dashboard-month', practitionerId, utcStart, utcEnd],
     queryFn: async () => {
       const API = await getAPI();
@@ -143,7 +147,7 @@ function useMonthQuery(
       return response.data;
     },
     staleTime: 30_000,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     enabled: Boolean(practitionerId)
   });
 }
@@ -175,7 +179,7 @@ function useDayQuery(
   const dayStartISO = dayStart?.toISOString();
   const dayEndISO = dayEnd?.toISOString();
 
-  return useQuery({
+  return useQuery<Bundle>({
     queryKey: ['dashboard-day', practitionerId, dayStartISO],
     queryFn: async () => {
       const API = await getAPI();
@@ -213,7 +217,6 @@ function useRoleQuery(
   }, [monthData, practitionerId, queryClient, roleQueryKey]);
 
   return useQuery({
-    // @ts-expect-error: TanStack Query v4 overload not matching TS version
     queryKey: roleQueryKey,
     queryFn: async () => {
       const API = await getAPI();

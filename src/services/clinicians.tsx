@@ -2,6 +2,7 @@ import { IPractitionerRoleDetail } from '@/types/practitioner';
 import { getUtcDayRange } from '@/utils/helper';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AxiosResponse } from 'axios';
+import { useEffect } from 'react';
 
 import {
   Bundle,
@@ -89,78 +90,81 @@ export const useGetPractitionerRolesDetail = (
   practitionerId: string,
   onSuccess?: (data: BundleEntry<IPractitionerRoleDetail>[]) => void
 ) => {
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  return useQuery<
+  const query = useQuery<
     AxiosResponse,
     Error,
     BundleEntry<IPractitionerRoleDetail>[],
     [string, string]
-  >(
-    ['practitioner-roles', practitionerId],
-    async () => {
+  >({
+    queryKey: ['practitioner-roles', practitionerId],
+    queryFn: async () => {
       const API = await getAPI();
       const response = await API.get<Bundle>(
         `/fhir/PractitionerRole?practitioner=${practitionerId}&_include=PractitionerRole:organization&_include=PractitionerRole:practitioner&_revinclude=Invoice:participant&_revinclude=Schedule:actor`
       );
       return response;
     },
-    {
-      select: response => {
-        const entries = (response.data as Bundle).entry || [];
+    select: response => {
+      const entries = (response.data as Bundle).entry || [];
 
-        const practitionerRoles = entries.filter(
-          (entry: BundleEntry) =>
-            entry.resource?.resourceType === 'PractitionerRole'
-        );
+      const practitionerRoles = entries.filter(
+        (entry: BundleEntry) =>
+          entry.resource?.resourceType === 'PractitionerRole'
+      );
 
-        const organizations = entries.filter(
-          (entry: BundleEntry) =>
-            entry.resource?.resourceType === 'Organization'
-        );
+      const organizations = entries.filter(
+        (entry: BundleEntry) => entry.resource?.resourceType === 'Organization'
+      );
 
-        const schedules = entries.filter(
-          (entry: BundleEntry) => entry.resource?.resourceType === 'Schedule'
-        );
+      const schedules = entries.filter(
+        (entry: BundleEntry) => entry.resource?.resourceType === 'Schedule'
+      );
 
-        const invoices = entries.filter(
-          (entry: BundleEntry) => entry.resource?.resourceType === 'Invoice'
-        );
+      const invoices = entries.filter(
+        (entry: BundleEntry) => entry.resource?.resourceType === 'Invoice'
+      );
 
-        // map PractitionerRole entries
-        return practitionerRoles.map((role: BundleEntry<PractitionerRole>) => {
-          const roleId = role.resource.id;
-          const orgRef = role.resource.organization?.reference?.split('/')[1];
+      // map PractitionerRole entries
+      return practitionerRoles.map((role: BundleEntry<PractitionerRole>) => {
+        const roleId = role.resource.id;
+        const orgRef = role.resource.organization?.reference?.split('/')[1];
 
-          const organizationData = organizations.find(
-            (org: BundleEntry<Organization>) => org.resource.id === orgRef
-          )?.resource;
+        const organizationData = organizations.find(
+          (org: BundleEntry<Organization>) => org.resource.id === orgRef
+        )?.resource;
 
-          const invoiceData = invoices.find((invoice: BundleEntry<Invoice>) =>
-            hasParticipantForRole(invoice, roleId)
-          )?.resource;
+        const invoiceData = invoices.find((invoice: BundleEntry<Invoice>) =>
+          hasParticipantForRole(invoice, roleId)
+        )?.resource;
 
-          const scheduleData = schedules
-            .filter((schedule: BundleEntry<Schedule>) =>
-              hasActorForRole(schedule, roleId)
-            )
-            .map((schedule: BundleEntry<Schedule>) => schedule.resource);
+        const scheduleData = schedules
+          .filter((schedule: BundleEntry<Schedule>) =>
+            hasActorForRole(schedule, roleId)
+          )
+          .map((schedule: BundleEntry<Schedule>) => schedule.resource);
 
-          const result = {
-            ...role,
-            resource: {
-              ...role.resource,
-              organizationData,
-              invoiceData,
-              scheduleData
-            }
-          };
-          return result as unknown as BundleEntry<IPractitionerRoleDetail>;
-        });
-      },
-      enabled: Boolean(practitionerId),
-      onSuccess
+        const result = {
+          ...role,
+          resource: {
+            ...role.resource,
+            organizationData,
+            invoiceData,
+            scheduleData
+          }
+        };
+        return result as unknown as BundleEntry<IPractitionerRoleDetail>;
+      });
+    },
+    enabled: Boolean(practitionerId)
+  });
+
+  useEffect(() => {
+    if (query.data && onSuccess) {
+      onSuccess(query.data);
     }
-  );
+  }, [query.data, onSuccess]);
+
+  return query;
 };
 
 /** Mutation hook to update practitioner role info via PATCH. */

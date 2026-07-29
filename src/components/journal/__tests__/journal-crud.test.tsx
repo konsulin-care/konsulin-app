@@ -128,7 +128,7 @@ describe('CreateJournal', () => {
     mockMutateAsync = vi.fn().mockResolvedValue({});
     vi.mocked(useSubmitJournal).mockReturnValue({
       mutateAsync: mockMutateAsync,
-      isLoading: false
+      isPending: false
     } as any);
   });
 

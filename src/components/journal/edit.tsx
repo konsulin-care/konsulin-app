@@ -35,8 +35,7 @@ export default function EditJournal({ journalId }: Props) {
     removeResponse
   } = useJournalForm();
   const viewRoute = `/record?view=Observation/${journalId}`;
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
+  const { mutateAsync: submitJournal, isPending: isSubmitLoading } =
     useUpdateJournal();
   const { data: journalData, isLoading: isJournalLoading } = useGetSingleRecord(
     { id: journalId, resourceType: 'Observation' }

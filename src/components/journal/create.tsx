@@ -36,8 +36,7 @@ export default function CreateJournal() {
     addResponse,
     removeResponse
   } = useJournalForm(1);
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
+  const { mutateAsync: submitJournal, isPending: isSubmitLoading } =
     useSubmitJournal();
   const { dispatch } = useFab();
 

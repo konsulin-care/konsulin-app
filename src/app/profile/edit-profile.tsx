@@ -155,8 +155,7 @@ export default function EditProfile({ userRole, fhirId }: Props) {
     }
   }, [initialDraft]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const { mutateAsync: updateProfile, isLoading: isUpdateLoading } =
+  const { mutateAsync: updateProfile, isPending: isUpdateLoading } =
     useUpdateProfile();
   const { data: listProvinces, isLoading: provinceLoading } = useGetProvinces();
   const { data: listCities, isLoading: cityLoading } = useGetCities(

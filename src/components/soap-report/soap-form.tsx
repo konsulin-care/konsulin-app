@@ -54,8 +54,7 @@ export default function SoapForm({
   const titleParam = searchParams?.get('title');
   const categoryParam = searchParams?.get('category');
 
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const { mutateAsync: submitSoapBundle, isLoading: isSubmitSoapLoading } =
+  const { mutateAsync: submitSoapBundle, isPending: isSubmitSoapLoading } =
     useSubmitSoapBundle();
 
   const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =

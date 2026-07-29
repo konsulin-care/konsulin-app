@@ -148,7 +148,7 @@ export function useRecords(
     obsQuery.isFetchingNextPage;
 
   const isLoading =
-    qrQuery.isLoading || condQuery.isLoading || obsQuery.isLoading;
+    qrQuery.isPending || condQuery.isPending || obsQuery.isPending;
   const error = qrQuery.error ?? condQuery.error ?? obsQuery.error;
 
   useEffect(() => {

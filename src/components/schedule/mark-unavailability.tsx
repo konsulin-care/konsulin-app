@@ -328,8 +328,7 @@ function useMarkUnavailabilityForm() {
     setSelectedRoleIds(getActiveRoleIds(entries));
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const { mutateAsync: markUnavailable, isLoading: saving } =
+  const { mutateAsync: markUnavailable, isPending: saving } =
     useMarkUnavailability();
   const [lastConflicts, setLastConflicts] = useState<
     { practitionerRoleId: string; slotId: string; start: string; end: string }[]

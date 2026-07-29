@@ -115,10 +115,8 @@ export default function PractitionerAvailability({
   const { state: authState } = useAuth();
   const { dispatch: fabDispatch } = useFab();
   const queryClient = useQueryClient();
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const { isLoading: isCreateAppointmentLoading } = useCreateAppointment();
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const { mutateAsync: payAppointment, isLoading: isPaying } =
+  const { isPending: isCreateAppointmentLoading } = useCreateAppointment();
+  const { mutateAsync: payAppointment, isPending: isPaying } =
     usePayAppointment();
 
   const patientId = authState?.userInfo?.fhirId;

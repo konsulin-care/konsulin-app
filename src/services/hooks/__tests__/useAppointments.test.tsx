@@ -187,6 +187,6 @@ describe('useAppointments', () => {
 
     expect(mockAPI).not.toHaveBeenCalled();
     expect(result.current.data).toBeUndefined();
-    expect(result.current.hasNextPage).toBeUndefined();
+    expect(result.current.hasNextPage).toBe(false);
   });
 });
