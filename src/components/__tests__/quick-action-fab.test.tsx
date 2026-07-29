@@ -1,8 +1,4 @@
-import { FabDirtyProvider, useFabDirty } from '@/context/fabDirtyContext';
-import {
-  FabSelectionProvider,
-  useFabSelection
-} from '@/context/fabSelectionContext';
+import { FabProvider, useFab } from '@/context/fabContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -29,76 +25,75 @@ vi.mock('react-toastify', () => ({
 }));
 
 function TestHarness() {
-  const { setDirtyState } = useFabDirty();
-  const { setSelectionState } = useFabSelection();
-  const makeDirty = (overrides = {}) => ({
-    isDirty: true,
-    label: 'Save Changes',
-    onSave: vi.fn(),
-    isSaving: false,
-    ...overrides
-  });
+  const { dispatch } = useFab();
   return (
     <QueryClientProvider client={queryClient}>
       <div>
         <QuickActionFab />
         <button
-          data-testid='trigger-dirty'
-          onClick={() => setDirtyState(makeDirty())}
-        >
-          Make Dirty
-        </button>
-        <button
-          data-testid='trigger-dirty-not'
+          data-testid='trigger-action'
           onClick={() =>
-            setDirtyState(
-              makeDirty({
-                isDirty: false,
-                icon: vi.fn() as React.ComponentType<{ className?: string }>
-              })
-            )
+            dispatch({
+              type: 'SET_ACTION',
+              config: {
+                label: 'Save Changes',
+                onAction: vi.fn(),
+                isSaving: false,
+                variant: 'primary'
+              }
+            })
           }
         >
-          Make Dirty (not really)
-        </button>
-        <button data-testid='trigger-clean' onClick={() => setDirtyState(null)}>
-          Make Clean
+          Make Action
         </button>
         <button
-          data-testid='trigger-dirty-disabled'
+          data-testid='clear-action'
+          onClick={() => dispatch({ type: 'SET_ACTION', config: null })}
+        >
+          Clear Action
+        </button>
+        <button
+          data-testid='trigger-action-disabled'
           onClick={() =>
-            setDirtyState(
-              makeDirty({
+            dispatch({
+              type: 'SET_ACTION',
+              config: {
                 label: 'Submit',
-                onSave: disabledOnSave,
-                disabled: true
-              })
-            )
+                onAction: disabledOnSave,
+                disabled: true,
+                variant: 'primary'
+              }
+            })
           }
         >
-          Make Dirty Disabled
+          Make Action Disabled
         </button>
         <button
-          data-testid='trigger-dirty-enabled'
+          data-testid='trigger-action-enabled'
           onClick={() =>
-            setDirtyState(
-              makeDirty({
+            dispatch({
+              type: 'SET_ACTION',
+              config: {
                 label: 'Submit',
-                onSave: enabledOnSave,
-                disabled: false
-              })
-            )
+                onAction: enabledOnSave,
+                disabled: false,
+                variant: 'primary'
+              }
+            })
           }
         >
-          Make Dirty Enabled
+          Make Action Enabled
         </button>
         <button
           data-testid='trigger-selection'
           onClick={() =>
-            setSelectionState({
-              count: 2,
-              onDelete: vi.fn(),
-              onCancel: vi.fn()
+            dispatch({
+              type: 'SET_SELECTION',
+              config: {
+                count: 2,
+                onDelete: vi.fn(),
+                onCancel: vi.fn()
+              }
             })
           }
         >
@@ -106,7 +101,7 @@ function TestHarness() {
         </button>
         <button
           data-testid='clear-selection'
-          onClick={() => setSelectionState(null)}
+          onClick={() => dispatch({ type: 'SET_SELECTION', config: null })}
         >
           Clear Selection
         </button>
@@ -117,11 +112,9 @@ function TestHarness() {
 
 function renderFab() {
   return render(
-    <FabDirtyProvider>
-      <FabSelectionProvider>
-        <TestHarness />
-      </FabSelectionProvider>
-    </FabDirtyProvider>
+    <FabProvider>
+      <TestHarness />
+    </FabProvider>
   );
 }
 
@@ -149,47 +142,32 @@ describe('QuickActionFab', () => {
     expect(getFabButton(container)).toHaveAttribute('aria-label', 'Open menu');
   });
 
-  it('morphs to pill with Save Changes text when dirty', () => {
+  it('shows action mode button with label when SET_ACTION dispatched', () => {
     const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-dirty'));
+    fireEvent.click(screen.getByTestId('trigger-action'));
     expect(getFabButton(container).textContent).toContain('Save Changes');
     expect(container.querySelector('.lucide-plus')).toBeFalsy();
   });
 
-  it('reverts to circle after dirty state is cleared', () => {
+  it('reverts to circle after action state is cleared', () => {
     const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-dirty'));
+    fireEvent.click(screen.getByTestId('trigger-action'));
     expect(getFabButton(container).textContent).toContain('Save Changes');
-    fireEvent.click(screen.getByTestId('trigger-clean'));
+    fireEvent.click(screen.getByTestId('clear-action'));
     const fabButton = getFabButton(container);
     expect(fabButton.className).toMatch(/h-14.*w-14/);
     expect(container.querySelector('.lucide-plus')).toBeTruthy();
   });
 
-  it('hides pills menu when dirty', () => {
+  it('hides pills menu when action mode is active', () => {
     renderFab();
     const fabButton = document.querySelectorAll<HTMLButtonElement>(
       'button[class*="rounded-full"]'
     );
     fireEvent.click(fabButton.item(fabButton.length - 1));
     expect(screen.queryAllByText(MENU_ITEMS).length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByTestId('trigger-dirty'));
+    fireEvent.click(screen.getByTestId('trigger-action'));
     expect(screen.queryAllByText(MENU_ITEMS)).toHaveLength(0);
-  });
-
-  it('shows speed-dial and Plus icon when dirtyState exists but isDirty is false', () => {
-    const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-dirty-not'));
-    expect(container.querySelector('.lucide-plus')).toBeTruthy();
-    fireEvent.click(getFabButton(container));
-    expect(screen.queryAllByText(MENU_ITEMS).length).toBeGreaterThan(0);
-  });
-
-  it('shows dirty icon in dirty mode', () => {
-    const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-dirty'));
-    expect(getFabButton(container).textContent).toContain('Save Changes');
-    expect(container.querySelector('.lucide-plus')).toBeFalsy();
   });
 
   describe('selection mode', () => {
@@ -201,9 +179,9 @@ describe('QuickActionFab', () => {
       expect(document.querySelector('.lucide-trash-2')).toBeTruthy();
     });
 
-    it('takes priority over dirty state', () => {
+    it('takes priority over action state', () => {
       renderFab();
-      fireEvent.click(screen.getByTestId('trigger-dirty'));
+      fireEvent.click(screen.getByTestId('trigger-action'));
       expect(screen.getByText('Save Changes')).toBeInTheDocument();
       fireEvent.click(screen.getByTestId('trigger-selection'));
       expect(screen.getByText('Delete (2)')).toBeInTheDocument();
@@ -266,6 +244,52 @@ describe('QuickActionFab clinic admin', () => {
     expect(screen.queryByText('Register Practitioner')).toBeNull();
   });
 
+  it('calls router.push when a navigation pill is clicked without throwing', () => {
+    mockRole = 'Patient';
+    renderFab();
+    const toggle = getFabButton(document.body);
+    fireEvent.click(toggle);
+    expect(() =>
+      fireEvent.click(screen.getByText('Self Checkup'))
+    ).not.toThrow();
+  });
+
+  it('applies scroll visibility classes to idle mode container', () => {
+    const { container } = renderFab();
+    // Default state is idle — the outer container should have visibility classes
+    const containers = container.querySelectorAll(
+      '[class*="fixed"][class*="transition-all"]'
+    );
+    expect(containers.length).toBeGreaterThan(0);
+    // At least one container should have the visible classes
+    const hasVisible = [...containers].some(
+      c =>
+        c.className.includes('translate-y-0') &&
+        c.className.includes('opacity-100')
+    );
+    expect(hasVisible).toBe(true);
+  });
+
+  it('applies scroll visibility classes to action mode container', () => {
+    const { container } = renderFab();
+    fireEvent.click(screen.getByTestId('trigger-action'));
+    const actionContainer = container.querySelector(
+      '[class*="fixed"][class*="z-50"]'
+    );
+    expect(actionContainer?.className).toContain('translate-y-0');
+    expect(actionContainer?.className).toContain('opacity-100');
+  });
+
+  it('applies scroll visibility classes to selection mode container', () => {
+    const { container } = renderFab();
+    fireEvent.click(screen.getByTestId('trigger-selection'));
+    const selectionContainer = container.querySelector(
+      '[class*="fixed"][class*="z-50"]'
+    );
+    expect(selectionContainer?.className).toContain('translate-y-0');
+    expect(selectionContainer?.className).toContain('opacity-100');
+  });
+
   it('renders practitioner pills for Practitioner role', () => {
     mockRole = 'Practitioner';
     renderFab();
@@ -277,15 +301,15 @@ describe('QuickActionFab clinic admin', () => {
   });
 });
 
-describe('QuickActionFab disabled dirty state', () => {
+describe('QuickActionFab disabled action state', () => {
   beforeEach(() => {
     disabledOnSave = vi.fn();
     enabledOnSave = vi.fn();
   });
 
-  it('applies greyed-out styling to dirty pill when disabled=true', () => {
+  it('applies greyed-out styling to action pill when disabled=true', () => {
     const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-dirty-disabled'));
+    fireEvent.click(screen.getByTestId('trigger-action-disabled'));
     const fabButton = getFabButton(container);
     expect(fabButton.className).toContain('bg-gray-300');
     expect(fabButton.className).toContain('text-gray-500');
@@ -293,16 +317,16 @@ describe('QuickActionFab disabled dirty state', () => {
     expect(fabButton.disabled).toBe(true);
   });
 
-  it('does not call onSave when dirty pill is disabled and clicked', () => {
+  it('does not call onAction when action pill is disabled and clicked', () => {
     const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-dirty-disabled'));
+    fireEvent.click(screen.getByTestId('trigger-action-disabled'));
     fireEvent.click(getFabButton(container));
     expect(disabledOnSave).not.toHaveBeenCalled();
   });
 
-  it('calls onSave when dirty pill is enabled and clicked', () => {
+  it('calls onAction when action pill is enabled and clicked', () => {
     const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-dirty-enabled'));
+    fireEvent.click(screen.getByTestId('trigger-action-enabled'));
     fireEvent.click(getFabButton(container));
     expect(enabledOnSave).toHaveBeenCalledTimes(1);
   });

@@ -1,7 +1,7 @@
 'use client';
 
 import ServiceCard from '@/components/practitioner/service-card';
-import { useFabSelection } from '@/context/fabSelectionContext';
+import { useFab } from '@/context/fabContext';
 import { useClinicContext } from '@/hooks/useClinicContext';
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
 /* eslint-disable max-lines */
@@ -43,7 +43,7 @@ export default function ServicesTab({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLongPress = useRef(false);
-  const { setSelectionState } = useFabSelection();
+  const { dispatch } = useFab();
 
   useEffect(() => {
     if (fetchedServices) setLocalServices(fetchedServices);
@@ -144,18 +144,21 @@ export default function ServicesTab({
 
   useEffect(() => {
     if (inSelectionMode) {
-      setSelectionState({
-        count: selectedIds.size,
-        onDelete: handleSelectionDelete,
-        onCancel: handleSelectionCancel
+      dispatch({
+        type: 'SET_SELECTION',
+        config: {
+          count: selectedIds.size,
+          onDelete: handleSelectionDelete,
+          onCancel: handleSelectionCancel
+        }
       });
     } else {
-      setSelectionState(null);
+      dispatch({ type: 'SET_SELECTION', config: null });
     }
   }, [
     inSelectionMode,
     selectedIds,
-    setSelectionState,
+    dispatch,
     handleSelectionDelete,
     handleSelectionCancel
   ]);

@@ -34,13 +34,13 @@ vi.mock('@/app/record/record-condition', () => ({
 vi.mock('@/components/page-header', () => ({
   default: () => <div data-testid='mock-page-header'>Header</div>
 }));
-vi.mock('@/context/fabDirtyContext', () => ({ useFabDirty: vi.fn() }));
+vi.mock('@/context/fabContext', () => ({ useFab: vi.fn() }));
 vi.mock('@/components/general/modal-qr', () => ({
   default: () => <div data-testid='mock-modal-qr'>QR</div>
 }));
 
 import { useAuth } from '@/context/auth/authContext';
-import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFab } from '@/context/fabContext';
 import { useRecordDetail } from '@/hooks/useRecordDetail';
 import RecordDetail from '../record-detail';
 
@@ -56,11 +56,28 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     } as any);
   });
 
-  it('sets FAB dirty state to "Share Record" for QuestionnaireResponse view', () => {
-    const mockSetDirtyState = vi.fn();
-    vi.mocked(useFabDirty).mockReturnValue({
-      setDirtyState: mockSetDirtyState
+  function mockDispatch() {
+    const d = vi.fn();
+    vi.mocked(useFab).mockReturnValue({
+      state: { action: null, selection: null, menu: null, panelOpen: false },
+      dispatch: d
     } as any);
+    return d;
+  }
+
+  type FabDispatchCall = [
+    action: { type: string; config: { label?: string } | null }
+  ];
+
+  function findActionCall(dispatch: ReturnType<typeof vi.fn>, label: string) {
+    return dispatch.mock.calls.find((c: unknown[]) => {
+      const action = (c as FabDispatchCall)[0];
+      return action?.type === 'SET_ACTION' && action?.config?.label === label;
+    }) as FabDispatchCall | undefined;
+  }
+
+  it('sets FAB to Share Record for QuestionnaireResponse view', () => {
+    const dispatch = mockDispatch();
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
         resourceType: 'QuestionnaireResponse',
@@ -73,17 +90,11 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
     render(
       <RecordDetail resourceType='QuestionnaireResponse' resourceId='qr-1' />
     );
-    const shareCall = mockSetDirtyState.mock.calls.find(
-      (c: unknown[]) => (c[0] as { label?: string })?.label === 'Share Record'
-    );
-    expect(shareCall).toBeDefined();
+    expect(findActionCall(dispatch, 'Share Record')).toBeDefined();
   });
 
-  it('sets FAB dirty state for Practitioner Note view', () => {
-    const mockSetDirtyState = vi.fn();
-    vi.mocked(useFabDirty).mockReturnValue({
-      setDirtyState: mockSetDirtyState
-    } as any);
+  it('sets FAB to Share Record for Practitioner Note view', () => {
+    const dispatch = mockDispatch();
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
         resourceType: 'Observation',
@@ -94,17 +105,11 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       error: null
     } as any);
     render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
-    const shareCall = mockSetDirtyState.mock.calls.find(
-      (c: unknown[]) => (c[0] as { label?: string })?.label === 'Share Record'
-    );
-    expect(shareCall).toBeDefined();
+    expect(findActionCall(dispatch, 'Share Record')).toBeDefined();
   });
 
-  it('clears FAB dirty state for non-own journal view', () => {
-    const mockSetDirtyState = vi.fn();
-    vi.mocked(useFabDirty).mockReturnValue({
-      setDirtyState: mockSetDirtyState
-    } as any);
+  it('clears FAB action state for non-own journal view', () => {
+    const dispatch = mockDispatch();
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
         resourceType: 'Observation',
@@ -116,17 +121,15 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       error: null
     } as any);
     render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
-    const nullCalls = mockSetDirtyState.mock.calls.filter(
-      (c: unknown[]) => c[0] === null
-    );
+    const nullCalls = dispatch.mock.calls.filter((c: unknown[]) => {
+      const action = (c as FabDispatchCall)[0];
+      return action?.type === 'SET_ACTION' && action?.config === null;
+    });
     expect(nullCalls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('sets FAB dirty state to Edit for own journal', () => {
-    const mockSetDirtyState = vi.fn();
-    vi.mocked(useFabDirty).mockReturnValue({
-      setDirtyState: mockSetDirtyState
-    } as any);
+  it('sets FAB to Edit for own journal', () => {
+    const dispatch = mockDispatch();
     vi.mocked(useAuth).mockReturnValue({
       state: {
         isAuthenticated: true,
@@ -149,19 +152,11 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       error: null
     } as any);
     render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);
-    const editCall = mockSetDirtyState.mock.calls.find(
-      (c: unknown[]) =>
-        (c[0] as { label?: string })?.label === 'Edit' &&
-        (c[0] as { isDirty?: boolean })?.isDirty === true
-    );
-    expect(editCall).toBeDefined();
+    expect(findActionCall(dispatch, 'Edit')).toBeDefined();
   });
 
-  it('clears FAB dirty state on unmount', () => {
-    const mockSetDirtyState = vi.fn();
-    vi.mocked(useFabDirty).mockReturnValue({
-      setDirtyState: mockSetDirtyState
-    } as any);
+  it('clears FAB action state on unmount', () => {
+    const dispatch = mockDispatch();
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
         resourceType: 'Observation',
@@ -175,7 +170,10 @@ describe('RecordDetail - dispatches by resourceType + content', () => {
       <RecordDetail resourceType='Observation' resourceId='obs-1' />
     );
     unmount();
-    expect(mockSetDirtyState).toHaveBeenCalledWith(null);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: 'SET_ACTION',
+      config: null
+    });
   });
 
   it('renders RecordAssessment for non-SOAP QuestionnaireResponse', () => {

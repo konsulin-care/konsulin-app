@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, react/jsx-no-useless-fragment, @next/next/no-img-element, jsx-a11y/alt-text */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, react/jsx-no-useless-fragment, @next/next/no-img-element, jsx-a11y/alt-text, max-lines */
 
-import { FabDirtyProvider, useFabDirty } from '@/context/fabDirtyContext';
+import { FabProvider, useFab } from '@/context/fabContext';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -134,10 +134,10 @@ function DirtyStateObserver({
 }: {
   onDirtyState: (state: unknown) => void;
 }) {
-  const { dirtyState } = useFabDirty();
+  const { state } = useFab();
   useEffect(() => {
-    onDirtyState(dirtyState);
-  }, [dirtyState, onDirtyState]);
+    onDirtyState(state.action);
+  }, [state.action, onDirtyState]);
   return null;
 }
 
@@ -219,10 +219,10 @@ describe('FhirFormsRenderer - loading state', () => {
 
 describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
   type DirtyState = {
-    isDirty?: boolean;
     label?: string;
     disabled?: boolean;
-    onSave?: () => void;
+    onAction?: () => void;
+    icon?: unknown;
   };
   let lastDirtyState: DirtyState | null | undefined;
 
@@ -233,7 +233,7 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
 
   const renderWithObserver = (extraProps?: Record<string, unknown>) =>
     render(
-      <FabDirtyProvider>
+      <FabProvider>
         <FhirFormsRenderer
           questionnaire={mockQuestionnaire}
           isAuthenticated
@@ -245,7 +245,7 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
             lastDirtyState = s as DirtyState | null;
           }}
         />
-      </FabDirtyProvider>
+      </FabProvider>
     );
 
   it('does not render a Kirim button', () => {
@@ -253,22 +253,22 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
     expect(screen.queryByText('Kirim')).not.toBeInTheDocument();
   });
 
-  it('does not set FAB dirty state on initial mount', () => {
+  it('does not set FAB action state on initial mount', () => {
     renderWithObserver();
-    expect(lastDirtyState?.isDirty).not.toBe(true);
+    expect(lastDirtyState).toBeNull();
   });
 
-  it('sets FAB dirty state after first form change interaction', () => {
+  it('sets FAB action state after first form change interaction', () => {
     renderWithObserver();
     act(() => {
       fireEvent.change(screen.getByTestId('mock-form-input'), {
         target: { value: 'a' }
       });
     });
-    expect(lastDirtyState?.isDirty).toBe(true);
+    expect(lastDirtyState).not.toBeNull();
     expect(lastDirtyState?.label).toBe('Submit');
     expect(lastDirtyState?.disabled).toBe(false);
-    expect(typeof lastDirtyState?.onSave).toBe('function');
+    expect(typeof lastDirtyState?.onAction).toBe('function');
   });
 
   it('sets disabled=true when required items are empty', () => {
@@ -288,7 +288,7 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
 
   it('sets disabled=true for practitioner without patientId', () => {
     render(
-      <FabDirtyProvider>
+      <FabProvider>
         <FhirFormsRenderer
           questionnaire={mockQuestionnaire}
           isAuthenticated
@@ -300,7 +300,7 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
             lastDirtyState = s as typeof lastDirtyState;
           }}
         />
-      </FabDirtyProvider>
+      </FabProvider>
     );
     act(() => {
       fireEvent.change(screen.getByTestId('mock-form-input'), {
@@ -310,9 +310,9 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
     expect(lastDirtyState?.disabled).toBe(true);
   });
 
-  it('provides icon component in dirty state after form interaction', () => {
+  it('provides icon component in action state after form interaction', () => {
     renderWithObserver();
-    expect(lastDirtyState?.isDirty).not.toBe(true);
+    expect(lastDirtyState).toBeNull();
     act(() => {
       fireEvent.change(screen.getByTestId('mock-form-input'), {
         target: { value: 'a' }
@@ -321,7 +321,7 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
     expect(typeof lastDirtyState?.icon).toMatch(/function|object/);
   });
 
-  it('calls onSave from dirty state opens the drawer', () => {
+  it('calls onAction from action state opens the drawer', () => {
     renderWithObserver();
     act(() => {
       fireEvent.change(screen.getByTestId('mock-form-input'), {
@@ -329,7 +329,7 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
       });
     });
     act(() => {
-      lastDirtyState?.onSave?.();
+      lastDirtyState?.onAction?.();
     });
     expect(screen.getByTestId('mock-drawer')).toBeInTheDocument();
   });

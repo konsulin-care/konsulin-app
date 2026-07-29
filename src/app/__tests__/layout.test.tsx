@@ -46,13 +46,8 @@ vi.mock('@/context/booking/bookingContext', () => ({
   BookingProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
-vi.mock('@/context/fabDirtyContext', () => ({
-  FabDirtyProvider: ({ children }: { children: React.ReactNode }) => children
-}));
-
-vi.mock('@/context/fabSelectionContext', () => ({
-  FabSelectionProvider: ({ children }: { children: React.ReactNode }) =>
-    children
+vi.mock('@/context/fabContext', () => ({
+  FabProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
 vi.mock('@/context/profile/profileContext', () => ({

@@ -12,8 +12,8 @@ vi.mock('@/services/api/record', () => ({
   useSubmitJournal: vi.fn()
 }));
 
-vi.mock('@/context/fabDirtyContext', () => ({
-  useFabDirty: vi.fn()
+vi.mock('@/context/fabContext', () => ({
+  useFab: vi.fn()
 }));
 
 vi.mock('@/components/shared/journal-response-fields', () => ({
@@ -102,7 +102,7 @@ vi.mock('@/components/ui/skeleton', () => ({
 }));
 
 import { useAuth } from '@/context/auth/authContext';
-import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFab } from '@/context/fabContext';
 import { useSubmitJournal } from '@/services/api/record';
 import CreateJournal from '../create';
 
@@ -120,8 +120,9 @@ describe('CreateJournal', () => {
       isLoading: false
     } as any);
 
-    vi.mocked(useFabDirty).mockReturnValue({
-      setDirtyState: mockSetDirtyState
+    vi.mocked(useFab).mockReturnValue({
+      state: { action: null, selection: null, menu: null, panelOpen: false },
+      dispatch: mockSetDirtyState
     } as any);
 
     mockMutateAsync = vi.fn().mockResolvedValue({});
@@ -161,18 +162,47 @@ describe('CreateJournal', () => {
     expect(screen.queryByTestId('submit-button')).not.toBeInTheDocument();
   });
 
-  it('sets dirtyState to null when title is less than 3 characters', () => {
+  type FabDispatchCall = [
+    action: {
+      type: string;
+      config: {
+        label?: string;
+        onAction?: () => void;
+        isSaving?: boolean;
+      } | null;
+    }
+  ];
+
+  function lastCallIsNull() {
+    const lastCall = mockSetDirtyState.mock.calls.at(-1) as
+      | FabDispatchCall
+      | undefined;
+    return lastCall?.[0]?.type === 'SET_ACTION' && lastCall[0]?.config === null;
+  }
+
+  function getActionCalls() {
+    return mockSetDirtyState.mock.calls.filter((c: unknown[]) => {
+      const action = (c as FabDispatchCall)[0];
+      return action?.type === 'SET_ACTION' && action?.config !== null;
+    });
+  }
+
+  function getLastActionConfig() {
+    const actionCalls = getActionCalls();
+    return (actionCalls.at(-1)?.[0] as FabDispatchCall[0] | undefined)?.config;
+  }
+
+  it('sets action to null when title is less than 3 characters', () => {
     render(<CreateJournal />);
 
     const titleInput = screen.getByPlaceholderText('Journal Title');
     fireEvent.change(titleInput, { target: { value: 'ab' } });
 
     // Wait for React state updates
-    const lastCall = mockSetDirtyState.mock.calls.at(-1);
-    expect(lastCall[0]).toBeNull();
+    expect(lastCallIsNull()).toBe(true);
   });
 
-  it('sets dirtyState to null when content has fewer than 2 words', () => {
+  it('sets action to null when content has fewer than 2 words', () => {
     render(<CreateJournal />);
 
     // Title meets threshold but content has only 1 word
@@ -182,11 +212,10 @@ describe('CreateJournal', () => {
     const contentInput = screen.getByTestId('response-0');
     fireEvent.change(contentInput, { target: { value: 'oneword' } });
 
-    const lastCall = mockSetDirtyState.mock.calls.at(-1);
-    expect(lastCall[0]).toBeNull();
+    expect(lastCallIsNull()).toBe(true);
   });
 
-  it('sets dirtyState with SaveJournal shape when title ≥3 chars AND content ≥2 words', () => {
+  it('sets action with SaveJournal shape when title ≥3 chars AND content ≥2 words', () => {
     render(<CreateJournal />);
 
     const titleInput = screen.getByPlaceholderText('Journal Title');
@@ -195,30 +224,20 @@ describe('CreateJournal', () => {
     const contentInput = screen.getByTestId('response-0');
     fireEvent.change(contentInput, { target: { value: 'two words' } });
 
-    const dirtyCalls = mockSetDirtyState.mock.calls.filter(
-      (c: unknown[]) => c[0] !== null
-    );
-    expect(dirtyCalls.length).toBeGreaterThanOrEqual(1);
-    const latest = dirtyCalls.at(-1)[0] as {
-      isDirty: boolean;
-      label: string;
-      onSave: () => void | Promise<void>;
-      isSaving: boolean;
-    };
-    expect(latest.isDirty).toBe(true);
-    expect(latest.label).toBe('Save Journal');
-    expect(typeof latest.onSave).toBe('function');
-    expect(latest.isSaving).toBe(false);
+    const config = getLastActionConfig();
+    expect(config).toBeDefined();
+    expect(config?.label).toBe('Save Journal');
+    expect(typeof config?.onAction).toBe('function');
+    expect(config?.isSaving).toBe(false);
   });
 
-  it('sets dirtyState to null when title and responses are empty', () => {
+  it('sets action to null when title and responses are empty', () => {
     render(<CreateJournal />);
 
-    const lastCall = mockSetDirtyState.mock.calls.at(-1);
-    expect(lastCall[0]).toBeNull();
+    expect(lastCallIsNull()).toBe(true);
   });
 
-  it('calls submitJournal when onSave is triggered with valid content', async () => {
+  it('calls submitJournal when onAction is triggered with valid content', () => {
     render(<CreateJournal />);
 
     // Type both title and content to meet thresholds
@@ -228,14 +247,8 @@ describe('CreateJournal', () => {
     const contentInput = screen.getByTestId('response-0');
     fireEvent.change(contentInput, { target: { value: 'two words' } });
 
-    // Find the latest setDirtyState call that is not null
-    const dirtyCalls = mockSetDirtyState.mock.calls.filter(
-      (c: unknown[]) => c[0] !== null
-    );
-    const onSave = (dirtyCalls.at(-1)[0] as { onSave: () => Promise<void> })
-      .onSave;
-
-    await onSave();
+    const config = getLastActionConfig();
+    config?.onAction();
 
     expect(mockMutateAsync).toHaveBeenCalledTimes(1);
     const payload = mockMutateAsync.mock.calls[0][0] as {
@@ -250,12 +263,14 @@ describe('CreateJournal', () => {
     expect(payload.note).toEqual([{ text: 'two words' }]);
   });
 
-  it('cleans up dirty state on unmount', () => {
+  it('cleans up action state on unmount', () => {
     const { unmount } = render(<CreateJournal />);
     unmount();
 
     const cleanupCall = mockSetDirtyState.mock.calls.find(
-      (c: unknown[]) => c[0] === null
+      (c: unknown[]) =>
+        (c as FabDispatchCall)[0]?.type === 'SET_ACTION' &&
+        (c as FabDispatchCall)[0]?.config === null
     );
     expect(cleanupCall).toBeDefined();
   });

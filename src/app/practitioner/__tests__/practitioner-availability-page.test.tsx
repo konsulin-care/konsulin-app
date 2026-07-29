@@ -21,8 +21,8 @@ vi.mock('@/services/api', () => ({
   getAPI: vi.fn()
 }));
 
-vi.mock('@/context/fabDirtyContext', () => ({
-  useFabDirty: vi.fn()
+vi.mock('@/context/fabContext', () => ({
+  useFab: vi.fn()
 }));
 
 vi.mock('@/services/api/appointments', () => ({
@@ -127,7 +127,7 @@ vi.mock('@/services/clinic-practitioners', () => ({
 
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
-import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFab } from '@/context/fabContext';
 import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import PractitionerAvailability from '../practitioner-availability';
 
@@ -167,9 +167,9 @@ beforeEach(() => {
     isLoading: false
   } as any);
 
-  vi.mocked(useFabDirty).mockReturnValue({
-    dirtyState: null,
-    setDirtyState: vi.fn()
+  vi.mocked(useFab).mockReturnValue({
+    state: { action: null, selection: null, menu: null, panelOpen: false },
+    dispatch: vi.fn()
   } as any);
 });
 
@@ -291,10 +291,10 @@ describe('PractitionerAvailability page variant', () => {
       { wrapper: createWrapper() }
     );
 
-    const { setDirtyState } = vi.mocked(useFabDirty)();
-    // setDirtyState should have been called, at minimum with null (form not valid)
-    expect(setDirtyState).toHaveBeenCalled();
-    expect(setDirtyState).toHaveBeenCalledWith(null);
+    const { dispatch } = vi.mocked(useFab)();
+    // dispatch should have been called, at minimum with null action (form not valid)
+    expect(dispatch).toHaveBeenCalled();
+    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_ACTION', config: null });
   });
 
   it('persists selected date when user clicks a different date in page mode', () => {

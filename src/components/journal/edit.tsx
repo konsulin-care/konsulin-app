@@ -6,7 +6,7 @@ import JournalResponseFields from '@/components/shared/journal-response-fields';
 import JournalSuccessDrawer from '@/components/shared/journal-succes-drawer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
-import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFab } from '@/context/fabContext';
 import { useGetSingleRecord, useUpdateJournal } from '@/services/api/record';
 import { format } from 'date-fns';
 import { FileCheckIcon, NotepadTextIcon, SavePen } from 'lucide-react';
@@ -42,7 +42,7 @@ export default function EditJournal({ journalId }: Props) {
     { id: journalId, resourceType: 'Observation' }
   );
   const router = useRouter();
-  const { setDirtyState } = useFabDirty();
+  const { dispatch } = useFab();
   const initialValues = useRef({ title: '', notes: [] as { text: string }[] });
 
   const initialized = useRef(false);
@@ -118,22 +118,19 @@ export default function EditJournal({ journalId }: Props) {
   ]);
 
   useEffect(() => {
-    setDirtyState({
-      isDirty: true,
-      label: 'Save Journal',
-      icon: SavePen,
-      onSave: () => handleSubmitJournal(),
-      isSaving: isSubmitLoading
+    dispatch({
+      type: 'SET_ACTION',
+      config: {
+        label: 'Save Journal',
+        icon: SavePen,
+        onAction: () => handleSubmitJournal(),
+        isSaving: isSubmitLoading,
+        variant: 'primary'
+      }
     });
 
-    return () => setDirtyState(null);
-  }, [
-    journalTitle,
-    response,
-    isSubmitLoading,
-    setDirtyState,
-    handleSubmitJournal
-  ]);
+    return () => dispatch({ type: 'SET_ACTION', config: null });
+  }, [journalTitle, response, isSubmitLoading, dispatch, handleSubmitJournal]);
 
   /** Format an ISO date string to a human-readable Indonesian locale format. */
   const formattedDate = (date: string) => {

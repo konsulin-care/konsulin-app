@@ -5,8 +5,7 @@ import ModalQr from '@/components/general/modal-qr';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
-import { useFabDirty } from '@/context/fabDirtyContext';
-import { useFabMenu } from '@/context/fabMenuContext';
+import { useFab } from '@/context/fabContext';
 import { useRecordDetail } from '@/hooks/useRecordDetail';
 import { isLoincSystem } from '@/utils/fhir';
 import type { Observation, QuestionnaireResponse } from 'fhir/r4';
@@ -216,8 +215,7 @@ export default function RecordDetail({
   const [qrOpen, setQrOpen] = useState(false);
 
   const router = useRouter();
-  const { setDirtyState } = useFabDirty();
-  const { setMenuState } = useFabMenu();
+  const { dispatch } = useFab();
 
   const handlePractitionerNameChange = useCallback((name: string) => {
     setDynamicTitle(`Notes from ${name}`);
@@ -239,7 +237,7 @@ export default function RecordDetail({
     return obs.subject?.reference === patientRef;
   }, [data, authState.userInfo?.fhirId]);
 
-  // Set FAB state: edit for own journals, default FAB for non-own journals
+  // Set FAB state: edit for own journals, share for others
   useEffect(() => {
     const isNonOwnJournal =
       data?.resourceType === 'Observation' &&
@@ -247,48 +245,53 @@ export default function RecordDetail({
       isPatientJournal(data as unknown as Observation);
 
     if (!data || error || isNonOwnJournal) {
-      setDirtyState(null);
-      setMenuState(null);
+      dispatch({ type: 'SET_ACTION', config: null });
+      dispatch({ type: 'SET_MENU', config: null });
     } else if (isOwnJournal) {
-      setDirtyState({
-        isDirty: true,
-        label: 'Edit',
-        icon: PenLine,
-        onSave: () => router.push(`/record?edit=Observation/${resourceId}`),
-        isSaving: false
+      dispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Edit',
+          icon: PenLine,
+          onAction: () => router.push(`/record?edit=Observation/${resourceId}`),
+          isSaving: false,
+          variant: 'primary'
+        }
       });
-      setMenuState(null);
+      dispatch({ type: 'SET_MENU', config: null });
     } else {
       // Other resources — share record
-      setMenuState(null);
-      setDirtyState({
-        isDirty: true,
-        label: 'Share Record',
-        icon: Repeat2,
-        onSave: () => {
-          const shareUrl = currentLocation || window.location.href;
-          if (typeof navigator.share === 'function') {
-            navigator.share({ url: shareUrl }).catch(() => {
-              /* user cancelled — do nothing */
-            });
-          } else {
-            setQrOpen(true);
-          }
-        },
-        isSaving: false
+      dispatch({ type: 'SET_MENU', config: null });
+      dispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Share Record',
+          icon: Repeat2,
+          onAction: () => {
+            const shareUrl = currentLocation || window.location.href;
+            if (typeof navigator.share === 'function') {
+              navigator.share({ url: shareUrl }).catch(() => {
+                /* user cancelled — do nothing */
+              });
+            } else {
+              setQrOpen(true);
+            }
+          },
+          isSaving: false,
+          variant: 'primary'
+        }
       });
     }
 
     return () => {
-      setDirtyState(null);
-      setMenuState(null);
+      dispatch({ type: 'SET_ACTION', config: null });
+      dispatch({ type: 'SET_MENU', config: null });
     };
   }, [
     data,
     error,
     isOwnJournal,
-    setDirtyState,
-    setMenuState,
+    dispatch,
     currentLocation,
     resourceId,
     router

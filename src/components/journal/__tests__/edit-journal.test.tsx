@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -15,9 +15,9 @@ vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));
 
-vi.mock('@/context/fabDirtyContext', () => ({
-  useFabDirty: vi.fn(),
-  FabDirtyProvider: ({ children }: { children: React.ReactNode }) => children
+vi.mock('@/context/fabContext', () => ({
+  useFab: vi.fn(),
+  FabProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
 vi.mock('@/services/api/record', () => ({
@@ -60,7 +60,7 @@ vi.mock('@/components/shared/journal-succes-drawer', () => ({
 }));
 
 import { useAuth } from '@/context/auth/authContext';
-import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFab } from '@/context/fabContext';
 import { useGetSingleRecord, useUpdateJournal } from '@/services/api/record';
 import EditJournal from '../edit';
 
@@ -74,22 +74,23 @@ const MOCK_JOURNAL_DATA = {
 };
 
 describe('EditJournal', () => {
-  let mockSetDirtyState: ReturnType<typeof vi.fn>;
+  let mockDispatch: ReturnType<typeof vi.fn>;
   let mockMutateAsync: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockPush.mockClear();
 
-    mockSetDirtyState = vi.fn();
+    mockDispatch = vi.fn();
 
     vi.mocked(useAuth).mockReturnValue({
       state: { userInfo: { fhirId: 'patient-1' } },
       isLoading: false
     } as any);
 
-    vi.mocked(useFabDirty).mockReturnValue({
-      setDirtyState: mockSetDirtyState
+    vi.mocked(useFab).mockReturnValue({
+      state: { action: null, selection: null, menu: null, panelOpen: false },
+      dispatch: mockDispatch
     } as any);
 
     mockMutateAsync = vi.fn().mockResolvedValue({});
@@ -124,22 +125,31 @@ describe('EditJournal', () => {
     expect(screen.getByTestId('response-count').textContent).toBe('2');
   });
 
-  it('always sets dirty state with save button regardless of changes', () => {
+  it('always sets action state with save button regardless of changes', () => {
     render(<EditJournal journalId='obs-123' />);
 
-    // At least one call should set dirty state with Save Journal shape
-    const dirtyCalls = mockSetDirtyState.mock.calls.filter(
-      (c: unknown[]) => (c[0] as { label?: string })?.label === 'Save Journal'
+    // At least one call should set action state with Save Journal shape
+    const actionCalls = mockDispatch.mock.calls.filter(
+      (c: unknown[]) =>
+        (c[0] as { type?: string })?.type === 'SET_ACTION' &&
+        (c[0] as { config?: { label?: string } })?.config?.label ===
+          'Save Journal'
     );
-    expect(dirtyCalls.length).toBeGreaterThanOrEqual(1);
+    expect(actionCalls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('calls router.replace without PUT when saving without changes', async () => {
+  function getLastOnAction() {
+    const lastCall = mockDispatch.mock.calls.at(-1);
+    return (lastCall[0] as { config?: { onAction?: () => void } })?.config
+      ?.onAction;
+  }
+
+  it('calls router.replace without PUT when saving without changes', () => {
     render(<EditJournal journalId='obs-123' />);
 
-    // Extract the onSave callback from setDirtyState
-    const onSave = mockSetDirtyState.mock.calls.at(-1)[0].onSave;
-    await onSave();
+    // Extract the onAction callback from the latest dispatch
+    const onAction = getLastOnAction();
+    onAction?.();
 
     // Should redirect without calling PUT
     expect(mockReplace).toHaveBeenCalledWith(
@@ -149,16 +159,16 @@ describe('EditJournal', () => {
     expect(mockMutateAsync).not.toHaveBeenCalled();
   });
 
-  it('calls PUT mutation with stripped payload when saving with changes', async () => {
+  it('calls PUT mutation with stripped payload when saving with changes', () => {
     render(<EditJournal journalId='obs-123' />);
 
     // Simulate a title change
     const titleInput = screen.getByDisplayValue('My Journal Title');
     fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
 
-    // Extract onSave from the latest setDirtyState call
-    const onSave = mockSetDirtyState.mock.calls.at(-1)[0].onSave;
-    await onSave();
+    // Extract onAction from the latest dispatch
+    const onAction = getLastOnAction();
+    onAction?.();
 
     // PUT should have been called
     expect(mockMutateAsync).toHaveBeenCalledTimes(1);
@@ -172,30 +182,29 @@ describe('EditJournal', () => {
     }
   });
 
-  it('passes viewRoute to success drawer when saving with changes', async () => {
+  it('passes viewRoute to success drawer when saving with changes', () => {
     render(<EditJournal journalId='obs-123' />);
 
     // Simulate a title change
     const titleInput = screen.getByDisplayValue('My Journal Title');
     fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
 
-    // Extract onSave from the latest setDirtyState call
-    const onSave = mockSetDirtyState.mock.calls.at(-1)[0].onSave;
-    await onSave();
+    const onAction = getLastOnAction();
+    onAction?.();
 
     // Success drawer should receive viewRoute pointing to view page
     const drawer = screen.getByTestId('success-drawer');
     expect(drawer.dataset.viewRoute).toBe('/record?view=Observation/obs-123');
   });
 
-  it('includes id, valueString, status in PUT payload', async () => {
+  it('includes id, valueString, status in PUT payload', () => {
     render(<EditJournal journalId='obs-123' />);
 
     const titleInput = screen.getByDisplayValue('My Journal Title');
     fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
 
-    const onSave = mockSetDirtyState.mock.calls.at(-1)[0].onSave;
-    await onSave();
+    const onAction = getLastOnAction();
+    onAction?.();
 
     const payload = mockMutateAsync.mock.calls[0][0];
     expect(payload.id).toBe('obs-123');
@@ -204,14 +213,14 @@ describe('EditJournal', () => {
     expect(payload.valueString).toBe('Updated Title');
   });
 
-  it('preserves original subject/performer from journalData in payload', async () => {
+  it('preserves original subject/performer from journalData in payload', () => {
     render(<EditJournal journalId='obs-123' />);
 
     const titleInput = screen.getByDisplayValue('My Journal Title');
     fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
 
-    const onSave = mockSetDirtyState.mock.calls.at(-1)[0].onSave;
-    await onSave();
+    const onAction = getLastOnAction();
+    onAction?.();
 
     const payload = mockMutateAsync.mock.calls[0][0];
     expect(payload.subject).toEqual({ reference: 'Patient/original-owner' });
@@ -220,14 +229,14 @@ describe('EditJournal', () => {
     ]);
   });
 
-  it('includes effectiveDateTime from journalData in PUT payload', async () => {
+  it('includes effectiveDateTime from journalData in PUT payload', () => {
     render(<EditJournal journalId='obs-123' />);
 
     const titleInput = screen.getByDisplayValue('My Journal Title');
     fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
 
-    const onSave = mockSetDirtyState.mock.calls.at(-1)[0].onSave;
-    await onSave();
+    const onAction = getLastOnAction();
+    onAction?.();
 
     const payload = mockMutateAsync.mock.calls[0][0];
     expect(payload.effectiveDateTime).toBe('2026-07-22T10:00:00Z');

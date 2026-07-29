@@ -7,7 +7,7 @@ import {
   Sparkles,
   UserPlus
 } from 'lucide-react';
-import type { Pill } from './fab-shared';
+import type { Pill } from './types';
 
 /** Speed-dial pills for patient role. */
 export const patientPills: Pill[] = [
@@ -83,6 +83,3 @@ export const adminPills: Pill[] = [
   },
   { label: 'Add Location', icon: MapPin, delay: 50, action: 'add-location' }
 ];
-
-export const SCROLL_THRESHOLD = 10;
-export const SCROLL_HIDE_OFFSET = 100;

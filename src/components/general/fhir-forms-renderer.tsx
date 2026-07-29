@@ -4,7 +4,7 @@ import { SmartFormShell } from '@/components/general/smart-form-shell';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Roles } from '@/constants/roles';
-import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFab } from '@/context/fabContext';
 import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
 import { useRequiredValidation } from '@/hooks/useRequiredValidation';
 import { getAPI } from '@/services/api';
@@ -66,7 +66,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { setDirtyState } = useFabDirty();
+  const { dispatch } = useFab();
   const draftOwnerId = props.ownerId || practitionerId || patientId || '';
 
   const rendererConfigOptions: RendererConfig = useMemo(
@@ -298,18 +298,24 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     </DrawerFooter>
   );
 
-  // Sync FAB dirty state when user has interacted with the form
+  // Sync FAB action state when user has interacted with the form
   useEffect(() => {
     if (hasInteracted) {
-      setDirtyState({
-        isDirty: true,
-        label: 'Submit',
-        icon: BookCheck,
-        onSave: handleValidation,
-        isSaving: isSubmitting,
-        disabled:
-          requiredItemEmpty > 0 || (role === Roles.Practitioner && !patientId)
+      dispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Submit',
+          icon: BookCheck,
+          onAction: handleValidation,
+          isSaving: isSubmitting,
+          disabled:
+            requiredItemEmpty > 0 ||
+            (role === Roles.Practitioner && !patientId),
+          variant: 'primary'
+        }
       });
+    } else {
+      dispatch({ type: 'SET_ACTION', config: null });
     }
   }, [
     hasInteracted,
@@ -318,13 +324,13 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     patientId,
     isSubmitting,
     handleValidation,
-    setDirtyState
+    dispatch
   ]);
 
-  // Clean up dirty state on unmount
+  // Clean up action state on unmount
   useEffect(() => {
-    return () => setDirtyState(null);
-  }, [setDirtyState]);
+    return () => dispatch({ type: 'SET_ACTION', config: null });
+  }, [dispatch]);
 
   const renderDrawerContent = (
     <>

@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
-import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFab } from '@/context/fabContext';
 import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import { PractitionerRole } from 'fhir/r4';
 import { useCallback, useMemo } from 'react';
@@ -38,23 +38,26 @@ function enhanceWithOrgDisplay(
  */
 export default function PractitionerRoleManagementShell(props: Props) {
   const { newData: detail } = useDetailPractitioner(props.practitionerRoleId);
-  const { setDirtyState } = useFabDirty();
+  const { dispatch } = useFab();
   const { state: authState } = useAuth();
 
   const handleDirtyChange = useCallback(
     (dirty: boolean, save: () => Promise<void>, saving: boolean) => {
       if (dirty) {
-        setDirtyState({
-          isDirty: true,
-          label: 'Save Changes',
-          onSave: save,
-          isSaving: saving
+        dispatch({
+          type: 'SET_ACTION',
+          config: {
+            label: 'Save Changes',
+            onAction: save,
+            isSaving: saving,
+            variant: 'primary'
+          }
         });
       } else {
-        setDirtyState(null);
+        dispatch({ type: 'SET_ACTION', config: null });
       }
     },
-    [setDirtyState]
+    [dispatch]
   );
 
   // Stable prop reference — prevents editor from re-computing

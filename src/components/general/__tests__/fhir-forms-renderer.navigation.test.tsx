@@ -59,17 +59,12 @@ vi.mock('@/lib/indexeddb', () => ({
   dbDelete: vi.fn()
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
-const fabDirtyNavMock: {
-  setDirtyState: ReturnType<typeof vi.fn>;
-} = {
-  setDirtyState: vi.fn()
-};
 
-vi.mock('@/context/fabDirtyContext', () => ({
-  FabDirtyProvider: ({ children }: any) => <>{children}</>,
-  useFabDirty: () => ({
-    dirtyState: null,
-    setDirtyState: fabDirtyNavMock.setDirtyState
+vi.mock('@/context/fabContext', () => ({
+  FabProvider: ({ children }: any) => <>{children}</>,
+  useFab: () => ({
+    state: { action: null, selection: null, menu: null, panelOpen: false },
+    dispatch: vi.fn()
   })
 }));
 
@@ -150,7 +145,6 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    fabDirtyNavMock.setDirtyState = vi.fn();
     vi.mocked(useRouter).mockReturnValue({
       push: mockPush,
       replace: mockReplace,
