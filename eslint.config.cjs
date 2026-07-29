@@ -125,6 +125,7 @@ module.exports = [
       '@typescript-eslint/no-floating-promises': 'error', // Codacy: Promise Rejection
       '@typescript-eslint/no-misused-promises': 'error', // DeepSource: async-as-handler
       '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/no-useless-default-assignment': 'off',
       // Requires strictNullChecks in tsconfig, which is off
       '@typescript-eslint/no-unnecessary-type-conversion': 'error',
       '@typescript-eslint/no-unused-vars': 'error', // DeepScan: unused variable

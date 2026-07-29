@@ -8,7 +8,7 @@ import { ToastContainer, ToastContainerProps } from 'react-toastify';
 
 const NextTopLoader = dynamic(
   () =>
-    import('@/components/next-top-loader') as Promise<{
+    import('nextjs-toploader') as Promise<{
       default: ComponentType<Record<string, unknown>>;
     }>,
   { ssr: false }

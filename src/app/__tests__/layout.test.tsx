@@ -58,10 +58,6 @@ vi.mock('nextjs-toploader', () => ({
   default: () => <div data-testid='next-top-loader' />
 }));
 
-vi.mock('@/components/next-top-loader', () => ({
-  default: () => <div data-testid='next-top-loader' />
-}));
-
 vi.mock('react-toastify', () => ({
   ToastContainer: () => <div data-testid='toast-container' />
 }));
