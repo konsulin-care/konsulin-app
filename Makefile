@@ -1,6 +1,6 @@
 .PHONY: deps test-go test-js test fmt-go check-fmt-go check-file-length
 .PHONY: lint-go-cognitive lint-go check-go css-templ dev dev-go dev-next
-.PHONY: build-go run update-js docker-check
+.PHONY: build-go run docker-check
 
 # Dependencies
 deps:
@@ -18,10 +18,10 @@ test: test-go test-js
 
 # Go formatting
 fmt-go:
-	gofmt -s -w ./cmd/ ./internal/ ./web/
+	gofmt -s -w ./cmd/ ./internal/
 
 check-fmt-go:
-	@! gofmt -s -d ./cmd/ ./internal/ ./web/ | read i; \
+	@! gofmt -s -d ./cmd/ ./internal/ | read i; \
 	echo "  Go formatting is correct ✓"
 
 # Go file length check (staged files only)
@@ -79,7 +79,7 @@ GO_PORT ?= 3000
 NEXT_PORT ?= 8000
 
 # Development
-dev: update-js css-templ templ-gen build-auth-spa-dev
+dev: css-templ templ-gen build-auth-spa-dev
 	@echo "Go SSR on :$(GO_PORT)  |  Next.js on :$(NEXT_PORT)"
 	@trap 'kill 0' EXIT; \
 	  export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3300} NEXTJS_URL=http://localhost:$(NEXT_PORT) SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
@@ -87,7 +87,7 @@ dev: update-js css-templ templ-gen build-auth-spa-dev
 	  npm run dev -- -p $(NEXT_PORT) & \
 	  wait
 
-dev-go: update-js css-templ templ-gen
+dev-go: css-templ templ-gen
 	export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3300} NEXTJS_URL=http://localhost:$(NEXT_PORT) SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
 	go run ./cmd/konsulin-app
 
@@ -102,15 +102,12 @@ build-auth-spa:
 	cd web && npm ci && npm run build
 
 # Build
-build-go: update-js css-templ templ-gen build-auth-spa
+build-go: css-templ templ-gen build-auth-spa
 	go build -o konsulin-app ./cmd/konsulin-app
 
-run: update-js css-templ templ-gen
+run: css-templ templ-gen
 	go run ./cmd/konsulin-app
 
 data-wilayah:
 	go generate ./internal/data/wilayah/
 
-update-js:
-	cp node_modules/htmx.org/dist/htmx.min.js web/static/js/htmx.min.js
-	cp node_modules/alpinejs/dist/cdn.min.js web/static/js/alpine.min.js

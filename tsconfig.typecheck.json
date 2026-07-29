@@ -3,7 +3,6 @@
   "exclude": [
     "node_modules",
     "public/sw.js",
-    "web/auth-spa",
     "**/*.test.ts",
     "**/*.test.tsx"
   ]
