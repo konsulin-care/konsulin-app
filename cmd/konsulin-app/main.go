@@ -96,6 +96,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
+	outDir := filepath.Join(wd, "out")
 	staticDir := filepath.Join(wd, "web", "static")
 	// deepsource-disable-next-line GO-S1034
 	// noDirFS prevents directory listing — false positive.
@@ -135,6 +136,23 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		AppURL:      cfg.AppURL,
 		TXURL:       cfg.TXURL,
 	}))
+
+	// /auth/* — serve Next.js auth page. Serves out/auth.html in static export mode
+	// (production) or proxies to Next.js in dev mode. The SuperTokens SDK handles
+	// client-side routing for /auth/verify, /auth/callback/*, etc.
+	authPageHandler := func(w http.ResponseWriter, r *http.Request) {
+		authHTML := filepath.Join(outDir, "auth.html")
+		if _, err := os.Stat(authHTML); err == nil {
+			http.ServeFile(w, r, authHTML)
+			return
+		}
+		proxy.ServeHTTP(w, r)
+	}
+	r.Route("/auth", func(r chi.Router) {
+		r.Use(appmw.RedirectAuthenticated(cfg.AuthCookieName, cfg.SessionCookieSecret, "/"))
+		r.Get("/", authPageHandler)
+		r.Get("/*", authPageHandler)
+	})
 
 	// Backend API proxy — adds Bearer token from sAccessToken cookie.
 	r.Handle("/proxy/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
@@ -213,7 +231,6 @@ func routes(cfg *config.Config) (http.Handler, error) {
 
 	// Serve Next.js static export (out/) directly when it exists.
 	// When absent (e.g., development), fall back to the reverse proxy.
-	outDir := filepath.Join(wd, "out")
 	if stat, err := os.Stat(outDir); err == nil && stat.IsDir() {
 		outFS := http.FileServer(http.Dir(outDir))
 		r.NotFound(outFS.ServeHTTP)
