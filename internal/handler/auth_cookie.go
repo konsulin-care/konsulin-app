@@ -11,10 +11,14 @@ import (
 	"github.com/konsulin-care/konsulin-app/internal/session"
 )
 
+// AuthCookieOptions configures the auth cookie handler.
 type AuthCookieOptions struct {
-	CookieName   string
-	CookieSecure bool
-	CookieSecret string
+	CookieName          string
+	CookieSecure        bool
+	CookieSecret        string
+	AccessCookieName    string
+	RefreshCookieName   string
+	IDRefreshCookieName string
 }
 
 type authCookieRequest struct {
@@ -31,6 +35,7 @@ type authCookieRequest struct {
 
 var errMissingUserID = errors.New("missing required field: userId")
 
+// NewAuthCookieHandler creates a handler for GET/POST/DELETE /auth/cookie.
 func NewAuthCookieHandler(opts AuthCookieOptions) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -62,9 +67,13 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 	}
 
 	// Verify SuperTokens session server-side.
-	accessCookie, err := r.Cookie("sAccessToken")
+	cookieName := opts.AccessCookieName
+	if cookieName == "" {
+		cookieName = "sAccessToken"
+	}
+	accessCookie, err := r.Cookie(cookieName)
 	if err != nil {
-		slog.Warn("auth cookie: missing sAccessToken cookie", "userId", req.UserID)
+		slog.Warn("auth cookie: missing access token cookie", "userId", req.UserID, "cookieName", cookieName)
 		http.Error(w, "missing SuperTokens session", http.StatusUnauthorized)
 		return
 	}
@@ -159,6 +168,9 @@ func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 
 func handleDeleteAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {
 	clear := func(name string) {
+		if name == "" {
+			return
+		}
 		//nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
 		// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 		http.SetCookie(w, &http.Cookie{
@@ -173,9 +185,9 @@ func handleDeleteAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCoo
 	}
 
 	clear(opts.CookieName)
-	clear("sAccessToken")
-	clear("sRefreshToken")
-	clear("sIdRefreshToken")
+	clear(opts.AccessCookieName)
+	clear(opts.RefreshCookieName)
+	clear(opts.IDRefreshCookieName)
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})

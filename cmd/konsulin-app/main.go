@@ -154,9 +154,10 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		r.Get("/*", authPageHandler)
 	})
 
-	// Backend API proxy — adds Bearer token from sAccessToken cookie.
+	// Backend API proxy — adds Bearer token from SuperTokens cookie.
 	r.Handle("/proxy/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
-		BackendBaseURL: cfg.APIURL,
+		BackendBaseURL:   cfg.APIURL,
+		AccessCookieName: cfg.SessionCookieNameAccess,
 	}))
 
 	// SuperTokens API — proxy directly to backend, bypass Next.js.
@@ -212,7 +213,8 @@ func routes(cfg *config.Config) (http.Handler, error) {
 
 	// Relay routes — BFF handles FHIR orchestration, not proxied.
 	r.Post("/api/v1/relay/booking", handler.NewRelayBookingHandler(handler.RelayBookingOptions{
-		BackendBaseURL: cfg.APIURL,
+		BackendBaseURL:   cfg.APIURL,
+		AccessCookieName: cfg.SessionCookieNameAccess,
 	}))
 
 	// Media upload — client sends image, BFF uploads to Cloudinary, returns URL.

@@ -112,4 +112,3 @@ func isRoleInSession(roles []string, target string) bool {
 	}
 	return false
 }
-

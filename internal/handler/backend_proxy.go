@@ -9,8 +9,18 @@ import (
 	"time"
 )
 
+// HeaderCookieMapping maps a response header to a Set-Cookie.
+type HeaderCookieMapping struct {
+	HeaderName string
+	CookieName string
+	HTTPOnly   bool
+}
+
 type BackendProxyOptions struct {
-	BackendBaseURL string
+	BackendBaseURL   string
+	AccessCookieName string
+	CookieMappings   []HeaderCookieMapping
+	CookieSecure     bool
 }
 
 var backendProxyClient = &http.Client{Timeout: 30 * time.Second}
@@ -30,7 +40,7 @@ func NewBackendProxyHandler(opts BackendProxyOptions) http.HandlerFunc {
 		}
 
 		setProxyRequestHeaders(proxyReq, r)
-		setAuthorizationFromRequest(proxyReq, r, targetURL)
+		setAuthorizationFromRequest(proxyReq, r, targetURL, opts.AccessCookieName)
 		proxyReq = proxyReq.WithContext(r.Context())
 
 		//nolint:gosec // G704: intentional proxy — forwards to trusted backend
@@ -42,7 +52,7 @@ func NewBackendProxyHandler(opts BackendProxyOptions) http.HandlerFunc {
 		}
 		defer func() { _ = resp.Body.Close() }()
 
-		writeProxyResponse(w, resp)
+		writeProxyResponse(w, resp, opts.CookieMappings, opts.CookieSecure)
 	}
 }
 
@@ -78,7 +88,7 @@ func setProxyRequestHeaders(proxyReq, r *http.Request) {
 	}
 }
 
-func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL string) {
+func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL string, accessCookieName string) {
 	// SuperTokens auth endpoints (session/refresh etc.) use cookie-based auth;
 	// injecting a Bearer header with the access token interferes with the refresh flow.
 	if strings.Contains(targetURL, "/api/v1/auth/") {
@@ -90,7 +100,11 @@ func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL string) {
 		return
 	}
 
-	accessCookie, err := r.Cookie("sAccessToken")
+	cookieName := accessCookieName
+	if cookieName == "" {
+		cookieName = "sAccessToken"
+	}
+	accessCookie, err := r.Cookie(cookieName)
 	if err != nil || accessCookie.Value == "" {
 		return
 	}
@@ -120,7 +134,7 @@ var hopByHopHeaders = map[string]bool{
 	"Content-Length":      true,
 }
 
-func writeProxyResponse(w http.ResponseWriter, resp *http.Response) {
+func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappings []HeaderCookieMapping, cookieSecure bool) {
 	for k, vs := range resp.Header {
 		if hopByHopHeaders[http.CanonicalHeaderKey(k)] {
 			continue
@@ -129,6 +143,25 @@ func writeProxyResponse(w http.ResponseWriter, resp *http.Response) {
 			w.Header().Add(k, v)
 		}
 	}
+
+	// Convert mapped response headers to Set-Cookie headers.
+	for _, m := range cookieMappings {
+		val := resp.Header.Get(m.HeaderName)
+		if val == "" {
+			continue
+		}
+		//nolint:gosec // G124: Secure and HttpOnly are set explicitly
+		cookie := &http.Cookie{
+			Name:     m.CookieName,
+			Value:    val,
+			Path:     "/",
+			HttpOnly: m.HTTPOnly,
+			Secure:   cookieSecure,
+			SameSite: http.SameSiteLaxMode,
+		}
+		w.Header().Add("Set-Cookie", cookie.String())
+	}
+
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
 }

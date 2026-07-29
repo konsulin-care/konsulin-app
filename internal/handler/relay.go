@@ -12,7 +12,8 @@ import (
 
 // RelayBookingOptions configures the relay booking handler.
 type RelayBookingOptions struct {
-	BackendBaseURL string
+	BackendBaseURL   string
+	AccessCookieName string
 }
 
 // relayBookingRequest is the JSON body from the client.
@@ -69,10 +70,13 @@ func sendUpstreamError(w http.ResponseWriter, err error) {
 	}
 }
 
-// verifySession extracts and verifies the sAccessToken cookie.
+// verifySession extracts and verifies the SuperTokens access token cookie.
 // Returns a Bearer token on success.
-func verifySession(r *http.Request) (string, error) {
-	accessCookie, err := r.Cookie("sAccessToken")
+func verifySession(r *http.Request, cookieName string) (string, error) {
+	if cookieName == "" {
+		cookieName = "sAccessToken"
+	}
+	accessCookie, err := r.Cookie(cookieName)
 	if err != nil || accessCookie.Value == "" {
 		return "", errors.New("session required")
 	}
@@ -120,7 +124,7 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 
 		logRelayRequest(req)
 
-		authToken, err := verifySession(r)
+		authToken, err := verifySession(r, opts.AccessCookieName)
 		if err != nil {
 			sendError(w, http.StatusUnauthorized, err.Error())
 			return
