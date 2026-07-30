@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
@@ -36,6 +37,38 @@ func (d noDirFS) Open(name string) (http.File, error) {
 		return nil, os.ErrNotExist
 	}
 	return f, nil
+}
+
+// spaFS wraps http.Dir to support clean URLs for static HTML export.
+// If opening a path fails and the path has no file extension, it retries
+// with ".html" appended. This lets /clinic serve out/clinic.html.
+// Directories (e.g. _next/) are opened normally for FileServer's subfile handling.
+type spaFS struct {
+	http.Dir
+}
+
+func (f *spaFS) Open(name string) (http.File, error) {
+	file, err := f.Dir.Open(name)
+	if err != nil {
+		if os.IsNotExist(err) && filepath.Ext(name) == "" {
+			if file, err := f.Dir.Open(name + ".html"); err == nil {
+				return file, nil
+			}
+		}
+		return nil, err
+	}
+	// Flat HTML export uses files like clinic.html, so a directory at the
+	// clean URL path (e.g. /clinic) is unexpected — prefer the .html variant.
+	if path.Clean("/"+name) != "/" {
+		if stat, _ := file.Stat(); stat != nil && stat.IsDir() {
+			_ = file.Close()
+			if file, err := f.Dir.Open(name + ".html"); err == nil {
+				return file, nil
+			}
+			return nil, os.ErrNotExist
+		}
+	}
+	return file, nil
 }
 
 func routes(cfg *config.Config) (http.Handler, error) {
@@ -226,8 +259,9 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	}))
 
 	// Serve Next.js static export (out/) directly when it exists.
+	// Uses spaFS to handle clean URLs (/clinic → out/clinic.html).
 	if stat, err := os.Stat(outDir); err == nil && stat.IsDir() {
-		outFS := http.FileServer(http.Dir(outDir))
+		outFS := http.FileServer(&spaFS{http.Dir(outDir)})
 		r.NotFound(outFS.ServeHTTP)
 	} else {
 		r.NotFound(proxy.ServeHTTP)

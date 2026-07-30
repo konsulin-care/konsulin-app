@@ -36,26 +36,22 @@ func newTestConfig(t *testing.T, csrfKey string) *config.Config {
 }
 
 func TestRoutes_servesOutDir(t *testing.T) {
-	// Create a temporary directory with an out/ subdirectory
 	tmpDir := t.TempDir()
 	outDir := filepath.Join(tmpDir, "out")
 	if err := os.MkdirAll(outDir, 0755); err != nil {
 		t.Fatalf("mkdir out: %v", err)
 	}
-	// Create a test file in out/
 	testContent := "hello from nextjs"
 	testFile := filepath.Join(outDir, "test-page.html")
 	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
 		t.Fatalf("write test file: %v", err)
 	}
 
-	// Change to the temp dir so workingDir() returns it
 	t.Chdir(tmpDir)
 
-	// 32-byte CSRF key for valid config
 	csrfKey := "01234567890123456789012345678901"
 	cfg := newTestConfig(t, csrfKey)
-	cfg.NextjsURL = "http://localhost:9999" // ensure proxy points elsewhere
+	cfg.NextjsURL = "http://localhost:9999"
 
 	handler, err := routes(cfg)
 	if err != nil {
@@ -74,7 +70,6 @@ func TestRoutes_servesOutDir(t *testing.T) {
 	}
 }
 
-// setupAuthTest creates a temp dir with out/auth.html and returns a handler for testing.
 func setupAuthTest(t *testing.T, authContent string) http.Handler {
 	t.Helper()
 	tmpDir := t.TempDir()
@@ -131,12 +126,11 @@ func TestRoutes_authHtml_servesForSubRoutes(t *testing.T) {
 
 func TestRoutes_authVerify_proxiesWhenOutMissing(t *testing.T) {
 	tmpDir := t.TempDir()
-	// No out/ directory
 	t.Chdir(tmpDir)
 
 	csrfKey := "01234567890123456789012345678901"
 	cfg := newTestConfig(t, csrfKey)
-	cfg.NextjsURL = "http://127.0.0.1:19999" // unreachable proxy
+	cfg.NextjsURL = "http://127.0.0.1:19999"
 	cfg.AppURL = "http://test:3000"
 
 	handler, err := routes(cfg)
@@ -148,7 +142,6 @@ func TestRoutes_authVerify_proxiesWhenOutMissing(t *testing.T) {
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 
-	// Proxy is unreachable, should get 502 Bad Gateway
 	if rec.Code != http.StatusBadGateway {
 		t.Errorf("expected 502 on unreachable proxy, got %d", rec.Code)
 	}
@@ -189,12 +182,11 @@ func TestRoutes_auth_redirectsAuthenticated(t *testing.T) {
 
 func TestRoutes_outDirMissing_fallsBackToProxy(t *testing.T) {
 	tmpDir := t.TempDir()
-	// No out/ directory this time
 	t.Chdir(tmpDir)
 
 	csrfKey := "01234567890123456789012345678901"
 	cfg := newTestConfig(t, csrfKey)
-	cfg.NextjsURL = "http://127.0.0.1:19999" // unreachable proxy
+	cfg.NextjsURL = "http://127.0.0.1:19999"
 
 	handler, err := routes(cfg)
 	if err != nil {
@@ -205,7 +197,6 @@ func TestRoutes_outDirMissing_fallsBackToProxy(t *testing.T) {
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 
-	// Proxy is unreachable, should get 502 Bad Gateway
 	if rec.Code != http.StatusBadGateway {
 		t.Errorf("expected 502 on unreachable proxy, got %d", rec.Code)
 	}
