@@ -8,13 +8,13 @@ import {
   CATEGORY_DEFAULT_ICONS,
   getLucideIconName
 } from '@/utils/fhir/questionnaire-icon';
+import { getQuestionnaireImageUrl } from '@/utils/fhir/questionnaire-image';
 import { getQuestionnaireDuration } from '@/utils/fhir/service-duration';
 import type { Questionnaire } from 'fhir/r4';
 import type { LucideIcon } from 'lucide-react';
 import {
   Accessibility,
   Activity,
-  Award,
   Brain,
   Building,
   CalendarDays,
@@ -23,6 +23,7 @@ import {
   Sparkles,
   Users
 } from 'lucide-react';
+import Image from 'next/image';
 
 interface AssessmentCardProps {
   readonly questionnaire: Questionnaire;
@@ -79,50 +80,43 @@ export default function AssessmentCard({
   const categoryLabel = getQuestionnaireCategoryLabel(questionnaire.useContext);
   const duration = getQuestionnaireDuration(questionnaire);
   const title = questionnaire.title ?? 'Untitled';
-  const description = questionnaire.description ?? '';
 
   if (variant === 'featured') {
+    const FALLBACK_IMAGE_URL =
+      'https://www.glasgowunisrc.org/pageassets/advice/health-and-wellbeing/AdobeStock_220793275-min.jpeg?thumbnail=true&height=465&width=620&resize_type=CropToFit';
+    const imageUrl =
+      getQuestionnaireImageUrl(questionnaire) ?? FALLBACK_IMAGE_URL;
+
     return (
       <button
         type='button'
-        className='flex w-[220px] flex-shrink-0 cursor-pointer flex-col gap-3 rounded-xl bg-white p-4 text-left shadow-md'
+        className='relative aspect-[4/3] h-[180px] w-auto flex-shrink-0 cursor-pointer overflow-hidden rounded-2xl shadow-lg'
         onClick={onClick}
       >
-        <div className='flex items-start justify-between'>
-          <div className='flex size-10 items-center justify-center rounded-lg bg-[#F8F8F8]'>
-            {Icon ? (
-              <Icon className='size-5' />
-            ) : (
-              <Heart className='size-5 text-gray-400' />
-            )}
+        <Image
+          src={imageUrl}
+          alt={title}
+          fill
+          className='object-cover'
+          sizes='(max-width: 640px) 100vw, 400px'
+        />
+        <div className='pointer-events-none absolute right-0 bottom-0 left-0 bg-black/50 backdrop-blur-md'>
+          <div className='px-3 py-2 text-left'>
+            <div className='truncate text-sm font-bold text-white'>{title}</div>
+            <div className='flex items-center gap-2 text-xs text-white/80'>
+              {categoryLabel && (
+                <span className='rounded-md bg-white/20 px-2 py-0.5 text-[10px] font-medium'>
+                  {categoryLabel}
+                </span>
+              )}
+              {duration != null && (
+                <span className='flex items-center gap-1'>
+                  <Clock className='size-3' />
+                  {duration} min
+                </span>
+              )}
+            </div>
           </div>
-          <span className='flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-medium text-yellow-700'>
-            <Award className='size-3' />
-            Featured
-          </span>
-        </div>
-
-        <div className='flex flex-col gap-1'>
-          <span className='text-sm font-bold text-black'>{title}</span>
-          {description && (
-            <span className='line-clamp-2 text-xs text-gray-500'>
-              {description}
-            </span>
-          )}
-        </div>
-
-        <div className='mt-auto flex items-center gap-2'>
-          {categoryLabel && (
-            <span className='bg-primary/10 text-primary rounded-md px-2 py-0.5 text-[10px] font-medium'>
-              {categoryLabel}
-            </span>
-          )}
-          {duration != null && (
-            <span className='flex items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-[10px] text-gray-600'>
-              <Clock className='size-3' />
-              {duration} min
-            </span>
-          )}
         </div>
       </button>
     );

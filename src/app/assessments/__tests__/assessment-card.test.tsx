@@ -1,10 +1,25 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { Questionnaire } from 'fhir/r4';
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('next/image', () => ({
+  __esModule: true,
+  default: ({ src, alt, ...props }: Record<string, string>) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} {...props} />
+  )
+}));
+
 import AssessmentCard from '../assessment-card';
 
 const DURATION_URL =
   'https://konsulin.id/fhir/StructureDefinition/questionnaireEstimatedDuration';
+
+const IMAGE_URL =
+  'https://konsulin.id/fhir/StructureDefinition/questionnaireImage';
+
+const FALLBACK_URL =
+  'https://www.glasgowunisrc.org/pageassets/advice/health-and-wellbeing/AdobeStock_220793275-min.jpeg?thumbnail=true&height=465&width=620&resize_type=CropToFit';
 
 const CATEGORY_CODING = {
   system: 'https://konsulin.id/fhir/CodeSystem/assessment-domain',
@@ -36,7 +51,7 @@ describe('AssessmentCard (featured variant)', () => {
     expect(screen.getByText('PHQ-9')).toBeInTheDocument();
   });
 
-  it('renders the description', () => {
+  it('does not render the description', () => {
     render(
       <AssessmentCard
         questionnaire={createQuestionnaire()}
@@ -45,11 +60,25 @@ describe('AssessmentCard (featured variant)', () => {
       />
     );
     expect(
-      screen.getByText('Patient Health Questionnaire for depression screening')
-    ).toBeInTheDocument();
+      screen.queryByText(
+        'Patient Health Questionnaire for depression screening'
+      )
+    ).not.toBeInTheDocument();
   });
 
-  it('shows featured badge', () => {
+  it('renders image from extension when present', () => {
+    const q = createQuestionnaire({
+      extension: [{ url: IMAGE_URL, valueUrl: 'https://example.com/photo.jpg' }]
+    });
+    render(
+      <AssessmentCard questionnaire={q} variant='featured' onClick={vi.fn()} />
+    );
+    const img = screen.getByAltText('PHQ-9');
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute('src', 'https://example.com/photo.jpg');
+  });
+
+  it('renders fallback image when no extension is set', () => {
     render(
       <AssessmentCard
         questionnaire={createQuestionnaire()}
@@ -57,7 +86,44 @@ describe('AssessmentCard (featured variant)', () => {
         onClick={vi.fn()}
       />
     );
-    expect(screen.getByText(/Featured|Editor.s Pick/)).toBeInTheDocument();
+    const img = screen.getByAltText('PHQ-9');
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute('src', FALLBACK_URL);
+  });
+
+  it('shows category label in overlay', () => {
+    const q = createQuestionnaire({
+      useContext: [
+        {
+          code: {
+            system: 'https://terminology.hl7.org/CodeSystem/usage-context',
+            code: 'focus'
+          },
+          valueCodeableConcept: {
+            coding: [
+              {
+                ...CATEGORY_CODING,
+                display: 'Mental & Emotional Health'
+              }
+            ]
+          }
+        }
+      ]
+    });
+    render(
+      <AssessmentCard questionnaire={q} variant='featured' onClick={vi.fn()} />
+    );
+    expect(screen.getByText('Mental & Emotional Health')).toBeInTheDocument();
+  });
+
+  it('shows duration in overlay', () => {
+    const q = createQuestionnaire({
+      extension: [{ url: DURATION_URL, valueDuration: { value: 15 } }]
+    });
+    render(
+      <AssessmentCard questionnaire={q} variant='featured' onClick={vi.fn()} />
+    );
+    expect(screen.getByText('15 min')).toBeInTheDocument();
   });
 
   it('calls onClick when clicked', () => {
