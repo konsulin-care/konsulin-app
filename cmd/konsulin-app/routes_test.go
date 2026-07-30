@@ -124,6 +124,49 @@ func TestRoutes_authHtml_servesForSubRoutes(t *testing.T) {
 	}
 }
 
+func TestRoutes_authVerify_pathRewrite_whenOutMissing(t *testing.T) {
+	// Start a test server acting as the Next.js dev server.
+	var receivedPath string
+	var receivedQuery string
+	nextjs := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedPath = r.URL.Path
+		receivedQuery = r.URL.RawQuery
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("auth page"))
+	}))
+	t.Cleanup(nextjs.Close)
+
+	tmpDir := t.TempDir()
+	t.Chdir(tmpDir)
+
+	csrfKey := "01234567890123456789012345678901"
+	cfg := newTestConfig(t, csrfKey)
+	cfg.NextjsURL = nextjs.URL
+	cfg.AppURL = "http://test:3000"
+
+	handler, err := routes(cfg)
+	if err != nil {
+		t.Fatalf("routes() failed: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/auth/verify?preAuthSessionId=test", http.NoBody)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", rec.Code)
+	}
+	if receivedPath != "/auth" {
+		t.Errorf("expected proxied path '/auth', got %q", receivedPath)
+	}
+	if receivedQuery != "preAuthSessionId=test" {
+		t.Errorf("expected query 'preAuthSessionId=test', got %q", receivedQuery)
+	}
+	if rec.Body.String() != "auth page" {
+		t.Errorf("expected body 'auth page', got %q", rec.Body.String())
+	}
+}
+
 func TestRoutes_authVerify_proxiesWhenOutMissing(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Chdir(tmpDir)

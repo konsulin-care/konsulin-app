@@ -162,12 +162,17 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	}))
 
 	// /auth/* — serve Next.js auth page (static export or dev proxy).
+	// In dev mode, rewrites the path to /auth so the Next.js dev server
+	// serves the auth SPA regardless of the sub-path (e.g. /auth/verify).
+	// The SuperTokens SDK reads the original path from window.location
+	// and handles routing via getRoutingComponent().
 	authPageHandler := func(w http.ResponseWriter, r *http.Request) {
 		authHTML := filepath.Join(outDir, "auth.html")
 		if _, err := os.Stat(authHTML); err == nil {
 			http.ServeFile(w, r, authHTML)
 			return
 		}
+		r.URL.Path = "/auth"
 		proxy.ServeHTTP(w, r)
 	}
 	r.Route("/auth", func(r chi.Router) {
