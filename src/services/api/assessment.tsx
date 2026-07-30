@@ -498,22 +498,51 @@ export const useSearchQuestionnaire = (query: string, context?: string) => {
   });
 };
 
-/** Fetch regular (non-popular) active assessments. */
-export const useRegularAssessments = () => {
+/**
+ * Fetch the curated 100 questionnaires (context=regular) with all needed fields.
+ *
+ * Returns Questionnaire resources directly (not BundleEntries).
+ */
+export const useCuratedAssessments = () => {
   return useQuery({
-    queryKey: ['regular-assessments'],
+    queryKey: ['curated-assessments'],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get<Bundle<Questionnaire>>(
-        '/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient&status=active&context=regular'
+        '/fhir/Questionnaire?context=regular&status=active&_elements=id,title,description,extension,useContext,code'
       );
       return response;
     },
-    select: response => response.data.entry ?? null
+    select: response =>
+      (response.data.entry ?? [])
+        .map(e => e.resource)
+        .filter((r): r is Questionnaire => r?.resourceType === 'Questionnaire')
   });
 };
 
-/** Fetch popular assessments. */
+/**
+ * Fetch featured (popular) questionnaires with all needed fields.
+ *
+ * Returns Questionnaire resources directly (not BundleEntries).
+ */
+export const useFeaturedAssessments = () => {
+  return useQuery({
+    queryKey: ['featured-assessments'],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get<Bundle<Questionnaire>>(
+        '/fhir/Questionnaire?context=popular&_elements=id,title,description,extension,useContext,code'
+      );
+      return response;
+    },
+    select: response =>
+      (response.data.entry ?? [])
+        .map(e => e.resource)
+        .filter((r): r is Questionnaire => r?.resourceType === 'Questionnaire')
+  });
+};
+
+/** Fetch popular assessments (legacy — returns BundleEntries). */
 export const usePopularAssessments = () => {
   return useQuery({
     queryKey: ['popular-assessments'],

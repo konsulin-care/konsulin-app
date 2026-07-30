@@ -1,195 +1,107 @@
 'use client';
 
-/* eslint-disable max-lines */
-
 import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
-import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
-import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
-import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
-import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
 import { lazyComponent } from '@/lib/lazy-component';
 import {
-  searchQuestionnaires,
-  useOngoingResearch,
-  usePopularAssessments,
-  useRegularAssessments
+  useCuratedAssessments,
+  useFeaturedAssessments
 } from '@/services/api/assessment';
-import { BundleEntry, Questionnaire, ResearchStudy } from 'fhir/r4';
-import { SearchIcon } from 'lucide-react';
-import Image from 'next/image';
+import { getQuestionnaireCategoryCode } from '@/utils/fhir/questionnaire-category';
+import type { Questionnaire } from 'fhir/r4';
+import { SearchIcon, X } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useTransition
-} from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
+import AssessmentCard from './assessment-card';
+import AssessmentsFilter, { type Filters } from './assessments-filter';
+import FeaturedRail from './featured-rail';
 
 const AssessmentDrawerContent = lazyComponent(
   () => import('./assessment-drawer'),
   { ssr: false }
 );
-const BrowseInstrumentsSection = lazyComponent(
-  () => import('./browse-instruments-section')
-);
-const PopularAssessmentsSection = lazyComponent(
-  () => import('./popular-assessments-section')
-);
-const ResearchSection = lazyComponent(() => import('./research-section'));
 
-/** Check if a bundle entry is a ResearchStudy resource. */
-const isResearchStudy = (
-  assessment: BundleEntry
-): assessment is BundleEntry<ResearchStudy> => {
-  return assessment.resource?.resourceType === 'ResearchStudy';
-};
+/** Filter the curated list by search term and selected categories. */
+function filterAssessments(
+  assessments: Questionnaire[],
+  searchTerm: string,
+  filters: Filters
+): Questionnaire[] {
+  let result = assessments;
 
-/** Check if a bundle entry is a Questionnaire resource. */
-const isQuestionnaire = (
-  assessment: BundleEntry
-): assessment is BundleEntry<Questionnaire> => {
-  return assessment.resource?.resourceType === 'Questionnaire';
-};
+  // Text search on title + description
+  if (searchTerm) {
+    const q = searchTerm.toLowerCase();
+    result = result.filter(
+      a =>
+        a.title?.toLowerCase().includes(q) ||
+        a.description?.toLowerCase().includes(q)
+    );
+  }
 
-/** Research study card with image, title, description, and Join button. */
-function ResearchAssessmentCard({
-  assessment,
-  onClick
-}: Readonly<{
-  assessment: BundleEntry<ResearchStudy>;
-  onClick: (resource: ResearchStudy) => void;
-}>) {
-  return (
-    <div className='flex max-w-[280px] cursor-pointer flex-col gap-2'>
-      <div className='flex gap-2'>
-        <Image
-          className='h-[64px] w-[64px] rounded-[8px] object-cover'
-          src='/images/clinic.jpg'
-          height={64}
-          width={64}
-          alt='research'
-        />
-        <div className='flex flex-col text-[12px]'>
-          <div className='font-bold text-wrap text-black'>
-            {assessment.resource.title}
-          </div>
-          <div className='overflow-hidden text-wrap'>
-            {(() => {
-              const desc = assessment.resource.description;
-              if (!desc) return '';
-              return desc.length > 100 ? `${desc.slice(0, 100)}...` : desc;
-            })()}
-          </div>
-        </div>
-      </div>
-      <Button
-        onClick={() => onClick(assessment.resource)}
-        className='bg-secondary rounded-[32px] px-4 py-2 text-sm font-bold text-white'
-      >
-        Join
-      </Button>
-    </div>
-  );
+  // Category filter
+  if (filters.categories.length > 0) {
+    result = result.filter(a => {
+      const code = getQuestionnaireCategoryCode(a.useContext);
+      return code != null && filters.categories.includes(code);
+    });
+  }
+
+  return result;
 }
 
-/** Questionnaire card with icon, title and description. */
-function QuestionnaireAssessmentCard({
-  assessment,
-  onClick
-}: Readonly<{
-  assessment: BundleEntry<Questionnaire>;
-  onClick: (resource: Questionnaire) => void;
-}>) {
-  return (
-    <button
-      type='button'
-      className='flex flex-col gap-4 text-left'
-      onClick={() => onClick(assessment.resource)}
-    >
-      <div className='flex items-start justify-between'>
-        <Image
-          src='/images/exercise.svg'
-          height={40}
-          width={40}
-          alt='exercise'
-        />
-      </div>
-      <div className='flex flex-col items-start'>
-        <span className='text-[12px] font-bold'>
-          {assessment.resource.title}
-        </span>
-        <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
-          {assessment.resource.description}
-        </span>
-      </div>
-    </button>
-  );
-}
-
-/** Render a single assessment card based on its resource type. */
-function AssessmentCard({
-  assessment,
-  onResearchClick,
+/** Grid content with loading, empty, and result states. */
+function InstrumentsGrid({
+  isLoading,
+  instruments,
+  searchTerm,
   onAssessmentClick
-}: Readonly<{
-  assessment: BundleEntry;
-  onResearchClick: (resource: ResearchStudy, questionnaireId?: string) => void;
-  onAssessmentClick: (assessment: Questionnaire) => void;
-}>) {
-  if (isResearchStudy(assessment)) {
+}: {
+  isLoading: boolean;
+  instruments: Questionnaire[];
+  searchTerm: string;
+  onAssessmentClick: (q: Questionnaire) => void;
+}) {
+  if (isLoading) {
     return (
-      <ResearchAssessmentCard
-        assessment={assessment}
-        onClick={resource => onResearchClick(resource)}
+      <div className='flex items-center justify-center py-16 text-sm text-gray-400'>
+        Loading...
+      </div>
+    );
+  }
+
+  if (instruments.length === 0) {
+    const subtitle = searchTerm
+      ? 'Try a different search term or clear filters.'
+      : 'No instruments match the selected filters.';
+    return (
+      <EmptyState
+        className='py-16'
+        title='No instruments found'
+        subtitle={subtitle}
       />
     );
   }
-  if (isQuestionnaire(assessment)) {
-    return (
-      <QuestionnaireAssessmentCard
-        assessment={assessment}
-        onClick={resource => onAssessmentClick(resource)}
-      />
-    );
-  }
-  return null;
-}
 
-/** Grid of mixed research/questionnaire search results. */
-function AssessmentSearchResults({
-  assessments,
-  onResearchClick,
-  onAssessmentClick
-}: Readonly<{
-  assessments: BundleEntry[];
-  onResearchClick: (resource: ResearchStudy, questionnaireId?: string) => void;
-  onAssessmentClick: (assessment: Questionnaire) => void;
-}>) {
   return (
-    <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-      {assessments.map((assessment: BundleEntry) => (
-        <div
-          key={assessment.resource.id}
-          className='card flex flex-col gap-2 p-4'
-        >
-          <AssessmentCard
-            assessment={assessment}
-            onResearchClick={onResearchClick}
-            onAssessmentClick={onAssessmentClick}
-          />
-        </div>
+    <div className='grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3'>
+      {instruments.map(q => (
+        <AssessmentCard
+          key={q.id}
+          questionnaire={q}
+          variant='compact'
+          onClick={() => onAssessmentClick(q)}
+        />
       ))}
     </div>
   );
 }
 
-/** Full assessments list page with search, research, popular, and browse sections. */
+/** Full assessments hub page. */
 export default function AssessmentsList() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -197,268 +109,175 @@ export default function AssessmentsList() {
   const baseUrl = globalThis.window?.location.origin ?? '';
   const isDrawerOpenParam = searchParams.get('isDrawerOpen') === 'true';
   const assessmentIdParam = searchParams.get('assessmentId');
-  const [currentLocation, setCurrentLocation] = useState<string>('');
 
-  const [researchUrl, setResearchUrl] = useState('');
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [selectedAssessment, setSelectedAssessment] = useState<
-    Questionnaire | ResearchStudy | null
-  >(null);
-  const [searchTerm, setSearchTerm] = useState<string>('');
-
+  const { state: authState } = useAuth();
   const [isPending, startTransition] = useTransition();
-  const { state: authState, isLoading: isAuthLoading } = useAuth();
-  const { data: popularAssessments = [], isLoading: popularLoading } =
-    usePopularAssessments();
-  const { data: regularAssessments = [], isLoading: regularLoading } =
-    useRegularAssessments();
-  const { data: research, isLoading: researchLoading } = useOngoingResearch();
-
-  const searchAssessments = useMemo(() => {
-    return [
-      ...(popularAssessments || []),
-      ...(regularAssessments || [])
-    ].filter(
-      (assessment: BundleEntry) =>
-        assessment.resource?.resourceType === 'Questionnaire'
-    );
-  }, [popularAssessments, regularAssessments]);
-
-  const {
-    filteredData: filteredAssessments,
-    isServerSearching,
-    showServerResults,
-    serverData: serverAssessments,
-    serverSearchCompleted
-  } = useSearchWithFallback({
-    data: searchAssessments,
-    searchFields: [
-      { path: 'resource.title' },
-      { path: 'resource.description' }
-    ],
-    serverSearchFunction: searchQuestionnaires,
-    searchTerm,
-    debounceDelay: 1000,
-    minCharsForServerSearch: 3
+  const { data: curated = [], isLoading: curatedLoading } =
+    useCuratedAssessments();
+  const { data: featured = [], isLoading: featuredLoading } =
+    useFeaturedAssessments();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState<Filters>({
+    categories: [],
+    sort: 'a-z'
   });
 
-  const isPractitioner = authState?.userInfo?.role_name === Roles.Practitioner;
+  const [selectedAssessment, setSelectedAssessment] =
+    useState<Questionnaire | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState('');
 
-  const findAssessmentById = useCallback(
-    (id: string) => {
-      const allRegular = [
-        ...(popularAssessments || []),
-        ...(regularAssessments || [])
-      ];
+  const isPractitioner = authState?.userInfo?.role_name === 'practitioner';
 
-      const regularFound = allRegular.find(item => item.resource.id === id);
-      if (regularFound) return regularFound.resource;
-
-      const researchFound = research?.find(item => item.resource.id === id);
-      if (researchFound) return researchFound.resource;
-
-      return null;
-    },
-    [popularAssessments, regularAssessments, research]
+  const filtered = useMemo(
+    () => filterAssessments(curated, searchTerm, filters),
+    [curated, searchTerm, filters]
   );
 
+  /** Find a questionnaire by ID from the curated list. */
+  const findAssessmentById = (id: string) =>
+    curated.find(q => q.id === id) ?? null;
+
+  // Restore drawer state from URL on mount
   useEffect(() => {
-    if (!isDrawerOpenParam || !assessmentIdParam) return;
-    const found = findAssessmentById(assessmentIdParam);
-
-    if (!found) return;
-
-    if (found.resourceType === 'ResearchStudy') {
-      const researchItem = research?.find(r => r.resource.id === found.id);
-      const questionnaireId = researchItem?.questionnaireIds?.[0];
-
-      if (questionnaireId) {
-        setResearchUrl(questionnaireId);
-      } else {
-        console.warn(
-          '[Assessment] Missing questionnaireId for research:',
-          found.id
-        );
-        return;
+    if (isDrawerOpenParam && assessmentIdParam) {
+      const found = findAssessmentById(assessmentIdParam);
+      if (found) {
+        setSelectedAssessment(found);
+        setIsOpen(true);
+        setCurrentLocation(`${baseUrl}${pathname}?${searchParams.toString()}`);
       }
     }
-
-    setSelectedAssessment(found);
-    setIsOpen(true);
-
-    const params = new URLSearchParams(globalThis.window.location.search);
-    const fullUrl = `${baseUrl}${pathname}?${params.toString()}`;
-    setCurrentLocation(fullUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    isDrawerOpenParam,
-    assessmentIdParam,
-    research,
-    popularAssessments,
-    regularAssessments,
-    findAssessmentById
-  ]);
+  }, []);
 
-  /** Open drawer for a research study, resolving its questionnaire ID. */
-  const handleResearchClick = (
-    study: ResearchStudy,
-    questionnaireId?: string
-  ) => {
-    if (!study?.id) return;
-
-    const resolvedQuestionnaireId =
-      questionnaireId ??
-      research?.find(item => item.resource.id === study.id)
-        ?.questionnaireIds?.[0];
-
-    if (!resolvedQuestionnaireId) {
-      console.warn(
-        '[Assessment] Missing questionnaireId for research:',
-        study.id
-      );
-      return;
-    }
-
-    setSelectedAssessment(study);
-    setResearchUrl(resolvedQuestionnaireId);
-
-    const params = new URLSearchParams(globalThis.window.location.search);
-    params.set('isDrawerOpen', 'true');
-    params.set('assessmentId', study.id);
-
-    setIsOpen(true);
-    router.push(`?${params.toString()}`, { scroll: false });
-  };
-
-  /** Open drawer for a regular questionnaire assessment. */
+  /** Open drawer for an assessment. */
   const handleAssessmentClick = (assessment: Questionnaire) => {
-    if (!assessment) return;
-
-    const params = new URLSearchParams(globalThis.window.location.search);
+    if (!assessment?.id) return;
+    const params = new URLSearchParams(searchParams.toString());
     params.set('isDrawerOpen', 'true');
-    params.set('assessmentId', assessment.id ?? '');
+    params.set('assessmentId', assessment.id);
     router.push(`?${params.toString()}`, { scroll: false });
     setSelectedAssessment(assessment);
     setIsOpen(true);
-
-    const fullUrl = `${baseUrl}${pathname}?${params.toString()}`;
-    setCurrentLocation(fullUrl);
+    setCurrentLocation(`${baseUrl}${pathname}?${params.toString()}`);
   };
 
-  /** Close the assessment drawer and clean up URL params. */
+  /** Close drawer. */
   const handleDrawerClose = () => {
     setIsOpen(false);
-
-    const params = new URLSearchParams(globalThis.window.location.search);
+    const params = new URLSearchParams(searchParams.toString());
     params.delete('isDrawerOpen');
     params.delete('assessmentId');
-
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
-  /** Render search results, research section, or empty states based on search term and loading status. */
-  const renderSearchResults = () => {
-    if (!searchTerm) {
-      return (
-        <>
-          <ResearchSection
-            research={research}
-            researchLoading={researchLoading}
-            isAuthLoading={isAuthLoading}
-            onResearchClick={handleResearchClick}
-          />
-
-          <PopularAssessmentsSection
-            popularAssessments={popularAssessments}
-            popularLoading={popularLoading}
-            isAuthLoading={isAuthLoading}
-            onAssessmentClick={handleAssessmentClick}
-          />
-
-          <BrowseInstrumentsSection
-            regularAssessments={regularAssessments}
-            regularLoading={regularLoading}
-            isAuthLoading={isAuthLoading}
-            onAssessmentClick={handleAssessmentClick}
-          />
-        </>
-      );
-    }
-    if (filteredAssessments.length > 0) {
-      return (
-        <AssessmentSearchResults
-          assessments={filteredAssessments}
-          onResearchClick={handleResearchClick}
-          onAssessmentClick={handleAssessmentClick}
-        />
-      );
-    }
-    if (
-      showServerResults &&
-      serverAssessments &&
-      serverAssessments.length > 0
-    ) {
-      return (
-        <AssessmentSearchResults
-          assessments={serverAssessments}
-          onResearchClick={handleResearchClick}
-          onAssessmentClick={handleAssessmentClick}
-        />
-      );
-    }
-    if (isServerSearching) {
-      return (
-        <div className='flex flex-col items-center justify-center py-16'>
-          <div className='flex items-center gap-2'>
-            <LoadingSpinnerIcon />
-            <span className='text-muted'>
-              No results found, requesting more data to the server
-            </span>
-          </div>
-        </div>
-      );
-    }
-    if (serverSearchCompleted) {
-      return (
-        <EmptyState
-          className='py-16'
-          title='No results found'
-          subtitle='Would you try another search term?'
-        />
-      );
-    }
-    return (
-      <EmptyState
-        className='py-16'
-        title='No assessments found'
-        subtitle='Try a different search term.'
-      />
-    );
+  const handleRemoveCategory = (cat: string) => {
+    setFilters(prev => ({
+      ...prev,
+      categories: prev.categories.filter(c => c !== cat)
+    }));
   };
+
+  const hasActiveFilters =
+    filters.categories.length > 0 || searchTerm.length > 0;
+
+  const isLoading = curatedLoading || featuredLoading;
 
   return (
     <>
       <PageHeader />
 
       <ContentWraper className='pt-4'>
-        <div className='flex gap-4 px-4'>
+        {/* Search + Filter */}
+        <div className='flex items-center gap-2 px-4'>
           <InputWithIcon
             value={searchTerm}
-            onChange={event => setSearchTerm(event.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             placeholder='Search Assessment'
-            className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
+            className='h-[50px] w-full border-0 bg-[#F9F9F9]'
             startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
           />
+          <AssessmentsFilter onChange={setFilters} />
         </div>
 
-        {renderSearchResults()}
+        {/* Active filter badges */}
+        {hasActiveFilters && (
+          <div className='flex flex-wrap items-center gap-2 px-4 pt-2'>
+            {filters.categories.map(cat => (
+              <span
+                key={cat}
+                className='flex items-center gap-1 rounded-full bg-teal-100 px-3 py-1 text-xs font-medium text-teal-700'
+              >
+                {cat}
+                <button
+                  type='button'
+                  onClick={() => handleRemoveCategory(cat)}
+                  className='ml-1 cursor-pointer'
+                  aria-label={`Remove ${cat} filter`}
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+
+            {searchTerm && (
+              <span className='flex items-center gap-1 rounded-full bg-teal-100 px-3 py-1 text-xs font-medium text-teal-700'>
+                Search: {searchTerm}
+                <button
+                  type='button'
+                  onClick={() => setSearchTerm('')}
+                  className='ml-1 cursor-pointer'
+                  aria-label='Clear search'
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+
+            <button
+              type='button'
+              onClick={() => {
+                setSearchTerm('');
+                setFilters({ categories: [], sort: 'a-z' });
+              }}
+              className='text-xs text-gray-500 underline'
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+
+        {/* Featured Rail */}
+        {!searchTerm && filters.categories.length === 0 && (
+          <FeaturedRail
+            questionnaires={featured}
+            onAssessmentClick={handleAssessmentClick}
+          />
+        )}
+
+        {/* Instruments Grid */}
+        <div className='px-4 pt-4'>
+          <h2 className='mb-2 text-sm font-bold text-gray-700'>
+            {searchTerm || filters.categories.length > 0
+              ? `Results (${filtered.length})`
+              : `All Instruments (${curated.length})`}
+          </h2>
+
+          <InstrumentsGrid
+            isLoading={isLoading}
+            instruments={filtered}
+            searchTerm={searchTerm}
+            onAssessmentClick={handleAssessmentClick}
+          />
+        </div>
       </ContentWraper>
 
       <Drawer onClose={handleDrawerClose} open={isOpen}>
         <DrawerContent className='mx-auto max-w-screen-sm p-4'>
           <AssessmentDrawerContent
             selectedAssessment={selectedAssessment}
-            researchUrl={researchUrl}
+            researchUrl=''
             currentLocation={currentLocation}
             isPending={isPending}
             isPractitioner={isPractitioner}
