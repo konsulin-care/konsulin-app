@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { useQuestionFocus } from '@/hooks/useQuestionFocus';
 
@@ -8,20 +8,12 @@ interface CardDomMapperProps {
   containerRef: React.RefObject<HTMLDivElement>;
 }
 
-const RETRY_DELAYS = [50, 200, 800];
-const MAX_RETRIES = 3;
-
 /**
  * Maps focus state to DOM classes on question card containers.
  *
- * After the renderer populates the DOM, this component finds each card
- * container (by locating `[id="label-{linkId}"]` and walking up to
- * `.MuiGrid-root.MuiGrid-container`) and assigns CSS classes based on
- * the current focus state from `useQuestionFocus`.
- *
- * If the renderer's DOM nodes are not yet present on the first attempt,
- * retries up to 3 times with exponential backoff (50ms, 200ms, 800ms),
- * each preceded by requestAnimationFrame to align with the paint cycle.
+ * Finds each card container by locating `[id^="label-{linkId}"]` and
+ * walking up to `.MuiGrid-root.MuiGrid-container`, then assigns CSS
+ * classes based on the current focus state from `useQuestionFocus`.
  *
  * Uses a MutationObserver to re-apply classes when the renderer updates
  * the DOM (enableWhen, repeated items, etc.).
@@ -31,38 +23,15 @@ export function CardDomMapper({ containerRef }: CardDomMapperProps) {
     useQuestionFocus();
 
   const observerRef = useRef<MutationObserver | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const attemptRef = useRef(0);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) {
       return undefined; // eslint-disable-line unicorn/no-useless-undefined
     }
 
-    function scheduleRetry() {
-      if (attemptRef.current >= MAX_RETRIES) return;
-
-      const delay = RETRY_DELAYS[attemptRef.current];
-      attemptRef.current += 1;
-
-      timeoutRef.current = setTimeout(() => {
-        timeoutRef.current = null;
-        rafRef.current = requestAnimationFrame(applyClasses);
-      }, delay);
-    }
-
     function applyClasses() {
       const labels = container.querySelectorAll<HTMLElement>('[id^="label-"]');
-
-      if (labels.length === 0) {
-        scheduleRetry();
-        return;
-      }
-
-      // Labels found — reset retry counter
-      attemptRef.current = 0;
 
       for (const label of labels) {
         const linkId = label.id.replace('label-', '');
@@ -124,14 +93,6 @@ export function CardDomMapper({ containerRef }: CardDomMapperProps) {
     });
 
     return () => {
-      if (timeoutRef.current !== null) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
       observerRef.current?.disconnect();
       observerRef.current = null;
 

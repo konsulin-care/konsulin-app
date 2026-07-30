@@ -70,8 +70,7 @@ GO_PORT ?= 3000
 NEXT_PORT ?= 8000
 
 # Development: hot reload mode (Next.js dev server + Go BFF proxy)
-dev:
-	@rm -rf out .next
+dev: clean
 	@echo "Go BFF on :$(GO_PORT)  |  Next.js on :$(NEXT_PORT)"
 	@trap 'kill 0' EXIT; \
 	  export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3300} NEXTJS_URL=http://localhost:$(NEXT_PORT) SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
@@ -89,10 +88,14 @@ dev-next:
 	npm run dev -- -p $(NEXT_PORT)
 
 # Production-like: build Next.js statically, then serve via Go BFF
-serve: build-next
+serve: clean build-next
 	@echo "Go BFF on :$(GO_PORT) serving static out/"
 	@export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3200} SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
 	  go run ./cmd/konsulin-app
+
+# Clean up .next and out directories
+clean:
+	@rm -rf .next out
 
 # Build
 build-go:
