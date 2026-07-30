@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -122,6 +123,9 @@ func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL string, ac
 // hopByHopHeaders are headers that must be stripped per RFC 2616 §13.5.1
 // when forwarding responses.  Go's HTTP server sets its own Transfer-Encoding
 // and Content-Length, so we skip those to avoid conflicts.
+// hopByHopHeaders are headers that must be stripped per RFC 2616 §13.5.1
+// when forwarding responses.  Go's HTTP server sets its own Transfer-Encoding
+// and Content-Length, so we skip those to avoid conflicts.
 var hopByHopHeaders = map[string]bool{
 	"Connection":          true,
 	"Keep-Alive":          true,
@@ -134,9 +138,25 @@ var hopByHopHeaders = map[string]bool{
 	"Content-Length":      true,
 }
 
+// strippedHeaders are backend response headers that must not be forwarded to the
+// browser. These raw token headers would otherwise be read by the SuperTokens
+// frontend SDK and stored as JS-accessible cookies. The BFF converts them to
+// httpOnly Set-Cookie equivalents via CookieMappings instead.
+var strippedHeaders = map[string]bool{
+	"St-Access-Token":  true,
+	"St-Refresh-Token": true,
+	"Front-Token":      true,
+}
+
+//nolint:gosec // G101: cookie name, not a credential
+const lastAccessTokenUpdateCookie = "st-last-access-token-update"
+
 func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappings []HeaderCookieMapping, cookieSecure bool) {
 	for k, vs := range resp.Header {
 		if hopByHopHeaders[http.CanonicalHeaderKey(k)] {
+			continue
+		}
+		if strippedHeaders[http.CanonicalHeaderKey(k)] {
 			continue
 		}
 		for _, v := range vs {
@@ -145,11 +165,13 @@ func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappin
 	}
 
 	// Convert mapped response headers to Set-Cookie headers.
+	hasMapping := false
 	for _, m := range cookieMappings {
 		val := resp.Header.Get(m.HeaderName)
 		if val == "" {
 			continue
 		}
+		hasMapping = true
 		//nolint:gosec // G124: Secure and HttpOnly are set explicitly
 		cookie := &http.Cookie{
 			Name:     m.CookieName,
@@ -160,6 +182,21 @@ func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappin
 			SameSite: http.SameSiteLaxMode,
 		}
 		w.Header().Add("Set-Cookie", cookie.String())
+	}
+
+	// When any CookieMapping produced a value, set the SDK's session existence
+	// tracking cookie so that getLocalSessionState() returns "EXISTS". Without
+	// this, the SDK treats the session as "MAY_EXIST" and triggers a refresh.
+	if hasMapping {
+		//nolint:gosec // G124: non-httpOnly so the SDK can read it via JS
+		http.SetCookie(w, &http.Cookie{
+			Name:     lastAccessTokenUpdateCookie,
+			Value:    fmt.Sprintf("%d", time.Now().UnixMilli()),
+			Path:     "/",
+			HttpOnly: false,
+			Secure:   cookieSecure,
+			SameSite: http.SameSiteLaxMode,
+		})
 	}
 
 	w.WriteHeader(resp.StatusCode)

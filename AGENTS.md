@@ -21,6 +21,9 @@ description: Single source of truth and the root reference for an AI agent
 - Document relative path from the project root: `@/path/to/file.txt`
 - Any directory named .archive/ at any depth MUST be ignored by all agentic tools
 - Follow the Concise skill for all output: no flattery, no hedging, short sentences, direct answers
+- Prioritize writing a readable and self-documenting code. If a file gets too long, then consider to:
+  1. Condense it, AND/OR
+  2. Split it
 
 ## Nested AGENTS.md Files
 

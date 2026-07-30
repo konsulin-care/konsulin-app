@@ -18,10 +18,8 @@ func init() {
 // testJWT is a fixed JWT with payload {"sub":"test-user","exp":9999999999,"st-role":{"v":["Patient"]}}
 // used to simulate a valid sAccessToken cookie in tests.
 const testJWT = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJleHAiOjk5OTk5OTk5OTksInN0LXJvbGUiOnsidiI6WyJQYXRpZW50Il19fQ.ZmFrZS1zaWc"
-
 // testJWTPractitioner is a fixed JWT with payload {"sub":"test-user","exp":9999999999,"st-role":{"v":["Patient","Practitioner"]}}
 const testJWTPractitioner = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJleHAiOjk5OTk5OTk5OTksInN0LXJvbGUiOnsidiI6WyJQYXRpZW50IiwiUHJhY3RpdGlvbmVyIl19fQ.ZmFrZS1zaWc"
-
 func newAuthCookieServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -50,7 +48,6 @@ func mustPost(t *testing.T, srv *httptest.Server, path, body string, cookies ...
 	t.Cleanup(func() { resp.Body.Close() })
 	return resp
 }
-
 func mustDelete(t *testing.T, srv *httptest.Server, path string) *http.Response {
 	t.Helper()
 	req, err := http.NewRequest(http.MethodDelete, srv.URL+path, http.NoBody)
@@ -64,7 +61,6 @@ func mustDelete(t *testing.T, srv *httptest.Server, path string) *http.Response 
 	t.Cleanup(func() { resp.Body.Close() })
 	return resp
 }
-
 func findCookie(resp *http.Response, name string) *http.Cookie {
 	for _, c := range resp.Cookies() {
 		if c.Name == name {
@@ -84,7 +80,6 @@ func extractSessionFromCookie(t *testing.T, cookie *http.Cookie) *session.Sessio
 	}
 	return s
 }
-
 func TestPostAuthCookie_setsCookie(t *testing.T) {
 	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
@@ -96,7 +91,6 @@ func TestPostAuthCookie_setsCookie(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected 200, got %d", resp.StatusCode)
 	}
-
 	authCookie := findCookie(resp, "auth")
 	if authCookie == nil {
 		t.Fatal("expected auth cookie")
@@ -133,7 +127,6 @@ func TestPostAuthCookie_missingUserId(t *testing.T) {
 		Name:  "sAccessToken",
 		Value: testJWT,
 	})
-
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("expected 400, got %d", resp.StatusCode)
 	}
@@ -144,12 +137,10 @@ func TestPostAuthCookie_missingSAccessToken(t *testing.T) {
 	t.Cleanup(srv.Close)
 	body := `{"userId":"u1","role_name":"Patient"}`
 	resp := mustPost(t, srv, "/auth/cookie", body)
-
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("expected 401, got %d", resp.StatusCode)
 	}
 }
-
 func TestPostAuthCookie_rolePrecedence(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -197,30 +188,36 @@ func TestPostAuthCookie_rolePrecedence(t *testing.T) {
 		})
 	}
 }
-
-func TestDeleteAuthCookie_clearsCookie(t *testing.T) {
-	srv := newAuthCookieServer(t)
-	t.Cleanup(srv.Close)
-
-	resp := mustDelete(t, srv, "/auth/cookie")
-
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected 200, got %d", resp.StatusCode)
+func TestDeleteAuthCookie_clearsCookies(t *testing.T) {
+	tests := []struct {
+		name       string
+		cookieName string
+	}{
+		{name: "auth", cookieName: "auth"},
+		{name: "st-last-access-token-update", cookieName: "st-last-access-token-update"},
 	}
-
-	authCookie := findCookie(resp, "auth")
-	if authCookie == nil {
-		t.Fatal("expected auth cookie in response")
-		return
-	}
-	if authCookie.Value != "" {
-		t.Errorf("expected empty cookie value, got %q", authCookie.Value)
-	}
-	if authCookie.MaxAge != -1 {
-		t.Errorf("expected MaxAge -1, got %d", authCookie.MaxAge)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := newAuthCookieServer(t)
+			t.Cleanup(srv.Close)
+			resp := mustDelete(t, srv, "/auth/cookie")
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("expected 200, got %d", resp.StatusCode)
+			}
+			c := findCookie(resp, tc.cookieName)
+			if c == nil {
+				t.Fatalf("expected %s cookie in response", tc.cookieName)
+				return
+			}
+			if c.Value != "" {
+				t.Errorf("expected empty cookie value, got %q", c.Value)
+			}
+			if c.MaxAge != -1 {
+				t.Errorf("expected MaxAge -1, got %d", c.MaxAge)
+			}
+		})
 	}
 }
-
 func TestPostAuthCookie_withAllFields(t *testing.T) {
 	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
@@ -266,7 +263,6 @@ func TestPostAuthCookie_withAllFields(t *testing.T) {
 		t.Errorf("expected ProfilePicture https://example.com/pic.jpg, got %q", sess.ProfilePicture)
 	}
 }
-
 func TestAuthCookieHandler_wrongMethod(t *testing.T) {
 	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)
@@ -283,7 +279,6 @@ func TestAuthCookieHandler_wrongMethod(t *testing.T) {
 		t.Errorf("expected 405, got %d", resp.StatusCode)
 	}
 }
-
 func TestPostAuthCookie_invalidJSON(t *testing.T) {
 	srv := newAuthCookieServer(t)
 	t.Cleanup(srv.Close)

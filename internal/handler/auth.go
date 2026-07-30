@@ -10,18 +10,25 @@ import (
 
 // Cookie inventory:
 //
-// | Cookie            | HttpOnly | SameSite | Secure | MaxAge | Set in                     |
-// | ----------------- | -------- | -------- | ------ | ------ | -------------------------- |
-// | auth              | true     | Lax      | config | 2h     | NewAuthCookieHandler (POST)|
-// | sAccessToken      | true     | Lax      | config | -1*    | SuperTokens SDK            |
-// | sRefreshToken     | true     | Lax      | config | -1*    | SuperTokens SDK            |
-// | sIdRefreshToken   | true     | Lax      | config | -1*    | SuperTokens SDK            |
-// | anon_session      | true     | Lax      | config | 24h    | Backend API via proxy      |
-// | redirect_intent   | false**  | Lax      | config | 300s   | RequireRole middleware     |
-// | _gorilla_csrf     | true     | Lax      | config | session| CSRF middleware            |
+// | Cookie                     | HttpOnly | SameSite | Secure | MaxAge  | Set in                               |
+// | -------------------------- | -------- | -------- | ------ | ------- | ------------------------------------ |
+// | auth                       | true     | Lax      | config | 2h      | NewAuthCookieHandler (POST)          |
+// | sAccessToken               | true     | Lax      | config | -1*     | SuperTokens SDK                      |
+// | sRefreshToken              | true     | Lax      | config | -1*     | SuperTokens SDK                      |
+// | sIdRefreshToken            | true     | Lax      | config | -1*     | SuperTokens SDK                      |
+// | anon_session               | true     | Lax      | config | 24h     | Backend API via proxy                |
+// | redirect_intent            | false**  | Lax      | config | 300s    | RequireRole middleware               |
+// | _gorilla_csrf              | true     | Lax      | config | session | CSRF middleware                      |
+// | st-last-access-token-update| false    | Lax      | config | session | writeProxyResponse (via CookieMappings)|
 //
 //   - Cleared (MaxAge=-1) by logout handler, not SuperTokens.
 //     ** HttpOnly=false required for client JS to read the value.
+
+// stLastAccessTokenUpdateCookie is the non-httpOnly cookie set by writeProxyResponse
+// so the SuperTokens frontend SDK can detect an active session.
+//nolint:gosec // G101: cookie name, not a credential
+const stLastAccessTokenUpdateCookie = "st-last-access-token-update"
+
 var logoutClient = &http.Client{Timeout: 10 * time.Second}
 
 type LogoutOptions struct {
@@ -85,6 +92,19 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 			Path:     "/",
 			MaxAge:   -1,
 			HttpOnly: true,
+			Secure:   opts.SecureCookie,
+			SameSite: http.SameSiteLaxMode,
+		})
+
+		// Clear the SDK's session existence tracking cookie.
+		//nolint:gosec // G124: non-httpOnly also cleared the same way
+		// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
+		http.SetCookie(w, &http.Cookie{
+			Name:     stLastAccessTokenUpdateCookie,
+			Value:    "",
+			Path:     "/",
+			MaxAge:   -1,
+			HttpOnly: false,
 			Secure:   opts.SecureCookie,
 			SameSite: http.SameSiteLaxMode,
 		})

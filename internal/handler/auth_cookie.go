@@ -188,6 +188,7 @@ func handleDeleteAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCoo
 	clear(opts.AccessCookieName)
 	clear(opts.RefreshCookieName)
 	clear(opts.IDRefreshCookieName)
+	clear("st-last-access-token-update")
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
