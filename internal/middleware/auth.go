@@ -161,9 +161,19 @@ func containsRole(roles []string, role string) bool {
 
 // RedirectAuthenticated redirects users with a valid auth cookie away from the given path prefix.
 // Used to prevent authenticated users from accessing /auth pages.
+// Exempts /auth/verify because magic link verification requires the frontend SDK
+// to read the linkCode from the URL fragment (never sent to the server).
 func RedirectAuthenticated(cookieName, cookieSecret, redirectTarget string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// /auth/verify is the SuperTokens magic link verification endpoint.
+			// The linkCode is in the URL fragment (#linkCode) which the browser
+			// never sends to the server — only the frontend SDK can extract it
+			// client-side. We must let the request through regardless of session.
+			if r.URL.Path == "/auth/verify" {
+				next.ServeHTTP(w, r)
+				return
+			}
 			sess, err := session.ExtractFromRequest(r, cookieName, cookieSecret)
 			if err == nil && sess.UserID != "" {
 				http.Redirect(w, r, redirectTarget, http.StatusFound)
