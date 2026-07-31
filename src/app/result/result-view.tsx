@@ -1,6 +1,7 @@
 'use client';
 
 import ScoreDisplay from '@/components/assessment/score-display';
+import PageHeader from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth/authContext';
 import { STORES, dbGetAll } from '@/lib/indexeddb';
@@ -75,31 +76,42 @@ export default function ResultView() {
   // No QR found — empty state
   if (!qrId || !qrData) {
     return (
-      <div className='flex min-h-[300px] items-center justify-center'>
-        <p className='text-muted-foreground text-sm'>Result not found</p>
-      </div>
+      <>
+        <PageHeader
+          pageIndicator='Assessment Result'
+          backRoute='/assessments'
+        />
+        <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
+          <div className='flex min-h-[300px] items-center justify-center'>
+            <p className='text-muted-foreground text-sm'>Result not found</p>
+          </div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className='pt-4'>
-      <ScoreDisplay
-        questionnaireResponse={qrData}
-        isLoading={false}
-        resultBrief={null}
-      />
+    <>
+      <PageHeader pageIndicator='Assessment Result' backRoute='/assessments' />
+      <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
+        <ScoreDisplay
+          questionnaireResponse={qrData}
+          isLoading={false}
+          resultBrief={null}
+        />
 
-      {!authState.isAuthenticated && (
-        <div className='fixed right-4 bottom-4 z-50'>
-          <Button
-            onClick={handleClaim}
-            className='flex items-center gap-2 rounded-full px-6 py-3 shadow-lg'
-          >
-            <ClipboardPlus className='h-5 w-5' />
-            Claim Results
-          </Button>
-        </div>
-      )}
-    </div>
+        {!authState.isAuthenticated && (
+          <div className='fixed right-4 bottom-4 z-50'>
+            <Button
+              onClick={handleClaim}
+              className='flex items-center gap-2 rounded-full px-6 py-3 shadow-lg'
+            >
+              <ClipboardPlus className='h-5 w-5' />
+              Claim Results
+            </Button>
+          </div>
+        )}
+      </div>
+    </>
   );
 }

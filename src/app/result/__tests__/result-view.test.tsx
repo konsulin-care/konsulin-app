@@ -48,6 +48,23 @@ vi.mock('lucide-react', () => ({
   ClipboardPlus: () => <div data-testid='clipboard-plus' />
 }));
 
+// Mock PageHeader — avoid its heavy dependency tree
+vi.mock('@/components/page-header', () => ({
+  default: ({
+    pageIndicator,
+    backRoute
+  }: {
+    pageIndicator?: string;
+    backRoute?: string;
+  }) => (
+    <div
+      data-testid='page-header'
+      data-indicator={pageIndicator ?? ''}
+      data-back-route={backRoute ?? ''}
+    />
+  )
+}));
+
 import { useAuth } from '@/context/auth/authContext';
 import { dbGetAll } from '@/lib/indexeddb';
 import { saveIntent } from '@/utils/redirect-intent';
@@ -198,6 +215,63 @@ describe('ResultView', () => {
 
     await screen.findByTestId('score-display');
     expect(screen.queryByText('Claim Results')).not.toBeInTheDocument();
+  });
+
+  it('renders PageHeader with Assessment Result indicator and /assessments back route', async () => {
+    const qrData = {
+      resourceType: 'QuestionnaireResponse',
+      id: 'test-qr-id',
+      item: []
+    };
+    vi.mocked(dbGetAll).mockResolvedValue([
+      {
+        ownerId: 'guest-1',
+        questionnaireId: 'Questionnaire/test',
+        response: qrData,
+        updatedAt: Date.now()
+      }
+    ]);
+
+    render(<ResultView />);
+
+    await screen.findByTestId('score-display');
+    const header = screen.getByTestId('page-header');
+    expect(header).toHaveAttribute('data-indicator', 'Assessment Result');
+    expect(header).toHaveAttribute('data-back-route', '/assessments');
+  });
+
+  it('wraps ScoreDisplay in the standard padded white shell', async () => {
+    const qrData = {
+      resourceType: 'QuestionnaireResponse',
+      id: 'test-qr-id',
+      item: []
+    };
+    vi.mocked(dbGetAll).mockResolvedValue([
+      {
+        ownerId: 'guest-1',
+        questionnaireId: 'Questionnaire/test',
+        response: qrData,
+        updatedAt: Date.now()
+      }
+    ]);
+
+    const { container } = render(<ResultView />);
+
+    const scoreDisplay = await screen.findByTestId('score-display');
+    const shell = container.querySelector('[class*="rounded-t-[16px]"]');
+    expect(shell).not.toBeNull();
+    expect(shell).toContainElement(scoreDisplay);
+  });
+
+  it('renders the empty state inside the padded white shell', async () => {
+    vi.mocked(dbGetAll).mockResolvedValue([]);
+
+    const { container } = render(<ResultView />);
+
+    const emptyText = await screen.findByText('Result not found');
+    const shell = container.querySelector('[class*="rounded-t-[16px]"]');
+    expect(shell).not.toBeNull();
+    expect(shell).toContainElement(emptyText);
   });
 
   it('saves intent and redirects to auth on FAB click', async () => {
