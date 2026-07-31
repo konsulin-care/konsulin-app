@@ -197,7 +197,15 @@ function handleIntent(
         return;
       }
     } catch (error) {
-      if ((error as Error)?.name !== 'AbortError') {
+      const err = error as { name?: string; code?: string };
+      // Aborts surface as axios CanceledError (ERR_CANCELED), not a DOM
+      // AbortError. Cancellations are benign — the intent survives so a
+      // re-run or the next mount can retry the claim.
+      const isCancellation =
+        err.name === 'AbortError' ||
+        err.name === 'CanceledError' ||
+        err.code === 'ERR_CANCELED';
+      if (!isCancellation) {
         console.error('Failed to restore intent:', error);
         if (error instanceof RoleSwitchError) {
           // Keep the intent so the claim can be retried after the role issue.
@@ -223,6 +231,9 @@ function handleIntent(
   return () => {
     isMounted = false;
     abortController.abort();
+    // The finally block skips the ref reset when the flow was aborted
+    // (isMounted false); reset here so a re-mounted effect re-processes.
+    isHandlingRef.current = false;
   };
 }
 

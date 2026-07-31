@@ -200,7 +200,12 @@ function resolvePostLoginRedirect(): string | null {
   const intent = getIntent();
   if (intent) {
     clearRedirectIntent();
-    return intent.payload?.path ?? '/';
+    // A pending assessmentResult claim must complete on the homepage before
+    // navigating to /record; landing directly on /record would skip the claim
+    // and race the login redirect against the in-flight PATCH.
+    return intent.kind === 'assessmentResult'
+      ? '/'
+      : (intent.payload?.path ?? '/');
   }
   return extractSafeRedirectPath(globalThis.location.search);
 }

@@ -153,7 +153,7 @@ export const useGetPractitionerRolesDetail = (
           }
         };
         return result;
-      });
+      }) as unknown as BundleEntry<IPractitionerRoleDetail>[];
     },
     enabled: Boolean(practitionerId)
   });
