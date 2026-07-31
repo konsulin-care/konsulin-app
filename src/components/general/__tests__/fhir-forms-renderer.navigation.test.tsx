@@ -160,7 +160,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
       requiredItemEmpty: 0,
       checkRequiredIsEmpty: vi.fn(),
       invalidItems: {}
-    } as any);
+    });
     vi.mocked(getResponse).mockReturnValue({
       resourceType: 'QuestionnaireResponse',
       questionnaire: 'Questionnaire/q-123',
@@ -199,7 +199,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     expect(url).not.toContain('title=');
   });
 
-  it('calls router.replace with view param (no patientId) for guest flow', async () => {
+  it('calls router.replace with /result?id= for guest flow', async () => {
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}
@@ -211,10 +211,26 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
     await waitFor(() => expect(mockReplace).toHaveBeenCalled());
     const url = mockReplace.mock.calls[0][0] as string;
-    expect(url).toBe('/record?view=QuestionnaireResponse/resp-789');
-    expect(url).not.toContain('id=');
+    expect(url).toBe('/result?id=resp-789');
+    expect(url).not.toContain('record');
     expect(url).not.toContain('category=');
     expect(url).not.toContain('title=');
+  });
+
+  it('calls router.replace with /record view for authenticated flow with patientId (no role)', async () => {
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated
+        patientId='pat-1'
+      />
+    );
+
+    clickSeeResult();
+    await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
+    await waitFor(() => expect(mockReplace).toHaveBeenCalled());
+    const url = mockReplace.mock.calls[0][0] as string;
+    expect(url).toBe('/record?id=pat-1&view=QuestionnaireResponse/resp-789');
   });
 
   it('still calls router.push for the "close" action', async () => {

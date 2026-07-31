@@ -1,6 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 
+import { STORES, dbDelete, dbGetAll } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { getAPI } from '@/services/api';
 import {
@@ -128,6 +129,25 @@ function handleIntent(
           signal: abortController.signal
         });
         toast.success('Your assessment result is now linked to your account.');
+
+        // Clean up the local IndexedDB draft for the claimed QR
+        if (intent.payload.qrId) {
+          const allDrafts = await dbGetAll<{
+            ownerId: string;
+            questionnaireId: string;
+            response: { id: string };
+          }>(STORES.assessmentDrafts);
+          const match = allDrafts.find(
+            d => d.response?.id === intent.payload.qrId
+          );
+          if (match) {
+            await dbDelete(STORES.assessmentDrafts, [
+              match.ownerId,
+              match.questionnaireId
+            ]);
+          }
+        }
+
         router.push(intent.payload.path);
         clearIntent();
         return;

@@ -129,11 +129,14 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const handleNavigate = (buttonLabel: string, responseId?: string) => {
     startTransition(() => {
       if (buttonLabel === 'result') {
-        const basePath = patientId
-          ? `/record?id=${patientId}&view=QuestionnaireResponse/${responseId}`
-          : `/record?view=QuestionnaireResponse/${responseId}`;
-
-        router.replace(basePath);
+        if (isAuthenticated) {
+          const basePath = patientId
+            ? `/record?id=${patientId}&view=QuestionnaireResponse/${responseId}`
+            : `/record?view=QuestionnaireResponse/${responseId}`;
+          router.replace(basePath);
+        } else {
+          router.replace(`/result?id=${responseId}`);
+        }
         setIsSubmitting(false);
       } else {
         router.push('/assessments');
