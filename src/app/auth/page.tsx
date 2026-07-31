@@ -1,6 +1,6 @@
 'use client';
 
-import { saveIntent } from '@/utils/redirect-intent';
+import { getIntent, saveIntent } from '@/utils/redirect-intent';
 import Image from 'next/image';
 import { createElement, useEffect, useState, type ReactElement } from 'react';
 import { redirectToAuth } from 'supertokens-auth-react';
@@ -83,14 +83,16 @@ export default function AuthPageComponent() {
 
   useEffect(() => {
     const safePath = sanitizePath(redirectToPath);
-    if (safePath) {
-      if (safePath.startsWith('/journal')) {
-        saveIntent('journal', { path: safePath });
-      }
-      if (safePath.startsWith('/record')) {
-        saveIntent('assessmentResult', { path: safePath });
-      }
-    }
+    if (!safePath) return;
+    let kind: 'journal' | 'assessmentResult' | null = null;
+    if (safePath.startsWith('/journal')) kind = 'journal';
+    else if (safePath.startsWith('/record')) kind = 'assessmentResult';
+    if (!kind) return;
+    // Preserve an existing same-kind intent — it may carry a richer
+    // payload such as qrId set by the /result claim flow.
+    const existing = getIntent();
+    if (existing?.kind === kind) return;
+    saveIntent(kind, { path: safePath });
   }, [redirectToPath]);
 
   useEffect(() => {
