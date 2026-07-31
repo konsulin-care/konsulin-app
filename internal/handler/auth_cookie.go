@@ -35,6 +35,12 @@ type authCookieRequest struct {
 
 var errMissingUserID = errors.New("missing required field: userId")
 
+// sessionLifetime mirrors the SuperTokens default session expiry (30 days) so
+// the auth cookie never independently expires while the underlying session is
+// still valid. The cookie is still refreshed on every page load via the
+// restore flow when the access token is renewed.
+const sessionLifetime = 30 * 24 * time.Hour
+
 // NewAuthCookieHandler creates a handler for GET/POST/DELETE /auth/cookie.
 func NewAuthCookieHandler(opts AuthCookieOptions) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -104,7 +110,7 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 		Email:           req.Email,
 		PhoneNumber:     req.PhoneNumber,
 		ProfilePicture:  req.ProfilePicture,
-		Exp:             time.Now().Add(2 * time.Hour).Unix(),
+		Exp:             time.Now().Add(sessionLifetime).Unix(),
 	}
 
 	encoded, err := session.EncodeSession(sess, opts.CookieName)
@@ -123,7 +129,7 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 		HttpOnly: true,
 		Secure:   opts.CookieSecure,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int((2 * time.Hour).Seconds()),
+		MaxAge:   int(sessionLifetime.Seconds()),
 	})
 
 	w.WriteHeader(http.StatusOK)

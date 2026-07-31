@@ -48,7 +48,7 @@ func handleRoleSwitch(w http.ResponseWriter, r *http.Request, opts RoleSwitchOpt
 	}
 
 	sess.Role = newRole
-	sess.Exp = time.Now().Add(2 * time.Hour).Unix()
+	sess.Exp = time.Now().Add(sessionLifetime).Unix()
 
 	encoded, err := session.EncodeSession(sess, opts.CookieName)
 	if err != nil {
@@ -65,7 +65,7 @@ func handleRoleSwitch(w http.ResponseWriter, r *http.Request, opts RoleSwitchOpt
 		HttpOnly: true,
 		Secure:   opts.CookieSecure,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int((2 * time.Hour).Seconds()),
+		MaxAge:   int(sessionLifetime.Seconds()),
 	})
 
 	setActiveRoleClaim(w, r, opts, newRole)
