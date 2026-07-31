@@ -16,6 +16,11 @@ vi.mock('@/services/anonymous-session', () => ({
   ensureAnonymousSession: vi.fn()
 }));
 
+vi.mock('@/services/auth', () => ({
+  getAuthCookieSession: vi.fn(),
+  fetchCSRFToken: vi.fn()
+}));
+
 vi.mock('@/utils/redirect-intent', () => ({
   getIntent: vi.fn(),
   getRedirectIntent: vi.fn(),
@@ -38,6 +43,7 @@ vi.mock('react-toastify', () => ({
 
 import { STORES, dbDelete, dbGetAll } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
+import { fetchCSRFToken, getAuthCookieSession } from '@/services/auth';
 import { clearIntent, getIntent } from '@/utils/redirect-intent';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -69,8 +75,14 @@ describe('useRedirectIntent cleanup after claim', () => {
     vi.mocked(getIntent).mockReturnValue(null);
     vi.mocked(getAPI).mockResolvedValue({
       patch: mockPatch
-    } as any);
+    });
     vi.mocked(dbGetAll).mockResolvedValue([]);
+    vi.mocked(getAuthCookieSession).mockResolvedValue({
+      authenticated: true,
+      role_name: 'Patient',
+      roles: ['Patient', 'Practitioner']
+    });
+    vi.mocked(fetchCSRFToken).mockResolvedValue('csrf-token');
   });
 
   it('deletes assessment draft when qrId is in intent payload', async () => {
@@ -213,5 +225,106 @@ describe('useRedirectIntent cleanup after claim', () => {
     await vi.waitFor(() => {
       expect(toast.success).toHaveBeenCalled();
     });
+  });
+
+  it('switches the active role to Patient before claiming when it is not Patient', async () => {
+    vi.mocked(getAuthCookieSession).mockResolvedValue({
+      authenticated: true,
+      role_name: 'Practitioner',
+      roles: ['Patient', 'Practitioner']
+    });
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', mockFetch);
+    const mockReload = vi.fn();
+    vi.stubGlobal(
+      'location',
+      Object.assign({}, window.location, { reload: mockReload })
+    );
+    vi.mocked(getIntent).mockReturnValue({
+      kind: 'assessmentResult',
+      payload: { path: '/record', qrId: 'qr-123' },
+      createdAt: Date.now()
+    });
+
+    render(
+      <TestHarness isLoading={false} authState={{ isAuthenticated: true }} />
+    );
+
+    await vi.waitFor(() => {
+      expect(mockFetch).toHaveBeenCalled();
+    });
+    const [url, init] = mockFetch.mock.calls[0] as [
+      string,
+      {
+        method?: string;
+        headers?: Record<string, string>;
+        body?: URLSearchParams;
+      }
+    ];
+    expect(url).toBe('/auth/role/switch');
+    expect(init.method).toBe('POST');
+    expect(init.headers?.['X-CSRF-Token']).toBe('csrf-token');
+    expect(init.body?.toString()).toBe('role=Patient');
+    expect(mockReload).toHaveBeenCalled();
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it('claims directly when the active role is already Patient', async () => {
+    vi.mocked(getIntent).mockReturnValue({
+      kind: 'assessmentResult',
+      payload: { path: '/record', qrId: 'qr-123' },
+      createdAt: Date.now()
+    });
+
+    render(
+      <TestHarness isLoading={false} authState={{ isAuthenticated: true }} />
+    );
+
+    await vi.waitFor(() => {
+      expect(mockPatch).toHaveBeenCalled();
+    });
+    expect(fetchCSRFToken).not.toHaveBeenCalled();
+  });
+
+  it('claims unchanged when the user holds no Patient role', async () => {
+    vi.mocked(getAuthCookieSession).mockResolvedValue({
+      authenticated: true,
+      role_name: 'Practitioner',
+      roles: ['Practitioner']
+    });
+    vi.mocked(getIntent).mockReturnValue({
+      kind: 'assessmentResult',
+      payload: { path: '/record', qrId: 'qr-123' },
+      createdAt: Date.now()
+    });
+
+    render(
+      <TestHarness isLoading={false} authState={{ isAuthenticated: true }} />
+    );
+
+    await vi.waitFor(() => {
+      expect(mockPatch).toHaveBeenCalled();
+    });
+    expect(fetchCSRFToken).not.toHaveBeenCalled();
+  });
+
+  it('claims unchanged when no authenticated cookie session exists', async () => {
+    vi.mocked(getAuthCookieSession).mockResolvedValue(null);
+    vi.mocked(getIntent).mockReturnValue({
+      kind: 'assessmentResult',
+      payload: { path: '/record', qrId: 'qr-123' },
+      createdAt: Date.now()
+    });
+
+    render(
+      <TestHarness isLoading={false} authState={{ isAuthenticated: true }} />
+    );
+
+    await vi.waitFor(() => {
+      expect(mockPatch).toHaveBeenCalled();
+    });
+    expect(fetchCSRFToken).not.toHaveBeenCalled();
   });
 });
