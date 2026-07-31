@@ -2,7 +2,7 @@ import { IPractitionerRoleDetail } from '@/types/practitioner';
 import { getUtcDayRange } from '@/utils/helper';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AxiosResponse } from 'axios';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import {
   Bundle,
@@ -152,17 +152,25 @@ export const useGetPractitionerRolesDetail = (
             scheduleData
           }
         };
-        return result as unknown as BundleEntry<IPractitionerRoleDetail>;
+        return result;
       });
     },
     enabled: Boolean(practitionerId)
   });
 
+  // Keep the latest callback in a ref so inline arrows (new identity per
+  // render) never re-trigger the fire effect below.
+  const onSuccessRef = useRef(onSuccess);
   useEffect(() => {
-    if (query.data && onSuccess) {
-      onSuccess(query.data);
+    onSuccessRef.current = onSuccess;
+  }, [onSuccess]);
+
+  // Fire once per data arrival (matches the old v4 onSuccess semantics).
+  useEffect(() => {
+    if (query.data && onSuccessRef.current) {
+      onSuccessRef.current(query.data);
     }
-  }, [query.data, onSuccess]);
+  }, [query.data]);
 
   return query;
 };
