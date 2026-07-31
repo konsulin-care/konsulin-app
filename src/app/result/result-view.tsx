@@ -2,14 +2,14 @@
 
 import ScoreDisplay from '@/components/assessment/score-display';
 import PageHeader from '@/components/page-header';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth/authContext';
+import { useFab } from '@/context/fabContext';
 import { STORES, dbGetAll } from '@/lib/indexeddb';
 import { saveIntent } from '@/utils/redirect-intent';
 import type { QuestionnaireResponse } from 'fhir/r4';
 import { ClipboardPlus } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 /** Load QR data from IndexedDB drafts by matching response.id. */
 async function loadDraftByQrId(
@@ -37,6 +37,7 @@ export default function ResultView() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { state: authState, isLoading: authLoading } = useAuth();
+  const { dispatch } = useFab();
   const qrId = searchParams.get('id');
 
   const [qrData, setQrData] = useState<QuestionnaireResponse | null>(null);
@@ -63,10 +64,38 @@ export default function ResultView() {
     });
   }, [qrId]);
 
-  const handleClaim = () => {
+  const handleClaim = useCallback(() => {
     saveIntent('assessmentResult', { path: '/record', qrId: qrId ?? '' });
     router.push('/auth?redirectToPath=/record');
-  };
+  }, [qrId, router]);
+
+  // Wire the claim CTA as the transformed action FAB for guests.
+  // Action mode suppresses the idle speed-dial, so exactly one FAB shows.
+  useEffect(() => {
+    const showClaim =
+      !authLoading && !loading && !authState.isAuthenticated && qrData;
+    if (showClaim) {
+      dispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Claim Results',
+          icon: ClipboardPlus,
+          variant: 'primary',
+          onAction: handleClaim
+        }
+      });
+    } else {
+      dispatch({ type: 'SET_ACTION', config: null });
+    }
+    return () => dispatch({ type: 'SET_ACTION', config: null });
+  }, [
+    authLoading,
+    loading,
+    authState.isAuthenticated,
+    qrData,
+    dispatch,
+    handleClaim
+  ]);
 
   // Still loading auth or data — render nothing
   if (authLoading || loading) {
@@ -99,18 +128,6 @@ export default function ResultView() {
           isLoading={false}
           resultBrief={null}
         />
-
-        {!authState.isAuthenticated && (
-          <div className='fixed right-4 bottom-4 z-50'>
-            <Button
-              onClick={handleClaim}
-              className='flex items-center gap-2 rounded-full px-6 py-3 shadow-lg'
-            >
-              <ClipboardPlus className='h-5 w-5' />
-              Claim Results
-            </Button>
-          </div>
-        )}
       </div>
     </>
   );
