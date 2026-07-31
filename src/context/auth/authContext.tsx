@@ -20,6 +20,7 @@ import React, {
 } from 'react';
 import { SessionContextUpdate } from 'supertokens-auth-react/lib/build/recipe/session/types';
 import {
+  attemptRefreshingSession,
   getClaimValue,
   useSessionContext
 } from 'supertokens-auth-react/recipe/session';
@@ -379,6 +380,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   /** Handle auth state when a SuperTokens session already exists. */
   const handleSessionExists = async () => {
+    // Renew the access token before the restore POST: the Go BFF verifies the
+    // sAccessToken JWT and rejects expired tokens (1h TTL), so restoring the
+    // auth cookie fails on reloads after idle unless the token is fresh.
+    try {
+      await attemptRefreshingSession();
+    } catch (error) {
+      console.error('Auth: session refresh before restore failed:', error);
+    }
     const restored = await tryRestoreAuthCookie();
     if (!restored) {
       setIsLoading(false);
