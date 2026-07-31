@@ -116,3 +116,8 @@ export function clearIntent(): void {
   }
   clearRedirectIntent();
 }
+
+/** Returns true when a pending assessmentResult claim intent exists. */
+export function hasPendingAssessmentClaimIntent(): boolean {
+  return getIntent()?.kind === 'assessmentResult';
+}

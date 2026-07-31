@@ -8,6 +8,7 @@ import { setCurrentUserId, UserProfile } from '@/services/api';
 import { getAuthCookieSession, restoreAuthCookie } from '@/services/auth';
 import { getProfileByIdentifier } from '@/services/profile';
 import { mergeNames } from '@/utils/helper';
+import { hasPendingAssessmentClaimIntent } from '@/utils/redirect-intent';
 import { roleToFhirResource } from '@/utils/role-fhir';
 import React, {
   createContext,
@@ -44,12 +45,20 @@ const AuthContext = createContext<ContextProps | undefined>(undefined);
 const INITIAL_PATHNAME_STORAGE_KEY = 'konsulin_initial_pathname';
 
 /** Resolve the active user role from cookie or SuperTokens claims. */
-function resolveActiveRole(
+export function resolveActiveRole(
   cookieRole: string | undefined,
   superTokensRoles: string[] | undefined
 ): UserRole {
   if (cookieRole) return cookieRole as UserRole;
   if (Array.isArray(superTokensRoles)) {
+    // A guest claiming an assessment result must be linked to the Patient
+    // resource, even when the default priority would pick another role.
+    if (
+      superTokensRoles.includes(Roles.Patient) &&
+      hasPendingAssessmentClaimIntent()
+    ) {
+      return Roles.Patient;
+    }
     if (superTokensRoles.includes(Roles.Practitioner))
       return Roles.Practitioner;
     if (superTokensRoles.includes(Roles.ClinicAdmin)) return Roles.ClinicAdmin;

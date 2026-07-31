@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearIntent, getIntent, saveIntent } from '../redirect-intent';
+import {
+  clearIntent,
+  getIntent,
+  hasPendingAssessmentClaimIntent,
+  saveIntent
+} from '../redirect-intent';
 import { assertDefined } from './test-utils';
 
 const LOCAL_STORAGE_KEY = 'konsulin.intent';
@@ -85,5 +90,21 @@ describe('saveIntent', () => {
     const parsed = readStored();
     expect(parsed.kind).toBe('appointment');
     expect(parsed.payload.slot.date).toBe('2026-06-20');
+  });
+
+  it('hasPendingAssessmentClaimIntent returns true for assessmentResult intent', () => {
+    saveIntent('assessmentResult', { path: '/record' });
+
+    expect(hasPendingAssessmentClaimIntent()).toBe(true);
+  });
+
+  it('hasPendingAssessmentClaimIntent returns false for other intent kinds', () => {
+    saveIntent('journal', { path: '/journal/new' });
+
+    expect(hasPendingAssessmentClaimIntent()).toBe(false);
+  });
+
+  it('hasPendingAssessmentClaimIntent returns false when no intent exists', () => {
+    expect(hasPendingAssessmentClaimIntent()).toBe(false);
   });
 });

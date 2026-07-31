@@ -2,6 +2,7 @@
 import { Roles } from '@/constants/roles';
 import { mergeNames } from '@/utils/helper';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
+import { hasPendingAssessmentClaimIntent } from '@/utils/redirect-intent';
 import { roleToFhirResource } from '@/utils/role-fhir';
 import { Patient, Practitioner } from 'fhir/r4';
 import { SessionContextUpdate } from 'supertokens-auth-react/lib/build/recipe/session/types';
@@ -123,8 +124,13 @@ async function attemptProfileFetch(
 }
 
 /** Resolve the highest-priority role from SuperTokens role claims. */
-function resolveRole(roles: string[] | undefined): string {
+export function resolveRole(roles: string[] | undefined): string {
   if (Array.isArray(roles)) {
+    // A guest claiming an assessment result must be linked to the Patient
+    // resource, even when the default priority would pick another role.
+    if (roles.includes(Roles.Patient) && hasPendingAssessmentClaimIntent()) {
+      return Roles.Patient;
+    }
     if (roles.includes(Roles.Practitioner)) return Roles.Practitioner;
     if (roles.includes(Roles.ClinicAdmin)) return Roles.ClinicAdmin;
   }
