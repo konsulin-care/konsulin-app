@@ -87,17 +87,31 @@ func setProxyRequestHeaders(proxyReq, r *http.Request) {
 	if rid := r.Header.Get("rid"); rid != "" {
 		proxyReq.Header.Set("rid", rid)
 	}
+	// SuperTokens SDK security headers. The anti-csrf header is required by
+	// Core during session refresh when anti-CSRF is enabled; dropping it makes
+	// every refresh 401 and kills the session on the next reload.
+	if v := r.Header.Get("anti-csrf"); v != "" {
+		proxyReq.Header.Set("anti-csrf", v)
+	}
+	if v := r.Header.Get("st-auth-mode"); v != "" {
+		proxyReq.Header.Set("st-auth-mode", v)
+	}
+	if v := r.Header.Get("fdi-version"); v != "" {
+		proxyReq.Header.Set("fdi-version", v)
+	}
 }
 
 func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL string, accessCookieName string) {
-	// SuperTokens auth endpoints (session/refresh etc.) use cookie-based auth;
-	// injecting a Bearer header with the access token interferes with the refresh flow.
-	if strings.Contains(targetURL, "/api/v1/auth/") {
+	// Always forward an explicit Authorization header supplied by the client
+	// (e.g. a Bearer refresh token on /session/refresh from the SDK).
+	if auth := r.Header.Get("Authorization"); auth != "" {
+		proxyReq.Header.Set("Authorization", auth)
 		return
 	}
 
-	if auth := r.Header.Get("Authorization"); auth != "" {
-		proxyReq.Header.Set("Authorization", auth)
+	// SuperTokens auth endpoints (session/refresh etc.) use cookie-based auth;
+	// injecting a Bearer header with the access token interferes with the refresh flow.
+	if strings.Contains(targetURL, "/api/v1/auth/") {
 		return
 	}
 
