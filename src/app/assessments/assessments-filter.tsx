@@ -103,7 +103,7 @@ export default function AssessmentsFilter({
                   type='checkbox'
                   checked={selectedCategories.includes(cat.code)}
                   onChange={() => handleCategoryToggle(cat.code)}
-                  className='size-4 accent-teal-500'
+                  className='size-4 accent-[var(--secondary)]'
                   aria-label={cat.label}
                 />
                 {cat.label}
@@ -123,7 +123,7 @@ export default function AssessmentsFilter({
                 onClick={() => setSelectedSort(opt.value)}
                 className={
                   selectedSort === opt.value
-                    ? 'bg-teal-500 text-white'
+                    ? 'bg-secondary text-white'
                     : 'border-gray-300 bg-white text-gray-700'
                 }
               >
@@ -134,7 +134,7 @@ export default function AssessmentsFilter({
         </div>
 
         <Button
-          className='mt-6 w-full rounded-xl bg-teal-500 py-3 text-white hover:bg-teal-600'
+          className='bg-secondary mt-6 w-full rounded-xl py-3 text-white'
           onClick={handleApply}
         >
           Apply

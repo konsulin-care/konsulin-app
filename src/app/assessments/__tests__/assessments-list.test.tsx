@@ -242,4 +242,50 @@ describe('AssessmentsList', () => {
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);
   });
+
+  it('renders the search badge with secondary colors', async () => {
+    mockUseCuratedAssessments.mockReturnValue({
+      data: MOCK_CURATED,
+      isLoading: false
+    });
+    mockUseFeaturedAssessments.mockReturnValue({
+      data: MOCK_FEATURED,
+      isLoading: false
+    });
+    renderPage();
+    const input = screen.getByTestId('search-input');
+    fireEvent.change(input, { target: { value: 'depression' } });
+
+    await waitFor(() => {
+      const badge = screen.getByText('Search: depression');
+      expect(badge.className).toContain('bg-secondary');
+      expect(badge.className).toContain('text-white');
+      expect(badge.className).not.toContain('teal');
+    });
+  });
+
+  it('renders the category badge with secondary colors', async () => {
+    mockUseCuratedAssessments.mockReturnValue({
+      data: MOCK_CURATED,
+      isLoading: false
+    });
+    mockUseFeaturedAssessments.mockReturnValue({
+      data: MOCK_FEATURED,
+      isLoading: false
+    });
+    renderPage();
+
+    // Open the filter drawer and select a category
+    fireEvent.click(screen.getAllByRole('button')[0]);
+    const checkbox = await screen.findByLabelText('Physical Health');
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByText('Apply'));
+
+    await waitFor(() => {
+      const badge = screen.getByText('physical-health');
+      expect(badge.className).toContain('bg-secondary');
+      expect(badge.className).toContain('text-white');
+      expect(badge.className).not.toContain('teal');
+    });
+  });
 });

@@ -207,7 +207,7 @@ export default function AssessmentsList() {
             {filters.categories.map(cat => (
               <span
                 key={cat}
-                className='flex items-center gap-1 rounded-full bg-teal-100 px-3 py-1 text-xs font-medium text-teal-700'
+                className='bg-secondary flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-white'
               >
                 {cat}
                 <button
@@ -222,7 +222,7 @@ export default function AssessmentsList() {
             ))}
 
             {searchTerm && (
-              <span className='flex items-center gap-1 rounded-full bg-teal-100 px-3 py-1 text-xs font-medium text-teal-700'>
+              <span className='bg-secondary flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-white'>
                 Search: {searchTerm}
                 <button
                   type='button'

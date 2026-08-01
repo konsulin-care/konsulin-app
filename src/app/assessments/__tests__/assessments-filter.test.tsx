@@ -83,4 +83,32 @@ describe('AssessmentsFilter', () => {
       sort: 'popular'
     });
   });
+
+  it('uses the secondary color for the Apply CTA', () => {
+    render(<AssessmentsFilter onChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button'));
+
+    const applyBtn = screen.getByText('Apply');
+    expect(applyBtn.className).toContain('bg-secondary');
+    expect(applyBtn.className).not.toContain('bg-teal');
+  });
+
+  it('uses the secondary color for the selected sort button', () => {
+    render(<AssessmentsFilter onChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button'));
+
+    fireEvent.click(screen.getByText('Most Popular'));
+    const selected = screen.getByText('Most Popular');
+    expect(selected.className).toContain('bg-secondary');
+    expect(selected.className).not.toContain('bg-teal');
+  });
+
+  it('uses the secondary color for the category checkbox accent', () => {
+    render(<AssessmentsFilter onChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button'));
+
+    const checkbox = screen.getByLabelText('Physical Health');
+    expect(checkbox.className).toContain('accent-[var(--secondary)]');
+    expect(checkbox.className).not.toContain('accent-teal-500');
+  });
 });
