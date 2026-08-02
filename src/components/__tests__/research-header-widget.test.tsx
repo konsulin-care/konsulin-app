@@ -25,9 +25,23 @@ function createWrapper() {
 
 const BATCH_1 = {
   id: 'batch-1',
+  start: '2026-07-01',
+  end: '2026-07-31',
+  questionnaireIds: ['phq2', 'big-five-inventory', 'gad7']
+};
+
+const BATCH_2 = {
+  id: 'batch-2',
   start: '2026-08-01',
   end: '2026-08-31',
-  questionnaireIds: ['phq2', 'big-five-inventory']
+  questionnaireIds: ['phq2', 'who5', 'pss4']
+};
+
+const BATCH_3 = {
+  id: 'batch-3',
+  start: '2026-09-01',
+  end: '2026-09-30',
+  questionnaireIds: ['big-five-inventory', 'gad7', 'who5']
 };
 
 function makeProgress(): ResearchProgress {
@@ -38,22 +52,34 @@ function makeProgress(): ResearchProgress {
       status: 'active',
       title: 'Konsulin Mental Health Survey'
     },
-    batches: [BATCH_1],
-    currentBatch: BATCH_1,
+    batches: [BATCH_1, BATCH_2, BATCH_3],
+    currentBatch: BATCH_2,
     completedCount: 1,
-    totalCount: 2,
+    totalCount: 3,
     isComplete: false,
-    firstUncompletedQuestionnaireId: 'big-five-inventory',
+    firstUncompletedQuestionnaireId: 'who5',
     completedQuestionnaireIds: ['phq2'],
     history: [
       {
         batchId: 'batch-1',
+        start: '2026-07-01',
+        end: '2026-07-31',
+        participated: true
+      },
+      {
+        batchId: 'batch-2',
         start: '2026-08-01',
         end: '2026-08-31',
         participated: true
+      },
+      {
+        batchId: 'batch-3',
+        start: '2026-09-01',
+        end: '2026-09-30',
+        participated: false
       }
     ],
-    consecutiveBatches: 1
+    consecutiveBatches: 2
   };
 
   return {
@@ -74,7 +100,7 @@ function makeProgress(): ResearchProgress {
 }
 
 describe('ResearchHeaderWidget', () => {
-  it('renders the current batch progress and level, linking to /research', () => {
+  it('renders study title, batch of n, closing days, questionnaire count, and disclaimer, linking to /research', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
@@ -84,9 +110,25 @@ describe('ResearchHeaderWidget', () => {
 
     const widget = screen.getByTestId('research-header-widget');
     expect(widget.getAttribute('href')).toBe('/research');
-    expect(screen.getByText('Active Research')).toBeTruthy();
-    expect(screen.getByText(/Batch 1 · 1\/2 questionnaires/)).toBeTruthy();
-    expect(screen.getByText('Participant')).toBeTruthy();
+    expect(screen.getByText('Konsulin Mental Health Survey')).toBeTruthy();
+    expect(screen.getByText(/Batch 2 of 3/)).toBeTruthy();
+    expect(screen.getByText(/Closes in \d+ days/)).toBeTruthy();
+    expect(screen.getByText('1/3 Questionnaires')).toBeTruthy();
+    expect(
+      screen.getByText(/Every questionnaire you complete counts toward/i)
+    ).toBeTruthy();
+  });
+
+  it('does not render the level badge or continue text', () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+
+    render(<ResearchHeaderWidget />, { wrapper: createWrapper() });
+
+    expect(screen.queryByText('Participant')).toBeNull();
+    expect(screen.queryByText(/Continue/)).toBeNull();
   });
 
   it('renders nothing while the progress query is loading', () => {
