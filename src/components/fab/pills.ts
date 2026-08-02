@@ -3,6 +3,7 @@ import {
   Calendar,
   ClipboardClock,
   FlaskConical,
+  Form,
   HeartPulse,
   MapPin,
   Sparkles,
@@ -89,5 +90,11 @@ export const adminPills: Pill[] = [
     delay: 0,
     action: 'register-practitioner'
   },
-  { label: 'Add Location', icon: MapPin, delay: 50, action: 'add-location' }
+  { label: 'Add Location', icon: MapPin, delay: 50, action: 'add-location' },
+  {
+    label: 'Add Assessments',
+    icon: Form,
+    delay: 100,
+    action: 'add-assessment'
+  }
 ];

@@ -7,6 +7,7 @@ import { resolveMode, useFab } from '@/context/fabContext';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
+import AddAssessmentDrawer from './add-assessment-drawer';
 import AddLocationDrawer from './add-location-drawer';
 import { ActionFab } from './fab/action-button';
 import { FabCustomMenu } from './fab/custom-menu';
@@ -42,6 +43,7 @@ export default function QuickActionFab() {
   const { state, dispatch } = useFab();
   const [showRegisterPrac, setShowRegisterPrac] = useState(false);
   const [showAddLocation, setShowAddLocation] = useState(false);
+  const [showAddAssessment, setShowAddAssessment] = useState(false);
 
   const mode = resolveMode(state);
   const roleName = authState?.userInfo?.role_name;
@@ -67,6 +69,10 @@ export default function QuickActionFab() {
       }
       if (pill.action === 'add-location') {
         setShowAddLocation(true);
+        return;
+      }
+      if (pill.action === 'add-assessment') {
+        setShowAddAssessment(true);
         return;
       }
       if (redirectGuestIfNeeded(pill, isGuest)) {
@@ -138,6 +144,10 @@ export default function QuickActionFab() {
             open={showAddLocation}
             onClose={() => setShowAddLocation(false)}
           />
+          <AddAssessmentDrawer
+            open={showAddAssessment}
+            onClose={() => setShowAddAssessment(false)}
+          />
         </>
       );
     }
@@ -163,6 +173,10 @@ export default function QuickActionFab() {
           <AddLocationDrawer
             open={showAddLocation}
             onClose={() => setShowAddLocation(false)}
+          />
+          <AddAssessmentDrawer
+            open={showAddAssessment}
+            onClose={() => setShowAddAssessment(false)}
           />
         </>
       );

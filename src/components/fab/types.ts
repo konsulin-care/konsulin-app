@@ -34,7 +34,11 @@ export interface Pill {
   href?: string;
 }
 
-export type PillAction = 'navigate' | 'register-practitioner' | 'add-location';
+export type PillAction =
+  | 'navigate'
+  | 'register-practitioner'
+  | 'add-location'
+  | 'add-assessment';
 
 export type FabVariant = 'primary' | 'danger' | 'secondary' | 'ghost';
 

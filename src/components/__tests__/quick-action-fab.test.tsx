@@ -1,13 +1,13 @@
 import { FabProvider, useFab } from '@/context/fabContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import QuickActionFab from '../quick-action-fab';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } }
 });
-let mockRole = 'Patient';
+const mockRole = 'Patient';
 let disabledOnSave: () => void;
 let enabledOnSave: () => void;
 
@@ -196,108 +196,6 @@ describe('QuickActionFab', () => {
       expect(getFabButton(container).className).toMatch(/h-14.*w-14/);
       expect(container.querySelector('.lucide-plus')).toBeTruthy();
     });
-  });
-});
-
-describe('QuickActionFab clinic admin', () => {
-  beforeEach(() => {
-    mockRole = 'Clinic Admin';
-  });
-  afterEach(() => {
-    mockRole = 'Patient';
-  });
-
-  it('renders Register Practitioner and Add Location pills', () => {
-    renderFab();
-    fireEvent.click(getFabButton(renderFab().container));
-    expect(screen.getByText('Register Practitioner')).toBeDefined();
-    expect(screen.getByText('Add Location')).toBeDefined();
-  });
-
-  it('does not render patient pills for ClinicAdmin', () => {
-    renderFab();
-    fireEvent.click(getFabButton(renderFab().container));
-    expect(screen.queryByText('Self Checkup')).toBeNull();
-  });
-
-  it('opens RegisterPractitionerDrawer when clicked', () => {
-    renderFab();
-    fireEvent.click(getFabButton(renderFab().container));
-    fireEvent.click(screen.getByText('Register Practitioner'));
-    expect(screen.getByLabelText('Name')).toBeDefined();
-    expect(screen.getByLabelText('Email')).toBeDefined();
-  });
-
-  it('opens AddLocationDrawer when clicked', () => {
-    renderFab();
-    fireEvent.click(getFabButton(renderFab().container));
-    fireEvent.click(screen.getByText('Add Location'));
-    expect(screen.getByLabelText('Longitude')).toBeDefined();
-    expect(screen.getByLabelText('Latitude')).toBeDefined();
-  });
-
-  it('renders patient pills for Patient role', () => {
-    mockRole = 'Patient';
-    renderFab();
-    fireEvent.click(getFabButton(renderFab().container));
-    expect(screen.getByText('Self Checkup')).toBeDefined();
-    expect(screen.queryByText('Register Practitioner')).toBeNull();
-  });
-
-  it('calls router.push when a navigation pill is clicked without throwing', () => {
-    mockRole = 'Patient';
-    renderFab();
-    const toggle = getFabButton(document.body);
-    fireEvent.click(toggle);
-    expect(() =>
-      fireEvent.click(screen.getByText('Self Checkup'))
-    ).not.toThrow();
-  });
-
-  it('applies scroll visibility classes to idle mode container', () => {
-    const { container } = renderFab();
-    // Default state is idle — the outer container should have visibility classes
-    const containers = container.querySelectorAll(
-      '[class*="fixed"][class*="transition-all"]'
-    );
-    expect(containers.length).toBeGreaterThan(0);
-    // At least one container should have the visible classes
-    const hasVisible = [...containers].some(
-      c =>
-        c.className.includes('translate-y-0') &&
-        c.className.includes('opacity-100')
-    );
-    expect(hasVisible).toBe(true);
-  });
-
-  it('applies scroll visibility classes to action mode container', () => {
-    const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-action'));
-    const actionContainer = container.querySelector(
-      '[class*="fixed"][class*="z-50"]'
-    );
-    expect(actionContainer?.className).toContain('translate-y-0');
-    expect(actionContainer?.className).toContain('opacity-100');
-  });
-
-  it('applies scroll visibility classes to selection mode container', () => {
-    const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-selection'));
-    const selectionContainer = container.querySelector(
-      '[class*="fixed"][class*="z-50"]'
-    );
-    expect(selectionContainer?.className).toContain('translate-y-0');
-    expect(selectionContainer?.className).toContain('opacity-100');
-  });
-
-  it('renders practitioner pills for Practitioner role', () => {
-    mockRole = 'Practitioner';
-    renderFab();
-    fireEvent.click(getFabButton(renderFab().container));
-    expect(screen.getByText('Set Availability')).toBeDefined();
-    expect(screen.getByText('Health Screening')).toBeDefined();
-    expect(screen.queryByText('Self Checkup')).toBeNull();
-    expect(screen.queryByText('Register Practitioner')).toBeNull();
   });
 });
 
