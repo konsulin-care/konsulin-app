@@ -39,10 +39,12 @@ vi.mock('react-toastify', () => ({
   }
 }));
 
+import type { IStateAuth } from '@/context/auth/authTypes';
 import { dbGetAll } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { getAuthCookieSession } from '@/services/auth';
 import { clearIntent, getIntent } from '@/utils/redirect-intent';
+import type { AxiosInstance } from 'axios';
 import { useRouter } from 'next/navigation';
 import { useRedirectIntent } from '../useRedirectIntent';
 
@@ -53,7 +55,10 @@ function TestHarness({
   isLoading: boolean;
   authState: Record<string, unknown>;
 }) {
-  useRedirectIntent({ isLoading, authState });
+  useRedirectIntent({
+    isLoading,
+    authState: authState as unknown as IStateAuth
+  });
   return null;
 }
 
@@ -84,7 +89,7 @@ describe('useRedirectIntent research invalidation', () => {
     vi.mocked(getIntent).mockReturnValue(null);
     vi.mocked(getAPI).mockResolvedValue({
       patch: mockPatch
-    });
+    } as unknown as AxiosInstance);
     vi.mocked(dbGetAll).mockResolvedValue([]);
     vi.mocked(getAuthCookieSession).mockResolvedValue({
       authenticated: true,

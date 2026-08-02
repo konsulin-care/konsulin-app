@@ -169,6 +169,7 @@ describe('resolveCjsDefaultExport', () => {
   });
 
   it('returns undefined for undefined input', () => {
-    expect(resolveCjsDefaultExport()).toBeUndefined();
+    // eslint-disable-next-line unicorn/no-useless-undefined -- explicit undefined input under test
+    expect(resolveCjsDefaultExport(undefined)).toBeUndefined();
   });
 });

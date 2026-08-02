@@ -23,7 +23,8 @@ describe('getLucideIconName', () => {
   });
 
   it('returns null when codes array is undefined', () => {
-    expect(getLucideIconName()).toBeNull();
+    // eslint-disable-next-line unicorn/no-useless-undefined -- explicit undefined input under test
+    expect(getLucideIconName(undefined)).toBeNull();
   });
 
   it('returns null when codes array is empty', () => {

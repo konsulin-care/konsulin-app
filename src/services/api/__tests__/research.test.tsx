@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
+import type { AxiosInstance } from 'axios';
 import type { Bundle } from 'fhir/r4';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getAPI } from '../../api';
@@ -90,7 +91,7 @@ describe('useResearchProgress', () => {
     const mockPost = vi.fn().mockResolvedValue({ data: EMPTY_BATCH_RESPONSE });
     vi.mocked(getAPI).mockResolvedValue({
       post: mockPost
-    } as unknown as ReturnType<typeof getAPI>);
+    } as unknown as AxiosInstance);
 
     const { result } = renderHook(() => useResearchProgress(), {
       wrapper: createWrapper()
@@ -116,7 +117,7 @@ describe('useResearchProgress', () => {
     const mockPost = vi.fn().mockResolvedValue({ data: EMPTY_BATCH_RESPONSE });
     vi.mocked(getAPI).mockResolvedValue({
       post: mockPost
-    } as unknown as ReturnType<typeof getAPI>);
+    } as unknown as AxiosInstance);
 
     const { result } = renderHook(() => useResearchProgress(), {
       wrapper: createWrapper()
@@ -139,7 +140,7 @@ describe('useResearchProgress', () => {
     const mockPost = vi.fn();
     vi.mocked(getAPI).mockResolvedValue({
       post: mockPost
-    } as unknown as ReturnType<typeof getAPI>);
+    } as unknown as AxiosInstance);
 
     const { result } = renderHook(() => useResearchProgress(), {
       wrapper: createWrapper()
@@ -218,7 +219,7 @@ describe('useResearchProgress', () => {
     });
     vi.mocked(getAPI).mockResolvedValue({
       post: mockPost
-    } as unknown as ReturnType<typeof getAPI>);
+    } as unknown as AxiosInstance);
 
     const { result } = renderHook(() => useResearchProgress(), {
       wrapper: createWrapper()

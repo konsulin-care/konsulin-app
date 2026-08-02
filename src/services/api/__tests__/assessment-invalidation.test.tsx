@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
+import type { AxiosInstance } from 'axios';
 import type { QuestionnaireResponse } from 'fhir/r4';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getAPI } from '../../api';
@@ -49,7 +50,7 @@ describe('questionnaire submission research invalidation', () => {
     const mockPost = vi.fn().mockResolvedValue({ data: MOCK_QR });
     vi.mocked(getAPI).mockResolvedValue({
       post: mockPost
-    } as unknown as ReturnType<typeof getAPI>);
+    } as unknown as AxiosInstance);
 
     const { result } = renderHook(() => useSubmitQuestionnaire('phq2', true), {
       wrapper: createWrapper(queryClient)
@@ -74,7 +75,7 @@ describe('questionnaire submission research invalidation', () => {
     const mockPut = vi.fn().mockResolvedValue({ data: MOCK_QR });
     vi.mocked(getAPI).mockResolvedValue({
       put: mockPut
-    } as unknown as ReturnType<typeof getAPI>);
+    } as unknown as AxiosInstance);
 
     const { result } = renderHook(
       () => useUpdateSubmitQuestionnaire('phq2', true),

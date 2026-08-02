@@ -4,6 +4,7 @@ import {
   computeConsecutiveBatches,
   computeResearchProgress,
   computeStudyProgress,
+  type BatchHistoryEntry,
   type ResearchBatch,
   type ResearchResponse
 } from '../research';
@@ -45,7 +46,7 @@ describe('computeConsecutiveBatches', () => {
       { batchId: 'b1', participated: true },
       { batchId: 'b2', participated: true },
       { batchId: 'b3', participated: false }
-    ] as unknown as { batchId: string; participated: boolean }[];
+    ] as unknown as BatchHistoryEntry[];
     expect(computeConsecutiveBatches(history)).toBe(2);
   });
 
@@ -53,7 +54,7 @@ describe('computeConsecutiveBatches', () => {
     const history = [
       { batchId: 'b1', participated: true },
       { batchId: 'b2', participated: true }
-    ] as unknown as { batchId: string; participated: boolean }[];
+    ] as unknown as BatchHistoryEntry[];
     expect(computeConsecutiveBatches(history)).toBe(2);
   });
 
@@ -61,7 +62,7 @@ describe('computeConsecutiveBatches', () => {
     const history = [
       { batchId: 'b1', participated: false },
       { batchId: 'b2', participated: false }
-    ] as unknown as { batchId: string; participated: boolean }[];
+    ] as unknown as BatchHistoryEntry[];
     expect(computeConsecutiveBatches(history)).toBe(0);
   });
 });

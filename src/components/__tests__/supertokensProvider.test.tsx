@@ -30,7 +30,8 @@ const mockRuntimeConfig = {
     apiDomain: 'http://localhost:3200',
     apiBasePath: '/api/v1',
     websiteBasePath: '/auth'
-  }
+  },
+  terminologyServer: ''
 };
 
 function renderWithRuntime(value: typeof mockRuntimeConfig | null) {

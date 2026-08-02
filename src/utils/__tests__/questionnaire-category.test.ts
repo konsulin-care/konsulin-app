@@ -40,7 +40,8 @@ describe('getQuestionnaireCategoryCode', () => {
   });
 
   it('returns null when useContext is undefined', () => {
-    expect(getQuestionnaireCategoryCode()).toBeNull();
+    // eslint-disable-next-line unicorn/no-useless-undefined -- explicit undefined input under test
+    expect(getQuestionnaireCategoryCode(undefined)).toBeNull();
   });
 
   it('returns null when useContext is empty', () => {

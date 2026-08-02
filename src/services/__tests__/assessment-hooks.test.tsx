@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
+import type { AxiosInstance } from 'axios';
 import type { Questionnaire } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAPI } from '../api';
@@ -61,7 +62,7 @@ describe('useCuratedAssessments', () => {
     mockGet = vi.fn().mockResolvedValue(MOCK_BUNDLE);
     vi.mocked(getAPI).mockResolvedValue({
       get: mockGet
-    } as unknown as ReturnType<typeof getAPI>);
+    } as unknown as AxiosInstance);
   });
 
   afterEach(() => {
@@ -134,7 +135,7 @@ describe('useFeaturedAssessments', () => {
     mockGet = vi.fn().mockResolvedValue(MOCK_BUNDLE);
     vi.mocked(getAPI).mockResolvedValue({
       get: mockGet
-    } as unknown as ReturnType<typeof getAPI>);
+    } as unknown as AxiosInstance);
   });
 
   afterEach(() => {

@@ -76,6 +76,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
 import { dbGetAll } from '@/lib/indexeddb';
 import { saveIntent } from '@/utils/redirect-intent';
+import type { ReadonlyURLSearchParams } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import ResultView from '../result-view';
 
@@ -115,7 +116,8 @@ describe('ResultView', () => {
     // Default: authenticated as guest (not logged in)
     vi.mocked(useAuth).mockReturnValue({
       state: { isAuthenticated: false, userInfo: { userId: 'guest-1' } },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     // Default: FAB context
@@ -130,13 +132,14 @@ describe('ResultView', () => {
     // Default: search param has id
     vi.mocked(useSearchParams).mockReturnValue({
       get: vi.fn().mockReturnValue('test-qr-id')
-    });
+    } as unknown as ReadonlyURLSearchParams);
   });
 
   it('shows loading state when auth is loading', () => {
     vi.mocked(useAuth).mockReturnValue({
-      state: { isAuthenticated: false },
-      isLoading: true
+      state: { isAuthenticated: false, userInfo: {} },
+      isLoading: true,
+      dispatch: vi.fn()
     });
 
     const { container } = render(<ResultView />);
@@ -145,7 +148,9 @@ describe('ResultView', () => {
 
   it('reads id from search params', () => {
     const getMock = vi.fn().mockReturnValue('my-qr-id');
-    vi.mocked(useSearchParams).mockReturnValue({ get: getMock });
+    vi.mocked(useSearchParams).mockReturnValue({
+      get: getMock
+    } as unknown as ReadonlyURLSearchParams);
 
     render(<ResultView />);
 
@@ -163,7 +168,7 @@ describe('ResultView', () => {
   it('shows empty state when id param is missing', () => {
     vi.mocked(useSearchParams).mockReturnValue({
       get: vi.fn().mockReturnValue(null)
-    });
+    } as unknown as ReadonlyURLSearchParams);
 
     render(<ResultView />);
 
@@ -237,7 +242,8 @@ describe('ResultView', () => {
   it('does not dispatch claim FAB action when authenticated', async () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { isAuthenticated: true, userInfo: { userId: 'user-1' } },
-      isLoading: false
+      isLoading: false,
+      dispatch: vi.fn()
     });
 
     vi.mocked(dbGetAll).mockResolvedValue(sampleDraft());
