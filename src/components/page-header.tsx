@@ -34,7 +34,8 @@ const MAIN_ROUTES = new Set([
   '/assessments',
   '/profile',
   '/recommendation',
-  '/schedule'
+  '/schedule',
+  '/research'
 ]);
 
 /** Returns the page title based on current route. */
@@ -58,6 +59,9 @@ function getPageIndicator(
     }
     case '/recommendation': {
       return 'Recommended for You';
+    }
+    case '/research': {
+      return 'Research';
     }
     default: {
       return '';
