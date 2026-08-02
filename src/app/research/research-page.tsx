@@ -4,7 +4,11 @@ import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
+import { useFab } from '@/context/fabContext';
 import { useResearchProgress } from '@/services/api/research';
+import { FlaskConical } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import BatchTimeline from './batch-timeline';
 import ContributionDashboard from './contribution-dashboard';
 import ResearchHero from './research-hero';
@@ -36,7 +40,31 @@ function HowItWorksSection() {
 
 /** Research hub page: hero, batch timeline, contribution dashboard, composition. */
 export default function ResearchPage() {
+  const router = useRouter();
+  const { dispatch } = useFab();
   const { data: progress, isLoading } = useResearchProgress();
+
+  // Morph the global FAB into a Participate action that continues the first
+  // hero study. Cleared when nothing can be participated in or on unmount.
+  useEffect(() => {
+    const first = progress?.studies[0];
+    const firstUncompleted = first?.firstUncompletedQuestionnaireId;
+
+    if (firstUncompleted) {
+      dispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Participate',
+          icon: FlaskConical,
+          onAction: () => router.push(`/assessments?id=${firstUncompleted}`)
+        }
+      });
+    } else {
+      dispatch({ type: 'SET_ACTION', config: null });
+    }
+
+    return () => dispatch({ type: 'SET_ACTION', config: null });
+  }, [progress, dispatch, router]);
 
   const renderContent = () => {
     if (isLoading) {

@@ -1,13 +1,20 @@
+import type { FabAction } from '@/context/fabContext';
 import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
 
-const { mockUseResearchProgress, mockPush } = vi.hoisted(() => ({
-  mockUseResearchProgress: vi.fn(),
-  mockPush: vi.fn()
-}));
+const { mockUseResearchProgress, mockPush, mockFabDispatch } = vi.hoisted(
+  () => ({
+    mockUseResearchProgress: vi.fn(),
+    mockPush: vi.fn(),
+    mockFabDispatch: vi.fn()
+  })
+);
+
+/** Dispatched FAB actions captured by the mock, reset per test. */
+let dispatchedActions: FabAction[] = [];
 
 vi.mock('@/services/api/research', () => ({
   useResearchProgress: mockUseResearchProgress
@@ -26,6 +33,10 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/research'
 }));
 
+vi.mock('@/context/fabContext', () => ({
+  useFab: () => ({ state: {}, dispatch: mockFabDispatch })
+}));
+
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } }
@@ -36,6 +47,15 @@ function createWrapper() {
     );
   };
 }
+
+beforeEach(() => {
+  mockPush.mockReset();
+  mockFabDispatch.mockReset();
+  dispatchedActions = [];
+  mockFabDispatch.mockImplementation((action: FabAction) => {
+    dispatchedActions.push(action);
+  });
+});
 
 const BATCH_1 = {
   id: 'batch-1',
@@ -185,6 +205,56 @@ describe('ResearchPage', () => {
     render(<ResearchPage />, { wrapper: createWrapper() });
 
     expect(screen.getByText('No ongoing research')).toBeTruthy();
+  });
+
+  it('dispatches a Participate FAB action that continues into the first uncompleted questionnaire', () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    const participate = dispatchedActions.find(
+      action =>
+        action.type === 'SET_ACTION' && action.config?.label === 'Participate'
+    );
+    expect(participate).toBeTruthy();
+    if (participate?.type === 'SET_ACTION' && participate.config) {
+      void participate.config.onAction();
+    }
+    expect(mockPush).toHaveBeenCalledWith('/assessments?id=big-five-inventory');
+  });
+
+  it('clears the FAB action when there is nothing to participate in', () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({ studies: [] }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    expect(
+      dispatchedActions.some(
+        action => action.type === 'SET_ACTION' && action.config === null
+      )
+    ).toBe(true);
+  });
+
+  it('clears the FAB action when the component unmounts', () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+
+    const { unmount } = render(<ResearchPage />, { wrapper: createWrapper() });
+    unmount();
+
+    expect(
+      dispatchedActions.some(
+        action => action.type === 'SET_ACTION' && action.config === null
+      )
+    ).toBe(true);
   });
 
   it('renders the batch timeline with chips and the consecutive-batch message', () => {
