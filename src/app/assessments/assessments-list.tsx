@@ -11,12 +11,14 @@ import {
   useCuratedAssessments,
   useFeaturedAssessments
 } from '@/services/api/assessment';
+import { useResearchProgress } from '@/services/api/research';
 import { getQuestionnaireCategoryCode } from '@/utils/fhir/questionnaire-category';
 import type { Questionnaire } from 'fhir/r4';
 import { SearchIcon, X } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import AssessmentCard from './assessment-card';
+import { deriveResearchNavigation } from './assessment-drawer';
 import AssessmentsFilter, { type Filters } from './assessments-filter';
 import FeaturedRail from './featured-rail';
 import ResearchProgressCard from './research-progress-card';
@@ -117,6 +119,7 @@ export default function AssessmentsList() {
     useCuratedAssessments();
   const { data: featured = [], isLoading: featuredLoading } =
     useFeaturedAssessments();
+  const { data: researchProgress } = useResearchProgress();
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<Filters>({
     categories: [],
@@ -129,6 +132,11 @@ export default function AssessmentsList() {
   const [currentLocation, setCurrentLocation] = useState('');
 
   const isPractitioner = authState?.userInfo?.role_name === 'practitioner';
+
+  const { researchUrl, researchComplete } = deriveResearchNavigation(
+    selectedAssessment,
+    researchProgress
+  );
 
   const filtered = useMemo(
     () => filterAssessments(curated, searchTerm, filters),
@@ -282,7 +290,8 @@ export default function AssessmentsList() {
         <DrawerContent className='mx-auto max-w-screen-sm p-4'>
           <AssessmentDrawerContent
             selectedAssessment={selectedAssessment}
-            researchUrl=''
+            researchUrl={researchUrl}
+            researchComplete={researchComplete}
             currentLocation={currentLocation}
             isPending={isPending}
             isPractitioner={isPractitioner}

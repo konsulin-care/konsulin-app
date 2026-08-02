@@ -92,7 +92,7 @@ describe('SoapPage', () => {
     vi.mocked(useTodaySessions).mockReturnValue({
       data: [{ patientId: 'patient-1', patientName: 'John Doe' }],
       isLoading: false
-    } as ReturnType<typeof useTodaySessions>);
+    });
 
     vi.mocked(useQuestionnaireSoap).mockReturnValue({
       data: { id: 'soap-q', title: 'SOAP Note' },
@@ -126,7 +126,7 @@ describe('SoapPage', () => {
     vi.mocked(useTodaySessions).mockReturnValue({
       data: undefined,
       isLoading: true
-    } as ReturnType<typeof useTodaySessions>);
+    });
 
     const { wrapper } = createWrapper();
     render(<Soap />, { wrapper });
