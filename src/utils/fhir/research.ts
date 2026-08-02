@@ -2,6 +2,7 @@ import {
   getResearchLevelProgress,
   type ResearchLevelProgress
 } from '@/constants/research';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type {
   Bundle,
   PlanDefinition,
@@ -68,6 +69,16 @@ export interface ResearchProgress {
   levelProgress: ResearchLevelProgress;
   /** Unique questionnaire ids ever completed. */
   completedQuestionnaireIds: string[];
+}
+
+/**
+ * Whole calendar days from today until a batch closes, never negative.
+ *
+ * @param end - Batch close date, yyyy-mm-dd.
+ * @returns Number of days remaining, 0 when already closed.
+ */
+export function daysUntilBatch(end: string): number {
+  return Math.max(0, differenceInCalendarDays(parseISO(end), new Date()));
 }
 
 /**

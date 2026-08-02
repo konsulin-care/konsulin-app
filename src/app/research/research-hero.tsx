@@ -1,14 +1,9 @@
 'use client';
 
 import type { StudyProgress } from '@/utils/fhir/research';
-import { differenceInCalendarDays, parseISO } from 'date-fns';
+import { daysUntilBatch } from '@/utils/fhir/research';
 import { FlaskConical } from 'lucide-react';
 import Link from 'next/link';
-
-/** Whole days until a batch closes, never negative. */
-function daysUntil(end: string): number {
-  return Math.max(0, differenceInCalendarDays(parseISO(end), new Date()));
-}
 
 /** Hero card for a single concurrent research study. */
 function StudyCard({ progress }: Readonly<{ progress: StudyProgress }>) {
@@ -40,7 +35,7 @@ function StudyCard({ progress }: Readonly<{ progress: StudyProgress }>) {
             <span className='font-bold text-black'>
               Batch {progress.batches.indexOf(currentBatch) + 1}
             </span>
-            <span>Closes in {daysUntil(currentBatch.end)} days</span>
+            <span>Closes in {daysUntilBatch(currentBatch.end)} days</span>
           </div>
           <div className='h-1.5 w-full overflow-hidden rounded-full bg-gray-200'>
             <div

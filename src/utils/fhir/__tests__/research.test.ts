@@ -1,7 +1,9 @@
+import { addDays, differenceInCalendarDays, format, parseISO } from 'date-fns';
 import type { PlanDefinition, ResearchStudy } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
 import {
   computeStudyProgress,
+  daysUntilBatch,
   extractQuestionnaireId,
   isDateInRange,
   isResponseInBatch,
@@ -60,6 +62,28 @@ function makePlan(
     ]
   };
 }
+
+describe('daysUntilBatch', () => {
+  it('returns whole calendar days from today until a future close', () => {
+    const end = format(addDays(new Date(), 5), 'yyyy-MM-dd');
+    expect(daysUntilBatch(end)).toBe(5);
+  });
+
+  it('returns 0 for a batch closing today', () => {
+    expect(daysUntilBatch(format(new Date(), 'yyyy-MM-dd'))).toBe(0);
+  });
+
+  it('never returns a negative number for a closed batch', () => {
+    expect(daysUntilBatch('2020-01-01')).toBe(0);
+  });
+
+  it('matches the reference date-fns computation', () => {
+    const end = '2026-08-31';
+    expect(daysUntilBatch(end)).toBe(
+      Math.max(0, differenceInCalendarDays(parseISO(end), new Date()))
+    );
+  });
+});
 
 describe('extractQuestionnaireId', () => {
   it('extracts the id from reference and canonical forms, stripping versions', () => {
