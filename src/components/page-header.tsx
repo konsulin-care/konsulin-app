@@ -2,6 +2,7 @@
 'use client';
 
 import Avatar from '@/components/general/avatar';
+import ResearchHeaderWidget from '@/components/research/research-header-widget';
 import RoleAvatarPopup from '@/components/role-avatar-popup';
 import UpcomingSession from '@/components/schedule/upcoming-session';
 import { getNow } from '@/constants/date';
@@ -249,6 +250,10 @@ export default function PageHeader({
           </div>
         </>
       )}
+
+      {!isLoadingAuth &&
+        !isAdmin &&
+        (isPatient || !authState.isAuthenticated) && <ResearchHeaderWidget />}
 
       {isAdmin && (
         <>
