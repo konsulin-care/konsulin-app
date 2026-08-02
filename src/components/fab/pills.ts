@@ -2,6 +2,7 @@ import {
   BookText,
   Calendar,
   ClipboardClock,
+  FlaskConical,
   HeartPulse,
   MapPin,
   Sparkles,
@@ -33,10 +34,17 @@ export const patientPills: Pill[] = [
     action: 'navigate'
   },
   {
+    label: 'Join Research',
+    href: '/research',
+    icon: FlaskConical,
+    delay: 150,
+    action: 'navigate'
+  },
+  {
     label: 'Get Recommendation',
     href: '/recommendation',
     icon: Sparkles,
-    delay: 150,
+    delay: 200,
     action: 'navigate'
   }
 ];
