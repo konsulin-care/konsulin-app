@@ -15,6 +15,10 @@ vi.mock('@/services/api/assessment', () => ({
   useFeaturedAssessments: mockUseFeaturedAssessments
 }));
 
+vi.mock('@/services/api/research', () => ({
+  useResearchProgress: vi.fn(() => ({ data: undefined, isLoading: false }))
+}));
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn(() => ({
     state: { userInfo: { role_name: 'patient' } },
