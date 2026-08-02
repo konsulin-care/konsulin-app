@@ -8,6 +8,7 @@ import {
   DrawerDescription,
   DrawerTitle
 } from '@/components/ui/drawer';
+import { ASSESSMENT_CATEGORIES } from '@/constants/assessment-categories';
 import { useState } from 'react';
 
 export interface Filters {
@@ -18,31 +19,6 @@ export interface Filters {
 interface AssessmentsFilterProps {
   readonly onChange: (filters: Filters) => void;
 }
-
-const CATEGORIES = [
-  { code: 'physical-health', label: 'Physical Health' },
-  {
-    code: 'mental-emotional-health',
-    label: 'Mental & Emotional Health'
-  },
-  {
-    code: 'social-health-relationships',
-    label: 'Social Health & Relationships'
-  },
-  { code: 'functional-capacity', label: 'Functional Capacity' },
-  {
-    code: 'meaning-purpose-fulfilment',
-    label: 'Meaning, Purpose & Fulfilment'
-  },
-  {
-    code: 'health-behaviours-lifestyle',
-    label: 'Health Behaviours & Lifestyle'
-  },
-  {
-    code: 'environmental-contextual',
-    label: 'Environmental & Contextual'
-  }
-];
 
 const SORT_OPTIONS = [
   { value: 'a-z' as const, label: 'A–Z' },
@@ -94,7 +70,7 @@ export default function AssessmentsFilter({
         <div className='mt-4'>
           <h3 className='mb-2 text-sm font-semibold text-gray-700'>Category</h3>
           <div className='flex flex-col gap-2'>
-            {CATEGORIES.map(cat => (
+            {ASSESSMENT_CATEGORIES.map(cat => (
               <label
                 key={cat.code}
                 className='flex cursor-pointer items-center gap-2 text-sm'

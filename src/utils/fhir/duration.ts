@@ -1,3 +1,5 @@
+import type { Questionnaire } from 'fhir/r4';
+
 /** URLs for custom FHIR duration extensions. */
 export const DurationExtensionUrls = {
   // eslint-disable-next-line unicorn/prefer-https
@@ -68,4 +70,40 @@ export function setDurationExtension(
       valueDuration: { value: minutes }
     }
   ];
+}
+
+/**
+ * Set the estimated duration on a Questionnaire resource.
+ *
+ * Replaces any existing questionnaireEstimatedDuration extension with a
+ * valueDuration carrying the UCUM minutes unit. Preserves all other
+ * extensions on the resource.
+ *
+ * @param questionnaire - The Questionnaire resource to modify
+ * @param minutes - Estimated duration in minutes
+ * @returns A new Questionnaire object with the duration extension set
+ */
+export function setQuestionnaireDuration(
+  questionnaire: Questionnaire,
+  minutes: number
+): Questionnaire {
+  const others =
+    questionnaire.extension?.filter(
+      e => e.url !== DurationExtensionUrls.Questionnaire
+    ) ?? [];
+
+  return {
+    ...questionnaire,
+    extension: [
+      ...others,
+      {
+        url: DurationExtensionUrls.Questionnaire,
+        valueDuration: {
+          value: minutes,
+          system: 'https://unitsofmeasure.org',
+          code: 'min'
+        }
+      }
+    ]
+  };
 }
