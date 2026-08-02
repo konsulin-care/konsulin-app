@@ -253,6 +253,7 @@ export default function PageHeader({
 
       {!isLoadingAuth &&
         !isAdmin &&
+        pathname !== '/research' &&
         (isPatient || !authState.isAuthenticated) && <ResearchHeaderWidget />}
 
       {isAdmin && (

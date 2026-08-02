@@ -4,18 +4,21 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PageHeader from '../page-header';
 
-const { mockUseAuth, mockUseResearchProgress } = vi.hoisted(() => ({
-  mockUseAuth: vi.fn<
-    () => {
-      isLoading: boolean;
-      state: {
-        isAuthenticated: boolean;
-        userInfo: { role_name?: string; fhirId?: string; fullname?: string };
-      };
-    }
-  >(),
-  mockUseResearchProgress: vi.fn()
-}));
+const { mockUseAuth, mockUseResearchProgress, mockPathname } = vi.hoisted(
+  () => ({
+    mockUseAuth: vi.fn<
+      () => {
+        isLoading: boolean;
+        state: {
+          isAuthenticated: boolean;
+          userInfo: { role_name?: string; fhirId?: string; fullname?: string };
+        };
+      }
+    >(),
+    mockUseResearchProgress: vi.fn(),
+    mockPathname: { current: '/' }
+  })
+);
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => mockUseAuth()
@@ -24,7 +27,7 @@ vi.mock('@/context/auth/authContext', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
-  usePathname: () => '/'
+  usePathname: () => mockPathname.current
 }));
 
 vi.mock('@/hooks/useUpcomingEvents', () => ({
@@ -109,6 +112,7 @@ const PROGRESS_DATA: ResearchProgress = {
 
 /** The widget must be hidden by role gating, not by a missing data source. */
 beforeEach(() => {
+  mockPathname.current = '/';
   mockUseResearchProgress.mockReturnValue({
     data: PROGRESS_DATA,
     isLoading: false
@@ -121,6 +125,7 @@ function renderHeader() {
 
 describe('PageHeader research widget gating', () => {
   it('shows the widget for patients', () => {
+    mockPathname.current = '/';
     mockUseAuth.mockReturnValue({
       isLoading: false,
       state: {
@@ -134,6 +139,7 @@ describe('PageHeader research widget gating', () => {
   });
 
   it('shows the widget for guests', () => {
+    mockPathname.current = '/';
     mockUseAuth.mockReturnValue({
       isLoading: false,
       state: { isAuthenticated: false, userInfo: {} }
@@ -160,6 +166,20 @@ describe('PageHeader research widget gating', () => {
     mockUseAuth.mockReturnValue({
       isLoading: false,
       state: { isAuthenticated: true, userInfo: { role_name: 'Clinic Admin' } }
+    });
+
+    renderHeader();
+    expect(screen.queryByTestId('research-header-widget')).toBeNull();
+  });
+
+  it('hides the widget on the /research page', () => {
+    mockPathname.current = '/research';
+    mockUseAuth.mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'Patient', fhirId: 'P1', fullname: 'Test' }
+      }
     });
 
     renderHeader();
