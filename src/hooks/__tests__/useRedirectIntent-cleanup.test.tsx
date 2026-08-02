@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -49,7 +50,11 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useRedirectIntent } from '../useRedirectIntent';
 
-function TestHarness({
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false } }
+});
+
+function HarnessInner({
   isLoading,
   authState
 }: {
@@ -58,6 +63,20 @@ function TestHarness({
 }) {
   useRedirectIntent({ isLoading, authState });
   return null;
+}
+
+function TestHarness({
+  isLoading,
+  authState
+}: {
+  isLoading: boolean;
+  authState: Record<string, unknown>;
+}) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <HarnessInner isLoading={isLoading} authState={authState} />
+    </QueryClientProvider>
+  );
 }
 
 describe('useRedirectIntent cleanup after claim', () => {

@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 import { STORES, dbDelete } from '@/lib/indexeddb';
 import { IQuestionnaireResponse } from '@/types/assessment';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {
   Bundle,
@@ -224,6 +224,8 @@ export const useSubmitQuestionnaire = (
   questionnaireId: string,
   isAuthenticated: boolean
 ) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
     mutationFn: async (questionnaireResponse: QuestionnaireResponse) => {
@@ -261,6 +263,10 @@ export const useSubmitQuestionnaire = (
       }
 
       return response.data;
+    },
+    onSuccess: () => {
+      // Reflect the new contribution in research progress widgets.
+      void queryClient.invalidateQueries({ queryKey: ['research'] });
     }
   });
 };
@@ -270,6 +276,8 @@ export const useUpdateSubmitQuestionnaire = (
   questionnaireId: string,
   isAuthenticated: boolean
 ) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
     mutationFn: async (questionnaireResponse: QuestionnaireResponse) => {
@@ -304,6 +312,10 @@ export const useUpdateSubmitQuestionnaire = (
         }
       );
       return response.data;
+    },
+    onSuccess: () => {
+      // Reflect the updated contribution in research progress widgets.
+      void queryClient.invalidateQueries({ queryKey: ['research'] });
     }
   });
 };

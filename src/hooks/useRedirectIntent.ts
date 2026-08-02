@@ -13,6 +13,8 @@ import {
   getIntent,
   getRedirectIntent
 } from '@/utils/redirect-intent';
+import type { QueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -141,11 +143,15 @@ async function ensurePatientRoleForClaim(): Promise<boolean> {
 /** Claim the guest's assessment result and clean up the local draft. */
 async function claimAssessmentResult(
   intent: Intent,
-  signal: AbortSignal
+  signal: AbortSignal,
+  queryClient: QueryClient
 ): Promise<void> {
   const api = await getAPI();
   await api.patch('/api/v1/auth/anonymous/claim', null, { signal });
   toast.success('Your assessment result is now linked to your account.');
+
+  // Previously-anonymous responses now count toward research progress.
+  await queryClient.invalidateQueries({ queryKey: ['research'] });
 
   // Clean up the local IndexedDB draft for the claimed QR
   if (!intent.payload.qrId) return;
@@ -167,7 +173,8 @@ async function claimAssessmentResult(
 function handleIntent(
   setIsRedirecting: (v: boolean) => void,
   isHandlingRef: { current: boolean },
-  router: ReturnType<typeof useRouter>
+  router: ReturnType<typeof useRouter>,
+  queryClient: QueryClient
 ): (() => void) | undefined {
   const intent = getIntent();
   if (!intent || isHandlingRef.current) return undefined;
@@ -190,7 +197,11 @@ function handleIntent(
           // Page is reloading to re-bootstrap as Patient — abort this flow.
           return;
         }
-        await claimAssessmentResult(intent, abortController.signal);
+        await claimAssessmentResult(
+          intent,
+          abortController.signal,
+          queryClient
+        );
 
         router.push(intent.payload.path);
         clearIntent();
@@ -245,6 +256,7 @@ export function useRedirectIntent({
   authState
 }: UseRedirectIntentOptions) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isRedirecting, setIsRedirecting] = useState(true);
   const isHandlingIntentRef = useRef(false);
 
@@ -257,7 +269,12 @@ export function useRedirectIntent({
     } else if (handleStoredRedirect(setIsRedirecting, router)) {
       // redirect handled
     } else if (authState.isAuthenticated) {
-      cleanup = handleIntent(setIsRedirecting, isHandlingIntentRef, router);
+      cleanup = handleIntent(
+        setIsRedirecting,
+        isHandlingIntentRef,
+        router,
+        queryClient
+      );
       if (!cleanup) {
         setIsRedirecting(false);
       }
@@ -265,7 +282,13 @@ export function useRedirectIntent({
       setIsRedirecting(false);
     }
     return cleanup;
-  }, [isLoading, authState.isAuthenticated, authState.userInfo, router]);
+  }, [
+    isLoading,
+    authState.isAuthenticated,
+    authState.userInfo,
+    router,
+    queryClient
+  ]);
 
   return { isRedirecting };
 }
