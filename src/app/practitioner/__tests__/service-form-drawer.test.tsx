@@ -134,7 +134,8 @@ vi.mock('@/components/ui/button', () => ({
 import type { HealthcareService } from 'fhir/r4';
 
 describe('ServiceFormDrawer', () => {
-  const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
+  // eslint-disable-next-line unicorn/prefer-https
+  const FEE_EXTENSION_URL = 'http://konsulin.care/fhir/StructureDefinition/fee';
   const defaultProps = {
     open: true,
     onClose: vi.fn(),

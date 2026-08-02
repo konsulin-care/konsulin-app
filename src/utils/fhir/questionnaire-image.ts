@@ -1,7 +1,8 @@
 import type { Questionnaire } from 'fhir/r4';
 
 const QUESTIONNAIRE_IMAGE_EXTENSION_URL =
-  'https://konsulin.id/fhir/StructureDefinition/questionnaireImage';
+  // eslint-disable-next-line unicorn/prefer-https
+  'http://konsulin.care/fhir/StructureDefinition/questionnaireImage';
 
 /**
  * Extract the image URL from a Questionnaire's extension.

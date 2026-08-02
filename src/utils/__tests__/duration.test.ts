@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-https */
 import { describe, expect, it } from 'vitest';
 import {
   DurationExtensionUrls,
@@ -56,7 +57,7 @@ describe('getDurationInMinutes', () => {
     const resource = {
       extension: [
         {
-          url: 'https://konsulin.id/fhir/StructureDefinition/fee',
+          url: 'http://konsulin.care/fhir/StructureDefinition/fee',
           valueDuration: { value: 50 }
         }
       ]

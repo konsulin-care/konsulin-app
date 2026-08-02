@@ -152,7 +152,7 @@ func TestRelayBooking_bundleHasCorrectResources(t *testing.T) {
 				"name":         "Konsultasi Umum",
 				"extension": []map[string]any{
 					{
-						"url": "https://konsulin.id/fhir/StructureDefinition/fee",
+						"url": "http://konsulin.care/fhir/StructureDefinition/fee",
 						"valueMoney": map[string]any{
 							"value":    150000,
 							"currency": "IDR",

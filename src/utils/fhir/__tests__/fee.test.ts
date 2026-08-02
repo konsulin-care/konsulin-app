@@ -2,7 +2,8 @@ import type { HealthcareService } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
 import { getFeeFromHealthcareService } from '../fee';
 
-const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
+// eslint-disable-next-line unicorn/prefer-https
+const FEE_EXTENSION_URL = 'http://konsulin.care/fhir/StructureDefinition/fee';
 
 describe('getFeeFromHealthcareService', () => {
   it('returns fee when extension is present', () => {

@@ -30,9 +30,11 @@ import { useRouter } from 'next/navigation';
 const mockUseDetailPractitioner = vi.mocked(useDetailPractitioner);
 const mockUseRouter = vi.mocked(useRouter);
 
-const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
+// eslint-disable-next-line unicorn/prefer-https
+const FEE_EXTENSION_URL = 'http://konsulin.care/fhir/StructureDefinition/fee';
 const DURATION_EXTENSION_URL =
-  'https://konsulin.id/fhir/StructureDefinition/serviceDuration';
+  // eslint-disable-next-line unicorn/prefer-https
+  'http://konsulin.care/fhir/StructureDefinition/serviceDuration';
 
 const baseLocation = {
   name: 'Jakarta Heart Clinic - Menteng',
@@ -289,7 +291,7 @@ describe('PatientDetail', () => {
       isLoading: true,
       isError: false,
       isFetching: false
-    } as unknown as ReturnType<typeof useDetailPractitioner>);
+    });
 
     render(<PatientDetail practitionerRoleId='role-123' />);
     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
@@ -301,7 +303,7 @@ describe('PatientDetail', () => {
       isLoading: false,
       isError: false,
       isFetching: false
-    } as unknown as ReturnType<typeof useDetailPractitioner>);
+    });
 
     const { container } = render(
       <PatientDetail practitionerRoleId='role-123' />
@@ -518,7 +520,7 @@ describe('PatientDetail', () => {
       const img = avatarContainer?.querySelector('img');
       expect(img?.getAttribute('src')).toBe(photoUrl);
 
-      fireEvent.error(img as HTMLElement);
+      fireEvent.error(img);
 
       // After error, should fall back to gradient data URI
       const gradientImg = avatarContainer?.querySelector('img');

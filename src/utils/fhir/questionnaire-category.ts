@@ -1,4 +1,5 @@
-const DOMAIN_SYSTEM = 'https://konsulin.id/fhir/CodeSystem/assessment-domain';
+// eslint-disable-next-line unicorn/prefer-https
+const DOMAIN_SYSTEM = 'http://konsulin.care/fhir/CodeSystem/assessment-domain';
 
 /**
  * Extract the assessment category code from a Questionnaire's useContext array.

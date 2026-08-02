@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-https */
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { Questionnaire } from 'fhir/r4';
 import { describe, expect, it, vi } from 'vitest';
@@ -13,16 +14,16 @@ vi.mock('next/image', () => ({
 import AssessmentCard from '../assessment-card';
 
 const DURATION_URL =
-  'https://konsulin.id/fhir/StructureDefinition/questionnaireEstimatedDuration';
+  'http://konsulin.care/fhir/StructureDefinition/questionnaireEstimatedDuration';
 
 const IMAGE_URL =
-  'https://konsulin.id/fhir/StructureDefinition/questionnaireImage';
+  'http://konsulin.care/fhir/StructureDefinition/questionnaireImage';
 
 const FALLBACK_URL =
   'https://www.glasgowunisrc.org/pageassets/advice/health-and-wellbeing/AdobeStock_220793275-min.jpeg?thumbnail=true&height=465&width=620&resize_type=CropToFit';
 
 const CATEGORY_CODING = {
-  system: 'https://konsulin.id/fhir/CodeSystem/assessment-domain',
+  system: 'http://konsulin.care/fhir/CodeSystem/assessment-domain',
   code: 'mental-emotional-health'
 };
 

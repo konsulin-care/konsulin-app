@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-https */
 import { describe, expect, it } from 'vitest';
 import {
   getQuestionnaireCategoryCode,
@@ -5,7 +6,7 @@ import {
 } from '../fhir/questionnaire-category';
 
 const DOMAIN_CODING = {
-  system: 'https://konsulin.id/fhir/CodeSystem/assessment-domain',
+  system: 'http://konsulin.care/fhir/CodeSystem/assessment-domain',
   code: 'mental-emotional-health',
   display: 'Mental & Emotional Health'
 };
@@ -69,7 +70,7 @@ describe('getQuestionnaireCategoryLabel', () => {
         valueCodeableConcept: {
           coding: [
             {
-              system: 'https://konsulin.id/fhir/CodeSystem/assessment-domain',
+              system: 'http://konsulin.care/fhir/CodeSystem/assessment-domain',
               code: 'physical-health'
             }
           ]

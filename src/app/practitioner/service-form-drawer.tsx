@@ -19,7 +19,8 @@ import {
 import type { HealthcareService } from 'fhir/r4';
 import { useCallback, useState } from 'react';
 
-const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
+// eslint-disable-next-line unicorn/prefer-https
+const FEE_EXTENSION_URL = 'http://konsulin.care/fhir/StructureDefinition/fee';
 
 type Props = {
   readonly open: boolean;

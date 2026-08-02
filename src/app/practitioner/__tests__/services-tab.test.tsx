@@ -5,7 +5,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { HealthcareService, PractitionerRole } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
+// eslint-disable-next-line unicorn/prefer-https
+const FEE_EXTENSION_URL = 'http://konsulin.care/fhir/StructureDefinition/fee';
 
 const mockServices: HealthcareService[] = [
   {

@@ -1,7 +1,8 @@
 import type { Location } from 'fhir/r4';
 
 const LOCATION_IMAGE_EXTENSION_URL =
-  'https://konsulin.id/fhir/StructureDefinition/locationImage';
+  // eslint-disable-next-line unicorn/prefer-https
+  'http://konsulin.care/fhir/StructureDefinition/locationImage';
 
 /**
  * Extract the image URL from a Location's extension.

@@ -1,6 +1,7 @@
 import type { HealthcareService, Money } from 'fhir/r4';
 
-const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
+// eslint-disable-next-line unicorn/prefer-https
+const FEE_EXTENSION_URL = 'http://konsulin.care/fhir/StructureDefinition/fee';
 
 /**
  * Extract the fee (Money) from a HealthcareService's extension.

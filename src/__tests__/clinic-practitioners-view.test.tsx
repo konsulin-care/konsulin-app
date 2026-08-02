@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-https */
 /* eslint-disable max-lines */
 /* reason: comprehensive integration test for ClinicPractitionersView */
 import ClinicPractitionersView from '@/components/clinic/clinic-practitioners-view';
@@ -181,7 +182,7 @@ describe('ClinicPractitionersView', () => {
       locEntry({
         extension: [
           {
-            url: 'https://konsulin.id/fhir/StructureDefinition/locationImage',
+            url: 'http://konsulin.care/fhir/StructureDefinition/locationImage',
             valueUrl:
               'https://res.cloudinary.com/test/image/upload/v1/clinic.webp'
           }

@@ -1,11 +1,12 @@
+/* eslint-disable unicorn/prefer-https */
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { HealthcareService } from 'fhir/r4';
 import { describe, expect, it, vi } from 'vitest';
 import ServiceCard from '../service-card';
 
-const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
+const FEE_EXTENSION_URL = 'http://konsulin.care/fhir/StructureDefinition/fee';
 const DURATION_EXTENSION_URL =
-  'https://konsulin.id/fhir/StructureDefinition/serviceDuration';
+  'http://konsulin.care/fhir/StructureDefinition/serviceDuration';
 
 const activeService: HealthcareService = {
   resourceType: 'HealthcareService',

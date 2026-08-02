@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-https */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { QueryClient } from '@tanstack/react-query';
 import { expect, type Mock, vi } from 'vitest';
@@ -41,7 +42,7 @@ export function createMockSelf() {
     }),
     skipWaiting: vi.fn(),
     clients: { claim: vi.fn() },
-    location: { origin: 'https://konsulin.id' }
+    location: { origin: 'http://konsulin.care' }
   };
 }
 

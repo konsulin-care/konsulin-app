@@ -1,8 +1,10 @@
 /** URLs for custom FHIR duration extensions. */
 export const DurationExtensionUrls = {
-  Service: 'https://konsulin.id/fhir/StructureDefinition/serviceDuration',
+  // eslint-disable-next-line unicorn/prefer-https
+  Service: 'http://konsulin.care/fhir/StructureDefinition/serviceDuration',
   Questionnaire:
-    'https://konsulin.id/fhir/StructureDefinition/questionnaireEstimatedDuration'
+    // eslint-disable-next-line unicorn/prefer-https
+    'http://konsulin.care/fhir/StructureDefinition/questionnaireEstimatedDuration'
 } as const;
 
 /**

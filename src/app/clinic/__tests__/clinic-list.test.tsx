@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-https */
 /* eslint-disable max-lines */
 import { useAuth } from '@/context/auth/authContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -92,7 +93,7 @@ function createMockLocation(
         closingTime: '18:00:00'
       }
     ]
-  } as Location;
+  };
 }
 
 beforeEach(() => {
@@ -468,7 +469,7 @@ describe('ClinicList — cards', () => {
     );
     locationWithImage.extension = [
       {
-        url: 'https://konsulin.id/fhir/StructureDefinition/locationImage',
+        url: 'http://konsulin.care/fhir/StructureDefinition/locationImage',
         valueUrl: 'https://res.cloudinary.com/test/image/upload/v1/sample.webp'
       }
     ];

@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-https */
 import { describe, expect, it } from 'vitest';
 
 /* Mirrors public/sw.js lines 42-57 */
@@ -23,16 +24,16 @@ function isProxyApi(pathname: string): boolean {
 // isSameOrigin
 // ---------------------------------------------------------------------------
 describe('isSameOrigin', () => {
-  const ORIGIN = 'https://konsulin.id';
+  const ORIGIN = 'http://konsulin.care';
 
   it('returns true when origins match exactly', () => {
-    expect(isSameOrigin(new URL('https://konsulin.id/page'), ORIGIN)).toBe(
+    expect(isSameOrigin(new URL('http://konsulin.care/page'), ORIGIN)).toBe(
       true
     );
   });
 
   it('returns true for root path', () => {
-    expect(isSameOrigin(new URL('https://konsulin.id/'), ORIGIN)).toBe(true);
+    expect(isSameOrigin(new URL('http://konsulin.care/'), ORIGIN)).toBe(true);
   });
 
   it('returns false for different host', () => {
@@ -40,22 +41,21 @@ describe('isSameOrigin', () => {
   });
 
   it('returns false for different protocol', () => {
-    // eslint-disable-next-line unicorn/prefer-https
-    expect(isSameOrigin(new URL('http://konsulin.id/page'), ORIGIN)).toBe(
+    expect(isSameOrigin(new URL('https://konsulin.care/page'), ORIGIN)).toBe(
       false
     );
   });
 
   it('returns false for different port', () => {
-    expect(isSameOrigin(new URL('https://konsulin.id:8080/page'), ORIGIN)).toBe(
-      false
-    );
+    expect(
+      isSameOrigin(new URL('http://konsulin.care:8080/page'), ORIGIN)
+    ).toBe(false);
   });
 
   it('returns false for subdomain', () => {
-    expect(isSameOrigin(new URL('https://app.konsulin.id/page'), ORIGIN)).toBe(
-      false
-    );
+    expect(
+      isSameOrigin(new URL('https://app.konsulin.care/page'), ORIGIN)
+    ).toBe(false);
   });
 });
 

@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-https */
 import {
   cacheFirst,
   isValidHttpUrl,
@@ -60,11 +61,11 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 describe('isValidHttpUrl', () => {
   it('returns true for https URL', () => {
-    expect(isValidHttpUrl('https://konsulin.id/page')).toBe(true);
+    expect(isValidHttpUrl('http://konsulin.care/page')).toBe(true);
   });
 
   it('returns true for http URL', () => {
-    expect(isValidHttpUrl('http://konsulin.id/page')).toBe(true); // eslint-disable-line unicorn/prefer-https
+    expect(isValidHttpUrl('http://konsulin.care:8080/page')).toBe(true);
   });
 
   it('returns false for javascript: URL', () => {
@@ -86,7 +87,7 @@ describe('isValidHttpUrl', () => {
   });
 
   it('returns false for blob URL', () => {
-    expect(isValidHttpUrl('blob:https://konsulin.id/uuid')).toBe(false);
+    expect(isValidHttpUrl('blob:http://konsulin.care/uuid')).toBe(false);
   });
 
   it('returns false for about:blank', () => {
