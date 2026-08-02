@@ -21,7 +21,6 @@ import AssessmentCard from './assessment-card';
 import { deriveResearchNavigation } from './assessment-drawer';
 import AssessmentsFilter, { type Filters } from './assessments-filter';
 import FeaturedRail from './featured-rail';
-import ResearchProgressCard from './research-progress-card';
 
 const AssessmentDrawerContent = lazyComponent(
   () => import('./assessment-drawer'),
@@ -198,10 +197,6 @@ export default function AssessmentsList() {
       <PageHeader />
 
       <ContentWraper className='pt-4'>
-        <div className='px-4'>
-          <ResearchProgressCard />
-        </div>
-
         {/* Search + Filter */}
         <div className='flex items-center gap-2 px-4'>
           <InputWithIcon
