@@ -139,7 +139,7 @@ describe('ResearchPage', () => {
     expect(screen.getAllByText('1/2 questionnaires').length).toBeGreaterThan(0);
   });
 
-  it('links the hero CTA to the first uncompleted questionnaire', () => {
+  it('makes the hero study card clickable, linking to the first uncompleted questionnaire', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
@@ -147,8 +147,11 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    const cta = screen.getByRole('link', { name: /participate/i });
-    expect(cta.getAttribute('href')).toBe('/assessments?id=big-five-inventory');
+    const card = screen.getByTestId('study-card-research');
+    expect(card.getAttribute('href')).toBe(
+      '/assessments?id=big-five-inventory'
+    );
+    expect(screen.queryByRole('link', { name: /participate/i })).toBeNull();
   });
 
   it('renders a completion state instead of a stale CTA when the batch is done', () => {
@@ -169,7 +172,8 @@ describe('ResearchPage', () => {
     render(<ResearchPage />, { wrapper: createWrapper() });
 
     expect(screen.getByText(/You've completed this batch/i)).toBeTruthy();
-    expect(screen.queryByRole('link', { name: /participate/i })).toBeNull();
+    // Completed batches are not clickable cards.
+    expect(screen.queryByTestId('study-card-research')).toBeNull();
   });
 
   it('shows an empty state when there are no active studies', () => {
