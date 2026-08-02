@@ -187,6 +187,13 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		AccessCookieName: cfg.SessionCookieNameAccess,
 	}))
 
+	// Questionnaire create — new assessments must enter the catalog as drafts.
+	// Exact-path match wins over the /proxy/* catch-all above.
+	r.Post("/proxy/fhir/Questionnaire", handler.NewQuestionnaireCreateHandler(handler.QuestionnaireCreateOptions{
+		BackendBaseURL:   cfg.APIURL,
+		AccessCookieName: cfg.SessionCookieNameAccess,
+	}))
+
 	// SuperTokens API proxy — converts backend response headers to Set-Cookie.
 	r.Handle("/api/v1/auth/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
 		BackendBaseURL: cfg.APIURL,

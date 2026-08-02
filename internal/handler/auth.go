@@ -26,6 +26,7 @@ import (
 
 // stLastAccessTokenUpdateCookie is the non-httpOnly cookie set by writeProxyResponse
 // so the SuperTokens frontend SDK can detect an active session.
+//
 //nolint:gosec // G101: cookie name, not a credential
 const stLastAccessTokenUpdateCookie = "st-last-access-token-update"
 

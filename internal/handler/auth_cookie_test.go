@@ -18,8 +18,10 @@ func init() {
 // testJWT is a fixed JWT with payload {"sub":"test-user","exp":9999999999,"st-role":{"v":["Patient"]}}
 // used to simulate a valid sAccessToken cookie in tests.
 const testJWT = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJleHAiOjk5OTk5OTk5OTksInN0LXJvbGUiOnsidiI6WyJQYXRpZW50Il19fQ.ZmFrZS1zaWc"
+
 // testJWTPractitioner is a fixed JWT with payload {"sub":"test-user","exp":9999999999,"st-role":{"v":["Patient","Practitioner"]}}
 const testJWTPractitioner = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJleHAiOjk5OTk5OTk5OTksInN0LXJvbGUiOnsidiI6WyJQYXRpZW50IiwiUHJhY3RpdGlvbmVyIl19fQ.ZmFrZS1zaWc"
+
 func newAuthCookieServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
