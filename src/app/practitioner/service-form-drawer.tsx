@@ -1,5 +1,6 @@
 'use client';
 
+import FeeInput from '@/components/shared/fee-input';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -45,7 +46,7 @@ function FormFields({
   readonly name: string;
   readonly onNameChange: (v: string) => void;
   readonly fee: string;
-  readonly onFeeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readonly onFeeChange: (raw: string) => void;
   readonly duration: string;
   readonly onDurationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   readonly extraDetails: string;
@@ -81,12 +82,11 @@ function FormFields({
         <label htmlFor='service-fee' className='text-sm font-medium'>
           Fee
         </label>
-        <Input
+        <FeeInput
           id='service-fee'
-          value={fee ? Number(fee).toLocaleString('en-US') : ''}
+          value={fee}
           onChange={onFeeChange}
           placeholder='250,000'
-          inputMode='numeric'
           className='bg-white'
         />
       </div>
@@ -214,13 +214,6 @@ export default function ServiceFormDrawer({
     []
   );
 
-  const handleFeeChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFee(e.target.value.replace(/\D/g, ''));
-    },
-    []
-  );
-
   const handleSave = useCallback(() => {
     const resource = buildService({
       id: service?.id,
@@ -264,7 +257,7 @@ export default function ServiceFormDrawer({
           name={name}
           onNameChange={setName}
           fee={fee}
-          onFeeChange={handleFeeChange}
+          onFeeChange={setFee}
           duration={duration}
           onDurationChange={handleDurationChange}
           extraDetails={extraDetails}
