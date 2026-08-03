@@ -61,7 +61,7 @@ function createDisplayCard(linkId: string): HTMLElement {
   labelCol.className = 'MuiGrid-root MuiGrid-grid-xs-12';
 
   const span = document.createElement('span');
-  span.id = 'label-' + linkId;
+  span.id = `label-${linkId}`;
   span.textContent = 'Instruction';
 
   labelCol.append(span);

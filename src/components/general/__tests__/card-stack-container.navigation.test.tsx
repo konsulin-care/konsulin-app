@@ -62,7 +62,7 @@ describe('click-to-navigate', () => {
   });
 
   function click(cls: string) {
-    fireEvent.click(document.querySelector('.' + cls));
+    fireEvent.click(document.querySelector(`.${cls}`));
   }
 
   it('navigates to answered card', () => {

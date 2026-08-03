@@ -73,7 +73,7 @@ export function QuestionFocusTracker() {
 
     /* Apply active class to the focus question */
     if (activeLinkId) {
-      const container = getCardContainer('label-' + activeLinkId);
+      const container = getCardContainer(`label-${activeLinkId}`);
       container?.classList.add('question-card--active');
     }
 

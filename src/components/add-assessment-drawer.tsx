@@ -93,11 +93,11 @@ async function resolvePublisherName(
   return orgResp.data?.name ?? '';
 }
 
-/** Check that a value is a non-empty parseable URL. */
+/** Check that a value is an http(s) URL. */
 function isValidHttpUrl(value: string): boolean {
   try {
-    new URL(value);
-    return true;
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
   } catch {
     return false;
   }

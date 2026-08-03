@@ -24,9 +24,7 @@ describe('FabToggleButton', () => {
   });
 
   it('rotates when open', () => {
-    const { container } = render(
-      <FabToggleButton isOpen={true} onToggle={vi.fn()} />
-    );
+    const { container } = render(<FabToggleButton isOpen onToggle={vi.fn()} />);
     const btn = container.querySelector('button');
     expect(btn?.className).toContain('rotate-45');
   });
@@ -91,7 +89,7 @@ describe('FabSpeedDial', () => {
 describe('FabToggleShell', () => {
   it('renders children when open', () => {
     const { getByText } = render(
-      <FabToggleShell isOpen={true} onClose={vi.fn()} onToggle={vi.fn()}>
+      <FabToggleShell isOpen onClose={vi.fn()} onToggle={vi.fn()}>
         <span>Child Content</span>
       </FabToggleShell>
     );

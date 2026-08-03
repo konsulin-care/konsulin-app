@@ -68,11 +68,7 @@ describe('ScoreDisplay', () => {
 
   it('renders loading skeleton when loadingSkeleton is true and no QR', () => {
     render(
-      <ScoreDisplay
-        questionnaireResponse={null}
-        isLoading={true}
-        loadingSkeleton={true}
-      />
+      <ScoreDisplay questionnaireResponse={null} isLoading loadingSkeleton />
     );
 
     const skeletons = screen.getAllByTestId('skeleton');

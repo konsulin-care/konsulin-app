@@ -36,7 +36,7 @@ function TimelineStrip({ progress }: Readonly<{ progress: StudyProgress }>) {
         })}
       </div>
       <p className='mt-2 text-[11px] text-gray-500'>
-        You've completed {progress.consecutiveBatches} {noun} in a row.
+        You&apos;ve completed {progress.consecutiveBatches} {noun} in a row.
       </p>
     </div>
   );

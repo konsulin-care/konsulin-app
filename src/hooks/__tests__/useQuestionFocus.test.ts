@@ -1,12 +1,27 @@
 import { act, renderHook } from '@testing-library/react';
-import type { Questionnaire, QuestionnaireItem } from 'fhir/r4';
+import type {
+  Questionnaire,
+  QuestionnaireItem,
+  QuestionnaireResponseItem
+} from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  answered,
+  display,
+  focusable,
+  nonRequired,
+  readOnly,
+  toItemMap,
+  unanswered
+} from './question-focus-helpers';
 
 const { mockSourceQuestionnaire, mockItemMap, mockUpdatableResponseItems } =
   vi.hoisted(() => ({
     mockSourceQuestionnaire: vi.fn<() => Questionnaire>(),
     mockItemMap: vi.fn<() => Record<string, QuestionnaireItem>>(),
-    mockUpdatableResponseItems: vi.fn<() => Record<string, any[]>>()
+    mockUpdatableResponseItems:
+      vi.fn<() => Record<string, QuestionnaireResponseItem[]>>()
   }));
 
 vi.mock('@aehrc/smart-forms-renderer', () => ({
@@ -19,59 +34,6 @@ vi.mock('@aehrc/smart-forms-renderer', () => ({
 }));
 
 import { useQuestionFocus } from '../useQuestionFocus';
-
-const focusable = (
-  linkId: string,
-  o?: Partial<QuestionnaireItem>
-): QuestionnaireItem => ({
-  linkId,
-  text: linkId,
-  type: 'choice',
-  required: true,
-  ...o
-});
-const nonRequired = (
-  linkId: string,
-  o?: Partial<QuestionnaireItem>
-): QuestionnaireItem => ({
-  linkId,
-  text: linkId,
-  type: 'choice',
-  required: false,
-  ...o
-});
-const display = (
-  linkId: string,
-  o?: Partial<QuestionnaireItem>
-): QuestionnaireItem => ({ linkId, text: linkId, type: 'display', ...o });
-const readOnly = (
-  linkId: string,
-  o?: Partial<QuestionnaireItem>
-): QuestionnaireItem => ({
-  linkId,
-  text: linkId,
-  type: 'choice',
-  required: true,
-  readOnly: true,
-  ...o
-});
-const answered = (linkId: string): any => ({
-  linkId,
-  text: linkId,
-  answer: [{ valueString: 'yes' }]
-});
-const unanswered = (linkId: string): any => ({ linkId, text: linkId });
-
-const toItemMap = (
-  items: QuestionnaireItem[]
-): Record<string, QuestionnaireItem> => {
-  const map: Record<string, QuestionnaireItem> = {};
-  for (const item of items) {
-    map[item.linkId] = item;
-    if (item.item) Object.assign(map, toItemMap(item.item));
-  }
-  return map;
-};
 
 describe('useQuestionFocus', () => {
   beforeEach(() => {

@@ -23,7 +23,9 @@ export default function FeaturedRail({
 
   return (
     <div className='px-4'>
-      <h2 className='mb-2 text-sm font-bold text-gray-700'>Editor's Picks</h2>
+      <h2 className='mb-2 text-sm font-bold text-gray-700'>
+        Editor&apos;s Picks
+      </h2>
 
       <ScrollArea className='w-full whitespace-nowrap'>
         <div className='flex gap-3 pb-2'>

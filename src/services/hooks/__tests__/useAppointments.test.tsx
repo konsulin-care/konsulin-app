@@ -34,7 +34,7 @@ function buildPage(entries: number, offset: number): Bundle {
         slot: [{ reference: `Slot/slot-${offset + i}` }],
         participant: [
           {
-            actor: { reference: `Patient/pat-1` },
+            actor: { reference: 'Patient/pat-1' },
             status: 'accepted'
           }
         ]
