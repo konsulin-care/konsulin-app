@@ -3,6 +3,10 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { mockUseQuery } = vi.hoisted(() => ({
+  mockUseQuery: vi.fn().mockReturnValue({ data: undefined, isLoading: false })
+}));
+
 // Mock heavy dependencies
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
@@ -30,7 +34,7 @@ vi.mock('@/lib/indexeddb', () => ({
 }));
 
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: vi.fn().mockReturnValue({ data: undefined, isLoading: false })
+  useQuery: mockUseQuery
 }));
 
 vi.mock('@/components/ui/progress', () => ({
@@ -53,6 +57,7 @@ vi.mock('react-markdown', () => ({
 
 import { useAuth } from '@/context/auth/authContext';
 import { useQuestionnaireResponse } from '@/services/api/assessment';
+import { FhirExtensionUrls } from '@/utils/fhir/extensions';
 import RecordAssessment from '../record-assessment';
 
 /** Build a minimal QuestionnaireResponse with score-dimension items. */
@@ -152,5 +157,54 @@ describe('RecordAssessment', () => {
 
     expect(screen.getByText('Result Brief')).toBeInTheDocument();
     expect(screen.getByText('Result Tables')).toBeInTheDocument();
+  });
+
+  it('reports the questionnaire fee via onFeeChange', () => {
+    const onFeeChange = vi.fn();
+    mockUseQuery.mockReturnValue({
+      data: {
+        resourceType: 'Questionnaire',
+        id: 'test-q',
+        title: 'PSS-10',
+        extension: [
+          {
+            url: FhirExtensionUrls.fee,
+            valueMoney: { value: 50_000, currency: 'IDR' }
+          }
+        ]
+      },
+      isLoading: false
+    });
+    vi.mocked(useQuestionnaireResponse).mockReturnValue({
+      data: buildMockQR([{ name: 'Stress', score: 2, ref: 4 }]),
+      isLoading: false
+    } as any);
+
+    render(<RecordAssessment recordId='qr-1' onFeeChange={onFeeChange} />);
+
+    expect(onFeeChange).toHaveBeenCalledWith({
+      value: 50_000,
+      currency: 'IDR'
+    });
+  });
+
+  it('reports null when the questionnaire has no fee extension', () => {
+    const onFeeChange = vi.fn();
+    mockUseQuery.mockReturnValue({
+      data: {
+        resourceType: 'Questionnaire',
+        id: 'test-q',
+        title: 'PSS-10'
+      },
+      isLoading: false
+    });
+    vi.mocked(useQuestionnaireResponse).mockReturnValue({
+      data: buildMockQR([{ name: 'Stress', score: 2, ref: 4 }]),
+      isLoading: false
+    } as any);
+
+    render(<RecordAssessment recordId='qr-1' onFeeChange={onFeeChange} />);
+
+    expect(onFeeChange).toHaveBeenCalledWith(null);
   });
 });

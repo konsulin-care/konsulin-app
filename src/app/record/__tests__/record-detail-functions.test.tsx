@@ -35,7 +35,7 @@ import {
   renderCondition,
   renderObservation,
   renderQuestionnaireResponse
-} from '../record-detail';
+} from '../record-renderers';
 
 describe('title resolvers', () => {
   it('conditionTitle returns "Condition Detail"', () => {
@@ -46,7 +46,7 @@ describe('title resolvers', () => {
     expect(
       questionnaireResponseTitle({
         questionnaire: 'Questionnaire/soap'
-      } as unknown as Record<string, unknown>)
+      })
     ).toBe('SOAP Detail');
   });
 
@@ -54,7 +54,7 @@ describe('title resolvers', () => {
     expect(
       questionnaireResponseTitle({
         questionnaire: 'Questionnaire/phq9'
-      } as unknown as Record<string, unknown>)
+      })
     ).toBe('Assessment Result');
   });
 
@@ -64,7 +64,7 @@ describe('title resolvers', () => {
         code: {
           coding: [{ system: 'https://loinc.org', code: '51855-5' }]
         }
-      } as unknown as Record<string, unknown>)
+      })
     ).toBe('Journal Detail');
   });
 
@@ -74,7 +74,7 @@ describe('title resolvers', () => {
         code: {
           coding: [{ system: 'https://loinc.org', code: '67855-7' }]
         }
-      } as unknown as Record<string, unknown>)
+      })
     ).toBe('SOAP Detail');
   });
 
@@ -84,7 +84,7 @@ describe('title resolvers', () => {
         code: {
           coding: [{ system: 'https://loinc.org', code: '12345-6' }]
         }
-      } as unknown as Record<string, unknown>)
+      })
     ).toBe('Detail');
   });
 });

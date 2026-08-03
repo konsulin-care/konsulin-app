@@ -7,8 +7,10 @@ import {
   RESULT_BRIEF_PLACEHOLDER,
   useQuestionnaireResponse
 } from '@/services/api/assessment';
+import { getFee } from '@/utils/fhir/fee';
 import { useQuery } from '@tanstack/react-query';
 import {
+  Money,
   Questionnaire,
   QuestionnaireResponse,
   QuestionnaireResponseItem
@@ -18,12 +20,17 @@ import { useEffect, useMemo, useState } from 'react';
 type Props = {
   readonly recordId: string;
   readonly onTitleChange?: (title: string) => void;
+  readonly onFeeChange?: (fee: Money | null) => void;
 };
 
 /**
  *
  */
-export default function RecordAssessment({ recordId, onTitleChange }: Props) {
+export default function RecordAssessment({
+  recordId,
+  onTitleChange,
+  onFeeChange
+}: Props) {
   const {
     data: questionnaireResponseRaw,
     isLoading: questionnaireResponseIsLoading
@@ -144,19 +151,24 @@ export default function RecordAssessment({ recordId, onTitleChange }: Props) {
     };
   }, [questionnaireResponse, recordId, authState.isAuthenticated]);
 
-  // Fetch questionnaire title for page header and display
+  // Fetch questionnaire title + fee extension for header and Get Report FAB
   const questionnaireId = questionnaireResponse?.questionnaire?.split('/')[1];
-  const { data: questionnaireTitle } = useQuery<string | undefined>({
-    queryKey: ['questionnaire', questionnaireId, 'title'],
+  const { data: questionnaire } = useQuery<Questionnaire | null>({
+    queryKey: ['questionnaire', questionnaireId, 'title,extension'],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get<Questionnaire>(
-        `/fhir/Questionnaire/${questionnaireId}?_elements=title`
+        `/fhir/Questionnaire/${questionnaireId}?_elements=title,extension`
       );
-      return response.data.title ?? questionnaireId;
+      return response.data ?? null;
     },
     enabled: Boolean(questionnaireId)
   });
+  const questionnaireTitle = questionnaire?.title ?? questionnaireId;
+  const fee = useMemo(
+    () => (questionnaire ? getFee(questionnaire) : null),
+    [questionnaire]
+  );
 
   // Push the resolved title up to RecordDetail
   useEffect(() => {
@@ -164,6 +176,12 @@ export default function RecordAssessment({ recordId, onTitleChange }: Props) {
       onTitleChange(questionnaireTitle);
     }
   }, [questionnaireTitle, onTitleChange]);
+
+  // Push the questionnaire fee up to RecordDetail; reset on unmount
+  useEffect(() => {
+    onFeeChange?.(fee);
+    return () => onFeeChange?.(null);
+  }, [fee, onFeeChange]);
 
   // Compute the result brief:
   // For guest users, pass null (ScoreDisplay shows "Claim the results to request analysis.")
