@@ -1,12 +1,10 @@
 /* eslint-disable sonarjs/assertions-in-tests */
 
+import { FhirExtensionUrls } from '@/utils/fhir/extensions';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { HealthcareService, PractitionerRole } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-// eslint-disable-next-line unicorn/prefer-https
-const FEE_EXTENSION_URL = 'http://konsulin.care/fhir/StructureDefinition/fee';
 
 const mockServices: HealthcareService[] = [
   {
@@ -48,7 +46,7 @@ vi.mock('../service-form-drawer', () => ({
               location: [{ reference: 'Location/loc-1' }],
               extension: [
                 {
-                  url: FEE_EXTENSION_URL,
+                  url: FhirExtensionUrls.fee,
                   valueMoney: { value: 150_000, currency: 'IDR' }
                 }
               ],
@@ -294,7 +292,7 @@ describe('ServicesTab', () => {
     ) as { resource: HealthcareService } | undefined;
     expect(hsEntry?.resource.extension).toEqual([
       {
-        url: FEE_EXTENSION_URL,
+        url: FhirExtensionUrls.fee,
         valueMoney: { value: 150_000, currency: 'IDR' }
       }
     ]);

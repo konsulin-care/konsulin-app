@@ -31,6 +31,7 @@ Subdirectories may contain their own AGENTS.md with scope-specific instructions.
 
 - PRECEDENCE: The AGENTS.md closest to the file being edited takes priority
 - INHERITANCE: Nested files supplement, not replace, this root file
+- FHIR R4 extensions: READ `@src/utils/fhir/AGENTS.md` before creating or modifying extension code
 
 ## ESLint Quality Gate
 

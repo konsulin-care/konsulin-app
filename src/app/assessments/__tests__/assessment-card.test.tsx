@@ -1,4 +1,3 @@
-/* eslint-disable unicorn/prefer-https */
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { Questionnaire } from 'fhir/r4';
 import { describe, expect, it, vi } from 'vitest';
@@ -11,19 +10,18 @@ vi.mock('next/image', () => ({
   )
 }));
 
+import { FhirExtensionUrls, FhirSystems } from '@/utils/fhir/extensions';
 import AssessmentCard from '../assessment-card';
 
-const DURATION_URL =
-  'http://konsulin.care/fhir/StructureDefinition/questionnaireEstimatedDuration';
+const DURATION_URL = FhirExtensionUrls.questionnaireEstimatedDuration;
 
-const IMAGE_URL =
-  'http://konsulin.care/fhir/StructureDefinition/questionnaireImage';
+const IMAGE_URL = FhirExtensionUrls.questionnaireImage;
 
 const FALLBACK_URL =
   'https://www.glasgowunisrc.org/pageassets/advice/health-and-wellbeing/AdobeStock_220793275-min.jpeg?thumbnail=true&height=465&width=620&resize_type=CropToFit';
 
 const CATEGORY_CODING = {
-  system: 'http://konsulin.care/fhir/CodeSystem/assessment-domain',
+  system: FhirSystems.assessmentDomain,
   code: 'mental-emotional-health'
 };
 
@@ -97,7 +95,7 @@ describe('AssessmentCard (featured variant)', () => {
       useContext: [
         {
           code: {
-            system: 'https://terminology.hl7.org/CodeSystem/usage-context',
+            system: FhirSystems.usageContext,
             code: 'focus'
           },
           valueCodeableConcept: {
@@ -197,7 +195,7 @@ describe('AssessmentCard (compact variant)', () => {
 describe('AssessmentCard (icon)', () => {
   it('renders icon from lucide code', () => {
     const q = createQuestionnaire({
-      code: [{ system: 'https://lucide.dev/icons', code: 'brain' }]
+      code: [{ system: FhirSystems.lucide, code: 'brain' }]
     });
     const { container } = render(
       <AssessmentCard questionnaire={q} variant='compact' onClick={vi.fn()} />
@@ -211,7 +209,7 @@ describe('AssessmentCard (icon)', () => {
       useContext: [
         {
           code: {
-            system: 'https://terminology.hl7.org/CodeSystem/usage-context',
+            system: FhirSystems.usageContext,
             code: 'focus'
           },
           valueCodeableConcept: {
@@ -266,7 +264,7 @@ describe('AssessmentCard (category chip)', () => {
       useContext: [
         {
           code: {
-            system: 'https://terminology.hl7.org/CodeSystem/usage-context',
+            system: FhirSystems.usageContext,
             code: 'focus'
           },
           valueCodeableConcept: {
@@ -291,7 +289,7 @@ describe('AssessmentCard (category chip)', () => {
       useContext: [
         {
           code: {
-            system: 'https://terminology.hl7.org/CodeSystem/usage-context',
+            system: FhirSystems.usageContext,
             code: 'focus'
           },
           valueCodeableConcept: {

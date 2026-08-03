@@ -1,8 +1,5 @@
 import type { Questionnaire } from 'fhir/r4';
-
-const QUESTIONNAIRE_IMAGE_EXTENSION_URL =
-  // eslint-disable-next-line unicorn/prefer-https
-  'http://konsulin.care/fhir/StructureDefinition/questionnaireImage';
+import { FhirExtensionUrls, getExtension, upsertExtension } from './extensions';
 
 /**
  * Extract the image URL from a Questionnaire's extension.
@@ -16,9 +13,7 @@ const QUESTIONNAIRE_IMAGE_EXTENSION_URL =
 export function getQuestionnaireImageUrl(
   questionnaire: Questionnaire
 ): string | null {
-  const ext = questionnaire.extension?.find(
-    e => e.url === QUESTIONNAIRE_IMAGE_EXTENSION_URL
-  );
+  const ext = getExtension(questionnaire, FhirExtensionUrls.questionnaireImage);
   return ext?.valueUrl ?? null;
 }
 
@@ -36,19 +31,8 @@ export function setQuestionnaireImageUrl(
   questionnaire: Questionnaire,
   url: string
 ): Questionnaire {
-  const otherExtensions =
-    questionnaire.extension?.filter(
-      e => e.url !== QUESTIONNAIRE_IMAGE_EXTENSION_URL
-    ) ?? [];
-
-  return {
-    ...questionnaire,
-    extension: [
-      ...otherExtensions,
-      {
-        url: QUESTIONNAIRE_IMAGE_EXTENSION_URL,
-        valueUrl: url
-      }
-    ]
-  };
+  return upsertExtension(questionnaire, {
+    url: FhirExtensionUrls.questionnaireImage,
+    valueUrl: url
+  });
 }

@@ -12,15 +12,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { SwitchField } from '@/components/ui/switch-field';
 import { Textarea } from '@/components/ui/textarea';
+import { getFee, setFee } from '@/utils/fhir/fee';
 import {
   getServiceDuration,
   setServiceDuration
 } from '@/utils/fhir/service-duration';
 import type { HealthcareService } from 'fhir/r4';
 import { useCallback, useState } from 'react';
-
-// eslint-disable-next-line unicorn/prefer-https
-const FEE_EXTENSION_URL = 'http://konsulin.care/fhir/StructureDefinition/fee';
 
 type Props = {
   readonly open: boolean;
@@ -138,25 +136,19 @@ function buildService(params: {
   providedBy: string;
   location?: string;
 }): HealthcareService {
-  const feeExtension = params.fee
-    ? [
-        {
-          url: FEE_EXTENSION_URL,
-          valueMoney: { value: params.fee, currency: 'IDR' as const }
-        }
-      ]
-    : undefined;
-
   let resource: HealthcareService = {
     resourceType: 'HealthcareService',
     ...(params.id ? { id: params.id } : {}),
-    ...(feeExtension ? { extension: feeExtension } : {}),
     active: params.active,
     name: params.name,
     extraDetails: params.extraDetails || undefined,
     providedBy: { reference: params.providedBy },
     ...(params.location ? { location: [{ reference: params.location }] } : {})
   };
+
+  if (params.fee > 0) {
+    resource = setFee(resource, params.fee);
+  }
 
   if (params.duration > 0) {
     resource = setServiceDuration(resource, params.duration);
@@ -167,9 +159,9 @@ function buildService(params: {
 
 /** Extract initial fee string from a HealthcareService. */
 function initFee(service?: HealthcareService): string {
-  const ext = service?.extension?.find(e => e.url === FEE_EXTENSION_URL);
-  const val = ext?.valueMoney?.value;
-  return val ? val.toString() : '';
+  if (!service) return '';
+  const fee = getFee(service);
+  return fee?.value ? fee.value.toString() : '';
 }
 
 /** Extract initial duration string from a HealthcareService. */

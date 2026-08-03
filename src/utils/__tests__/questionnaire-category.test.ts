@@ -1,12 +1,12 @@
-/* eslint-disable unicorn/prefer-https */
 import { describe, expect, it } from 'vitest';
+import { FhirSystems } from '../fhir/extensions';
 import {
   getQuestionnaireCategoryCode,
   getQuestionnaireCategoryLabel
 } from '../fhir/questionnaire-category';
 
 const DOMAIN_CODING = {
-  system: 'http://konsulin.care/fhir/CodeSystem/assessment-domain',
+  system: FhirSystems.assessmentDomain,
   code: 'mental-emotional-health',
   display: 'Mental & Emotional Health'
 };
@@ -16,7 +16,7 @@ describe('getQuestionnaireCategoryCode', () => {
     const useContext = [
       {
         code: {
-          system: 'https://terminology.hl7.org/CodeSystem/usage-context',
+          system: FhirSystems.usageContext,
           code: 'focus'
         },
         valueCodeableConcept: {
@@ -70,7 +70,7 @@ describe('getQuestionnaireCategoryLabel', () => {
         valueCodeableConcept: {
           coding: [
             {
-              system: 'http://konsulin.care/fhir/CodeSystem/assessment-domain',
+              system: FhirSystems.assessmentDomain,
               code: 'physical-health'
             }
           ]

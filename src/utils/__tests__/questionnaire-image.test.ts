@@ -1,6 +1,6 @@
-/* eslint-disable unicorn/prefer-https */
 import type { Questionnaire } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
+import { FhirExtensionUrls } from '../fhir/extensions';
 import {
   getQuestionnaireImageUrl,
   setQuestionnaireImageUrl
@@ -23,7 +23,7 @@ describe('getQuestionnaireImageUrl', () => {
       title: 'Wellness Check',
       extension: [
         {
-          url: 'http://konsulin.care/fhir/StructureDefinition/questionnaireImage',
+          url: FhirExtensionUrls.questionnaireImage,
           valueUrl: 'https://res.cloudinary.com/test/image/upload/v1/q.webp'
         }
       ]
@@ -50,7 +50,7 @@ describe('getQuestionnaireImageUrl', () => {
       title: 'Wellness Check',
       extension: [
         {
-          url: 'http://konsulin.care/fhir/StructureDefinition/questionnaireImage'
+          url: FhirExtensionUrls.questionnaireImage
         }
       ]
     };
@@ -64,7 +64,7 @@ describe('getQuestionnaireImageUrl', () => {
       title: 'Wellness Check',
       extension: [
         {
-          url: 'http://konsulin.care/fhir/StructureDefinition/someOther',
+          url: 'https://example.org/extension/someOther',
           valueUrl: 'https://example.com/photo.jpg'
         }
       ]
@@ -85,9 +85,7 @@ describe('setQuestionnaireImageUrl', () => {
       'https://res.cloudinary.com/test/image/upload/v1/q.webp'
     );
     const ext = result.extension?.find(
-      e =>
-        e.url ===
-        'http://konsulin.care/fhir/StructureDefinition/questionnaireImage'
+      e => e.url === FhirExtensionUrls.questionnaireImage
     );
     expect(ext?.valueUrl).toBe(
       'https://res.cloudinary.com/test/image/upload/v1/q.webp'
@@ -101,7 +99,7 @@ describe('setQuestionnaireImageUrl', () => {
       title: 'Wellness Check',
       extension: [
         {
-          url: 'http://konsulin.care/fhir/StructureDefinition/questionnaireImage',
+          url: FhirExtensionUrls.questionnaireImage,
           valueUrl: 'https://res.cloudinary.com/test/image/upload/v1/old.webp'
         }
       ]
@@ -111,9 +109,7 @@ describe('setQuestionnaireImageUrl', () => {
       'https://res.cloudinary.com/test/image/upload/v1/new.webp'
     );
     const ext = result.extension?.find(
-      e =>
-        e.url ===
-        'http://konsulin.care/fhir/StructureDefinition/questionnaireImage'
+      e => e.url === FhirExtensionUrls.questionnaireImage
     );
     expect(ext?.valueUrl).toBe(
       'https://res.cloudinary.com/test/image/upload/v1/new.webp'
@@ -128,7 +124,7 @@ describe('setQuestionnaireImageUrl', () => {
       title: 'Wellness Check',
       extension: [
         {
-          url: 'http://konsulin.care/fhir/StructureDefinition/questionnaireCategory',
+          url: 'https://example.org/extension/questionnaireCategory',
           valueString: 'mental-health'
         }
       ]
@@ -138,14 +134,10 @@ describe('setQuestionnaireImageUrl', () => {
       'https://res.cloudinary.com/test/image/upload/v1/q.webp'
     );
     const imgExt = result.extension?.find(
-      e =>
-        e.url ===
-        'http://konsulin.care/fhir/StructureDefinition/questionnaireImage'
+      e => e.url === FhirExtensionUrls.questionnaireImage
     );
     const otherExt = result.extension?.find(
-      e =>
-        e.url ===
-        'http://konsulin.care/fhir/StructureDefinition/questionnaireCategory'
+      e => e.url === 'https://example.org/extension/questionnaireCategory'
     );
     expect(imgExt?.valueUrl).toBe(
       'https://res.cloudinary.com/test/image/upload/v1/q.webp'

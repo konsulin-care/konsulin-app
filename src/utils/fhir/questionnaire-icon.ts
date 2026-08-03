@@ -1,4 +1,4 @@
-const LUCIDE_SYSTEM = 'https://lucide.dev/icons';
+import { FhirSystems } from './extensions';
 
 /**
  * Extract a Lucide icon name from a Questionnaire's code array.
@@ -12,7 +12,7 @@ const LUCIDE_SYSTEM = 'https://lucide.dev/icons';
 export function getLucideIconName(
   codes: Array<{ system?: string; code?: string }> | undefined
 ): string | null {
-  const iconCode = codes?.find(c => c.system === LUCIDE_SYSTEM)?.code;
+  const iconCode = codes?.find(c => c.system === FhirSystems.lucide)?.code;
   if (!iconCode) return null;
   return iconCode
     .split('-')

@@ -1,6 +1,6 @@
-/* eslint-disable unicorn/prefer-https */
 import type { Location } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
+import { FhirExtensionUrls } from '../fhir/extensions';
 import {
   getLocationImageUrl,
   setLocationImageUrl
@@ -21,7 +21,7 @@ describe('getLocationImageUrl', () => {
       name: 'Main Clinic',
       extension: [
         {
-          url: 'http://konsulin.care/fhir/StructureDefinition/locationImage',
+          url: FhirExtensionUrls.locationImage,
           valueUrl:
             'https://res.cloudinary.com/test/image/upload/v1/sample.webp'
         }
@@ -47,7 +47,7 @@ describe('getLocationImageUrl', () => {
       name: 'Main Clinic',
       extension: [
         {
-          url: 'http://konsulin.care/fhir/StructureDefinition/locationImage'
+          url: FhirExtensionUrls.locationImage
         }
       ]
     };
@@ -66,8 +66,7 @@ describe('setLocationImageUrl', () => {
       'https://res.cloudinary.com/test/image/upload/v1/sample.webp'
     );
     const ext = result.extension?.find(
-      e =>
-        e.url === 'http://konsulin.care/fhir/StructureDefinition/locationImage'
+      e => e.url === FhirExtensionUrls.locationImage
     );
     expect(ext?.valueUrl).toBe(
       'https://res.cloudinary.com/test/image/upload/v1/sample.webp'
@@ -80,7 +79,7 @@ describe('setLocationImageUrl', () => {
       name: 'Main Clinic',
       extension: [
         {
-          url: 'http://konsulin.care/fhir/StructureDefinition/locationImage',
+          url: FhirExtensionUrls.locationImage,
           valueUrl: 'https://res.cloudinary.com/test/image/upload/v1/old.webp'
         }
       ]
@@ -90,8 +89,7 @@ describe('setLocationImageUrl', () => {
       'https://res.cloudinary.com/test/image/upload/v1/new.webp'
     );
     const ext = result.extension?.find(
-      e =>
-        e.url === 'http://konsulin.care/fhir/StructureDefinition/locationImage'
+      e => e.url === FhirExtensionUrls.locationImage
     );
     expect(ext?.valueUrl).toBe(
       'https://res.cloudinary.com/test/image/upload/v1/new.webp'
@@ -105,7 +103,7 @@ describe('setLocationImageUrl', () => {
       name: 'Main Clinic',
       extension: [
         {
-          url: 'http://konsulin.care/fhir/StructureDefinition/someOther',
+          url: 'https://example.org/extension/someOther',
           valueString: 'metadata'
         }
       ]
@@ -115,11 +113,10 @@ describe('setLocationImageUrl', () => {
       'https://res.cloudinary.com/test/image/upload/v1/sample.webp'
     );
     const imgExt = result.extension?.find(
-      e =>
-        e.url === 'http://konsulin.care/fhir/StructureDefinition/locationImage'
+      e => e.url === FhirExtensionUrls.locationImage
     );
     const otherExt = result.extension?.find(
-      e => e.url === 'http://konsulin.care/fhir/StructureDefinition/someOther'
+      e => e.url === 'https://example.org/extension/someOther'
     );
     expect(imgExt?.valueUrl).toBe(
       'https://res.cloudinary.com/test/image/upload/v1/sample.webp'

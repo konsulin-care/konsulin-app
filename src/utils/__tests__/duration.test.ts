@@ -1,13 +1,9 @@
-/* eslint-disable unicorn/prefer-https */
 import { describe, expect, it } from 'vitest';
-import {
-  DurationExtensionUrls,
-  getDurationInMinutes,
-  setDurationExtension
-} from '../fhir/duration';
+import { getDurationInMinutes, setDurationExtension } from '../fhir/duration';
+import { FhirExtensionUrls } from '../fhir/extensions';
 
 describe('getDurationInMinutes', () => {
-  const URL = DurationExtensionUrls.Questionnaire;
+  const URL = FhirExtensionUrls.questionnaireEstimatedDuration;
 
   it('returns null when no matching extension exists', () => {
     const resource = { extension: [] };
@@ -57,7 +53,7 @@ describe('getDurationInMinutes', () => {
     const resource = {
       extension: [
         {
-          url: 'http://konsulin.care/fhir/StructureDefinition/fee',
+          url: FhirExtensionUrls.fee,
           valueDuration: { value: 50 }
         }
       ]
@@ -69,19 +65,19 @@ describe('getDurationInMinutes', () => {
     const resource = {
       extension: [
         {
-          url: DurationExtensionUrls.Service,
+          url: FhirExtensionUrls.serviceDuration,
           valueDuration: { value: 45 }
         }
       ]
     };
-    expect(getDurationInMinutes(resource, DurationExtensionUrls.Service)).toBe(
-      45
-    );
+    expect(
+      getDurationInMinutes(resource, FhirExtensionUrls.serviceDuration)
+    ).toBe(45);
   });
 });
 
 describe('setDurationExtension', () => {
-  const URL = DurationExtensionUrls.Questionnaire;
+  const URL = FhirExtensionUrls.questionnaireEstimatedDuration;
 
   it('adds duration extension when no extensions exist', () => {
     const result = setDurationExtension(undefined, URL, 10);

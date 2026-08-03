@@ -1,13 +1,16 @@
 import type { Questionnaire } from 'fhir/r4';
+import {
+  FhirExtensionUrls,
+  FhirSystems,
+  getExtension,
+  upsertExtension
+} from './extensions';
 
-/** URLs for custom FHIR duration extensions. */
-export const DurationExtensionUrls = {
-  // eslint-disable-next-line unicorn/prefer-https
-  Service: 'http://konsulin.care/fhir/StructureDefinition/serviceDuration',
-  Questionnaire:
-    // eslint-disable-next-line unicorn/prefer-https
-    'http://konsulin.care/fhir/StructureDefinition/questionnaireEstimatedDuration'
-} as const;
+type DurationExtension = {
+  url: string;
+  valueDuration?: { value?: number };
+  valueInteger?: number;
+};
 
 /**
  * Extract duration in minutes from a FHIR resource's extension.
@@ -21,16 +24,10 @@ export const DurationExtensionUrls = {
  * @returns Duration in minutes, or null if not present
  */
 export function getDurationInMinutes(
-  resource: {
-    extension?: Array<{
-      url: string;
-      valueDuration?: { value?: number };
-      valueInteger?: number;
-    }>;
-  },
+  resource: { extension?: DurationExtension[] },
   extensionUrl: string
 ): number | null {
-  const ext = resource.extension?.find(e => e.url === extensionUrl);
+  const ext = getExtension(resource, extensionUrl);
   if (ext?.valueDuration?.value != null) return ext.valueDuration.value;
   if (ext?.valueInteger != null) return ext.valueInteger;
   return null;
@@ -47,29 +44,18 @@ export function getDurationInMinutes(
  * @returns New extension array with the duration set
  */
 export function setDurationExtension(
-  existingExtensions:
-    | Array<{
-        url: string;
-        valueDuration?: { value?: number };
-        valueInteger?: number;
-      }>
-    | undefined,
+  existingExtensions: DurationExtension[] | undefined,
   extensionUrl: string,
   minutes: number
-): Array<{
-  url: string;
-  valueDuration?: { value?: number };
-  valueInteger?: number;
-}> {
-  const others = existingExtensions?.filter(e => e.url !== extensionUrl) ?? [];
-
-  return [
-    ...others,
+): DurationExtension[] {
+  const resource = upsertExtension(
+    { extension: existingExtensions },
     {
       url: extensionUrl,
       valueDuration: { value: minutes }
     }
-  ];
+  );
+  return resource.extension ?? [];
 }
 
 /**
@@ -87,23 +73,12 @@ export function setQuestionnaireDuration(
   questionnaire: Questionnaire,
   minutes: number
 ): Questionnaire {
-  const others =
-    questionnaire.extension?.filter(
-      e => e.url !== DurationExtensionUrls.Questionnaire
-    ) ?? [];
-
-  return {
-    ...questionnaire,
-    extension: [
-      ...others,
-      {
-        url: DurationExtensionUrls.Questionnaire,
-        valueDuration: {
-          value: minutes,
-          system: 'https://unitsofmeasure.org',
-          code: 'min'
-        }
-      }
-    ]
-  };
+  return upsertExtension(questionnaire, {
+    url: FhirExtensionUrls.questionnaireEstimatedDuration,
+    valueDuration: {
+      value: minutes,
+      system: FhirSystems.ucum,
+      code: 'min'
+    }
+  });
 }

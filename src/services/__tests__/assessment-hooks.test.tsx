@@ -1,3 +1,4 @@
+import { FhirSystems } from '@/utils/fhir/extensions';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { AxiosInstance } from 'axios';
@@ -37,7 +38,7 @@ const MOCK_BUNDLE = {
           status: 'active',
           extension: [],
           useContext: [],
-          code: [{ system: 'https://lucide.dev/icons', code: 'brain' }]
+          code: [{ system: FhirSystems.lucide, code: 'brain' }]
         } as Questionnaire
       },
       {
@@ -48,7 +49,7 @@ const MOCK_BUNDLE = {
           status: 'active',
           extension: [],
           useContext: [],
-          code: [{ system: 'https://lucide.dev/icons', code: 'activity' }]
+          code: [{ system: FhirSystems.lucide, code: 'activity' }]
         } as Questionnaire
       }
     ]

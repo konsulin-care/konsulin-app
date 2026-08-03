@@ -1,12 +1,8 @@
-/* eslint-disable unicorn/prefer-https */
+import { FhirExtensionUrls } from '@/utils/fhir/extensions';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { HealthcareService } from 'fhir/r4';
 import { describe, expect, it, vi } from 'vitest';
 import ServiceCard from '../service-card';
-
-const FEE_EXTENSION_URL = 'http://konsulin.care/fhir/StructureDefinition/fee';
-const DURATION_EXTENSION_URL =
-  'http://konsulin.care/fhir/StructureDefinition/serviceDuration';
 
 const activeService: HealthcareService = {
   resourceType: 'HealthcareService',
@@ -15,8 +11,11 @@ const activeService: HealthcareService = {
   name: 'General Consultation',
   extraDetails: 'Standard checkup',
   extension: [
-    { url: FEE_EXTENSION_URL, valueMoney: { value: 150_000, currency: 'IDR' } },
-    { url: DURATION_EXTENSION_URL, valueInteger: 30 }
+    {
+      url: FhirExtensionUrls.fee,
+      valueMoney: { value: 150_000, currency: 'IDR' }
+    },
+    { url: FhirExtensionUrls.serviceDuration, valueInteger: 30 }
   ]
 };
 

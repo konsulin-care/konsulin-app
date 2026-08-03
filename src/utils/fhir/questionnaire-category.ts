@@ -1,13 +1,5 @@
 import type { Questionnaire, UsageContext } from 'fhir/r4';
-
-// eslint-disable-next-line unicorn/prefer-https
-const DOMAIN_SYSTEM = 'http://konsulin.care/fhir/CodeSystem/assessment-domain';
-const CONTEXT_SYSTEM =
-  // eslint-disable-next-line unicorn/prefer-https
-  'http://blaze.konsulin.care/fhir/CodeSystem/assessment-context';
-const USAGE_CONTEXT_SYSTEM =
-  // eslint-disable-next-line unicorn/prefer-https
-  'http://terminology.hl7.org/CodeSystem/usage-context';
+import { FhirSystems } from './extensions';
 
 /** Build a useContext entry whose coding matches the given system. */
 function buildUsageContextEntry(
@@ -16,7 +8,7 @@ function buildUsageContextEntry(
   display?: string
 ): UsageContext {
   return {
-    code: { system: USAGE_CONTEXT_SYSTEM, code: 'focus' },
+    code: { system: FhirSystems.usageContext, code: 'focus' },
     valueCodeableConcept: {
       coding: [{ system, code, ...(display ? { display } : {}) }]
     }
@@ -45,7 +37,9 @@ export function setQuestionnaireCategory(
 
   const updatedContext = useContext.map(ctx => {
     if (
-      !ctx.valueCodeableConcept?.coding?.some(c => c.system === DOMAIN_SYSTEM)
+      !ctx.valueCodeableConcept?.coding?.some(
+        c => c.system === FhirSystems.assessmentDomain
+      )
     ) {
       return ctx;
     }
@@ -56,8 +50,8 @@ export function setQuestionnaireCategory(
       valueCodeableConcept: {
         ...ctx.valueCodeableConcept,
         coding: [
-          ...coding.filter(c => c.system !== DOMAIN_SYSTEM),
-          { system: DOMAIN_SYSTEM, code, display: label }
+          ...coding.filter(c => c.system !== FhirSystems.assessmentDomain),
+          { system: FhirSystems.assessmentDomain, code, display: label }
         ]
       }
     };
@@ -65,15 +59,21 @@ export function setQuestionnaireCategory(
 
   let next = hadDomain
     ? updatedContext
-    : [...updatedContext, buildUsageContextEntry(DOMAIN_SYSTEM, code, label)];
+    : [
+        ...updatedContext,
+        buildUsageContextEntry(FhirSystems.assessmentDomain, code, label)
+      ];
 
   const hasRegular = next.some(ctx =>
     ctx.valueCodeableConcept?.coding?.some(
-      c => c.system === CONTEXT_SYSTEM && c.code === 'regular'
+      c => c.system === FhirSystems.assessmentContext && c.code === 'regular'
     )
   );
   if (!hasRegular) {
-    next = [...next, buildUsageContextEntry(CONTEXT_SYSTEM, 'regular')];
+    next = [
+      ...next,
+      buildUsageContextEntry(FhirSystems.assessmentContext, 'regular')
+    ];
   }
 
   return { ...questionnaire, useContext: next };
@@ -102,7 +102,7 @@ export function getQuestionnaireCategoryCode(
   for (const ctx of useContext ?? []) {
     const coding = ctx.valueCodeableConcept?.coding ?? [];
     for (const c of coding) {
-      if (c.system === DOMAIN_SYSTEM && c.code) {
+      if (c.system === FhirSystems.assessmentDomain && c.code) {
         return c.code;
       }
     }
@@ -132,7 +132,7 @@ export function getQuestionnaireCategoryLabel(
   for (const ctx of useContext ?? []) {
     const coding = ctx.valueCodeableConcept?.coding ?? [];
     for (const c of coding) {
-      if (c.system === DOMAIN_SYSTEM) {
+      if (c.system === FhirSystems.assessmentDomain) {
         return c.display ?? c.code ?? null;
       }
     }

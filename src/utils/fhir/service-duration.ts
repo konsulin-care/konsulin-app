@@ -1,5 +1,6 @@
 import type { HealthcareService } from 'fhir/r4';
-import { DurationExtensionUrls, getDurationInMinutes } from './duration';
+import { getDurationInMinutes } from './duration';
+import { FhirExtensionUrls, FhirSystems, upsertExtension } from './extensions';
 
 /**
  * Extract the service duration in minutes from a HealthcareService's extension.
@@ -10,7 +11,7 @@ import { DurationExtensionUrls, getDurationInMinutes } from './duration';
  * @returns The duration in minutes, or null if not present
  */
 export function getServiceDuration(hs: HealthcareService): number | null {
-  return getDurationInMinutes(hs, DurationExtensionUrls.Service);
+  return getDurationInMinutes(hs, FhirExtensionUrls.serviceDuration);
 }
 
 /**
@@ -28,7 +29,10 @@ export function getQuestionnaireDuration(q: {
     valueInteger?: number;
   }>;
 }): number | null {
-  return getDurationInMinutes(q, DurationExtensionUrls.Questionnaire);
+  return getDurationInMinutes(
+    q,
+    FhirExtensionUrls.questionnaireEstimatedDuration
+  );
 }
 
 /**
@@ -45,21 +49,12 @@ export function setServiceDuration(
   hs: HealthcareService,
   durationMinutes: number
 ): HealthcareService {
-  const others =
-    hs.extension?.filter(e => e.url !== DurationExtensionUrls.Service) ?? [];
-
-  return {
-    ...hs,
-    extension: [
-      ...others,
-      {
-        url: DurationExtensionUrls.Service,
-        valueDuration: {
-          value: durationMinutes,
-          system: 'https://unitsofmeasure.org',
-          code: 'min'
-        }
-      }
-    ]
-  };
+  return upsertExtension(hs, {
+    url: FhirExtensionUrls.serviceDuration,
+    valueDuration: {
+      value: durationMinutes,
+      system: FhirSystems.ucum,
+      code: 'min'
+    }
+  });
 }

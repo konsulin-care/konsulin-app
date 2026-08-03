@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { FhirSystems } from '../fhir/extensions';
 import {
   CATEGORY_DEFAULT_ICONS,
   getLucideIconName
@@ -6,14 +7,12 @@ import {
 
 describe('getLucideIconName', () => {
   it('returns PascalCase name from kebab-case code', () => {
-    const codes = [{ system: 'https://lucide.dev/icons', code: 'activity' }];
+    const codes = [{ system: FhirSystems.lucide, code: 'activity' }];
     expect(getLucideIconName(codes)).toBe('Activity');
   });
 
   it('handles multi-word kebab-case codes', () => {
-    const codes = [
-      { system: 'https://lucide.dev/icons', code: 'squares-subtract' }
-    ];
+    const codes = [{ system: FhirSystems.lucide, code: 'squares-subtract' }];
     expect(getLucideIconName(codes)).toBe('SquaresSubtract');
   });
 
@@ -34,14 +33,14 @@ describe('getLucideIconName', () => {
   it('picks the lucide icon among other codes', () => {
     const codes = [
       { system: 'https://loinc.org', code: '44249-1' },
-      { system: 'https://lucide.dev/icons', code: 'brain' },
+      { system: FhirSystems.lucide, code: 'brain' },
       { system: 'https://snomed.info/sct', code: '123456' }
     ];
     expect(getLucideIconName(codes)).toBe('Brain');
   });
 
   it('handles single-letter segments', () => {
-    const codes = [{ system: 'https://lucide.dev/icons', code: 'p-c' }];
+    const codes = [{ system: FhirSystems.lucide, code: 'p-c' }];
     expect(getLucideIconName(codes)).toBe('PC');
   });
 });

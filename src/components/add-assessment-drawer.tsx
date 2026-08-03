@@ -17,6 +17,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { setQuestionnaireDuration } from '@/utils/fhir/duration';
+import { setFee } from '@/utils/fhir/fee';
 import { setQuestionnaireCategory } from '@/utils/fhir/questionnaire-category';
 import { setQuestionnaireImageUrl } from '@/utils/fhir/questionnaire-image';
 import {
@@ -37,6 +38,7 @@ type FormState = {
   questionnaire: Questionnaire | null;
   imageUrl: string;
   duration: string;
+  fee: string;
   category: string;
 };
 
@@ -45,6 +47,7 @@ async function submitQuestionnaire(params: {
   questionnaire: Questionnaire;
   imageUrl: string;
   duration: number;
+  fee: number;
   categoryCode: string;
   categoryLabel: string;
   publisher: string;
@@ -57,6 +60,7 @@ async function submitQuestionnaire(params: {
     payload = setQuestionnaireImageUrl(payload, params.imageUrl);
   }
   payload = setQuestionnaireDuration(payload, params.duration);
+  if (params.fee > 0) payload = setFee(payload, params.fee);
   payload = setQuestionnaireCategory(
     payload,
     params.categoryCode,
@@ -98,7 +102,7 @@ function isValidHttpUrl(value: string): boolean {
   }
 }
 
-/** The four drawer fields: uploader, image URL, duration, and category. */
+/** The five drawer fields: uploader, image URL, duration, fee, and category. */
 function AssessmentFormFields({
   state,
   onChange
@@ -112,9 +116,7 @@ function AssessmentFormFields({
         <Label>Upload Questionnaire</Label>
         <QuestionnaireUploader
           value={state.questionnaire}
-          onChange={q => {
-            onChange({ questionnaire: q });
-          }}
+          onChange={q => onChange({ questionnaire: q })}
         />
       </div>
 
@@ -124,9 +126,7 @@ function AssessmentFormFields({
           id='assessment-image'
           type='url'
           value={state.imageUrl}
-          onChange={e => {
-            onChange({ imageUrl: e.target.value });
-          }}
+          onChange={e => onChange({ imageUrl: e.target.value })}
           placeholder='https://example.com/image.webp'
           className='bg-white'
           aria-label='Image URL (optional)'
@@ -142,12 +142,23 @@ function AssessmentFormFields({
           type='number'
           min='1'
           value={state.duration}
-          onChange={e => {
-            onChange({ duration: e.target.value });
-          }}
+          onChange={e => onChange({ duration: e.target.value })}
           placeholder='10'
           className='bg-white'
           aria-label='Estimated Duration (minutes)'
+        />
+      </div>
+
+      <div className='space-y-2'>
+        <Label htmlFor='assessment-fee'>Fee</Label>
+        <Input
+          id='assessment-fee'
+          inputMode='numeric'
+          value={state.fee}
+          onChange={e => onChange({ fee: e.target.value.replace(/\D/g, '') })}
+          placeholder='0'
+          className='bg-white'
+          aria-label='Fee'
         />
       </div>
 
@@ -156,9 +167,7 @@ function AssessmentFormFields({
         <select
           id='assessment-category'
           value={state.category}
-          onChange={e => {
-            onChange({ category: e.target.value });
-          }}
+          onChange={e => onChange({ category: e.target.value })}
           className='focus:ring-primary block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:outline-none'
           aria-label='Category'
         >
@@ -180,9 +189,9 @@ function AssessmentFormFields({
  * Drawer for adding a new Questionnaire to the clinic's assessment catalog.
  *
  * Accepts a FHIR R4 Questionnaire JSON, an optional image URL, an estimated
- * duration, and one of the seven assessment categories. On submit, fills in
- * the publisher (clinic Organization name), date, and current user's contact,
- * forces status=draft, and POSTs to /fhir/Questionnaire.
+ * duration, an optional fee (IDR), and one of the seven assessment categories.
+ * On submit, fills in the publisher (clinic Organization name), date, and
+ * current user's contact, forces status=draft, and POSTs to /fhir/Questionnaire.
  */
 export default function AddAssessmentDrawer({ open, onClose }: Props) {
   const queryClient = useQueryClient();
@@ -191,6 +200,7 @@ export default function AddAssessmentDrawer({ open, onClose }: Props) {
     questionnaire: null,
     imageUrl: '',
     duration: '',
+    fee: '',
     category: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -198,7 +208,13 @@ export default function AddAssessmentDrawer({ open, onClose }: Props) {
   // Reset the form every time the drawer opens.
   useEffect(() => {
     if (!open) return;
-    setForm({ questionnaire: null, imageUrl: '', duration: '', category: '' });
+    setForm({
+      questionnaire: null,
+      imageUrl: '',
+      duration: '',
+      fee: '',
+      category: ''
+    });
     setIsSubmitting(false);
   }, [open]);
 
@@ -236,6 +252,7 @@ export default function AddAssessmentDrawer({ open, onClose }: Props) {
         questionnaire: form.questionnaire,
         imageUrl: form.imageUrl,
         duration: parsedDuration,
+        fee: Number(form.fee),
         categoryCode: selectedCategory.code,
         categoryLabel: selectedCategory.label,
         publisher,
@@ -267,6 +284,7 @@ export default function AddAssessmentDrawer({ open, onClose }: Props) {
     form.questionnaire,
     form.imageUrl,
     parsedDuration,
+    form.fee,
     selectedCategory,
     authState?.userInfo,
     queryClient,

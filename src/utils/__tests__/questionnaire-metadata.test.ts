@@ -1,17 +1,15 @@
-/* eslint-disable unicorn/prefer-https */
 import { describe, expect, it } from 'vitest';
 import { setQuestionnaireDuration } from '../fhir/duration';
+import { FhirExtensionUrls, FhirSystems } from '../fhir/extensions';
 import { setQuestionnaireCategory } from '../fhir/questionnaire-category';
 import {
   appendQuestionnaireContact,
   setQuestionnairePublisherDate
 } from '../fhir/questionnaire-metadata';
 
-const DOMAIN_SYSTEM = 'http://konsulin.care/fhir/CodeSystem/assessment-domain';
-const CONTEXT_SYSTEM =
-  'http://blaze.konsulin.care/fhir/CodeSystem/assessment-context';
-const USAGE_CONTEXT_SYSTEM =
-  'http://terminology.hl7.org/CodeSystem/usage-context';
+const DOMAIN_SYSTEM = FhirSystems.assessmentDomain;
+const CONTEXT_SYSTEM = FhirSystems.assessmentContext;
+const USAGE_CONTEXT_SYSTEM = FhirSystems.usageContext;
 
 describe('setQuestionnaireCategory', () => {
   it('adds domain coding and regular context when useContext is empty', () => {
@@ -126,8 +124,7 @@ describe('setQuestionnaireCategory', () => {
 });
 
 describe('setQuestionnaireDuration', () => {
-  const DURATION_URL =
-    'http://konsulin.care/fhir/StructureDefinition/questionnaireEstimatedDuration';
+  const DURATION_URL = FhirExtensionUrls.questionnaireEstimatedDuration;
 
   it('adds the duration extension with unit system and code', () => {
     const result = setQuestionnaireDuration(
@@ -138,7 +135,7 @@ describe('setQuestionnaireDuration', () => {
     const ext = result.extension?.find(e => e.url === DURATION_URL);
     expect(ext?.valueDuration).toEqual({
       value: 10,
-      system: 'https://unitsofmeasure.org',
+      system: FhirSystems.ucum,
       code: 'min'
     });
   });
@@ -165,7 +162,7 @@ describe('setQuestionnaireDuration', () => {
 
   it('preserves unrelated extensions', () => {
     const other = {
-      url: 'http://konsulin.care/fhir/StructureDefinition/questionnaireImage',
+      url: FhirExtensionUrls.questionnaireImage,
       valueUrl: 'https://example.com/image.png'
     };
     const result = setQuestionnaireDuration(

@@ -117,6 +117,7 @@ describe('AddAssessmentDrawer', () => {
     expect(
       screen.getByLabelText('Estimated Duration (minutes)')
     ).toBeInTheDocument();
+    expect(screen.getByLabelText('Fee')).toBeInTheDocument();
     expect(screen.getByLabelText('Category')).toBeInTheDocument();
 
     const submit = screen.getByRole('button', { name: 'Submit' });
@@ -222,6 +223,9 @@ describe('AddAssessmentDrawer', () => {
     );
     expect(durationExt?.valueDuration?.value).toBe(10);
 
+    const feeExt = payload.extension?.find(e => e.url.endsWith('/fee'));
+    expect(feeExt).toBeUndefined();
+
     const useContextJson = JSON.stringify(payload.useContext);
     expect(useContextJson).toContain('assessment-domain');
     expect(useContextJson).toContain('physical-health');
@@ -236,6 +240,48 @@ describe('AddAssessmentDrawer', () => {
 
     expect(mockToast.success).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('posts the fee extension when a fee is entered', async () => {
+    const { container } = render(
+      <AddAssessmentDrawer open onClose={onClose} />,
+      {
+        wrapper
+      }
+    );
+
+    uploadFile(container, buildQuestionnaireFile());
+    await waitFor(() =>
+      expect(screen.getByTestId('questionnaire-snippet')).toBeInTheDocument()
+    );
+
+    fireEvent.change(screen.getByLabelText('Estimated Duration (minutes)'), {
+      target: { value: '10' }
+    });
+    fireEvent.change(screen.getByLabelText('Category'), {
+      target: { value: 'physical-health' }
+    });
+    fireEvent.change(screen.getByLabelText('Fee'), {
+      target: { value: '150000' }
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+
+    await waitFor(() =>
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        '/fhir/Questionnaire',
+        expect.anything()
+      )
+    );
+
+    const payload = mockAxiosInstance.post.mock.calls[0]?.[1] as {
+      extension?: Array<{
+        url: string;
+        valueMoney?: { value: number; currency: string };
+      }>;
+    };
+    const feeExt = payload.extension?.find(e => e.url.endsWith('/fee'));
+    expect(feeExt?.valueMoney).toEqual({ value: 150_000, currency: 'IDR' });
   });
 
   it('shows an error toast and keeps the drawer open when the POST fails', async () => {

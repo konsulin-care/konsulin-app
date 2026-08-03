@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- pre-existing, out of scope for current refactor */
 
+import { FhirExtensionUrls } from '@/utils/fhir/extensions';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PatientDetail from '../patient-detail';
@@ -29,12 +30,6 @@ import { useRouter } from 'next/navigation';
 
 const mockUseDetailPractitioner = vi.mocked(useDetailPractitioner);
 const mockUseRouter = vi.mocked(useRouter);
-
-// eslint-disable-next-line unicorn/prefer-https
-const FEE_EXTENSION_URL = 'http://konsulin.care/fhir/StructureDefinition/fee';
-const DURATION_EXTENSION_URL =
-  // eslint-disable-next-line unicorn/prefer-https
-  'http://konsulin.care/fhir/StructureDefinition/serviceDuration';
 
 const baseLocation = {
   name: 'Jakarta Heart Clinic - Menteng',
@@ -72,11 +67,11 @@ const baseServices = [
     extraDetails: 'Standard checkup including vitals',
     extension: [
       {
-        url: FEE_EXTENSION_URL,
+        url: FhirExtensionUrls.fee,
         valueMoney: { value: 500_000, currency: 'IDR' }
       },
       {
-        url: DURATION_EXTENSION_URL,
+        url: FhirExtensionUrls.serviceDuration,
         valueInteger: 30
       }
     ]
@@ -88,11 +83,11 @@ const baseServices = [
     extraDetails: 'Full cardiac assessment',
     extension: [
       {
-        url: FEE_EXTENSION_URL,
+        url: FhirExtensionUrls.fee,
         valueMoney: { value: 1_500_000, currency: 'IDR' }
       },
       {
-        url: DURATION_EXTENSION_URL,
+        url: FhirExtensionUrls.serviceDuration,
         valueInteger: 60
       }
     ]
@@ -539,7 +534,7 @@ describe('PatientDetail', () => {
             active: false,
             extension: [
               {
-                url: FEE_EXTENSION_URL,
+                url: FhirExtensionUrls.fee,
                 valueMoney: { value: 100_000, currency: 'IDR' }
               }
             ]
