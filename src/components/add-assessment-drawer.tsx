@@ -1,5 +1,6 @@
 'use client';
 
+import FeeInput from '@/components/shared/fee-input';
 import QuestionnaireUploader from '@/components/shared/questionnaire-uploader';
 import { Button } from '@/components/ui/button';
 import {
@@ -151,11 +152,10 @@ function AssessmentFormFields({
 
       <div className='space-y-2'>
         <Label htmlFor='assessment-fee'>Fee</Label>
-        <Input
+        <FeeInput
           id='assessment-fee'
-          inputMode='numeric'
           value={state.fee}
-          onChange={e => onChange({ fee: e.target.value.replace(/\D/g, '') })}
+          onChange={fee => onChange({ fee })}
           placeholder='0'
           className='bg-white'
           aria-label='Fee'
