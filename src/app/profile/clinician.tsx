@@ -1,7 +1,5 @@
 'use client';
 
-import ClinicianPracticeSchedule from '@/components/profile/clinician-practice-schedule';
-import ClinicianUnavailabilityCard from '@/components/profile/clinician-unavailability-card';
 import InformationDetail from '@/components/profile/information-detail';
 import ProfileActions from '@/components/profile/ProfileActions';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,7 +12,6 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { Practitioner } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
-import { useClinicianSchedule } from './hooks/useClinicianSchedule';
 
 type Props = { fhirId: string };
 
@@ -89,38 +86,7 @@ function GeneralInfoSection({
   );
 }
 
-/** Practice information section with loading skeleton. */
-function PracticeInfoSection({
-  loading,
-  activeFirms,
-  onEdit
-}: {
-  readonly loading: boolean;
-  readonly activeFirms: unknown[];
-  readonly onEdit: () => void;
-}) {
-  if (loading) {
-    return (
-      <Skeleton className='h-[200px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
-    );
-  }
-  return (
-    <InformationDetail
-      initials=''
-      backgroundColor=''
-      isRadiusIcon={false}
-      iconUrl='/icons/hospital.svg'
-      title='Practice Information'
-      buttonText='Edit Detail'
-      details={activeFirms}
-      onEdit={onEdit}
-      role='clinician'
-      isEditPractice
-    />
-  );
-}
-
-/** Clinician profile page with info, schedule, and actions. */
+/** Clinician profile page with info and actions. */
 export default function Clinician({ fhirId }: Props) {
   const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
@@ -130,8 +96,6 @@ export default function Clinician({ fhirId }: Props) {
       queryFn: () =>
         getProfileById(fhirId, 'Practitioner') as Promise<Practitioner>
     });
-  const { groupedByFirmAndDay, isPractitionerRolesLoading, activeFirms } =
-    useClinicianSchedule();
 
   useUpdatePractitionerInfo();
 
@@ -159,16 +123,6 @@ export default function Clinician({ fhirId }: Props) {
         onEdit={() => router.push('/profile?path=edit-profile')}
       />
       <div className='my-4' />
-      <PracticeInfoSection
-        loading={isPractitionerRolesLoading}
-        activeFirms={activeFirms}
-        onEdit={() => router.push('/profile?path=edit-practice')}
-      />
-      <ClinicianPracticeSchedule
-        groupedByFirmAndDay={groupedByFirmAndDay}
-        onEditSchedule={() => router.push('/practitioner/availability')}
-      />
-      <ClinicianUnavailabilityCard />
       <ProfileActions menus={settingMenus} />
     </>
   );

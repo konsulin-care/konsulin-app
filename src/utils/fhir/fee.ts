@@ -4,6 +4,40 @@ import { FhirExtensionUrls, getExtension, upsertExtension } from './extensions';
 type WithExtension = { extension?: Extension[] };
 
 /**
+ * Locale used for all fee display formatting.
+ *
+ * Single source of truth for number grouping (en-US → comma
+ * separators, e.g. 100000 → "100,000"). When i18n lands, swap this
+ * constant for the user-selected locale.
+ */
+export const FEE_DISPLAY_LOCALE = 'en-US';
+
+/**
+ * Format a numeric fee value with locale grouping (e.g. "100,000").
+ *
+ * @param value - The fee amount
+ * @returns The grouped number string
+ */
+export function formatFeeValue(value: number): string {
+  return value.toLocaleString(FEE_DISPLAY_LOCALE);
+}
+
+/**
+ * Format a numeric value as currency (e.g. "Rp 100,000").
+ *
+ * @param value - The amount
+ * @param currency - ISO 4217 currency code
+ * @returns The formatted currency string
+ */
+export function formatCurrencyValue(value: number, currency: string): string {
+  return new Intl.NumberFormat(FEE_DISPLAY_LOCALE, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0
+  }).format(value);
+}
+
+/**
  * Build a fee extension carrying an IDR Money value.
  *
  * The canonical shape for the Konsulin fee extension, shared by
@@ -67,12 +101,11 @@ export function getFeeFromHealthcareService(
 }
 
 /**
- * Format a fee Money object as an Indonesian Rupiah string (e.g. "Rp 150.000").
+ * Format a fee Money object as an en-US Rupiah string (e.g. "Rp 150,000").
  *
  * @param fee - The Money object with value and optional currency
  * @returns Formatted IDR string
  */
 export function formatFee(fee: Money): string {
-  const formatted = (fee.value ?? 0).toLocaleString('id-ID');
-  return `Rp ${formatted}`;
+  return `Rp ${formatFeeValue(fee.value ?? 0)}`;
 }

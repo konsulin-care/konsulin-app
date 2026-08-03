@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { FhirExtensionUrls } from '../extensions';
 import {
   buildFeeExtension,
+  formatCurrencyValue,
+  formatFee,
+  formatFeeValue,
   getFee,
   getFeeFromHealthcareService,
   setFee
@@ -203,5 +206,46 @@ describe('getFee', () => {
     };
 
     expect(getFee(hs)).toEqual({ value: 500, currency: 'IDR' });
+  });
+});
+
+describe('formatFeeValue', () => {
+  it('formats zero as "0"', () => {
+    expect(formatFeeValue(0)).toBe('0');
+  });
+
+  it('groups thousands with a comma separator', () => {
+    expect(formatFeeValue(100_000)).toBe('100,000');
+    expect(formatFeeValue(250_000)).toBe('250,000');
+  });
+
+  it('groups millions', () => {
+    expect(formatFeeValue(1_000_000)).toBe('1,000,000');
+  });
+
+  it('leaves small values ungrouped', () => {
+    expect(formatFeeValue(999)).toBe('999');
+  });
+});
+
+describe('formatCurrencyValue', () => {
+  it('groups a currency value with comma separators', () => {
+    // Symbol (Rp vs IDR) depends on ICU data; grouping is the behavior under test.
+    expect(formatCurrencyValue(150_000, 'IDR')).toMatch(/150,000/);
+    expect(formatCurrencyValue(500_000, 'IDR')).toMatch(/500,000/);
+  });
+
+  it('formats zero without decimals', () => {
+    expect(formatCurrencyValue(0, 'IDR')).toMatch(/0$/);
+  });
+});
+
+describe('formatFee', () => {
+  it('formats a fee Money as an en-US Rupiah string', () => {
+    expect(formatFee({ value: 150_000, currency: 'IDR' })).toBe('Rp 150,000');
+  });
+
+  it('defaults missing value to zero', () => {
+    expect(formatFee({ currency: 'IDR' })).toBe('Rp 0');
   });
 });

@@ -5,7 +5,6 @@ import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import EditPractice from './edit-practice';
 import EditProfile from './edit-profile';
 import ProfileDisplay from './profile-display';
 
@@ -20,8 +19,6 @@ const PathProfile = () => {
   useEffect(() => {
     if (path === 'edit-profile') {
       setTitle('Perbarui Profile');
-    } else if (path === 'edit-practice') {
-      setTitle('Perbarui Practice Information');
     }
   }, [path]);
 
@@ -42,8 +39,6 @@ const PathProfile = () => {
           fhirId={authState.userInfo.fhirId}
         />
       );
-    } else if (path === 'edit-practice') {
-      component = <EditPractice />;
     }
 
     if (isLoading) {
