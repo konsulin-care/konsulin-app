@@ -213,17 +213,17 @@ describe('AddAssessmentDrawer', () => {
       }
     ]);
 
-    const imageExt = payload.extension?.find(e =>
+    const imageExt = payload?.extension?.find(e =>
       e.url.endsWith('questionnaireImage')
     );
     expect(imageExt?.valueUrl).toBe('https://example.com/image.webp');
 
-    const durationExt = payload.extension?.find(e =>
+    const durationExt = payload?.extension?.find(e =>
       e.url.endsWith('questionnaireEstimatedDuration')
     );
     expect(durationExt?.valueDuration?.value).toBe(10);
 
-    const feeExt = payload.extension?.find(e => e.url.endsWith('/fee'));
+    const feeExt = payload?.extension?.find(e => e.url.endsWith('/fee'));
     expect(feeExt).toBeUndefined();
 
     const useContextJson = JSON.stringify(payload.useContext);
@@ -280,7 +280,7 @@ describe('AddAssessmentDrawer', () => {
         valueMoney?: { value: number; currency: string };
       }>;
     };
-    const feeExt = payload.extension?.find(e => e.url.endsWith('/fee'));
+    const feeExt = payload?.extension?.find(e => e.url.endsWith('/fee'));
     expect(feeExt?.valueMoney).toEqual({ value: 150_000, currency: 'IDR' });
   });
 
