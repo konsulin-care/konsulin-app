@@ -7,7 +7,7 @@ import {
   upsertExtension
 } from '../extensions';
 
-type WithExtension = { extension?: Extension[] };
+type WithExtension = { resourceType?: string; extension?: Extension[] };
 
 describe('FhirExtensionUrls', () => {
   it('defines the five canonical extension URLs without duplication', () => {

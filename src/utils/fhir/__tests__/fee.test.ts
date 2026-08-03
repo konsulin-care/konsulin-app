@@ -1,4 +1,4 @@
-import type { HealthcareService } from 'fhir/r4';
+import type { Extension, HealthcareService } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
 import { FhirExtensionUrls } from '../extensions';
 import {
@@ -11,7 +11,7 @@ import {
   setFee
 } from '../fee';
 
-type WithExtension = { extension?: unknown[] };
+type WithExtension = { resourceType?: string; extension?: Extension[] };
 
 describe('getFeeFromHealthcareService', () => {
   it('returns fee when extension is present', () => {

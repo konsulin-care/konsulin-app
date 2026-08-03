@@ -14,7 +14,7 @@ const USAGE_CONTEXT_SYSTEM = FhirSystems.usageContext;
 describe('setQuestionnaireCategory', () => {
   it('adds domain coding and regular context when useContext is empty', () => {
     const result = setQuestionnaireCategory(
-      { resourceType: 'Questionnaire' },
+      { resourceType: 'Questionnaire', status: 'draft' },
       'physical-health',
       'Physical Health'
     );
@@ -42,6 +42,7 @@ describe('setQuestionnaireCategory', () => {
   it('replaces an existing domain coding instead of appending', () => {
     const existing = {
       resourceType: 'Questionnaire' as const,
+      status: 'draft' as const,
       useContext: [
         {
           code: { system: USAGE_CONTEXT_SYSTEM, code: 'focus' },
@@ -86,6 +87,7 @@ describe('setQuestionnaireCategory', () => {
     const result = setQuestionnaireCategory(
       {
         resourceType: 'Questionnaire',
+        status: 'draft',
         useContext: [unrelated]
       },
       'functional-capacity',
@@ -98,6 +100,7 @@ describe('setQuestionnaireCategory', () => {
   it('does not duplicate the regular assessment-context when already present', () => {
     const existing = {
       resourceType: 'Questionnaire' as const,
+      status: 'draft' as const,
       useContext: [
         {
           code: { system: USAGE_CONTEXT_SYSTEM, code: 'focus' },
@@ -128,7 +131,7 @@ describe('setQuestionnaireDuration', () => {
 
   it('adds the duration extension with unit system and code', () => {
     const result = setQuestionnaireDuration(
-      { resourceType: 'Questionnaire' },
+      { resourceType: 'Questionnaire', status: 'draft' },
       10
     );
 
@@ -143,6 +146,7 @@ describe('setQuestionnaireDuration', () => {
   it('replaces an existing duration extension instead of appending', () => {
     const existing = {
       resourceType: 'Questionnaire' as const,
+      status: 'draft' as const,
       extension: [
         {
           url: DURATION_URL,
@@ -166,7 +170,7 @@ describe('setQuestionnaireDuration', () => {
       valueUrl: 'https://example.com/image.png'
     };
     const result = setQuestionnaireDuration(
-      { resourceType: 'Questionnaire', extension: [other] },
+      { resourceType: 'Questionnaire', status: 'draft', extension: [other] },
       15
     );
 
@@ -196,6 +200,7 @@ describe('setQuestionnairePublisherDate', () => {
     const result = setQuestionnairePublisherDate(
       {
         resourceType: 'Questionnaire',
+        status: 'draft',
         publisher: 'Old Publisher',
         date: '2020-01-01'
       },
@@ -211,7 +216,7 @@ describe('setQuestionnairePublisherDate', () => {
 describe('appendQuestionnaireContact', () => {
   it('appends a contact with name and telecom for present fields', () => {
     const result = appendQuestionnaireContact(
-      { resourceType: 'Questionnaire' },
+      { resourceType: 'Questionnaire', status: 'draft' },
       { name: 'Aly Lamuri', email: 'aly@example.com', phone: '+628123' }
     );
 
@@ -231,7 +236,11 @@ describe('appendQuestionnaireContact', () => {
       telecom: [{ system: 'email' as const, value: 'old@example.com' }]
     };
     const result = appendQuestionnaireContact(
-      { resourceType: 'Questionnaire', contact: [existingContact] },
+      {
+        resourceType: 'Questionnaire',
+        status: 'draft',
+        contact: [existingContact]
+      },
       { name: 'New User', email: 'new@example.com' }
     );
 
@@ -241,7 +250,7 @@ describe('appendQuestionnaireContact', () => {
 
   it('omits telecom entries for missing fields', () => {
     const result = appendQuestionnaireContact(
-      { resourceType: 'Questionnaire' },
+      { resourceType: 'Questionnaire', status: 'draft' },
       { name: 'Only Name' }
     );
 
@@ -250,7 +259,10 @@ describe('appendQuestionnaireContact', () => {
   });
 
   it('returns the questionnaire unchanged when no contact fields are present', () => {
-    const questionnaire = { resourceType: 'Questionnaire' };
+    const questionnaire = {
+      resourceType: 'Questionnaire' as const,
+      status: 'draft' as const
+    };
     const result = appendQuestionnaireContact(questionnaire, {});
 
     expect(result).toBe(questionnaire);

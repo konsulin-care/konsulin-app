@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
+    "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "format": "prettier --check . --write \"src/**/*{js,ts,css,scss,json,tsx,jsx,mdx,md}\" \"*.{js,ts,tsx,jsx,mdx,md}\"",
     "prepare": "husky",
