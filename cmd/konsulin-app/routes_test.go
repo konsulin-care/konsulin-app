@@ -38,7 +38,7 @@ func newTestConfig(t *testing.T, csrfKey string) *config.Config {
 func TestRoutes_servesOutDir(t *testing.T) {
 	tmpDir := t.TempDir()
 	outDir := filepath.Join(tmpDir, "out")
-	if err := os.MkdirAll(outDir, 0755); err != nil {
+	if err := os.MkdirAll(outDir, 0700); err != nil {
 		t.Fatalf("mkdir out: %v", err)
 	}
 	testContent := "hello from nextjs"
@@ -74,7 +74,7 @@ func setupAuthTest(t *testing.T, authContent string) http.Handler {
 	t.Helper()
 	tmpDir := t.TempDir()
 	outDir := filepath.Join(tmpDir, "out")
-	if err := os.MkdirAll(outDir, 0755); err != nil {
+	if err := os.MkdirAll(outDir, 0700); err != nil {
 		t.Fatalf("mkdir out: %v", err)
 	}
 	authFile := filepath.Join(outDir, "auth.html")

@@ -223,7 +223,7 @@ func TestLogoutClient_hasTimeout(t *testing.T) {
 	}
 }
 
-func TestTryBackendLogout_httpSkipped(t *testing.T) {
+func TestTryBackendLogout_httpSkipped(_ *testing.T) {
 	// HTTP backend URL — should skip (log warning), not make a request.
 	r := httptest.NewRequest(http.MethodPost, "/logout", http.NoBody)
 	tryBackendLogout(r, "http://localhost:8080", false)
@@ -255,7 +255,7 @@ func TestTryBackendLogout_httpsForwarded(t *testing.T) {
 	}
 }
 
-func TestTryBackendLogout_emptyBackend(t *testing.T) {
+func TestTryBackendLogout_emptyBackend(_ *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, "/logout", http.NoBody)
 	// Should not panic with empty backend URL.
 	tryBackendLogout(r, "", false)

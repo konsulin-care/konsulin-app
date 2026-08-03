@@ -215,7 +215,7 @@ func postFHIRBundle(baseURL string, bundleBody []byte, authToken string) (map[st
 
 // parseRelayResponse extracts Slot ID and Invoice ID from the FHIR
 // transaction-response bundle.
-func parseRelayResponse(fhirResp map[string]any, serviceID string, fee feeObj) relayResponse {
+func parseRelayResponse(fhirResp map[string]any, fee feeObj) relayResponse {
 	entries, ok := fhirResp["entry"].([]any)
 	if !ok {
 		return relayResponse{

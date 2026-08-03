@@ -97,7 +97,7 @@ func TestRedirectAuthenticated_nonVerifyPaths_redirectAuthenticated(t *testing.T
 			req.Header.Set("Cookie", "auth="+cookieVal)
 
 			httpClient := &http.Client{
-				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 					return http.ErrUseLastResponse
 				},
 			}

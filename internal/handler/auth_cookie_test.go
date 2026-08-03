@@ -167,6 +167,7 @@ func TestPostAuthCookie_rolePrecedence(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			srv := newAuthCookieServer(t)
 			t.Cleanup(srv.Close)
 			resp := mustPost(t, srv, "/auth/cookie", tc.body, &http.Cookie{

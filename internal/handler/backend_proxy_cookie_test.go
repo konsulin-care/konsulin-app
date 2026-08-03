@@ -8,7 +8,7 @@ import (
 )
 
 func TestBackendProxy_stripsRawTokenHeaders(t *testing.T) {
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("st-access-token", "jwt-access")
 		w.Header().Set("st-refresh-token", "jwt-refresh")
 		w.Header().Set("front-token", "front-info")
@@ -56,7 +56,7 @@ func TestBackendProxy_stripsRawTokenHeaders(t *testing.T) {
 }
 
 func TestBackendProxy_setsLastAccessTokenUpdate(t *testing.T) {
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("st-access-token", "jwt-access")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{}`))
@@ -104,7 +104,7 @@ func TestBackendProxy_setsLastAccessTokenUpdate(t *testing.T) {
 }
 
 func TestBackendProxy_noLastUpdateWhenNoMappings(t *testing.T) {
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("st-access-token", "jwt-access")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{}`))

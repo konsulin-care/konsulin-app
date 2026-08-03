@@ -101,7 +101,7 @@ func setProxyRequestHeaders(proxyReq, r *http.Request) {
 	}
 }
 
-func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL string, accessCookieName string) {
+func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL, accessCookieName string) {
 	// Always forward an explicit Authorization header supplied by the client
 	// (e.g. a Bearer refresh token on /session/refresh from the SDK).
 	if auth := r.Header.Get("Authorization"); auth != "" {

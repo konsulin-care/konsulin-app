@@ -172,8 +172,8 @@ func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func handleDeleteAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {
-	clear := func(name string) {
+func handleDeleteAuthCookie(w http.ResponseWriter, _ *http.Request, opts AuthCookieOptions) {
+	clearCookie := func(name string) {
 		if name == "" {
 			return
 		}
@@ -190,11 +190,11 @@ func handleDeleteAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCoo
 		})
 	}
 
-	clear(opts.CookieName)
-	clear(opts.AccessCookieName)
-	clear(opts.RefreshCookieName)
-	clear(opts.IDRefreshCookieName)
-	clear("st-last-access-token-update")
+	clearCookie(opts.CookieName)
+	clearCookie(opts.AccessCookieName)
+	clearCookie(opts.RefreshCookieName)
+	clearCookie(opts.IDRefreshCookieName)
+	clearCookie("st-last-access-token-update")
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})

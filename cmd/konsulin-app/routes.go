@@ -126,6 +126,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	}
 	outDir := filepath.Join(wd, "out")
 	staticDir := filepath.Join(wd, "web", "static")
+	// deepsource:ignore GO-S1034 — noDirFS rejects directory opens, so FileServer can never list the static dir.
 	fileServer := http.FileServer(noDirFS{http.Dir(staticDir)})
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 
@@ -273,6 +274,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	// Serve Next.js static export (out/) directly when it exists.
 	// Uses spaFS to handle clean URLs (/clinic → out/clinic.html).
 	if stat, err := os.Stat(outDir); err == nil && stat.IsDir() {
+		// deepsource:ignore GO-S1034 — spaFS rejects non-root directory opens, so FileServer can never list the export dir.
 		outFS := http.FileServer(&spaFS{http.Dir(outDir)})
 		r.NotFound(outFS.ServeHTTP)
 	} else {

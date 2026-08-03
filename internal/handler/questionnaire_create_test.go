@@ -34,7 +34,7 @@ func testQuestionnaireBackend(t *testing.T) (*httptest.Server, *strings.Builder)
 	return backend, &captured
 }
 
-func newQuestionnaireCreateHandler(t *testing.T) (http.Handler, *strings.Builder) {
+func newQuestionnaireCreateTestHandler(t *testing.T) (http.Handler, *strings.Builder) {
 	t.Helper()
 	backend, captured := testQuestionnaireBackend(t)
 	handler := NewQuestionnaireCreateHandler(QuestionnaireCreateOptions{
@@ -44,7 +44,7 @@ func newQuestionnaireCreateHandler(t *testing.T) (http.Handler, *strings.Builder
 }
 
 func TestQuestionnaireCreateHandler_acceptsDraftAndForwards(t *testing.T) {
-	handler, captured := newQuestionnaireCreateHandler(t)
+	handler, captured := newQuestionnaireCreateTestHandler(t)
 
 	body := `{"resourceType":"Questionnaire","id":"q-1","status":"draft","title":"Demo"}`
 	req := httptest.NewRequest(http.MethodPost, "/proxy/fhir/Questionnaire", strings.NewReader(body))
@@ -65,7 +65,7 @@ func TestQuestionnaireCreateHandler_acceptsDraftAndForwards(t *testing.T) {
 }
 
 func TestQuestionnaireCreateHandler_rejectsNonDraft(t *testing.T) {
-	handler, captured := newQuestionnaireCreateHandler(t)
+	handler, captured := newQuestionnaireCreateTestHandler(t)
 	before := captured.Len()
 
 	body := `{"resourceType":"Questionnaire","id":"q-2","status":"active"}`
@@ -86,7 +86,7 @@ func TestQuestionnaireCreateHandler_rejectsNonDraft(t *testing.T) {
 }
 
 func TestQuestionnaireCreateHandler_rejectsNonQuestionnaireResource(t *testing.T) {
-	handler, captured := newQuestionnaireCreateHandler(t)
+	handler, captured := newQuestionnaireCreateTestHandler(t)
 	before := captured.Len()
 
 	body := `{"resourceType":"Patient","id":"p-1","status":"draft"}`
@@ -104,7 +104,7 @@ func TestQuestionnaireCreateHandler_rejectsNonQuestionnaireResource(t *testing.T
 }
 
 func TestQuestionnaireCreateHandler_rejectsInvalidJSON(t *testing.T) {
-	handler, _ := newQuestionnaireCreateHandler(t)
+	handler, _ := newQuestionnaireCreateTestHandler(t)
 
 	req := httptest.NewRequest(http.MethodPost, "/proxy/fhir/Questionnaire", strings.NewReader("not json"))
 	rec := httptest.NewRecorder()
@@ -117,7 +117,7 @@ func TestQuestionnaireCreateHandler_rejectsInvalidJSON(t *testing.T) {
 }
 
 func TestQuestionnaireCreateHandler_rejectsNonPostMethod(t *testing.T) {
-	handler, _ := newQuestionnaireCreateHandler(t)
+	handler, _ := newQuestionnaireCreateTestHandler(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/proxy/fhir/Questionnaire", http.NoBody)
 	rec := httptest.NewRecorder()

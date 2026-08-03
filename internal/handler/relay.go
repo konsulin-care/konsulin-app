@@ -164,7 +164,7 @@ func relayBundleAndParse(baseURL string, req relayBookingRequest, fee feeObj, au
 		return relayResponse{}, err
 	}
 
-	result := parseRelayResponse(fhirResp, req.HealthcareServiceID, fee)
+	result := parseRelayResponse(fhirResp, fee)
 	if result.SlotID == "" || result.InvoiceID == "" {
 		slog.Error("relay/booking: backend returned incomplete response",
 			"slotId", result.SlotID, "invoiceId", result.InvoiceID)

@@ -11,7 +11,7 @@ import (
 func TestRoutes_result_isNotProtected(t *testing.T) {
 	tmpDir := t.TempDir()
 	outDir := filepath.Join(tmpDir, "out")
-	if err := os.MkdirAll(outDir, 0755); err != nil {
+	if err := os.MkdirAll(outDir, 0700); err != nil {
 		t.Fatalf("mkdir out: %v", err)
 	}
 	testContent := "result page content"
@@ -49,7 +49,7 @@ func TestRoutes_result_isNotProtected(t *testing.T) {
 func TestRoutes_result_subPathsAreNotProtected(t *testing.T) {
 	tmpDir := t.TempDir()
 	outDir := filepath.Join(tmpDir, "out")
-	if err := os.MkdirAll(outDir, 0755); err != nil {
+	if err := os.MkdirAll(outDir, 0700); err != nil {
 		t.Fatalf("mkdir out: %v", err)
 	}
 	testFile := filepath.Join(outDir, "result.html")

@@ -82,7 +82,7 @@ func TestSPAFS_allowsDirectoryForAssetSubpaths(t *testing.T) {
 	t.Parallel()
 	tmpDir := t.TempDir()
 	dirPath := filepath.Join(tmpDir, "_next", "static", "chunks")
-	if err := os.MkdirAll(dirPath, 0755); err != nil {
+	if err := os.MkdirAll(dirPath, 0700); err != nil {
 		t.Fatal(err)
 	}
 	content := "chunk content"
@@ -107,7 +107,7 @@ func TestSPAFS_allowsDirectoryForAssetSubpaths(t *testing.T) {
 func TestRoutes_servesCleanUrl(t *testing.T) {
 	tmpDir := t.TempDir()
 	outDir := filepath.Join(tmpDir, "out")
-	if err := os.MkdirAll(outDir, 0755); err != nil {
+	if err := os.MkdirAll(outDir, 0700); err != nil {
 		t.Fatalf("mkdir out: %v", err)
 	}
 	content := "<html><body>clinic page</body></html>"
@@ -141,7 +141,7 @@ func TestRoutes_servesCleanUrl(t *testing.T) {
 func TestRoutes_cleanUrlNotFound(t *testing.T) {
 	tmpDir := t.TempDir()
 	outDir := filepath.Join(tmpDir, "out")
-	if err := os.MkdirAll(outDir, 0755); err != nil {
+	if err := os.MkdirAll(outDir, 0700); err != nil {
 		t.Fatalf("mkdir out: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(outDir, "404.html"), []byte("not found"), 0644); err != nil {

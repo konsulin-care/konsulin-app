@@ -98,7 +98,7 @@ func TestRelayBooking_missingFields(t *testing.T) {
 }
 
 func TestRelayBooking_backendError(t *testing.T) {
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(`{"error":"server error"}`))
 	}))
