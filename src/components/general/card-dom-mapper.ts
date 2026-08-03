@@ -30,6 +30,7 @@ export function CardDomMapper({ containerRef }: CardDomMapperProps) {
       return undefined; // eslint-disable-line unicorn/no-useless-undefined
     }
 
+    /** Applies the active/inactive classes to the focus question labels. */
     function applyClasses() {
       const labels = container.querySelectorAll<HTMLElement>('[id^="label-"]');
 

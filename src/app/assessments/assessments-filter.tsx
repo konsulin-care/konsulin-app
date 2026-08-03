@@ -41,17 +41,20 @@ export default function AssessmentsFilter({
     'a-z' | 'popular' | 'newest'
   >('a-z');
 
+  /** Toggles a category code in the selected categories list. */
   const handleCategoryToggle = (code: string) => {
     setSelectedCategories(prev =>
       prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
     );
   };
 
+  /** Applies the selected categories and sort order to the parent. */
   const handleApply = () => {
     setIsOpen(false);
     onChange({ categories: selectedCategories, sort: selectedSort });
   };
 
+  /** Syncs the drawer open state with the parent. */
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
   };

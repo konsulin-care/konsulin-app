@@ -8,16 +8,16 @@ import {
 
 describe('getQuestionnaireImageUrl', () => {
   it('returns null when no image extension exists', () => {
-    const q: Questionnaire = {
+    const questionnaire: Questionnaire = {
       resourceType: 'Questionnaire',
       status: 'active',
       title: 'Wellness Check'
     };
-    expect(getQuestionnaireImageUrl(q)).toBeNull();
+    expect(getQuestionnaireImageUrl(questionnaire)).toBeNull();
   });
 
   it('returns the URL from the image extension', () => {
-    const q: Questionnaire = {
+    const questionnaire: Questionnaire = {
       resourceType: 'Questionnaire',
       status: 'active',
       title: 'Wellness Check',
@@ -28,23 +28,23 @@ describe('getQuestionnaireImageUrl', () => {
         }
       ]
     };
-    expect(getQuestionnaireImageUrl(q)).toBe(
+    expect(getQuestionnaireImageUrl(questionnaire)).toBe(
       'https://res.cloudinary.com/test/image/upload/v1/q.webp'
     );
   });
 
   it('returns null when extensions array is empty', () => {
-    const q: Questionnaire = {
+    const questionnaire: Questionnaire = {
       resourceType: 'Questionnaire',
       status: 'active',
       title: 'Wellness Check',
       extension: []
     };
-    expect(getQuestionnaireImageUrl(q)).toBeNull();
+    expect(getQuestionnaireImageUrl(questionnaire)).toBeNull();
   });
 
   it('returns null when matching extension has no valueUrl', () => {
-    const q: Questionnaire = {
+    const questionnaire: Questionnaire = {
       resourceType: 'Questionnaire',
       status: 'active',
       title: 'Wellness Check',
@@ -54,11 +54,11 @@ describe('getQuestionnaireImageUrl', () => {
         }
       ]
     };
-    expect(getQuestionnaireImageUrl(q)).toBeNull();
+    expect(getQuestionnaireImageUrl(questionnaire)).toBeNull();
   });
 
   it('returns null when extension URL does not match', () => {
-    const q: Questionnaire = {
+    const questionnaire: Questionnaire = {
       resourceType: 'Questionnaire',
       status: 'active',
       title: 'Wellness Check',
@@ -69,19 +69,19 @@ describe('getQuestionnaireImageUrl', () => {
         }
       ]
     };
-    expect(getQuestionnaireImageUrl(q)).toBeNull();
+    expect(getQuestionnaireImageUrl(questionnaire)).toBeNull();
   });
 });
 
 describe('setQuestionnaireImageUrl', () => {
   it('adds image extension to a questionnaire without extensions', () => {
-    const q: Questionnaire = {
+    const questionnaire: Questionnaire = {
       resourceType: 'Questionnaire',
       status: 'active',
       title: 'Wellness Check'
     };
     const result = setQuestionnaireImageUrl(
-      q,
+      questionnaire,
       'https://res.cloudinary.com/test/image/upload/v1/q.webp'
     );
     const ext = result.extension?.find(
@@ -93,7 +93,7 @@ describe('setQuestionnaireImageUrl', () => {
   });
 
   it('replaces existing image extension', () => {
-    const q: Questionnaire = {
+    const questionnaire: Questionnaire = {
       resourceType: 'Questionnaire',
       status: 'active',
       title: 'Wellness Check',
@@ -105,7 +105,7 @@ describe('setQuestionnaireImageUrl', () => {
       ]
     };
     const result = setQuestionnaireImageUrl(
-      q,
+      questionnaire,
       'https://res.cloudinary.com/test/image/upload/v1/new.webp'
     );
     const ext = result.extension?.find(
@@ -118,7 +118,7 @@ describe('setQuestionnaireImageUrl', () => {
   });
 
   it('preserves other extensions when adding image', () => {
-    const q: Questionnaire = {
+    const questionnaire: Questionnaire = {
       resourceType: 'Questionnaire',
       status: 'active',
       title: 'Wellness Check',
@@ -130,7 +130,7 @@ describe('setQuestionnaireImageUrl', () => {
       ]
     };
     const result = setQuestionnaireImageUrl(
-      q,
+      questionnaire,
       'https://res.cloudinary.com/test/image/upload/v1/q.webp'
     );
     const imgExt = result.extension?.find(

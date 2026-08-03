@@ -61,6 +61,7 @@ const passwordlessOverrides: Partial<ComponentOverrideMap> = {
   }
 };
 
+/** Returns the path only when it is a safe single-segment URL path. */
 function sanitizePath(path: string | null): string | null {
   if (!path || typeof path !== 'string') return null;
   if (!/^\/[a-zA-Z0-9\-_.~/]+$/.test(path)) return null;

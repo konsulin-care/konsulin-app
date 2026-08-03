@@ -104,8 +104,8 @@ describe('CardStackContainer', () => {
   });
 
   it('advances on swipe up', () => {
-    const s = vi.fn();
-    mockF.mockReturnValue({ ...BASE, setActiveCardIndex: s });
+    const setActiveCardIndex = vi.fn();
+    mockF.mockReturnValue({ ...BASE, setActiveCardIndex });
     mockSwipe.mockReturnValue({
       swipeDirection: 'up',
       onTouchStart: vi.fn(),
@@ -117,15 +117,15 @@ describe('CardStackContainer', () => {
         <div>c</div>
       </CardStackContainer>
     );
-    expect(s).toHaveBeenCalledWith(1);
+    expect(setActiveCardIndex).toHaveBeenCalledWith(1);
   });
 
   it('retreats on swipe down', () => {
-    const s = vi.fn();
+    const setActiveCardIndex = vi.fn();
     mockF.mockReturnValue({
       ...BASE,
       activeCardIndex: 1,
-      setActiveCardIndex: s,
+      setActiveCardIndex,
       cardStates: { q1: 'answered', q2: 'active', q3: 'future' }
     });
     mockSwipe.mockReturnValue({
@@ -139,14 +139,14 @@ describe('CardStackContainer', () => {
         <div>c</div>
       </CardStackContainer>
     );
-    expect(s).toHaveBeenCalledWith(0);
+    expect(setActiveCardIndex).toHaveBeenCalledWith(0);
   });
 
   it('does not block swipe on required unanswered card', () => {
-    const s = vi.fn();
+    const setActiveCardIndex = vi.fn();
     mockF.mockReturnValue({
       ...BASE,
-      setActiveCardIndex: s,
+      setActiveCardIndex,
       cardStates: { q1: 'answered', q2: 'future', q3: 'future' },
       isRequired: vi.fn().mockImplementation((id: string) => id === 'q2'),
       isAnswered: vi.fn().mockImplementation((id: string) => id === 'q1')
@@ -162,7 +162,7 @@ describe('CardStackContainer', () => {
         <div>c</div>
       </CardStackContainer>
     );
-    expect(s).toHaveBeenCalledWith(1);
+    expect(setActiveCardIndex).toHaveBeenCalledWith(1);
     expect(mockToast.error).not.toHaveBeenCalled();
   });
 });

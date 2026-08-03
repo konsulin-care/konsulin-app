@@ -111,15 +111,15 @@ async function tryRevalidateChunkCache(error: ChunkError): Promise<void> {
  */
 export function resolveCjsDefaultExport(mod: unknown): unknown {
   if (!mod) return mod;
-  const d = (mod as Record<string, unknown>).default;
+  const defaultExport = (mod as Record<string, unknown>).default;
   if (
-    d &&
-    typeof d === 'object' &&
-    'default' in (d as Record<string, unknown>)
+    defaultExport &&
+    typeof defaultExport === 'object' &&
+    'default' in (defaultExport as Record<string, unknown>)
   ) {
-    return (d as Record<string, unknown>).default;
+    return (defaultExport as Record<string, unknown>).default;
   }
-  return d === undefined ? mod : d;
+  return defaultExport === undefined ? mod : defaultExport;
 }
 
 /**

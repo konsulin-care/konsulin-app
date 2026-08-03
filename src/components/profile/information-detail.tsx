@@ -2,6 +2,7 @@ import { Roles } from '@/constants/roles';
 
 import Avatar from '../general/avatar';
 
+/** Renders the profile header with avatar, title, and action button. */
 function HeaderSection({
   isRadiusIcon,
   iconUrl,

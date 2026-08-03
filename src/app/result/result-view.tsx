@@ -49,6 +49,7 @@ export default function ResultView() {
       return;
     }
 
+    /** Loads the draft questionnaire response for the given QR id. */
     const loadData = async () => {
       try {
         const data = await loadDraftByQrId(qrId);

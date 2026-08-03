@@ -162,11 +162,11 @@ describe('click-to-navigate', () => {
   });
 
   it('does not track return for already-answered card', () => {
-    const s = vi.fn();
+    const setActiveCardIndex = vi.fn();
     const base = {
       ...BASE,
       activeCardIndex: 1,
-      setActiveCardIndex: s,
+      setActiveCardIndex,
       cardStates: { q1: 'answered', q2: 'active', q3: 'future' },
       isRequired: vi.fn().mockReturnValue(false),
       isAnswered: vi.fn().mockReturnValue(true)
@@ -176,8 +176,8 @@ describe('click-to-navigate', () => {
       withCards({ q1: 'card-answered', q2: 'card-active', q3: 'card-future' })
     );
     click('card-answered');
-    expect(s).toHaveBeenCalledWith(0);
-    s.mockClear();
+    expect(setActiveCardIndex).toHaveBeenCalledWith(0);
+    setActiveCardIndex.mockClear();
     mockF.mockReturnValue({
       ...base,
       isAnswered: vi.fn().mockReturnValue(false)
@@ -185,6 +185,6 @@ describe('click-to-navigate', () => {
     rerender(
       withCards({ q1: 'card-answered', q2: 'card-active', q3: 'card-future' })
     );
-    expect(s).not.toHaveBeenCalled();
+    expect(setActiveCardIndex).not.toHaveBeenCalled();
   });
 });

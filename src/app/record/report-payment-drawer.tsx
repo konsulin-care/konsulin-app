@@ -23,6 +23,7 @@ export default function ReportPaymentDrawer({
   onOpenChange,
   fee
 }: Props) {
+  /** Closes the payment drawer. */
   const close = () => onOpenChange(false);
   return (
     <Drawer onClose={close} open={open}>

@@ -37,11 +37,11 @@ function filterAssessments(
 
   // Text search on title + description
   if (searchTerm) {
-    const q = searchTerm.toLowerCase();
+    const query = searchTerm.toLowerCase();
     result = result.filter(
       a =>
-        a.title?.toLowerCase().includes(q) ||
-        a.description?.toLowerCase().includes(q)
+        a.title?.toLowerCase().includes(query) ||
+        a.description?.toLowerCase().includes(query)
     );
   }
 
@@ -180,6 +180,7 @@ export default function AssessmentsList() {
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
+  /** Removes a category code from the active filters. */
   const handleRemoveCategory = (cat: string) => {
     setFilters(prev => ({
       ...prev,

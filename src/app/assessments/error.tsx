@@ -72,6 +72,7 @@ export default function AssessmentsError({
   const chunkError = isChunkError(error);
   const chunkErr = error as ChunkError;
 
+  /** Retries chunk loading and resets the error boundary. */
   const handleRetry = (): void => {
     if (chunkError) {
       tryRemoveStaleScripts(chunkErr);
@@ -80,6 +81,7 @@ export default function AssessmentsError({
     reset();
   };
 
+  /** Reloads the page to recover from an unrecoverable error. */
   const handleReload = (): void => {
     window.location.reload();
   };

@@ -167,6 +167,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Extracts the Organization id from a managingOrganization reference. */
   const extractOrgId = (result: unknown): string | undefined => {
     if (!result || typeof result !== 'object') return undefined;
     const obj = result as Record<string, unknown>;
@@ -178,6 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       : undefined;
   };
 
+  /** Persists the selected clinic organization id in IndexedDB. */
   const persistClinicOrganization = (orgId: string) =>
     dbSet(STORES.uiPreferences, {
       ownerId: '',

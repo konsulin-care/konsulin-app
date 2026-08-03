@@ -252,6 +252,7 @@ export function computeStudyProgress(
   const currentBatch =
     sorted.find(batch => isDateInRange(today, batch.start, batch.end)) ?? null;
 
+  /** Filters responses that fall inside the given batch window. */
   const inBatch = (batch: ResearchBatch) =>
     responses.filter(response => isResponseInBatch(response, batch));
 
@@ -326,6 +327,7 @@ export function computeResearchProgress(
 /** Recursively flattens nested bundle entries into their resources. */
 function collectBundleResources(bundle: Bundle): Resource[] {
   const resources: Resource[] = [];
+  /** Recursively collects resources from the bundle and its nested bundles. */
   const walk = (current: Bundle) => {
     for (const entry of current.entry ?? []) {
       const resource = entry.resource;

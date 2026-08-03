@@ -66,6 +66,7 @@ export default function ResearchPage() {
     return () => dispatch({ type: 'SET_ACTION', config: null });
   }, [progress, dispatch, router]);
 
+  /** Renders the loading, error, or study content for the page. */
   const renderContent = () => {
     if (isLoading) {
       return (

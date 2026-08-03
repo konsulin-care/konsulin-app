@@ -84,12 +84,12 @@ type FabDispatchCall = [
 ];
 
 function mockDispatch() {
-  const d = vi.fn();
+  const dispatch = vi.fn();
   vi.mocked(useFab).mockReturnValue({
     state: { action: null, selection: null, menu: null, panelOpen: false },
-    dispatch: d
+    dispatch
   });
-  return d;
+  return dispatch;
 }
 
 function mockDetail(data: Record<string, unknown> | null) {
