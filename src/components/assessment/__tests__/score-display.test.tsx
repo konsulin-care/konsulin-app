@@ -176,4 +176,38 @@ describe('ScoreDisplay', () => {
     // "reference" linkId should NOT appear as a dimension name
     expect(screen.queryByText('reference')).not.toBeInTheDocument();
   });
+
+  it('assigns colors deterministically — identical across fresh mounts', () => {
+    const qr = buildMockQR([
+      { name: 'Anxiety', score: 3, ref: 5 },
+      { name: 'Depression', score: 4, ref: 5 }
+    ]);
+
+    const first = render(
+      <ScoreDisplay questionnaireResponse={qr} isLoading={false} />
+    );
+    const firstColors = screen
+      .getAllByTestId('progress-bar')
+      .map(bar => bar.dataset.color);
+    first.unmount();
+
+    render(<ScoreDisplay questionnaireResponse={qr} isLoading={false} />);
+    const secondColors = screen
+      .getAllByTestId('progress-bar')
+      .map(bar => bar.dataset.color);
+
+    expect(secondColors).toEqual(firstColors);
+  });
+
+  it('renders valid HSL colors for every score bar', () => {
+    const qr = buildMockQR([
+      { name: 'Anxiety', score: 3, ref: 5 },
+      { name: 'Depression', score: 4, ref: 5 }
+    ]);
+    render(<ScoreDisplay questionnaireResponse={qr} isLoading={false} />);
+
+    for (const bar of screen.getAllByTestId('progress-bar')) {
+      expect(bar.dataset.color).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/);
+    }
+  });
 });

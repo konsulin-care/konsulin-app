@@ -160,6 +160,111 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
   );
 
   /**
+   * Make cards keyboard-accessible.
+   * Non-active cards become tab stops with role="button"; the active card
+   * gets tabIndex=-1 and no role (it is a form region, not a button). Future
+   * cards blocked by a required unanswered card get aria-disabled.
+   */
+  useEffect(() => {
+    const viewport = containerRef.current;
+    if (!viewport) return;
+
+    const activeLinkId =
+      activeCardIndex >= 0 && activeCardIndex < focusableLinkIds.length
+        ? focusableLinkIds[activeCardIndex]
+        : null;
+
+    const activeBlocked =
+      activeLinkId !== null &&
+      isRequired(activeLinkId) &&
+      !isAnswered(activeLinkId);
+
+    viewport.querySelectorAll<HTMLElement>('[data-link-id]').forEach(card => {
+      const cardLinkId = card.dataset.linkId ?? '';
+      if (!focusableLinkIds.includes(cardLinkId)) return;
+
+      if (cardLinkId === activeLinkId) {
+        card.tabIndex = -1;
+        card.removeAttribute('role');
+        card.removeAttribute('aria-disabled');
+        return;
+      }
+
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
+      const isFuture = focusableLinkIds.indexOf(cardLinkId) > activeCardIndex;
+      if (isFuture && activeBlocked) {
+        card.setAttribute('aria-disabled', 'true');
+      } else {
+        card.removeAttribute('aria-disabled');
+      }
+    });
+  }, [activeCardIndex, focusableLinkIds, cardStates, isRequired, isAnswered]);
+
+  /** Move keyboard focus to the card at the given index. */
+  const focusCardByIndex = useCallback(
+    (index: number) => {
+      const viewport = containerRef.current;
+      if (!viewport) return;
+      const linkId = focusableLinkIds[index];
+      if (!linkId) return;
+      const card = viewport.querySelector<HTMLElement>(
+        `[data-link-id="${CSS.escape(linkId)}"]`
+      );
+      card?.focus({ preventScroll: true });
+    },
+    [focusableLinkIds]
+  );
+
+  /**
+   * Handle keyboard interaction on the card stack.
+   * Only reacts when a card ([data-link-id]) has focus.
+   * - Enter/Space: activate the focused card (same guard as click)
+   * - ArrowDown/Right: next card; ArrowUp/Left: previous card
+   */
+  const handleCardKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const focused = document.activeElement as HTMLElement | null;
+      const linkId = focused?.dataset.linkId;
+      if (!linkId || !focusableLinkIds.includes(linkId)) return;
+
+      switch (event.key) {
+        case 'Enter':
+        case ' ': {
+          event.preventDefault();
+          processCardClick(linkId, focused);
+          break;
+        }
+        case 'ArrowDown':
+        case 'ArrowRight': {
+          event.preventDefault();
+          focusCardByIndex(activeCardIndex + 1);
+          handleNext();
+          break;
+        }
+        case 'ArrowUp':
+        case 'ArrowLeft': {
+          event.preventDefault();
+          focusCardByIndex(activeCardIndex - 1);
+          handlePrevious();
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+    },
+    [
+      focusableLinkIds,
+      processCardClick,
+      activeCardIndex,
+      handleNext,
+      handlePrevious,
+      focusCardByIndex
+    ]
+  );
+
+  /**
    * Handle click on inactive cards.
    * Walks up from event.target to find an element with `data-link-id`.
    */
@@ -222,6 +327,7 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
         ref={containerRef}
         className='card-stack-viewport'
         onClick={handleCardClick}
+        onKeyDown={handleCardKeyDown}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}

@@ -143,9 +143,9 @@ describe('AddAssessmentDrawer', () => {
     expect(submit).toBeDisabled();
 
     uploadFile(container, buildQuestionnaireFile());
-    await waitFor(() =>
-      expect(screen.getByTestId('questionnaire-snippet')).toBeInTheDocument()
-    );
+    expect(
+      await screen.findByTestId('questionnaire-snippet')
+    ).toBeInTheDocument();
     expect(submit).not.toBeDisabled();
   });
 
@@ -159,9 +159,9 @@ describe('AddAssessmentDrawer', () => {
     );
 
     uploadFile(container, buildQuestionnaireFile());
-    await waitFor(() =>
-      expect(screen.getByTestId('questionnaire-snippet')).toBeInTheDocument()
-    );
+    expect(
+      await screen.findByTestId('questionnaire-snippet')
+    ).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Image URL (optional)'), {
       target: { value: 'https://example.com/image.webp' }
@@ -251,9 +251,9 @@ describe('AddAssessmentDrawer', () => {
     );
 
     uploadFile(container, buildQuestionnaireFile());
-    await waitFor(() =>
-      expect(screen.getByTestId('questionnaire-snippet')).toBeInTheDocument()
-    );
+    expect(
+      await screen.findByTestId('questionnaire-snippet')
+    ).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Estimated Duration (minutes)'), {
       target: { value: '10' }
@@ -294,9 +294,9 @@ describe('AddAssessmentDrawer', () => {
     );
 
     uploadFile(container, buildQuestionnaireFile());
-    await waitFor(() =>
-      expect(screen.getByTestId('questionnaire-snippet')).toBeInTheDocument()
-    );
+    expect(
+      await screen.findByTestId('questionnaire-snippet')
+    ).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Estimated Duration (minutes)'), {
       target: { value: '10' }

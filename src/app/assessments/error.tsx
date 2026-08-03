@@ -65,7 +65,10 @@ function tryRemoveStaleScripts(error: ChunkError): void {
 }
 
 /** Error boundary for the /assessments segment. Catches chunk failures and shows retry UI. */
-export default function AssessmentsError({ error, reset }: ErrorProps) {
+export default function AssessmentsError({
+  error,
+  reset
+}: Readonly<ErrorProps>) {
   const chunkError = isChunkError(error);
   const chunkErr = error as ChunkError;
 

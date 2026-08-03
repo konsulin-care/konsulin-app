@@ -156,7 +156,7 @@ function setupBeforeEach() {
     requiredItemEmpty: 0,
     checkRequiredIsEmpty: vi.fn(),
     invalidItems: {}
-  } as any);
+  });
   vi.mocked(useBuildForm).mockReturnValue(false);
 }
 
@@ -242,7 +242,7 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
         />
         <DirtyStateObserver
           onDirtyState={s => {
-            lastDirtyState = s as DirtyState | null;
+            lastDirtyState = s;
           }}
         />
       </FabProvider>
@@ -260,10 +260,8 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
 
   it('sets FAB action state after first form change interaction', () => {
     renderWithObserver();
-    act(() => {
-      fireEvent.change(screen.getByTestId('mock-form-input'), {
-        target: { value: 'a' }
-      });
+    fireEvent.change(screen.getByTestId('mock-form-input'), {
+      target: { value: 'a' }
     });
     expect(lastDirtyState).not.toBeNull();
     expect(lastDirtyState?.label).toBe('Submit');
@@ -278,10 +276,8 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
       invalidItems: { q1: { issue: [{ code: 'required' }] } }
     } as any);
     renderWithObserver();
-    act(() => {
-      fireEvent.change(screen.getByTestId('mock-form-input'), {
-        target: { value: 'a' }
-      });
+    fireEvent.change(screen.getByTestId('mock-form-input'), {
+      target: { value: 'a' }
     });
     expect(lastDirtyState?.disabled).toBe(true);
   });
@@ -297,15 +293,13 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
         />
         <DirtyStateObserver
           onDirtyState={s => {
-            lastDirtyState = s as typeof lastDirtyState;
+            lastDirtyState = s;
           }}
         />
       </FabProvider>
     );
-    act(() => {
-      fireEvent.change(screen.getByTestId('mock-form-input'), {
-        target: { value: 'a' }
-      });
+    fireEvent.change(screen.getByTestId('mock-form-input'), {
+      target: { value: 'a' }
     });
     expect(lastDirtyState?.disabled).toBe(true);
   });
@@ -313,20 +307,16 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
   it('provides icon component in action state after form interaction', () => {
     renderWithObserver();
     expect(lastDirtyState).toBeNull();
-    act(() => {
-      fireEvent.change(screen.getByTestId('mock-form-input'), {
-        target: { value: 'a' }
-      });
+    fireEvent.change(screen.getByTestId('mock-form-input'), {
+      target: { value: 'a' }
     });
     expect(typeof lastDirtyState?.icon).toMatch(/function|object/);
   });
 
   it('calls onAction from action state opens the drawer', () => {
     renderWithObserver();
-    act(() => {
-      fireEvent.change(screen.getByTestId('mock-form-input'), {
-        target: { value: 'a' }
-      });
+    fireEvent.change(screen.getByTestId('mock-form-input'), {
+      target: { value: 'a' }
     });
     act(() => {
       lastDirtyState?.onAction?.();

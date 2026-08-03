@@ -18,7 +18,7 @@ interface AssessmentThemeProviderProps {
  */
 export function AssessmentThemeProvider({
   children
-}: AssessmentThemeProviderProps) {
+}: Readonly<AssessmentThemeProviderProps>) {
   return <RendererThemeProvider>{children}</RendererThemeProvider>;
 }
 

@@ -5,7 +5,9 @@ interface LoadingSectionProps {
 }
 
 /** Pure CSS skeleton with pulse animation. No icon or component imports — ~0.5KB. */
-export default function LoadingSection({ className }: LoadingSectionProps) {
+export default function LoadingSection({
+  className
+}: Readonly<LoadingSectionProps>) {
   return (
     <div
       data-testid='loading-section'

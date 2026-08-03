@@ -46,14 +46,14 @@ function flattenResult(v: unknown): string {
 }
 
 /** Shared page header used by all render branches. */
-function TimelineHeader({ backRoute }: { backRoute?: string }) {
+function TimelineHeader({ backRoute }: Readonly<{ backRoute?: string }>) {
   return (
     <PageHeader pageIndicator='Personal Health Records' backRoute={backRoute} />
   );
 }
 
 /** Skeleton shown while records are loading. */
-function TimelineSkeleton({ backRoute }: { backRoute?: string }) {
+function TimelineSkeleton({ backRoute }: Readonly<{ backRoute?: string }>) {
   return (
     <div data-testid='timeline-skeleton'>
       <TimelineHeader backRoute={backRoute} />
@@ -72,7 +72,7 @@ function TimelineSkeleton({ backRoute }: { backRoute?: string }) {
 }
 
 /** Empty state when no records exist. */
-function TimelineEmpty({ backRoute }: { backRoute?: string }) {
+function TimelineEmpty({ backRoute }: Readonly<{ backRoute?: string }>) {
   return (
     <>
       <TimelineHeader backRoute={backRoute} />

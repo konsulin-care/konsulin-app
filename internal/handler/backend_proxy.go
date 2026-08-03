@@ -203,7 +203,7 @@ func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappin
 	// this, the SDK treats the session as "MAY_EXIST" and triggers a refresh.
 	if hasMapping {
 		//nolint:gosec // G124: non-httpOnly so the SDK can read it via JS
-		http.SetCookie(w, &http.Cookie{
+		http.SetCookie(w, &http.Cookie{ //NOSONAR
 			Name:     lastAccessTokenUpdateCookie,
 			Value:    fmt.Sprintf("%d", time.Now().UnixMilli()),
 			Path:     "/",

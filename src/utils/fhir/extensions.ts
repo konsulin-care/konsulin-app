@@ -5,17 +5,21 @@ import type { Extension } from 'fhir/r4';
  *
  * Single source of truth for every extension URL. Consumers must import
  * from this map instead of hardcoding URL literals.
+ *
+ * Note: the http:// scheme is intentional — these canonical URLs are
+ * identifier locators, never fetched. SonarQube S5332 is a false positive,
+ * suppressed inline with //NOSONAR.
  */
 export const FhirExtensionUrls = {
   /* eslint-disable unicorn/prefer-https */
-  fee: 'http://konsulin.care/fhir/StructureDefinition/fee',
+  fee: 'http://konsulin.care/fhir/StructureDefinition/fee', //NOSONAR
   serviceDuration:
-    'http://konsulin.care/fhir/StructureDefinition/serviceDuration',
+    'http://konsulin.care/fhir/StructureDefinition/serviceDuration', //NOSONAR
   questionnaireEstimatedDuration:
-    'http://konsulin.care/fhir/StructureDefinition/questionnaireEstimatedDuration',
-  locationImage: 'http://konsulin.care/fhir/StructureDefinition/locationImage',
+    'http://konsulin.care/fhir/StructureDefinition/questionnaireEstimatedDuration', //NOSONAR
+  locationImage: 'http://konsulin.care/fhir/StructureDefinition/locationImage', //NOSONAR
   questionnaireImage:
-    'http://konsulin.care/fhir/StructureDefinition/questionnaireImage'
+    'http://konsulin.care/fhir/StructureDefinition/questionnaireImage' //NOSONAR
   /* eslint-enable unicorn/prefer-https */
 } as const;
 
@@ -23,13 +27,17 @@ export const FhirExtensionUrls = {
  * Canonical URLs for FHIR code systems and terminologies used across
  * Konsulin resources. Consumers must import from this map instead of
  * hardcoding system URL literals.
+ *
+ * Note: the http:// scheme is intentional — these canonical URLs are
+ * identifier locators, never fetched. SonarQube S5332 is a false positive,
+ * suppressed inline with //NOSONAR.
  */
 export const FhirSystems = {
   /* eslint-disable unicorn/prefer-https */
-  assessmentDomain: 'http://konsulin.care/fhir/CodeSystem/assessment-domain',
+  assessmentDomain: 'http://konsulin.care/fhir/CodeSystem/assessment-domain', //NOSONAR
   assessmentContext:
-    'http://blaze.konsulin.care/fhir/CodeSystem/assessment-context',
-  usageContext: 'http://terminology.hl7.org/CodeSystem/usage-context',
+    'http://blaze.konsulin.care/fhir/CodeSystem/assessment-context', //NOSONAR
+  usageContext: 'http://terminology.hl7.org/CodeSystem/usage-context', //NOSONAR
   lucide: 'https://lucide.dev/icons',
   ucum: 'https://unitsofmeasure.org'
   /* eslint-enable unicorn/prefer-https */

@@ -2,7 +2,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { QuestionnaireResponse, QuestionnaireResponseItem } from 'fhir/r4';
 import { NotepadTextIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 type IScore = {
@@ -13,11 +13,20 @@ type IScore = {
 
 const BASE_HUE = 170;
 
-/** Generates a random HSL color based on a base hue. */
-function generateRandomColor(baseHue: number): string {
-  const hue = (baseHue + (Math.random() * 20 - 10)) % 360;
-  const saturation = 70 + Math.random() * 20;
-  const lightness = 45 + Math.random() * 15;
+/**
+ * Deterministic HSL color derived from a score name.
+ *
+ * Pure function: hashes the name into stable hue/saturation/lightness so the
+ * same score always renders the same color. No randomness, no state.
+ */
+function getColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  }
+  const hue = (BASE_HUE + (hash % 40) - 20 + 360) % 360;
+  const saturation = 70 + (hash % 20);
+  const lightness = 45 + (hash % 15);
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 }
 
@@ -42,9 +51,7 @@ export default function ScoreDisplay({
   isLoading = false,
   resultBrief,
   loadingSkeleton = false
-}: ScoreDisplayProps) {
-  const [colorMap, setColorMap] = useState<Record<string, string>>({});
-
+}: Readonly<ScoreDisplayProps>) {
   const scoreList = useMemo<IScore[]>(() => {
     if (!questionnaireResponse) return [];
 
@@ -89,21 +96,6 @@ export default function ScoreDisplay({
   const displayResultBrief = useMemo<string>(() => {
     return resultBrief ?? RESULT_BRIEF_CLAIM;
   }, [resultBrief]);
-
-  const getColor = (name: string): string => {
-    if (colorMap[name]) return colorMap[name];
-
-    const randomColor = generateRandomColor(BASE_HUE);
-    setColorMap(prevMap => ({
-      ...prevMap,
-      [name]: randomColor
-    }));
-    return randomColor;
-  };
-
-  // Persist color map changes to parent (via useEffect visibility)
-  // but since this is a presentational component, colors live in local state
-  // Consumers can integrate with IndexedDB externally.
 
   const showLoading = (isLoading || loadingSkeleton) && !questionnaireResponse;
 
