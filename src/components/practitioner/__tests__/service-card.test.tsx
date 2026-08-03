@@ -37,7 +37,7 @@ const minimalService: HealthcareService = {
 describe('ServiceCard', () => {
   it.each([
     ['service name', 'General Consultation'],
-    ['fee formatted as IDR', 'Rp 150.000'],
+    ['fee formatted as IDR', 'Rp 150,000'],
     ['duration in minutes', '30 min'],
     ['extra details', 'Standard checkup']
   ])('renders %s', (_, text) => {

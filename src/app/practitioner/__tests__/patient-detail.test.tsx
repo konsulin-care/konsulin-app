@@ -249,7 +249,7 @@ describe('PatientDetail', () => {
 
   it.each([
     ['healthcare service names', 'General Checkup'],
-    ['fee formatted as IDR', 'Rp 500.000'],
+    ['fee formatted as IDR', 'Rp 500,000'],
     ['duration in minutes', '30 min'],
     [
       'extra details for healthcare services',
