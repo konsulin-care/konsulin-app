@@ -221,6 +221,7 @@ describe('ResearchPage', () => {
     );
     expect(participate).toBeTruthy();
     if (participate?.type === 'SET_ACTION' && participate.config) {
+      // deepsource:ignore JS-0098 — invoke action in test without awaiting
       void participate.config.onAction();
     }
     expect(mockPush).toHaveBeenCalledWith('/assessments?id=big-five-inventory');

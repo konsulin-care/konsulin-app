@@ -161,6 +161,7 @@ describe('cacheFirst', () => {
     // First call (initial lookup): miss → proceed to fetch
     // Second call (fallback in catch): hit → return cached
     cache.match
+      // deepsource:ignore JS-W1042 — explicit undefined simulates the first-lookup cache miss
       .mockResolvedValueOnce(undefined) // eslint-disable-line unicorn/no-useless-undefined
       .mockResolvedValueOnce(cachedResponse);
     const cacheStorage = createMockCacheStorage({ v1: cache });

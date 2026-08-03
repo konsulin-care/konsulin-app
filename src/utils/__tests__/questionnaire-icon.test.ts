@@ -22,6 +22,7 @@ describe('getLucideIconName', () => {
   });
 
   it('returns null when codes array is undefined', () => {
+    // deepsource:ignore JS-W1042 — explicit undefined input under test
     // eslint-disable-next-line unicorn/no-useless-undefined -- explicit undefined input under test
     expect(getLucideIconName(undefined)).toBeNull();
   });

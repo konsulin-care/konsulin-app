@@ -266,6 +266,7 @@ export const useSubmitQuestionnaire = (
     },
     onSuccess: () => {
       // Reflect the new contribution in research progress widgets.
+      // deepsource:ignore JS-0098 — fire-and-forget query invalidation
       void queryClient.invalidateQueries({ queryKey: ['research'] });
     }
   });
@@ -315,6 +316,7 @@ export const useUpdateSubmitQuestionnaire = (
     },
     onSuccess: () => {
       // Reflect the updated contribution in research progress widgets.
+      // deepsource:ignore JS-0098 — fire-and-forget query invalidation
       void queryClient.invalidateQueries({ queryKey: ['research'] });
     }
   });

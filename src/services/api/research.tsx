@@ -92,6 +92,7 @@ export function useResearchProgress() {
     let cancelled = false;
 
     if (!isAuthLoading && isEligible) {
+      // deepsource:ignore JS-0098 — fire-and-forget identity resolution
       void (async () => {
         if (isAuthenticated && fhirId) {
           if (!cancelled) setIdentity({ kind: 'patient', id: fhirId });

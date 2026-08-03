@@ -112,6 +112,7 @@ describe('useRedirectIntent cancellation handling', () => {
   it('treats a canceled claim as benign — no toast, no clearIntent, no console.error', async () => {
     const errorSpy = vi
       .spyOn(console, 'error')
+      // deepsource:ignore JS-0098 — suppress expected console.error output
       .mockImplementation(() => void 0);
     vi.mocked(getIntent).mockReturnValue({
       kind: 'assessmentResult',

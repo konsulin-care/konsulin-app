@@ -286,6 +286,7 @@ describe('ResultView', () => {
     await screen.findByTestId('score-display');
     const claimAction = findClaimAction(mockDispatch.mock.calls);
     expect(claimAction).toBeDefined();
+    // deepsource:ignore JS-0098 — invoke claim action in test without awaiting
     void claimAction?.config.onAction();
 
     expect(saveIntent).toHaveBeenCalledWith('assessmentResult', {

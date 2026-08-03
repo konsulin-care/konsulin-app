@@ -76,6 +76,7 @@ export default function AssessmentsError({
   const handleRetry = (): void => {
     if (chunkError) {
       tryRemoveStaleScripts(chunkErr);
+      // deepsource:ignore JS-0098 — fire-and-forget chunk cache revalidation
       void revalidateChunkCache(chunkErr);
     }
     reset();

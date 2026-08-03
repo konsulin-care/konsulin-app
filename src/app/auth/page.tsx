@@ -100,6 +100,7 @@ export default function AuthPageComponent() {
     const preBuiltUIList = [ThirdPartyPreBuiltUI, PasswordlessPreBuiltUI];
 
     if (!canHandleRoute(preBuiltUIList)) {
+      // deepsource:ignore JS-0098 — redirect is fire-and-forget navigation
       void redirectToAuth({ redirectBack: false });
       return;
     }
