@@ -6,7 +6,9 @@ import { UserRoleClaim } from 'supertokens-auth-react/recipe/userroles';
  * Route guard that renders children only when the session has the
  * Practitioner role. Shows AccessDeniedScreen otherwise.
  */
-export function PractitionerRoute({ children }: { children: React.ReactNode }) {
+export function PractitionerRoute({
+  children
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <SessionAuth
       accessDeniedScreen={AccessDeniedScreen}
