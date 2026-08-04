@@ -179,3 +179,29 @@ export function isReferralWritten(storage: Storage, batchId: string): boolean {
 export function markReferralWritten(storage: Storage, batchId: string): void {
   storage.setItem(`${REFERRAL_WRITTEN_PREFIX}${batchId}`, '1');
 }
+
+/**
+ * Clears all local research and referral state on erasure.
+ *
+ * Removes the captured referral ref, every per-batch written flag, and the
+ * share-booster counter. Called on account deletion or participation
+ * revocation alongside the server-side purge.
+ *
+ * @param storage - Storage-like object (localStorage in browsers).
+ */
+export function clearReferralLocalState(storage: Storage): void {
+  const keys: string[] = [];
+  for (let i = 0; i < storage.length; i += 1) {
+    const key = storage.key(i);
+    const isReferralKey =
+      key === REFERRAL_STORAGE_KEY ||
+      key === SHARE_BOOSTER_KEY ||
+      (key?.startsWith(REFERRAL_WRITTEN_PREFIX) ?? false);
+    if (isReferralKey && key !== null) {
+      keys.push(key);
+    }
+  }
+  for (const key of keys) {
+    storage.removeItem(key);
+  }
+}

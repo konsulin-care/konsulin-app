@@ -4,6 +4,7 @@ import {
   buildShareUrl,
   buildWhatsAppShareUrl,
   captureReferralRef,
+  clearReferralLocalState,
   isReferralWritten,
   markReferralWritten,
   parseReferralRef,
@@ -120,6 +121,10 @@ describe('referral ref capture and storage', () => {
       },
       removeItem: (key: string) => {
         store.delete(key);
+      },
+      key: (index: number) => [...store.keys()][index] ?? null,
+      get length() {
+        return store.size;
       }
     } as unknown as Storage;
   }
@@ -151,5 +156,22 @@ describe('referral ref capture and storage', () => {
     markReferralWritten(storage, 'batch-1');
     expect(isReferralWritten(storage, 'batch-1')).toBe(true);
     expect(isReferralWritten(storage, 'batch-2')).toBe(false);
+  });
+
+  it('clears referral ref, written flags, and share booster on erasure', () => {
+    const storage = fakeStorage();
+    captureReferralRef('p_DG3F3STPYZ6HX25A', storage);
+    markReferralWritten(storage, 'batch-1');
+    markReferralWritten(storage, 'batch-3');
+    writeShareCount(storage, 4);
+    storage.setItem('unrelated-key', 'keep');
+
+    clearReferralLocalState(storage);
+
+    expect(storage.getItem('konsulin_ref')).toBeNull();
+    expect(storage.getItem('konsulin_referral_written_batch-1')).toBeNull();
+    expect(storage.getItem('konsulin_referral_written_batch-3')).toBeNull();
+    expect(storage.getItem('konsulin_share_booster')).toBeNull();
+    expect(storage.getItem('unrelated-key')).toBe('keep');
   });
 });
