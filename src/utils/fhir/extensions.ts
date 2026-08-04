@@ -18,7 +18,8 @@ export const FhirExtensionUrls = {
     'http://konsulin.care/fhir/StructureDefinition/questionnaireEstimatedDuration', //NOSONAR
   locationImage: 'http://konsulin.care/fhir/StructureDefinition/locationImage', //NOSONAR
   questionnaireImage:
-    'http://konsulin.care/fhir/StructureDefinition/questionnaireImage' //NOSONAR
+    'http://konsulin.care/fhir/StructureDefinition/questionnaireImage', //NOSONAR
+  referralBatch: 'http://konsulin.care/fhir/StructureDefinition/referralBatch' //NOSONAR
 } as const;
 
 /**
@@ -36,7 +37,8 @@ export const FhirSystems = {
     'http://blaze.konsulin.care/fhir/CodeSystem/assessment-context', //NOSONAR
   usageContext: 'http://terminology.hl7.org/CodeSystem/usage-context', //NOSONAR
   lucide: 'https://lucide.dev/icons',
-  ucum: 'https://unitsofmeasure.org'
+  ucum: 'https://unitsofmeasure.org',
+  researchReferral: 'http://konsulin.care/fhir/CodeSystem/research-referral' //NOSONAR
 } as const;
 
 type WithExtension = { extension?: Extension[] };

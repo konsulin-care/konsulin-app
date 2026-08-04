@@ -7,6 +7,7 @@ import PageHeader from '@/components/page-header';
 import ShareCard from '@/components/research/share-card';
 import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
+import { useReferralWrite } from '@/hooks/useReferralWrite';
 import { useResearchProgress } from '@/services/api/research';
 import { FlaskConical } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -47,6 +48,7 @@ export default function ResearchPage() {
   const { state: authState } = useAuth();
   const fhirId = authState?.userInfo?.fhirId;
   const { data: progress, isLoading } = useResearchProgress();
+  useReferralWrite(progress);
 
   // Morph the global FAB into a Participate action that continues the first
   // hero study. Cleared when nothing can be participated in or on unmount.

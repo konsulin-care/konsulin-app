@@ -3,8 +3,13 @@ import {
   buildShareMessage,
   buildShareUrl,
   buildWhatsAppShareUrl,
+  captureReferralRef,
+  isReferralWritten,
+  markReferralWritten,
   parseReferralRef,
+  readRefFromUrl,
   readShareCount,
+  readStoredReferralRef,
   shareBadgeFor,
   writeShareCount,
   type ShareBadge
@@ -102,5 +107,49 @@ describe('share booster storage', () => {
     } as unknown as Storage;
     expect(readShareCount(corrupt)).toBe(0);
     expect(readShareCount(negative)).toBe(0);
+  });
+});
+
+describe('referral ref capture and storage', () => {
+  function fakeStorage(): Storage {
+    const store = new Map<string, string>();
+    return {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, value);
+      },
+      removeItem: (key: string) => {
+        store.delete(key);
+      }
+    } as unknown as Storage;
+  }
+
+  it('captures only patient refs and reads them back', () => {
+    const storage = fakeStorage();
+    captureReferralRef('p_DG3F3STPYZ6HX25A', storage);
+    expect(readStoredReferralRef(storage)).toBe('p_DG3F3STPYZ6HX25A');
+  });
+
+  it('ignores absent or guest refs', () => {
+    const storage = fakeStorage();
+    captureReferralRef('g_guest-1', storage);
+    expect(readStoredReferralRef(storage)).toBeNull();
+    captureReferralRef(null, storage);
+    expect(readStoredReferralRef(storage)).toBeNull();
+  });
+
+  it('reads the ref from a landing url', () => {
+    expect(
+      readRefFromUrl('https://konsulin.care/research?ref=p_DG3F3STPYZ6HX25A')
+    ).toBe('p_DG3F3STPYZ6HX25A');
+    expect(readRefFromUrl('https://konsulin.care/research')).toBeNull();
+  });
+
+  it('tracks written batches per batch id', () => {
+    const storage = fakeStorage();
+    expect(isReferralWritten(storage, 'batch-1')).toBe(false);
+    markReferralWritten(storage, 'batch-1');
+    expect(isReferralWritten(storage, 'batch-1')).toBe(true);
+    expect(isReferralWritten(storage, 'batch-2')).toBe(false);
   });
 });

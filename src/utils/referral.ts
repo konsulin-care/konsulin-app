@@ -12,6 +12,12 @@ export const PATIENT_REF_PREFIX = 'p_';
 /** localStorage key for the share-booster counter. */
 export const SHARE_BOOSTER_KEY = 'konsulin_share_booster';
 
+/** localStorage key for the captured referral ref. */
+export const REFERRAL_STORAGE_KEY = 'konsulin_ref';
+
+/** localStorage prefix for per-batch referral-written flags. */
+export const REFERRAL_WRITTEN_PREFIX = 'konsulin_referral_written_';
+
 /** A parsed patient referral ref. */
 export type ReferralRef = {
   kind: 'patient';
@@ -115,4 +121,61 @@ export function readShareCount(storage: Storage): number {
  */
 export function writeShareCount(storage: Storage, count: number): void {
   storage.setItem(SHARE_BOOSTER_KEY, String(count));
+}
+
+/**
+ * Reads the referral ref from a landing url's `?ref=` parameter.
+ *
+ * @param url - Landing page url.
+ * @returns The raw ref value, or null when absent.
+ */
+export function readRefFromUrl(url: string): string | null {
+  return new URL(url).searchParams.get('ref');
+}
+
+/**
+ * Captures a referral ref when it is a valid patient ref.
+ *
+ * Guests share plain links, so anything that is not a patient ref (absent,
+ * empty, or malformed) is ignored and never overwrites a stored ref.
+ *
+ * @param ref - Raw `?ref=` value.
+ * @param storage - Storage-like object (localStorage in browsers).
+ */
+export function captureReferralRef(ref: string | null, storage: Storage): void {
+  const parsed = parseReferralRef(ref);
+  if (parsed) {
+    storage.setItem(REFERRAL_STORAGE_KEY, ref ?? '');
+  }
+}
+
+/**
+ * Reads the stored referral ref, if any.
+ *
+ * @param storage - Storage-like object (localStorage in browsers).
+ * @returns The raw ref value, or null when absent.
+ */
+export function readStoredReferralRef(storage: Storage): string | null {
+  return storage.getItem(REFERRAL_STORAGE_KEY);
+}
+
+/**
+ * True when a referral Communication has been written for a batch.
+ *
+ * @param storage - Storage-like object (localStorage in browsers).
+ * @param batchId - Batch PlanDefinition id.
+ * @returns True when the batch was already recorded.
+ */
+export function isReferralWritten(storage: Storage, batchId: string): boolean {
+  return storage.getItem(`${REFERRAL_WRITTEN_PREFIX}${batchId}`) === '1';
+}
+
+/**
+ * Marks a batch as having its referral Communication written.
+ *
+ * @param storage - Storage-like object (localStorage in browsers).
+ * @param batchId - Batch PlanDefinition id.
+ */
+export function markReferralWritten(storage: Storage, batchId: string): void {
+  storage.setItem(`${REFERRAL_WRITTEN_PREFIX}${batchId}`, '1');
 }
