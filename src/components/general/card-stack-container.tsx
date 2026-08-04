@@ -21,7 +21,9 @@ interface CardStackContainerProps {
  * card gets a CSS class based on its focus state (answered/active/future).
  * Display items are excluded from the stack.
  */
-export function CardStackContainer({ children }: CardStackContainerProps) {
+export function CardStackContainer({
+  children
+}: Readonly<CardStackContainerProps>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -326,6 +328,8 @@ export function CardStackContainer({ children }: CardStackContainerProps) {
       <div
         ref={containerRef}
         className='card-stack-viewport'
+        role='group'
+        aria-label='Question navigation'
         onClick={handleCardClick}
         onKeyDown={handleCardKeyDown}
         onTouchStart={onTouchStart}
