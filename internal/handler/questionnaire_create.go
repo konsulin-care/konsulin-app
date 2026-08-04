@@ -38,8 +38,8 @@ func forwardQuestionnaire(
 	body []byte,
 	accessCookieName string,
 ) {
-	// nosemgrep — target host is fixed config (cfg.APIURL); path is a literal; no user input
 	targetURL := baseURL + "/fhir/Questionnaire"
+	// nosemgrep — target host is fixed config (cfg.APIURL); path is a literal; no user input
 	proxyReq, err := http.NewRequest(http.MethodPost, targetURL, strings.NewReader(string(body)))
 	if err != nil {
 		slog.Error("questionnaire create: failed to create request", "err", err)
