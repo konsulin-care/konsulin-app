@@ -111,11 +111,11 @@ export default function PageHeader({
   const indicator =
     overrideIndicator ?? getPageIndicator(pathname, searchParams) ?? '';
 
-  const role = authState?.userInfo?.role_name;
+  const role = authState.userInfo.role_name;
   const isPatient = role === Roles.Patient;
   const isAdmin = role === Roles.ClinicAdmin;
 
-  const displayName = getDisplayName(authState?.userInfo);
+  const displayName = getDisplayName(authState.userInfo);
 
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
