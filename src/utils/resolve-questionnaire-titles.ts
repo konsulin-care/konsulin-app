@@ -32,8 +32,8 @@ export async function resolveQuestionnaireTitles(
   for (const r of records) {
     if (r.type !== 'QuestionnaireResponse') continue;
     const qId = resolveQuestionnaireTitle(r);
-    // Only resolve if title is still a canonical reference
-    if (r.title === `Questionnaire/${qId}`) {
+    // Only resolve if title is still a reference (relative or canonical)
+    if (qId !== r.title) {
       neededIds.add(qId);
     }
   }

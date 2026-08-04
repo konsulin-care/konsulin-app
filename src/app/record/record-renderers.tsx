@@ -2,6 +2,7 @@
 
 import Notfound from '@/app/not-found';
 import { isLoincSystem } from '@/utils/fhir';
+import { questionnaireIdOf } from '@/utils/fhir/questionnaire-url';
 import type { Money, Observation, QuestionnaireResponse } from 'fhir/r4';
 import type { ReactNode } from 'react';
 import RecordAssessment from './record-assessment';
@@ -27,9 +28,11 @@ export function isPractitionerNote(resource: Observation): boolean {
   );
 }
 
-/** Check if QuestionnaireResponse is a SOAP note. */
-export function isSoapNote(resource: QuestionnaireResponse): boolean {
-  return resource.questionnaire === 'Questionnaire/soap';
+/** Check if QuestionnaireResponse is a SOAP note (any reference form). */
+export function isSoapNote(
+  resource: Pick<QuestionnaireResponse, 'questionnaire'>
+): boolean {
+  return questionnaireIdOf(resource.questionnaire) === 'soap';
 }
 
 export type RenderHandler = (props: {
@@ -127,7 +130,7 @@ export function conditionTitle(): string {
 export function questionnaireResponseTitle(
   data: Record<string, unknown>
 ): string {
-  if (isSoapNote(data as unknown as QuestionnaireResponse)) {
+  if (isSoapNote(data)) {
     return 'SOAP Detail';
   }
   return 'Assessment Result';

@@ -1,5 +1,6 @@
 /* eslint-disable max-lines */
 import { IBundleResponse, IJournal } from '@/types/record';
+import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
 import { getUtcDayRange } from '@/utils/helper';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bundle, Observation } from 'fhir/r4';
@@ -164,7 +165,7 @@ export const useRecordSummaryPractitioner = () => {
           {
             request: {
               method: 'GET',
-              url: `/QuestionnaireResponse?patient=${patientId}&questionnaire=Questionnaire/soap&_sorted=-_lastUpdated`
+              url: `/QuestionnaireResponse?patient=${patientId}&questionnaire=${toCanonicalQuestionnaireUrl('soap')}&_sorted=-_lastUpdated`
             }
           }
         ]
@@ -209,7 +210,7 @@ export const useFilterRecordPractitionerByDate = () => {
           {
             request: {
               method: 'GET',
-              url: `/QuestionnaireResponse?patient=${patientId}&questionnaire=Questionnaire/soap&authored=le${utcEnd}&date=ge${utcStart}&_sorted=-_lastUpdated`
+              url: `/QuestionnaireResponse?patient=${patientId}&questionnaire=${toCanonicalQuestionnaireUrl('soap')}&authored=le${utcEnd}&date=ge${utcStart}&_sorted=-_lastUpdated`
             }
           }
         ]

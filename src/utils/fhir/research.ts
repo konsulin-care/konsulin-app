@@ -10,6 +10,7 @@ import type {
   ResearchStudy,
   Resource
 } from 'fhir/r4';
+import { questionnaireIdOf } from './questionnaire-url';
 
 /** Minimal response projection used for progress computation. */
 export interface ResearchResponse {
@@ -85,15 +86,12 @@ export function daysUntilBatch(end: string): number {
  * Extracts the questionnaire id from a canonical or reference string,
  * stripping any version suffix (e.g. "Questionnaire/phq2|1.0" -> "phq2").
  *
+ * Consolidated with questionnaireIdOf in questionnaire-url.ts.
+ *
  * @param canonical - Canonical questionnaire reference.
  * @returns The bare questionnaire id, or null when absent.
  */
-export function extractQuestionnaireId(canonical?: string): string | null {
-  if (!canonical) return null;
-  const withoutVersion = canonical.split('|')[0];
-  const segments = withoutVersion.split('/').filter(Boolean);
-  return segments.at(-1) ?? null;
-}
+export const extractQuestionnaireId = questionnaireIdOf;
 
 /**
  * Parses a resource reference or canonical into its id, optionally checking

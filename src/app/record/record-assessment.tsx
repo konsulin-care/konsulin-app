@@ -8,6 +8,7 @@ import {
   useQuestionnaireResponse
 } from '@/services/api/assessment';
 import { getFee } from '@/utils/fhir/fee';
+import { questionnaireIdOf } from '@/utils/fhir/questionnaire-url';
 import { useQuery } from '@tanstack/react-query';
 import {
   Money,
@@ -152,7 +153,9 @@ export default function RecordAssessment({
   }, [questionnaireResponse, recordId, authState.isAuthenticated]);
 
   // Fetch questionnaire title + fee extension for header and Get Report FAB
-  const questionnaireId = questionnaireResponse?.questionnaire?.split('/')[1];
+  const questionnaireId = questionnaireIdOf(
+    questionnaireResponse?.questionnaire
+  );
   const { data: questionnaire } = useQuery<Questionnaire | null>({
     queryKey: ['questionnaire', questionnaireId, 'title,extension'],
     queryFn: async () => {
