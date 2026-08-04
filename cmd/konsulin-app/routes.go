@@ -18,27 +18,6 @@ import (
 	appmw "github.com/konsulin-care/konsulin-app/internal/middleware"
 )
 
-type noDirFS struct {
-	http.Dir
-}
-
-func (d noDirFS) Open(name string) (http.File, error) {
-	f, err := d.Dir.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	stat, err := f.Stat()
-	if err != nil {
-		_ = f.Close()
-		return nil, err
-	}
-	if stat.IsDir() {
-		_ = f.Close()
-		return nil, os.ErrNotExist
-	}
-	return f, nil
-}
-
 // spaFS wraps http.Dir to support clean URLs for static HTML export.
 // If opening a path fails and the path has no file extension, it retries
 // with ".html" appended. This lets /clinic serve out/clinic.html.
@@ -91,7 +70,6 @@ func routes(cfg *config.Config) (http.Handler, error) {
 			"/api/config",
 			"/proxy/",
 			"/health",
-			"/static/",
 			"/api/v1/auth/",
 			"/api/v1/relay/",
 		},
@@ -125,10 +103,6 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		return nil, err
 	}
 	outDir := filepath.Join(wd, "out")
-	staticDir := filepath.Join(wd, "web", "static")
-	// deepsource:ignore GO-S1034 — noDirFS rejects directory opens, so FileServer can never list the static dir.
-	fileServer := http.FileServer(noDirFS{http.Dir(staticDir)})
-	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 
 	r.Post("/auth/logout", handler.NewLogoutHandler(handler.LogoutOptions{
 		AuthPath:                   cfg.AuthPath,
