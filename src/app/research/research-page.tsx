@@ -4,6 +4,8 @@ import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
+import ShareCard from '@/components/research/share-card';
+import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
 import { useResearchProgress } from '@/services/api/research';
 import { FlaskConical } from 'lucide-react';
@@ -42,6 +44,8 @@ function HowItWorksSection() {
 export default function ResearchPage() {
   const router = useRouter();
   const { dispatch } = useFab();
+  const { state: authState } = useAuth();
+  const fhirId = authState?.userInfo?.fhirId;
   const { data: progress, isLoading } = useResearchProgress();
 
   // Morph the global FAB into a Participate action that continues the first
@@ -90,6 +94,7 @@ export default function ResearchPage() {
     return (
       <>
         <ResearchHero studies={progress.studies} />
+        <ShareCard isPatient={Boolean(fhirId)} fhirId={fhirId} />
         <BatchTimeline studies={progress.studies} />
         <ContributionDashboard progress={progress} />
         <StudyComposition studies={progress.studies} />

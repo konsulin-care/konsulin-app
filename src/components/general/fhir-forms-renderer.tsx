@@ -2,6 +2,7 @@
 import PageLoader from '@/components/general/page-loader';
 import { SmartFormShell } from '@/components/general/smart-form-shell';
 import { LoadingSpinnerIcon } from '@/components/icons';
+import ShareResearchCta from '@/components/research/share-research-cta';
 import { Button } from '@/components/ui/button';
 import { Roles } from '@/constants/roles';
 import { useFab } from '@/context/fabContext';
@@ -266,6 +267,12 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const drawerButtons = (
     <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
+      {formType === 'research' && (
+        <ShareResearchCta
+          isPatient={isAuthenticated && Boolean(patientId)}
+          fhirId={patientId}
+        />
+      )}
       {formType !== 'research' && (
         <Button
           className='bg-secondary h-full w-full rounded-xl p-4 text-white'
