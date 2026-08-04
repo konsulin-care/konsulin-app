@@ -84,7 +84,7 @@ describe('frontendConfig', () => {
     expect(initMock).toHaveBeenCalledTimes(1);
     const callArgs = initMock.mock.calls[0]?.[0] as ThirdPartyInitArg;
     const providers = callArgs?.signInAndUpFeature?.providers ?? [];
-    expect(providers.length).toBe(1);
+    expect(providers).toHaveLength(1);
     expect(providers[0]?.id).toBe('whatsapp');
     expect(providers[0]?.name).toBe('WhatsApp');
   });
