@@ -22,7 +22,7 @@ const BASE_HUE = 170;
 function getColor(name: string): string {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+    hash = (hash * 31 + (name.codePointAt(i) ?? 0)) >>> 0;
   }
   const hue = (BASE_HUE + (hash % 40) - 20 + 360) % 360;
   const saturation = 70 + (hash % 20);
