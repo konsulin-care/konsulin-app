@@ -20,6 +20,7 @@ import (
 // | redirect_intent            | false**  | Lax      | config | 300s    | RequireRole middleware               |
 // | _gorilla_csrf              | true     | Lax      | config | session | CSRF middleware                      |
 // | st-last-access-token-update| false    | Lax      | config | session | writeProxyResponse (via CookieMappings)|
+// | sFrontToken               | false    | Lax      | config | JWT exp | writeProxyResponse (via CookieMappings)|
 //
 //   - Cleared (MaxAge=-1) by logout handler, not SuperTokens.
 //     ** HttpOnly=false required for client JS to read the value.
@@ -29,6 +30,12 @@ import (
 //
 //nolint:gosec // G101: cookie name, not a credential
 const stLastAccessTokenUpdateCookie = "st-last-access-token-update"
+
+// frontTokenCookie is the non-httpOnly cookie mirroring the backend front-token
+// header so the SuperTokens frontend SDK can read session metadata from JS.
+//
+//nolint:gosec // G101: cookie name, not a credential
+const frontTokenCookie = "sFrontToken"
 
 var logoutClient = &http.Client{Timeout: 10 * time.Second}
 
@@ -98,6 +105,19 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 		// nosemgrep — must stay JS-readable for the SuperTokens SDK; holds a timestamp, not a credential
 		http.SetCookie(w, &http.Cookie{ //NOSONAR
 			Name:     stLastAccessTokenUpdateCookie,
+			Value:    "",
+			Path:     "/",
+			MaxAge:   -1,
+			HttpOnly: false,
+			Secure:   opts.SecureCookie,
+			SameSite: http.SameSiteLaxMode,
+		})
+
+		// Clear the JS-visible front token set by the /api/v1/auth/* proxy.
+		//nolint:gosec // G124: non-httpOnly to match how the cookie is set
+		// nosemgrep — must stay JS-readable for the SuperTokens SDK
+		http.SetCookie(w, &http.Cookie{ //NOSONAR
+			Name:     frontTokenCookie,
 			Value:    "",
 			Path:     "/",
 			MaxAge:   -1,

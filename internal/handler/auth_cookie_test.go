@@ -198,6 +198,7 @@ func TestDeleteAuthCookie_clearsCookies(t *testing.T) {
 	}{
 		{name: "auth", cookieName: "auth"},
 		{name: "st-last-access-token-update", cookieName: "st-last-access-token-update"},
+		{name: "sFrontToken", cookieName: "sFrontToken"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

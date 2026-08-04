@@ -191,7 +191,7 @@ func TestLogoutHandler_clearsCookies(t *testing.T) {
 				SecureCookie:      false,
 			},
 			wantLoc:  "/auth",
-			wantKeys: []string{"auth", "sAccessToken", "sRefreshToken", "st-last-access-token-update"},
+			wantKeys: []string{"auth", "sAccessToken", "sRefreshToken", "st-last-access-token-update", "sFrontToken"},
 		},
 		{
 			name: "custom cookie names",
@@ -203,7 +203,7 @@ func TestLogoutHandler_clearsCookies(t *testing.T) {
 				SecureCookie:      true,
 			},
 			wantLoc:  "/signin",
-			wantKeys: []string{"myAuth", "myAccess", "myRefresh", "st-last-access-token-update"},
+			wantKeys: []string{"myAuth", "myAccess", "myRefresh", "st-last-access-token-update", "sFrontToken"},
 		},
 	}
 
