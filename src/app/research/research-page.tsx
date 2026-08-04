@@ -5,6 +5,7 @@ import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import CirclePanel from '@/components/research/circle-panel';
+import ReferralNotice from '@/components/research/referral-notice';
 import ShareCard from '@/components/research/share-card';
 import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
@@ -35,8 +36,11 @@ function HowItWorksSection() {
         </li>
       </ul>
       <p className='mt-3 text-[10px] text-gray-500'>
-        Participation is voluntary. Responses are anonymized and used only for
-        research purposes. You can stop participating at any time.
+        Participation is voluntary and pseudonymized, not anonymized: your
+        responses are linked to your identity so you can track your own
+        contribution. Referral patterns are used to study the structure of the
+        research community. You can review your data, stop participating, or
+        request deletion at any time.
       </p>
     </section>
   );
@@ -96,6 +100,7 @@ export default function ResearchPage() {
     }
     return (
       <>
+        <ReferralNotice />
         <ResearchHero studies={progress.studies} />
         <ShareCard isPatient={Boolean(fhirId)} fhirId={fhirId} />
         <CirclePanel isPatient={Boolean(fhirId)} fhirId={fhirId} />
