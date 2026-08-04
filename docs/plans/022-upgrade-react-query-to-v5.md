@@ -1,7 +1,7 @@
 ---
 title: Upgrade React Query to v5
 description: Upgrade React Query to v5
-status: { { status } }
+status: draft
 date: 2026-07-29
 ---
 
@@ -20,11 +20,11 @@ The app's `@tanstack/react-query` v4.42.0 is incompatible with `@aehrc/smart-for
 
 - [ ] **Step 1: Write failing test for SmartFormShell context** — Render a component that requires `useQueryClient` from v5 inside SmartFormShell and assert it doesn't throw
 - [ ] **Step 2: Upgrade package.json** — Change `@tanstack/react-query` from `^4.40.1` to `^5.90.5` and run npm install
-- [ ] **Step 3: Fix TypeScript compilation** — Fix `isLoading` to `isPending` in src/hooks/ and src/services/hooks/
-- [ ] **Step 4: Fix mutation onSuccess callbacks** — Refactor `src/services/api/record.tsx` (3 mutations) to use `mutateAsync` + `.then()`
-- [ ] **Step 5: Fix mutation onError callback** — Refactor `src/services/api/assessment.tsx` (1 mutation) to use `mutateAsync` + try/catch
-- [ ] **Step 6: Fix keepPreviousData** — Update `src/services/hooks/usePractitionerDashboard.ts` to use `placeholderData: keepPreviousData`
-- [ ] **Step 7: Fix SmartFormShell provider** — Update `src/components/general/smart-form-shell.tsx` to remove `as unknown as QueryClient` cast
+- [ ] **Step 3: Fix TypeScript compilation** — Fix `isLoading` to `isPending` in @/src/hooks/ and @/src/services/hooks/
+- [ ] **Step 4: Fix mutation onSuccess callbacks** — Refactor @/src/services/api/record.tsx (3 mutations) to use `mutateAsync` + `.then()`
+- [ ] **Step 5: Fix mutation onError callback** — Refactor @/src/services/api/assessment.tsx (1 mutation) to use `mutateAsync` + try/catch
+- [ ] **Step 6: Fix keepPreviousData** — Update @/src/services/hooks/usePractitionerDashboard.ts to use `placeholderData: keepPreviousData`
+- [ ] **Step 7: Fix SmartFormShell provider** — Update @/src/components/general/smart-form-shell.tsx to remove `as unknown as QueryClient` cast
 - [ ] **Step 8: Run full test suite and fix failures**
 - [ ] **Step 9: Run ESLint quality gate**
 
@@ -47,4 +47,4 @@ The app's `@tanstack/react-query` v4.42.0 is incompatible with `@aehrc/smart-for
 6. `npm test` passes
 7. `npx eslint --max-warnings 5 src/` passes with no new errors
 
-This plan implements @docs/specs/018-\*.md
+This plan implements @/docs/specs/018-\*.md

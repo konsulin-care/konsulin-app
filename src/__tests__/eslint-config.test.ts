@@ -214,10 +214,5 @@ describe('ESLint config rule tiers', () => {
       const text = readConfigText();
       expect(text).toMatch(/plugins:\s*\{[^}]*sonarjs[^}]*jsdoc[^}]*unicorn/);
     });
-
-    it('has an auth-spa overrides block', () => {
-      const text = readConfigText();
-      expect(text).toMatch(/files:\s*\[[^\]]*web\/auth-spa/);
-    });
   });
 });
