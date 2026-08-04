@@ -2,6 +2,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildCardStyles, injectCardStyles } from '../injectCardStyles';
 
+const PEEK_FIXTURE = {
+  activeLinkId: 'q1',
+  answeredLinkIds: ['q0'],
+  futureLinkIds: ['q2'],
+  displayItemLinkIds: []
+};
+
 describe('buildCardStyles', () => {
   it('generates CSS with active, answered, and future states', () => {
     const css = buildCardStyles({
@@ -43,208 +50,91 @@ describe('buildCardStyles', () => {
   });
 
   describe('peek card styles', () => {
-    it('removes max-height and overflow:hidden from peek cards', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
+    const css = buildCardStyles(PEEK_FIXTURE);
 
+    it('removes max-height and overflow:hidden from peek cards', () => {
       // Should NOT contain old truncation props
       expect(css).not.toContain('max-height: 56px');
       expect(css).not.toContain('overflow: hidden');
     });
 
     it('removes pointer-events:none from peek cards', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).not.toContain('pointer-events: none');
     });
 
     it('removes negative margins from peek cards', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).not.toContain('margin-bottom: -12px');
       expect(css).not.toContain('margin-top: -12px');
     });
 
     it('uses var(--color-secondary) for answered and active borders', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).toContain('var(--color-secondary, #13c2c2)');
       expect(css).not.toContain('#229954');
     });
 
     it('hides radio group on peek cards', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).toContain('.card-answered .MuiRadioGroup-root');
       expect(css).toContain('.card-future .MuiRadioGroup-root');
       expect(css).toContain('display: none');
     });
 
     it('hides SyncIcon on peek cards', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).toContain('.card-answered .MuiSvgIcon-colorSuccess');
       expect(css).toContain('.card-future .MuiSvgIcon-colorSuccess');
     });
 
     it('colors SyncIcon with secondary color on active card', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).toContain('.card-active .MuiSvgIcon-colorSuccess');
       expect(css).toContain('var(--color-secondary, #13c2c2)');
     });
 
     it('uses border-right for answered card indicator', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).toContain('.card-answered');
       expect(css).toContain('border-right: 3px solid');
       expect(css).not.toContain('border-left');
     });
 
     it('uses border-right for active card indicator', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).toContain('.card-active');
       expect(css).toContain('border-right: 4px solid');
     });
 
     it('uses border-right for future card indicator', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).toContain('.card-future');
       expect(css).toContain('border-right: 3px solid');
     });
 
     it('uses scale 0.95 for peek cards', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       // Old scale was 0.92, new scale is 0.95
       expect(css).toContain('scale: 0.95');
     });
 
     it('adds padding to card-question-container', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).toContain('.card-question-container');
       expect(css).toContain('padding: 12px 16px');
     });
 
     it('adds padding to card-stack-viewport', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).toContain('.card-stack-viewport');
       expect(css).toContain('padding: 0 16px');
     });
 
     it('hides scrollbar on card-stack-viewport', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).toContain('scrollbar-width: none');
       expect(css).toContain('-ms-overflow-style: none');
     });
 
     it('overrides FullWidthFormComponentBox maxWidth to fix right gap asymmetry', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).toMatch(
         /data-test="q-item-choice-radio-answer-option-box"[^}]*max-width:\s*100%\s*!important/
       );
     });
 
     it('does not reset MuiCard-root padding', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).not.toMatch(/\.MuiCard-root[^}]*padding:\s*0\s*!important/);
     });
 
     it('does not add overflow-x hidden to card-stack-viewport', () => {
-      const css = buildCardStyles({
-        activeLinkId: 'q1',
-        answeredLinkIds: ['q0'],
-        futureLinkIds: ['q2'],
-        displayItemLinkIds: []
-      });
-
       expect(css).not.toContain('overflow-x: hidden');
     });
   });
