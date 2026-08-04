@@ -13,7 +13,7 @@ vi.mock('@/services/api', () => ({
 
 vi.mock('@/lib/indexeddb', () => ({
   STORES: { assessmentDrafts: 'assessmentDrafts' },
-  dbDelete: vi.fn().mockResolvedValue()
+  dbDelete: vi.fn().mockResolvedValue(undefined as never)
 }));
 
 import { getAPI } from '@/services/api';
