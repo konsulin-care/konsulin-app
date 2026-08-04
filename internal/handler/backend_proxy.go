@@ -187,6 +187,7 @@ func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappin
 		}
 		hasMapping = true
 		//nolint:gosec // G124: Secure and HttpOnly are set explicitly
+		// nosemgrep — HttpOnly/Secure come from CookieMappings config and runtime env (routes.go)
 		cookie := &http.Cookie{
 			Name:     m.CookieName,
 			Value:    val,
@@ -203,6 +204,7 @@ func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappin
 	// this, the SDK treats the session as "MAY_EXIST" and triggers a refresh.
 	if hasMapping {
 		//nolint:gosec // G124: non-httpOnly so the SDK can read it via JS
+		// nosemgrep — must stay JS-readable for the SuperTokens SDK; Secure follows runtime env
 		http.SetCookie(w, &http.Cookie{ //NOSONAR
 			Name:     lastAccessTokenUpdateCookie,
 			Value:    fmt.Sprintf("%d", time.Now().UnixMilli()),

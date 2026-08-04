@@ -33,7 +33,12 @@ export function setQuestionnaireCategory(
   label: string
 ): Questionnaire {
   const useContext = questionnaire.useContext ?? [];
-  let hadDomain = false;
+
+  const hadDomain = useContext.some(ctx =>
+    ctx.valueCodeableConcept?.coding?.some(
+      c => c.system === FhirSystems.assessmentDomain
+    )
+  );
 
   const updatedContext = useContext.map(ctx => {
     if (
@@ -43,7 +48,6 @@ export function setQuestionnaireCategory(
     ) {
       return ctx;
     }
-    hadDomain = true;
     const coding = ctx.valueCodeableConcept.coding;
     return {
       ...ctx,

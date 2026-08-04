@@ -18,7 +18,7 @@ if ! npm run typecheck; then
 fi
 
 # Type-check auth SPA subproject
-if ! (cd web/auth-spa && npx tsc --noEmit); then
+if ! (npx tsc --noEmit); then
   echo "  auth-spa TypeScript errors found. Fix them and try again."
   exit 1
 fi

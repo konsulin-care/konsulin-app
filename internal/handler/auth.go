@@ -95,6 +95,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 
 		// Clear the SDK's session existence tracking cookie.
 		//nolint:gosec // G124: non-httpOnly also cleared the same way
+		// nosemgrep — must stay JS-readable for the SuperTokens SDK; holds a timestamp, not a credential
 		http.SetCookie(w, &http.Cookie{ //NOSONAR
 			Name:     stLastAccessTokenUpdateCookie,
 			Value:    "",

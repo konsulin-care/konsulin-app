@@ -194,7 +194,7 @@ export function mergeResponses(
   const seen = new Set<string>();
   const merged: ResearchResponse[] = [];
   for (const response of responses) {
-    if (!response?.id || seen.has(response.id)) continue;
+    if (!response.id || seen.has(response.id)) continue;
     seen.add(response.id);
     merged.push(response);
   }
@@ -221,14 +221,13 @@ export function sortBatches(batches: ResearchBatch[]): ResearchBatch[] {
 export function computeConsecutiveBatches(
   history: BatchHistoryEntry[]
 ): number {
-  let index = history.length - 1;
-  while (index >= 0 && !history[index].participated) {
-    index -= 1;
-  }
   let streak = 0;
-  while (index >= 0 && history[index].participated) {
+  for (const entry of history.toReversed()) {
+    if (!entry.participated) {
+      if (streak > 0) break;
+      continue;
+    }
     streak += 1;
-    index -= 1;
   }
   return streak;
 }
