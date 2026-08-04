@@ -57,7 +57,7 @@ func handleRoleSwitch(w http.ResponseWriter, r *http.Request, opts RoleSwitchOpt
 		return
 	}
 
-	//nolint:gosec // G124: Secure depends on runtime env; always true on HTTPS production.
+	// nolint:gosec // G124: Secure depends on runtime env; always true on HTTPS production.
 	http.SetCookie(w, &http.Cookie{
 		Name:     opts.CookieName,
 		Value:    encoded,
@@ -80,7 +80,7 @@ func setActiveRoleClaim(w http.ResponseWriter, r *http.Request, opts RoleSwitchO
 	}
 	body := strings.NewReader(fmt.Sprintf(`{"role":%q}`, role))
 	// BackendBaseURL comes from server configuration, not user input — safe.
-	//nolint:gosec
+	// nolint:gosec
 	req, err := http.NewRequest(http.MethodPost, opts.BackendBaseURL+"/api/v1/auth/active-role", body)
 	if err != nil {
 		slog.Warn("role switch: build active-role request failed", "err", err)

@@ -39,6 +39,7 @@ function PageContent({ children }: Readonly<{ children: ReactNode }>) {
   );
 }
 
+/** Wraps children in app-wide context providers. */
 function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
   return <FabProvider>{children}</FabProvider>;
 }

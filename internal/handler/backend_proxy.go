@@ -35,7 +35,7 @@ func NewBackendProxyHandler(opts BackendProxyOptions) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		targetURL := buildTargetURL(baseURL, r)
 
-		//nolint:gosec // G704: intentional proxy — forwards to trusted backend
+		// nolint:gosec // G704: intentional proxy — forwards to trusted backend
 		proxyReq, err := http.NewRequest(r.Method, targetURL, r.Body)
 		if err != nil {
 			slog.Error("backend proxy: failed to create request", "err", err)
@@ -47,7 +47,7 @@ func NewBackendProxyHandler(opts BackendProxyOptions) http.HandlerFunc {
 		setAuthorizationFromRequest(proxyReq, r, targetURL, opts.AccessCookieName)
 		proxyReq = proxyReq.WithContext(r.Context())
 
-		//nolint:gosec // G704: intentional proxy — forwards to trusted backend
+		// nolint:gosec // G704: intentional proxy — forwards to trusted backend
 		resp, err := backendProxyClient.Do(proxyReq)
 		if err != nil {
 			slog.Warn("backend proxy: upstream unreachable", "target", targetURL, "err", err)
@@ -165,7 +165,7 @@ var strippedHeaders = map[string]bool{
 	"Front-Token":      true,
 }
 
-//nolint:gosec // G101: cookie name, not a credential
+// nolint:gosec // G101: cookie name, not a credential
 const lastAccessTokenUpdateCookie = "st-last-access-token-update"
 
 // jwtExpiry extracts the exp claim from a JWT payload.
@@ -231,7 +231,7 @@ func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappin
 			continue
 		}
 		hasMapping = true
-		//nolint:gosec // G124: Secure and HttpOnly are set explicitly
+		// nolint:gosec // G124: Secure and HttpOnly are set explicitly
 		// nosemgrep — HttpOnly/Secure come from CookieMappings config and runtime env (routes.go)
 		cookie := &http.Cookie{
 			Name:     m.CookieName,
@@ -249,7 +249,7 @@ func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappin
 	// tracking cookie so that getLocalSessionState() returns "EXISTS". Without
 	// this, the SDK treats the session as "MAY_EXIST" and triggers a refresh.
 	if hasMapping {
-		//nolint:gosec // G124: non-httpOnly so the SDK can read it via JS
+		// nolint:gosec // G124: non-httpOnly so the SDK can read it via JS
 		// nosemgrep — must stay JS-readable for the SuperTokens SDK; Secure follows runtime env
 		http.SetCookie(w, &http.Cookie{ //NOSONAR
 			Name:     lastAccessTokenUpdateCookie,

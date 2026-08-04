@@ -120,7 +120,7 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 		return
 	}
 
-	//nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
+	// nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
 	// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 	http.SetCookie(w, &http.Cookie{
 		Name:     opts.CookieName,
@@ -177,7 +177,7 @@ func handleDeleteAuthCookie(w http.ResponseWriter, _ *http.Request, opts AuthCoo
 		if name == "" {
 			return
 		}
-		//nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
+		// nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
 		// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 		http.SetCookie(w, &http.Cookie{
 			Name:     name,

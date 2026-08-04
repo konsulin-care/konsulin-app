@@ -180,7 +180,7 @@ func TestEnvUnset_clearsRequiredVars(t *testing.T) {
 		t.Fatalf("unset TX_URL: %v", err)
 	}
 
-	//nolint:usetesting // os.Getenv used for env var cleanup verification, not test isolation
+	// nolint:usetesting // os.Getenv used for env var cleanup verification, not test isolation
 	if os.Getenv("API_URL") != "" || os.Getenv("APP_URL") != "" || os.Getenv("TX_URL") != "" {
 		t.Fatal("required env vars not properly unset")
 	}

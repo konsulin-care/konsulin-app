@@ -84,7 +84,7 @@ func redirectMissingSession(w http.ResponseWriter, r *http.Request, opts AuthGua
 	slog.Debug("auth guard: no valid session", "path", path)
 	redirectURL := redirectURLForPath(path, opts.AuthPath, opts.AppURL)
 
-	//nolint:gosec // G710: redirectURL validated by redirectURLForPath via ValidateRedirectPath
+	// nolint:gosec // G710: redirectURL validated by redirectURLForPath via ValidateRedirectPath
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
@@ -113,7 +113,7 @@ func requireRoleHandler(w http.ResponseWriter, r *http.Request, next http.Handle
 
 	if sess.Role == "Guest" && !containsRole(roles, "Guest") {
 		if validatedPath, valid := session.ValidateRedirectPath(r.URL.Path, opts.AppURL); valid {
-			//nolint:gosec // G124: HttpOnly=false required for JS to read redirect_intent cookie
+			// nolint:gosec // G124: HttpOnly=false required for JS to read redirect_intent cookie
 			// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 			http.SetCookie(w, &http.Cookie{
 				Name:     opts.RedirectIntentCookieName,

@@ -52,7 +52,7 @@ func forwardQuestionnaire(
 	setAuthorizationFromRequest(proxyReq, r, targetURL, accessCookieName)
 	proxyReq = proxyReq.WithContext(r.Context())
 
-	//nolint:gosec // G704: intentional proxy — forwards to trusted backend
+	// nolint:gosec // G704: intentional proxy — forwards to trusted backend
 	resp, err := backendProxyClient.Do(proxyReq)
 	if err != nil {
 		slog.Warn("questionnaire create: upstream unreachable", "target", targetURL, "err", err)

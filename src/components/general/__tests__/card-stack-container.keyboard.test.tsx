@@ -55,7 +55,7 @@ describe('keyboard navigation', () => {
   });
 
   function keyDown(cls: string, key: string) {
-    const el = document.querySelector<HTMLElement>('.' + cls);
+    const el = document.querySelector<HTMLElement>(`.${cls}`);
     if (!el) throw new Error(`card ${cls} not found`);
     el.focus();
     fireEvent.keyDown(el, { key });
