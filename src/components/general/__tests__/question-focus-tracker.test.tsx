@@ -84,13 +84,13 @@ describe('QuestionFocusTracker', () => {
 
     const { unmount } = render(<QuestionFocusTracker />);
 
-    expect(document.head.querySelectorAll('style').length).toBe(
+    expect(document.head.querySelectorAll('style')).toHaveLength(
       initialStyles + 1
     );
 
     unmount();
 
-    expect(document.head.querySelectorAll('style').length).toBe(initialStyles);
+    expect(document.head.querySelectorAll('style')).toHaveLength(initialStyles);
   });
 
   it('adds "question-card" class to all label-containing containers on mount', async () => {
