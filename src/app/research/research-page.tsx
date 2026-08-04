@@ -4,6 +4,7 @@ import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
+import CirclePanel from '@/components/research/circle-panel';
 import ShareCard from '@/components/research/share-card';
 import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
@@ -97,6 +98,7 @@ export default function ResearchPage() {
       <>
         <ResearchHero studies={progress.studies} />
         <ShareCard isPatient={Boolean(fhirId)} fhirId={fhirId} />
+        <CirclePanel isPatient={Boolean(fhirId)} fhirId={fhirId} />
         <BatchTimeline studies={progress.studies} />
         <ContributionDashboard progress={progress} />
         <StudyComposition studies={progress.studies} />
