@@ -8,12 +8,14 @@ import { Suspense, type ComponentType, type ReactNode } from 'react';
 import { ToastContainer, ToastContainerProps } from 'react-toastify';
 
 const NextTopLoader = dynamic(
-  () =>
-    import('nextjs-toploader').then(mod => ({
+  async () => {
+    const mod = await import('nextjs-toploader');
+    return {
       default: resolveCjsDefaultExport(mod) as ComponentType<
         Record<string, unknown>
       >
-    })),
+    };
+  },
   { ssr: false }
 );
 

@@ -106,6 +106,15 @@ module.exports = [
     }
   },
 
+  // --- FHIR canonical URLs: identifier locators, never fetched; http:// is intentional.
+  // Scoped override replaces the inline eslint-disable blocks in extensions.ts.
+  {
+    files: ['src/utils/fhir/extensions.ts'],
+    rules: {
+      'unicorn/prefer-https': 'off'
+    }
+  },
+
   // --- TypeScript-aware rules (strict + stylistic) for TS files only ---
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],

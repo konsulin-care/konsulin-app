@@ -352,6 +352,7 @@ describe('Task 2 - refresh before auth-cookie restore', () => {
 
   it('renews the access token BEFORE restoring the auth cookie', async () => {
     // GIVEN: the refresh is pending until we resolve it
+    // Assigned synchronously inside the Promise executor before any await, so it is always set
     let resolveRefresh!: (value: boolean) => void;
     mockAttemptRefreshingSession.mockReturnValue(
       new Promise<boolean>(resolve => {

@@ -11,7 +11,6 @@ import type { Extension } from 'fhir/r4';
  * suppressed inline with //NOSONAR.
  */
 export const FhirExtensionUrls = {
-  /* eslint-disable unicorn/prefer-https */
   fee: 'http://konsulin.care/fhir/StructureDefinition/fee', //NOSONAR
   serviceDuration:
     'http://konsulin.care/fhir/StructureDefinition/serviceDuration', //NOSONAR
@@ -20,7 +19,6 @@ export const FhirExtensionUrls = {
   locationImage: 'http://konsulin.care/fhir/StructureDefinition/locationImage', //NOSONAR
   questionnaireImage:
     'http://konsulin.care/fhir/StructureDefinition/questionnaireImage' //NOSONAR
-  /* eslint-enable unicorn/prefer-https */
 } as const;
 
 /**
@@ -33,14 +31,12 @@ export const FhirExtensionUrls = {
  * suppressed inline with //NOSONAR.
  */
 export const FhirSystems = {
-  /* eslint-disable unicorn/prefer-https */
   assessmentDomain: 'http://konsulin.care/fhir/CodeSystem/assessment-domain', //NOSONAR
   assessmentContext:
     'http://blaze.konsulin.care/fhir/CodeSystem/assessment-context', //NOSONAR
   usageContext: 'http://terminology.hl7.org/CodeSystem/usage-context', //NOSONAR
   lucide: 'https://lucide.dev/icons',
   ucum: 'https://unitsofmeasure.org'
-  /* eslint-enable unicorn/prefer-https */
 } as const;
 
 type WithExtension = { extension?: Extension[] };

@@ -42,8 +42,8 @@ async function revalidateChunkCache(error: ChunkError): Promise<void> {
 
     // Forces HTTP cache revalidation (fire-and-forget)
     await fetch(src, { cache: 'reload', mode: 'no-cors' });
-  } catch {
-    // Best effort
+  } catch (err) {
+    console.info('Chunk cache revalidation failed (best effort)', err);
   }
 }
 
@@ -59,8 +59,8 @@ function tryRemoveStaleScripts(error: ChunkError): void {
     document.querySelectorAll<HTMLScriptElement>('script').forEach(s => {
       if (s.src.startsWith(scriptUrl)) s.remove();
     });
-  } catch {
-    // Best effort
+  } catch (err) {
+    console.info('Failed to remove stale chunk scripts (best effort)', err);
   }
 }
 
