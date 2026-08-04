@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -23,7 +21,13 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/components/general/content-wraper', () => ({
   __esModule: true,
-  default: ({ children, className }: any) => (
+  default: ({
+    children,
+    className
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => (
     <div data-testid='content-wraper' className={className}>
       {children}
     </div>
@@ -32,7 +36,15 @@ vi.mock('@/components/general/content-wraper', () => ({
 
 vi.mock('@/components/general/empty-state', () => ({
   __esModule: true,
-  default: ({ title, subtitle, className }: any) => (
+  default: ({
+    title,
+    subtitle,
+    className
+  }: {
+    title?: string;
+    subtitle?: string;
+    className?: string;
+  }) => (
     <div data-testid='empty-state' className={className}>
       <div data-testid='empty-state-title'>{title}</div>
       <div data-testid='empty-state-subtitle'>{subtitle}</div>
@@ -41,8 +53,8 @@ vi.mock('@/components/general/empty-state', () => ({
 }));
 
 vi.mock('@/components/icons', () => ({
-  LoadingSpinnerIcon: (props: any) => (
-    <div data-testid='loading-spinner' {...props}>
+  LoadingSpinnerIcon: ({ className }: { className?: string }) => (
+    <div data-testid='loading-spinner' className={className}>
       Loading...
     </div>
   )
@@ -50,7 +62,7 @@ vi.mock('@/components/icons', () => ({
 
 vi.mock('@/components/page-header', () => ({
   __esModule: true,
-  default: ({ pageIndicator }: any) => (
+  default: ({ pageIndicator }: { pageIndicator?: string }) => (
     <div data-testid='page-header'>{pageIndicator ?? 'Header'}</div>
   )
 }));
@@ -65,10 +77,8 @@ vi.mock('@/lib/lazy-component', async () => {
     '@/lib/lazy-component'
   );
   const React = await import('react');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const lazyComponent = (
-    loader: () => Promise<{ default: any }>,
-    _options?: any
+    loader: () => Promise<{ default: React.ComponentType }>
   ) => {
     const LazyComp = React.lazy(loader);
     // eslint-disable-next-line react/display-name
@@ -102,7 +112,9 @@ describe('AssessmentsDetail', () => {
     vi.clearAllMocks();
 
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=q-123') as any
+      new URLSearchParams('id=q-123') as unknown as ReturnType<
+        typeof useSearchParams
+      >
     );
 
     vi.mocked(useAuth).mockReturnValue({
@@ -122,12 +134,12 @@ describe('AssessmentsDetail', () => {
     vi.mocked(useQuestionnaire).mockReturnValue({
       data: null,
       isLoading: false
-    } as any);
+    } as unknown as ReturnType<typeof useQuestionnaire>);
 
     vi.mocked(useTodaySessions).mockReturnValue({
       data: [],
       isLoading: false
-    } as any);
+    });
   });
 
   afterEach(() => {
@@ -147,7 +159,7 @@ describe('AssessmentsDetail', () => {
     vi.mocked(useQuestionnaire).mockReturnValue({
       data: null,
       isLoading: true
-    } as any);
+    } as unknown as ReturnType<typeof useQuestionnaire>);
 
     render(<AssessmentsDetail />, { wrapper });
 
@@ -175,7 +187,7 @@ describe('AssessmentsDetail', () => {
         }
       ],
       isLoading: false
-    } as any);
+    } as unknown as ReturnType<typeof useQuestionnaire>);
 
     render(<AssessmentsDetail />, { wrapper });
     await waitForLoad();
