@@ -2,7 +2,7 @@
 import { RuntimeConfigContext } from '@/components/general/runtime-config-provider';
 import { frontendConfig, setRouter } from '@/config/frontendConfig';
 import { usePathname, useRouter } from 'next/navigation';
-import React, { useContext, useEffect, useRef } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import SuperTokensReact, { SuperTokensWrapper } from 'supertokens-auth-react';
 
 /** SuperTokens auth provider wrapper initialized from runtime config. */
@@ -10,7 +10,7 @@ export const SuperTokensProviders: React.FC<
   React.PropsWithChildren<object>
 > = ({ children }) => {
   const runtimeConfig = useContext(RuntimeConfigContext);
-  const initDone = useRef(false);
+  const [initDone, setInitDone] = useState(false);
   const prevConfigRef = useRef('');
   setRouter(useRouter(), usePathname() || window.location.pathname);
 
@@ -22,10 +22,10 @@ export const SuperTokensProviders: React.FC<
     prevConfigRef.current = configStr;
 
     SuperTokensReact.init(frontendConfig(runtimeConfig.appInfo));
-    initDone.current = true;
+    setInitDone(true);
   }, [runtimeConfig]);
 
-  if (!initDone.current) return null;
+  if (!initDone) return null;
 
   return <SuperTokensWrapper>{children}</SuperTokensWrapper>;
 };

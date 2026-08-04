@@ -94,7 +94,7 @@ const baseProps = {
   bookingState: {
     date: new Date('2026-07-15'),
     startTime: '10:00'
-  } as unknown as { date: Date; startTime: string },
+  },
   isPaying: false,
   patientId: 'patient-1',
   selectedSlotId: 'slot-123',
@@ -146,7 +146,7 @@ describe('PaymentDrawer', () => {
     render(<PaymentDrawer {...baseProps} invoice={invoice} />, {
       wrapper: createWrapper()
     });
-    expect(screen.getByText(/150.000/)).toBeInTheDocument();
+    expect(screen.getByText(/150,000/)).toBeInTheDocument();
   });
 
   it('disables buttons when selectedSlotId is null', () => {

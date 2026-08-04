@@ -41,7 +41,6 @@
   ],
   "exclude": [
     "node_modules",
-    "public/sw.js",
-    "web/auth-spa"
+    "public/sw.js"
   ]
 }

@@ -69,7 +69,7 @@ describe('RecommendationCard', () => {
 
   it('renders formatted fee in IDR', () => {
     render(<RecommendationCard {...makeProps({ fee: 500_000 })} />);
-    const feeElements = screen.getAllByText(/500\.000/);
+    const feeElements = screen.getAllByText(/500,000/);
     expect(feeElements.length).toBeGreaterThanOrEqual(1);
   });
 

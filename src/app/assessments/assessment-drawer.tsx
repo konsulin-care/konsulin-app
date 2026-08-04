@@ -12,6 +12,7 @@ import {
   DrawerHeader,
   DrawerTitle
 } from '@/components/ui/drawer';
+import type { ResearchProgress } from '@/utils/fhir/research';
 import { customMarkdownComponents } from '@/utils/helper';
 import { Questionnaire, ResearchStudy } from 'fhir/r4';
 import ReactMarkdown from 'react-markdown';
@@ -20,12 +21,41 @@ import QRCode from 'react-qr-code';
 interface AssessmentDrawerContentProps {
   selectedAssessment: Questionnaire | ResearchStudy | null;
   researchUrl: string;
+  /** True when the study's current batch is fully completed. */
+  researchComplete: boolean;
   currentLocation: string;
   isPending: boolean;
   isPractitioner: boolean;
   onClose: () => void;
   startTransition: React.TransitionStartFunction;
   router: { push: (url: string, options?: Record<string, unknown>) => void };
+}
+
+/**
+ * Derives the research navigation state for a selected ResearchStudy:
+ * the first uncompleted questionnaire of the current batch, or a completion
+ * flag when the batch is fully done.
+ *
+ * @param selectedAssessment - The drawer's selected resource.
+ * @param progress - Shared research progress, may be undefined while loading.
+ * @returns The researchUrl to deep-link to and whether the study is complete.
+ */
+export function deriveResearchNavigation(
+  selectedAssessment: Questionnaire | ResearchStudy | null,
+  progress: ResearchProgress | undefined
+): { researchUrl: string; researchComplete: boolean } {
+  if (selectedAssessment?.resourceType !== 'ResearchStudy') {
+    return { researchUrl: '', researchComplete: false };
+  }
+  const study = progress?.studies.find(
+    item => item.study.id === selectedAssessment.id
+  );
+  const hasCurrentBatch = Boolean(study?.currentBatch);
+  const researchUrl = study?.firstUncompletedQuestionnaireId ?? '';
+  return {
+    researchUrl,
+    researchComplete: hasCurrentBatch && !researchUrl
+  };
 }
 
 /** Description card with brief text rendered as markdown. */
@@ -49,6 +79,7 @@ function DescriptionCard({ text }: Readonly<{ text: string }>) {
 export default function AssessmentDrawerContent({
   selectedAssessment,
   researchUrl,
+  researchComplete,
   currentLocation,
   isPending,
   isPractitioner,
@@ -59,29 +90,39 @@ export default function AssessmentDrawerContent({
     selectedAssessment?.resourceType === 'ResearchStudy' &&
     (selectedAssessment.note?.length ?? 0) > 0;
 
-  /** Navigate to assessment detail or research URL. */
+  /** Navigate to the assessment detail, the next batch questionnaire, or the research page. */
   const handleButtonClick = () => {
-    if (selectedAssessment?.resourceType === 'ResearchStudy' && !researchUrl) {
+    if (selectedAssessment?.resourceType === 'ResearchStudy') {
+      if (researchComplete) {
+        startTransition(() => {
+          router.push('/research');
+        });
+        return;
+      }
+      if (!researchUrl) return;
+      startTransition(() => {
+        router.push(`/assessments?id=${researchUrl}`);
+      });
       return;
     }
-    startTransition(() => {
-      router.push(
-        `/assessments?id=${
-          selectedAssessment?.resourceType === 'ResearchStudy'
-            ? researchUrl
-            : selectedAssessment?.id
-        }`
-      );
-    });
+    if (selectedAssessment?.id) {
+      startTransition(() => {
+        router.push(`/assessments?id=${selectedAssessment.id}`);
+      });
+    }
   };
 
   const isButtonDisabled =
     isPending ||
-    (selectedAssessment?.resourceType === 'ResearchStudy' && !researchUrl);
+    (selectedAssessment?.resourceType === 'ResearchStudy' &&
+      !researchUrl &&
+      !researchComplete);
 
   const buttonText = (() => {
     if (isPractitioner) return 'Isi assessment untuk Pasien';
-    if (selectedAssessment?.resourceType === 'ResearchStudy') return 'Mulai';
+    if (selectedAssessment?.resourceType === 'ResearchStudy') {
+      return researchComplete ? 'View Research' : 'Mulai';
+    }
     return 'Start Test';
   })();
 

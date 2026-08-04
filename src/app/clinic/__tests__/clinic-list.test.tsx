@@ -1,5 +1,6 @@
 /* eslint-disable max-lines */
 import { useAuth } from '@/context/auth/authContext';
+import { FhirExtensionUrls } from '@/utils/fhir/extensions';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { type Location } from 'fhir/r4';
@@ -92,7 +93,7 @@ function createMockLocation(
         closingTime: '18:00:00'
       }
     ]
-  } as Location;
+  };
 }
 
 beforeEach(() => {
@@ -468,7 +469,7 @@ describe('ClinicList — cards', () => {
     );
     locationWithImage.extension = [
       {
-        url: 'https://konsulin.id/fhir/StructureDefinition/locationImage',
+        url: FhirExtensionUrls.locationImage,
         valueUrl: 'https://res.cloudinary.com/test/image/upload/v1/sample.webp'
       }
     ];

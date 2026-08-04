@@ -16,11 +16,11 @@ func TestExtractArchive(t *testing.T) {
 	w := zip.NewWriter(&buf)
 
 	files := map[string]string{
-		"api/provinces.json":              `[{"id":"11","name":"ACEH"}]`,
-		"api/regencies/11.json":           `[{"id":"1101","name":"KABUPATEN ACEH SELATAN","province_id":"11"}]`,
-		"api/districts/1101.json":         `[{"id":"110101","name":"BAKONGAN","regency_id":"1101"}]`,
-		"api/villages/110101.json":        `[{"id":"1101012001","name":"KEUDE BAKONGAN","district_id":"110101"}]`,
-		"api/other.json":                  `{"ignored":true}`,
+		"api/provinces.json":       `[{"id":"11","name":"ACEH"}]`,
+		"api/regencies/11.json":    `[{"id":"1101","name":"KABUPATEN ACEH SELATAN","province_id":"11"}]`,
+		"api/districts/1101.json":  `[{"id":"110101","name":"BAKONGAN","regency_id":"1101"}]`,
+		"api/villages/110101.json": `[{"id":"1101012001","name":"KEUDE BAKONGAN","district_id":"110101"}]`,
+		"api/other.json":           `{"ignored":true}`,
 	}
 	for name, content := range files {
 		f, err := w.Create(name)
@@ -118,10 +118,10 @@ func TestFullPipeline(t *testing.T) {
 	w := zip.NewWriter(&buf)
 
 	entries := map[string]string{
-		"api/provinces.json":              `[{"id":"11","name":"ACEH"}]`,
-		"api/regencies/11.json":           `[{"id":"1101","name":"KABUPATEN ACEH SELATAN","province_id":"11"}]`,
-		"api/districts/1101.json":         `[{"id":"110101","name":"BAKONGAN","regency_id":"1101"}]`,
-		"api/villages/110101.json":        `[{"id":"1101012001","name":"KEUDE BAKONGAN","district_id":"110101"}]`,
+		"api/provinces.json":       `[{"id":"11","name":"ACEH"}]`,
+		"api/regencies/11.json":    `[{"id":"1101","name":"KABUPATEN ACEH SELATAN","province_id":"11"}]`,
+		"api/districts/1101.json":  `[{"id":"110101","name":"BAKONGAN","regency_id":"1101"}]`,
+		"api/villages/110101.json": `[{"id":"1101012001","name":"KEUDE BAKONGAN","district_id":"110101"}]`,
 	}
 	for name, content := range entries {
 		f, _ := w.Create(name)

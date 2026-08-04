@@ -1,3 +1,4 @@
+import { FhirExtensionUrls } from '@/utils/fhir/extensions';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { type AxiosInstance } from 'axios';
@@ -48,7 +49,7 @@ const baseLocation = {
   },
   extension: [
     {
-      url: 'https://konsulin.id/fhir/StructureDefinition/locationImage',
+      url: FhirExtensionUrls.locationImage,
       valueUrl: 'https://res.cloudinary.com/test/image/upload/v1/location.webp'
     }
   ],

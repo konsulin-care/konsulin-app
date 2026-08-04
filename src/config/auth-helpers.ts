@@ -7,7 +7,8 @@ import { extractSafeRedirectPath } from '@/utils/redirect-guard';
 import {
   clearRedirectIntent,
   getIntent,
-  getRedirectIntent
+  getRedirectIntent,
+  hasPendingAssessmentClaimIntent
 } from '@/utils/redirect-intent';
 import { roleToFhirResource } from '@/utils/role-fhir';
 type RolesParam = string[] | undefined;
@@ -87,6 +88,16 @@ function resolveLoginRole(roles: RolesParam): string {
     } else if (roles.includes(Roles.ClinicAdmin)) {
       role = Roles.ClinicAdmin;
     }
+  }
+  // A guest claiming an assessment result must be linked to the Patient
+  // resource, even when the default priority would pick another role.
+  if (
+    role !== Roles.Patient &&
+    Array.isArray(roles) &&
+    roles.includes(Roles.Patient) &&
+    hasPendingAssessmentClaimIntent()
+  ) {
+    role = Roles.Patient;
   }
   return role;
 }
@@ -189,7 +200,12 @@ function resolvePostLoginRedirect(): string | null {
   const intent = getIntent();
   if (intent) {
     clearRedirectIntent();
-    return intent.payload?.path ?? '/';
+    // A pending assessmentResult claim must complete on the homepage before
+    // navigating to /record; landing directly on /record would skip the claim
+    // and race the login redirect against the in-flight PATCH.
+    return intent.kind === 'assessmentResult'
+      ? '/'
+      : (intent.payload?.path ?? '/');
   }
   return extractSafeRedirectPath(globalThis.location.search);
 }
@@ -200,5 +216,6 @@ export {
   handleReturningUserLogin,
   postAuthCookie,
   postAuthCookieForUser,
+  resolveLoginRole,
   resolvePostLoginRedirect
 };

@@ -56,15 +56,6 @@ CLAUDE.md
 CLAUDE.local.md
 *.local.md
 
-# Generated static assets (built in CI)
-web/static/*
-!web/static/**/AGENTS.md
-!web/static/images/**
-!web/static/css/templ-input.css
-
-# templ generated Go code (regenerated at build time)
-web/template/**/*_templ.go
-
 # Go artifacts
 *.out
 *.test

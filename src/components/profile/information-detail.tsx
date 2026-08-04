@@ -1,9 +1,8 @@
 import { Roles } from '@/constants/roles';
 
-import type { IPractitionerRoleDetail } from '@/types/practitioner';
 import Avatar from '../general/avatar';
-import Tags from './tags';
 
+/** Renders the profile header with avatar, title, and action button. */
 function HeaderSection({
   isRadiusIcon,
   iconUrl,
@@ -75,88 +74,18 @@ function DetailItem({
 }
 
 /**
- * Renders practice information (affiliation and fee) and an optional list of specialties.
+ * Renders a rounded information card with an avatar header, an action button, and a list of detail rows.
  *
- * Renders two labeled detail rows: "Affiliation" (organization name or `-`) and "Fee" (formatted Indonesian currency per session or `-`). If `items.specialty` is an array of objects with a `text` field, renders those texts as tags.
- *
- * @param items - Practice data; expected shape includes:
- *   - organizationData.name (string | undefined)
- *   - invoiceData.totalNet { value: number, currency: string } (optional)
- *   - specialty: Array<{ text: string }> (optional)
- * @returns A JSX fragment containing the practice detail rows and, when present, a Tags component for specialties.
- */
-function DetailPractice({
-  items
-}: {
-  readonly items: IPractitionerRoleDetail;
-}) {
-  const organizationName = items?.organizationData.name
-    ? items.organizationData.name
-    : '-';
-
-  const fee = items?.invoiceData?.totalNet
-    ? `${new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: items.invoiceData.totalNet.currency,
-        minimumFractionDigits: 0
-      }).format(items.invoiceData.totalNet.value)} / Session`
-    : '-';
-
-  const practiceInformationsDetail = [
-    {
-      key: 'Affiliation',
-      value: organizationName
-    },
-    {
-      key: 'Fee',
-      value: fee
-    }
-  ];
-
-  const specialties = Array.isArray(items?.specialty)
-    ? items.specialty.map((item: { text: string }) => item.text).filter(Boolean)
-    : null;
-
-  return (
-    <>
-      <div className='flex w-full flex-col py-2'>
-        {practiceInformationsDetail.map(item => {
-          return (
-            <div key={item.key} className='mt-2 flex w-full justify-between'>
-              <div className='text-sm text-[#2C2F35] opacity-100'>
-                {item.key}
-              </div>
-              <div className='text-sm font-bold text-[#2C2F35] opacity-100'>
-                {item.value}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {specialties && Array.isArray(specialties) && (
-        <div className='my-2 flex w-full'>
-          <Tags tags={specialties} />
-        </div>
-      )}
-    </>
-  );
-}
-
-/**
- * Renders a rounded information card with an avatar header, an action button, and a list of detail rows or practice sections.
- *
- * Renders a HeaderSection with avatar/title/subtitle and a right-aligned action button. When `isEditPractice` is true, `details` is treated as an array of practice objects and each entry is rendered using DetailPractice; otherwise `details` is treated as a list of key/value items and each entry is rendered using DetailItem.
+ * Renders a HeaderSection with avatar/title/subtitle and a right-aligned action button. `details` is treated as a list of key/value items and each entry is rendered using DetailItem.
  *
  * @param isRadiusIcon - Whether the avatar uses a rounded icon style (default: `true`).
  * @param iconUrl - URL of the avatar image to display.
  * @param title - Primary title text shown next to the avatar.
  * @param subTitle - Secondary text shown under the title (default: empty string).
  * @param buttonText - Label for the action button displayed in the header.
- * @param details - Array of detail entries; structure depends on `isEditPractice` (practice objects when `true`, key/value items when `false`).
+ * @param details - Array of key/value detail items to render.
  * @param onEdit - Click handler invoked when the action button is pressed.
  * @param role - Role used to adjust header typography and layout (affects HeaderSection rendering).
- * @param isEditPractice - When `true`, render practice-style detail sections; when `false`, render simple key/value detail rows (default: `false`).
  * @param initials - Initials to show in the avatar when no image URL is provided.
  * @param backgroundColor - Background color for the avatar.
  * @returns The React element for the information card.
@@ -191,7 +120,6 @@ export default function InformationDetail({
   details,
   onEdit,
   role,
-  isEditPractice = false,
   initials,
   backgroundColor,
   seed
@@ -204,7 +132,6 @@ export default function InformationDetail({
   details?: unknown[];
   onEdit?: () => void;
   role?: string;
-  isEditPractice?: boolean;
   initials: string;
   backgroundColor: string;
   seed?: string;
@@ -227,30 +154,16 @@ export default function InformationDetail({
 
       {details && <div className='flex w-full' />}
 
-      {isEditPractice ? (
-        <div className='mt-2 flex w-full flex-col'>
-          {Array.isArray(details) &&
-            (details as IPractitionerRoleDetail[]).map(detail => (
-              <div
-                key={detail.id}
-                className='mt-1 flex flex-col border-t border-[#E3E3E3] font-[#2C2F35] text-xs'
-              >
-                <DetailPractice items={detail} />
-              </div>
-            ))}
-        </div>
-      ) : (
-        <div className='mt-2 flex w-full flex-col space-y-2 border-t border-[#E3E3E3]'>
-          {details?.map((item: { id: string; key: string; value: string }) => (
-            <div
-              className='mt-2 flex justify-between font-[#2C2F35] text-xs'
-              key={item.id}
-            >
-              <DetailItem item={item} />
-            </div>
-          ))}
-        </div>
-      )}
+      <div className='mt-2 flex w-full flex-col space-y-2 border-t border-[#E3E3E3]'>
+        {details?.map((item: { id: string; key: string; value: string }) => (
+          <div
+            className='mt-2 flex justify-between font-[#2C2F35] text-xs'
+            key={item.id}
+          >
+            <DetailItem item={item} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

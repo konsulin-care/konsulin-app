@@ -98,7 +98,7 @@ func TestRelayBooking_missingFields(t *testing.T) {
 }
 
 func TestRelayBooking_backendError(t *testing.T) {
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(`{"error":"server error"}`))
 	}))
@@ -152,7 +152,7 @@ func TestRelayBooking_bundleHasCorrectResources(t *testing.T) {
 				"name":         "Konsultasi Umum",
 				"extension": []map[string]any{
 					{
-						"url": "https://konsulin.id/fhir/StructureDefinition/fee",
+						"url": "http://konsulin.care/fhir/StructureDefinition/fee",
 						"valueMoney": map[string]any{
 							"value":    150000,
 							"currency": "IDR",

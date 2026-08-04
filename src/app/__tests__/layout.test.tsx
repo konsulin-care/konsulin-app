@@ -46,13 +46,8 @@ vi.mock('@/context/booking/bookingContext', () => ({
   BookingProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
-vi.mock('@/context/fabDirtyContext', () => ({
-  FabDirtyProvider: ({ children }: { children: React.ReactNode }) => children
-}));
-
-vi.mock('@/context/fabSelectionContext', () => ({
-  FabSelectionProvider: ({ children }: { children: React.ReactNode }) =>
-    children
+vi.mock('@/context/fabContext', () => ({
+  FabProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
 vi.mock('@/context/profile/profileContext', () => ({
@@ -60,10 +55,6 @@ vi.mock('@/context/profile/profileContext', () => ({
 }));
 
 vi.mock('nextjs-toploader', () => ({
-  default: () => <div data-testid='next-top-loader' />
-}));
-
-vi.mock('@/components/next-top-loader', () => ({
   default: () => <div data-testid='next-top-loader' />
 }));
 

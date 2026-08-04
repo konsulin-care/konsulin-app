@@ -27,8 +27,8 @@ export function useRequiredValidation() {
       setRequiredItemEmpty(0);
       return;
     }
-    if (requiredItemEmpty > 0) checkRequiredIsEmpty();
-  }, [invalidItems, requiredItemEmpty, checkRequiredIsEmpty]);
+    checkRequiredIsEmpty();
+  }, [invalidItems, checkRequiredIsEmpty]);
 
   return { requiredItemEmpty, checkRequiredIsEmpty, invalidItems };
 }

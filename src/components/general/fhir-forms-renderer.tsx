@@ -4,12 +4,16 @@ import { SmartFormShell } from '@/components/general/smart-form-shell';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Roles } from '@/constants/roles';
+import { useFab } from '@/context/fabContext';
 import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
 import { useRequiredValidation } from '@/hooks/useRequiredValidation';
 import { getAPI } from '@/services/api';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
+import { BookCheck } from 'lucide-react';
 import Image from 'next/image';
 
+import { AssessmentThemeProvider } from '@/components/general/assessment-theme-provider';
+import { CardStackContainer } from '@/components/general/card-stack-container';
 import {
   Drawer,
   DrawerContent,
@@ -19,14 +23,17 @@ import {
   DrawerTitle
 } from '@/components/ui/drawer';
 import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
-import {
-  getResponse,
-  RendererThemeProvider,
-  useBuildForm
-} from '@aehrc/smart-forms-renderer';
+import type { RendererConfig } from '@aehrc/smart-forms-renderer';
+import { getResponse, useBuildForm } from '@aehrc/smart-forms-renderer';
 import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition
+} from 'react';
 import { toast } from 'react-toastify';
 
 interface FhirFormsRendererProps {
@@ -55,17 +62,35 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const [isPending, startTransition] = useTransition();
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { dispatch } = useFab();
   const draftOwnerId = props.ownerId || practitionerId || patientId || '';
 
-  const isBuilding = useBuildForm(questionnaire, response);
+  const rendererConfigOptions: RendererConfig = useMemo(
+    () => ({
+      itemResponsive: {
+        labelBreakpoints: { xs: 12, md: 12 },
+        fieldBreakpoints: { xs: 12, md: 12 },
+        columnGapPixels: 24,
+        rowGapPixels: 4
+      }
+    }),
+    []
+  );
 
-  const {
-    mutateAsync: submitQuestionnaire,
-    isLoading: submitQuestionnaireIsLoading // eslint-disable-line @typescript-eslint/no-deprecated
-  } = useSubmitQuestionnaire(questionnaire.id, isAuthenticated);
+  const isBuilding = useBuildForm({
+    questionnaire,
+    questionnaireResponse: response,
+    rendererConfigOptions
+  });
+
+  const { mutateAsync: submitQuestionnaire } = useSubmitQuestionnaire(
+    questionnaire.id,
+    isAuthenticated
+  );
 
   const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =
     useRequiredValidation();
@@ -84,35 +109,34 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       .catch((err: unknown) => console.warn('[IndexedDB]', err));
   }, [draftOwnerId, questionnaire.id]);
 
-  const handleResponseChange = useDraftAutoSave(
-    STORES.assessmentDrafts,
-    qr => ({
-      ownerId: draftOwnerId,
-      questionnaireId: questionnaire.id,
-      response: qr,
-      updatedAt: Date.now()
-    })
-  );
+  const autoSave = useDraftAutoSave(STORES.assessmentDrafts, qr => ({
+    ownerId: draftOwnerId,
+    questionnaireId: questionnaire.id,
+    response: qr,
+    updatedAt: Date.now()
+  }));
 
   /** Validates required fields before submission. */
-  const handleValidation = () => {
+  const handleValidation = useCallback(() => {
     if (Object.keys(invalidItems).length === 0) {
       setIsOpen(true);
     } else {
       checkRequiredIsEmpty();
     }
-  };
+  }, [invalidItems, checkRequiredIsEmpty]);
 
   /** Navigates after form submission based on button label. */
   const handleNavigate = (buttonLabel: string, responseId?: string) => {
     startTransition(() => {
       if (buttonLabel === 'result') {
-        const query = new URLSearchParams({
-          category: '1',
-          title: questionnaire.title
-        }).toString();
-
-        router.replace(`/record?id=${responseId}&${query}`);
+        if (isAuthenticated) {
+          const basePath = patientId
+            ? `/record?id=${patientId}&view=QuestionnaireResponse/${responseId}`
+            : `/record?view=QuestionnaireResponse/${responseId}`;
+          router.replace(basePath);
+        } else {
+          router.replace(`/result?id=${responseId}`);
+        }
         setIsSubmitting(false);
       } else {
         router.push('/assessments');
@@ -277,6 +301,40 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     </DrawerFooter>
   );
 
+  // Sync FAB action state when user has interacted with the form
+  useEffect(() => {
+    if (hasInteracted) {
+      dispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Submit',
+          icon: BookCheck,
+          onAction: handleValidation,
+          isSaving: isSubmitting,
+          disabled:
+            requiredItemEmpty > 0 ||
+            (role === Roles.Practitioner && !patientId),
+          variant: 'primary'
+        }
+      });
+    } else {
+      dispatch({ type: 'SET_ACTION', config: null });
+    }
+  }, [
+    hasInteracted,
+    requiredItemEmpty,
+    role,
+    patientId,
+    isSubmitting,
+    handleValidation,
+    dispatch
+  ]);
+
+  // Clean up action state on unmount
+  useEffect(() => {
+    return () => dispatch({ type: 'SET_ACTION', config: null });
+  }, [dispatch]);
+
   const renderDrawerContent = (
     <>
       <DrawerHeader className='mx-auto flex flex-col items-center gap-4 pb-0 text-[20px]'>
@@ -304,43 +362,23 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   }
 
   return (
-    <RendererThemeProvider>
-      <SmartFormShell
-        className='custom-smart-form'
-        onChange={handleResponseChange}
-      />
-      <div className='flex-flex-col mt-4 px-2'>
-        {requiredItemEmpty > 0 ? (
-          <div className='text-destructive mb-2 w-full text-sm'>
-            Terdapat {requiredItemEmpty} pertanyaan wajib yang belum terisi, yuk
-            dilengkapi dulu!
-          </div>
-        ) : (
-          ''
-        )}
-        <Button
-          disabled={
-            submitQuestionnaireIsLoading ||
-            requiredItemEmpty > 0 ||
-            (role === Roles.Practitioner && !patientId)
-          }
-          className='bg-secondary w-full text-white'
-          onClick={handleValidation}
-        >
-          {submitQuestionnaireIsLoading ? (
-            <LoadingSpinnerIcon stroke='white' />
-          ) : (
-            'Kirim'
-          )}
-        </Button>
-      </div>
+    <AssessmentThemeProvider>
+      <CardStackContainer>
+        <SmartFormShell
+          className='custom-smart-form'
+          onChange={() => {
+            autoSave();
+            if (!hasInteracted) setHasInteracted(true);
+          }}
+        />
+      </CardStackContainer>
 
       <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
         <DrawerContent className='mx-auto max-w-screen-sm p-4'>
           {renderDrawerContent}
         </DrawerContent>
       </Drawer>
-    </RendererThemeProvider>
+    </AssessmentThemeProvider>
   );
 }
 export default FhirFormsRenderer;

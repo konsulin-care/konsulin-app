@@ -1,6 +1,7 @@
 /* eslint-disable max-lines */
 /* reason: comprehensive integration test for ClinicPractitionersView */
 import ClinicPractitionersView from '@/components/clinic/clinic-practitioners-view';
+import { FhirExtensionUrls } from '@/utils/fhir/extensions';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { type BundleEntry } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -181,7 +182,7 @@ describe('ClinicPractitionersView', () => {
       locEntry({
         extension: [
           {
-            url: 'https://konsulin.id/fhir/StructureDefinition/locationImage',
+            url: FhirExtensionUrls.locationImage,
             valueUrl:
               'https://res.cloudinary.com/test/image/upload/v1/clinic.webp'
           }

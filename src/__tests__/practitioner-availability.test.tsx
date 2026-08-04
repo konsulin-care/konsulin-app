@@ -294,7 +294,7 @@ describe('PractitionerAvailability', () => {
       }),
       isLoading: false
     } as any);
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
+
     vi.mocked(useQuery as any).mockReturnValue({ data: null } as any);
   });
 
@@ -527,6 +527,12 @@ describe('PractitionerAvailability', () => {
   });
 
   it('auto-selects earliest available date when month changes in page mode', () => {
+    // Freeze the clock so the hardcoded 2026-08-01 month change stays the
+    // earliest available date >= today (this test is date-sensitive).
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-15T00:00:00Z'));
+    vi.mocked(useBusySlotsByPractitioner).mockClear();
+
     vi.mocked(useDetailPractitioner).mockReturnValue({
       newData: {
         resource: {
@@ -556,5 +562,7 @@ describe('PractitionerAvailability', () => {
       'prac-1',
       '2026-08-01'
     );
+
+    vi.useRealTimers();
   });
 });

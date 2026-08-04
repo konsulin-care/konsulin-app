@@ -1,12 +1,11 @@
-# Stage 1: Build SPA assets
-FROM node:24-alpine AS spa-builder
-WORKDIR /build/web
-COPY web/package.json web/package-lock.json ./
+# Stage 1: Build Next.js static export
+FROM node:24-alpine AS next-builder
+WORKDIR /build
+COPY package.json package-lock.json ./
 RUN npm ci
-COPY web/auth-spa ./auth-spa
-COPY web/static/css/templ-input.css ./static/css/templ-input.css
-COPY web/template ../template/
-COPY web/static/images ./static/images
+COPY next.config.mjs tsconfig.json ./
+COPY public ./public
+COPY src ./src
 RUN npm run build
 
 # Stage 2: Build Go binary
@@ -19,13 +18,12 @@ COPY mise.toml ./
 RUN TEMPL_VERSION=$(awk -F'"' '/templ\/cmd\/templ/{print $4}' mise.toml) && \
     GOPROXY=direct go install "github.com/a-h/templ/cmd/templ@v${TEMPL_VERSION}"
 COPY . .
-COPY --from=spa-builder /build/web/static ./web/static
 RUN templ generate && CGO_ENABLED=0 go build -o /app/server ./cmd/konsulin-app
 
 # Stage 3: Runtime
 FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
 COPY --from=go-builder /app/server /app/server
-COPY --from=go-builder /build/web ./web
+COPY --from=next-builder /build/out ./out
 EXPOSE 8080
 CMD ["/app/server"]

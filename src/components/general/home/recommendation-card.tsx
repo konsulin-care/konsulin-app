@@ -2,6 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Recommendation } from '@/constants/recommendations';
+import { formatCurrencyValue } from '@/utils/fhir/fee';
 import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
 import Image from 'next/image';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -189,12 +190,7 @@ export default function RecommendationCard({
   const { photoUrl, name, serviceName, specialties, fee, id, description } =
     recommendation;
 
-  const formattedFee = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(fee);
+  const formattedFee = formatCurrencyValue(fee, 'IDR');
 
   const initials = getInitials(name);
 

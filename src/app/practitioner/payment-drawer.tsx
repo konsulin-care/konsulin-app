@@ -3,6 +3,7 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
+import { formatCurrencyValue } from '@/utils/fhir/fee';
 import type { QueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { Invoice, PractitionerRole } from 'fhir/r4';
@@ -163,11 +164,10 @@ function PaymentDrawerBody({
         <span className='text-[12px] text-[#666]'>Total</span>
         <span className='text-[16px] font-bold'>
           {invoice?.totalNet
-            ? new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: invoice.totalNet.currency,
-                minimumFractionDigits: 0
-              }).format(invoice.totalNet.value)
+            ? formatCurrencyValue(
+                invoice.totalNet.value,
+                invoice.totalNet.currency
+              )
             : '-'}
         </span>
       </div>

@@ -1,5 +1,6 @@
 import type { HealthcareService } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
+import { FhirExtensionUrls, FhirSystems } from '../fhir/extensions';
 import {
   getServiceDuration,
   setServiceDuration
@@ -20,7 +21,7 @@ describe('getServiceDuration', () => {
       name: 'General Consultation',
       extension: [
         {
-          url: 'https://konsulin.id/fhir/StructureDefinition/serviceDuration',
+          url: FhirExtensionUrls.serviceDuration,
           valueInteger: 30
         }
       ]
@@ -34,10 +35,10 @@ describe('getServiceDuration', () => {
       name: 'General Consultation',
       extension: [
         {
-          url: 'https://konsulin.id/fhir/StructureDefinition/serviceDuration',
+          url: FhirExtensionUrls.serviceDuration,
           valueDuration: {
             value: 30,
-            system: 'https://unitsofmeasure.org',
+            system: FhirSystems.ucum,
             code: 'min'
           }
         }
@@ -52,7 +53,7 @@ describe('getServiceDuration', () => {
       name: 'General Consultation',
       extension: [
         {
-          url: 'https://konsulin.id/fhir/StructureDefinition/serviceDuration'
+          url: FhirExtensionUrls.serviceDuration
         }
       ]
     };
@@ -77,11 +78,10 @@ describe('setServiceDuration', () => {
     };
     const result = setServiceDuration(hs, 45);
     const ext = result.extension?.find(
-      e =>
-        e.url === 'https://konsulin.id/fhir/StructureDefinition/serviceDuration'
+      e => e.url === FhirExtensionUrls.serviceDuration
     );
     expect(ext?.valueDuration?.value).toBe(45);
-    expect(ext?.valueDuration?.system).toBe('https://unitsofmeasure.org');
+    expect(ext?.valueDuration?.system).toBe(FhirSystems.ucum);
     expect(ext?.valueDuration?.code).toBe('min');
   });
 
@@ -91,10 +91,10 @@ describe('setServiceDuration', () => {
       name: 'General Consultation',
       extension: [
         {
-          url: 'https://konsulin.id/fhir/StructureDefinition/serviceDuration',
+          url: FhirExtensionUrls.serviceDuration,
           valueDuration: {
             value: 30,
-            system: 'https://unitsofmeasure.org',
+            system: FhirSystems.ucum,
             code: 'min'
           }
         }
@@ -102,11 +102,10 @@ describe('setServiceDuration', () => {
     };
     const result = setServiceDuration(hs, 60);
     const ext = result.extension?.find(
-      e =>
-        e.url === 'https://konsulin.id/fhir/StructureDefinition/serviceDuration'
+      e => e.url === FhirExtensionUrls.serviceDuration
     );
     expect(ext?.valueDuration?.value).toBe(60);
-    expect(ext?.valueDuration?.system).toBe('https://unitsofmeasure.org');
+    expect(ext?.valueDuration?.system).toBe(FhirSystems.ucum);
     expect(ext?.valueDuration?.code).toBe('min');
     expect(result.extension).toHaveLength(1);
   });
@@ -117,23 +116,18 @@ describe('setServiceDuration', () => {
       name: 'General Consultation',
       extension: [
         {
-          url: 'https://konsulin.id/fhir/StructureDefinition/fee',
+          url: FhirExtensionUrls.fee,
           valueMoney: { value: 250_000, currency: 'IDR' }
         }
       ]
     };
     const result = setServiceDuration(hs, 30);
-    const feeExt = result.extension?.find(
-      e => e.url === 'https://konsulin.id/fhir/StructureDefinition/fee'
-    );
+    const feeExt = result.extension?.find(e => e.url === FhirExtensionUrls.fee);
     const durationExt = result.extension?.find(
-      e =>
-        e.url === 'https://konsulin.id/fhir/StructureDefinition/serviceDuration'
+      e => e.url === FhirExtensionUrls.serviceDuration
     );
     expect(durationExt?.valueDuration?.value).toBe(30);
-    expect(durationExt?.valueDuration?.system).toBe(
-      'https://unitsofmeasure.org'
-    );
+    expect(durationExt?.valueDuration?.system).toBe(FhirSystems.ucum);
     expect(durationExt?.valueDuration?.code).toBe('min');
     expect(feeExt?.valueMoney?.value).toBe(250_000);
     expect(result.extension).toHaveLength(2);

@@ -38,7 +38,7 @@ describe('AppChrome', () => {
       back: vi.fn(),
       forward: vi.fn(),
       refresh: vi.fn()
-    } as unknown as ReturnType<typeof useRouter>);
+    });
     vi.mocked(usePathname).mockReturnValue('/');
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>

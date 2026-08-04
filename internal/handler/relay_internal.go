@@ -14,7 +14,7 @@ import (
 var relayFHIRClient = &http.Client{Timeout: 30 * time.Second}
 
 // constFeeExtensionURL is the FHIR extension URL for service fee.
-const constFeeExtensionURL = "https://konsulin.id/fhir/StructureDefinition/fee"
+const constFeeExtensionURL = "http://konsulin.care/fhir/StructureDefinition/fee"
 
 // validateFHIRReference checks that ref has the form "expectedType/non-empty-id".
 func validateFHIRReference(ref, expectedType string) bool {
@@ -215,7 +215,7 @@ func postFHIRBundle(baseURL string, bundleBody []byte, authToken string) (map[st
 
 // parseRelayResponse extracts Slot ID and Invoice ID from the FHIR
 // transaction-response bundle.
-func parseRelayResponse(fhirResp map[string]any, serviceID string, fee feeObj) relayResponse {
+func parseRelayResponse(fhirResp map[string]any, fee feeObj) relayResponse {
 	entries, ok := fhirResp["entry"].([]any)
 	if !ok {
 		return relayResponse{

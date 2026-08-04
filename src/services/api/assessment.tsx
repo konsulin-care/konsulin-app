@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 import { STORES, dbDelete } from '@/lib/indexeddb';
 import { IQuestionnaireResponse } from '@/types/assessment';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {
   Bundle,
@@ -184,6 +184,8 @@ export const useQuestionnaire = (questionnaireId: number | string) => {
       );
       return response;
     },
+    staleTime: 30_000,
+    retry: 1,
     select: response => {
       return response.data.entry ?? null;
     }
@@ -222,6 +224,8 @@ export const useSubmitQuestionnaire = (
   questionnaireId: string,
   isAuthenticated: boolean
 ) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
     mutationFn: async (questionnaireResponse: QuestionnaireResponse) => {
@@ -259,6 +263,11 @@ export const useSubmitQuestionnaire = (
       }
 
       return response.data;
+    },
+    onSuccess: () => {
+      // Reflect the new contribution in research progress widgets.
+      // deepsource:ignore JS-0098 — fire-and-forget query invalidation
+      void queryClient.invalidateQueries({ queryKey: ['research'] });
     }
   });
 };
@@ -268,6 +277,8 @@ export const useUpdateSubmitQuestionnaire = (
   questionnaireId: string,
   isAuthenticated: boolean
 ) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
     mutationFn: async (questionnaireResponse: QuestionnaireResponse) => {
@@ -302,6 +313,11 @@ export const useUpdateSubmitQuestionnaire = (
         }
       );
       return response.data;
+    },
+    onSuccess: () => {
+      // Reflect the updated contribution in research progress widgets.
+      // deepsource:ignore JS-0098 — fire-and-forget query invalidation
+      void queryClient.invalidateQueries({ queryKey: ['research'] });
     }
   });
 };
@@ -496,22 +512,51 @@ export const useSearchQuestionnaire = (query: string, context?: string) => {
   });
 };
 
-/** Fetch regular (non-popular) active assessments. */
-export const useRegularAssessments = () => {
+/**
+ * Fetch the curated 100 questionnaires (context=regular) with all needed fields.
+ *
+ * Returns Questionnaire resources directly (not BundleEntries).
+ */
+export const useCuratedAssessments = () => {
   return useQuery({
-    queryKey: ['regular-assessments'],
+    queryKey: ['curated-assessments'],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get<Bundle<Questionnaire>>(
-        '/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient&status=active&context=regular'
+        '/fhir/Questionnaire?context=regular&status=active&_elements=id,title,description,extension,useContext,code'
       );
       return response;
     },
-    select: response => response.data.entry ?? null
+    select: response =>
+      (response.data.entry ?? [])
+        .map(e => e.resource)
+        .filter((r): r is Questionnaire => r?.resourceType === 'Questionnaire')
   });
 };
 
-/** Fetch popular assessments. */
+/**
+ * Fetch featured (popular) questionnaires with all needed fields.
+ *
+ * Returns Questionnaire resources directly (not BundleEntries).
+ */
+export const useFeaturedAssessments = () => {
+  return useQuery({
+    queryKey: ['featured-assessments'],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get<Bundle<Questionnaire>>(
+        '/fhir/Questionnaire?context=popular&_elements=id,title,description,extension,useContext,code'
+      );
+      return response;
+    },
+    select: response =>
+      (response.data.entry ?? [])
+        .map(e => e.resource)
+        .filter((r): r is Questionnaire => r?.resourceType === 'Questionnaire')
+  });
+};
+
+/** Fetch popular assessments (legacy — returns BundleEntries). */
 export const usePopularAssessments = () => {
   return useQuery({
     queryKey: ['popular-assessments'],

@@ -1,6 +1,6 @@
 .PHONY: deps test-go test-js test fmt-go check-fmt-go check-file-length
-.PHONY: lint-go-cognitive lint-go check-go css-templ dev dev-go dev-next
-.PHONY: build-go run update-js docker-check
+.PHONY: lint-go-cognitive lint-go check-go dev dev-go dev-next serve build-next
+.PHONY: build-go run docker-check
 
 # Dependencies
 deps:
@@ -8,7 +8,7 @@ deps:
 	go mod download
 
 # Testing
-test-go: templ-gen
+test-go:
 	go test ./... -count=1
 
 test-js:
@@ -18,10 +18,10 @@ test: test-go test-js
 
 # Go formatting
 fmt-go:
-	gofmt -s -w ./cmd/ ./internal/ ./web/
+	gofmt -s -w ./cmd/ ./internal/
 
 check-fmt-go:
-	@! gofmt -s -d ./cmd/ ./internal/ ./web/ | read i; \
+	@! gofmt -s -d ./cmd/ ./internal/ | read i; \
 	echo "  Go formatting is correct ✓"
 
 # Go file length check (staged files only)
@@ -61,56 +61,49 @@ docker-check:
 	  echo "  hadolint not available (run mise install)"; \
 	fi
 
-# Tailwind CSS for templ templates
-TAILWIND = ./node_modules/.bin/tailwindcss
-TAILWIND_INPUT = web/static/css/templ-input.css
-TAILWIND_OUTPUT = web/static/css/output.css
-TAILWIND_CONTENT = "web/template/**/*.templ"
-
-css-templ:
-	$(TAILWIND) -i $(TAILWIND_INPUT) -o $(TAILWIND_OUTPUT) --content $(TAILWIND_CONTENT)
-
-# Templ code generation
-templ-gen:
-	templ generate
+# Build Next.js static export
+build-next:
+	npm run build
 
 # Ports
 GO_PORT ?= 3000
 NEXT_PORT ?= 8000
 
-# Development
-dev: update-js css-templ templ-gen build-auth-spa-dev
-	@echo "Go SSR on :$(GO_PORT)  |  Next.js on :$(NEXT_PORT)"
+# Development: hot reload mode (Next.js dev server + Go BFF proxy)
+dev: clean
+	@echo "Go BFF on :$(GO_PORT)  |  Next.js on :$(NEXT_PORT)"
 	@trap 'kill 0' EXIT; \
 	  export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3300} NEXTJS_URL=http://localhost:$(NEXT_PORT) SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
 	  go run ./cmd/konsulin-app & \
 	  npm run dev -- -p $(NEXT_PORT) & \
 	  wait
 
-dev-go: update-js css-templ templ-gen
+# Go BFF only (requires NEXTJS_URL to proxy to Next.js)
+dev-go:
 	export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3300} NEXTJS_URL=http://localhost:$(NEXT_PORT) SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
 	go run ./cmd/konsulin-app
 
+# Next.js dev server standalone (open separate terminal)
 dev-next:
 	npm run dev -- -p $(NEXT_PORT)
 
-# Auth SPA build
-build-auth-spa-dev:
-	cd web && npm run build:auth-spa
+# Production-like: build Next.js statically, then serve via Go BFF
+serve: clean build-next
+	@echo "Go BFF on :$(GO_PORT) serving static out/"
+	@export PORT=$(GO_PORT) APP_URL=http://localhost:$(GO_PORT) API_URL=$${API_URL:-http://localhost:3200} TX_URL=$${TX_URL:-http://localhost:3200} SESSION_COOKIE_SECRET=$${SESSION_COOKIE_SECRET:-CHANGE_ME_generate_a_random_64_char_secret} CSRF_AUTH_KEY=$${CSRF_AUTH_KEY:-dev-csrf-auth-key-32-bytes-long!}; \
+	  go run ./cmd/konsulin-app
 
-build-auth-spa:
-	cd web && npm ci && npm run build
+# Clean up .next and out directories
+clean:
+	@rm -rf .next out
 
 # Build
-build-go: update-js css-templ templ-gen build-auth-spa
+build-go:
 	go build -o konsulin-app ./cmd/konsulin-app
 
-run: update-js css-templ templ-gen
+run:
 	go run ./cmd/konsulin-app
 
 data-wilayah:
 	go generate ./internal/data/wilayah/
 
-update-js:
-	cp node_modules/htmx.org/dist/htmx.min.js web/static/js/htmx.min.js
-	cp node_modules/alpinejs/dist/cdn.min.js web/static/js/alpine.min.js

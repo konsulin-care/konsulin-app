@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- pre-existing, out of scope for current refactor */
 
+import { FhirExtensionUrls } from '@/utils/fhir/extensions';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PatientDetail from '../patient-detail';
@@ -29,10 +30,6 @@ import { useRouter } from 'next/navigation';
 
 const mockUseDetailPractitioner = vi.mocked(useDetailPractitioner);
 const mockUseRouter = vi.mocked(useRouter);
-
-const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
-const DURATION_EXTENSION_URL =
-  'https://konsulin.id/fhir/StructureDefinition/serviceDuration';
 
 const baseLocation = {
   name: 'Jakarta Heart Clinic - Menteng',
@@ -70,11 +67,11 @@ const baseServices = [
     extraDetails: 'Standard checkup including vitals',
     extension: [
       {
-        url: FEE_EXTENSION_URL,
+        url: FhirExtensionUrls.fee,
         valueMoney: { value: 500_000, currency: 'IDR' }
       },
       {
-        url: DURATION_EXTENSION_URL,
+        url: FhirExtensionUrls.serviceDuration,
         valueInteger: 30
       }
     ]
@@ -86,11 +83,11 @@ const baseServices = [
     extraDetails: 'Full cardiac assessment',
     extension: [
       {
-        url: FEE_EXTENSION_URL,
+        url: FhirExtensionUrls.fee,
         valueMoney: { value: 1_500_000, currency: 'IDR' }
       },
       {
-        url: DURATION_EXTENSION_URL,
+        url: FhirExtensionUrls.serviceDuration,
         valueInteger: 60
       }
     ]
@@ -252,7 +249,7 @@ describe('PatientDetail', () => {
 
   it.each([
     ['healthcare service names', 'General Checkup'],
-    ['fee formatted as IDR', 'Rp 500.000'],
+    ['fee formatted as IDR', 'Rp 500,000'],
     ['duration in minutes', '30 min'],
     [
       'extra details for healthcare services',
@@ -289,7 +286,7 @@ describe('PatientDetail', () => {
       isLoading: true,
       isError: false,
       isFetching: false
-    } as unknown as ReturnType<typeof useDetailPractitioner>);
+    });
 
     render(<PatientDetail practitionerRoleId='role-123' />);
     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
@@ -301,7 +298,7 @@ describe('PatientDetail', () => {
       isLoading: false,
       isError: false,
       isFetching: false
-    } as unknown as ReturnType<typeof useDetailPractitioner>);
+    });
 
     const { container } = render(
       <PatientDetail practitionerRoleId='role-123' />
@@ -518,7 +515,7 @@ describe('PatientDetail', () => {
       const img = avatarContainer?.querySelector('img');
       expect(img?.getAttribute('src')).toBe(photoUrl);
 
-      fireEvent.error(img as HTMLElement);
+      fireEvent.error(img);
 
       // After error, should fall back to gradient data URI
       const gradientImg = avatarContainer?.querySelector('img');
@@ -537,7 +534,7 @@ describe('PatientDetail', () => {
             active: false,
             extension: [
               {
-                url: FEE_EXTENSION_URL,
+                url: FhirExtensionUrls.fee,
                 valueMoney: { value: 100_000, currency: 'IDR' }
               }
             ]

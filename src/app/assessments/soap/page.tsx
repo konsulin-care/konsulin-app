@@ -1,5 +1,6 @@
 'use client';
 
+import { PractitionerRoute } from '@/components/auth/practitioner-route';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import SoapForm from '@/components/soap-report/soap-form';
@@ -13,7 +14,7 @@ import Participant from './participant';
  *
  */
 export default function Soap() {
-  const { state: authState, isLoading: isAuthLoading } = useAuth();
+  const { state: authState } = useAuth();
   const [participantId, setParticipantId] = useState('');
   const [patientsListToday, setPatientListToday] = useState([]);
   const { data: questionnaireData, isLoading: isQuestionnaireLoading } =
@@ -28,35 +29,37 @@ export default function Soap() {
   }, [todaySessions]);
 
   return (
-    <>
-      <PageHeader pageIndicator='SOAP Report' />
+    <PractitionerRoute>
+      <>
+        <PageHeader pageIndicator='SOAP Report' />
 
-      <div className='mt-[-24px] rounded-[16px] bg-white'>
-        {isQuestionnaireLoading || isAuthLoading || isPatientListLoading ? (
-          <div className='flex min-h-screen min-w-full items-center justify-center'>
-            <LoadingSpinnerIcon
-              width={56}
-              height={56}
-              className='w-full animate-spin'
-            />
-          </div>
-        ) : (
-          <div className='flex min-h-screen flex-col gap-5 p-4'>
-            <Participant
-              list={patientsListToday}
-              value={participantId}
-              placeholder='Select patient'
-              onSelect={value => setParticipantId(value.patientId)}
-            />
-            <SoapForm
-              questionnaire={questionnaireData}
-              patientId={participantId}
-              practitionerId={authState.userInfo.fhirId}
-              mode='create'
-            />
-          </div>
-        )}
-      </div>
-    </>
+        <div className='mt-[-24px] rounded-[16px] bg-white'>
+          {isQuestionnaireLoading || isPatientListLoading ? (
+            <div className='flex min-h-screen min-w-full items-center justify-center'>
+              <LoadingSpinnerIcon
+                width={56}
+                height={56}
+                className='w-full animate-spin'
+              />
+            </div>
+          ) : (
+            <div className='flex min-h-screen flex-col gap-5 p-4'>
+              <Participant
+                list={patientsListToday}
+                value={participantId}
+                placeholder='Select patient'
+                onSelect={value => setParticipantId(value.patientId)}
+              />
+              <SoapForm
+                questionnaire={questionnaireData}
+                patientId={participantId}
+                practitionerId={authState.userInfo.fhirId}
+                mode='create'
+              />
+            </div>
+          )}
+        </div>
+      </>
+    </PractitionerRoute>
   );
 }

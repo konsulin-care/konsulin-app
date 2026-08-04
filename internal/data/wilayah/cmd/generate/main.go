@@ -22,7 +22,7 @@ func main() {
 
 // writeDataFile writes the complete WilayahIndex literal to disk.
 //
-//nolint:gosec // outputPath is a known constant path, not user input.
+// nolint:gosec // outputPath is a known constant path, not user input.
 func writeDataFile(idx wilayah.WilayahIndex) error {
 	f, err := os.Create(outputPath)
 	if err != nil {

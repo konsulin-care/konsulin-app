@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/konsulin-care/konsulin-app/internal/session"
-	"github.com/konsulin-care/konsulin-app/web/template/partials"
 )
 
 type RoleSwitchOptions struct {
@@ -24,10 +23,7 @@ func NewRoleSwitchHandler(opts RoleSwitchOptions) http.HandlerFunc {
 			handleRoleSwitch(w, r, opts)
 			return
 		}
-		if r.Method == http.MethodGet {
-			handleRoleSwitcherPartial(w, r)
-			return
-		}
+
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
@@ -52,7 +48,7 @@ func handleRoleSwitch(w http.ResponseWriter, r *http.Request, opts RoleSwitchOpt
 	}
 
 	sess.Role = newRole
-	sess.Exp = time.Now().Add(2 * time.Hour).Unix()
+	sess.Exp = time.Now().Add(sessionLifetime).Unix()
 
 	encoded, err := session.EncodeSession(sess, opts.CookieName)
 	if err != nil {
@@ -61,7 +57,7 @@ func handleRoleSwitch(w http.ResponseWriter, r *http.Request, opts RoleSwitchOpt
 		return
 	}
 
-	//nolint:gosec // G124: Secure depends on runtime env; always true on HTTPS production.
+	// nolint:gosec // G124: Secure depends on runtime env; always true on HTTPS production.
 	http.SetCookie(w, &http.Cookie{
 		Name:     opts.CookieName,
 		Value:    encoded,
@@ -69,12 +65,11 @@ func handleRoleSwitch(w http.ResponseWriter, r *http.Request, opts RoleSwitchOpt
 		HttpOnly: true,
 		Secure:   opts.CookieSecure,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int((2 * time.Hour).Seconds()),
+		MaxAge:   int(sessionLifetime.Seconds()),
 	})
 
 	setActiveRoleClaim(w, r, opts, newRole)
 
-	w.Header().Set("HX-Redirect", "/")
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -85,7 +80,7 @@ func setActiveRoleClaim(w http.ResponseWriter, r *http.Request, opts RoleSwitchO
 	}
 	body := strings.NewReader(fmt.Sprintf(`{"role":%q}`, role))
 	// BackendBaseURL comes from server configuration, not user input — safe.
-	//nolint:gosec
+	// nolint:gosec
 	req, err := http.NewRequest(http.MethodPost, opts.BackendBaseURL+"/api/v1/auth/active-role", body)
 	if err != nil {
 		slog.Warn("role switch: build active-role request failed", "err", err)
@@ -116,23 +111,4 @@ func isRoleInSession(roles []string, target string) bool {
 		}
 	}
 	return false
-}
-
-func handleRoleSwitcherPartial(w http.ResponseWriter, r *http.Request) {
-	sess, ok := session.SessionFromContext(r.Context())
-	if !ok || sess == nil {
-		http.Error(w, "no session", http.StatusUnauthorized)
-		return
-	}
-
-	if len(sess.Roles) <= 1 {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/html")
-	if err := partials.RoleSwitcher(sess.Role, sess.Roles).Render(r.Context(), w); err != nil {
-		slog.Error("role switcher partial: render failed", "err", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
-	}
 }

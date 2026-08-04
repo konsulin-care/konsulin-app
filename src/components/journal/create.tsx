@@ -7,7 +7,7 @@ import JournalSuccessDrawer from '@/components/shared/journal-succes-drawer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
-import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFab } from '@/context/fabContext';
 import { useSubmitJournal } from '@/services/api/record';
 import { addDays, subDays } from 'date-fns';
 import {
@@ -36,10 +36,9 @@ export default function CreateJournal() {
     addResponse,
     removeResponse
   } = useJournalForm(1);
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const { mutateAsync: submitJournal, isLoading: isSubmitLoading } =
+  const { mutateAsync: submitJournal, isPending: isSubmitLoading } =
     useSubmitJournal();
-  const { setDirtyState } = useFabDirty();
+  const { dispatch } = useFab();
 
   /** Submits a journal entry to the server. */
   const handleSubmitJournal = useCallback(async () => {
@@ -86,25 +85,22 @@ export default function CreateJournal() {
     const contentReady = contentWords >= 2;
 
     if (titleReady && contentReady) {
-      setDirtyState({
-        isDirty: true,
-        label: 'Save Journal',
-        icon: SavePen,
-        onSave: () => handleSubmitJournal(),
-        isSaving: isSubmitLoading
+      dispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Save Journal',
+          icon: SavePen,
+          onAction: () => handleSubmitJournal(),
+          isSaving: isSubmitLoading,
+          variant: 'primary'
+        }
       });
     } else {
-      setDirtyState(null);
+      dispatch({ type: 'SET_ACTION', config: null });
     }
 
-    return () => setDirtyState(null);
-  }, [
-    journalTitle,
-    response,
-    isSubmitLoading,
-    setDirtyState,
-    handleSubmitJournal
-  ]);
+    return () => dispatch({ type: 'SET_ACTION', config: null });
+  }, [journalTitle, response, isSubmitLoading, dispatch, handleSubmitJournal]);
 
   /** Increment selected date by one day. */
   const nextDay = () => {

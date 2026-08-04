@@ -191,7 +191,7 @@ func TestLogoutHandler_clearsCookies(t *testing.T) {
 				SecureCookie:      false,
 			},
 			wantLoc:  "/auth",
-			wantKeys: []string{"auth", "sAccessToken", "sRefreshToken"},
+			wantKeys: []string{"auth", "sAccessToken", "sRefreshToken", "st-last-access-token-update", "sFrontToken"},
 		},
 		{
 			name: "custom cookie names",
@@ -203,7 +203,7 @@ func TestLogoutHandler_clearsCookies(t *testing.T) {
 				SecureCookie:      true,
 			},
 			wantLoc:  "/signin",
-			wantKeys: []string{"myAuth", "myAccess", "myRefresh"},
+			wantKeys: []string{"myAuth", "myAccess", "myRefresh", "st-last-access-token-update", "sFrontToken"},
 		},
 	}
 
@@ -223,7 +223,7 @@ func TestLogoutClient_hasTimeout(t *testing.T) {
 	}
 }
 
-func TestTryBackendLogout_httpSkipped(t *testing.T) {
+func TestTryBackendLogout_httpSkipped(_ *testing.T) {
 	// HTTP backend URL — should skip (log warning), not make a request.
 	r := httptest.NewRequest(http.MethodPost, "/logout", http.NoBody)
 	tryBackendLogout(r, "http://localhost:8080", false)
@@ -255,13 +255,13 @@ func TestTryBackendLogout_httpsForwarded(t *testing.T) {
 	}
 }
 
-func TestTryBackendLogout_emptyBackend(t *testing.T) {
+func TestTryBackendLogout_emptyBackend(_ *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, "/logout", http.NoBody)
 	// Should not panic with empty backend URL.
 	tryBackendLogout(r, "", false)
 }
 
-func TestHTMXProtectedRoute_redirectsViaHeader(t *testing.T) {
+func TestProtectedRoute_redirectsToAuth(t *testing.T) {
 	r := newAuthRouter()
 	r.Get("/profile", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -272,17 +272,16 @@ func TestHTMXProtectedRoute_redirectsViaHeader(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
-	req.Header.Set("HX-Request", "true")
 
 	resp := testDo(t, req)
 
-	assertStatus(t, resp, http.StatusOK)
+	assertStatus(t, resp, http.StatusFound)
 
-	hxRedirect := resp.Header.Get("HX-Redirect")
-	if hxRedirect == "" {
-		t.Fatal("expected HX-Redirect header")
+	location := resp.Header.Get("Location")
+	if location == "" {
+		t.Fatal("expected Location header")
 	}
-	if !strings.Contains(hxRedirect, "/auth?redirectToPath=") {
-		t.Errorf("expected HX-Redirect to contain /auth?redirectToPath=, got %s", hxRedirect)
+	if !strings.Contains(location, "/auth?redirectToPath=") {
+		t.Errorf("expected Location to contain /auth?redirectToPath=, got %s", location)
 	}
 }

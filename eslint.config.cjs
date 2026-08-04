@@ -19,7 +19,7 @@ const tsStrictRules = tsPlugin.configs['strict-type-checked'].rules
 const tsStylisticRules = tsPlugin.configs['stylistic-type-checked'].rules
 
 module.exports = [
-  { ignores: ['web/static/js/*.min.js', '**/.next/**', 'src/components/shared/__tests__/practitioner-location-combobox.test.tsx'] },
+  { ignores: ['**/.next/**', 'src/components/shared/__tests__/practitioner-location-combobox.test.tsx'] },
 
   // --- Base: Next.js (loads import, react, jsx-a11y plugins internally) ---
   ...compat.extends('next/core-web-vitals'),
@@ -106,6 +106,15 @@ module.exports = [
     }
   },
 
+  // --- FHIR canonical URLs: identifier locators, never fetched; http:// is intentional.
+  // Scoped override replaces the inline eslint-disable blocks in extensions.ts.
+  {
+    files: ['src/utils/fhir/extensions.ts'],
+    rules: {
+      'unicorn/prefer-https': 'off'
+    }
+  },
+
   // --- TypeScript-aware rules (strict + stylistic) for TS files only ---
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],
@@ -125,6 +134,7 @@ module.exports = [
       '@typescript-eslint/no-floating-promises': 'error', // Codacy: Promise Rejection
       '@typescript-eslint/no-misused-promises': 'error', // DeepSource: async-as-handler
       '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/no-useless-default-assignment': 'off',
       // Requires strictNullChecks in tsconfig, which is off
       '@typescript-eslint/no-unnecessary-type-conversion': 'error',
       '@typescript-eslint/no-unused-vars': 'error', // DeepScan: unused variable
@@ -232,17 +242,6 @@ module.exports = [
     ],
     rules: {
       'jsdoc/require-jsdoc': 'off'
-    }
-  },
-
-  // --- auth-spa overrides ---
-  {
-    files: ['web/auth-spa/**/*.{js,jsx,ts,tsx}'],
-    rules: {
-      '@next/next/no-img-element': 'off',
-      'unicorn/catch-error-name': 'off',
-      'unicorn/prefer-query-selector': 'off',
-      'unicorn/no-document-cookie': 'off'
     }
   }
 ]

@@ -84,16 +84,9 @@ func redirectMissingSession(w http.ResponseWriter, r *http.Request, opts AuthGua
 	slog.Debug("auth guard: no valid session", "path", path)
 	redirectURL := redirectURLForPath(path, opts.AuthPath, opts.AppURL)
 
-	if isHTMX(r) {
-		w.Header().Set(hxRedirectHeader, redirectURL)
-		w.WriteHeader(http.StatusOK)
-	} else {
-		//nolint:gosec // G710: redirectURL validated by redirectURLForPath via ValidateRedirectPath
-		http.Redirect(w, r, redirectURL, http.StatusFound)
-	}
+	// nolint:gosec // G710: redirectURL validated by redirectURLForPath via ValidateRedirectPath
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
-
-const hxRedirectHeader = "HX-Redirect"
 
 func redirectURLForPath(path, authPath, appURL string) string {
 	if validated, ok := session.ValidateRedirectPath(path, appURL); ok {
@@ -120,7 +113,7 @@ func requireRoleHandler(w http.ResponseWriter, r *http.Request, next http.Handle
 
 	if sess.Role == "Guest" && !containsRole(roles, "Guest") {
 		if validatedPath, valid := session.ValidateRedirectPath(r.URL.Path, opts.AppURL); valid {
-			//nolint:gosec // G124: HttpOnly=false required for JS to read redirect_intent cookie
+			// nolint:gosec // G124: HttpOnly=false required for JS to read redirect_intent cookie
 			// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 			http.SetCookie(w, &http.Cookie{
 				Name:     opts.RedirectIntentCookieName,
@@ -150,21 +143,11 @@ func redirectToUnauthorized(w http.ResponseWriter, r *http.Request, opts Require
 	if unauthorizedPath == "" {
 		unauthorizedPath = "/unauthorized"
 	}
-	if isHTMX(r) {
-		w.Header().Set(hxRedirectHeader, unauthorizedPath)
-		w.WriteHeader(http.StatusOK)
-	} else {
-		http.Redirect(w, r, unauthorizedPath, http.StatusFound)
-	}
+	http.Redirect(w, r, unauthorizedPath, http.StatusFound)
 }
 
 func redirectToAuth(w http.ResponseWriter, r *http.Request, opts RequireRoleOptions) {
-	if isHTMX(r) {
-		w.Header().Set(hxRedirectHeader, opts.AuthPath)
-		w.WriteHeader(http.StatusOK)
-	} else {
-		http.Redirect(w, r, opts.AuthPath, http.StatusFound)
-	}
+	http.Redirect(w, r, opts.AuthPath, http.StatusFound)
 }
 
 func containsRole(roles []string, role string) bool {
@@ -178,9 +161,19 @@ func containsRole(roles []string, role string) bool {
 
 // RedirectAuthenticated redirects users with a valid auth cookie away from the given path prefix.
 // Used to prevent authenticated users from accessing /auth pages.
+// Exempts /auth/verify because magic link verification requires the frontend SDK
+// to read the linkCode from the URL fragment (never sent to the server).
 func RedirectAuthenticated(cookieName, cookieSecret, redirectTarget string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// /auth/verify is the SuperTokens magic link verification endpoint.
+			// The linkCode is in the URL fragment (#linkCode) which the browser
+			// never sends to the server — only the frontend SDK can extract it
+			// client-side. We must let the request through regardless of session.
+			if r.URL.Path == "/auth/verify" {
+				next.ServeHTTP(w, r)
+				return
+			}
 			sess, err := session.ExtractFromRequest(r, cookieName, cookieSecret)
 			if err == nil && sess.UserID != "" {
 				http.Redirect(w, r, redirectTarget, http.StatusFound)
@@ -201,8 +194,4 @@ func isSkippedPath(path string, opts AuthGuardOptions) bool {
 		}
 	}
 	return false
-}
-
-func isHTMX(r *http.Request) bool {
-	return r.Header.Get("HX-Request") == "true"
 }

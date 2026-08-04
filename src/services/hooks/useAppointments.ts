@@ -25,7 +25,7 @@ export function useAppointments(role: Role, fhirId: string) {
         ]
       : ['_include=Appointment:slot', '_include=Appointment:actor:Patient'];
 
-  return useInfiniteQuery<Bundle, Error>({
+  return useInfiniteQuery({
     queryKey: ['appointments', role, fhirId],
     queryFn: async ({ pageParam }) => {
       const API = await getAPI();
@@ -42,6 +42,7 @@ export function useAppointments(role: Role, fhirId: string) {
       const response = await API.get<Bundle>(url);
       return response.data;
     },
+    initialPageParam: undefined,
     getNextPageParam: lastPage => {
       const nextLink = lastPage.link?.find(l => l.relation === 'next');
       return nextLink?.url

@@ -66,9 +66,9 @@ export function useResourceInfiniteQuery(
   startDate?: string,
   endDate?: string
 ) {
-  return useInfiniteQuery<Bundle, Error>({
+  return useInfiniteQuery({
     queryKey: [queryKey, patientId, startDate, endDate] as const,
-    queryFn: async ({ pageParam }: { pageParam?: string }) => {
+    queryFn: async ({ pageParam }) => {
       const api = await getAPI();
       const url =
         pageParam ??
@@ -76,6 +76,7 @@ export function useResourceInfiniteQuery(
       const { data } = await api.get<Bundle>(url);
       return data;
     },
+    initialPageParam: undefined,
     getNextPageParam: (lastPage: Bundle): string | undefined => {
       const next = lastPage.link?.find(l => l.relation === 'next');
       if (!next?.url) return undefined;

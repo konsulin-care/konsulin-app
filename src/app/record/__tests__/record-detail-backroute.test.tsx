@@ -25,12 +25,12 @@ vi.mock('@/components/page-header', () => ({
     </div>
   )
 }));
-vi.mock('@/context/fabDirtyContext', () => ({
-  useFabDirty: vi.fn()
+vi.mock('@/context/fabContext', () => ({
+  useFab: vi.fn()
 }));
 
 import { useAuth } from '@/context/auth/authContext';
-import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFab } from '@/context/fabContext';
 import { useRecordDetail } from '@/hooks/useRecordDetail';
 import RecordDetail from '../record-detail';
 
@@ -47,7 +47,7 @@ describe('RecordDetail - backRoute prop', () => {
   });
 
   it('passes backRoute prop to PageHeader when provided', () => {
-    const mockSetDirtyState = vi.fn();
+    const mockDispatch = vi.fn();
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
         resourceType: 'Observation',
@@ -57,8 +57,9 @@ describe('RecordDetail - backRoute prop', () => {
       isLoading: false,
       error: null
     } as unknown as never);
-    vi.mocked(useFabDirty).mockReturnValue({
-      setDirtyState: mockSetDirtyState
+    vi.mocked(useFab).mockReturnValue({
+      state: { action: null, selection: null, menu: null, panelOpen: false },
+      dispatch: mockDispatch
     } as unknown as never);
 
     render(
@@ -74,7 +75,7 @@ describe('RecordDetail - backRoute prop', () => {
   });
 
   it('passes empty backRoute to PageHeader when not provided', () => {
-    const mockSetDirtyState = vi.fn();
+    const mockDispatch = vi.fn();
     vi.mocked(useRecordDetail).mockReturnValue({
       data: {
         resourceType: 'Observation',
@@ -84,8 +85,9 @@ describe('RecordDetail - backRoute prop', () => {
       isLoading: false,
       error: null
     } as unknown as never);
-    vi.mocked(useFabDirty).mockReturnValue({
-      setDirtyState: mockSetDirtyState
+    vi.mocked(useFab).mockReturnValue({
+      state: { action: null, selection: null, menu: null, panelOpen: false },
+      dispatch: mockDispatch
     } as unknown as never);
 
     render(<RecordDetail resourceType='Observation' resourceId='obs-1' />);

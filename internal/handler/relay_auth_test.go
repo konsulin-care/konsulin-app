@@ -23,7 +23,7 @@ func TestRelayBooking_forwardsAuthToken(t *testing.T) {
 				"name":         "Konsultasi Umum",
 				"extension": []map[string]any{
 					{
-						"url": "https://konsulin.id/fhir/StructureDefinition/fee",
+						"url": "http://konsulin.care/fhir/StructureDefinition/fee",
 						"valueMoney": map[string]any{
 							"value":    150000,
 							"currency": "IDR",
@@ -104,7 +104,7 @@ func TestRelayBooking_passthroughUpstreamStatus(t *testing.T) {
 				"name":         "Konsultasi Umum",
 				"extension": []map[string]any{
 					{
-						"url": "https://konsulin.id/fhir/StructureDefinition/fee",
+						"url": "http://konsulin.care/fhir/StructureDefinition/fee",
 						"valueMoney": map[string]any{
 							"value":    150000,
 							"currency": "IDR",
@@ -170,7 +170,7 @@ func TestRelayBooking_rejectsEmptyBackendResponse(t *testing.T) {
 				"name":         "Konsultasi Umum",
 				"extension": []map[string]any{
 					{
-						"url": "https://konsulin.id/fhir/StructureDefinition/fee",
+						"url": "http://konsulin.care/fhir/StructureDefinition/fee",
 						"valueMoney": map[string]any{
 							"value":    150000,
 							"currency": "IDR",

@@ -5,12 +5,10 @@ import ModalQr from '@/components/general/modal-qr';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
-import { useFabDirty } from '@/context/fabDirtyContext';
-import { useFabMenu } from '@/context/fabMenuContext';
+import { useFab } from '@/context/fabContext';
 import { useRecordDetail } from '@/hooks/useRecordDetail';
-import { isLoincSystem } from '@/utils/fhir';
-import type { Observation, QuestionnaireResponse } from 'fhir/r4';
-import { PenLine, Repeat2, UsersIcon } from 'lucide-react';
+import type { Money, Observation, QuestionnaireResponse } from 'fhir/r4';
+import { PenLine, Repeat2, Sparkles, UsersIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
   useCallback,
@@ -19,150 +17,19 @@ import {
   useState,
   type ReactNode
 } from 'react';
-import RecordAssessment from './record-assessment';
-import RecordCondition from './record-condition';
-import RecordJournal from './record-journal';
-import RecordSoap from './record-soap';
+import {
+  isPatientJournal,
+  isSoapNote,
+  RESOURCE_RENDERERS,
+  RESOURCE_TITLES
+} from './record-renderers';
+import ReportPaymentDrawer from './report-payment-drawer';
 type Props = {
   readonly resourceType: string;
   readonly resourceId: string;
   readonly backRoute?: string;
 };
-/** Check if Observation is a patient journal (LOINC 51855-5). */
-function isPatientJournal(resource: Observation): boolean {
-  return (
-    resource.code?.coding?.some(
-      c => isLoincSystem(c.system) && c.code === '51855-5'
-    ) ?? false
-  );
-}
 
-/** Check if Observation is a practitioner note (LOINC 67855-7). */
-function isPractitionerNote(resource: Observation): boolean {
-  return (
-    resource.code?.coding?.some(
-      c => isLoincSystem(c.system) && c.code === '67855-7'
-    ) ?? false
-  );
-}
-
-/** Check if QuestionnaireResponse is a SOAP note. */
-function isSoapNote(resource: QuestionnaireResponse): boolean {
-  return resource.questionnaire === 'Questionnaire/soap';
-}
-
-type RenderHandler = (props: {
-  resourceId: string;
-  data: Record<string, unknown>;
-  onTitleChange?: (title: string) => void;
-  onPractitionerNameChange?: (name: string) => void;
-}) => ReactNode;
-
-/**
- *
- */
-export function renderCondition({
-  resourceId
-}: {
-  readonly resourceId: string;
-}): ReactNode {
-  return <RecordCondition conditionId={resourceId} />;
-}
-
-/**
- *
- */
-export function renderQuestionnaireResponse({
-  resourceId,
-  data,
-  onTitleChange
-}: {
-  readonly resourceId: string;
-  readonly data: Record<string, unknown>;
-  readonly onTitleChange?: (title: string) => void;
-}): ReactNode {
-  const qr = data as unknown as QuestionnaireResponse;
-  if (isSoapNote(qr)) {
-    return <RecordSoap soapId={resourceId} />;
-  }
-  return (
-    <RecordAssessment recordId={resourceId} onTitleChange={onTitleChange} />
-  );
-}
-
-/**
- *
- */
-export function renderObservation({
-  resourceId,
-  data,
-  onPractitionerNameChange
-}: {
-  readonly resourceId: string;
-  readonly data: Record<string, unknown>;
-  readonly onPractitionerNameChange?: (name: string) => void;
-}): ReactNode {
-  const obs = data as unknown as Observation;
-  if (isPatientJournal(obs)) {
-    return <RecordJournal journalId={resourceId} />;
-  }
-  if (isPractitionerNote(obs)) {
-    return (
-      <RecordSoap
-        soapId={resourceId}
-        onPractitionerNameChange={onPractitionerNameChange}
-      />
-    );
-  }
-  return <Notfound />;
-}
-
-const RESOURCE_RENDERERS = new Map<string, RenderHandler>([
-  ['Condition', renderCondition],
-  ['QuestionnaireResponse', renderQuestionnaireResponse],
-  ['Observation', renderObservation]
-]);
-
-/**
- *
- */
-export function conditionTitle(): string {
-  return 'Condition Detail';
-}
-
-/**
- *
- */
-export function questionnaireResponseTitle(
-  data: Record<string, unknown>
-): string {
-  if (isSoapNote(data as unknown as QuestionnaireResponse)) {
-    return 'SOAP Detail';
-  }
-  return 'Assessment Result';
-}
-
-/**
- *
- */
-export function observationTitle(data: Record<string, unknown>): string {
-  if (isPatientJournal(data as unknown as Observation)) {
-    return 'Journal Detail';
-  }
-  if (isPractitionerNote(data as unknown as Observation)) {
-    return 'SOAP Detail';
-  }
-  return 'Detail';
-}
-
-const RESOURCE_TITLES = new Map<
-  string,
-  (data: Record<string, unknown>) => string
->([
-  ['Condition', conditionTitle],
-  ['QuestionnaireResponse', questionnaireResponseTitle],
-  ['Observation', observationTitle]
-]);
 /** Compute the display name from auth state. */
 function computeDisplayName(authState: {
   userInfo?: { fullname?: string; email?: string };
@@ -214,10 +81,11 @@ export default function RecordDetail({
   const [dynamicTitle, setDynamicTitle] = useState<string | null>(null);
   const [currentLocation, setCurrentLocation] = useState<string>('');
   const [qrOpen, setQrOpen] = useState(false);
+  const [reportFee, setReportFee] = useState<Money | null>(null);
+  const [payOpen, setPayOpen] = useState(false);
 
   const router = useRouter();
-  const { setDirtyState } = useFabDirty();
-  const { setMenuState } = useFabMenu();
+  const { dispatch } = useFab();
 
   const handlePractitionerNameChange = useCallback((name: string) => {
     setDynamicTitle(`Notes from ${name}`);
@@ -239,59 +107,84 @@ export default function RecordDetail({
     return obs.subject?.reference === patientRef;
   }, [data, authState.userInfo?.fhirId]);
 
-  // Set FAB state: edit for own journals, default FAB for non-own journals
+  // Set FAB state: edit for own journals, Get Report for paid assessments, share otherwise
   useEffect(() => {
     const isNonOwnJournal =
       data?.resourceType === 'Observation' &&
       !isOwnJournal &&
       isPatientJournal(data as unknown as Observation);
+    const isPaidAssessment =
+      data?.resourceType === 'QuestionnaireResponse' &&
+      !isSoapNote(data as unknown as QuestionnaireResponse) &&
+      authState.isAuthenticated &&
+      reportFee !== null;
 
     if (!data || error || isNonOwnJournal) {
-      setDirtyState(null);
-      setMenuState(null);
+      dispatch({ type: 'SET_ACTION', config: null });
+      dispatch({ type: 'SET_MENU', config: null });
     } else if (isOwnJournal) {
-      setDirtyState({
-        isDirty: true,
-        label: 'Edit',
-        icon: PenLine,
-        onSave: () => router.push(`/record?edit=Observation/${resourceId}`),
-        isSaving: false
+      dispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Edit',
+          icon: PenLine,
+          onAction: () => router.push(`/record?edit=Observation/${resourceId}`),
+          isSaving: false,
+          variant: 'primary'
+        }
       });
-      setMenuState(null);
+      dispatch({ type: 'SET_MENU', config: null });
+    } else if (isPaidAssessment) {
+      // Paid assessment report — FAB opens the payment drawer
+      dispatch({ type: 'SET_MENU', config: null });
+      dispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Get Report',
+          icon: Sparkles,
+          onAction: () => setPayOpen(true),
+          isSaving: false,
+          variant: 'primary'
+        }
+      });
     } else {
       // Other resources — share record
-      setMenuState(null);
-      setDirtyState({
-        isDirty: true,
-        label: 'Share Record',
-        icon: Repeat2,
-        onSave: () => {
-          const shareUrl = currentLocation || window.location.href;
-          if (typeof navigator.share === 'function') {
-            navigator.share({ url: shareUrl }).catch(() => {
-              /* user cancelled — do nothing */
-            });
-          } else {
-            setQrOpen(true);
-          }
-        },
-        isSaving: false
+      dispatch({ type: 'SET_MENU', config: null });
+      dispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Share Record',
+          icon: Repeat2,
+          onAction: () => {
+            const shareUrl = currentLocation || window.location.href;
+            if (typeof navigator.share === 'function') {
+              navigator.share({ url: shareUrl }).catch(() => {
+                /* user cancelled — do nothing */
+              });
+            } else {
+              setQrOpen(true);
+            }
+          },
+          isSaving: false,
+          variant: 'primary'
+        }
       });
     }
 
     return () => {
-      setDirtyState(null);
-      setMenuState(null);
+      dispatch({ type: 'SET_ACTION', config: null });
+      dispatch({ type: 'SET_MENU', config: null });
     };
   }, [
     data,
     error,
     isOwnJournal,
-    setDirtyState,
-    setMenuState,
+    dispatch,
     currentLocation,
     resourceId,
-    router
+    router,
+    reportFee,
+    authState.isAuthenticated
   ]);
 
   // Invalid props
@@ -324,7 +217,8 @@ export default function RecordDetail({
         resourceId,
         data,
         onTitleChange: setDynamicTitle,
-        onPractitionerNameChange: handlePractitionerNameChange
+        onPractitionerNameChange: handlePractitionerNameChange,
+        onFeeChange: setReportFee
       })
     ) : (
       <Notfound />
@@ -342,6 +236,13 @@ export default function RecordDetail({
         {renderContent()}
       </div>
       <ModalQr value={currentLocation} open={qrOpen} onOpenChange={setQrOpen} />
+      {reportFee !== null && (
+        <ReportPaymentDrawer
+          open={payOpen}
+          onOpenChange={setPayOpen}
+          fee={reportFee}
+        />
+      )}
     </>
   );
 }

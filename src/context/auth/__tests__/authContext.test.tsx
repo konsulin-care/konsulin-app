@@ -9,10 +9,12 @@ import { AuthProvider, useAuth } from '../authContext';
 // ---------------------------------------------------------------------------
 const mockUseSessionContext = vi.fn();
 const mockGetClaimValue = vi.fn();
+const mockAttemptRefreshingSession = vi.fn();
 
 vi.mock('supertokens-auth-react/recipe/session', () => ({
   useSessionContext: () => mockUseSessionContext(), // eslint-disable-line @typescript-eslint/no-unsafe-return
-  getClaimValue: () => mockGetClaimValue() // eslint-disable-line @typescript-eslint/no-unsafe-return
+  getClaimValue: () => mockGetClaimValue(), // eslint-disable-line @typescript-eslint/no-unsafe-return
+  attemptRefreshingSession: () => mockAttemptRefreshingSession() // eslint-disable-line @typescript-eslint/no-unsafe-return
 }));
 
 vi.mock('supertokens-web-js/recipe/userroles', () => ({
@@ -152,6 +154,7 @@ beforeEach(() => {
   mockGetClaimValue.mockResolvedValue(['Patient']);
   mockMigrate.mockResolvedValue(undefined); // eslint-disable-line unicorn/no-useless-undefined
   mockDbGet.mockResolvedValue(null);
+  mockAttemptRefreshingSession.mockResolvedValue(true);
 });
 
 // =========================================================================
@@ -328,6 +331,84 @@ describe('Fix 3 - function dependency ordering', () => {
     for (const [, line] of depLines) {
       expect(line).toBeLessThan(callerLine);
     }
+  });
+});
+
+// =========================================================================
+// Task 2: renew the access token before the auth-cookie restore POST
+// =========================================================================
+describe('Task 2 - refresh before auth-cookie restore', () => {
+  beforeEach(() => {
+    // GIVEN: an active SuperTokens session with an expired auth cookie
+    mockUseSessionContext.mockReturnValue({
+      doesSessionExist: true,
+      userId: 'user-1',
+      accessTokenPayload: {}
+    });
+    mockGetClaimValue.mockResolvedValue(['Patient']);
+    mockGetAuthSession.mockResolvedValue({ authenticated: false });
+    mockRestoreCookie.mockResolvedValue(true);
+  });
+
+  it('renews the access token BEFORE restoring the auth cookie', async () => {
+    // GIVEN: the refresh is pending until we resolve it
+    // Assigned synchronously inside the Promise executor before any await, so it is always set
+    let resolveRefresh!: (value: boolean) => void;
+    mockAttemptRefreshingSession.mockReturnValue(
+      new Promise<boolean>(resolve => {
+        resolveRefresh = resolve;
+      })
+    );
+
+    // WHEN: the auth provider mounts
+    renderWithAuthProvider();
+
+    // THEN: the refresh attempt starts, but restore has NOT run yet
+    await waitFor(() => {
+      expect(mockAttemptRefreshingSession).toHaveBeenCalled();
+    });
+    expect(mockRestoreCookie).not.toHaveBeenCalled();
+
+    // WHEN: the refresh completes
+    resolveRefresh(true);
+
+    // THEN: the restore POST runs after the renewal and the user is logged in
+    await waitFor(() => {
+      expect(mockRestoreCookie).toHaveBeenCalled();
+    });
+    expect(screen.getByTestId('auth-authenticated').textContent).toBe('true');
+  });
+
+  it('falls through to restore when the refresh attempt throws', async () => {
+    // GIVEN: the refresh attempt fails with a network/API error
+    mockAttemptRefreshingSession.mockRejectedValue(new Error('refresh failed'));
+
+    // WHEN: the auth provider mounts
+    renderWithAuthProvider();
+
+    // THEN: the restore POST is still attempted and loading resolves
+    await waitFor(() => {
+      expect(mockRestoreCookie).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-loading').textContent).toBe('false');
+    });
+  });
+
+  it('falls through to restore when the refresh attempt returns false', async () => {
+    // GIVEN: the refresh attempt reports no session renewal
+    mockAttemptRefreshingSession.mockResolvedValue(false);
+
+    // WHEN: the auth provider mounts
+    renderWithAuthProvider();
+
+    // THEN: the restore POST is still attempted and loading resolves
+    await waitFor(() => {
+      expect(mockRestoreCookie).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-loading').textContent).toBe('false');
+    });
   });
 });
 

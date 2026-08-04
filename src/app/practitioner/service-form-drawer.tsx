@@ -1,5 +1,6 @@
 'use client';
 
+import FeeInput from '@/components/shared/fee-input';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -12,14 +13,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { SwitchField } from '@/components/ui/switch-field';
 import { Textarea } from '@/components/ui/textarea';
+import { getFee, setFee } from '@/utils/fhir/fee';
 import {
   getServiceDuration,
   setServiceDuration
 } from '@/utils/fhir/service-duration';
 import type { HealthcareService } from 'fhir/r4';
 import { useCallback, useState } from 'react';
-
-const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
 
 type Props = {
   readonly open: boolean;
@@ -46,7 +46,7 @@ function FormFields({
   readonly name: string;
   readonly onNameChange: (v: string) => void;
   readonly fee: string;
-  readonly onFeeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readonly onFeeChange: (raw: string) => void;
   readonly duration: string;
   readonly onDurationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   readonly extraDetails: string;
@@ -82,12 +82,11 @@ function FormFields({
         <label htmlFor='service-fee' className='text-sm font-medium'>
           Fee
         </label>
-        <Input
+        <FeeInput
           id='service-fee'
-          value={fee ? Number(fee).toLocaleString('en-US') : ''}
+          value={fee}
           onChange={onFeeChange}
           placeholder='250,000'
-          inputMode='numeric'
           className='bg-white'
         />
       </div>
@@ -137,25 +136,19 @@ function buildService(params: {
   providedBy: string;
   location?: string;
 }): HealthcareService {
-  const feeExtension = params.fee
-    ? [
-        {
-          url: FEE_EXTENSION_URL,
-          valueMoney: { value: params.fee, currency: 'IDR' as const }
-        }
-      ]
-    : undefined;
-
   let resource: HealthcareService = {
     resourceType: 'HealthcareService',
     ...(params.id ? { id: params.id } : {}),
-    ...(feeExtension ? { extension: feeExtension } : {}),
     active: params.active,
     name: params.name,
     extraDetails: params.extraDetails || undefined,
     providedBy: { reference: params.providedBy },
     ...(params.location ? { location: [{ reference: params.location }] } : {})
   };
+
+  if (params.fee > 0) {
+    resource = setFee(resource, params.fee);
+  }
 
   if (params.duration > 0) {
     resource = setServiceDuration(resource, params.duration);
@@ -166,9 +159,9 @@ function buildService(params: {
 
 /** Extract initial fee string from a HealthcareService. */
 function initFee(service?: HealthcareService): string {
-  const ext = service?.extension?.find(e => e.url === FEE_EXTENSION_URL);
-  const val = ext?.valueMoney?.value;
-  return val ? val.toString() : '';
+  if (!service) return '';
+  const fee = getFee(service);
+  return fee?.value ? fee.value.toString() : '';
 }
 
 /** Extract initial duration string from a HealthcareService. */
@@ -221,13 +214,6 @@ export default function ServiceFormDrawer({
     []
   );
 
-  const handleFeeChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFee(e.target.value.replace(/\D/g, ''));
-    },
-    []
-  );
-
   const handleSave = useCallback(() => {
     const resource = buildService({
       id: service?.id,
@@ -271,7 +257,7 @@ export default function ServiceFormDrawer({
           name={name}
           onNameChange={setName}
           fee={fee}
-          onFeeChange={handleFeeChange}
+          onFeeChange={setFee}
           duration={duration}
           onDurationChange={handleDurationChange}
           extraDetails={extraDetails}

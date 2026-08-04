@@ -1,24 +1,21 @@
-/* eslint-disable complexity */
 'use client';
 
-import Avatar from '@/components/general/avatar';
-import RoleAvatarPopup from '@/components/role-avatar-popup';
-import UpcomingSession from '@/components/schedule/upcoming-session';
-import { getNow } from '@/constants/date';
+import {
+  AdminClinicCard,
+  AuthArea,
+  GuestAvatar,
+  ResearchHeaderWidgetSection,
+  UpcomingSessionBlock,
+  useUpcomingSession
+} from '@/components/page-header-sections';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
-import {
-  generateAvatarPlaceholder,
-  parseMergedAppointments,
-  parseMergedSessions
-} from '@/utils/helper';
+import { generateAvatarPlaceholder } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
-import { isAfter, parseISO } from 'date-fns';
-import { Calendar, ChevronLeftIcon } from 'lucide-react';
-import Link from 'next/link';
+import { ChevronLeftIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -34,7 +31,8 @@ const MAIN_ROUTES = new Set([
   '/assessments',
   '/profile',
   '/recommendation',
-  '/schedule'
+  '/schedule',
+  '/research'
 ]);
 
 /** Returns the page title based on current route. */
@@ -59,6 +57,9 @@ function getPageIndicator(
     case '/recommendation': {
       return 'Recommended for You';
     }
+    case '/research': {
+      return 'Research';
+    }
     default: {
       return '';
     }
@@ -72,13 +73,25 @@ function getDefaultBackRoute(
 ): string | undefined {
   if (pathname === '/') return undefined;
   if (MAIN_ROUTES.has(pathname)) {
-    return searchParams.toString() ? undefined : '/';
+    if (searchParams.toString()) return pathname;
+    return '/';
   }
   return undefined;
 }
 
+/** Resolves the display name, falling back to email for placeholder values. */
+function getDisplayName(
+  userInfo: { fullname?: string; email?: string } | undefined
+): string | undefined {
+  if (!userInfo?.fullname || userInfo.fullname.trim() === '-') {
+    return userInfo?.email;
+  }
+  return userInfo?.fullname;
+}
+
 /**
- *
+ * Page header with back navigation, auth area, upcoming session,
+ * research widget, and the admin clinic switcher.
  */
 export default function PageHeader({
   pageIndicator: overrideIndicator,
@@ -98,15 +111,11 @@ export default function PageHeader({
   const indicator =
     overrideIndicator ?? getPageIndicator(pathname, searchParams) ?? '';
 
-  const role = authState?.userInfo?.role_name;
+  const role = authState.userInfo.role_name;
   const isPatient = role === Roles.Patient;
   const isAdmin = role === Roles.ClinicAdmin;
 
-  const displayName =
-    !authState?.userInfo?.fullname ||
-    authState.userInfo?.fullname.trim() === '-'
-      ? authState?.userInfo?.email
-      : authState?.userInfo?.fullname;
+  const displayName = getDisplayName(authState.userInfo);
 
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
@@ -139,7 +148,7 @@ export default function PageHeader({
     enabled: Boolean(isAdmin && selectedClinicId)
   });
 
-  const guestAvatar = useMemo(() => {
+  const guestAvatar: GuestAvatar = useMemo(() => {
     const seed = crypto.randomUUID();
     const placeholder = generateAvatarPlaceholder({ id: seed, name: 'Guest' });
     return {
@@ -149,40 +158,12 @@ export default function PageHeader({
     };
   }, []);
 
-  const parsedAppointmentsData = useMemo(() => {
-    if (
-      !appointmentData ||
-      appointmentData?.total === 0 ||
-      !authState.isAuthenticated
-    )
-      return null;
-
-    const parsed = parseMergedAppointments(appointmentData);
-    const filtered = parsed.filter(session => {
-      const slotStart = parseISO(session.slotStart ?? '');
-      return isAfter(slotStart, getNow());
-    });
-
-    return filtered;
-  }, [appointmentData, authState]);
-
-  const parsedSessionsData = useMemo(() => {
-    if (!sessionData || sessionData?.total === 0 || !authState.isAuthenticated)
-      return null;
-
-    const parsed = parseMergedSessions(sessionData);
-    const filtered = parsed.filter(session => {
-      const slotStart = parseISO(session.slotStart ?? '');
-      return isAfter(slotStart, getNow());
-    });
-
-    return filtered;
-  }, [sessionData, authState]);
-
-  const allData = isPatient ? parsedAppointmentsData : parsedSessionsData;
-  const upcomingData = allData?.slice(0, 1) ?? null;
-  const hasUpcomingSession =
-    upcomingData && upcomingData.length > 0 && !isAdmin && !hideUpcomingSession;
+  const upcomingData = useUpcomingSession(
+    appointmentData,
+    sessionData,
+    isPatient,
+    authState.isAuthenticated
+  );
 
   const showBack = pathname !== '/';
   const backAction =
@@ -208,71 +189,35 @@ export default function PageHeader({
             onClick={handleBack}
           />
         )}
-
-        {!isLoadingAuth && authState.isAuthenticated ? (
-          <RoleAvatarPopup indicator={indicator} displayName={displayName} />
-        ) : (
-          <Link href='/auth' className='flex items-center gap-2'>
-            <div className='flex flex-col text-right'>
-              {indicator && (
-                <div className='text-xs font-normal text-[#2c2f35]'>
-                  {indicator}
-                </div>
-              )}
-              <div className='text-sm font-bold text-[#2c2f35]'>Guest</div>
-            </div>
-            <Avatar
-              seed={guestAvatar.seed}
-              initials={guestAvatar.initials}
-              backgroundColor={guestAvatar.backgroundColor}
-              height={32}
-              width={32}
-              className='text-xs'
-              imageClassName='self-center'
-            />
-          </Link>
-        )}
+        <AuthArea
+          isLoading={isLoadingAuth}
+          isAuthenticated={authState.isAuthenticated}
+          indicator={indicator}
+          displayName={displayName}
+          guestAvatar={guestAvatar}
+        />
       </div>
 
-      {hasUpcomingSession && (
-        <>
-          <UpcomingSession data={upcomingData} role={role ?? ''} />
-          <div className='mt-1 flex justify-end'>
-            <Link href='/schedule' className='text-[10px] text-[#2c2f35]'>
-              See All
-            </Link>
-          </div>
-        </>
-      )}
+      <UpcomingSessionBlock
+        data={upcomingData}
+        role={role}
+        isAdmin={isAdmin}
+        hideUpcomingSession={hideUpcomingSession}
+      />
+
+      <ResearchHeaderWidgetSection
+        isLoadingAuth={isLoadingAuth}
+        isAdmin={isAdmin}
+        pathname={pathname}
+        isPatient={isPatient}
+        isAuthenticated={authState.isAuthenticated}
+      />
 
       {isAdmin && (
-        <>
-          {isClinicNameLoading && (
-            <div className='card mt-4 flex items-center border-0 bg-[#F9F9F9] p-4'>
-              <div className='mr-[10pxpx] h-5 w-5 animate-pulse rounded bg-gray-200' />
-              <div className='mr-auto flex flex-col gap-1'>
-                <div className='h-3 w-20 animate-pulse rounded bg-gray-200' />
-                <div className='h-4 w-40 animate-pulse rounded bg-gray-200' />
-              </div>
-            </div>
-          )}
-          {!isClinicNameLoading && clinicName && clinicName !== '-' && (
-            <Link
-              href='/clinic'
-              className='card mt-4 flex items-center border-0 bg-[#F9F9F9]'
-            >
-              <Calendar className='mr-[10px] h-5 w-5 shrink-0 text-black' />
-              <div className='mr-auto flex flex-col'>
-                <span className='text-muted text-[12px]'>
-                  Currently Managing
-                </span>
-                <span className='text-secondary text-left text-[14px] font-bold'>
-                  {clinicName}
-                </span>
-              </div>
-            </Link>
-          )}
-        </>
+        <AdminClinicCard
+          isLoading={isClinicNameLoading}
+          clinicName={clinicName}
+        />
       )}
     </div>
   );

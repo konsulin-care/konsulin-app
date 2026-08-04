@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-https */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, sonarjs/code-eval, @typescript-eslint/no-implied-eval, unicorn/text-encoding-identifier-case */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -141,22 +142,25 @@ describe('activate event', () => {
 describe('fetch event routing', () => {
   it('routes navigation requests through networkFirst (tries fetch)', () => {
     const event = fireFetch(mockSelf, {
-      url: 'https://konsulin.id/page',
+      url: 'http://konsulin.care/page',
       mode: 'navigate'
     });
 
     expect(event.respondWith).toHaveBeenCalled();
     // networkFirst attempts fetch(request) first
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.objectContaining({ url: 'https://konsulin.id/page' })
+      expect.objectContaining({ url: 'http://konsulin.care/page' })
     );
   });
 
   it.each([
-    { url: 'https://konsulin.id/_next/static/foo.js', label: 'static assets' },
-    { url: 'https://konsulin.id/favicon/icon.ico', label: 'favicon' },
-    { url: 'https://konsulin.id/icons/192.png', label: 'icons' },
-    { url: 'https://konsulin.id/images/logo.svg', label: 'images' }
+    {
+      url: 'http://konsulin.care/_next/static/foo.js',
+      label: 'static assets'
+    },
+    { url: 'http://konsulin.care/favicon/icon.ico', label: 'favicon' },
+    { url: 'http://konsulin.care/icons/192.png', label: 'icons' },
+    { url: 'http://konsulin.care/images/logo.svg', label: 'images' }
   ])('routes $label through networkFirst', async ({ url }) => {
     const event = fireFetch(mockSelf, { url, method: 'GET' });
     await awaitEvent(event);
@@ -175,26 +179,28 @@ describe('fetch event routing', () => {
     );
 
     fireFetch(mockSelf, {
-      url: 'https://konsulin.id/_next/static/chunk.js',
+      url: 'http://konsulin.care/_next/static/chunk.js',
       method: 'GET'
     });
 
     // networkFirst should fetch from network regardless of cache state
     expect(mockFetch).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: 'https://konsulin.id/_next/static/chunk.js'
+        url: 'http://konsulin.care/_next/static/chunk.js'
       })
     );
   });
 
   it('routes proxy API directly to fetch (no cache)', () => {
     const event = fireFetch(mockSelf, {
-      url: 'https://konsulin.id/proxy/fhir/Patient'
+      url: 'http://konsulin.care/proxy/fhir/Patient'
     });
 
     expect(event.respondWith).toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.objectContaining({ url: 'https://konsulin.id/proxy/fhir/Patient' })
+      expect.objectContaining({
+        url: 'http://konsulin.care/proxy/fhir/Patient'
+      })
     );
     expect(mockCaches.open).not.toHaveBeenCalled();
   });
@@ -211,12 +217,12 @@ describe('fetch event routing', () => {
 
   it('routes other same-origin requests through networkFirst', () => {
     const event = fireFetch(mockSelf, {
-      url: 'https://konsulin.id/api/data'
+      url: 'http://konsulin.care/api/data'
     });
 
     expect(event.respondWith).toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.objectContaining({ url: 'https://konsulin.id/api/data' })
+      expect.objectContaining({ url: 'http://konsulin.care/api/data' })
     );
   });
 
@@ -250,7 +256,7 @@ describe('fetch offline fallback', () => {
     );
 
     const event = fireFetch(mockSelf, {
-      url: 'https://konsulin.id/new-page',
+      url: 'http://konsulin.care/new-page',
       mode: 'navigate',
       method: 'GET'
     });
@@ -271,7 +277,7 @@ describe('fetch offline fallback', () => {
     );
 
     const event = fireFetch(mockSelf, {
-      url: 'https://konsulin.id/cached-page',
+      url: 'http://konsulin.care/cached-page',
       mode: 'navigate',
       method: 'GET'
     });
@@ -293,7 +299,7 @@ describe('fetch cache failure resilience', () => {
     mockFetch.mockRejectedValue(new Error('Offline'));
 
     const event = fireFetch(mockSelf, {
-      url: 'https://konsulin.id/new-page',
+      url: 'http://konsulin.care/new-page',
       mode: 'navigate',
       method: 'GET'
     });

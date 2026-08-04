@@ -1,14 +1,20 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 
+import { Roles } from '@/constants/roles';
+import { STORES, dbDelete, dbGetAll } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { getAPI } from '@/services/api';
+import { fetchCSRFToken, getAuthCookieSession } from '@/services/auth';
+import type { Intent } from '@/utils/redirect-intent';
 import {
   clearIntent,
   clearRedirectIntent,
   getIntent,
   getRedirectIntent
 } from '@/utils/redirect-intent';
+import type { QueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -101,11 +107,74 @@ function handleStoredRedirect(
   return true;
 }
 
+/** Thrown when switching the active role to Patient fails before a claim. */
+class RoleSwitchError extends Error {}
+
+/**
+ * Ensure the active role is Patient before claiming an assessment result.
+ * Returns true when a role switch + reload was triggered, false otherwise.
+ */
+async function ensurePatientRoleForClaim(): Promise<boolean> {
+  const cookieSession = await getAuthCookieSession();
+  if (!cookieSession?.authenticated) return false;
+  if (cookieSession.role_name === Roles.Patient) return false;
+  if (!cookieSession.roles?.includes(Roles.Patient)) return false;
+
+  const token = await fetchCSRFToken();
+  const res = await fetch('/auth/role/switch', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      ...(token ? { 'X-CSRF-Token': token } : {})
+    },
+    body: new URLSearchParams({ role: Roles.Patient })
+  });
+  if (!res.ok) {
+    throw new RoleSwitchError(
+      `role switch to Patient failed with status ${res.status}`
+    );
+  }
+  // Full reload re-bootstraps auth as Patient; the still-pending intent
+  // re-processes and claims against the patient resource.
+  globalThis.location.reload();
+  return true;
+}
+
+/** Claim the guest's assessment result and clean up the local draft. */
+async function claimAssessmentResult(
+  intent: Intent,
+  signal: AbortSignal,
+  queryClient: QueryClient
+): Promise<void> {
+  const api = await getAPI();
+  await api.patch('/api/v1/auth/anonymous/claim', null, { signal });
+  toast.success('Your assessment result is now linked to your account.');
+
+  // Previously-anonymous responses now count toward research progress.
+  await queryClient.invalidateQueries({ queryKey: ['research'] });
+
+  // Clean up the local IndexedDB draft for the claimed QR
+  if (!intent.payload.qrId) return;
+  const allDrafts = await dbGetAll<{
+    ownerId: string;
+    questionnaireId: string;
+    response: { id: string };
+  }>(STORES.assessmentDrafts);
+  const match = allDrafts.find(d => d.response?.id === intent.payload.qrId);
+  if (match) {
+    await dbDelete(STORES.assessmentDrafts, [
+      match.ownerId,
+      match.questionnaireId
+    ]);
+  }
+}
+
 /** Process a pending intent (journal, appointment, assessment). */
 function handleIntent(
   setIsRedirecting: (v: boolean) => void,
   isHandlingRef: { current: boolean },
-  router: ReturnType<typeof useRouter>
+  router: ReturnType<typeof useRouter>,
+  queryClient: QueryClient
 ): (() => void) | undefined {
   const intent = getIntent();
   if (!intent || isHandlingRef.current) return undefined;
@@ -123,20 +192,43 @@ function handleIntent(
         return;
       }
       if (intent.kind === 'assessmentResult' && isMounted) {
-        const api = await getAPI();
-        await api.patch('/api/v1/auth/anonymous/claim', null, {
-          signal: abortController.signal
-        });
-        toast.success('Your assessment result is now linked to your account.');
+        const roleSwitched = await ensurePatientRoleForClaim();
+        if (roleSwitched) {
+          // Page is reloading to re-bootstrap as Patient — abort this flow.
+          return;
+        }
+        await claimAssessmentResult(
+          intent,
+          abortController.signal,
+          queryClient
+        );
+
         router.push(intent.payload.path);
         clearIntent();
         return;
       }
     } catch (error) {
-      if ((error as Error)?.name !== 'AbortError') {
+      const err = error as { name?: string; code?: string };
+      // Aborts surface as axios CanceledError (ERR_CANCELED), not a DOM
+      // AbortError. Cancellations are benign — the intent survives so a
+      // re-run or the next mount can retry the claim.
+      const isCancellation =
+        err.name === 'AbortError' ||
+        err.name === 'CanceledError' ||
+        err.code === 'ERR_CANCELED';
+      if (!isCancellation) {
         console.error('Failed to restore intent:', error);
-        toast.error('Failed to link your assessment result. Please try again.');
-        clearIntent();
+        if (error instanceof RoleSwitchError) {
+          // Keep the intent so the claim can be retried after the role issue.
+          toast.error(
+            'Unable to switch to your patient account. Please try again.'
+          );
+        } else {
+          toast.error(
+            'Failed to link your assessment result. Please try again.'
+          );
+          clearIntent();
+        }
       }
     } finally {
       if (isMounted) {
@@ -150,6 +242,9 @@ function handleIntent(
   return () => {
     isMounted = false;
     abortController.abort();
+    // The finally block skips the ref reset when the flow was aborted
+    // (isMounted false); reset here so a re-mounted effect re-processes.
+    isHandlingRef.current = false;
   };
 }
 
@@ -161,6 +256,7 @@ export function useRedirectIntent({
   authState
 }: UseRedirectIntentOptions) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isRedirecting, setIsRedirecting] = useState(true);
   const isHandlingIntentRef = useRef(false);
 
@@ -173,7 +269,12 @@ export function useRedirectIntent({
     } else if (handleStoredRedirect(setIsRedirecting, router)) {
       // redirect handled
     } else if (authState.isAuthenticated) {
-      cleanup = handleIntent(setIsRedirecting, isHandlingIntentRef, router);
+      cleanup = handleIntent(
+        setIsRedirecting,
+        isHandlingIntentRef,
+        router,
+        queryClient
+      );
       if (!cleanup) {
         setIsRedirecting(false);
       }
@@ -181,7 +282,13 @@ export function useRedirectIntent({
       setIsRedirecting(false);
     }
     return cleanup;
-  }, [isLoading, authState.isAuthenticated, authState.userInfo, router]);
+  }, [
+    isLoading,
+    authState.isAuthenticated,
+    authState.userInfo,
+    router,
+    queryClient
+  ]);
 
   return { isRedirecting };
 }

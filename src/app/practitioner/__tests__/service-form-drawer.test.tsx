@@ -1,3 +1,4 @@
+import { FhirExtensionUrls } from '@/utils/fhir/extensions';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ServiceFormDrawer from '../service-form-drawer';
@@ -134,7 +135,6 @@ vi.mock('@/components/ui/button', () => ({
 import type { HealthcareService } from 'fhir/r4';
 
 describe('ServiceFormDrawer', () => {
-  const FEE_EXTENSION_URL = 'https://konsulin.id/fhir/StructureDefinition/fee';
   const defaultProps = {
     open: true,
     onClose: vi.fn(),
@@ -226,7 +226,7 @@ describe('ServiceFormDrawer', () => {
       name: 'General Consultation',
       extension: [
         {
-          url: FEE_EXTENSION_URL,
+          url: FhirExtensionUrls.fee,
           valueMoney: { value: 250_000, currency: 'IDR' }
         }
       ]
@@ -256,7 +256,7 @@ describe('ServiceFormDrawer', () => {
     const saved = onSave.mock.calls[0][0] as HealthcareService;
     expect(saved.extension).toEqual([
       {
-        url: FEE_EXTENSION_URL,
+        url: FhirExtensionUrls.fee,
         valueMoney: { value: 300_000, currency: 'IDR' }
       }
     ]);

@@ -34,7 +34,7 @@ function buildPage(entries: number, offset: number): Bundle {
         slot: [{ reference: `Slot/slot-${offset + i}` }],
         participant: [
           {
-            actor: { reference: `Patient/pat-1` },
+            actor: { reference: 'Patient/pat-1' },
             status: 'accepted'
           }
         ]
@@ -187,6 +187,6 @@ describe('useAppointments', () => {
 
     expect(mockAPI).not.toHaveBeenCalled();
     expect(result.current.data).toBeUndefined();
-    expect(result.current.hasNextPage).toBeUndefined();
+    expect(result.current.hasNextPage).toBe(false);
   });
 });

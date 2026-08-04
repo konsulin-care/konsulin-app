@@ -284,7 +284,7 @@ describe('PageHeader - back navigation', () => {
     expect(router.back).not.toHaveBeenCalled();
   });
 
-  it('calls router.back() for /record?edit=xxx', () => {
+  it('calls router.push("/record") for /record?edit=xxx', () => {
     vi.mocked(usePathname).mockReturnValue('/record');
     const params = new URLSearchParams('edit=Observation/test-id-123');
     vi.mocked(useSearchParams).mockReturnValue(
@@ -296,8 +296,24 @@ describe('PageHeader - back navigation', () => {
 
     expect(clickChevron()).not.toBeNull();
 
-    expect(router.back).toHaveBeenCalledTimes(1);
-    expect(router.push).not.toHaveBeenCalled();
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith('/record');
+  });
+
+  it('calls router.push("/assessments") for /assessments?id=phq2', () => {
+    vi.mocked(usePathname).mockReturnValue('/assessments');
+    const params = new URLSearchParams('id=phq2');
+    vi.mocked(useSearchParams).mockReturnValue(
+      params as unknown as ReturnType<typeof useSearchParams>
+    );
+    const router = setupMockRouter();
+
+    render(<PageHeader />, { wrapper });
+
+    expect(clickChevron()).not.toBeNull();
+
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith('/assessments');
   });
 
   it('does not render back chevron on the home page', () => {

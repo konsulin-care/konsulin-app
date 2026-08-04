@@ -17,9 +17,9 @@ if ! npm run typecheck; then
   exit 1
 fi
 
-# Type-check auth SPA subproject
-if ! (cd web/auth-spa && npx tsc --noEmit); then
-  echo "  auth-spa TypeScript errors found. Fix them and try again."
+# Type-check the whole project
+if ! (npx tsc --noEmit); then
+  echo "  TypeScript errors found. Fix them and try again."
   exit 1
 fi
 
@@ -27,4 +27,15 @@ fi
 if ! npx --no-install lint-staged; then
   echo "  Lint-staged failed, do npm install and try again"
   exit 1
+fi
+
+# Run tests for staged test files last — run only after all cheap checks pass
+STAGED_TESTS=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.test\.(ts|tsx)$' || true)
+if [ -n "$STAGED_TESTS" ]; then
+  if ! npx vitest run $STAGED_TESTS; then
+    echo "  Tests failed. Fix them and try again."
+    exit 1
+  fi
+else
+  echo "  No test files staged — skipping tests"
 fi

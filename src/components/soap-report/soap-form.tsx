@@ -11,6 +11,7 @@ import { dbDelete, dbGet, STORES } from '@/lib/indexeddb';
 import { useSubmitSoapBundle } from '@/services/api/assessment';
 import {
   buildForm,
+  destroyForm,
   extractObservationBased,
   getResponse,
   RendererThemeProvider
@@ -53,8 +54,7 @@ export default function SoapForm({
   const titleParam = searchParams?.get('title');
   const categoryParam = searchParams?.get('category');
 
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const { mutateAsync: submitSoapBundle, isLoading: isSubmitSoapLoading } =
+  const { mutateAsync: submitSoapBundle, isPending: isSubmitSoapLoading } =
     useSubmitSoapBundle();
 
   const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =
@@ -79,12 +79,13 @@ export default function SoapForm({
           finalResponse = saved?.draft ?? questionnaireResponse ?? null;
         }
 
-        await buildForm(
+        destroyForm();
+        await buildForm({
           questionnaire,
-          finalResponse,
-          mode === 'view',
-          process.env.NEXT_PUBLIC_TX_URL
-        );
+          questionnaireResponse: finalResponse,
+          readOnly: mode === 'view',
+          terminologyServerUrl: process.env.NEXT_PUBLIC_TX_URL
+        });
       } catch (err) {
         setIsBuilding(false);
         toast.error(err);

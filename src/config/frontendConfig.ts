@@ -124,16 +124,6 @@ export const frontendConfig = (
           // The click behaviour is handled in the /auth page override (no OAuth flow).
           providers: [
             {
-              id: 'email',
-              name: 'Email',
-              logo: React.createElement('img', {
-                src: '/icons/email.svg',
-                alt: 'email',
-                width: 18,
-                height: 18
-              })
-            },
-            {
               id: 'whatsapp',
               name: 'WhatsApp',
               logo: React.createElement('img', {
@@ -147,7 +137,7 @@ export const frontendConfig = (
         }
       }),
       Passwordless.init({
-        contactMethod: 'EMAIL_OR_PHONE',
+        contactMethod: 'EMAIL',
         onHandleEvent: async context => {
           if (context.action !== 'SUCCESS') return;
 

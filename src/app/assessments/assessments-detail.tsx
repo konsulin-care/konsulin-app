@@ -3,16 +3,21 @@
 
 import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
-import FhirFormsRenderer from '@/components/general/fhir-forms-renderer';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
+import { lazyComponent } from '@/lib/lazy-component';
 import { useQuestionnaire } from '@/services/api/assessment';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Participant from './soap/participant';
+
+const FhirFormsRenderer = lazyComponent(
+  () => import('@/components/general/fhir-forms-renderer'),
+  { ssr: false }
+);
 
 /** Assessment detail page: loads and renders a FHIR Questionnaire via AEHRC forms. */
 export default function AssessmentsDetail() {

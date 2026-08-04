@@ -16,14 +16,14 @@ if ! npx next build; then
   exit 1
 fi
 
-# Run JS/TS tests — fail push on test failure
-if ! npx vitest run; then
-  echo "  [FAIL] Tests failed. Fix them and try again."
-  exit 1
-fi
-
 # Deep type-check including library types
 if ! npx tsc --noEmit; then
   echo "  [FAIL] Type errors found. Fix them and try again."
+  exit 1
+fi
+
+# Run JS/TS tests — fail push on test failure
+if ! npx vitest run; then
+  echo "  [FAIL] Tests failed. Fix them and try again."
   exit 1
 fi

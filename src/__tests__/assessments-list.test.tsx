@@ -1,7 +1,8 @@
-/* eslint-disable max-lines, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, max-lines */
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { Questionnaire } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ----- global mock factories (hoisted before imports) -----
@@ -11,14 +12,8 @@ vi.mock('@/context/auth/authContext', () => ({
 }));
 
 vi.mock('@/services/api/assessment', () => ({
-  usePopularAssessments: vi.fn(),
-  useRegularAssessments: vi.fn(),
-  useOngoingResearch: vi.fn(),
-  searchQuestionnaires: vi.fn()
-}));
-
-vi.mock('@/hooks/useSearchWithFallback', () => ({
-  useSearchWithFallback: vi.fn()
+  useCuratedAssessments: vi.fn(),
+  useFeaturedAssessments: vi.fn()
 }));
 
 vi.mock('next/navigation', () => ({
@@ -29,34 +24,24 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('next/image', () => ({
   __esModule: true,
-  default: ({ src, alt, height, width, className, ...props }: any) => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={alt}
-      height={height}
-      width={width}
-      className={className}
-      {...props}
-    />
+  default: (props: any) => (
+    // eslint-disable-next-line @next/next/no-img-element, @typescript-eslint/no-unsafe-member-access
+    <img src={props.src} alt={props.alt} />
   )
 }));
 
-vi.mock('react-qr-code', () => ({
-  __esModule: true,
-  default: (props: any) => <div data-testid='qr-code' {...props} />
-}));
-
-vi.mock('react-markdown', () => ({
-  __esModule: true,
-  default: ({ children }: any) => <div data-testid='markdown'>{children}</div>
-}));
-
-vi.mock('lucide-react', () => ({
-  AwardIcon: (props: any) => <div data-testid='award-icon' {...props} />,
-  BookmarkIcon: (props: any) => <div data-testid='bookmark-icon' {...props} />,
-  SearchIcon: (props: any) => <div data-testid='search-icon' {...props} />
-}));
+vi.mock('lucide-react', async importOriginal => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    Clock: (props: Record<string, string>) => (
+      <svg data-testid='clock-icon' {...props} />
+    ),
+    SearchIcon: (props: Record<string, string>) => (
+      <div data-testid='search-icon' {...props} />
+    )
+  };
+});
 
 vi.mock('@/components/ui/drawer', () => ({
   Drawer: ({ children, open }: any) => (
@@ -69,40 +54,22 @@ vi.mock('@/components/ui/drawer', () => ({
       {children}
     </button>
   ),
-  DrawerContent: ({ children, className }: any) => (
-    <div data-testid='drawer-content' className={className}>
-      {children}
-    </div>
+  DrawerContent: ({ children }: any) => (
+    <div data-testid='drawer-content'>{children}</div>
   ),
   DrawerDescription: ({ children }: any) => (
     <div data-testid='drawer-description'>{children}</div>
   ),
-  DrawerFooter: ({ children, className }: any) => (
-    <div className={className}>{children}</div>
-  ),
-  DrawerHeader: ({ children, className }: any) => (
-    <div className={className}>{children}</div>
-  ),
+  DrawerFooter: ({ children }: any) => <div>{children}</div>,
+  DrawerHeader: ({ children }: any) => <div>{children}</div>,
   DrawerTitle: ({ children }: any) => (
     <div data-testid='drawer-title'>{children}</div>
   )
 }));
 
 vi.mock('@/components/ui/scroll-area', () => ({
-  ScrollArea: ({ children, className }: any) => (
-    <div data-testid='scroll-area' className={className}>
-      {children}
-    </div>
-  ),
-  ScrollBar: (props: any) => <div data-testid='scroll-bar' {...props} />
-}));
-
-vi.mock('@/components/ui/badge', () => ({
-  Badge: ({ children, className, style, ...props }: any) => (
-    <div className={className} style={style} {...props}>
-      {children}
-    </div>
-  )
+  ScrollArea: ({ children }: any) => <div>{children}</div>,
+  ScrollBar: () => null
 }));
 
 vi.mock('@/components/ui/input-with-icon', () => ({
@@ -110,10 +77,13 @@ vi.mock('@/components/ui/input-with-icon', () => ({
     value,
     onChange,
     placeholder,
-    className,
-    startIcon,
-    ...props
-  }: any) => (
+    startIcon
+  }: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    placeholder: string;
+    startIcon: React.ReactNode;
+  }) => (
     <div>
       {startIcon}
       <input
@@ -121,25 +91,54 @@ vi.mock('@/components/ui/input-with-icon', () => ({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={className}
-        {...props}
       />
     </div>
   )
 }));
 
-vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick, className, disabled, ...props }: any) => (
-    <button
-      onClick={onClick}
-      className={className}
-      disabled={disabled}
-      {...props}
-    >
-      {children}
-    </button>
+vi.mock('@/components/general/content-wraper', () => ({
+  __esModule: true,
+  default: ({ children }: any) => (
+    <div data-testid='content-wraper'>{children}</div>
   )
 }));
+
+vi.mock('@/components/general/empty-state', () => ({
+  __esModule: true,
+  default: ({ title, subtitle }: any) => (
+    <div data-testid='empty-state'>
+      <div data-testid='empty-state-title'>{title}</div>
+      <div data-testid='empty-state-subtitle'>{subtitle}</div>
+    </div>
+  )
+}));
+
+vi.mock('@/components/page-header', () => ({
+  __esModule: true,
+  default: () => <div data-testid='page-header'>PageHeader</div>
+}));
+
+vi.mock('@/lib/lazy-component', async () => {
+  const mod = await vi.importActual<typeof import('@/lib/lazy-component')>(
+    '@/lib/lazy-component'
+  );
+  const React = await import('react');
+  const lazyComponent = (loader: () => Promise<{ default: any }>) => {
+    const LazyComp = React.lazy(loader);
+    // eslint-disable-next-line react/display-name
+    return (props: Record<string, unknown>) =>
+      React.createElement(
+        React.Suspense,
+        {
+          fallback: React.createElement('div', {
+            'data-testid': 'lazy-loading'
+          })
+        },
+        React.createElement(LazyComp, props)
+      );
+  };
+  return { ...mod, lazyComponent };
+});
 
 vi.mock('@/components/general/card-loader', () => ({
   __esModule: true,
@@ -150,79 +149,43 @@ vi.mock('@/components/general/card-loader', () => ({
   )
 }));
 
-vi.mock('@/components/general/content-wraper', () => ({
-  __esModule: true,
-  default: ({ children, className }: any) => (
-    <div data-testid='content-wraper' className={className}>
+vi.mock('@/components/ui/badge', () => ({
+  Badge: ({ children, className }: any) => (
+    <div className={className}>{children}</div>
+  )
+}));
+
+vi.mock('@/components/ui/button', () => ({
+  Button: ({ children, onClick }: any) => (
+    <button type='button' onClick={onClick}>
       {children}
-    </div>
+    </button>
   )
-}));
-
-vi.mock('@/components/general/empty-state', () => ({
-  __esModule: true,
-  default: ({ title, subtitle, className }: any) => (
-    <div data-testid='empty-state' className={className}>
-      <div data-testid='empty-state-title'>{title}</div>
-      <div data-testid='empty-state-subtitle'>{subtitle}</div>
-    </div>
-  )
-}));
-
-vi.mock('@/components/icons', () => ({
-  LoadingSpinnerIcon: (props: any) => (
-    <div data-testid='loading-spinner' {...props}>
-      Loading...
-    </div>
-  )
-}));
-
-vi.mock('@/components/page-header', () => ({
-  __esModule: true,
-  default: () => <div data-testid='page-header'>PageHeader</div>
 }));
 
 // ----- data helpers -----
 
-const createQuestionnaireEntry = (
+function createQuestionnaire(
   id: string,
   title: string,
-  description?: string
-) => ({
-  resource: {
+  overrides?: Partial<Questionnaire>
+): Questionnaire {
+  return {
+    resourceType: 'Questionnaire',
     id,
-    resourceType: 'Questionnaire' as const,
     title,
-    description: description ?? `Description for ${title}`
-  }
-});
-
-const createResearchEntry = (
-  id: string,
-  title: string,
-  description?: string
-) => ({
-  resource: {
-    id,
-    resourceType: 'ResearchStudy' as const,
-    title,
-    description: description ?? `Description for ${title}`,
-    period: { start: '2025-01-01', end: '2025-12-31' },
-    note: [{ text: '30 mins' }],
-    contact: [{ name: 'Dr. Smith' }]
-  },
-  questionnaireIds: ['q-123']
-});
+    description: `Description for ${title}`,
+    status: 'active',
+    ...overrides
+  };
+}
 
 // ----- component imports (after vi.mock) -----
 
 import { useAuth } from '@/context/auth/authContext';
-import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
 import {
-  searchQuestionnaires,
-  useOngoingResearch,
-  usePopularAssessments,
-  useRegularAssessments
+  useCuratedAssessments,
+  useFeaturedAssessments
 } from '@/services/api/assessment';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import AssessmentsList from '../app/assessments/assessments-list';
@@ -242,7 +205,6 @@ describe('AssessmentsList', () => {
     vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams() as any);
     vi.mocked(usePathname).mockReturnValue('/assessments');
 
-    // Default: patient role, not loading
     vi.mocked(useAuth).mockReturnValue({
       isLoading: false,
       state: {
@@ -257,31 +219,15 @@ describe('AssessmentsList', () => {
       dispatch: vi.fn()
     });
 
-    vi.mocked(usePopularAssessments).mockReturnValue({
+    vi.mocked(useCuratedAssessments).mockReturnValue({
       data: [],
       isLoading: false
     } as any);
 
-    vi.mocked(useRegularAssessments).mockReturnValue({
+    vi.mocked(useFeaturedAssessments).mockReturnValue({
       data: [],
       isLoading: false
     } as any);
-
-    vi.mocked(useOngoingResearch).mockReturnValue({
-      data: [],
-      isLoading: false
-    } as any);
-
-    vi.mocked(useSearchWithFallback).mockReturnValue({
-      filteredData: [],
-      isServerSearching: false,
-      showServerResults: false,
-      serverSearchTerm: '',
-      serverData: undefined,
-      serverSearchCompleted: false
-    });
-
-    vi.mocked(searchQuestionnaires).mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -292,205 +238,130 @@ describe('AssessmentsList', () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
-  // ------------------------------------------------------------------
-  //  1. Renders loading state when research is loading
-  // ------------------------------------------------------------------
-  it('renders loading state when research is loading', () => {
-    vi.mocked(useOngoingResearch).mockReturnValue({
-      data: [],
-      isLoading: true
-    } as any);
+  const waitForLoad = () =>
+    waitFor(() => {
+      expect(screen.queryByTestId('lazy-loading')).toBeNull();
+    });
 
-    render(<AssessmentsList />, { wrapper });
-
-    // CardLoader appears for the research section
-    expect(screen.getAllByTestId('card-loader').length).toBeGreaterThanOrEqual(
-      1
-    );
-
-    // Search input still renders
-    expect(screen.getByPlaceholderText('Search Assessment')).toBeDefined();
-
-    // Page header renders
-    expect(screen.getByTestId('page-header')).toBeDefined();
-
-    // "Popular Assessment" and "Browse Instruments" titles still appear
-    expect(screen.getByText('Popular Assessment')).toBeDefined();
-    expect(screen.getByText('Browse Instruments')).toBeDefined();
-  });
-
-  // ------------------------------------------------------------------
-  //  2. Renders the search input
-  // ------------------------------------------------------------------
   it('renders the search input', () => {
     render(<AssessmentsList />, { wrapper });
 
-    const input = screen.getByPlaceholderText('Search Assessment');
-    expect(input).toBeDefined();
-  });
-
-  // ------------------------------------------------------------------
-  //  3. Renders "Ongoing Research" section with title
-  // ------------------------------------------------------------------
-  it('renders "Ongoing Research" section with title', () => {
-    const researchData = [createResearchEntry('research-1', 'Heart Study')];
-    vi.mocked(useOngoingResearch).mockReturnValue({
-      data: researchData,
-      isLoading: false
-    } as any);
-
-    render(<AssessmentsList />, { wrapper });
-
-    expect(screen.getByText('Ongoing Research')).toBeDefined();
-
-    // Research card title
-    expect(screen.getByText('Heart Study')).toBeDefined();
-
-    // Participate button
-    expect(screen.getByText('Participate')).toBeDefined();
-  });
-
-  // ------------------------------------------------------------------
-  //  4. Renders popular assessments when data is available
-  // ------------------------------------------------------------------
-  it('renders popular assessments when data is available', () => {
-    const popularData = [
-      createQuestionnaireEntry('pop-1', 'Popular Test 1'),
-      createQuestionnaireEntry('pop-2', 'Popular Test 2')
-    ];
-    vi.mocked(usePopularAssessments).mockReturnValue({
-      data: popularData,
-      isLoading: false
-    } as any);
-
-    render(<AssessmentsList />, { wrapper });
-
-    expect(screen.getByText('Popular Assessment')).toBeDefined();
-    expect(screen.getByText('Popular Test 1')).toBeDefined();
-    expect(screen.getByText('Popular Test 2')).toBeDefined();
-
-    // Best Impact badge appears on every popular card (2 cards = 2 badges)
-    expect(screen.getAllByText('Best Impact')).toHaveLength(2);
-
-    // Award icon renders on every popular card (2 cards = 2 icons)
-    expect(screen.getAllByTestId('award-icon')).toHaveLength(2);
-  });
-
-  // ------------------------------------------------------------------
-  //  5. Renders regular/browse assessments when data is available
-  // ------------------------------------------------------------------
-  it('renders regular/browse assessments when data is available', () => {
-    const regularData = [
-      createQuestionnaireEntry('reg-1', 'Regular Test 1'),
-      createQuestionnaireEntry('reg-2', 'Regular Test 2')
-    ];
-    vi.mocked(useRegularAssessments).mockReturnValue({
-      data: regularData,
-      isLoading: false
-    } as any);
-
-    render(<AssessmentsList />, { wrapper });
-
-    expect(screen.getByText('Browse Instruments')).toBeDefined();
-    expect(screen.getByText('Regular Test 1')).toBeDefined();
-    expect(screen.getByText('Regular Test 2')).toBeDefined();
-  });
-
-  // ------------------------------------------------------------------
-  //  6. Shows empty state when no research data
-  // ------------------------------------------------------------------
-  it('shows empty state when no research data', () => {
-    // research data is already [] from beforeEach, loading is false
-    render(<AssessmentsList />, { wrapper });
-
-    // Empty state for research
-    expect(screen.getByTestId('empty-state-title')).toBeDefined();
-    expect(screen.getByText('No ongoing research')).toBeDefined();
     expect(
-      screen.getByText(
-        'There are currently no research studies available. Please check back later.'
-      )
-    ).toBeDefined();
-
-    // "Ongoing Research" title still appears
-    expect(screen.getByText('Ongoing Research')).toBeDefined();
+      screen.getByPlaceholderText('Search Assessment')
+    ).toBeInTheDocument();
   });
 
-  // ------------------------------------------------------------------
-  //  7. Shows empty state when no popular assessments
-  // ------------------------------------------------------------------
-  it('shows empty state when no popular assessments', () => {
-    // popularAssessments defaults to [] in beforeEach
-    render(<AssessmentsList />, { wrapper });
-
-    // The section heading still renders
-    expect(screen.getByText('Popular Assessment')).toBeDefined();
-
-    // No assessment card titles appear
-    expect(screen.queryByText('Popular Test 1')).toBeNull();
-    expect(screen.queryByText('Best Impact')).toBeNull();
-  });
-
-  // ------------------------------------------------------------------
-  //  8. Drawer interaction – clicking an assessment opens the drawer
-  // ------------------------------------------------------------------
-  it('opens the drawer when a popular assessment is clicked', async () => {
-    const popularData = [createQuestionnaireEntry('pop-1', 'Popular Test 1')];
-    vi.mocked(usePopularAssessments).mockReturnValue({
-      data: popularData,
+  it('shows Editor Picks section when featured assessments exist', async () => {
+    vi.mocked(useFeaturedAssessments).mockReturnValue({
+      data: [createQuestionnaire('feat-1', 'Featured Test')],
       isLoading: false
     } as any);
 
     render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
 
-    // Initially the drawer is closed
-    const drawer = screen.getByTestId('drawer');
-    expect(drawer.dataset.open).toBe('false');
+    expect(screen.getByText("Editor's Picks")).toBeInTheDocument();
+    expect(screen.getByAltText('Featured Test')).toBeInTheDocument();
+  });
 
-    // Click on the assessment card (its title text)
-    fireEvent.click(screen.getByText('Popular Test 1'));
+  it('hides Editor Picks section when featured assessments is empty', async () => {
+    render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
 
-    // Drawer should now be open
+    expect(screen.queryByText("Editor's Picks")).not.toBeInTheDocument();
+  });
+
+  it('renders All Instruments grid with curated assessments', async () => {
+    vi.mocked(useCuratedAssessments).mockReturnValue({
+      data: [
+        createQuestionnaire('cur-1', 'Instrument A'),
+        createQuestionnaire('cur-2', 'Instrument B')
+      ],
+      isLoading: false
+    } as any);
+
+    render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
+
+    expect(screen.getByText(/All Instruments/)).toBeInTheDocument();
+    expect(screen.getByText('Instrument A')).toBeInTheDocument();
+    expect(screen.getByText('Instrument B')).toBeInTheDocument();
+  });
+
+  it('shows empty state when no curated assessments', async () => {
+    render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
+
+    expect(screen.getByText('No instruments found')).toBeInTheDocument();
+  });
+
+  it('opens the drawer when a featured assessment is clicked', async () => {
+    vi.mocked(useFeaturedAssessments).mockReturnValue({
+      data: [createQuestionnaire('feat-1', 'Featured Test')],
+      isLoading: false
+    } as any);
+
+    render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
+
+    const drawers = screen.getAllByTestId('drawer');
+    expect(drawers[1]).toHaveAttribute('data-open', 'false');
+
+    fireEvent.click(screen.getByAltText('Featured Test'));
+
     await waitFor(() => {
-      expect(drawer.dataset.open).toBe('true');
+      expect(drawers[1]).toHaveAttribute('data-open', 'true');
     });
 
-    // Router push was called with the correct search params
     expect(mockRouterPush).toHaveBeenCalledWith(
       expect.stringContaining('isDrawerOpen=true'),
       expect.objectContaining({ scroll: false })
     );
     expect(mockRouterPush).toHaveBeenCalledWith(
-      expect.stringContaining('assessmentId=pop-1'),
+      expect.stringContaining('assessmentId=feat-1'),
       expect.objectContaining({ scroll: false })
     );
   });
 
-  // ------------------------------------------------------------------
-  //  8b. Drawer opens via URL search params on mount
-  // ------------------------------------------------------------------
-  it('opens drawer based on URL search params on mount', async () => {
-    const popularData = [createQuestionnaireEntry('pop-1', 'Popular Test 1')];
-    vi.mocked(usePopularAssessments).mockReturnValue({
-      data: popularData,
+  it('opens the drawer when a curated assessment is clicked', async () => {
+    vi.mocked(useCuratedAssessments).mockReturnValue({
+      data: [createQuestionnaire('cur-1', 'Instrument A')],
       isLoading: false
     } as any);
 
-    // Set up search params as if the URL contains drawer=open instructions
+    render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
+
+    const drawers = screen.getAllByTestId('drawer');
+    expect(drawers[1]).toHaveAttribute('data-open', 'false');
+
+    fireEvent.click(screen.getByText('Instrument A'));
+
+    await waitFor(() => {
+      expect(drawers[1]).toHaveAttribute('data-open', 'true');
+    });
+  });
+
+  it('opens drawer based on URL search params on mount', async () => {
+    vi.mocked(useCuratedAssessments).mockReturnValue({
+      data: [createQuestionnaire('cur-1', 'Instrument A')],
+      isLoading: false
+    } as any);
+
     const params = new URLSearchParams();
     params.set('isDrawerOpen', 'true');
-    params.set('assessmentId', 'pop-1');
+    params.set('assessmentId', 'cur-1');
     vi.mocked(useSearchParams).mockReturnValue(params as any);
 
     render(<AssessmentsList />, { wrapper });
+    await waitForLoad();
 
-    // Drawer should be open from the URL effect
     await waitFor(() => {
-      const drawer = screen.getByTestId('drawer');
-      expect(drawer.dataset.open).toBe('true');
+      const drawers = screen.getAllByTestId('drawer');
+      expect(drawers[1]).toHaveAttribute('data-open', 'true');
     });
 
-    // Selected assessment title appears both in the card listing and the drawer title
-    expect(screen.getAllByText('Popular Test 1')).toHaveLength(2);
+    // Title appears in both card listing and drawer
+    expect(screen.getAllByText('Instrument A')).toHaveLength(2);
   });
 });

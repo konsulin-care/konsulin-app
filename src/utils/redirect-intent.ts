@@ -8,8 +8,7 @@ export interface Intent {
 }
 
 const REDIRECT_INTENT_COOKIE = 'redirect_intent';
-// Keep in sync with web/auth-spa/src/utils/redirect-intent.ts and
-// RequireRole middleware MaxAge=300 (5 min).
+// Keep in sync with RequireRole middleware MaxAge=300 (5 min).
 const COOKIE_TTL_MS = 5 * 60 * 1000;
 
 // localStorage-based intent (matching develop's intent-storage.ts)
@@ -115,4 +114,9 @@ export function clearIntent(): void {
     );
   }
   clearRedirectIntent();
+}
+
+/** Returns true when a pending assessmentResult claim intent exists. */
+export function hasPendingAssessmentClaimIntent(): boolean {
+  return getIntent()?.kind === 'assessmentResult';
 }

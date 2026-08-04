@@ -1,12 +1,11 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 
-import Unauthorized from '@/app/unauthorized/page';
+import { PractitionerRoute } from '@/components/auth/practitioner-route';
 import EmptyState from '@/components/general/empty-state';
 import SoapHeaderCards from '@/components/shared/soap-header-cards';
 import SoapLoadingSpinner from '@/components/shared/soap-loading-spinner';
 import SoapForm from '@/components/soap-report/soap-form';
-import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { usePatientProfile } from '@/hooks/usePatientProfile';
 import { useQuestionnaireSoap } from '@/services/api/assessment';
@@ -31,9 +30,6 @@ export default function EditSoap({ soapId, title }: Props) {
   const { data: questionnaireData, isLoading: isQuestionnaireLoading } =
     useQuestionnaireSoap();
 
-  const role = authState?.userInfo?.role_name;
-  const isPatient = role === Roles.Patient;
-
   useEffect(() => {
     if (!soapData) return;
 
@@ -47,10 +43,6 @@ export default function EditSoap({ soapId, title }: Props) {
     return <EmptyState className='py-16' title='No Data Found' />;
   }
 
-  if (isPatient) {
-    return <Unauthorized />;
-  }
-
   if (
     isAuthLoading ||
     isSoapLoading ||
@@ -61,15 +53,17 @@ export default function EditSoap({ soapId, title }: Props) {
   }
 
   return (
-    <div className='flex flex-col gap-5'>
-      <SoapHeaderCards displayName={displayName} title={title} />
-      <SoapForm
-        questionnaire={questionnaireData}
-        patientId={patientId}
-        practitionerId={authState.userInfo.fhirId}
-        mode='edit'
-        questionnaireResponse={soapData}
-      />
-    </div>
+    <PractitionerRoute>
+      <div className='flex flex-col gap-5'>
+        <SoapHeaderCards displayName={displayName} title={title} />
+        <SoapForm
+          questionnaire={questionnaireData}
+          patientId={patientId}
+          practitionerId={authState.userInfo.fhirId}
+          mode='edit'
+          questionnaireResponse={soapData}
+        />
+      </div>
+    </PractitionerRoute>
   );
 }

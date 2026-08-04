@@ -3,7 +3,7 @@ import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
-import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFab } from '@/context/fabContext';
 import { STORES, dbDelete, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import {
@@ -113,12 +113,10 @@ export default function PractitionerAvailability({
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const { state: bookingState, dispatch } = useBooking();
   const { state: authState } = useAuth();
-  const { setDirtyState } = useFabDirty();
+  const { dispatch: fabDispatch } = useFab();
   const queryClient = useQueryClient();
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const { isLoading: isCreateAppointmentLoading } = useCreateAppointment();
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const { mutateAsync: payAppointment, isLoading: isPaying } =
+  const { isPending: isCreateAppointmentLoading } = useCreateAppointment();
+  const { mutateAsync: payAppointment, isPending: isPaying } =
     usePayAppointment();
 
   const patientId = authState?.userInfo?.fhirId;
@@ -415,24 +413,27 @@ export default function PractitionerAvailability({
     Boolean(bookingState.startTime) &&
     Boolean(bookingForm.problem_brief.trim());
 
-  // Sync FAB dirty state to show "Book Now" when form is ready in page mode
+  // Sync FAB action state to show "Book Now" when form is ready in page mode
   useEffect(() => {
     if (isPageMode && isFormValid) {
-      setDirtyState({
-        isDirty: true,
-        label: 'Book Now',
-        onSave: () => handleSubmitFormRef.current(),
-        isSaving: false
+      fabDispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Book Now',
+          onAction: () => handleSubmitFormRef.current(),
+          isSaving: false,
+          variant: 'primary'
+        }
       });
     } else {
-      setDirtyState(null);
+      fabDispatch({ type: 'SET_ACTION', config: null });
     }
 
     return () => {
-      setDirtyState(null);
+      fabDispatch({ type: 'SET_ACTION', config: null });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFormValid, isPageMode, setDirtyState]);
+  }, [isFormValid, isPageMode, fabDispatch]);
 
   const effectiveBookingState = isPageMode
     ? ({

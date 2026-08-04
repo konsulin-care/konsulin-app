@@ -1,14 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearIntent, getIntent, saveIntent } from '../redirect-intent';
+import type { Intent } from '../redirect-intent';
+import {
+  clearIntent,
+  getIntent,
+  hasPendingAssessmentClaimIntent,
+  saveIntent
+} from '../redirect-intent';
 import { assertDefined } from './test-utils';
 
 const LOCAL_STORAGE_KEY = 'konsulin.intent';
 
-function readStored(): any {
+function readStored(): Intent {
   const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
   assertDefined(raw);
-  return JSON.parse(raw);
+  return JSON.parse(raw) as Intent;
 }
 
 describe('saveIntent', () => {
@@ -84,6 +90,23 @@ describe('saveIntent', () => {
     });
     const parsed = readStored();
     expect(parsed.kind).toBe('appointment');
-    expect(parsed.payload.slot.date).toBe('2026-06-20');
+    const slot = parsed.payload.slot as { date: string; startTime: string };
+    expect(slot.date).toBe('2026-06-20');
+  });
+
+  it('hasPendingAssessmentClaimIntent returns true for assessmentResult intent', () => {
+    saveIntent('assessmentResult', { path: '/record' });
+
+    expect(hasPendingAssessmentClaimIntent()).toBe(true);
+  });
+
+  it('hasPendingAssessmentClaimIntent returns false for other intent kinds', () => {
+    saveIntent('journal', { path: '/journal/new' });
+
+    expect(hasPendingAssessmentClaimIntent()).toBe(false);
+  });
+
+  it('hasPendingAssessmentClaimIntent returns false when no intent exists', () => {
+    expect(hasPendingAssessmentClaimIntent()).toBe(false);
   });
 });

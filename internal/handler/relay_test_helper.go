@@ -14,7 +14,7 @@ import (
 // VerifySession decodes the base64 payload without signature verification.
 func testAccessToken(sub string) string {
 	h := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"none"}`))
-	p := base64.RawURLEncoding.EncodeToString([]byte(fmt.Sprintf(`{"sub":"%s"}`, sub)))
+	p := base64.RawURLEncoding.EncodeToString([]byte(fmt.Sprintf(`{"sub":%q}`, sub)))
 	return h + "." + p + ".test-sig"
 }
 
@@ -31,7 +31,7 @@ func testRelayBackend() *httptest.Server {
 				"name":         "Konsultasi Umum",
 				"extension": []map[string]any{
 					{
-						"url": "https://konsulin.id/fhir/StructureDefinition/fee",
+						"url": "http://konsulin.care/fhir/StructureDefinition/fee",
 						"valueMoney": map[string]any{
 							"value":    150000,
 							"currency": "IDR",

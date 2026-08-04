@@ -21,6 +21,9 @@ description: Single source of truth and the root reference for an AI agent
 - Document relative path from the project root: `@/path/to/file.txt`
 - Any directory named .archive/ at any depth MUST be ignored by all agentic tools
 - Follow the Concise skill for all output: no flattery, no hedging, short sentences, direct answers
+- Prioritize writing a readable and self-documenting code. If a file gets too long, then consider to:
+  1. Condense it, AND/OR
+  2. Split it
 
 ## Nested AGENTS.md Files
 
@@ -28,6 +31,7 @@ Subdirectories may contain their own AGENTS.md with scope-specific instructions.
 
 - PRECEDENCE: The AGENTS.md closest to the file being edited takes priority
 - INHERITANCE: Nested files supplement, not replace, this root file
+- FHIR R4 extensions: READ `@src/utils/fhir/AGENTS.md` before creating or modifying extension code
 
 ## ESLint Quality Gate
 
@@ -78,3 +82,4 @@ Agentic contributions MUST NOT introduce:
 - System design and decisions: READ `@docs/agents/ARCHITECTURE.md`
 - Document templates: READ `@docs/templates/`
 - FAB transformation patterns: READ `@docs/agents/fab-patterns.md`
+- Frontend auth guards: READ `@src/components/auth/AGENTS.md`

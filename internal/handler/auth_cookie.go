@@ -11,10 +11,14 @@ import (
 	"github.com/konsulin-care/konsulin-app/internal/session"
 )
 
+// AuthCookieOptions configures the auth cookie handler.
 type AuthCookieOptions struct {
-	CookieName   string
-	CookieSecure bool
-	CookieSecret string
+	CookieName          string
+	CookieSecure        bool
+	CookieSecret        string
+	AccessCookieName    string
+	RefreshCookieName   string
+	IDRefreshCookieName string
 }
 
 type authCookieRequest struct {
@@ -31,6 +35,13 @@ type authCookieRequest struct {
 
 var errMissingUserID = errors.New("missing required field: userId")
 
+// sessionLifetime mirrors the SuperTokens default session expiry (30 days) so
+// the auth cookie never independently expires while the underlying session is
+// still valid. The cookie is still refreshed on every page load via the
+// restore flow when the access token is renewed.
+const sessionLifetime = 30 * 24 * time.Hour
+
+// NewAuthCookieHandler creates a handler for GET/POST/DELETE /auth/cookie.
 func NewAuthCookieHandler(opts AuthCookieOptions) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -62,9 +73,13 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 	}
 
 	// Verify SuperTokens session server-side.
-	accessCookie, err := r.Cookie("sAccessToken")
+	cookieName := opts.AccessCookieName
+	if cookieName == "" {
+		cookieName = "sAccessToken"
+	}
+	accessCookie, err := r.Cookie(cookieName)
 	if err != nil {
-		slog.Warn("auth cookie: missing sAccessToken cookie", "userId", req.UserID)
+		slog.Warn("auth cookie: missing access token cookie", "userId", req.UserID, "cookieName", cookieName)
 		http.Error(w, "missing SuperTokens session", http.StatusUnauthorized)
 		return
 	}
@@ -95,7 +110,7 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 		Email:           req.Email,
 		PhoneNumber:     req.PhoneNumber,
 		ProfilePicture:  req.ProfilePicture,
-		Exp:             time.Now().Add(2 * time.Hour).Unix(),
+		Exp:             time.Now().Add(sessionLifetime).Unix(),
 	}
 
 	encoded, err := session.EncodeSession(sess, opts.CookieName)
@@ -105,7 +120,7 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 		return
 	}
 
-	//nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
+	// nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
 	// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 	http.SetCookie(w, &http.Cookie{
 		Name:     opts.CookieName,
@@ -114,7 +129,7 @@ func handleSetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 		HttpOnly: true,
 		Secure:   opts.CookieSecure,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int((2 * time.Hour).Seconds()),
+		MaxAge:   int(sessionLifetime.Seconds()),
 	})
 
 	w.WriteHeader(http.StatusOK)
@@ -157,25 +172,30 @@ func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func handleDeleteAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {
-	clear := func(name string) {
-		//nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
+func handleDeleteAuthCookie(w http.ResponseWriter, _ *http.Request, opts AuthCookieOptions) {
+	clearCookie := func(name string, httpOnly bool) {
+		if name == "" {
+			return
+		}
+		// nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
 		// NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 		http.SetCookie(w, &http.Cookie{
 			Name:     name,
 			Value:    "",
 			Path:     "/",
-			HttpOnly: true,
+			HttpOnly: httpOnly,
 			Secure:   opts.CookieSecure,
 			SameSite: http.SameSiteLaxMode,
 			MaxAge:   -1,
 		})
 	}
 
-	clear(opts.CookieName)
-	clear("sAccessToken")
-	clear("sRefreshToken")
-	clear("sIdRefreshToken")
+	clearCookie(opts.CookieName, true)
+	clearCookie(opts.AccessCookieName, true)
+	clearCookie(opts.RefreshCookieName, true)
+	clearCookie(opts.IDRefreshCookieName, true)
+	clearCookie(stLastAccessTokenUpdateCookie, false)
+	clearCookie(frontTokenCookie, false)
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})

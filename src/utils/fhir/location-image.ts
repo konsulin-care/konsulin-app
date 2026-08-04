@@ -1,7 +1,5 @@
 import type { Location } from 'fhir/r4';
-
-const LOCATION_IMAGE_EXTENSION_URL =
-  'https://konsulin.id/fhir/StructureDefinition/locationImage';
+import { FhirExtensionUrls, getExtension, upsertExtension } from './extensions';
 
 /**
  * Extract the image URL from a Location's extension.
@@ -13,9 +11,7 @@ const LOCATION_IMAGE_EXTENSION_URL =
  * @returns The image URL string, or null if not present
  */
 export function getLocationImageUrl(location: Location): string | null {
-  const ext = location.extension?.find(
-    e => e.url === LOCATION_IMAGE_EXTENSION_URL
-  );
+  const ext = getExtension(location, FhirExtensionUrls.locationImage);
   return ext?.valueUrl ?? null;
 }
 
@@ -30,18 +26,8 @@ export function getLocationImageUrl(location: Location): string | null {
  * @returns A new Location object with the image extension set
  */
 export function setLocationImageUrl(location: Location, url: string): Location {
-  const otherExtensions =
-    location.extension?.filter(e => e.url !== LOCATION_IMAGE_EXTENSION_URL) ??
-    [];
-
-  return {
-    ...location,
-    extension: [
-      ...otherExtensions,
-      {
-        url: LOCATION_IMAGE_EXTENSION_URL,
-        valueUrl: url
-      }
-    ]
-  };
+  return upsertExtension(location, {
+    url: FhirExtensionUrls.locationImage,
+    valueUrl: url
+  });
 }

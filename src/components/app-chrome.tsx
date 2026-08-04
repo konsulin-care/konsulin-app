@@ -1,18 +1,21 @@
 import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
 import QuickActionFab from '@/components/quick-action-fab';
-import { FabDirtyProvider } from '@/context/fabDirtyContext';
-import { FabMenuProvider } from '@/context/fabMenuContext';
-import { FabSelectionProvider } from '@/context/fabSelectionContext';
+import { FabProvider } from '@/context/fabContext';
+import { resolveCjsDefaultExport } from '@/lib/lazy-component';
 import dynamic from 'next/dynamic';
 import { Suspense, type ComponentType, type ReactNode } from 'react';
 import { ToastContainer, ToastContainerProps } from 'react-toastify';
 
 const NextTopLoader = dynamic(
-  () =>
-    import('@/components/next-top-loader') as Promise<{
-      default: ComponentType<Record<string, unknown>>;
-    }>,
+  async () => {
+    const mod = await import('nextjs-toploader');
+    return {
+      default: resolveCjsDefaultExport(mod) as ComponentType<
+        Record<string, unknown>
+      >
+    };
+  },
   { ssr: false }
 );
 
@@ -36,15 +39,9 @@ function PageContent({ children }: Readonly<{ children: ReactNode }>) {
   );
 }
 
-/** Nested provider chain isolated to reduce JSX depth. */
+/** Wraps children in app-wide context providers. */
 function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
-  return (
-    <FabDirtyProvider>
-      <FabSelectionProvider>
-        <FabMenuProvider>{children}</FabMenuProvider>
-      </FabSelectionProvider>
-    </FabDirtyProvider>
-  );
+  return <FabProvider>{children}</FabProvider>;
 }
 
 /** Renders app chrome: top loader, toasts, modals, FAB, and page content. */
