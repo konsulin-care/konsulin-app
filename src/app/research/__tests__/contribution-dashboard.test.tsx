@@ -4,27 +4,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ContributionDashboard from '../contribution-dashboard';
 import { makeProgress, makeStudyProgress } from './research-fixtures';
 
-const { mockUseAuth, mockUseShareBooster, mockUseCircleStats } = vi.hoisted(
-  () => ({
-    mockUseAuth: vi.fn<
-      () => {
-        state: { userInfo: { fhirId?: string; fullname?: string } };
-        isLoading: boolean;
-      }
-    >(),
-    mockUseShareBooster:
-      vi.fn<() => { count: number; increment: () => void }>(),
-    mockUseCircleStats:
-      vi.fn<() => { data?: { converted: number; joined: number } }>()
-  })
-);
+const { mockUseAuth, mockUseCircleStats } = vi.hoisted(() => ({
+  mockUseAuth: vi.fn<
+    () => {
+      state: { userInfo: { fhirId?: string; fullname?: string } };
+      isLoading: boolean;
+    }
+  >(),
+  mockUseCircleStats:
+    vi.fn<() => { data?: { converted: number; joined: number } }>()
+}));
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => mockUseAuth()
-}));
-
-vi.mock('@/hooks/useShareBooster', () => ({
-  useShareBooster: mockUseShareBooster
 }));
 
 vi.mock('@/services/api/circle', () => ({
@@ -39,8 +31,6 @@ const INFO_MAP: Record<string, QuestionnaireInfo> = {
 beforeEach(() => {
   mockUseAuth.mockReset();
   mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
-  mockUseShareBooster.mockReset();
-  mockUseShareBooster.mockReturnValue({ count: 0, increment: vi.fn() });
   mockUseCircleStats.mockReset();
   mockUseCircleStats.mockReturnValue({ data: { converted: 0, joined: 0 } });
 });
@@ -57,12 +47,12 @@ describe('ContributionDashboard', () => {
         progress={makeProgress({ questionnaireResponses: ['phq2'] })}
         activeStudy={null}
         questionnaireInfo={{
-          phq2: { title: 'PHQ-2', durationMinutes: 50 }
+          phq2: { title: 'PHQ-2', durationMinutes: 10 }
         }}
       />
     );
 
-    // 50 XP questionnaire + 0 shares + 0 converted → 50% of the first level.
+    // 10-minute questionnaire → 50 XP → 50% of the first level.
     expect(screen.getByTestId('dashboard-halo-ring')).toHaveAttribute(
       'data-fraction',
       '0.5'
@@ -81,11 +71,16 @@ describe('ContributionDashboard', () => {
         progress={makeProgress({ questionnaireResponses: ['phq2'] })}
         activeStudy={null}
         questionnaireInfo={{
-          phq2: { title: 'PHQ-2', durationMinutes: 150 }
+          phq2: { title: 'PHQ-2', durationMinutes: 30 }
         }}
       />
     );
 
+    // 30-minute questionnaire → 150 XP → level 2 with 50 XP into it.
+    expect(screen.getByTestId('dashboard-halo-ring')).toHaveAttribute(
+      'data-fraction',
+      '0.5'
+    );
     expect(screen.getByTestId('dashboard-level').textContent).toContain('Lv 2');
   });
 
@@ -178,7 +173,7 @@ describe('ContributionDashboard', () => {
       state: { userInfo: { fhirId: 'PAT-1' } },
       isLoading: false
     });
-    mockUseShareBooster.mockReturnValue({ count: 92, increment: vi.fn() });
+    mockUseCircleStats.mockReturnValue({ data: { converted: 92, joined: 92 } });
 
     render(
       <ContributionDashboard
@@ -193,15 +188,15 @@ describe('ContributionDashboard', () => {
     );
   });
 
-  it('falls back to a share mission for guests without an active batch', () => {
+  it('falls back to a referral mission for guests without an active batch', () => {
     mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
-    mockUseShareBooster.mockReturnValue({ count: 88, increment: vi.fn() });
+    mockUseCircleStats.mockReturnValue({ data: { converted: 88, joined: 88 } });
 
     render(
       <ContributionDashboard
         progress={makeProgress({ questionnaireResponses: [] })}
         activeStudy={null}
-        questionnaireInfo={{}}
+        questionnaireInfo={INFO_MAP}
       />
     );
 

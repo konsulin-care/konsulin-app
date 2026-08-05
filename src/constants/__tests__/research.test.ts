@@ -12,17 +12,20 @@ import {
   GUEST_TITLE,
   LEVEL_XP,
   RESEARCH_LEVELS,
+  XP_PER_MINUTE,
   buildMission,
   getNextResearchLevel,
   getResearchLevel,
   getResearchLevelNumber,
   getResearchLevelProgress,
-  getXpInLevel
+  getXpInLevel,
+  xpForDuration
 } from '../research';
 
 describe('level constants', () => {
-  it('defines 100 XP per level and a 5 XP fallback for unknown durations', () => {
+  it('defines 100 XP per level, 5 XP per minute, and a 5 XP fallback', () => {
     expect(LEVEL_XP).toBe(100);
+    expect(XP_PER_MINUTE).toBe(5);
     expect(DEFAULT_QUESTIONNAIRE_XP).toBe(5);
   });
 
@@ -118,6 +121,23 @@ describe('getResearchLevelProgress', () => {
       intoNext: 0,
       toNext: 0
     });
+  });
+});
+
+describe('xpForDuration', () => {
+  it('awards 5 XP per minute for known durations', () => {
+    expect(xpForDuration(2)).toBe(10);
+    expect(xpForDuration(8)).toBe(40);
+    expect(xpForDuration(15)).toBe(75);
+  });
+
+  it('falls back to the default XP for null or missing durations', () => {
+    expect(xpForDuration(null)).toBe(DEFAULT_QUESTIONNAIRE_XP);
+    expect(xpForDuration()).toBe(DEFAULT_QUESTIONNAIRE_XP);
+  });
+
+  it('awards nothing for a zero-minute questionnaire', () => {
+    expect(xpForDuration(0)).toBe(0);
   });
 });
 

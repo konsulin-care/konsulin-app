@@ -9,9 +9,7 @@ import {
   markReferralWritten,
   parseReferralRef,
   readRefFromUrl,
-  readShareCount,
-  readStoredReferralRef,
-  writeShareCount
+  readStoredReferralRef
 } from '../referral';
 
 const ORIGIN = 'https://konsulin.care';
@@ -85,33 +83,6 @@ describe('buildWhatsAppShareUrl', () => {
   });
 });
 
-describe('share booster storage', () => {
-  it('round-trips the counter through a Storage-like object', () => {
-    const storage = new Map<string, string>();
-    const fakeStorage = {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => {
-        storage.set(key, value);
-      }
-    } as unknown as Storage;
-
-    expect(readShareCount(fakeStorage)).toBe(0);
-    writeShareCount(fakeStorage, 3);
-    expect(readShareCount(fakeStorage)).toBe(3);
-  });
-
-  it('treats corrupt or negative stored values as zero', () => {
-    const corrupt = {
-      getItem: () => 'not-a-number'
-    } as unknown as Storage;
-    const negative = {
-      getItem: () => '-2'
-    } as unknown as Storage;
-    expect(readShareCount(corrupt)).toBe(0);
-    expect(readShareCount(negative)).toBe(0);
-  });
-});
-
 describe('referral ref capture and storage', () => {
   function fakeStorage(): Storage {
     const store = new Map<string, string>();
@@ -159,12 +130,11 @@ describe('referral ref capture and storage', () => {
     expect(isReferralWritten(storage, 'batch-2')).toBe(false);
   });
 
-  it('clears referral ref, written flags, and share booster on erasure', () => {
+  it('clears referral ref and written flags on erasure', () => {
     const storage = fakeStorage();
     captureReferralRef('p_DG3F3STPYZ6HX25A', storage);
     markReferralWritten(storage, 'batch-1');
     markReferralWritten(storage, 'batch-3');
-    writeShareCount(storage, 4);
     storage.setItem('unrelated-key', 'keep');
 
     clearReferralLocalState(storage);
@@ -172,7 +142,6 @@ describe('referral ref capture and storage', () => {
     expect(storage.getItem('konsulin_ref')).toBeNull();
     expect(storage.getItem('konsulin_referral_written_batch-1')).toBeNull();
     expect(storage.getItem('konsulin_referral_written_batch-3')).toBeNull();
-    expect(storage.getItem('konsulin_share_booster')).toBeNull();
     expect(storage.getItem('unrelated-key')).toBe('keep');
   });
 });

@@ -10,13 +10,18 @@ import {
   TITLE_MAP
 } from './research-fixtures';
 
+/** Auth hook state shape consumed by the research page. */
+interface AuthState {
+  state: { userInfo: { fhirId?: string } };
+  isLoading: boolean;
+}
+
 const {
   mockUseAuth,
   mockUseResearchProgress,
   mockUseConsentToStudy,
   mockUseQuestionnaireTitles,
   mockUseCircleStats,
-  mockUseShareBooster,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -26,17 +31,11 @@ const {
   const push = vi.fn();
   const replace = vi.fn();
   return {
-    mockUseAuth: vi.fn<
-      () => {
-        state: { userInfo: { fhirId?: string } };
-        isLoading: boolean;
-      }
-    >(),
+    mockUseAuth: vi.fn<() => AuthState>(),
     mockUseResearchProgress: vi.fn(),
     mockUseConsentToStudy: vi.fn(),
     mockUseQuestionnaireTitles: vi.fn(),
     mockUseCircleStats: vi.fn(),
-    mockUseShareBooster: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -62,10 +61,6 @@ vi.mock('@/services/api/circle', () => ({
   useCircleStats: mockUseCircleStats
 }));
 
-vi.mock('@/hooks/useShareBooster', () => ({
-  useShareBooster: mockUseShareBooster
-}));
-
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => mockUseAuth()
 }));
@@ -79,7 +74,6 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/context/fabContext', () => ({
   useFab: () => ({ state: {}, dispatch: mockFabDispatch })
 }));
-
 vi.mock('react-toastify', () => ({
   toast: { error: vi.fn(), success: vi.fn() }
 }));
@@ -97,8 +91,6 @@ beforeEach(() => {
   });
   mockUseCircleStats.mockReset();
   mockUseCircleStats.mockReturnValue({ data: { converted: 0, joined: 0 } });
-  mockUseShareBooster.mockReset();
-  mockUseShareBooster.mockReturnValue({ count: 0, increment: vi.fn() });
   mockPush.mockReset();
   mockReplace.mockReset();
   mockFabDispatch.mockReset();
@@ -106,7 +98,6 @@ beforeEach(() => {
   mockFabDispatch.mockImplementation((action: FabAction) => {
     dispatchedActions.push(action);
   });
-  // Reset the two params the research page consumes.
   mockSearchParams.delete('id');
   mockSearchParams.delete('ref');
 });

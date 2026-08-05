@@ -41,7 +41,7 @@ describe('useShareStudy', () => {
     );
   });
 
-  it('shares via the Web Share API and increments the booster', async () => {
+  it('shares via the Web Share API', async () => {
     const shareMock = vi.fn().mockResolvedValue(void 0);
     Object.assign(navigator, { share: shareMock });
 
@@ -57,7 +57,6 @@ describe('useShareStudy', () => {
       url: 'https://konsulin.care/research?id=study-x'
     });
     expect(result.current.copied).toBe(false);
-    expect(window.localStorage.getItem('konsulin_share_booster')).toBe('1');
   });
 
   it('falls back to the clipboard with copied feedback', async () => {
@@ -79,6 +78,5 @@ describe('useShareStudy', () => {
       'https://konsulin.care/research?id=study-x'
     );
     expect(result.current.copied).toBe(true);
-    expect(window.localStorage.getItem('konsulin_share_booster')).toBe('1');
   });
 });

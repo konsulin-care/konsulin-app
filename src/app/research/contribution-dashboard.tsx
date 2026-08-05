@@ -11,7 +11,6 @@ import {
   type MissionQuestionnaire
 } from '@/constants/research';
 import { useAuth } from '@/context/auth/authContext';
-import { useShareBooster } from '@/hooks/useShareBooster';
 import { useCircleStats } from '@/services/api/circle';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import {
@@ -165,7 +164,6 @@ export default function ContributionDashboard({
   questionnaireInfo: Readonly<Record<string, QuestionnaireInfo>>;
 }>) {
   const { state: authState } = useAuth();
-  const { count: shareCount } = useShareBooster();
   const fhirId = authState?.userInfo?.fhirId;
   const isPatient = Boolean(fhirId);
   const { data: circleStats } = useCircleStats(isPatient ? fhirId : undefined);
@@ -185,7 +183,7 @@ export default function ContributionDashboard({
     () => computeQuestionnaireXp(progress.questionnaireResponses, durationMap),
     [progress.questionnaireResponses, durationMap]
   );
-  const totalXp = questionnaireXp + shareCount + converted;
+  const totalXp = questionnaireXp + converted;
 
   const title: { label: string; icon: LucideIcon } = isPatient
     ? getResearchLevel(totalXp)

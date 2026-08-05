@@ -1,4 +1,4 @@
-import { DEFAULT_QUESTIONNAIRE_XP } from '@/constants/research';
+import { xpForDuration } from '@/constants/research';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type {
   Bundle,
@@ -315,8 +315,9 @@ export function resolveStudyIdForQuestionnaire(
 /**
  * Sums questionnaire XP from per-response questionnaire ids.
  *
- * Each response contributes its estimated duration in minutes, falling back
- * to DEFAULT_QUESTIONNAIRE_XP when the duration is unknown or missing.
+ * Each response contributes its estimated duration in minutes times
+ * XP_PER_MINUTE, falling back to DEFAULT_QUESTIONNAIRE_XP when the duration
+ * is unknown or missing.
  *
  * @param questionnaireIds - Bare questionnaire id per completed response.
  * @param durationByQuestionnaire - Map of questionnaire id to minutes (or null).
@@ -327,8 +328,7 @@ export function computeQuestionnaireXp(
   durationByQuestionnaire: Readonly<Record<string, number | null>> = {}
 ): number {
   return questionnaireIds.reduce(
-    (sum, id) =>
-      sum + (durationByQuestionnaire[id] ?? DEFAULT_QUESTIONNAIRE_XP),
+    (sum, id) => sum + xpForDuration(durationByQuestionnaire[id]),
     0
   );
 }

@@ -3,15 +3,11 @@
  *
  * Patients share a link carrying `?ref=p_<fhirId>` so referees can be
  * attributed on completion; guests share a plain link with no attribution.
- * A local share-booster counter feeds the research XP engine (1 XP per
- * share); each converted referee adds another XP via FHIR Communications.
+ * Each converted referee adds 1 XP via FHIR Communications.
  */
 
 /** Prefix marking a patient referral ref. */
 export const PATIENT_REF_PREFIX = 'p_';
-
-/** localStorage key for the share-booster counter. */
-export const SHARE_BOOSTER_KEY = 'konsulin_share_booster';
 
 /** localStorage key for the captured referral ref. */
 export const REFERRAL_STORAGE_KEY = 'konsulin_ref';
@@ -87,28 +83,6 @@ export function buildWhatsAppShareUrl(message: string): string {
 }
 
 /**
- * Reads the share-booster counter, tolerating corrupt storage.
- *
- * @param storage - Storage-like object (localStorage in browsers).
- * @returns The recorded count, 0 when absent or invalid.
- */
-export function readShareCount(storage: Storage): number {
-  const raw = storage.getItem(SHARE_BOOSTER_KEY);
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-}
-
-/**
- * Persists the share-booster counter.
- *
- * @param storage - Storage-like object (localStorage in browsers).
- * @param count - Count to store.
- */
-export function writeShareCount(storage: Storage, count: number): void {
-  storage.setItem(SHARE_BOOSTER_KEY, String(count));
-}
-
-/**
  * Reads the referral ref from a landing url's `?ref=` parameter.
  *
  * @param url - Landing page url.
@@ -168,9 +142,9 @@ export function markReferralWritten(storage: Storage, batchId: string): void {
 /**
  * Clears all local research and referral state on erasure.
  *
- * Removes the captured referral ref, every per-batch written flag, and the
- * share-booster counter. Called on account deletion or participation
- * revocation alongside the server-side purge.
+ * Removes the captured referral ref and every per-batch written flag. Called
+ * on account deletion or participation revocation alongside the server-side
+ * purge.
  *
  * @param storage - Storage-like object (localStorage in browsers).
  */
@@ -180,7 +154,6 @@ export function clearReferralLocalState(storage: Storage): void {
     const key = storage.key(i);
     const isReferralKey =
       key === REFERRAL_STORAGE_KEY ||
-      key === SHARE_BOOSTER_KEY ||
       (key?.startsWith(REFERRAL_WRITTEN_PREFIX) ?? false);
     if (isReferralKey && key !== null) {
       keys.push(key);

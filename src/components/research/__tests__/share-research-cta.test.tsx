@@ -76,15 +76,4 @@ describe('ShareResearchCta', () => {
       `${window.location.origin}/research?ref=p_DG3F3STPYZ6HX25A`
     );
   });
-
-  it('counts the share toward the booster', async () => {
-    render(<ShareResearchCta isPatient />);
-
-    fireEvent.click(screen.getByTestId('cta-copy'));
-
-    await waitFor(() => {
-      expect(writeText).toHaveBeenCalled();
-    });
-    expect(window.localStorage.getItem('konsulin_share_booster')).toBe('1');
-  });
 });

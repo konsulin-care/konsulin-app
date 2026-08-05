@@ -1,6 +1,5 @@
 'use client';
 
-import { useShareBooster } from '@/hooks/useShareBooster';
 import {
   buildShareMessage,
   buildShareUrl,
@@ -19,7 +18,7 @@ export interface ShareResearchCtaProps {
  *
  * Opens WhatsApp with the prefilled message and research link, with a
  * clipboard fallback. When a studyId is given the link deep-links that study
- * on the research page. Counts shares toward the share-booster badges.
+ * on the research page.
  *
  * @param isPatient - Whether the user shares an attributed ref link.
  * @param fhirId - Patient FHIR id used in the referral ref.
@@ -30,7 +29,6 @@ export default function ShareResearchCta({
   fhirId,
   studyId
 }: ShareResearchCtaProps) {
-  const { increment } = useShareBooster();
   const [origin, setOrigin] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -42,12 +40,11 @@ export default function ShareResearchCta({
   const waUrl = buildWhatsAppShareUrl(`${buildShareMessage()} ${shareUrl}`);
 
   const handleCopy = async () => {
-    increment();
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
     } catch {
-      // Clipboard unavailable; the share intent is still counted.
+      // Clipboard unavailable.
     }
   };
 

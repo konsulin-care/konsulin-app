@@ -70,9 +70,9 @@ describe('computeConsecutiveBatches', () => {
 });
 
 describe('computeQuestionnaireXp', () => {
-  it('sums durations for known questionnaires and falls back to 5 XP otherwise', () => {
-    expect(computeQuestionnaireXp(['phq2', 'gad7'], { phq2: 8 })).toBe(13);
-    expect(computeQuestionnaireXp(['phq2'], { phq2: 8 })).toBe(8);
+  it('awards 5 XP per minute and falls back to 5 XP for unknown durations', () => {
+    expect(computeQuestionnaireXp(['phq2', 'gad7'], { phq2: 8 })).toBe(45);
+    expect(computeQuestionnaireXp(['phq2'], { phq2: 8 })).toBe(40);
   });
 
   it('returns zero for no responses', () => {
@@ -111,7 +111,7 @@ describe('computeResearchProgress', () => {
     expect(studyA.completedCount).toBe(1);
     expect(studyB.completedCount).toBe(1);
     expect(progress.cumulativeResponses).toBe(1);
-    expect(progress.questionnaireXp).toBe(8);
+    expect(progress.questionnaireXp).toBe(40);
   });
 
   it('sums per-response durations into questionnaire XP', () => {
@@ -127,7 +127,7 @@ describe('computeResearchProgress', () => {
       phq2: 8,
       'big-five-inventory': 15
     });
-    expect(progress.questionnaireXp).toBe(23);
+    expect(progress.questionnaireXp).toBe(115);
     expect(progress.questionnaireResponses).toEqual([
       'phq2',
       'big-five-inventory'
@@ -153,7 +153,7 @@ describe('computeResearchProgress', () => {
     ];
     const progress = computeResearchProgress([], responses, [], { phq2: 8 });
     expect(progress.questionnaireResponses).toEqual(['phq2', 'phq2']);
-    expect(progress.questionnaireXp).toBe(16);
+    expect(progress.questionnaireXp).toBe(80);
     expect(progress.completedQuestionnaireIds).toEqual(['phq2']);
   });
 

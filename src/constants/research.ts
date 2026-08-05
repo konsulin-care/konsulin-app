@@ -20,8 +20,26 @@ import {
 /** Experience points required to advance one level. */
 export const LEVEL_XP = 100;
 
+/** XP awarded per estimated minute of a completed questionnaire. */
+export const XP_PER_MINUTE = 5;
+
 /** Fallback XP awarded for a questionnaire whose duration is unknown. */
 export const DEFAULT_QUESTIONNAIRE_XP = 5;
+
+/**
+ * XP earned from a single questionnaire: its estimated duration in minutes
+ * times XP_PER_MINUTE, falling back to DEFAULT_QUESTIONNAIRE_XP when the
+ * duration is unknown or missing.
+ *
+ * @param durationMinutes - Estimated minutes, or null/undefined when unknown.
+ * @returns The questionnaire XP.
+ */
+export function xpForDuration(
+  durationMinutes: number | null | undefined
+): number {
+  if (durationMinutes == null) return DEFAULT_QUESTIONNAIRE_XP;
+  return durationMinutes * XP_PER_MINUTE;
+}
 
 export interface ResearchLevel {
   /** Minimum cumulative XP required to reach this level. */
