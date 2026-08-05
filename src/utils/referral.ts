@@ -40,19 +40,29 @@ export const SHARE_BADGES: ReadonlyArray<{
 /**
  * Builds the shareable research URL for a user.
  *
- * @param opts - Origin, whether the user is a patient, and the patient fhirId.
+ * When a studyId is given, the URL deep-links to that study on the research
+ * page (`/research?id={studyId}`); patients additionally carry the referral
+ * ref. Absent studyId, the plain research page URL is built, keeping existing
+ * callers valid.
+ *
+ * @param opts - Origin, whether the user is a patient, the patient fhirId, and
+ * optionally the study to deep-link.
  * @returns The share URL, with ref for patients and plain for guests.
  */
 export function buildShareUrl(opts: {
   origin: string;
   isPatient: boolean;
   fhirId?: string;
+  studyId?: string;
 }): string {
   const base = `${opts.origin}/research`;
+  const params = new URLSearchParams();
+  if (opts.studyId) params.set('id', opts.studyId);
   if (opts.isPatient && opts.fhirId) {
-    return `${base}?ref=${PATIENT_REF_PREFIX}${opts.fhirId}`;
+    params.set('ref', `${PATIENT_REF_PREFIX}${opts.fhirId}`);
   }
-  return base;
+  const query = params.toString();
+  return query ? `${base}?${query}` : base;
 }
 
 /**
