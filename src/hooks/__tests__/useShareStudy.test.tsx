@@ -42,7 +42,7 @@ describe('useShareStudy', () => {
   });
 
   it('shares via the Web Share API and increments the booster', async () => {
-    const shareMock = vi.fn().mockResolvedValue();
+    const shareMock = vi.fn().mockResolvedValue(void 0);
     Object.assign(navigator, { share: shareMock });
 
     const { result } = renderHook(() =>
@@ -61,7 +61,7 @@ describe('useShareStudy', () => {
   });
 
   it('falls back to the clipboard with copied feedback', async () => {
-    const clipboardMock = vi.fn().mockResolvedValue();
+    const clipboardMock = vi.fn().mockResolvedValue(void 0);
     Object.assign(navigator, {
       share: undefined,
       clipboard: { writeText: clipboardMock }
