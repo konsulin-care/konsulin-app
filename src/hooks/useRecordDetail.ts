@@ -7,15 +7,17 @@ import { useQuery } from '@tanstack/react-query';
  * Returns the raw FHIR resource data. Consumer components handle
  * type-specific rendering based on the resource's content.
  */
-export function useRecordDetail<T = Record<string, unknown>>(
+export function useRecordDetail(
   resourceType: string,
   resourceId: string | null
 ) {
-  return useQuery<T, Error>({
+  return useQuery<Record<string, unknown>>({
     queryKey: ['record-detail', resourceType, resourceId],
     queryFn: async () => {
       const api = await getAPI();
-      const { data } = await api.get<T>(`/fhir/${resourceType}/${resourceId}`);
+      const { data } = await api.get<Record<string, unknown>>(
+        `/fhir/${resourceType}/${resourceId}`
+      );
       return data;
     },
     enabled: Boolean(resourceType) && Boolean(resourceId)
