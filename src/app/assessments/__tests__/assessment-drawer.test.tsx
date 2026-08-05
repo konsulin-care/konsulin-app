@@ -98,7 +98,8 @@ function makeProgress(firstUncompleted: string | null): ResearchProgress {
     },
     completedQuestionnaireIds: firstUncompleted
       ? ['phq2']
-      : ['phq2', 'big-five-inventory']
+      : ['phq2', 'big-five-inventory'],
+    consentedStudyIds: []
   };
 }
 

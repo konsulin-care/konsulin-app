@@ -93,6 +93,7 @@ export function makeProgress(
       toNext: 4
     },
     completedQuestionnaireIds: ['phq2'],
+    consentedStudyIds: [],
     ...overrides
   };
 }

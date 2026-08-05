@@ -4,7 +4,12 @@ import type { AxiosInstance } from 'axios';
 import type { Bundle } from 'fhir/r4';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getAPI } from '../../api';
-import { buildResearchBundle, useResearchProgress } from '../research';
+import {
+  buildConsentBundle,
+  buildResearchBundle,
+  useConsentToStudy,
+  useResearchProgress
+} from '../research';
 
 const { mockUseAuth, mockEnsureAnonymousSession } = vi.hoisted(() => ({
   mockUseAuth: vi.fn<
@@ -29,6 +34,14 @@ vi.mock('../../anonymous-session', () => ({
 
 vi.mock('../../api', () => ({
   getAPI: vi.fn()
+}));
+
+const { mockSubmitFhirBundle } = vi.hoisted(() => ({
+  mockSubmitFhirBundle: vi.fn<(bundle: Bundle) => Promise<Bundle>>()
+}));
+
+vi.mock('@/services/api/fhir-bundle', () => ({
+  submitFhirBundle: mockSubmitFhirBundle
 }));
 
 function createWrapper() {
@@ -71,7 +84,7 @@ describe('buildResearchBundle', () => {
     expect(bundle.type).toBe('batch');
 
     const urls = bundle.entry?.map(e => e.request?.url) ?? [];
-    expect(urls).toHaveLength(3);
+    expect(urls).toHaveLength(4);
     expect(urls[0]).toBe(
       'ResearchStudy?date=ge2026-08-01&status=active&_include=ResearchStudy:protocol'
     );
@@ -82,6 +95,60 @@ describe('buildResearchBundle', () => {
     expect(urls[2]).toContain(
       encodeURIComponent('https://login.konsulin.care/guestid|PAT-1')
     );
+    expect(urls[3]).toBe(
+      'ResearchSubject?patient=Patient/PAT-1&_elements=study,status&_count=100'
+    );
+  });
+
+  it('omits the ResearchSubject search for guests without a patient id', () => {
+    const bundle = buildResearchBundle(
+      { kind: 'guest', id: 'GUEST-UUID' },
+      '2026-08-01'
+    );
+
+    const urls = bundle.entry?.map(e => e.request?.url) ?? [];
+    expect(urls).toHaveLength(3);
+    expect(urls.some(url => url.startsWith('ResearchSubject?'))).toBe(false);
+  });
+});
+
+describe('buildConsentBundle', () => {
+  it('creates an active research-scoped Consent for the patient', () => {
+    const bundle = buildConsentBundle('PAT-1', 'study-a');
+
+    expect(bundle.resourceType).toBe('Bundle');
+    expect(bundle.type).toBe('transaction');
+    expect(bundle.entry).toHaveLength(2);
+    expect(bundle.entry?.[0].fullUrl).toMatch(/^urn:uuid:/);
+    expect(bundle.entry?.[0].request).toEqual({
+      method: 'POST',
+      url: 'Consent'
+    });
+    expect(bundle.entry?.[0].resource).toMatchObject({
+      resourceType: 'Consent',
+      status: 'active',
+      scope: { coding: [{ code: 'research' }] },
+      category: [{ coding: [{ code: 'research' }] }],
+      patient: { reference: 'Patient/PAT-1' }
+    });
+  });
+
+  it('links an on-study ResearchSubject to the Consent via its urn', () => {
+    const bundle = buildConsentBundle('PAT-1', 'study-a');
+    const consentFullUrl = bundle.entry?.[0].fullUrl;
+
+    expect(bundle.entry?.[1].fullUrl).toMatch(/^urn:uuid:/);
+    expect(bundle.entry?.[1].request).toEqual({
+      method: 'POST',
+      url: 'ResearchSubject'
+    });
+    expect(bundle.entry?.[1].resource).toMatchObject({
+      resourceType: 'ResearchSubject',
+      status: 'on-study',
+      study: { reference: 'ResearchStudy/study-a' },
+      individual: { reference: 'Patient/PAT-1' },
+      consent: { reference: consentFullUrl }
+    });
   });
 });
 
@@ -229,5 +296,34 @@ describe('useResearchProgress', () => {
     expect(result.current.data?.cumulativeResponses).toBe(1);
     expect(result.current.data?.studies[0].completedCount).toBe(1);
     expect(result.current.data?.currentLevel?.label).toBe('Participant');
+  });
+});
+
+describe('useConsentToStudy', () => {
+  it('posts a consent transaction bundle for the patient and study', async () => {
+    mockUseAuth.mockReturnValue(PATIENT_STATE);
+    mockSubmitFhirBundle.mockResolvedValue({
+      resourceType: 'Bundle',
+      type: 'transaction-response',
+      entry: []
+    });
+
+    const { result } = renderHook(() => useConsentToStudy('study-a'), {
+      wrapper: createWrapper()
+    });
+
+    await result.current.mutateAsync();
+
+    expect(mockSubmitFhirBundle).toHaveBeenCalledTimes(1);
+    const bundle = mockSubmitFhirBundle.mock.calls[0][0];
+    expect(bundle.type).toBe('transaction');
+    expect(bundle.entry?.[0]).toMatchObject({
+      request: { method: 'POST', url: 'Consent' },
+      resource: { patient: { reference: 'Patient/PAT-1' } }
+    });
+    expect(bundle.entry?.[1]).toMatchObject({
+      request: { method: 'POST', url: 'ResearchSubject' },
+      resource: { study: { reference: 'ResearchStudy/study-a' } }
+    });
   });
 });

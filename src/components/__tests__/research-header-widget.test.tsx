@@ -95,7 +95,8 @@ function makeProgress(): ResearchProgress {
       intoNext: 0,
       toNext: 4
     },
-    completedQuestionnaireIds: ['phq2']
+    completedQuestionnaireIds: ['phq2'],
+    consentedStudyIds: []
   };
 }
 

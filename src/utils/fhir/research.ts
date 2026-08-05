@@ -8,6 +8,7 @@ import type {
   PlanDefinition,
   QuestionnaireResponse,
   ResearchStudy,
+  ResearchSubject,
   Resource
 } from 'fhir/r4';
 import { questionnaireIdOf } from './questionnaire-url';
@@ -70,6 +71,8 @@ export interface ResearchProgress {
   levelProgress: ResearchLevelProgress;
   /** Unique questionnaire ids ever completed. */
   completedQuestionnaireIds: string[];
+  /** Study ids with an active on-study ResearchSubject for this patient. */
+  consentedStudyIds: string[];
 }
 
 /**
@@ -316,11 +319,13 @@ export function resolveStudyIdForQuestionnaire(
  *
  * @param studies - Computed per-study progress.
  * @param responses - Raw responses across all identity queries.
+ * @param consentedStudyIds - Study ids with an active consent.
  * @returns Aggregate progress with cumulative level and response set.
  */
 export function computeResearchProgress(
   studies: StudyProgress[],
-  responses: ResearchResponse[]
+  responses: ResearchResponse[],
+  consentedStudyIds: string[] = []
 ): ResearchProgress {
   const merged = mergeResponses(responses);
   const levelProgress = getResearchLevelProgress(merged.length);
@@ -337,7 +342,8 @@ export function computeResearchProgress(
           .map(response => extractQuestionnaireId(response.questionnaire))
           .filter((id): id is string => id !== null)
       )
-    ]
+    ],
+    consentedStudyIds
   };
 }
 
@@ -393,6 +399,17 @@ export function parseResearchBundle(
       authored: response.authored
     }));
 
+  const consentedStudyIds = resources
+    .filter(
+      (resource): resource is ResearchSubject =>
+        resource.resourceType === 'ResearchSubject'
+    )
+    .filter(subject => subject.status === 'on-study')
+    .map(subject =>
+      parseCanonicalOrReference(subject.study?.reference, 'ResearchStudy')
+    )
+    .filter((id): id is string => id !== null);
+
   const batchesByPlanId = new Map<string, ResearchBatch>();
   for (const plan of plans) {
     const batch = toResearchBatch(plan);
@@ -411,5 +428,5 @@ export function parseResearchBundle(
     return computeStudyProgress(study, batches, responses, today);
   });
 
-  return computeResearchProgress(studyProgress, responses);
+  return computeResearchProgress(studyProgress, responses, consentedStudyIds);
 }

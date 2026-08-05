@@ -5,12 +5,13 @@ import {
   parseResearchBundle,
   type ResearchProgress
 } from '@/utils/fhir/research';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { Bundle } from 'fhir/r4';
 import { useEffect, useMemo, useState } from 'react';
 import { ensureAnonymousSession } from '../anonymous-session';
 import { getAPI } from '../api';
+import { submitFhirBundle } from './fhir-bundle';
 
 /** Identity under which research progress is tracked. */
 export interface ResearchIdentity {
@@ -77,8 +78,8 @@ const QR_SEARCH_SUFFIX =
 
 /**
  * Builds a FHIR batch bundle that fetches the active studies (with their
- * batch PlanDefinitions via _include) and the user's completed responses
- * in a single round trip.
+ * batch PlanDefinitions via _include), the user's completed responses, and
+ * (for patients) their ResearchSubjects, in a single round trip.
  *
  * @param identity - Patient or guest identity.
  * @param today - Reference date, yyyy-mm-dd.
@@ -91,29 +92,41 @@ export function buildResearchBundle(
   const identifierValue = encodeURIComponent(
     `${ANONYMOUS_SESSION_IDENTIFIER_SYSTEM}|${identity.id}`
   );
+  const entries: NonNullable<Bundle['entry']> = [
+    {
+      request: {
+        method: 'GET',
+        url: `ResearchStudy?date=ge${today}&status=active&_include=ResearchStudy:protocol`
+      }
+    },
+    {
+      request: {
+        method: 'GET',
+        url: `${AUTHOR_QR_SEARCH}${identity.id}${QR_SEARCH_SUFFIX}`
+      }
+    },
+    {
+      request: {
+        method: 'GET',
+        url: `${IDENTIFIER_QR_SEARCH}${identifierValue}${QR_SEARCH_SUFFIX}`
+      }
+    }
+  ];
+
+  // Per-study consent check: only patients have a FHIR identity to query.
+  if (identity.kind === 'patient') {
+    entries.push({
+      request: {
+        method: 'GET',
+        url: `ResearchSubject?patient=Patient/${identity.id}&_elements=study,status&_count=100`
+      }
+    });
+  }
+
   return {
     resourceType: 'Bundle',
     type: 'batch',
-    entry: [
-      {
-        request: {
-          method: 'GET',
-          url: `ResearchStudy?date=ge${today}&status=active&_include=ResearchStudy:protocol`
-        }
-      },
-      {
-        request: {
-          method: 'GET',
-          url: `${AUTHOR_QR_SEARCH}${identity.id}${QR_SEARCH_SUFFIX}`
-        }
-      },
-      {
-        request: {
-          method: 'GET',
-          url: `${IDENTIFIER_QR_SEARCH}${identifierValue}${QR_SEARCH_SUFFIX}`
-        }
-      }
-    ]
+    entry: entries
   };
 }
 
@@ -203,6 +216,100 @@ export function useStudyCompletionCounts(questionnaireIds: string[]) {
       const API = await getAPI();
       const total = await fetchCompletionTotal(API, ids);
       return { total, visibleCount: withKAnonymityFloor(total) };
+    }
+  });
+}
+
+/**
+ * Builds a FHIR transaction bundle that records a patient's consent to a
+ * study: a Consent resource (active, scope/category research) linked via a
+ * urn to an on-study ResearchSubject.
+ *
+ * @param patientId - FHIR Patient id giving consent.
+ * @param studyId - Bare ResearchStudy id being consented to.
+ * @returns A transaction bundle creating Consent + ResearchSubject.
+ */
+export function buildConsentBundle(patientId: string, studyId: string): Bundle {
+  const consentFullUrl = `urn:uuid:${crypto.randomUUID()}`;
+  return {
+    resourceType: 'Bundle',
+    type: 'transaction',
+    entry: [
+      {
+        fullUrl: consentFullUrl,
+        resource: {
+          resourceType: 'Consent',
+          status: 'active',
+          scope: {
+            coding: [
+              {
+                system: 'https://terminology.hl7.org/CodeSystem/consentscope',
+                code: 'research'
+              }
+            ]
+          },
+          category: [
+            {
+              coding: [
+                {
+                  system:
+                    'https://terminology.hl7.org/CodeSystem/consentcategorycodes',
+                  code: 'research'
+                }
+              ]
+            }
+          ],
+          patient: { reference: `Patient/${patientId}` },
+          policy: [
+            {
+              authority: 'https://konsulin.care/research',
+              uri: 'https://konsulin.care/research/consent'
+            }
+          ]
+        },
+        request: { method: 'POST', url: 'Consent' }
+      },
+      {
+        fullUrl: `urn:uuid:${crypto.randomUUID()}`,
+        resource: {
+          resourceType: 'ResearchSubject',
+          status: 'on-study',
+          study: { reference: `ResearchStudy/${studyId}` },
+          individual: { reference: `Patient/${patientId}` },
+          consent: { reference: consentFullUrl }
+        },
+        request: { method: 'POST', url: 'ResearchSubject' }
+      }
+    ]
+  };
+}
+
+/**
+ * Mutation that records a patient's consent to a study by posting a
+ * Consent + ResearchSubject transaction bundle and refreshing the research
+ * progress cache so the study is treated as consented.
+ *
+ * @param studyId - Bare ResearchStudy id being consented to.
+ * @returns React Query mutation for the consent bundle POST.
+ */
+export function useConsentToStudy(studyId: string) {
+  const queryClient = useQueryClient();
+  const { state: authState } = useAuth();
+  const fhirId = authState?.userInfo?.fhirId;
+
+  return useMutation({
+    mutationFn: async (): Promise<Bundle> => {
+      if (!fhirId) {
+        throw new Error('Patient identity required for research consent');
+      }
+      return submitFhirBundle(buildConsentBundle(fhirId, studyId));
+    },
+    onSuccess: () => {
+      void queryClient
+        .invalidateQueries({ queryKey: ['research'] })
+        .catch(() => {
+          /* cache invalidation best-effort */
+        });
     }
   });
 }

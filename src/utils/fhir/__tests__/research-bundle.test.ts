@@ -119,4 +119,43 @@ describe('parseResearchBundle', () => {
     expect(progress.studies).toEqual([]);
     expect(progress.cumulativeResponses).toBe(0);
   });
+
+  it('extracts consented study ids from on-study ResearchSubject entries', () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'batch-response',
+      entry: [
+        {
+          resource: {
+            resourceType: 'Bundle',
+            type: 'searchset',
+            entry: [
+              {
+                resource: {
+                  resourceType: 'ResearchSubject',
+                  id: 'rs-1',
+                  status: 'on-study',
+                  study: { reference: 'ResearchStudy/study-a' },
+                  individual: { reference: 'Patient/pat-1' }
+                }
+              },
+              {
+                resource: {
+                  resourceType: 'ResearchSubject',
+                  id: 'rs-2',
+                  status: 'off-study',
+                  study: { reference: 'ResearchStudy/study-b' },
+                  individual: { reference: 'Patient/pat-1' }
+                }
+              }
+            ]
+          },
+          response: { status: '200' }
+        }
+      ]
+    };
+
+    const progress = parseResearchBundle(bundle, TODAY);
+    expect(progress.consentedStudyIds).toEqual(['study-a']);
+  });
 });
