@@ -103,6 +103,21 @@ function displayName(id: string): string {
     .join(' ');
 }
 
+/** Maps each questionnaire to every study title that deploys it. */
+export function buildOverlapMap(
+  studies: StudyProgress[]
+): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const study of studies) {
+    for (const id of study.currentBatch?.questionnaireIds ?? []) {
+      const titles = map.get(id) ?? [];
+      titles.push(study.study.title ?? study.study.id);
+      map.set(id, titles);
+    }
+  }
+  return map;
+}
+
 /** Questionnaire list for one study with done states and overlap hints. */
 export function QuestionnaireList({
   progress,

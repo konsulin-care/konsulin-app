@@ -15,6 +15,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import ContributionDashboard from './contribution-dashboard';
 import ResearchCarousel from './research-carousel';
+import StudyDetailView from './study-detail-view';
+import { buildOverlapMap } from './study-sections';
 
 /** Static how-it-works and privacy explainer for the research page. */
 function HowItWorksSection() {
@@ -59,6 +61,11 @@ export default function ResearchPage() {
 
   const studies = useMemo(() => progress?.studies ?? [], [progress]);
   const [activeStudyId, setActiveStudyId] = useState<string | null>(null);
+  const [detailStudyId, setDetailStudyId] = useState<string | null>(null);
+  const overlapMap = useMemo(() => buildOverlapMap(studies), [studies]);
+
+  const detailStudy =
+    studies.find(study => study.study.id === detailStudyId) ?? null;
 
   // Resolve the active study from the `?id=` param. An unknown or inactive id
   // silently falls back to the first study and the URL is cleaned. A
@@ -153,9 +160,7 @@ export default function ResearchPage() {
           studies={studies}
           activeId={activeStudyId ?? ''}
           onSlideChange={handleSlideChange}
-          onStudyClick={() => {
-            /* wired to the study detail view in T3 */
-          }}
+          onStudyClick={setDetailStudyId}
           onQuestionnaireClick={() => {
             /* wired to the consent-aware flow in T5 */
           }}
@@ -175,6 +180,20 @@ export default function ResearchPage() {
       <ContentWraper className='pt-4'>
         <div className='px-4'>{renderContent()}</div>
       </ContentWraper>
+      <StudyDetailView
+        progress={detailStudy}
+        overlapMap={overlapMap}
+        open={detailStudy !== null}
+        onClose={() => setDetailStudyId(null)}
+        onParticipate={() => {
+          /* wired to the consent-aware flow in T5 */
+        }}
+        onQuestionnaireClick={() => {
+          /* wired to the consent-aware flow in T5 */
+        }}
+        isPatient={Boolean(fhirId)}
+        fhirId={fhirId}
+      />
     </>
   );
 }

@@ -8,6 +8,7 @@ import 'swiper/css';
 import { Swiper, SwiperSlide, type SwiperClass } from 'swiper/react';
 import {
   BatchProgress,
+  buildOverlapMap,
   QuestionnaireList,
   TimelineStrip,
   truncateDescription
@@ -98,19 +99,6 @@ function StudySlide({
       </button>
     </div>
   );
-}
-
-/** Maps each questionnaire to every study title that deploys it. */
-function buildOverlapMap(studies: StudyProgress[]): Map<string, string[]> {
-  const map = new Map<string, string[]>();
-  for (const study of studies) {
-    for (const id of study.currentBatch?.questionnaireIds ?? []) {
-      const titles = map.get(id) ?? [];
-      titles.push(study.study.title ?? study.study.id);
-      map.set(id, titles);
-    }
-  }
-  return map;
 }
 
 /** Swiper carousel with one study project per slide. */

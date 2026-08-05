@@ -274,10 +274,8 @@ describe('ResearchPage', () => {
   });
 
   it('shows an empty state when there are no active studies', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [] }),
-      isLoading: false
-    });
+    const data = makeProgress({ studies: [] });
+    mockUseResearchProgress.mockReturnValue({ data, isLoading: false });
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
@@ -298,6 +296,17 @@ describe('ResearchPage', () => {
         action => action.type === 'SET_ACTION' && action.config === null
       )
     ).toBe(true);
+  });
+
+  it('opens the full study detail view when a card is tapped', () => {
+    const data = makeProgress();
+    mockUseResearchProgress.mockReturnValue({ data, isLoading: false });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    fireEvent.click(screen.getByTestId('research-slide-research'));
+
+    expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();
   });
 
   it('drives the contribution dashboard ring from the active study', () => {
