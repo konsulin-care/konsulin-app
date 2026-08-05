@@ -2,7 +2,7 @@ import type { StudyProgress } from '@/utils/fhir/research';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchCarousel from '../research-carousel';
-import { makeStudyB, makeStudyProgress } from './research-fixtures';
+import { BATCH_1, makeStudyB, makeStudyProgress } from './research-fixtures';
 
 vi.mock('next/link', () => ({
   __esModule: true,
@@ -20,6 +20,20 @@ vi.mock('next/link', () => ({
     </a>
   )
 }));
+
+const BATCH_2 = {
+  id: 'batch-2',
+  start: '2026-09-01',
+  end: '2026-09-30',
+  questionnaireIds: ['phq2']
+};
+
+const BATCH_3 = {
+  id: 'batch-3',
+  start: '2026-10-01',
+  end: '2026-10-31',
+  questionnaireIds: ['phq2']
+};
 
 function renderCarousel(
   studies: StudyProgress[],
@@ -62,19 +76,29 @@ describe('ResearchCarousel', () => {
     expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
     expect(screen.getByText('PHQ2')).toBeTruthy();
     expect(screen.getByText('BIG FIVE INVENTORY')).toBeTruthy();
-    expect(screen.getByText(/Tap card to share this study/i)).toBeTruthy();
+    expect(screen.getByText(/Tap to share this survey/i)).toBeTruthy();
   });
 
-  it('shares the study URL when the slide is clicked', () => {
+  it('shares the study URL when the share bar is clicked', () => {
+    const share = vi.fn().mockResolvedValue(void 0);
+    Object.assign(navigator, { share });
+    renderCarousel([makeStudyProgress()], 'research');
+
+    fireEvent.click(screen.getByTestId('research-share-research'));
+
+    expect(share).toHaveBeenCalledWith({
+      url: 'https://konsulin.care/research?id=research'
+    });
+  });
+
+  it('does not share when the card body is clicked', () => {
     const share = vi.fn().mockResolvedValue(void 0);
     Object.assign(navigator, { share });
     renderCarousel([makeStudyProgress()], 'research');
 
     fireEvent.click(screen.getByTestId('research-slide-research'));
 
-    expect(share).toHaveBeenCalledWith({
-      url: 'https://konsulin.care/research?id=research'
-    });
+    expect(share).not.toHaveBeenCalled();
   });
 
   it('does not share when a questionnaire row is clicked', () => {
@@ -85,6 +109,87 @@ describe('ResearchCarousel', () => {
     fireEvent.click(screen.getByRole('link', { name: 'PHQ2' }));
 
     expect(share).not.toHaveBeenCalled();
+  });
+
+  it('styles the active batch chip bold black and upcoming chips at half opacity', () => {
+    renderCarousel(
+      [
+        makeStudyProgress({
+          batches: [BATCH_1, BATCH_2, BATCH_3],
+          currentBatch: BATCH_1,
+          history: [
+            {
+              batchId: 'batch-1',
+              start: '2026-08-01',
+              end: '2026-08-31',
+              participated: true
+            },
+            {
+              batchId: 'batch-2',
+              start: '2026-09-01',
+              end: '2026-09-30',
+              participated: false
+            },
+            {
+              batchId: 'batch-3',
+              start: '2026-10-01',
+              end: '2026-10-31',
+              participated: false
+            }
+          ]
+        })
+      ],
+      'research'
+    );
+
+    const activeChip = screen.getByTestId('batch-chip-batch-1');
+    expect(activeChip).toHaveTextContent('B1');
+    expect(activeChip).toHaveClass('bg-gray-100', 'text-black', 'font-bold');
+    expect(activeChip).not.toHaveClass('opacity-50');
+
+    const upcomingChip = screen.getByTestId('batch-chip-batch-2');
+    expect(upcomingChip).toHaveTextContent('B2');
+    expect(upcomingChip).toHaveClass(
+      'bg-gray-100',
+      'text-black',
+      'font-bold',
+      'opacity-50'
+    );
+  });
+
+  it('keeps completed batch chips teal with a check', () => {
+    renderCarousel(
+      [
+        makeStudyProgress({
+          batches: [BATCH_1, BATCH_2, BATCH_3],
+          currentBatch: BATCH_3,
+          history: [
+            {
+              batchId: 'batch-1',
+              start: '2026-08-01',
+              end: '2026-08-31',
+              participated: true
+            },
+            {
+              batchId: 'batch-2',
+              start: '2026-09-01',
+              end: '2026-09-30',
+              participated: true
+            },
+            {
+              batchId: 'batch-3',
+              start: '2026-10-01',
+              end: '2026-10-31',
+              participated: false
+            }
+          ]
+        })
+      ],
+      'research'
+    );
+
+    const doneChip = screen.getByTestId('batch-chip-batch-1');
+    expect(doneChip).toHaveClass('bg-secondary', 'text-white');
   });
 
   it('marks the active slide', () => {

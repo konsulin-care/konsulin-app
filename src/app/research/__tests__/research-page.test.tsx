@@ -196,7 +196,7 @@ describe('ResearchPage', () => {
     );
   });
 
-  it('targets the active slide study when sharing by clicking the carousel', () => {
+  it('targets the active slide study when sharing via the share bar', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
@@ -209,7 +209,7 @@ describe('ResearchPage', () => {
       'true'
     );
     // Click-to-share must not navigate; it hands off to the share handler.
-    fireEvent.click(screen.getByTestId('research-slide-research'));
+    fireEvent.click(screen.getByTestId('research-share-research'));
     expect(mockPush).not.toHaveBeenCalled();
   });
 
