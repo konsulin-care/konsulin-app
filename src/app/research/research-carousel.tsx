@@ -22,6 +22,10 @@ interface ResearchCarouselProps {
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
   isPatient: boolean;
   fhirId?: string;
+  /** Resolved id → questionnaire title map. */
+  titleMap?: Readonly<Record<string, string>>;
+  /** True while questionnaire titles are being fetched. */
+  isTitlesLoading?: boolean;
 }
 
 /** Icon, title, and description block of a study slide. */
@@ -46,6 +50,8 @@ function StudySlide({
   isPatient,
   fhirId,
   overlapMap,
+  titleMap,
+  isTitlesLoading,
   onStudyClick,
   onQuestionnaireClick
 }: Readonly<{
@@ -54,6 +60,8 @@ function StudySlide({
   isPatient: boolean;
   fhirId?: string;
   overlapMap: Map<string, string[]>;
+  titleMap?: Readonly<Record<string, string>>;
+  isTitlesLoading?: boolean;
   onStudyClick: (studyId: string) => void;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
 }>) {
@@ -84,6 +92,9 @@ function StudySlide({
         progress={progress}
         overlapMap={overlapMap}
         onQuestionnaireClick={onQuestionnaireClick}
+        titleMap={titleMap}
+        isTitlesLoading={isTitlesLoading}
+        showOverlapHints={false}
       />
       <button
         type='button'
@@ -109,7 +120,9 @@ export default function ResearchCarousel({
   onStudyClick,
   onQuestionnaireClick,
   isPatient,
-  fhirId
+  fhirId,
+  titleMap,
+  isTitlesLoading
 }: Readonly<ResearchCarouselProps>) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [swiper, setSwiper] = useState<SwiperClass | null>(null);
@@ -148,6 +161,8 @@ export default function ResearchCarousel({
                 isPatient={isPatient}
                 fhirId={fhirId}
                 overlapMap={overlapMap}
+                titleMap={titleMap}
+                isTitlesLoading={isTitlesLoading}
                 onStudyClick={onStudyClick}
                 onQuestionnaireClick={onQuestionnaireClick}
               />

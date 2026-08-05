@@ -6,13 +6,15 @@ import {
   createResearchWrapper as createWrapper,
   makeProgress,
   makeStudyB,
-  makeStudyProgress
+  makeStudyProgress,
+  TITLE_MAP
 } from './research-fixtures';
 
 const {
   mockUseAuth,
   mockUseResearchProgress,
   mockUseConsentToStudy,
+  mockUseQuestionnaireTitles,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -30,6 +32,7 @@ const {
     >(),
     mockUseResearchProgress: vi.fn(),
     mockUseConsentToStudy: vi.fn(),
+    mockUseQuestionnaireTitles: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -44,6 +47,7 @@ let dispatchedActions: FabAction[] = [];
 vi.mock('@/services/api/research', () => ({
   useResearchProgress: mockUseResearchProgress,
   useConsentToStudy: mockUseConsentToStudy,
+  useQuestionnaireTitles: mockUseQuestionnaireTitles,
   useClaimLocalConsents: vi.fn()
 }));
 
@@ -72,6 +76,11 @@ beforeEach(() => {
   mockUseConsentToStudy.mockReset();
   mockUseConsentToStudy.mockReturnValue({
     mutate: vi.fn()
+  });
+  mockUseQuestionnaireTitles.mockReset();
+  mockUseQuestionnaireTitles.mockReturnValue({
+    data: TITLE_MAP,
+    isPending: false
   });
   mockPush.mockReset();
   mockReplace.mockReset();
@@ -311,7 +320,7 @@ describe('ResearchPage', () => {
     ).toBeTruthy();
   });
 
-  it('shows overlap hints across studies in the carousel', () => {
+  it('hides overlap hints across studies in the carousel', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress({
         studies: [
@@ -331,10 +340,8 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    expect(screen.getAllByText('PHQ2').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('BIG FIVE INVENTORY').length).toBeGreaterThan(0);
-    expect(
-      screen.getAllByText(/also counts toward Sleep Quality Study/i).length
-    ).toBeGreaterThan(0);
+    expect(screen.getAllByText('PHQ-2').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Big Five Inventory').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Also counts toward/)).toBeNull();
   });
 });

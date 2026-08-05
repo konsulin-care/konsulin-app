@@ -122,11 +122,20 @@ export function buildOverlapMap(
 export function QuestionnaireList({
   progress,
   overlapMap,
-  onQuestionnaireClick
+  onQuestionnaireClick,
+  titleMap,
+  isTitlesLoading = false,
+  showOverlapHints = false
 }: Readonly<{
   progress: StudyProgress;
   overlapMap: Map<string, string[]>;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
+  /** Resolved id → questionnaire title map; falls back to the id when absent. */
+  titleMap?: Readonly<Record<string, string>>;
+  /** True while titles are being fetched; unresolved rows show a skeleton. */
+  isTitlesLoading?: boolean;
+  /** Expanded views render the "Also counts toward" overlap hint. */
+  showOverlapHints?: boolean;
 }>) {
   const batch = progress.currentBatch;
   if (!batch) return null;
@@ -141,6 +150,8 @@ export function QuestionnaireList({
         const otherStudies = (overlapMap.get(id) ?? []).filter(
           title => title !== studyTitle
         );
+        const title =
+          titleMap?.[id] ?? (isTitlesLoading ? null : displayName(id));
         return (
           <li key={id} className='flex items-start gap-2 text-xs'>
             {done ? (
@@ -149,14 +160,21 @@ export function QuestionnaireList({
               <Circle className='mt-0.5 h-4 w-4 shrink-0 text-gray-300' />
             )}
             <div className='flex flex-col'>
-              <button
-                type='button'
-                onClick={() => onQuestionnaireClick(progress.study.id, id)}
-                className='cursor-pointer font-bold text-gray-800 hover:underline'
-              >
-                {displayName(id)}
-              </button>
-              {otherStudies.length > 0 && (
+              {title ? (
+                <button
+                  type='button'
+                  onClick={() => onQuestionnaireClick(progress.study.id, id)}
+                  className='cursor-pointer text-left font-bold text-gray-800 hover:underline'
+                >
+                  {title}
+                </button>
+              ) : (
+                <span
+                  data-testid={`questionnaire-title-skeleton-${id}`}
+                  className='h-3.5 w-24 animate-pulse rounded bg-gray-200'
+                />
+              )}
+              {showOverlapHints && otherStudies.length > 0 && (
                 <span className='text-[10px] text-gray-500'>
                   Also counts toward {otherStudies.join(', ')}
                 </span>

@@ -12,6 +12,7 @@ import { useReferralWrite } from '@/hooks/useReferralWrite';
 import {
   useClaimLocalConsents,
   useConsentToStudy,
+  useQuestionnaireTitles,
   useResearchProgress
 } from '@/services/api/research';
 import { readConsentFlag, writeConsentFlag } from '@/utils/consent';
@@ -55,6 +56,18 @@ export default function ResearchPage() {
     null
   );
   const overlapMap = useMemo(() => buildOverlapMap(studies), [studies]);
+
+  /** Questionnaire ids deployed by the current batch of any active study. */
+  const questionnaireIds = useMemo(
+    () => [
+      ...new Set(
+        studies.flatMap(study => study.currentBatch?.questionnaireIds ?? [])
+      )
+    ],
+    [studies]
+  );
+  const { data: titleMap = {}, isPending: titlesPending } =
+    useQuestionnaireTitles(questionnaireIds);
 
   const detailStudy =
     studies.find(study => study.study.id === detailStudyId) ?? null;
@@ -240,6 +253,8 @@ export default function ResearchPage() {
           onQuestionnaireClick={handleQuestionnaireClick}
           isPatient={isPatient}
           fhirId={fhirId}
+          titleMap={titleMap}
+          isTitlesLoading={titlesPending}
         />
         <ContributionDashboard progress={progress} activeStudy={activeStudy} />
         <CirclePanel isPatient={isPatient} fhirId={fhirId} />
@@ -262,6 +277,8 @@ export default function ResearchPage() {
         onQuestionnaireClick={handleQuestionnaireClick}
         isPatient={isPatient}
         fhirId={fhirId}
+        titleMap={titleMap}
+        isTitlesLoading={titlesPending}
       />
       <ConsentDrawer
         open={pendingConsent !== null}

@@ -25,6 +25,10 @@ interface StudyDetailViewProps {
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
   isPatient: boolean;
   fhirId?: string;
+  /** Resolved id → questionnaire title map. */
+  titleMap?: Readonly<Record<string, string>>;
+  /** True while questionnaire titles are being fetched. */
+  isTitlesLoading?: boolean;
 }
 
 /**
@@ -41,7 +45,9 @@ export default function StudyDetailView({
   onParticipate,
   onQuestionnaireClick,
   isPatient,
-  fhirId
+  fhirId,
+  titleMap,
+  isTitlesLoading
 }: Readonly<StudyDetailViewProps>) {
   const { handleShare, copied } = useShareStudy({
     studyId: progress?.study.id ?? '',
@@ -81,6 +87,9 @@ export default function StudyDetailView({
                   progress={progress}
                   overlapMap={overlapMap}
                   onQuestionnaireClick={onQuestionnaireClick}
+                  titleMap={titleMap}
+                  isTitlesLoading={isTitlesLoading}
+                  showOverlapHints={true}
                 />
                 <button
                   type='button'

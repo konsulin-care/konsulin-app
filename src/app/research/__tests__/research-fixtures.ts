@@ -9,6 +9,12 @@ export const BATCH_1 = {
   questionnaireIds: ['phq2', 'big-five-inventory']
 };
 
+/** Resolved questionnaire titles matching the research questionnaire ids. */
+export const TITLE_MAP: Record<string, string> = {
+  phq2: 'PHQ-2',
+  'big-five-inventory': 'Big Five Inventory'
+};
+
 /** Base StudyProgress fixture for the mental-health survey study. */
 export function makeStudyProgress(
   overrides?: Partial<StudyProgress>

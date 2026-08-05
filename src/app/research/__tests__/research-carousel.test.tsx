@@ -2,7 +2,12 @@ import type { StudyProgress } from '@/utils/fhir/research';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchCarousel from '../research-carousel';
-import { BATCH_1, makeStudyB, makeStudyProgress } from './research-fixtures';
+import {
+  BATCH_1,
+  makeStudyB,
+  makeStudyProgress,
+  TITLE_MAP
+} from './research-fixtures';
 
 vi.mock('next/link', () => ({
   __esModule: true,
@@ -43,7 +48,11 @@ function renderCarousel(
     onStudyClick?: (studyId: string) => void;
     onQuestionnaireClick?: (studyId: string, qid: string) => void;
   } = {},
-  onSlideChange = vi.fn()
+  onSlideChange = vi.fn(),
+  options: {
+    titleMap?: Record<string, string>;
+    isTitlesLoading?: boolean;
+  } = {}
 ) {
   return render(
     <ResearchCarousel
@@ -53,6 +62,8 @@ function renderCarousel(
       onStudyClick={overrides.onStudyClick ?? vi.fn()}
       onQuestionnaireClick={overrides.onQuestionnaireClick ?? vi.fn()}
       isPatient={false}
+      titleMap={options.titleMap ?? TITLE_MAP}
+      isTitlesLoading={options.isTitlesLoading ?? false}
     />
   );
 }
@@ -81,8 +92,8 @@ describe('ResearchCarousel', () => {
     expect(screen.getByText(/Closes in \d+ days/i)).toBeTruthy();
     expect(screen.getAllByText('1/2 questionnaires').length).toBeGreaterThan(0);
     expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
-    expect(screen.getByText('PHQ2')).toBeTruthy();
-    expect(screen.getByText('BIG FIVE INVENTORY')).toBeTruthy();
+    expect(screen.getByText('PHQ-2')).toBeTruthy();
+    expect(screen.getByText('Big Five Inventory')).toBeTruthy();
     expect(screen.getByText(/Tap to share this survey/i)).toBeTruthy();
   });
 
@@ -122,7 +133,7 @@ describe('ResearchCarousel', () => {
       onQuestionnaireClick
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'PHQ2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'PHQ-2' }));
 
     expect(onQuestionnaireClick).toHaveBeenCalledWith('research', 'phq2');
     expect(onStudyClick).not.toHaveBeenCalled();
@@ -264,6 +275,45 @@ describe('ResearchCarousel', () => {
       'data-active',
       'false'
     );
+  });
+
+  it('left-justifies the questionnaire name button', () => {
+    renderCarousel([makeStudyProgress()], 'research');
+
+    expect(screen.getByRole('button', { name: 'PHQ-2' })).toHaveClass(
+      'text-left'
+    );
+  });
+
+  it('hides overlap hints in the standard view even for shared questionnaires', () => {
+    renderCarousel([makeStudyProgress(), makeStudyB()], 'research');
+
+    expect(screen.getAllByText('PHQ-2').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Also counts toward/)).toBeNull();
+  });
+
+  it('shows a skeleton for unresolved titles while loading', () => {
+    renderCarousel([makeStudyProgress()], 'research', {}, vi.fn(), {
+      titleMap: {},
+      isTitlesLoading: true
+    });
+
+    expect(screen.getByTestId('questionnaire-title-skeleton-phq2')).toHaveClass(
+      'animate-pulse'
+    );
+    expect(
+      screen.getByTestId('questionnaire-title-skeleton-big-five-inventory')
+    ).toBeTruthy();
+    expect(screen.queryByText('PHQ2')).toBeNull();
+  });
+
+  it('falls back to the id-derived name when a title is missing', () => {
+    renderCarousel([makeStudyProgress()], 'research', {}, vi.fn(), {
+      titleMap: { phq2: 'PHQ-2' }
+    });
+
+    expect(screen.getByText('PHQ-2')).toBeTruthy();
+    expect(screen.getByText('BIG FIVE INVENTORY')).toBeTruthy();
   });
 
   it('reports the study id when the active slide changes', () => {

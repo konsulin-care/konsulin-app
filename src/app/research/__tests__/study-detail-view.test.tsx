@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import StudyDetailView from '../study-detail-view';
 import { buildOverlapMap } from '../study-sections';
-import { makeStudyB, makeStudyProgress } from './research-fixtures';
+import { makeStudyB, makeStudyProgress, TITLE_MAP } from './research-fixtures';
 
 const LONG_DESCRIPTION = Array.from(
   { length: 20 },
@@ -20,7 +20,8 @@ function renderDetail(
       description: LONG_DESCRIPTION
     }
   }),
-  open = true
+  open = true,
+  titleMap: Record<string, string> = TITLE_MAP
 ) {
   const handlers = {
     onClose: vi.fn<() => void>(),
@@ -39,6 +40,7 @@ function renderDetail(
       onParticipate={handlers.onParticipate}
       onQuestionnaireClick={handlers.onQuestionnaireClick}
       isPatient={false}
+      titleMap={titleMap}
     />
   );
   return handlers;
@@ -65,7 +67,7 @@ describe('StudyDetailView', () => {
     expect(screen.getByText(LONG_DESCRIPTION)).toBeTruthy();
     expect(screen.getByText(/1\/2 questionnaires/)).toBeTruthy();
     expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'PHQ2' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'PHQ-2' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();
     expect(screen.getByText(/Tap to share this study/i)).toBeTruthy();
   });
@@ -83,12 +85,21 @@ describe('StudyDetailView', () => {
   it('reports questionnaire clicks', () => {
     const handlers = renderDetail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'PHQ2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'PHQ-2' }));
 
     expect(handlers.onQuestionnaireClick).toHaveBeenCalledWith(
       'research',
       'phq2'
     );
+  });
+
+  it('shows the overlap hint in the expanded view for shared questionnaires', () => {
+    renderDetail();
+
+    expect(screen.getByRole('button', { name: 'PHQ-2' })).toBeTruthy();
+    expect(
+      screen.getAllByText(/Also counts toward Sleep Quality Study/).length
+    ).toBeGreaterThan(0);
   });
 
   it('shares the study URL from the share row', () => {

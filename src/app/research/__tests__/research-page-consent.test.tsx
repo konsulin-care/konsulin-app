@@ -6,13 +6,15 @@ import {
   createResearchWrapper as createWrapper,
   makeProgress,
   makeStudyB,
-  makeStudyProgress
+  makeStudyProgress,
+  TITLE_MAP
 } from './research-fixtures';
 
 const {
   mockUseAuth,
   mockUseResearchProgress,
   mockUseConsentToStudy,
+  mockUseQuestionnaireTitles,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -30,6 +32,7 @@ const {
     >(),
     mockUseResearchProgress: vi.fn(),
     mockUseConsentToStudy: vi.fn(),
+    mockUseQuestionnaireTitles: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -44,6 +47,7 @@ let dispatchedActions: FabAction[] = [];
 vi.mock('@/services/api/research', () => ({
   useResearchProgress: mockUseResearchProgress,
   useConsentToStudy: mockUseConsentToStudy,
+  useQuestionnaireTitles: mockUseQuestionnaireTitles,
   useClaimLocalConsents: vi.fn()
 }));
 
@@ -94,6 +98,11 @@ beforeEach(() => {
   mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
   mockUseConsentToStudy.mockReset();
   mockUseConsentToStudy.mockReturnValue(consentMutationMock());
+  mockUseQuestionnaireTitles.mockReset();
+  mockUseQuestionnaireTitles.mockReturnValue({
+    data: TITLE_MAP,
+    isPending: false
+  });
   mockPush.mockReset();
   mockReplace.mockReset();
   mockFabDispatch.mockReset();
@@ -267,7 +276,7 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    fireEvent.click(screen.getByRole('button', { name: 'PHQ2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'PHQ-2' }));
     fireEvent.click(
       screen.getByRole('button', { name: 'Agree to Participate' })
     );
@@ -287,7 +296,7 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    fireEvent.click(screen.getByRole('button', { name: 'PHQ2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'PHQ-2' }));
 
     expect(mockPush).toHaveBeenCalledWith('/assessments?id=phq2');
     expect(
