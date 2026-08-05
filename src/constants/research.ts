@@ -34,9 +34,7 @@ export const DEFAULT_QUESTIONNAIRE_XP = 5;
  * @param durationMinutes - Estimated minutes, or null/undefined when unknown.
  * @returns The questionnaire XP.
  */
-export function xpForDuration(
-  durationMinutes: number | null | undefined
-): number {
+export function xpForDuration(durationMinutes?: number | null): number {
   if (durationMinutes == null) return DEFAULT_QUESTIONNAIRE_XP;
   return durationMinutes * XP_PER_MINUTE;
 }
@@ -176,22 +174,84 @@ export function getXpInLevel(xp: number): number {
   return Math.max(0, xp) % LEVEL_XP;
 }
 
-/** A questionnaire the user can complete, with its XP value when known. */
+/** A questionnaire the user can complete, with its XP basis when known. */
 export interface MissionQuestionnaire {
   id: string;
   title: string;
-  /** Estimated minutes (= XP earned); null when the extension is missing. */
+  /** Estimated minutes; null when the extension is missing. */
   durationMinutes: number | null;
+}
+
+/** A questionnaire with its derived XP value. */
+interface MissionQuestionnaireWithXp extends MissionQuestionnaire {
+  xp: number;
+}
+
+/**
+ * Keeps questionnaires with a known, positive duration and derives their XP.
+ *
+ * @param questionnaires - Batch questionnaires to evaluate.
+ * @returns The questionnaires worth XP, with xp attached.
+ */
+function withKnownXp(
+  questionnaires: readonly MissionQuestionnaire[]
+): MissionQuestionnaireWithXp[] {
+  return questionnaires
+    .filter(
+      (q): q is MissionQuestionnaire & { durationMinutes: number } =>
+        q.durationMinutes != null && q.durationMinutes > 0
+    )
+    .map(q => ({ ...q, xp: q.durationMinutes * XP_PER_MINUTE }));
+}
+
+/**
+ * Smallest questionnaire whose XP alone closes the gap, if any.
+ *
+ * @param available - Questionnaires with known XP.
+ * @param xpNeeded - XP required to reach the next level.
+ * @returns The cheapest closing questionnaire, or undefined.
+ */
+function smallestClosing(
+  available: readonly MissionQuestionnaireWithXp[],
+  xpNeeded: number
+): MissionQuestionnaireWithXp | undefined {
+  return available
+    .filter(q => q.xp >= xpNeeded)
+    .toSorted((a, b) => a.xp - b.xp)[0];
+}
+
+/**
+ * Number of questionnaires (greedy, largest first) needed to reach xpNeeded.
+ *
+ * @param available - Questionnaires with known XP.
+ * @param xpNeeded - XP required to reach the next level.
+ * @returns The minimal greedy count.
+ */
+function subsetCountNeeded(
+  available: readonly MissionQuestionnaireWithXp[],
+  xpNeeded: number
+): number {
+  let sum = 0;
+  let count = 0;
+  for (const q of available.toSorted((a, b) => b.xp - a.xp)) {
+    sum += q.xp;
+    count += 1;
+    if (sum >= xpNeeded) break;
+  }
+  return count;
 }
 
 /**
  * Builds the mission line: the most efficient path to the next level.
  *
- * Prefers a single questionnaire that closes the gap; otherwise combines
- * questionnaires (ceil over the longest available duration) with shares.
+ * The mission is contextual to the active batch: only the remaining (not yet
+ * completed) questionnaires with a known duration are considered, each worth
+ * duration × XP_PER_MINUTE. A single questionnaire that closes the XP gap is
+ * named; otherwise the smallest greedy subset is counted; when even the whole
+ * batch is not enough, the batch XP plus the referral shortfall is shown.
  * Guests never see a title name — they level up toward registration.
  *
- * @param opts - Total XP, available questionnaires, and guest flag.
+ * @param opts - Total XP, remaining batch questionnaires, and guest flag.
  * @returns The mission text.
  */
 export function buildMission(opts: {
@@ -210,25 +270,31 @@ export function buildMission(opts: {
   }
 
   const target = isGuest ? 'level up' : `reach ${next.label}`;
+  const available = withKnownXp(questionnaires);
 
-  const withDuration = questionnaires.filter(
-    (q): q is MissionQuestionnaire & { durationMinutes: number } =>
-      q.durationMinutes != null && q.durationMinutes > 0
-  );
-
-  if (withDuration.length === 0) {
-    return `${xpNeeded} shares to ${target}`;
+  if (available.length === 0) {
+    return isGuest
+      ? 'Check back for the next batch to level up'
+      : `Complete ${xpNeeded} referrals to ${target}`;
   }
 
-  const maxDuration = Math.max(...withDuration.map(q => q.durationMinutes));
-
-  if (maxDuration >= xpNeeded) {
-    const best = withDuration
-      .filter(q => q.durationMinutes >= xpNeeded)
-      .toSorted((a, b) => a.durationMinutes - b.durationMinutes)[0];
-    return `Complete ${best.title} (+${best.durationMinutes} XP) to ${target}`;
+  const single = smallestClosing(available, xpNeeded);
+  if (single) {
+    return isGuest
+      ? `Complete ${single.title} (+${single.xp} XP) to ${target}`
+      : `Complete ${single.title} (+${single.xp} XP) or ${xpNeeded} referrals to ${target}`;
   }
 
-  const count = Math.ceil(xpNeeded / maxDuration);
-  return `${count} questionnaires or ${xpNeeded} shares to ${target}`;
+  const batchXp = available.reduce((sum, q) => sum + q.xp, 0);
+  if (batchXp >= xpNeeded) {
+    const count = subsetCountNeeded(available, xpNeeded);
+    return isGuest
+      ? `Complete ${count} questionnaires to ${target}`
+      : `Complete ${count} questionnaires or ${xpNeeded} referrals to ${target}`;
+  }
+
+  const shortfall = xpNeeded - batchXp;
+  return isGuest
+    ? `Complete this batch (+${batchXp} XP) — ${shortfall} more XP to ${target}`
+    : `Complete this batch (+${batchXp} XP) and ${shortfall} referrals to ${target}`;
 }

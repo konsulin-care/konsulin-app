@@ -189,15 +189,20 @@ export default function ContributionDashboard({
     ? getResearchLevel(totalXp)
     : GUEST_TITLE;
 
-  const missionQuestionnaires: MissionQuestionnaire[] = useMemo(
-    () =>
-      (activeStudy?.currentBatch?.questionnaireIds ?? []).map(id => ({
+  const missionQuestionnaires: MissionQuestionnaire[] = useMemo(() => {
+    const completed = new Set(activeStudy?.completedQuestionnaireIds);
+    return (activeStudy?.currentBatch?.questionnaireIds ?? [])
+      .filter(id => !completed.has(id))
+      .map(id => ({
         id,
         title: questionnaireInfo[id]?.title ?? id,
         durationMinutes: questionnaireInfo[id]?.durationMinutes ?? null
-      })),
-    [activeStudy?.currentBatch, questionnaireInfo]
-  );
+      }));
+  }, [
+    activeStudy?.currentBatch,
+    activeStudy?.completedQuestionnaireIds,
+    questionnaireInfo
+  ]);
   const mission = buildMission({
     totalXp,
     questionnaires: missionQuestionnaires,
