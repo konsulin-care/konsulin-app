@@ -6,18 +6,15 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import CirclePanel from '@/components/research/circle-panel';
 import ReferralNotice from '@/components/research/referral-notice';
-import ShareCard from '@/components/research/share-card';
 import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
 import { useReferralWrite } from '@/hooks/useReferralWrite';
 import { useResearchProgress } from '@/services/api/research';
 import { FlaskConical } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import BatchTimeline from './batch-timeline';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import ContributionDashboard from './contribution-dashboard';
-import ResearchHero from './research-hero';
-import StudyComposition from './study-composition';
+import ResearchCarousel from './research-carousel';
 
 /** Static how-it-works and privacy explainer for the research page. */
 function HowItWorksSection() {
@@ -46,20 +43,58 @@ function HowItWorksSection() {
   );
 }
 
-/** Research hub page: hero, batch timeline, contribution dashboard, composition. */
+/**
+ * Research hub page: carousel of active studies, contribution dashboard,
+ * circle panel, and explainer. The carousel slide drives the Participate FAB
+ * and the URL `?id=` param for deep links and sharing.
+ */
 export default function ResearchPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { dispatch } = useFab();
   const { state: authState } = useAuth();
   const fhirId = authState?.userInfo?.fhirId;
   const { data: progress, isLoading } = useResearchProgress();
   useReferralWrite(progress);
 
-  // Morph the global FAB into a Participate action that continues the first
-  // hero study. Cleared when nothing can be participated in or on unmount.
+  const studies = useMemo(() => progress?.studies ?? [], [progress]);
+  const [activeStudyId, setActiveStudyId] = useState<string | null>(null);
+
+  // Resolve the active study from the `?id=` param. An unknown or inactive id
+  // silently falls back to the first study and the URL is cleaned. A
+  // user-swiped active study is left untouched unless the URL says otherwise.
   useEffect(() => {
-    const first = progress?.studies[0];
-    const firstUncompleted = first?.firstUncompletedQuestionnaireId;
+    const requestedId = searchParams.get('id');
+    const known = requestedId
+      ? studies.find(study => study.study.id === requestedId)
+      : undefined;
+
+    // Invalid deep link: drop the unknown id, keeping any referral ref.
+    if (requestedId && !known) {
+      const ref = searchParams.get('ref');
+      router.replace(
+        ref ? `/research?ref=${encodeURIComponent(ref)}` : '/research'
+      );
+    }
+
+    const targetId =
+      known?.study.id ??
+      (activeStudyId && studies.some(study => study.study.id === activeStudyId)
+        ? activeStudyId
+        : (studies[0]?.study.id ?? null));
+
+    if (targetId !== activeStudyId) {
+      setActiveStudyId(targetId);
+    }
+  }, [searchParams, studies, router, activeStudyId]);
+
+  const activeStudy =
+    studies.find(study => study.study.id === activeStudyId) ?? null;
+
+  // Morph the global FAB into a Participate action that continues the active
+  // slide's study. Cleared when nothing can be participated in or on unmount.
+  useEffect(() => {
+    const firstUncompleted = activeStudy?.firstUncompletedQuestionnaireId;
 
     if (firstUncompleted) {
       dispatch({
@@ -75,7 +110,20 @@ export default function ResearchPage() {
     }
 
     return () => dispatch({ type: 'SET_ACTION', config: null });
-  }, [progress, dispatch, router]);
+  }, [activeStudy, dispatch, router]);
+
+  /** Updates the URL to deep-link the newly active slide, keeping any ref. */
+  const handleSlideChange = (studyId: string) => {
+    setActiveStudyId(studyId);
+    // Programmatic syncs (deep links, back/forward) already carry the id.
+    if (searchParams.get('id') === studyId) return;
+    const ref = searchParams.get('ref');
+    router.replace(
+      ref
+        ? `/research?id=${studyId}&ref=${encodeURIComponent(ref)}`
+        : `/research?id=${studyId}`
+    );
+  };
 
   /** Renders the loading, error, or study content for the page. */
   const renderContent = () => {
@@ -101,12 +149,15 @@ export default function ResearchPage() {
     return (
       <>
         <ReferralNotice />
-        <ResearchHero studies={progress.studies} />
-        <ShareCard isPatient={Boolean(fhirId)} fhirId={fhirId} />
+        <ResearchCarousel
+          studies={studies}
+          activeId={activeStudyId ?? ''}
+          onSlideChange={handleSlideChange}
+          isPatient={Boolean(fhirId)}
+          fhirId={fhirId}
+        />
+        <ContributionDashboard progress={progress} activeStudy={activeStudy} />
         <CirclePanel isPatient={Boolean(fhirId)} fhirId={fhirId} />
-        <BatchTimeline studies={progress.studies} />
-        <ContributionDashboard progress={progress} />
-        <StudyComposition studies={progress.studies} />
         <HowItWorksSection />
       </>
     );

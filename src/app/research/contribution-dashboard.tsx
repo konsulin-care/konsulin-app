@@ -1,7 +1,7 @@
 'use client';
 
 import { RESEARCH_LEVELS } from '@/constants/research';
-import type { ResearchProgress } from '@/utils/fhir/research';
+import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
 import { Lock, Unlock } from 'lucide-react';
 
 /** Circular progress ring showing a fraction of completion. */
@@ -109,14 +109,17 @@ function RewardsVault({ progress }: Readonly<{ progress: ResearchProgress }>) {
   );
 }
 
-/** Contribution dashboard: current-batch ring, level progress, rewards vault. */
+/** Contribution dashboard: active-study ring, level progress, rewards vault. */
 export default function ContributionDashboard({
-  progress
-}: Readonly<{ progress: ResearchProgress }>) {
-  const primary = progress.studies[0];
+  progress,
+  activeStudy
+}: Readonly<{
+  progress: ResearchProgress;
+  activeStudy: StudyProgress | null;
+}>) {
   const fraction =
-    primary && primary.totalCount > 0
-      ? primary.completedCount / primary.totalCount
+    activeStudy && activeStudy.totalCount > 0
+      ? activeStudy.completedCount / activeStudy.totalCount
       : 0;
 
   return (
@@ -126,9 +129,12 @@ export default function ContributionDashboard({
         <ProgressRing fraction={fraction} />
         <div className='flex flex-col gap-1 text-xs text-gray-600'>
           <span>Current batch</span>
-          <span className='text-sm font-bold text-black'>
-            {primary
-              ? `${primary.completedCount}/${primary.totalCount} questionnaires`
+          <span
+            data-testid='dashboard-batch-count'
+            className='text-sm font-bold text-black'
+          >
+            {activeStudy
+              ? `${activeStudy.completedCount}/${activeStudy.totalCount} questionnaires`
               : 'No active batch'}
           </span>
         </div>

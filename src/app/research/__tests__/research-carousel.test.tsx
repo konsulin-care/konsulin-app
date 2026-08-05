@@ -2,6 +2,7 @@ import type { StudyProgress } from '@/utils/fhir/research';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchCarousel from '../research-carousel';
+import { makeStudyB, makeStudyProgress } from './research-fixtures';
 
 vi.mock('next/link', () => ({
   __esModule: true,
@@ -19,56 +20,6 @@ vi.mock('next/link', () => ({
     </a>
   )
 }));
-
-const BATCH_1 = {
-  id: 'batch-1',
-  start: '2026-08-01',
-  end: '2026-08-31',
-  questionnaireIds: ['phq2', 'big-five-inventory']
-};
-
-function makeStudyProgress(overrides?: Partial<StudyProgress>): StudyProgress {
-  return {
-    study: {
-      resourceType: 'ResearchStudy',
-      id: 'research',
-      status: 'active',
-      title: 'Konsulin Mental Health Survey',
-      description: 'A longitudinal survey of mental health.',
-      period: { start: '2026-08-01', end: '2027-07-31' }
-    },
-    batches: [BATCH_1],
-    currentBatch: BATCH_1,
-    completedCount: 1,
-    totalCount: 2,
-    isComplete: false,
-    firstUncompletedQuestionnaireId: 'big-five-inventory',
-    completedQuestionnaireIds: ['phq2'],
-    history: [
-      {
-        batchId: 'batch-1',
-        start: '2026-08-01',
-        end: '2026-08-31',
-        participated: true
-      }
-    ],
-    consecutiveBatches: 1,
-    ...overrides
-  };
-}
-
-function makeStudyB(overrides?: Partial<StudyProgress>): StudyProgress {
-  return makeStudyProgress({
-    study: {
-      resourceType: 'ResearchStudy',
-      id: 'study-b',
-      status: 'active',
-      title: 'Sleep Quality Study',
-      description: 'Tracks sleep patterns over time.'
-    },
-    ...overrides
-  });
-}
 
 function renderCarousel(
   studies: StudyProgress[],
@@ -147,5 +98,18 @@ describe('ResearchCarousel', () => {
       'data-active',
       'false'
     );
+  });
+
+  it('reports the study id when the active slide changes', () => {
+    const onSlideChange = vi.fn();
+    renderCarousel(
+      [makeStudyProgress(), makeStudyB()],
+      'research',
+      onSlideChange
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go to slide 2' }));
+
+    expect(onSlideChange).toHaveBeenCalledWith('study-b');
   });
 });

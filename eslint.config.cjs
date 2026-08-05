@@ -19,7 +19,18 @@ const tsStrictRules = tsPlugin.configs['strict-type-checked'].rules
 const tsStylisticRules = tsPlugin.configs['stylistic-type-checked'].rules
 
 module.exports = [
-  { ignores: ['**/.next/**', 'src/components/shared/__tests__/practitioner-location-combobox.test.tsx'] },
+  {
+    ignores: [
+      '**/.next/**',
+      'src/components/shared/__tests__/practitioner-location-combobox.test.tsx',
+      // Vestige shadowed by research-fixtures.ts in the TS program; deleted by
+      // the research-page cleanup (sandbox cannot remove files).
+      'src/app/research/__tests__/research-fixtures.tsx',
+      // Probe artifact from diagnosing the same-basename shadowing; deleted by
+      // the research-page cleanup (sandbox cannot remove files).
+      'src/app/research/__tests__/zz-same.tsx'
+    ]
+  },
 
   // --- Base: Next.js (loads import, react, jsx-a11y plugins internally) ---
   ...compat.extends('next/core-web-vitals'),
