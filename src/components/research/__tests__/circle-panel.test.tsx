@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import CirclePanel from '../circle-panel';
 
 const { mockUseCircleStats } = vi.hoisted(() => ({
@@ -11,6 +11,10 @@ vi.mock('@/services/api/circle', () => ({
 }));
 
 describe('CirclePanel', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it('shows the converted count and milestone for patients', () => {
     mockUseCircleStats.mockReturnValue({
       data: { converted: 4, joined: 4 }
@@ -44,5 +48,35 @@ describe('CirclePanel', () => {
     expect(screen.getByTestId('circle-upsell')).toBeInTheDocument();
     expect(screen.queryByTestId('circle-panel')).not.toBeInTheDocument();
     expect(mockUseCircleStats).toHaveBeenCalledWith(undefined);
+  });
+
+  it('shows the share count and badge for patients', () => {
+    window.localStorage.setItem('konsulin_share_booster', '3');
+    mockUseCircleStats.mockReturnValue({
+      data: { converted: 4, joined: 4 }
+    });
+
+    render(<CirclePanel isPatient fhirId='PAT-1' />);
+
+    expect(screen.getByTestId('share-booster').textContent).toContain('3');
+    expect(screen.getByTestId('share-badge').textContent).toContain(
+      'community-researcher'
+    );
+  });
+
+  it('shows the share count and badge for guests', () => {
+    window.localStorage.setItem('konsulin_share_booster', '1');
+
+    render(<CirclePanel isPatient={false} />);
+
+    expect(screen.getByTestId('share-booster').textContent).toContain('1');
+    expect(screen.getByTestId('share-badge').textContent).toContain('buddy');
+  });
+
+  it('hides the share booster before the first share', () => {
+    render(<CirclePanel isPatient={false} />);
+
+    expect(screen.queryByTestId('share-booster')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('share-badge')).not.toBeInTheDocument();
   });
 });

@@ -1,10 +1,33 @@
 'use client';
 
+import { useShareBooster } from '@/hooks/useShareBooster';
 import { useCircleStats } from '@/services/api/circle';
 import {
   communityMilestoneFor,
   nextMilestoneTarget
 } from '@/utils/circle-stats';
+
+/** Share-booster count and badge shown in both patient and guest branches. */
+function ShareBooster() {
+  const { count, badge } = useShareBooster();
+  if (count === 0) return null;
+
+  return (
+    <>
+      <p data-testid='share-booster' className='text-[10px] text-gray-400'>
+        {count} share{count === 1 ? '' : 's'}
+      </p>
+      {badge && (
+        <p
+          data-testid='share-badge'
+          className='text-[10px] font-bold text-[#13c2c2]'
+        >
+          Share badge unlocked: {badge}
+        </p>
+      )}
+    </>
+  );
+}
 
 export interface CirclePanelProps {
   isPatient: boolean;
@@ -35,6 +58,7 @@ export default function CirclePanel({ isPatient, fhirId }: CirclePanelProps) {
           Join the research and invite friends. You stay part of the community
           and can track referral milestones once you participate.
         </p>
+        <ShareBooster />
       </section>
     );
   }
@@ -65,6 +89,7 @@ export default function CirclePanel({ isPatient, fhirId }: CirclePanelProps) {
           ? 'Highest milestone reached. Thank you for growing the community!'
           : `${next - converted} more to the next milestone`}
       </p>
+      <ShareBooster />
     </section>
   );
 }
