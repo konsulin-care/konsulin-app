@@ -10,6 +10,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
 import { useReferralWrite } from '@/hooks/useReferralWrite';
 import {
+  useClaimLocalConsents,
   useConsentToStudy,
   useResearchProgress
 } from '@/services/api/research';
@@ -94,6 +95,10 @@ export default function ResearchPage() {
     () => new Set(progress?.consentedStudyIds),
     [progress]
   );
+
+  // Migrate a newly registered patient's localStorage guest consents into
+  // FHIR Consent + ResearchSubject resources (idempotent, per study).
+  useClaimLocalConsents(studies, consentedStudyIds);
 
   /**
    * True when consent was recorded for a study: FHIR ResearchSubject for

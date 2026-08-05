@@ -1,14 +1,16 @@
 import { ANONYMOUS_SESSION_IDENTIFIER_SYSTEM } from '@/constants/anonymous-session';
 import { useAuth } from '@/context/auth/authContext';
+import { clearConsentFlag, readConsentFlag } from '@/utils/consent';
 import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
 import {
   parseResearchBundle,
-  type ResearchProgress
+  type ResearchProgress,
+  type StudyProgress
 } from '@/utils/fhir/research';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { Bundle } from 'fhir/r4';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ensureAnonymousSession } from '../anonymous-session';
 import { getAPI } from '../api';
 import { submitFhirBundle } from './fhir-bundle';
@@ -312,4 +314,58 @@ export function useConsentToStudy(studyId: string) {
         });
     }
   });
+}
+
+/**
+ * Claims a newly registered patient's localStorage guest consents as FHIR
+ * Consent + ResearchSubject resources.
+ *
+ * Runs once per progress snapshot: for every study with a local consent flag
+ * that is not yet backed by an on-study ResearchSubject, posts the consent
+ * bundle and clears the flag on success. Failed or skipped studies keep their
+ * flag so the claim retries on the next load. Guests (no fhirId) are ignored.
+ *
+ * @param studies - Active studies to claim consent for.
+ * @param consentedStudyIds - Study ids already consented in FHIR.
+ */
+export function useClaimLocalConsents(
+  studies: StudyProgress[],
+  consentedStudyIds: ReadonlySet<string>
+) {
+  const queryClient = useQueryClient();
+  const { state: authState } = useAuth();
+  const fhirId = authState?.userInfo?.fhirId;
+  const migrating = useRef(false);
+
+  useEffect(() => {
+    if (!fhirId || migrating.current) return;
+
+    const pending = studies.filter(
+      study =>
+        readConsentFlag(window.localStorage, study.study.id) &&
+        !consentedStudyIds.has(study.study.id)
+    );
+    if (pending.length === 0) return;
+
+    migrating.current = true;
+    void (async () => {
+      try {
+        for (const study of pending) {
+          try {
+            await submitFhirBundle(buildConsentBundle(fhirId, study.study.id));
+            clearConsentFlag(window.localStorage, study.study.id);
+          } catch {
+            // Keep the flag so the claim retries on a later page load.
+          }
+        }
+        void queryClient
+          .invalidateQueries({ queryKey: ['research'] })
+          .catch(() => {
+            /* cache invalidation best-effort */
+          });
+      } finally {
+        migrating.current = false;
+      }
+    })();
+  }, [consentedStudyIds, fhirId, queryClient, studies]);
 }

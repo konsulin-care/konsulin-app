@@ -43,7 +43,8 @@ let dispatchedActions: FabAction[] = [];
 
 vi.mock('@/services/api/research', () => ({
   useResearchProgress: mockUseResearchProgress,
-  useConsentToStudy: mockUseConsentToStudy
+  useConsentToStudy: mockUseConsentToStudy,
+  useClaimLocalConsents: vi.fn()
 }));
 
 vi.mock('@/context/auth/authContext', () => ({
