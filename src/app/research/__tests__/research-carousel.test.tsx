@@ -1,3 +1,4 @@
+import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -50,7 +51,7 @@ function renderCarousel(
   } = {},
   onSlideChange = vi.fn(),
   options: {
-    titleMap?: Record<string, string>;
+    titleMap?: Record<string, QuestionnaireInfo>;
     isTitlesLoading?: boolean;
   } = {}
 ) {
@@ -292,6 +293,13 @@ describe('ResearchCarousel', () => {
     expect(screen.queryByText(/Also counts toward/)).toBeNull();
   });
 
+  it('shows the XP value next to questionnaires with a known duration', () => {
+    renderCarousel([makeStudyProgress()], 'research');
+
+    expect(screen.getAllByText('+8 XP').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('+15 XP').length).toBeGreaterThan(0);
+  });
+
   it('shows a skeleton for unresolved titles while loading', () => {
     renderCarousel([makeStudyProgress()], 'research', {}, vi.fn(), {
       titleMap: {},
@@ -309,7 +317,7 @@ describe('ResearchCarousel', () => {
 
   it('falls back to the id-derived name when a title is missing', () => {
     renderCarousel([makeStudyProgress()], 'research', {}, vi.fn(), {
-      titleMap: { phq2: 'PHQ-2' }
+      titleMap: { phq2: { title: 'PHQ-2', durationMinutes: null } }
     });
 
     expect(screen.getByText('PHQ-2')).toBeTruthy();

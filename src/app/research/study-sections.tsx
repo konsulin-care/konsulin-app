@@ -1,3 +1,4 @@
+import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { daysUntilBatch } from '@/utils/fhir/research';
 import { Check, CheckCircle2, Circle } from 'lucide-react';
@@ -130,8 +131,8 @@ export function QuestionnaireList({
   progress: StudyProgress;
   overlapMap: Map<string, string[]>;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
-  /** Resolved id → questionnaire title map; falls back to the id when absent. */
-  titleMap?: Readonly<Record<string, string>>;
+  /** Resolved id → questionnaire info; falls back to the id when absent. */
+  titleMap?: Readonly<Record<string, QuestionnaireInfo>>;
   /** True while titles are being fetched; unresolved rows show a skeleton. */
   isTitlesLoading?: boolean;
   /** Expanded views render the "Also counts toward" overlap hint. */
@@ -150,8 +151,8 @@ export function QuestionnaireList({
         const otherStudies = (overlapMap.get(id) ?? []).filter(
           title => title !== studyTitle
         );
-        const title =
-          titleMap?.[id] ?? (isTitlesLoading ? null : displayName(id));
+        const info = titleMap?.[id];
+        const title = info?.title ?? (isTitlesLoading ? null : displayName(id));
         return (
           <li key={id} className='flex items-start gap-2 text-xs'>
             {done ? (
@@ -174,11 +175,18 @@ export function QuestionnaireList({
                   className='h-3.5 w-24 animate-pulse rounded bg-gray-200'
                 />
               )}
-              {showOverlapHints && otherStudies.length > 0 && (
-                <span className='text-[10px] text-gray-500'>
-                  Also counts toward {otherStudies.join(', ')}
-                </span>
-              )}
+              <div className='flex items-center gap-2'>
+                {info?.durationMinutes != null && (
+                  <span className='text-[10px] font-bold text-[#13c2c2]'>
+                    +{info.durationMinutes} XP
+                  </span>
+                )}
+                {showOverlapHints && otherStudies.length > 0 && (
+                  <span className='text-[10px] text-gray-500'>
+                    Also counts toward {otherStudies.join(', ')}
+                  </span>
+                )}
+              </div>
             </div>
           </li>
         );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useShareStudy } from '@/hooks/useShareStudy';
+import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { FlaskConical, Share2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -22,8 +23,8 @@ interface ResearchCarouselProps {
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
   isPatient: boolean;
   fhirId?: string;
-  /** Resolved id → questionnaire title map. */
-  titleMap?: Readonly<Record<string, string>>;
+  /** Resolved id → questionnaire info map (title + estimated duration). */
+  titleMap?: Readonly<Record<string, QuestionnaireInfo>>;
   /** True while questionnaire titles are being fetched. */
   isTitlesLoading?: boolean;
 }
@@ -60,7 +61,7 @@ function StudySlide({
   isPatient: boolean;
   fhirId?: string;
   overlapMap: Map<string, string[]>;
-  titleMap?: Readonly<Record<string, string>>;
+  titleMap?: Readonly<Record<string, QuestionnaireInfo>>;
   isTitlesLoading?: boolean;
   onStudyClick: (studyId: string) => void;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;

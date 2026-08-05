@@ -15,6 +15,8 @@ const {
   mockUseResearchProgress,
   mockUseConsentToStudy,
   mockUseQuestionnaireTitles,
+  mockUseCircleStats,
+  mockUseShareBooster,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -33,6 +35,8 @@ const {
     mockUseResearchProgress: vi.fn(),
     mockUseConsentToStudy: vi.fn(),
     mockUseQuestionnaireTitles: vi.fn(),
+    mockUseCircleStats: vi.fn(),
+    mockUseShareBooster: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -47,8 +51,19 @@ let dispatchedActions: FabAction[] = [];
 vi.mock('@/services/api/research', () => ({
   useResearchProgress: mockUseResearchProgress,
   useConsentToStudy: mockUseConsentToStudy,
-  useQuestionnaireTitles: mockUseQuestionnaireTitles,
   useClaimLocalConsents: vi.fn()
+}));
+
+vi.mock('@/services/api/questionnaire-info', () => ({
+  useQuestionnaireTitles: mockUseQuestionnaireTitles
+}));
+
+vi.mock('@/services/api/circle', () => ({
+  useCircleStats: mockUseCircleStats
+}));
+
+vi.mock('@/hooks/useShareBooster', () => ({
+  useShareBooster: mockUseShareBooster
 }));
 
 vi.mock('@/context/auth/authContext', () => ({
@@ -74,14 +89,16 @@ beforeEach(() => {
   mockUseAuth.mockReset();
   mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
   mockUseConsentToStudy.mockReset();
-  mockUseConsentToStudy.mockReturnValue({
-    mutate: vi.fn()
-  });
+  mockUseConsentToStudy.mockReturnValue({ mutate: vi.fn() });
   mockUseQuestionnaireTitles.mockReset();
   mockUseQuestionnaireTitles.mockReturnValue({
     data: TITLE_MAP,
     isPending: false
   });
+  mockUseCircleStats.mockReset();
+  mockUseCircleStats.mockReturnValue({ data: { converted: 0, joined: 0 } });
+  mockUseShareBooster.mockReset();
+  mockUseShareBooster.mockReturnValue({ count: 0, increment: vi.fn() });
   mockPush.mockReset();
   mockReplace.mockReset();
   mockFabDispatch.mockReset();
@@ -302,7 +319,7 @@ describe('ResearchPage', () => {
     );
   });
 
-  it('renders the level card and rewards vault from cumulative responses', () => {
+  it('renders the contribution dashboard above the carousel and drops the circle panel', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
@@ -310,14 +327,26 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    expect(screen.getByText('Level Participant')).toBeTruthy();
-    expect(screen.getByText('Rewards vault')).toBeTruthy();
+    const dashboard = screen.getByTestId('contribution-dashboard');
+    const carousel = screen.getByTestId('research-slide-research');
     expect(
-      screen.getByText(/Standard result brief for every questionnaire/)
+      dashboard.compareDocumentPosition(carousel) &
+        Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
-    expect(
-      screen.getByText(/Personalized summary report \+ badge/)
-    ).toBeTruthy();
+    expect(screen.queryByTestId('circle-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('circle-upsell')).not.toBeInTheDocument();
+  });
+
+  it('shows the XP value on carousel questionnaire rows from the info map', () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    expect(screen.getAllByText('+8 XP').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('+15 XP').length).toBeGreaterThan(0);
   });
 
   it('hides overlap hints across studies in the carousel', () => {

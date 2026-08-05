@@ -1,17 +1,18 @@
+import type { QuestionnaireInfo } from '@/services/api/research';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { buildOverlapMap, QuestionnaireList } from '../study-sections';
 import { makeStudyB, makeStudyProgress } from './research-fixtures';
 
-const TITLE_MAP = {
-  phq2: 'PHQ-2',
-  'big-five-inventory': 'Big Five Inventory'
+const TITLE_MAP: Record<string, QuestionnaireInfo> = {
+  phq2: { title: 'PHQ-2', durationMinutes: 8 },
+  'big-five-inventory': { title: 'Big Five Inventory', durationMinutes: 15 }
 };
 
 /** Renders the list for the base study, which overlaps study-b on phq2. */
 function renderList(
   props: {
-    titleMap?: Record<string, string>;
+    titleMap?: Record<string, QuestionnaireInfo>;
     isTitlesLoading?: boolean;
     showOverlapHints?: boolean;
   } = {}
@@ -48,7 +49,10 @@ describe('QuestionnaireList', () => {
   });
 
   it('shows a pulsing skeleton for unresolved titles while loading', () => {
-    renderList({ titleMap: { phq2: 'PHQ-2' }, isTitlesLoading: true });
+    renderList({
+      titleMap: { phq2: { title: 'PHQ-2', durationMinutes: 8 } },
+      isTitlesLoading: true
+    });
 
     expect(screen.getByRole('button', { name: 'PHQ-2' })).toBeTruthy();
     expect(
@@ -65,6 +69,22 @@ describe('QuestionnaireList', () => {
     expect(screen.getByRole('button', { name: 'PHQ-2' })).toHaveClass(
       'text-left'
     );
+  });
+
+  it('shows the XP value next to questionnaires with a known duration', () => {
+    renderList({ titleMap: TITLE_MAP });
+
+    expect(screen.getAllByText('+8 XP').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('+15 XP').length).toBeGreaterThan(0);
+  });
+
+  it('omits the XP value when the duration is unknown', () => {
+    renderList({
+      titleMap: { phq2: { title: 'PHQ-2', durationMinutes: null } }
+    });
+
+    expect(screen.queryByText('+8 XP')).toBeNull();
+    expect(screen.queryByText('+15 XP')).toBeNull();
   });
 
   it('hides overlap hints in the standard view', () => {

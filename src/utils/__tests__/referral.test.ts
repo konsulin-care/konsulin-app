@@ -11,9 +11,7 @@ import {
   readRefFromUrl,
   readShareCount,
   readStoredReferralRef,
-  shareBadgeFor,
-  writeShareCount,
-  type ShareBadge
+  writeShareCount
 } from '../referral';
 
 const ORIGIN = 'https://konsulin.care';
@@ -84,23 +82,6 @@ describe('buildWhatsAppShareUrl', () => {
     expect(url).not.toContain(' ');
     expect(url).not.toContain('%20%20');
     expect(decodeURIComponent(url.split('text=')[1])).toBe(buildShareMessage());
-  });
-});
-
-describe('shareBadgeFor', () => {
-  it('unlocks badges at 1, 3, and 5 shares', () => {
-    expect(shareBadgeFor(0)).toBeNull();
-    expect(shareBadgeFor(1)).toBe('buddy');
-    expect(shareBadgeFor(2)).toBe('buddy');
-    expect(shareBadgeFor(3)).toBe('community-researcher');
-    expect(shareBadgeFor(4)).toBe('community-researcher');
-    expect(shareBadgeFor(5)).toBe('captain');
-    expect(shareBadgeFor(9)).toBe('captain');
-  });
-
-  it('exposes the badge order for UI display', () => {
-    const badges: ShareBadge[] = ['buddy', 'community-researcher', 'captain'];
-    expect(badges).toHaveLength(3);
   });
 });
 

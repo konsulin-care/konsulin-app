@@ -1,72 +1,106 @@
+import {
+  ClipboardList,
+  Compass,
+  Crown,
+  Flame,
+  Footprints,
+  ShieldCheck,
+  type LucideIcon
+} from 'lucide-react';
+
 /**
  * Research gamification level ladder.
  *
- * Levels are intrinsic-only rewards that vary by cumulative contribution.
- * Thresholds represent the number of completed QuestionnaireResponses
- * required to reach each level.
+ * Levels are intrinsic-only rewards that vary by cumulative experience.
+ * Thresholds represent the total experience points (XP) required to reach
+ * each level. XP comes from questionnaire submissions (estimated minutes),
+ * share actions (+1), and converted referrals (+1).
  */
 
+/** Experience points required to advance one level. */
+export const LEVEL_XP = 100;
+
+/** Fallback XP awarded for a questionnaire whose duration is unknown. */
+export const DEFAULT_QUESTIONNAIRE_XP = 5;
+
 export interface ResearchLevel {
-  /** Minimum cumulative responses required to reach this level. */
+  /** Minimum cumulative XP required to reach this level. */
   threshold: number;
   /** Human-friendly level title. */
   label: string;
+  /** Icon representing the title badge. */
+  icon: LucideIcon;
   /** Intrinsic reward unlocked at this level. */
   reward: string;
 }
 
 export const RESEARCH_LEVELS: readonly ResearchLevel[] = [
   {
-    threshold: 1,
-    label: 'Participant',
-    reward: 'Standard result brief for every questionnaire'
+    threshold: 0,
+    label: 'Trailblazer',
+    icon: Footprints,
+    reward: 'Personal result brief for every questionnaire'
   },
   {
-    threshold: 5,
-    label: 'Contributor',
-    reward: 'Personalized summary report + badge'
+    threshold: 100,
+    label: 'Pathfinder',
+    icon: Compass,
+    reward: 'Personalized summary report + in-app title badge'
   },
   {
-    threshold: 10,
-    label: 'Advocate',
-    reward: 'Early access to batch results + cohort insights'
+    threshold: 200,
+    label: 'Torchbearer',
+    icon: Flame,
+    reward: 'Early access to batch results + anonymized cohort insights'
   },
   {
-    threshold: 20,
-    label: 'Champion',
-    reward: 'Influence on future research topics'
+    threshold: 400,
+    label: 'Vanguard',
+    icon: ShieldCheck,
+    reward: 'Vote on future research topics'
+  },
+  {
+    threshold: 600,
+    label: 'Pioneer',
+    icon: Crown,
+    reward:
+      'Co-design research questions (anonymously) + first access to new studies'
   }
 ];
 
+/** Fixed title for guests: no persistent identity, so no progression. */
+export const GUEST_TITLE: { label: string; icon: LucideIcon } = {
+  label: 'Participant',
+  icon: ClipboardList
+};
+
 /** Progress toward the next research level. */
 export interface ResearchLevelProgress {
-  /** Highest level reached, or null below the first threshold. */
-  current: ResearchLevel | null;
+  /** Highest level reached (Trailblazer at minimum). */
+  current: ResearchLevel;
   /** Next level to unlock, or null at the top level. */
   next: ResearchLevel | null;
-  /** Threshold of the current level (0 when below the first level). */
+  /** XP threshold of the current level. */
   currentThreshold: number;
-  /** Threshold of the next level (null at the top level). */
+  /** XP threshold of the next level (null at the top level). */
   nextThreshold: number | null;
-  /** Responses already accumulated within the current level. */
+  /** XP already accumulated within the current level. */
   intoNext: number;
-  /** Responses still needed to reach the next level (0 when maxed). */
+  /** XP still needed to reach the next level (0 when maxed). */
   toNext: number;
 }
 
 /**
- * Returns the highest level whose threshold is met, or null when the
- * cumulative response count is below the first threshold.
+ * Returns the highest level whose XP threshold is met.
  *
- * @param cumulativeResponses - Total completed QuestionnaireResponses.
- * @returns The reached level, or null.
+ * @param xp - Total cumulative experience points.
+ * @returns The reached level (Trailblazer at minimum).
  */
-export function getResearchLevel(
-  cumulativeResponses: number
-): ResearchLevel | null {
-  let reached: ResearchLevel | null = null;
+export function getResearchLevel(xp: number): ResearchLevel {
+  const safe = Math.max(0, xp);
+  let reached = RESEARCH_LEVELS[0];
   for (const level of RESEARCH_LEVELS) {
-    if (cumulativeResponses >= level.threshold) {
+    if (safe >= level.threshold) {
       reached = level;
     }
   }
@@ -76,41 +110,107 @@ export function getResearchLevel(
 /**
  * Returns the next level to unlock, or null at the top level.
  *
- * @param cumulativeResponses - Total completed QuestionnaireResponses.
+ * @param xp - Total cumulative experience points.
  * @returns The next level, or null when maxed out.
  */
-export function getNextResearchLevel(
-  cumulativeResponses: number
-): ResearchLevel | null {
-  return (
-    RESEARCH_LEVELS.find(level => cumulativeResponses < level.threshold) ?? null
-  );
+export function getNextResearchLevel(xp: number): ResearchLevel | null {
+  const safe = Math.max(0, xp);
+  return RESEARCH_LEVELS.find(level => safe < level.threshold) ?? null;
 }
 
 /**
- * Computes progress within the level ladder for a cumulative response count.
+ * Computes progress within the level ladder for a total XP count.
  *
- * @param cumulativeResponses - Total completed QuestionnaireResponses.
+ * @param xp - Total cumulative experience points.
  * @returns Current level, next level, and progress toward the next threshold.
  */
-export function getResearchLevelProgress(
-  cumulativeResponses: number
-): ResearchLevelProgress {
-  const current = getResearchLevel(cumulativeResponses);
-  const next = getNextResearchLevel(cumulativeResponses);
-
-  const currentThreshold = current?.threshold ?? 0;
-  const nextThreshold = next?.threshold ?? null;
+export function getResearchLevelProgress(xp: number): ResearchLevelProgress {
+  const current = getResearchLevel(xp);
+  const next = getNextResearchLevel(xp);
 
   return {
     current,
     next,
-    currentThreshold,
-    nextThreshold,
-    intoNext: Math.max(0, cumulativeResponses - currentThreshold),
-    toNext:
-      nextThreshold === null
-        ? 0
-        : Math.max(0, nextThreshold - cumulativeResponses)
+    currentThreshold: current.threshold,
+    nextThreshold: next?.threshold ?? null,
+    intoNext: Math.max(0, xp - current.threshold),
+    toNext: next === null ? 0 : Math.max(0, next.threshold - xp)
   };
+}
+
+/**
+ * Returns the numeric level for a total XP count (level 1 at 0-99 XP).
+ *
+ * @param xp - Total cumulative experience points.
+ * @returns The level number, starting at 1.
+ */
+export function getResearchLevelNumber(xp: number): number {
+  return Math.floor(Math.max(0, xp) / LEVEL_XP) + 1;
+}
+
+/**
+ * Returns the XP accumulated within the current level.
+ *
+ * @param xp - Total cumulative experience points.
+ * @returns XP within the current level, in [0, LEVEL_XP).
+ */
+export function getXpInLevel(xp: number): number {
+  return Math.max(0, xp) % LEVEL_XP;
+}
+
+/** A questionnaire the user can complete, with its XP value when known. */
+export interface MissionQuestionnaire {
+  id: string;
+  title: string;
+  /** Estimated minutes (= XP earned); null when the extension is missing. */
+  durationMinutes: number | null;
+}
+
+/**
+ * Builds the mission line: the most efficient path to the next level.
+ *
+ * Prefers a single questionnaire that closes the gap; otherwise combines
+ * questionnaires (ceil over the longest available duration) with shares.
+ * Guests never see a title name — they level up toward registration.
+ *
+ * @param opts - Total XP, available questionnaires, and guest flag.
+ * @returns The mission text.
+ */
+export function buildMission(opts: {
+  totalXp: number;
+  questionnaires: readonly MissionQuestionnaire[];
+  isGuest: boolean;
+}): string {
+  const { totalXp, questionnaires, isGuest } = opts;
+  const xpNeeded = LEVEL_XP - getXpInLevel(totalXp);
+  const next = getNextResearchLevel(totalXp);
+
+  if (next === null) {
+    return isGuest
+      ? 'You reached the highest level. Keep contributing!'
+      : `You reached ${getResearchLevel(totalXp).label}, the highest title. Keep contributing!`;
+  }
+
+  const target = isGuest ? 'level up' : `reach ${next.label}`;
+
+  const withDuration = questionnaires.filter(
+    (q): q is MissionQuestionnaire & { durationMinutes: number } =>
+      q.durationMinutes != null && q.durationMinutes > 0
+  );
+
+  if (withDuration.length === 0) {
+    return `${xpNeeded} shares to ${target}`;
+  }
+
+  const maxDuration = Math.max(...withDuration.map(q => q.durationMinutes));
+
+  if (maxDuration >= xpNeeded) {
+    const best = withDuration
+      .filter(q => q.durationMinutes >= xpNeeded)
+      .toSorted((a, b) => a.durationMinutes - b.durationMinutes)[0];
+    return `Complete ${best.title} (+${best.durationMinutes} XP) to ${target}`;
+  }
+
+  const count = Math.ceil(xpNeeded / maxDuration);
+  return `${count} questionnaires or ${xpNeeded} shares to ${target}`;
 }

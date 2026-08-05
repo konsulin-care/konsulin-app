@@ -7,18 +7,16 @@ describe('useShareBooster', () => {
     window.localStorage.clear();
   });
 
-  it('starts at zero with no badge and increments', () => {
+  it('starts at zero and increments the count', () => {
     const { result } = renderHook(() => useShareBooster());
 
     expect(result.current.count).toBe(0);
-    expect(result.current.badge).toBeNull();
 
     act(() => {
       result.current.increment();
     });
 
     expect(result.current.count).toBe(1);
-    expect(result.current.badge).toBe('buddy');
   });
 
   it('persists the counter across remounts', () => {
@@ -33,10 +31,9 @@ describe('useShareBooster', () => {
 
     const second = renderHook(() => useShareBooster());
     expect(second.result.current.count).toBe(2);
-    expect(second.result.current.badge).toBe('buddy');
   });
 
-  it('unlocks the captain badge at five shares', () => {
+  it('counts every share toward XP without a badge cap', () => {
     const { result } = renderHook(() => useShareBooster());
     for (let i = 0; i < 5; i += 1) {
       act(() => {
@@ -44,6 +41,5 @@ describe('useShareBooster', () => {
       });
     }
     expect(result.current.count).toBe(5);
-    expect(result.current.badge).toBe('captain');
   });
 });

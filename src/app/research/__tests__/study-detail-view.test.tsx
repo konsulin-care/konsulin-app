@@ -1,3 +1,4 @@
+import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,7 +22,7 @@ function renderDetail(
     }
   }),
   open = true,
-  titleMap: Record<string, string> = TITLE_MAP
+  titleMap: Record<string, QuestionnaireInfo> = TITLE_MAP
 ) {
   const handlers = {
     onClose: vi.fn<() => void>(),

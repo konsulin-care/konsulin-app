@@ -63,9 +63,7 @@ const sampleBundle: Bundle = {
 describe('submitFhirBundle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(getAPI).mockResolvedValue(
-      mockAxiosInstance as unknown as AxiosInstance
-    );
+    vi.mocked(getAPI).mockResolvedValue(mockAxiosInstance);
   });
 
   afterEach(() => {
@@ -97,9 +95,7 @@ describe('submitFhirBundle', () => {
 describe('useFhirBundleSubmit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(getAPI).mockResolvedValue(
-      mockAxiosInstance as unknown as AxiosInstance
-    );
+    vi.mocked(getAPI).mockResolvedValue(mockAxiosInstance);
   });
 
   afterEach(() => {

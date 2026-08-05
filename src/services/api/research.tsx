@@ -9,11 +9,13 @@ import {
 } from '@/utils/fhir/research';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import type { Bundle, Questionnaire } from 'fhir/r4';
+import type { Bundle } from 'fhir/r4';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ensureAnonymousSession } from '../anonymous-session';
 import { getAPI } from '../api';
 import { submitFhirBundle } from './fhir-bundle';
+
+export type { QuestionnaireInfo } from './questionnaire-info';
 
 /** Identity under which research progress is tracked. */
 export interface ResearchIdentity {
@@ -190,61 +192,6 @@ export function useResearchProgress() {
       const API = await getAPI();
       const response = await API.post<Bundle>('/fhir', bundle);
       return parseResearchBundle(response.data, today);
-    }
-  });
-}
-
-/**
- * Fetches Questionnaire titles for a set of questionnaire ids in one batch
- * request, returning an id → title map.
- *
- * Resolved titles are seeded into the shared `['questionnaire', id, 'title']`
- * cache (used by /record); the select merges titles already cached.
- *
- * @param questionnaireIds - Bare questionnaire ids to resolve.
- * @returns React Query result whose data maps each id to its title.
- */
-export function useQuestionnaireTitles(questionnaireIds: string[]) {
-  const queryClient = useQueryClient();
-  const uniqueIds = useMemo(
-    () => [...new Set(questionnaireIds)].toSorted((a, b) => a.localeCompare(b)),
-    [questionnaireIds]
-  );
-
-  return useQuery({
-    queryKey: ['questionnaire-titles', uniqueIds],
-    enabled: uniqueIds.length > 0,
-    staleTime: 30 * 60_000,
-    queryFn: async (): Promise<Record<string, string>> => {
-      const API = await getAPI();
-      const { data } = await API.get<Bundle>(
-        `/fhir/Questionnaire?_id=${uniqueIds.join(',')}&_elements=id,title`
-      );
-      const titles: Record<string, string> = {};
-      for (const entry of data.entry ?? []) {
-        const questionnaire = entry.resource as Questionnaire | undefined;
-        if (!questionnaire?.id) continue;
-        const title = questionnaire.title ?? questionnaire.id;
-        titles[questionnaire.id] = title;
-        queryClient.setQueryData(
-          ['questionnaire', questionnaire.id, 'title'],
-          title
-        );
-      }
-      return titles;
-    },
-    select: (fetched: Record<string, string>) => {
-      const merged: Record<string, string> = { ...fetched };
-      for (const id of uniqueIds) {
-        if (merged[id]) continue;
-        const cached = queryClient.getQueryData<string>([
-          'questionnaire',
-          id,
-          'title'
-        ]);
-        if (cached) merged[id] = cached;
-      }
-      return merged;
     }
   });
 }

@@ -1,7 +1,4 @@
-import {
-  getResearchLevelProgress,
-  type ResearchLevelProgress
-} from '@/constants/research';
+import { DEFAULT_QUESTIONNAIRE_XP } from '@/constants/research';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type {
   Bundle,
@@ -66,9 +63,10 @@ export interface ResearchProgress {
   studies: StudyProgress[];
   /** Distinct completed responses across all identity queries. */
   cumulativeResponses: number;
-  currentLevel: ResearchLevelProgress['current'];
-  nextLevel: ResearchLevelProgress['next'];
-  levelProgress: ResearchLevelProgress;
+  /** Questionnaire id of every completed response (deduped, in order). */
+  questionnaireResponses: string[];
+  /** XP earned from questionnaire submissions (minutes, 5 XP fallback). */
+  questionnaireXp: number;
   /** Unique questionnaire ids ever completed. */
   completedQuestionnaireIds: string[];
   /** Study ids with an active on-study ResearchSubject for this patient. */
@@ -315,34 +313,55 @@ export function resolveStudyIdForQuestionnaire(
 }
 
 /**
+ * Sums questionnaire XP from per-response questionnaire ids.
+ *
+ * Each response contributes its estimated duration in minutes, falling back
+ * to DEFAULT_QUESTIONNAIRE_XP when the duration is unknown or missing.
+ *
+ * @param questionnaireIds - Bare questionnaire id per completed response.
+ * @param durationByQuestionnaire - Map of questionnaire id to minutes (or null).
+ * @returns The total questionnaire XP.
+ */
+export function computeQuestionnaireXp(
+  questionnaireIds: readonly string[],
+  durationByQuestionnaire: Readonly<Record<string, number | null>> = {}
+): number {
+  return questionnaireIds.reduce(
+    (sum, id) =>
+      sum + (durationByQuestionnaire[id] ?? DEFAULT_QUESTIONNAIRE_XP),
+    0
+  );
+}
+
+/**
  * Aggregates per-study progress into a single ResearchProgress object.
  *
  * @param studies - Computed per-study progress.
  * @param responses - Raw responses across all identity queries.
  * @param consentedStudyIds - Study ids with an active consent.
- * @returns Aggregate progress with cumulative level and response set.
+ * @param durationByQuestionnaire - Map of questionnaire id to minutes (or null).
+ * @returns Aggregate progress with questionnaire XP and response set.
  */
 export function computeResearchProgress(
   studies: StudyProgress[],
   responses: ResearchResponse[],
-  consentedStudyIds: string[] = []
+  consentedStudyIds: string[] = [],
+  durationByQuestionnaire: Readonly<Record<string, number | null>> = {}
 ): ResearchProgress {
   const merged = mergeResponses(responses);
-  const levelProgress = getResearchLevelProgress(merged.length);
+  const questionnaireResponses = merged
+    .map(response => extractQuestionnaireId(response.questionnaire))
+    .filter((id): id is string => id !== null);
 
   return {
     studies,
     cumulativeResponses: merged.length,
-    currentLevel: levelProgress.current,
-    nextLevel: levelProgress.next,
-    levelProgress,
-    completedQuestionnaireIds: [
-      ...new Set(
-        merged
-          .map(response => extractQuestionnaireId(response.questionnaire))
-          .filter((id): id is string => id !== null)
-      )
-    ],
+    questionnaireResponses,
+    questionnaireXp: computeQuestionnaireXp(
+      questionnaireResponses,
+      durationByQuestionnaire
+    ),
+    completedQuestionnaireIds: [...new Set(questionnaireResponses)],
     consentedStudyIds
   };
 }

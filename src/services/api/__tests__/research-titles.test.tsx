@@ -1,10 +1,11 @@
+import { FhirExtensionUrls } from '@/utils/fhir/extensions';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { AxiosInstance } from 'axios';
 import type { Bundle } from 'fhir/r4';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getAPI } from '../../api';
-import { useQuestionnaireTitles } from '../research';
+import { useQuestionnaireTitles } from '../questionnaire-info';
 
 vi.mock('../../api', () => ({
   getAPI: vi.fn()
@@ -30,6 +31,8 @@ function createWrapperWithClient(queryClient: QueryClient) {
   };
 }
 
+const DURATION_URL = FhirExtensionUrls.questionnaireEstimatedDuration;
+
 const TITLES_BUNDLE: Bundle = {
   resourceType: 'Bundle',
   type: 'searchset',
@@ -39,7 +42,13 @@ const TITLES_BUNDLE: Bundle = {
         resourceType: 'Questionnaire',
         id: 'phq2',
         status: 'active',
-        title: 'PHQ-2'
+        title: 'PHQ-2',
+        extension: [
+          {
+            url: DURATION_URL,
+            valueDuration: { value: 8, code: 'min' }
+          }
+        ]
       }
     },
     {
@@ -47,7 +56,13 @@ const TITLES_BUNDLE: Bundle = {
         resourceType: 'Questionnaire',
         id: 'big-five-inventory',
         status: 'active',
-        title: 'Big Five Inventory'
+        title: 'Big Five Inventory',
+        extension: [
+          {
+            url: DURATION_URL,
+            valueInteger: 15
+          }
+        ]
       }
     }
   ]
@@ -58,7 +73,7 @@ afterEach(() => {
 });
 
 describe('useQuestionnaireTitles', () => {
-  it('batch-fetches titles for the given ids and returns an id to title map', async () => {
+  it('batch-fetches titles and durations for the given ids', async () => {
     const mockGet = vi.fn().mockResolvedValue({ data: TITLES_BUNDLE });
     vi.mocked(getAPI).mockResolvedValue({
       get: mockGet
@@ -71,15 +86,49 @@ describe('useQuestionnaireTitles', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockGet).toHaveBeenCalledWith(
-      '/fhir/Questionnaire?_id=big-five-inventory,phq2&_elements=id,title'
+      '/fhir/Questionnaire?_id=big-five-inventory,phq2&_elements=id,title,extension'
     );
     expect(result.current.data).toEqual({
-      'big-five-inventory': 'Big Five Inventory',
-      phq2: 'PHQ-2'
+      'big-five-inventory': {
+        title: 'Big Five Inventory',
+        durationMinutes: 15
+      },
+      phq2: { title: 'PHQ-2', durationMinutes: 8 }
     });
   });
 
-  it('seeds the shared per-questionnaire title cache used by /record', async () => {
+  it('reports a null duration when the extension is missing', async () => {
+    const mockGet = vi.fn().mockResolvedValue({
+      data: {
+        resourceType: 'Bundle',
+        type: 'searchset',
+        entry: [
+          {
+            resource: {
+              resourceType: 'Questionnaire',
+              id: 'gad-7',
+              status: 'active',
+              title: 'GAD-7'
+            }
+          }
+        ]
+      }
+    });
+    vi.mocked(getAPI).mockResolvedValue({
+      get: mockGet
+    } as unknown as AxiosInstance);
+
+    const { result } = renderHook(() => useQuestionnaireTitles(['gad-7']), {
+      wrapper: createWrapper()
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual({
+      'gad-7': { title: 'GAD-7', durationMinutes: null }
+    });
+  });
+
+  it('seeds the shared per-questionnaire title and duration caches', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } }
     });
@@ -99,9 +148,12 @@ describe('useQuestionnaireTitles', () => {
     expect(
       queryClient.getQueryData(['questionnaire', 'big-five-inventory', 'title'])
     ).toBe('Big Five Inventory');
+    expect(
+      queryClient.getQueryData(['questionnaire', 'phq2', 'duration'])
+    ).toBe(8);
   });
 
-  it('merges titles already cached for the requested ids', async () => {
+  it('merges cached titles for the requested ids without refetching', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } }
     });
@@ -136,8 +188,8 @@ describe('useQuestionnaireTitles', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual({
-      'gad-7': 'GAD-7',
-      phq2: 'PHQ-2 cached'
+      'gad-7': { title: 'GAD-7', durationMinutes: null },
+      phq2: { title: 'PHQ-2 cached', durationMinutes: null }
     });
   });
 

@@ -1,3 +1,4 @@
+import type { QuestionnaireInfo } from '@/services/api/research';
 import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as React from 'react';
@@ -9,10 +10,10 @@ export const BATCH_1 = {
   questionnaireIds: ['phq2', 'big-five-inventory']
 };
 
-/** Resolved questionnaire titles matching the research questionnaire ids. */
-export const TITLE_MAP: Record<string, string> = {
-  phq2: 'PHQ-2',
-  'big-five-inventory': 'Big Five Inventory'
+/** Resolved questionnaire info matching the research questionnaire ids. */
+export const TITLE_MAP: Record<string, QuestionnaireInfo> = {
+  phq2: { title: 'PHQ-2', durationMinutes: 8 },
+  'big-five-inventory': { title: 'Big Five Inventory', durationMinutes: 15 }
 };
 
 /** Base StudyProgress fixture for the mental-health survey study. */
@@ -65,39 +66,15 @@ export function makeStudyB(overrides?: Partial<StudyProgress>): StudyProgress {
   });
 }
 
-/** Aggregate ResearchProgress fixture with level metadata. */
+/** Aggregate ResearchProgress fixture with questionnaire XP metadata. */
 export function makeProgress(
   overrides?: Partial<ResearchProgress>
 ): ResearchProgress {
   return {
     studies: [makeStudyProgress()],
     cumulativeResponses: 1,
-    currentLevel: {
-      threshold: 1,
-      label: 'Participant',
-      reward: 'Standard result brief for every questionnaire'
-    },
-    nextLevel: {
-      threshold: 5,
-      label: 'Contributor',
-      reward: 'Personalized summary report + badge'
-    },
-    levelProgress: {
-      current: {
-        threshold: 1,
-        label: 'Participant',
-        reward: 'Standard result brief for every questionnaire'
-      },
-      next: {
-        threshold: 5,
-        label: 'Contributor',
-        reward: 'Personalized summary report + badge'
-      },
-      currentThreshold: 1,
-      nextThreshold: 5,
-      intoNext: 0,
-      toNext: 4
-    },
+    questionnaireResponses: ['phq2'],
+    questionnaireXp: 8,
     completedQuestionnaireIds: ['phq2'],
     consentedStudyIds: [],
     ...overrides

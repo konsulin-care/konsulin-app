@@ -3,7 +3,8 @@
  *
  * Patients share a link carrying `?ref=p_<fhirId>` so referees can be
  * attributed on completion; guests share a plain link with no attribution.
- * A local share-booster counter rewards repeat sharing (badges at 1/3/5).
+ * A local share-booster counter feeds the research XP engine (1 XP per
+ * share); each converted referee adds another XP via FHIR Communications.
  */
 
 /** Prefix marking a patient referral ref. */
@@ -23,19 +24,6 @@ export type ReferralRef = {
   kind: 'patient';
   fhirId: string;
 };
-
-/** Badge names unlocked by the share booster. */
-export type ShareBadge = 'buddy' | 'community-researcher' | 'captain';
-
-/** Badge thresholds, highest first. */
-export const SHARE_BADGES: ReadonlyArray<{
-  count: number;
-  badge: ShareBadge;
-}> = [
-  { count: 5, badge: 'captain' },
-  { count: 3, badge: 'community-researcher' },
-  { count: 1, badge: 'buddy' }
-];
 
 /**
  * Builds the shareable research URL for a user.
@@ -96,19 +84,6 @@ export function buildShareMessage(): string {
  */
 export function buildWhatsAppShareUrl(message: string): string {
   return `https://wa.me/?text=${encodeURIComponent(message)}`;
-}
-
-/**
- * Highest share badge unlocked for a share count.
- *
- * @param count - Number of shares recorded.
- * @returns The badge name, or null before the first share.
- */
-export function shareBadgeFor(count: number): ShareBadge | null {
-  for (const { count: threshold, badge } of SHARE_BADGES) {
-    if (count >= threshold) return badge;
-  }
-  return null;
 }
 
 /**

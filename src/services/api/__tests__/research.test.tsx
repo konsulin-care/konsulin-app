@@ -295,7 +295,8 @@ describe('useResearchProgress', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.cumulativeResponses).toBe(1);
     expect(result.current.data?.studies[0].completedCount).toBe(1);
-    expect(result.current.data?.currentLevel?.label).toBe('Participant');
+    expect(result.current.data?.questionnaireResponses).toEqual(['phq2']);
+    expect(result.current.data?.questionnaireXp).toBe(5);
   });
 });
 

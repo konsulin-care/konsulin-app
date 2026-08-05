@@ -86,16 +86,10 @@ function makeProgress(firstUncompleted: string | null): ResearchProgress {
       }
     ],
     cumulativeResponses: 2,
-    currentLevel: { threshold: 1, label: 'Participant', reward: 'brief' },
-    nextLevel: { threshold: 5, label: 'Contributor', reward: 'report' },
-    levelProgress: {
-      current: { threshold: 1, label: 'Participant', reward: 'brief' },
-      next: { threshold: 5, label: 'Contributor', reward: 'report' },
-      currentThreshold: 1,
-      nextThreshold: 5,
-      intoNext: 1,
-      toNext: 3
-    },
+    questionnaireResponses: firstUncompleted
+      ? ['phq2']
+      : ['phq2', 'big-five-inventory'],
+    questionnaireXp: 8,
     completedQuestionnaireIds: firstUncompleted
       ? ['phq2']
       : ['phq2', 'big-five-inventory'],

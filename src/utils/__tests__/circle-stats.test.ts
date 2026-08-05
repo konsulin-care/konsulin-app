@@ -1,10 +1,6 @@
 import type { Communication } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
-import {
-  communityMilestoneFor,
-  deriveCircleStats,
-  nextMilestoneTarget
-} from '../circle-stats';
+import { deriveCircleStats } from '../circle-stats';
 
 function comm(recipient: string): Communication {
   return {
@@ -42,29 +38,5 @@ describe('deriveCircleStats', () => {
       converted: 0,
       joined: 0
     });
-  });
-});
-
-describe('communityMilestoneFor', () => {
-  it('unlocks Buddy at 1, Community Researcher at 3, Captain at 5', () => {
-    expect(communityMilestoneFor(0)).toBeNull();
-    expect(communityMilestoneFor(1)).toBe('buddy');
-    expect(communityMilestoneFor(2)).toBe('buddy');
-    expect(communityMilestoneFor(3)).toBe('community-researcher');
-    expect(communityMilestoneFor(4)).toBe('community-researcher');
-    expect(communityMilestoneFor(5)).toBe('captain');
-    expect(communityMilestoneFor(9)).toBe('captain');
-  });
-});
-
-describe('nextMilestoneTarget', () => {
-  it('returns the next threshold above the current count', () => {
-    expect(nextMilestoneTarget(0)).toBe(1);
-    expect(nextMilestoneTarget(1)).toBe(3);
-    expect(nextMilestoneTarget(2)).toBe(3);
-    expect(nextMilestoneTarget(3)).toBe(5);
-    expect(nextMilestoneTarget(4)).toBe(5);
-    expect(nextMilestoneTarget(5)).toBeNull();
-    expect(nextMilestoneTarget(9)).toBeNull();
   });
 });

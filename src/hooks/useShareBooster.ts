@@ -1,24 +1,18 @@
 'use client';
 
-import {
-  readShareCount,
-  shareBadgeFor,
-  writeShareCount,
-  type ShareBadge
-} from '@/utils/referral';
+import { readShareCount, writeShareCount } from '@/utils/referral';
 import { useCallback, useState } from 'react';
 
 /**
- * Local share-booster counter with milestone badges.
+ * Local share-booster counter feeding the research XP engine.
  *
  * Reads and writes the counter from localStorage so repeated shares are
- * rewarded across sessions (badges at 1/3/5 shares).
+ * rewarded across sessions (each share counts as 1 XP).
  *
- * @returns The current count, the unlocked badge (or null), and increment.
+ * @returns The current count and the increment function.
  */
 export function useShareBooster(): {
   count: number;
-  badge: ShareBadge | null;
   increment: () => void;
 } {
   const [count, setCount] = useState(() =>
@@ -33,7 +27,5 @@ export function useShareBooster(): {
     });
   }, []);
 
-  const badge = shareBadgeFor(count);
-
-  return { count, badge, increment };
+  return { count, increment };
 }

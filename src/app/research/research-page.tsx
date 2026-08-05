@@ -4,15 +4,14 @@ import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
-import CirclePanel from '@/components/research/circle-panel';
 import ReferralNotice from '@/components/research/referral-notice';
 import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
 import { useReferralWrite } from '@/hooks/useReferralWrite';
+import { useQuestionnaireTitles } from '@/services/api/questionnaire-info';
 import {
   useClaimLocalConsents,
   useConsentToStudy,
-  useQuestionnaireTitles,
   useResearchProgress
 } from '@/services/api/research';
 import { readConsentFlag, writeConsentFlag } from '@/utils/consent';
@@ -57,14 +56,16 @@ export default function ResearchPage() {
   );
   const overlapMap = useMemo(() => buildOverlapMap(studies), [studies]);
 
-  /** Questionnaire ids deployed by the current batch of any active study. */
+  /** Questionnaire ids deployed by any current batch plus every id the user
+   * has ever completed (the latter feeds historical questionnaire XP). */
   const questionnaireIds = useMemo(
     () => [
-      ...new Set(
-        studies.flatMap(study => study.currentBatch?.questionnaireIds ?? [])
-      )
+      ...new Set([
+        ...studies.flatMap(study => study.currentBatch?.questionnaireIds ?? []),
+        ...(progress?.completedQuestionnaireIds ?? [])
+      ])
     ],
-    [studies]
+    [studies, progress?.completedQuestionnaireIds]
   );
   const { data: titleMap = {}, isPending: titlesPending } =
     useQuestionnaireTitles(questionnaireIds);
@@ -245,6 +246,11 @@ export default function ResearchPage() {
     return (
       <>
         <ReferralNotice />
+        <ContributionDashboard
+          progress={progress}
+          activeStudy={activeStudy}
+          questionnaireInfo={titleMap}
+        />
         <ResearchCarousel
           studies={studies}
           activeId={activeStudyId ?? ''}
@@ -256,8 +262,6 @@ export default function ResearchPage() {
           titleMap={titleMap}
           isTitlesLoading={titlesPending}
         />
-        <ContributionDashboard progress={progress} activeStudy={activeStudy} />
-        <CirclePanel isPatient={isPatient} fhirId={fhirId} />
       </>
     );
   };
