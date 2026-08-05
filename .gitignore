@@ -48,11 +48,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Diagnostic probe files created to isolate a TS include-glob shadowing bug;
-# deleted by the research-page cleanup (sandbox cannot remove files).
-src/app/research/__tests__/zz-*
-src/app/research/__tests__/research-fixtures.tsx
-
 
 # agent config
 CLAUDE.md
