@@ -153,6 +153,12 @@ export default function ResearchPage() {
           studies={studies}
           activeId={activeStudyId ?? ''}
           onSlideChange={handleSlideChange}
+          onStudyClick={() => {
+            /* wired to the study detail view in T3 */
+          }}
+          onQuestionnaireClick={() => {
+            /* wired to the consent-aware flow in T5 */
+          }}
           isPatient={Boolean(fhirId)}
           fhirId={fhirId}
         />

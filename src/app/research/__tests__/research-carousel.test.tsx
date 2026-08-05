@@ -38,13 +38,20 @@ const BATCH_3 = {
 function renderCarousel(
   studies: StudyProgress[],
   activeId: string,
+  overrides: {
+    onSlideChange?: () => void;
+    onStudyClick?: (studyId: string) => void;
+    onQuestionnaireClick?: (studyId: string, qid: string) => void;
+  } = {},
   onSlideChange = vi.fn()
 ) {
   return render(
     <ResearchCarousel
       studies={studies}
       activeId={activeId}
-      onSlideChange={onSlideChange}
+      onSlideChange={overrides.onSlideChange ?? onSlideChange}
+      onStudyClick={overrides.onStudyClick ?? vi.fn()}
+      onQuestionnaireClick={overrides.onQuestionnaireClick ?? vi.fn()}
       isPatient={false}
     />
   );
@@ -82,33 +89,87 @@ describe('ResearchCarousel', () => {
   it('shares the study URL when the share bar is clicked', () => {
     const share = vi.fn().mockResolvedValue(void 0);
     Object.assign(navigator, { share });
-    renderCarousel([makeStudyProgress()], 'research');
+    const onStudyClick = vi.fn();
+    renderCarousel([makeStudyProgress()], 'research', { onStudyClick });
 
     fireEvent.click(screen.getByTestId('research-share-research'));
 
     expect(share).toHaveBeenCalledWith({
       url: 'https://konsulin.care/research?id=research'
     });
+    expect(onStudyClick).not.toHaveBeenCalled();
   });
 
-  it('does not share when the card body is clicked', () => {
+  it('fires the study click handler when the card body is clicked', () => {
     const share = vi.fn().mockResolvedValue(void 0);
     Object.assign(navigator, { share });
-    renderCarousel([makeStudyProgress()], 'research');
+    const onStudyClick = vi.fn();
+    renderCarousel([makeStudyProgress()], 'research', { onStudyClick });
 
     fireEvent.click(screen.getByTestId('research-slide-research'));
 
+    expect(onStudyClick).toHaveBeenCalledWith('research');
     expect(share).not.toHaveBeenCalled();
   });
 
-  it('does not share when a questionnaire row is clicked', () => {
+  it('reports questionnaire clicks without firing the card handler', () => {
     const share = vi.fn().mockResolvedValue(void 0);
     Object.assign(navigator, { share });
+    const onStudyClick = vi.fn();
+    const onQuestionnaireClick = vi.fn();
+    renderCarousel([makeStudyProgress()], 'research', {
+      onStudyClick,
+      onQuestionnaireClick
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'PHQ2' }));
+
+    expect(onQuestionnaireClick).toHaveBeenCalledWith('research', 'phq2');
+    expect(onStudyClick).not.toHaveBeenCalled();
+    expect(share).not.toHaveBeenCalled();
+  });
+
+  it('truncates descriptions longer than 200 characters with an ellipsis', () => {
+    const longDescription = 'Lorem ipsum dolor sit amet '.repeat(20);
+    renderCarousel(
+      [
+        makeStudyProgress({
+          study: {
+            resourceType: 'ResearchStudy',
+            id: 'research',
+            status: 'active',
+            title: 'Long Description Study',
+            description: longDescription
+          }
+        })
+      ],
+      'research'
+    );
+
+    expect(screen.getByText(`${longDescription.slice(0, 200)}…`)).toBeTruthy();
+    expect(screen.queryByText(longDescription)).toBeNull();
+  });
+
+  it('keeps short descriptions untouched', () => {
     renderCarousel([makeStudyProgress()], 'research');
 
-    fireEvent.click(screen.getByRole('link', { name: 'PHQ2' }));
+    expect(
+      screen.getByText('A longitudinal survey of mental health.')
+    ).toBeTruthy();
+  });
 
-    expect(share).not.toHaveBeenCalled();
+  it('styles the share text black', () => {
+    renderCarousel([makeStudyProgress()], 'research');
+
+    expect(screen.getByTestId('research-share-research')).toHaveClass(
+      'text-black'
+    );
+  });
+
+  it('applies the research-carousel class for equal-height slides', () => {
+    renderCarousel([makeStudyProgress()], 'research');
+
+    expect(document.querySelector('.research-carousel')).toBeTruthy();
   });
 
   it('styles the active batch chip bold black and upcoming chips at half opacity', () => {
@@ -210,6 +271,7 @@ describe('ResearchCarousel', () => {
     renderCarousel(
       [makeStudyProgress(), makeStudyB()],
       'research',
+      { onSlideChange },
       onSlideChange
     );
 

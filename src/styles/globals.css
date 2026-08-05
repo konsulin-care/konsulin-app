@@ -5,6 +5,13 @@
 }
 @import './phone-input.css';
 
+/* Stretch carousel slides to the tallest slide so every card is equal
+   height. Swiper sizes slides to their content otherwise, which makes the
+   carousel height jump between studies. */
+.research-carousel .swiper-slide {
+  height: auto;
+}
+
 * {
   border-color: var(--border);
 }
