@@ -59,6 +59,12 @@ vi.mock('@/lib/indexeddb', () => ({
   dbDelete: vi.fn()
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
+const { mockUseResearchProgress } = vi.hoisted(() => ({
+  mockUseResearchProgress: vi.fn()
+}));
+vi.mock('@/services/api/research', () => ({
+  useResearchProgress: mockUseResearchProgress
+}));
 vi.mock('@/components/general/smart-form-shell', () => ({
   SmartFormShell: ({ className, onChange }: any) => (
     <div data-testid='mock-smart-form' className={className}>
@@ -143,6 +149,7 @@ function DirtyStateObserver({
 
 function setupBeforeEach() {
   vi.clearAllMocks();
+  vi.mocked(mockUseResearchProgress).mockReturnValue({ data: undefined });
   vi.mocked(useRouter).mockReturnValue({
     push: vi.fn(),
     replace: vi.fn(),
@@ -322,5 +329,29 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
       lastDirtyState?.onAction?.();
     });
     expect(screen.getByTestId('mock-drawer')).toBeInTheDocument();
+  });
+
+  it('scopes the research share CTA link to the deployed study', () => {
+    vi.mocked(mockUseResearchProgress).mockReturnValue({
+      data: {
+        studies: [
+          {
+            study: { id: 'study-x', title: 'Study X' },
+            currentBatch: { questionnaireIds: ['q-123'] }
+          }
+        ]
+      }
+    });
+    renderWithObserver({ formType: 'research' });
+    fireEvent.change(screen.getByTestId('mock-form-input'), {
+      target: { value: 'a' }
+    });
+    act(() => {
+      lastDirtyState?.onAction?.();
+    });
+
+    const href = screen.getByTestId('cta-whatsapp').getAttribute('href') ?? '';
+    const message = decodeURIComponent(href.split('text=')[1] ?? '');
+    expect(message).toContain('/research?id=study-x');
   });
 });

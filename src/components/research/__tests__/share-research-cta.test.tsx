@@ -30,6 +30,42 @@ describe('ShareResearchCta', () => {
     });
   });
 
+  it('deep-links the study when studyId is given', async () => {
+    render(
+      <ShareResearchCta isPatient fhirId='DG3F3STPYZ6HX25A' studyId='study-x' />
+    );
+
+    fireEvent.click(screen.getByTestId('cta-copy'));
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(
+        `${window.location.origin}/research?id=study-x&ref=p_DG3F3STPYZ6HX25A`
+      );
+    });
+  });
+
+  it('deep-links the study without a ref for guests', async () => {
+    render(<ShareResearchCta isPatient={false} studyId='study-x' />);
+
+    fireEvent.click(screen.getByTestId('cta-copy'));
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(
+        `${window.location.origin}/research?id=study-x`
+      );
+    });
+  });
+
+  it('wa.me message embeds the study-scoped share link', () => {
+    render(<ShareResearchCta isPatient fhirId='ABC' studyId='study-x' />);
+
+    const href = screen.getByTestId('cta-whatsapp').getAttribute('href') ?? '';
+    const message = decodeURIComponent(href.split('text=')[1] ?? '');
+    expect(message).toContain(
+      `${window.location.origin}/research?id=study-x&ref=p_ABC`
+    );
+  });
+
   it('wa.me message embeds the share link', () => {
     render(<ShareResearchCta isPatient fhirId='DG3F3STPYZ6HX25A' />);
 

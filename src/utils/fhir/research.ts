@@ -292,6 +292,26 @@ export function computeStudyProgress(
 }
 
 /**
+ * Resolves the study that deploys a questionnaire in its current batch,
+ * falling back to the first study. Used to scope share links to the study a
+ * completed questionnaire belongs to.
+ *
+ * @param studies - Computed per-study progress.
+ * @param questionnaireId - Bare questionnaire id to match.
+ * @returns The study id, or undefined when there are no studies.
+ */
+export function resolveStudyIdForQuestionnaire(
+  studies: StudyProgress[],
+  questionnaireId: string
+): string | undefined {
+  return (
+    studies.find(study =>
+      study.currentBatch?.questionnaireIds.includes(questionnaireId)
+    )?.study.id ?? studies[0]?.study.id
+  );
+}
+
+/**
  * Aggregates per-study progress into a single ResearchProgress object.
  *
  * @param studies - Computed per-study progress.

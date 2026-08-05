@@ -59,6 +59,9 @@ vi.mock('@/lib/indexeddb', () => ({
   dbDelete: vi.fn()
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
+vi.mock('@/services/api/research', () => ({
+  useResearchProgress: () => ({ data: undefined })
+}));
 
 vi.mock('@/context/fabContext', () => ({
   FabProvider: ({ children }: any) => <>{children}</>,

@@ -11,20 +11,24 @@ import { useEffect, useState } from 'react';
 export interface ShareResearchCtaProps {
   isPatient: boolean;
   fhirId?: string;
+  studyId?: string;
 }
 
 /**
  * Compact share CTA for the research success drawer.
  *
  * Opens WhatsApp with the prefilled message and research link, with a
- * clipboard fallback. Counts shares toward the share-booster badges.
+ * clipboard fallback. When a studyId is given the link deep-links that study
+ * on the research page. Counts shares toward the share-booster badges.
  *
  * @param isPatient - Whether the user shares an attributed ref link.
  * @param fhirId - Patient FHIR id used in the referral ref.
+ * @param studyId - Study to deep-link in the shared research URL.
  */
 export default function ShareResearchCta({
   isPatient,
-  fhirId
+  fhirId,
+  studyId
 }: ShareResearchCtaProps) {
   const { increment } = useShareBooster();
   const [origin, setOrigin] = useState('');
@@ -34,7 +38,7 @@ export default function ShareResearchCta({
     setOrigin(window.location.origin);
   }, []);
 
-  const shareUrl = buildShareUrl({ origin, isPatient, fhirId });
+  const shareUrl = buildShareUrl({ origin, isPatient, fhirId, studyId });
   const waUrl = buildWhatsAppShareUrl(`${buildShareMessage()} ${shareUrl}`);
 
   const handleCopy = async () => {

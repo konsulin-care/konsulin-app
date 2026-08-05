@@ -10,6 +10,8 @@ import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
 import { useRequiredValidation } from '@/hooks/useRequiredValidation';
 import { getAPI } from '@/services/api';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
+import { useResearchProgress } from '@/services/api/research';
+import { resolveStudyIdForQuestionnaire } from '@/utils/fhir/research';
 import { BookCheck } from 'lucide-react';
 import Image from 'next/image';
 
@@ -92,6 +94,8 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     questionnaire.id,
     isAuthenticated
   );
+
+  const { data: researchProgress } = useResearchProgress();
 
   const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =
     useRequiredValidation();
@@ -271,6 +275,10 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         <ShareResearchCta
           isPatient={isAuthenticated && Boolean(patientId)}
           fhirId={patientId}
+          studyId={resolveStudyIdForQuestionnaire(
+            researchProgress?.studies ?? [],
+            questionnaire.id
+          )}
         />
       )}
       {formType !== 'research' && (
