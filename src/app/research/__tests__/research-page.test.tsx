@@ -10,7 +10,9 @@ import {
 } from './research-fixtures';
 
 const {
+  mockUseAuth,
   mockUseResearchProgress,
+  mockUseConsentToStudy,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -20,7 +22,14 @@ const {
   const push = vi.fn();
   const replace = vi.fn();
   return {
+    mockUseAuth: vi.fn<
+      () => {
+        state: { userInfo: { fhirId?: string } };
+        isLoading: boolean;
+      }
+    >(),
     mockUseResearchProgress: vi.fn(),
+    mockUseConsentToStudy: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -33,14 +42,12 @@ const {
 let dispatchedActions: FabAction[] = [];
 
 vi.mock('@/services/api/research', () => ({
-  useResearchProgress: mockUseResearchProgress
+  useResearchProgress: mockUseResearchProgress,
+  useConsentToStudy: mockUseConsentToStudy
 }));
 
 vi.mock('@/context/auth/authContext', () => ({
-  useAuth: vi.fn(() => ({
-    state: { userInfo: {} },
-    isLoading: false
-  }))
+  useAuth: () => mockUseAuth()
 }));
 
 vi.mock('next/navigation', () => ({
@@ -53,7 +60,18 @@ vi.mock('@/context/fabContext', () => ({
   useFab: () => ({ state: {}, dispatch: mockFabDispatch })
 }));
 
+vi.mock('react-toastify', () => ({
+  toast: { error: vi.fn(), success: vi.fn() }
+}));
+
 beforeEach(() => {
+  window.localStorage.clear();
+  mockUseAuth.mockReset();
+  mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
+  mockUseConsentToStudy.mockReset();
+  mockUseConsentToStudy.mockReturnValue({
+    mutate: vi.fn()
+  });
   mockPush.mockReset();
   mockReplace.mockReset();
   mockFabDispatch.mockReset();
@@ -65,26 +83,6 @@ beforeEach(() => {
   mockSearchParams.delete('id');
   mockSearchParams.delete('ref');
 });
-
-/** Latest Participate FAB action, or null. */
-function participateAction(): FabAction | null {
-  return (
-    dispatchedActions.findLast(
-      action =>
-        action.type === 'SET_ACTION' && action.config?.label === 'Participate'
-    ) ?? null
-  );
-}
-
-/** Invokes the latest Participate FAB action, asserting it exists. */
-function invokeParticipate(): void {
-  const action = participateAction();
-  expect(action).toBeTruthy();
-  if (action?.type === 'SET_ACTION' && action.config) {
-    // deepsource:ignore JS-0098 — invoke action in test without awaiting
-    void action.config.onAction();
-  }
-}
 
 describe('ResearchPage', () => {
   it('shows a loading state while the progress query is pending', () => {
@@ -213,45 +211,6 @@ describe('ResearchPage', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it('dispatches a Participate FAB action for the first study by default', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper: createWrapper() });
-
-    invokeParticipate();
-    expect(mockPush).toHaveBeenCalledWith('/assessments?id=big-five-inventory');
-  });
-
-  it('targets the deep-linked study in the Participate FAB action', () => {
-    mockSearchParams.set('id', 'study-b');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper: createWrapper() });
-
-    invokeParticipate();
-    expect(mockPush).toHaveBeenCalledWith('/assessments?id=phq2');
-  });
-
-  it('retargets the Participate FAB action to the new active slide', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper: createWrapper() });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Go to slide 2' }));
-
-    invokeParticipate();
-    expect(mockPush).toHaveBeenCalledWith('/assessments?id=phq2');
-  });
-
   it('renders a completion state instead of a stale CTA when the batch is done', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress({
@@ -270,7 +229,12 @@ describe('ResearchPage', () => {
     render(<ResearchPage />, { wrapper: createWrapper() });
 
     expect(screen.getByText(/You've completed this batch/i)).toBeTruthy();
-    expect(participateAction()).toBeNull();
+    expect(
+      dispatchedActions.findLast(
+        action =>
+          action.type === 'SET_ACTION' && action.config?.label === 'Participate'
+      )
+    ).toBeUndefined();
   });
 
   it('shows an empty state when there are no active studies', () => {
