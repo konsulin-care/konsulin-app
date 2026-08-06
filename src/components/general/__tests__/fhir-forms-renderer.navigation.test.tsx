@@ -59,7 +59,6 @@ vi.mock('@/lib/indexeddb', () => ({
   dbDelete: vi.fn()
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
-
 const { mockResearchProgress } = vi.hoisted(() => ({
   mockResearchProgress: vi.fn<() => { data: unknown }>()
 }));
