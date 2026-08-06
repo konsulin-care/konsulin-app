@@ -330,6 +330,63 @@ export function resolveStudyIdForQuestionnaire(
   );
 }
 
+/** Continuation target after completing a questionnaire inside a research batch. */
+export interface AssessmentContinuation {
+  /** Chosen study whose current batch contains the completed questionnaire. */
+  studyId: string;
+  /** Next uncompleted questionnaire in that batch, or null when the batch is complete. */
+  nextQuestionnaireId: string | null;
+}
+
+/**
+ * Recommended next questionnaire after completing one in a research batch.
+ * Among all studies whose current batch contains the questionnaire, picks
+ * the one with the fewest remaining questionnaires (shortest path). Treats
+ * the just-completed questionnaire as done. Returns null when the
+ * questionnaire is not part of any current batch.
+ *
+ * @param studies - Computed per-study progress.
+ * @param questionnaireId - Bare questionnaire id that was just completed.
+ * @returns The chosen study's continuation, or null when no current batch contains it.
+ */
+export function nextAssessmentInStudy(
+  studies: StudyProgress[],
+  questionnaireId: string
+): AssessmentContinuation | null {
+  const candidates = studies
+    .filter(study =>
+      study.currentBatch?.questionnaireIds.includes(questionnaireId)
+    )
+    .map(study => {
+      const remaining =
+        study.currentBatch?.questionnaireIds.filter(
+          id =>
+            id !== questionnaireId &&
+            !study.completedQuestionnaireIds.includes(id)
+        ) ?? [];
+      return { study, remaining };
+    });
+
+  if (candidates.length === 0) return null;
+
+  type BatchCandidate = { study: StudyProgress; remaining: string[] };
+
+  let shortest: BatchCandidate | null = null;
+  for (const candidate of candidates) {
+    if (
+      shortest === null ||
+      candidate.remaining.length < shortest.remaining.length
+    ) {
+      shortest = candidate;
+    }
+  }
+  if (shortest === null) return null;
+  return {
+    studyId: shortest.study.study.id,
+    nextQuestionnaireId: shortest.remaining[0] ?? null
+  };
+}
+
 /**
  * Sums questionnaire XP from per-response questionnaire ids.
  *

@@ -2,8 +2,10 @@ import type { ResearchStudy } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
 import {
   computeStudyProgress,
+  nextAssessmentInStudy,
   resolveStudyIdForQuestionnaire,
-  type ResearchBatch
+  type ResearchBatch,
+  type ResearchResponse
 } from '../research';
 
 const TODAY = '2026-08-15';
@@ -19,15 +21,80 @@ function makeStudy(id: string): ResearchStudy {
   };
 }
 
-function progressFor(studyId: string, questionnaireIds: string[]) {
+function progressFor(
+  studyId: string,
+  questionnaireIds: string[],
+  completed: string[] = []
+) {
   const batch: ResearchBatch = {
     id: 'batch-x',
     start: '2026-08-01',
     end: '2026-08-31',
     questionnaireIds
   };
-  return computeStudyProgress(makeStudy(studyId), [batch], [], TODAY);
+  const responses: ResearchResponse[] = completed.map((questionnaire, i) => ({
+    id: `resp-${i}`,
+    questionnaire: `Questionnaire/${questionnaire}`,
+    authored: '2026-08-10T10:00:00Z'
+  }));
+  return computeStudyProgress(makeStudy(studyId), [batch], responses, TODAY);
 }
+
+describe('nextAssessmentInStudy', () => {
+  it('returns null when the questionnaire is not part of any current batch', () => {
+    const studyA = progressFor('study-a', ['phq2']);
+    expect(nextAssessmentInStudy([studyA], 'gad7')).toBeNull();
+  });
+
+  it('returns the next uncompleted questionnaire, excluding the submitted one', () => {
+    const studyA = progressFor(
+      'study-a',
+      ['phq2', 'big-five-inventory', 'gad7'],
+      ['phq2']
+    );
+    expect(nextAssessmentInStudy([studyA], 'big-five-inventory')).toEqual({
+      studyId: 'study-a',
+      nextQuestionnaireId: 'gad7'
+    });
+  });
+
+  it('returns a null next when the submitted questionnaire is the last in the batch', () => {
+    const studyA = progressFor(
+      'study-a',
+      ['phq2', 'big-five-inventory'],
+      ['phq2']
+    );
+    expect(nextAssessmentInStudy([studyA], 'big-five-inventory')).toEqual({
+      studyId: 'study-a',
+      nextQuestionnaireId: null
+    });
+  });
+
+  it('picks the study with the fewest remaining among overlapping batches', () => {
+    const short = progressFor('study-short', ['phq2', 'gad7'], ['phq2']);
+    const long = progressFor(
+      'study-long',
+      ['phq2', 'gad7', 'who5', 'pss4'],
+      ['phq2']
+    );
+    expect(nextAssessmentInStudy([long, short], 'phq2')).toEqual({
+      studyId: 'study-short',
+      nextQuestionnaireId: 'gad7'
+    });
+  });
+
+  it('continues past a re-submitted, already-completed questionnaire', () => {
+    const studyA = progressFor(
+      'study-a',
+      ['phq2', 'big-five-inventory', 'gad7'],
+      ['phq2', 'big-five-inventory']
+    );
+    expect(nextAssessmentInStudy([studyA], 'phq2')).toEqual({
+      studyId: 'study-a',
+      nextQuestionnaireId: 'gad7'
+    });
+  });
+});
 
 describe('resolveStudyIdForQuestionnaire', () => {
   it('returns the study whose current batch deploys the questionnaire', () => {
