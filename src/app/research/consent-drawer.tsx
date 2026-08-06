@@ -1,6 +1,6 @@
 'use client';
 
-import { Drawer } from '@/components/ui/drawer';
+import AppDrawer from '@/components/ui/app-drawer';
 import ConsentDrawerContent from './consent-drawer-content';
 
 interface ConsentDrawerProps {
@@ -19,13 +19,15 @@ export default function ConsentDrawer({
   onAgree
 }: ConsentDrawerProps) {
   return (
-    <Drawer
+    <AppDrawer
       open={open}
-      onOpenChange={next => {
-        if (!next) onClose();
-      }}
+      onClose={onClose}
+      title='Informed Consent'
+      description='Your participation in this research study.'
+      ctaLabel='Agree to Participate'
+      onCtaClick={onAgree}
     >
-      <ConsentDrawerContent onAgree={onAgree} />
-    </Drawer>
+      <ConsentDrawerContent />
+    </AppDrawer>
   );
 }
