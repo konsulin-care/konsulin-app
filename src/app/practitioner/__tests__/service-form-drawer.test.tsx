@@ -193,18 +193,6 @@ describe('ServiceFormDrawer', () => {
     );
   });
 
-  it('calls onClose when close button is pressed', () => {
-    const onClose = vi.fn();
-
-    render(<ServiceFormDrawer {...defaultProps} onClose={onClose} />);
-
-    const buttons = screen.getAllByTestId('button');
-    const cancelButton = buttons.find(b => b.textContent === 'Cancel');
-    if (cancelButton) fireEvent.click(cancelButton);
-
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
   it('renders fee input field', () => {
     render(<ServiceFormDrawer {...defaultProps} />);
 

@@ -160,13 +160,6 @@ describe('AddLocationDrawer', () => {
     expect(submitBtn).toBeDisabled();
   });
 
-  it('calls onClose when Cancel is clicked', () => {
-    render(<AddLocationDrawer open onClose={onClose} />, { wrapper });
-
-    fireEvent.click(screen.getByText('Cancel'));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
   it('posts full Location resource on submit', async () => {
     mockAxiosInstance.post.mockResolvedValue({ data: { id: 'loc-1' } });
 

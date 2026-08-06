@@ -1,6 +1,6 @@
 'use client';
 
-import { Drawer } from '@/components/ui/drawer';
+import AppDrawer from '@/components/ui/app-drawer';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { useOrganizationLocations } from '@/services/clinic-practitioners';
@@ -152,25 +152,25 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
   }));
 
   return (
-    <Drawer
+    <AppDrawer
       open={open}
-      onOpenChange={o => {
-        if (!o) onClose();
-      }}
+      onClose={onClose}
+      title='Register Practitioner'
+      description='Add a new practitioner to your clinic.'
+      ctaLabel='Register'
+      onCtaClick={handleRegister}
+      ctaDisabled={!isValid || isSubmitting}
+      ctaLoading={isSubmitting}
     >
       <RegisterPractitionerDrawerContent
         name={name}
         email={email}
         selectedLocationId={selectedLocationId}
         locations={locationOptions}
-        isSubmitting={isSubmitting}
-        isValid={isValid}
         onNameChange={setName}
         onEmailChange={setEmail}
         onLocationSelect={setSelectedLocationId}
-        onRegister={handleRegister}
-        onClose={onClose}
       />
-    </Drawer>
+    </AppDrawer>
   );
 }
