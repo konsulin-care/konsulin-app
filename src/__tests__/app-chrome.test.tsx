@@ -64,4 +64,22 @@ describe('AppChrome', () => {
       )
     ).not.toThrow();
   });
+
+  it('centers the page column to the full viewport so the drawer aligns with it', () => {
+    renderWithProviders(
+      <AppChrome>
+        <span>test</span>
+      </AppChrome>
+    );
+
+    // `main` is the mobile-first page column (mx-auto max-w-screen-sm). The
+    // fixed-position drawer centers in the full viewport, while the column
+    // centers in the content area (viewport minus the classic scrollbar).
+    // `relative` + `left-[calc(50vw_-_50%)]` shift the column by half the
+    // scrollbar width to true screen center, aligning both. The offset
+    // evaluates to 0 on mobile and on overlay-scrollbar platforms.
+    const main = screen.getByRole('main');
+    expect(main).toHaveClass('relative');
+    expect(main).toHaveClass('left-[calc(50vw_-_50%)]');
+  });
 });

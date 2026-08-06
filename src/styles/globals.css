@@ -21,6 +21,13 @@ body {
   color: hsl(var(--foreground));
 }
 
+/* Reserve the vertical scrollbar gutter on classic-scrollbar platforms so
+   the centered page column does not jump sideways when the scrollbar
+   appears/disappears between routes. No-op for overlay scrollbars. */
+html {
+  scrollbar-gutter: stable;
+}
+
 @layer utilities {
   .bg-secondary {
     background-color: var(--secondary);
