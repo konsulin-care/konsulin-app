@@ -115,12 +115,10 @@ describe('PaymentDrawer', () => {
     expect(screen.getByText('Dr. John Doe')).toBeInTheDocument();
   });
 
-  it('renders Pay Now and Pay Later buttons', () => {
+  it('renders the Pay Now CTA', () => {
     render(<PaymentDrawer {...baseProps} />, { wrapper: createWrapper() });
     expect(screen.getByText('Pay Now')).toBeInTheDocument();
-    expect(screen.getByText('Pay Later')).toBeInTheDocument();
-    expect(screen.queryByText('Bayar Sekarang')).not.toBeInTheDocument();
-    expect(screen.queryByText('Bayar Nanti')).not.toBeInTheDocument();
+    expect(screen.queryByText('Pay Later')).not.toBeInTheDocument();
   });
 
   it('renders healthcare service name when provided', () => {
@@ -159,7 +157,7 @@ describe('PaymentDrawer', () => {
     });
   });
 
-  it('includes healthcareServiceId in online payment payload', () => {
+  it('includes healthcareServiceId in the payment payload', () => {
     const payAppointment = vi.fn().mockResolvedValue({ data: {} });
     const invoice = {
       id: 'inv-1',
@@ -181,32 +179,6 @@ describe('PaymentDrawer', () => {
     expect(payAppointment).toHaveBeenCalledWith(
       expect.objectContaining({
         healthcareServiceId: 'HealthcareService/hs-456'
-      })
-    );
-  });
-
-  it('includes healthcareServiceId in offline payment payload', () => {
-    const payAppointment = vi.fn().mockResolvedValue({ data: {} });
-    const invoice = {
-      id: 'inv-2',
-      totalNet: { value: 150_000, currency: 'IDR' }
-    } as Invoice;
-
-    render(
-      <PaymentDrawer
-        {...baseProps}
-        payAppointment={payAppointment}
-        healthcareServiceId='hs-789'
-        invoice={invoice}
-      />,
-      { wrapper: createWrapper() }
-    );
-
-    fireEvent.click(screen.getByText('Pay Later'));
-
-    expect(payAppointment).toHaveBeenCalledWith(
-      expect.objectContaining({
-        healthcareServiceId: 'HealthcareService/hs-789'
       })
     );
   });
