@@ -1,5 +1,5 @@
-/* eslint-disable max-lines, react/jsx-max-depth, complexity, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
-import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
+/* eslint-disable max-lines, complexity, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
+import AppDrawer from '@/components/ui/app-drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
@@ -543,19 +543,15 @@ export default function PractitionerAvailability({
 
   return (
     <>
-      <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
-        <DrawerTrigger asChild>
-          <div onClick={() => setIsOpen(true)}>{children}</div>
-        </DrawerTrigger>
-        <DrawerContent
-          onInteractOutside={() => setIsOpen(false)}
-          className='fixed right-0 bottom-0 left-0 mx-auto flex h-[85%] max-w-screen-sm flex-col bg-white p-4'
-        >
-          <div className='scrollbar-hide mt-4 h-full overflow-y-auto px-1'>
-            {bookingContent}
-          </div>
-        </DrawerContent>
-      </Drawer>
+      <AppDrawer
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        trigger={<div onClick={() => setIsOpen(true)}>{children}</div>}
+      >
+        <div className='scrollbar-hide mt-4 h-full overflow-y-auto px-1'>
+          {bookingContent}
+        </div>
+      </AppDrawer>
 
       <PaymentDrawer
         paymentOpen={paymentOpen}
