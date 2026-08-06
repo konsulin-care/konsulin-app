@@ -310,7 +310,7 @@ describe('ResearchPage', () => {
     );
   });
 
-  it('renders the contribution dashboard above the carousel and drops the circle panel', () => {
+  it('renders the research carousel above the contribution dashboard and drops the circle panel', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
@@ -321,7 +321,7 @@ describe('ResearchPage', () => {
     const dashboard = screen.getByTestId('contribution-dashboard');
     const carousel = screen.getByTestId('research-slide-research');
     expect(
-      dashboard.compareDocumentPosition(carousel) &
+      carousel.compareDocumentPosition(dashboard) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
     expect(screen.queryByTestId('circle-panel')).not.toBeInTheDocument();

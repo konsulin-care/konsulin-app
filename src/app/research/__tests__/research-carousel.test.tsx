@@ -27,19 +27,13 @@ vi.mock('next/link', () => ({
   )
 }));
 
-const BATCH_2 = {
-  id: 'batch-2',
-  start: '2026-09-01',
-  end: '2026-09-30',
-  questionnaireIds: ['phq2']
-};
+/** Upcoming batch fixture sharing the same questionnaire set. */
+function makeUpcomingBatch(id: string, start: string, end: string) {
+  return { id, start, end, questionnaireIds: ['phq2'] };
+}
 
-const BATCH_3 = {
-  id: 'batch-3',
-  start: '2026-10-01',
-  end: '2026-10-31',
-  questionnaireIds: ['phq2']
-};
+const BATCH_2 = makeUpcomingBatch('batch-2', '2026-09-01', '2026-09-30');
+const BATCH_3 = makeUpcomingBatch('batch-3', '2026-10-01', '2026-10-31');
 
 function renderCarousel(
   studies: StudyProgress[],
@@ -263,6 +257,13 @@ describe('ResearchCarousel', () => {
 
     const doneChip = screen.getByTestId('batch-chip-batch-1');
     expect(doneChip).toHaveClass('bg-secondary', 'text-white');
+  });
+
+  it('spaces slides 16px apart for a breathing room between cards', () => {
+    renderCarousel([makeStudyProgress(), makeStudyB()], 'research');
+    const slides = document.querySelectorAll<HTMLElement>('.swiper-slide');
+    expect(slides.length).toBeGreaterThan(1);
+    slides.forEach(slide => expect(slide.style.marginRight).toBe('16px'));
   });
 
   it('marks the active slide', () => {

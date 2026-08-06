@@ -105,8 +105,25 @@ describe('ContributionDashboard', () => {
       'Trailblazer'
     );
     expect(screen.getByTestId('dashboard-converted').textContent).toContain(
-      '3 people'
+      '3 joined via your link'
     );
+  });
+
+  it('omits the section heading to keep the dashboard compact', () => {
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { fhirId: 'PAT-1' } },
+      isLoading: false
+    });
+
+    render(
+      <ContributionDashboard
+        progress={makeProgress({ questionnaireResponses: [] })}
+        activeStudy={null}
+        questionnaireInfo={{}}
+      />
+    );
+
+    expect(screen.queryByText('Your contribution')).toBeNull();
   });
 
   it('keeps the guest title fixed to Participant regardless of XP', () => {

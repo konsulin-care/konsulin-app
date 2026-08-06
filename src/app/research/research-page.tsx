@@ -246,11 +246,6 @@ export default function ResearchPage() {
     return (
       <>
         <ReferralNotice />
-        <ContributionDashboard
-          progress={progress}
-          activeStudy={activeStudy}
-          questionnaireInfo={titleMap}
-        />
         <ResearchCarousel
           studies={studies}
           activeId={activeStudyId ?? ''}
@@ -261,6 +256,11 @@ export default function ResearchPage() {
           fhirId={fhirId}
           titleMap={titleMap}
           isTitlesLoading={titlesPending}
+        />
+        <ContributionDashboard
+          progress={progress}
+          activeStudy={activeStudy}
+          questionnaireInfo={titleMap}
         />
       </>
     );

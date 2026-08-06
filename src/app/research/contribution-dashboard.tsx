@@ -232,8 +232,7 @@ export default function ContributionDashboard({
       data-testid='contribution-dashboard'
       className='card mt-4 border-0 bg-[#F9F9F9] p-4'
     >
-      <h2 className='text-sm font-bold text-gray-700'>Your contribution</h2>
-      <div className='mt-3 flex items-center gap-4'>
+      <div className='flex items-center gap-4'>
         <LevelHalo
           fraction={getXpInLevel(totalXp) / LEVEL_XP}
           level={getResearchLevelNumber(totalXp)}
@@ -243,7 +242,7 @@ export default function ContributionDashboard({
           <TitleBadge title={title} />
           <StatRow icon={Users} testId='dashboard-converted'>
             {isPatient
-              ? `${converted} people completed the research through your link`
+              ? `${converted} joined via your link`
               : 'Invite friends to start'}
           </StatRow>
           <StatRow icon={Trophy} testId='dashboard-batch-count'>

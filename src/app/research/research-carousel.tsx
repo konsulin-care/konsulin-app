@@ -141,11 +141,12 @@ export default function ResearchCarousel({
   }, [activeId, studies, swiper]);
 
   return (
-    <div className='w-full'>
+    <div className='mt-4 w-full'>
       <Swiper
         onSwiper={setSwiper}
         className='research-carousel !overflow-visible'
         slidesPerView={1}
+        spaceBetween={16}
         initialSlide={initialIndex}
         onSlideChange={current => {
           setActiveIndex(current.realIndex);
