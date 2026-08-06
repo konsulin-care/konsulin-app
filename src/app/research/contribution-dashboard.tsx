@@ -2,8 +2,14 @@
 
 import Avatar from '@/components/general/avatar';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover';
+import {
   GUEST_TITLE,
   LEVEL_XP,
+  RESEARCH_LEVELS,
   buildMission,
   getResearchLevel,
   getResearchLevelNumber,
@@ -19,9 +25,8 @@ import {
   type StudyProgress
 } from '@/utils/fhir/research';
 import { generateAvatarPlaceholder } from '@/utils/helper';
-import { Target, Trophy, Users, type LucideIcon } from 'lucide-react';
+import { Check, Target, Trophy, Users, type LucideIcon } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
-import RewardsVault from './rewards-vault';
 
 /** Avatar data resolved from the current user profile. */
 interface AvatarData {
@@ -90,16 +95,22 @@ function LevelHalo({
   );
 }
 
-/** Title badge: level icon in a chip plus the title label. */
+/** Level icon in a teal chip. */
+function TitleIcon({ icon: Icon }: Readonly<{ icon: LucideIcon }>) {
+  return (
+    <span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#13c2c2]/10'>
+      <Icon className='h-3.5 w-3.5 text-[#13c2c2]' />
+    </span>
+  );
+}
+
+/** Non-interactive title badge for guests: icon chip plus the label. */
 function TitleBadge({
   title
 }: Readonly<{ title: { label: string; icon: LucideIcon } }>) {
-  const Icon = title.icon;
   return (
     <div className='flex items-center gap-2'>
-      <span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#13c2c2]/10'>
-        <Icon className='h-3.5 w-3.5 text-[#13c2c2]' />
-      </span>
+      <TitleIcon icon={title.icon} />
       <span
         data-testid='dashboard-title'
         className='text-sm font-bold text-black'
@@ -107,6 +118,54 @@ function TitleBadge({
         {title.label}
       </span>
     </div>
+  );
+}
+
+/**
+ * Patient title badge whose label opens a popover listing every reached
+ * level's reward, oldest first.
+ *
+ * @param title - The current research title.
+ * @param totalXp - Total XP used to resolve the reached levels.
+ */
+function TitleWithRewards({
+  title,
+  totalXp
+}: Readonly<{
+  title: { label: string; icon: LucideIcon };
+  totalXp: number;
+}>) {
+  const reached = RESEARCH_LEVELS.filter(level => level.threshold <= totalXp);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type='button'
+          data-testid='dashboard-title'
+          className='flex cursor-pointer items-center gap-2'
+        >
+          <TitleIcon icon={title.icon} />
+          <span className='text-sm font-bold text-black'>{title.label}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side='bottom' align='start' className='w-64'>
+        <p className='text-xs font-bold text-black'>
+          As a {title.label}, you will receive:
+        </p>
+        <ul className='mt-2 flex flex-col gap-1.5'>
+          {reached.map(level => (
+            <li
+              key={level.threshold}
+              data-testid='dashboard-reward-item'
+              className='flex items-start gap-2 text-[11px] text-gray-600'
+            >
+              <Check className='mt-0.5 h-3.5 w-3.5 shrink-0 text-[#13c2c2]' />
+              <span>{level.reward}</span>
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -239,7 +298,11 @@ export default function ContributionDashboard({
           avatar={avatar}
         />
         <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
-          <TitleBadge title={title} />
+          {isPatient ? (
+            <TitleWithRewards title={title} totalXp={totalXp} />
+          ) : (
+            <TitleBadge title={title} />
+          )}
           <StatRow icon={Users} testId='dashboard-converted'>
             {isPatient
               ? `${converted} joined via your link`
@@ -251,7 +314,6 @@ export default function ContributionDashboard({
         </div>
       </div>
       <Mission text={mission} />
-      <RewardsVault totalXp={totalXp} />
     </section>
   );
 }

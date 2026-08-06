@@ -185,7 +185,7 @@ describe('ContributionDashboard', () => {
     );
   });
 
-  it('names the single remaining questionnaire that closes the XP gap', () => {
+  it('names the single remaining questionnaire and never suggests completed ones', () => {
     mockUseAuth.mockReturnValue({
       state: { userInfo: { fhirId: 'PAT-1' } },
       isLoading: false
@@ -202,27 +202,10 @@ describe('ContributionDashboard', () => {
 
     // phq2 is already completed in the fixture, so the mission must point at
     // the remaining Big Five Inventory instead of suggesting phq2 again.
-    expect(screen.getByTestId('dashboard-mission').textContent).toBe(
+    const mission = screen.getByTestId('dashboard-mission').textContent ?? '';
+    expect(mission).toBe(
       'Complete Big Five Inventory (+75 XP) or 8 referrals to reach Pathfinder'
     );
-  });
-
-  it('never suggests a questionnaire already completed in the batch', () => {
-    mockUseAuth.mockReturnValue({
-      state: { userInfo: { fhirId: 'PAT-1' } },
-      isLoading: false
-    });
-    mockUseCircleStats.mockReturnValue({ data: { converted: 92, joined: 92 } });
-
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: [] })}
-        activeStudy={makeStudyProgress()}
-        questionnaireInfo={INFO_MAP}
-      />
-    );
-
-    const mission = screen.getByTestId('dashboard-mission').textContent ?? '';
     expect(mission).toContain('Big Five Inventory');
     expect(mission).not.toContain('PHQ-2');
   });
@@ -307,10 +290,13 @@ describe('ContributionDashboard', () => {
     );
   });
 
-  it('collapses the vault to the current reward and expands to next + ladder', () => {
+  it('opens the rewards popover listing every reached level when the title is clicked', async () => {
     mockUseAuth.mockReturnValue({
       state: { userInfo: { fhirId: 'PAT-1' } },
       isLoading: false
+    });
+    mockUseCircleStats.mockReturnValue({
+      data: { converted: 150, joined: 150 }
     });
 
     render(
@@ -321,28 +307,36 @@ describe('ContributionDashboard', () => {
       />
     );
 
-    expect(screen.getByTestId('dashboard-vault-current').textContent).toContain(
-      'Personal result brief for every questionnaire'
-    );
+    // 150 XP → Pathfinder title; rewards of Trailblazer and Pathfinder both
+    // accumulate, oldest first.
+    expect(screen.getByRole('button', { name: 'Pathfinder' })).toBeTruthy();
+    fireEvent.click(screen.getByTestId('dashboard-title'));
+
     expect(
-      screen.queryByTestId('dashboard-vault-next')
-    ).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId('dashboard-vault-toggle'));
-
-    expect(screen.getByTestId('dashboard-vault-next').textContent).toContain(
+      await screen.findByText(/As a Pathfinder, you will receive:/)
+    ).toBeTruthy();
+    const items = screen.getAllByTestId('dashboard-reward-item');
+    expect(items.map(item => item.textContent)).toEqual([
+      'Personal result brief for every questionnaire',
       'Personalized summary report + in-app title badge'
+    ]);
+  });
+
+  it('keeps the guest title non-interactive without a rewards popover', () => {
+    mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
+
+    render(
+      <ContributionDashboard
+        progress={makeProgress({ questionnaireResponses: [] })}
+        activeStudy={null}
+        questionnaireInfo={{}}
+      />
     );
-    // Full ladder: every title is listed with its XP threshold (the current
-    // title also appears in the badge above, so match all occurrences).
-    for (const label of [
-      'Trailblazer',
-      'Pathfinder',
-      'Torchbearer',
-      'Vanguard',
-      'Pioneer'
-    ]) {
-      expect(screen.getAllByText(label).length).toBeGreaterThan(0);
-    }
+
+    expect(screen.getByTestId('dashboard-title').textContent).toBe(
+      'Participant'
+    );
+    fireEvent.click(screen.getByTestId('dashboard-title'));
+    expect(screen.queryByText(/you will receive:/)).toBeNull();
   });
 });
