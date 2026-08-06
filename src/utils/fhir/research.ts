@@ -83,6 +83,25 @@ export function daysUntilBatch(end: string): number {
 }
 
 /**
+ * Returns the earliest study period start (yyyy-mm-dd) across the studies,
+ * or null when no study declares a period start.
+ *
+ * @param studies - Active studies to consider.
+ * @returns The earliest period start, or null.
+ */
+export function earliestStudyStart(
+  studies: readonly ResearchStudy[]
+): string | null {
+  let earliest: string | null = null;
+  for (const study of studies) {
+    const start = study.period?.start;
+    if (!start) continue;
+    if (earliest === null || start < earliest) earliest = start;
+  }
+  return earliest;
+}
+
+/**
  * Extracts the questionnaire id from a canonical or reference string,
  * stripping any version suffix (e.g. "Questionnaire/phq2|1.0" -> "phq2").
  *

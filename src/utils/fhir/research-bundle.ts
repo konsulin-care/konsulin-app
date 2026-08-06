@@ -7,12 +7,12 @@ import type {
   Resource
 } from 'fhir/r4';
 import {
-  computeResearchProgress,
   computeStudyProgress,
   parseCanonicalOrReference,
   toResearchBatch,
   type ResearchBatch,
-  type ResearchProgress
+  type ResearchResponse,
+  type StudyProgress
 } from './research';
 
 /** Recursively flattens nested bundle entries into their resources. */
@@ -35,17 +35,21 @@ function collectBundleResources(bundle: Bundle): Resource[] {
 }
 
 /**
- * Parses a batch-response bundle (studies + _include PlanDefinitions +
- * QuestionnaireResponses) into a typed ResearchProgress object.
+ * Parses a studies bundle (ResearchStudy + _include PlanDefinitions +
+ * ResearchSubject) into per-study progress and consented study ids.
  *
- * @param bundle - The batch-response bundle returned by the FHIR server.
+ * Handles both a flat searchset and a batch-response bundle with nested
+ * searchsets, since the studies query may run alone or batched with the
+ * ResearchSubject query.
+ *
+ * @param bundle - The bundle returned by the FHIR server.
  * @param today - Reference date, yyyy-mm-dd.
- * @returns Aggregated research progress.
+ * @returns Per-study progress and the consented study ids.
  */
-export function parseResearchBundle(
+export function parseStudiesBundle(
   bundle: Bundle,
   today: string
-): ResearchProgress {
+): { studyProgress: StudyProgress[]; consentedStudyIds: string[] } {
   const resources = collectBundleResources(bundle);
 
   const studies = resources.filter(
@@ -56,16 +60,6 @@ export function parseResearchBundle(
     (resource): resource is PlanDefinition =>
       resource.resourceType === 'PlanDefinition'
   );
-  const responses = resources
-    .filter(
-      (resource): resource is QuestionnaireResponse =>
-        resource.resourceType === 'QuestionnaireResponse'
-    )
-    .map(response => ({
-      id: response.id ?? '',
-      questionnaire: response.questionnaire ?? '',
-      authored: response.authored
-    }));
 
   const consentedStudyIds = resources
     .filter(
@@ -93,8 +87,55 @@ export function parseResearchBundle(
     const batches = batchIds
       .map(id => batchesByPlanId.get(id))
       .filter((batch): batch is ResearchBatch => batch !== undefined);
-    return computeStudyProgress(study, batches, responses, today);
+    return computeStudyProgress(study, batches, [], today);
   });
 
-  return computeResearchProgress(studyProgress, responses, consentedStudyIds);
+  return { studyProgress, consentedStudyIds };
+}
+
+/**
+ * Recomputes per-study progress once the user's completed responses are
+ * known. parseStudiesBundle builds the batch structure with no responses;
+ * this refills the response-derived fields (completed counts, history,
+ * first uncompleted questionnaire).
+ *
+ * @param studyProgress - Study progress with batch structure only.
+ * @param responses - Completed response projections.
+ * @param today - Reference date, yyyy-mm-dd.
+ * @returns Study progress with response-derived fields populated.
+ */
+export function recomputeStudyProgress(
+  studyProgress: StudyProgress[],
+  responses: ResearchResponse[],
+  today: string
+): StudyProgress[] {
+  return studyProgress.map(entry =>
+    computeStudyProgress(entry.study, entry.batches, responses, today)
+  );
+}
+
+/**
+ * Projects completed QuestionnaireResponses from a plain searchset bundle.
+ *
+ * Reads `entry[].resource` directly (no nested batch flattening) and maps
+ * each QR to its minimal progress projection. Entries without a resource
+ * are skipped.
+ *
+ * @param bundle - The searchset bundle returned by the FHIR server.
+ * @returns Minimal response projections.
+ */
+export function parseQuestionnaireResponseSearchset(
+  bundle: Bundle
+): ResearchResponse[] {
+  return (bundle.entry ?? [])
+    .map(entry => entry.resource)
+    .filter(
+      (resource): resource is QuestionnaireResponse =>
+        resource?.resourceType === 'QuestionnaireResponse'
+    )
+    .map(response => ({
+      id: response.id ?? '',
+      questionnaire: response.questionnaire ?? '',
+      authored: response.authored
+    }));
 }

@@ -1,11 +1,16 @@
 import type {
   Bundle,
+  FhirResource,
   PlanDefinition,
   QuestionnaireResponse,
   ResearchStudy
 } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
-import { parseResearchBundle } from '../research-bundle';
+import {
+  parseQuestionnaireResponseSearchset,
+  parseStudiesBundle,
+  recomputeStudyProgress
+} from '../research-bundle';
 
 const TODAY = '2026-08-15';
 
@@ -51,111 +56,196 @@ function makeQrResponse(
   };
 }
 
-describe('parseResearchBundle', () => {
-  it('parses a batch-response bundle into typed research progress', () => {
+/** Wraps resources in a batch-response entry with a nested searchset. */
+function batchSearchsetEntry(
+  resources: FhirResource[]
+): NonNullable<Bundle['entry']>[number] {
+  return {
+    resource: {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: resources.map(resource => ({ resource }))
+    },
+    response: { status: '200' }
+  };
+}
+
+describe('parseStudiesBundle', () => {
+  it('parses studies and their PlanDefinition batches from a batch-response bundle', () => {
     const bundle: Bundle = {
       resourceType: 'Bundle',
       type: 'batch-response',
       entry: [
-        {
-          resource: {
-            resourceType: 'Bundle',
-            type: 'searchset',
-            entry: [
-              { resource: makeStudy('study-a', ['PlanDefinition/batch-1']) },
-              { resource: makePlan('batch-1') }
-            ]
-          },
-          response: { status: '200' }
-        },
-        {
-          resource: {
-            resourceType: 'Bundle',
-            type: 'searchset',
-            entry: [
-              {
-                resource: makeQrResponse('r1', 'phq2', '2026-08-10T00:00:00Z')
-              }
-            ]
-          },
-          response: { status: '200' }
-        }
+        batchSearchsetEntry([
+          makeStudy('study-a', ['PlanDefinition/batch-1']),
+          makePlan('batch-1')
+        ])
       ]
     };
 
-    const progress = parseResearchBundle(bundle, TODAY);
-    expect(progress.studies).toHaveLength(1);
-    expect(progress.studies[0].study.id).toBe('study-a');
-    expect(progress.studies[0].currentBatch?.id).toBe('batch-1');
-    expect(progress.studies[0].completedCount).toBe(1);
-    expect(progress.cumulativeResponses).toBe(1);
+    const { studyProgress, consentedStudyIds } = parseStudiesBundle(
+      bundle,
+      TODAY
+    );
+    expect(studyProgress).toHaveLength(1);
+    expect(studyProgress[0].study.id).toBe('study-a');
+    expect(studyProgress[0].currentBatch?.id).toBe('batch-1');
+    expect(studyProgress[0].batches[0].questionnaireIds).toEqual([
+      'phq2',
+      'big-five-inventory'
+    ]);
+    expect(studyProgress[0].totalCount).toBe(2);
+    expect(consentedStudyIds).toEqual([]);
   });
 
-  it('links batch questionnaires to their study via protocol references', () => {
+  it('extracts consented study ids from on-study ResearchSubject entries only', () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'batch-response',
+      entry: [
+        batchSearchsetEntry([
+          {
+            resourceType: 'ResearchSubject',
+            id: 'rs-1',
+            status: 'on-study',
+            study: { reference: 'ResearchStudy/study-a' },
+            individual: { reference: 'Patient/pat-1' }
+          },
+          {
+            resourceType: 'ResearchSubject',
+            id: 'rs-2',
+            status: 'off-study',
+            study: { reference: 'ResearchStudy/study-b' },
+            individual: { reference: 'Patient/pat-1' }
+          }
+        ])
+      ]
+    };
+
+    const { studyProgress, consentedStudyIds } = parseStudiesBundle(
+      bundle,
+      TODAY
+    );
+    expect(studyProgress).toEqual([]);
+    expect(consentedStudyIds).toEqual(['study-a']);
+  });
+
+  it('handles an empty bundle with no studies', () => {
+    const { studyProgress, consentedStudyIds } = parseStudiesBundle(
+      { resourceType: 'Bundle', type: 'batch-response', entry: [] },
+      TODAY
+    );
+    expect(studyProgress).toEqual([]);
+    expect(consentedStudyIds).toEqual([]);
+  });
+});
+
+describe('recomputeStudyProgress', () => {
+  it('refills response-derived fields once responses are known', () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'batch-response',
+      entry: [
+        batchSearchsetEntry([
+          makeStudy('study-a', ['PlanDefinition/batch-1']),
+          makePlan('batch-1')
+        ])
+      ]
+    };
+
+    const { studyProgress } = parseStudiesBundle(bundle, TODAY);
+    expect(studyProgress[0].completedCount).toBe(0);
+
+    const responses = [
+      {
+        id: 'r1',
+        questionnaire: 'Questionnaire/phq2',
+        authored: '2026-08-10T00:00:00Z'
+      }
+    ];
+    const recomputed = recomputeStudyProgress(studyProgress, responses, TODAY);
+    expect(recomputed[0].completedCount).toBe(1);
+    expect(recomputed[0].history[0].participated).toBe(true);
+    expect(recomputed[0].firstUncompletedQuestionnaireId).toBe(
+      'big-five-inventory'
+    );
+  });
+
+  it('keeps counts at zero for responses outside the batch period', () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'batch-response',
+      entry: [
+        batchSearchsetEntry([
+          makeStudy('study-a', ['PlanDefinition/batch-1']),
+          makePlan('batch-1')
+        ])
+      ]
+    };
+
+    const { studyProgress } = parseStudiesBundle(bundle, TODAY);
+    const recomputed = recomputeStudyProgress(
+      studyProgress,
+      [
+        {
+          id: 'r1',
+          questionnaire: 'Questionnaire/phq2',
+          authored: '2026-07-10T00:00:00Z'
+        }
+      ],
+      TODAY
+    );
+    expect(recomputed[0].completedCount).toBe(0);
+    expect(recomputed[0].history[0].participated).toBe(false);
+  });
+});
+
+describe('parseQuestionnaireResponseSearchset', () => {
+  it('projects completed QuestionnaireResponses from a plain searchset', () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      total: 2,
+      entry: [
+        { resource: makeQrResponse('r1', 'phq2', '2026-08-10T00:00:00Z') },
+        { resource: makeQrResponse('r2', 'gad7', '2026-08-11T00:00:00Z') }
+      ]
+    };
+
+    expect(parseQuestionnaireResponseSearchset(bundle)).toEqual([
+      {
+        id: 'r1',
+        questionnaire: 'Questionnaire/phq2',
+        authored: '2026-08-10T00:00:00Z'
+      },
+      {
+        id: 'r2',
+        questionnaire: 'Questionnaire/gad7',
+        authored: '2026-08-11T00:00:00Z'
+      }
+    ]);
+  });
+
+  it('returns an empty list for an empty searchset', () => {
+    expect(
+      parseQuestionnaireResponseSearchset({
+        resourceType: 'Bundle',
+        type: 'searchset',
+        total: 0
+      })
+    ).toEqual([]);
+  });
+
+  it('tolerates entries without resources', () => {
     const bundle: Bundle = {
       resourceType: 'Bundle',
       type: 'searchset',
       entry: [
-        {
-          resource: makeStudy('study-a', ['PlanDefinition/batch-1'])
-        },
-        { resource: makePlan('batch-1') }
+        { resource: makeQrResponse('r1', 'phq2', '2026-08-10T00:00:00Z') },
+        {}
       ]
     };
 
-    const progress = parseResearchBundle(bundle, TODAY);
-    expect(progress.studies[0].batches[0].questionnaireIds).toEqual([
-      'phq2',
-      'big-five-inventory'
-    ]);
-    expect(progress.studies[0].totalCount).toBe(2);
-  });
-
-  it('handles an empty bundle with no studies', () => {
-    const progress = parseResearchBundle(
-      { resourceType: 'Bundle', type: 'batch-response', entry: [] },
-      TODAY
-    );
-    expect(progress.studies).toEqual([]);
-    expect(progress.cumulativeResponses).toBe(0);
-  });
-
-  it('extracts consented study ids from on-study ResearchSubject entries', () => {
-    const bundle: Bundle = {
-      resourceType: 'Bundle',
-      type: 'batch-response',
-      entry: [
-        {
-          resource: {
-            resourceType: 'Bundle',
-            type: 'searchset',
-            entry: [
-              {
-                resource: {
-                  resourceType: 'ResearchSubject',
-                  id: 'rs-1',
-                  status: 'on-study',
-                  study: { reference: 'ResearchStudy/study-a' },
-                  individual: { reference: 'Patient/pat-1' }
-                }
-              },
-              {
-                resource: {
-                  resourceType: 'ResearchSubject',
-                  id: 'rs-2',
-                  status: 'off-study',
-                  study: { reference: 'ResearchStudy/study-b' },
-                  individual: { reference: 'Patient/pat-1' }
-                }
-              }
-            ]
-          },
-          response: { status: '200' }
-        }
-      ]
-    };
-
-    const progress = parseResearchBundle(bundle, TODAY);
-    expect(progress.consentedStudyIds).toEqual(['study-a']);
+    expect(parseQuestionnaireResponseSearchset(bundle)).toHaveLength(1);
   });
 });

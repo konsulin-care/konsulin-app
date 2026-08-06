@@ -3,7 +3,15 @@ import { useAuth } from '@/context/auth/authContext';
 import { clearConsentFlag, readConsentFlag } from '@/utils/consent';
 import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
 import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
-import { parseResearchBundle } from '@/utils/fhir/research-bundle';
+import {
+  computeResearchProgress,
+  earliestStudyStart
+} from '@/utils/fhir/research';
+import {
+  parseQuestionnaireResponseSearchset,
+  parseStudiesBundle,
+  recomputeStudyProgress
+} from '@/utils/fhir/research-bundle';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { Bundle } from 'fhir/r4';
@@ -69,47 +77,28 @@ async function fetchCompletionTotal(
   return total;
 }
 
-/** URL for a QuestionnaireResponse search by FHIR author reference. */
-const AUTHOR_QR_SEARCH = 'QuestionnaireResponse?author=Patient/';
-/** URL for a QuestionnaireResponse search by anonymous guest identifier. */
-const IDENTIFIER_QR_SEARCH = 'QuestionnaireResponse?identifier=';
 /** Common search suffix: only completed responses, minimal fields. */
 const QR_SEARCH_SUFFIX =
   '&status=completed&_elements=questionnaire,authored&_count=500';
 
 /**
  * Builds a FHIR batch bundle that fetches the active studies (with their
- * batch PlanDefinitions via _include), the user's completed responses, and
- * (for patients) their ResearchSubjects, in a single round trip.
+ * batch PlanDefinitions via _include) and, for patients, their
+ * ResearchSubjects, in a single round trip.
  *
  * @param identity - Patient or guest identity.
  * @param today - Reference date, yyyy-mm-dd.
  * @returns A FHIR batch bundle of GET search requests.
  */
-export function buildResearchBundle(
+export function buildStudiesBundle(
   identity: ResearchIdentity,
   today: string
 ): Bundle {
-  const identifierValue = encodeURIComponent(
-    `${ANONYMOUS_SESSION_IDENTIFIER_SYSTEM}|${identity.id}`
-  );
   const entries: NonNullable<Bundle['entry']> = [
     {
       request: {
         method: 'GET',
         url: `ResearchStudy?date=ge${today}&status=active&_include=ResearchStudy:protocol`
-      }
-    },
-    {
-      request: {
-        method: 'GET',
-        url: `${AUTHOR_QR_SEARCH}${identity.id}${QR_SEARCH_SUFFIX}`
-      }
-    },
-    {
-      request: {
-        method: 'GET',
-        url: `${IDENTIFIER_QR_SEARCH}${identifierValue}${QR_SEARCH_SUFFIX}`
       }
     }
   ];
@@ -132,13 +121,37 @@ export function buildResearchBundle(
 }
 
 /**
+ * Builds the QuestionnaireResponse search URL for an identity, optionally
+ * bounded below by the earliest study period start (authored=ge). Patients
+ * are matched by FHIR author; guests by anonymous identifier.
+ *
+ * @param identity - Patient or guest identity.
+ * @param earliest - Earliest study period start, yyyy-mm-dd, or null.
+ * @returns The FHIR search URL for the user's completed responses.
+ */
+export function buildQuestionnaireResponseSearch(
+  identity: ResearchIdentity,
+  earliest: string | null
+): string {
+  const scope =
+    identity.kind === 'patient'
+      ? `author=Patient/${identity.id}`
+      : `identifier=${encodeURIComponent(
+          `${ANONYMOUS_SESSION_IDENTIFIER_SYSTEM}|${identity.id}`
+        )}`;
+  const bound = earliest ? `&authored=ge${earliest}` : '';
+  return `/fhir/QuestionnaireResponse?${scope}${QR_SEARCH_SUFFIX}${bound}`;
+}
+
+/**
  * Fetches the research progress for the current user: active studies, their
  * current batch, and the user's completed responses, aggregated into a
  * typed ResearchProgress object.
  *
- * Patients are matched by FHIR author; guests by anonymous identifier.
- * Both queries run in one batch bundle and are merged (deduped by id) so
- * claimed and unclaimed responses both count.
+ * Two sequential requests: the studies bundle first (so the earliest study
+ * period start can bound the response search), then the completed-response
+ * search scoped to the identity. Patients are matched by FHIR author, guests
+ * by anonymous identifier.
  *
  * @returns React Query result with ResearchProgress data.
  */
@@ -185,10 +198,40 @@ export function useResearchProgress() {
     queryFn: async (): Promise<ResearchProgress> => {
       if (!identity) throw new Error('Research identity not resolved');
       const today = format(new Date(), 'yyyy-MM-dd');
-      const bundle = buildResearchBundle(identity, today);
       const API = await getAPI();
-      const response = await API.post<Bundle>('/fhir', bundle);
-      return parseResearchBundle(response.data, today);
+
+      const studiesResponse = await API.post<Bundle>(
+        '/fhir',
+        buildStudiesBundle(identity, today)
+      );
+      const { studyProgress, consentedStudyIds } = parseStudiesBundle(
+        studiesResponse.data,
+        today
+      );
+
+      // Nothing to measure without active studies: skip the response search.
+      if (studyProgress.length === 0) {
+        return computeResearchProgress([], [], consentedStudyIds);
+      }
+
+      const earliest = earliestStudyStart(
+        studyProgress.map(study => study.study)
+      );
+      const qrResponse = await API.get<Bundle>(
+        buildQuestionnaireResponseSearch(identity, earliest)
+      );
+      const responses = parseQuestionnaireResponseSearchset(qrResponse.data);
+      const finalStudyProgress = recomputeStudyProgress(
+        studyProgress,
+        responses,
+        today
+      );
+
+      return computeResearchProgress(
+        finalStudyProgress,
+        responses,
+        consentedStudyIds
+      );
     }
   });
 }
