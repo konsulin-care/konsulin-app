@@ -59,8 +59,12 @@ vi.mock('@/lib/indexeddb', () => ({
   dbDelete: vi.fn()
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
+
+const { mockResearchProgress } = vi.hoisted(() => ({
+  mockResearchProgress: vi.fn<() => { data: unknown }>()
+}));
 vi.mock('@/services/api/research', () => ({
-  useResearchProgress: () => ({ data: undefined })
+  useResearchProgress: () => mockResearchProgress()
 }));
 
 vi.mock('@/context/fabContext', () => ({
@@ -141,6 +145,46 @@ const mockQuestionnaire: Questionnaire = {
   item: [{ linkId: 'q1', text: 'Question 1', type: 'string' }]
 };
 
+/** ResearchProgress fixture: one study whose current batch matches the given ids. */
+function researchProgressWith(
+  questionnaireIds: string[],
+  completed: string[] = []
+) {
+  const batch = {
+    id: 'batch-1',
+    start: '2026-08-01',
+    end: '2026-08-31',
+    questionnaireIds
+  };
+  return {
+    studies: [
+      {
+        study: {
+          resourceType: 'ResearchStudy',
+          id: 'study-a',
+          status: 'active',
+          title: 'Study A'
+        },
+        batches: [batch],
+        currentBatch: batch,
+        completedCount: completed.length,
+        totalCount: questionnaireIds.length,
+        isComplete: completed.length >= questionnaireIds.length,
+        firstUncompletedQuestionnaireId:
+          questionnaireIds.find(id => !completed.includes(id)) ?? null,
+        completedQuestionnaireIds: completed,
+        history: [],
+        consecutiveBatches: 0
+      }
+    ],
+    cumulativeResponses: 0,
+    questionnaireResponses: [],
+    questionnaireXp: 0,
+    completedQuestionnaireIds: completed,
+    consentedStudyIds: []
+  };
+}
+
 describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
   const mockPush = vi.fn();
   const mockReplace = vi.fn();
@@ -148,6 +192,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockResearchProgress.mockReturnValue({ data: undefined });
     vi.mocked(useRouter).mockReturnValue({
       push: mockPush,
       replace: mockReplace,
@@ -172,15 +217,20 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     } as any);
   });
 
-  const clickSeeResult = () => {
-    const seeResultButton = screen
+  const clickCta = (label: string) => {
+    const button = screen
       .getAllByTestId('mock-button')
-      .find(btn => btn.textContent === 'See result');
-    if (!seeResultButton) throw new Error('See result button not found');
-    fireEvent.click(seeResultButton);
+      .find(btn => btn.textContent === label);
+    if (!button) throw new Error(`${label} CTA not found`);
+    fireEvent.click(button);
   };
 
-  it('calls router.replace with view param and patientId when patientId is provided', async () => {
+  const clickFooterSeeResults = () => {
+    const link = screen.getByText('See Results');
+    fireEvent.click(link);
+  };
+
+  it('standalone: CTA "See Results" replaces to the record view for authenticated patients', async () => {
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}
@@ -189,20 +239,18 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
       />
     );
 
-    // Drawer is always rendered in tests (mock always returns open)
-    clickSeeResult();
+    clickCta('See Results');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalled();
       expect(mockPush).not.toHaveBeenCalled();
     });
-    const url = mockReplace.mock.calls[0][0] as string;
-    expect(url).toBe('/record?id=pat-1&view=QuestionnaireResponse/resp-789');
-    expect(url).not.toContain('category=');
-    expect(url).not.toContain('title=');
+    expect(mockReplace.mock.calls[0][0]).toBe(
+      '/record?id=pat-1&view=QuestionnaireResponse/resp-789'
+    );
   });
 
-  it('calls router.replace with /result?id= for guest flow', async () => {
+  it('standalone: CTA "See Results" replaces to /result for guests', async () => {
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}
@@ -210,17 +258,16 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
       />
     );
 
-    clickSeeResult();
+    clickCta('See Results');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
     await waitFor(() => expect(mockReplace).toHaveBeenCalled());
-    const url = mockReplace.mock.calls[0][0] as string;
-    expect(url).toBe('/result?id=resp-789');
-    expect(url).not.toContain('record');
-    expect(url).not.toContain('category=');
-    expect(url).not.toContain('title=');
+    expect(mockReplace.mock.calls[0][0]).toBe('/result?id=resp-789');
   });
 
-  it('calls router.replace with /record view for authenticated flow with patientId (no role)', async () => {
+  it('mid-batch: CTA "Continue" submits then pushes to the next questionnaire', async () => {
+    mockResearchProgress.mockReturnValue({
+      data: researchProgressWith(['q-123', 'yyy'])
+    });
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}
@@ -229,14 +276,18 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
       />
     );
 
-    clickSeeResult();
+    clickCta('Continue');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
-    await waitFor(() => expect(mockReplace).toHaveBeenCalled());
-    const url = mockReplace.mock.calls[0][0] as string;
-    expect(url).toBe('/record?id=pat-1&view=QuestionnaireResponse/resp-789');
+    await waitFor(() =>
+      expect(mockPush).toHaveBeenCalledWith('/assessments?id=yyy')
+    );
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it('still calls router.push for the "close" action', async () => {
+  it('mid-batch: footer "See Results" submits then replaces to the record view', async () => {
+    mockResearchProgress.mockReturnValue({
+      data: researchProgressWith(['q-123', 'yyy'])
+    });
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}
@@ -245,12 +296,32 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
       />
     );
 
-    const closeButton = screen
-      .getAllByTestId('mock-button')
-      .find(btn => btn.textContent === 'Close');
-    if (!closeButton) throw new Error('Close button not found');
-    fireEvent.click(closeButton);
+    clickFooterSeeResults();
+    await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
+    await waitFor(() => expect(mockReplace).toHaveBeenCalled());
+    expect(mockReplace.mock.calls[0][0]).toBe(
+      '/record?id=pat-1&view=QuestionnaireResponse/resp-789'
+    );
+  });
 
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/assessments'));
+  it('final-in-batch: CTA "See Results" with a completed-batch note replaces to the record view', async () => {
+    mockResearchProgress.mockReturnValue({
+      data: researchProgressWith(['q-123'])
+    });
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated
+        patientId='pat-1'
+      />
+    );
+
+    expect(screen.getByText("You've completed this batch")).toBeTruthy();
+    clickCta('See Results');
+    await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
+    await waitFor(() => expect(mockReplace).toHaveBeenCalled());
+    expect(mockReplace.mock.calls[0][0]).toBe(
+      '/record?id=pat-1&view=QuestionnaireResponse/resp-789'
+    );
   });
 });
