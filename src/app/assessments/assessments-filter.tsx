@@ -1,13 +1,8 @@
 'use client';
 
 import FilterDrawerTrigger from '@/components/shared/filter-drawer-trigger';
+import AppDrawer from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerTitle
-} from '@/components/ui/drawer';
 import { ASSESSMENT_CATEGORIES } from '@/constants/assessment-categories';
 import { useState } from 'react';
 
@@ -54,71 +49,56 @@ export default function AssessmentsFilter({
     onChange({ categories: selectedCategories, sort: selectedSort });
   };
 
-  /** Syncs the drawer open state with the parent. */
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-  };
-
   return (
-    <Drawer
-      onClose={() => setIsOpen(false)}
+    <AppDrawer
       open={isOpen}
-      onOpenChange={handleOpenChange}
+      onClose={() => setIsOpen(false)}
+      trigger={<FilterDrawerTrigger onClick={() => setIsOpen(true)} />}
+      title='Filter'
+      ctaLabel='Apply'
+      onCtaClick={handleApply}
     >
-      <FilterDrawerTrigger onClick={() => setIsOpen(true)} />
-      <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-        <DrawerTitle className='mx-auto text-lg font-bold'>Filter</DrawerTitle>
-        <DrawerDescription />
-
-        <div className='mt-4'>
-          <h3 className='mb-2 text-sm font-semibold text-gray-700'>Category</h3>
-          <div className='flex flex-col gap-2'>
-            {ASSESSMENT_CATEGORIES.map(cat => (
-              <label
-                key={cat.code}
-                className='flex cursor-pointer items-center gap-2 text-sm'
-              >
-                <input
-                  type='checkbox'
-                  checked={selectedCategories.includes(cat.code)}
-                  onChange={() => handleCategoryToggle(cat.code)}
-                  className='size-4 accent-[var(--secondary)]'
-                  aria-label={cat.label}
-                />
-                {cat.label}
-              </label>
-            ))}
-          </div>
+      <div className='mt-4'>
+        <h3 className='mb-2 text-sm font-semibold text-gray-700'>Category</h3>
+        <div className='flex flex-col gap-2'>
+          {ASSESSMENT_CATEGORIES.map(cat => (
+            <label
+              key={cat.code}
+              className='flex cursor-pointer items-center gap-2 text-sm'
+            >
+              <input
+                type='checkbox'
+                checked={selectedCategories.includes(cat.code)}
+                onChange={() => handleCategoryToggle(cat.code)}
+                className='size-4 accent-[var(--secondary)]'
+                aria-label={cat.label}
+              />
+              {cat.label}
+            </label>
+          ))}
         </div>
+      </div>
 
-        <div className='mt-4'>
-          <h3 className='mb-2 text-sm font-semibold text-gray-700'>Sort</h3>
-          <div className='flex flex-wrap gap-2'>
-            {SORT_OPTIONS.map(opt => (
-              <Button
-                key={opt.value}
-                variant={selectedSort === opt.value ? 'default' : 'outline'}
-                size='sm'
-                onClick={() => setSelectedSort(opt.value)}
-                className={
-                  selectedSort === opt.value
-                    ? 'bg-secondary text-white'
-                    : 'border-gray-300 bg-white text-gray-700'
-                }
-              >
-                {opt.label}
-              </Button>
-            ))}
-          </div>
+      <div className='mt-4'>
+        <h3 className='mb-2 text-sm font-semibold text-gray-700'>Sort</h3>
+        <div className='flex flex-wrap gap-2'>
+          {SORT_OPTIONS.map(opt => (
+            <Button
+              key={opt.value}
+              variant={selectedSort === opt.value ? 'default' : 'outline'}
+              size='sm'
+              onClick={() => setSelectedSort(opt.value)}
+              className={
+                selectedSort === opt.value
+                  ? 'bg-secondary text-white'
+                  : 'border-gray-300 bg-white text-gray-700'
+              }
+            >
+              {opt.label}
+            </Button>
+          ))}
         </div>
-
-        <Button
-          className='bg-secondary mt-6 w-full rounded-xl py-3 text-white'
-          onClick={handleApply}
-        >
-          Apply
-        </Button>
-      </DrawerContent>
-    </Drawer>
+      </div>
+    </AppDrawer>
   );
 }

@@ -8,14 +8,8 @@ import FilterDrawerTrigger from '@/components/shared/filter-drawer-trigger';
 import LocationCombobox, {
   type ComboboxOption
 } from '@/components/shared/location-combobox';
+import AppDrawer from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerTitle,
-  DrawerTrigger
-} from '@/components/ui/drawer';
 import { Roles } from '@/constants/roles';
 import { useGetCities, useGetProvinces } from '@/services/api/cities';
 import { IUseClinicParams } from '@/services/clinic';
@@ -226,11 +220,6 @@ export default function ClinicFilter({
       case CONTENT_DEFAULT: {
         return (
           <div className='flex flex-col'>
-            <DrawerTitle className='mx-auto text-[20px] font-bold'>
-              Filter & Sort
-            </DrawerTitle>
-            <DrawerDescription />
-
             {type === 'practitioner' ? (
               <>
                 <DatePresetFilter
@@ -293,23 +282,12 @@ export default function ClinicFilter({
                 Reset Filter
               </Button>
             )}
-
-            <Button
-              className='bg-secondary mt-4 rounded-xl p-4 text-white'
-              onClick={() => {
-                setIsOpen(false);
-                onChange(filter);
-              }}
-            >
-              Apply Filter
-            </Button>
           </div>
         );
       }
       case CONTENT_CUSTOM: {
         return (
           <div className='flex flex-col'>
-            <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
             <div className='mt-4 flex w-full flex-col justify-center'>
               <FilterCalendar
                 selected={{
@@ -356,26 +334,21 @@ export default function ClinicFilter({
   };
 
   return (
-    <Drawer
+    <AppDrawer
+      open={isOpen}
       onClose={() => {
         setWhichContent(CONTENT_DEFAULT);
         setIsOpen(false);
       }}
-      open={isOpen}
+      trigger={<FilterDrawerTrigger onClick={() => setIsOpen(true)} />}
+      title='Filter & Sort'
+      ctaLabel='Apply Filter'
+      onCtaClick={() => {
+        setIsOpen(false);
+        onChange(filter);
+      }}
     >
-      <DrawerTrigger asChild>
-        <FilterDrawerTrigger onClick={() => setIsOpen(true)} />
-      </DrawerTrigger>
-      <DrawerContent
-        className='mx-auto max-w-screen-sm p-4'
-        onInteractOutside={() => {
-          onChange(filter);
-          setIsOpen(false);
-        }}
-      >
-        <DrawerDescription />
-        <div className='mt-4'>{renderDrawerContent()}</div>
-      </DrawerContent>
-    </Drawer>
+      {renderDrawerContent()}
+    </AppDrawer>
   );
 }
