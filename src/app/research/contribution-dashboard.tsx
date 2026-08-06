@@ -65,7 +65,6 @@ function LevelHalo({
           cy='36'
           r={radius}
           fill='none'
-          stroke='#13c2c2'
           strokeWidth='6'
           strokeDasharray={circumference}
           strokeDashoffset={circumference * (1 - clamped)}
@@ -73,6 +72,9 @@ function LevelHalo({
           transform='rotate(-90 36 36)'
           data-testid='dashboard-halo-ring'
           data-fraction={clamped}
+          // Palette-driven arc color; inline style because SVG stroke
+          // attributes cannot resolve CSS custom properties.
+          style={{ stroke: 'var(--color-gold)' }}
         />
       </svg>
       <div className='absolute inset-[6px] overflow-hidden rounded-full'>
@@ -87,7 +89,7 @@ function LevelHalo({
       </div>
       <span
         data-testid='dashboard-level'
-        className='absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-[#13c2c2] px-2 py-0.5 text-[10px] font-bold text-white'
+        className='bg-secondary absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[10px] font-bold text-white'
       >
         Lv {level}
       </span>
@@ -98,8 +100,8 @@ function LevelHalo({
 /** Level icon in a teal chip. */
 function TitleIcon({ icon: Icon }: Readonly<{ icon: LucideIcon }>) {
   return (
-    <span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#13c2c2]/10'>
-      <Icon className='h-3.5 w-3.5 text-[#13c2c2]' />
+    <span className='bg-secondary/10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full'>
+      <Icon className='text-secondary h-3.5 w-3.5' />
     </span>
   );
 }
@@ -159,7 +161,7 @@ function TitleWithRewards({
               data-testid='dashboard-reward-item'
               className='flex items-start gap-2 text-[11px] text-gray-600'
             >
-              <Check className='mt-0.5 h-3.5 w-3.5 shrink-0 text-[#13c2c2]' />
+              <Check className='text-secondary mt-0.5 h-3.5 w-3.5 shrink-0' />
               <span>{level.reward}</span>
             </li>
           ))}
@@ -193,7 +195,7 @@ function StatRow({
 function Mission({ text }: Readonly<{ text: string }>) {
   return (
     <div className='mt-3 flex items-center gap-2 rounded-xl bg-white px-3 py-2'>
-      <Target className='h-3.5 w-3.5 shrink-0 text-[#13c2c2]' />
+      <Target className='text-secondary h-3.5 w-3.5 shrink-0' />
       <p data-testid='dashboard-mission' className='text-[11px] text-gray-600'>
         {text}
       </p>

@@ -2,11 +2,8 @@ import { ANONYMOUS_SESSION_IDENTIFIER_SYSTEM } from '@/constants/anonymous-sessi
 import { useAuth } from '@/context/auth/authContext';
 import { clearConsentFlag, readConsentFlag } from '@/utils/consent';
 import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
-import {
-  parseResearchBundle,
-  type ResearchProgress,
-  type StudyProgress
-} from '@/utils/fhir/research';
+import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
+import { parseResearchBundle } from '@/utils/fhir/research-bundle';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { Bundle } from 'fhir/r4';

@@ -1,5 +1,6 @@
 @use 'sass:meta';
 @use 'tailwindcss';
 @use 'tailwindcss/utilities';
+@use './palette';
 @include meta.load-css('custom-smart-form.scss');
 @include meta.load-css('custom-soap-form.scss');

@@ -1,0 +1,13 @@
+// Design palette tokens, the source for brand colors used outside the
+// Tailwind theme (e.g. SVG strokes). Exposed as CSS custom properties so
+// components can reference var(--color-*). Keep globals.css @theme's
+// --color-secondary in sync for Tailwind utility generation (bg-secondary,
+// text-secondary, ...).
+
+$color-secondary: #13c2c2;
+$color-gold: #ebcb8b;
+
+:root {
+  --color-secondary: #{$color-secondary};
+  --color-gold: #{$color-gold};
+}

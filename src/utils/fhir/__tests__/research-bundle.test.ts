@@ -5,7 +5,7 @@ import type {
   ResearchStudy
 } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
-import { parseResearchBundle } from '../research';
+import { parseResearchBundle } from '../research-bundle';
 
 const TODAY = '2026-08-15';
 

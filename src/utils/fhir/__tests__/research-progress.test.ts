@@ -6,9 +6,11 @@ import {
   computeQuestionnaireXp,
   computeResearchProgress,
   computeStudyProgress,
+  distinctBatchPeriods,
   type BatchHistoryEntry,
   type ResearchBatch,
-  type ResearchResponse
+  type ResearchResponse,
+  type StudyProgress
 } from '../research';
 
 const TODAY = '2026-08-15';
@@ -40,6 +42,22 @@ function makeStudy(id: string, protocolRefs: string[]): ResearchStudy {
     period: { start: '2026-08-01', end: '2027-07-31' },
     protocol: protocolRefs.map(reference => ({ reference }))
   };
+}
+
+/** Builds a StudyProgress for a study owning the given batches. */
+function makeStudyProgress(
+  batches: ResearchBatch[],
+  studyId = 'study-a'
+): StudyProgress {
+  return computeStudyProgress(
+    makeStudy(
+      studyId,
+      batches.map(batch => `PlanDefinition/${batch.id}`)
+    ),
+    batches,
+    [],
+    TODAY
+  );
 }
 
 describe('computeConsecutiveBatches', () => {
@@ -123,10 +141,12 @@ describe('computeResearchProgress', () => {
         '2026-08-02T00:00:00Z'
       )
     ];
-    const progress = computeResearchProgress([], responses, [], {
-      phq2: 8,
-      'big-five-inventory': 15
-    });
+    const progress = computeResearchProgress(
+      [makeStudyProgress([makeBatch()])],
+      responses,
+      [],
+      { phq2: 8, 'big-five-inventory': 15 }
+    );
     expect(progress.questionnaireXp).toBe(115);
     expect(progress.questionnaireResponses).toEqual([
       'phq2',
@@ -140,21 +160,94 @@ describe('computeResearchProgress', () => {
 
   it('applies the default XP for questionnaires without a known duration', () => {
     const progress = computeResearchProgress(
-      [],
+      [makeStudyProgress([makeBatch()])],
       [makeResponse('r1', 'Questionnaire/gad7', '2026-08-01T00:00:00Z')]
     );
     expect(progress.questionnaireXp).toBe(DEFAULT_QUESTIONNAIRE_XP);
   });
 
-  it('keeps per-response questionnaire ids for double completions', () => {
+  it('counts a questionnaire once per batch period despite duplicate submissions', () => {
     const responses = [
       makeResponse('r1', 'Questionnaire/phq2', '2026-08-01T00:00:00Z'),
       makeResponse('r2', 'Questionnaire/phq2', '2026-08-02T00:00:00Z')
     ];
-    const progress = computeResearchProgress([], responses, [], { phq2: 8 });
+    const progress = computeResearchProgress(
+      [makeStudyProgress([makeBatch()])],
+      responses,
+      [],
+      { phq2: 8 }
+    );
+    expect(progress.questionnaireResponses).toEqual(['phq2']);
+    expect(progress.questionnaireXp).toBe(40);
+    expect(progress.completedQuestionnaireIds).toEqual(['phq2']);
+  });
+
+  it('counts the same questionnaire again in a different batch period', () => {
+    const responses = [
+      makeResponse('r1', 'Questionnaire/phq2', '2026-08-10T00:00:00Z'),
+      makeResponse('r2', 'Questionnaire/phq2', '2026-09-10T00:00:00Z')
+    ];
+    const progress = computeResearchProgress(
+      [
+        makeStudyProgress([
+          makeBatch(),
+          makeBatch({
+            id: 'batch-2',
+            start: '2026-09-01',
+            end: '2026-09-30'
+          })
+        ])
+      ],
+      responses,
+      [],
+      { phq2: 8 }
+    );
     expect(progress.questionnaireResponses).toEqual(['phq2', 'phq2']);
     expect(progress.questionnaireXp).toBe(80);
-    expect(progress.completedQuestionnaireIds).toEqual(['phq2']);
+  });
+
+  it('merges identical batch periods across studies into one', () => {
+    const shared = makeResponse(
+      'r1',
+      'Questionnaire/phq2',
+      '2026-08-10T00:00:00Z'
+    );
+    const progress = computeResearchProgress(
+      [
+        makeStudyProgress([makeBatch()], 'study-a'),
+        makeStudyProgress([makeBatch()], 'study-b')
+      ],
+      [shared],
+      [],
+      { phq2: 8 }
+    );
+    expect(progress.questionnaireResponses).toEqual(['phq2']);
+    expect(progress.questionnaireXp).toBe(40);
+  });
+
+  it('ignores responses authored outside all batch periods', () => {
+    const progress = computeResearchProgress(
+      [makeStudyProgress([makeBatch()])],
+      [makeResponse('r1', 'Questionnaire/phq2', '2026-05-15T00:00:00Z')],
+      [],
+      { phq2: 8 }
+    );
+    expect(progress.questionnaireResponses).toEqual([]);
+    expect(progress.questionnaireXp).toBe(0);
+  });
+
+  it('counts responses on the inclusive batch period boundaries', () => {
+    const responses = [
+      makeResponse('r1', 'Questionnaire/phq2', '2026-08-01T00:00:00Z'),
+      makeResponse('r2', 'Questionnaire/gad7', '2026-08-31T23:59:59Z')
+    ];
+    const progress = computeResearchProgress(
+      [makeStudyProgress([makeBatch()])],
+      responses,
+      [],
+      { phq2: 8, gad7: 3 }
+    );
+    expect(progress.questionnaireXp).toBe(55);
   });
 
   it('returns an empty progress object when there are no responses', () => {
@@ -164,5 +257,28 @@ describe('computeResearchProgress', () => {
     expect(progress.questionnaireResponses).toEqual([]);
     expect(progress.completedQuestionnaireIds).toEqual([]);
     expect(progress.studies).toEqual([]);
+  });
+});
+
+describe('distinctBatchPeriods', () => {
+  it('merges identical periods and keeps the first-seen order', () => {
+    const periods = distinctBatchPeriods([
+      makeStudyProgress([makeBatch()], 'study-a'),
+      makeStudyProgress(
+        [
+          makeBatch(),
+          makeBatch({
+            id: 'batch-2',
+            start: '2026-09-01',
+            end: '2026-09-30'
+          })
+        ],
+        'study-b'
+      )
+    ]);
+    expect(periods).toEqual([
+      { start: '2026-08-01', end: '2026-08-31' },
+      { start: '2026-09-01', end: '2026-09-30' }
+    ]);
   });
 });

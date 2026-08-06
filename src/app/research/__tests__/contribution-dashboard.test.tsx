@@ -57,6 +57,10 @@ describe('ContributionDashboard', () => {
       'data-fraction',
       '0.5'
     );
+    // Arc color comes from the SCSS palette, not a hardcoded hex.
+    expect(screen.getByTestId('dashboard-halo-ring')).toHaveStyle({
+      stroke: 'var(--color-gold)'
+    });
     expect(screen.getByTestId('dashboard-level').textContent).toContain('Lv 1');
   });
 
