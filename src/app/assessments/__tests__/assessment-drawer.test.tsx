@@ -17,6 +17,14 @@ vi.mock('react-qr-code', () => ({
 }));
 
 vi.mock('@/components/ui/drawer', () => ({
+  Drawer: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
+    open ? <div data-testid='drawer'>{children}</div> : null,
+  DrawerContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DrawerTrigger: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
   DrawerHeader: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
@@ -24,12 +32,6 @@ vi.mock('@/components/ui/drawer', () => ({
     <h2>{children}</h2>
   ),
   DrawerDescription: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  DrawerFooter: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  DrawerClose: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   )
 }));
@@ -109,6 +111,7 @@ function renderDrawer({
   const router = { push: vi.fn() };
   render(
     <AssessmentDrawerContent
+      open
       selectedAssessment={selectedAssessment}
       researchUrl={researchUrl}
       researchComplete={researchComplete}

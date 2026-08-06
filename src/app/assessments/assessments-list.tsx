@@ -3,7 +3,6 @@
 import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
 import PageHeader from '@/components/page-header';
-import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { useAuth } from '@/context/auth/authContext';
 import { lazyComponent } from '@/lib/lazy-component';
@@ -282,21 +281,18 @@ export default function AssessmentsList() {
         </div>
       </ContentWraper>
 
-      <Drawer onClose={handleDrawerClose} open={isOpen}>
-        <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-          <AssessmentDrawerContent
-            selectedAssessment={selectedAssessment}
-            researchUrl={researchUrl}
-            researchComplete={researchComplete}
-            currentLocation={currentLocation}
-            isPending={isPending}
-            isPractitioner={isPractitioner}
-            onClose={handleDrawerClose}
-            startTransition={startTransition}
-            router={router}
-          />
-        </DrawerContent>
-      </Drawer>
+      <AssessmentDrawerContent
+        open={isOpen}
+        onClose={handleDrawerClose}
+        selectedAssessment={selectedAssessment}
+        researchUrl={researchUrl}
+        researchComplete={researchComplete}
+        currentLocation={currentLocation}
+        isPending={isPending}
+        isPractitioner={isPractitioner}
+        startTransition={startTransition}
+        router={router}
+      />
     </>
   );
 }
