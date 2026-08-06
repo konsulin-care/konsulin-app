@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/components/ui/drawer', () => ({
@@ -142,5 +142,72 @@ describe('AppDrawer', () => {
 
     fireEvent.click(screen.getByTestId('drawer-root'));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+/** Two independently controlled drawers plus an open button for each. */
+function TwoDrawerHarness() {
+  const [aOpen, setAOpen] = useState(false);
+  const [bOpen, setBOpen] = useState(false);
+  return (
+    <div>
+      <AppDrawer open={aOpen} onClose={() => setAOpen(false)} title='Drawer A'>
+        <p>Body A</p>
+      </AppDrawer>
+      <AppDrawer open={bOpen} onClose={() => setBOpen(false)} title='Drawer B'>
+        <p>Body B</p>
+      </AppDrawer>
+      <button type='button' onClick={() => setAOpen(true)}>
+        open-a
+      </button>
+      <button type='button' onClick={() => setBOpen(true)}>
+        open-b
+      </button>
+    </div>
+  );
+}
+
+/** Drawer roots in render order: [drawer A, drawer B]. */
+function drawerRoots() {
+  return screen.getAllByTestId('drawer-root');
+}
+
+describe('AppDrawer exclusive enforcement', () => {
+  it('closes an already open drawer when another drawer opens', () => {
+    render(<TwoDrawerHarness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'open-a' }));
+    let roots = drawerRoots();
+    expect(roots[0]).toHaveAttribute('data-open', 'true');
+    expect(roots[1]).toHaveAttribute('data-open', 'false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'open-b' }));
+    roots = drawerRoots();
+    expect(roots[0]).toHaveAttribute('data-open', 'false');
+    expect(roots[1]).toHaveAttribute('data-open', 'true');
+  });
+
+  it('closes the existing drawer symmetrically in the reverse order', () => {
+    render(<TwoDrawerHarness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'open-b' }));
+    let roots = drawerRoots();
+    expect(roots[0]).toHaveAttribute('data-open', 'false');
+    expect(roots[1]).toHaveAttribute('data-open', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'open-a' }));
+    roots = drawerRoots();
+    expect(roots[0]).toHaveAttribute('data-open', 'true');
+    expect(roots[1]).toHaveAttribute('data-open', 'false');
+  });
+
+  it('never closes the drawer that just opened', () => {
+    render(<TwoDrawerHarness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'open-a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'open-b' }));
+
+    const roots = drawerRoots();
+    expect(roots[1]).toHaveAttribute('data-open', 'true');
   });
 });

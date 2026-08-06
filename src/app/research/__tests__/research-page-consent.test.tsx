@@ -1,5 +1,5 @@
 import type { FabAction } from '@/context/fabContext';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
 import {
@@ -125,6 +125,11 @@ function participateAction(): FabAction | null {
         action.type === 'SET_ACTION' && action.config?.label === 'Participate'
     ) ?? null
   );
+}
+
+/** Vaul drawer content nodes in mount order: first detail, then consent. */
+function vaulDrawerNodes(): HTMLElement[] {
+  return [...document.querySelectorAll<HTMLElement>('[data-vaul-drawer]')];
 }
 
 /** Invokes the latest Participate FAB action, asserting it exists. */
@@ -316,5 +321,49 @@ describe('ResearchPage consent flow', () => {
     render(<ResearchPage />, { wrapper: createWrapper() });
 
     expect(screen.queryByText('How it works')).toBeNull();
+  });
+
+  it('closes the detail drawer when the consent drawer opens from Participate', async () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    // Card opens the detail drawer; Participate then spawns the consent drawer.
+    fireEvent.click(screen.getByTestId('research-slide-research'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Participate' }));
+
+    // Consent is visible; the detail drawer is closed, not stacked.
+    expect(
+      await screen.findByRole('button', { name: 'Agree to Participate' })
+    ).toBeTruthy();
+    await waitFor(() => {
+      const drawers = vaulDrawerNodes();
+      expect(drawers).toHaveLength(2);
+      expect(drawers[0].dataset.open).toBe('false');
+      expect(drawers[1].dataset.open).toBe('true');
+    });
+  });
+
+  it('does not bring the detail drawer back after the consent drawer is dismissed', async () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    fireEvent.click(screen.getByTestId('research-slide-research'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Participate' }));
+    await screen.findByRole('button', { name: 'Agree to Participate' });
+
+    // Dismiss the consent drawer via Escape.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => {
+      expect(vaulDrawerNodes()[1].dataset.open).toBe('false');
+    });
+
+    // Detail stays closed permanently: dismissing consent must not reopen it.
+    expect(vaulDrawerNodes()[0].dataset.open).toBe('false');
   });
 });

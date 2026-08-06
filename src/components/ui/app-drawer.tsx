@@ -11,7 +11,14 @@ import {
   DrawerTrigger
 } from '@/components/ui/drawer';
 import { cn } from '@/lib/utils';
-import type { ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
+
+/**
+ * Drawers currently open, keyed by instance id → close callback. Powers the
+ * app-wide one-open-at-a-time rule: opening a drawer permanently closes any
+ * other drawer that is already open.
+ */
+const openDrawers = new Map<string, () => void>();
 
 type AppDrawerProps = {
   open: boolean;
@@ -58,6 +65,40 @@ export default function AppDrawer({
   className
 }: AppDrawerProps) {
   const hasCta = Boolean(ctaLabel && onCtaClick);
+  // Instance identity for the open-drawer registry (unique per mount).
+  const instanceId = useId();
+  const wasOpen = useRef(open);
+  // Latest onClose, read by the registry at call time so the register
+  // effect never has to re-run (and re-clean) on identity changes.
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Keep this drawer's close callback registered while it is open. Deps
+  // exclude onClose so re-renders do not delete and re-add the entry.
+  useEffect(() => {
+    if (open) {
+      openDrawers.set(instanceId, () => onCloseRef.current());
+    } else {
+      openDrawers.delete(instanceId);
+    }
+    return () => {
+      openDrawers.delete(instanceId);
+    };
+  }, [instanceId, open]);
+
+  // On a fresh open (false→true only), permanently close every other drawer.
+  // Deps deliberately exclude onClose so re-renders never re-trigger this.
+  useEffect(() => {
+    if (open && !wasOpen.current) {
+      for (const [otherId, closeOther] of openDrawers) {
+        if (otherId !== instanceId) closeOther();
+      }
+    }
+    wasOpen.current = open;
+  }, [instanceId, open]);
 
   return (
     <Drawer
@@ -67,7 +108,10 @@ export default function AppDrawer({
       }}
     >
       {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
-      <DrawerContent className={cn('mx-auto max-w-screen-sm', className)}>
+      <DrawerContent
+        data-open={open}
+        className={cn('mx-auto max-w-screen-sm', className)}
+      >
         <div className='flex min-h-full flex-col'>
           {(title || description) && (
             <DrawerHeader>
