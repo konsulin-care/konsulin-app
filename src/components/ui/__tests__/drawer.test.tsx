@@ -27,6 +27,8 @@ describe('DrawerContent', () => {
     const drawerEl = document.querySelector('[data-vaul-drawer]');
     expect(drawerEl).toBeInTheDocument();
     expect(drawerEl).toHaveClass('max-h-[85dvh]');
+    expect(drawerEl).toHaveClass('mx-auto');
+    expect(drawerEl).toHaveClass('max-w-screen-sm');
     expect(drawerEl).not.toHaveClass('overflow-y-auto');
 
     // overflow-y-auto is on the inner scroll wrapper, not on [data-vaul-drawer]
