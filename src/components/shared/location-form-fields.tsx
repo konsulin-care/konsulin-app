@@ -87,7 +87,7 @@ export default function LocationFormFields({
     <div className='space-y-4'>
       <LocationImageUploader
         imageUrl={imageUrl}
-        onImageUrlChange={onImageUrlChange as (url: string) => void}
+        onImageUrlChange={onImageUrlChange}
       />
 
       <SwitchField
