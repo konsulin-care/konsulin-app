@@ -1,0 +1,11 @@
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import Loading from '../loading';
+
+describe('research route loading', () => {
+  it('renders a skeleton placeholder while the route chunk loads', () => {
+    render(<Loading />);
+
+    expect(screen.getByTestId('research-route-loading')).toBeTruthy();
+  });
+});

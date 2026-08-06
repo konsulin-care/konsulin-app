@@ -158,6 +158,7 @@ export function buildQuestionnaireResponseSearch(
 export function useResearchProgress() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [identity, setIdentity] = useState<ResearchIdentity | null>(null);
+  const [identityFailed, setIdentityFailed] = useState(false);
 
   const isAuthenticated = authState?.isAuthenticated ?? false;
   const fhirId = authState?.userInfo?.fhirId;
@@ -172,18 +173,25 @@ export function useResearchProgress() {
       // deepsource:ignore JS-0098 — fire-and-forget identity resolution
       void (async () => {
         if (isAuthenticated && fhirId) {
-          if (!cancelled) setIdentity({ kind: 'patient', id: fhirId });
+          if (!cancelled) {
+            setIdentityFailed(false);
+            setIdentity({ kind: 'patient', id: fhirId });
+          }
           return;
         }
         try {
           const guestId = await ensureAnonymousSession(false);
-          if (!cancelled) setIdentity({ kind: 'guest', id: guestId });
+          if (!cancelled) {
+            setIdentityFailed(false);
+            setIdentity({ kind: 'guest', id: guestId });
+          }
         } catch {
-          if (!cancelled) setIdentity(null);
+          if (!cancelled) setIdentityFailed(true);
         }
       })();
     } else {
       setIdentity(null);
+      setIdentityFailed(false);
     }
 
     return () => {
@@ -191,7 +199,7 @@ export function useResearchProgress() {
     };
   }, [isAuthLoading, isEligible, isAuthenticated, fhirId]);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['research', identity?.kind ?? 'none', identity?.id ?? 'none'],
     enabled: identity !== null,
     staleTime: 5 * 60_000,
@@ -234,6 +242,16 @@ export function useResearchProgress() {
       );
     }
   });
+
+  // v5's isLoading (isPending && isFetching) is false while the query is
+  // disabled during identity resolution, which would flash the empty state.
+  // Loading means: no data yet and it may still arrive (auth resolution,
+  // guest-session resolution, or the first fetch). Ineligible users and
+  // failed sessions fall through to the empty state.
+  return {
+    ...query,
+    isLoading: query.isPending && isEligible && !identityFailed
+  };
 }
 
 /**

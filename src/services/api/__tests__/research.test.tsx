@@ -305,4 +305,45 @@ describe('useResearchProgress', () => {
     expect(result.current.isFetching).toBe(false);
     expect(mockPost).not.toHaveBeenCalled();
   });
+
+  it('reports loading while guest identity resolution is in flight', () => {
+    mockUseAuth.mockReturnValue(GUEST_STATE);
+    // Never resolves: guest session stays in flight.
+    mockEnsureAnonymousSession.mockReturnValue(
+      new Promise<string>(() => void 0)
+    );
+
+    const { result } = renderHook(() => useResearchProgress(), {
+      wrapper: createWrapper()
+    });
+
+    expect(result.current.isLoading).toBe(true);
+  });
+
+  it('stops loading when the anonymous session fails to resolve', async () => {
+    mockUseAuth.mockReturnValue(GUEST_STATE);
+    mockEnsureAnonymousSession.mockRejectedValue(
+      new Error('anonymous session failed')
+    );
+
+    const { result } = renderHook(() => useResearchProgress(), {
+      wrapper: createWrapper()
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.data).toBeUndefined();
+  });
+
+  it('never reports loading for ineligible authenticated users without a fhir id', () => {
+    mockUseAuth.mockReturnValue({
+      isLoading: false,
+      state: { isAuthenticated: true, userInfo: { role_name: 'Practitioner' } }
+    });
+
+    const { result } = renderHook(() => useResearchProgress(), {
+      wrapper: createWrapper()
+    });
+
+    expect(result.current.isLoading).toBe(false);
+  });
 });

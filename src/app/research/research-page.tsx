@@ -2,7 +2,6 @@
 
 import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
-import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import ReferralNotice from '@/components/research/referral-notice';
 import { useAuth } from '@/context/auth/authContext';
@@ -23,6 +22,7 @@ import { toast } from 'react-toastify';
 import ConsentDrawer from './consent-drawer';
 import ContributionDashboard from './contribution-dashboard';
 import ResearchCarousel from './research-carousel';
+import ResearchSkeleton from './research-skeleton';
 import StudyDetailView from './study-detail-view';
 import { buildOverlapMap } from './study-sections';
 
@@ -225,14 +225,7 @@ export default function ResearchPage() {
   /** Renders the loading, error, or study content for the page. */
   const renderContent = () => {
     if (isLoading) {
-      return (
-        <div
-          data-testid='research-loading'
-          className='flex min-h-[60vh] items-center justify-center'
-        >
-          <LoadingSpinnerIcon width={48} height={48} className='animate-spin' />
-        </div>
-      );
+      return <ResearchSkeleton />;
     }
     if (!progress || progress.studies.length === 0) {
       return (

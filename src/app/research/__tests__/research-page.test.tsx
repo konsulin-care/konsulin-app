@@ -103,15 +103,15 @@ beforeEach(() => {
 });
 
 describe('ResearchPage', () => {
-  it('shows a loading state while the progress query is pending', () => {
+  it('shows a skeleton instead of the empty state while the progress query is pending', () => {
     mockUseResearchProgress.mockReturnValue({
       data: undefined,
       isLoading: true
     });
-
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    expect(screen.getByTestId('research-loading')).toBeTruthy();
+    expect(screen.queryByText('No ongoing research')).toBeNull();
+    expect(screen.getByTestId('research-skeleton')).toBeTruthy();
   });
 
   it('renders the carousel with study data and batch progress', () => {
