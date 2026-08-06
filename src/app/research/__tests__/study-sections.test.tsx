@@ -74,8 +74,16 @@ describe('QuestionnaireList', () => {
   it('shows the XP value next to questionnaires with a known duration', () => {
     renderList({ titleMap: TITLE_MAP });
 
-    expect(screen.getAllByText('+8 XP').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('+15 XP').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('+40 XP').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('+75 XP').length).toBeGreaterThan(0);
+  });
+
+  it('renders the XP value beside the title on the same row', () => {
+    renderList({ titleMap: TITLE_MAP });
+
+    const title = screen.getByRole('button', { name: 'PHQ-2' });
+    const xp = screen.getByText('+40 XP');
+    expect(title.parentElement).toBe(xp.parentElement);
   });
 
   it('omits the XP value when the duration is unknown', () => {
@@ -83,8 +91,8 @@ describe('QuestionnaireList', () => {
       titleMap: { phq2: { title: 'PHQ-2', durationMinutes: null } }
     });
 
-    expect(screen.queryByText('+8 XP')).toBeNull();
-    expect(screen.queryByText('+15 XP')).toBeNull();
+    expect(screen.queryByText('+40 XP')).toBeNull();
+    expect(screen.queryByText('+75 XP')).toBeNull();
   });
 
   it('hides overlap hints in the standard view', () => {

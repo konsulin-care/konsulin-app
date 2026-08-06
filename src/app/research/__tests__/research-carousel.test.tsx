@@ -297,8 +297,8 @@ describe('ResearchCarousel', () => {
   it('shows the XP value next to questionnaires with a known duration', () => {
     renderCarousel([makeStudyProgress()], 'research');
 
-    expect(screen.getAllByText('+8 XP').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('+15 XP').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('+40 XP').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('+75 XP').length).toBeGreaterThan(0);
   });
 
   it('shows a skeleton for unresolved titles while loading', () => {

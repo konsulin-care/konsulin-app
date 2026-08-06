@@ -1,3 +1,4 @@
+import { xpForDuration } from '@/constants/research';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { daysUntilBatch } from '@/utils/fhir/research';
@@ -154,13 +155,13 @@ export function QuestionnaireList({
         const info = titleMap?.[id];
         const title = info?.title ?? (isTitlesLoading ? null : displayName(id));
         return (
-          <li key={id} className='flex items-start gap-2 text-xs'>
-            {done ? (
-              <CheckCircle2 className='mt-0.5 h-4 w-4 shrink-0 text-[#13c2c2]' />
-            ) : (
-              <Circle className='mt-0.5 h-4 w-4 shrink-0 text-gray-300' />
-            )}
-            <div className='flex flex-col'>
+          <li key={id} className='flex flex-col gap-0.5 text-xs'>
+            <div className='flex items-center gap-2'>
+              {done ? (
+                <CheckCircle2 className='h-4 w-4 shrink-0 text-[#13c2c2]' />
+              ) : (
+                <Circle className='h-4 w-4 shrink-0 text-gray-300' />
+              )}
               {title ? (
                 <button
                   type='button'
@@ -175,19 +176,17 @@ export function QuestionnaireList({
                   className='h-3.5 w-24 animate-pulse rounded bg-gray-200'
                 />
               )}
-              <div className='flex items-center gap-2'>
-                {info?.durationMinutes != null && (
-                  <span className='text-[10px] font-bold text-[#13c2c2]'>
-                    +{info.durationMinutes} XP
-                  </span>
-                )}
-                {showOverlapHints && otherStudies.length > 0 && (
-                  <span className='text-[10px] text-gray-500'>
-                    Also counts toward {otherStudies.join(', ')}
-                  </span>
-                )}
-              </div>
+              {info?.durationMinutes != null && (
+                <span className='text-[10px] font-bold text-[#13c2c2]'>
+                  +{xpForDuration(info.durationMinutes)} XP
+                </span>
+              )}
             </div>
+            {showOverlapHints && otherStudies.length > 0 && (
+              <span className='pl-6 text-[10px] text-gray-500'>
+                Also counts toward {otherStudies.join(', ')}
+              </span>
+            )}
           </li>
         );
       })}

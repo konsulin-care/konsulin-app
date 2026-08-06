@@ -336,8 +336,8 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    expect(screen.getAllByText('+8 XP').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('+15 XP').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('+40 XP').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('+75 XP').length).toBeGreaterThan(0);
   });
 
   it('hides overlap hints across studies in the carousel', () => {
