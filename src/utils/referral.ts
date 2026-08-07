@@ -64,22 +64,16 @@ export function parseReferralRef(ref?: string | null): ReferralRef | null {
 }
 
 /**
- * Bahasa Indonesia prefilled message for the wa.me share template.
+ * English prefilled message for the research share flow.
  *
+ * Invites the recipient to join the study as a citizen scientist, ending
+ * with a newline so the shared URL starts on its own line.
+ *
+ * @param title - Research study title to interpolate.
  * @returns The share message text.
  */
-export function buildShareMessage(): string {
-  return 'Yuk ikut riset kesehatan di Konsulin! Selesaikan batch-nya dan dukung riset komunitas.';
-}
-
-/**
- * Builds a one-tap wa.me share URL with the prefilled message encoded.
- *
- * @param message - Message text to prefill.
- * @returns The wa.me URL.
- */
-export function buildWhatsAppShareUrl(message: string): string {
-  return `https://wa.me/?text=${encodeURIComponent(message)}`;
+export function buildResearchShareMessage(title: string): string {
+  return `Join me as a citizen scientist through ${title} in Konsulin.\n`;
 }
 
 /**

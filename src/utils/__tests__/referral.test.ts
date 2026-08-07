@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildShareMessage,
+  buildResearchShareMessage,
   buildShareUrl,
-  buildWhatsAppShareUrl,
   captureReferralRef,
   clearReferralLocalState,
   isReferralWritten,
@@ -73,13 +72,17 @@ describe('parseReferralRef', () => {
   });
 });
 
-describe('buildWhatsAppShareUrl', () => {
-  it('encodes the prefilled message', () => {
-    const url = buildWhatsAppShareUrl(buildShareMessage());
-    expect(url).toMatch(/^https:\/\/wa\.me\/\?text=/);
-    expect(url).not.toContain(' ');
-    expect(url).not.toContain('%20%20');
-    expect(decodeURIComponent(url.split('text=')[1])).toBe(buildShareMessage());
+describe('buildResearchShareMessage', () => {
+  it('builds the English citizen-scientist invite with a trailing newline', () => {
+    expect(buildResearchShareMessage('PHQ-9 Study')).toBe(
+      'Join me as a citizen scientist through PHQ-9 Study in Konsulin.\n'
+    );
+  });
+
+  it('interpolates any study title', () => {
+    expect(buildResearchShareMessage('Sleep Cohort 2026')).toBe(
+      'Join me as a citizen scientist through Sleep Cohort 2026 in Konsulin.\n'
+    );
   });
 });
 

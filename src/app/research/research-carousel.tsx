@@ -1,9 +1,9 @@
 'use client';
 
-import { useShareStudy } from '@/hooks/useShareStudy';
+import ShareResearchButton from '@/components/research/share-research-button';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
-import { FlaskConical, Share2 } from 'lucide-react';
+import { FlaskConical } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import 'swiper/css';
 import { Swiper, SwiperSlide, type SwiperClass } from 'swiper/react';
@@ -66,12 +66,6 @@ function StudySlide({
   onStudyClick: (studyId: string) => void;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
 }>) {
-  const { handleShare, copied } = useShareStudy({
-    studyId: progress.study.id,
-    isPatient,
-    fhirId
-  });
-
   return (
     <div
       data-testid={`research-slide-${progress.study.id}`}
@@ -97,18 +91,14 @@ function StudySlide({
         isTitlesLoading={isTitlesLoading}
         showOverlapHints={false}
       />
-      <button
-        type='button'
-        data-testid={`research-share-${progress.study.id}`}
-        onClick={e => {
-          e.stopPropagation();
-          void handleShare();
-        }}
-        className='mt-auto flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 pt-2 text-center text-[10px] text-black'
-      >
-        <Share2 className='h-3 w-3' />
-        {copied ? 'Link copied!' : 'Tap to share this survey'}
-      </button>
+      <ShareResearchButton
+        title={progress.study.title}
+        isPatient={isPatient}
+        fhirId={fhirId}
+        studyId={progress.study.id}
+        dataTestId={`research-share-${progress.study.id}`}
+        className='mt-auto flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 pt-2 text-[10px] text-black'
+      />
     </div>
   );
 }

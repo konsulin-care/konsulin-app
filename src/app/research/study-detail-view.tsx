@@ -1,10 +1,10 @@
 'use client';
 
+import ShareResearchButton from '@/components/research/share-research-button';
 import AppDrawer from '@/components/ui/app-drawer';
-import { useShareStudy } from '@/hooks/useShareStudy';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
-import { FlaskConical, Share2 } from 'lucide-react';
+import { FlaskConical } from 'lucide-react';
 import {
   BatchProgress,
   QuestionnaireList,
@@ -44,12 +44,6 @@ export default function StudyDetailView({
   titleMap,
   isTitlesLoading
 }: Readonly<StudyDetailViewProps>) {
-  const { handleShare, copied } = useShareStudy({
-    studyId: progress?.study.id ?? '',
-    isPatient,
-    fhirId
-  });
-
   return (
     <AppDrawer
       open={open}
@@ -92,17 +86,14 @@ export default function StudyDetailView({
             isTitlesLoading={isTitlesLoading}
             showOverlapHints={true}
           />
-          <button
-            type='button'
-            data-testid={`research-share-${progress.study.id}`}
-            onClick={() => {
-              void handleShare();
-            }}
-            className='flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 pt-3 text-center text-[10px] text-black'
-          >
-            <Share2 className='h-3 w-3' />
-            {copied ? 'Link copied!' : 'Tap to share this study'}
-          </button>
+          <ShareResearchButton
+            title={progress.study.title}
+            isPatient={isPatient}
+            fhirId={fhirId}
+            studyId={progress.study.id}
+            dataTestId={`research-share-${progress.study.id}`}
+            className='flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 pt-3 text-[10px] text-black'
+          />
         </div>
       )}
     </AppDrawer>

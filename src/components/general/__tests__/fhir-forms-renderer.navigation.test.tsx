@@ -135,6 +135,8 @@ vi.mock('@/constants/roles', () => ({
 }));
 
 import { useRequiredValidation } from '@/hooks/useRequiredValidation';
+import { dbSet } from '@/lib/indexeddb';
+import { getAPI } from '@/services/api';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
 import { getResponse } from '@aehrc/smart-forms-renderer';
 import type { Questionnaire } from 'fhir/r4';
@@ -331,10 +333,13 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
       />
     );
 
-    // Final drawer: completion title, celebration image, and share CTA.
+    // Final drawer: completion title, celebration image, and share footer.
     expect(screen.getByText("You've completed this batch!")).toBeTruthy();
     expect(screen.getByTestId('mock-image')).toBeTruthy();
-    expect(screen.getByTestId('share-research-cta')).toBeTruthy();
+    expect(screen.getByTestId('share-research-footer')).toBeTruthy();
+    expect(screen.getByTestId('share-research-footer')).toHaveTextContent(
+      'Tap to share this survey'
+    );
 
     clickCta('See Results');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
@@ -342,6 +347,53 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     expect(mockReplace.mock.calls[0][0]).toBe(
       '/record?id=pat-1&view=QuestionnaireResponse/resp-789'
     );
+  });
+
+  it('navigates immediately after QR save without waiting for the interpret webhook', async () => {
+    let resolveHook: ((value: unknown) => void) | undefined;
+    const hookPromise = new Promise(resolve => {
+      resolveHook = resolve;
+    });
+    const post = vi.fn().mockReturnValue(hookPromise);
+    vi.mocked(getAPI).mockResolvedValue({ post } as any);
+
+    vi.mocked(getResponse).mockReturnValue({
+      resourceType: 'QuestionnaireResponse',
+      questionnaire: 'Questionnaire/q-123',
+      status: 'completed',
+      item: [
+        {
+          linkId: 'interpretation',
+          item: [{ linkId: 'score-dimension', item: [] }]
+        }
+      ]
+    } as any);
+
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated
+        patientId='pat-1'
+      />
+    );
+
+    clickCta('See Results');
+    await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
+    await waitFor(() => expect(mockReplace).toHaveBeenCalled());
+
+    // The interpret webhook is still pending — navigation was not blocked.
+    expect(post).toHaveBeenCalled();
+
+    resolveHook?.({ data: { data: { asyncServiceResultId: 'sr-1' } } });
+
+    await waitFor(() => {
+      expect(dbSet).toHaveBeenCalledWith('service_requests', {
+        id: 'resp-789',
+        ownerId: 'pat-1',
+        serviceRequestId: 'sr-1',
+        updatedAt: expect.any(Number)
+      });
+    });
   });
 
   it('mid-batch without study: CTA "See Results", no footer, replaces to the record view', async () => {

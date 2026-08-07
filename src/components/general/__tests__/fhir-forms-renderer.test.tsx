@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, react/jsx-no-useless-fragment, @next/next/no-img-element, jsx-a11y/alt-text, max-lines */
 
 import { FabProvider, useFab } from '@/context/fabContext';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor
+} from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
@@ -333,7 +339,12 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
     expect(screen.getByTestId('mock-drawer')).toBeInTheDocument();
   });
 
-  it('scopes the research share CTA link to the deployed study', () => {
+  it('shares the study-scoped invite from the completion drawer', async () => {
+    const share = vi.fn().mockResolvedValue(void 0);
+    Object.defineProperty(navigator, 'share', {
+      value: share,
+      configurable: true
+    });
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams('study=study-x') as ReadonlyURLSearchParams
     );
@@ -379,8 +390,14 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
       lastDirtyState?.onAction?.();
     });
 
-    const href = screen.getByTestId('cta-whatsapp').getAttribute('href') ?? '';
-    const message = decodeURIComponent(href.split('text=')[1] ?? '');
-    expect(message).toContain('/research?id=study-x');
+    fireEvent.click(screen.getByTestId('share-research-footer'));
+
+    await waitFor(() => {
+      expect(share).toHaveBeenCalledWith({
+        title: 'Study X',
+        text: `Join me as a citizen scientist through Study X in Konsulin.\n${window.location.origin}/research?id=study-x&ref=p_pat-1`,
+        url: `${window.location.origin}/research?id=study-x&ref=p_pat-1`
+      });
+    });
   });
 });

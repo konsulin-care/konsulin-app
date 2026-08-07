@@ -70,7 +70,7 @@ describe('StudyDetailView', () => {
     expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'PHQ-2' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();
-    expect(screen.getByText(/Tap to share this study/i)).toBeTruthy();
+    expect(screen.getByText(/Tap to share this survey/i)).toBeTruthy();
   });
 
   it('calls onParticipate with the study when the CTA is clicked', () => {
@@ -103,14 +103,16 @@ describe('StudyDetailView', () => {
     ).toBeGreaterThan(0);
   });
 
-  it('shares the study URL from the share row', () => {
+  it('shares the full invite message from the share row', () => {
     const share = vi.fn().mockResolvedValue(void 0);
     Object.assign(navigator, { share });
     renderDetail();
 
-    fireEvent.click(screen.getByText(/Tap to share this study/i));
+    fireEvent.click(screen.getByText(/Tap to share this survey/i));
 
     expect(share).toHaveBeenCalledWith({
+      title: 'Konsulin Mental Health Survey',
+      text: 'Join me as a citizen scientist through Konsulin Mental Health Survey in Konsulin.\nhttps://konsulin.care/research?id=research',
       url: 'https://konsulin.care/research?id=research'
     });
   });

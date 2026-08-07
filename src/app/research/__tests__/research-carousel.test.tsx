@@ -92,7 +92,7 @@ describe('ResearchCarousel', () => {
     expect(screen.getByText(/Tap to share this survey/i)).toBeTruthy();
   });
 
-  it('shares the study URL when the share bar is clicked', () => {
+  it('shares the full invite message when the share bar is clicked', () => {
     const share = vi.fn().mockResolvedValue(void 0);
     Object.assign(navigator, { share });
     const onStudyClick = vi.fn();
@@ -101,6 +101,8 @@ describe('ResearchCarousel', () => {
     fireEvent.click(screen.getByTestId('research-share-research'));
 
     expect(share).toHaveBeenCalledWith({
+      title: 'Konsulin Mental Health Survey',
+      text: 'Join me as a citizen scientist through Konsulin Mental Health Survey in Konsulin.\nhttps://konsulin.care/research?id=research',
       url: 'https://konsulin.care/research?id=research'
     });
     expect(onStudyClick).not.toHaveBeenCalled();

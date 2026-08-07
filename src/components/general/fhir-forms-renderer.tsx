@@ -1,7 +1,7 @@
 /* eslint-disable sonarjs/cognitive-complexity, max-lines, complexity, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import PageLoader from '@/components/general/page-loader';
 import { SmartFormShell } from '@/components/general/smart-form-shell';
-import ShareResearchCta from '@/components/research/share-research-cta';
+import ShareResearchButton from '@/components/research/share-research-button';
 import type { DrawerCopy } from '@/constants/research-copy';
 import {
   fillProgress,
@@ -29,7 +29,11 @@ import AppDrawer from '@/components/ui/app-drawer';
 import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import type { RendererConfig } from '@aehrc/smart-forms-renderer';
 import { getResponse, useBuildForm } from '@aehrc/smart-forms-renderer';
-import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
+import {
+  Questionnaire,
+  QuestionnaireResponse,
+  QuestionnaireResponseItem
+} from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   useCallback,
@@ -49,6 +53,39 @@ interface FhirFormsRendererProps {
   role?: string;
   practitionerId?: string;
   ownerId?: string; // for scoping IndexedDB drafts per user/guest
+}
+
+/**
+ * Posts the interpretation item to the async interpret webhook and records
+ * the returned service request id in IndexedDB for later result polling.
+ * Fire-and-forget: failures are logged and never block form submission.
+ *
+ * @param opts - Response id, draft owner, and the interpret payload.
+ */
+async function triggerInterpretWebhook(opts: {
+  responseId: string;
+  ownerId: string;
+  payload: {
+    questionnaire?: string;
+    description?: string;
+    item: QuestionnaireResponseItem[];
+  };
+}): Promise<void> {
+  try {
+    const API = await getAPI();
+    const hookRes = await API.post('/api/v1/hook/interpret', opts.payload);
+    const serviceRequestId =
+      hookRes?.data?.data?.asyncServiceResultId?.trim?.() ?? '';
+    if (!serviceRequestId) return;
+    await dbSet(STORES.serviceRequests, {
+      id: opts.responseId,
+      ownerId: opts.ownerId,
+      serviceRequestId,
+      updatedAt: Date.now()
+    });
+  } catch (err) {
+    console.error('[interpret] webhook failed', err);
+  }
 }
 
 /**
@@ -129,6 +166,12 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     isResearchFlow &&
     Boolean(continuation) &&
     !continuation?.nextQuestionnaireId;
+
+  /** Title of the study the completed batch belongs to, for the share invite. */
+  const studyTitle =
+    researchProgress?.studies.find(
+      item => item.study.id === continuation?.studyId
+    )?.study.title ?? '';
 
   /**
    * Progress within the continuation study's current batch: server-known
@@ -287,32 +330,23 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         subject
       });
 
-      // Authenticated users only: trigger webhook AFTER QR is saved
+      // Authenticated users only: fire-and-forget the interpret webhook so
+      // navigation is never blocked on the async interpretation. The record
+      // page polls the result via the stored service request id.
       if (
         isAuthenticated &&
         interpretationItem?.item?.length &&
         submitResult?.id
       ) {
-        const payload = {
-          questionnaire: questionnaireResponse.questionnaire,
-          description: questionnaire.description,
-          item: interpretationItem.item
-        };
-
-        const API = await getAPI();
-        const hookRes = await API.post('/api/v1/hook/interpret', payload);
-
-        const serviceRequestId =
-          hookRes?.data?.data?.asyncServiceResultId?.trim?.() ?? '';
-
-        if (serviceRequestId) {
-          dbSet(STORES.serviceRequests, {
-            id: submitResult.id,
-            ownerId: draftOwnerId,
-            serviceRequestId,
-            updatedAt: Date.now()
-          }).catch((err: unknown) => console.warn('[IndexedDB]', err));
-        }
+        void triggerInterpretWebhook({
+          responseId: submitResult.id,
+          ownerId: draftOwnerId,
+          payload: {
+            questionnaire: questionnaireResponse.questionnaire,
+            description: questionnaire.description,
+            item: interpretationItem.item
+          }
+        });
       }
 
       /* save questionnaire response to IndexedDB for guest */
@@ -368,6 +402,16 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       >
         See Results
       </button>
+    );
+  } else if (isBatchComplete) {
+    footerContent = (
+      <ShareResearchButton
+        title={studyTitle}
+        isPatient={isAuthenticated && Boolean(patientId)}
+        fhirId={patientId}
+        studyId={continuation?.studyId}
+        className='mt-2 w-full text-center text-sm text-gray-500 underline underline-offset-4'
+      />
     );
   }
 
@@ -441,13 +485,6 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
               style={{ width: '200', height: 'auto' }}
               alt='success'
             />
-            {isBatchComplete && (
-              <ShareResearchCta
-                isPatient={isAuthenticated && Boolean(patientId)}
-                fhirId={patientId}
-                studyId={continuation?.studyId}
-              />
-            )}
           </div>
         )}
       </AppDrawer>

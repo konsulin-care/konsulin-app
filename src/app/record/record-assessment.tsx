@@ -24,6 +24,38 @@ type Props = {
   readonly onFeeChange?: (fee: Money | null) => void;
 };
 
+/** Max attempts when waiting for a service request id to land. */
+const MAX_ID_READ_ATTEMPTS = 5;
+
+/** Delay between service request id read attempts. */
+const ID_READ_INTERVAL_MS = 1000;
+
+/**
+ * Reads the stored service request id, retrying briefly so a webhook result
+ * that lands shortly after navigation is still picked up for polling.
+ *
+ * @param recordId - QuestionnaireResponse id keying the store entry.
+ * @param isCancelled - Aborts further retries once the component unmounts.
+ * @returns The service request id, or undefined when never found.
+ */
+async function readServiceRequestId(
+  recordId: string,
+  isCancelled: () => boolean
+): Promise<string | undefined> {
+  for (let attempt = 0; attempt < MAX_ID_READ_ATTEMPTS; attempt += 1) {
+    const srRecord = await dbGet<{ serviceRequestId: string }>(
+      STORES.serviceRequests,
+      recordId
+    );
+    const serviceRequestId = srRecord?.serviceRequestId;
+    if (serviceRequestId || isCancelled()) return serviceRequestId;
+    if (attempt < MAX_ID_READ_ATTEMPTS - 1) {
+      await new Promise(resolve => setTimeout(resolve, ID_READ_INTERVAL_MS));
+    }
+  }
+  return undefined;
+}
+
 /**
  *
  */
@@ -135,11 +167,10 @@ export default function RecordAssessment({
         return;
       }
 
-      const srRecord = await dbGet<{ serviceRequestId: string }>(
-        STORES.serviceRequests,
-        recordId
+      const serviceRequestId = await readServiceRequestId(
+        recordId,
+        () => cancelled
       );
-      const serviceRequestId = srRecord?.serviceRequestId;
       if (!serviceRequestId) return;
 
       poll(serviceRequestId).catch(console.error);
