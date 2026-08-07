@@ -2,6 +2,16 @@
 import PageLoader from '@/components/general/page-loader';
 import { SmartFormShell } from '@/components/general/smart-form-shell';
 import ShareResearchCta from '@/components/research/share-research-cta';
+import type { DrawerCopy } from '@/constants/research-copy';
+import {
+  fillProgress,
+  FINAL_BATCH_MESSAGE,
+  LAST_MID_BATCH_MESSAGE,
+  MID_BATCH_FALLBACK_MESSAGE,
+  MID_BATCH_MESSAGES,
+  STANDALONE_MESSAGE,
+  STANDALONE_RESEARCH_MESSAGE
+} from '@/constants/research-copy';
 import { Roles } from '@/constants/roles';
 import { useFab } from '@/context/fabContext';
 import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
@@ -9,10 +19,7 @@ import { useRequiredValidation } from '@/hooks/useRequiredValidation';
 import { getAPI } from '@/services/api';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
 import { useResearchProgress } from '@/services/api/research';
-import {
-  nextAssessmentInStudy,
-  resolveStudyIdForQuestionnaire
-} from '@/utils/fhir/research';
+import { nextAssessmentInStudy } from '@/utils/fhir/research';
 import { BookCheck } from 'lucide-react';
 import Image from 'next/image';
 
@@ -112,6 +119,72 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       ),
     [researchProgress, questionnaire.id, isResearchFlow, studyId, doneIds]
   );
+
+  /** True when the batch has another questionnaire after the current one. */
+  const hasNextQuestionnaire =
+    isResearchFlow && Boolean(continuation?.nextQuestionnaireId);
+
+  /** True when the current questionnaire finishes the current batch. */
+  const isBatchComplete =
+    isResearchFlow &&
+    Boolean(continuation) &&
+    !continuation?.nextQuestionnaireId;
+
+  /**
+   * Progress within the continuation study's current batch: server-known
+   * completions, chain-done ids, and the current questionnaire unioned and
+   * intersected with the batch ids. Null when the batch cannot be resolved.
+   */
+  const batchProgress = useMemo(() => {
+    const study = researchProgress?.studies.find(
+      item => item.study.id === continuation?.studyId
+    );
+    const batchIds = study?.currentBatch?.questionnaireIds ?? [];
+    if (batchIds.length === 0) return null;
+    const completedSet = new Set([
+      ...(study?.completedQuestionnaireIds ?? []),
+      ...doneIds,
+      questionnaire.id
+    ]);
+    const completed = batchIds.filter(id => completedSet.has(id)).length;
+    return { completed, total: batchIds.length };
+  }, [researchProgress, continuation?.studyId, doneIds, questionnaire.id]);
+
+  /**
+   * Motivational copy for the mid-batch drawer: the dedicated last-one
+   * message when a single questionnaire remains, otherwise a pick from the
+   * pool seeded by the questionnaire id so each one shows a fresh variation
+   * while staying stable across re-renders.
+   */
+  const midBatchMessage = useMemo(() => {
+    if (batchProgress === null) return MID_BATCH_FALLBACK_MESSAGE;
+    if (batchProgress.total - batchProgress.completed === 1) {
+      return LAST_MID_BATCH_MESSAGE;
+    }
+    let seed = 0;
+    for (const ch of questionnaire.id) {
+      seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+    }
+    return MID_BATCH_MESSAGES[seed % MID_BATCH_MESSAGES.length];
+  }, [batchProgress, questionnaire.id]);
+
+  /** Title/body for the submission drawer, keyed on the flow state. */
+  const drawerCopy: DrawerCopy = (() => {
+    if (hasNextQuestionnaire) {
+      return {
+        title: midBatchMessage.title,
+        body: fillProgress(
+          midBatchMessage.body,
+          batchProgress?.completed ?? 0,
+          batchProgress?.total ?? 0
+        )
+      };
+    }
+    if (isBatchComplete) return FINAL_BATCH_MESSAGE;
+    return formType === 'research'
+      ? STANDALONE_RESEARCH_MESSAGE
+      : STANDALONE_MESSAGE;
+  })();
 
   const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =
     useRequiredValidation();
@@ -260,29 +333,13 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     }
   };
 
-  const drawerTitleText =
-    formType === 'research' ? (
-      <div className='mb-2 text-2xl font-bold'>
-        Terima Kasih Karena Telah Berpatisipasi Dalam Research
-      </div>
-    ) : (
-      <div className='mb-2 text-2xl font-bold'>
-        Selamat Anda Menyelesaikan Test
-      </div>
-    );
+  const drawerTitleText = (
+    <div className='mb-2 text-2xl font-bold'>{drawerCopy.title}</div>
+  );
 
-  const drawerDescriptionText =
-    formType === 'research' ? (
-      <span className='text-sm opacity-50'>
-        Partisipasi Anda sangat berharga bagi kami dan akan membantu kami dalam
-        mengembangkan solusi yg lebih baik untuk kebutuhan Anda.
-      </span>
-    ) : (
-      <span className='text-sm opacity-50'>
-        Hasil test ini akan memberikan wawasan berharga tentang kesehatan mental
-        Anda
-      </span>
-    );
+  const drawerDescriptionText = (
+    <span className='text-sm opacity-50'>{drawerCopy.body}</span>
+  );
 
   const ctaLabel =
     isResearchFlow && continuation?.nextQuestionnaireId
@@ -300,26 +357,18 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   };
 
   let footerContent: ReactNode = null;
-  if (isResearchFlow) {
-    if (continuation?.nextQuestionnaireId) {
-      footerContent = (
-        <button
-          type='button'
-          className='mt-2 w-full text-center text-sm text-gray-500 underline underline-offset-4'
-          onClick={() => {
-            handleSubmitQuestionnaire('result').catch(console.error);
-          }}
-        >
-          See Results
-        </button>
-      );
-    } else if (continuation) {
-      footerContent = (
-        <p className='mt-2 text-center text-sm text-gray-500'>
-          You've completed this batch
-        </p>
-      );
-    }
+  if (hasNextQuestionnaire) {
+    footerContent = (
+      <button
+        type='button'
+        className='mt-2 w-full text-center text-sm text-gray-500 underline underline-offset-4'
+        onClick={() => {
+          handleSubmitQuestionnaire('result').catch(console.error);
+        }}
+      >
+        See Results
+      </button>
+    );
   }
 
   // Sync FAB action state when user has interacted with the form
@@ -382,26 +431,25 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         ctaLoading={isSubmitting || isPending}
         footerContent={footerContent}
       >
-        <div className='flex flex-col items-center gap-4'>
-          <Image
-            className='rounded-[8px] object-cover'
-            src={'/images/submit-questionnaire.png'}
-            height={0}
-            width={200}
-            style={{ width: '200', height: 'auto' }}
-            alt='success'
-          />
-          {formType === 'research' && (
-            <ShareResearchCta
-              isPatient={isAuthenticated && Boolean(patientId)}
-              fhirId={patientId}
-              studyId={resolveStudyIdForQuestionnaire(
-                researchProgress?.studies ?? [],
-                questionnaire.id
-              )}
+        {!hasNextQuestionnaire && (
+          <div className='flex flex-col items-center gap-4'>
+            <Image
+              className='rounded-[8px] object-cover'
+              src={'/images/submit-questionnaire.png'}
+              height={0}
+              width={200}
+              style={{ width: '200', height: 'auto' }}
+              alt='success'
             />
-          )}
-        </div>
+            {isBatchComplete && (
+              <ShareResearchCta
+                isPatient={isAuthenticated && Boolean(patientId)}
+                fhirId={patientId}
+                studyId={continuation?.studyId}
+              />
+            )}
+          </div>
+        )}
       </AppDrawer>
     </AssessmentThemeProvider>
   );

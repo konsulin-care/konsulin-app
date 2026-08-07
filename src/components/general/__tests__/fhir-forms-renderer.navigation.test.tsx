@@ -273,7 +273,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
   it('mid-batch: CTA "Continue" submits then pushes to the next questionnaire in the same study', async () => {
     mockSearchParams.set('study', 'study-a');
     mockResearchProgress.mockReturnValue({
-      data: researchProgressWith(['q-123', 'yyy'])
+      data: researchProgressWith(['q-123', 'yyy', 'zzz'])
     });
     render(
       <FhirFormsRenderer
@@ -282,6 +282,10 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
         patientId='pat-1'
       />
     );
+
+    // Mid-batch: motivational copy only — no celebration image or share CTA.
+    expect(screen.queryByTestId('mock-image')).toBeNull();
+    expect(screen.getByText(/1 of 3/)).toBeTruthy();
 
     clickCta('Continue');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
@@ -327,7 +331,11 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
       />
     );
 
-    expect(screen.getByText("You've completed this batch")).toBeTruthy();
+    // Final drawer: completion title, celebration image, and share CTA.
+    expect(screen.getByText("You've completed this batch!")).toBeTruthy();
+    expect(screen.getByTestId('mock-image')).toBeTruthy();
+    expect(screen.getByTestId('share-research-cta')).toBeTruthy();
+
     clickCta('See Results');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
     await waitFor(() => expect(mockReplace).toHaveBeenCalled());

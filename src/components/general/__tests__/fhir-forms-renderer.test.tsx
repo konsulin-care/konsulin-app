@@ -124,7 +124,8 @@ import { useRequiredValidation } from '@/hooks/useRequiredValidation';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
 import { useBuildForm } from '@aehrc/smart-forms-renderer';
 import type { Questionnaire } from 'fhir/r4';
-import { useRouter } from 'next/navigation';
+import type { ReadonlyURLSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import FhirFormsRenderer from '../fhir-forms-renderer';
 
@@ -333,14 +334,41 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
   });
 
   it('scopes the research share CTA link to the deployed study', () => {
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('study=study-x') as ReadonlyURLSearchParams
+    );
+    const batch = {
+      id: 'batch-1',
+      start: '2026-08-01',
+      end: '2026-08-31',
+      questionnaireIds: ['q-123']
+    };
     vi.mocked(mockUseResearchProgress).mockReturnValue({
       data: {
         studies: [
           {
-            study: { id: 'study-x', title: 'Study X' },
-            currentBatch: { questionnaireIds: ['q-123'] }
+            study: {
+              resourceType: 'ResearchStudy',
+              id: 'study-x',
+              status: 'active',
+              title: 'Study X'
+            },
+            batches: [batch],
+            currentBatch: batch,
+            completedCount: 1,
+            totalCount: 1,
+            isComplete: true,
+            firstUncompletedQuestionnaireId: null,
+            completedQuestionnaireIds: ['q-123'],
+            history: [],
+            consecutiveBatches: 0
           }
-        ]
+        ],
+        cumulativeResponses: 0,
+        questionnaireResponses: [],
+        questionnaireXp: 0,
+        completedQuestionnaireIds: ['q-123'],
+        consentedStudyIds: []
       }
     });
     renderWithObserver({ formType: 'research' });
