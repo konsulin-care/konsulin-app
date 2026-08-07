@@ -7,7 +7,7 @@ describe('useShareStudy', () => {
   const TITLE = 'Sleep Cohort';
   const MESSAGE =
     `Join me as a citizen scientist through ${TITLE} in Konsulin.\n` +
-    'https://konsulin.care/research?id=study-x';
+    'https://konsulin.care/research?view=study-x';
 
   beforeEach(() => {
     window.localStorage.clear();
@@ -31,7 +31,7 @@ describe('useShareStudy', () => {
     );
 
     expect(result.current.shareUrl).toBe(
-      'https://konsulin.care/research?id=study-x&ref=p_DG3F3STPYZ6HX25A'
+      'https://konsulin.care/research?view=study-x&ref=p_DG3F3STPYZ6HX25A'
     );
   });
 
@@ -41,7 +41,7 @@ describe('useShareStudy', () => {
     );
 
     expect(result.current.shareUrl).toBe(
-      'https://konsulin.care/research?id=study-x'
+      'https://konsulin.care/research?view=study-x'
     );
   });
 
@@ -60,7 +60,7 @@ describe('useShareStudy', () => {
     expect(shareMock).toHaveBeenCalledWith({
       title: TITLE,
       text: MESSAGE,
-      url: 'https://konsulin.care/research?id=study-x'
+      url: 'https://konsulin.care/research?view=study-x'
     });
     expect(result.current.copied).toBe(false);
   });

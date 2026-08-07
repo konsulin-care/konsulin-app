@@ -23,6 +23,11 @@ import ConsentDrawer from './consent-drawer';
 import ContributionDashboard from './contribution-dashboard';
 import ResearchCarousel from './research-carousel';
 import ResearchSkeleton from './research-skeleton';
+import {
+  resolveDeepLinks,
+  resolveFocusTarget,
+  updateResearchUrl
+} from './research-url';
 import StudyDetailView from './study-detail-view';
 import { buildOverlapMap } from './study-sections';
 
@@ -33,10 +38,8 @@ interface PendingConsent {
 }
 
 /**
- * Research hub page: carousel of active studies, contribution dashboard,
- * circle panel, and the study detail view. Participation is consent-gated:
- * patients persist Consent + ResearchSubject per study, guests use
- * localStorage flags, and the consent drawer opens once per study.
+ * Research hub: study carousel, contribution dashboard, and detail drawer.
+ * Participation is consent-gated for patients and guests alike.
  */
 export default function ResearchPage() {
   const router = useRouter();
@@ -56,8 +59,7 @@ export default function ResearchPage() {
   );
   const overlapMap = useMemo(() => buildOverlapMap(studies), [studies]);
 
-  /** Questionnaire ids deployed by any current batch plus every id the user
-   * has ever completed (the latter feeds historical questionnaire XP). */
+  /** Every questionnaire id deployed by current batches or completed before. */
   const questionnaireIds = useMemo(
     () => [
       ...new Set([
@@ -70,39 +72,42 @@ export default function ResearchPage() {
   const { data: titleMap = {}, isPending: titlesPending } =
     useQuestionnaireTitles(questionnaireIds);
 
-  const detailStudy =
-    studies.find(study => study.study.id === detailStudyId) ?? null;
-
-  // Resolve the active study from the `?id=` param. An unknown or inactive id
-  // silently falls back to the first study and the URL is cleaned. A
-  // user-swiped active study is left untouched unless the URL says otherwise.
+  const detailStudy = studies.find(s => s.study.id === detailStudyId) ?? null;
+  // Resolve the active study and detail drawer from `?id=` / `?view=`:
+  // `id` focuses the carousel, `view` also opens the detail drawer.
   useEffect(() => {
-    const requestedId = searchParams.get('id');
-    const known = requestedId
-      ? studies.find(study => study.study.id === requestedId)
-      : undefined;
+    const { knownId, knownView } = resolveDeepLinks(searchParams, studies);
 
-    // Invalid deep link: drop the unknown id, keeping any referral ref.
-    if (requestedId && !known) {
-      const ref = searchParams.get('ref');
+    // Invalid deep link: drop the unknown params, keeping valid ones and ref.
+    if (
+      (searchParams.get('id') && !knownId) ||
+      (searchParams.get('view') && !knownView)
+    ) {
       router.replace(
-        ref ? `/research?ref=${encodeURIComponent(ref)}` : '/research'
+        updateResearchUrl(searchParams, {
+          id: knownId ? knownId.study.id : null,
+          view: knownView ? knownView.study.id : null
+        })
       );
     }
 
-    const targetId =
-      known?.study.id ??
-      (activeStudyId && studies.some(study => study.study.id === activeStudyId)
-        ? activeStudyId
-        : (studies[0]?.study.id ?? null));
-
+    const targetId = resolveFocusTarget(
+      knownId,
+      knownView,
+      activeStudyId,
+      studies
+    );
     if (targetId !== activeStudyId) {
       setActiveStudyId(targetId);
     }
-  }, [searchParams, studies, router, activeStudyId]);
 
-  const activeStudy =
-    studies.find(study => study.study.id === activeStudyId) ?? null;
+    // Drawer: a valid view param opens the study detail drawer.
+    if (knownView && knownView.study.id !== detailStudyId) {
+      setDetailStudyId(knownView.study.id);
+    }
+  }, [searchParams, studies, router, activeStudyId, detailStudyId]);
+
+  const activeStudy = studies.find(s => s.study.id === activeStudyId) ?? null;
 
   /** Study ids the patient has already consented to in FHIR. */
   const consentedStudyIds = useMemo(
@@ -110,14 +115,10 @@ export default function ResearchPage() {
     [progress]
   );
 
-  // Migrate a newly registered patient's localStorage guest consents into
-  // FHIR Consent + ResearchSubject resources (idempotent, per study).
+  // Migrate a patient's localStorage guest consents into FHIR (idempotent).
   useClaimLocalConsents(studies, consentedStudyIds);
 
-  /**
-   * True when consent was recorded for a study: FHIR ResearchSubject for
-   * patients, localStorage flag for guests.
-   */
+  /** True when consent was recorded: FHIR ResearchSubject or localStorage. */
   const isConsented = useCallback(
     (studyId: string) =>
       isPatient
@@ -127,9 +128,8 @@ export default function ResearchPage() {
   );
 
   /**
-   * Entry point for every participate action (FAB, study-view CTA,
-   * questionnaire rows): consented studies navigate directly, others open
-   * the consent drawer with the questionnaire to open after agreeing.
+   * Participate entry point for every action: consented studies navigate
+   * directly, others open the consent drawer for the target questionnaire.
    */
   const participate = useCallback(
     (study: StudyProgress | null, questionnaireId?: string) => {
@@ -151,9 +151,8 @@ export default function ResearchPage() {
   const consentMutation = useConsentToStudy(pendingStudyId);
 
   /**
-   * Records consent for the pending study and navigates to its target
-   * questionnaire. Patients POST a Consent + ResearchSubject bundle (toast
-   * on failure); guests write a localStorage flag.
+   * Records consent for the pending study, then navigates to its target
+   * questionnaire. Patients POST a Consent + ResearchSubject bundle.
    */
   const handleAgree = useCallback(() => {
     if (!pendingConsent) return;
@@ -183,8 +182,8 @@ export default function ResearchPage() {
     finish();
   }, [consentMutation, isPatient, pendingConsent, router, studies]);
 
-  // Morph the global FAB into a Participate action that continues the active
-  // slide's study. Cleared when nothing can be participated in or on unmount.
+  // Morph the FAB into a Participate action continuing the active slide's
+  // study. Cleared when nothing can be participated in or on unmount.
   useEffect(() => {
     const firstUncompleted = activeStudy?.firstUncompletedQuestionnaireId;
 
@@ -213,17 +212,27 @@ export default function ResearchPage() {
     [participate, studies]
   );
 
-  /** Updates the URL to deep-link the newly active slide, keeping any ref. */
+  /** Updates the URL to deep-link the newly active slide, keeping view/ref. */
   const handleSlideChange = (studyId: string) => {
     setActiveStudyId(studyId);
     // Programmatic syncs (deep links, back/forward) already carry the id.
     if (searchParams.get('id') === studyId) return;
-    const ref = searchParams.get('ref');
-    router.replace(
-      ref
-        ? `/research?id=${studyId}&ref=${encodeURIComponent(ref)}`
-        : `/research?id=${studyId}`
-    );
+    router.replace(updateResearchUrl(searchParams, { id: studyId }));
+  };
+
+  /** Opens the study detail drawer and mirrors it in the URL as `view`. */
+  const handleStudyClick = (studyId: string) => {
+    setDetailStudyId(studyId);
+    if (searchParams.get('view') === studyId) return;
+    router.replace(updateResearchUrl(searchParams, { view: studyId }));
+  };
+
+  /** Closes the detail drawer and removes its `view` param, keeping id/ref. */
+  const handleDrawerClose = () => {
+    setDetailStudyId(null);
+    if (searchParams.get('view')) {
+      router.replace(updateResearchUrl(searchParams, { view: null }));
+    }
   };
 
   /** Renders the loading, error, or study content for the page. */
@@ -247,7 +256,7 @@ export default function ResearchPage() {
           studies={studies}
           activeId={activeStudyId ?? ''}
           onSlideChange={handleSlideChange}
-          onStudyClick={setDetailStudyId}
+          onStudyClick={handleStudyClick}
           onQuestionnaireClick={handleQuestionnaireClick}
           isPatient={isPatient}
           fhirId={fhirId}
@@ -273,7 +282,7 @@ export default function ResearchPage() {
         progress={detailStudy}
         overlapMap={overlapMap}
         open={detailStudy !== null}
-        onClose={() => setDetailStudyId(null)}
+        onClose={handleDrawerClose}
         onParticipate={participate}
         onQuestionnaireClick={handleQuestionnaireClick}
         isPatient={isPatient}

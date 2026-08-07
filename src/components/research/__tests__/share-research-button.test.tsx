@@ -7,7 +7,7 @@ describe('ShareResearchButton', () => {
   const ORIGIN = 'https://konsulin.care';
   const MESSAGE =
     `Join me as a citizen scientist through ${TITLE} in Konsulin.\n` +
-    'https://konsulin.care/research?id=study-x';
+    'https://konsulin.care/research?view=study-x';
 
   beforeEach(() => {
     window.localStorage.clear();
@@ -45,7 +45,7 @@ describe('ShareResearchButton', () => {
       expect(share).toHaveBeenCalledWith({
         title: TITLE,
         text: MESSAGE,
-        url: 'https://konsulin.care/research?id=study-x'
+        url: 'https://konsulin.care/research?view=study-x'
       });
     });
   });

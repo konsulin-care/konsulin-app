@@ -33,7 +33,7 @@ describe('buildShareUrl', () => {
     );
   });
 
-  it('builds a study-scoped patient link carrying id and ref', () => {
+  it('builds a study-scoped patient link carrying view and ref', () => {
     expect(
       buildShareUrl({
         origin: ORIGIN,
@@ -41,16 +41,18 @@ describe('buildShareUrl', () => {
         fhirId: 'DG3F3STPYZ6HX25A',
         studyId: 'study-x'
       })
-    ).toBe('https://konsulin.care/research?id=study-x&ref=p_DG3F3STPYZ6HX25A');
+    ).toBe(
+      'https://konsulin.care/research?view=study-x&ref=p_DG3F3STPYZ6HX25A'
+    );
   });
 
   it('builds a study-scoped plain link for guests without a ref', () => {
     expect(
       buildShareUrl({ origin: ORIGIN, isPatient: false, studyId: 'study-x' })
-    ).toBe('https://konsulin.care/research?id=study-x');
+    ).toBe('https://konsulin.care/research?view=study-x');
     expect(
       buildShareUrl({ origin: ORIGIN, isPatient: true, studyId: 'study-x' })
-    ).toBe('https://konsulin.care/research?id=study-x');
+    ).toBe('https://konsulin.care/research?view=study-x');
   });
 });
 

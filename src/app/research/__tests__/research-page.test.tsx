@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
 import type { FabAction } from '@/context/fabContext';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
 import {
@@ -100,6 +100,7 @@ beforeEach(() => {
     dispatchedActions.push(action);
   });
   mockSearchParams.delete('id');
+  mockSearchParams.delete('view');
   mockSearchParams.delete('ref');
 });
 
@@ -182,6 +183,130 @@ describe('ResearchPage', () => {
     render(<ResearchPage />, { wrapper: createWrapper() });
 
     expect(mockReplace).toHaveBeenCalledWith('/research?ref=p_ABC123');
+  });
+
+  it('opens the study detail drawer and focuses its card for a valid view param', async () => {
+    mockSearchParams.set('view', 'study-b');
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    expect(screen.getByTestId('research-slide-study-b')).toHaveAttribute(
+      'data-active',
+      'true'
+    );
+    expect(
+      await screen.findByRole('button', { name: 'Participate' })
+    ).toBeTruthy();
+  });
+
+  it('lets a valid id win for focus over a differing valid view, but still opens the view drawer', async () => {
+    mockSearchParams.set('id', 'research');
+    mockSearchParams.set('view', 'study-b');
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    expect(screen.getByTestId('research-slide-research')).toHaveAttribute(
+      'data-active',
+      'true'
+    );
+    expect(
+      await screen.findByRole('button', { name: 'Participate' })
+    ).toBeTruthy();
+    // Focus stays on the id target: the slide for study-b is not active.
+    expect(screen.getByTestId('research-slide-study-b')).toHaveAttribute(
+      'data-active',
+      'false'
+    );
+  });
+
+  it('cleans an unknown view param and preserves the referral ref', () => {
+    mockSearchParams.set('view', 'unknown-study');
+    mockSearchParams.set('ref', 'p_ABC123');
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    expect(mockReplace).toHaveBeenCalledWith('/research?ref=p_ABC123');
+  });
+
+  it('cleans an unknown view param without a ref', () => {
+    mockSearchParams.set('view', 'unknown-study');
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    expect(mockReplace).toHaveBeenCalledWith('/research');
+  });
+
+  it('writes the view param to the URL when a card is tapped', () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    fireEvent.click(screen.getByTestId('research-slide-research'));
+
+    expect(mockReplace).toHaveBeenCalledWith('/research?view=research');
+  });
+
+  it('removes the view param from the URL when the drawer is dismissed', async () => {
+    mockSearchParams.set('view', 'study-b');
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    await screen.findByRole('button', { name: 'Participate' });
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/research');
+    });
+  });
+
+  it('keeps the view param in the URL when the slide changes while the drawer is open', async () => {
+    mockSearchParams.set('view', 'study-b');
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    await screen.findByRole('button', { name: 'Participate' });
+    // The open drawer makes carousel controls inert, so reach the pagination
+    // button directly to simulate a swipe while the drawer stays open.
+    const slideButton = document.querySelector<HTMLElement>(
+      '[aria-label="Go to slide 1"]'
+    );
+    expect(slideButton).not.toBeNull();
+    if (slideButton) {
+      fireEvent.click(slideButton);
+    }
+
+    expect(mockReplace).toHaveBeenCalledWith(
+      '/research?id=research&view=study-b'
+    );
+    // The drawer stays open on the viewed study.
+    expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();
   });
 
   it('replaces the URL with the study id when the slide changes', () => {

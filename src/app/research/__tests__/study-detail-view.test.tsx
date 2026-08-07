@@ -112,8 +112,8 @@ describe('StudyDetailView', () => {
 
     expect(share).toHaveBeenCalledWith({
       title: 'Konsulin Mental Health Survey',
-      text: 'Join me as a citizen scientist through Konsulin Mental Health Survey in Konsulin.\nhttps://konsulin.care/research?id=research',
-      url: 'https://konsulin.care/research?id=research'
+      text: 'Join me as a citizen scientist through Konsulin Mental Health Survey in Konsulin.\nhttps://konsulin.care/research?view=research',
+      url: 'https://konsulin.care/research?view=research'
     });
   });
 

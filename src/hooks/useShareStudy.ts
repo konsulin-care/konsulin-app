@@ -14,7 +14,7 @@ export interface UseShareStudyParams {
 /**
  * Study-scoped share handler for the research carousel and completion drawer.
  *
- * Builds `/research?id={studyId}` (plus `ref=p_{fhirId}` for patients) and,
+ * Builds `/research?view={studyId}` (plus `ref=p_{fhirId}` for patients) and,
  * when a title is given, a full message
  * `Join me as a citizen scientist through {title} in Konsulin.\n{url}`. Shares
  * via the native Web Share API when it accepts the payload, with a clipboard

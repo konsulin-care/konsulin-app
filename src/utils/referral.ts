@@ -25,9 +25,9 @@ export type ReferralRef = {
  * Builds the shareable research URL for a user.
  *
  * When a studyId is given, the URL deep-links to that study on the research
- * page (`/research?id={studyId}`); patients additionally carry the referral
- * ref. Absent studyId, the plain research page URL is built, keeping existing
- * callers valid.
+ * page (`/research?view={studyId}`), which opens the study drawer and focuses
+ * its card; patients additionally carry the referral ref. Absent studyId, the
+ * plain research page URL is built, keeping existing callers valid.
  *
  * @param opts - Origin, whether the user is a patient, the patient fhirId, and
  * optionally the study to deep-link.
@@ -41,7 +41,7 @@ export function buildShareUrl(opts: {
 }): string {
   const base = `${opts.origin}/research`;
   const params = new URLSearchParams();
-  if (opts.studyId) params.set('id', opts.studyId);
+  if (opts.studyId) params.set('view', opts.studyId);
   if (opts.isPatient && opts.fhirId) {
     params.set('ref', `${PATIENT_REF_PREFIX}${opts.fhirId}`);
   }
