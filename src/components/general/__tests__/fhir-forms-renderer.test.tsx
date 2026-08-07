@@ -7,7 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('next/navigation', () => ({
   useRouter: vi
     .fn()
-    .mockReturnValue({ push: vi.fn(), replace: vi.fn(), back: vi.fn() })
+    .mockReturnValue({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+  useSearchParams: vi.fn(() => new URLSearchParams())
 }));
 vi.mock('@/components/general/card-dom-mapper', () => ({
   CardDomMapper: () => null

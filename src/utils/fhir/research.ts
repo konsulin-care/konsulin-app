@@ -340,19 +340,27 @@ export interface AssessmentContinuation {
 
 /**
  * Recommended next questionnaire after completing one in a research batch.
- * Among all studies whose current batch contains the questionnaire, picks
- * the one with the fewest remaining questionnaires (shortest path). Treats
- * the just-completed questionnaire as done. Returns null when the
- * questionnaire is not part of any current batch.
+ * Among all studies whose current batch contains the questionnaire, prefers
+ * the requested study; otherwise picks the one with the fewest remaining
+ * questionnaires (shortest path). Treats the just-completed questionnaire
+ * and any chain-done questionnaires (doneQuestionnaireIds) as done. Returns
+ * null when the questionnaire is not part of any current batch.
  *
  * @param studies - Computed per-study progress.
  * @param questionnaireId - Bare questionnaire id that was just completed.
+ * @param preferredStudyId - Study the chain should stay within, when it also
+ * deploys the questionnaire in its current batch.
+ * @param doneQuestionnaireIds - Questionnaire ids completed earlier in the
+ * same chain, excluded regardless of cache freshness.
  * @returns The chosen study's continuation, or null when no current batch contains it.
  */
 export function nextAssessmentInStudy(
   studies: StudyProgress[],
-  questionnaireId: string
+  questionnaireId: string,
+  preferredStudyId?: string,
+  doneQuestionnaireIds: readonly string[] = []
 ): AssessmentContinuation | null {
+  const doneSet = new Set(doneQuestionnaireIds);
   const candidates = studies
     .filter(study =>
       study.currentBatch?.questionnaireIds.includes(questionnaireId)
@@ -362,12 +370,23 @@ export function nextAssessmentInStudy(
         study.currentBatch?.questionnaireIds.filter(
           id =>
             id !== questionnaireId &&
+            !doneSet.has(id) &&
             !study.completedQuestionnaireIds.includes(id)
         ) ?? [];
       return { study, remaining };
     });
 
   if (candidates.length === 0) return null;
+
+  const preferred = preferredStudyId
+    ? candidates.find(c => c.study.study.id === preferredStudyId)
+    : undefined;
+  if (preferred) {
+    return {
+      studyId: preferred.study.study.id,
+      nextQuestionnaireId: preferred.remaining[0] ?? null
+    };
+  }
 
   type BatchCandidate = { study: StudyProgress; remaining: string[] };
 

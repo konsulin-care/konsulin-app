@@ -1,12 +1,17 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, react/jsx-no-useless-fragment, @next/next/no-img-element, jsx-a11y/alt-text */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, react/jsx-no-useless-fragment, @next/next/no-img-element, jsx-a11y/alt-text, max-lines */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { mockSearchParams } = vi.hoisted(() => ({
+  mockSearchParams: new URLSearchParams()
+}));
+
 vi.mock('next/navigation', () => ({
   useRouter: vi
     .fn()
-    .mockReturnValue({ push: vi.fn(), replace: vi.fn(), back: vi.fn() })
+    .mockReturnValue({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+  useSearchParams: () => mockSearchParams
 }));
 
 vi.mock('@/components/general/card-dom-mapper', () => ({
@@ -191,6 +196,8 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearchParams.delete('study');
+    mockSearchParams.delete('done');
     mockResearchProgress.mockReturnValue({ data: undefined });
     vi.mocked(useRouter).mockReturnValue({
       push: mockPush,
@@ -263,7 +270,8 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     expect(mockReplace.mock.calls[0][0]).toBe('/result?id=resp-789');
   });
 
-  it('mid-batch: CTA "Continue" submits then pushes to the next questionnaire', async () => {
+  it('mid-batch: CTA "Continue" submits then pushes to the next questionnaire in the same study', async () => {
+    mockSearchParams.set('study', 'study-a');
     mockResearchProgress.mockReturnValue({
       data: researchProgressWith(['q-123', 'yyy'])
     });
@@ -278,12 +286,15 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     clickCta('Continue');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
     await waitFor(() =>
-      expect(mockPush).toHaveBeenCalledWith('/assessments?id=yyy')
+      expect(mockPush).toHaveBeenCalledWith(
+        '/assessments?id=yyy&study=study-a&done=q-123'
+      )
     );
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it('mid-batch: footer "See Results" submits then replaces to the record view', async () => {
+    mockSearchParams.set('study', 'study-a');
     mockResearchProgress.mockReturnValue({
       data: researchProgressWith(['q-123', 'yyy'])
     });
@@ -304,6 +315,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
   });
 
   it('final-in-batch: CTA "See Results" with a completed-batch note replaces to the record view', async () => {
+    mockSearchParams.set('study', 'study-a');
     mockResearchProgress.mockReturnValue({
       data: researchProgressWith(['q-123'])
     });
@@ -322,5 +334,29 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     expect(mockReplace.mock.calls[0][0]).toBe(
       '/record?id=pat-1&view=QuestionnaireResponse/resp-789'
     );
+  });
+
+  it('mid-batch without study: CTA "See Results", no footer, replaces to the record view', async () => {
+    mockResearchProgress.mockReturnValue({
+      data: researchProgressWith(['q-123', 'yyy'])
+    });
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated
+        patientId='pat-1'
+      />
+    );
+
+    // Standalone: only the CTA renders — no secondary footer link.
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+
+    clickCta('See Results');
+    await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
+    await waitFor(() => expect(mockReplace).toHaveBeenCalled());
+    expect(mockReplace.mock.calls[0][0]).toBe(
+      '/record?id=pat-1&view=QuestionnaireResponse/resp-789'
+    );
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

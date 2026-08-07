@@ -23,7 +23,7 @@ import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import type { RendererConfig } from '@aehrc/smart-forms-renderer';
 import { getResponse, useBuildForm } from '@aehrc/smart-forms-renderer';
 import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   useCallback,
   useEffect,
@@ -62,6 +62,13 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const studyId = searchParams.get('study');
+  const isResearchFlow = Boolean(studyId);
+  const doneIds = useMemo(
+    () => (searchParams.get('done') ?? '').split(',').filter(Boolean),
+    [searchParams]
+  );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { dispatch } = useFab();
@@ -92,12 +99,18 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const { data: researchProgress } = useResearchProgress();
 
-  /** Next questionnaire after submitting this one: the shortest current batch
-   * that deploys it, or null when it is not part of any research batch. */
+  /** Next questionnaire after submitting this one: the current batch of the
+   * study the chain came from, or the shortest current batch that deploys it
+   * when no study is in play. Null when it is not part of any research batch. */
   const continuation = useMemo(
     () =>
-      nextAssessmentInStudy(researchProgress?.studies ?? [], questionnaire.id),
-    [researchProgress, questionnaire.id]
+      nextAssessmentInStudy(
+        researchProgress?.studies ?? [],
+        questionnaire.id,
+        isResearchFlow ? (studyId ?? undefined) : undefined,
+        isResearchFlow ? doneIds : []
+      ),
+    [researchProgress, questionnaire.id, isResearchFlow, studyId, doneIds]
   );
 
   const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =
@@ -147,7 +160,10 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         }
         setIsSubmitting(false);
       } else {
-        router.push(`/assessments?id=${continuation.nextQuestionnaireId}`);
+        const nextDone = [...doneIds, questionnaire.id];
+        router.push(
+          `/assessments?id=${continuation.nextQuestionnaireId}&study=${continuation.studyId}&done=${nextDone.join(',')}`
+        );
         setIsSubmitting(false);
       }
     });
@@ -268,37 +284,42 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       </span>
     );
 
-  const ctaLabel = continuation?.nextQuestionnaireId
-    ? 'Continue'
-    : 'See Results';
+  const ctaLabel =
+    isResearchFlow && continuation?.nextQuestionnaireId
+      ? 'Continue'
+      : 'See Results';
 
-  /** Submits and navigates to the next questionnaire, or the result page. */
+  /** Submits and navigates to the next questionnaire, or the result page.
+   * The destination mirrors the CTA label: only research flows continue. */
   const handlePrimaryAction = () => {
-    const destination = continuation?.nextQuestionnaireId
-      ? 'continue'
-      : 'result';
+    const destination =
+      isResearchFlow && continuation?.nextQuestionnaireId
+        ? 'continue'
+        : 'result';
     handleSubmitQuestionnaire(destination).catch(console.error);
   };
 
   let footerContent: ReactNode = null;
-  if (continuation?.nextQuestionnaireId) {
-    footerContent = (
-      <button
-        type='button'
-        className='mt-2 w-full text-center text-sm text-gray-500 underline underline-offset-4'
-        onClick={() => {
-          handleSubmitQuestionnaire('result').catch(console.error);
-        }}
-      >
-        See Results
-      </button>
-    );
-  } else if (continuation) {
-    footerContent = (
-      <p className='mt-2 text-center text-sm text-gray-500'>
-        You've completed this batch
-      </p>
-    );
+  if (isResearchFlow) {
+    if (continuation?.nextQuestionnaireId) {
+      footerContent = (
+        <button
+          type='button'
+          className='mt-2 w-full text-center text-sm text-gray-500 underline underline-offset-4'
+          onClick={() => {
+            handleSubmitQuestionnaire('result').catch(console.error);
+          }}
+        >
+          See Results
+        </button>
+      );
+    } else if (continuation) {
+      footerContent = (
+        <p className='mt-2 text-center text-sm text-gray-500'>
+          You've completed this batch
+        </p>
+      );
+    }
   }
 
   // Sync FAB action state when user has interacted with the form

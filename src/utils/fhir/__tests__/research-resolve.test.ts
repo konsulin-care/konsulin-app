@@ -94,6 +94,49 @@ describe('nextAssessmentInStudy', () => {
       nextQuestionnaireId: 'gad7'
     });
   });
+
+  it('prefers the requested study over the shortest-path alternative', () => {
+    const short = progressFor('study-short', ['phq2', 'gad7'], ['phq2']);
+    const long = progressFor(
+      'study-long',
+      ['phq2', 'gad7', 'who5', 'pss4'],
+      ['phq2']
+    );
+    expect(nextAssessmentInStudy([long, short], 'phq2', 'study-long')).toEqual({
+      studyId: 'study-long',
+      nextQuestionnaireId: 'gad7'
+    });
+  });
+
+  it('falls back to the shortest-path study when the preferred study is unknown', () => {
+    const short = progressFor('study-short', ['phq2', 'gad7'], ['phq2']);
+    const long = progressFor(
+      'study-long',
+      ['phq2', 'gad7', 'who5', 'pss4'],
+      ['phq2']
+    );
+    expect(
+      nextAssessmentInStudy([long, short], 'phq2', 'unknown-study')
+    ).toEqual({
+      studyId: 'study-short',
+      nextQuestionnaireId: 'gad7'
+    });
+  });
+
+  it('excludes chain-done questionnaires even when the progress cache is stale', () => {
+    // The cache still lists phq2 as uncompleted; the done chain records it.
+    const studyA = progressFor('study-a', [
+      'phq2',
+      'big-five-inventory',
+      'gad7'
+    ]);
+    expect(
+      nextAssessmentInStudy([studyA], 'big-five-inventory', 'study-a', ['phq2'])
+    ).toEqual({
+      studyId: 'study-a',
+      nextQuestionnaireId: 'gad7'
+    });
+  });
 });
 
 describe('resolveStudyIdForQuestionnaire', () => {

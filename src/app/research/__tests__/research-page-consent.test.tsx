@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import type { FabAction } from '@/context/fabContext';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -172,7 +173,9 @@ describe('ResearchPage consent flow', () => {
       await screen.findByRole('button', { name: 'Agree to Participate' })
     );
 
-    expect(mockPush).toHaveBeenCalledWith('/assessments?id=big-five-inventory');
+    expect(mockPush).toHaveBeenCalledWith(
+      '/assessments?id=big-five-inventory&study=research'
+    );
     expect(window.localStorage.getItem('konsulin_consent_research')).toBe('1');
   });
 
@@ -190,7 +193,9 @@ describe('ResearchPage consent flow', () => {
 
     invokeParticipate();
 
-    expect(mockPush).toHaveBeenCalledWith('/assessments?id=big-five-inventory');
+    expect(mockPush).toHaveBeenCalledWith(
+      '/assessments?id=big-five-inventory&study=research'
+    );
     expect(
       screen.queryByRole('button', { name: 'Agree to Participate' })
     ).toBeNull();
@@ -216,7 +221,9 @@ describe('ResearchPage consent flow', () => {
     );
 
     expect(consentMock.mutate).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith('/assessments?id=big-five-inventory');
+    expect(mockPush).toHaveBeenCalledWith(
+      '/assessments?id=big-five-inventory&study=research'
+    );
   });
 
   it('shows a toast and stays put when consent creation fails', async () => {
@@ -256,7 +263,7 @@ describe('ResearchPage consent flow', () => {
       await screen.findByRole('button', { name: 'Agree to Participate' })
     );
 
-    expect(mockPush).toHaveBeenCalledWith('/assessments?id=phq2');
+    expect(mockPush).toHaveBeenCalledWith('/assessments?id=phq2&study=study-b');
   });
 
   it('retargets the consent drawer to the newly active slide', async () => {
@@ -273,7 +280,7 @@ describe('ResearchPage consent flow', () => {
       await screen.findByRole('button', { name: 'Agree to Participate' })
     );
 
-    expect(mockPush).toHaveBeenCalledWith('/assessments?id=phq2');
+    expect(mockPush).toHaveBeenCalledWith('/assessments?id=phq2&study=study-b');
   });
 
   it('routes questionnaire clicks through the consent drawer when not consented', () => {
@@ -289,7 +296,9 @@ describe('ResearchPage consent flow', () => {
       screen.getByRole('button', { name: 'Agree to Participate' })
     );
 
-    expect(mockPush).toHaveBeenCalledWith('/assessments?id=phq2');
+    expect(mockPush).toHaveBeenCalledWith(
+      '/assessments?id=phq2&study=research'
+    );
   });
 
   it('navigates directly from questionnaire clicks when consented', () => {
@@ -306,7 +315,9 @@ describe('ResearchPage consent flow', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'PHQ-2' }));
 
-    expect(mockPush).toHaveBeenCalledWith('/assessments?id=phq2');
+    expect(mockPush).toHaveBeenCalledWith(
+      '/assessments?id=phq2&study=research'
+    );
     expect(
       screen.queryByRole('button', { name: 'Agree to Participate' })
     ).toBeNull();

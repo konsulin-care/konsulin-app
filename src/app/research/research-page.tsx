@@ -136,7 +136,9 @@ export default function ResearchPage() {
       if (!study) return;
       const target = questionnaireId ?? study.firstUncompletedQuestionnaireId;
       if (isConsented(study.study.id)) {
-        if (target) router.push(`/assessments?id=${target}`);
+        if (target) {
+          router.push(`/assessments?id=${target}&study=${study.study.id}`);
+        }
         return;
       }
       setPendingConsent({ studyId: study.study.id, questionnaireId });
@@ -162,7 +164,9 @@ export default function ResearchPage() {
 
     const finish = () => {
       setPendingConsent(null);
-      if (target) router.push(`/assessments?id=${target}`);
+      if (target) {
+        router.push(`/assessments?id=${target}&study=${studyId}`);
+      }
     };
 
     if (isPatient) {
