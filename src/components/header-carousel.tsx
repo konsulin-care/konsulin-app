@@ -53,8 +53,9 @@ export function resolveCarouselHeight(heights: number[]): number | undefined {
  *   container, so both cards stretch to the same height.
  * - A card that self-hides (renders nothing) is excluded from the slide count;
  *   when only one card remains, the carousel degrades to static rendering.
- *   Non-present cards stay mounted but hidden, so late-loading research data
- *   is still detected (via MutationObserver) and promotes to carousel mode.
+ *   Wrappers stay mounted (hidden) even while no card has content yet, so
+ *   late-loading session or research data is still detected (via
+ *   MutationObserver) and promotes to single or carousel mode.
  */
 export default function HeaderCarousel({
   session,
@@ -141,9 +142,9 @@ export default function HeaderCarousel({
     slides.push({ key: 'research', slot: 1, node: research });
   }
 
-  if (mode === 'none') return null;
+  if (slides.length === 0) return null;
 
-  if (mode === 'single') {
+  if (mode === 'single' || mode === 'none') {
     return (
       <div className='mt-4' data-testid='header-carousel'>
         {slides.map(slide =>

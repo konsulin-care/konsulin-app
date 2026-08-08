@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { Bundle } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PageHeader from '../page-header';
@@ -265,5 +265,41 @@ describe('PageHeader carousel integration', () => {
     expect(screen.queryByTestId('research-header-widget')).toBeNull();
     expect(screen.getByText('Pat Smith')).toBeTruthy();
     expect(screen.getByText('See All')).toBeTruthy();
+  });
+
+  it('promotes to a carousel when session and research data arrive after initial load', async () => {
+    mockPatient();
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: true
+    });
+    mockUseUpcomingEvents.mockReturnValue({
+      appointmentData: undefined,
+      sessionData: undefined
+    });
+
+    const wrapper = createWrapper();
+    const { rerender } = render(<PageHeader />, { wrapper });
+    expect(document.querySelector('.swiper')).toBeNull();
+
+    mockUseResearchProgress.mockReturnValue({
+      data: PROGRESS_DATA,
+      isLoading: false
+    });
+    mockUseUpcomingEvents.mockReturnValue({
+      appointmentData: SESSION_BUNDLE,
+      sessionData: null
+    });
+
+    rerender(<PageHeader />);
+
+    await waitFor(() => {
+      const realSlides = document.querySelectorAll(
+        '.swiper-slide:not(.swiper-slide-duplicate)'
+      );
+      expect(realSlides.length).toBe(2);
+    });
+    expect(screen.getByTestId('research-header-widget')).toBeTruthy();
+    expect(screen.getByText(/Upcoming Session With/)).toBeTruthy();
   });
 });

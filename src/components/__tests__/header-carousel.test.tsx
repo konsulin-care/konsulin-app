@@ -231,6 +231,33 @@ describe('HeaderCarousel render behavior', () => {
     });
   });
 
+  it('keeps wrappers mounted when both cards are empty at mount and promotes once content arrives', async () => {
+    const NullCard = () => null;
+    const { container, rerender } = render(
+      <HeaderCarousel session={<NullCard />} research={<NullCard />} />
+    );
+
+    const wrappers = [
+      ...container.querySelectorAll('[data-testid="header-carousel"] > div')
+    ];
+    expect(wrappers.length).toBe(2);
+    expect(wrappers.filter(w => w.className.includes('hidden')).length).toBe(2);
+    expect(document.querySelector('.swiper')).toBeNull();
+
+    rerender(
+      <HeaderCarousel
+        session={<div>Session card</div>}
+        research={<div>Research card</div>}
+      />
+    );
+
+    await waitFor(() => {
+      expect(document.querySelector('.swiper')).toBeTruthy();
+    });
+    expect(screen.getByText('Session card')).toBeTruthy();
+    expect(screen.getByText('Research card')).toBeTruthy();
+  });
+
   it('attaches the header-carousel testid to the swiper container', () => {
     render(
       <HeaderCarousel
