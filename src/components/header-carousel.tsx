@@ -53,6 +53,8 @@ export function resolveCarouselHeight(heights: number[]): number | undefined {
  *   container, so both cards stretch to the same height.
  * - A card that self-hides (renders nothing) is excluded from the slide count;
  *   when only one card remains, the carousel degrades to static rendering.
+ *   Non-present cards stay mounted but hidden, so late-loading research data
+ *   is still detected (via MutationObserver) and promotes to carousel mode.
  */
 export default function HeaderCarousel({
   session,
@@ -102,20 +104,31 @@ export default function HeaderCarousel({
 
   useLayoutEffect(() => {
     measure();
-    const observer =
+    const resizeObserver =
       typeof ResizeObserver === 'undefined'
         ? undefined
         : new ResizeObserver(measure);
-    if (observer) {
-      wrapperRefs.current.forEach(wrapper => {
-        if (wrapper) observer.observe(wrapper);
-      });
-    }
-    return () => observer?.disconnect();
+    const mutationObserver =
+      typeof MutationObserver === 'undefined'
+        ? undefined
+        : new MutationObserver(measure);
+    wrapperRefs.current.forEach(wrapper => {
+      if (!wrapper) return;
+      resizeObserver?.observe(wrapper);
+      mutationObserver?.observe(wrapper, { childList: true });
+    });
+    return () => {
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
+    };
   }, [measure, mode]);
 
-  const renderWrapper = (slot: number, node: ReactNode) => (
-    <div key={slot} ref={setWrapperRef(slot)} className='h-full'>
+  const renderWrapper = (slot: number, node: ReactNode, hidden: boolean) => (
+    <div
+      key={slot}
+      ref={setWrapperRef(slot)}
+      className={hidden ? 'hidden' : 'h-full'}
+    >
       {node}
     </div>
   );
@@ -133,7 +146,9 @@ export default function HeaderCarousel({
   if (mode === 'single') {
     return (
       <div className='mt-4' data-testid='header-carousel'>
-        {slides.map(slide => renderWrapper(slide.slot, slide.node))}
+        {slides.map(slide =>
+          renderWrapper(slide.slot, slide.node, !present[slide.key])
+        )}
       </div>
     );
   }
@@ -146,6 +161,7 @@ export default function HeaderCarousel({
   return (
     <Swiper
       className='mt-4'
+      data-testid='header-carousel'
       modules={[Autoplay]}
       slidesPerView={1}
       spaceBetween={0}
@@ -163,7 +179,7 @@ export default function HeaderCarousel({
     >
       {slides.map(slide => (
         <SwiperSlide key={slide.key}>
-          {renderWrapper(slide.slot, slide.node)}
+          {renderWrapper(slide.slot, slide.node, false)}
         </SwiperSlide>
       ))}
     </Swiper>

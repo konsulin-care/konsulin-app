@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HeaderCarousel, { resolveCarouselHeight } from '../header-carousel';
 
@@ -184,6 +190,58 @@ describe('HeaderCarousel render behavior', () => {
 
     expect(document.querySelector('.swiper')).toBeTruthy();
     expect(screen.getByText('Research card')).toBeTruthy();
+  });
+
+  it('hides the non-present card so only one card is visible', () => {
+    const NullCard = () => null;
+    const { container } = render(
+      <HeaderCarousel
+        session={<div>Session card</div>}
+        research={<NullCard />}
+      />
+    );
+
+    const wrappers = [
+      ...container.querySelectorAll('[data-testid="header-carousel"] > div')
+    ];
+    expect(wrappers.length).toBe(2);
+    expect(wrappers.filter(w => w.className.includes('h-full')).length).toBe(1);
+    expect(wrappers.filter(w => w.className.includes('hidden')).length).toBe(1);
+  });
+
+  it('promotes to a carousel when the research card appears without a resize event', async () => {
+    const NullCard = () => null;
+    const { rerender } = render(
+      <HeaderCarousel
+        session={<div>Session card</div>}
+        research={<NullCard />}
+      />
+    );
+    expect(document.querySelector('.swiper')).toBeNull();
+
+    rerender(
+      <HeaderCarousel
+        session={<div>Session card</div>}
+        research={<div>Research card</div>}
+      />
+    );
+
+    await waitFor(() => {
+      expect(document.querySelector('.swiper')).toBeTruthy();
+    });
+  });
+
+  it('attaches the header-carousel testid to the swiper container', () => {
+    render(
+      <HeaderCarousel
+        session={<div>Session card</div>}
+        research={<div>Research card</div>}
+      />
+    );
+
+    const carousel = document.querySelector('[data-testid="header-carousel"]');
+    expect(carousel).not.toBeNull();
+    expect(carousel?.className).toContain('swiper');
   });
 });
 
