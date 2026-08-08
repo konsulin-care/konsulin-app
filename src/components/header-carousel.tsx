@@ -30,18 +30,6 @@ interface CarouselSlide {
 }
 
 /**
- * Resolves the tallest measured slide height, ignoring empty slides.
- *
- * @param heights - Measured height per slide; 0 marks an empty slide.
- * @returns The maximum height, or undefined when no slide has content.
- */
-export function resolveCarouselHeight(heights: number[]): number | undefined {
-  const present = heights.filter(height => height > 0);
-  if (present.length === 0) return undefined;
-  return Math.max(...present);
-}
-
-/**
  * Alternates the upcoming session and research cards in a swipeable,
  * auto-rotating carousel of equal-height slides.
  *
@@ -49,22 +37,24 @@ export function resolveCarouselHeight(heights: number[]): number | undefined {
  * - Two cards render a Swiper that auto-advances every 5 seconds, pauses on
  *   hover, and keeps running after a manual swipe (disabled for users who
  *   prefer reduced motion).
- * - Slide heights are measured after render and the tallest one sizes the
- *   container, so both cards stretch to the same height.
+ * - Slides stretch to the tallest card via the `.header-carousel .swiper-slide`
+ *   flex rule in globals.css, so both cards render at equal height without any
+ *   JS height measurement or inline container height.
  * - A card that self-hides (renders nothing) is excluded from the slide count;
  *   when only one card remains, the carousel degrades to static rendering.
  *   Wrappers stay mounted (hidden) even while no card has content yet, so
- *   late-loading session or research data is still detected (via
- *   MutationObserver) and promotes to single or carousel mode.
+ *   late-loading session or research data is still detected (via a bounded
+ *   MutationObserver on childList changes) and promotes to single or carousel
+ *   mode. No ResizeObserver is used: presence is content-driven and the equal
+ *   height comes from CSS, so there is no measurement feedback loop.
  */
 export default function HeaderCarousel({
   session,
   research
 }: Readonly<HeaderCarouselProps>) {
   const wrapperRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [slideHeights, setSlideHeights] = useState<number[]>([]);
   const [present, setPresent] = useState<SlidePresence>({
-    session: session !== undefined,
+    session: false,
     research: false
   });
 
@@ -75,23 +65,27 @@ export default function HeaderCarousel({
     []
   );
 
-  /** Reads wrapper heights and rendered content to refresh slide presence. */
+  /** Refreshes card presence from rendered content, bailing out when unchanged. */
   const measure = useCallback(() => {
-    const heights = wrapperRefs.current.map(
-      wrapper => wrapper?.scrollHeight ?? 0
-    );
-    setSlideHeights(heights);
     const sessionWrapper = wrapperRefs.current[0];
     const researchWrapper = wrapperRefs.current[1];
-    setPresent({
+    const next = {
       session: (sessionWrapper?.childElementCount ?? 0) > 0,
       research: (researchWrapper?.childElementCount ?? 0) > 0
-    });
+    };
+    setPresent(prev =>
+      prev.session === next.session && prev.research === next.research
+        ? prev
+        : next
+    );
   }, []);
 
-  const setWrapperRef = (index: number) => (element: HTMLDivElement | null) => {
-    wrapperRefs.current[index] = element;
-  };
+  const setSessionRef = useCallback((element: HTMLDivElement | null) => {
+    wrapperRefs.current[0] = element;
+  }, []);
+  const setResearchRef = useCallback((element: HTMLDivElement | null) => {
+    wrapperRefs.current[1] = element;
+  }, []);
 
   const cardCount = (present.session ? 1 : 0) + (present.research ? 1 : 0);
   let mode: 'carousel' | 'single' | 'none';
@@ -105,21 +99,15 @@ export default function HeaderCarousel({
 
   useLayoutEffect(() => {
     measure();
-    const resizeObserver =
-      typeof ResizeObserver === 'undefined'
-        ? undefined
-        : new ResizeObserver(measure);
     const mutationObserver =
       typeof MutationObserver === 'undefined'
         ? undefined
         : new MutationObserver(measure);
     wrapperRefs.current.forEach(wrapper => {
       if (!wrapper) return;
-      resizeObserver?.observe(wrapper);
       mutationObserver?.observe(wrapper, { childList: true });
     });
     return () => {
-      resizeObserver?.disconnect();
       mutationObserver?.disconnect();
     };
   }, [measure, mode]);
@@ -127,7 +115,7 @@ export default function HeaderCarousel({
   const renderWrapper = (slot: number, node: ReactNode, hidden: boolean) => (
     <div
       key={slot}
-      ref={setWrapperRef(slot)}
+      ref={slot === 0 ? setSessionRef : setResearchRef}
       className={hidden ? 'hidden' : 'h-full'}
     >
       {node}
@@ -154,14 +142,9 @@ export default function HeaderCarousel({
     );
   }
 
-  const containerHeight = resolveCarouselHeight(slideHeights);
-  const containerStyle = containerHeight
-    ? { height: containerHeight }
-    : undefined;
-
   return (
     <Swiper
-      className='mt-4'
+      className='header-carousel mt-4'
       data-testid='header-carousel'
       modules={[Autoplay]}
       slidesPerView={1}
@@ -176,7 +159,6 @@ export default function HeaderCarousel({
               pauseOnMouseEnter: true
             }
       }
-      style={containerStyle}
     >
       {slides.map(slide => (
         <SwiperSlide key={slide.key}>

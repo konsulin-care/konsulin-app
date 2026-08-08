@@ -6,13 +6,13 @@ import {
   waitFor
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import HeaderCarousel, { resolveCarouselHeight } from '../header-carousel';
+import HeaderCarousel from '../header-carousel';
 
 /** jsdom lacks ResizeObserver; capture callbacks so tests can trigger re-measures. */
 class ResizeObserverMock {
   static readonly instances: ResizeObserverMock[] = [];
   callback: ResizeObserverCallback;
-  private observed = new Set<Element>();
+  observed = new Set<Element>();
 
   constructor(callback: ResizeObserverCallback) {
     this.callback = callback;
@@ -30,23 +30,6 @@ class ResizeObserverMock {
   disconnect() {
     this.observed.clear();
   }
-}
-
-/** Invoke every captured ResizeObserver callback, like a real size change would. */
-function fireResizeObservers() {
-  ResizeObserverMock.instances.forEach(instance =>
-    instance.callback([], instance)
-  );
-}
-
-/** Stub slide widths so the measured layout height is deterministic in jsdom. */
-function mockSlideScrollHeight(height: number) {
-  Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
-    configurable: true,
-    get() {
-      return height;
-    }
-  });
 }
 
 /** Give swiper a real container width so its geometry is computable in jsdom. */
@@ -75,6 +58,12 @@ function mockMatchMedia(reducedMotion: boolean) {
     }))
   });
 }
+
+/** Flushes pending microtasks so MutationObserver callbacks and effects settle. */
+const flush = () =>
+  act(async () => {
+    await new Promise(resolve => setTimeout(resolve, 0));
+  });
 
 function getActiveSlideText(): string {
   return document.querySelector('.swiper-slide-active')?.textContent ?? '';
@@ -109,31 +98,12 @@ function getSwiperInstance(): {
 beforeEach(() => {
   ResizeObserverMock.instances.length = 0;
   globalThis.ResizeObserver = ResizeObserverMock;
-  mockSlideScrollHeight(0);
   mockMatchMedia(false);
 });
 
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
-});
-
-describe('resolveCarouselHeight', () => {
-  it('returns undefined for an empty height list', () => {
-    expect(resolveCarouselHeight([])).toBeUndefined();
-  });
-
-  it('returns undefined when every slide is empty', () => {
-    expect(resolveCarouselHeight([0, 0])).toBeUndefined();
-  });
-
-  it('returns the tallest measured slide', () => {
-    expect(resolveCarouselHeight([100, 140, 90])).toBe(140);
-  });
-
-  it('ignores empty slides when computing the max', () => {
-    expect(resolveCarouselHeight([0, 120])).toBe(120);
-  });
 });
 
 describe('HeaderCarousel render behavior', () => {
@@ -165,7 +135,7 @@ describe('HeaderCarousel render behavior', () => {
     expect(screen.getByText('Research card')).toBeTruthy();
   });
 
-  it('excludes a self-hiding research card and keeps the session card static', () => {
+  it('excludes a self-hiding research card and keeps the session card static', async () => {
     const NullCard = () => null;
     const { rerender } = render(
       <HeaderCarousel
@@ -177,18 +147,17 @@ describe('HeaderCarousel render behavior', () => {
     expect(document.querySelector('.swiper')).toBeNull();
     expect(screen.getByText('Session card')).toBeTruthy();
 
-    // research data arrives: the wrapper gains content, a resize fires
+    // research data arrives: the wrapper gains content, the MutationObserver promotes
     rerender(
       <HeaderCarousel
         session={<div>Session card</div>}
         research={<div>Research card</div>}
       />
     );
-    act(() => {
-      fireResizeObservers();
-    });
 
-    expect(document.querySelector('.swiper')).toBeTruthy();
+    await waitFor(() => {
+      expect(document.querySelector('.swiper')).toBeTruthy();
+    });
     expect(screen.getByText('Research card')).toBeTruthy();
   });
 
@@ -337,8 +306,7 @@ describe('HeaderCarousel autoplay', () => {
 });
 
 describe('HeaderCarousel equal height', () => {
-  it('sizes the container to the tallest slide and stretches both cards', () => {
-    mockSlideScrollHeight(132);
+  it('stretches slides via flex instead of setting an inline container height', () => {
     render(
       <HeaderCarousel
         session={<div>Session card</div>}
@@ -350,10 +318,44 @@ describe('HeaderCarousel equal height', () => {
     if (!swiperElement) {
       throw new Error('swiper element not found');
     }
-    expect(swiperElement.style.height).toBe('132px');
+    expect(swiperElement.className).toContain('header-carousel');
+    expect(swiperElement.style.height).toBe('');
 
     document
       .querySelectorAll('.swiper-slide > div')
       .forEach(wrapper => expect(wrapper.className).toContain('h-full'));
+  });
+});
+
+describe('HeaderCarousel observer safety', () => {
+  it('creates no ResizeObserver and does not re-render when presence is unchanged', async () => {
+    const renderCount: number[] = [];
+    const ProbeCard = () => {
+      renderCount.push(1);
+      return <div>Probe</div>;
+    };
+    render(<HeaderCarousel session={<ProbeCard />} research={<ProbeCard />} />);
+
+    await waitFor(() => expect(document.querySelector('.swiper')).toBeTruthy());
+    // Let swiper init settle (active-class application re-renders slides once).
+    await flush();
+    // HeaderCarousel itself must not observe the card wrappers; Swiper's own
+    // container observer is bounded and unrelated to the height feedback loop.
+    const wrapperObservers = ResizeObserverMock.instances.filter(instance =>
+      [...instance.observed].some(target => target.className.includes('h-full'))
+    );
+    expect(wrapperObservers.length).toBe(0);
+
+    const settled = renderCount.length;
+    // A real MutationObserver event with unchanged presence must not re-render.
+    const wrapper = document.querySelector<HTMLElement>('.swiper-slide > div');
+    const firstChild = wrapper?.firstChild;
+    if (firstChild) {
+      act(() => {
+        wrapper?.replaceChild(document.createElement('div'), firstChild);
+      });
+    }
+    await flush();
+    expect(renderCount.length).toBe(settled);
   });
 });

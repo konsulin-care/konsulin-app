@@ -12,6 +12,12 @@
   height: auto;
 }
 
+/* Same equal-height behavior for the header session/research carousel.
+   Slides stretch via flexbox, so no JS height measurement is needed. */
+.header-carousel .swiper-slide {
+  height: auto;
+}
+
 * {
   border-color: var(--border);
 }
