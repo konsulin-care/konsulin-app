@@ -17,7 +17,7 @@ import { readConsentFlag, writeConsentFlag } from '@/utils/consent';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { FlaskConical } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import ConsentDrawer from './consent-drawer';
 import ContributionDashboard from './contribution-dashboard';
@@ -73,20 +73,32 @@ export default function ResearchPage() {
     useQuestionnaireTitles(questionnaireIds);
 
   const detailStudy = studies.find(s => s.study.id === detailStudyId) ?? null;
+  // Mirrors the focused slide for the no-param focus fallback without making
+  // the URL-sync effect react to local state changes.
+  const activeStudyIdRef = useRef(activeStudyId);
+  useEffect(() => {
+    activeStudyIdRef.current = activeStudyId;
+  }, [activeStudyId]);
+
   // Resolve the active study and detail drawer from `?id=` / `?view=`:
-  // `id` focuses the carousel, `view` also opens the detail drawer.
+  // `id` focuses the carousel, `view` also opens the detail drawer. Runs only
+  // when the URL or the studies change — never on local state changes — so a
+  // stale param cannot reopen a drawer the user just closed (flicker fix).
   useEffect(() => {
     const { knownId, knownView } = resolveDeepLinks(searchParams, studies);
+    const requestedId = searchParams.get('id');
+    const requestedView = searchParams.get('view');
 
-    // Invalid deep link: drop the unknown params, keeping valid ones and ref.
-    if (
-      (searchParams.get('id') && !knownId) ||
-      (searchParams.get('view') && !knownView)
-    ) {
+    // One canonical param: view wins over id; drop unknown ids/views, keep ref.
+    const needsRewrite =
+      Boolean(requestedId && requestedView) ||
+      (Boolean(requestedId) && !knownId) ||
+      (Boolean(requestedView) && !knownView);
+    if (needsRewrite) {
       router.replace(
         updateResearchUrl(searchParams, {
-          id: knownId ? knownId.study.id : null,
-          view: knownView ? knownView.study.id : null
+          id: knownView ? null : (knownId?.study.id ?? null),
+          view: knownView?.study.id ?? null
         })
       );
     }
@@ -94,18 +106,14 @@ export default function ResearchPage() {
     const targetId = resolveFocusTarget(
       knownId,
       knownView,
-      activeStudyId,
+      activeStudyIdRef.current,
       studies
     );
-    if (targetId !== activeStudyId) {
-      setActiveStudyId(targetId);
-    }
+    setActiveStudyId(targetId);
 
-    // Drawer: a valid view param opens the study detail drawer.
-    if (knownView && knownView.study.id !== detailStudyId) {
-      setDetailStudyId(knownView.study.id);
-    }
-  }, [searchParams, studies, router, activeStudyId, detailStudyId]);
+    // Drawer mirrors the URL in both directions: open iff `view` is present.
+    setDetailStudyId(knownView?.study.id ?? null);
+  }, [searchParams, studies, router]);
 
   const activeStudy = studies.find(s => s.study.id === activeStudyId) ?? null;
 
@@ -212,12 +220,26 @@ export default function ResearchPage() {
     [participate, studies]
   );
 
-  /** Updates the URL to deep-link the newly active slide, keeping view/ref. */
+  /** Writes the focused slide as ?id=, dropping any open view param. */
   const handleSlideChange = (studyId: string) => {
     setActiveStudyId(studyId);
-    // Programmatic syncs (deep links, back/forward) already carry the id.
-    if (searchParams.get('id') === studyId) return;
-    router.replace(updateResearchUrl(searchParams, { id: studyId }));
+    // Programmatic syncs (deep links, back/forward) already carry the slide
+    // as ?id= or ?view=.
+    if (
+      searchParams.get('id') === studyId ||
+      searchParams.get('view') === studyId
+    ) {
+      return;
+    }
+    // A focus change cannot coexist with an open drawer in the URL.
+    if (searchParams.get('view')) {
+      setDetailStudyId(null);
+      router.replace(
+        updateResearchUrl(searchParams, { id: studyId, view: null })
+      );
+    } else {
+      router.replace(updateResearchUrl(searchParams, { id: studyId }));
+    }
   };
 
   /** Opens the study detail drawer, or redirects to the report when the batch is done. */
@@ -237,12 +259,13 @@ export default function ResearchPage() {
     router.push(`/report?id=${studyId}`);
   };
 
-  /** Closes the detail drawer and removes its `view` param, keeping id/ref. */
+  /** Closes the detail drawer: `view` transitions back to a focus `id`. */
   const handleDrawerClose = () => {
+    const studyId = detailStudyId; // non-null while the drawer is open
     setDetailStudyId(null);
-    if (searchParams.get('view')) {
-      router.replace(updateResearchUrl(searchParams, { view: null }));
-    }
+    router.replace(
+      updateResearchUrl(searchParams, { id: studyId, view: null })
+    );
   };
 
   /** Renders the loading, error, or study content for the page. */

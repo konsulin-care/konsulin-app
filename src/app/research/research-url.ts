@@ -4,6 +4,7 @@ import type { StudyProgress } from '@/utils/fhir/research';
  * Rebuilds the /research URL from the given search params, applying updates
  * in canonical id → view → ref order. A null value removes the key;
  * undefined preserves it. Used so URL rewrites only touch what changed.
+ * id and view are mutually exclusive; a non-null view always wins over id.
  *
  * @param searchParams - Current search params to derive values from.
  * @param updates - Keys to set (string) or remove (null); omitted keys keep
@@ -19,8 +20,12 @@ export function updateResearchUrl(
   const view =
     updates.view === undefined ? searchParams.get('view') : updates.view;
   const ref = updates.ref === undefined ? searchParams.get('ref') : updates.ref;
-  if (id) next.set('id', id);
-  if (view) next.set('view', view);
+  // Canonical form: `view` subsumes focus + drawer, so it always wins.
+  if (view) {
+    next.set('view', view);
+  } else if (id) {
+    next.set('id', id);
+  }
   if (ref) next.set('ref', ref);
   const query = next.toString();
   return query ? `/research?${query}` : '/research';
@@ -51,8 +56,8 @@ export function resolveDeepLinks(
 }
 
 /**
- * Resolves the carousel slide to focus: a valid `id` wins, then a valid
- * `view`, then the current slide, then the first study.
+ * Resolves the carousel slide to focus: a valid `view` wins, then a valid
+ * `id`, then the current slide, then the first study.
  *
  * @param knownId - Study resolved from `?id=`, or undefined.
  * @param knownView - Study resolved from `?view=`, or undefined.
@@ -66,8 +71,8 @@ export function resolveFocusTarget(
   activeStudyId: string | null,
   studies: StudyProgress[]
 ): string | null {
-  if (knownId) return knownId.study.id;
   if (knownView) return knownView.study.id;
+  if (knownId) return knownId.study.id;
   if (
     activeStudyId &&
     studies.some(study => study.study.id === activeStudyId)
