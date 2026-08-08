@@ -7,7 +7,14 @@ import UpcomingSession from '@/components/schedule/upcoming-session';
 import { getNow } from '@/constants/date';
 import type { MergedAppointment, MergedSession } from '@/types/appointment';
 import { parseMergedAppointments, parseMergedSessions } from '@/utils/helper';
-import { isAfter, parseISO } from 'date-fns';
+import {
+  addDays,
+  endOfDay,
+  isAfter,
+  isBefore,
+  parseISO,
+  startOfDay
+} from 'date-fns';
 import type { Bundle } from 'fhir/r4';
 import { Calendar } from 'lucide-react';
 import Link from 'next/link';
@@ -23,6 +30,23 @@ export interface GuestAvatar {
 /** Returns true when the session slot start is still in the future. */
 function isFutureSession(slotStart: string | null | undefined): boolean {
   return isAfter(parseISO(slotStart ?? ''), getNow());
+}
+
+/**
+ * Returns true when the first upcoming session starts today or tomorrow.
+ * Sessions further out are not urgent enough to win the header reminder.
+ */
+export function isSessionWithinWindow(
+  data: MergedAppointment[] | MergedSession[] | null | undefined
+): boolean {
+  const session = data?.[0];
+  if (!session?.slotStart) return false;
+  const start = parseISO(session.slotStart);
+  const now = getNow();
+  return (
+    !isBefore(start, startOfDay(now)) &&
+    !isAfter(start, endOfDay(addDays(now, 1)))
+  );
 }
 
 /**
@@ -113,8 +137,44 @@ export function UpcomingSessionBlock({
   return <UpcomingSession data={data} role={role ?? ''} />;
 }
 
-/** Renders the research progress widget subject to role and route gating. */
-export function ResearchHeaderWidgetSection({
+/**
+ * Returns true when the upcoming session card may render: session data
+ * exists and the block is not gated off for admins or by the page.
+ */
+export function isSessionCardAvailable(
+  data: MergedAppointment[] | MergedSession[] | null | undefined,
+  isAdmin: boolean,
+  hideUpcomingSession: boolean | undefined
+): boolean {
+  return (
+    data !== null &&
+    data !== undefined &&
+    data.length > 0 &&
+    !isAdmin &&
+    !hideUpcomingSession
+  );
+}
+
+/**
+ * Returns true when the session card is the card actually displayed in the
+ * header, which is when the "See All" schedule link is relevant: an urgent
+ * session wins outright, or research is not eligible so the session falls
+ * back into the slot.
+ */
+export function shouldShowSeeAll(
+  hasSessionCard: boolean,
+  isSessionUrgent: boolean,
+  researchEligible: boolean
+): boolean {
+  return hasSessionCard && (isSessionUrgent || !researchEligible);
+}
+
+/**
+ * Returns true when the research progress widget may show in the header:
+ * patients and guests only, never admins, practitioners, the /research page,
+ * or while auth is still loading.
+ */
+export function canShowResearchHeader({
   isLoadingAuth,
   isAdmin,
   pathname,
@@ -126,15 +186,26 @@ export function ResearchHeaderWidgetSection({
   pathname: string;
   isPatient: boolean;
   isAuthenticated: boolean;
-}>) {
-  if (
+}>): boolean {
+  return !(
     isLoadingAuth ||
     isAdmin ||
     pathname === '/research' ||
     (!isPatient && isAuthenticated)
-  ) {
-    return null;
-  }
+  );
+}
+
+/** Renders the research progress widget subject to role and route gating. */
+export function ResearchHeaderWidgetSection(
+  props: Readonly<{
+    isLoadingAuth: boolean;
+    isAdmin: boolean;
+    pathname: string;
+    isPatient: boolean;
+    isAuthenticated: boolean;
+  }>
+) {
+  if (!canShowResearchHeader(props)) return null;
   return <ResearchHeaderWidget />;
 }
 

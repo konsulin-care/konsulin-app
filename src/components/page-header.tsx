@@ -1,12 +1,16 @@
 'use client';
 
-import HeaderCarousel from '@/components/header-carousel';
+import HeaderReminder from '@/components/header-reminder';
 import {
   AdminClinicCard,
   AuthArea,
   GuestAvatar,
   ResearchHeaderWidgetSection,
   UpcomingSessionBlock,
+  canShowResearchHeader,
+  isSessionCardAvailable,
+  isSessionWithinWindow,
+  shouldShowSeeAll,
   useUpcomingSession
 } from '@/components/page-header-sections';
 import { Roles } from '@/constants/roles';
@@ -167,16 +171,32 @@ export default function PageHeader({
     authState.isAuthenticated
   );
 
-  const sessionCard = (
+  const hasSessionCard = isSessionCardAvailable(
+    upcomingData,
+    isAdmin,
+    hideUpcomingSession
+  );
+
+  const isSessionUrgent = hasSessionCard && isSessionWithinWindow(upcomingData);
+
+  const researchEligible = canShowResearchHeader({
+    isLoadingAuth,
+    isAdmin,
+    pathname,
+    isPatient,
+    isAuthenticated: authState.isAuthenticated
+  });
+
+  const sessionCard = hasSessionCard ? (
     <UpcomingSessionBlock
       data={upcomingData}
       role={role}
       isAdmin={isAdmin}
       hideUpcomingSession={hideUpcomingSession}
     />
-  );
+  ) : undefined;
 
-  const researchCard = (
+  const researchCard = researchEligible ? (
     <ResearchHeaderWidgetSection
       isLoadingAuth={isLoadingAuth}
       isAdmin={isAdmin}
@@ -184,14 +204,7 @@ export default function PageHeader({
       isPatient={isPatient}
       isAuthenticated={authState.isAuthenticated}
     />
-  );
-
-  const hasSessionCard =
-    upcomingData !== null &&
-    upcomingData !== undefined &&
-    upcomingData.length > 0 &&
-    !isAdmin &&
-    !hideUpcomingSession;
+  ) : undefined;
 
   const showBack = pathname !== '/';
   const backAction =
@@ -226,9 +239,13 @@ export default function PageHeader({
         />
       </div>
 
-      <HeaderCarousel session={sessionCard} research={researchCard} />
+      <HeaderReminder
+        isSessionUrgent={isSessionUrgent}
+        session={sessionCard}
+        research={researchCard}
+      />
 
-      {hasSessionCard && (
+      {shouldShowSeeAll(hasSessionCard, isSessionUrgent, researchEligible) && (
         <div className='mt-1 flex justify-end'>
           <Link href='/schedule' className='text-[10px] text-[#2c2f35]'>
             See All

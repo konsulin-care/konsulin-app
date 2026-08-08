@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
+import { addDays, addHours, format } from 'date-fns';
 import type { Bundle } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PageHeader from '../page-header';
@@ -66,74 +67,85 @@ function createWrapper() {
   };
 }
 
-/** Far-future appointment bundle usable by both the patient and practitioner parsers. */
-const SESSION_BUNDLE = {
-  resourceType: 'Bundle',
-  type: 'searchset',
-  total: 1,
-  entry: [
-    {
-      resource: {
-        resourceType: 'Appointment',
-        id: 'appt-1',
-        status: 'booked',
-        start: '2099-01-01T09:00:00Z',
-        slot: [{ reference: 'Slot/slot-1' }],
-        participant: [
-          { actor: { reference: 'Patient/pat-1' }, status: 'accepted' },
-          { actor: { reference: 'Practitioner/prac-1' }, status: 'accepted' },
-          {
-            actor: { reference: 'PractitionerRole/role-1' },
-            status: 'accepted'
-          },
-          {
-            actor: { reference: 'HealthcareService/svc-1' },
-            status: 'accepted'
-          },
-          { actor: { reference: 'Location/loc-1' }, status: 'accepted' }
-        ]
+/** Naive local ISO start for an appointment offset by the given days from now. */
+function startOn(dayOffset: number): string {
+  return format(addDays(new Date(), dayOffset), "yyyy-MM-dd'T'HH:mm:ss");
+}
+
+/**
+ * Naive local ISO start one hour from now: strictly in the future while
+ * staying within the today-or-tomorrow urgency window.
+ */
+function urgentStart(): string {
+  return format(addHours(new Date(), 1), "yyyy-MM-dd'T'HH:mm:ss");
+}
+
+/** Appointment bundle with the given start usable by patient and practitioner parsers. */
+function makeBundle(startIso: string): Bundle {
+  return {
+    resourceType: 'Bundle',
+    type: 'searchset',
+    total: 1,
+    entry: [
+      {
+        resource: {
+          resourceType: 'Appointment',
+          id: 'appt-1',
+          status: 'booked',
+          start: startIso,
+          slot: [{ reference: 'Slot/slot-1' }],
+          participant: [
+            { actor: { reference: 'Patient/pat-1' }, status: 'accepted' },
+            { actor: { reference: 'Practitioner/prac-1' }, status: 'accepted' },
+            {
+              actor: { reference: 'PractitionerRole/role-1' },
+              status: 'accepted'
+            },
+            {
+              actor: { reference: 'HealthcareService/svc-1' },
+              status: 'accepted'
+            },
+            { actor: { reference: 'Location/loc-1' }, status: 'accepted' }
+          ]
+        }
+      },
+      {
+        resource: {
+          resourceType: 'Slot',
+          id: 'slot-1',
+          status: 'busy',
+          start: startIso,
+          end: '2099-01-01T10:00:00Z'
+        }
+      },
+      {
+        resource: {
+          resourceType: 'Practitioner',
+          id: 'prac-1',
+          name: [{ family: 'Doe', given: ['Jane'] }],
+          telecom: [{ system: 'email', value: 'jane@test.com' }]
+        }
+      },
+      {
+        resource: {
+          resourceType: 'Patient',
+          id: 'pat-1',
+          name: [{ family: 'Smith', given: ['Pat'] }]
+        }
+      },
+      {
+        resource: { resourceType: 'Location', id: 'loc-1', name: 'Main Clinic' }
+      },
+      {
+        resource: {
+          resourceType: 'HealthcareService',
+          id: 'svc-1',
+          name: 'Consultation'
+        }
       }
-    },
-    {
-      resource: {
-        resourceType: 'Slot',
-        id: 'slot-1',
-        status: 'busy',
-        start: '2099-01-01T09:00:00Z',
-        end: '2099-01-01T10:00:00Z'
-      }
-    },
-    {
-      resource: {
-        resourceType: 'Practitioner',
-        id: 'prac-1',
-        name: [{ family: 'Doe', given: ['Jane'] }],
-        telecom: [{ system: 'email', value: 'jane@test.com' }]
-      }
-    },
-    {
-      resource: {
-        resourceType: 'Patient',
-        id: 'pat-1',
-        name: [{ family: 'Smith', given: ['Pat'] }]
-      }
-    },
-    {
-      resource: {
-        resourceType: 'Location',
-        id: 'loc-1',
-        name: 'Main Clinic'
-      }
-    },
-    {
-      resource: {
-        resourceType: 'HealthcareService',
-        id: 'svc-1',
-        name: 'Consultation'
-      }
-    }
-  ]
-} as unknown as Bundle;
+    ]
+  } as unknown as Bundle;
+}
 
 const BATCH_1 = {
   id: 'batch-1',
@@ -197,56 +209,52 @@ beforeEach(() => {
   });
 });
 
-describe('PageHeader carousel integration', () => {
-  it('shows both cards in a swiper carousel with See All for a patient', () => {
+describe('PageHeader single-card reminder', () => {
+  it('shows the session card and See All when the session starts today', () => {
     mockPatient();
     mockUseUpcomingEvents.mockReturnValue({
-      appointmentData: SESSION_BUNDLE,
+      appointmentData: makeBundle(urgentStart()),
       sessionData: null
     });
 
     render(<PageHeader />, { wrapper: createWrapper() });
 
-    const realSlides = document.querySelectorAll(
-      '.swiper-slide:not(.swiper-slide-duplicate)'
-    );
-    expect(realSlides.length).toBe(2);
-    expect(screen.getByTestId('research-header-widget')).toBeTruthy();
     expect(screen.getByText(/Upcoming Session With/)).toBeTruthy();
     expect(screen.getByText('Jane Doe')).toBeTruthy();
+    expect(screen.queryByTestId('research-header-widget')).toBeNull();
     expect(screen.getByText('See All')).toBeTruthy();
+    expect(document.querySelector('.swiper')).toBeNull();
   });
 
-  it('renders the session card statically with See All when research is loading', () => {
+  it('shows the session card and See All when the session starts tomorrow', () => {
     mockPatient();
     mockUseUpcomingEvents.mockReturnValue({
-      appointmentData: SESSION_BUNDLE,
+      appointmentData: makeBundle(startOn(1)),
       sessionData: null
-    });
-    mockUseResearchProgress.mockReturnValue({
-      data: undefined,
-      isLoading: true
     });
 
     render(<PageHeader />, { wrapper: createWrapper() });
 
-    expect(document.querySelector('.swiper')).toBeNull();
     expect(screen.getByText(/Upcoming Session With/)).toBeTruthy();
     expect(screen.getByText('See All')).toBeTruthy();
     expect(screen.queryByTestId('research-header-widget')).toBeNull();
   });
 
-  it('renders the research card statically without See All when there is no session', () => {
+  it('shows the research card without See All when the session is not urgent', () => {
     mockPatient();
+    mockUseUpcomingEvents.mockReturnValue({
+      appointmentData: makeBundle(startOn(5)),
+      sessionData: null
+    });
 
     render(<PageHeader />, { wrapper: createWrapper() });
 
-    expect(document.querySelector('.swiper')).toBeNull();
     expect(screen.getByTestId('research-header-widget')).toBeTruthy();
+    expect(screen.queryByText(/Upcoming Session With/)).toBeNull();
     expect(screen.queryByText('See All')).toBeNull();
   });
 
-  it('keeps the practitioner header as a static session card without the research widget', () => {
+  it('always shows the session card for practitioners without the research widget', () => {
     mockUseAuth.mockReturnValue({
       isLoading: false,
       state: {
@@ -256,18 +264,41 @@ describe('PageHeader carousel integration', () => {
     });
     mockUseUpcomingEvents.mockReturnValue({
       appointmentData: null,
-      sessionData: SESSION_BUNDLE
+      sessionData: makeBundle(startOn(5))
     });
 
     render(<PageHeader />, { wrapper: createWrapper() });
 
-    expect(document.querySelector('.swiper')).toBeNull();
-    expect(screen.queryByTestId('research-header-widget')).toBeNull();
+    expect(screen.getByText(/Upcoming Session With/)).toBeTruthy();
     expect(screen.getByText('Pat Smith')).toBeTruthy();
+    expect(screen.queryByTestId('research-header-widget')).toBeNull();
     expect(screen.getByText('See All')).toBeTruthy();
   });
 
-  it('promotes to a carousel when session and research data arrive after initial load', async () => {
+  it('shows the research card without See All when there is no session', () => {
+    mockPatient();
+
+    render(<PageHeader />, { wrapper: createWrapper() });
+
+    expect(screen.getByTestId('research-header-widget')).toBeTruthy();
+    expect(screen.queryByText(/Upcoming Session With/)).toBeNull();
+    expect(screen.queryByText('See All')).toBeNull();
+  });
+
+  it('shows no card while research is loading and no session exists', () => {
+    mockPatient();
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: true
+    });
+
+    render(<PageHeader />, { wrapper: createWrapper() });
+
+    expect(screen.queryByTestId('research-header-widget')).toBeNull();
+    expect(screen.queryByText(/Upcoming Session With/)).toBeNull();
+  });
+
+  it('switches from research to the session card when an urgent session arrives', async () => {
     mockPatient();
     mockUseResearchProgress.mockReturnValue({
       data: undefined,
@@ -280,26 +311,22 @@ describe('PageHeader carousel integration', () => {
 
     const wrapper = createWrapper();
     const { rerender } = render(<PageHeader />, { wrapper });
-    expect(document.querySelector('.swiper')).toBeNull();
+    expect(screen.queryByText(/Upcoming Session With/)).toBeNull();
 
     mockUseResearchProgress.mockReturnValue({
       data: PROGRESS_DATA,
       isLoading: false
     });
     mockUseUpcomingEvents.mockReturnValue({
-      appointmentData: SESSION_BUNDLE,
+      appointmentData: makeBundle(startOn(1)),
       sessionData: null
     });
 
     rerender(<PageHeader />);
 
     await waitFor(() => {
-      const realSlides = document.querySelectorAll(
-        '.swiper-slide:not(.swiper-slide-duplicate)'
-      );
-      expect(realSlides.length).toBe(2);
+      expect(screen.getByText(/Upcoming Session With/)).toBeTruthy();
     });
-    expect(screen.getByTestId('research-header-widget')).toBeTruthy();
-    expect(screen.getByText(/Upcoming Session With/)).toBeTruthy();
+    expect(screen.queryByTestId('research-header-widget')).toBeNull();
   });
 });
