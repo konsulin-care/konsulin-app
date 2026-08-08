@@ -266,7 +266,10 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const handleNavigate = (buttonLabel: string, responseId?: string) => {
     startTransition(() => {
       if (buttonLabel === 'result' || !continuation?.nextQuestionnaireId) {
-        if (isAuthenticated) {
+        // Final questionnaire of a batch: both roles land on the study report.
+        if (isBatchComplete && continuation?.studyId) {
+          router.replace(`/report?id=${continuation.studyId}`);
+        } else if (isAuthenticated) {
           const basePath = patientId
             ? `/record?id=${patientId}&view=QuestionnaireResponse/${responseId}`
             : `/record?view=QuestionnaireResponse/${responseId}`;

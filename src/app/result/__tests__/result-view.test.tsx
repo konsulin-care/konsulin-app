@@ -50,9 +50,9 @@ vi.mock('@/utils/redirect-intent', () => ({
   saveIntent: vi.fn()
 }));
 
-// Mock lucide-react ClipboardPlus
+// Mock lucide-react BookCheck
 vi.mock('lucide-react', () => ({
-  ClipboardPlus: () => <div data-testid='clipboard-plus' />
+  BookCheck: () => <div data-testid='book-check-icon' />
 }));
 
 // Mock PageHeader — avoid its heavy dependency tree
@@ -98,13 +98,13 @@ function sampleDraft(qrId = 'test-qr-id') {
 
 type SetAction = Extract<FabAction, { type: 'SET_ACTION' }>;
 
-/** Find the 'Claim Results' SET_ACTION call from the dispatched FAB actions. */
+/** Find the 'Claim Report' SET_ACTION call from the dispatched FAB actions. */
 function findClaimAction(calls: readonly unknown[][]): SetAction | undefined {
   return calls.find(([action]) => {
     const fabAction = action as FabAction;
     return (
       fabAction.type === 'SET_ACTION' &&
-      fabAction.config?.label === 'Claim Results'
+      fabAction.config?.label === 'Claim Report'
     );
   })?.[0] as SetAction | undefined;
 }

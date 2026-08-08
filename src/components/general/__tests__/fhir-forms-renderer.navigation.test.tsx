@@ -320,7 +320,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     );
   });
 
-  it('final-in-batch: CTA "See Results" with a completed-batch note replaces to the record view', async () => {
+  it('final-in-batch: CTA "See Results" replaces to the study report for authenticated patients', async () => {
     mockSearchParams.set('study', 'study-a');
     mockResearchProgress.mockReturnValue({
       data: researchProgressWith(['q-123'])
@@ -344,9 +344,25 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     clickCta('See Results');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
     await waitFor(() => expect(mockReplace).toHaveBeenCalled());
-    expect(mockReplace.mock.calls[0][0]).toBe(
-      '/record?id=pat-1&view=QuestionnaireResponse/resp-789'
+    expect(mockReplace.mock.calls[0][0]).toBe('/report?id=study-a');
+  });
+
+  it('final-in-batch: CTA "See Results" replaces to the study report for guests', async () => {
+    mockSearchParams.set('study', 'study-a');
+    mockResearchProgress.mockReturnValue({
+      data: researchProgressWith(['q-123'])
+    });
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated={false}
+      />
     );
+
+    clickCta('See Results');
+    await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
+    await waitFor(() => expect(mockReplace).toHaveBeenCalled());
+    expect(mockReplace.mock.calls[0][0]).toBe('/report?id=study-a');
   });
 
   it('navigates immediately after QR save without waiting for the interpret webhook', async () => {
