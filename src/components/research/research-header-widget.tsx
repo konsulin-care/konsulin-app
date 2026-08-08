@@ -33,7 +33,7 @@ export default function ResearchHeaderWidget() {
     <Link
       href='/research'
       data-testid='research-header-widget'
-      className='card mt-4 flex flex-col gap-1.5 border-0 bg-[#F9F9F9] p-3'
+      className='card flex h-full flex-col gap-1.5 border-0 bg-[#F9F9F9] p-3'
     >
       <div className='flex items-center'>
         <FlaskConical className='mr-[10px] h-5 w-5 shrink-0 text-black' />

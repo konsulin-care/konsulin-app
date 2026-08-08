@@ -95,7 +95,7 @@ export function AuthArea({
   );
 }
 
-/** Renders the upcoming session card with its See All link. */
+/** Renders the upcoming session card subject to role and data gating. */
 export function UpcomingSessionBlock({
   data,
   role,
@@ -110,16 +110,7 @@ export function UpcomingSessionBlock({
   if (!data || data.length === 0 || isAdmin || hideUpcomingSession) {
     return null;
   }
-  return (
-    <>
-      <UpcomingSession data={data} role={role ?? ''} />
-      <div className='mt-1 flex justify-end'>
-        <Link href='/schedule' className='text-[10px] text-[#2c2f35]'>
-          See All
-        </Link>
-      </div>
-    </>
-  );
+  return <UpcomingSession data={data} role={role ?? ''} />;
 }
 
 /** Renders the research progress widget subject to role and route gating. */

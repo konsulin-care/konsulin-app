@@ -47,18 +47,18 @@ function SessionCard({
   return (
     <Link
       href={href}
-      className='card mt-4 flex items-center border-0 bg-[#F9F9F9]'
+      className='card flex h-full flex-col gap-1.5 border-0 bg-[#F9F9F9] p-3'
     >
-      <Calendar className='mr-[10px] h-5 w-5 shrink-0 text-black' />
-      <div className='mr-auto flex flex-col'>
+      <div className='flex items-center'>
+        <Calendar className='mr-[10px] h-5 w-5 shrink-0 text-black' />
         <span className='text-muted text-[12px]'>Upcoming Session With</span>
-        <span className='text-secondary text-left text-[14px] font-bold'>
-          {displayName}
-        </span>
       </div>
-      <div>
-        <span className='text-[12px] font-bold'>{sessionStartTime} </span>
-        <span className='text-[12px]'> | {sessionDate}</span>
+      <span className='text-secondary truncate text-left text-[14px] font-bold'>
+        {displayName}
+      </span>
+      <div className='flex items-center justify-between text-[11px] text-gray-600'>
+        <span className='font-bold text-black'>{sessionStartTime}</span>
+        <span>{sessionDate}</span>
       </div>
     </Link>
   );

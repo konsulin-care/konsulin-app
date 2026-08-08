@@ -1,5 +1,6 @@
 'use client';
 
+import HeaderCarousel from '@/components/header-carousel';
 import {
   AdminClinicCard,
   AuthArea,
@@ -16,6 +17,7 @@ import { getAPI } from '@/services/api';
 import { generateAvatarPlaceholder } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeftIcon } from 'lucide-react';
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -165,6 +167,32 @@ export default function PageHeader({
     authState.isAuthenticated
   );
 
+  const sessionCard = (
+    <UpcomingSessionBlock
+      data={upcomingData}
+      role={role}
+      isAdmin={isAdmin}
+      hideUpcomingSession={hideUpcomingSession}
+    />
+  );
+
+  const researchCard = (
+    <ResearchHeaderWidgetSection
+      isLoadingAuth={isLoadingAuth}
+      isAdmin={isAdmin}
+      pathname={pathname}
+      isPatient={isPatient}
+      isAuthenticated={authState.isAuthenticated}
+    />
+  );
+
+  const hasSessionCard =
+    upcomingData !== null &&
+    upcomingData !== undefined &&
+    upcomingData.length > 0 &&
+    !isAdmin &&
+    !hideUpcomingSession;
+
   const showBack = pathname !== '/';
   const backAction =
     overrideBackRoute ?? getDefaultBackRoute(pathname, searchParams);
@@ -198,20 +226,15 @@ export default function PageHeader({
         />
       </div>
 
-      <UpcomingSessionBlock
-        data={upcomingData}
-        role={role}
-        isAdmin={isAdmin}
-        hideUpcomingSession={hideUpcomingSession}
-      />
+      <HeaderCarousel session={sessionCard} research={researchCard} />
 
-      <ResearchHeaderWidgetSection
-        isLoadingAuth={isLoadingAuth}
-        isAdmin={isAdmin}
-        pathname={pathname}
-        isPatient={isPatient}
-        isAuthenticated={authState.isAuthenticated}
-      />
+      {hasSessionCard && (
+        <div className='mt-1 flex justify-end'>
+          <Link href='/schedule' className='text-[10px] text-[#2c2f35]'>
+            See All
+          </Link>
+        </div>
+      )}
 
       {isAdmin && (
         <AdminClinicCard
