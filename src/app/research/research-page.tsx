@@ -220,11 +220,21 @@ export default function ResearchPage() {
     router.replace(updateResearchUrl(searchParams, { id: studyId }));
   };
 
-  /** Opens the study detail drawer and mirrors it in the URL as `view`. */
+  /** Opens the study detail drawer, or redirects to the report when the batch is done. */
   const handleStudyClick = (studyId: string) => {
+    const study = studies.find(entry => entry.study.id === studyId);
+    if (study?.isComplete) {
+      router.push(`/report?id=${studyId}`);
+      return;
+    }
     setDetailStudyId(studyId);
     if (searchParams.get('view') === studyId) return;
     router.replace(updateResearchUrl(searchParams, { view: studyId }));
+  };
+
+  /** Navigates to the study report; used by the drawer's See Report CTA. */
+  const handleSeeReport = (studyId: string) => {
+    router.push(`/report?id=${studyId}`);
   };
 
   /** Closes the detail drawer and removes its `view` param, keeping id/ref. */
@@ -284,6 +294,7 @@ export default function ResearchPage() {
         open={detailStudy !== null}
         onClose={handleDrawerClose}
         onParticipate={participate}
+        onSeeReport={handleSeeReport}
         onQuestionnaireClick={handleQuestionnaireClick}
         isPatient={isPatient}
         fhirId={fhirId}

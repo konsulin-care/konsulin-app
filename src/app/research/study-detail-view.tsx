@@ -17,6 +17,7 @@ interface StudyDetailViewProps {
   open: boolean;
   onClose: () => void;
   onParticipate: (progress: StudyProgress) => void;
+  onSeeReport: (studyId: string) => void;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
   isPatient: boolean;
   fhirId?: string;
@@ -38,6 +39,7 @@ export default function StudyDetailView({
   open,
   onClose,
   onParticipate,
+  onSeeReport,
   onQuestionnaireClick,
   isPatient,
   fhirId,
@@ -63,9 +65,14 @@ export default function StudyDetailView({
           </span>
         ) : undefined
       }
-      ctaLabel='Participate'
+      ctaLabel={progress?.isComplete ? 'See Report' : 'Participate'}
       onCtaClick={() => {
-        if (progress) onParticipate(progress);
+        if (!progress) return;
+        if (progress.isComplete) {
+          onSeeReport(progress.study.id);
+        } else {
+          onParticipate(progress);
+        }
       }}
       ctaDisabled={!progress}
     >

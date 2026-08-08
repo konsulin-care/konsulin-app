@@ -265,6 +265,58 @@ describe('ResearchPage', () => {
     expect(mockReplace).toHaveBeenCalledWith('/research?view=research');
   });
 
+  it('redirects to the report when a completed study card is tapped', () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({
+        studies: [
+          makeStudyProgress({
+            completedCount: 2,
+            isComplete: true,
+            firstUncompletedQuestionnaireId: null,
+            completedQuestionnaireIds: ['phq2', 'big-five-inventory']
+          })
+        ]
+      }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    fireEvent.click(screen.getByTestId('research-slide-research'));
+
+    expect(mockPush).toHaveBeenCalledWith('/report?id=research');
+    expect(screen.queryByRole('button', { name: 'Participate' })).toBeNull();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('opens the drawer with a See Report CTA for a completed study deep-linked via view', async () => {
+    mockSearchParams.set('view', 'research');
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({
+        studies: [
+          makeStudyProgress({
+            completedCount: 2,
+            isComplete: true,
+            firstUncompletedQuestionnaireId: null,
+            completedQuestionnaireIds: ['phq2', 'big-five-inventory']
+          })
+        ]
+      }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    const seeReport = await screen.findByRole('button', {
+      name: 'See Report'
+    });
+    expect(screen.queryByRole('button', { name: 'Participate' })).toBeNull();
+
+    fireEvent.click(seeReport);
+
+    expect(mockPush).toHaveBeenCalledWith('/report?id=research');
+  });
+
   it('removes the view param from the URL when the drawer is dismissed', async () => {
     mockSearchParams.set('view', 'study-b');
     mockUseResearchProgress.mockReturnValue({

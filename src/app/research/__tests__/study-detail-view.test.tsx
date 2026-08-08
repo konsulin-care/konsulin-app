@@ -27,7 +27,8 @@ function renderDetail(
   const handlers = {
     onClose: vi.fn<() => void>(),
     onParticipate: vi.fn<(progress: StudyProgress) => void>(),
-    onQuestionnaireClick: vi.fn<(studyId: string, qid: string) => void>()
+    onQuestionnaireClick: vi.fn<(studyId: string, qid: string) => void>(),
+    onSeeReport: vi.fn<(studyId: string) => void>()
   };
   const overlapMap = buildOverlapMap(
     [progress, makeStudyB()].filter((p): p is StudyProgress => p !== null)
@@ -40,6 +41,7 @@ function renderDetail(
       onClose={handlers.onClose}
       onParticipate={handlers.onParticipate}
       onQuestionnaireClick={handlers.onQuestionnaireClick}
+      onSeeReport={handlers.onSeeReport}
       isPatient={false}
       titleMap={titleMap}
     />
@@ -71,6 +73,23 @@ describe('StudyDetailView', () => {
     expect(screen.getByRole('button', { name: 'PHQ-2' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();
     expect(screen.getByText(/Tap to share this survey/i)).toBeTruthy();
+  });
+
+  it('shows a See Report CTA and routes to the report when the batch is complete', () => {
+    const handlers = renderDetail(
+      makeStudyProgress({
+        completedCount: 2,
+        isComplete: true,
+        firstUncompletedQuestionnaireId: null,
+        completedQuestionnaireIds: ['phq2', 'big-five-inventory']
+      })
+    );
+
+    expect(screen.queryByRole('button', { name: 'Participate' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'See Report' }));
+
+    expect(handlers.onSeeReport).toHaveBeenCalledWith('research');
+    expect(handlers.onParticipate).not.toHaveBeenCalled();
   });
 
   it('calls onParticipate with the study when the CTA is clicked', () => {
