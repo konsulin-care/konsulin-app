@@ -16,15 +16,18 @@ export function updateResearchUrl(
   updates: { id?: string | null; view?: string | null; ref?: string | null }
 ): string {
   const next = new URLSearchParams();
-  // Explicit update wins, an explicit null removes the key, and an omitted
-  // key falls back to the current param. `??` would collapse null into
-  // undefined, breaking the remove-vs-preserve contract callers rely on.
+  // Explicit values (including an explicit null = removal) beat the current
+  // params; absent keys fall back to the current param. Map.get returns
+  // undefined for missing keys, preserving the remove-vs-preserve contract
+  // that a `??` fallback would collapse (null would become undefined).
+  const explicit = new Map(
+    Object.entries(updates).filter(
+      (entry): entry is [string, string | null] => entry[1] !== undefined
+    )
+  );
   const resolve = (key: 'id' | 'view' | 'ref'): string | null => {
-    const value = updates[key];
-    if (value === undefined) {
-      return searchParams.get(key);
-    }
-    return value;
+    const value = explicit.get(key);
+    return value === undefined ? searchParams.get(key) : value;
   };
   const view = resolve('view');
   const id = resolve('id');
