@@ -103,7 +103,7 @@ describe('remove-account page', () => {
     );
     expect(mockDispatch).toHaveBeenCalledWith({ type: 'logout' });
     expect(mockDispatchProfile).toHaveBeenCalledWith({ type: 'reset' });
-    await waitFor(() => expect(window.location.href).toBe('/'));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/'));
   });
 
   it('clears no local state and redirects to /profile on purge failure', async () => {

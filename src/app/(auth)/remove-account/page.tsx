@@ -36,9 +36,9 @@ export default function RemoveAccount() {
         clearReferralLocalState(window.localStorage);
         await clearUserData(ownerId);
         // Account is already deleted server-side; local sign-out is best-effort.
-        await Session.signOut().catch((err: unknown) =>
-          console.error('[remove-account] session sign-out failed', err)
-        );
+        await Session.signOut().catch((err: unknown) => {
+          console.error('[remove-account] session sign-out failed', err);
+        });
         const csrfRes = await fetch('/auth/cookie/csrf-token');
         const csrfToken = csrfRes.ok
           ? (((await csrfRes.json()) as { token?: string }).token ?? '')
@@ -46,12 +46,12 @@ export default function RemoveAccount() {
         await fetch('/auth/cookie', {
           method: 'DELETE',
           headers: { ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) }
-        }).catch((err: unknown) =>
-          console.error('[auth:cookie] failed to clear auth cookie', err)
-        );
+        }).catch((err: unknown) => {
+          console.error('[auth:cookie] failed to clear auth cookie', err);
+        });
         dispatch({ type: 'logout' });
         dispatchProfile({ type: 'reset' });
-        window.location.href = '/';
+        router.push('/');
       } catch (err) {
         console.error('[remove-account] purge failed', err);
         router.push('/profile');
@@ -60,8 +60,7 @@ export default function RemoveAccount() {
 
     // skipcq: JS-0098 - fire-and-forget account purge; errors handled inside
     void handleRemoveAccount();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [state, router, dispatch, dispatchProfile]);
 
   return (
     <div className='flex min-h-screen min-w-full items-center justify-center'>
