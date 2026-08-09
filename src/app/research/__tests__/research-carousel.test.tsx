@@ -45,7 +45,7 @@ function renderCarousel(
   } = {},
   onSlideChange = vi.fn(),
   options: {
-    titleMap?: Record<string, QuestionnaireInfo>;
+    titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
     isTitlesLoading?: boolean;
   } = {}
 ) {
@@ -307,7 +307,7 @@ describe('ResearchCarousel', () => {
 
   it('shows a skeleton for unresolved titles while loading', () => {
     renderCarousel([makeStudyProgress()], 'research', {}, vi.fn(), {
-      titleMap: {},
+      titleMap: new Map(),
       isTitlesLoading: true
     });
 
@@ -322,7 +322,7 @@ describe('ResearchCarousel', () => {
 
   it('falls back to the id-derived name when a title is missing', () => {
     renderCarousel([makeStudyProgress()], 'research', {}, vi.fn(), {
-      titleMap: { phq2: { title: 'PHQ-2', durationMinutes: null } }
+      titleMap: new Map([['phq2', { title: 'PHQ-2', durationMinutes: null }]])
     });
 
     expect(screen.getByText('PHQ-2')).toBeTruthy();

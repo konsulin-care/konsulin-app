@@ -21,7 +21,7 @@ type ResearchHookResult = {
   isLoading: boolean;
 };
 type TitlesHookResult = {
-  data: Record<string, QuestionnaireInfo>;
+  data: ReadonlyMap<string, QuestionnaireInfo>;
   isPending: boolean;
 };
 type ResponsesHookResult = {
@@ -114,10 +114,10 @@ const BATCH_2: ResearchBatch = {
   questionnaireIds: ['phq2']
 };
 
-const TITLE_MAP = {
-  phq2: { title: 'PHQ-2', durationMinutes: 8 },
-  ocean: { title: 'Big Five Inventory', durationMinutes: 15 }
-};
+const TITLE_MAP: ReadonlyMap<string, QuestionnaireInfo> = new Map([
+  ['phq2', { title: 'PHQ-2', durationMinutes: 8 }],
+  ['ocean', { title: 'Big Five Inventory', durationMinutes: 15 }]
+]);
 
 /** Builds a full QR with score-dimension interpretation items. */
 function makeQr(
@@ -327,7 +327,7 @@ describe('ReportView', () => {
 
   it('falls back to the all-caps questionnaire id when the title is missing', async () => {
     mockUseQuestionnaireTitles.mockReturnValue({
-      data: { phq2: { title: 'PHQ-2', durationMinutes: 8 } },
+      data: new Map([['phq2', { title: 'PHQ-2', durationMinutes: 8 }]]),
       isPending: false
     });
 

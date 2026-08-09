@@ -7,7 +7,10 @@ import ReferralNotice from '@/components/research/referral-notice';
 import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
 import { useReferralWrite } from '@/hooks/useReferralWrite';
-import { useQuestionnaireTitles } from '@/services/api/questionnaire-info';
+import {
+  EMPTY_QUESTIONNAIRE_INFO_MAP,
+  useQuestionnaireTitles
+} from '@/services/api/questionnaire-info';
 import {
   useClaimLocalConsents,
   useConsentToStudy,
@@ -69,8 +72,10 @@ export default function ResearchPage() {
     ],
     [studies, progress?.completedQuestionnaireIds]
   );
-  const { data: titleMap = {}, isPending: titlesPending } =
-    useQuestionnaireTitles(questionnaireIds);
+  const {
+    data: titleMap = EMPTY_QUESTIONNAIRE_INFO_MAP,
+    isPending: titlesPending
+  } = useQuestionnaireTitles(questionnaireIds);
 
   const detailStudy = studies.find(s => s.study.id === detailStudyId) ?? null;
   // Mirrors the focused slide for the no-param focus fallback without making

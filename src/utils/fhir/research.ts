@@ -420,10 +420,10 @@ export function nextAssessmentInStudy(
  */
 export function computeQuestionnaireXp(
   questionnaireIds: readonly string[],
-  durationByQuestionnaire: Readonly<Record<string, number | null>> = {}
+  durationByQuestionnaire: ReadonlyMap<string, number | null> = new Map()
 ): number {
   return questionnaireIds.reduce(
-    (sum, id) => sum + xpForDuration(durationByQuestionnaire[id]),
+    (sum, id) => sum + xpForDuration(durationByQuestionnaire.get(id)),
     0
   );
 }
@@ -447,7 +447,7 @@ export function computeResearchProgress(
   studies: StudyProgress[],
   responses: ResearchResponse[],
   consentedStudyIds: string[] = [],
-  durationByQuestionnaire: Readonly<Record<string, number | null>> = {}
+  durationByQuestionnaire: ReadonlyMap<string, number | null> = new Map()
 ): ResearchProgress {
   const merged = mergeResponses(responses);
 

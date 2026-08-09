@@ -91,7 +91,7 @@ export function BatchSection({
   batch: ResearchBatch;
   sortedBatches: readonly ResearchBatch[];
   responses: readonly QuestionnaireResponse[];
-  titleMap: Readonly<Record<string, QuestionnaireInfo>>;
+  titleMap: ReadonlyMap<string, QuestionnaireInfo>;
   buckets: ReadonlyMap<string, readonly QuestionnaireResponse[]>;
   latestBatchByQuestionnaire: ReadonlyMap<string, string>;
 }>) {
@@ -144,7 +144,7 @@ export function BatchSection({
               key={response.id}
               questionnaireId={questionnaireId}
               title={
-                titleMap[questionnaireId]?.title ??
+                titleMap.get(questionnaireId)?.title ??
                 questionnaireIdLabel(questionnaireId)
               }
               response={response}

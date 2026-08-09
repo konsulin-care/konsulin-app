@@ -88,16 +88,18 @@ describe('computeConsecutiveBatches', () => {
 
 describe('computeQuestionnaireXp', () => {
   it('awards 5 XP per minute and falls back to 5 XP for unknown durations', () => {
-    expect(computeQuestionnaireXp(['phq2', 'gad7'], { phq2: 8 })).toBe(45);
-    expect(computeQuestionnaireXp(['phq2'], { phq2: 8 })).toBe(40);
+    expect(
+      computeQuestionnaireXp(['phq2', 'gad7'], new Map([['phq2', 8]]))
+    ).toBe(45);
+    expect(computeQuestionnaireXp(['phq2'], new Map([['phq2', 8]]))).toBe(40);
   });
 
   it('returns zero for no responses', () => {
-    expect(computeQuestionnaireXp([], {})).toBe(0);
+    expect(computeQuestionnaireXp([], new Map())).toBe(0);
   });
 
   it('treats a null duration as unknown and applies the default', () => {
-    expect(computeQuestionnaireXp(['phq2'], { phq2: null })).toBe(
+    expect(computeQuestionnaireXp(['phq2'], new Map([['phq2', null]]))).toBe(
       DEFAULT_QUESTIONNAIRE_XP
     );
   });
@@ -122,9 +124,12 @@ describe('computeResearchProgress', () => {
       [shared],
       TODAY
     );
-    const progress = computeResearchProgress([studyA, studyB], [shared], [], {
-      phq2: 8
-    });
+    const progress = computeResearchProgress(
+      [studyA, studyB],
+      [shared],
+      [],
+      new Map([['phq2', 8]])
+    );
     expect(studyA.completedCount).toBe(1);
     expect(studyB.completedCount).toBe(1);
     expect(progress.cumulativeResponses).toBe(1);
@@ -145,7 +150,10 @@ describe('computeResearchProgress', () => {
       [makeStudyProgress([makeBatch()])],
       responses,
       [],
-      { phq2: 8, 'big-five-inventory': 15 }
+      new Map([
+        ['phq2', 8],
+        ['big-five-inventory', 15]
+      ])
     );
     expect(progress.questionnaireXp).toBe(115);
     expect(progress.questionnaireResponses).toEqual([
@@ -181,7 +189,7 @@ describe('computeResearchProgress', () => {
       [makeStudyProgress([makeBatch()])],
       responses,
       [],
-      { phq2: 8 }
+      new Map([['phq2', 8]])
     );
     expect(progress.questionnaireResponses).toEqual(['phq2']);
     expect(progress.questionnaireXp).toBe(40);
@@ -206,7 +214,7 @@ describe('computeResearchProgress', () => {
       ],
       responses,
       [],
-      { phq2: 8 }
+      new Map([['phq2', 8]])
     );
     expect(progress.questionnaireResponses).toEqual(['phq2', 'phq2']);
     expect(progress.questionnaireXp).toBe(80);
@@ -225,7 +233,7 @@ describe('computeResearchProgress', () => {
       ],
       [shared],
       [],
-      { phq2: 4 }
+      new Map([['phq2', 4]])
     );
     // 4 minutes → 20 XP per study; two deploying studies → 40 XP total.
     expect(progress.questionnaireResponses).toEqual(['phq2', 'phq2']);
@@ -255,9 +263,12 @@ describe('computeResearchProgress', () => {
         [shared],
         TODAY
       );
-      const progress = computeResearchProgress([studyA, studyB], [shared], [], {
-        phq2: 8
-      });
+      const progress = computeResearchProgress(
+        [studyA, studyB],
+        [shared],
+        [],
+        new Map([['phq2', 8]])
+      );
       expect(progress.questionnaireResponses).toEqual(ids);
       expect(progress.questionnaireXp).toBe(xp);
     }
@@ -268,7 +279,7 @@ describe('computeResearchProgress', () => {
       [makeStudyProgress([makeBatch()])],
       [makeResponse('r1', 'Questionnaire/phq2', '2026-05-15T00:00:00Z')],
       [],
-      { phq2: 8 }
+      new Map([['phq2', 8]])
     );
     expect(progress.questionnaireResponses).toEqual([]);
     expect(progress.questionnaireXp).toBe(0);
@@ -279,7 +290,7 @@ describe('computeResearchProgress', () => {
       [makeStudyProgress([makeBatch()])],
       [makeResponse('r1', 'Questionnaire/gad7', '2026-08-10T00:00:00Z')],
       [],
-      { gad7: 3 }
+      new Map([['gad7', 3]])
     );
     expect(progress.questionnaireResponses).toEqual([]);
     expect(progress.questionnaireXp).toBe(0);
@@ -298,7 +309,10 @@ describe('computeResearchProgress', () => {
       [makeStudyProgress([makeBatch()])],
       responses,
       [],
-      { phq2: 8, 'big-five-inventory': 3 }
+      new Map([
+        ['phq2', 8],
+        ['big-five-inventory', 3]
+      ])
     );
     expect(progress.questionnaireXp).toBe(55);
   });

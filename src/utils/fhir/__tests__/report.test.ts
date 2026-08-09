@@ -168,10 +168,14 @@ describe('computeParticipationStats', () => {
       resp('r13', 'ocean', '2026-08-16T10:00:00Z'),
       resp('r14', 'phq2', '2026-09-10T10:00:00Z')
     ];
-    const stats = computeParticipationStats(study, responses, {
-      phq2: 8,
-      ocean: 15
-    });
+    const stats = computeParticipationStats(
+      study,
+      responses,
+      new Map([
+        ['phq2', 8],
+        ['ocean', 15]
+      ])
+    );
     expect(stats.assessmentsCompleted).toBe(3);
     expect(stats.batchesCompleted).toBe(2);
     expect(stats.totalBatches).toBe(3);
@@ -184,7 +188,7 @@ describe('computeParticipationStats', () => {
   });
 
   it('returns zeroed stats for no responses', () => {
-    const stats = computeParticipationStats(study, [], {});
+    const stats = computeParticipationStats(study, [], new Map());
     expect(stats.assessmentsCompleted).toBe(0);
     expect(stats.xp).toBe(0);
     expect(stats.timeInvestedMinutes).toBe(0);

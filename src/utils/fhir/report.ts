@@ -162,7 +162,7 @@ export interface ParticipationStats {
 export function computeParticipationStats(
   study: StudyProgress,
   responses: readonly ReportResponse[],
-  durationByQuestionnaire: Readonly<Record<string, number | null>>
+  durationByQuestionnaire: ReadonlyMap<string, number | null>
 ): ParticipationStats {
   const buckets = bucketResponsesByBatch(responses, study.batches);
 
@@ -180,7 +180,7 @@ export function computeParticipationStats(
   for (const response of responses) {
     const questionnaireId = extractQuestionnaireId(response.questionnaire);
     const duration = questionnaireId
-      ? durationByQuestionnaire[questionnaireId]
+      ? durationByQuestionnaire.get(questionnaireId)
       : null;
     if (duration) timeInvested += duration;
   }

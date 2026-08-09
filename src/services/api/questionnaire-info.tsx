@@ -13,6 +13,12 @@ export interface QuestionnaireInfo {
   durationMinutes: number | null;
 }
 
+/** Shared empty title map for surfaces before titles have loaded. */
+export const EMPTY_QUESTIONNAIRE_INFO_MAP: ReadonlyMap<
+  string,
+  QuestionnaireInfo
+> = new Map();
+
 /**
  * Resolves the display title for a single questionnaire id.
  *
@@ -81,18 +87,18 @@ export function useQuestionnaireTitles(questionnaireIds: string[]) {
     queryKey: ['questionnaire-titles', uniqueIds],
     enabled: uniqueIds.length > 0,
     staleTime: 30 * 60_000,
-    queryFn: async (): Promise<Record<string, QuestionnaireInfo>> => {
+    queryFn: async (): Promise<ReadonlyMap<string, QuestionnaireInfo>> => {
       const API = await getAPI();
       const { data } = await API.get<Bundle>(
         `/fhir/Questionnaire?_id=${uniqueIds.join(',')}&_elements=id,title,extension`
       );
-      const info: Record<string, QuestionnaireInfo> = {};
+      const info = new Map<string, QuestionnaireInfo>();
       for (const entry of data.entry ?? []) {
         const questionnaire = entry.resource as Questionnaire | undefined;
         if (!questionnaire?.id) continue;
         const title = questionnaire.title ?? questionnaire.id;
         const durationMinutes = getQuestionnaireDuration(questionnaire);
-        info[questionnaire.id] = { title, durationMinutes };
+        info.set(questionnaire.id, { title, durationMinutes });
         queryClient.setQueryData(
           ['questionnaire', questionnaire.id, 'title'],
           title
@@ -104,10 +110,10 @@ export function useQuestionnaireTitles(questionnaireIds: string[]) {
       }
       return info;
     },
-    select: (fetched: Record<string, QuestionnaireInfo>) => {
-      const merged: Record<string, QuestionnaireInfo> = { ...fetched };
+    select: (fetched: ReadonlyMap<string, QuestionnaireInfo>) => {
+      const merged = new Map(fetched);
       for (const id of uniqueIds) {
-        if (merged[id]) continue;
+        if (merged.has(id)) continue;
         const cachedTitle = queryClient.getQueryData<string>([
           'questionnaire',
           id,
@@ -119,10 +125,10 @@ export function useQuestionnaireTitles(questionnaireIds: string[]) {
             id,
             'duration'
           ]);
-          merged[id] = {
+          merged.set(id, {
             title: cachedTitle,
             durationMinutes: cachedDuration ?? null
-          };
+          });
         }
       }
       return merged;

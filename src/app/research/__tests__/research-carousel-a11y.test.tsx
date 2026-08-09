@@ -11,7 +11,7 @@ function renderCarousel(
   onStudyClick: (studyId: string) => void,
   onQuestionnaireClick: (studyId: string, qid: string) => void = vi.fn(),
   options: {
-    titleMap?: Record<string, QuestionnaireInfo>;
+    titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
     isTitlesLoading?: boolean;
   } = {}
 ) {

@@ -3,7 +3,10 @@
 import ClaimReportFab from '@/components/assessment/claim-report-fab';
 import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
-import { useQuestionnaireTitles } from '@/services/api/questionnaire-info';
+import {
+  EMPTY_QUESTIONNAIRE_INFO_MAP,
+  useQuestionnaireTitles
+} from '@/services/api/questionnaire-info';
 import { useReportResponses } from '@/services/api/report';
 import { useResearchProgress } from '@/services/api/research';
 import {
@@ -47,7 +50,8 @@ export default function ReportView() {
         : [],
     [study]
   );
-  const { data: titleMap = {} } = useQuestionnaireTitles(questionnaireIds);
+  const { data: titleMap = EMPTY_QUESTIONNAIRE_INFO_MAP } =
+    useQuestionnaireTitles(questionnaireIds);
   const { data: responses, isLoading: responsesLoading } =
     useReportResponses(questionnaireIds);
 
@@ -61,8 +65,8 @@ export default function ReportView() {
 
   const stats = useMemo(() => {
     if (!study || !responses) return null;
-    const durationMap = Object.fromEntries(
-      Object.entries(titleMap).map(([id, info]) => [id, info.durationMinutes])
+    const durationMap = new Map(
+      [...titleMap].map(([id, info]) => [id, info.durationMinutes])
     );
     return computeParticipationStats(study, responses, durationMap);
   }, [study, responses, titleMap]);

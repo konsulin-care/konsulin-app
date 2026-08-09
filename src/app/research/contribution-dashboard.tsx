@@ -223,7 +223,7 @@ export default function ContributionDashboard({
 }: Readonly<{
   progress: ResearchProgress;
   activeStudy: StudyProgress | null;
-  questionnaireInfo: Readonly<Record<string, QuestionnaireInfo>>;
+  questionnaireInfo: ReadonlyMap<string, QuestionnaireInfo>;
 }>) {
   const { state: authState } = useAuth();
   const fhirId = authState?.userInfo?.fhirId;
@@ -233,11 +233,8 @@ export default function ContributionDashboard({
 
   const durationMap = useMemo(
     () =>
-      Object.fromEntries(
-        Object.entries(questionnaireInfo).map(([id, info]) => [
-          id,
-          info.durationMinutes
-        ])
+      new Map(
+        [...questionnaireInfo].map(([id, info]) => [id, info.durationMinutes])
       ),
     [questionnaireInfo]
   );
@@ -263,8 +260,8 @@ export default function ContributionDashboard({
       .filter(id => !completed.has(id))
       .map(id => ({
         id,
-        title: questionnaireInfo[id]?.title ?? questionnaireIdLabel(id),
-        durationMinutes: questionnaireInfo[id]?.durationMinutes ?? null,
+        title: questionnaireInfo.get(id)?.title ?? questionnaireIdLabel(id),
+        durationMinutes: questionnaireInfo.get(id)?.durationMinutes ?? null,
         studyCount: studyCounts.get(id) ?? 1
       }));
   }, [

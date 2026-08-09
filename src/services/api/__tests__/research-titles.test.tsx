@@ -88,13 +88,15 @@ describe('useQuestionnaireTitles', () => {
     expect(mockGet).toHaveBeenCalledWith(
       '/fhir/Questionnaire?_id=big-five-inventory,phq2&_elements=id,title,extension'
     );
-    expect(result.current.data).toEqual({
-      'big-five-inventory': {
-        title: 'Big Five Inventory',
-        durationMinutes: 15
-      },
-      phq2: { title: 'PHQ-2', durationMinutes: 8 }
-    });
+    expect(result.current.data).toEqual(
+      new Map([
+        [
+          'big-five-inventory',
+          { title: 'Big Five Inventory', durationMinutes: 15 }
+        ],
+        ['phq2', { title: 'PHQ-2', durationMinutes: 8 }]
+      ])
+    );
   });
 
   it('reports a null duration when the extension is missing', async () => {
@@ -123,9 +125,9 @@ describe('useQuestionnaireTitles', () => {
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual({
-      'gad-7': { title: 'GAD-7', durationMinutes: null }
-    });
+    expect(result.current.data).toEqual(
+      new Map([['gad-7', { title: 'GAD-7', durationMinutes: null }]])
+    );
   });
 
   it('seeds the shared per-questionnaire title and duration caches', async () => {
@@ -187,10 +189,12 @@ describe('useQuestionnaireTitles', () => {
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual({
-      'gad-7': { title: 'GAD-7', durationMinutes: null },
-      phq2: { title: 'PHQ-2 cached', durationMinutes: null }
-    });
+    expect(result.current.data).toEqual(
+      new Map([
+        ['gad-7', { title: 'GAD-7', durationMinutes: null }],
+        ['phq2', { title: 'PHQ-2 cached', durationMinutes: null }]
+      ])
+    );
   });
 
   it('does not fetch when there are no ids', () => {

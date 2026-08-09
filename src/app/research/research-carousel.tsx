@@ -24,7 +24,7 @@ interface ResearchCarouselProps {
   isPatient: boolean;
   fhirId?: string;
   /** Resolved id → questionnaire info map (title + estimated duration). */
-  titleMap?: Readonly<Record<string, QuestionnaireInfo>>;
+  titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
   /** True while questionnaire titles are being fetched. */
   isTitlesLoading?: boolean;
 }
@@ -61,7 +61,7 @@ function StudySlide({
   isPatient: boolean;
   fhirId?: string;
   overlapMap: Map<string, string[]>;
-  titleMap?: Readonly<Record<string, QuestionnaireInfo>>;
+  titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
   isTitlesLoading?: boolean;
   onStudyClick: (studyId: string) => void;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;

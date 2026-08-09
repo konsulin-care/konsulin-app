@@ -28,16 +28,16 @@ vi.mock('@/services/api/circle', () => ({
   useCircleStats: mockUseCircleStats
 }));
 
-const INFO_MAP: Record<string, QuestionnaireInfo> = {
-  phq2: { title: 'PHQ-2', durationMinutes: 8 },
-  'big-five-inventory': { title: 'Big Five Inventory', durationMinutes: 15 }
-};
+const INFO_MAP: ReadonlyMap<string, QuestionnaireInfo> = new Map([
+  ['phq2', { title: 'PHQ-2', durationMinutes: 8 }],
+  ['big-five-inventory', { title: 'Big Five Inventory', durationMinutes: 15 }]
+]);
 
 /** Renders the dashboard with default empty progress and empty info. */
 function renderDashboard(
   progress: Partial<ResearchProgress>,
   activeStudy: StudyProgress | null = null,
-  info: Record<string, QuestionnaireInfo> = {}
+  info: ReadonlyMap<string, QuestionnaireInfo> = new Map()
 ) {
   render(
     <ContributionDashboard
@@ -62,9 +62,11 @@ describe('ContributionDashboard', () => {
       isLoading: false
     });
 
-    renderDashboard({ questionnaireResponses: ['phq2'] }, null, {
-      phq2: { title: 'PHQ-2', durationMinutes: 10 }
-    });
+    renderDashboard(
+      { questionnaireResponses: ['phq2'] },
+      null,
+      new Map([['phq2', { title: 'PHQ-2', durationMinutes: 10 }]])
+    );
 
     // 10-minute questionnaire → 50 XP → 50% of the first level.
     expect(screen.getByTestId('dashboard-halo-ring')).toHaveAttribute(
@@ -84,9 +86,11 @@ describe('ContributionDashboard', () => {
       isLoading: false
     });
 
-    renderDashboard({ questionnaireResponses: ['phq2'] }, null, {
-      phq2: { title: 'PHQ-2', durationMinutes: 30 }
-    });
+    renderDashboard(
+      { questionnaireResponses: ['phq2'] },
+      null,
+      new Map([['phq2', { title: 'PHQ-2', durationMinutes: 30 }]])
+    );
 
     // 30-minute questionnaire → 150 XP → level 2 with 50 XP into it.
     expect(screen.getByTestId('dashboard-halo-ring')).toHaveAttribute(
@@ -130,9 +134,11 @@ describe('ContributionDashboard', () => {
       isLoading: false
     });
 
-    renderDashboard({ questionnaireResponses: ['phq2', 'phq2'] }, null, {
-      phq2: { title: 'PHQ-2', durationMinutes: 80 }
-    });
+    renderDashboard(
+      { questionnaireResponses: ['phq2', 'phq2'] },
+      null,
+      new Map([['phq2', { title: 'PHQ-2', durationMinutes: 80 }]])
+    );
 
     expect(screen.getByTestId('dashboard-title').textContent).toBe(
       'Participant'
@@ -213,7 +219,7 @@ describe('ContributionDashboard', () => {
         },
         completedQuestionnaireIds: []
       }),
-      { gad7: { title: 'GAD-7', durationMinutes: 3 } }
+      new Map([['gad7', { title: 'GAD-7', durationMinutes: 3 }]])
     );
 
     // 3 minutes → 15 XP from the batch; 30 XP needed → 15 referral shortfall.
@@ -240,10 +246,10 @@ describe('ContributionDashboard', () => {
         },
         completedQuestionnaireIds: []
       }),
-      {
-        phq2: { title: 'PHQ-2', durationMinutes: 8 },
-        gad7: { title: 'GAD-7', durationMinutes: 12 }
-      }
+      new Map([
+        ['phq2', { title: 'PHQ-2', durationMinutes: 8 }],
+        ['gad7', { title: 'GAD-7', durationMinutes: 12 }]
+      ])
     );
 
     // 83 XP needed; 40 + 60 XP available → both questionnaires together close

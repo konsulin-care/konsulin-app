@@ -14,15 +14,15 @@ function makeUpcomingBatch(id: string, start: string, end: string) {
   return { id, start, end, questionnaireIds: ['phq2'] };
 }
 
-const TITLE_MAP: Record<string, QuestionnaireInfo> = {
-  phq2: { title: 'PHQ-2', durationMinutes: 8 },
-  'big-five-inventory': { title: 'Big Five Inventory', durationMinutes: 15 }
-};
+const TITLE_MAP: ReadonlyMap<string, QuestionnaireInfo> = new Map([
+  ['phq2', { title: 'PHQ-2', durationMinutes: 8 }],
+  ['big-five-inventory', { title: 'Big Five Inventory', durationMinutes: 15 }]
+]);
 
 /** Renders the list for the base study, which overlaps study-b on phq2. */
 function renderList(
   props: {
-    titleMap?: Record<string, QuestionnaireInfo>;
+    titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
     isTitlesLoading?: boolean;
     showOverlapHints?: boolean;
   } = {}
@@ -126,7 +126,7 @@ describe('QuestionnaireList', () => {
   });
 
   it('falls back to the id-derived name when the title is missing', () => {
-    renderList({ titleMap: {} });
+    renderList({ titleMap: new Map() });
 
     expect(screen.getByRole('button', { name: 'PHQ2' })).toBeTruthy();
     expect(
@@ -136,7 +136,7 @@ describe('QuestionnaireList', () => {
 
   it('shows a pulsing skeleton for unresolved titles while loading', () => {
     renderList({
-      titleMap: { phq2: { title: 'PHQ-2', durationMinutes: 8 } },
+      titleMap: new Map([['phq2', { title: 'PHQ-2', durationMinutes: 8 }]]),
       isTitlesLoading: true
     });
 
@@ -174,7 +174,7 @@ describe('QuestionnaireList', () => {
 
   it('omits the XP value when the duration is unknown', () => {
     renderList({
-      titleMap: { phq2: { title: 'PHQ-2', durationMinutes: null } }
+      titleMap: new Map([['phq2', { title: 'PHQ-2', durationMinutes: null }]])
     });
 
     expect(screen.queryByText('+40 XP')).toBeNull();

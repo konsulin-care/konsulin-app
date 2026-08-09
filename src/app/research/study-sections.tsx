@@ -119,7 +119,7 @@ export function QuestionnaireList({
   overlapMap: Map<string, string[]>;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
   /** Resolved id → questionnaire info; falls back to the id when absent. */
-  titleMap?: Readonly<Record<string, QuestionnaireInfo>>;
+  titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
   /** True while titles are being fetched; unresolved rows show a skeleton. */
   isTitlesLoading?: boolean;
   /** Expanded views render the "Also counts toward" overlap hint. */
@@ -138,7 +138,7 @@ export function QuestionnaireList({
         const otherStudies = (overlapMap.get(id) ?? []).filter(
           title => title !== studyTitle
         );
-        const info = titleMap?.[id];
+        const info = titleMap?.get(id);
         const title =
           info?.title ?? (isTitlesLoading ? null : questionnaireIdLabel(id));
         return (

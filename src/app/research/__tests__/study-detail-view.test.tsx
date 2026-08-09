@@ -22,7 +22,7 @@ function renderDetail(
     }
   }),
   open = true,
-  titleMap: Record<string, QuestionnaireInfo> = TITLE_MAP
+  titleMap: ReadonlyMap<string, QuestionnaireInfo> = TITLE_MAP
 ) {
   const handlers = {
     onClose: vi.fn<() => void>(),

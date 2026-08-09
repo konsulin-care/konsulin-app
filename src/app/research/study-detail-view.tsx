@@ -22,7 +22,7 @@ interface StudyDetailViewProps {
   isPatient: boolean;
   fhirId?: string;
   /** Resolved id → questionnaire info map (title + estimated duration). */
-  titleMap?: Readonly<Record<string, QuestionnaireInfo>>;
+  titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
   /** True while questionnaire titles are being fetched. */
   isTitlesLoading?: boolean;
 }

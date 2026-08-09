@@ -11,10 +11,10 @@ export const BATCH_1 = {
 };
 
 /** Resolved questionnaire info matching the research questionnaire ids. */
-export const TITLE_MAP: Record<string, QuestionnaireInfo> = {
-  phq2: { title: 'PHQ-2', durationMinutes: 8 },
-  'big-five-inventory': { title: 'Big Five Inventory', durationMinutes: 15 }
-};
+export const TITLE_MAP: ReadonlyMap<string, QuestionnaireInfo> = new Map([
+  ['phq2', { title: 'PHQ-2', durationMinutes: 8 }],
+  ['big-five-inventory', { title: 'Big Five Inventory', durationMinutes: 15 }]
+]);
 
 /** Base StudyProgress fixture for the mental-health survey study. */
 export function makeStudyProgress(
