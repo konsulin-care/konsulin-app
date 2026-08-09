@@ -3,15 +3,15 @@ import '@testing-library/jest-dom';
 // Polyfill ResizeObserver for cmdk (Command component) in jsdom
 /* eslint-disable sonarjs/void-use */
 globalThis.ResizeObserver = class ResizeObserver {
-  // deepsource:ignore JS-0098 — no-op observer callbacks must return void, not `this`
+  // skipcq: JS-0098 - no-op observer callbacks must return void, not `this`
   observe = () => {
     void this;
   };
-  // deepsource:ignore JS-0098 — no-op observer callbacks must return void, not `this`
+  // skipcq: JS-0098 - no-op observer callbacks must return void, not `this`
   unobserve = () => {
     void this;
   };
-  // deepsource:ignore JS-0098 — no-op observer callbacks must return void, not `this`
+  // skipcq: JS-0098 - no-op observer callbacks must return void, not `this`
   disconnect = () => {
     void this;
   };

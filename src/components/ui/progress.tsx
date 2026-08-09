@@ -1,7 +1,9 @@
 'use client';
 /* eslint-disable sonarjs/no-commented-code */
 
+// skipcq: JS-C1003 - radix namespace convention shared by all ui/ components
 import * as ProgressPrimitive from '@radix-ui/react-progress';
+// skipcq: JS-C1003 - react namespace convention shared by all ui/ components
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';

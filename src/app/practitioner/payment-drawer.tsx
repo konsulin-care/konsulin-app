@@ -114,6 +114,7 @@ export default function PaymentDrawer({
     !selectedSlotId ||
     !bookingForm.problem_brief?.trim();
 
+  /** Pays for the appointment online, opens the payment URL, and refreshes the busy-slots cache. */
   const handlePayOnline = async () => {
     try {
       const response = await payAppointment({

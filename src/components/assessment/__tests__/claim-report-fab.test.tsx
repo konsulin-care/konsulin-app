@@ -75,7 +75,7 @@ describe('ClaimReportFab', () => {
     render(<ClaimReportFab path='/report?id=research' visible />);
 
     const action = findClaimAction(mockDispatch.mock.calls);
-    // deepsource:ignore JS-0098 — invoke claim action in test without awaiting
+    // skipcq: JS-0098 - invoke claim action in test without awaiting
     void action?.config.onAction();
 
     expect(saveIntent).toHaveBeenCalledWith('assessmentResult', {
@@ -90,7 +90,7 @@ describe('ClaimReportFab', () => {
     render(<ClaimReportFab path='/record' qrId='qr-9' visible />);
 
     const action = findClaimAction(mockDispatch.mock.calls);
-    // deepsource:ignore JS-0098 — invoke claim action in test without awaiting
+    // skipcq: JS-0098 - invoke claim action in test without awaiting
     void action?.config.onAction();
 
     expect(saveIntent).toHaveBeenCalledWith('assessmentResult', {

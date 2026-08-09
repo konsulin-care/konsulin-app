@@ -21,35 +21,42 @@ describe('buildReferralId', () => {
 
   it('changes when any component changes', async () => {
     const base = { recipient: 'r1', sender: 's1', batch: 'b1' };
-    const a = await buildReferralId(base);
-    const b = await buildReferralId({ ...base, recipient: 'r2' });
-    const c = await buildReferralId({ ...base, sender: 's2' });
-    const d = await buildReferralId({ ...base, batch: 'b2' });
-    expect(a).not.toBe(b);
-    expect(a).not.toBe(c);
-    expect(a).not.toBe(d);
+    const baseId = await buildReferralId(base);
+    const changedRecipientId = await buildReferralId({
+      ...base,
+      recipient: 'r2'
+    });
+    const changedSenderId = await buildReferralId({ ...base, sender: 's2' });
+    const changedBatchId = await buildReferralId({ ...base, batch: 'b2' });
+    expect(baseId).not.toBe(changedRecipientId);
+    expect(baseId).not.toBe(changedSenderId);
+    expect(baseId).not.toBe(changedBatchId);
   });
 });
 
 describe('buildReferralCommunication', () => {
   it('builds a completed Communication with sender, recipient, topic, and batch extension', () => {
-    const c = buildReferralCommunication({
+    const communication = buildReferralCommunication({
       id: 'referral-abc',
       sender: 'DG3F3STPYZ6HX25A',
       recipient: 'referee-id',
       batch: 'batch-1'
     });
 
-    expect(c.resourceType).toBe('Communication');
-    expect(c.id).toBe('referral-abc');
-    expect(c.status).toBe('completed');
-    expect(c.sender).toEqual({ reference: 'Patient/DG3F3STPYZ6HX25A' });
-    expect(c.recipient).toEqual([{ reference: 'Patient/referee-id' }]);
-    expect(c.topic?.coding?.[0]).toMatchObject({
+    expect(communication.resourceType).toBe('Communication');
+    expect(communication.id).toBe('referral-abc');
+    expect(communication.status).toBe('completed');
+    expect(communication.sender).toEqual({
+      reference: 'Patient/DG3F3STPYZ6HX25A'
+    });
+    expect(communication.recipient).toEqual([
+      { reference: 'Patient/referee-id' }
+    ]);
+    expect(communication.topic?.coding?.[0]).toMatchObject({
       system: FhirSystems.researchReferral,
       code: 'research-referral'
     });
-    expect(c.extension).toEqual([
+    expect(communication.extension).toEqual([
       {
         url: FhirExtensionUrls.referralBatch,
         valueReference: { reference: 'PlanDefinition/batch-1' }

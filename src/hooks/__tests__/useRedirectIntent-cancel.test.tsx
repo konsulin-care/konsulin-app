@@ -110,10 +110,9 @@ describe('useRedirectIntent cancellation handling', () => {
   });
 
   it('treats a canceled claim as benign — no toast, no clearIntent, no console.error', async () => {
-    const errorSpy = vi
-      .spyOn(console, 'error')
-      // deepsource:ignore JS-0098 — suppress expected console.error output
-      .mockImplementation(() => void 0);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+      /* swallow expected console.error output */
+    });
     vi.mocked(getIntent).mockReturnValue({
       kind: 'assessmentResult',
       payload: { path: '/record', qrId: 'qr-123' },

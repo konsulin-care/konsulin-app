@@ -63,7 +63,7 @@ export default function AppDrawer({
   ctaLoading = false,
   footerContent,
   className
-}: AppDrawerProps) {
+}: Readonly<AppDrawerProps>) {
   const hasCta = Boolean(ctaLabel && onCtaClick);
   // Instance identity for the open-drawer registry (unique per mount).
   const instanceId = useId();
@@ -130,6 +130,7 @@ export default function AppDrawer({
                 className='w-full rounded-xl py-4 text-white'
                 disabled={ctaDisabled || ctaLoading}
                 onClick={() => {
+                  // skipcq: JS-0098 - fire-and-forget CTA action
                   void onCtaClick?.();
                 }}
               >

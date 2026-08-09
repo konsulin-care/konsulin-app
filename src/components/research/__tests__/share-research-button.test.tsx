@@ -32,7 +32,7 @@ describe('ShareResearchButton', () => {
   });
 
   it('shares the full message via the Web Share API', async () => {
-    const share = vi.fn().mockResolvedValue(void 0);
+    const share = vi.fn(() => Promise.resolve());
     Object.assign(navigator, { share });
 
     render(
@@ -51,7 +51,7 @@ describe('ShareResearchButton', () => {
   });
 
   it('copies the full message and shows Link copied! when share is unavailable', async () => {
-    const writeText = vi.fn().mockResolvedValue(void 0);
+    const writeText = vi.fn(() => Promise.resolve());
     Object.assign(navigator, {
       share: undefined,
       clipboard: { writeText }

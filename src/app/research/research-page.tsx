@@ -169,6 +169,7 @@ export default function ResearchPage() {
     const target =
       questionnaireId ?? study?.firstUncompletedQuestionnaireId ?? null;
 
+    /** Closes the consent drawer and routes to the target questionnaire. */
     const finish = () => {
       setPendingConsent(null);
       if (target) {

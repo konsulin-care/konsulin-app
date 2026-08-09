@@ -39,7 +39,7 @@ export default function ShareResearchButton({
   label = 'Tap to share this survey',
   className,
   dataTestId = 'share-research-footer'
-}: ShareResearchButtonProps) {
+}: Readonly<ShareResearchButtonProps>) {
   const { handleShare, copied } = useShareStudy({
     studyId: studyId ?? '',
     isPatient,
@@ -53,6 +53,7 @@ export default function ShareResearchButton({
       data-testid={dataTestId}
       onClick={e => {
         e.stopPropagation();
+        // skipcq: JS-0098 - fire-and-forget share; errors handled inside hook
         void handleShare();
       }}
       className={cn(

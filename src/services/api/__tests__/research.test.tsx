@@ -310,7 +310,9 @@ describe('useResearchProgress', () => {
     mockUseAuth.mockReturnValue(GUEST_STATE);
     // Never resolves: guest session stays in flight.
     mockEnsureAnonymousSession.mockReturnValue(
-      new Promise<string>(() => void 0)
+      new Promise<string>(() => {
+        /* never settles */
+      })
     );
 
     const { result } = renderHook(() => useResearchProgress(), {

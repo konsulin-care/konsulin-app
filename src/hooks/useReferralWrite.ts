@@ -58,6 +58,7 @@ export function useReferralWrite(progress?: ResearchProgress): void {
     let cancelled = false;
 
     if (batch && referrer) {
+      // skipcq: JS-0098 - fire-and-forget referral write; cancellation flag guards the effect
       void (async () => {
         const recipient = fhirId ?? (await ensureAnonymousSession(false));
         if (cancelled || !recipient) return;

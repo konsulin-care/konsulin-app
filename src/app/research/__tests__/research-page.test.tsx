@@ -114,6 +114,10 @@ describe('ResearchPage', () => {
 
     expect(screen.queryByText('No ongoing research')).toBeNull();
     expect(screen.getByTestId('research-skeleton')).toBeTruthy();
+    expect(screen.getByTestId('research-skeleton').tagName).toBe('OUTPUT');
+    expect(screen.getByRole('status')).toBe(
+      screen.getByTestId('research-skeleton')
+    );
   });
 
   it('renders the carousel with study data and batch progress', () => {

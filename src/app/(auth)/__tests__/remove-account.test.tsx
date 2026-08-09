@@ -79,7 +79,11 @@ describe('remove-account page', () => {
   });
 
   it('shows a spinner while the purge is in flight', () => {
-    mockPurge.mockReturnValue(new Promise(() => void 0));
+    mockPurge.mockReturnValue(
+      new Promise(() => {
+        /* never resolves: keeps the spinner in flight */
+      })
+    );
     render(<RemoveAccount />);
     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
   });

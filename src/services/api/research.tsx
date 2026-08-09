@@ -170,7 +170,7 @@ export function useResearchProgress() {
     let cancelled = false;
 
     if (!isAuthLoading && isEligible) {
-      // deepsource:ignore JS-0098 — fire-and-forget identity resolution
+      // skipcq: JS-0098 - fire-and-forget identity resolution
       void (async () => {
         if (isAuthenticated && fhirId) {
           if (!cancelled) {
@@ -360,13 +360,14 @@ export function useConsentToStudy(studyId: string) {
   const fhirId = authState?.userInfo?.fhirId;
 
   return useMutation({
-    mutationFn: async (): Promise<Bundle> => {
+    mutationFn: (): Promise<Bundle> => {
       if (!fhirId) {
         throw new Error('Patient identity required for research consent');
       }
       return submitFhirBundle(buildConsentBundle(fhirId, studyId));
     },
     onSuccess: () => {
+      // skipcq: JS-0098 - fire-and-forget cache invalidation
       void queryClient
         .invalidateQueries({ queryKey: ['research'] })
         .catch(() => {
@@ -408,6 +409,7 @@ export function useClaimLocalConsents(
     if (pending.length === 0) return;
 
     migrating.current = true;
+    // skipcq: JS-0098 - fire-and-forget consent claim; failed studies retry next load
     void (async () => {
       try {
         for (const study of pending) {
@@ -418,6 +420,7 @@ export function useClaimLocalConsents(
             // Keep the flag so the claim retries on a later page load.
           }
         }
+        // skipcq: JS-0098 - fire-and-forget cache invalidation
         void queryClient
           .invalidateQueries({ queryKey: ['research'] })
           .catch(() => {

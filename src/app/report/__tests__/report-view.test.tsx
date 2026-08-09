@@ -522,7 +522,7 @@ describe('ReportView', () => {
     await screen.findAllByTestId('report-progress');
     const claimAction = findClaimAction(mockFabDispatch.mock.calls);
     expect(claimAction).toBeDefined();
-    // deepsource:ignore JS-0098 — invoke claim action in test without awaiting
+    // skipcq: JS-0098 - invoke claim action in test without awaiting
     void claimAction?.config.onAction();
     expect(mockPush).toHaveBeenCalledWith(
       '/auth?redirectToPath=/report?id=research'

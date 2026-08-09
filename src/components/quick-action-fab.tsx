@@ -87,7 +87,7 @@ export default function QuickActionFab() {
   const handleCustomAction = useCallback(
     (action: MenuAction) => {
       close();
-      // deepsource:ignore JS-0098 — fire-and-forget action with handled rejection
+      // skipcq: JS-0098 - fire-and-forget action with handled rejection
       void Promise.resolve(action.onAction()).catch(() => {
         /* handled */
       });

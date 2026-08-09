@@ -340,7 +340,7 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
   });
 
   it('shares the study-scoped invite from the completion drawer', async () => {
-    const share = vi.fn().mockResolvedValue(void 0);
+    const share = vi.fn(() => Promise.resolve());
     Object.defineProperty(navigator, 'share', {
       value: share,
       configurable: true

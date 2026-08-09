@@ -78,6 +78,6 @@ describe('HeaderReminder precedence', () => {
     const cards = document.querySelectorAll(
       '[data-testid="header-reminder"] > *'
     );
-    expect(cards.length).toBe(1);
+    expect(cards).toHaveLength(1);
   });
 });

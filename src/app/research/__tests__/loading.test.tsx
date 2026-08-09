@@ -8,4 +8,13 @@ describe('research route loading', () => {
 
     expect(screen.getByTestId('research-route-loading')).toBeTruthy();
   });
+
+  it('uses an <output> element with the implicit status role', () => {
+    render(<Loading />);
+
+    expect(screen.getByTestId('research-route-loading').tagName).toBe('OUTPUT');
+    expect(screen.getByRole('status')).toBe(
+      screen.getByTestId('research-route-loading')
+    );
+  });
 });

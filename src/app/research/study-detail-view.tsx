@@ -86,7 +86,7 @@ export default function StudyDetailView({
             onQuestionnaireClick={onQuestionnaireClick}
             titleMap={titleMap}
             isTitlesLoading={isTitlesLoading}
-            showOverlapHints={true}
+            showOverlapHints
           />
           <ShareResearchButton
             title={progress.study.title}

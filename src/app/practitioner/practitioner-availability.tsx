@@ -546,7 +546,21 @@ export default function PractitionerAvailability({
       <AppDrawer
         open={isOpen}
         onClose={() => setIsOpen(false)}
-        trigger={<div onClick={() => setIsOpen(true)}>{children}</div>}
+        trigger={
+          <button
+            type='button'
+            onClick={() => setIsOpen(true)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setIsOpen(true);
+              }
+            }}
+            className='w-full cursor-pointer appearance-none border-none bg-transparent p-0 text-left'
+          >
+            {children}
+          </button>
+        }
       >
         <div className='scrollbar-hide mt-4 h-full overflow-y-auto px-1'>
           {bookingContent}

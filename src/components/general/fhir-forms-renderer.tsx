@@ -206,7 +206,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     }
     let seed = 0;
     for (const ch of questionnaire.id) {
-      seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+      seed = (seed * 31 + (ch.codePointAt(0) ?? 0)) >>> 0;
     }
     return MID_BATCH_MESSAGES[seed % MID_BATCH_MESSAGES.length];
   }, [batchProgress, questionnaire.id]);
@@ -341,6 +341,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         interpretationItem?.item?.length &&
         submitResult?.id
       ) {
+        // skipcq: JS-0098 - fire-and-forget interpret webhook; record page polls the result
         void triggerInterpretWebhook({
           responseId: submitResult.id,
           ownerId: draftOwnerId,

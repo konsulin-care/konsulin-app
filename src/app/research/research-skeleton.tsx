@@ -8,9 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
  */
 export default function ResearchSkeleton() {
   return (
-    <div
+    <output
       data-testid='research-skeleton'
-      role='status'
       aria-busy='true'
       aria-label='Loading ongoing research'
       className='flex flex-col gap-4'
@@ -54,6 +53,6 @@ export default function ResearchSkeleton() {
           <Skeleton className='h-3 w-40' />
         </div>
       </div>
-    </div>
+    </output>
   );
 }

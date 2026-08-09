@@ -69,7 +69,7 @@ beforeEach(() => {
     configurable: true,
     value: new URL('https://konsulin.care/research')
   });
-  Object.assign(navigator, { share: vi.fn().mockResolvedValue(void 0) });
+  Object.assign(navigator, { share: vi.fn(() => Promise.resolve()) });
 });
 
 afterEach(() => {
@@ -93,7 +93,7 @@ describe('ResearchCarousel', () => {
   });
 
   it('shares the full invite message when the share bar is clicked', () => {
-    const share = vi.fn().mockResolvedValue(void 0);
+    const share = vi.fn(() => Promise.resolve());
     Object.assign(navigator, { share });
     const onStudyClick = vi.fn();
     renderCarousel([makeStudyProgress()], 'research', { onStudyClick });
@@ -109,7 +109,7 @@ describe('ResearchCarousel', () => {
   });
 
   it('fires the study click handler when the card body is clicked', () => {
-    const share = vi.fn().mockResolvedValue(void 0);
+    const share = vi.fn(() => Promise.resolve());
     Object.assign(navigator, { share });
     const onStudyClick = vi.fn();
     renderCarousel([makeStudyProgress()], 'research', { onStudyClick });
@@ -121,7 +121,7 @@ describe('ResearchCarousel', () => {
   });
 
   it('reports questionnaire clicks without firing the card handler', () => {
-    const share = vi.fn().mockResolvedValue(void 0);
+    const share = vi.fn(() => Promise.resolve());
     Object.assign(navigator, { share });
     const onStudyClick = vi.fn();
     const onQuestionnaireClick = vi.fn();

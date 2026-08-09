@@ -138,7 +138,7 @@ function invokeParticipate(): void {
   const action = participateAction();
   expect(action).toBeTruthy();
   if (action?.type === 'SET_ACTION' && action.config) {
-    // deepsource:ignore JS-0098 — invoke action in test without awaiting
+    // skipcq: JS-0098 - invoke action in test without awaiting
     void action.config.onAction();
   }
 }

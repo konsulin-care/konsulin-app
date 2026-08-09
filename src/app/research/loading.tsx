@@ -9,9 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
  */
 export default function Loading() {
   return (
-    <div
+    <output
       data-testid='research-route-loading'
-      role='status'
       aria-busy='true'
       aria-label='Loading research'
       className='flex flex-col gap-4 px-4 pt-4'
@@ -22,6 +21,6 @@ export default function Loading() {
       <Skeleton className='h-72 w-full rounded-xl' />
       {/* Dashboard block placeholder. */}
       <Skeleton className='h-44 w-full rounded-xl' />
-    </div>
+    </output>
   );
 }

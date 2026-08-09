@@ -63,7 +63,7 @@ export function withChunkRetry<T>(
         );
 
         // Best-effort cache revalidation for the failed chunk URL
-        // deepsource:ignore JS-0098 — fire-and-forget cache revalidation
+        // skipcq: JS-0098 - fire-and-forget cache revalidation
         void tryRevalidateChunkCache(error);
       }
     }

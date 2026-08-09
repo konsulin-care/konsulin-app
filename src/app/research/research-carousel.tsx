@@ -70,7 +70,17 @@ function StudySlide({
     <div
       data-testid={`research-slide-${progress.study.id}`}
       data-active={isActive}
+      role='button'
+      tabIndex={0}
       onClick={() => onStudyClick(progress.study.id)}
+      onKeyDown={e => {
+        // Inner buttons (questionnaire, share) handle their own keys.
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onStudyClick(progress.study.id);
+        }
+      }}
       className={`card border-softGray flex h-full cursor-pointer flex-col gap-2 bg-white p-4 transition-all duration-300 ${
         isActive ? 'opacity-100' : 'opacity-70'
       }`}

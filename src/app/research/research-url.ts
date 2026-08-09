@@ -16,10 +16,19 @@ export function updateResearchUrl(
   updates: { id?: string | null; view?: string | null; ref?: string | null }
 ): string {
   const next = new URLSearchParams();
-  const id = updates.id === undefined ? searchParams.get('id') : updates.id;
-  const view =
-    updates.view === undefined ? searchParams.get('view') : updates.view;
-  const ref = updates.ref === undefined ? searchParams.get('ref') : updates.ref;
+  // Explicit update wins, an explicit null removes the key, and an omitted
+  // key falls back to the current param. `??` would collapse null into
+  // undefined, breaking the remove-vs-preserve contract callers rely on.
+  const resolve = (key: 'id' | 'view' | 'ref'): string | null => {
+    const value = updates[key];
+    if (value === undefined) {
+      return searchParams.get(key);
+    }
+    return value;
+  };
+  const view = resolve('view');
+  const id = resolve('id');
+  const ref = resolve('ref');
   // Canonical form: `view` subsumes focus + drawer, so it always wins.
   if (view) {
     next.set('view', view);

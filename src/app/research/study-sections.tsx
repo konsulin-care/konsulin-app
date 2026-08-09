@@ -132,7 +132,7 @@ export function QuestionnaireList({
   const studyTitle = progress.study.title ?? progress.study.id;
 
   return (
-    <ul onClick={e => e.stopPropagation()} className='flex flex-col gap-2'>
+    <ul className='flex flex-col gap-2'>
       {batch.questionnaireIds.map(id => {
         const done = completed.has(id);
         const otherStudies = (overlapMap.get(id) ?? []).filter(
@@ -152,7 +152,11 @@ export function QuestionnaireList({
               {title ? (
                 <button
                   type='button'
-                  onClick={() => onQuestionnaireClick(progress.study.id, id)}
+                  onClick={e => {
+                    // Keep the row's own action from opening the study card.
+                    e.stopPropagation();
+                    onQuestionnaireClick(progress.study.id, id);
+                  }}
                   className='cursor-pointer text-left font-bold text-gray-800 hover:underline'
                 >
                   {title}

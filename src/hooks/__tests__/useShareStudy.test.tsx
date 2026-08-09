@@ -46,7 +46,7 @@ describe('useShareStudy', () => {
   });
 
   it('shares the full message via the Web Share API', async () => {
-    const shareMock = vi.fn().mockResolvedValue(void 0);
+    const shareMock = vi.fn(() => Promise.resolve());
     Object.assign(navigator, { share: shareMock });
 
     const { result } = renderHook(() =>
@@ -66,7 +66,7 @@ describe('useShareStudy', () => {
   });
 
   it('falls back to the clipboard with the full message', async () => {
-    const clipboardMock = vi.fn().mockResolvedValue(void 0);
+    const clipboardMock = vi.fn(() => Promise.resolve());
     Object.assign(navigator, {
       share: undefined,
       clipboard: { writeText: clipboardMock }
@@ -86,7 +86,7 @@ describe('useShareStudy', () => {
 
   it('falls back to the clipboard when canShare rejects the payload', async () => {
     const shareMock = vi.fn();
-    const clipboardMock = vi.fn().mockResolvedValue(void 0);
+    const clipboardMock = vi.fn(() => Promise.resolve());
     Object.assign(navigator, {
       share: shareMock,
       canShare: () => false,

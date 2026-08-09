@@ -58,6 +58,7 @@ export default function RemoveAccount() {
       }
     };
 
+    // skipcq: JS-0098 - fire-and-forget account purge; errors handled inside
     void handleRemoveAccount();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

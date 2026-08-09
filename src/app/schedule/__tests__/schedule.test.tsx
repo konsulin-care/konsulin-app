@@ -31,7 +31,7 @@ class MockIntersectionObserver {
   }
 
   unobserve() {
-    void 0;
+    /* no-op */
   }
   disconnect() {
     mockIntersectionDisconnect();
