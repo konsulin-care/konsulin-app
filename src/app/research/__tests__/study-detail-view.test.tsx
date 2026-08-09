@@ -86,6 +86,7 @@ describe('StudyDetailView', () => {
     );
 
     expect(screen.queryByRole('button', { name: 'Participate' })).toBeNull();
+    expect(screen.queryByText(/Next batch opens soon/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'See Report' }));
 
     expect(handlers.onSeeReport).toHaveBeenCalledWith('research');

@@ -464,7 +464,8 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    expect(screen.getByText(/You've completed this batch/i)).toBeTruthy();
+    expect(screen.getByText(/Batch 1 completed/)).toBeTruthy();
+    expect(screen.queryByText(/Next batch opens soon/)).toBeNull();
     expect(
       dispatchedActions.findLast(
         action =>

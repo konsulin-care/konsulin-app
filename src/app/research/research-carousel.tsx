@@ -77,11 +77,6 @@ function StudySlide({
     >
       <StudyHeader study={progress.study} />
       <BatchProgress progress={progress} />
-      {progress.isComplete && (
-        <div className='rounded-xl bg-green-50 px-4 py-2 text-center text-xs font-bold text-green-700'>
-          You&apos;ve completed this batch. Next batch opens soon!
-        </div>
-      )}
       <TimelineStrip progress={progress} />
       <QuestionnaireList
         progress={progress}

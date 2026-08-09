@@ -1,8 +1,18 @@
 import type { QuestionnaireInfo } from '@/services/api/research';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { buildOverlapMap, QuestionnaireList } from '../study-sections';
-import { makeStudyB, makeStudyProgress } from './research-fixtures';
+import {
+  BatchProgress,
+  buildOverlapMap,
+  QuestionnaireList,
+  TimelineStrip
+} from '../study-sections';
+import { BATCH_1, makeStudyB, makeStudyProgress } from './research-fixtures';
+
+/** Upcoming batch fixture sharing the same questionnaire set. */
+function makeUpcomingBatch(id: string, start: string, end: string) {
+  return { id, start, end, questionnaireIds: ['phq2'] };
+}
 
 const TITLE_MAP: Record<string, QuestionnaireInfo> = {
   phq2: { title: 'PHQ-2', durationMinutes: 8 },
@@ -28,6 +38,82 @@ function renderList(
     />
   );
 }
+
+describe('BatchProgress', () => {
+  it('labels a completed batch with the completed suffix and no green badge', () => {
+    render(
+      <BatchProgress
+        progress={makeStudyProgress({
+          completedCount: 2,
+          isComplete: true,
+          firstUncompletedQuestionnaireId: null,
+          completedQuestionnaireIds: ['phq2', 'big-five-inventory']
+        })}
+      />
+    );
+
+    expect(screen.getByText('Batch 1 completed')).toBeTruthy();
+    expect(screen.queryByText('Batch complete')).toBeNull();
+  });
+
+  it('keeps the plain batch label while the batch is in progress', () => {
+    render(<BatchProgress progress={makeStudyProgress()} />);
+
+    expect(screen.getByText('Batch 1')).toBeTruthy();
+    expect(screen.queryByText(/completed/)).toBeNull();
+  });
+});
+
+describe('TimelineStrip', () => {
+  it('styles the current completed batch chip teal with a white label', () => {
+    const batch2 = makeUpcomingBatch('batch-2', '2026-09-01', '2026-09-30');
+    render(
+      <TimelineStrip
+        progress={makeStudyProgress({
+          batches: [BATCH_1, batch2],
+          currentBatch: batch2,
+          completedCount: 1,
+          isComplete: true,
+          firstUncompletedQuestionnaireId: null,
+          completedQuestionnaireIds: ['phq2'],
+          history: [
+            {
+              batchId: 'batch-1',
+              start: '2026-08-01',
+              end: '2026-08-31',
+              participated: true
+            },
+            {
+              batchId: 'batch-2',
+              start: '2026-09-01',
+              end: '2026-09-30',
+              participated: true
+            }
+          ]
+        })}
+      />
+    );
+
+    const currentChip = screen.getByTestId('batch-chip-batch-2');
+    expect(currentChip).toHaveClass('bg-secondary', 'text-white');
+    expect(currentChip).toHaveTextContent('B2');
+  });
+
+  it('marks the current in-progress batch chip with a teal ring', () => {
+    render(<TimelineStrip progress={makeStudyProgress()} />);
+
+    const activeChip = screen.getByTestId('batch-chip-batch-1');
+    expect(activeChip).toHaveClass('ring-2', 'ring-secondary');
+  });
+
+  it('omits the consecutive-batch streak text', () => {
+    render(
+      <TimelineStrip progress={makeStudyProgress({ consecutiveBatches: 3 })} />
+    );
+
+    expect(screen.queryByText(/in a row/)).toBeNull();
+  });
+});
 
 describe('QuestionnaireList', () => {
   it('renders questionnaire titles from the title map', () => {

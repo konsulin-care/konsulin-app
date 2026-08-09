@@ -2,7 +2,7 @@ import { xpForDuration } from '@/constants/research';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { daysUntilBatch } from '@/utils/fhir/research';
-import { Check, CheckCircle2, Circle } from 'lucide-react';
+import { CheckCircle2, Circle } from 'lucide-react';
 
 /**
  * Limits a description to maxLength characters, appending an ellipsis.
@@ -37,6 +37,7 @@ export function BatchProgress({
       <div className='flex items-center justify-between'>
         <span className='font-bold text-black'>
           Batch {progress.batches.indexOf(currentBatch) + 1}
+          {progress.isComplete ? ' completed' : ''}
         </span>
         <span>Closes in {daysUntilBatch(currentBatch.end)} days</span>
       </div>
@@ -50,9 +51,6 @@ export function BatchProgress({
         <span>
           {progress.completedCount}/{progress.totalCount} questionnaires
         </span>
-        {progress.isComplete && (
-          <span className='font-bold text-green-600'>Batch complete</span>
-        )}
       </div>
     </div>
   );
@@ -62,21 +60,19 @@ export function BatchProgress({
 export function TimelineStrip({
   progress
 }: Readonly<{ progress: StudyProgress }>) {
-  const noun = progress.consecutiveBatches === 1 ? 'batch' : 'batches';
   return (
     <div>
       <div className='flex items-center gap-2'>
         {progress.history.map((entry, index) => {
           const isCurrent = progress.currentBatch?.id === entry.batchId;
-          const isDone = entry.participated && !isCurrent;
+          const isDone = isCurrent ? progress.isComplete : entry.participated;
 
           let chipClass = 'bg-gray-100 text-black font-bold opacity-50';
-          let content: React.ReactNode = `B${index + 1}`;
-          if (isCurrent) {
-            chipClass = 'bg-gray-100 text-black font-bold';
-          } else if (isDone) {
+          if (isDone) {
             chipClass = 'bg-secondary text-white';
-            content = <Check className='h-4 w-4' />;
+          } else if (isCurrent) {
+            chipClass =
+              'bg-gray-100 text-black font-bold ring-2 ring-secondary';
           }
 
           return (
@@ -85,14 +81,11 @@ export function TimelineStrip({
               data-testid={`batch-chip-${entry.batchId}`}
               className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${chipClass}`}
             >
-              {content}
+              B{index + 1}
             </div>
           );
         })}
       </div>
-      <p className='mt-2 text-[11px] text-gray-500'>
-        You&apos;ve completed {progress.consecutiveBatches} {noun} in a row.
-      </p>
     </div>
   );
 }

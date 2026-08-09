@@ -214,6 +214,7 @@ describe('ResearchCarousel', () => {
     const activeChip = screen.getByTestId('batch-chip-batch-1');
     expect(activeChip).toHaveTextContent('B1');
     expect(activeChip).toHaveClass('bg-gray-100', 'text-black', 'font-bold');
+    expect(activeChip).toHaveClass('ring-2', 'ring-secondary');
     expect(activeChip).not.toHaveClass('opacity-50');
 
     const upcomingChip = screen.getByTestId('batch-chip-batch-2');
@@ -226,7 +227,7 @@ describe('ResearchCarousel', () => {
     );
   });
 
-  it('keeps completed batch chips teal with a check', () => {
+  it('keeps completed batch chips teal with a white label', () => {
     renderCarousel(
       [
         makeStudyProgress({
@@ -259,6 +260,7 @@ describe('ResearchCarousel', () => {
 
     const doneChip = screen.getByTestId('batch-chip-batch-1');
     expect(doneChip).toHaveClass('bg-secondary', 'text-white');
+    expect(doneChip).toHaveTextContent('B1');
   });
 
   it('spaces slides 16px apart for a breathing room between cards', () => {
