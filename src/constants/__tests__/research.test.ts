@@ -290,4 +290,29 @@ describe('buildMission', () => {
       })
     ).toBe('Complete this batch (+25 XP) — 5 more XP to level up');
   });
+
+  it('multiplies a shared questionnaire XP by its study count', () => {
+    expect(
+      buildMission({
+        totalXp: 92,
+        questionnaires: [
+          { id: 'phq2', title: 'PHQ-2', durationMinutes: 8, studyCount: 2 }
+        ],
+        isGuest: false
+      })
+    ).toBe('Complete PHQ-2 (+80 XP) or 8 referrals to reach Pathfinder');
+  });
+
+  it('includes multiplied XP in the batch shortfall total', () => {
+    expect(
+      buildMission({
+        totalXp: 0,
+        questionnaires: [
+          { id: 'phq2', title: 'PHQ-2', durationMinutes: 2, studyCount: 3 },
+          { id: 'gad7', title: 'GAD-7', durationMinutes: 3 }
+        ],
+        isGuest: false
+      })
+    ).toBe('Complete this batch (+45 XP) and 55 referrals to reach Pathfinder');
+  });
 });

@@ -57,16 +57,17 @@ export interface ResearchProgress {
   /** Distinct completed responses across all identity queries. */
   cumulativeResponses: number;
   /**
-   * Questionnaire id per (batch period, questionnaire) pair that counts
-   * toward XP: distinct within each period, in period order.
+   * Questionnaire id per (study batch, questionnaire) pair that counts
+   * toward XP: one award per study that deploys the questionnaire in a
+   * batch containing the response, distinct within each batch.
    */
   questionnaireResponses: string[];
   /**
-   * XP earned from questionnaire submissions within batch periods: one award
-   * per distinct questionnaire per period (minutes, 5 XP fallback).
+   * XP earned from questionnaire submissions: one award per study batch
+   * that deploys the completed questionnaire (minutes, 5 XP fallback).
    */
   questionnaireXp: number;
-  /** Unique questionnaire ids ever completed within a batch period. */
+  /** Unique questionnaire ids ever completed within a study batch. */
   completedQuestionnaireIds: string[];
   /** Study ids with an active on-study ResearchSubject for this patient. */
   consentedStudyIds: string[];
@@ -428,36 +429,13 @@ export function computeQuestionnaireXp(
 }
 
 /**
- * Collects the distinct batch periods across all studies. Identical
- * [start, end] windows (e.g. synchronized monthly batches) merge into one
- * period so a single submission is never counted once per study.
- *
- * @param studies - Computed per-study progress.
- * @returns Unique batch periods in first-seen order.
- */
-export function distinctBatchPeriods(
-  studies: readonly StudyProgress[]
-): Array<{ start: string; end: string }> {
-  const seen = new Set<string>();
-  const periods: Array<{ start: string; end: string }> = [];
-  for (const study of studies) {
-    for (const batch of study.batches) {
-      const key = `${batch.start}|${batch.end}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      periods.push({ start: batch.start, end: batch.end });
-    }
-  }
-  return periods;
-}
-
-/**
  * Aggregates per-study progress into a single ResearchProgress object.
  *
- * XP is scoped to batch periods: for each distinct period, each questionnaire
- * is counted once regardless of how many times it was submitted, so repeated
- * submissions cannot farm XP. Responses authored outside every period
- * contribute no XP.
+ * XP is scoped to study batches: each questionnaire completed within a batch
+ * awards XP once per study that deploys it in that batch, so a questionnaire
+ * shared across studies earns multiplied XP. Repeated submissions within the
+ * same study batch still count once, so they cannot farm XP. Responses
+ * authored outside every batch contribute no XP.
  *
  * @param studies - Computed per-study progress.
  * @param responses - Raw responses across all identity queries.
@@ -473,25 +451,16 @@ export function computeResearchProgress(
 ): ResearchProgress {
   const merged = mergeResponses(responses);
 
-  const questionnaireResponses = distinctBatchPeriods(studies).flatMap(
-    period => {
+  const questionnaireResponses = studies.flatMap(study =>
+    study.batches.flatMap(batch => {
       const distinct = new Set<string>();
       for (const response of merged) {
-        if (!response.authored) continue;
-        if (
-          !isDateInRange(
-            response.authored.slice(0, 10),
-            period.start,
-            period.end
-          )
-        ) {
-          continue;
-        }
+        if (!isResponseInBatch(response, batch)) continue;
         const id = extractQuestionnaireId(response.questionnaire);
         if (id) distinct.add(id);
       }
       return [...distinct];
-    }
+    })
   );
 
   return {

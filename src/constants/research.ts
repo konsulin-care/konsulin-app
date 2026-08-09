@@ -180,6 +180,12 @@ export interface MissionQuestionnaire {
   title: string;
   /** Estimated minutes; null when the extension is missing. */
   durationMinutes: number | null;
+  /**
+   * Number of active studies whose current batch deploys this questionnaire.
+   * Each study awards full XP, so the mission multiplies the single-study XP
+   * by this count. Defaults to 1.
+   */
+  studyCount?: number;
 }
 
 /** A questionnaire with its derived XP value. */
@@ -189,6 +195,9 @@ interface MissionQuestionnaireWithXp extends MissionQuestionnaire {
 
 /**
  * Keeps questionnaires with a known, positive duration and derives their XP.
+ * XP is the estimated minutes times XP_PER_MINUTE times the number of
+ * studies deploying the questionnaire (studyCount, default 1), so a shared
+ * questionnaire contributes multiplied XP.
  *
  * @param questionnaires - Batch questionnaires to evaluate.
  * @returns The questionnaires worth XP, with xp attached.
@@ -201,7 +210,10 @@ function withKnownXp(
       (q): q is MissionQuestionnaire & { durationMinutes: number } =>
         q.durationMinutes != null && q.durationMinutes > 0
     )
-    .map(q => ({ ...q, xp: q.durationMinutes * XP_PER_MINUTE }));
+    .map(q => ({
+      ...q,
+      xp: q.durationMinutes * XP_PER_MINUTE * (q.studyCount ?? 1)
+    }));
 }
 
 /**
@@ -246,7 +258,8 @@ function subsetCountNeeded(
  *
  * The mission is contextual to the active batch: only the remaining (not yet
  * completed) questionnaires with a known duration are considered, each worth
- * duration × XP_PER_MINUTE. A single questionnaire that closes the XP gap is
+ * duration × XP_PER_MINUTE, multiplied by the number of studies deploying it
+ * (studyCount). A single questionnaire that closes the XP gap is
  * named; otherwise the smallest greedy subset is counted; when even the whole
  * batch is not enough, the batch XP plus the referral shortfall is shown.
  * Guests never see a title name — they level up toward registration.

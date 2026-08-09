@@ -1,8 +1,13 @@
 import type { QuestionnaireInfo } from '@/services/api/research';
+import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ContributionDashboard from '../contribution-dashboard';
-import { makeProgress, makeStudyProgress } from './research-fixtures';
+import {
+  makeProgress,
+  makeStudyB,
+  makeStudyProgress
+} from './research-fixtures';
 
 const { mockUseAuth, mockUseCircleStats } = vi.hoisted(() => ({
   mockUseAuth: vi.fn<
@@ -28,6 +33,21 @@ const INFO_MAP: Record<string, QuestionnaireInfo> = {
   'big-five-inventory': { title: 'Big Five Inventory', durationMinutes: 15 }
 };
 
+/** Renders the dashboard with default empty progress and empty info. */
+function renderDashboard(
+  progress: Partial<ResearchProgress>,
+  activeStudy: StudyProgress | null = null,
+  info: Record<string, QuestionnaireInfo> = {}
+) {
+  render(
+    <ContributionDashboard
+      progress={makeProgress(progress)}
+      activeStudy={activeStudy}
+      questionnaireInfo={info}
+    />
+  );
+}
+
 beforeEach(() => {
   mockUseAuth.mockReset();
   mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
@@ -42,15 +62,9 @@ describe('ContributionDashboard', () => {
       isLoading: false
     });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: ['phq2'] })}
-        activeStudy={null}
-        questionnaireInfo={{
-          phq2: { title: 'PHQ-2', durationMinutes: 10 }
-        }}
-      />
-    );
+    renderDashboard({ questionnaireResponses: ['phq2'] }, null, {
+      phq2: { title: 'PHQ-2', durationMinutes: 10 }
+    });
 
     // 10-minute questionnaire → 50 XP → 50% of the first level.
     expect(screen.getByTestId('dashboard-halo-ring')).toHaveAttribute(
@@ -70,15 +84,9 @@ describe('ContributionDashboard', () => {
       isLoading: false
     });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: ['phq2'] })}
-        activeStudy={null}
-        questionnaireInfo={{
-          phq2: { title: 'PHQ-2', durationMinutes: 30 }
-        }}
-      />
-    );
+    renderDashboard({ questionnaireResponses: ['phq2'] }, null, {
+      phq2: { title: 'PHQ-2', durationMinutes: 30 }
+    });
 
     // 30-minute questionnaire → 150 XP → level 2 with 50 XP into it.
     expect(screen.getByTestId('dashboard-halo-ring')).toHaveAttribute(
@@ -93,17 +101,9 @@ describe('ContributionDashboard', () => {
       state: { userInfo: { fhirId: 'PAT-1', fullname: 'Ada Lovelace' } },
       isLoading: false
     });
-    mockUseCircleStats.mockReturnValue({
-      data: { converted: 3, joined: 3 }
-    });
+    mockUseCircleStats.mockReturnValue({ data: { converted: 3, joined: 3 } });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: [] })}
-        activeStudy={null}
-        questionnaireInfo={{}}
-      />
-    );
+    renderDashboard({ questionnaireResponses: [] });
 
     expect(screen.getByTestId('dashboard-title').textContent).toBe(
       'Trailblazer'
@@ -119,13 +119,7 @@ describe('ContributionDashboard', () => {
       isLoading: false
     });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: [] })}
-        activeStudy={null}
-        questionnaireInfo={{}}
-      />
-    );
+    renderDashboard({ questionnaireResponses: [] });
 
     expect(screen.queryByText('Your contribution')).toBeNull();
   });
@@ -136,18 +130,9 @@ describe('ContributionDashboard', () => {
       isLoading: false
     });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({
-          questionnaireResponses: ['phq2', 'phq2'],
-          questionnaireXp: 160
-        })}
-        activeStudy={null}
-        questionnaireInfo={{
-          phq2: { title: 'PHQ-2', durationMinutes: 80 }
-        }}
-      />
-    );
+    renderDashboard({ questionnaireResponses: ['phq2', 'phq2'] }, null, {
+      phq2: { title: 'PHQ-2', durationMinutes: 80 }
+    });
 
     expect(screen.getByTestId('dashboard-title').textContent).toBe(
       'Participant'
@@ -157,13 +142,7 @@ describe('ContributionDashboard', () => {
   it('shows an invite nudge instead of a converted count for guests', () => {
     mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: [] })}
-        activeStudy={null}
-        questionnaireInfo={{}}
-      />
-    );
+    renderDashboard({ questionnaireResponses: [] });
 
     expect(screen.getByTestId('dashboard-converted').textContent).toContain(
       'Invite friends to start'
@@ -176,13 +155,7 @@ describe('ContributionDashboard', () => {
       isLoading: false
     });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: [] })}
-        activeStudy={makeStudyProgress()}
-        questionnaireInfo={{}}
-      />
-    );
+    renderDashboard({ questionnaireResponses: [] }, makeStudyProgress());
 
     expect(screen.getByTestId('dashboard-batch-count').textContent).toBe(
       '1/2 questionnaires'
@@ -196,12 +169,10 @@ describe('ContributionDashboard', () => {
     });
     mockUseCircleStats.mockReturnValue({ data: { converted: 92, joined: 92 } });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: [] })}
-        activeStudy={makeStudyProgress()}
-        questionnaireInfo={INFO_MAP}
-      />
+    renderDashboard(
+      { questionnaireResponses: [] },
+      makeStudyProgress(),
+      INFO_MAP
     );
 
     // phq2 is already completed in the fixture, so the mission must point at
@@ -217,13 +188,7 @@ describe('ContributionDashboard', () => {
   it('tells guests to wait for the next batch without an active batch', () => {
     mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: [] })}
-        activeStudy={null}
-        questionnaireInfo={INFO_MAP}
-      />
-    );
+    renderDashboard({ questionnaireResponses: [] }, null, INFO_MAP);
 
     expect(screen.getByTestId('dashboard-mission').textContent).toBe(
       'Check back for the next batch to level up'
@@ -237,22 +202,18 @@ describe('ContributionDashboard', () => {
     });
     mockUseCircleStats.mockReturnValue({ data: { converted: 70, joined: 70 } });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: [] })}
-        activeStudy={makeStudyProgress({
-          currentBatch: {
-            id: 'batch-1',
-            start: '2026-08-01',
-            end: '2026-08-31',
-            questionnaireIds: ['gad7']
-          },
-          completedQuestionnaireIds: []
-        })}
-        questionnaireInfo={{
-          gad7: { title: 'GAD-7', durationMinutes: 3 }
-        }}
-      />
+    renderDashboard(
+      { questionnaireResponses: [] },
+      makeStudyProgress({
+        currentBatch: {
+          id: 'batch-1',
+          start: '2026-08-01',
+          end: '2026-08-31',
+          questionnaireIds: ['gad7']
+        },
+        completedQuestionnaireIds: []
+      }),
+      { gad7: { title: 'GAD-7', durationMinutes: 3 } }
     );
 
     // 3 minutes → 15 XP from the batch; 30 XP needed → 15 referral shortfall.
@@ -268,23 +229,21 @@ describe('ContributionDashboard', () => {
     });
     mockUseCircleStats.mockReturnValue({ data: { converted: 17, joined: 17 } });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: [] })}
-        activeStudy={makeStudyProgress({
-          currentBatch: {
-            id: 'batch-1',
-            start: '2026-08-01',
-            end: '2026-08-31',
-            questionnaireIds: ['phq2', 'gad7']
-          },
-          completedQuestionnaireIds: []
-        })}
-        questionnaireInfo={{
-          phq2: { title: 'PHQ-2', durationMinutes: 8 },
-          gad7: { title: 'GAD-7', durationMinutes: 12 }
-        }}
-      />
+    renderDashboard(
+      { questionnaireResponses: [] },
+      makeStudyProgress({
+        currentBatch: {
+          id: 'batch-1',
+          start: '2026-08-01',
+          end: '2026-08-31',
+          questionnaireIds: ['phq2', 'gad7']
+        },
+        completedQuestionnaireIds: []
+      }),
+      {
+        phq2: { title: 'PHQ-2', durationMinutes: 8 },
+        gad7: { title: 'GAD-7', durationMinutes: 12 }
+      }
     );
 
     // 83 XP needed; 40 + 60 XP available → both questionnaires together close
@@ -303,16 +262,7 @@ describe('ContributionDashboard', () => {
       data: { converted: 150, joined: 150 }
     });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: [] })}
-        activeStudy={null}
-        questionnaireInfo={{}}
-      />
-    );
-
-    // 150 XP → Pathfinder title; rewards of Trailblazer and Pathfinder both
-    // accumulate, oldest first.
+    renderDashboard({ questionnaireResponses: [] });
     expect(screen.getByRole('button', { name: 'Pathfinder' })).toBeTruthy();
     fireEvent.click(screen.getByTestId('dashboard-title'));
 
@@ -326,16 +276,34 @@ describe('ContributionDashboard', () => {
     ]);
   });
 
+  it('multiplies mission XP when a questionnaire is deployed by several studies', () => {
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { fhirId: 'PAT-1' } },
+      isLoading: false
+    });
+    mockUseCircleStats.mockReturnValue({ data: { converted: 92, joined: 92 } });
+
+    renderDashboard(
+      {
+        questionnaireResponses: [],
+        studies: [
+          makeStudyProgress({ completedQuestionnaireIds: [] }),
+          makeStudyB()
+        ]
+      },
+      makeStudyProgress({ completedQuestionnaireIds: [] }),
+      INFO_MAP
+    );
+
+    expect(screen.getByTestId('dashboard-mission').textContent).toBe(
+      'Complete PHQ-2 (+80 XP) or 8 referrals to reach Pathfinder'
+    );
+  });
+
   it('keeps the guest title non-interactive without a rewards popover', () => {
     mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
 
-    render(
-      <ContributionDashboard
-        progress={makeProgress({ questionnaireResponses: [] })}
-        activeStudy={null}
-        questionnaireInfo={{}}
-      />
-    );
+    renderDashboard({ questionnaireResponses: [] });
 
     expect(screen.getByTestId('dashboard-title').textContent).toBe(
       'Participant'

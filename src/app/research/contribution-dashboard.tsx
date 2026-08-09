@@ -252,16 +252,24 @@ export default function ContributionDashboard({
 
   const missionQuestionnaires: MissionQuestionnaire[] = useMemo(() => {
     const completed = new Set(activeStudy?.completedQuestionnaireIds);
+    const studyCounts = new Map<string, number>();
+    for (const study of progress.studies) {
+      for (const id of study.currentBatch?.questionnaireIds ?? []) {
+        studyCounts.set(id, (studyCounts.get(id) ?? 0) + 1);
+      }
+    }
     return (activeStudy?.currentBatch?.questionnaireIds ?? [])
       .filter(id => !completed.has(id))
       .map(id => ({
         id,
         title: questionnaireInfo[id]?.title ?? id,
-        durationMinutes: questionnaireInfo[id]?.durationMinutes ?? null
+        durationMinutes: questionnaireInfo[id]?.durationMinutes ?? null,
+        studyCount: studyCounts.get(id) ?? 1
       }));
   }, [
     activeStudy?.currentBatch,
     activeStudy?.completedQuestionnaireIds,
+    progress.studies,
     questionnaireInfo
   ]);
   const mission = buildMission({
