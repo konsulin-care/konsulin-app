@@ -184,6 +184,30 @@ describe('useReferralWrite', () => {
     });
   });
 
+  it('does not write when the effect is cancelled while resolving the guest session', async () => {
+    mockUseAuth.mockReturnValue({
+      state: { isAuthenticated: false, userInfo: {} },
+      isLoading: false
+    });
+    let resolveSession: ((value: string) => void) | undefined;
+    mockEnsureAnonymousSession.mockReturnValue(
+      new Promise<string>(resolve => {
+        resolveSession = resolve;
+      })
+    );
+    mockWriteReferral.mockResolvedValue(true);
+    window.localStorage.setItem('konsulin_ref', 'p_DG3F3STPYZ6HX25A');
+
+    const { unmount } = renderHook(() => useReferralWrite(progressWith(true)));
+
+    // Effect cleanup runs while ensureAnonymousSession is still pending.
+    unmount();
+    resolveSession?.('guest-123');
+
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect(mockWriteReferral).not.toHaveBeenCalled();
+  });
+
   it('captures a landing ?ref= into localStorage on mount', async () => {
     mockUseAuth.mockReturnValue({
       state: { isAuthenticated: false, userInfo: {} },
