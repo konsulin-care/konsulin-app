@@ -351,17 +351,128 @@ describe('ReportView', () => {
     expect(b1Section?.querySelector('[data-testid="report-trend"]')).toBeNull();
   });
 
-  it('shows a baseline teaser when a repeated instrument has a single response', async () => {
+  it('shows a baseline badge and batch note for a repeated instrument with a single response', async () => {
     mockUseReportResponses.mockReturnValue({
       data: [PHQ2_AUG, OCEAN_AUG],
       isLoading: false
     });
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
-    expect(
-      screen.getByText('Baseline recorded as comparison to future trend')
-    ).toBeInTheDocument();
+    expect(screen.getByTestId('report-baseline-badge')).toBeInTheDocument();
+    expect(screen.getByTestId('report-baseline-note')).toHaveTextContent(
+      'Baseline scores recorded for 1 assessment for future comparison'
+    );
     expect(screen.queryByTestId('report-trend')).toBeNull();
+  });
+
+  it('renders no baseline badge or note when instruments show trends or are single-batch', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.queryByTestId('report-baseline-badge')).toBeNull();
+    expect(screen.queryByTestId('report-baseline-note')).toBeNull();
+  });
+
+  it('shows the baseline note once per batch with the total baseline count', async () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: {
+        studies: [
+          makeStudy({
+            batches: [
+              {
+                id: 'b1',
+                start: '2026-08-01',
+                end: '2026-08-31',
+                questionnaireIds: ['phq2', 'ocean']
+              },
+              {
+                id: 'b2',
+                start: '2026-09-01',
+                end: '2026-09-30',
+                questionnaireIds: ['phq2', 'ocean']
+              }
+            ]
+          })
+        ],
+        cumulativeResponses: 2,
+        questionnaireResponses: [],
+        questionnaireXp: 0,
+        completedQuestionnaireIds: [],
+        consentedStudyIds: []
+      },
+      isLoading: false
+    });
+    mockUseReportResponses.mockReturnValue({
+      data: [PHQ2_AUG, OCEAN_AUG],
+      isLoading: false
+    });
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.getAllByTestId('report-baseline-note')).toHaveLength(1);
+    expect(screen.getByTestId('report-baseline-note')).toHaveTextContent(
+      'Baseline scores recorded for 2 assessments for future comparison'
+    );
+    expect(screen.getAllByTestId('report-baseline-badge')).toHaveLength(2);
+  });
+
+  it('shows a shared completion date once in the batch header, not per card', async () => {
+    const oceanSameDay = makeQr(
+      'r2-same-day',
+      'ocean',
+      '2026-08-15T10:00:00Z',
+      [
+        { name: 'Openness', raw: 22 },
+        { name: 'Conscientiousness', raw: 17 },
+        { name: 'Extroversion', raw: 26 },
+        { name: 'Agreeableness', raw: 20 },
+        { name: 'Neuroticism', raw: 24 }
+      ],
+      40
+    );
+    mockUseReportResponses.mockReturnValue({
+      data: [PHQ2_AUG, oceanSameDay],
+      isLoading: false
+    });
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    const b1Section = screen
+      .getAllByTestId('report-batch-section')
+      .find(section => section.dataset.batchId === 'b1');
+    expect(b1Section).toBeDefined();
+    const header = b1Section?.querySelector(
+      '[data-testid="report-batch-header"]'
+    );
+    expect(header?.textContent).toContain('Completed 15 Aug 2026');
+    const completedLeaves = [
+      ...(b1Section?.querySelectorAll('span, p') ?? [])
+    ].filter(el => el.textContent?.includes('Completed'));
+    expect(completedLeaves).toHaveLength(1);
+    const cards = b1Section?.querySelectorAll(
+      '[data-testid^="report-questionnaire-card-"]'
+    );
+    cards?.forEach(card => {
+      expect(card.textContent).not.toContain('Completed');
+    });
+  });
+
+  it('keeps per-card completion dates when dates differ within a batch', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    const b1Section = screen
+      .getAllByTestId('report-batch-section')
+      .find(section => section.dataset.batchId === 'b1');
+    expect(b1Section).toBeDefined();
+    const header = b1Section?.querySelector(
+      '[data-testid="report-batch-header"]'
+    );
+    expect(header?.textContent).not.toContain('Completed');
+    const phq2Card = b1Section?.querySelector(
+      '[data-testid="report-questionnaire-card-phq2"]'
+    );
+    expect(phq2Card?.textContent).toContain('Completed 15 Aug 2026');
+    const oceanCard = b1Section?.querySelector(
+      '[data-testid="report-questionnaire-card-ocean"]'
+    );
+    expect(oceanCard?.textContent).toContain('Completed 16 Aug 2026');
   });
 
   it('renders the disclaimer footer', async () => {

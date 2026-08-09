@@ -1,6 +1,5 @@
 'use client';
 
-import { Progress } from '@/components/ui/progress';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import {
   batchLabel,
@@ -9,10 +8,15 @@ import {
 } from '@/utils/fhir/report';
 import type { ResearchBatch, StudyProgress } from '@/utils/fhir/research';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
-import { getScoreColor, parseDimensionScores } from '@/utils/fhir/scores';
-import { format, parseISO } from 'date-fns';
 import type { QuestionnaireResponse } from 'fhir/r4';
-import { useMemo } from 'react';
+
+import {
+  baselineCardCount,
+  baselineNoteText,
+  formatDay,
+  sharedAuthoredDate
+} from './batch-meta';
+import { QuestionnaireCard } from './questionnaire-card';
 
 /** Nudge shown to guests in place of score history. */
 export const CLAIM_REPORT_NUDGE =
@@ -22,148 +26,11 @@ export const CLAIM_REPORT_NUDGE =
 export const REPORT_DISCLAIMER =
   'These scores are screening results for research purposes only and are not a medical diagnosis. If you are feeling distressed, please reach out to a qualified professional.';
 
-/** Formats a yyyy-mm-dd date for display, e.g. "15 Aug 2026". */
-export function formatDay(date: string | undefined): string | null {
-  if (!date) return null;
-  try {
-    return format(parseISO(date.slice(0, 10)), 'dd MMM yyyy');
-  } catch {
-    return null;
-  }
-}
-
 /** Overall study status for the report header badge. */
 export function studyStatus(study: StudyProgress): string {
   if (!study.currentBatch) return 'Study complete';
   if (study.isComplete) return 'Batch complete';
   return 'In progress';
-}
-
-/** One completed questionnaire card within a batch section. */
-export function QuestionnaireCard({
-  questionnaireId,
-  title,
-  response,
-  batchId,
-  latestBatchId,
-  trend
-}: Readonly<{
-  questionnaireId: string;
-  title: string;
-  response: QuestionnaireResponse;
-  batchId: string;
-  latestBatchId: string | undefined;
-  trend: ReturnType<typeof trendForQuestionnaire>;
-}>) {
-  const dimensions = useMemo(
-    () =>
-      [...parseDimensionScores(response)].toSorted(
-        (a, b) => b.percentage - a.percentage
-      ),
-    [response]
-  );
-  const authored = formatDay(response.authored);
-  const isLatestCard = latestBatchId === batchId;
-
-  return (
-    <article
-      data-testid={`report-questionnaire-card-${questionnaireId}`}
-      className='rounded-xl border border-gray-100 bg-white p-4'
-    >
-      <div className='mb-2 flex items-baseline justify-between gap-2'>
-        <h3 className='text-sm font-bold text-black'>{title}</h3>
-        {authored && (
-          <span className='text-[11px] text-gray-500'>
-            Completed {authored}
-          </span>
-        )}
-      </div>
-
-      <div className='space-y-2'>
-        {dimensions.map(dimension => (
-          <div
-            key={dimension.name}
-            className='grid grid-cols-[110px_1fr_auto] items-center gap-2'
-          >
-            <span
-              data-testid='report-dimension-name'
-              className='text-xs text-wrap break-words text-gray-700'
-            >
-              {dimension.name}
-            </span>
-            <Progress
-              value={dimension.score}
-              color={getScoreColor(dimension.name)}
-            />
-            <span className='text-xs text-gray-600'>
-              {dimension.raw}/{dimension.reference} · {dimension.percentage}%
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {isLatestCard && trend.kind === 'trend' && trend.rows[0] && (
-        <div
-          data-testid='report-trend'
-          className='mt-4 border-t border-gray-100 pt-3'
-        >
-          <p className='mb-2 text-[11px] font-bold text-gray-500 uppercase'>
-            Score history
-          </p>
-          {trend.rows[0].dimensions.map(dimension => (
-            <div key={dimension.name} className='mb-2'>
-              <span className='text-xs font-bold text-gray-700'>
-                {dimension.name}
-              </span>
-              <div className='mt-1 space-y-1'>
-                {trend.rows.map(row => {
-                  const rowDimension = row.dimensions.find(
-                    item => item.name === dimension.name
-                  );
-                  const latest = row.batchId === batchId;
-                  return (
-                    <div
-                      key={row.batchId}
-                      data-testid='report-trend-row'
-                      data-batch-id={row.batchId}
-                      data-latest={String(latest)}
-                      className={`grid grid-cols-[110px_1fr_auto] items-center gap-2 ${
-                        latest ? 'font-bold' : 'opacity-70'
-                      }`}
-                    >
-                      <span className='text-[11px] text-gray-500'>
-                        {row.label}
-                      </span>
-                      {rowDimension && (
-                        <Progress
-                          value={rowDimension.score}
-                          color={getScoreColor(rowDimension.name)}
-                        />
-                      )}
-                      <span className='text-[11px] text-gray-600'>
-                        {rowDimension
-                          ? `${rowDimension.raw}/${rowDimension.reference} ${rowDimension.percentage}%`
-                          : '—'}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {isLatestCard && trend.kind === 'baseline' && (
-        <p
-          data-testid='report-baseline-teaser'
-          className='mt-3 rounded-lg bg-gray-50 px-3 py-2 text-[11px] text-gray-500'
-        >
-          Baseline recorded as comparison to future trend
-        </p>
-      )}
-    </article>
-  );
 }
 
 /** Participation summary card with the six aggregate stats. */
@@ -245,12 +112,20 @@ export function BatchSection({
   buckets: ReadonlyMap<string, readonly QuestionnaireResponse[]>;
   latestBatchByQuestionnaire: ReadonlyMap<string, string>;
 }>) {
-  const completed = new Set(
-    responses
-      .map(response => extractQuestionnaireId(response.questionnaire))
-      .filter((id): id is string => id !== null)
-  ).size;
+  const questionnaireIds = responses
+    .map(response => extractQuestionnaireId(response.questionnaire))
+    .filter((id): id is string => id !== null);
+  const completed = new Set(questionnaireIds).size;
   const status = currentBatchId === batch.id ? 'In progress' : 'Closed';
+
+  const sharedDate = sharedAuthoredDate(responses);
+  const baselineCount = baselineCardCount(
+    responses,
+    buckets,
+    sortedBatches,
+    batch.id,
+    latestBatchByQuestionnaire
+  );
 
   return (
     <section
@@ -268,6 +143,7 @@ export function BatchSection({
           </p>
           <p className='text-[11px] text-gray-500'>
             {formatDay(batch.start)} – {formatDay(batch.end)}
+            {sharedDate ? ` · Completed ${sharedDate}` : ''}
           </p>
         </div>
         <div className='text-right'>
@@ -277,6 +153,15 @@ export function BatchSection({
           <p className='text-[11px] font-bold text-gray-600'>{status}</p>
         </div>
       </div>
+
+      {baselineCount > 0 && (
+        <p
+          data-testid='report-baseline-note'
+          className='mb-2 rounded-lg bg-gray-50 px-3 py-2 text-[11px] text-gray-500'
+        >
+          {baselineNoteText(baselineCount)}
+        </p>
+      )}
 
       <div className='space-y-2'>
         {responses.map(response => {
@@ -298,6 +183,7 @@ export function BatchSection({
               batchId={batch.id}
               latestBatchId={latestBatchByQuestionnaire.get(questionnaireId)}
               trend={trend}
+              hideAuthored={sharedDate !== null}
             />
           );
         })}
