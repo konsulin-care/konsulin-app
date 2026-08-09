@@ -29,20 +29,29 @@ function renderCarousel(
   );
 }
 
+const OPEN_STUDY_NAME = 'Open study Konsulin Mental Health Survey';
+
 describe('ResearchCarousel keyboard and click containment', () => {
-  it.each(['Enter', ' '])(
-    'opens the study when the focused card is activated with %s',
-    key => {
-      const onStudyClick = vi.fn();
-      renderCarousel([makeStudyProgress()], 'research', onStudyClick);
+  it('exposes the card action as a real button, not a fake button role', () => {
+    const onStudyClick = vi.fn();
+    renderCarousel([makeStudyProgress()], 'research', onStudyClick);
 
-      fireEvent.keyDown(screen.getByTestId('research-slide-research'), {
-        key
-      });
+    const slide = screen.getByTestId('research-slide-research');
+    expect(slide).not.toHaveAttribute('role');
+    expect(slide).not.toHaveAttribute('tabindex');
 
-      expect(onStudyClick).toHaveBeenCalledWith('research');
-    }
-  );
+    const openButton = screen.getByRole('button', { name: OPEN_STUDY_NAME });
+    expect(openButton).toHaveAttribute('type', 'button');
+  });
+
+  it('opens the study when the card button is activated', () => {
+    const onStudyClick = vi.fn();
+    renderCarousel([makeStudyProgress()], 'research', onStudyClick);
+
+    fireEvent.click(screen.getByRole('button', { name: OPEN_STUDY_NAME }));
+
+    expect(onStudyClick).toHaveBeenCalledWith('research');
+  });
 
   it('does not fire the card handler for keys pressed inside inner buttons', () => {
     const onStudyClick = vi.fn();
@@ -55,7 +64,7 @@ describe('ResearchCarousel keyboard and click containment', () => {
     expect(onStudyClick).not.toHaveBeenCalled();
   });
 
-  it('opens the study when a questionnaire row dead zone is clicked', () => {
+  it('opens the study when a non-interactive card zone is clicked', () => {
     const onStudyClick = vi.fn();
     const onQuestionnaireClick = vi.fn();
     renderCarousel(
@@ -65,7 +74,7 @@ describe('ResearchCarousel keyboard and click containment', () => {
       onQuestionnaireClick
     );
 
-    fireEvent.click(screen.getAllByText('+40 XP')[0]);
+    fireEvent.click(screen.getByRole('button', { name: OPEN_STUDY_NAME }));
 
     expect(onStudyClick).toHaveBeenCalledWith('research');
     expect(onQuestionnaireClick).not.toHaveBeenCalled();

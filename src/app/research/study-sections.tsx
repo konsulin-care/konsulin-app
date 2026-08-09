@@ -157,7 +157,7 @@ export function QuestionnaireList({
                     e.stopPropagation();
                     onQuestionnaireClick(progress.study.id, id);
                   }}
-                  className='cursor-pointer text-left font-bold text-gray-800 hover:underline'
+                  className='pointer-events-auto cursor-pointer text-left font-bold text-gray-800 hover:underline'
                 >
                   {title}
                 </button>

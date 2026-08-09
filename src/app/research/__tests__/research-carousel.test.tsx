@@ -34,6 +34,7 @@ function makeUpcomingBatch(id: string, start: string, end: string) {
 
 const BATCH_2 = makeUpcomingBatch('batch-2', '2026-09-01', '2026-09-30');
 const BATCH_3 = makeUpcomingBatch('batch-3', '2026-10-01', '2026-10-31');
+const OPEN_STUDY_NAME = 'Open study Konsulin Mental Health Survey';
 
 function renderCarousel(
   studies: StudyProgress[],
@@ -114,7 +115,7 @@ describe('ResearchCarousel', () => {
     const onStudyClick = vi.fn();
     renderCarousel([makeStudyProgress()], 'research', { onStudyClick });
 
-    fireEvent.click(screen.getByTestId('research-slide-research'));
+    fireEvent.click(screen.getByRole('button', { name: OPEN_STUDY_NAME }));
 
     expect(onStudyClick).toHaveBeenCalledWith('research');
     expect(share).not.toHaveBeenCalled();

@@ -266,7 +266,11 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    fireEvent.click(screen.getByTestId('research-slide-research'));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open study Konsulin Mental Health Survey'
+      })
+    );
 
     expect(mockReplace).toHaveBeenCalledWith('/research?view=research');
   });
@@ -288,7 +292,11 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    fireEvent.click(screen.getByTestId('research-slide-research'));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open study Konsulin Mental Health Survey'
+      })
+    );
 
     expect(mockPush).toHaveBeenCalledWith('/report?id=research');
     expect(screen.queryByRole('button', { name: 'Participate' })).toBeNull();
@@ -377,7 +385,11 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    fireEvent.click(screen.getByTestId('research-slide-research'));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open study Konsulin Mental Health Survey'
+      })
+    );
 
     expect(mockReplace).toHaveBeenCalledWith('/research?view=research');
     expect(
@@ -509,7 +521,11 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    fireEvent.click(screen.getByTestId('research-slide-research'));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open study Konsulin Mental Health Survey'
+      })
+    );
 
     expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();
   });

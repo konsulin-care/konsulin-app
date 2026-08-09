@@ -70,42 +70,39 @@ function StudySlide({
     <div
       data-testid={`research-slide-${progress.study.id}`}
       data-active={isActive}
-      role='button'
-      tabIndex={0}
-      onClick={() => {
-        onStudyClick(progress.study.id);
-      }}
-      onKeyDown={e => {
-        // Inner buttons (questionnaire, share) handle their own keys.
-        if (e.target !== e.currentTarget) return;
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onStudyClick(progress.study.id);
-        }
-      }}
-      className={`card border-softGray flex h-full cursor-pointer flex-col gap-2 bg-white p-4 transition-all duration-300 ${
+      className={`card border-softGray focus-within:ring-secondary relative flex h-full flex-col gap-2 bg-white p-4 transition-all duration-300 focus-within:ring-2 ${
         isActive ? 'opacity-100' : 'opacity-70'
       }`}
     >
-      <StudyHeader study={progress.study} />
-      <BatchProgress progress={progress} />
-      <TimelineStrip progress={progress} />
-      <QuestionnaireList
-        progress={progress}
-        overlapMap={overlapMap}
-        onQuestionnaireClick={onQuestionnaireClick}
-        titleMap={titleMap}
-        isTitlesLoading={isTitlesLoading}
-        showOverlapHints={false}
+      <button
+        type='button'
+        aria-label={`Open study ${progress.study.title}`}
+        onClick={() => {
+          onStudyClick(progress.study.id);
+        }}
+        className='absolute inset-0 z-0 cursor-pointer'
       />
-      <ShareResearchButton
-        title={progress.study.title}
-        isPatient={isPatient}
-        fhirId={fhirId}
-        studyId={progress.study.id}
-        dataTestId={`research-share-${progress.study.id}`}
-        className='mt-auto flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 pt-2 text-[10px] text-black'
-      />
+      <div className='pointer-events-none relative z-10 flex flex-col gap-2'>
+        <StudyHeader study={progress.study} />
+        <BatchProgress progress={progress} />
+        <TimelineStrip progress={progress} />
+        <QuestionnaireList
+          progress={progress}
+          overlapMap={overlapMap}
+          onQuestionnaireClick={onQuestionnaireClick}
+          titleMap={titleMap}
+          isTitlesLoading={isTitlesLoading}
+          showOverlapHints={false}
+        />
+        <ShareResearchButton
+          title={progress.study.title}
+          isPatient={isPatient}
+          fhirId={fhirId}
+          studyId={progress.study.id}
+          dataTestId={`research-share-${progress.study.id}`}
+          className='pointer-events-auto mt-auto flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 pt-2 text-[10px] text-black'
+        />
+      </div>
     </div>
   );
 }

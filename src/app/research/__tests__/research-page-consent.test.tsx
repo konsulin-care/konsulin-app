@@ -342,7 +342,11 @@ describe('ResearchPage consent flow', () => {
     render(<ResearchPage />, { wrapper: createWrapper() });
 
     // Card opens the detail drawer; Participate then spawns the consent drawer.
-    fireEvent.click(screen.getByTestId('research-slide-research'));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open study Konsulin Mental Health Survey'
+      })
+    );
     fireEvent.click(await screen.findByRole('button', { name: 'Participate' }));
 
     // Consent is visible; the detail drawer is closed, not stacked.
@@ -364,7 +368,11 @@ describe('ResearchPage consent flow', () => {
     });
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    fireEvent.click(screen.getByTestId('research-slide-research'));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open study Konsulin Mental Health Survey'
+      })
+    );
     fireEvent.click(await screen.findByRole('button', { name: 'Participate' }));
     await screen.findByRole('button', { name: 'Agree to Participate' });
 
