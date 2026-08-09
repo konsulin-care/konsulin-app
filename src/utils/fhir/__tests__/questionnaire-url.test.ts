@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  questionnaireIdLabel,
   questionnaireIdOf,
   toCanonicalQuestionnaireUrl
 } from '../questionnaire-url';
@@ -64,5 +65,21 @@ describe('questionnaireIdOf', () => {
   it('returns null for empty input', () => {
     expect(questionnaireIdOf('')).toBeNull();
     expect(questionnaireIdOf()).toBeNull();
+  });
+});
+
+describe('questionnaireIdLabel', () => {
+  it('uppercases a hyphenated id, splitting hyphens into spaces', () => {
+    expect(questionnaireIdLabel('phq-9')).toBe('PHQ 9');
+    expect(questionnaireIdLabel('gad-7')).toBe('GAD 7');
+  });
+
+  it('uppercases a plain id without separators', () => {
+    expect(questionnaireIdLabel('phq9')).toBe('PHQ9');
+    expect(questionnaireIdLabel('ocean')).toBe('OCEAN');
+  });
+
+  it('handles empty input', () => {
+    expect(questionnaireIdLabel('')).toBe('');
   });
 });

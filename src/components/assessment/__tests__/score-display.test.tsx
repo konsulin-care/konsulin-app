@@ -75,14 +75,31 @@ describe('ScoreDisplay', () => {
     expect(skeletons.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders questionnaire name from the QR questionnaire field', () => {
+  it('renders the resolved questionnaire title when provided', () => {
+    const qr = buildMockQR(
+      [{ name: 'Anxiety', score: 3, ref: 5 }],
+      'Questionnaire/gad-7'
+    );
+    render(
+      <ScoreDisplay
+        questionnaireResponse={qr}
+        isLoading={false}
+        questionnaireTitle='GAD-7'
+      />
+    );
+
+    expect(screen.getByText('GAD-7')).toBeInTheDocument();
+    expect(screen.queryByText('gad-7')).not.toBeInTheDocument();
+  });
+
+  it('falls back to the all-caps questionnaire id when no title is provided', () => {
     const qr = buildMockQR(
       [{ name: 'Anxiety', score: 3, ref: 5 }],
       'Questionnaire/gad-7'
     );
     render(<ScoreDisplay questionnaireResponse={qr} isLoading={false} />);
 
-    expect(screen.getByText('gad-7')).toBeInTheDocument();
+    expect(screen.getByText('GAD 7')).toBeInTheDocument();
   });
 
   it('extracts and renders score-dimension progress bars', () => {

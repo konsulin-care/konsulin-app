@@ -6,10 +6,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { typeMappings } from '@/constants/record';
 import type { IRecord } from '@/types/record';
 import {
+  isQuestionnaireReference,
+  questionnaireIdLabel
+} from '@/utils/fhir/questionnaire-url';
+import {
   customMarkdownComponents,
   formatTitle,
   generateAvatarPlaceholder
 } from '@/utils/helper';
+import { resolveQuestionnaireTitle } from '@/utils/parse-searchset-bundles';
 import { format } from 'date-fns';
 import type { Patient, Practitioner } from 'fhir/r4';
 import { FileText, HeartPulse, Microscope } from 'lucide-react';
@@ -178,6 +183,18 @@ export default function RecordCard({
     if (record.type === 'PatientNote') {
       return record.title;
     }
+    // Questionnaire-based records show Questionnaire.title verbatim; when the
+    // title is still a canonical reference (resolution pending/failed), fall
+    // back to the all-caps questionnaire id.
+    if (
+      record.type === 'QuestionnaireResponse' ||
+      record.type === 'SOAP Notes'
+    ) {
+      const resolved = resolveQuestionnaireTitle(record);
+      return isQuestionnaireReference(record.title)
+        ? questionnaireIdLabel(resolved)
+        : resolved;
+    }
     const splitTitle = record.title.split('/');
     const title = splitTitle[1] ? splitTitle[1] : splitTitle[0];
     if (formatTitleFor.length === 0 || formatTitleFor.includes(record.type)) {
@@ -208,7 +225,11 @@ export default function RecordCard({
         record={record}
         formattedTitle={formattedTitle}
         cleanDescription={cleanDescription}
-        titleLoading={titlesLoading && record.type === 'QuestionnaireResponse'}
+        titleLoading={
+          titlesLoading &&
+          (record.type === 'QuestionnaireResponse' ||
+            record.type === 'SOAP Notes')
+        }
       />
       <hr className='w-full' />
 

@@ -1,6 +1,9 @@
 import type { Bundle, QuestionnaireResponse } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
-import { parseQRBundle } from '../parse-searchset-bundles';
+import {
+  parseQRBundle,
+  resolveQuestionnaireTitle
+} from '../parse-searchset-bundles';
 
 function soapBundle(questionnaire: string): Bundle {
   const qr = {
@@ -49,5 +52,31 @@ describe('parseQRBundle SOAP classification', () => {
       soapBundle('https://konsulin.care/fhir/Questionnaire/phq2')
     );
     expect(result[0].type).toBe('QuestionnaireResponse');
+  });
+});
+
+describe('resolveQuestionnaireTitle SOAP records', () => {
+  it('resolves a SOAP Notes canonical ref to the bare questionnaire id', () => {
+    const record = {
+      type: 'SOAP Notes',
+      resourceType: 'QuestionnaireResponse',
+      id: 'QuestionnaireResponse/soap-1',
+      title: 'https://konsulin.care/fhir/Questionnaire/soap',
+      result: [],
+      lastUpdated: '2024-06-01T00:00:00Z'
+    };
+    expect(resolveQuestionnaireTitle(record)).toBe('soap');
+  });
+
+  it('leaves a non-reference SOAP Notes title untouched', () => {
+    const record = {
+      type: 'SOAP Notes',
+      resourceType: 'QuestionnaireResponse',
+      id: 'QuestionnaireResponse/soap-1',
+      title: 'SOAP Note',
+      result: [],
+      lastUpdated: '2024-06-01T00:00:00Z'
+    };
+    expect(resolveQuestionnaireTitle(record)).toBe('SOAP Note');
   });
 });

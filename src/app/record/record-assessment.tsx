@@ -8,8 +8,11 @@ import {
   useQuestionnaireResponse
 } from '@/services/api/assessment';
 import { getFee } from '@/utils/fhir/fee';
-import { questionnaireIdOf } from '@/utils/fhir/questionnaire-url';
-import { useQuery } from '@tanstack/react-query';
+import {
+  questionnaireIdLabel,
+  questionnaireIdOf
+} from '@/utils/fhir/questionnaire-url';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Money,
   Questionnaire,
@@ -187,6 +190,7 @@ export default function RecordAssessment({
   const questionnaireId = questionnaireIdOf(
     questionnaireResponse?.questionnaire
   );
+  const queryClient = useQueryClient();
   const { data: questionnaire } = useQuery<Questionnaire | null>({
     queryKey: ['questionnaire', questionnaireId, 'title,extension'],
     queryFn: async () => {
@@ -198,7 +202,9 @@ export default function RecordAssessment({
     },
     enabled: Boolean(questionnaireId)
   });
-  const questionnaireTitle = questionnaire?.title ?? questionnaireId;
+  const questionnaireTitle =
+    questionnaire?.title ??
+    (questionnaireId ? questionnaireIdLabel(questionnaireId) : '');
   const fee = useMemo(
     () => (questionnaire ? getFee(questionnaire) : null),
     [questionnaire]
@@ -210,6 +216,16 @@ export default function RecordAssessment({
       onTitleChange(questionnaireTitle);
     }
   }, [questionnaireTitle, onTitleChange]);
+
+  // Seed the shared title cache so other surfaces show the same string
+  useEffect(() => {
+    if (questionnaireId && questionnaire?.title) {
+      queryClient.setQueryData(
+        ['questionnaire', questionnaireId, 'title'],
+        questionnaire.title
+      );
+    }
+  }, [questionnaireId, questionnaire?.title, queryClient]);
 
   // Push the questionnaire fee up to RecordDetail; reset on unmount
   useEffect(() => {
@@ -252,6 +268,7 @@ export default function RecordAssessment({
       questionnaireResponse={questionnaireResponse}
       isLoading={questionnaireResponseIsLoading}
       resultBrief={computedResultBrief}
+      questionnaireTitle={questionnaireTitle}
     />
   );
 }

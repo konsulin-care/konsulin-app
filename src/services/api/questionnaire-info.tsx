@@ -14,6 +14,52 @@ export interface QuestionnaireInfo {
 }
 
 /**
+ * Resolves the display title for a single questionnaire id.
+ *
+ * Reads the shared `['questionnaire', id, 'title']` cache (seeded by record
+ * lists, /report, and /research) and fetches `_elements=title` only when
+ * uncached. The resolved value (title, or the raw id) is seeded back into the
+ * shared cache so every surface shows the identical string.
+ *
+ * @param questionnaireId - Bare questionnaire id, or null/undefined.
+ * @returns React Query result whose data is the questionnaire title.
+ */
+export function useQuestionnaireTitle(
+  questionnaireId: string | null | undefined
+) {
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: ['questionnaire', questionnaireId, 'title'],
+    enabled: Boolean(questionnaireId),
+    staleTime: Infinity,
+    initialData: (): string | undefined =>
+      questionnaireId
+        ? (queryClient.getQueryData<string>([
+            'questionnaire',
+            questionnaireId,
+            'title'
+          ]) ?? undefined)
+        : undefined,
+    queryFn: async (): Promise<string | undefined> => {
+      if (!questionnaireId) return undefined;
+      const API = await getAPI();
+      const { data } = await API.get<Bundle>(
+        `/fhir/Questionnaire?_id=${questionnaireId}&_elements=title`
+      );
+      const questionnaire = data.entry?.[0]?.resource as
+        | Questionnaire
+        | undefined;
+      const title = questionnaire?.title ?? questionnaireId;
+      queryClient.setQueryData(
+        ['questionnaire', questionnaireId, 'title'],
+        title
+      );
+      return title;
+    }
+  });
+}
+
+/**
  * Fetches Questionnaire titles and estimated durations for a set of
  * questionnaire ids in one batch request, returning an id → info map.
  *

@@ -5,6 +5,8 @@ import ScoreDisplay from '@/components/assessment/score-display';
 import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
 import { STORES, dbGetAll } from '@/lib/indexeddb';
+import { useQuestionnaireTitle } from '@/services/api/questionnaire-info';
+import { questionnaireIdOf } from '@/utils/fhir/questionnaire-url';
 import type { QuestionnaireResponse } from 'fhir/r4';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -65,6 +67,10 @@ export default function ResultView() {
   const showClaim =
     !authLoading && !loading && !authState.isAuthenticated && qrData !== null;
 
+  // Resolve the questionnaire title via the shared cache contract.
+  const questionnaireId = questionnaireIdOf(qrData?.questionnaire);
+  const { data: questionnaireTitle } = useQuestionnaireTitle(questionnaireId);
+
   // Still loading auth or data — render nothing
   if (authLoading || loading) {
     return null;
@@ -95,6 +101,7 @@ export default function ResultView() {
           questionnaireResponse={qrData}
           isLoading={false}
           resultBrief={null}
+          questionnaireTitle={questionnaireTitle}
         />
       </div>
       <ClaimReportFab path='/record' qrId={qrId} visible={showClaim} />

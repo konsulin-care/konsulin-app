@@ -1,5 +1,9 @@
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  questionnaireIdLabel,
+  questionnaireIdOf
+} from '@/utils/fhir/questionnaire-url';
 import { getScoreColor, parseDimensionScores } from '@/utils/fhir/scores';
 import type { QuestionnaireResponse } from 'fhir/r4';
 import { NotepadTextIcon } from 'lucide-react';
@@ -13,6 +17,8 @@ interface ScoreDisplayProps {
   isLoading?: boolean;
   resultBrief?: string | null;
   loadingSkeleton?: boolean;
+  /** Resolved Questionnaire.title, or undefined to show the all-caps id. */
+  questionnaireTitle?: string;
 }
 
 /**
@@ -26,7 +32,8 @@ export default function ScoreDisplay({
   questionnaireResponse,
   isLoading = false,
   resultBrief,
-  loadingSkeleton = false
+  loadingSkeleton = false,
+  questionnaireTitle
 }: Readonly<ScoreDisplayProps>) {
   const scoreList = useMemo(
     () => parseDimensionScores(questionnaireResponse),
@@ -36,6 +43,14 @@ export default function ScoreDisplay({
   const displayResultBrief = useMemo<string>(() => {
     return resultBrief ?? RESULT_BRIEF_CLAIM;
   }, [resultBrief]);
+
+  // Questionnaire.title when resolved; otherwise the all-caps questionnaire id.
+  const questionnaireId = questionnaireIdOf(
+    questionnaireResponse?.questionnaire
+  );
+  const displayQuestionnaireName =
+    questionnaireTitle ??
+    (questionnaireId ? questionnaireIdLabel(questionnaireId) : '');
 
   const showLoading = (isLoading || loadingSkeleton) && !questionnaireResponse;
 
@@ -48,7 +63,7 @@ export default function ScoreDisplay({
       {questionnaireResponse?.questionnaire && (
         <div className='card mb-4 flex items-center'>
           <NotepadTextIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
-          {questionnaireResponse.questionnaire.split('/')[1] ?? ''}
+          {displayQuestionnaireName}
         </div>
       )}
 

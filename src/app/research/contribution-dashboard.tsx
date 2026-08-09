@@ -19,6 +19,7 @@ import {
 import { useAuth } from '@/context/auth/authContext';
 import { useCircleStats } from '@/services/api/circle';
 import type { QuestionnaireInfo } from '@/services/api/research';
+import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import {
   computeQuestionnaireXp,
   type ResearchProgress,
@@ -262,7 +263,7 @@ export default function ContributionDashboard({
       .filter(id => !completed.has(id))
       .map(id => ({
         id,
-        title: questionnaireInfo[id]?.title ?? id,
+        title: questionnaireInfo[id]?.title ?? questionnaireIdLabel(id),
         durationMinutes: questionnaireInfo[id]?.durationMinutes ?? null,
         studyCount: studyCounts.get(id) ?? 1
       }));

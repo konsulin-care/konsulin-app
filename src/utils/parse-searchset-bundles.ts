@@ -192,7 +192,9 @@ function extractCondition(resource: Condition): Partial<IRecord> {
 
 /** Extract the display-friendly questionnaire ID from a canonical title. */
 export function resolveQuestionnaireTitle(record: IRecord): string {
-  if (record.type !== 'QuestionnaireResponse') return record.title;
+  if (record.type !== 'QuestionnaireResponse' && record.type !== 'SOAP Notes') {
+    return record.title;
+  }
   const title = record.title ?? '';
   if (!isQuestionnaireReference(title)) return title;
   return questionnaireIdOf(title) ?? title;

@@ -72,4 +72,59 @@ describe('resolveQuestionnaireTitles', () => {
     expect(result[0].title).toBe('PHQ-2 Depression Screener');
     expect(mockAxios.get).not.toHaveBeenCalled();
   });
+
+  it('resolves titles for SOAP Notes records whose questionnaire is a canonical url', async () => {
+    mockAxios.get.mockResolvedValue({
+      data: {
+        entry: [
+          {
+            resource: {
+              resourceType: 'Questionnaire',
+              id: 'soap',
+              title: 'SOAP Note'
+            }
+          }
+        ]
+      }
+    });
+
+    const queryClient = new QueryClient();
+    const records = [
+      {
+        type: 'SOAP Notes',
+        resourceType: 'QuestionnaireResponse',
+        id: 'QR/soap-1',
+        title: 'https://konsulin.care/fhir/Questionnaire/soap',
+        result: [],
+        lastUpdated: '2024-01-01T00:00:00Z'
+      }
+    ];
+
+    const result = await resolveQuestionnaireTitles(records, { queryClient });
+
+    expect(result[0].title).toBe('SOAP Note');
+    expect(mockAxios.get).toHaveBeenCalledWith(
+      '/fhir/Questionnaire?_id=soap&_elements=title',
+      expect.anything()
+    );
+  });
+
+  it('leaves a non-reference SOAP Notes title untouched and skips the fetch', async () => {
+    const queryClient = new QueryClient();
+    const records = [
+      {
+        type: 'SOAP Notes',
+        resourceType: 'QuestionnaireResponse',
+        id: 'QR/soap-2',
+        title: 'SOAP Note',
+        result: [],
+        lastUpdated: '2024-01-01T00:00:00Z'
+      }
+    ];
+
+    const result = await resolveQuestionnaireTitles(records, { queryClient });
+
+    expect(result[0].title).toBe('SOAP Note');
+    expect(mockAxios.get).not.toHaveBeenCalled();
+  });
 });

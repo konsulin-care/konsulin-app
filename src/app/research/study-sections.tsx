@@ -1,5 +1,6 @@
 import { xpForDuration } from '@/constants/research';
 import type { QuestionnaireInfo } from '@/services/api/research';
+import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { daysUntilBatch } from '@/utils/fhir/research';
 import { CheckCircle2, Circle } from 'lucide-react';
@@ -90,14 +91,6 @@ export function TimelineStrip({
   );
 }
 
-/** Maps a questionnaire id to a readable display name. */
-function displayName(id: string): string {
-  return id
-    .split('-')
-    .map(part => part.toUpperCase())
-    .join(' ');
-}
-
 /** Maps each questionnaire to every study title that deploys it. */
 export function buildOverlapMap(
   studies: StudyProgress[]
@@ -146,7 +139,8 @@ export function QuestionnaireList({
           title => title !== studyTitle
         );
         const info = titleMap?.[id];
-        const title = info?.title ?? (isTitlesLoading ? null : displayName(id));
+        const title =
+          info?.title ?? (isTitlesLoading ? null : questionnaireIdLabel(id));
         return (
           <li key={id} className='flex flex-col gap-0.5 text-xs'>
             <div className='flex items-center gap-2'>

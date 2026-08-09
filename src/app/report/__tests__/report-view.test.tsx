@@ -325,6 +325,18 @@ describe('ReportView', () => {
     ]);
   });
 
+  it('falls back to the all-caps questionnaire id when the title is missing', async () => {
+    mockUseQuestionnaireTitles.mockReturnValue({
+      data: { phq2: { title: 'PHQ-2', durationMinutes: 8 } },
+      isPending: false
+    });
+
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    const oceanCard = screen.getByTestId('report-questionnaire-card-ocean');
+    expect(oceanCard.querySelector('h3')?.textContent).toBe('OCEAN');
+  });
+
   it('shows trend rows for a repeated instrument, latest highlighted', async () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');

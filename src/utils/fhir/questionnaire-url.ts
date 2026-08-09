@@ -51,3 +51,17 @@ export function isQuestionnaireReference(value?: string): boolean {
   if (!value) return false;
   return /(^|\/)Questionnaire(\/|$|\|)/.test(value);
 }
+
+/**
+ * All-caps display label for a raw questionnaire id used when a title is
+ * unavailable. Hyphens become spaces: `phq-9` → `PHQ 9`, `phq9` → `PHQ9`.
+ *
+ * @param id - Raw questionnaire id.
+ * @returns The uppercased label.
+ */
+export function questionnaireIdLabel(id: string): string {
+  return id
+    .split('-')
+    .map(part => part.toUpperCase())
+    .join(' ');
+}

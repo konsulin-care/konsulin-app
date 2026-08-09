@@ -1,6 +1,7 @@
 'use client';
 
 import type { QuestionnaireInfo } from '@/services/api/research';
+import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import {
   trendForQuestionnaire,
   type ParticipationStats
@@ -142,7 +143,10 @@ export function BatchSection({
             <QuestionnaireCard
               key={response.id}
               questionnaireId={questionnaireId}
-              title={titleMap[questionnaireId]?.title ?? questionnaireId}
+              title={
+                titleMap[questionnaireId]?.title ??
+                questionnaireIdLabel(questionnaireId)
+              }
               response={response}
               batchId={batch.id}
               latestBatchId={latestBatchByQuestionnaire.get(questionnaireId)}

@@ -160,7 +160,7 @@ export function useRecords(
 
     const hasUnresolved = mergedRecords.some(
       r =>
-        r.type === 'QuestionnaireResponse' &&
+        (r.type === 'QuestionnaireResponse' || r.type === 'SOAP Notes') &&
         resolveQuestionnaireTitle(r) !== r.title
     );
     setTitlesLoading(hasUnresolved);

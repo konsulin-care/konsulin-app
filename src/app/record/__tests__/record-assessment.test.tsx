@@ -34,7 +34,8 @@ vi.mock('@/lib/indexeddb', () => ({
 }));
 
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: mockUseQuery
+  useQuery: mockUseQuery,
+  useQueryClient: vi.fn(() => ({ setQueryData: vi.fn() }))
 }));
 
 vi.mock('@/components/ui/progress', () => ({
@@ -60,6 +61,7 @@ import { dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { useQuestionnaireResponse } from '@/services/api/assessment';
 import { FhirExtensionUrls } from '@/utils/fhir/extensions';
+import { useQueryClient } from '@tanstack/react-query';
 import RecordAssessment from '../record-assessment';
 
 /** Build a minimal QuestionnaireResponse with score-dimension items. */
@@ -208,6 +210,31 @@ describe('RecordAssessment', () => {
     render(<RecordAssessment recordId='qr-1' onFeeChange={onFeeChange} />);
 
     expect(onFeeChange).toHaveBeenCalledWith(null);
+  });
+
+  it('passes the resolved questionnaire title and seeds the shared title cache', () => {
+    const setQueryData = vi.fn();
+    vi.mocked(useQueryClient).mockReturnValue({ setQueryData } as any);
+    mockUseQuery.mockReturnValue({
+      data: {
+        resourceType: 'Questionnaire',
+        id: 'test-q',
+        title: 'PSS-10'
+      },
+      isLoading: false
+    });
+    vi.mocked(useQuestionnaireResponse).mockReturnValue({
+      data: buildMockQR([{ name: 'Stress', score: 2, ref: 4 }]),
+      isLoading: false
+    } as any);
+
+    render(<RecordAssessment recordId='qr-1' />);
+
+    expect(screen.getByText('PSS-10')).toBeInTheDocument();
+    expect(setQueryData).toHaveBeenCalledWith(
+      ['questionnaire', 'test-q', 'title'],
+      'PSS-10'
+    );
   });
 
   it('picks up a service request id that lands shortly after mount', async () => {
