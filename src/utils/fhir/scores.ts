@@ -42,7 +42,7 @@ function scoreDimensionItemOf(
   const interpretationItem = (questionnaireResponse?.item ?? []).find(
     (item: QuestionnaireResponseItem) => item.linkId === 'interpretation'
   );
-  return interpretationItem?.item.find(
+  return interpretationItem?.item?.find(
     (subItem: QuestionnaireResponseItem) => subItem.linkId === 'score-dimension'
   );
 }
@@ -65,7 +65,7 @@ export function parseDimensionScores(
   const scoreDimensionItem = scoreDimensionItemOf(questionnaireResponse);
   if (!scoreDimensionItem) return [];
 
-  const reference = scoreDimensionItem.item.find(
+  const reference = scoreDimensionItem.item?.find(
     (subItem: QuestionnaireResponseItem) => subItem.linkId === 'reference'
   );
   const refValue = reference?.answer?.[0]?.valueInteger ?? 1;

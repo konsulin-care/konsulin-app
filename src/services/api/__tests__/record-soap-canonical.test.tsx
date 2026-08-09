@@ -53,8 +53,10 @@ describe('practitioner SOAP queries use the canonical questionnaire url', () => 
       expect(mockAxios.post).toHaveBeenCalled();
     });
 
-    const payload = mockAxios.post.mock.calls[0]?.[1] as BatchPayload;
-    const urls = (payload.entry ?? []).map(e => e.request?.url ?? '');
+    const payload = mockAxios.post.mock.calls[0]?.[1] as
+      | BatchPayload
+      | undefined;
+    const urls = (payload?.entry ?? []).map(e => e.request?.url ?? '');
     expect(urls).toContain(
       '/QuestionnaireResponse?patient=pat-1&questionnaire=https://konsulin.care/fhir/Questionnaire/soap&_sorted=-_lastUpdated'
     );
@@ -77,8 +79,10 @@ describe('practitioner SOAP queries use the canonical questionnaire url', () => 
       expect(mockAxios.post).toHaveBeenCalled();
     });
 
-    const payload = mockAxios.post.mock.calls[0]?.[1] as BatchPayload;
-    const urls = (payload.entry ?? []).map(e => e.request?.url ?? '');
+    const payload = mockAxios.post.mock.calls[0]?.[1] as
+      | BatchPayload
+      | undefined;
+    const urls = (payload?.entry ?? []).map(e => e.request?.url ?? '');
     const soapUrl = urls.find(url => url.includes('questionnaire='));
     expect(soapUrl).toContain(
       'questionnaire=https://konsulin.care/fhir/Questionnaire/soap'

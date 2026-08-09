@@ -41,6 +41,31 @@ describe('parseDimensionScores', () => {
     expect(parseDimensionScores(null)).toEqual([]);
   });
 
+  it('returns an empty array when the interpretation item has no nested items', () => {
+    const qr: QuestionnaireResponse = {
+      resourceType: 'QuestionnaireResponse',
+      id: 'qr-1',
+      status: 'completed',
+      item: [{ linkId: 'interpretation', text: 'summary' }]
+    };
+    expect(parseDimensionScores(qr)).toEqual([]);
+  });
+
+  it('returns an empty array when the score-dimension item has no nested items', () => {
+    const qr: QuestionnaireResponse = {
+      resourceType: 'QuestionnaireResponse',
+      id: 'qr-1',
+      status: 'completed',
+      item: [
+        {
+          linkId: 'interpretation',
+          item: [{ linkId: 'score-dimension', text: 'PHQ-9' }]
+        }
+      ]
+    };
+    expect(parseDimensionScores(qr)).toEqual([]);
+  });
+
   it('returns an empty array when no interpretation item exists', () => {
     const qr: QuestionnaireResponse = {
       resourceType: 'QuestionnaireResponse',
