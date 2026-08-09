@@ -72,7 +72,9 @@ function StudySlide({
       data-active={isActive}
       role='button'
       tabIndex={0}
-      onClick={() => onStudyClick(progress.study.id)}
+      onClick={() => {
+        onStudyClick(progress.study.id);
+      }}
       onKeyDown={e => {
         // Inner buttons (questionnaire, share) handle their own keys.
         if (e.target !== e.currentTarget) return;
