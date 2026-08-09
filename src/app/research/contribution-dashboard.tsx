@@ -59,14 +59,14 @@ function LevelHalo({
           r={radius}
           fill='none'
           stroke='#E5E7EB'
-          strokeWidth='6'
+          strokeWidth='8'
         />
         <circle
           cx='36'
           cy='36'
           r={radius}
           fill='none'
-          strokeWidth='6'
+          strokeWidth='8'
           strokeDasharray={circumference}
           strokeDashoffset={circumference * (1 - clamped)}
           strokeLinecap='round'
@@ -90,7 +90,7 @@ function LevelHalo({
       </div>
       <span
         data-testid='dashboard-level'
-        className='bg-secondary absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[10px] font-bold text-white'
+        className='bg-secondary absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap text-white'
       >
         Lv {level}
       </span>
