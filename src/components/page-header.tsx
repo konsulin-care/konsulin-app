@@ -171,10 +171,13 @@ export default function PageHeader({
     authState.isAuthenticated
   );
 
+  /** /research renders no header reminder cards, mirroring canShowResearchHeader. */
+  const hideSessionCard = hideUpcomingSession || pathname === '/research';
+
   const hasSessionCard = isSessionCardAvailable(
     upcomingData,
     isAdmin,
-    hideUpcomingSession
+    hideSessionCard
   );
 
   const isSessionUrgent = hasSessionCard && isSessionWithinWindow(upcomingData);
@@ -192,7 +195,7 @@ export default function PageHeader({
       data={upcomingData}
       role={role}
       isAdmin={isAdmin}
-      hideUpcomingSession={hideUpcomingSession}
+      hideUpcomingSession={hideSessionCard}
     />
   ) : undefined;
 

@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+import Avatar from '@/components/general/avatar';
 import { Roles } from '@/constants/roles';
 import { MergedAppointment, MergedSession } from '@/types/appointment';
-import { mergeNames } from '@/utils/helper';
+import { generateAvatarPlaceholder, mergeNames } from '@/utils/helper';
+import { capitalizeFirstLetter } from '@/utils/validation';
 import { format, parseISO } from 'date-fns';
-import { Calendar } from 'lucide-react';
 import Link from 'next/link';
 
 type Props = {
@@ -11,7 +12,46 @@ type Props = {
   role: string;
 };
 
-/** Renders a single upcoming session card with time and participant info. */
+/** Returns the other party's display name, falling back to their email. */
+function getDisplayName(
+  session: MergedAppointment | MergedSession,
+  isPatient: boolean
+): string {
+  const appointment = session as MergedAppointment;
+  const mergedSession = session as MergedSession;
+  const fullName = isPatient
+    ? mergeNames(
+        appointment.practitionerName,
+        appointment.practitionerQualification ?? undefined
+      )
+    : mergeNames(mergedSession.patientName);
+  const email = isPatient
+    ? appointment.practitionerEmail
+    : mergedSession.patientEmail;
+  return fullName.trim() === '-' ? email : fullName;
+}
+
+/** Returns the avatar photo URL for the current role, when one exists. */
+function getAvatarPhoto(
+  session: MergedAppointment | MergedSession,
+  isPatient: boolean
+): string | undefined {
+  return isPatient
+    ? (session as MergedAppointment).practitionerPhoto?.[0]?.url
+    : (session as MergedSession).patientPhoto?.[0]?.url;
+}
+
+/** Formats slot bounds as HH:mm–HH:mm, or the start time alone without an end. */
+function getTimeRange(
+  slotStart: string | null | undefined,
+  slotEnd: string | null | undefined
+): string {
+  const start = slotStart ? format(parseISO(slotStart), 'HH:mm') : '-:-';
+  const end = slotEnd ? format(parseISO(slotEnd), 'HH:mm') : null;
+  return end ? `${start}–${end}` : start;
+}
+
+/** Renders a single compact upcoming session card with photo and time range. */
 function SessionCard({
   session,
   role
@@ -19,46 +59,57 @@ function SessionCard({
   session: MergedAppointment | MergedSession;
   role: string;
 }>) {
-  const sessionStartTime = session.slotStart
-    ? format(parseISO(session.slotStart), 'HH:mm')
-    : '-:-';
-  const sessionDate = session.slotStart
-    ? format(parseISO(session.slotStart), 'dd/MM/yyyy')
-    : '-/-/-';
-
   const isPatient = role === Roles.Patient;
+  const appointment = session as MergedAppointment;
+  const mergedSession = session as MergedSession;
 
-  const displayName = (() => {
-    const fullName = isPatient
-      ? mergeNames(
-          (session as MergedAppointment).practitionerName,
-          (session as MergedAppointment).practitionerQualification
-        )
-      : mergeNames((session as MergedSession).patientName);
-    const email = isPatient
-      ? (session as MergedAppointment).practitionerEmail
-      : (session as MergedSession).patientEmail;
-    return fullName.trim() === '-' ? email : fullName;
-  })();
+  const displayName = getDisplayName(session, isPatient);
+  const timeRange = getTimeRange(session.slotStart, session.slotEnd);
+  const sessionDate = session.slotStart
+    ? format(parseISO(session.slotStart), 'EEE, dd MMM')
+    : '-/-/-';
+  const placeholder = generateAvatarPlaceholder({
+    id: isPatient
+      ? (appointment.practitionerId ?? undefined)
+      : mergedSession.patientId,
+    name: displayName ?? undefined,
+    email: isPatient
+      ? (appointment.practitionerEmail ?? undefined)
+      : mergedSession.patientEmail
+  });
   const href = isPatient
     ? `/schedule?id=${session.appointmentId}`
-    : `/record?patientId=${(session as MergedSession).patientId}`;
+    : `/record?patientId=${mergedSession.patientId}`;
 
   return (
     <Link
       href={href}
-      className='card flex h-full flex-col gap-1.5 border-0 bg-[#F9F9F9] p-3'
+      data-testid='upcoming-session-card'
+      className='card flex items-center gap-2.5 border-0 bg-[#F9F9F9] p-3'
     >
-      <div className='flex items-center'>
-        <Calendar className='mr-[10px] h-5 w-5 shrink-0 text-black' />
-        <span className='text-muted text-[12px]'>Upcoming Session With</span>
+      <Avatar
+        seed={placeholder.seed}
+        initials={placeholder.initials ?? ''}
+        backgroundColor={placeholder.backgroundColor ?? ''}
+        photoUrl={getAvatarPhoto(session, isPatient)}
+        className='text-xs'
+        imageClassName='self-center'
+        height={40}
+        width={40}
+      />
+      <div className='flex min-w-0 flex-1 flex-col'>
+        <span className='text-secondary truncate text-left text-[14px] font-bold'>
+          {displayName}
+        </span>
+        {session.appointmentType && (
+          <span className='text-muted truncate text-left text-[12px]'>
+            {capitalizeFirstLetter(session.appointmentType)} Session
+          </span>
+        )}
       </div>
-      <span className='text-secondary truncate text-left text-[14px] font-bold'>
-        {displayName}
-      </span>
-      <div className='flex items-center justify-between text-[11px] text-gray-600'>
-        <span className='font-bold text-black'>{sessionStartTime}</span>
-        <span>{sessionDate}</span>
+      <div className='flex shrink-0 flex-col items-end text-black'>
+        <span className='text-[11px] font-bold'>{sessionDate}</span>
+        <span className='text-[11px]'>{timeRange}</span>
       </div>
     </Link>
   );

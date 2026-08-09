@@ -24,15 +24,21 @@ const { mockUseAuth, mockUseResearchProgress, mockUseUpcomingEvents } =
       }
     >()
   }));
+const mockPathname = vi.hoisted(() => ({ current: '/' }));
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => mockUseAuth()
 }));
 
+// The card internals are covered by upcoming-session.test.tsx.
+vi.mock('@/components/general/avatar', () => ({
+  default: () => <div data-testid='avatar' />
+}));
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
-  usePathname: () => '/'
+  usePathname: () => mockPathname.current
 }));
 
 vi.mock('@/hooks/useUpcomingEvents', () => ({
@@ -188,17 +194,19 @@ const PROGRESS_DATA = {
   consentedStudyIds: []
 };
 
-function mockPatient() {
+/** Mocks the auth context for the given role, optionally with a full name. */
+function mockAuth(role_name: string, fhirId: string, fullname?: string) {
   mockUseAuth.mockReturnValue({
     isLoading: false,
     state: {
       isAuthenticated: true,
-      userInfo: { role_name: 'Patient', fhirId: 'pat-1', fullname: 'Pat Smith' }
+      userInfo: { role_name, fhirId, ...(fullname ? { fullname } : {}) }
     }
   });
 }
 
 beforeEach(() => {
+  mockPathname.current = '/';
   mockUseResearchProgress.mockReturnValue({
     data: PROGRESS_DATA,
     isLoading: false
@@ -211,7 +219,7 @@ beforeEach(() => {
 
 describe('PageHeader single-card reminder', () => {
   it('shows the session card and See All when the session starts today', () => {
-    mockPatient();
+    mockAuth('Patient', 'pat-1', 'Pat Smith');
     mockUseUpcomingEvents.mockReturnValue({
       appointmentData: makeBundle(urgentStart()),
       sessionData: null
@@ -219,7 +227,7 @@ describe('PageHeader single-card reminder', () => {
 
     render(<PageHeader />, { wrapper: createWrapper() });
 
-    expect(screen.getByText(/Upcoming Session With/)).toBeTruthy();
+    expect(screen.getByTestId('upcoming-session-card')).toBeTruthy();
     expect(screen.getByText('Jane Doe')).toBeTruthy();
     expect(screen.queryByTestId('research-header-widget')).toBeNull();
     expect(screen.getByText('See All')).toBeTruthy();
@@ -227,7 +235,7 @@ describe('PageHeader single-card reminder', () => {
   });
 
   it('shows the session card and See All when the session starts tomorrow', () => {
-    mockPatient();
+    mockAuth('Patient', 'pat-1', 'Pat Smith');
     mockUseUpcomingEvents.mockReturnValue({
       appointmentData: makeBundle(startOn(1)),
       sessionData: null
@@ -235,13 +243,13 @@ describe('PageHeader single-card reminder', () => {
 
     render(<PageHeader />, { wrapper: createWrapper() });
 
-    expect(screen.getByText(/Upcoming Session With/)).toBeTruthy();
+    expect(screen.getByTestId('upcoming-session-card')).toBeTruthy();
     expect(screen.getByText('See All')).toBeTruthy();
     expect(screen.queryByTestId('research-header-widget')).toBeNull();
   });
 
   it('shows the research card without See All when the session is not urgent', () => {
-    mockPatient();
+    mockAuth('Patient', 'pat-1', 'Pat Smith');
     mockUseUpcomingEvents.mockReturnValue({
       appointmentData: makeBundle(startOn(5)),
       sessionData: null
@@ -250,18 +258,12 @@ describe('PageHeader single-card reminder', () => {
     render(<PageHeader />, { wrapper: createWrapper() });
 
     expect(screen.getByTestId('research-header-widget')).toBeTruthy();
-    expect(screen.queryByText(/Upcoming Session With/)).toBeNull();
+    expect(screen.queryByTestId('upcoming-session-card')).toBeNull();
     expect(screen.queryByText('See All')).toBeNull();
   });
 
   it('always shows the session card for practitioners without the research widget', () => {
-    mockUseAuth.mockReturnValue({
-      isLoading: false,
-      state: {
-        isAuthenticated: true,
-        userInfo: { role_name: 'Practitioner', fhirId: 'prac-1' }
-      }
-    });
+    mockAuth('Practitioner', 'prac-1');
     mockUseUpcomingEvents.mockReturnValue({
       appointmentData: null,
       sessionData: makeBundle(startOn(5))
@@ -269,24 +271,24 @@ describe('PageHeader single-card reminder', () => {
 
     render(<PageHeader />, { wrapper: createWrapper() });
 
-    expect(screen.getByText(/Upcoming Session With/)).toBeTruthy();
+    expect(screen.getByTestId('upcoming-session-card')).toBeTruthy();
     expect(screen.getByText('Pat Smith')).toBeTruthy();
     expect(screen.queryByTestId('research-header-widget')).toBeNull();
     expect(screen.getByText('See All')).toBeTruthy();
   });
 
   it('shows the research card without See All when there is no session', () => {
-    mockPatient();
+    mockAuth('Patient', 'pat-1', 'Pat Smith');
 
     render(<PageHeader />, { wrapper: createWrapper() });
 
     expect(screen.getByTestId('research-header-widget')).toBeTruthy();
-    expect(screen.queryByText(/Upcoming Session With/)).toBeNull();
+    expect(screen.queryByTestId('upcoming-session-card')).toBeNull();
     expect(screen.queryByText('See All')).toBeNull();
   });
 
   it('shows no card while research is loading and no session exists', () => {
-    mockPatient();
+    mockAuth('Patient', 'pat-1', 'Pat Smith');
     mockUseResearchProgress.mockReturnValue({
       data: undefined,
       isLoading: true
@@ -295,11 +297,11 @@ describe('PageHeader single-card reminder', () => {
     render(<PageHeader />, { wrapper: createWrapper() });
 
     expect(screen.queryByTestId('research-header-widget')).toBeNull();
-    expect(screen.queryByText(/Upcoming Session With/)).toBeNull();
+    expect(screen.queryByTestId('upcoming-session-card')).toBeNull();
   });
 
   it('switches from research to the session card when an urgent session arrives', async () => {
-    mockPatient();
+    mockAuth('Patient', 'pat-1', 'Pat Smith');
     mockUseResearchProgress.mockReturnValue({
       data: undefined,
       isLoading: true
@@ -311,7 +313,7 @@ describe('PageHeader single-card reminder', () => {
 
     const wrapper = createWrapper();
     const { rerender } = render(<PageHeader />, { wrapper });
-    expect(screen.queryByText(/Upcoming Session With/)).toBeNull();
+    expect(screen.queryByTestId('upcoming-session-card')).toBeNull();
 
     mockUseResearchProgress.mockReturnValue({
       data: PROGRESS_DATA,
@@ -325,8 +327,21 @@ describe('PageHeader single-card reminder', () => {
     rerender(<PageHeader />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Upcoming Session With/)).toBeTruthy();
+      expect(screen.getByTestId('upcoming-session-card')).toBeTruthy();
     });
     expect(screen.queryByTestId('research-header-widget')).toBeNull();
+  });
+
+  it('suppresses the session card and See All on the /research page', () => {
+    mockAuth('Patient', 'pat-1', 'Pat Smith');
+    mockPathname.current = '/research';
+    mockUseUpcomingEvents.mockReturnValue({
+      appointmentData: makeBundle(urgentStart()),
+      sessionData: null
+    });
+    render(<PageHeader />, { wrapper: createWrapper() });
+    expect(screen.queryByTestId('upcoming-session-card')).toBeNull();
+    expect(screen.queryByTestId('research-header-widget')).toBeNull();
+    expect(screen.queryByText('See All')).toBeNull();
   });
 });
