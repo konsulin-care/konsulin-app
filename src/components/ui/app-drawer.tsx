@@ -80,7 +80,9 @@ export default function AppDrawer({
   // exclude onClose so re-renders do not delete and re-add the entry.
   useEffect(() => {
     if (open) {
-      openDrawers.set(instanceId, () => onCloseRef.current());
+      openDrawers.set(instanceId, () => {
+        onCloseRef.current();
+      });
     } else {
       openDrawers.delete(instanceId);
     }
