@@ -15,6 +15,33 @@ export function formatDay(date: string | undefined): string | null {
 }
 
 /**
+ * Compact batch title for a report header, e.g. "Batch 2: 01 - 31 Aug 2026".
+ *
+ * Same-month windows collapse into "dd - dd MMM yyyy"; cross-month windows
+ * fall back to a full "dd MMM yyyy - dd MMM yyyy" range. Position comes from
+ * the batch's index in the study's chronological order.
+ *
+ * @param batch - The batch to title.
+ * @param sorted - All batches sorted by period start ascending.
+ * @returns The header title, e.g. "Batch 2: 01 - 31 Aug 2026".
+ */
+export function batchTitle(
+  batch: ResearchBatch,
+  sorted: readonly ResearchBatch[]
+): string {
+  const index = sorted.findIndex(item => item.id === batch.id) + 1;
+  const start = parseISO(batch.start);
+  const end = parseISO(batch.end);
+  const sameMonth =
+    start.getMonth() === end.getMonth() &&
+    start.getFullYear() === end.getFullYear();
+  const range = sameMonth
+    ? `${format(start, 'dd')} - ${format(end, 'dd MMM yyyy')}`
+    : `${format(start, 'dd MMM yyyy')} - ${format(end, 'dd MMM yyyy')}`;
+  return `Batch ${index}: ${range}`;
+}
+
+/**
  * Shared formatted completion date when every renderable response in a batch
  * carries the same authored date; otherwise null (mixed or missing dates).
  *

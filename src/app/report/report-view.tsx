@@ -18,8 +18,7 @@ import {
   BatchSection,
   CLAIM_REPORT_NUDGE,
   ParticipationCard,
-  REPORT_DISCLAIMER,
-  studyStatus
+  REPORT_DISCLAIMER
 } from './report-sections';
 
 /**
@@ -148,12 +147,6 @@ export default function ReportView() {
           >
             {study.study.title}
           </h1>
-          <span
-            data-testid='report-status-badge'
-            className='bg-secondary/10 text-secondary mt-1 inline-block rounded-full px-3 py-1 text-[11px] font-bold'
-          >
-            {studyStatus(study)}
-          </span>
         </div>
 
         {stats && <ParticipationCard stats={stats} />}
@@ -168,7 +161,6 @@ export default function ReportView() {
                 batch={batch}
                 sortedBatches={sortedBatches}
                 responses={batchResponses}
-                currentBatchId={study.currentBatch?.id ?? null}
                 titleMap={titleMap}
                 buckets={buckets}
                 latestBatchByQuestionnaire={latestBatchByQuestionnaire}

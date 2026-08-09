@@ -146,8 +146,6 @@ export interface ParticipationStats {
   xp: number;
   /** Sum of estimated durations across all completions. */
   timeInvestedMinutes: number;
-  /** Earliest response date (yyyy-mm-dd), or null when none. */
-  firstParticipationDate: string | null;
 }
 
 /**
@@ -179,18 +177,12 @@ export function computeParticipationStats(
   }
 
   let timeInvested = 0;
-  let earliest: string | null = null;
   for (const response of responses) {
     const questionnaireId = extractQuestionnaireId(response.questionnaire);
     const duration = questionnaireId
       ? durationByQuestionnaire[questionnaireId]
       : null;
     if (duration) timeInvested += duration;
-
-    const authored = response.authored?.slice(0, 10);
-    if (authored && (earliest === null || authored < earliest)) {
-      earliest = authored;
-    }
   }
 
   return {
@@ -199,7 +191,6 @@ export function computeParticipationStats(
     totalBatches: study.batches.length,
     consecutiveBatches: study.consecutiveBatches,
     xp: computeQuestionnaireXp(scopedIds, durationByQuestionnaire),
-    timeInvestedMinutes: timeInvested,
-    firstParticipationDate: earliest
+    timeInvestedMinutes: timeInvested
   };
 }

@@ -277,15 +277,13 @@ describe('ReportView', () => {
     expect(screen.getByText('Report not found')).toBeInTheDocument();
   });
 
-  it('renders the study title and status badge', async () => {
+  it('renders the study title without a status badge', async () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
     expect(screen.getByTestId('report-study-title')).toHaveTextContent(
       'Mental Health Survey'
     );
-    expect(screen.getByTestId('report-status-badge')).toHaveTextContent(
-      'Batch complete'
-    );
+    expect(screen.queryByTestId('report-status-badge')).toBeNull();
   });
 
   it('renders participation stats on the summary card', async () => {
@@ -298,9 +296,7 @@ describe('ReportView', () => {
     expect(screen.getByTestId('report-stat-streak')).toHaveTextContent('2');
     expect(screen.getByTestId('report-stat-xp')).toHaveTextContent('155');
     expect(screen.getByTestId('report-stat-time')).toHaveTextContent('31');
-    expect(screen.getByTestId('report-stat-first')).toHaveTextContent(
-      '15 Aug 2026'
-    );
+    expect(screen.queryByTestId('report-stat-first')).toBeNull();
   });
 
   it('renders batch sections in reverse chronological order', async () => {
@@ -309,8 +305,8 @@ describe('ReportView', () => {
     const sections = screen.getAllByTestId('report-batch-section');
     expect(sections[0]).toHaveAttribute('data-batch-id', 'b2');
     expect(sections[1]).toHaveAttribute('data-batch-id', 'b1');
-    expect(sections[0]).toHaveTextContent('1/1 assessments');
-    expect(sections[1]).toHaveTextContent('2/2 assessments');
+    expect(sections[0]).toHaveTextContent('Batch 2: 01 - 30 Sep 2026');
+    expect(sections[1]).toHaveTextContent('Batch 1: 01 - 31 Aug 2026');
   });
 
   it('shows the big-five card with dimension bars sorted by percentage desc', async () => {
@@ -441,7 +437,7 @@ describe('ReportView', () => {
     const header = b1Section?.querySelector(
       '[data-testid="report-batch-header"]'
     );
-    expect(header?.textContent).toContain('Completed 15 Aug 2026');
+    expect(header?.textContent).toContain('Completed at 15 Aug 2026');
     const completedLeaves = [
       ...(b1Section?.querySelectorAll('span, p') ?? [])
     ].filter(el => el.textContent?.includes('Completed'));

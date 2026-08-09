@@ -2,18 +2,17 @@
 
 import type { QuestionnaireInfo } from '@/services/api/research';
 import {
-  batchLabel,
   trendForQuestionnaire,
   type ParticipationStats
 } from '@/utils/fhir/report';
-import type { ResearchBatch, StudyProgress } from '@/utils/fhir/research';
+import type { ResearchBatch } from '@/utils/fhir/research';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
 import type { QuestionnaireResponse } from 'fhir/r4';
 
 import {
   baselineCardCount,
   baselineNoteText,
-  formatDay,
+  batchTitle,
   sharedAuthoredDate
 } from './batch-meta';
 import { QuestionnaireCard } from './questionnaire-card';
@@ -26,14 +25,7 @@ export const CLAIM_REPORT_NUDGE =
 export const REPORT_DISCLAIMER =
   'These scores are screening results for research purposes only and are not a medical diagnosis. If you are feeling distressed, please reach out to a qualified professional.';
 
-/** Overall study status for the report header badge. */
-export function studyStatus(study: StudyProgress): string {
-  if (!study.currentBatch) return 'Study complete';
-  if (study.isComplete) return 'Batch complete';
-  return 'In progress';
-}
-
-/** Participation summary card with the six aggregate stats. */
+/** Participation summary card with the aggregate stats. */
 export function ParticipationCard({
   stats
 }: Readonly<{ stats: ParticipationStats }>) {
@@ -81,14 +73,6 @@ export function ParticipationCard({
             ~{stats.timeInvestedMinutes} min
           </p>
         </div>
-        {stats.firstParticipationDate && (
-          <div>
-            <p className='text-[11px] text-gray-400'>First participation</p>
-            <p data-testid='report-stat-first' className='font-bold text-black'>
-              {formatDay(stats.firstParticipationDate)}
-            </p>
-          </div>
-        )}
       </div>
     </section>
   );
@@ -99,7 +83,6 @@ export function BatchSection({
   batch,
   sortedBatches,
   responses,
-  currentBatchId,
   titleMap,
   buckets,
   latestBatchByQuestionnaire
@@ -107,17 +90,10 @@ export function BatchSection({
   batch: ResearchBatch;
   sortedBatches: readonly ResearchBatch[];
   responses: readonly QuestionnaireResponse[];
-  currentBatchId: string | null;
   titleMap: Readonly<Record<string, QuestionnaireInfo>>;
   buckets: ReadonlyMap<string, readonly QuestionnaireResponse[]>;
   latestBatchByQuestionnaire: ReadonlyMap<string, string>;
 }>) {
-  const questionnaireIds = responses
-    .map(response => extractQuestionnaireId(response.questionnaire))
-    .filter((id): id is string => id !== null);
-  const completed = new Set(questionnaireIds).size;
-  const status = currentBatchId === batch.id ? 'In progress' : 'Closed';
-
   const sharedDate = sharedAuthoredDate(responses);
   const baselineCount = baselineCardCount(
     responses,
@@ -133,25 +109,13 @@ export function BatchSection({
       data-batch-id={batch.id}
       className='mb-5'
     >
-      <div
-        data-testid='report-batch-header'
-        className='mb-2 flex items-center justify-between'
-      >
-        <div>
-          <p className='text-sm font-bold text-black'>
-            {batchLabel(batch, sortedBatches)}
-          </p>
-          <p className='text-[11px] text-gray-500'>
-            {formatDay(batch.start)} – {formatDay(batch.end)}
-            {sharedDate ? ` · Completed ${sharedDate}` : ''}
-          </p>
-        </div>
-        <div className='text-right'>
-          <p className='text-[11px] text-gray-500'>
-            {completed}/{batch.questionnaireIds.length} assessments
-          </p>
-          <p className='text-[11px] font-bold text-gray-600'>{status}</p>
-        </div>
+      <div data-testid='report-batch-header' className='mb-2'>
+        <p className='text-sm font-bold text-black'>
+          {batchTitle(batch, sortedBatches)}
+        </p>
+        {sharedDate && (
+          <p className='text-[11px] text-gray-500'>Completed at {sharedDate}</p>
+        )}
       </div>
 
       {baselineCount > 0 && (

@@ -162,7 +162,7 @@ describe('computeParticipationStats', () => {
     consecutiveBatches: 2
   };
 
-  it('aggregates completion, streak, XP, time, and first participation date', () => {
+  it('aggregates completion, streak, XP, and time invested', () => {
     const responses = [
       resp('r12', 'phq2', '2026-08-15T10:00:00Z'),
       resp('r13', 'ocean', '2026-08-16T10:00:00Z'),
@@ -181,7 +181,6 @@ describe('computeParticipationStats', () => {
     expect(stats.xp).toBe(155);
     // Sum of durations across all completions: 8 + 15 + 8
     expect(stats.timeInvestedMinutes).toBe(31);
-    expect(stats.firstParticipationDate).toBe('2026-08-15');
   });
 
   it('returns zeroed stats for no responses', () => {
@@ -189,6 +188,5 @@ describe('computeParticipationStats', () => {
     expect(stats.assessmentsCompleted).toBe(0);
     expect(stats.xp).toBe(0);
     expect(stats.timeInvestedMinutes).toBe(0);
-    expect(stats.firstParticipationDate).toBeNull();
   });
 });
