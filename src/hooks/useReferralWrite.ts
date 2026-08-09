@@ -61,16 +61,17 @@ export function useReferralWrite(progress?: ResearchProgress): void {
       // skipcq: JS-0098 - fire-and-forget referral write; cancellation flag guards the effect
       void (async () => {
         const recipient = fhirId ?? (await ensureAnonymousSession(false));
-        if (cancelled || !recipient) return;
+        if (cancelled) return;
 
         await writeReferralCommunication({
           sender: referrer.fhirId,
           recipient,
           batch: batch.id
         });
-        if (!cancelled) {
-          markReferralWritten(window.localStorage, batch.id);
-        }
+        // The write succeeded server-side; record it even when the effect
+        // was cancelled mid-flight so a later run does not re-write a
+        // duplicate Communication.
+        markReferralWritten(window.localStorage, batch.id);
       })();
     }
 

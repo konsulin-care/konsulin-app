@@ -154,6 +154,36 @@ describe('useReferralWrite', () => {
     });
   });
 
+  it('records the write even when the effect is cancelled mid-write', async () => {
+    mockUseAuth.mockReturnValue({
+      state: { isAuthenticated: false, userInfo: {} },
+      isLoading: false
+    });
+    mockEnsureAnonymousSession.mockResolvedValue('guest-123');
+    let resolveWrite: ((value: boolean) => void) | undefined;
+    mockWriteReferral.mockReturnValue(
+      new Promise<boolean>(resolve => {
+        resolveWrite = resolve;
+      })
+    );
+    window.localStorage.setItem('konsulin_ref', 'p_DG3F3STPYZ6HX25A');
+
+    const { unmount } = renderHook(() => useReferralWrite(progressWith(true)));
+
+    await waitFor(() => {
+      expect(mockWriteReferral).toHaveBeenCalledTimes(1);
+    });
+    // Effect cleanup runs while the write is still pending.
+    unmount();
+    resolveWrite?.(true);
+
+    await waitFor(() => {
+      expect(
+        window.localStorage.getItem('konsulin_referral_written_batch-1')
+      ).toBe('1');
+    });
+  });
+
   it('captures a landing ?ref= into localStorage on mount', async () => {
     mockUseAuth.mockReturnValue({
       state: { isAuthenticated: false, userInfo: {} },
