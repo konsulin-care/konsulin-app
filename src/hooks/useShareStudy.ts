@@ -48,8 +48,13 @@ export function useShareStudy({
   const handleShare = useCallback(async () => {
     try {
       const payload = { title, text: message, url: shareUrl };
-      const canShare = navigator.canShare?.(payload) ?? true;
-      if (navigator.share && canShare) {
+      // Feature-detect via typeof: lib.dom types navigator.share/canShare as
+      // non-optional, but older browsers lack them at runtime.
+      if (
+        typeof navigator.share === 'function' &&
+        (typeof navigator.canShare !== 'function' ||
+          navigator.canShare(payload))
+      ) {
         await navigator.share(payload);
       } else {
         await navigator.clipboard.writeText(message);
