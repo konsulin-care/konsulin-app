@@ -16,18 +16,12 @@ export function updateResearchUrl(
   updates: { id?: string | null; view?: string | null; ref?: string | null }
 ): string {
   const next = new URLSearchParams();
-  // Explicit values (including an explicit null = removal) beat the current
-  // params; absent keys fall back to the current param. Map.get returns
-  // undefined for missing keys, preserving the remove-vs-preserve contract
-  // that a `??` fallback would collapse (null would become undefined).
-  const explicit = new Map(
-    Object.entries(updates).filter(
-      (entry): entry is [string, string | null] => entry[1] !== undefined
-    )
-  );
+  // Explicit null = removal; explicit string overrides; an absent key keeps
+  // the current param. The null case returns before `??`, so a removal is
+  // never collapsed into the fallback.
   const resolve = (key: 'id' | 'view' | 'ref'): string | null => {
-    const value = explicit.get(key);
-    return value === undefined ? searchParams.get(key) : value;
+    const updated = updates[key];
+    return updated === null ? null : (updated ?? searchParams.get(key));
   };
   const view = resolve('view');
   const id = resolve('id');

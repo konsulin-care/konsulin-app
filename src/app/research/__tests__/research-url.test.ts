@@ -45,4 +45,10 @@ describe('updateResearchUrl', () => {
       updateResearchUrl(params('?id=abc&ref=r1'), { id: null, ref: null })
     ).toBe('/research');
   });
+
+  it('preserves a current key when the update value is explicitly undefined', () => {
+    expect(updateResearchUrl(params('?id=abc'), { id: undefined })).toBe(
+      '/research?id=abc'
+    );
+  });
 });
