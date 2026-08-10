@@ -26,9 +26,9 @@ export function registerSubmissionReplayHandlers(): void {
       const API = await getAPI();
       await API.post('/fhir/QuestionnaireResponse', payload);
       // Reflect the synced contribution in research progress widgets.
-      // skipcq: JS-0098 - fire-and-forget query invalidation
       const queryClient = getAppQueryClient();
       if (queryClient) {
+        // skipcq: JS-0098 - fire-and-forget query invalidation
         void queryClient.invalidateQueries({ queryKey: ['research'] });
       }
     }

@@ -36,11 +36,14 @@ export function setupInstallPrompt(onChange?: () => void): () => void {
     };
   }
 
+  /** Captures the install prompt for later use by installPwa(). */
   const onBeforeInstall = (event: Event) => {
     event.preventDefault();
     deferredPrompt = event as BeforeInstallPromptEvent;
     onChange?.();
   };
+
+  /** Marks the app as installed and clears the deferred prompt. */
   const onInstalled = () => {
     installed = true;
     deferredPrompt = null;

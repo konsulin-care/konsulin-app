@@ -63,7 +63,7 @@ export async function removeSubmission(id: string): Promise<void> {
 }
 
 /** Lists all queued submissions. */
-export async function listPendingSubmissions(): Promise<PendingSubmission[]> {
+export function listPendingSubmissions(): Promise<PendingSubmission[]> {
   return dbGetAll<PendingSubmission>(STORES.pendingSubmissions);
 }
 
@@ -136,6 +136,8 @@ export function listenForSyncReplay(): () => void {
       // No service worker available — nothing to unsubscribe.
     };
   }
+
+  /** Replays the queue when the service worker broadcasts a sync message. */
   const onMessage = (event: MessageEvent): void => {
     const data = event.data as { type?: string } | null;
     if (data?.type === SYNC_REPLAY_MESSAGE) {

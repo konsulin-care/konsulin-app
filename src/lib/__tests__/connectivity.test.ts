@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 type ConnectivityModule = typeof import('@/lib/connectivity');
 
 /** Re-imports the module so each test starts with fresh internal state. */
-async function freshModule(): Promise<ConnectivityModule> {
+function freshModule(): Promise<ConnectivityModule> {
   vi.resetModules();
   return import('@/lib/connectivity');
 }

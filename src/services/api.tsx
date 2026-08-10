@@ -109,6 +109,7 @@ function setupResponseInterceptor(instance: AxiosInstance) {
       // surfacing the error, so toasts and the auth redirect only fire once
       // the retry budget is exhausted.
       if (shouldRetryRequest(error, config, retryCount)) {
+        /** Waits for the backoff delay, then re-issues the request with the retry counter bumped. */
         const retryAfterBackoff = async (): Promise<unknown> => {
           await new Promise(resolve =>
             setTimeout(resolve, getRetryDelayMs(retryCount))

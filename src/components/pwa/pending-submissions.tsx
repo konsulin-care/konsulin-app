@@ -32,22 +32,27 @@ export function usePendingSubmissions(): PendingSubmissionsState {
     const unsubscribe = listenForSyncReplay();
 
     let cancelled = false;
+
+    /** Refreshes the queued count unless the effect was cleaned up. */
     const refresh = async () => {
       const next = await pendingCount();
       if (!cancelled) setCount(next);
     };
 
-    // Page-load replay: flush anything queued while the app was offline.
-    void (async () => {
+    /** Replays queued submissions, then refreshes the count. */
+    const replay = async () => {
       await replayPendingSubmissions();
       await refresh();
-    })();
+    };
 
+    // Page-load replay: flush anything queued while the app was offline.
+    // skipcq: JS-0098 - fire-and-forget replay on page load
+    void replay();
+
+    /** Fires a replay when the browser comes back online. */
     const onOnline = () => {
-      void (async () => {
-        await replayPendingSubmissions();
-        await refresh();
-      })();
+      // skipcq: JS-0098 - fire-and-forget replay on reconnect
+      void replay();
     };
     window.addEventListener('online', onOnline);
 
@@ -67,6 +72,12 @@ export default function PendingSubmissionsBanner() {
 
   if (count === 0) return null;
 
+  /** Triggers a manual sync of queued submissions. */
+  const handleSyncNow = () => {
+    // skipcq: JS-0098 - fire-and-forget manual sync
+    void syncNow();
+  };
+
   return (
     <div
       role='status'
@@ -77,7 +88,7 @@ export default function PendingSubmissionsBanner() {
       </span>
       <button
         type='button'
-        onClick={() => void syncNow()}
+        onClick={handleSyncNow}
         className='cursor-pointer font-semibold text-teal-600 underline'
       >
         Sync now
