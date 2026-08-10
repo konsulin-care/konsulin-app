@@ -19,13 +19,13 @@ export function updateResearchUrl(
   // Explicit null = removal; explicit string overrides; an absent key keeps
   // the current param. The null case returns before `??`, so a removal is
   // never collapsed into the fallback.
-  const resolve = (key: 'id' | 'view' | 'ref'): string | null => {
-    const updated = updates[key];
-    return updated === null ? null : (updated ?? searchParams.get(key));
-  };
-  const view = resolve('view');
-  const id = resolve('id');
-  const ref = resolve('ref');
+  const resolve = (
+    updated: string | null | undefined,
+    current: string | null
+  ): string | null => (updated === null ? null : (updated ?? current));
+  const view = resolve(updates.view, searchParams.get('view'));
+  const id = resolve(updates.id, searchParams.get('id'));
+  const ref = resolve(updates.ref, searchParams.get('ref'));
   // Canonical form: `view` subsumes focus + drawer, so it always wins.
   if (view) {
     next.set('view', view);

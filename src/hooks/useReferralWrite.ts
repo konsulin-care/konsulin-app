@@ -56,15 +56,16 @@ export function useReferralWrite(progress?: ResearchProgress): void {
         : null;
 
     let cancelled = false;
+    const isCancelled = (): boolean => cancelled;
 
     if (batch && referrer) {
       // skipcq: JS-0098 - fire-and-forget referral write; cancellation flag guards the effect
       void (async () => {
         const recipient = fhirId ?? (await ensureAnonymousSession(false));
-        // skipcq: @typescript-eslint_no-unnecessary-condition - cleanup can run
-        // during the guest session await; without this guard a re-run effect
-        // would write a duplicate Communication.
-        if (cancelled) return;
+        // Cleanup can run during the guest-session await; without this guard a
+        // re-run effect would write a duplicate Communication. Read via a
+        // helper so TS cannot narrow the flag to `false` (no-unnecessary-condition).
+        if (isCancelled()) return;
 
         await writeReferralCommunication({
           sender: referrer.fhirId,
