@@ -1,6 +1,6 @@
 /* eslint-disable max-lines, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unnecessary-type-parameters, unicorn/prefer-includes-over-repeated-comparisons, unicorn/prefer-add-event-listener */
 const DB_NAME = 'konsulin';
-const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 export const STORES = {
   guestSessions: 'guest_sessions',
@@ -10,21 +10,34 @@ export const STORES = {
   tempBooking: 'temp_booking',
   uiPreferences: 'ui_preferences',
   navigationState: 'navigation_state',
-  userProfile: 'user_profile'
+  userProfile: 'user_profile',
+  pendingSubmissions: 'pending_submissions'
 } as const;
 
 export type StoreName = (typeof STORES)[keyof typeof STORES];
 
-const STORE_SCHEMAS: { name: StoreName; keyPath: string | string[] }[] = [
-  { name: STORES.guestSessions, keyPath: 'guest_id' },
-  { name: STORES.assessmentDrafts, keyPath: ['ownerId', 'questionnaireId'] },
-  { name: STORES.soapDrafts, keyPath: ['practitionerId', 'patientId'] },
-  { name: STORES.serviceRequests, keyPath: 'id' },
-  { name: STORES.tempBooking, keyPath: 'ownerId' },
-  { name: STORES.uiPreferences, keyPath: ['ownerId', 'prefKey'] },
-  { name: STORES.navigationState, keyPath: ['ownerId', 'stateKey'] },
-  { name: STORES.userProfile, keyPath: 'userId' }
-];
+/** A submission that failed to send and is waiting for a replay attempt. */
+export type PendingSubmission<T = unknown> = {
+  id: string;
+  ownerId: string;
+  kind: string;
+  payload: T;
+  createdAt: number;
+  attempts: number;
+};
+
+export const STORE_SCHEMAS: { name: StoreName; keyPath: string | string[] }[] =
+  [
+    { name: STORES.guestSessions, keyPath: 'guest_id' },
+    { name: STORES.assessmentDrafts, keyPath: ['ownerId', 'questionnaireId'] },
+    { name: STORES.soapDrafts, keyPath: ['practitionerId', 'patientId'] },
+    { name: STORES.serviceRequests, keyPath: 'id' },
+    { name: STORES.tempBooking, keyPath: 'ownerId' },
+    { name: STORES.uiPreferences, keyPath: ['ownerId', 'prefKey'] },
+    { name: STORES.navigationState, keyPath: ['ownerId', 'stateKey'] },
+    { name: STORES.userProfile, keyPath: 'userId' },
+    { name: STORES.pendingSubmissions, keyPath: 'id' }
+  ];
 
 /** Cached DB connection promise, reused across calls. */
 let dbPromise: Promise<IDBDatabase> | null = null;
