@@ -1,5 +1,6 @@
 import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
+import PendingSubmissionsBanner from '@/components/pwa/pending-submissions';
 import QuickActionFab from '@/components/quick-action-fab';
 import { FabProvider } from '@/context/fabContext';
 import { resolveCjsDefaultExport } from '@/lib/lazy-component';
@@ -57,6 +58,7 @@ export default function AppChrome({
       <ToastContainer {...toastConfig} />
       <ProfileCompletenessModal />
       <AppProviders>
+        <PendingSubmissionsBanner />
         <PageContent>{children}</PageContent>
         <QuickActionFab />
       </AppProviders>
