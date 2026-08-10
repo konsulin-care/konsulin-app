@@ -5,6 +5,19 @@
 }
 @import './phone-input.css';
 
+/* Stretch carousel slides to the tallest slide so every card is equal
+   height. Swiper sizes slides to their content otherwise, which makes the
+   carousel height jump between studies. */
+.research-carousel .swiper-slide {
+  height: auto;
+}
+
+/* Same equal-height behavior for the header session/research carousel.
+   Slides stretch via flexbox, so no JS height measurement is needed. */
+.header-carousel .swiper-slide {
+  height: auto;
+}
+
 * {
   border-color: var(--border);
 }
@@ -12,6 +25,13 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+}
+
+/* Reserve the vertical scrollbar gutter on classic-scrollbar platforms so
+   the centered page column does not jump sideways when the scrollbar
+   appears/disappears between routes. No-op for overlay scrollbars. */
+html {
+  scrollbar-gutter: stable;
 }
 
 @layer utilities {

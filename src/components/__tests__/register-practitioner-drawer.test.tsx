@@ -92,7 +92,6 @@ describe('RegisterPractitionerDrawer', () => {
     expect(screen.getByLabelText('Name')).toBeDefined();
     expect(screen.getByLabelText('Email')).toBeDefined();
     expect(screen.getByText('Register')).toBeDefined();
-    expect(screen.getByText('Cancel')).toBeDefined();
   });
 
   it('renders location combobox when locations are available', async () => {
@@ -130,12 +129,6 @@ describe('RegisterPractitionerDrawer', () => {
     render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
     await fillForm();
     expect(screen.getByText('Register').closest('button')).toBeEnabled();
-  });
-
-  it('calls onClose when Cancel is clicked', () => {
-    render(<RegisterPractitionerDrawer open onClose={onClose} />, { wrapper });
-    fireEvent.click(screen.getByText('Cancel'));
-    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('performs full FHIR pipeline on successful registration', async () => {

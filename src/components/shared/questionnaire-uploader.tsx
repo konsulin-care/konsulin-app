@@ -88,7 +88,7 @@ export default function QuestionnaireUploader({ value, onChange }: Props) {
           accept='.json,application/json'
           className='hidden'
           onChange={e => {
-            // deepsource:ignore JS-0098 — fire-and-forget file parse
+            // skipcq: JS-0098 - fire-and-forget file parse
             void handleFile(e);
           }}
         />
@@ -116,7 +116,7 @@ export default function QuestionnaireUploader({ value, onChange }: Props) {
         accept='.json,application/json'
         className='hidden'
         onChange={e => {
-          // deepsource:ignore JS-0098 — fire-and-forget file parse
+          // skipcq: JS-0098 - fire-and-forget file parse
           void handleFile(e);
         }}
       />

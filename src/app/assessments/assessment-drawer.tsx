@@ -2,16 +2,9 @@
 /* reason: assessment drawer renders practitioner/patient views with rich sub-sections */
 'use client';
 
-import { LoadingSpinnerIcon } from '@/components/icons';
+import AppDrawer from '@/components/ui/app-drawer';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  DrawerClose,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle
-} from '@/components/ui/drawer';
+import { DrawerDescription } from '@/components/ui/drawer';
 import type { ResearchProgress } from '@/utils/fhir/research';
 import { customMarkdownComponents } from '@/utils/helper';
 import { Questionnaire, ResearchStudy } from 'fhir/r4';
@@ -19,6 +12,8 @@ import ReactMarkdown from 'react-markdown';
 import QRCode from 'react-qr-code';
 
 interface AssessmentDrawerContentProps {
+  /** Whether the drawer is open. */
+  open: boolean;
   selectedAssessment: Questionnaire | ResearchStudy | null;
   researchUrl: string;
   /** True when the study's current batch is fully completed. */
@@ -77,12 +72,14 @@ function DescriptionCard({ text }: Readonly<{ text: string }>) {
 
 /** Assessment detail drawer with QR code, description, and action button. */
 export default function AssessmentDrawerContent({
+  open,
   selectedAssessment,
   researchUrl,
   researchComplete,
   currentLocation,
   isPending,
   isPractitioner,
+  onClose,
   startTransition,
   router
 }: Readonly<AssessmentDrawerContentProps>) {
@@ -137,41 +134,24 @@ export default function AssessmentDrawerContent({
     </Badge>
   );
 
-  const renderActionButton = (
-    <Button
-      onClick={handleButtonClick}
-      className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-      disabled={isButtonDisabled}
-    >
-      {isPending ? (
-        <LoadingSpinnerIcon
-          width={20}
-          height={20}
-          stroke='white'
-          className='w-full animate-spin'
-        />
-      ) : (
-        buttonText
-      )}
-    </Button>
-  );
-
-  const renderCloseButton = (
-    <DrawerClose className='focus:ring-opacity-50 items-center justify-center rounded-xl border-transparent bg-transparent p-4 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 focus:ring-2 focus:ring-gray-300 focus:outline-none'>
-      Close
-    </DrawerClose>
-  );
-
-  if (isPractitioner) {
-    return (
-      <div className='flex flex-col'>
-        <DrawerHeader className='mx-auto text-[20px] font-bold'>
+  return (
+    <AppDrawer
+      open={open}
+      onClose={onClose}
+      title={
+        <>
           {renderBadge}
-          <DrawerTitle className='text-center text-2xl'>
+          <span className='block text-center text-2xl'>
             {selectedAssessment?.title}
-          </DrawerTitle>
-        </DrawerHeader>
-
+          </span>
+        </>
+      }
+      ctaLabel={buttonText}
+      onCtaClick={handleButtonClick}
+      ctaDisabled={isButtonDisabled}
+      ctaLoading={isPending}
+    >
+      {isPractitioner ? (
         <DrawerDescription>
           <QRCode
             size={150}
@@ -185,53 +165,31 @@ export default function AssessmentDrawerContent({
             viewBox='0 0 256 256'
           />
         </DrawerDescription>
+      ) : (
+        <>
+          <DescriptionCard
+            text={
+              selectedAssessment && 'description' in selectedAssessment
+                ? selectedAssessment.description
+                : ''
+            }
+          />
 
-        {selectedAssessment && (
-          <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
-            {renderActionButton}
-            {renderCloseButton}
-          </DrawerFooter>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className='flex flex-col'>
-      <DrawerHeader className='mx-auto text-[20px] font-bold'>
-        {renderBadge}
-        <DrawerTitle className='text-center text-2xl'>
-          {selectedAssessment?.title}
-        </DrawerTitle>
-      </DrawerHeader>
-      <DescriptionCard
-        text={
-          selectedAssessment && 'description' in selectedAssessment
-            ? selectedAssessment.description
-            : ''
-        }
-      />
-
-      {selectedAssessment?.resourceType === 'ResearchStudy' && (
-        <div>
-          <div className='mt-4 font-bold'>Researcher</div>
-          {(selectedAssessment.contact ?? []).map((item, index) => (
-            <div
-              className='card mt-2 border-0 bg-[#F9F9F9] text-sm'
-              key={item.name ?? `contact-${index}`}
-            >
-              {item.name}
+          {selectedAssessment?.resourceType === 'ResearchStudy' && (
+            <div>
+              <div className='mt-4 font-bold'>Researcher</div>
+              {(selectedAssessment.contact ?? []).map((item, index) => (
+                <div
+                  className='card mt-2 border-0 bg-[#F9F9F9] text-sm'
+                  key={item.name ?? `contact-${index}`}
+                >
+                  {item.name}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
-
-      {selectedAssessment && (
-        <DrawerFooter className='mt-2 flex flex-col p-0 py-4'>
-          {renderActionButton}
-          {renderCloseButton}
-        </DrawerFooter>
-      )}
-    </div>
+    </AppDrawer>
   );
 }

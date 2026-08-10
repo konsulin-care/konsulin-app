@@ -1,5 +1,9 @@
 import type { IRecord, ISoapSection } from '@/types/record';
 import { isLoincSystem } from '@/utils/fhir';
+import {
+  isQuestionnaireReference,
+  questionnaireIdOf
+} from '@/utils/fhir/questionnaire-url';
 import type {
   Bundle,
   Coding,
@@ -163,7 +167,7 @@ function extractBriefQuestionnaire(
 function extractQuestionnaireResponse(
   resource: QuestionnaireResponse
 ): Partial<IRecord> {
-  if (resource.questionnaire === 'Questionnaire/soap') {
+  if (questionnaireIdOf(resource.questionnaire) === 'soap') {
     return extractSoapQuestionnaire(resource);
   }
   return extractBriefQuestionnaire(resource);
@@ -188,10 +192,12 @@ function extractCondition(resource: Condition): Partial<IRecord> {
 
 /** Extract the display-friendly questionnaire ID from a canonical title. */
 export function resolveQuestionnaireTitle(record: IRecord): string {
-  if (record.type !== 'QuestionnaireResponse') return record.title;
-  const parts = record.title.split('/');
-  if (parts.length === 2 && parts[0] === 'Questionnaire') return parts[1];
-  return record.title;
+  if (record.type !== 'QuestionnaireResponse' && record.type !== 'SOAP Notes') {
+    return record.title;
+  }
+  const title = record.title ?? '';
+  if (!isQuestionnaireReference(title)) return title;
+  return questionnaireIdOf(title) ?? title;
 }
 
 /** Apply title map to a QuestionnaireResponse record if a display title exists. */

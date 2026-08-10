@@ -19,7 +19,12 @@ const tsStrictRules = tsPlugin.configs['strict-type-checked'].rules
 const tsStylisticRules = tsPlugin.configs['stylistic-type-checked'].rules
 
 module.exports = [
-  { ignores: ['**/.next/**', 'src/components/shared/__tests__/practitioner-location-combobox.test.tsx'] },
+  {
+    ignores: [
+      '**/.next/**',
+      'src/components/shared/__tests__/practitioner-location-combobox.test.tsx'
+    ]
+  },
 
   // --- Base: Next.js (loads import, react, jsx-a11y plugins internally) ---
   ...compat.extends('next/core-web-vitals'),

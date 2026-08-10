@@ -1,15 +1,7 @@
-import {
-  getResearchLevelProgress,
-  type ResearchLevelProgress
-} from '@/constants/research';
+import { xpForDuration } from '@/constants/research';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
-import type {
-  Bundle,
-  PlanDefinition,
-  QuestionnaireResponse,
-  ResearchStudy,
-  Resource
-} from 'fhir/r4';
+import type { PlanDefinition, ResearchStudy } from 'fhir/r4';
+import { questionnaireIdOf } from './questionnaire-url';
 
 /** Minimal response projection used for progress computation. */
 export interface ResearchResponse {
@@ -64,11 +56,21 @@ export interface ResearchProgress {
   studies: StudyProgress[];
   /** Distinct completed responses across all identity queries. */
   cumulativeResponses: number;
-  currentLevel: ResearchLevelProgress['current'];
-  nextLevel: ResearchLevelProgress['next'];
-  levelProgress: ResearchLevelProgress;
-  /** Unique questionnaire ids ever completed. */
+  /**
+   * Questionnaire id per (study batch, questionnaire) pair that counts
+   * toward XP: one award per study that deploys the questionnaire in a
+   * batch containing the response, distinct within each batch.
+   */
+  questionnaireResponses: string[];
+  /**
+   * XP earned from questionnaire submissions: one award per study batch
+   * that deploys the completed questionnaire (minutes, 5 XP fallback).
+   */
+  questionnaireXp: number;
+  /** Unique questionnaire ids ever completed within a study batch. */
   completedQuestionnaireIds: string[];
+  /** Study ids with an active on-study ResearchSubject for this patient. */
+  consentedStudyIds: string[];
 }
 
 /**
@@ -82,18 +84,34 @@ export function daysUntilBatch(end: string): number {
 }
 
 /**
+ * Returns the earliest study period start (yyyy-mm-dd) across the studies,
+ * or null when no study declares a period start.
+ *
+ * @param studies - Active studies to consider.
+ * @returns The earliest period start, or null.
+ */
+export function earliestStudyStart(
+  studies: readonly ResearchStudy[]
+): string | null {
+  let earliest: string | null = null;
+  for (const study of studies) {
+    const start = study.period?.start;
+    if (!start) continue;
+    if (earliest === null || start < earliest) earliest = start;
+  }
+  return earliest;
+}
+
+/**
  * Extracts the questionnaire id from a canonical or reference string,
  * stripping any version suffix (e.g. "Questionnaire/phq2|1.0" -> "phq2").
+ *
+ * Consolidated with questionnaireIdOf in questionnaire-url.ts.
  *
  * @param canonical - Canonical questionnaire reference.
  * @returns The bare questionnaire id, or null when absent.
  */
-export function extractQuestionnaireId(canonical?: string): string | null {
-  if (!canonical) return null;
-  const withoutVersion = canonical.split('|')[0];
-  const segments = withoutVersion.split('/').filter(Boolean);
-  return segments.at(-1) ?? null;
-}
+export const extractQuestionnaireId = questionnaireIdOf;
 
 /**
  * Parses a resource reference or canonical into its id, optionally checking
@@ -294,104 +312,166 @@ export function computeStudyProgress(
 }
 
 /**
+ * Resolves the study that deploys a questionnaire in its current batch,
+ * falling back to the first study. Used to scope share links to the study a
+ * completed questionnaire belongs to.
+ *
+ * @param studies - Computed per-study progress.
+ * @param questionnaireId - Bare questionnaire id to match.
+ * @returns The study id, or undefined when there are no studies.
+ */
+export function resolveStudyIdForQuestionnaire(
+  studies: StudyProgress[],
+  questionnaireId: string
+): string | undefined {
+  return (
+    studies.find(study =>
+      study.currentBatch?.questionnaireIds.includes(questionnaireId)
+    )?.study.id ?? studies[0]?.study.id
+  );
+}
+
+/** Continuation target after completing a questionnaire inside a research batch. */
+export interface AssessmentContinuation {
+  /** Chosen study whose current batch contains the completed questionnaire. */
+  studyId: string;
+  /** Next uncompleted questionnaire in that batch, or null when the batch is complete. */
+  nextQuestionnaireId: string | null;
+}
+
+/**
+ * Recommended next questionnaire after completing one in a research batch.
+ * Among all studies whose current batch contains the questionnaire, prefers
+ * the requested study; otherwise picks the one with the fewest remaining
+ * questionnaires (shortest path). Treats the just-completed questionnaire
+ * and any chain-done questionnaires (doneQuestionnaireIds) as done. Returns
+ * null when the questionnaire is not part of any current batch.
+ *
+ * @param studies - Computed per-study progress.
+ * @param questionnaireId - Bare questionnaire id that was just completed.
+ * @param preferredStudyId - Study the chain should stay within, when it also
+ * deploys the questionnaire in its current batch.
+ * @param doneQuestionnaireIds - Questionnaire ids completed earlier in the
+ * same chain, excluded regardless of cache freshness.
+ * @returns The chosen study's continuation, or null when no current batch contains it.
+ */
+export function nextAssessmentInStudy(
+  studies: StudyProgress[],
+  questionnaireId: string,
+  preferredStudyId?: string,
+  doneQuestionnaireIds: readonly string[] = []
+): AssessmentContinuation | null {
+  const doneSet = new Set(doneQuestionnaireIds);
+  const candidates = studies
+    .filter(study =>
+      study.currentBatch?.questionnaireIds.includes(questionnaireId)
+    )
+    .map(study => {
+      const remaining =
+        study.currentBatch?.questionnaireIds.filter(
+          id =>
+            id !== questionnaireId &&
+            !doneSet.has(id) &&
+            !study.completedQuestionnaireIds.includes(id)
+        ) ?? [];
+      return { study, remaining };
+    });
+
+  if (candidates.length === 0) return null;
+
+  const preferred = preferredStudyId
+    ? candidates.find(c => c.study.study.id === preferredStudyId)
+    : undefined;
+  if (preferred) {
+    return {
+      studyId: preferred.study.study.id,
+      nextQuestionnaireId: preferred.remaining[0] ?? null
+    };
+  }
+
+  type BatchCandidate = { study: StudyProgress; remaining: string[] };
+
+  let shortest: BatchCandidate | null = null;
+  for (const candidate of candidates) {
+    if (
+      shortest === null ||
+      candidate.remaining.length < shortest.remaining.length
+    ) {
+      shortest = candidate;
+    }
+  }
+  if (shortest === null) return null;
+  return {
+    studyId: shortest.study.study.id,
+    nextQuestionnaireId: shortest.remaining[0] ?? null
+  };
+}
+
+/**
+ * Sums questionnaire XP from per-response questionnaire ids.
+ *
+ * Each response contributes its estimated duration in minutes times
+ * XP_PER_MINUTE, falling back to DEFAULT_QUESTIONNAIRE_XP when the duration
+ * is unknown or missing.
+ *
+ * @param questionnaireIds - Bare questionnaire id per completed response.
+ * @param durationByQuestionnaire - Map of questionnaire id to minutes (or null).
+ * @returns The total questionnaire XP.
+ */
+export function computeQuestionnaireXp(
+  questionnaireIds: readonly string[],
+  durationByQuestionnaire: ReadonlyMap<string, number | null> = new Map()
+): number {
+  return questionnaireIds.reduce(
+    (sum, id) => sum + xpForDuration(durationByQuestionnaire.get(id)),
+    0
+  );
+}
+
+/**
  * Aggregates per-study progress into a single ResearchProgress object.
+ *
+ * XP is scoped to study batches: each questionnaire completed within a batch
+ * awards XP once per study that deploys it in that batch, so a questionnaire
+ * shared across studies earns multiplied XP. Repeated submissions within the
+ * same study batch still count once, so they cannot farm XP. Responses
+ * authored outside every batch contribute no XP.
  *
  * @param studies - Computed per-study progress.
  * @param responses - Raw responses across all identity queries.
- * @returns Aggregate progress with cumulative level and response set.
+ * @param consentedStudyIds - Study ids with an active consent.
+ * @param durationByQuestionnaire - Map of questionnaire id to minutes (or null).
+ * @returns Aggregate progress with questionnaire XP and response set.
  */
 export function computeResearchProgress(
   studies: StudyProgress[],
-  responses: ResearchResponse[]
+  responses: ResearchResponse[],
+  consentedStudyIds: string[] = [],
+  durationByQuestionnaire: ReadonlyMap<string, number | null> = new Map()
 ): ResearchProgress {
   const merged = mergeResponses(responses);
-  const levelProgress = getResearchLevelProgress(merged.length);
+
+  const questionnaireResponses = studies.flatMap(study =>
+    study.batches.flatMap(batch => {
+      const distinct = new Set<string>();
+      for (const response of merged) {
+        if (!isResponseInBatch(response, batch)) continue;
+        const id = extractQuestionnaireId(response.questionnaire);
+        if (id) distinct.add(id);
+      }
+      return [...distinct];
+    })
+  );
 
   return {
     studies,
     cumulativeResponses: merged.length,
-    currentLevel: levelProgress.current,
-    nextLevel: levelProgress.next,
-    levelProgress,
-    completedQuestionnaireIds: [
-      ...new Set(
-        merged
-          .map(response => extractQuestionnaireId(response.questionnaire))
-          .filter((id): id is string => id !== null)
-      )
-    ]
+    questionnaireResponses,
+    questionnaireXp: computeQuestionnaireXp(
+      questionnaireResponses,
+      durationByQuestionnaire
+    ),
+    completedQuestionnaireIds: [...new Set(questionnaireResponses)],
+    consentedStudyIds
   };
-}
-
-/** Recursively flattens nested bundle entries into their resources. */
-function collectBundleResources(bundle: Bundle): Resource[] {
-  const resources: Resource[] = [];
-  /** Recursively collects resources from the bundle and its nested bundles. */
-  const walk = (current: Bundle) => {
-    for (const entry of current.entry ?? []) {
-      const resource = entry.resource;
-      if (!resource) continue;
-      if (resource.resourceType === 'Bundle') {
-        walk(resource);
-      } else {
-        resources.push(resource);
-      }
-    }
-  };
-  walk(bundle);
-  return resources;
-}
-
-/**
- * Parses a batch-response bundle (studies + _include PlanDefinitions +
- * QuestionnaireResponses) into a typed ResearchProgress object.
- *
- * @param bundle - The batch-response bundle returned by the FHIR server.
- * @param today - Reference date, yyyy-mm-dd.
- * @returns Aggregated research progress.
- */
-export function parseResearchBundle(
-  bundle: Bundle,
-  today: string
-): ResearchProgress {
-  const resources = collectBundleResources(bundle);
-
-  const studies = resources.filter(
-    (resource): resource is ResearchStudy =>
-      resource.resourceType === 'ResearchStudy'
-  );
-  const plans = resources.filter(
-    (resource): resource is PlanDefinition =>
-      resource.resourceType === 'PlanDefinition'
-  );
-  const responses = resources
-    .filter(
-      (resource): resource is QuestionnaireResponse =>
-        resource.resourceType === 'QuestionnaireResponse'
-    )
-    .map(response => ({
-      id: response.id ?? '',
-      questionnaire: response.questionnaire ?? '',
-      authored: response.authored
-    }));
-
-  const batchesByPlanId = new Map<string, ResearchBatch>();
-  for (const plan of plans) {
-    const batch = toResearchBatch(plan);
-    if (batch) batchesByPlanId.set(batch.id, batch);
-  }
-
-  const studyProgress = studies.map(study => {
-    const batchIds = (study.protocol ?? [])
-      .map(reference =>
-        parseCanonicalOrReference(reference.reference, 'PlanDefinition')
-      )
-      .filter((id): id is string => id !== null);
-    const batches = batchIds
-      .map(id => batchesByPlanId.get(id))
-      .filter((batch): batch is ResearchBatch => batch !== undefined);
-    return computeStudyProgress(study, batches, responses, today);
-  });
-
-  return computeResearchProgress(studyProgress, responses);
 }

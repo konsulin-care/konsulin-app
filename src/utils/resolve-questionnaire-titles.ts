@@ -9,8 +9,16 @@ export type ResolveTitleOptions = {
   signal?: AbortSignal;
 };
 
+/** True when the record type participates in questionnaire title resolution. */
+function isQuestionnaireRecord(record: IRecord): boolean {
+  return (
+    record.type === 'QuestionnaireResponse' || record.type === 'SOAP Notes'
+  );
+}
+
 /**
- * Batch-fetch Questionnaire titles for QuestionnaireResponse records.
+ * Batch-fetch Questionnaire titles for questionnaire-based records
+ * (QuestionnaireResponse and SOAP Notes).
  *
  * Collects all unique unresolved questionnaire IDs (canonical references
  * like "Questionnaire/phq9"), batch-fetches their title fields via
@@ -30,10 +38,10 @@ export async function resolveQuestionnaireTitles(
   const neededIds = new Set<string>();
 
   for (const r of records) {
-    if (r.type !== 'QuestionnaireResponse') continue;
+    if (!isQuestionnaireRecord(r)) continue;
     const qId = resolveQuestionnaireTitle(r);
-    // Only resolve if title is still a canonical reference
-    if (r.title === `Questionnaire/${qId}`) {
+    // Only resolve if title is still a reference (relative or canonical)
+    if (qId !== r.title) {
       neededIds.add(qId);
     }
   }
@@ -77,7 +85,7 @@ export async function resolveQuestionnaireTitles(
 
   // Apply title map to records
   return records.map(r => {
-    if (r.type !== 'QuestionnaireResponse') return r;
+    if (!isQuestionnaireRecord(r)) return r;
     const qId = resolveQuestionnaireTitle(r);
     const displayTitle = titleMap[qId];
     if (displayTitle) return { ...r, title: displayTitle };

@@ -1,34 +1,14 @@
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { QuestionnaireResponse, QuestionnaireResponseItem } from 'fhir/r4';
+import {
+  questionnaireIdLabel,
+  questionnaireIdOf
+} from '@/utils/fhir/questionnaire-url';
+import { getScoreColor, parseDimensionScores } from '@/utils/fhir/scores';
+import type { QuestionnaireResponse } from 'fhir/r4';
 import { NotepadTextIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-
-type IScore = {
-  name: string;
-  score: number;
-  percentage: number;
-};
-
-const BASE_HUE = 170;
-
-/**
- * Deterministic HSL color derived from a score name.
- *
- * Pure function: hashes the name into stable hue/saturation/lightness so the
- * same score always renders the same color. No randomness, no state.
- */
-function getColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + (name.codePointAt(i) ?? 0)) >>> 0;
-  }
-  const hue = (BASE_HUE + (hash % 40) - 20 + 360) % 360;
-  const saturation = 70 + (hash % 20);
-  const lightness = 45 + (hash % 15);
-  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-}
 
 const RESULT_BRIEF_CLAIM = 'Claim the results to request analysis.';
 
@@ -37,6 +17,8 @@ interface ScoreDisplayProps {
   isLoading?: boolean;
   resultBrief?: string | null;
   loadingSkeleton?: boolean;
+  /** Resolved Questionnaire.title, or undefined to show the all-caps id. */
+  questionnaireTitle?: string;
 }
 
 /**
@@ -50,52 +32,25 @@ export default function ScoreDisplay({
   questionnaireResponse,
   isLoading = false,
   resultBrief,
-  loadingSkeleton = false
+  loadingSkeleton = false,
+  questionnaireTitle
 }: Readonly<ScoreDisplayProps>) {
-  const scoreList = useMemo<IScore[]>(() => {
-    if (!questionnaireResponse) return [];
-
-    const interpretationItem = questionnaireResponse.item.find(
-      (item: QuestionnaireResponseItem) => item.linkId === 'interpretation'
-    );
-
-    const scoreDimensionItem = interpretationItem?.item.find(
-      (subItem: QuestionnaireResponseItem) =>
-        subItem.linkId === 'score-dimension'
-    );
-
-    const reference = scoreDimensionItem?.item.find(
-      (subItem: QuestionnaireResponseItem) => subItem.linkId === 'reference'
-    );
-
-    const refValue = reference?.answer?.[0]?.valueInteger ?? 1;
-
-    const result = scoreDimensionItem?.item
-      .map((subItem: QuestionnaireResponseItem) => {
-        if (subItem.linkId === 'reference') return null;
-
-        const score = subItem.answer?.[0]?.valueInteger;
-
-        if (score && refValue) {
-          const newScore = score / refValue;
-          const percentage = Math.round(newScore * 100);
-
-          return {
-            name: subItem.text ?? 'Score',
-            score: newScore,
-            percentage
-          };
-        }
-        return null;
-      })
-      .filter(Boolean) as IScore[];
-
-    return result;
-  }, [questionnaireResponse]);
+  const scoreList = useMemo(
+    () => parseDimensionScores(questionnaireResponse),
+    [questionnaireResponse]
+  );
 
   const displayResultBrief = useMemo<string>(() => {
     return resultBrief ?? RESULT_BRIEF_CLAIM;
   }, [resultBrief]);
+
+  // Questionnaire.title when resolved; otherwise the all-caps questionnaire id.
+  const questionnaireId = questionnaireIdOf(
+    questionnaireResponse?.questionnaire
+  );
+  const displayQuestionnaireName =
+    questionnaireTitle ??
+    (questionnaireId ? questionnaireIdLabel(questionnaireId) : '');
 
   const showLoading = (isLoading || loadingSkeleton) && !questionnaireResponse;
 
@@ -108,7 +63,7 @@ export default function ScoreDisplay({
       {questionnaireResponse?.questionnaire && (
         <div className='card mb-4 flex items-center'>
           <NotepadTextIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
-          {questionnaireResponse.questionnaire.split('/')[1] ?? ''}
+          {displayQuestionnaireName}
         </div>
       )}
 
@@ -132,7 +87,7 @@ export default function ScoreDisplay({
         ) : (
           <div className='space-y-2 rounded-lg bg-[#F9F9F9] p-4'>
             {scoreList.map(item => {
-              const barColor = getColor(item.name);
+              const barColor = getScoreColor(item.name);
               return (
                 <div
                   key={item.name}

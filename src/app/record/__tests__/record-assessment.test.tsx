@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockUseQuery } = vi.hoisted(() => ({
@@ -34,7 +34,8 @@ vi.mock('@/lib/indexeddb', () => ({
 }));
 
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: mockUseQuery
+  useQuery: mockUseQuery,
+  useQueryClient: vi.fn(() => ({ setQueryData: vi.fn() }))
 }));
 
 vi.mock('@/components/ui/progress', () => ({
@@ -56,8 +57,11 @@ vi.mock('react-markdown', () => ({
 }));
 
 import { useAuth } from '@/context/auth/authContext';
+import { dbGet } from '@/lib/indexeddb';
+import { getAPI } from '@/services/api';
 import { useQuestionnaireResponse } from '@/services/api/assessment';
 import { FhirExtensionUrls } from '@/utils/fhir/extensions';
+import { useQueryClient } from '@tanstack/react-query';
 import RecordAssessment from '../record-assessment';
 
 /** Build a minimal QuestionnaireResponse with score-dimension items. */
@@ -206,5 +210,62 @@ describe('RecordAssessment', () => {
     render(<RecordAssessment recordId='qr-1' onFeeChange={onFeeChange} />);
 
     expect(onFeeChange).toHaveBeenCalledWith(null);
+  });
+
+  it('passes the resolved questionnaire title and seeds the shared title cache', () => {
+    const setQueryData = vi.fn();
+    vi.mocked(useQueryClient).mockReturnValue({ setQueryData } as any);
+    mockUseQuery.mockReturnValue({
+      data: {
+        resourceType: 'Questionnaire',
+        id: 'test-q',
+        title: 'PSS-10'
+      },
+      isLoading: false
+    });
+    vi.mocked(useQuestionnaireResponse).mockReturnValue({
+      data: buildMockQR([{ name: 'Stress', score: 2, ref: 4 }]),
+      isLoading: false
+    } as any);
+
+    render(<RecordAssessment recordId='qr-1' />);
+
+    expect(screen.getByText('PSS-10')).toBeInTheDocument();
+    expect(setQueryData).toHaveBeenCalledWith(
+      ['questionnaire', 'test-q', 'title'],
+      'PSS-10'
+    );
+  });
+
+  it('picks up a service request id that lands shortly after mount', async () => {
+    vi.useFakeTimers();
+    try {
+      const apiGet = vi.fn().mockResolvedValue({
+        data: { data: { note: 'Interpreted' } }
+      });
+      const apiPut = vi.fn().mockResolvedValue({ data: {} });
+      vi.mocked(getAPI).mockResolvedValue({ get: apiGet, put: apiPut } as any);
+      vi.mocked(dbGet)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ serviceRequestId: 'sr-1' });
+
+      vi.mocked(useQuestionnaireResponse).mockReturnValue({
+        data: buildMockQR([{ name: 'Stress', score: 2, ref: 4 }]),
+        isLoading: false
+      } as any);
+
+      render(<RecordAssessment recordId='qr-1' />);
+
+      // First IndexedDB read misses; the retry after 1s finds the id and polls.
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+
+      expect(apiGet).toHaveBeenCalledWith(
+        '/api/v1/service-request/sr-1/result'
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

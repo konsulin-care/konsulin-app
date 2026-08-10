@@ -41,23 +41,15 @@ describe('ReportPaymentDrawer', () => {
     expect(screen.getByText('Rp 50,000')).toBeInTheDocument();
   });
 
-  it('renders Pay Now and Cancel buttons', () => {
+  it('renders the Pay Now CTA', () => {
     render(<ReportPaymentDrawer open fee={FEE} onOpenChange={vi.fn()} />);
     expect(screen.getByText('Pay Now')).toBeInTheDocument();
-    expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
 
   it('closes the drawer when Pay Now is clicked', () => {
     const onOpenChange = vi.fn();
     render(<ReportPaymentDrawer open fee={FEE} onOpenChange={onOpenChange} />);
     fireEvent.click(screen.getByText('Pay Now'));
-    expect(onOpenChange).toHaveBeenCalledWith(false);
-  });
-
-  it('closes the drawer when Cancel is clicked', () => {
-    const onOpenChange = vi.fn();
-    render(<ReportPaymentDrawer open fee={FEE} onOpenChange={onOpenChange} />);
-    fireEvent.click(screen.getByText('Cancel'));
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });

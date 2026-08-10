@@ -12,7 +12,16 @@ vi.mock('next/image', () => ({
 
 vi.mock('@/utils/helper', () => ({
   customMarkdownComponents: {},
-  formatTitle: (t: string) => t,
+  formatTitle: (raw: string) => {
+    const cleaned = raw.trim().replace(/\s+/g, ' ');
+    if (cleaned.includes('-')) {
+      return cleaned
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    }
+    return cleaned.toUpperCase();
+  },
   generateAvatarPlaceholder: ({
     id,
     name
@@ -244,5 +253,50 @@ describe('RecordCard title loading skeleton', () => {
     // Skeleton div has animate-pulse class from shadcn/ui
     const skeleton = document.querySelector('.animate-pulse');
     expect(skeleton).not.toBeNull();
+  });
+});
+
+describe('RecordCard questionnaire title display', () => {
+  it('renders QuestionnaireResponse title verbatim without formatting', () => {
+    render(
+      <RecordCard
+        record={makeRecord({
+          type: 'QuestionnaireResponse',
+          id: 'qr-phq9',
+          title: 'PHQ-9'
+        })}
+      />
+    );
+    expect(screen.getByText('PHQ-9')).toBeInTheDocument();
+    expect(screen.queryByText('Phq 9')).not.toBeInTheDocument();
+  });
+
+  it('falls back to the all-caps questionnaire id for a canonical ref', () => {
+    render(
+      <RecordCard
+        record={makeRecord({
+          type: 'QuestionnaireResponse',
+          id: 'qr-gad7',
+          title: 'https://konsulin.care/fhir/Questionnaire/gad-7'
+        })}
+      />
+    );
+    expect(screen.getByText('GAD 7')).toBeInTheDocument();
+  });
+
+  it('shows SOAP for an unresolved SOAP Notes canonical ref', () => {
+    render(
+      <RecordCard
+        record={makeRecord({
+          type: 'SOAP Notes',
+          id: 'soap-1',
+          title: 'https://konsulin.care/fhir/Questionnaire/soap'
+        })}
+      />
+    );
+    // No more broken HTTPS output
+    expect(screen.queryByText(/https:/i)).not.toBeInTheDocument();
+    // Title (plus the SOAP badge) both resolve to the same label
+    expect(screen.getAllByText('SOAP').length).toBeGreaterThanOrEqual(1);
   });
 });

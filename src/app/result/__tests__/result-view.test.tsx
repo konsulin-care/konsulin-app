@@ -8,16 +8,23 @@ import type { FabAction } from '@/context/fabContext';
 vi.mock('@/components/assessment/score-display', () => ({
   default: ({
     questionnaireResponse,
-    resultBrief
+    resultBrief,
+    questionnaireTitle
   }: {
     questionnaireResponse: unknown;
     resultBrief: string | null;
+    questionnaireTitle?: string;
   }) => (
     <div data-testid='score-display'>
       {resultBrief === null ? 'claim-prompt' : resultBrief}
       {questionnaireResponse ? 'has-data' : 'no-data'}
+      {questionnaireTitle ? `title:${questionnaireTitle}` : 'no-title'}
     </div>
   )
+}));
+
+vi.mock('@/services/api/questionnaire-info', () => ({
+  useQuestionnaireTitle: vi.fn()
 }));
 
 // Mock next/navigation
@@ -50,9 +57,9 @@ vi.mock('@/utils/redirect-intent', () => ({
   saveIntent: vi.fn()
 }));
 
-// Mock lucide-react ClipboardPlus
+// Mock lucide-react BookCheck
 vi.mock('lucide-react', () => ({
-  ClipboardPlus: () => <div data-testid='clipboard-plus' />
+  BookCheck: () => <div data-testid='book-check-icon' />
 }));
 
 // Mock PageHeader — avoid its heavy dependency tree
@@ -75,6 +82,7 @@ vi.mock('@/components/page-header', () => ({
 import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
 import { dbGetAll } from '@/lib/indexeddb';
+import { useQuestionnaireTitle } from '@/services/api/questionnaire-info';
 import { saveIntent } from '@/utils/redirect-intent';
 import type { ReadonlyURLSearchParams } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
@@ -89,6 +97,7 @@ function sampleDraft(qrId = 'test-qr-id') {
       response: {
         resourceType: 'QuestionnaireResponse',
         id: qrId,
+        questionnaire: 'Questionnaire/test-q',
         item: []
       },
       updatedAt: Date.now()
@@ -98,13 +107,13 @@ function sampleDraft(qrId = 'test-qr-id') {
 
 type SetAction = Extract<FabAction, { type: 'SET_ACTION' }>;
 
-/** Find the 'Claim Results' SET_ACTION call from the dispatched FAB actions. */
+/** Find the 'Claim Report' SET_ACTION call from the dispatched FAB actions. */
 function findClaimAction(calls: readonly unknown[][]): SetAction | undefined {
   return calls.find(([action]) => {
     const fabAction = action as FabAction;
     return (
       fabAction.type === 'SET_ACTION' &&
-      fabAction.config?.label === 'Claim Results'
+      fabAction.config?.label === 'Claim Report'
     );
   })?.[0] as SetAction | undefined;
 }
@@ -128,6 +137,11 @@ describe('ResultView', () => {
 
     // Default: no drafts found
     vi.mocked(dbGetAll).mockResolvedValue([]);
+
+    // Default: questionnaire title hook is idle
+    vi.mocked(useQuestionnaireTitle).mockReturnValue({
+      data: undefined
+    } as never);
 
     // Default: search param has id
     vi.mocked(useSearchParams).mockReturnValue({
@@ -192,6 +206,18 @@ describe('ResultView', () => {
     const scoreDisplay = await screen.findByTestId('score-display');
     expect(scoreDisplay.textContent).toContain('claim-prompt');
     expect(scoreDisplay.textContent).toContain('has-data');
+  });
+
+  it('passes the resolved questionnaire title to ScoreDisplay', async () => {
+    vi.mocked(dbGetAll).mockResolvedValue(sampleDraft());
+    vi.mocked(useQuestionnaireTitle).mockReturnValue({
+      data: 'PSS-10'
+    } as never);
+
+    render(<ResultView />);
+
+    const scoreDisplay = await screen.findByTestId('score-display');
+    expect(scoreDisplay.textContent).toContain('title:PSS-10');
   });
 
   it('renders PageHeader with Assessment Result indicator and /assessments back route', async () => {
@@ -286,7 +312,7 @@ describe('ResultView', () => {
     await screen.findByTestId('score-display');
     const claimAction = findClaimAction(mockDispatch.mock.calls);
     expect(claimAction).toBeDefined();
-    // deepsource:ignore JS-0098 — invoke claim action in test without awaiting
+    // skipcq: JS-0098 - invoke claim action in test without awaiting
     void claimAction?.config.onAction();
 
     expect(saveIntent).toHaveBeenCalledWith('assessmentResult', {

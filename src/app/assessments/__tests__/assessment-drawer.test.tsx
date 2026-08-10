@@ -17,6 +17,14 @@ vi.mock('react-qr-code', () => ({
 }));
 
 vi.mock('@/components/ui/drawer', () => ({
+  Drawer: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
+    open ? <div data-testid='drawer'>{children}</div> : null,
+  DrawerContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DrawerTrigger: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
   DrawerHeader: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
@@ -24,12 +32,6 @@ vi.mock('@/components/ui/drawer', () => ({
     <h2>{children}</h2>
   ),
   DrawerDescription: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  DrawerFooter: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  DrawerClose: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   )
 }));
@@ -86,19 +88,14 @@ function makeProgress(firstUncompleted: string | null): ResearchProgress {
       }
     ],
     cumulativeResponses: 2,
-    currentLevel: { threshold: 1, label: 'Participant', reward: 'brief' },
-    nextLevel: { threshold: 5, label: 'Contributor', reward: 'report' },
-    levelProgress: {
-      current: { threshold: 1, label: 'Participant', reward: 'brief' },
-      next: { threshold: 5, label: 'Contributor', reward: 'report' },
-      currentThreshold: 1,
-      nextThreshold: 5,
-      intoNext: 1,
-      toNext: 3
-    },
+    questionnaireResponses: firstUncompleted
+      ? ['phq2']
+      : ['phq2', 'big-five-inventory'],
+    questionnaireXp: 8,
     completedQuestionnaireIds: firstUncompleted
       ? ['phq2']
-      : ['phq2', 'big-five-inventory']
+      : ['phq2', 'big-five-inventory'],
+    consentedStudyIds: []
   };
 }
 
@@ -114,6 +111,7 @@ function renderDrawer({
   const router = { push: vi.fn() };
   render(
     <AssessmentDrawerContent
+      open
       selectedAssessment={selectedAssessment}
       researchUrl={researchUrl}
       researchComplete={researchComplete}

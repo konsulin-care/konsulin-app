@@ -2,15 +2,7 @@
 
 import FeeInput from '@/components/shared/fee-input';
 import QuestionnaireUploader from '@/components/shared/questionnaire-uploader';
-import { Button } from '@/components/ui/button';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle
-} from '@/components/ui/drawer';
+import AppDrawer from '@/components/ui/app-drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ASSESSMENT_CATEGORIES } from '@/constants/assessment-categories';
@@ -292,47 +284,28 @@ export default function AddAssessmentDrawer({ open, onClose }: Props) {
   ]);
 
   return (
-    <Drawer
+    <AppDrawer
       open={open}
-      onOpenChange={o => {
-        if (!o) onClose();
+      onClose={onClose}
+      title='Add Assessment'
+      description='Upload a questionnaire and set its display metadata.'
+      ctaLabel='Submit'
+      onCtaClick={() => {
+        handleSubmit().catch(() => {
+          /* handled in handleSubmit */
+        });
       }}
+      ctaDisabled={!isValid || isSubmitting}
+      ctaLoading={isSubmitting}
     >
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>Add Assessment</DrawerTitle>
-          <DrawerDescription>
-            Upload a questionnaire and set its display metadata.
-          </DrawerDescription>
-        </DrawerHeader>
-
-        <div className='px-4'>
-          <AssessmentFormFields
-            state={form}
-            onChange={patch => {
-              setForm(prev => ({ ...prev, ...patch }));
-            }}
-          />
-        </div>
-
-        <DrawerFooter>
-          <Button
-            onClick={() => {
-              handleSubmit().catch(() => {
-                /* handled in handleSubmit */
-              });
-            }}
-            disabled={!isValid || isSubmitting}
-            variant='secondary'
-            className='text-white'
-          >
-            {isSubmitting ? 'Submitting...' : 'Submit'}
-          </Button>
-          <Button variant='outline' onClick={onClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+      <div className='px-4'>
+        <AssessmentFormFields
+          state={form}
+          onChange={patch => {
+            setForm(prev => ({ ...prev, ...patch }));
+          }}
+        />
+      </div>
+    </AppDrawer>
   );
 }

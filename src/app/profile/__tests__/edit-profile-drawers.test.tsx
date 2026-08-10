@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { EditProfileDrawers } from '@/app/profile/edit-profile-drawers';
@@ -16,9 +16,7 @@ describe('EditProfileDrawers', () => {
       />
     );
     // The DobCalendar should be rendered with the birth date month/year
-    expect(
-      screen.getByText('January 2012')
-    ).toBeDefined();
+    expect(screen.getByText('January 2012')).toBeDefined();
   });
 
   it('renders success drawer when SUCCESS state is set', () => {
@@ -61,21 +59,5 @@ describe('EditProfileDrawers', () => {
     // Close the drawer by clicking outside/escape
     // NOTE: Radix drawer testing is complex - we verify the prop-based behavior
     expect(onCloseDrawer).not.toHaveBeenCalled();
-  });
-
-  it('calls onSuccessClose when success drawer close button is clicked', () => {
-    const onSuccessClose = vi.fn();
-    render(
-      <EditProfileDrawers
-        drawerState={DRAWER_STATE.SUCCESS}
-        birthDate=''
-        onDOBChange={vi.fn()}
-        onCloseDrawer={vi.fn()}
-        onSuccessClose={onSuccessClose}
-      />
-    );
-    const closeButton = screen.getByText('Close');
-    fireEvent.click(closeButton);
-    expect(onSuccessClose).toHaveBeenCalledOnce();
   });
 });

@@ -52,6 +52,7 @@ Backend API (Go + SuperTokens Go SDK)
 
 | Decision                              | ADR                                                      |
 | ------------------------------------- | -------------------------------------------------------- |
+| AppDrawer standardization             | `@docs/ADR/018-app-drawer-standard.md`                   |
 | Go BFF + Next.js static frontend      | `@docs/ADR/015-go-bff-static-nextjs.md`                  |
 | Anonymous session consolidation       | `@docs/ADR/016-anon-session-consolidation.md`            |
 | Client-side data layer                | `@docs/ADR/013-client-side-data-layer.md`                |

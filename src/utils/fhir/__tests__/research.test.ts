@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeStudyProgress,
   daysUntilBatch,
+  earliestStudyStart,
   extractQuestionnaireId,
   isDateInRange,
   isResponseInBatch,
@@ -62,6 +63,25 @@ function makePlan(
     ]
   };
 }
+
+/** Study with a period start override, for earliestStudyStart fixtures. */
+const studyFrom = (id: string, start?: string): ResearchStudy => ({
+  ...makeStudy(id, []),
+  period: start ? { start, end: '2027-07-31' } : undefined
+});
+
+describe('earliestStudyStart', () => {
+  it('returns the earliest start, skipping start-less studies, or null when none', () => {
+    expect(
+      earliestStudyStart([
+        studyFrom('a'),
+        studyFrom('b', '2026-06-01'),
+        studyFrom('c', '2026-07-01')
+      ])
+    ).toBe('2026-06-01');
+    expect(earliestStudyStart([studyFrom('a')])).toBeNull();
+  });
+});
 
 describe('daysUntilBatch', () => {
   it('returns whole calendar days from today until a future close', () => {

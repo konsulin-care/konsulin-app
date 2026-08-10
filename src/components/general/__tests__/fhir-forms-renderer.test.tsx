@@ -1,13 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, react/jsx-no-useless-fragment, @next/next/no-img-element, jsx-a11y/alt-text, max-lines */
 
 import { FabProvider, useFab } from '@/context/fabContext';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor
+} from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
   useRouter: vi
     .fn()
-    .mockReturnValue({ push: vi.fn(), replace: vi.fn(), back: vi.fn() })
+    .mockReturnValue({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+  useSearchParams: vi.fn(() => new URLSearchParams())
 }));
 vi.mock('@/components/general/card-dom-mapper', () => ({
   CardDomMapper: () => null
@@ -59,6 +66,12 @@ vi.mock('@/lib/indexeddb', () => ({
   dbDelete: vi.fn()
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
+const { mockUseResearchProgress } = vi.hoisted(() => ({
+  mockUseResearchProgress: vi.fn()
+}));
+vi.mock('@/services/api/research', () => ({
+  useResearchProgress: mockUseResearchProgress
+}));
 vi.mock('@/components/general/smart-form-shell', () => ({
   SmartFormShell: ({ className, onChange }: any) => (
     <div data-testid='mock-smart-form' className={className}>
@@ -117,7 +130,8 @@ import { useRequiredValidation } from '@/hooks/useRequiredValidation';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
 import { useBuildForm } from '@aehrc/smart-forms-renderer';
 import type { Questionnaire } from 'fhir/r4';
-import { useRouter } from 'next/navigation';
+import type { ReadonlyURLSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import FhirFormsRenderer from '../fhir-forms-renderer';
 
@@ -143,6 +157,7 @@ function DirtyStateObserver({
 
 function setupBeforeEach() {
   vi.clearAllMocks();
+  vi.mocked(mockUseResearchProgress).mockReturnValue({ data: undefined });
   vi.mocked(useRouter).mockReturnValue({
     push: vi.fn(),
     replace: vi.fn(),
@@ -322,5 +337,67 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
       lastDirtyState?.onAction?.();
     });
     expect(screen.getByTestId('mock-drawer')).toBeInTheDocument();
+  });
+
+  it('shares the study-scoped invite from the completion drawer', async () => {
+    const share = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'share', {
+      value: share,
+      configurable: true
+    });
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('study=study-x') as ReadonlyURLSearchParams
+    );
+    const batch = {
+      id: 'batch-1',
+      start: '2026-08-01',
+      end: '2026-08-31',
+      questionnaireIds: ['q-123']
+    };
+    vi.mocked(mockUseResearchProgress).mockReturnValue({
+      data: {
+        studies: [
+          {
+            study: {
+              resourceType: 'ResearchStudy',
+              id: 'study-x',
+              status: 'active',
+              title: 'Study X'
+            },
+            batches: [batch],
+            currentBatch: batch,
+            completedCount: 1,
+            totalCount: 1,
+            isComplete: true,
+            firstUncompletedQuestionnaireId: null,
+            completedQuestionnaireIds: ['q-123'],
+            history: [],
+            consecutiveBatches: 0
+          }
+        ],
+        cumulativeResponses: 0,
+        questionnaireResponses: [],
+        questionnaireXp: 0,
+        completedQuestionnaireIds: ['q-123'],
+        consentedStudyIds: []
+      }
+    });
+    renderWithObserver({ formType: 'research' });
+    fireEvent.change(screen.getByTestId('mock-form-input'), {
+      target: { value: 'a' }
+    });
+    act(() => {
+      lastDirtyState?.onAction?.();
+    });
+
+    fireEvent.click(screen.getByTestId('share-research-footer'));
+
+    await waitFor(() => {
+      expect(share).toHaveBeenCalledWith({
+        title: 'Study X',
+        text: `Join me as a citizen scientist through Study X in Konsulin.\n${window.location.origin}/research?view=study-x&ref=p_pat-1`,
+        url: `${window.location.origin}/research?view=study-x&ref=p_pat-1`
+      });
+    });
   });
 });

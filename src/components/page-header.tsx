@@ -1,11 +1,16 @@
 'use client';
 
+import HeaderReminder from '@/components/header-reminder';
 import {
   AdminClinicCard,
   AuthArea,
   GuestAvatar,
   ResearchHeaderWidgetSection,
   UpcomingSessionBlock,
+  canShowResearchHeader,
+  isSessionCardAvailable,
+  isSessionWithinWindow,
+  shouldShowSeeAll,
   useUpcomingSession
 } from '@/components/page-header-sections';
 import { Roles } from '@/constants/roles';
@@ -16,6 +21,7 @@ import { getAPI } from '@/services/api';
 import { generateAvatarPlaceholder } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeftIcon } from 'lucide-react';
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -165,6 +171,44 @@ export default function PageHeader({
     authState.isAuthenticated
   );
 
+  /** /research renders no header reminder cards, mirroring canShowResearchHeader. */
+  const hideSessionCard = hideUpcomingSession || pathname === '/research';
+
+  const hasSessionCard = isSessionCardAvailable(
+    upcomingData,
+    isAdmin,
+    hideSessionCard
+  );
+
+  const isSessionUrgent = hasSessionCard && isSessionWithinWindow(upcomingData);
+
+  const researchEligible = canShowResearchHeader({
+    isLoadingAuth,
+    isAdmin,
+    pathname,
+    isPatient,
+    isAuthenticated: authState.isAuthenticated
+  });
+
+  const sessionCard = hasSessionCard ? (
+    <UpcomingSessionBlock
+      data={upcomingData}
+      role={role}
+      isAdmin={isAdmin}
+      hideUpcomingSession={hideSessionCard}
+    />
+  ) : undefined;
+
+  const researchCard = researchEligible ? (
+    <ResearchHeaderWidgetSection
+      isLoadingAuth={isLoadingAuth}
+      isAdmin={isAdmin}
+      pathname={pathname}
+      isPatient={isPatient}
+      isAuthenticated={authState.isAuthenticated}
+    />
+  ) : undefined;
+
   const showBack = pathname !== '/';
   const backAction =
     overrideBackRoute ?? getDefaultBackRoute(pathname, searchParams);
@@ -198,20 +242,19 @@ export default function PageHeader({
         />
       </div>
 
-      <UpcomingSessionBlock
-        data={upcomingData}
-        role={role}
-        isAdmin={isAdmin}
-        hideUpcomingSession={hideUpcomingSession}
+      <HeaderReminder
+        isSessionUrgent={isSessionUrgent}
+        session={sessionCard}
+        research={researchCard}
       />
 
-      <ResearchHeaderWidgetSection
-        isLoadingAuth={isLoadingAuth}
-        isAdmin={isAdmin}
-        pathname={pathname}
-        isPatient={isPatient}
-        isAuthenticated={authState.isAuthenticated}
-      />
+      {shouldShowSeeAll(hasSessionCard, isSessionUrgent, researchEligible) && (
+        <div className='mt-1 flex justify-end'>
+          <Link href='/schedule' className='text-[10px] text-[#2c2f35]'>
+            See All
+          </Link>
+        </div>
+      )}
 
       {isAdmin && (
         <AdminClinicCard

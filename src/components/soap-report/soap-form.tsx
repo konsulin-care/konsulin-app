@@ -9,6 +9,7 @@ import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
 import { useRequiredValidation } from '@/hooks/useRequiredValidation';
 import { dbDelete, dbGet, STORES } from '@/lib/indexeddb';
 import { useSubmitSoapBundle } from '@/services/api/assessment';
+import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
 import {
   buildForm,
   destroyForm,
@@ -16,13 +17,7 @@ import {
   getResponse,
   RendererThemeProvider
 } from '@aehrc/smart-forms-renderer';
-import {
-  Bundle,
-  BundleEntryRequest,
-  Observation,
-  Questionnaire,
-  QuestionnaireResponse
-} from 'fhir/r4';
+import { Bundle, Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -35,6 +30,37 @@ type Props = {
   questionnaireResponse?: QuestionnaireResponse;
   isAuthorSame?: boolean;
 };
+
+/**
+ * Builds the QuestionnaireResponse resource submitted for a SOAP note.
+ *
+ * Uses the canonical questionnaire url so the note stays searchable by Blaze's
+ * `questionnaire` search parameter.
+ *
+ * @param questionnaireResponse - The in-progress response from the form.
+ * @param author - Practitioner author reference.
+ * @param subject - Patient subject reference.
+ * @param timestamp - Authored ISO timestamp.
+ * @returns The completed QuestionnaireResponse resource.
+ */
+export function buildSoapResponseResource(
+  questionnaireResponse: QuestionnaireResponse,
+  author: { reference: string },
+  subject: { reference: string },
+  timestamp: string
+): QuestionnaireResponse {
+  const { id, item, resourceType } = questionnaireResponse;
+  return {
+    id,
+    item,
+    resourceType,
+    status: 'completed',
+    authored: timestamp,
+    author,
+    subject,
+    questionnaire: toCanonicalQuestionnaireUrl('soap')
+  };
+}
 
 /**
  *
@@ -125,27 +151,23 @@ export default function SoapForm({
         questionnaireResponse
       );
 
-      const { item, resourceType, id } = questionnaireResponse;
-
       const timestamp = new Date().toISOString();
 
-      const qrResource = {
-        id,
-        item,
-        resourceType,
-        status: 'completed',
-        authored: timestamp,
+      const qrResource = buildSoapResponseResource(
+        questionnaireResponse,
         author,
         subject,
-        questionnaire: 'Questionnaire/soap'
-      };
+        timestamp
+      );
+
+      const { id } = questionnaireResponse;
 
       const bundle: Bundle = {
         resourceType: 'Bundle',
         type: 'transaction',
         entry: [
           {
-            resource: qrResource as QuestionnaireResponse,
+            resource: qrResource,
             request: {
               method: 'PUT',
               url: `QuestionnaireResponse/${id}`
@@ -167,11 +189,11 @@ export default function SoapForm({
                 code: fixedCode,
                 subject,
                 performer: [author]
-              } as Observation,
+              },
               request: {
-                method: 'POST',
+                method: 'POST' as const,
                 url: 'Observation'
-              } as BundleEntryRequest
+              }
             };
           })
         ]

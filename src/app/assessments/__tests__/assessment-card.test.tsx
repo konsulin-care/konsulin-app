@@ -45,6 +45,17 @@ describe('AssessmentCard (compact variant)', () => {
     expect(screen.getByText('PHQ-9')).toBeInTheDocument();
   });
 
+  it('falls back to the all-caps questionnaire id when the title is missing', () => {
+    render(
+      <AssessmentCard
+        questionnaire={createQuestionnaire({ title: undefined })}
+        variant='compact'
+        onClick={vi.fn()}
+      />
+    );
+    expect(screen.getByText('PHQ 9')).toBeInTheDocument();
+  });
+
   it('does not show description', () => {
     render(
       <AssessmentCard

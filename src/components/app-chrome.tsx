@@ -32,7 +32,7 @@ function PageContent({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <div className='flex min-h-screen flex-col'>
       <div id='modal' />
-      <main className='mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
+      <main className='relative left-[calc(50vw_-_50%)] mx-auto flex min-h-full w-full max-w-screen-sm grow flex-col sm:shadow-2xl'>
         {children}
       </main>
     </div>

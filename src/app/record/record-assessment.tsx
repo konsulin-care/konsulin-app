@@ -8,7 +8,11 @@ import {
   useQuestionnaireResponse
 } from '@/services/api/assessment';
 import { getFee } from '@/utils/fhir/fee';
-import { useQuery } from '@tanstack/react-query';
+import {
+  questionnaireIdLabel,
+  questionnaireIdOf
+} from '@/utils/fhir/questionnaire-url';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Money,
   Questionnaire,
@@ -22,6 +26,38 @@ type Props = {
   readonly onTitleChange?: (title: string) => void;
   readonly onFeeChange?: (fee: Money | null) => void;
 };
+
+/** Max attempts when waiting for a service request id to land. */
+const MAX_ID_READ_ATTEMPTS = 5;
+
+/** Delay between service request id read attempts. */
+const ID_READ_INTERVAL_MS = 1000;
+
+/**
+ * Reads the stored service request id, retrying briefly so a webhook result
+ * that lands shortly after navigation is still picked up for polling.
+ *
+ * @param recordId - QuestionnaireResponse id keying the store entry.
+ * @param isCancelled - Aborts further retries once the component unmounts.
+ * @returns The service request id, or undefined when never found.
+ */
+async function readServiceRequestId(
+  recordId: string,
+  isCancelled: () => boolean
+): Promise<string | undefined> {
+  for (let attempt = 0; attempt < MAX_ID_READ_ATTEMPTS; attempt += 1) {
+    const srRecord = await dbGet<{ serviceRequestId: string }>(
+      STORES.serviceRequests,
+      recordId
+    );
+    const serviceRequestId = srRecord?.serviceRequestId;
+    if (serviceRequestId || isCancelled()) return serviceRequestId;
+    if (attempt < MAX_ID_READ_ATTEMPTS - 1) {
+      await new Promise(resolve => setTimeout(resolve, ID_READ_INTERVAL_MS));
+    }
+  }
+  return undefined;
+}
 
 /**
  *
@@ -134,11 +170,10 @@ export default function RecordAssessment({
         return;
       }
 
-      const srRecord = await dbGet<{ serviceRequestId: string }>(
-        STORES.serviceRequests,
-        recordId
+      const serviceRequestId = await readServiceRequestId(
+        recordId,
+        () => cancelled
       );
-      const serviceRequestId = srRecord?.serviceRequestId;
       if (!serviceRequestId) return;
 
       poll(serviceRequestId).catch(console.error);
@@ -152,7 +187,10 @@ export default function RecordAssessment({
   }, [questionnaireResponse, recordId, authState.isAuthenticated]);
 
   // Fetch questionnaire title + fee extension for header and Get Report FAB
-  const questionnaireId = questionnaireResponse?.questionnaire?.split('/')[1];
+  const questionnaireId = questionnaireIdOf(
+    questionnaireResponse?.questionnaire
+  );
+  const queryClient = useQueryClient();
   const { data: questionnaire } = useQuery<Questionnaire | null>({
     queryKey: ['questionnaire', questionnaireId, 'title,extension'],
     queryFn: async () => {
@@ -164,7 +202,9 @@ export default function RecordAssessment({
     },
     enabled: Boolean(questionnaireId)
   });
-  const questionnaireTitle = questionnaire?.title ?? questionnaireId;
+  const questionnaireTitle =
+    questionnaire?.title ??
+    (questionnaireId ? questionnaireIdLabel(questionnaireId) : '');
   const fee = useMemo(
     () => (questionnaire ? getFee(questionnaire) : null),
     [questionnaire]
@@ -176,6 +216,16 @@ export default function RecordAssessment({
       onTitleChange(questionnaireTitle);
     }
   }, [questionnaireTitle, onTitleChange]);
+
+  // Seed the shared title cache so other surfaces show the same string
+  useEffect(() => {
+    if (questionnaireId && questionnaire?.title) {
+      queryClient.setQueryData(
+        ['questionnaire', questionnaireId, 'title'],
+        questionnaire.title
+      );
+    }
+  }, [questionnaireId, questionnaire?.title, queryClient]);
 
   // Push the questionnaire fee up to RecordDetail; reset on unmount
   useEffect(() => {
@@ -218,6 +268,7 @@ export default function RecordAssessment({
       questionnaireResponse={questionnaireResponse}
       isLoading={questionnaireResponseIsLoading}
       resultBrief={computedResultBrief}
+      questionnaireTitle={questionnaireTitle}
     />
   );
 }

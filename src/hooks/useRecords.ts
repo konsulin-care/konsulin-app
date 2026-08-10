@@ -3,7 +3,8 @@ import {
   mergeRecords,
   parseConditionBundle,
   parseObservationBundle,
-  parseQRBundle
+  parseQRBundle,
+  resolveQuestionnaireTitle
 } from '@/utils/parse-searchset-bundles';
 import { resolveQuestionnaireTitles } from '@/utils/resolve-questionnaire-titles';
 import { useQueryClient } from '@tanstack/react-query';
@@ -159,8 +160,8 @@ export function useRecords(
 
     const hasUnresolved = mergedRecords.some(
       r =>
-        r.type === 'QuestionnaireResponse' &&
-        r.title.startsWith('Questionnaire/')
+        (r.type === 'QuestionnaireResponse' || r.type === 'SOAP Notes') &&
+        resolveQuestionnaireTitle(r) !== r.title
     );
     setTitlesLoading(hasUnresolved);
   }, [mergedRecords, patientId]);

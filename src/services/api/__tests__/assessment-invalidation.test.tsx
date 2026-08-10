@@ -62,7 +62,9 @@ describe('questionnaire submission research invalidation', () => {
 
     expect(mockPost).toHaveBeenCalledWith(
       '/fhir/QuestionnaireResponse',
-      expect.objectContaining({ questionnaire: 'Questionnaire/phq2' })
+      expect.objectContaining({
+        questionnaire: 'https://konsulin.care/fhir/Questionnaire/phq2'
+      })
     );
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['research'] });
   });

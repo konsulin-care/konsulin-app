@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, complexity */
 import { IBundleResponse, IRecord } from '@/types/record';
+import { questionnaireIdOf } from '@/utils/fhir/questionnaire-url';
 import {
   Bundle,
   Coding,
@@ -277,7 +278,7 @@ export const parseRecordBundlePractitioner = (bundle: Bundle) => {
         break;
       }
       case 'QuestionnaireResponse': {
-        if (resource.questionnaire === 'Questionnaire/soap') {
+        if (questionnaireIdOf(resource.questionnaire) === 'soap') {
           results.push(extractSoapQuestionnaire(resource));
         } else {
           results.push(extractBriefQuestionnaire(resource));

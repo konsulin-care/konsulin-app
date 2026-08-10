@@ -1,15 +1,7 @@
 'use client';
 
 import FeeInput from '@/components/shared/fee-input';
-import { Button } from '@/components/ui/button';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle
-} from '@/components/ui/drawer';
+import AppDrawer from '@/components/ui/app-drawer';
 import { Input } from '@/components/ui/input';
 import { SwitchField } from '@/components/ui/switch-field';
 import { Textarea } from '@/components/ui/textarea';
@@ -239,47 +231,27 @@ export default function ServiceFormDrawer({
   ]);
 
   return (
-    <Drawer
+    <AppDrawer
       open={open}
-      onOpenChange={o => {
-        if (!o) onClose();
-      }}
+      onClose={onClose}
+      title={service ? 'Edit Service' : 'Add Service'}
+      description='Configure a healthcare service for this practitioner.'
+      ctaLabel='Save'
+      onCtaClick={handleSave}
+      ctaDisabled={!name.trim()}
     >
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>{service ? 'Edit Service' : 'Add Service'}</DrawerTitle>
-          <DrawerDescription>
-            Configure a healthcare service for this practitioner.
-          </DrawerDescription>
-        </DrawerHeader>
-
-        <FormFields
-          name={name}
-          onNameChange={setName}
-          fee={fee}
-          onFeeChange={setFee}
-          duration={duration}
-          onDurationChange={handleDurationChange}
-          extraDetails={extraDetails}
-          onExtraDetailsChange={setExtraDetails}
-          active={active}
-          onActiveChange={setActive}
-        />
-
-        <DrawerFooter>
-          <Button
-            onClick={handleSave}
-            disabled={!name.trim()}
-            variant='secondary'
-            className='text-white'
-          >
-            Save
-          </Button>
-          <Button variant='outline' onClick={onClose}>
-            Cancel
-          </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+      <FormFields
+        name={name}
+        onNameChange={setName}
+        fee={fee}
+        onFeeChange={setFee}
+        duration={duration}
+        onDurationChange={handleDurationChange}
+        extraDetails={extraDetails}
+        onExtraDetailsChange={setExtraDetails}
+        active={active}
+        onActiveChange={setActive}
+      />
+    </AppDrawer>
   );
 }

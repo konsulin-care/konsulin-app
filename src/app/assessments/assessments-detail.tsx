@@ -10,6 +10,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
 import { lazyComponent } from '@/lib/lazy-component';
 import { useQuestionnaire } from '@/services/api/assessment';
+import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Participant from './soap/participant';
@@ -18,6 +19,21 @@ const FhirFormsRenderer = lazyComponent(
   () => import('@/components/general/fhir-forms-renderer'),
   { ssr: false }
 );
+
+/**
+ * Resolve the assessment detail page title: the Questionnaire.title verbatim,
+ * or the all-caps questionnaire id when the title is unavailable.
+ *
+ * @param questionnaire - Questionnaires fetched for the id, or null.
+ * @param id - The questionnaire id from the URL.
+ * @returns The title to display in the page header.
+ */
+export function resolveDetailPageTitle(
+  questionnaire: Array<{ resource?: { title?: string } }> | null,
+  id: string
+): string {
+  return questionnaire?.[0]?.resource?.title ?? questionnaireIdLabel(id);
+}
 
 /** Assessment detail page: loads and renders a FHIR Questionnaire via AEHRC forms. */
 export default function AssessmentsDetail() {
@@ -49,7 +65,7 @@ export default function AssessmentsDetail() {
   const title =
     questionnaireIsLoading || isAuthLoading
       ? ''
-      : questionnaire?.[0]?.resource?.title || '-';
+      : resolveDetailPageTitle(questionnaire, id);
 
   /** Renders loading state, empty state, or the Questionnaire form with participant selector. */
   const renderContent = () => {

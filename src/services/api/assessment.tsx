@@ -1,6 +1,7 @@
 /* eslint-disable max-lines */
 import { STORES, dbDelete } from '@/lib/indexeddb';
 import { IQuestionnaireResponse } from '@/types/assessment';
+import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {
@@ -248,7 +249,7 @@ export const useSubmitQuestionnaire = (
           item,
           identifier,
           resourceType,
-          questionnaire: `Questionnaire/${questionnaireId}`,
+          questionnaire: toCanonicalQuestionnaireUrl(questionnaireId),
           status: 'completed',
           authored: timestamp,
           subject
@@ -266,7 +267,7 @@ export const useSubmitQuestionnaire = (
     },
     onSuccess: () => {
       // Reflect the new contribution in research progress widgets.
-      // deepsource:ignore JS-0098 — fire-and-forget query invalidation
+      // skipcq: JS-0098 - fire-and-forget query invalidation
       void queryClient.invalidateQueries({ queryKey: ['research'] });
     }
   });
@@ -306,7 +307,7 @@ export const useUpdateSubmitQuestionnaire = (
           item,
           identifier,
           resourceType,
-          questionnaire: `Questionnaire/${questionnaireId}`,
+          questionnaire: toCanonicalQuestionnaireUrl(questionnaireId),
           status: 'completed',
           authored: timestamp,
           subject
@@ -316,7 +317,7 @@ export const useUpdateSubmitQuestionnaire = (
     },
     onSuccess: () => {
       // Reflect the updated contribution in research progress widgets.
-      // deepsource:ignore JS-0098 — fire-and-forget query invalidation
+      // skipcq: JS-0098 - fire-and-forget query invalidation
       void queryClient.invalidateQueries({ queryKey: ['research'] });
     }
   });
@@ -402,7 +403,12 @@ export const useQuestionnaireResponse = ({
       return `${baseUrl}/${questionnaireId}`;
     }
 
-    return `${baseUrl}?questionnaire=Questionnaire/big-five-inventory&patient=${patientId}&_elements=item&_sort=-_lastUpdated`;
+    const canonical = questionnaireId
+      ? toCanonicalQuestionnaireUrl(questionnaireId)
+      : '';
+    const questionnaireParam = canonical ? `&questionnaire=${canonical}` : '';
+
+    return `${baseUrl}?patient=${patientId}${questionnaireParam}&_elements=item&_sort=-_lastUpdated`;
   }, [patientId, questionnaireId]);
 
   return useQuery({

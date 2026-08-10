@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/konsulin-care/konsulin-app/internal/config"
@@ -220,6 +221,22 @@ func TestRoutes_auth_redirectsAuthenticated(t *testing.T) {
 	location := rec.Header().Get("Location")
 	if location != "/" {
 		t.Errorf("expected Location /, got %q", location)
+	}
+}
+
+func TestRoutes_removeAccount_redirectsUnauthenticated(t *testing.T) {
+	handler := setupAuthTest(t, "<html><body>auth page</body></html>")
+
+	req := httptest.NewRequest(http.MethodGet, "/remove-account", http.NoBody)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusFound {
+		t.Fatalf("expected 302 redirect for unauthenticated /remove-account, got %d", rec.Code)
+	}
+	location := rec.Header().Get("Location")
+	if !strings.HasPrefix(location, "/auth?redirectToPath=") {
+		t.Errorf("expected redirect to /auth with redirectToPath, got %q", location)
 	}
 }
 

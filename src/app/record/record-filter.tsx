@@ -4,14 +4,8 @@ import FilterCalendar from '@/components/shared/filter-calendar';
 import FilterDrawerTrigger from '@/components/shared/filter-drawer-trigger';
 import type { ComboboxOption } from '@/components/shared/location-combobox';
 import LocationCombobox from '@/components/shared/location-combobox';
+import AppDrawer from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerTitle,
-  DrawerTrigger
-} from '@/components/ui/drawer';
 import {
   addDays,
   endOfMonth,
@@ -133,11 +127,6 @@ export default function RecordFilter({
       case CONTENT_DEFAULT: {
         return (
           <div className='flex flex-col'>
-            <DrawerTitle>
-              <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
-            </DrawerTitle>
-
-            <DrawerDescription />
             <DatePresetFilter
               presets={filterContentListDate}
               activeStart={filter.start_date}
@@ -169,10 +158,6 @@ export default function RecordFilter({
             <FilterActions
               showReset={!isInitiaFilterState}
               onReset={resetFilter}
-              onApply={() => {
-                setIsOpen(false);
-                onChange(filter);
-              }}
             />
           </div>
         );
@@ -180,11 +165,6 @@ export default function RecordFilter({
       case CONTENT_CUSTOM: {
         return (
           <div className='flex flex-col'>
-            <DrawerTitle>
-              <div className='mx-auto text-[20px] font-bold'>Filter & Sort</div>
-            </DrawerTitle>
-
-            <DrawerDescription />
             <div className='mt-4 flex w-full flex-col justify-center'>
               <FilterCalendar
                 selected={{
@@ -219,20 +199,21 @@ export default function RecordFilter({
   };
 
   return (
-    <Drawer
+    <AppDrawer
+      open={isOpen}
       onClose={() => {
         setWhichContent(CONTENT_DEFAULT);
         setIsOpen(false);
       }}
-      open={isOpen}
-      modal
+      trigger={<FilterDrawerTrigger onClick={() => setIsOpen(true)} />}
+      title='Filter & Sort'
+      ctaLabel='Terapkan Filter'
+      onCtaClick={() => {
+        setIsOpen(false);
+        onChange(filter);
+      }}
     >
-      <DrawerTrigger asChild>
-        <FilterDrawerTrigger onClick={() => setIsOpen(true)} />
-      </DrawerTrigger>
-      <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-        <div className='mt-4'>{renderDrawerContent()}</div>
-      </DrawerContent>
-    </Drawer>
+      {renderDrawerContent()}
+    </AppDrawer>
   );
 }

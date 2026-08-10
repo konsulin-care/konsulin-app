@@ -1,15 +1,15 @@
 'use client';
 
+import ClaimReportFab from '@/components/assessment/claim-report-fab';
 import ScoreDisplay from '@/components/assessment/score-display';
 import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
-import { useFab } from '@/context/fabContext';
 import { STORES, dbGetAll } from '@/lib/indexeddb';
-import { saveIntent } from '@/utils/redirect-intent';
+import { useQuestionnaireTitle } from '@/services/api/questionnaire-info';
+import { questionnaireIdOf } from '@/utils/fhir/questionnaire-url';
 import type { QuestionnaireResponse } from 'fhir/r4';
-import { ClipboardPlus } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 /** Load QR data from IndexedDB drafts by matching response.id. */
 async function loadDraftByQrId(
@@ -31,13 +31,11 @@ async function loadDraftByQrId(
  *
  * Reads a QuestionnaireResponse ID from ?id=, looks up the data in
  * IndexedDB (saved locally after guest submission), and renders
- * the score display with a "Claim Results" CTA for unauthenticated users.
+ * the score display with a shared "Claim Report" CTA for unauthenticated users.
  */
 export default function ResultView() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { state: authState, isLoading: authLoading } = useAuth();
-  const { dispatch } = useFab();
   const qrId = searchParams.get('id');
 
   const [qrData, setQrData] = useState<QuestionnaireResponse | null>(null);
@@ -65,38 +63,13 @@ export default function ResultView() {
     });
   }, [qrId]);
 
-  const handleClaim = useCallback(() => {
-    saveIntent('assessmentResult', { path: '/record', qrId: qrId ?? '' });
-    router.push('/auth?redirectToPath=/record');
-  }, [qrId, router]);
+  // Offer the claim CTA only to guests with a loaded response.
+  const showClaim =
+    !authLoading && !loading && !authState.isAuthenticated && qrData !== null;
 
-  // Wire the claim CTA as the transformed action FAB for guests.
-  // Action mode suppresses the idle speed-dial, so exactly one FAB shows.
-  useEffect(() => {
-    const showClaim =
-      !authLoading && !loading && !authState.isAuthenticated && qrData;
-    if (showClaim) {
-      dispatch({
-        type: 'SET_ACTION',
-        config: {
-          label: 'Claim Results',
-          icon: ClipboardPlus,
-          variant: 'primary',
-          onAction: handleClaim
-        }
-      });
-    } else {
-      dispatch({ type: 'SET_ACTION', config: null });
-    }
-    return () => dispatch({ type: 'SET_ACTION', config: null });
-  }, [
-    authLoading,
-    loading,
-    authState.isAuthenticated,
-    qrData,
-    dispatch,
-    handleClaim
-  ]);
+  // Resolve the questionnaire title via the shared cache contract.
+  const questionnaireId = questionnaireIdOf(qrData?.questionnaire);
+  const { data: questionnaireTitle } = useQuestionnaireTitle(questionnaireId);
 
   // Still loading auth or data — render nothing
   if (authLoading || loading) {
@@ -128,8 +101,10 @@ export default function ResultView() {
           questionnaireResponse={qrData}
           isLoading={false}
           resultBrief={null}
+          questionnaireTitle={questionnaireTitle}
         />
       </div>
+      <ClaimReportFab path='/record' qrId={qrId} visible={showClaim} />
     </>
   );
 }

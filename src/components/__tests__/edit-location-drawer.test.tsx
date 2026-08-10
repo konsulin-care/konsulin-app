@@ -111,10 +111,9 @@ describe('EditLocationDrawer', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Edit Location')).toBeInTheDocument();
+      expect(screen.getByLabelText('Location Name')).toBeInTheDocument();
     });
 
-    expect(screen.getByLabelText('Location Name')).toBeInTheDocument();
     expect(screen.getByLabelText('Address')).toBeInTheDocument();
     expect(screen.getByLabelText('Longitude')).toBeInTheDocument();
     expect(screen.getByLabelText('Latitude')).toBeInTheDocument();
@@ -194,7 +193,7 @@ describe('EditLocationDrawer', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Edit Location')).toBeInTheDocument();
+      expect(screen.getByLabelText('Location Name')).toBeInTheDocument();
     });
 
     const saveBtn = screen.getByRole('button', { name: 'Save' });
@@ -209,7 +208,7 @@ describe('EditLocationDrawer', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Edit Location')).toBeInTheDocument();
+      expect(screen.getByLabelText('Location Name')).toBeInTheDocument();
     });
 
     const saveBtn = screen.getByRole('button', { name: 'Save' });
@@ -225,7 +224,7 @@ describe('EditLocationDrawer', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Edit Location')).toBeInTheDocument();
+      expect(screen.getByLabelText('Location Name')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -268,7 +267,7 @@ describe('EditLocationDrawer', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Edit Location')).toBeInTheDocument();
+      expect(screen.getByLabelText('Location Name')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -298,20 +297,5 @@ describe('EditLocationDrawer', () => {
     const imgButton = screen.getByRole('button', { name: /location preview/i });
     expect(imgButton).toBeInTheDocument();
     expect(imgButton).toHaveAttribute('type', 'button');
-  });
-
-  it('calls onClose when cancel is clicked', async () => {
-    mockAxiosInstance.get.mockResolvedValue({ data: baseLocation });
-
-    render(<EditLocationDrawer locationId='loc-1' onClose={onClose} />, {
-      wrapper
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Edit Location')).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByText('Cancel'));
-    expect(onClose).toHaveBeenCalled();
   });
 });

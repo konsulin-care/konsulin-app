@@ -1,40 +1,26 @@
 'use client';
 
-import { Button, buttonVariants } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 type Props = {
   readonly showReset: boolean;
   readonly onReset: () => void;
-  readonly onApply: () => void;
 };
 
 /**
- *
+ * Inline reset link for filter drawers. The apply action lives in the
+ * drawer's footer CTA (AppDrawer), not here.
  */
-export default function FilterActions({ showReset, onReset, onApply }: Props) {
+export default function FilterActions({ showReset, onReset }: Props) {
+  if (!showReset) return null;
   return (
-    <>
-      {showReset && (
-        <Button
-          variant='outline'
-          size='sm'
-          className={cn(
-            buttonVariants({ variant: 'outline' }),
-            'mt-4 w-min border-0 text-[12px]'
-          )}
-          onClick={onReset}
-        >
-          Reset Filter
-        </Button>
-      )}
-
-      <Button
-        className='bg-secondary mt-4 rounded-xl p-4 text-white'
-        onClick={onApply}
-      >
-        Terapkan Filter
-      </Button>
-    </>
+    <Button
+      variant='outline'
+      size='sm'
+      className='mt-4 w-min border-0 text-[12px]'
+      onClick={onReset}
+    >
+      Reset Filter
+    </Button>
   );
 }

@@ -10,7 +10,6 @@ vi.mock('@/services/api/cities', () => ({
 
 import LocationFormFields from '@/components/shared/location-form-fields';
 import { DayOfWeek, TimeRange } from '@/types/availability';
-import { IWilayahResponse } from '@/types/wilayah';
 
 function defaultHours(): Record<DayOfWeek, TimeRange[]> {
   return { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
@@ -28,9 +27,9 @@ describe('LocationFormFields image uploader', () => {
         districtCode=''
         longitude=''
         latitude=''
-        listProvinces={[] as unknown as IWilayahResponse[]}
-        listCities={[] as unknown as IWilayahResponse[]}
-        listDistricts={[] as unknown as IWilayahResponse[]}
+        listProvinces={[]}
+        listCities={[]}
+        listDistricts={[]}
         provinceLoading={false}
         cityLoading={false}
         districtLoading={false}
@@ -68,9 +67,9 @@ describe('LocationFormFields status toggle', () => {
         districtCode=''
         longitude=''
         latitude=''
-        listProvinces={[] as unknown as IWilayahResponse[]}
-        listCities={[] as unknown as IWilayahResponse[]}
-        listDistricts={[] as unknown as IWilayahResponse[]}
+        listProvinces={[]}
+        listCities={[]}
+        listDistricts={[]}
         provinceLoading={false}
         cityLoading={false}
         districtLoading={false}
@@ -113,9 +112,9 @@ describe('LocationFormFields status toggle', () => {
         districtCode=''
         longitude=''
         latitude=''
-        listProvinces={[] as unknown as IWilayahResponse[]}
-        listCities={[] as unknown as IWilayahResponse[]}
-        listDistricts={[] as unknown as IWilayahResponse[]}
+        listProvinces={[]}
+        listCities={[]}
+        listDistricts={[]}
         provinceLoading={false}
         cityLoading={false}
         districtLoading={false}

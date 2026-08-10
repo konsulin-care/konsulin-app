@@ -85,17 +85,10 @@ function makeProgress(): ResearchProgress {
   return {
     studies: [study],
     cumulativeResponses: 1,
-    currentLevel: { threshold: 1, label: 'Participant', reward: 'brief' },
-    nextLevel: { threshold: 5, label: 'Contributor', reward: 'report' },
-    levelProgress: {
-      current: { threshold: 1, label: 'Participant', reward: 'brief' },
-      next: { threshold: 5, label: 'Contributor', reward: 'report' },
-      currentThreshold: 1,
-      nextThreshold: 5,
-      intoNext: 0,
-      toNext: 4
-    },
-    completedQuestionnaireIds: ['phq2']
+    questionnaireResponses: ['phq2'],
+    questionnaireXp: 8,
+    completedQuestionnaireIds: ['phq2'],
+    consentedStudyIds: []
   };
 }
 

@@ -334,6 +334,34 @@ describe('PractitionerAvailability', () => {
     expect(bookingDrawer.dataset.open).toBe('true');
   });
 
+  it('opens the drawer when the trigger is activated with Enter', () => {
+    render(
+      <PractitionerAvailability
+        practitionerRole={mockPractitionerRole}
+        scheduleId='schedule-1'
+      >
+        <div data-testid='trigger-child'>Book Now</div>
+      </PractitionerAvailability>,
+      { wrapper: createWrapper(queryClient) }
+    );
+    fireEvent.keyDown(screen.getByTestId('trigger-child'), { key: 'Enter' });
+    expect(screen.getAllByTestId('mock-drawer')[0].dataset.open).toBe('true');
+  });
+
+  it('opens the drawer when the trigger is activated with Space', () => {
+    render(
+      <PractitionerAvailability
+        practitionerRole={mockPractitionerRole}
+        scheduleId='schedule-1'
+      >
+        <div data-testid='trigger-child'>Book Now</div>
+      </PractitionerAvailability>,
+      { wrapper: createWrapper(queryClient) }
+    );
+    fireEvent.keyDown(screen.getByTestId('trigger-child'), { key: ' ' });
+    expect(screen.getAllByTestId('mock-drawer')[0].dataset.open).toBe('true');
+  });
+
   it('shows calendar inside drawer', () => {
     render(
       <PractitionerAvailability

@@ -1,11 +1,4 @@
-import { Button } from '@/components/ui/button';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerTitle,
-  DrawerTrigger
-} from '@/components/ui/drawer';
+import AppDrawer from '@/components/ui/app-drawer';
 import { ChevronRightIcon } from 'lucide-react';
 import { Fragment } from 'react';
 import {
@@ -56,60 +49,14 @@ function MenuItem({
   );
 }
 
-/** Confirmation drawer with title, subtitle, and confirm/cancel buttons. */
-function ConfirmDrawerContent({
-  title,
-  subTitle,
-  confirmText,
-  onClose,
-  onConfirm
-}: {
-  readonly title: string;
-  readonly subTitle: string;
-  readonly confirmText: string;
-  readonly onClose: () => void;
-  readonly onConfirm: () => void;
-}) {
-  return (
-    <DrawerContent className='mx-auto w-full max-w-screen-sm p-4'>
-      <div className='rounded-t-lg bg-white'>
-        <DrawerTitle className='text-black-100 py-1 text-center text-lg font-bold md:text-xl'>
-          {title.split('\n').map(line => (
-            <Fragment key={line}>
-              {line}
-              <br />
-            </Fragment>
-          ))}
-        </DrawerTitle>
-        <DrawerDescription className='text-center text-xs font-normal text-black opacity-60 md:text-sm'>
-          {subTitle.split('\n').map(line => (
-            <Fragment key={line}>
-              {line}
-              <br />
-            </Fragment>
-          ))}
-        </DrawerDescription>
-        <Button
-          className='border-primary bg-secondary my-4 h-[52px] w-full rounded-full'
-          type='button'
-          onClick={onClose}
-        >
-          <span className='text-sm font-bold text-white'>
-            No, I don&apos;t want to
-          </span>
-        </Button>
-        <Button
-          className='border-opacity-20 mb-4 h-[52px] w-full rounded-full border border-[#2C2F35] bg-white text-sm font-bold'
-          type='button'
-          onClick={onConfirm}
-        >
-          <span className='text-sm font-bold text-[#2C2F35]'>
-            {confirmText}
-          </span>
-        </Button>
-      </div>
-    </DrawerContent>
-  );
+/** Split multi-line text into <br/>-separated lines. */
+function splitLines(text: string) {
+  return text.split('\n').map(line => (
+    <Fragment key={line}>
+      {line}
+      <br />
+    </Fragment>
+  ));
 }
 
 /** Profile actions menu with list of account actions and a confirmation drawer. */
@@ -146,18 +93,14 @@ export default function ProfileActions({
           ))}
         </ul>
       </div>
-      <Drawer open={drawerState.show} onClose={closeDrawer}>
-        <DrawerTrigger asChild>
-          <div />
-        </DrawerTrigger>
-        <ConfirmDrawerContent
-          title={drawerState.title}
-          subTitle={drawerState.subTitle}
-          confirmText={confirmText}
-          onClose={closeDrawer}
-          onConfirm={confirmAction}
-        />
-      </Drawer>
+      <AppDrawer
+        open={drawerState.show}
+        onClose={closeDrawer}
+        title={splitLines(drawerState.title)}
+        description={splitLines(drawerState.subTitle)}
+        ctaLabel={confirmText}
+        onCtaClick={confirmAction}
+      />
     </>
   );
 }

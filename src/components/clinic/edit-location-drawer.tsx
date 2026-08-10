@@ -1,14 +1,6 @@
 'use client';
 import LocationFormFields from '@/components/shared/location-form-fields';
-import { Button } from '@/components/ui/button';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle
-} from '@/components/ui/drawer';
+import AppDrawer from '@/components/ui/app-drawer';
 import { useLocationFormState } from '@/hooks/useLocationFormState';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
@@ -250,69 +242,52 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     isLoading || !isDataLoaded ? (
       <div className='p-4 text-center'>Loading...</div>
     ) : (
-      <>
-        <DrawerHeader>
-          <DrawerTitle>Edit Location</DrawerTitle>
-          <DrawerDescription>Update location details.</DrawerDescription>
-        </DrawerHeader>
-
-        <div className='space-y-4 px-4'>
-          <LocationFormFields
-            status={status}
-            name={name}
-            addressLine={addressLine}
-            provinceCode={provinceCode}
-            cityCode={cityCode}
-            districtCode={districtCode}
-            longitude={longitude}
-            latitude={latitude}
-            listProvinces={listProvinces ?? []}
-            listCities={listCities ?? []}
-            listDistricts={listDistricts ?? []}
-            provinceLoading={provinceLoading}
-            cityLoading={cityLoading}
-            districtLoading={districtLoading}
-            hours={hours}
-            imageUrl={imageUrl}
-            onImageUrlChange={setImageUrl}
-            onStatusChange={setStatus}
-            onNameChange={setName}
-            onAddressLineChange={setAddressLine}
-            onProvinceSelect={handleProvinceSelect}
-            onCitySelect={handleCitySelect}
-            onDistrictSelect={handleDistrictSelect}
-            onLongitudeChange={setLongitude}
-            onLatitudeChange={setLatitude}
-            onAddTimeRange={handleAddTimeRange}
-            onUpdateTimeRange={handleUpdateTimeRange}
-            onDeleteTimeRange={handleDeleteTimeRange}
-          />
-        </div>
-
-        <DrawerFooter>
-          <Button
-            onClick={handleSubmit}
-            disabled={!isValid || isSubmitting}
-            variant='secondary'
-            className='text-white'
-          >
-            {isSubmitting ? 'Saving...' : 'Save'}
-          </Button>
-          <Button variant='outline' onClick={onClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-        </DrawerFooter>
-      </>
+      <div className='space-y-4 px-4'>
+        <LocationFormFields
+          status={status}
+          name={name}
+          addressLine={addressLine}
+          provinceCode={provinceCode}
+          cityCode={cityCode}
+          districtCode={districtCode}
+          longitude={longitude}
+          latitude={latitude}
+          listProvinces={listProvinces ?? []}
+          listCities={listCities ?? []}
+          listDistricts={listDistricts ?? []}
+          provinceLoading={provinceLoading}
+          cityLoading={cityLoading}
+          districtLoading={districtLoading}
+          hours={hours}
+          imageUrl={imageUrl}
+          onImageUrlChange={setImageUrl}
+          onStatusChange={setStatus}
+          onNameChange={setName}
+          onAddressLineChange={setAddressLine}
+          onProvinceSelect={handleProvinceSelect}
+          onCitySelect={handleCitySelect}
+          onDistrictSelect={handleDistrictSelect}
+          onLongitudeChange={setLongitude}
+          onLatitudeChange={setLatitude}
+          onAddTimeRange={handleAddTimeRange}
+          onUpdateTimeRange={handleUpdateTimeRange}
+          onDeleteTimeRange={handleDeleteTimeRange}
+        />
+      </div>
     );
 
   return (
-    <Drawer
+    <AppDrawer
       open
-      onOpenChange={o => {
-        if (!o) onClose();
-      }}
+      onClose={onClose}
+      title='Edit Location'
+      description='Update location details.'
+      ctaLabel='Save'
+      onCtaClick={handleSubmit}
+      ctaDisabled={!isValid || isSubmitting}
+      ctaLoading={isSubmitting}
     >
-      <DrawerContent>{content}</DrawerContent>
-    </Drawer>
+      {content}
+    </AppDrawer>
   );
 }

@@ -30,7 +30,7 @@ vi.mock('@/components/ui/drawer', () => ({
 vi.mock('next/image', () => ({
   default: (props: Record<string, unknown>) => (
     // eslint-disable-next-line @next/next/no-img-element
-    <img alt='' {...(props as React.ImgHTMLAttributes<HTMLImageElement>)} />
+    <img alt='' {...props} />
   )
 }));
 

@@ -9,6 +9,7 @@ import {
   getLucideIconName
 } from '@/utils/fhir/questionnaire-icon';
 import { getQuestionnaireImageUrl } from '@/utils/fhir/questionnaire-image';
+import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import { getQuestionnaireDuration } from '@/utils/fhir/service-duration';
 import type { Questionnaire } from 'fhir/r4';
 import type { LucideIcon } from 'lucide-react';
@@ -79,7 +80,8 @@ export default function AssessmentCard({
   const Icon = useIcon(questionnaire);
   const categoryLabel = getQuestionnaireCategoryLabel(questionnaire.useContext);
   const duration = getQuestionnaireDuration(questionnaire);
-  const title = questionnaire.title ?? 'Untitled';
+  const title =
+    questionnaire.title ?? questionnaireIdLabel(questionnaire.id ?? '');
 
   if (variant === 'featured') {
     const FALLBACK_IMAGE_URL =
