@@ -58,6 +58,22 @@ vi.mock('nextjs-toploader', () => ({
   default: () => <div data-testid='next-top-loader' />
 }));
 
+vi.mock('@/lib/submission-queue', () => ({
+  pendingCount: vi.fn<() => Promise<number>>().mockResolvedValue(0),
+  replayPendingSubmissions: vi.fn<() => Promise<void>>().mockResolvedValue(),
+  listenForSyncReplay: vi.fn(() => vi.fn())
+}));
+
+vi.mock('@/lib/submission-replay', () => ({
+  registerSubmissionReplayHandlers: vi.fn()
+}));
+
+vi.mock('@/lib/pwa-install', () => ({
+  canInstall: vi.fn(() => false),
+  installPwa: vi.fn(),
+  setupInstallPrompt: vi.fn(() => vi.fn())
+}));
+
 vi.mock('react-toastify', () => ({
   ToastContainer: () => <div data-testid='toast-container' />
 }));
