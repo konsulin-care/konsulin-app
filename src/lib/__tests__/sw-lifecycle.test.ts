@@ -1,5 +1,6 @@
 /* eslint-disable unicorn/prefer-https */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, sonarjs/code-eval, @typescript-eslint/no-implied-eval, unicorn/text-encoding-identifier-case */
+/* eslint-disable max-lines */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +23,7 @@ import {
   fireActivate,
   fireFetch,
   fireInstall,
+  fireSync,
   type MockCaches,
   type MockSelf
 } from '@/__tests__/test-utils';
@@ -133,6 +135,30 @@ describe('activate event', () => {
     await awaitEvent(event);
 
     expect(mockSelf.clients.claim).toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Sync event
+// ---------------------------------------------------------------------------
+describe('sync event', () => {
+  it('broadcasts SYNC_REPLAY to all clients for the replay-pending tag', async () => {
+    const clientA = { postMessage: vi.fn() };
+    const clientB = { postMessage: vi.fn() };
+    mockSelf.clients.matchAll.mockResolvedValue([clientA, clientB]);
+
+    const event = fireSync(mockSelf, 'replay-pending');
+    await awaitEvent(event);
+
+    expect(mockSelf.clients.matchAll).toHaveBeenCalled();
+    expect(clientA.postMessage).toHaveBeenCalledWith({ type: 'SYNC_REPLAY' });
+    expect(clientB.postMessage).toHaveBeenCalledWith({ type: 'SYNC_REPLAY' });
+  });
+
+  it('ignores sync events for other tags', () => {
+    const event = fireSync(mockSelf, 'other-tag');
+
+    expect(event.waitUntil).not.toHaveBeenCalled();
   });
 });
 
@@ -363,8 +389,8 @@ describe('sw-register.js', () => {
 describe('defense-in-depth URL validation', () => {
   it('networkFirst returns 503 for non-http URLs', async () => {
     const patchedCode = SW_CODE.replace(
-      'async function networkFirst (request, cacheName, fallbackUrl) {',
-      'self.__testNetworkFirst = async function networkFirst (request, cacheName, fallbackUrl) {'
+      'async function networkFirst(request, cacheName, fallbackUrl) {',
+      'self.__testNetworkFirst = async function networkFirst(request, cacheName, fallbackUrl) {'
     );
 
     const captureSelf = createMockSelf() as MockSelf & {
