@@ -37,4 +37,10 @@ describe('ConnectivityIndicator', () => {
     render(<ConnectivityIndicator />);
     expect(screen.getByRole('status')).toHaveTextContent(/offline/i);
   });
+
+  it('renders the status region as an <output> element', () => {
+    vi.mocked(getStatus).mockReturnValue('offline');
+    const { container } = render(<ConnectivityIndicator />);
+    expect(container.querySelector('output')).not.toBeNull();
+  });
 });

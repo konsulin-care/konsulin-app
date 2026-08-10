@@ -166,11 +166,13 @@ describe('sync event', () => {
 // Message event
 // ---------------------------------------------------------------------------
 describe('message event', () => {
-  it('calls skipWaiting() on a SKIP_WAITING message', () => {
+  const SAME_ORIGIN = 'http://konsulin.care';
+
+  it('calls skipWaiting() on a same-origin SKIP_WAITING message', () => {
     const handler = mockSelf.handlers.message[0];
     expect(handler, 'message handler must be registered').toBeDefined();
 
-    handler({ data: { type: 'SKIP_WAITING' } });
+    handler({ origin: SAME_ORIGIN, data: { type: 'SKIP_WAITING' } });
 
     expect(mockSelf.skipWaiting).toHaveBeenCalled();
   });
@@ -178,7 +180,18 @@ describe('message event', () => {
   it('ignores messages without the SKIP_WAITING type', () => {
     const handler = mockSelf.handlers.message[0];
 
-    handler({ data: { type: 'SOMETHING_ELSE' } });
+    handler({ origin: SAME_ORIGIN, data: { type: 'SOMETHING_ELSE' } });
+
+    expect(mockSelf.skipWaiting).not.toHaveBeenCalled();
+  });
+
+  it('rejects SKIP_WAITING messages from other origins', () => {
+    const handler = mockSelf.handlers.message[0];
+
+    handler({
+      origin: 'https://evil.example',
+      data: { type: 'SKIP_WAITING' }
+    });
 
     expect(mockSelf.skipWaiting).not.toHaveBeenCalled();
   });
@@ -474,8 +487,8 @@ describe('sw-register.js', () => {
 describe('defense-in-depth URL validation', () => {
   it('networkFirst returns 503 for non-http URLs', async () => {
     const patchedCode = SW_CODE.replace(
-      'async function networkFirst (request, cacheName, fallbackUrl) {',
-      'self.__testNetworkFirst = async function networkFirst (request, cacheName, fallbackUrl) {'
+      'async function networkFirst(request, cacheName, fallbackUrl) {',
+      'self.__testNetworkFirst = async function networkFirst(request, cacheName, fallbackUrl) {'
     );
 
     const captureSelf = createMockSelf() as MockSelf & {

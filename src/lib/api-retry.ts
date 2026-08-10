@@ -52,5 +52,6 @@ export function shouldRetryRequest(
  */
 export function getRetryDelayMs(attempt: number): number {
   const base = BASE_RETRY_DELAY_MS * 2 ** attempt;
+  // NOSONAR - Math.random is fine for retry jitter, not a security boundary
   return base + Math.random() * MAX_JITTER_MS;
 }

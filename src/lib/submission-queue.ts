@@ -32,6 +32,7 @@ function generateId(): string {
   ) {
     return crypto.randomUUID();
   }
+  // NOSONAR - non-security fallback id; crypto.randomUUID is the primary path
   return `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 

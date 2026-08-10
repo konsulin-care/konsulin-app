@@ -35,6 +35,12 @@ describe('PendingSubmissionsBanner', () => {
     expect(screen.getByRole('button', { name: /sync now/i })).toBeTruthy();
   });
 
+  it('renders the banner as an <output> element', async () => {
+    const { container } = render(<PendingSubmissionsBanner />);
+    await screen.findByText(/2/);
+    expect(container.querySelector('output')).not.toBeNull();
+  });
+
   it('renders nothing when the queue is empty', async () => {
     vi.mocked(pendingCount).mockResolvedValue(0);
 
