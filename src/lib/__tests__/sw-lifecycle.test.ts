@@ -163,6 +163,28 @@ describe('sync event', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Message event
+// ---------------------------------------------------------------------------
+describe('message event', () => {
+  it('calls skipWaiting() on a SKIP_WAITING message', () => {
+    const handler = mockSelf.handlers.message[0];
+    expect(handler, 'message handler must be registered').toBeDefined();
+
+    handler({ data: { type: 'SKIP_WAITING' } });
+
+    expect(mockSelf.skipWaiting).toHaveBeenCalled();
+  });
+
+  it('ignores messages without the SKIP_WAITING type', () => {
+    const handler = mockSelf.handlers.message[0];
+
+    handler({ data: { type: 'SOMETHING_ELSE' } });
+
+    expect(mockSelf.skipWaiting).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Fetch event - routing
 // ---------------------------------------------------------------------------
 describe('fetch event routing', () => {

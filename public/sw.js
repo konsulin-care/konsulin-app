@@ -34,6 +34,13 @@ self.addEventListener('sync', function (event) {
   );
 });
 
+self.addEventListener('message', function (event) {
+  // NOSONAR - self is SW global scope
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches
