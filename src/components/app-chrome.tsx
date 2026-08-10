@@ -1,5 +1,6 @@
 import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
+import InstallButton from '@/components/pwa/install-button';
 import PendingSubmissionsBanner from '@/components/pwa/pending-submissions';
 import QuickActionFab from '@/components/quick-action-fab';
 import { FabProvider } from '@/context/fabContext';
@@ -60,6 +61,7 @@ export default function AppChrome({
       <AppProviders>
         <PendingSubmissionsBanner />
         <PageContent>{children}</PageContent>
+        <InstallButton />
         <QuickActionFab />
       </AppProviders>
     </>
