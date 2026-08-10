@@ -79,8 +79,8 @@ describe('install event', () => {
     const event = fireInstall(mockSelf);
     await awaitEvent(event);
 
-    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v1');
-    expect(mockCaches.stores['konsulin-static-v1'].addAll).toHaveBeenCalledWith(
+    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v2');
+    expect(mockCaches.stores['konsulin-static-v2'].addAll).toHaveBeenCalledWith(
       ['/~offline', '/manifest.json', '/images/Loading-Time.svg']
     );
   });
@@ -108,14 +108,14 @@ describe('activate event', () => {
 
   it('preserves current version caches', async () => {
     mockCaches.stores['konsulin-old-v1'] = createMockCache();
-    mockCaches.stores['konsulin-static-v1'] = createMockCache();
-    mockCaches.stores['konsulin-nav-v1'] = createMockCache();
+    mockCaches.stores['konsulin-static-v2'] = createMockCache();
+    mockCaches.stores['konsulin-nav-v2'] = createMockCache();
 
     const event = fireActivate(mockSelf);
     await awaitEvent(event);
 
-    expect(mockCaches.delete).not.toHaveBeenCalledWith('konsulin-static-v1');
-    expect(mockCaches.delete).not.toHaveBeenCalledWith('konsulin-nav-v1');
+    expect(mockCaches.delete).not.toHaveBeenCalledWith('konsulin-static-v2');
+    expect(mockCaches.delete).not.toHaveBeenCalledWith('konsulin-nav-v2');
     expect(mockCaches.delete).toHaveBeenCalledTimes(1); // only old cache
   });
 
@@ -215,14 +215,14 @@ describe('fetch event routing', () => {
 
     expect(event.respondWith).toHaveBeenCalled();
     // networkFirst opens cache after network fetch succeeds
-    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v1');
+    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v2');
   });
 
   it('fetches static assets from network even when cached (networkFirst behavior)', () => {
     // Pre-populate cache so cacheFirst would return cached without fetching
     const cachedResponse = new Response('cached', { status: 200 });
-    mockCaches.stores['konsulin-static-v1'] = createMockCache();
-    mockCaches.stores['konsulin-static-v1'].match.mockResolvedValue(
+    mockCaches.stores['konsulin-static-v2'] = createMockCache();
+    mockCaches.stores['konsulin-static-v2'].match.mockResolvedValue(
       cachedResponse
     );
 
@@ -241,7 +241,8 @@ describe('fetch event routing', () => {
 
   it('routes proxy API directly to fetch (no cache)', () => {
     const event = fireFetch(mockSelf, {
-      url: 'http://konsulin.care/proxy/fhir/Patient'
+      url: 'http://konsulin.care/proxy/fhir/Patient',
+      method: 'GET'
     });
 
     expect(event.respondWith).toHaveBeenCalled();
@@ -250,6 +251,68 @@ describe('fetch event routing', () => {
         url: 'http://konsulin.care/proxy/fhir/Patient'
       })
     );
+    expect(mockCaches.open).not.toHaveBeenCalled();
+  });
+
+  it('routes /proxy/fhir/Questionnaire GETs through networkFirst (caches on success)', async () => {
+    const event = fireFetch(mockSelf, {
+      url: 'http://konsulin.care/proxy/fhir/Questionnaire?_id=abc',
+      method: 'GET'
+    });
+    await awaitEvent(event);
+
+    expect(event.respondWith).toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'http://konsulin.care/proxy/fhir/Questionnaire?_id=abc'
+      })
+    );
+    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-nav-v2');
+  });
+
+  it('serves a cached Questionnaire when the network fails', async () => {
+    mockFetch.mockRejectedValue(new Error('Offline'));
+    const cachedResponse = new Response('cached questionnaire', {
+      status: 200
+    });
+    mockCaches.stores['konsulin-nav-v2'] = createMockCache();
+    mockCaches.stores['konsulin-nav-v2'].match.mockResolvedValue(
+      cachedResponse
+    );
+
+    const event = fireFetch(mockSelf, {
+      url: 'http://konsulin.care/proxy/fhir/Questionnaire/soap',
+      method: 'GET'
+    });
+
+    const response = await awaitEvent(event);
+    expect(response).toBe(cachedResponse);
+  });
+
+  it('routes /proxy/fhir/QuestionnaireResponse through raw fetch (no cache)', () => {
+    const event = fireFetch(mockSelf, {
+      url: 'http://konsulin.care/proxy/fhir/QuestionnaireResponse',
+      method: 'GET'
+    });
+
+    expect(event.respondWith).toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'http://konsulin.care/proxy/fhir/QuestionnaireResponse'
+      })
+    );
+    expect(mockCaches.open).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'http://konsulin.care/auth/cookie',
+    'http://konsulin.care/auth/cookie/csrf-token',
+    'http://konsulin.care/api/config'
+  ])('routes %s through raw fetch (never cached)', url => {
+    const event = fireFetch(mockSelf, { url, method: 'GET' });
+
+    expect(event.respondWith).toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(expect.objectContaining({ url }));
     expect(mockCaches.open).not.toHaveBeenCalled();
   });
 
@@ -295,8 +358,8 @@ describe('fetch offline fallback', () => {
 
     // Pre-populate static cache with the offline fallback page
     const offlineResponse = new Response('offline page', { status: 200 });
-    mockCaches.stores['konsulin-static-v1'] = createMockCache();
-    mockCaches.stores['konsulin-static-v1'].match.mockImplementation(
+    mockCaches.stores['konsulin-static-v2'] = createMockCache();
+    mockCaches.stores['konsulin-static-v2'].match.mockImplementation(
       (url: string) => {
         if (url === '/~offline') return Promise.resolve(offlineResponse);
         return Promise.resolve();
@@ -311,16 +374,16 @@ describe('fetch offline fallback', () => {
 
     const response = await awaitEvent(event);
     expect(response).toBe(offlineResponse);
-    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-nav-v1');
-    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v1');
+    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-nav-v2');
+    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v2');
   });
 
   it('serves cached page when network fails on navigation', async () => {
     mockFetch.mockRejectedValue(new Error('Offline'));
 
     const cachedResponse = new Response('cached page', { status: 200 });
-    mockCaches.stores['konsulin-nav-v1'] = createMockCache();
-    mockCaches.stores['konsulin-nav-v1'].match.mockResolvedValue(
+    mockCaches.stores['konsulin-nav-v2'] = createMockCache();
+    mockCaches.stores['konsulin-nav-v2'].match.mockResolvedValue(
       cachedResponse
     );
 
@@ -333,7 +396,7 @@ describe('fetch offline fallback', () => {
     const response = await awaitEvent(event);
     expect(response).toBe(cachedResponse);
     // Should NOT reach the static cache fallback
-    expect(mockCaches.open).not.toHaveBeenCalledWith('konsulin-static-v1');
+    expect(mockCaches.open).not.toHaveBeenCalledWith('konsulin-static-v2');
   });
 });
 

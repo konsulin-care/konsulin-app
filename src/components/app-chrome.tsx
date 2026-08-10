@@ -1,5 +1,6 @@
 import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
+import ConnectivityIndicator from '@/components/pwa/connectivity-indicator';
 import InstallButton from '@/components/pwa/install-button';
 import PendingSubmissionsBanner from '@/components/pwa/pending-submissions';
 import QuickActionFab from '@/components/quick-action-fab';
@@ -61,6 +62,7 @@ export default function AppChrome({
       <ProfileCompletenessModal />
       <SwUpdateDetector />
       <AppProviders>
+        <ConnectivityIndicator />
         <PendingSubmissionsBanner />
         <PageContent>{children}</PageContent>
         <InstallButton />
