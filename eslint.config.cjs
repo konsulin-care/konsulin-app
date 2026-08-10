@@ -237,6 +237,14 @@ module.exports = [
     }
   },
 
+  // --- PWA status live-regions: prefer <output> over role="status" (SonarQube) ---
+  {
+    files: ['src/components/pwa/**/*.tsx'],
+    rules: {
+      'jsx-a11y/prefer-tag-over-role': 'error'
+    }
+  },
+
   // --- Test & third-party UI: no JSDoc required (auto-generated or test helpers) ---
   {
     files: [

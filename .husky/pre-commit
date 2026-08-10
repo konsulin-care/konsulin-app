@@ -17,12 +17,6 @@ if ! npm run typecheck; then
   exit 1
 fi
 
-# Type-check the whole project
-if ! (npx tsc --noEmit); then
-  echo "  TypeScript errors found. Fix them and try again."
-  exit 1
-fi
-
 # Lint staged JS/TS files — fail commit on any error
 if ! npx --no-install lint-staged; then
   echo "  Lint-staged failed, do npm install and try again"
