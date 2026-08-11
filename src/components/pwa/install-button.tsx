@@ -8,7 +8,9 @@ export default function InstallButton() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    return setupInstallPrompt(() => setVisible(canInstall()));
+    return setupInstallPrompt(() => {
+      setVisible(canInstall());
+    });
   }, []);
 
   /** Shows the deferred browser install prompt. */

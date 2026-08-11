@@ -32,8 +32,15 @@ function generateId(): string {
   ) {
     return crypto.randomUUID();
   }
-  // NOSONAR - non-security fallback id; crypto.randomUUID is the primary path
-  return `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  // Fallback for engines without crypto.randomUUID: CSPRNG segment.
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.getRandomValues === 'function'
+  ) {
+    const buffer = crypto.getRandomValues(new Uint32Array(2));
+    return `pending-${Date.now()}-${buffer[0].toString(36)}${buffer[1].toString(36)}`;
+  }
+  return `pending-${Date.now()}`;
 }
 
 /**

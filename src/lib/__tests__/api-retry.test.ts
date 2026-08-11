@@ -19,6 +19,12 @@ function makeError(overrides: Record<string, unknown> = {}): unknown {
 const GET_CONFIG = { method: 'GET' };
 const POST_CONFIG = { method: 'POST' };
 
+/** Mocks crypto.getRandomValues to return a fixed 32-bit fraction. */
+function mockRandomValue(fraction: number): void {
+  const value = Math.floor(fraction * 2 ** 32);
+  vi.spyOn(crypto, 'getRandomValues').mockReturnValue(new Uint32Array([value]));
+}
+
 describe('shouldRetryRequest', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -89,12 +95,12 @@ describe('getRetryDelayMs', () => {
   });
 
   it('returns the base delay for the first attempt without jitter', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0);
+    mockRandomValue(0);
     expect(getRetryDelayMs(0)).toBe(BASE_RETRY_DELAY_MS);
   });
 
   it('exponential backoff: doubles the base delay each attempt', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0);
+    mockRandomValue(0);
     expect(getRetryDelayMs(1)).toBe(BASE_RETRY_DELAY_MS * 2);
     expect(getRetryDelayMs(2)).toBe(BASE_RETRY_DELAY_MS * 4);
   });
@@ -108,7 +114,7 @@ describe('getRetryDelayMs', () => {
   });
 
   it('is bounded by base delay plus max jitter', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.9999);
+    mockRandomValue(0.9999);
     expect(getRetryDelayMs(0)).toBeLessThanOrEqual(
       BASE_RETRY_DELAY_MS + MAX_JITTER_MS
     );

@@ -44,6 +44,15 @@ export function shouldRetryRequest(
 }
 
 /**
+ * Returns a random float in [0, 1) using the platform CSPRNG.
+ * Provides the jitter for retry backoff without a weak RNG.
+ */
+function randomUnit(): number {
+  const buffer = new Uint32Array(1);
+  return crypto.getRandomValues(buffer)[0] / 2 ** 32;
+}
+
+/**
  * Computes the backoff delay for a retry attempt: exponential base delay
  * plus bounded random jitter to avoid thundering-herd retries.
  *
@@ -52,6 +61,5 @@ export function shouldRetryRequest(
  */
 export function getRetryDelayMs(attempt: number): number {
   const base = BASE_RETRY_DELAY_MS * 2 ** attempt;
-  // NOSONAR - Math.random is fine for retry jitter, not a security boundary
-  return base + Math.random() * MAX_JITTER_MS;
+  return base + randomUnit() * MAX_JITTER_MS;
 }

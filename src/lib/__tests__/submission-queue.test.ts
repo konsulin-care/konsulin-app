@@ -103,6 +103,40 @@ describe('submission queue', () => {
       expect(entry.createdAt).toBeTypeOf('number');
       expect(entry.id.length).toBeGreaterThan(0);
     });
+
+    it('falls back to a CSPRNG segment id when crypto.randomUUID is missing', async () => {
+      mockDbSet.mockResolvedValue();
+      const first = 42;
+      const second = 77;
+      const getRandomValues = vi.fn(() => new Uint32Array([first, second]));
+      vi.stubGlobal('crypto', { getRandomValues });
+      try {
+        const entry = await enqueueSubmission('assessment', {});
+        expect(getRandomValues).toHaveBeenCalled();
+        expect(entry.id).toBe(
+          `pending-${entry.createdAt}-${first.toString(36)}${second.toString(36)}`
+        );
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('falls back to a timestamp-only id when crypto is absent', async () => {
+      mockDbSet.mockResolvedValue();
+      const cryptoDescriptor = Object.getOwnPropertyDescriptor(
+        globalThis,
+        'crypto'
+      );
+      Reflect.deleteProperty(globalThis, 'crypto');
+      try {
+        const entry = await enqueueSubmission('assessment', {});
+        expect(entry.id).toBe(`pending-${entry.createdAt}`);
+      } finally {
+        if (cryptoDescriptor) {
+          Object.defineProperty(globalThis, 'crypto', cryptoDescriptor);
+        }
+      }
+    });
   });
 
   describe('listPendingSubmissions', () => {
