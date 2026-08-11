@@ -328,6 +328,9 @@ export function useProfileSave({
           cachedAt: Date.now()
         });
         queryClient.invalidateQueries({ queryKey: ['profile-data', fhirId] });
+        // Role-profile cache must be invalidated so a role switch after a
+        // profile save shows the just-updated photo/name without refresh.
+        queryClient.invalidateQueries({ queryKey: ['role-profiles'] });
         setDrawerState(DRAWER_STATE.SUCCESS);
       } catch (error) {
         console.error('Error when updating profile: ', error);
