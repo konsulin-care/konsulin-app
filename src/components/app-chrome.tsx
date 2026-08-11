@@ -1,8 +1,12 @@
 import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
+import ConnectivityIndicator from '@/components/pwa/connectivity-indicator';
+import InstallButton from '@/components/pwa/install-button';
+import PendingSubmissionsBanner from '@/components/pwa/pending-submissions';
 import QuickActionFab from '@/components/quick-action-fab';
 import { FabProvider } from '@/context/fabContext';
 import { resolveCjsDefaultExport } from '@/lib/lazy-component';
+import SwUpdateDetector from '@/lib/sw-update';
 import dynamic from 'next/dynamic';
 import { Suspense, type ComponentType, type ReactNode } from 'react';
 import { ToastContainer, ToastContainerProps } from 'react-toastify';
@@ -56,8 +60,12 @@ export default function AppChrome({
       </Suspense>
       <ToastContainer {...toastConfig} />
       <ProfileCompletenessModal />
+      <SwUpdateDetector />
       <AppProviders>
+        <ConnectivityIndicator />
+        <PendingSubmissionsBanner />
         <PageContent>{children}</PageContent>
+        <InstallButton />
         <QuickActionFab />
       </AppProviders>
     </>

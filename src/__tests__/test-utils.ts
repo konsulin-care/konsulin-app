@@ -41,7 +41,10 @@ export function createMockSelf() {
       listenerArr.push(handler);
     }),
     skipWaiting: vi.fn(),
-    clients: { claim: vi.fn() },
+    clients: {
+      claim: vi.fn(),
+      matchAll: vi.fn(() => Promise.resolve([]))
+    },
     location: { origin: 'http://konsulin.care' }
   };
 }
@@ -128,6 +131,17 @@ export function fireFetch(
   const event = createMockEvent({ request });
   const handler = mockSelf.handlers.fetch[0];
   expect(handler, 'fetch handler must be registered').toBeDefined();
+  handler(event);
+  return event;
+}
+
+/**
+ *
+ */
+export function fireSync(mockSelf: MockSelf, tag: string) {
+  const event = createMockEvent({ tag });
+  const handler = mockSelf.handlers.sync[0];
+  expect(handler, 'sync handler must be registered').toBeDefined();
   handler(event);
   return event;
 }

@@ -1,5 +1,5 @@
 /* eslint-disable unicorn/prefer-global-this */
-const SW_VERSION = '1'
+const SW_VERSION = '2'
 const STATIC_CACHE = `konsulin-static-v${SW_VERSION}`
 const NAV_CACHE = `konsulin-nav-v${SW_VERSION}`
 const OFFLINE_URL = '/~offline'
@@ -18,6 +18,28 @@ self.addEventListener('install', function (event) {
     })
   )
   self.skipWaiting() // NOSONAR - self is SW global scope
+})
+
+self.addEventListener('sync', function (event) {
+  // NOSONAR - self is SW global scope
+  if (event.tag !== 'replay-pending') return
+  event.waitUntil(
+    self.clients.matchAll().then(function (clients) {
+      return Promise.all(
+        clients.map(function (client) {
+          return client.postMessage({ type: 'SYNC_REPLAY' })
+        })
+      )
+    })
+  )
+})
+
+self.addEventListener('message', function (event) {
+  // NOSONAR - self is SW global scope
+  if (event.origin !== self.location.origin) return
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
 })
 
 self.addEventListener('activate', function (event) {
@@ -86,6 +108,23 @@ function isProxyApi (pathname) {
   return pathname.startsWith('/proxy/')
 }
 
+/**
+ * Checks if a pathname targets a cacheable proxy Questionnaire read.
+ * The negative guard matters: QuestionnaireResponse also starts with
+ * Questionnaire but must stay network-only.
+ */
+function isCachedProxyApi (pathname) {
+  return (
+    pathname.startsWith('/proxy/fhir/Questionnaire') &&
+    !pathname.startsWith('/proxy/fhir/QuestionnaireResponse')
+  )
+}
+
+/** Checks if a pathname targets an auth/config endpoint (never cached). */
+function isAuthApi (pathname) {
+  return pathname.startsWith('/auth/') || pathname === '/api/config'
+}
+
 /** Network-first strategy: tries network, falls back to cache, then to offline fallback URL. */
 async function networkFirst (request, cacheName, fallbackUrl) {
   try {
@@ -135,7 +174,17 @@ self.addEventListener('fetch', function (event) {
         // Non-GET requests bypass caching entirely.
         if (request.method !== 'GET') return fetch(request)
 
-        if (isProxyApi(url.pathname)) return fetch(request)
+        // Auth/config endpoints carry identity data — never cached.
+        if (isAuthApi(url.pathname)) return fetch(request)
+
+        if (isProxyApi(url.pathname)) {
+          // Only Questionnaire reads are cached (network-first); all other
+          // proxy traffic (incl. QuestionnaireResponse) stays network-only.
+          if (isCachedProxyApi(url.pathname)) {
+            return await networkFirst(request, NAV_CACHE)
+          }
+          return fetch(request)
+        }
 
         if (request.mode === 'navigate') {
           return await networkFirst(request, NAV_CACHE, OFFLINE_URL)

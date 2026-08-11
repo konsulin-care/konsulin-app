@@ -1,5 +1,11 @@
 /* eslint-disable max-lines */
-import { STORES, dbDelete } from '@/lib/indexeddb';
+import { dbDelete, STORES } from '@/lib/indexeddb';
+import { enqueueSubmission } from '@/lib/submission-queue';
+import {
+  isNetworkError,
+  QUESTIONNAIRE_RESPONSE_KIND,
+  SOAP_BUNDLE_KIND
+} from '@/lib/submission-replay';
 import { IQuestionnaireResponse } from '@/types/assessment';
 import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -74,6 +80,13 @@ export const RESULT_BRIEF_PLACEHOLDER =
 
 export const RESULT_BRIEF_LOGIN_REQUIRED =
   'Kindly log in to generate the result brief.';
+
+/**
+ * Returned by submission mutations when the response was queued for
+ * offline replay instead of being sent. Kept opaque so callers can
+ * detect the queued state without changing the mutation's public type.
+ */
+export const OFFLINE_QUEUED = { queued: true } as const;
 
 const POLL_INTERVAL_MS = 1000; // 1 request per second
 const MAX_WAIT_MS = 3000; // max 3 seconds total
@@ -214,8 +227,16 @@ export const useSubmitSoapBundle = () => {
     mutationKey: ['soap-response'],
     mutationFn: async (bundle: Bundle) => {
       const API = await getAPI();
-      const response = await API.post<Bundle>('/fhir', bundle);
-      return response.data;
+      try {
+        const response = await API.post<Bundle>('/fhir', bundle);
+        return response.data;
+      } catch (error) {
+        if (isNetworkError(error)) {
+          await enqueueSubmission(SOAP_BUNDLE_KIND, bundle);
+          return OFFLINE_QUEUED as unknown as Bundle;
+        }
+        throw error;
+      }
     }
   });
 };
@@ -237,33 +258,57 @@ export const useSubmitQuestionnaire = (
       const API = await getAPI();
 
       let identifier = questionnaireResponse.identifier;
+      let ownerId = '';
       if (!isAuthenticated) {
-        const guestId = await ensureAnonymousSession(false);
-        identifier = buildAnonymousIdentifier(guestId);
-      }
-
-      const response = await API.post<QuestionnaireResponse>(
-        '/fhir/QuestionnaireResponse',
-        {
-          author,
-          item,
-          identifier,
-          resourceType,
-          questionnaire: toCanonicalQuestionnaireUrl(questionnaireId),
-          status: 'completed',
-          authored: timestamp,
-          subject
+        try {
+          const guestId = await ensureAnonymousSession(false);
+          identifier = buildAnonymousIdentifier(guestId);
+          ownerId = guestId;
+        } catch (error) {
+          // Offline anonymous: keep any existing identifier and let the
+          // queue replay the fully-prepared payload once back online.
+          if (!isNetworkError(error)) throw error;
         }
-      );
-
-      // Only delete draft after successful server submission.
-      if (isAuthenticated) {
-        dbDelete(STORES.assessmentDrafts, ['', questionnaireId]).catch(
-          (err: unknown) => console.warn('[IndexedDB]', err)
-        );
       }
 
-      return response.data;
+      const payload = {
+        author,
+        item,
+        identifier,
+        resourceType,
+        questionnaire: toCanonicalQuestionnaireUrl(questionnaireId),
+        status: 'completed',
+        authored: timestamp,
+        subject
+      };
+
+      try {
+        const response = await API.post<QuestionnaireResponse>(
+          '/fhir/QuestionnaireResponse',
+          payload
+        );
+
+        // Only delete draft after successful server submission.
+        if (isAuthenticated) {
+          dbDelete(STORES.assessmentDrafts, ['', questionnaireId]).catch(
+            (err: unknown) => console.warn('[IndexedDB]', err)
+          );
+        }
+
+        return response.data;
+      } catch (error) {
+        // Network-level failure: queue for replay instead of failing the
+        // submission. The marker keeps the mutation's public type stable.
+        if (isNetworkError(error)) {
+          await enqueueSubmission(
+            QUESTIONNAIRE_RESPONSE_KIND,
+            payload,
+            ownerId
+          );
+          return OFFLINE_QUEUED as unknown as QuestionnaireResponse;
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       // Reflect the new contribution in research progress widgets.

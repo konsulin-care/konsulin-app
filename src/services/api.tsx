@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+import { getRetryDelayMs, shouldRetryRequest } from '@/lib/api-retry';
+import { reportRequestOutcome } from '@/lib/connectivity';
 import { clearUserData } from '@/lib/indexeddb';
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import { toast } from 'react-toastify';
 import { parseAxiosError } from './api-error';
 
@@ -87,11 +89,41 @@ export function getAPI(options?: {
   return Promise.resolve(instance);
 }
 
+/** Request config with the retry counter attached by the interceptor. */
+type RetryableConfig = InternalAxiosRequestConfig & {
+  _retryCount?: number;
+};
+
 /** Attach the shared response interceptor to an Axios instance. */
 function setupResponseInterceptor(instance: AxiosInstance) {
   instance.interceptors.response.use(
-    response => response,
+    response => {
+      reportRequestOutcome(true);
+      return response;
+    },
     error => {
+      const config = error.config as RetryableConfig | undefined;
+      const retryCount = config?._retryCount ?? 0;
+
+      // Retry idempotent GETs (network failures / 5xx) with backoff before
+      // surfacing the error, so toasts and the auth redirect only fire once
+      // the retry budget is exhausted.
+      if (shouldRetryRequest(error, config, retryCount)) {
+        /** Waits for the backoff delay, then re-issues the request with the retry counter bumped. */
+        const retryAfterBackoff = async (): Promise<unknown> => {
+          await new Promise(resolve =>
+            setTimeout(resolve, getRetryDelayMs(retryCount))
+          );
+          if (config) {
+            config._retryCount = retryCount + 1;
+          }
+          return instance.request(config as InternalAxiosRequestConfig);
+        };
+        return retryAfterBackoff();
+      }
+
+      reportRequestOutcome(false);
+
       const { errorMessage, isExpiredToken, isMissingToken } =
         parseAxiosError(error);
 

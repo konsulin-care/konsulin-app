@@ -37,6 +37,76 @@ function createMockRequest(result?: IDBDatabase, error?: DOMException) {
   return request;
 }
 
+describe('schema v3', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  it('exports DB_VERSION 3', async () => {
+    const mod = await import('@/lib/indexeddb');
+    expect(mod.DB_VERSION).toBe(3);
+  });
+
+  it('declares the pending_submissions store with id keyPath', async () => {
+    const mod = await import('@/lib/indexeddb');
+    expect(mod.STORES.pendingSubmissions).toBe('pending_submissions');
+    const schema = mod.STORE_SCHEMAS.find(
+      (s: { name: string }) => s.name === 'pending_submissions'
+    );
+    expect(schema).toBeDefined();
+    expect(schema.keyPath).toBe('id');
+  });
+
+  it('creates only the pending_submissions store during v2 -> v3 upgrade', async () => {
+    const mod = await import('@/lib/indexeddb');
+    const v2Stores = new Set([
+      'guest_sessions',
+      'assessment_drafts',
+      'soap_drafts',
+      'service_requests',
+      'temp_booking',
+      'ui_preferences',
+      'navigation_state',
+      'user_profile'
+    ]);
+    const createObjectStore = vi.fn();
+    const mockDb = {
+      name: 'konsulin',
+      version: 3,
+      objectStoreNames: {
+        contains: vi.fn((name: string) => v2Stores.has(name))
+      },
+      createObjectStore,
+      addEventListener: vi.fn(),
+      close: vi.fn(),
+      onclose: null,
+      onversionchange: null
+    };
+
+    const request = createMockRequest(mockDb as unknown as IDBDatabase);
+    mockIndexedDB.open.mockImplementation(() => {
+      setTimeout(() => {
+        if (request.onupgradeneeded) {
+          triggerEvent(request.onupgradeneeded, { target: request });
+        }
+        if (request.onsuccess) {
+          triggerEvent(request.onsuccess, { target: request });
+        }
+      }, 0);
+      return request;
+    });
+
+    await mod.openDB();
+
+    // Existing v2 stores are left untouched; only the new store is created.
+    expect(createObjectStore).toHaveBeenCalledTimes(1);
+    expect(createObjectStore).toHaveBeenCalledWith('pending_submissions', {
+      keyPath: 'id'
+    });
+  });
+});
+
 describe('openDB', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -52,7 +122,7 @@ describe('openDB', () => {
   it('opens DB with a single indexedDB.open call in normal case', async () => {
     const mockDb = {
       name: 'konsulin',
-      version: 2,
+      version: 3,
       objectStoreNames: { contains: vi.fn().mockReturnValue(true) },
       addEventListener: vi.fn(),
       close: vi.fn(),
@@ -77,7 +147,7 @@ describe('openDB', () => {
     expect(db).toBe(mockDb);
     // Normal path: directly opens with DB_VERSION, no discovery
     expect(mockIndexedDB.open).toHaveBeenCalledTimes(1);
-    expect(mockIndexedDB.open).toHaveBeenCalledWith('konsulin', 2);
+    expect(mockIndexedDB.open).toHaveBeenCalledWith('konsulin', 3);
   });
 
   it('reuses the same DB promise on subsequent calls', async () => {
@@ -136,7 +206,7 @@ describe('openDB', () => {
           }
         }, 0);
       } else {
-        req.result = mockDb as unknown as IDBDatabase;
+        req.result = mockDb;
         setTimeout(() => {
           if (req.onsuccess) {
             triggerEvent(req.onsuccess, { target: req });
@@ -174,7 +244,7 @@ describe('openDB', () => {
     };
 
     const versionError = new DOMException(
-      'The requested version (2) is less than the existing version (5).',
+      'The requested version (3) is less than the existing version (5).',
       'VersionError'
     );
 
@@ -183,7 +253,7 @@ describe('openDB', () => {
       openCount++;
       const req = createMockRequest();
 
-      if (openCount === 1 && version === 2) {
+      if (openCount === 1 && version === 3) {
         // First attempt: VersionError
         req.error = versionError;
         setTimeout(() => {

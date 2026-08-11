@@ -3,6 +3,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRef } from 'react';
 
+let appQueryClient: QueryClient | null = null;
+
+/** Returns the app-wide QueryClient, or null before the provider mounts. */
+export function getAppQueryClient(): QueryClient | null {
+  return appQueryClient;
+}
+
 /**
  *
  */
@@ -21,6 +28,7 @@ export default function QueryProvider({
         }
       }
     });
+    appQueryClient = queryClientRef.current;
   }
 
   return (

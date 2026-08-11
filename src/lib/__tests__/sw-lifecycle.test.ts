@@ -1,5 +1,6 @@
 /* eslint-disable unicorn/prefer-https */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, sonarjs/code-eval, @typescript-eslint/no-implied-eval, unicorn/text-encoding-identifier-case */
+/* eslint-disable max-lines */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +23,7 @@ import {
   fireActivate,
   fireFetch,
   fireInstall,
+  fireSync,
   type MockCaches,
   type MockSelf
 } from '@/__tests__/test-utils';
@@ -77,8 +79,8 @@ describe('install event', () => {
     const event = fireInstall(mockSelf);
     await awaitEvent(event);
 
-    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v1');
-    expect(mockCaches.stores['konsulin-static-v1'].addAll).toHaveBeenCalledWith(
+    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v2');
+    expect(mockCaches.stores['konsulin-static-v2'].addAll).toHaveBeenCalledWith(
       ['/~offline', '/manifest.json', '/images/Loading-Time.svg']
     );
   });
@@ -106,14 +108,14 @@ describe('activate event', () => {
 
   it('preserves current version caches', async () => {
     mockCaches.stores['konsulin-old-v1'] = createMockCache();
-    mockCaches.stores['konsulin-static-v1'] = createMockCache();
-    mockCaches.stores['konsulin-nav-v1'] = createMockCache();
+    mockCaches.stores['konsulin-static-v2'] = createMockCache();
+    mockCaches.stores['konsulin-nav-v2'] = createMockCache();
 
     const event = fireActivate(mockSelf);
     await awaitEvent(event);
 
-    expect(mockCaches.delete).not.toHaveBeenCalledWith('konsulin-static-v1');
-    expect(mockCaches.delete).not.toHaveBeenCalledWith('konsulin-nav-v1');
+    expect(mockCaches.delete).not.toHaveBeenCalledWith('konsulin-static-v2');
+    expect(mockCaches.delete).not.toHaveBeenCalledWith('konsulin-nav-v2');
     expect(mockCaches.delete).toHaveBeenCalledTimes(1); // only old cache
   });
 
@@ -133,6 +135,65 @@ describe('activate event', () => {
     await awaitEvent(event);
 
     expect(mockSelf.clients.claim).toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Sync event
+// ---------------------------------------------------------------------------
+describe('sync event', () => {
+  it('broadcasts SYNC_REPLAY to all clients for the replay-pending tag', async () => {
+    const clientA = { postMessage: vi.fn() };
+    const clientB = { postMessage: vi.fn() };
+    mockSelf.clients.matchAll.mockResolvedValue([clientA, clientB]);
+
+    const event = fireSync(mockSelf, 'replay-pending');
+    await awaitEvent(event);
+
+    expect(mockSelf.clients.matchAll).toHaveBeenCalled();
+    expect(clientA.postMessage).toHaveBeenCalledWith({ type: 'SYNC_REPLAY' });
+    expect(clientB.postMessage).toHaveBeenCalledWith({ type: 'SYNC_REPLAY' });
+  });
+
+  it('ignores sync events for other tags', () => {
+    const event = fireSync(mockSelf, 'other-tag');
+
+    expect(event.waitUntil).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Message event
+// ---------------------------------------------------------------------------
+describe('message event', () => {
+  const SAME_ORIGIN = 'http://konsulin.care';
+
+  it('calls skipWaiting() on a same-origin SKIP_WAITING message', () => {
+    const handler = mockSelf.handlers.message[0];
+    expect(handler, 'message handler must be registered').toBeDefined();
+
+    handler({ origin: SAME_ORIGIN, data: { type: 'SKIP_WAITING' } });
+
+    expect(mockSelf.skipWaiting).toHaveBeenCalled();
+  });
+
+  it('ignores messages without the SKIP_WAITING type', () => {
+    const handler = mockSelf.handlers.message[0];
+
+    handler({ origin: SAME_ORIGIN, data: { type: 'SOMETHING_ELSE' } });
+
+    expect(mockSelf.skipWaiting).not.toHaveBeenCalled();
+  });
+
+  it('rejects SKIP_WAITING messages from other origins', () => {
+    const handler = mockSelf.handlers.message[0];
+
+    handler({
+      origin: 'https://evil.example',
+      data: { type: 'SKIP_WAITING' }
+    });
+
+    expect(mockSelf.skipWaiting).not.toHaveBeenCalled();
   });
 });
 
@@ -167,14 +228,14 @@ describe('fetch event routing', () => {
 
     expect(event.respondWith).toHaveBeenCalled();
     // networkFirst opens cache after network fetch succeeds
-    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v1');
+    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v2');
   });
 
   it('fetches static assets from network even when cached (networkFirst behavior)', () => {
     // Pre-populate cache so cacheFirst would return cached without fetching
     const cachedResponse = new Response('cached', { status: 200 });
-    mockCaches.stores['konsulin-static-v1'] = createMockCache();
-    mockCaches.stores['konsulin-static-v1'].match.mockResolvedValue(
+    mockCaches.stores['konsulin-static-v2'] = createMockCache();
+    mockCaches.stores['konsulin-static-v2'].match.mockResolvedValue(
       cachedResponse
     );
 
@@ -193,7 +254,8 @@ describe('fetch event routing', () => {
 
   it('routes proxy API directly to fetch (no cache)', () => {
     const event = fireFetch(mockSelf, {
-      url: 'http://konsulin.care/proxy/fhir/Patient'
+      url: 'http://konsulin.care/proxy/fhir/Patient',
+      method: 'GET'
     });
 
     expect(event.respondWith).toHaveBeenCalled();
@@ -202,6 +264,68 @@ describe('fetch event routing', () => {
         url: 'http://konsulin.care/proxy/fhir/Patient'
       })
     );
+    expect(mockCaches.open).not.toHaveBeenCalled();
+  });
+
+  it('routes /proxy/fhir/Questionnaire GETs through networkFirst (caches on success)', async () => {
+    const event = fireFetch(mockSelf, {
+      url: 'http://konsulin.care/proxy/fhir/Questionnaire?_id=abc',
+      method: 'GET'
+    });
+    await awaitEvent(event);
+
+    expect(event.respondWith).toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'http://konsulin.care/proxy/fhir/Questionnaire?_id=abc'
+      })
+    );
+    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-nav-v2');
+  });
+
+  it('serves a cached Questionnaire when the network fails', async () => {
+    mockFetch.mockRejectedValue(new Error('Offline'));
+    const cachedResponse = new Response('cached questionnaire', {
+      status: 200
+    });
+    mockCaches.stores['konsulin-nav-v2'] = createMockCache();
+    mockCaches.stores['konsulin-nav-v2'].match.mockResolvedValue(
+      cachedResponse
+    );
+
+    const event = fireFetch(mockSelf, {
+      url: 'http://konsulin.care/proxy/fhir/Questionnaire/soap',
+      method: 'GET'
+    });
+
+    const response = await awaitEvent(event);
+    expect(response).toBe(cachedResponse);
+  });
+
+  it('routes /proxy/fhir/QuestionnaireResponse through raw fetch (no cache)', () => {
+    const event = fireFetch(mockSelf, {
+      url: 'http://konsulin.care/proxy/fhir/QuestionnaireResponse',
+      method: 'GET'
+    });
+
+    expect(event.respondWith).toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'http://konsulin.care/proxy/fhir/QuestionnaireResponse'
+      })
+    );
+    expect(mockCaches.open).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'http://konsulin.care/auth/cookie',
+    'http://konsulin.care/auth/cookie/csrf-token',
+    'http://konsulin.care/api/config'
+  ])('routes %s through raw fetch (never cached)', url => {
+    const event = fireFetch(mockSelf, { url, method: 'GET' });
+
+    expect(event.respondWith).toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(expect.objectContaining({ url }));
     expect(mockCaches.open).not.toHaveBeenCalled();
   });
 
@@ -247,8 +371,8 @@ describe('fetch offline fallback', () => {
 
     // Pre-populate static cache with the offline fallback page
     const offlineResponse = new Response('offline page', { status: 200 });
-    mockCaches.stores['konsulin-static-v1'] = createMockCache();
-    mockCaches.stores['konsulin-static-v1'].match.mockImplementation(
+    mockCaches.stores['konsulin-static-v2'] = createMockCache();
+    mockCaches.stores['konsulin-static-v2'].match.mockImplementation(
       (url: string) => {
         if (url === '/~offline') return Promise.resolve(offlineResponse);
         return Promise.resolve();
@@ -263,16 +387,16 @@ describe('fetch offline fallback', () => {
 
     const response = await awaitEvent(event);
     expect(response).toBe(offlineResponse);
-    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-nav-v1');
-    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v1');
+    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-nav-v2');
+    expect(mockCaches.open).toHaveBeenCalledWith('konsulin-static-v2');
   });
 
   it('serves cached page when network fails on navigation', async () => {
     mockFetch.mockRejectedValue(new Error('Offline'));
 
     const cachedResponse = new Response('cached page', { status: 200 });
-    mockCaches.stores['konsulin-nav-v1'] = createMockCache();
-    mockCaches.stores['konsulin-nav-v1'].match.mockResolvedValue(
+    mockCaches.stores['konsulin-nav-v2'] = createMockCache();
+    mockCaches.stores['konsulin-nav-v2'].match.mockResolvedValue(
       cachedResponse
     );
 
@@ -285,7 +409,7 @@ describe('fetch offline fallback', () => {
     const response = await awaitEvent(event);
     expect(response).toBe(cachedResponse);
     // Should NOT reach the static cache fallback
-    expect(mockCaches.open).not.toHaveBeenCalledWith('konsulin-static-v1');
+    expect(mockCaches.open).not.toHaveBeenCalledWith('konsulin-static-v2');
   });
 });
 
@@ -363,8 +487,8 @@ describe('sw-register.js', () => {
 describe('defense-in-depth URL validation', () => {
   it('networkFirst returns 503 for non-http URLs', async () => {
     const patchedCode = SW_CODE.replace(
-      'async function networkFirst (request, cacheName, fallbackUrl) {',
-      'self.__testNetworkFirst = async function networkFirst (request, cacheName, fallbackUrl) {'
+      'async function networkFirst(request, cacheName, fallbackUrl) {',
+      'self.__testNetworkFirst = async function networkFirst(request, cacheName, fallbackUrl) {'
     );
 
     const captureSelf = createMockSelf() as MockSelf & {
