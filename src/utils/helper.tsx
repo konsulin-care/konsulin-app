@@ -11,6 +11,7 @@ import {
   HumanName,
   Location,
   Patient,
+  Person,
   Practitioner,
   PractitionerQualification,
   Slot
@@ -276,7 +277,7 @@ export const dataUrlToBlob = (dataUrl: string) => {
 
 /** Find identifier value by system from FHIR resource. */
 export const findIdentifierValue = (
-  data: Patient | Practitioner,
+  data: Patient | Practitioner | Person | undefined,
   system: string
 ) => {
   return (
@@ -401,8 +402,7 @@ function mergeSessionData(
     : null;
 
   const locationParticipant = appointment.participant.find(
-    (p: AppointmentParticipant) =>
-      p.actor?.reference?.startsWith('Location/')
+    (p: AppointmentParticipant) => p.actor?.reference?.startsWith('Location/')
   );
   const locationId = locationParticipant
     ? (locationParticipant.actor?.reference?.split('/')[1] ?? null)

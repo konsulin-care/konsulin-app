@@ -1,0 +1,99 @@
+import type { CodeableConcept, Patient, Person, Practitioner } from 'fhir/r4';
+
+type ProfileResource = Patient | Practitioner | Person;
+
+export type PersonalInfoValues = {
+  gender: string;
+  birthDate: string;
+  languageCode?: string;
+  languageLabel?: string;
+};
+
+export type ContactValues = {
+  email: string;
+  phone: string;
+};
+
+export type AddressValues = {
+  line: string[];
+  district: string;
+  city: string;
+  province: string;
+  postalCode: string;
+};
+
+/** Build a BCP-47 language CodeableConcept. */
+function buildLanguageConcept(code: string, label: string): CodeableConcept {
+  return {
+    coding: [{ system: 'urn:ietf:bcp:47', code, display: label }]
+  };
+}
+
+/**
+ * Merge personal-info fields into the latest resource. The communication
+ * language is written only for Patient (wrapped) and Practitioner (direct);
+ * Person has no language field and is left untouched.
+ */
+export function mergePersonalInfo(
+  latest: ProfileResource,
+  values: PersonalInfoValues
+): ProfileResource {
+  const merged = {
+    ...latest,
+    gender: values.gender,
+    birthDate: values.birthDate
+  } as ProfileResource;
+
+  if (!values.languageCode) return merged;
+  const concept = buildLanguageConcept(
+    values.languageCode,
+    values.languageLabel ?? values.languageCode
+  );
+
+  if (merged.resourceType === 'Practitioner') {
+    return { ...merged, communication: [concept] };
+  }
+  if (merged.resourceType === 'Patient') {
+    return { ...merged, communication: [{ language: concept }] };
+  }
+  return merged;
+}
+
+/** Merge contact fields into a fresh telecom array. */
+export function mergeContact(
+  latest: ProfileResource,
+  values: ContactValues
+): ProfileResource {
+  const telecom: Array<{
+    system: 'phone' | 'email';
+    use: 'mobile' | 'home';
+    value: string;
+  }> = [];
+  const email = values.email.trim();
+  const phone = values.phone.trim();
+  if (email) telecom.push({ system: 'email', use: 'home', value: email });
+  if (phone) telecom.push({ system: 'phone', use: 'mobile', value: phone });
+  return { ...latest, telecom };
+}
+
+/** Merge address fields into a single home address entry. */
+export function mergeAddress(
+  latest: ProfileResource,
+  values: AddressValues
+): ProfileResource {
+  return {
+    ...latest,
+    address: [
+      {
+        use: 'home',
+        type: 'physical',
+        line: values.line.filter(Boolean),
+        district: values.district,
+        city: values.city,
+        state: values.province,
+        postalCode: values.postalCode,
+        country: 'ID'
+      }
+    ]
+  };
+}

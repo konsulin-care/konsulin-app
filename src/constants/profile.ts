@@ -56,3 +56,10 @@ export const genderList = [
     code: 'female'
   }
 ];
+
+export const languageOptions = [
+  { code: 'id', label: 'Indonesian' },
+  { code: 'en', label: 'English' },
+  { code: 'ms', label: 'Malay' },
+  { code: 'zh', label: 'Chinese' }
+] as const;

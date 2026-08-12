@@ -1,11 +1,10 @@
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, renderHook, screen } from '@testing-library/react';
+import { fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createQueryClient, mockAuth } from '@/__tests__/test-utils';
+import { mockAuth } from '@/__tests__/test-utils';
 
 // ---------------------------------------------------------------------------
-// Mock dependencies
+// Mocks
 // ---------------------------------------------------------------------------
 
 vi.mock('@/context/auth/authContext', () => ({
@@ -20,65 +19,115 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/profile'
 }));
 
-vi.mock('@/lib/indexeddb', () => ({
-  STORES: { profileEditDrafts: 'profile_edit_drafts' },
-  dbGet: vi.fn(),
-  dbSet: vi.fn(),
-  dbDelete: vi.fn()
+vi.mock('@/components/page-header', () => ({
+  default: () => <div data-testid='page-header' />
 }));
 
-// Mock child components to isolate ProfileDisplay behavior
-vi.mock('../patient', () => ({
-  default: ({ fhirId }: { fhirId: string }) => (
-    <div data-testid='patient-profile'>Patient {fhirId}</div>
-  )
+vi.mock('@/components/profile/ProfileActions', () => ({
+  default: () => <div data-testid='profile-actions' />
 }));
 
-vi.mock('../clinician', () => ({
-  default: ({ fhirId }: { fhirId: string }) => (
-    <div data-testid='clinician-profile'>Clinician {fhirId}</div>
-  )
+vi.mock('../extension-card', () => ({
+  default: () => <div data-testid='extension-card' />
 }));
 
-import { useAuth } from '@/context/auth/authContext';
-
-// ---------------------------------------------------------------------------
-// Profile page — all tests share one QueryClient and wrapper
-// ---------------------------------------------------------------------------
-
-import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
-import { Patient, Practitioner } from 'fhir/r4';
-
-import { usePractitionerProfile } from '@/hooks/usePractitionerProfile';
-
-vi.mock('@/services/profile', () => ({
-  getProfileById: vi.fn()
+vi.mock('../hooks/useProfileData', () => ({
+  useProfileData: vi.fn()
 }));
 
-import { getProfileById } from '@/services/profile';
+vi.mock('../hooks/useProfilePhotoSave', () => ({
+  useProfilePhotoSave: vi.fn()
+}));
+
+vi.mock('../name-edit-drawer', () => ({
+  default: ({ open }: { open: boolean }) =>
+    open ? <div data-testid='name-drawer' /> : null
+}));
+vi.mock('../personal-info-edit-drawer', () => ({
+  default: ({ open }: { open: boolean }) =>
+    open ? <div data-testid='personal-info-drawer' /> : null
+}));
+vi.mock('../contact-edit-drawer', () => ({
+  default: ({ open }: { open: boolean }) =>
+    open ? <div data-testid='contact-drawer' /> : null
+}));
+vi.mock('../address-edit-drawer', () => ({
+  default: ({ open }: { open: boolean }) =>
+    open ? <div data-testid='address-drawer' /> : null
+}));
+
+vi.mock('next/image', async () => {
+  const { createNextImageMock } = await import('@/__tests__/mocks/next-image');
+  return createNextImageMock();
+});
 
 import CompletenessBanner from '@/components/profile/completeness-banner';
+import { useAuth } from '@/context/auth/authContext';
+import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
+import type { Patient } from 'fhir/r4';
+import { useProfileData } from '../hooks/useProfileData';
+import { useProfilePhotoSave } from '../hooks/useProfilePhotoSave';
 import ProfileDisplay from '../profile-display';
 
-describe('Profile page', () => {
-  let queryClient: ReturnType<typeof createQueryClient>;
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
 
+const sections = [
+  {
+    id: 'personal-info',
+    title: 'Personal Information',
+    rows: [{ id: 'gender', key: 'Gender', value: 'Male' }]
+  },
+  {
+    id: 'contact',
+    title: 'Contact',
+    rows: [{ id: 'email', key: 'Email', value: 'john@konsulin.care' }]
+  },
+  {
+    id: 'address',
+    title: 'Address',
+    rows: [{ id: 'city', key: 'City', value: 'Jakarta Selatan' }]
+  }
+];
+
+const identity = {
+  photoUrl: undefined,
+  initials: 'JD',
+  backgroundColor: '#13c2c2',
+  seed: 'seed-1',
+  displayName: 'John Magnificent Doe',
+  given: ['John', 'Magnificent'],
+  family: 'Doe'
+};
+
+function mockProfileHooks(roleName: string) {
+  vi.mocked(useProfileData).mockReturnValue({
+    profileData: { resourceType: 'Patient', id: 'pat-1' },
+    isLoading: false,
+    identity,
+    sections,
+    resourceType: roleName === 'Clinic Admin' ? 'Person' : 'Patient'
+  });
+  vi.mocked(useProfilePhotoSave).mockReturnValue({
+    isUploading: false,
+    handleFileSelected: vi.fn()
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe('Profile page', () => {
   beforeEach(() => {
-    queryClient = createQueryClient();
     vi.clearAllMocks();
   });
 
   afterEach(() => {
-    queryClient.clear();
+    vi.clearAllMocks();
   });
 
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-
-  // -----------------------------------------------------------------------
-  // useProfileCompleteness
-  // -----------------------------------------------------------------------
   describe('useProfileCompleteness', () => {
     it('returns showBanner=true when profile_complete is false', () => {
       mockAuth(vi.mocked(useAuth), {
@@ -104,20 +153,21 @@ describe('Profile page', () => {
       expect(result.current.isComplete).toBe(true);
     });
 
-    it('falls back to local FHIR check when server flag is undefined', () => {
+    it('falls back to local FHIR check when the server flag is undefined', () => {
       mockAuth(vi.mocked(useAuth), {
         role_name: 'Patient',
         fhirId: 'p1'
       });
 
-      // A profile with name + birthDate + phone telecom = complete
-      const completeProfile = {
+      // name + gender + birthDate + language = complete
+      const completeProfile: Patient = {
         resourceType: 'Patient',
         id: 'p1',
         name: [{ use: 'official', given: ['John'] }],
+        gender: 'male',
         birthDate: '1990-01-01',
-        telecom: [{ system: 'phone', value: '+628123456789' }]
-      } as Patient;
+        communication: [{ language: { coding: [{ code: 'id' }] } }]
+      };
 
       const { result } = renderHook(() =>
         useProfileCompleteness(completeProfile)
@@ -126,18 +176,19 @@ describe('Profile page', () => {
       expect(result.current.showBanner).toBe(false);
     });
 
-    it('detects incomplete profile via local FHIR check', () => {
+    it('detects an incomplete profile via local FHIR check', () => {
       mockAuth(vi.mocked(useAuth), {
         role_name: 'Patient',
         fhirId: 'p1'
       });
 
-      // A profile missing name and birthDate
-      const incompleteProfile = {
+      // missing gender and language
+      const incompleteProfile: Patient = {
         resourceType: 'Patient',
         id: 'p1',
-        telecom: []
-      } as Patient;
+        name: [{ use: 'official', given: ['John'] }],
+        birthDate: '1990-01-01'
+      };
 
       const { result } = renderHook(() =>
         useProfileCompleteness(incompleteProfile)
@@ -147,43 +198,6 @@ describe('Profile page', () => {
     });
   });
 
-  // -----------------------------------------------------------------------
-  // usePractitionerProfile
-  // -----------------------------------------------------------------------
-  describe('usePractitionerProfile', () => {
-    it('fetches practitioner profile by FHIR ID', () => {
-      vi.mocked(getProfileById).mockResolvedValue({
-        id: 'p1',
-        resourceType: 'Practitioner'
-      } as Practitioner);
-
-      const { result } = renderHook(() => usePractitionerProfile('p1'), {
-        wrapper
-      });
-
-      expect(result.current.isLoading).toBe(true);
-      expect(getProfileById).toHaveBeenCalledWith('p1', 'Practitioner');
-    });
-
-    it('is not enabled when fhirId is empty', () => {
-      vi.mocked(getProfileById).mockResolvedValue(
-        {} as unknown as Practitioner
-      );
-
-      const { result } = renderHook(() => usePractitionerProfile(''), {
-        wrapper
-      });
-
-      // When enabled is false, React Query v4 still reports isLoading=true initially
-      // but the queryFn is never called
-      expect(getProfileById).not.toHaveBeenCalled();
-      expect(result.current.fetchStatus).toBe('idle');
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // CompletenessBanner
-  // -----------------------------------------------------------------------
   describe('CompletenessBanner', () => {
     beforeEach(() => {
       sessionStorage.clear();
@@ -192,7 +206,6 @@ describe('Profile page', () => {
     it('renders when show is true', () => {
       render(<CompletenessBanner show />);
       expect(screen.getByText('Your profile is incomplete.')).toBeDefined();
-      expect(screen.getByText('Edit Profile')).toBeDefined();
     });
 
     it('does not render when show is false', () => {
@@ -200,62 +213,85 @@ describe('Profile page', () => {
       expect(container.firstChild).toBeNull();
     });
 
-    it('navigates to edit profile on button click', () => {
+    it('dismisses on the dismiss button', () => {
       render(<CompletenessBanner show />);
-      const button = screen.getByText('Edit Profile');
-      button.click();
-      expect(mockRouterPush).toHaveBeenCalledWith('/profile?path=edit-profile');
+      fireEvent.click(screen.getByLabelText('Dismiss'));
+      expect(screen.queryByText('Your profile is incomplete.')).toBeNull();
     });
   });
 
-  // -----------------------------------------------------------------------
-  // ProfileDisplay — role dispatch
-  // -----------------------------------------------------------------------
-  describe('ProfileDisplay', () => {
-    it('renders Patient profile when role is Patient', () => {
+  describe('ProfileDisplay — unified composition', () => {
+    it('renders the identity hero with the active role badge', () => {
       mockAuth(vi.mocked(useAuth), {
         role_name: 'Patient',
         fhirId: 'pat-1',
         profile_complete: true
       });
+      mockProfileHooks('Patient');
 
-      render(<ProfileDisplay />, { wrapper });
-      expect(screen.getByTestId('patient-profile')).toBeDefined();
-      expect(screen.queryByTestId('clinician-profile')).toBeNull();
+      render(<ProfileDisplay />);
+      expect(screen.getByTestId('role-badge').textContent).toBe('Patient');
+      expect(screen.getByTestId('display-name').textContent).toBe(
+        'John Magnificent Doe'
+      );
     });
 
-    it('renders Clinician profile when role is Practitioner', () => {
+    it('renders every section card from the profile data hook', () => {
       mockAuth(vi.mocked(useAuth), {
         role_name: 'Practitioner',
         fhirId: 'pra-1',
         profile_complete: true
       });
+      mockProfileHooks('Practitioner');
 
-      render(<ProfileDisplay />, { wrapper });
-      expect(screen.getByTestId('clinician-profile')).toBeDefined();
-      expect(screen.queryByTestId('patient-profile')).toBeNull();
+      render(<ProfileDisplay />);
+      expect(screen.getByText('Personal Information')).toBeDefined();
+      expect(screen.getByText('Contact')).toBeDefined();
+      expect(screen.getByText('Address')).toBeDefined();
+      expect(screen.getByTestId('extension-card')).toBeDefined();
+      expect(screen.getByTestId('profile-actions')).toBeDefined();
     });
 
-    it('shows completeness banner when profile_complete is false', () => {
-      mockAuth(vi.mocked(useAuth), {
-        role_name: 'Patient',
-        fhirId: 'pat-1',
-        profile_complete: false
-      });
-
-      render(<ProfileDisplay />, { wrapper });
-      expect(screen.getByText('Your profile is incomplete.')).toBeDefined();
-    });
-
-    it('hides completeness banner when profile_complete is true', () => {
+    it('opens the name drawer from the pencil in the identity hero', () => {
       mockAuth(vi.mocked(useAuth), {
         role_name: 'Patient',
         fhirId: 'pat-1',
         profile_complete: true
       });
+      mockProfileHooks('Patient');
 
-      render(<ProfileDisplay />, { wrapper });
-      expect(screen.queryByText('Your profile is incomplete.')).toBeNull();
+      render(<ProfileDisplay />);
+      expect(screen.queryByTestId('name-drawer')).toBeNull();
+      fireEvent.click(screen.getByTestId('edit-name'));
+      expect(screen.getByTestId('name-drawer')).toBeDefined();
+    });
+
+    it('opens the matching section drawer from a card pencil', () => {
+      mockAuth(vi.mocked(useAuth), {
+        role_name: 'Patient',
+        fhirId: 'pat-1',
+        profile_complete: true
+      });
+      mockProfileHooks('Patient');
+
+      render(<ProfileDisplay />);
+      fireEvent.click(screen.getAllByTestId('section-edit')[0]);
+      expect(screen.getByTestId('personal-info-drawer')).toBeDefined();
+      expect(screen.queryByTestId('contact-drawer')).toBeNull();
+    });
+
+    it('renders uniformly for a Person-based role (Clinic Admin)', () => {
+      mockAuth(vi.mocked(useAuth), {
+        role_name: 'Clinic Admin',
+        fhirId: 'clinic-1',
+        profile_complete: true
+      });
+      mockProfileHooks('Clinic Admin');
+
+      render(<ProfileDisplay />);
+      expect(screen.getByTestId('role-badge').textContent).toBe('Clinic Admin');
+      expect(screen.getByText('Personal Information')).toBeDefined();
+      expect(screen.getByTestId('profile-actions')).toBeDefined();
     });
   });
 });

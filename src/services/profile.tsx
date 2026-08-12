@@ -1,11 +1,13 @@
 import { validateEmail } from '@/utils/validation';
 import { useMutation } from '@tanstack/react-query';
-import { Bundle, Patient, Practitioner } from 'fhir/r4';
+import { Bundle, Patient, Person, Practitioner } from 'fhir/r4';
 import { apiRequest, getAPI } from './api';
 
 type IProfileRequest = {
-  payload: Patient | Practitioner;
+  payload: Patient | Practitioner | Person;
 };
+
+type ProfileResource = Patient | Practitioner | Person;
 
 type EmailExistenceResponse = {
   exists: boolean;
@@ -105,11 +107,11 @@ export const getProfileByIdentifier = async ({
 /** Fetch a FHIR profile by its resource ID and type. */
 export const getProfileById = async (
   id: string,
-  type: 'Patient' | 'Practitioner'
-) => {
+  type: 'Patient' | 'Practitioner' | 'Person'
+): Promise<ProfileResource> => {
   if (!id) throw new Error('Missing FHIR id');
 
-  const response = await apiRequest<Patient | Practitioner>(
+  const response = await apiRequest<ProfileResource>(
     'GET',
     `/fhir/${type}/${id}`
   );
@@ -138,13 +140,13 @@ export const signupByEmail = (email: string) => {
 
 /** Mutation hook to update user profile via PATCH. */
 export const useUpdateProfile = () => {
-  return useMutation<Patient | Practitioner, Error, IProfileRequest>({
+  return useMutation<ProfileResource, Error, IProfileRequest>({
     mutationKey: ['update-profile'],
     mutationFn: async ({ payload }) => {
       const { id, resourceType } = payload;
       try {
         const API = await getAPI();
-        const response = await API.put<Patient | Practitioner>(
+        const response = await API.put<ProfileResource>(
           `/fhir/${resourceType}/${id}`,
           payload
         );

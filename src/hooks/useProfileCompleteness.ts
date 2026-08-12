@@ -2,14 +2,14 @@
 
 import { useAuth } from '@/context/auth/authContext';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
-import { Patient, Practitioner } from 'fhir/r4';
+import { Patient, Person, Practitioner } from 'fhir/r4';
 
 /**
  * Checks profile completeness using the server flag (authState) as primary
  * source, falling back to local FHIR resource inspection.
  */
 export function useProfileCompleteness(
-  profile?: Patient | Practitioner
+  profile?: Patient | Practitioner | Person
 ) {
   const { state: authState } = useAuth();
 
