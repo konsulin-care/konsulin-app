@@ -2,7 +2,7 @@ import { getAPI } from '@/services/api';
 import { getProfileById } from '@/services/profile';
 import type { IRecord } from '@/types/record';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import type { Bundle, Patient, Practitioner } from 'fhir/r4';
+import type { Bundle, Patient, Person, Practitioner } from 'fhir/r4';
 import type { Dispatch, SetStateAction } from 'react';
 
 export const PAGE_SIZE = 10;
@@ -86,14 +86,23 @@ export function useResourceInfiniteQuery(
   });
 }
 
+/** Options for enrichProfileData. */
+export type EnrichProfileOptions = {
+  queryClient: ReturnType<typeof useQueryClient>;
+  setRecords: Dispatch<SetStateAction<IRecord[]>>;
+  /** Callback returning true once the enclosing effect cleaned up. */
+  isStale: () => boolean;
+  /** Optional auth-bootstrap full profile of the record patient. */
+  fullProfile?: Patient | Practitioner | Person;
+};
+
 /** Enrich records with practitioner and patient profile data from FHIR. */
 export async function enrichProfileData(
   records: IRecord[],
   patientId: string,
-  queryClient: ReturnType<typeof useQueryClient>,
-  setRecords: Dispatch<SetStateAction<IRecord[]>>,
-  isStale: () => boolean
+  options: EnrichProfileOptions
 ): Promise<void> {
+  const { queryClient, setRecords, isStale, fullProfile } = options;
   const uniqPracIds = [
     ...new Set(
       records
@@ -102,24 +111,55 @@ export async function enrichProfileData(
     )
   ];
 
-  const patientProfile = await queryClient.fetchQuery<Patient>({
-    queryKey: ['profile-patient', patientId],
-    queryFn: () => getProfileById(patientId, 'Patient') as Promise<Patient>
-  });
+  // The auth bootstrap already fetched the active role's full resource. When
+  // it is the patient behind these records, reuse it instead of issuing a
+  // duplicate profile fetch, and seed the cache for other consumers.
+  let patientProfile: Patient;
+  if (fullProfile?.resourceType === 'Patient' && fullProfile.id === patientId) {
+    patientProfile = fullProfile;
+    queryClient.setQueryData(['profile-patient', patientId], fullProfile);
+  } else {
+    patientProfile = await queryClient.fetchQuery<Patient>({
+      queryKey: ['profile-patient', patientId],
+      queryFn: () => getProfileById(patientId, 'Patient') as Promise<Patient>
+    });
+  }
 
-  const pracProfiles = await Promise.all(
-    uniqPracIds.map(id =>
-      queryClient.fetchQuery<Practitioner>({
-        queryKey: ['profile-practitioner', id],
-        queryFn: () =>
-          getProfileById(id, 'Practitioner') as Promise<Practitioner>
+  // Batch-fetch only the uncached practitioner profiles in a single search so
+  // the record cards can show name + photo without one request per
+  // practitioner, mirroring resolveQuestionnaireTitles. Records whose
+  // practitioner has no match keep the existing fallback (no profile).
+  const uncachedPracIds = uniqPracIds.filter(
+    id => !queryClient.getQueryData(['profile-practitioner', id])
+  );
+  if (uncachedPracIds.length > 0) {
+    const api = await getAPI();
+    const url = `/fhir/Practitioner?_id=${uncachedPracIds.join(',')}&_elements=name,photo`;
+    const { data } = await api.get<Bundle>(url);
+    for (const entry of data.entry ?? []) {
+      const practitioner = entry.resource as Practitioner | undefined;
+      if (practitioner?.id) {
+        queryClient.setQueryData(
+          ['profile-practitioner', practitioner.id],
+          practitioner
+        );
+      }
+    }
+  }
+
+  const pracMap = new Map(
+    uniqPracIds
+      .map(id => {
+        const profile = queryClient.getQueryData<Practitioner>([
+          'profile-practitioner',
+          id
+        ]);
+        return profile ? ([id, profile] as const) : undefined;
       })
-    )
+      .filter((e): e is readonly [string, Practitioner] => e !== undefined)
   );
 
   if (isStale()) return;
-
-  const pracMap = new Map(uniqPracIds.map((id, i) => [id, pracProfiles[i]]));
 
   setRecords(
     records.map(r => ({

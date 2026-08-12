@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@/context/auth/authContext';
 import {
   getProfileById,
   modifyProfile,
@@ -52,6 +53,7 @@ export function useProfilePhotoSave({
 }: Params): Result {
   const { mutateAsync: updateProfile } = useUpdateProfile();
   const queryClient = useQueryClient();
+  const { state: authState, dispatch: dispatchAuth } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
 
   /** Resolve a Chatwoot id, creating a contact via modifyProfile if needed. */
@@ -96,10 +98,33 @@ export function useProfilePhotoSave({
         const payload = { ...latest, photo } as ProfileResource;
         await updateProfile({ payload });
 
+        // Optimistic auth-state update: keep the header avatar and the role
+        // switcher dropdown fresh without a refetch after the photo save.
+        const role = authState.userInfo?.role_name;
+        if (role) {
+          const existingProfiles = authState.userInfo?.roleProfiles ?? {};
+          dispatchAuth({
+            type: 'auth-check',
+            payload: {
+              ...authState.userInfo,
+              profile_picture: uploadedUrl,
+              roleProfiles: {
+                ...existingProfiles,
+                [role]: {
+                  name:
+                    existingProfiles[role]?.name ??
+                    authState.userInfo?.fullname ??
+                    '',
+                  photoUrl: uploadedUrl
+                }
+              }
+            }
+          });
+        }
+
         await queryClient.invalidateQueries({
           queryKey: ['profile-data', fhirId]
         });
-        await queryClient.invalidateQueries({ queryKey: ['role-profiles'] });
         toast.success('Profile photo updated');
       } catch (error) {
         console.error('[avatar] profile photo update failed', error);
@@ -108,7 +133,15 @@ export function useProfilePhotoSave({
         setIsUploading(false);
       }
     },
-    [fhirId, resourceType, ensureChatwootId, updateProfile, queryClient]
+    [
+      fhirId,
+      resourceType,
+      ensureChatwootId,
+      updateProfile,
+      queryClient,
+      authState,
+      dispatchAuth
+    ]
   );
 
   return { isUploading, handleFileSelected };

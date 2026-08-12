@@ -12,6 +12,11 @@ vi.mock('@/services/profile', () => ({
   getProfileById: vi.fn()
 }));
 
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: vi.fn()
+}));
+
+import { useAuth } from '@/context/auth/authContext';
 import { getAPI } from '@/services/api';
 import { getProfileById } from '@/services/profile';
 import { usePatientRecords } from '../usePatientRecords';
@@ -34,6 +39,14 @@ function mockBundle() {
 describe('usePatientRecords SOAP title resolution', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useAuth).mockReturnValue({
+      isLoading: false,
+      dispatch: vi.fn(),
+      state: {
+        isAuthenticated: true,
+        userInfo: { fhirId: 'pat-1' }
+      }
+    });
     vi.mocked(getProfileById).mockResolvedValue({
       id: 'pat-1',
       resourceType: 'Patient',

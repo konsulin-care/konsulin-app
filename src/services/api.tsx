@@ -3,6 +3,7 @@ import { getRetryDelayMs, shouldRetryRequest } from '@/lib/api-retry';
 import { reportRequestOutcome } from '@/lib/connectivity';
 import { clearUserData } from '@/lib/indexeddb';
 import axios, { AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
+import type { Patient, Person, Practitioner } from 'fhir/r4';
 import { toast } from 'react-toastify';
 import { parseAxiosError } from './api-error';
 
@@ -17,6 +18,8 @@ export interface UserProfile {
   fhirId?: string;
   organizationId?: string;
   profile_complete?: boolean;
+  roleProfiles?: Record<string, { name: string; photoUrl: string } | null>;
+  fullProfile?: Patient | Practitioner | Person;
   cachedAt?: number;
 }
 

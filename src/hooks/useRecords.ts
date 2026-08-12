@@ -8,6 +8,7 @@ import {
 } from '@/utils/parse-searchset-bundles';
 import { resolveQuestionnaireTitles } from '@/utils/resolve-questionnaire-titles';
 import { useQueryClient } from '@tanstack/react-query';
+import type { Patient, Person, Practitioner } from 'fhir/r4';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   enrichProfileData,
@@ -38,7 +39,8 @@ export function useRecords(
   patientId: string | null,
   config: UseRecordsConfig,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  fullProfile?: Patient | Practitioner | Person
 ): UseRecordsResult {
   const queryClient = useQueryClient();
   const { queryKeyPrefix, skipPractitionerAuthored, enrichProfiles } = config;
@@ -101,13 +103,12 @@ export function useRecords(
       setTitlesLoading(false);
 
       if (enrichProfiles) {
-        await enrichProfileData(
-          withTitles,
-          patientId,
+        await enrichProfileData(withTitles, patientId, {
           queryClient,
           setRecords,
-          () => stale
-        );
+          isStale: () => stale,
+          fullProfile
+        });
       } else {
         setRecords(withTitles);
       }
@@ -120,7 +121,7 @@ export function useRecords(
     return function cleanup(): void {
       stale = true;
     };
-  }, [mergedRecords, patientId, queryClient, enrichProfiles]);
+  }, [mergedRecords, patientId, queryClient, enrichProfiles, fullProfile]);
 
   const fetchNextPage = useCallback(
     function fetchNextPage(): void {

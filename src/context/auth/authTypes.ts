@@ -1,3 +1,6 @@
+import type { RoleProfile } from '@/services/role-profiles';
+import type { Patient, Person, Practitioner } from 'fhir/r4';
+
 export interface IStateAuth {
   isAuthenticated: boolean;
   userInfo: IStateUserInfo;
@@ -14,6 +17,8 @@ export interface IStateUserInfo {
   fhirId?: string;
   organizationId?: string;
   profile_complete?: boolean;
+  roleProfiles?: Record<string, RoleProfile | null>;
+  fullProfile?: Patient | Practitioner | Person;
 }
 
 export type IActionAuth = IActionLogin | IActionLogout;

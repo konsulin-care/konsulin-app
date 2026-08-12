@@ -119,7 +119,7 @@ describe('useProfileSectionSave', () => {
     });
   });
 
-  it('invalidates the profile-data and role-profiles caches', async () => {
+  it('invalidates the profile-data cache only (no role-profiles refetch)', async () => {
     vi.mocked(getProfileById).mockResolvedValue(patientFixture);
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -136,7 +136,7 @@ describe('useProfileSectionSave', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ['profile-data', 'pat-1']
     });
-    expect(invalidateSpy).toHaveBeenCalledWith({
+    expect(invalidateSpy).not.toHaveBeenCalledWith({
       queryKey: ['role-profiles']
     });
   });
@@ -171,6 +171,9 @@ describe('useProfileSectionSave', () => {
     expect(action.type).toBe('auth-check');
     expect(action.payload?.fullname).toBe('John Magnificent Doe');
     expect(action.payload?.fhirId).toBe('pat-1');
+    expect(action.payload?.roleProfiles).toEqual({
+      Patient: { name: 'John Magnificent Doe', photoUrl: '' }
+    });
     expect(dbSet).toHaveBeenCalled();
   });
 

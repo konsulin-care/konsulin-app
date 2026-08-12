@@ -23,7 +23,7 @@ const mockAppointmentEntry = (
   id: string,
   start: string,
   participantActors: string[]
-) => ({
+): BundleEntry => ({
   resource: {
     resourceType: 'Appointment',
     status: 'booked',
@@ -46,12 +46,12 @@ const mockMonthBundle: Bundle = {
       'Patient/pat-1',
       'Location/loc-1',
       'PractitionerRole/role-1'
-    ]) as unknown as BundleEntry,
+    ]),
     mockAppointmentEntry('appt-2', '2026-07-04T03:00:00.000Z', [
       'Patient/pat-2',
       'Location/loc-2',
       'PractitionerRole/role-2'
-    ]) as unknown as BundleEntry,
+    ]),
     {
       resource: {
         resourceType: 'Slot',

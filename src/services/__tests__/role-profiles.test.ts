@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 
 import type { AxiosInstance } from 'axios';
-import type { Bundle } from 'fhir/r4';
+import type { Bundle, Patient } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/services/api', () => ({
@@ -9,7 +9,7 @@ vi.mock('@/services/api', () => ({
 }));
 
 import { getAPI } from '@/services/api';
-import { fetchRoleProfiles } from '@/services/role-profiles';
+import { fetchUserProfilesBundle } from '@/services/role-profiles';
 
 const mockAxiosInstance = {
   get: vi.fn(),
@@ -49,7 +49,34 @@ const emptySearchset: Bundle = {
   entry: []
 };
 
-describe('fetchRoleProfiles', () => {
+const fullPatientResource: Patient = {
+  resourceType: 'Patient',
+  id: 'pat-1',
+  identifier: [
+    {
+      system: 'https://login.konsulin.care/userid',
+      value: 'user-1'
+    }
+  ],
+  name: [{ use: 'official', given: ['John'], family: 'Doe' }],
+  telecom: [{ system: 'email', value: 'john@example.com' }],
+  photo: [{ url: 'https://cdn.example.com/john.jpg' }],
+  managingOrganization: { reference: 'Organization/org-1' }
+};
+
+const fullPatientSearchset: Bundle = {
+  resourceType: 'Bundle',
+  type: 'searchset',
+  total: 1,
+  entry: [{ resource: fullPatientResource }]
+};
+
+/** Build a batch-response entry for one search request. */
+function batchResponseEntry(bundle: Bundle, status = '200 OK') {
+  return { resource: bundle, response: { status } };
+}
+
+describe('fetchUserProfilesBundle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getAPI).mockResolvedValue(mockAxiosInstance);
@@ -59,61 +86,165 @@ describe('fetchRoleProfiles', () => {
     vi.resetAllMocks();
   });
 
-  it('fetches one profile per role by identifier and maps name + photo', async () => {
-    vi.mocked(mockAxiosInstance.get)
-      .mockResolvedValueOnce({ data: practitionerSearchset })
-      .mockResolvedValueOnce({ data: emptySearchset });
+  it('posts ONE batch bundle with a full entry for the active role and minimal entries for inactive roles', async () => {
+    vi.mocked(mockAxiosInstance.post).mockResolvedValue({
+      data: {
+        resourceType: 'Bundle',
+        type: 'batch-response',
+        entry: [
+          batchResponseEntry(fullPatientSearchset),
+          batchResponseEntry(practitionerSearchset),
+          batchResponseEntry(emptySearchset),
+          batchResponseEntry(emptySearchset)
+        ]
+      }
+    });
 
-    const result = await fetchRoleProfiles('user-1', [
-      'Practitioner',
+    const result = await fetchUserProfilesBundle(
+      'user-1',
+      ['Patient', 'Practitioner', 'Clinic Admin', 'Researcher'],
       'Patient'
-    ]);
+    );
 
-    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-      '/fhir/Practitioner?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
-    );
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-      '/fhir/Patient?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
-    );
-    expect(result).toEqual({
+    expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1);
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fhir', {
+      resourceType: 'Bundle',
+      type: 'batch',
+      entry: [
+        {
+          request: {
+            method: 'GET',
+            url: '/fhir/Patient?identifier=https://login.konsulin.care/userid|user-1'
+          }
+        },
+        {
+          request: {
+            method: 'GET',
+            url: '/fhir/Practitioner?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
+          }
+        },
+        {
+          request: {
+            method: 'GET',
+            url: '/fhir/Person?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
+          }
+        },
+        {
+          request: {
+            method: 'GET',
+            url: '/fhir/Person?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
+          }
+        }
+      ]
+    });
+
+    expect(result.activeProfile).toEqual(fullPatientResource);
+    expect(result.roleProfiles).toEqual({
+      Patient: {
+        name: 'John Doe',
+        photoUrl: 'https://cdn.example.com/john.jpg'
+      },
       Practitioner: {
         name: 'Jane Doe',
         photoUrl: 'https://cdn.example.com/jane.jpg'
       },
-      Patient: null
+      'Clinic Admin': null,
+      Researcher: null
     });
   });
 
-  it('returns null for a role whose profile is missing', async () => {
-    vi.mocked(mockAxiosInstance.get).mockResolvedValue({
-      data: emptySearchset
+  it('returns null for a role whose entry has no resource', async () => {
+    vi.mocked(mockAxiosInstance.post).mockResolvedValue({
+      data: {
+        resourceType: 'Bundle',
+        type: 'batch-response',
+        entry: [batchResponseEntry(emptySearchset)]
+      }
     });
 
-    const result = await fetchRoleProfiles('user-1', ['Patient']);
+    const result = await fetchUserProfilesBundle(
+      'user-1',
+      ['Patient'],
+      'Patient'
+    );
 
-    expect(result).toEqual({ Patient: null });
+    expect(result.activeProfile).toBeNull();
+    expect(result.roleProfiles).toEqual({ Patient: null });
   });
 
-  it('returns null for a role when the request fails', async () => {
-    vi.mocked(mockAxiosInstance.get).mockRejectedValue(
+  it('treats a non-2xx per-entry response as a missing profile', async () => {
+    vi.mocked(mockAxiosInstance.post).mockResolvedValue({
+      data: {
+        resourceType: 'Bundle',
+        type: 'batch-response',
+        entry: [{ response: { status: '404 Not Found' } }]
+      }
+    });
+
+    const result = await fetchUserProfilesBundle(
+      'user-1',
+      ['Practitioner'],
+      'Practitioner'
+    );
+
+    expect(result.activeProfile).toBeNull();
+    expect(result.roleProfiles).toEqual({ Practitioner: null });
+  });
+
+  it('URL-encodes the userId in every identifier query', async () => {
+    vi.mocked(mockAxiosInstance.post).mockResolvedValue({
+      data: {
+        resourceType: 'Bundle',
+        type: 'batch-response',
+        entry: [batchResponseEntry(emptySearchset)]
+      }
+    });
+
+    await fetchUserProfilesBundle('user id/1', ['Patient'], 'Patient');
+
+    const posted = vi.mocked(mockAxiosInstance.post).mock.calls[0][1] as Bundle;
+    expect(posted.entry?.[0]?.request?.url).toBe(
+      '/fhir/Patient?identifier=https://login.konsulin.care/userid|user%20id%2F1'
+    );
+  });
+
+  it('appends the active role as a full entry when it is missing from the roles list', async () => {
+    vi.mocked(mockAxiosInstance.post).mockResolvedValue({
+      data: {
+        resourceType: 'Bundle',
+        type: 'batch-response',
+        entry: [
+          batchResponseEntry(practitionerSearchset),
+          batchResponseEntry(fullPatientSearchset)
+        ]
+      }
+    });
+
+    const result = await fetchUserProfilesBundle(
+      'user-1',
+      ['Practitioner'],
+      'Patient'
+    );
+
+    const posted = vi.mocked(mockAxiosInstance.post).mock.calls[0][1] as Bundle;
+    expect(posted.entry).toHaveLength(2);
+    expect(posted.entry?.[1]?.request?.url).toBe(
+      '/fhir/Patient?identifier=https://login.konsulin.care/userid|user-1'
+    );
+    expect(result.activeProfile).toEqual(fullPatientResource);
+    expect(result.roleProfiles.Practitioner).toEqual({
+      name: 'Jane Doe',
+      photoUrl: 'https://cdn.example.com/jane.jpg'
+    });
+  });
+
+  it('propagates a batch POST failure for the caller fallback', async () => {
+    vi.mocked(mockAxiosInstance.post).mockRejectedValue(
       new Error('network down')
     );
 
-    const result = await fetchRoleProfiles('user-1', ['Practitioner']);
-
-    expect(result).toEqual({ Practitioner: null });
-  });
-
-  it('URL-encodes the userId in the identifier query', async () => {
-    vi.mocked(mockAxiosInstance.get).mockResolvedValue({
-      data: emptySearchset
-    });
-
-    await fetchRoleProfiles('user id/1', ['Patient']);
-
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-      '/fhir/Patient?identifier=https://login.konsulin.care/userid|user%20id%2F1&_elements=name,photo'
-    );
+    await expect(
+      fetchUserProfilesBundle('user-1', ['Patient'], 'Patient')
+    ).rejects.toThrow('network down');
   });
 });

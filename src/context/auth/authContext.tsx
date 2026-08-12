@@ -6,10 +6,13 @@ import { dbGet, dbSet, migrateLocalStorage, STORES } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { setCurrentUserId, UserProfile } from '@/services/api';
 import { getAuthCookieSession, restoreAuthCookie } from '@/services/auth';
-import { getProfileByIdentifier } from '@/services/profile';
+import {
+  fetchUserProfilesBundle,
+  type ProfileResource,
+  type RoleProfile
+} from '@/services/role-profiles';
 import { mergeNames } from '@/utils/helper';
 import { hasPendingAssessmentClaimIntent } from '@/utils/redirect-intent';
-import { roleToFhirResource } from '@/utils/role-fhir';
 import React, {
   createContext,
   ReactNode,
@@ -27,7 +30,7 @@ import {
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 import { isProfileCompleteFromFHIR } from '../../utils/profileCompleteness';
 import { initialState, reducer } from './authReducer';
-import { IActionAuth, IStateAuth } from './authTypes';
+import { IActionAuth, IStateAuth, IStateUserInfo } from './authTypes';
 
 interface ContextProps {
   isLoading: boolean;
@@ -39,6 +42,63 @@ type UserRole =
   | typeof Roles.Practitioner
   | typeof Roles.ClinicAdmin
   | typeof Roles.Patient;
+
+/** Extracts the Organization id from a managingOrganization reference. */
+function extractOrgId(result: unknown): string | undefined {
+  if (!result || typeof result !== 'object') return undefined;
+  const obj = result as Record<string, unknown>;
+  const mgmtOrg = obj.managingOrganization;
+  if (!mgmtOrg || typeof mgmtOrg !== 'object') return undefined;
+  const ref = (mgmtOrg as Record<string, unknown>).reference;
+  return typeof ref === 'string'
+    ? ref.replace('Organization/', '') || undefined
+    : undefined;
+}
+
+/** Extract the photo URL from a FHIR profile; Person stores a single Attachment. */
+function extractPhotoUrl(profile: ProfileResource | null): string {
+  if (!profile) return '';
+  if (profile.resourceType === 'Person') return profile.photo?.url ?? '';
+  return profile.photo?.[0]?.url ?? '';
+}
+
+/** Build the login payload from the active profile resource. */
+function buildLoginPayload(
+  userId: string,
+  role: UserRole,
+  superTokensRoles: string[] | undefined,
+  profile: ProfileResource,
+  roleProfiles: Record<string, RoleProfile | null>
+): IStateUserInfo {
+  return {
+    userId,
+    role_name: role,
+    roles: superTokensRoles,
+    email: profile.telecom?.find(item => item.system === 'email')?.value,
+    profile_picture: extractPhotoUrl(profile),
+    fullname: mergeNames(profile.name),
+    fhirId: profile.id ?? '',
+    organizationId: extractOrgId(profile),
+    profile_complete: isProfileCompleteFromFHIR(profile),
+    roleProfiles,
+    fullProfile: profile
+  };
+}
+
+/** True when a cached profile can serve the session.
+ *
+ * Single-role users always use the cache. Multi-role users only when the cache
+ * carries the role profile map — a pre-bundle cache would leave the role
+ * switcher with placeholder avatars for the other roles.
+ */
+function isCacheUsable(
+  cached: UserProfile | null,
+  superTokensRoles: string[] | undefined
+): boolean {
+  const isMultiRole =
+    Array.isArray(superTokensRoles) && superTokensRoles.length > 1;
+  return !isMultiRole || Boolean(cached?.roleProfiles);
+}
 
 // skipcq: JS-W1042 - createContext requires a default value per React API
 const AuthContext = createContext<ContextProps | undefined>(undefined);
@@ -167,18 +227,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  /** Extracts the Organization id from a managingOrganization reference. */
-  const extractOrgId = (result: unknown): string | undefined => {
-    if (!result || typeof result !== 'object') return undefined;
-    const obj = result as Record<string, unknown>;
-    const mgmtOrg = obj.managingOrganization;
-    if (!mgmtOrg || typeof mgmtOrg !== 'object') return undefined;
-    const ref = (mgmtOrg as Record<string, unknown>).reference;
-    return typeof ref === 'string'
-      ? ref.replace('Organization/', '') || undefined
-      : undefined;
-  };
-
   /** Persists the selected clinic organization id in IndexedDB. */
   const persistClinicOrganization = (orgId: string) =>
     dbSet(STORES.uiPreferences, {
@@ -246,13 +294,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     role: UserRole,
     superTokensRoles: string[] | undefined
   ): Promise<void> => {
-    const result = await getProfileByIdentifier({
-      userId,
-      type: roleToFhirResource(role)
-    });
+    const { activeProfile: result, roleProfiles } =
+      await fetchUserProfilesBundle(userId, superTokensRoles ?? [role], role);
 
     if (!result) {
-      const payload = {
+      const payload: IStateUserInfo = {
         userId,
         role_name: role,
         roles: superTokensRoles,
@@ -260,7 +306,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         fullname: '',
         profile_picture: '',
         fhirId: '',
-        profile_complete: false
+        profile_complete: false,
+        roleProfiles,
+        fullProfile: undefined
       };
       await dbSet(STORES.userProfile, { ...payload, cachedAt: Date.now() });
       dispatch({ type: 'login', payload });
@@ -268,21 +316,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const email = result.telecom?.find(item => item.system === 'email')?.value;
-    const profile_complete = isProfileCompleteFromFHIR(result);
-    const organizationId = extractOrgId(result);
-
-    const payload = {
+    const payload = buildLoginPayload(
       userId,
-      role_name: role,
-      roles: superTokensRoles,
-      email,
-      profile_picture: result?.photo?.[0]?.url ?? '',
-      fullname: mergeNames(result?.name),
-      fhirId: result?.id ?? '',
-      organizationId,
-      profile_complete
-    };
+      role,
+      superTokensRoles,
+      result,
+      roleProfiles
+    );
 
     await dbSet(STORES.userProfile, {
       ...payload,
@@ -290,11 +330,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       cachedAt: Date.now()
     });
     dispatch({ type: 'login', payload });
-    await persistFhirIdForRole(userId, role, result?.id ?? '');
+    await persistFhirIdForRole(userId, role, result.id ?? '');
 
     // Clinic admin: persist managingOrganization as clinic_organization
-    if (role === Roles.ClinicAdmin && organizationId) {
-      await persistClinicOrganization(organizationId);
+    if (role === Roles.ClinicAdmin && payload.organizationId) {
+      await persistClinicOrganization(payload.organizationId);
     }
   };
 
@@ -318,7 +358,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         fullname: fallbackCookie.fullname ?? '',
         profile_picture: fallbackCookie.profile_picture ?? '',
         fhirId: resolvedFhirId,
-        profile_complete: fallbackCookie.profile_complete ?? false
+        profile_complete: fallbackCookie.profile_complete ?? false,
+        roleProfiles: {},
+        fullProfile: undefined
       };
       dispatch({ type: 'login', payload });
     } else {
@@ -359,7 +401,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       // IndexedDB unavailable — skip cache and fetch from API
     }
-    if (cached?.userId === userId && cached?.role_name === role) {
+    if (
+      cached?.userId === userId &&
+      cached?.role_name === role &&
+      isCacheUsable(cached, superTokensRoles)
+    ) {
       setCurrentUserId(userId);
       dispatch({ type: 'login', payload: cached });
 

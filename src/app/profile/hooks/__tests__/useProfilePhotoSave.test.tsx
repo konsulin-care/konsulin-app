@@ -11,6 +11,10 @@ vi.mock('@/services/profile', () => ({
   useUpdateProfile: vi.fn()
 }));
 
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: vi.fn()
+}));
+
 vi.mock('@/utils/image-processing', () => ({
   processImageForAvatar: vi.fn()
 }));
@@ -19,6 +23,8 @@ vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));
 
+import { useAuth } from '@/context/auth/authContext';
+import type { IActionLogin } from '@/context/auth/authTypes';
 import {
   getProfileById,
   modifyProfile,
@@ -50,6 +56,7 @@ const personFixture: Person = {
 describe('useProfilePhotoSave', () => {
   let queryClient: QueryClient;
   const mockUpdate = vi.fn();
+  const mockDispatch = vi.fn();
   const mockFile = new File(['image-bytes'], 'avatar.png', {
     type: 'image/png'
   });
@@ -59,6 +66,21 @@ describe('useProfilePhotoSave', () => {
       defaultOptions: { queries: { retry: false } }
     });
     vi.clearAllMocks();
+    vi.mocked(useAuth).mockReturnValue({
+      isLoading: false,
+      dispatch: mockDispatch,
+      state: {
+        isAuthenticated: true,
+        userInfo: {
+          userId: 'u1',
+          role_name: 'Patient',
+          fullname: 'John Doe',
+          fhirId: 'pat-1',
+          profile_picture: '',
+          roleProfiles: {}
+        }
+      }
+    });
     vi.mocked(useUpdateProfile).mockReturnValue({
       mutateAsync: mockUpdate
     } as unknown as ReturnType<typeof useUpdateProfile>);
@@ -129,7 +151,35 @@ describe('useProfilePhotoSave', () => {
     });
   });
 
-  it('invalidates the profile-data and role-profiles caches', async () => {
+  it('dispatches an optimistic auth-check with the new photo for the active role', async () => {
+    vi.mocked(getProfileById).mockResolvedValue(patientFixture);
+
+    const { result } = renderHook(
+      () =>
+        useProfilePhotoSave({
+          fhirId: 'pat-1',
+          resourceType: 'Patient',
+          profile: patientFixture
+        }),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.handleFileSelected(mockFile);
+    });
+
+    const action = mockDispatch.mock.calls[0]?.[0] as IActionLogin;
+    expect(action.type).toBe('auth-check');
+    expect(action.payload?.profile_picture).toBe(
+      'https://cdn.example.com/avatar.jpg'
+    );
+    expect(action.payload?.roleProfiles?.Patient).toEqual({
+      name: 'John Doe',
+      photoUrl: 'https://cdn.example.com/avatar.jpg'
+    });
+  });
+
+  it('invalidates the profile-data cache only (no role-profiles refetch)', async () => {
     vi.mocked(getProfileById).mockResolvedValue(patientFixture);
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -150,7 +200,7 @@ describe('useProfilePhotoSave', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ['profile-data', 'pat-1']
     });
-    expect(invalidateSpy).toHaveBeenCalledWith({
+    expect(invalidateSpy).not.toHaveBeenCalledWith({
       queryKey: ['role-profiles']
     });
   });

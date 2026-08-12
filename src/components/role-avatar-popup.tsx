@@ -11,9 +11,7 @@ import {
 import { RoleSwitchDropdown } from '@/components/role-switch-dropdown';
 import { useAuth } from '@/context/auth/authContext';
 import { IStateAuth } from '@/context/auth/authTypes';
-import { fetchRoleProfiles } from '@/services/role-profiles';
 import { generateAvatarPlaceholder } from '@/utils/helper';
-import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 
 /** Builds AvatarInfo for the current user and role. */
@@ -42,10 +40,10 @@ function getCurrentAvatar(
  * Header avatar for the active user.
  *
  * Single-role users keep a plain link to /profile. Multi-role users get a
- * dropdown with the other roles' FHIR profile photos, fetched once per
- * user/roles and served from the React Query cache within the staleness
- * window. All roles are fetched (including the current one) so an
- * invalidation after a profile save captures the just-updated photo.
+ * dropdown with the other roles' FHIR profile photos, sourced from the auth
+ * state (`userInfo.roleProfiles`), which the auth bootstrap populates with a
+ * single batch bundle. No component-level fetch happens here anymore; the
+ * profile-save hooks keep the map fresh via optimistic auth-state updates.
  */
 export default function RoleAvatarPopup({
   indicator,
@@ -60,14 +58,7 @@ export default function RoleAvatarPopup({
   const userId = authState.userInfo?.userId ?? '';
   const currentAvatar = getCurrentAvatar(currentRole, userId, authState);
 
-  const { data: profileMap } = useQuery({
-    queryKey: ['role-profiles', userId, roles],
-    queryFn: () => fetchRoleProfiles(userId, roles),
-    enabled: roles.length > 1 && Boolean(userId),
-    staleTime: 15 * 60_000,
-    gcTime: 60 * 60_000,
-    retry: 2
-  });
+  const profileMap = authState.userInfo?.roleProfiles;
 
   if (roles.length <= 1) {
     return (

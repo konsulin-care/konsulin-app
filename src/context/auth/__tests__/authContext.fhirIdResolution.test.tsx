@@ -28,8 +28,8 @@ vi.mock('@/services/auth', () => ({
   restoreAuthCookie: vi.fn()
 }));
 
-vi.mock('@/services/profile', () => ({
-  getProfileByIdentifier: vi.fn()
+vi.mock('@/services/role-profiles', () => ({
+  fetchUserProfilesBundle: vi.fn()
 }));
 
 vi.mock('@/services/anonymous-session', () => ({
@@ -84,14 +84,14 @@ vi.mock('@/utils/helper', () => ({
 // ---------------------------------------------------------------------------
 import { dbGet, dbSet } from '@/lib/indexeddb';
 import { getAuthCookieSession, restoreAuthCookie } from '@/services/auth';
-import { getProfileByIdentifier } from '@/services/profile';
+import { fetchUserProfilesBundle } from '@/services/role-profiles';
 
 // ---------------------------------------------------------------------------
 // Type helpers
 // ---------------------------------------------------------------------------
 const mockGetAuthSession = getAuthCookieSession as ReturnType<typeof vi.fn>;
 const mockRestoreCookie = restoreAuthCookie as ReturnType<typeof vi.fn>;
-const mockGetProfile = getProfileByIdentifier as ReturnType<typeof vi.fn>;
+const mockFetchBundle = fetchUserProfilesBundle as ReturnType<typeof vi.fn>;
 const mockDbGet = dbGet as ReturnType<typeof vi.fn>;
 const mockDbSet = dbSet as ReturnType<typeof vi.fn>;
 
@@ -193,10 +193,13 @@ describe('fhirId per-role storage', () => {
     mockDbGet.mockResolvedValue(null);
 
     // AND: API returns a Patient profile
-    mockGetProfile.mockResolvedValue({
-      resourceType: 'Patient',
-      id: 'correct-patient-id',
-      name: [{ use: 'official', given: ['Test'], family: 'User' }]
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: {
+        resourceType: 'Patient',
+        id: 'correct-patient-id',
+        name: [{ use: 'official', given: ['Test'], family: 'User' }]
+      },
+      roleProfiles: {}
     });
 
     globalThis.fetch = setupFetchMock({ ok: true, status: 200 });
@@ -220,7 +223,10 @@ describe('fhirId per-role storage', () => {
   it('stores fhirId as empty when no profile is found for the role', async () => {
     // GIVEN: no cached profile, API returns null
     mockDbGet.mockResolvedValue(null);
-    mockGetProfile.mockResolvedValue(null);
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: null,
+      roleProfiles: { Patient: null }
+    });
 
     globalThis.fetch = setupFetchMock({ ok: true, status: 200 });
 
@@ -282,7 +288,7 @@ describe('fallback uses stored fhirId per-role mapping', () => {
       return null;
     });
 
-    mockGetProfile.mockRejectedValue(new Error('API unavailable'));
+    mockFetchBundle.mockRejectedValue(new Error('API unavailable'));
 
     globalThis.fetch = setupFetchMock({ ok: true, status: 200 });
 
@@ -314,7 +320,7 @@ describe('fallback uses stored fhirId per-role mapping', () => {
     });
 
     // AND: API fetch fails
-    mockGetProfile.mockRejectedValue(new Error('API unavailable'));
+    mockFetchBundle.mockRejectedValue(new Error('API unavailable'));
 
     globalThis.fetch = setupFetchMock({ ok: true, status: 200 });
 

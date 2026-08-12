@@ -12,6 +12,11 @@ vi.mock('@/services/profile', () => ({
   getProfileById: vi.fn()
 }));
 
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: vi.fn()
+}));
+
+import { useAuth } from '@/context/auth/authContext';
 import { getAPI } from '@/services/api';
 import { getProfileById } from '@/services/profile';
 import { usePatientRecords } from '../usePatientRecords';
@@ -39,6 +44,14 @@ function mockBundle(overrides?: Record<string, unknown>) {
 describe('usePatientRecords', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useAuth).mockReturnValue({
+      isLoading: false,
+      dispatch: vi.fn(),
+      state: {
+        isAuthenticated: true,
+        userInfo: { fhirId: 'pat-1' }
+      }
+    });
   });
 
   it('fetches records from 3 resource queries', async () => {
@@ -59,106 +72,6 @@ describe('usePatientRecords', () => {
       expect.stringContaining('Condition'),
       expect.stringContaining('Observation')
     ]);
-  });
-
-  it('enriches PractitionerNote records with practitioner profile', async () => {
-    const mockPracProfile = {
-      id: 'prac-1',
-      resourceType: 'Practitioner',
-      name: [{ given: ['Dr'], family: 'Smith' }],
-      telecom: [{ system: 'email', value: 'dr@test.com' }],
-      photo: [{ url: 'https://example.com/photo.jpg' }]
-    } as const;
-    const mockPatientProfile = {
-      id: 'pat-1',
-      resourceType: 'Patient',
-      name: [{ given: ['John'], family: 'Doe' }],
-      photo: [{ url: 'https://example.com/patient.jpg' }]
-    } as const;
-
-    vi.mocked(getProfileById).mockImplementation((id, type) => {
-      if (id === 'prac-1' && type === 'Practitioner') {
-        return Promise.resolve(mockPracProfile as never);
-      }
-      if (id === 'pat-1' && type === 'Patient') {
-        return Promise.resolve(mockPatientProfile as never);
-      }
-      return Promise.reject(new Error('unknown profile'));
-    });
-
-    const apiMock = {
-      get: vi.fn().mockResolvedValue({
-        data: {
-          resourceType: 'Bundle',
-          type: 'searchset',
-          entry: [
-            {
-              resource: {
-                resourceType: 'Observation',
-                id: 'obs-prac-1',
-                status: 'final',
-                code: {
-                  coding: [
-                    {
-                      system: 'https://loinc.org',
-                      code: '67855-7'
-                    }
-                  ]
-                },
-                performer: [{ reference: 'Practitioner/prac-1' }],
-                meta: { lastUpdated: '2024-06-01T00:00:00Z' }
-              }
-            },
-            {
-              resource: {
-                resourceType: 'Observation',
-                id: 'obs-pat-1',
-                status: 'final',
-                code: {
-                  coding: [
-                    {
-                      system: 'https://loinc.org',
-                      code: '51855-5'
-                    }
-                  ]
-                },
-                meta: { lastUpdated: '2024-06-01T00:00:00Z' }
-              }
-            }
-          ]
-        }
-      })
-    };
-    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
-
-    const { result } = renderHook(() => usePatientRecords('pat-1'), {
-      wrapper: TestWrapper
-    });
-
-    // Wait for loading to finish and enrichment to complete
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    // Wait for enrichment (profiles may arrive after isLoading)
-    await waitFor(() => {
-      expect(result.current.records.length).toBeGreaterThan(0);
-    });
-
-    const pracNote = result.current.records.find(
-      r => r.type === 'PractitionerNote'
-    );
-    expect(pracNote).toBeDefined();
-    expect(pracNote.practitionerProfile).toBeDefined();
-    expect(pracNote.practitionerProfile.id).toBe('prac-1');
-    expect(pracNote.practitionerProfile.photo?.[0]?.url).toBe(
-      'https://example.com/photo.jpg'
-    );
-
-    const patNote = result.current.records.find(r => r.type === 'PatientNote');
-    expect(patNote).toBeDefined();
-    expect(patNote.patientProfile).toBeDefined();
-    expect(patNote.patientProfile.id).toBe('pat-1');
   });
 
   it('does not call $everything endpoint', async () => {

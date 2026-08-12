@@ -59,7 +59,6 @@ export function useProfileSectionSave(): Result {
         await queryClient.invalidateQueries({
           queryKey: ['profile-data', params.fhirId]
         });
-        await queryClient.invalidateQueries({ queryKey: ['role-profiles'] });
         toast.success('Profile updated');
         params.onSuccess?.();
       } catch (error) {

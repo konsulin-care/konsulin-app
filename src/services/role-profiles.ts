@@ -1,7 +1,7 @@
 import { getAPI } from '@/services/api';
 import { mergeNames } from '@/utils/helper';
 import { roleToFhirResource } from '@/utils/role-fhir';
-import type { Bundle, HumanName } from 'fhir/r4';
+import type { Bundle, HumanName, Patient, Person, Practitioner } from 'fhir/r4';
 
 /** Shape of the FHIR profile fields this service reads. */
 interface ProfileResourceShape {
@@ -13,6 +13,17 @@ interface ProfileResourceShape {
 export interface RoleProfile {
   name: string;
   photoUrl: string;
+}
+
+/** Full FHIR resource backing any role's profile. */
+export type ProfileResource = Patient | Practitioner | Person;
+
+/** Result of the single batch fetch for the active profile + role switcher. */
+export interface UserProfilesBundleResult {
+  /** Full resource of the active role (no `_elements` projection). */
+  activeProfile: ProfileResource | null;
+  /** Minimal display summary per role, or null when missing/failed. */
+  roleProfiles: Record<string, RoleProfile | null>;
 }
 
 /**
@@ -33,38 +44,59 @@ function parseRoleProfile(bundle: Bundle): RoleProfile | null {
 }
 
 /**
- * Fetch profile summaries for every role of a user in parallel.
+ * Fetch the active role's full profile plus minimal summaries for every
+ * role of a user in a single FHIR batch request.
  *
- * Issues one identifier-based FHIR search per role (Patient, Practitioner,
- * Person via roleToFhirResource) with `_elements=name,photo` to keep the
- * payload minimal. Uses Promise.allSettled so a failed or missing profile
- * for one role never blocks the others.
+ * Builds one `type: 'batch'` bundle with one GET entry per role, each
+ * searching by the login identifier. The active role's entry requests the
+ * complete resource; inactive roles project to `_elements=name,photo` for
+ * the role switcher dropdown. The response is a `batch-response` bundle
+ * parsed by entry index, so a missing or failed entry for one role never
+ * blocks the others.
  *
  * @param userId - The SuperTokens user ID used as the FHIR identifier value.
  * @param roles - The role names to fetch profiles for.
- * @returns A map from role name to its profile summary, or null when the
- *   profile is missing, empty, or the request failed.
+ * @param activeRole - The active role; its entry omits `_elements`. Appended
+ *   to the bundle as a full entry when missing from `roles`.
+ * @returns The full active profile resource and the per-role summary map.
  */
-export async function fetchRoleProfiles(
+export async function fetchUserProfilesBundle(
   userId: string,
-  roles: string[]
-): Promise<Record<string, RoleProfile | null>> {
-  const API = await getAPI();
-  const results = await Promise.allSettled(
-    roles.map(role =>
-      API.get<Bundle>(
-        `/fhir/${roleToFhirResource(role)}?identifier=https://login.konsulin.care/userid|${encodeURIComponent(userId)}&_elements=name,photo`
-      )
-    )
-  );
+  roles: string[],
+  activeRole: string
+): Promise<UserProfilesBundleResult> {
+  const roleList = roles.includes(activeRole) ? roles : [...roles, activeRole];
 
-  const profiles: Record<string, RoleProfile | null> = {};
-  roles.forEach((role, index) => {
-    const settled = results[index];
-    profiles[role] =
-      settled.status === 'fulfilled'
-        ? parseRoleProfile(settled.value.data)
-        : null;
+  const bundle: Bundle = {
+    resourceType: 'Bundle',
+    type: 'batch',
+    entry: roleList.map(role => ({
+      request: {
+        method: 'GET',
+        url: `/fhir/${roleToFhirResource(role)}?identifier=https://login.konsulin.care/userid|${encodeURIComponent(userId)}${role === activeRole ? '' : '&_elements=name,photo'}`
+      }
+    }))
+  };
+
+  const API = await getAPI();
+  const response = await API.post<Bundle>('/fhir', bundle);
+  const responseEntries = response.data.entry ?? [];
+
+  let activeProfile: ProfileResource | null = null;
+  const roleProfiles: Record<string, RoleProfile | null> = {};
+
+  roleList.forEach((role, index) => {
+    // For a search entry in a batch-response bundle the searchset is the
+    // entry's `resource`; `response` only carries status/outcome.
+    const searchset = responseEntries[index]?.resource as Bundle | undefined;
+    const resource = searchset?.entry?.[0]?.resource as
+      | ProfileResource
+      | undefined;
+    if (role === activeRole) {
+      activeProfile = resource ?? null;
+    }
+    roleProfiles[role] = searchset ? parseRoleProfile(searchset) : null;
   });
-  return profiles;
+
+  return { activeProfile, roleProfiles };
 }

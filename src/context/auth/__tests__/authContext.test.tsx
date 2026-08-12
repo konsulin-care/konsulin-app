@@ -29,8 +29,8 @@ vi.mock('@/services/auth', () => ({
   restoreAuthCookie: vi.fn()
 }));
 
-vi.mock('@/services/profile', () => ({
-  getProfileByIdentifier: vi.fn()
+vi.mock('@/services/role-profiles', () => ({
+  fetchUserProfilesBundle: vi.fn()
 }));
 
 vi.mock('@/services/anonymous-session', () => ({
@@ -87,14 +87,14 @@ vi.mock('@/utils/helper', () => ({
 // ---------------------------------------------------------------------------
 import { dbGet, dbSet, migrateLocalStorage } from '@/lib/indexeddb';
 import { getAuthCookieSession, restoreAuthCookie } from '@/services/auth';
-import { getProfileByIdentifier } from '@/services/profile';
+import { fetchUserProfilesBundle } from '@/services/role-profiles';
 
 // ---------------------------------------------------------------------------
 // Type helpers — avoid repeating `as ReturnType<typeof vi.fn>`
 // ---------------------------------------------------------------------------
 const mockGetAuthSession = getAuthCookieSession as ReturnType<typeof vi.fn>;
 const mockRestoreCookie = restoreAuthCookie as ReturnType<typeof vi.fn>;
-const mockGetProfile = getProfileByIdentifier as ReturnType<typeof vi.fn>;
+const mockFetchBundle = fetchUserProfilesBundle as ReturnType<typeof vi.fn>;
 const mockDbGet = dbGet as ReturnType<typeof vi.fn>;
 const mockDbSet = dbSet as ReturnType<typeof vi.fn>;
 const mockMigrate = migrateLocalStorage as ReturnType<typeof vi.fn>;
@@ -299,8 +299,8 @@ describe('Fix 2 - fetchProfileAndLogin fallback on early error', () => {
     // The initial default role (Patient) was used, so a fresh profile
     // was created/dispatched via fetchAndDispatchProfile
     expect(screen.getByTestId('auth-authenticated').textContent).toBe('true');
-    // getProfileByIdentifier was called (skipped the dbGet cache)
-    expect(getProfileByIdentifier).toHaveBeenCalled();
+    // fetchUserProfilesBundle was called (skipped the dbGet cache)
+    expect(fetchUserProfilesBundle).toHaveBeenCalled();
   });
 });
 
@@ -348,6 +348,10 @@ describe('Task 2 - refresh before auth-cookie restore', () => {
     mockGetClaimValue.mockResolvedValue(['Patient']);
     mockGetAuthSession.mockResolvedValue({ authenticated: false });
     mockRestoreCookie.mockResolvedValue(true);
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: null,
+      roleProfiles: { Patient: null }
+    });
   });
 
   it('renews the access token BEFORE restoring the auth cookie', async () => {
@@ -442,11 +446,14 @@ describe('Fix 4 - clinic admin managingOrganization stored as clinic_organizatio
     ).toBeUndefined();
 
   it('stores managingOrganization as clinic_organization when Person has it', async () => {
-    mockGetProfile.mockResolvedValue({
-      resourceType: 'Person',
-      id: 'person-123',
-      managingOrganization: { reference: 'Organization/org-456' },
-      telecom: [{ system: 'email', value: 'admin@clinic.com' }]
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: {
+        resourceType: 'Person',
+        id: 'person-123',
+        managingOrganization: { reference: 'Organization/org-456' },
+        telecom: [{ system: 'email', value: 'admin@clinic.com' }]
+      },
+      roleProfiles: {}
     });
     renderWithAuthProvider();
     await waitFor(() => {
@@ -473,10 +480,13 @@ describe('Fix 4 - clinic admin managingOrganization stored as clinic_organizatio
   });
 
   it('does NOT store clinic_organization when Person has no managingOrganization', async () => {
-    mockGetProfile.mockResolvedValue({
-      resourceType: 'Person',
-      id: 'person-123',
-      telecom: [{ system: 'email', value: 'admin@clinic.com' }]
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: {
+        resourceType: 'Person',
+        id: 'person-123',
+        telecom: [{ system: 'email', value: 'admin@clinic.com' }]
+      },
+      roleProfiles: {}
     });
     renderWithAuthProvider();
     await waitFor(() =>
@@ -492,9 +502,12 @@ describe('Fix 4 - clinic admin managingOrganization stored as clinic_organizatio
       role_name: 'Patient',
       userId: 'patient-1'
     });
-    mockGetProfile.mockResolvedValue({
-      resourceType: 'Patient',
-      id: 'patient-123'
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: {
+        resourceType: 'Patient',
+        id: 'patient-123'
+      },
+      roleProfiles: {}
     });
     renderWithAuthProvider();
     await waitFor(() =>
@@ -521,7 +534,7 @@ describe('Fix 4 - clinic admin managingOrganization stored as clinic_organizatio
         value: 'org-456'
       })
     );
-    expect(getProfileByIdentifier).not.toHaveBeenCalled();
+    expect(fetchUserProfilesBundle).not.toHaveBeenCalled();
   });
 
   it('skips cache and fetches fresh when clinic admin cache lacks organizationId', async () => {
@@ -532,14 +545,17 @@ describe('Fix 4 - clinic admin managingOrganization stored as clinic_organizatio
       fullname: 'Admin User',
       profile_complete: true
     });
-    mockGetProfile.mockResolvedValue({
-      resourceType: 'Person',
-      id: 'person-123',
-      managingOrganization: { reference: 'Organization/org-789' }
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: {
+        resourceType: 'Person',
+        id: 'person-123',
+        managingOrganization: { reference: 'Organization/org-789' }
+      },
+      roleProfiles: {}
     });
     mockGetClaimValue.mockResolvedValue(['Clinic Admin']);
     renderWithAuthProvider();
-    await waitFor(() => expect(getProfileByIdentifier).toHaveBeenCalled());
+    await waitFor(() => expect(fetchUserProfilesBundle).toHaveBeenCalled());
     await waitFor(() =>
       expect(dbSet).toHaveBeenCalledWith('ui_preferences', {
         ownerId: '',
@@ -572,7 +588,7 @@ describe('Fix 4 - clinic admin managingOrganization stored as clinic_organizatio
     await waitFor(() =>
       expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
     );
-    expect(getProfileByIdentifier).not.toHaveBeenCalled();
+    expect(fetchUserProfilesBundle).not.toHaveBeenCalled();
     expectNoClinicOrganization();
   });
 });

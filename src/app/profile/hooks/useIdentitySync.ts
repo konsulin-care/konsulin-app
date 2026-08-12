@@ -34,6 +34,7 @@ function buildAuthPayload(
     findTelecomValue(profile, 'email') || existing.email || undefined;
   const phone =
     findTelecomValue(profile, 'phone') || existing.phoneNumber || undefined;
+  const photoUrl = findPhotoUrl(profile) ?? existing.profile_picture ?? '';
   return {
     userId: existing.userId,
     roles: superTokensRoles ??
@@ -43,8 +44,17 @@ function buildAuthPayload(
     phoneNumber: phone || existing.phoneNumber,
     fhirId: profile.id ?? existing.fhirId,
     fullname,
-    profile_picture: findPhotoUrl(profile) ?? existing.profile_picture,
-    profile_complete: isProfileCompleteFromFHIR(profile)
+    profile_picture: photoUrl,
+    profile_complete: isProfileCompleteFromFHIR(profile),
+    // Keep the role switcher map fresh after identity edits: preserve every
+    // role and refresh the active role's name/photo from the saved resource.
+    roleProfiles: {
+      ...existing.roleProfiles,
+      [existing.role_name ?? '']: {
+        name: fullname,
+        photoUrl
+      }
+    }
   };
 }
 

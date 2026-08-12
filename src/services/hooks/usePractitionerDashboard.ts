@@ -195,13 +195,18 @@ function useDayQuery(
 /** Fetch PractitionerRole resources, cached with staleTime: Infinity. */
 function useRoleQuery(
   practitionerId: string | undefined,
-  monthData: Bundle | undefined
+  monthQuery: ReturnType<typeof useMonthQuery>
 ) {
   const queryClient = useQueryClient();
   const roleQueryKey = useMemo(
     () => ['dashboard-roles', practitionerId],
     [practitionerId]
   );
+
+  const monthData = monthQuery.data;
+  const hasRolesInMonth =
+    extractResources<PractitionerRole>(monthData, 'PractitionerRole').length >
+    0;
 
   useEffect(() => {
     if (!monthData || !practitionerId) return;
@@ -235,7 +240,14 @@ function useRoleQuery(
     },
     staleTime: Infinity,
     gcTime: 30 * 60 * 1000,
-    enabled: Boolean(practitionerId)
+    // The month query already pulls PractitionerRole entries via
+    // `_include=Appointment:actor:PractitionerRole`; skip the dedicated fetch
+    // when they are present (the seeding effect above serves them from the
+    // cache). When the month query errored, fetch roles anyway so calendar
+    // availability still loads.
+    enabled:
+      Boolean(practitionerId) &&
+      (monthQuery.isError || (Boolean(monthData) && !hasRolesInMonth))
   });
 }
 
@@ -263,7 +275,7 @@ export function usePractitionerDashboard({
   const monthQuery = useMonthQuery(practitionerId, utcStart, utcEnd);
   const monthData = monthQuery.data;
 
-  const { data: roles } = useRoleQuery(practitionerId, monthData);
+  const { data: roles } = useRoleQuery(practitionerId, monthQuery);
 
   // Query D: full day data when a day is selected
   const dayQuery = useDayQuery(practitionerId, selectedDate);
