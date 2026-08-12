@@ -114,25 +114,25 @@ describe('fetchUserProfilesBundle', () => {
         {
           request: {
             method: 'GET',
-            url: '/fhir/Patient?identifier=https://login.konsulin.care/userid|user-1'
+            url: '/Patient?identifier=https://login.konsulin.care/userid|user-1'
           }
         },
         {
           request: {
             method: 'GET',
-            url: '/fhir/Practitioner?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
+            url: '/Practitioner?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
           }
         },
         {
           request: {
             method: 'GET',
-            url: '/fhir/Person?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
+            url: '/Person?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
           }
         },
         {
           request: {
             method: 'GET',
-            url: '/fhir/Person?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
+            url: '/Person?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
           }
         }
       ]
@@ -204,7 +204,7 @@ describe('fetchUserProfilesBundle', () => {
 
     const posted = vi.mocked(mockAxiosInstance.post).mock.calls[0][1] as Bundle;
     expect(posted.entry?.[0]?.request?.url).toBe(
-      '/fhir/Patient?identifier=https://login.konsulin.care/userid|user%20id%2F1'
+      '/Patient?identifier=https://login.konsulin.care/userid|user%20id%2F1'
     );
   });
 
@@ -229,7 +229,7 @@ describe('fetchUserProfilesBundle', () => {
     const posted = vi.mocked(mockAxiosInstance.post).mock.calls[0][1] as Bundle;
     expect(posted.entry).toHaveLength(2);
     expect(posted.entry?.[1]?.request?.url).toBe(
-      '/fhir/Patient?identifier=https://login.konsulin.care/userid|user-1'
+      '/Patient?identifier=https://login.konsulin.care/userid|user-1'
     );
     expect(result.activeProfile).toEqual(fullPatientResource);
     expect(result.roleProfiles.Practitioner).toEqual({

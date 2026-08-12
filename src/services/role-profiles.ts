@@ -73,7 +73,7 @@ export async function fetchUserProfilesBundle(
     entry: roleList.map(role => ({
       request: {
         method: 'GET',
-        url: `/fhir/${roleToFhirResource(role)}?identifier=https://login.konsulin.care/userid|${encodeURIComponent(userId)}${role === activeRole ? '' : '&_elements=name,photo'}`
+        url: `/${roleToFhirResource(role)}?identifier=https://login.konsulin.care/userid|${encodeURIComponent(userId)}${role === activeRole ? '' : '&_elements=name,photo'}`
       }
     }))
   };

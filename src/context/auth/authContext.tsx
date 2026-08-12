@@ -95,9 +95,13 @@ function isCacheUsable(
   cached: UserProfile | null,
   superTokensRoles: string[] | undefined
 ): boolean {
+  if (!cached) return false;
+  // A cache without identity data is a broken payload from a failed fetch;
+  // never serve it — force a refetch so the profile self-heals.
+  if (!cached.fullname && !cached.fhirId) return false;
   const isMultiRole =
     Array.isArray(superTokensRoles) && superTokensRoles.length > 1;
-  return !isMultiRole || Boolean(cached?.roleProfiles);
+  return !isMultiRole || Boolean(cached.roleProfiles);
 }
 
 // skipcq: JS-W1042 - createContext requires a default value per React API
@@ -310,7 +314,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         roleProfiles,
         fullProfile: undefined
       };
-      await dbSet(STORES.userProfile, { ...payload, cachedAt: Date.now() });
+      // Never persist an empty profile: caching it would poison the next
+      // load (isCacheUsable rejects empty caches and forces a refetch).
       dispatch({ type: 'login', payload });
       await persistFhirIdForRole(userId, role, '');
       return;

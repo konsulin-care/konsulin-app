@@ -239,6 +239,12 @@ describe('fhirId per-role storage', () => {
     const map = findFhirIdMapDbSetCall();
     expect(map).not.toBeNull();
     expect(map?.Patient).toBe('');
+
+    // AND: the empty profile is never persisted to the userProfile cache
+    const userProfileWrites = mockDbSet.mock.calls.filter(
+      (call: unknown[]) => call[0] === 'user_profile'
+    );
+    expect(userProfileWrites).toHaveLength(0);
   });
 });
 

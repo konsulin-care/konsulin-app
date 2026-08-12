@@ -82,7 +82,7 @@ export function useResourceInfiniteQuery(
       if (!next?.url) return undefined;
       return toFhirPath(next.url);
     },
-    enabled: patientId != null
+    enabled: Boolean(patientId)
   });
 }
 

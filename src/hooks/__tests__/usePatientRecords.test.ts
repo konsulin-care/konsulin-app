@@ -101,6 +101,22 @@ describe('usePatientRecords', () => {
     expect(result.current.records).toEqual([]);
   });
 
+  it('does not fire FHIR searches when patientId is an empty string', async () => {
+    const apiMock = {
+      get: vi.fn().mockResolvedValue({ data: mockBundle() })
+    };
+    vi.mocked(getAPI).mockResolvedValue(apiMock as never);
+
+    const { result } = renderHook(() => usePatientRecords(''), {
+      wrapper: TestWrapper
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.records).toEqual([]);
+    // An empty patientId must disable the query, never fire `patient=`
+    expect(apiMock.get).not.toHaveBeenCalled();
+  });
+
   it('filters Observation query to Practitioner Note + Patient Journal LOINC codes', async () => {
     const apiMock = {
       get: vi.fn().mockResolvedValue({ data: mockBundle() })

@@ -592,3 +592,51 @@ describe('Fix 4 - clinic admin managingOrganization stored as clinic_organizatio
     expectNoClinicOrganization();
   });
 });
+
+// =========================================================================
+// Fix 5: Empty profile cache is never served (self-healing)
+// =========================================================================
+describe('Fix 5 - empty profile cache is never served', () => {
+  beforeEach(() => {
+    mockUseSessionContext.mockReturnValue({
+      doesSessionExist: true,
+      userId: 'patient-1',
+      accessTokenPayload: {}
+    });
+    mockGetClaimValue.mockResolvedValue(['Patient']);
+    mockGetAuthSession.mockResolvedValue({
+      authenticated: true,
+      role_name: 'Patient',
+      userId: 'patient-1'
+    });
+    mockRestoreCookie.mockResolvedValue(true);
+  });
+
+  it('refetches from the API when the cached profile has no identity data', async () => {
+    // GIVEN: a poisoned cache from a previously failed fetch (empty identity)
+    mockDbGet.mockResolvedValue({
+      userId: 'patient-1',
+      role_name: 'Patient',
+      email: '',
+      fullname: '',
+      fhirId: '',
+      profile_complete: false
+    });
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: {
+        resourceType: 'Patient',
+        id: 'patient-123',
+        name: [{ use: 'official', given: ['Test'], family: 'Patient' }]
+      },
+      roleProfiles: {}
+    });
+
+    renderWithAuthProvider();
+
+    // THEN: the empty cache is rejected and the profile is fetched fresh
+    await waitFor(() => expect(fetchUserProfilesBundle).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
+    );
+  });
+});
