@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 
 import type { AxiosInstance } from 'axios';
-import type { Bundle, Patient } from 'fhir/r4';
+import type { Bundle, Patient, Person } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/services/api', () => ({
@@ -69,6 +69,37 @@ const fullPatientSearchset: Bundle = {
   type: 'searchset',
   total: 1,
   entry: [{ resource: fullPatientResource }]
+};
+
+const unnamedPersonResource: Person = {
+  resourceType: 'Person',
+  id: 'clinic-1',
+  identifier: [
+    {
+      system: 'https://login.konsulin.care/userid',
+      value: 'user-1'
+    }
+  ]
+};
+
+const unnamedPersonSearchset: Bundle = {
+  resourceType: 'Bundle',
+  type: 'searchset',
+  total: 1,
+  entry: [{ resource: unnamedPersonResource }]
+};
+
+const emptyNamePersonResource: Person = {
+  resourceType: 'Person',
+  id: 'clinic-2',
+  name: []
+};
+
+const emptyNamePersonSearchset: Bundle = {
+  resourceType: 'Bundle',
+  type: 'searchset',
+  total: 1,
+  entry: [{ resource: emptyNamePersonResource }]
 };
 
 /** Build a batch-response entry for one search request. */
@@ -160,6 +191,49 @@ describe('fetchUserProfilesBundle', () => {
       'Clinic Admin': null,
       Researcher: null
     });
+  });
+
+  it('caches an unnamed Person resource (no name) instead of returning null', async () => {
+    vi.mocked(mockAxiosInstance.post).mockResolvedValue({
+      data: {
+        resourceType: 'Bundle',
+        type: 'batch-response',
+        entry: [batchResponseEntry(unnamedPersonSearchset)]
+      }
+    });
+
+    const result = await fetchUserProfilesBundle(
+      'user-1',
+      ['Clinic Admin'],
+      'Clinic Admin'
+    );
+
+    expect(result.activeProfile).toEqual(unnamedPersonResource);
+    expect(result.roleProfiles['Clinic Admin']).toEqual({
+      name: '-',
+      photoUrl: '',
+      resource: unnamedPersonResource
+    });
+  });
+
+  it('caches a Person with an empty name array', async () => {
+    vi.mocked(mockAxiosInstance.post).mockResolvedValue({
+      data: {
+        resourceType: 'Bundle',
+        type: 'batch-response',
+        entry: [batchResponseEntry(emptyNamePersonSearchset)]
+      }
+    });
+
+    const result = await fetchUserProfilesBundle(
+      'user-1',
+      ['Clinic Admin'],
+      'Clinic Admin'
+    );
+
+    expect(result.roleProfiles['Clinic Admin']?.resource).toEqual(
+      emptyNamePersonResource
+    );
   });
 
   it('returns null for a role whose entry has no resource', async () => {

@@ -25,15 +25,17 @@ export interface UserProfilesBundleResult {
 /**
  * Extract the profile summary from a searchset Bundle response.
  *
+ * A found resource is always cached — even an unnamed one (its name falls
+ * back to '-') — so empty Person profiles stay part of the multi-role sync
+ * instead of being silently dropped. Only a missing resource yields null.
+ *
  * @param bundle - The FHIR searchset returned for one role identifier query.
- * @returns The profile summary, or null when the resource is missing or
- *   has no usable name (caller falls back to placeholder initials).
+ * @returns The profile summary, or null when the resource is missing.
  */
 function parseRoleProfile(bundle: Bundle): RoleProfile | null {
   const resource = bundle?.entry?.[0]?.resource as ProfileResource | undefined;
   if (!resource) return null;
   const name = mergeNames(resource.name ?? []);
-  if (!name || name === '-') return null;
   return {
     name,
     photoUrl:

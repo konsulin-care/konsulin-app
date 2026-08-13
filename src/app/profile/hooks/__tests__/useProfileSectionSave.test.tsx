@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
 import { renderHook } from '@testing-library/react';
-import type { Bundle, HumanName, Patient, Practitioner } from 'fhir/r4';
+import type { Bundle, HumanName, Patient, Person, Practitioner } from 'fhir/r4';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -72,6 +72,20 @@ const practitionerFixture: Practitioner = {
       identifier: [{ value: 'LIC-1' }]
     }
   ]
+};
+
+/** Never-filled-in Person backing the Clinic Admin role. */
+const unnamedClinicAdminPerson: Person = {
+  resourceType: 'Person',
+  id: 'clinic-1',
+  active: true
+};
+
+/** Never-filled-in Person backing the Researcher role. */
+const unnamedResearcherPerson: Person = {
+  resourceType: 'Person',
+  id: 'researcher-1',
+  active: true
 };
 
 const okTransactionResponse = (): Bundle => ({
@@ -211,6 +225,119 @@ describe('useProfileSectionSave', () => {
     });
     expect((bundle.entry?.[0]?.resource as Patient).gender).toBe('female');
     expect((bundle.entry?.[1]?.resource as Practitioner).gender).toBe('female');
+  });
+
+  it('PUTs every owned role resource — including unnamed Person roles — in one transaction bundle', async () => {
+    setupAuth({
+      role_name: 'Practitioner',
+      roles: ['Patient', 'Practitioner', 'Clinic Admin', 'Researcher'],
+      roleProfiles: {
+        Patient: {
+          name: 'Old Name',
+          photoUrl: '',
+          resource: patientFixture
+        },
+        Practitioner: {
+          name: 'Old Name',
+          photoUrl: '',
+          resource: practitionerFixture
+        },
+        'Clinic Admin': {
+          name: '-',
+          photoUrl: '',
+          resource: unnamedClinicAdminPerson
+        },
+        Researcher: {
+          name: '-',
+          photoUrl: '',
+          resource: unnamedResearcherPerson
+        }
+      }
+    });
+    mockSubmit.mockResolvedValue({
+      resourceType: 'Bundle',
+      type: 'transaction-response',
+      entry: [
+        { response: { status: '200 OK' } },
+        { response: { status: '200 OK' } },
+        { response: { status: '200 OK' } },
+        { response: { status: '200 OK' } }
+      ]
+    });
+
+    const { result } = renderHook(() => useProfileSectionSave());
+
+    await act(async () => {
+      await result.current.saveSection({
+        fhirId: 'prac-1',
+        resourceType: 'Practitioner',
+        merge: latest => ({ ...latest, gender: 'female' as const })
+      });
+    });
+
+    expect(mockSubmit).toHaveBeenCalledTimes(1);
+    const bundle = mockSubmit.mock.calls[0]?.[0] as Bundle;
+    expect(bundle.type).toBe('transaction');
+    expect(bundle.entry).toHaveLength(4);
+    const putUrls = bundle.entry?.map(entry => entry.request?.url);
+    expect(putUrls).toEqual([
+      'Patient/pat-1',
+      'Practitioner/prac-1',
+      'Person/clinic-1',
+      'Person/researcher-1'
+    ]);
+    // The merged section fields land on the unnamed Person resources too,
+    // and untouched fields on them are preserved.
+    const clinicEntry = bundle.entry?.[2];
+    const researcherEntry = bundle.entry?.[3];
+    expect((clinicEntry?.resource as Person).gender).toBe('female');
+    expect((researcherEntry?.resource as Person).gender).toBe('female');
+    expect((clinicEntry?.resource as Person).active).toBe(true);
+    expect((researcherEntry?.resource as Person).active).toBe(true);
+    // The recached roleProfiles include the Person roles.
+    const action = mockDispatch.mock.calls[0]?.[0] as IActionLogin;
+    expect(action.payload?.roleProfiles).toMatchObject({
+      'Clinic Admin': { resource: { gender: 'female' } },
+      Researcher: { resource: { gender: 'female' } }
+    });
+  });
+
+  it('keeps a role with a genuinely null cache entry out of the bundle', async () => {
+    setupAuth({
+      role_name: 'Patient',
+      roles: ['Patient', 'Practitioner', 'Clinic Admin'],
+      roleProfiles: {
+        Patient: {
+          name: 'Old Name',
+          photoUrl: '',
+          resource: patientFixture
+        },
+        Practitioner: {
+          name: 'Old Name',
+          photoUrl: '',
+          resource: practitionerFixture
+        },
+        // No resource at all: the searchset came back empty.
+        'Clinic Admin': null
+      }
+    });
+
+    const { result } = renderHook(() => useProfileSectionSave());
+
+    await act(async () => {
+      await result.current.saveSection({
+        fhirId: 'pat-1',
+        resourceType: 'Patient',
+        merge: latest => ({ ...latest, gender: 'female' as const })
+      });
+    });
+
+    const bundle = mockSubmit.mock.calls[0]?.[0] as Bundle;
+    expect(bundle.entry).toHaveLength(2);
+    expect(bundle.entry?.map(entry => entry.request?.url)).toEqual([
+      'Patient/pat-1',
+      'Practitioner/prac-1'
+    ]);
   });
 
   it('applies mergeOtherRoles to other roles (language stays on the active role)', async () => {

@@ -235,6 +235,39 @@ describe('useProfileData', () => {
     );
   });
 
+  it('resolves an unnamed Person resource as the active profile (no fullProfile fallback)', () => {
+    const unnamedPerson: Person = {
+      resourceType: 'Person',
+      id: 'clinic-1',
+      active: true
+    };
+    setupAuth({
+      role_name: 'Clinic Admin',
+      roles: ['Patient', 'Clinic Admin'],
+      roleProfiles: {
+        'Clinic Admin': { name: '-', photoUrl: '', resource: unnamedPerson },
+        Patient: { name: 'John Doe', photoUrl: '', resource: patientFixture }
+      },
+      // A stale fallback that must NOT win over the cached Person resource.
+      fullProfile: patientFixture
+    });
+
+    const { result } = renderHook(() =>
+      useProfileData('u1', ['Patient', 'Clinic Admin'], 'Clinic Admin')
+    );
+
+    expect(result.current.profileData).toEqual(unnamedPerson);
+    expect(result.current.resourceType).toBe('Person');
+    // Sections render placeholder '-' values without crashing.
+    const rows = result.current.sections.flatMap(section => section.rows);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every(row => row.value === '-')).toBe(true);
+    // Identity has no name to derive from; the hook still renders safely.
+    expect(result.current.identity.displayName).toBe('');
+    expect(result.current.identity.seed).toBe('clinic-1');
+    expect(typeof result.current.identity.initials).toBe('string');
+  });
+
   it('falls back to fullProfile when the active role has no cached entry', () => {
     setupAuth({
       roleProfiles: {},
