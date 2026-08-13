@@ -1,76 +1,39 @@
-import { AvatarInfo } from '@/components/role-avatar-popup-types';
 import { Roles } from '@/constants/roles';
-import type { RoleProfile } from '@/services/role-profiles';
-import { generateAvatarPlaceholder } from '@/utils/helper';
+import {
+  Building2,
+  FlaskConical,
+  Stethoscope,
+  User,
+  UserRound,
+  type LucideIcon
+} from 'lucide-react';
 
 const ROLE_LABELS: Record<string, string> = {
   [Roles.Patient]: 'Patient',
   [Roles.Practitioner]: 'Practitioner',
-  [Roles.ClinicAdmin]: Roles.ClinicAdmin
+  [Roles.ClinicAdmin]: Roles.ClinicAdmin,
+  [Roles.Researcher]: Roles.Researcher
 };
 
-/**
- *
- */
+/** Display label for an app role. */
 export function roleLabel(role: string): string {
   return ROLE_LABELS[role] || role;
 }
 
-/** Builds AvatarInfo for a fetched role profile (photo + name initials). */
-function avatarInfoFromProfile(role: string, profile: RoleProfile): AvatarInfo {
-  const placeholder = generateAvatarPlaceholder({
-    id: role,
-    name: profile.name
-  });
-  return {
-    seed: placeholder.seed,
-    initials: placeholder.initials ?? '',
-    backgroundColor: placeholder.backgroundColor ?? '',
-    photoUrl: profile.photoUrl
-  };
-}
-
-/** Builds AvatarInfo placeholder (initials only) for a role without a profile. */
-export function avatarInfoForRole(role: string): AvatarInfo {
-  const displayName = roleLabel(role);
-  const placeholder = generateAvatarPlaceholder({
-    id: role,
-    name: displayName
-  });
-  return {
-    seed: placeholder.seed,
-    initials: placeholder.initials ?? '',
-    backgroundColor: placeholder.backgroundColor ?? '',
-    photoUrl: ''
-  };
-}
+const ROLE_ICONS: Record<string, LucideIcon> = {
+  [Roles.Patient]: UserRound,
+  [Roles.Practitioner]: Stethoscope,
+  [Roles.ClinicAdmin]: Building2,
+  [Roles.Researcher]: FlaskConical
+};
 
 /**
- * Builds the other-role avatar list for the role-switch popup.
+ * Icon shown next to a role in the role-switch dropdown. Falls back to a
+ * generic user icon for unknown roles.
  *
- * Excludes the current role and prefers the fetched profile (real photo +
- * name-based initials) over the role placeholder for every other role.
- *
- * @param roles - All roles of the authenticated user.
- * @param currentRole - The active role, excluded from the result.
- * @param profiles - Fetched role profiles keyed by role; null or undefined
- *   entries fall back to placeholder initials.
- * @returns The other-role avatars with their role names.
+ * @param role - The canonical app role name.
+ * @returns The lucide icon component for that role.
  */
-export function buildOtherRoleAvatars(
-  roles: string[],
-  currentRole: string | undefined,
-  profiles: Record<string, RoleProfile | null> | undefined
-): (AvatarInfo & { role: string })[] {
-  return roles
-    .filter(role => role !== currentRole)
-    .map(role => {
-      const profile = profiles?.[role];
-      return {
-        role,
-        ...(profile
-          ? avatarInfoFromProfile(role, profile)
-          : avatarInfoForRole(role))
-      };
-    });
+export function roleIcon(role: string): LucideIcon {
+  return ROLE_ICONS[role] ?? User;
 }

@@ -1,13 +1,14 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import type { Patient, Person, Practitioner } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/services/profile', () => ({
-  getProfileById: vi.fn()
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: vi.fn()
 }));
 
-import { getProfileById } from '@/services/profile';
+import { useAuth } from '@/context/auth/authContext';
+import type { IStateUserInfo } from '@/context/auth/authTypes';
+import type { ProfileResource } from '@/services/role-profiles';
 import { useProfileData } from '../useProfileData';
 
 const patientFixture: Patient = {
@@ -51,7 +52,8 @@ const practitionerFixture: Practitioner = {
   name: [{ use: 'official', given: ['Jane'], family: 'Smith' }],
   gender: 'female',
   birthDate: '1985-07-01',
-  telecom: [{ system: 'email', value: 'jane@konsulin.care' }]
+  telecom: [{ system: 'email', value: 'jane@konsulin.care' }],
+  communication: [{ coding: [{ code: 'en', display: 'English' }] }]
 };
 
 const personFixture: Person = {
@@ -65,52 +67,78 @@ const personFixture: Person = {
 };
 
 describe('useProfileData', () => {
-  let queryClient: QueryClient;
+  const mockUseAuth = vi.mocked(useAuth);
+  const mockRefresh = vi.fn();
+
+  type LooseRoleProfile = {
+    name?: string;
+    photoUrl?: string;
+    resource?: ProfileResource;
+  } | null;
+
+  type LooseUserInfo = {
+    role_name?: string;
+    roles?: string[];
+    roleProfiles?: Record<string, LooseRoleProfile>;
+    cachedAt?: number;
+    fullProfile?: ProfileResource;
+  };
+
+  function setupAuth(userInfo: LooseUserInfo) {
+    mockRefresh.mockClear();
+    mockUseAuth.mockReturnValue({
+      isLoading: false,
+      dispatch: vi.fn(),
+      refreshProfiles: mockRefresh,
+      state: {
+        isAuthenticated: true,
+        userInfo: {
+          userId: 'u1',
+          role_name: 'Patient',
+          roles: ['Patient', 'Practitioner'],
+          roleProfiles: {},
+          cachedAt: Date.now(),
+          ...userInfo
+        } as IStateUserInfo
+      }
+    });
+  }
 
   beforeEach(() => {
-    queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } }
-    });
     vi.clearAllMocks();
   });
 
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-
-  it('resolves the FHIR resource type from the role name', async () => {
-    vi.mocked(getProfileById).mockResolvedValue(practitionerFixture);
-
-    const { result } = renderHook(
-      () => useProfileData('pra-1', 'Practitioner'),
-      { wrapper }
-    );
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(getProfileById).toHaveBeenCalledWith('pra-1', 'Practitioner');
-  });
-
-  it('uses the shared profile-data query key for cache invalidation', async () => {
-    vi.mocked(getProfileById).mockResolvedValue(patientFixture);
-
-    const { result } = renderHook(() => useProfileData('pat-1', 'Patient'), {
-      wrapper
+  it('reads the active profile from the cached roleProfiles (no fetch, no query)', () => {
+    setupAuth({
+      roleProfiles: {
+        Patient: { name: 'John Doe', photoUrl: '', resource: patientFixture },
+        Practitioner: {
+          name: 'Jane Smith',
+          photoUrl: '',
+          resource: practitionerFixture
+        }
+      }
     });
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(queryClient.getQueryData(['profile-data', 'pat-1'])).toEqual(
-      patientFixture
+    const { result } = renderHook(() =>
+      useProfileData('u1', ['Patient', 'Practitioner'], 'Patient')
     );
+
+    expect(result.current.resourceType).toBe('Patient');
+    expect(result.current.profileData).toEqual(patientFixture);
   });
 
-  it('collapses the FHIR name into identity display parts', async () => {
-    vi.mocked(getProfileById).mockResolvedValue(patientFixture);
-
-    const { result } = renderHook(() => useProfileData('pat-1', 'Patient'), {
-      wrapper
+  it('collapses the FHIR name into identity display parts', () => {
+    setupAuth({
+      roleProfiles: {
+        Patient: { name: 'John Doe', photoUrl: '', resource: patientFixture }
+      }
     });
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    const { result } = renderHook(() =>
+      useProfileData('u1', ['Patient'], 'Patient')
+    );
+
     expect(result.current.identity.displayName).toBe('John Magnificent Doe');
     expect(result.current.identity.given).toEqual(['John', 'Magnificent']);
     expect(result.current.identity.family).toBe('Doe');
@@ -119,14 +147,16 @@ describe('useProfileData', () => {
     );
   });
 
-  it('builds personal-info, contact and address sections for Patient', async () => {
-    vi.mocked(getProfileById).mockResolvedValue(patientFixture);
-
-    const { result } = renderHook(() => useProfileData('pat-1', 'Patient'), {
-      wrapper
+  it('builds personal-info, contact and address sections for Patient', () => {
+    setupAuth({
+      roleProfiles: {
+        Patient: { name: 'John Doe', photoUrl: '', resource: patientFixture }
+      }
     });
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    const { result } = renderHook(() =>
+      useProfileData('u1', ['Patient'], 'Patient')
+    );
 
     const ids = result.current.sections.map(s => s.id);
     expect(ids).toEqual(['personal-info', 'contact', 'address']);
@@ -141,54 +171,117 @@ describe('useProfileData', () => {
     );
   });
 
-  it('includes the language row for Practitioner', async () => {
-    const withLanguage: Practitioner = {
-      ...practitionerFixture,
-      communication: [{ coding: [{ code: 'en', display: 'English' }] }]
-    };
-    vi.mocked(getProfileById).mockResolvedValue(withLanguage);
-
-    const { result } = renderHook(
-      () => useProfileData('pra-1', 'Practitioner'),
-      { wrapper }
-    );
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    const personalInfo = result.current.sections[0];
-    expect(personalInfo.rows.find(r => r.id === 'language')?.value).toBe(
-      'English'
-    );
-  });
-
-  it('omits the language row for Person-based roles', async () => {
-    vi.mocked(getProfileById).mockResolvedValue(personFixture);
-
-    const { result } = renderHook(
-      () => useProfileData('clinic-1', 'Clinic Admin'),
-      { wrapper }
-    );
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(getProfileById).toHaveBeenCalledWith('clinic-1', 'Person');
-
-    const personalInfo = result.current.sections[0];
-    expect(personalInfo.rows.map(r => r.id)).not.toContain('language');
-  });
-
-  it('shows "-" placeholders for missing personal fields', async () => {
-    vi.mocked(getProfileById).mockResolvedValue({
-      resourceType: 'Person',
-      id: 'clinic-1',
-      active: true
+  it('includes the language row for Practitioner and omits it for Person', () => {
+    setupAuth({
+      role_name: 'Practitioner',
+      roleProfiles: {
+        Practitioner: {
+          name: 'Jane Smith',
+          photoUrl: '',
+          resource: practitionerFixture
+        }
+      }
     });
-    const { result } = renderHook(
-      () => useProfileData('clinic-1', 'Clinic Admin'),
-      { wrapper }
+
+    const { result: practitionerResult } = renderHook(() =>
+      useProfileData('u1', ['Practitioner'], 'Practitioner')
+    );
+    expect(
+      practitionerResult.current.sections[0].rows.find(r => r.id === 'language')
+        ?.value
+    ).toBe('English');
+
+    setupAuth({
+      role_name: 'Clinic Admin',
+      roleProfiles: {
+        'Clinic Admin': {
+          name: 'Alex Brown',
+          photoUrl: '',
+          resource: personFixture
+        }
+      }
+    });
+
+    const { result: personResult } = renderHook(() =>
+      useProfileData('u1', ['Clinic Admin'], 'Clinic Admin')
+    );
+    expect(personResult.current.resourceType).toBe('Person');
+    expect(personResult.current.sections[0].rows.map(r => r.id)).not.toContain(
+      'language'
+    );
+  });
+
+  it('exposes every role profile for the extension cards', () => {
+    setupAuth({
+      roleProfiles: {
+        Patient: { name: 'John Doe', photoUrl: '', resource: patientFixture },
+        Practitioner: {
+          name: 'Jane Smith',
+          photoUrl: '',
+          resource: practitionerFixture
+        }
+      }
+    });
+
+    const { result } = renderHook(() =>
+      useProfileData('u1', ['Patient', 'Practitioner'], 'Patient')
     );
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    const personalInfo = result.current.sections[0];
-    expect(personalInfo.rows.find(r => r.id === 'gender')?.value).toBe('-');
-    expect(personalInfo.rows.find(r => r.id === 'birthDate')?.value).toBe('-');
+    expect(result.current.roleProfiles?.Patient?.resource).toEqual(
+      patientFixture
+    );
+    expect(result.current.roleProfiles?.Practitioner?.resource).toEqual(
+      practitionerFixture
+    );
+  });
+
+  it('falls back to fullProfile when the active role has no cached entry', () => {
+    setupAuth({
+      roleProfiles: {},
+      fullProfile: patientFixture
+    });
+
+    const { result } = renderHook(() =>
+      useProfileData('u1', ['Patient'], 'Patient')
+    );
+
+    expect(result.current.profileData).toEqual(patientFixture);
+  });
+
+  it('triggers refreshProfiles when the cache is stale', () => {
+    setupAuth({
+      cachedAt: Date.now() - 6 * 60 * 1000,
+      roleProfiles: {
+        Patient: { name: 'John Doe', photoUrl: '', resource: patientFixture }
+      }
+    });
+
+    renderHook(() => useProfileData('u1', ['Patient'], 'Patient'));
+
+    expect(mockRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers refreshProfiles when cached resources are missing', () => {
+    setupAuth({
+      roleProfiles: {
+        Patient: { name: 'John Doe', photoUrl: '' }
+      }
+    });
+
+    renderHook(() => useProfileData('u1', ['Patient'], 'Patient'));
+
+    expect(mockRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not trigger refreshProfiles for a fresh cache', () => {
+    setupAuth({
+      roleProfiles: {
+        Patient: { name: 'John Doe', photoUrl: '', resource: patientFixture }
+      }
+    });
+
+    renderHook(() => useProfileData('u1', ['Patient'], 'Patient'));
+
+    expect(mockRefresh).not.toHaveBeenCalled();
   });
 });

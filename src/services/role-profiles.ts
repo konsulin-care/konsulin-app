@@ -1,18 +1,14 @@
 import { getAPI } from '@/services/api';
 import { mergeNames } from '@/utils/helper';
 import { roleToFhirResource } from '@/utils/role-fhir';
-import type { Bundle, HumanName, Patient, Person, Practitioner } from 'fhir/r4';
+import type { Bundle, Patient, Person, Practitioner } from 'fhir/r4';
 
-/** Shape of the FHIR profile fields this service reads. */
-interface ProfileResourceShape {
-  name?: HumanName[];
-  photo?: Array<{ url?: string }>;
-}
-
-/** A resolved role profile: display name and photo URL. */
+/** A resolved role profile: display name, photo URL and full resource. */
 export interface RoleProfile {
   name: string;
   photoUrl: string;
+  /** The complete FHIR resource backing this role. */
+  resource: ProfileResource;
 }
 
 /** Full FHIR resource backing any role's profile. */
@@ -34,31 +30,36 @@ export interface UserProfilesBundleResult {
  *   has no usable name (caller falls back to placeholder initials).
  */
 function parseRoleProfile(bundle: Bundle): RoleProfile | null {
-  const resource = bundle?.entry?.[0]?.resource as
-    | ProfileResourceShape
-    | undefined;
+  const resource = bundle?.entry?.[0]?.resource as ProfileResource | undefined;
   if (!resource) return null;
   const name = mergeNames(resource.name ?? []);
   if (!name || name === '-') return null;
-  return { name, photoUrl: resource.photo?.[0]?.url ?? '' };
+  return {
+    name,
+    photoUrl:
+      resource.resourceType === 'Person'
+        ? (resource.photo?.url ?? '')
+        : (resource.photo?.[0]?.url ?? ''),
+    resource
+  };
 }
 
 /**
- * Fetch the active role's full profile plus minimal summaries for every
- * role of a user in a single FHIR batch request.
+ * Fetch the active role's full profile plus full resources for every role
+ * of a user in a single FHIR batch request.
  *
  * Builds one `type: 'batch'` bundle with one GET entry per role, each
- * searching by the login identifier. The active role's entry requests the
- * complete resource; inactive roles project to `_elements=name,photo` for
- * the role switcher dropdown. The response is a `batch-response` bundle
- * parsed by entry index, so a missing or failed entry for one role never
- * blocks the others.
+ * searching by the login identifier. Every entry requests the complete
+ * resource — the returned resources are cached and reused by the profile
+ * page and the multi-role save flow, so no per-visit fetches are needed.
+ * The response is a `batch-response` bundle parsed by entry index, so a
+ * missing or failed entry for one role never blocks the others.
  *
  * @param userId - The SuperTokens user ID used as the FHIR identifier value.
  * @param roles - The role names to fetch profiles for.
- * @param activeRole - The active role; its entry omits `_elements`. Appended
- *   to the bundle as a full entry when missing from `roles`.
- * @returns The full active profile resource and the per-role summary map.
+ * @param activeRole - The active role. Appended to the bundle as a full
+ *   entry when missing from `roles`.
+ * @returns The full active profile resource and the per-role profile map.
  */
 export async function fetchUserProfilesBundle(
   userId: string,
@@ -73,7 +74,7 @@ export async function fetchUserProfilesBundle(
     entry: roleList.map(role => ({
       request: {
         method: 'GET',
-        url: `/${roleToFhirResource(role)}?identifier=https://login.konsulin.care/userid|${encodeURIComponent(userId)}${role === activeRole ? '' : '&_elements=name,photo'}`
+        url: `/${roleToFhirResource(role)}?identifier=https://login.konsulin.care/userid|${encodeURIComponent(userId)}`
       }
     }))
   };

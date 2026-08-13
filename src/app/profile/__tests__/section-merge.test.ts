@@ -4,6 +4,7 @@ import {
   mergeAddress,
   mergeContact,
   mergePersonalInfo,
+  mergePersonalInfoSync,
   type AddressValues
 } from '../section-merge';
 
@@ -76,6 +77,47 @@ describe('mergePersonalInfo', () => {
     });
     expect('communication' in merged).toBe(false);
     expect(merged.gender).toBe('other');
+  });
+});
+
+describe('mergePersonalInfoSync', () => {
+  it('writes gender and birthDate only (no language) for Patient', () => {
+    const merged = mergePersonalInfoSync(patientFixture, {
+      gender: 'male',
+      birthDate: '1990-03-12',
+      languageCode: 'id',
+      languageLabel: 'Indonesian'
+    });
+    expect(merged.gender).toBe('male');
+    expect(merged.birthDate).toBe('1990-03-12');
+    expect('communication' in merged).toBe(false);
+  });
+
+  it('writes gender and birthDate only for Practitioner', () => {
+    const practitioner: Practitioner = {
+      ...patientFixture,
+      resourceType: 'Practitioner'
+    };
+    const merged = mergePersonalInfoSync(practitioner, {
+      gender: 'female',
+      birthDate: '1985-07-01',
+      languageCode: 'en',
+      languageLabel: 'English'
+    });
+    expect(merged.gender).toBe('female');
+    expect('communication' in merged).toBe(false);
+  });
+
+  it('writes gender and birthDate only for Person', () => {
+    const merged = mergePersonalInfoSync(personFixture, {
+      gender: 'other',
+      birthDate: '1978-11-20',
+      languageCode: 'id',
+      languageLabel: 'Indonesian'
+    });
+    expect(merged.gender).toBe('other');
+    expect(merged.birthDate).toBe('1978-11-20');
+    expect('communication' in merged).toBe(false);
   });
 });
 

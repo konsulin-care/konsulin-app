@@ -1,29 +1,71 @@
 'use client';
 
 import { useAuth } from '@/context/auth/authContext';
+import type { IActionAuth, IStateUserInfo } from '@/context/auth/authTypes';
+import { dbSet, STORES } from '@/lib/indexeddb';
+import { submitFhirBundle } from '@/services/api/fhir-bundle';
 import {
-  getProfileById,
   modifyProfile,
   uploadAvatar,
   useUpdateProfile
 } from '@/services/profile';
+import type { ProfileResource, RoleProfile } from '@/services/role-profiles';
 import { findIdentifierValue } from '@/utils/helper';
 import { processImageForAvatar } from '@/utils/image-processing';
-import { useQueryClient } from '@tanstack/react-query';
-import type { Patient, Person, Practitioner } from 'fhir/r4';
+import type { Dispatch } from 'react';
 import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
-
-type ProfileResource = Patient | Practitioner | Person;
+import {
+  assertBundleSuccess,
+  buildProfileTransactionBundle,
+  buildUpdatedRoleProfiles,
+  collectCachedResources
+} from '../multi-role-sync';
 
 const CHATWOOT_ID_SYSTEM = 'https://login.konsulin.care/chatwoot-id';
+
+/** Merge the uploaded photo into every resource with the per-type shape. */
+function mergePhoto(
+  resources: Record<string, ProfileResource>,
+  url: string
+): Record<string, ProfileResource> {
+  const merged: Record<string, ProfileResource> = {};
+  for (const [role, resource] of Object.entries(resources)) {
+    const photo = resource.resourceType === 'Person' ? { url } : [{ url }];
+    merged[role] = { ...resource, photo } as ProfileResource;
+  }
+  return merged;
+}
+
+/** Recache the merged resources into the auth state and IndexedDB. */
+async function recacheProfiles(
+  userInfo: IStateUserInfo | undefined,
+  merged: Record<string, ProfileResource>,
+  uploadedUrl: string,
+  existingRoleProfiles: Record<string, RoleProfile | null> | undefined,
+  dispatchAuth: Dispatch<IActionAuth>
+): Promise<void> {
+  const updatedRoleProfiles = buildUpdatedRoleProfiles(
+    merged,
+    existingRoleProfiles
+  );
+  const payload = {
+    ...userInfo,
+    profile_picture: uploadedUrl,
+    roleProfiles: updatedRoleProfiles,
+    fullProfile: merged[userInfo?.role_name ?? ''] ?? Object.values(merged)[0],
+    cachedAt: Date.now()
+  };
+  dispatchAuth({ type: 'auth-check', payload });
+  await dbSet(STORES.userProfile, payload);
+}
 
 type Params = {
   /** The active role's FHIR resource id. */
   fhirId: string;
   /** The FHIR resource type backing the active role. */
   resourceType: 'Patient' | 'Practitioner' | 'Person';
-  /** The currently loaded profile, used to read the existing photo/chatwoot id. */
+  /** The currently loaded active profile, used to read the chatwoot id. */
   profile?: ProfileResource;
   /** Identity fallbacks used to create a Chatwoot contact when no id exists. */
   fallbackName?: string;
@@ -39,20 +81,20 @@ type Result = {
 };
 
 /**
- * Immediate profile photo upload: process the picked file, upload it via
- * Chatwoot, merge the returned URL into the FHIR resource and PUT it back.
- * Person stores a single Attachment; Patient/Practitioner store an array.
+ * Immediate profile photo upload: process the picked file, upload it once via
+ * Chatwoot, merge the returned URL into every cached role resource (Person
+ * stores a single Attachment, Patient/Practitioner an array) and persist them
+ * all-or-nothing — one transaction bundle for multi-role users, a direct PUT
+ * for single-role users. On success the merged resources are recached into
+ * the auth state + IndexedDB; no refetch happens.
  */
 export function useProfilePhotoSave({
-  fhirId,
-  resourceType,
   profile,
   fallbackName,
   fallbackEmail,
   fallbackPhone
 }: Params): Result {
   const { mutateAsync: updateProfile } = useUpdateProfile();
-  const queryClient = useQueryClient();
   const { state: authState, dispatch: dispatchAuth } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
 
@@ -90,41 +132,34 @@ export function useProfilePhotoSave({
         const uploadedUrl = await uploadAvatar(chatwootId, processed.blob);
         if (!uploadedUrl) throw new Error('Empty avatar URL');
 
-        const latest = await getProfileById(fhirId, resourceType);
-        const photo =
-          resourceType === 'Person'
-            ? { url: uploadedUrl }
-            : [{ url: uploadedUrl }];
-        const payload = { ...latest, photo } as ProfileResource;
-        await updateProfile({ payload });
+        const userInfo = authState.userInfo;
+        const existingRoleProfiles = userInfo?.roleProfiles ?? {};
+        const activeRole = userInfo?.role_name ?? '';
 
-        // Optimistic auth-state update: keep the header avatar and the role
-        // switcher dropdown fresh without a refetch after the photo save.
-        const role = authState.userInfo?.role_name;
-        if (role) {
-          const existingProfiles = authState.userInfo?.roleProfiles ?? {};
-          dispatchAuth({
-            type: 'auth-check',
-            payload: {
-              ...authState.userInfo,
-              profile_picture: uploadedUrl,
-              roleProfiles: {
-                ...existingProfiles,
-                [role]: {
-                  name:
-                    existingProfiles[role]?.name ??
-                    authState.userInfo?.fullname ??
-                    '',
-                  photoUrl: uploadedUrl
-                }
-              }
-            }
-          });
+        const resources = collectCachedResources(userInfo);
+        if (!resources[activeRole]) {
+          throw new Error('Missing active profile resource');
+        }
+        const merged = mergePhoto(resources, uploadedUrl);
+
+        if (Object.keys(merged).length > 1) {
+          const response = await submitFhirBundle(
+            buildProfileTransactionBundle(Object.values(merged))
+          );
+          assertBundleSuccess(response);
+        } else {
+          const result = await updateProfile({ payload: merged[activeRole] });
+          if (!result) throw new Error('Empty profile update response');
         }
 
-        await queryClient.invalidateQueries({
-          queryKey: ['profile-data', fhirId]
-        });
+        await recacheProfiles(
+          userInfo,
+          merged,
+          uploadedUrl,
+          existingRoleProfiles,
+          dispatchAuth
+        );
+
         toast.success('Profile photo updated');
       } catch (error) {
         console.error('[avatar] profile photo update failed', error);
@@ -133,15 +168,7 @@ export function useProfilePhotoSave({
         setIsUploading(false);
       }
     },
-    [
-      fhirId,
-      resourceType,
-      ensureChatwootId,
-      updateProfile,
-      queryClient,
-      authState,
-      dispatchAuth
-    ]
+    [ensureChatwootId, updateProfile, authState, dispatchAuth]
   );
 
   return { isUploading, handleFileSelected };

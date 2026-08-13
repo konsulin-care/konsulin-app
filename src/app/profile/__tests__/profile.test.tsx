@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -28,7 +29,16 @@ vi.mock('@/components/profile/ProfileActions', () => ({
 }));
 
 vi.mock('../extension-card', () => ({
-  default: () => <div data-testid='extension-card' />
+  default: ({ profile }: { profile: { resourceType: string } }) => {
+    if (profile.resourceType === 'Person') return null;
+    return (
+      <div data-testid='extension-card'>
+        {profile.resourceType === 'Practitioner'
+          ? 'Professional'
+          : 'Additional'}
+      </div>
+    );
+  }
 }));
 
 vi.mock('../hooks/useProfileData', () => ({
@@ -64,6 +74,7 @@ vi.mock('next/image', async () => {
 import CompletenessBanner from '@/components/profile/completeness-banner';
 import { useAuth } from '@/context/auth/authContext';
 import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
+import type { RoleProfile } from '@/services/role-profiles';
 import type { Patient } from 'fhir/r4';
 import { useProfileData } from '../hooks/useProfileData';
 import { useProfilePhotoSave } from '../hooks/useProfilePhotoSave';
@@ -101,13 +112,35 @@ const identity = {
   family: 'Doe'
 };
 
-function mockProfileHooks(roleName: string) {
+type MockRoleProfile = RoleProfile;
+
+const ROLE_RESOURCE_TYPE: Record<
+  string,
+  'Patient' | 'Practitioner' | 'Person'
+> = {
+  'Clinic Admin': 'Person',
+  Practitioner: 'Practitioner'
+};
+
+function mockProfileHooks(
+  roleName: string,
+  roleProfiles?: Record<string, MockRoleProfile | null>
+) {
+  const resourceType = ROLE_RESOURCE_TYPE[roleName] ?? 'Patient';
+  const resolved = roleProfiles ?? {
+    [roleName]: {
+      name: 'Test User',
+      photoUrl: '',
+      resource: { resourceType, id: 'res-1' }
+    }
+  };
   vi.mocked(useProfileData).mockReturnValue({
-    profileData: { resourceType: 'Patient', id: 'pat-1' },
+    profileData: resolved[roleName]?.resource,
+    roleProfiles: resolved,
     isLoading: false,
     identity,
     sections,
-    resourceType: roleName === 'Clinic Admin' ? 'Person' : 'Patient'
+    resourceType
   });
   vi.mocked(useProfilePhotoSave).mockReturnValue({
     isUploading: false,
@@ -292,6 +325,53 @@ describe('Profile page', () => {
       expect(screen.getByTestId('role-badge').textContent).toBe('Clinic Admin');
       expect(screen.getByText('Personal Information')).toBeDefined();
       expect(screen.getByTestId('profile-actions')).toBeDefined();
+    });
+
+    it('renders Professional AND Additional cards for every owned role', () => {
+      mockAuth(vi.mocked(useAuth), {
+        role_name: 'Patient',
+        fhirId: 'pat-1',
+        userId: 'u1',
+        roles: ['Patient', 'Practitioner'],
+        profile_complete: true
+      });
+      mockProfileHooks('Patient', {
+        Patient: {
+          name: 'John Doe',
+          photoUrl: '',
+          resource: { resourceType: 'Patient', id: 'pat-1' }
+        },
+        Practitioner: {
+          name: 'Jane Smith',
+          photoUrl: '',
+          resource: { resourceType: 'Practitioner', id: 'pra-1' }
+        }
+      });
+
+      render(<ProfileDisplay />);
+      expect(screen.getAllByTestId('extension-card')).toHaveLength(2);
+      expect(screen.getByText('Professional')).toBeDefined();
+      expect(screen.getByText('Additional')).toBeDefined();
+    });
+
+    it('renders no extension card for a Person-only role', () => {
+      mockAuth(vi.mocked(useAuth), {
+        role_name: 'Clinic Admin',
+        fhirId: 'clinic-1',
+        userId: 'u1',
+        roles: ['Clinic Admin'],
+        profile_complete: true
+      });
+      mockProfileHooks('Clinic Admin', {
+        'Clinic Admin': {
+          name: 'Alex Brown',
+          photoUrl: '',
+          resource: { resourceType: 'Person', id: 'clinic-1' }
+        }
+      });
+
+      render(<ProfileDisplay />);
+      expect(screen.queryByTestId('extension-card')).toBeNull();
     });
   });
 });

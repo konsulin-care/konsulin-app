@@ -8,6 +8,7 @@ import ProfileActions from '@/components/profile/ProfileActions';
 import { settingMenus } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
 import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
+import type { RoleProfile } from '@/services/role-profiles';
 import type { Address, Patient, Person, Practitioner } from 'fhir/r4';
 import { useState } from 'react';
 import AddressEditDrawer from './address-edit-drawer';
@@ -15,6 +16,7 @@ import ContactEditDrawer from './contact-edit-drawer';
 import ExtensionCard from './extension-card';
 import { useProfileData, type ProfileSection } from './hooks/useProfileData';
 import { useProfilePhotoSave } from './hooks/useProfilePhotoSave';
+import { resolveRoles } from './multi-role-sync';
 import NameEditDrawer from './name-edit-drawer';
 import PersonalInfoEditDrawer from './personal-info-edit-drawer';
 import ProfileIdentity from './profile-identity';
@@ -157,17 +159,27 @@ function ProfileDrawers({
 
 /**
  * Unified profile page shared by every registered role: identity hero,
- * section cards, role extension card and account actions. Each section
- * edits in place via a bottom-sheet drawer.
+ * section cards, per-role extension cards and account actions. Each section
+ * edits in place via a bottom-sheet drawer. The data comes from the auth
+ * profile cache; shared cards read the active role's resource while the
+ * extension cards render every owned role's non-overlapping fields.
  */
 export default function ProfileDisplay() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const fhirId = authState.userInfo?.fhirId ?? '';
   const roleName = authState.userInfo?.role_name ?? '';
+  const userId = authState.userInfo?.userId ?? '';
+  const roles = resolveRoles(authState.userInfo);
   const isEmailBased = Boolean(authState.userInfo?.email);
 
-  const { profileData, isLoading, identity, sections, resourceType } =
-    useProfileData(fhirId, roleName);
+  const {
+    profileData,
+    roleProfiles,
+    isLoading,
+    identity,
+    sections,
+    resourceType
+  } = useProfileData(userId, roles, roleName);
   const { showBanner } = useProfileCompleteness(profileData);
   const { isUploading, handleFileSelected } = useProfilePhotoSave({
     fhirId,
@@ -208,7 +220,16 @@ export default function ProfileDisplay() {
               onEditName={() => setActiveDrawer('name')}
             />
             <SectionCards sections={sections} onEdit={setActiveDrawer} />
-            <ExtensionCard profile={profileData} />
+            {Object.values(roleProfiles ?? {})
+              .filter((profile): profile is RoleProfile =>
+                Boolean(profile?.resource)
+              )
+              .map(profile => (
+                <ExtensionCard
+                  key={profile.resource.id}
+                  profile={profile.resource}
+                />
+              ))}
             <ProfileActions menus={settingMenus} />
           </div>
         )}

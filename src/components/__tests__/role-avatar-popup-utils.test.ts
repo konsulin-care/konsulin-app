@@ -1,77 +1,35 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildOtherRoleAvatars } from '@/components/role-avatar-popup-utils';
-import type { RoleProfile } from '@/services/role-profiles';
+import { roleIcon, roleLabel } from '@/components/role-avatar-popup-utils';
 
-describe('buildOtherRoleAvatars', () => {
-  it('maps fetched profiles to avatars with photo and name-based initials', () => {
-    const profiles: Record<string, RoleProfile | null> = {
-      Practitioner: {
-        name: 'Jane Doe',
-        photoUrl: 'https://cdn.example.com/jane.jpg'
-      },
-      Patient: { name: 'John Doe', photoUrl: '' }
-    };
-
-    const avatars = buildOtherRoleAvatars(
-      ['Patient', 'Practitioner'],
-      'Patient',
-      profiles
-    );
-
-    expect(avatars).toHaveLength(1);
-    expect(avatars[0]).toMatchObject({
-      role: 'Practitioner',
-      photoUrl: 'https://cdn.example.com/jane.jpg',
-      initials: 'JD'
-    });
+describe('roleLabel', () => {
+  it('returns the display label for known roles', () => {
+    expect(roleLabel('Patient')).toBe('Patient');
+    expect(roleLabel('Practitioner')).toBe('Practitioner');
+    expect(roleLabel('Clinic Admin')).toBe('Clinic Admin');
+    expect(roleLabel('Researcher')).toBe('Researcher');
   });
 
-  it('falls back to the role placeholder when the profile is missing', () => {
-    const avatars = buildOtherRoleAvatars(
-      ['Patient', 'Practitioner'],
-      'Patient',
-      { Practitioner: null, Patient: null }
-    );
+  it('falls back to the raw role string for unknown roles', () => {
+    expect(roleLabel('Unknown Role')).toBe('Unknown Role');
+  });
+});
 
-    expect(avatars).toHaveLength(1);
-    expect(avatars[0]).toMatchObject({
-      role: 'Practitioner',
-      photoUrl: ''
-    });
+describe('roleIcon', () => {
+  it('maps every known role to an icon component', () => {
+    expect(roleIcon('Patient')).toBeDefined();
+    expect(roleIcon('Practitioner')).toBeDefined();
+    expect(roleIcon('Clinic Admin')).toBeDefined();
+    expect(roleIcon('Researcher')).toBeDefined();
   });
 
-  it('falls back to the role placeholder before profiles load', () => {
-    let profiles: Record<string, RoleProfile | null> | undefined;
-    const avatars = buildOtherRoleAvatars(
-      ['Patient', 'Practitioner'],
-      'Patient',
-      profiles
-    );
-
-    expect(avatars).toHaveLength(1);
-    expect(avatars[0]).toMatchObject({ role: 'Practitioner', photoUrl: '' });
+  it('returns distinct icons for distinct roles', () => {
+    const roleNames = ['Patient', 'Practitioner', 'Clinic Admin', 'Researcher'];
+    const icons = roleNames.map(role => roleIcon(role));
+    expect(new Set(icons).size).toBe(4);
   });
 
-  it('excludes the current role from the list', () => {
-    const profiles: Record<string, RoleProfile | null> = {
-      Practitioner: {
-        name: 'Jane Doe',
-        photoUrl: 'https://cdn.example.com/jane.jpg'
-      },
-      Patient: {
-        name: 'John Doe',
-        photoUrl: 'https://cdn.example.com/john.jpg'
-      }
-    };
-
-    const avatars = buildOtherRoleAvatars(
-      ['Patient', 'Practitioner'],
-      'Practitioner',
-      profiles
-    );
-
-    expect(avatars.map(a => a.role)).toEqual(['Patient']);
-    expect(avatars[0]?.photoUrl).toBe('https://cdn.example.com/john.jpg');
+  it('falls back to the default User icon for unknown roles', () => {
+    expect(roleIcon('Unknown Role')).toBeDefined();
   });
 });

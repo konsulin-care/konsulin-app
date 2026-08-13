@@ -7,7 +7,7 @@ import type { FhirResourceType } from '@/utils/role-fhir';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useProfileSectionSave } from './hooks/useProfileSectionSave';
-import { mergePersonalInfo } from './section-merge';
+import { mergePersonalInfo, mergePersonalInfoSync } from './section-merge';
 
 type Props = {
   /** Whether the drawer is open. */
@@ -80,6 +80,12 @@ export default function PersonalInfoEditDrawer({
                 languageLabel: selected.label
               }
             : {})
+        }),
+      // Language stays per role: other roles receive gender/DOB only.
+      mergeOtherRoles: latest =>
+        mergePersonalInfoSync(latest, {
+          gender: genderValue,
+          birthDate: dobValue
         }),
       onSuccess: onClose
     });

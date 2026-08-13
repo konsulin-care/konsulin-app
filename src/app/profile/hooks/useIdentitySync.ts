@@ -4,6 +4,7 @@ import { useAuth } from '@/context/auth/authContext';
 import type { IStateUserInfo } from '@/context/auth/authTypes';
 import { dbSet, STORES } from '@/lib/indexeddb';
 import { modifyProfile } from '@/services/profile';
+import type { RoleProfile } from '@/services/role-profiles';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
 import type { Patient, Person, Practitioner } from 'fhir/r4';
 import { useCallback } from 'react';
@@ -23,12 +24,17 @@ function findPhotoUrl(profile: ProfileResource): string | undefined {
   return profile.photo?.[0]?.url;
 }
 
-/** Build the auth payload persisted to the cookie and IndexedDB. */
+/**
+ * Build the auth payload persisted to the cookie and IndexedDB. Rebuilds the
+ * identity fields from the saved active resource and carries the full
+ * roleProfiles map (with resources) so the cache stays fresh after a save.
+ */
 function buildAuthPayload(
   existing: IStateUserInfo,
   profile: ProfileResource,
   fullname: string,
-  superTokensRoles: string[] | undefined
+  superTokensRoles: string[] | undefined,
+  roleProfiles: Record<string, RoleProfile | null>
 ): IStateUserInfo {
   const email =
     findTelecomValue(profile, 'email') || existing.email || undefined;
@@ -46,15 +52,9 @@ function buildAuthPayload(
     fullname,
     profile_picture: photoUrl,
     profile_complete: isProfileCompleteFromFHIR(profile),
-    // Keep the role switcher map fresh after identity edits: preserve every
-    // role and refresh the active role's name/photo from the saved resource.
-    roleProfiles: {
-      ...existing.roleProfiles,
-      [existing.role_name ?? '']: {
-        name: fullname,
-        photoUrl
-      }
-    }
+    roleProfiles,
+    fullProfile: profile,
+    cachedAt: Date.now()
   };
 }
 
@@ -63,14 +63,19 @@ function buildAuthPayload(
  * rewrite the auth cookie with the updated identity, dispatch the new auth
  * state and persist it to IndexedDB. Best-effort on the Chatwoot step.
  *
- * @returns `syncIdentity(profile, fullname)` to run after a PUT that changed
- *   identity fields (name, email, phone).
+ * @returns `syncIdentity(profile, fullname, roleProfiles?)` to run after a
+ *   PUT that changed identity fields (name, email, phone). Pass the merged
+ *   roleProfiles map for multi-role saves so every role is recached.
  */
 export function useIdentitySync() {
   const { state: authState, dispatch: dispatchAuth } = useAuth();
 
   const syncIdentity = useCallback(
-    async (profile: ProfileResource, fullname: string) => {
+    async (
+      profile: ProfileResource,
+      fullname: string,
+      roleProfiles?: Record<string, RoleProfile | null>
+    ) => {
       const existing = authState.userInfo ?? {};
       const email =
         findTelecomValue(profile, 'email') || existing.email || undefined;
@@ -86,11 +91,20 @@ export function useIdentitySync() {
       }
 
       const superTokensRoles = await getClaimValue({ claim: UserRoleClaim });
+      const updatedRoleProfiles = roleProfiles ?? {
+        ...existing.roleProfiles,
+        [existing.role_name ?? '']: {
+          name: fullname,
+          photoUrl: findPhotoUrl(profile) ?? '',
+          resource: profile
+        }
+      };
       const authPayload = buildAuthPayload(
         existing,
         profile,
         fullname,
-        superTokensRoles
+        superTokensRoles,
+        updatedRoleProfiles
       );
 
       const csrfToken = await fetch('/auth/cookie/csrf-token')
@@ -112,10 +126,7 @@ export function useIdentitySync() {
       }
 
       dispatchAuth({ type: 'auth-check', payload: authPayload });
-      await dbSet(STORES.userProfile, {
-        ...authPayload,
-        cachedAt: Date.now()
-      });
+      await dbSet(STORES.userProfile, authPayload);
     },
     [authState.userInfo, dispatchAuth]
   );

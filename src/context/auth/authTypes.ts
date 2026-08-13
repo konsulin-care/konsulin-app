@@ -19,6 +19,8 @@ export interface IStateUserInfo {
   profile_complete?: boolean;
   roleProfiles?: Record<string, RoleProfile | null>;
   fullProfile?: Patient | Practitioner | Person;
+  /** When this profile cache was last fetched, in epoch ms. */
+  cachedAt?: number;
 }
 
 export type IActionAuth = IActionLogin | IActionLogout;

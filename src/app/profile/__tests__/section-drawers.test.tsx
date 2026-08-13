@@ -115,6 +115,37 @@ describe('PersonalInfoEditDrawer', () => {
     ]);
   });
 
+  it('passes a mergeOtherRoles variant that keeps language per role', () => {
+    render(
+      <PersonalInfoEditDrawer
+        open
+        onClose={onClose}
+        fhirId='pat-1'
+        resourceType='Patient'
+        gender='male'
+        birthDate='1990-03-12'
+        languageCode='id'
+        supportsLanguage
+      />
+    );
+    fireEvent.change(screen.getByTestId('gender-select'), {
+      target: { value: 'female' }
+    });
+    fireEvent.change(screen.getByTestId('language-select'), {
+      target: { value: 'en' }
+    });
+    fireEvent.click(screen.getByText('Save'));
+
+    const params = mockSaveSection.mock.calls[0][0] as {
+      mergeOtherRoles?: (latest: Patient) => Patient;
+    };
+    expect(params.mergeOtherRoles).toBeTypeOf('function');
+    const merged = params.mergeOtherRoles?.(patientFixture);
+    expect(merged?.gender).toBe('female');
+    expect(merged?.birthDate).toBe('1990-03-12');
+    expect('communication' in (merged ?? {})).toBe(false);
+  });
+
   it('does not save without gender and DOB', () => {
     render(
       <PersonalInfoEditDrawer

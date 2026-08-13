@@ -1,13 +1,13 @@
 'use client';
 
-import { getProfileById } from '@/services/profile';
+import { PROFILE_CACHE_STALE_MS } from '@/constants/profile';
+import { useAuth } from '@/context/auth/authContext';
 import { collapseHumanName } from '@/utils/fhir/human-name';
 import { generateAvatarPlaceholder } from '@/utils/helper';
 import { roleToFhirResource, type FhirResourceType } from '@/utils/role-fhir';
-import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { CodeableConcept, Patient, Person, Practitioner } from 'fhir/r4';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 type ProfileResource = Patient | Practitioner | Person;
 
@@ -23,6 +23,17 @@ export type ProfileIdentity = {
   given: string[];
   family?: string;
 };
+
+/** True when every non-null role profile carries its full resource. */
+function roleProfilesCarryResources(
+  roleProfiles: Record<string, unknown> | undefined
+): boolean {
+  if (!roleProfiles) return false;
+  return Object.values(roleProfiles).every(
+    profile =>
+      profile === null || Boolean((profile as { resource?: unknown }).resource)
+  );
+}
 
 /** Narrow the profile union to Patient/Practitioner (both have communication). */
 function isPatientOrPractitioner(
@@ -92,13 +103,13 @@ function conceptDisplay(concept?: CodeableConcept): string {
 /** Build the identity block (photo, initials, collapsed name parts). */
 function buildIdentity(
   profile: ProfileResource | undefined,
-  fhirId: string
+  seedId: string
 ): ProfileIdentity {
   const name = profile?.name?.[0];
   const displayName = collapseHumanName(name);
   const email = findTelecom(profile, 'email');
   const avatar = generateAvatarPlaceholder({
-    id: fhirId,
+    id: seedId,
     name: displayName,
     email: email === '-' ? undefined : email
   });
@@ -175,32 +186,64 @@ function buildSections(
 }
 
 /**
- * Fetch and transform the current user's FHIR profile into a uniform shape
- * shared by every role. The resource type is derived from the active role,
- * and the query key stays `['profile-data', fhirId]` so existing cache
- * invalidation keeps working.
+ * Read the current user's profile data straight from the auth cache.
  *
- * @param fhirId - The active role's FHIR resource id.
- * @param roleName - The active role name (Patient, Practitioner, Clinic Admin, Researcher).
- * @returns Profile data, loading flag, identity block and display sections.
+ * The auth bootstrap fetches the full profile bundle once and caches every
+ * role resource in `userInfo.roleProfiles` (persisted to IndexedDB). This
+ * hook renders from that cache — no per-visit query — and refreshes only
+ * when the cache is stale or predates the full-resource cache shape.
+ *
+ * @param userId - The SuperTokens user ID.
+ * @param roles - All roles of the user.
+ * @param activeRole - The active role whose resource drives the shared cards.
+ * @returns The active profile, the per-role profile map, identity block,
+ *   display sections and the active role's resource type.
  */
-export function useProfileData(fhirId: string, roleName: string) {
-  const resourceType = roleToFhirResource(roleName);
+export function useProfileData(
+  userId: string,
+  roles: string[],
+  activeRole: string
+) {
+  const { state: authState, refreshProfiles } = useAuth();
+  const userInfo = authState.userInfo;
+  const roleProfiles = useMemo(
+    () => userInfo?.roleProfiles ?? {},
+    [userInfo?.roleProfiles]
+  );
+  const resourceType = roleToFhirResource(activeRole);
 
-  const { data: profileData, isLoading } = useQuery<ProfileResource>({
-    queryKey: ['profile-data', fhirId],
-    queryFn: () => getProfileById(fhirId, resourceType),
-    enabled: Boolean(fhirId)
-  });
+  const activeProfile = useMemo(
+    () => roleProfiles[activeRole]?.resource ?? userInfo?.fullProfile,
+    [roleProfiles, activeRole, userInfo?.fullProfile]
+  );
+
+  // Refresh the cache once when it is stale (>5 min) or carries no full
+  // resources (old-shape cache from before the refactor).
+  useEffect(() => {
+    if (!userId) return;
+    const cacheIsFresh =
+      typeof userInfo?.cachedAt === 'number' &&
+      Date.now() - userInfo.cachedAt <= PROFILE_CACHE_STALE_MS;
+    if (!cacheIsFresh || !roleProfilesCarryResources(roleProfiles)) {
+      void refreshProfiles?.();
+    }
+  }, [userId, userInfo?.cachedAt, roleProfiles, refreshProfiles]);
 
   const identity = useMemo(
-    () => buildIdentity(profileData, fhirId),
-    [profileData, fhirId]
+    () => buildIdentity(activeProfile, activeProfile?.id ?? userId),
+    [activeProfile, userId]
   );
   const sections = useMemo(
-    () => buildSections(profileData, resourceType),
-    [profileData, resourceType]
+    () => buildSections(activeProfile, resourceType),
+    [activeProfile, resourceType]
   );
 
-  return { profileData, isLoading, identity, sections, resourceType };
+  return {
+    profileData: activeProfile,
+    roleProfiles,
+    isLoading: false,
+    identity,
+    sections,
+    resourceType
+  };
 }

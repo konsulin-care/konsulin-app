@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import fs from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuth } from '../authContext';
@@ -590,6 +590,227 @@ describe('Fix 4 - clinic admin managingOrganization stored as clinic_organizatio
     );
     expect(fetchUserProfilesBundle).not.toHaveBeenCalled();
     expectNoClinicOrganization();
+  });
+});
+
+// =========================================================================
+// Task: profile cache carries full resources + refreshProfiles
+// =========================================================================
+describe('profile cache carries full resources and staleness', () => {
+  beforeEach(() => {
+    mockUseSessionContext.mockReturnValue({
+      doesSessionExist: true,
+      userId: 'multi-role-user',
+      accessTokenPayload: {}
+    });
+    mockGetClaimValue.mockResolvedValue(['Patient', 'Practitioner']);
+    mockRestoreCookie.mockResolvedValue(true);
+    mockGetAuthSession.mockResolvedValue({
+      authenticated: true,
+      role_name: 'Patient',
+      userId: 'multi-role-user'
+    });
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: {
+        resourceType: 'Patient',
+        id: 'pat-1',
+        name: [{ use: 'official', given: ['Test'], family: 'User' }]
+      },
+      roleProfiles: {
+        Patient: {
+          name: 'Test User',
+          photoUrl: '',
+          resource: {
+            resourceType: 'Patient',
+            id: 'pat-1',
+            name: [{ use: 'official', given: ['Test'], family: 'User' }]
+          }
+        },
+        Practitioner: {
+          name: 'Test User',
+          photoUrl: '',
+          resource: { resourceType: 'Practitioner', id: 'prac-1' }
+        }
+      }
+    });
+  });
+
+  it('serves a cached multi-role payload whose roleProfiles carry resources', async () => {
+    // GIVEN: cache has a full resource per role
+    mockDbGet.mockResolvedValue({
+      userId: 'multi-role-user',
+      role_name: 'Patient',
+      roles: ['Patient', 'Practitioner'],
+      fullname: 'Test User',
+      email: 'test@example.com',
+      fhirId: 'pat-1',
+      profile_complete: true,
+      roleProfiles: {
+        Patient: {
+          name: 'Test User',
+          photoUrl: '',
+          resource: { resourceType: 'Patient', id: 'pat-1' }
+        },
+        Practitioner: {
+          name: 'Test User',
+          photoUrl: '',
+          resource: { resourceType: 'Practitioner', id: 'prac-1' }
+        }
+      }
+    });
+
+    renderWithAuthProvider();
+
+    await waitFor(() =>
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
+    );
+    expect(fetchUserProfilesBundle).not.toHaveBeenCalled();
+  });
+
+  it('rejects a pre-refactor multi-role cache without resources and refetches', async () => {
+    // GIVEN: cache still uses the old shape (name/photoUrl only)
+    mockDbGet.mockResolvedValue({
+      userId: 'multi-role-user',
+      role_name: 'Patient',
+      roles: ['Patient', 'Practitioner'],
+      fullname: 'Test User',
+      email: 'test@example.com',
+      fhirId: 'pat-1',
+      profile_complete: true,
+      roleProfiles: {
+        Patient: { name: 'Test User', photoUrl: '' },
+        Practitioner: { name: 'Test User', photoUrl: '' }
+      }
+    });
+
+    renderWithAuthProvider();
+
+    await waitFor(() => expect(fetchUserProfilesBundle).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
+    );
+  });
+
+  it('dispatches and persists a fresh cachedAt on login', async () => {
+    mockDbGet.mockResolvedValue(null);
+    renderWithAuthProvider();
+
+    await waitFor(() =>
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
+    );
+
+    const stored = mockDbSet.mock.calls
+      .filter((call: unknown[]) => call[0] === 'user_profile')
+      .find(
+        (call: unknown[]) =>
+          (call[1] as Record<string, unknown>)?.userId === 'multi-role-user'
+      );
+    expect(stored).toBeDefined();
+    expect(typeof (stored?.[1] as Record<string, unknown>)?.cachedAt).toBe(
+      'number'
+    );
+  });
+
+  it('refreshProfiles re-fetches, dispatches updated roleProfiles and persists', async () => {
+    mockDbGet.mockResolvedValue(null);
+    mockFetchBundle
+      .mockResolvedValueOnce({
+        activeProfile: {
+          resourceType: 'Patient',
+          id: 'pat-1',
+          name: [{ use: 'official', given: ['Old'], family: 'Name' }]
+        },
+        roleProfiles: {
+          Patient: {
+            name: 'Old Name',
+            photoUrl: '',
+            resource: {
+              resourceType: 'Patient',
+              id: 'pat-1',
+              name: [{ use: 'official', given: ['Old'], family: 'Name' }]
+            }
+          },
+          Practitioner: {
+            name: 'Old Name',
+            photoUrl: '',
+            resource: { resourceType: 'Practitioner', id: 'prac-1' }
+          }
+        }
+      })
+      .mockResolvedValueOnce({
+        activeProfile: {
+          resourceType: 'Patient',
+          id: 'pat-1',
+          name: [{ use: 'official', given: ['New'], family: 'Name' }]
+        },
+        roleProfiles: {
+          Patient: {
+            name: 'New Name',
+            photoUrl: '',
+            resource: {
+              resourceType: 'Patient',
+              id: 'pat-1',
+              name: [{ use: 'official', given: ['New'], family: 'Name' }]
+            }
+          },
+          Practitioner: {
+            name: 'New Name',
+            photoUrl: '',
+            resource: { resourceType: 'Practitioner', id: 'prac-1' }
+          }
+        }
+      });
+
+    function RefreshObserver() {
+      const auth = useAuth();
+      return (
+        <div>
+          <div data-testid='refresh-name'>
+            {auth.state.userInfo.roleProfiles?.Patient?.name ?? ''}
+          </div>
+          <button
+            type='button'
+            onClick={() => {
+              void auth.refreshProfiles();
+            }}
+          >
+            refresh
+          </button>
+        </div>
+      );
+    }
+
+    render(
+      <AuthProvider>
+        <RefreshObserver />
+      </AuthProvider>
+    );
+
+    await waitFor(() =>
+      expect(fetchUserProfilesBundle).toHaveBeenCalledTimes(1)
+    );
+    expect(screen.getByTestId('refresh-name').textContent).toBe('Old Name');
+
+    fireEvent.click(screen.getByText('refresh'));
+
+    await waitFor(() =>
+      expect(fetchUserProfilesBundle).toHaveBeenCalledTimes(2)
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('refresh-name').textContent).toBe('New Name')
+    );
+
+    const stored = mockDbSet.mock.calls
+      .filter((call: unknown[]) => call[0] === 'user_profile')
+      .filter(
+        (call: unknown[]) =>
+          (call[1] as Record<string, unknown>)?.userId === 'multi-role-user'
+      );
+    const last = stored.at(-1)?.[1] as Record<string, unknown>;
+    expect(typeof last.cachedAt).toBe('number');
+    expect(
+      (last.roleProfiles as Record<string, unknown>).Patient
+    ).toMatchObject({ name: 'New Name' });
   });
 });
 

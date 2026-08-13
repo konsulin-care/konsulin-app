@@ -86,7 +86,7 @@ describe('fetchUserProfilesBundle', () => {
     vi.resetAllMocks();
   });
 
-  it('posts ONE batch bundle with a full entry for the active role and minimal entries for inactive roles', async () => {
+  it('fetches the FULL resource for every role (no _elements projection)', async () => {
     vi.mocked(mockAxiosInstance.post).mockResolvedValue({
       data: {
         resourceType: 'Bundle',
@@ -120,33 +120,42 @@ describe('fetchUserProfilesBundle', () => {
         {
           request: {
             method: 'GET',
-            url: '/Practitioner?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
+            url: '/Practitioner?identifier=https://login.konsulin.care/userid|user-1'
           }
         },
         {
           request: {
             method: 'GET',
-            url: '/Person?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
+            url: '/Person?identifier=https://login.konsulin.care/userid|user-1'
           }
         },
         {
           request: {
             method: 'GET',
-            url: '/Person?identifier=https://login.konsulin.care/userid|user-1&_elements=name,photo'
+            url: '/Person?identifier=https://login.konsulin.care/userid|user-1'
           }
         }
       ]
     });
+    const postMock = mockAxiosInstance.post as ReturnType<typeof vi.fn>;
+    const postedBundle = postMock.mock.calls[0]?.[1] as Bundle;
+    expect(
+      postedBundle.entry?.some(entry =>
+        entry.request?.url.includes('_elements')
+      )
+    ).toBe(false);
 
     expect(result.activeProfile).toEqual(fullPatientResource);
     expect(result.roleProfiles).toEqual({
       Patient: {
         name: 'John Doe',
-        photoUrl: 'https://cdn.example.com/john.jpg'
+        photoUrl: 'https://cdn.example.com/john.jpg',
+        resource: fullPatientResource
       },
       Practitioner: {
         name: 'Jane Doe',
-        photoUrl: 'https://cdn.example.com/jane.jpg'
+        photoUrl: 'https://cdn.example.com/jane.jpg',
+        resource: practitionerSearchset.entry?.[0]?.resource
       },
       'Clinic Admin': null,
       Researcher: null
@@ -234,7 +243,8 @@ describe('fetchUserProfilesBundle', () => {
     expect(result.activeProfile).toEqual(fullPatientResource);
     expect(result.roleProfiles.Practitioner).toEqual({
       name: 'Jane Doe',
-      photoUrl: 'https://cdn.example.com/jane.jpg'
+      photoUrl: 'https://cdn.example.com/jane.jpg',
+      resource: practitionerSearchset.entry?.[0]?.resource
     });
   });
 

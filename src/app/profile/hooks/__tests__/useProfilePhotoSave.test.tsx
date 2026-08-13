@@ -1,6 +1,6 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+/* eslint-disable max-lines */
 import { renderHook, waitFor } from '@testing-library/react';
-import type { Patient, Person, Practitioner } from 'fhir/r4';
+import type { Bundle, Patient, Person, Practitioner } from 'fhir/r4';
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +11,10 @@ vi.mock('@/services/profile', () => ({
   useUpdateProfile: vi.fn()
 }));
 
+vi.mock('@/services/api/fhir-bundle', () => ({
+  submitFhirBundle: vi.fn()
+}));
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));
@@ -19,12 +23,19 @@ vi.mock('@/utils/image-processing', () => ({
   processImageForAvatar: vi.fn()
 }));
 
+vi.mock('@/lib/indexeddb', () => ({
+  STORES: { userProfile: 'user_profile' },
+  dbSet: vi.fn()
+}));
+
 vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));
 
 import { useAuth } from '@/context/auth/authContext';
-import type { IActionLogin } from '@/context/auth/authTypes';
+import type { IActionLogin, IStateUserInfo } from '@/context/auth/authTypes';
+import { dbSet } from '@/lib/indexeddb';
+import { submitFhirBundle } from '@/services/api/fhir-bundle';
 import {
   getProfileById,
   modifyProfile,
@@ -45,6 +56,14 @@ const patientFixture: Patient = {
   identifier: [{ system: CHATWOOT_SYSTEM, value: 'cw-123' }]
 };
 
+const practitionerFixture: Practitioner = {
+  resourceType: 'Practitioner',
+  id: 'prac-1',
+  active: true,
+  name: [{ use: 'official', given: ['Jane'], family: 'Smith' }],
+  identifier: [{ system: CHATWOOT_SYSTEM, value: 'cw-123' }]
+};
+
 const personFixture: Person = {
   resourceType: 'Person',
   id: 'clinic-1',
@@ -54,21 +73,18 @@ const personFixture: Person = {
 };
 
 describe('useProfilePhotoSave', () => {
-  let queryClient: QueryClient;
   const mockUpdate = vi.fn();
   const mockDispatch = vi.fn();
+  const mockSubmit = submitFhirBundle as ReturnType<typeof vi.fn>;
   const mockFile = new File(['image-bytes'], 'avatar.png', {
     type: 'image/png'
   });
 
-  beforeEach(() => {
-    queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } }
-    });
-    vi.clearAllMocks();
+  function setupAuth(userInfo: Partial<IStateUserInfo>) {
     vi.mocked(useAuth).mockReturnValue({
       isLoading: false,
       dispatch: mockDispatch,
+      refreshProfiles: vi.fn(),
       state: {
         isAuthenticated: true,
         userInfo: {
@@ -77,13 +93,33 @@ describe('useProfilePhotoSave', () => {
           fullname: 'John Doe',
           fhirId: 'pat-1',
           profile_picture: '',
-          roleProfiles: {}
+          roles: ['Patient'],
+          roleProfiles: {
+            Patient: {
+              name: 'John Doe',
+              photoUrl: '',
+              resource: patientFixture
+            }
+          },
+          cachedAt: Date.now(),
+          ...userInfo
         }
       }
     });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupAuth({});
     vi.mocked(useUpdateProfile).mockReturnValue({
       mutateAsync: mockUpdate
     } as unknown as ReturnType<typeof useUpdateProfile>);
+    mockUpdate.mockResolvedValue(patientFixture);
+    mockSubmit.mockResolvedValue({
+      resourceType: 'Bundle',
+      type: 'transaction-response',
+      entry: [{ response: { status: '200 OK' } }]
+    });
     vi.mocked(processImageForAvatar).mockResolvedValue({
       blob: new Blob(['processed'], { type: 'image/webp' }),
       dataUrl: 'data:image/webp;base64,xxx',
@@ -95,28 +131,20 @@ describe('useProfilePhotoSave', () => {
     );
   });
 
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-
-  it('uploads the file and PUTs the photo array for Patient', async () => {
-    vi.mocked(getProfileById).mockResolvedValue(patientFixture);
-    queryClient.setQueryData(['profile-data', 'pat-1'], patientFixture);
-
-    const { result } = renderHook(
-      () =>
-        useProfilePhotoSave({
-          fhirId: 'pat-1',
-          resourceType: 'Patient',
-          profile: patientFixture
-        }),
-      { wrapper }
+  it('uploads the file and PUTs the photo array merged onto the cached Patient resource', async () => {
+    const { result } = renderHook(() =>
+      useProfilePhotoSave({
+        fhirId: 'pat-1',
+        resourceType: 'Patient',
+        profile: patientFixture
+      })
     );
 
     await act(async () => {
       await result.current.handleFileSelected(mockFile);
     });
 
+    expect(getProfileById).not.toHaveBeenCalled();
     expect(uploadAvatar).toHaveBeenCalledWith('cw-123', expect.any(Blob));
     expect(mockUpdate).toHaveBeenCalledWith({
       payload: {
@@ -124,19 +152,28 @@ describe('useProfilePhotoSave', () => {
         photo: [{ url: 'https://cdn.example.com/avatar.jpg' }]
       }
     });
+    expect(mockSubmit).not.toHaveBeenCalled();
   });
 
-  it('PUTs a single Attachment photo for Person', async () => {
-    vi.mocked(getProfileById).mockResolvedValue(personFixture);
+  it('PUTs a single Attachment photo for Person (single role)', async () => {
+    setupAuth({
+      role_name: 'Clinic Admin',
+      roles: ['Clinic Admin'],
+      roleProfiles: {
+        'Clinic Admin': {
+          name: 'Alex Brown',
+          photoUrl: '',
+          resource: personFixture
+        }
+      }
+    });
 
-    const { result } = renderHook(
-      () =>
-        useProfilePhotoSave({
-          fhirId: 'clinic-1',
-          resourceType: 'Person',
-          profile: personFixture
-        }),
-      { wrapper }
+    const { result } = renderHook(() =>
+      useProfilePhotoSave({
+        fhirId: 'clinic-1',
+        resourceType: 'Person',
+        profile: personFixture
+      })
     );
 
     await act(async () => {
@@ -151,17 +188,80 @@ describe('useProfilePhotoSave', () => {
     });
   });
 
-  it('dispatches an optimistic auth-check with the new photo for the active role', async () => {
-    vi.mocked(getProfileById).mockResolvedValue(patientFixture);
+  it('writes the correct photo shape to EVERY role resource in one transaction bundle', async () => {
+    setupAuth({
+      role_name: 'Patient',
+      roles: ['Patient', 'Practitioner', 'Clinic Admin'],
+      roleProfiles: {
+        Patient: {
+          name: 'John Doe',
+          photoUrl: '',
+          resource: patientFixture
+        },
+        Practitioner: {
+          name: 'Jane Smith',
+          photoUrl: '',
+          resource: practitionerFixture
+        },
+        'Clinic Admin': {
+          name: 'Alex Brown',
+          photoUrl: '',
+          resource: personFixture
+        }
+      }
+    });
+    mockSubmit.mockResolvedValue({
+      resourceType: 'Bundle',
+      type: 'transaction-response',
+      entry: [
+        { response: { status: '200 OK' } },
+        { response: { status: '200 OK' } },
+        { response: { status: '200 OK' } }
+      ]
+    });
 
-    const { result } = renderHook(
-      () =>
-        useProfilePhotoSave({
-          fhirId: 'pat-1',
-          resourceType: 'Patient',
-          profile: patientFixture
-        }),
-      { wrapper }
+    const { result } = renderHook(() =>
+      useProfilePhotoSave({
+        fhirId: 'pat-1',
+        resourceType: 'Patient',
+        profile: patientFixture
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleFileSelected(mockFile);
+    });
+
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockSubmit).toHaveBeenCalledTimes(1);
+    const bundle = mockSubmit.mock.calls[0]?.[0] as Bundle;
+    expect(bundle.type).toBe('transaction');
+    expect(bundle.entry).toHaveLength(3);
+
+    const byUrl = Object.fromEntries(
+      (bundle.entry ?? []).map(e => [
+        (e.resource as { id?: string }).id,
+        e.resource
+      ])
+    );
+    expect(byUrl['pat-1']).toMatchObject({
+      photo: [{ url: 'https://cdn.example.com/avatar.jpg' }]
+    });
+    expect(byUrl['prac-1']).toMatchObject({
+      photo: [{ url: 'https://cdn.example.com/avatar.jpg' }]
+    });
+    expect(byUrl['clinic-1']).toMatchObject({
+      photo: { url: 'https://cdn.example.com/avatar.jpg' }
+    });
+  });
+
+  it('recaches the photo into the auth dispatch and persists it', async () => {
+    const { result } = renderHook(() =>
+      useProfilePhotoSave({
+        fhirId: 'pat-1',
+        resourceType: 'Patient',
+        profile: patientFixture
+      })
     );
 
     await act(async () => {
@@ -173,36 +273,11 @@ describe('useProfilePhotoSave', () => {
     expect(action.payload?.profile_picture).toBe(
       'https://cdn.example.com/avatar.jpg'
     );
-    expect(action.payload?.roleProfiles?.Patient).toEqual({
-      name: 'John Doe',
-      photoUrl: 'https://cdn.example.com/avatar.jpg'
+    expect(action.payload?.roleProfiles?.Patient?.resource).toMatchObject({
+      photo: [{ url: 'https://cdn.example.com/avatar.jpg' }]
     });
-  });
-
-  it('invalidates the profile-data cache only (no role-profiles refetch)', async () => {
-    vi.mocked(getProfileById).mockResolvedValue(patientFixture);
-    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
-
-    const { result } = renderHook(
-      () =>
-        useProfilePhotoSave({
-          fhirId: 'pat-1',
-          resourceType: 'Patient',
-          profile: patientFixture
-        }),
-      { wrapper }
-    );
-
-    await act(async () => {
-      await result.current.handleFileSelected(mockFile);
-    });
-
-    expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: ['profile-data', 'pat-1']
-    });
-    expect(invalidateSpy).not.toHaveBeenCalledWith({
-      queryKey: ['role-profiles']
-    });
+    expect(action.payload?.cachedAt).toEqual(expect.any(Number));
+    expect(dbSet).toHaveBeenCalledWith('user_profile', expect.any(Object));
   });
 
   it('falls back to modifyProfile when chatwoot id is missing', async () => {
@@ -210,20 +285,28 @@ describe('useProfilePhotoSave', () => {
       ...personFixture,
       identifier: []
     };
-    vi.mocked(getProfileById).mockResolvedValue(noChatwoot);
+    setupAuth({
+      role_name: 'Clinic Admin',
+      roles: ['Clinic Admin'],
+      roleProfiles: {
+        'Clinic Admin': {
+          name: 'Alex Brown',
+          photoUrl: '',
+          resource: noChatwoot
+        }
+      }
+    });
     vi.mocked(modifyProfile).mockResolvedValue({
       chatwootId: 'cw-new'
     });
 
-    const { result } = renderHook(
-      () =>
-        useProfilePhotoSave({
-          fhirId: 'clinic-1',
-          resourceType: 'Person',
-          profile: noChatwoot,
-          fallbackName: 'Alex Brown'
-        }),
-      { wrapper }
+    const { result } = renderHook(() =>
+      useProfilePhotoSave({
+        fhirId: 'clinic-1',
+        resourceType: 'Person',
+        profile: noChatwoot,
+        fallbackName: 'Alex Brown'
+      })
     );
 
     await act(async () => {
@@ -246,17 +329,21 @@ describe('useProfilePhotoSave', () => {
       name: [{ use: 'official', given: ['Jane'] }],
       identifier: []
     };
-    vi.mocked(getProfileById).mockResolvedValue(noChatwoot);
+    setupAuth({
+      role_name: 'Practitioner',
+      roles: ['Practitioner'],
+      roleProfiles: {
+        Practitioner: { name: 'Jane', photoUrl: '', resource: noChatwoot }
+      }
+    });
     vi.mocked(modifyProfile).mockRejectedValue(new Error('missing name'));
 
-    const { result } = renderHook(
-      () =>
-        useProfilePhotoSave({
-          fhirId: 'pra-1',
-          resourceType: 'Practitioner',
-          profile: noChatwoot
-        }),
-      { wrapper }
+    const { result } = renderHook(() =>
+      useProfilePhotoSave({
+        fhirId: 'pra-1',
+        resourceType: 'Practitioner',
+        profile: noChatwoot
+      })
     );
 
     await act(async () => {

@@ -16,6 +16,7 @@ import { hasPendingAssessmentClaimIntent } from '@/utils/redirect-intent';
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useReducer,
@@ -36,6 +37,8 @@ interface ContextProps {
   isLoading: boolean;
   state: IStateAuth;
   dispatch: React.Dispatch<IActionAuth>;
+  /** Re-fetch the full profile bundle and refresh the cached auth payload. */
+  refreshProfiles?: () => Promise<void>;
 }
 
 type UserRole =
@@ -81,15 +84,27 @@ function buildLoginPayload(
     organizationId: extractOrgId(profile),
     profile_complete: isProfileCompleteFromFHIR(profile),
     roleProfiles,
-    fullProfile: profile
+    fullProfile: profile,
+    cachedAt: Date.now()
   };
+}
+
+/** True when every non-null role profile carries its full resource. */
+function roleProfilesCarryResources(
+  roleProfiles: Record<string, RoleProfile | null> | undefined
+): boolean {
+  if (!roleProfiles) return false;
+  return Object.values(roleProfiles).every(
+    profile => profile === null || Boolean(profile.resource)
+  );
 }
 
 /** True when a cached profile can serve the session.
  *
- * Single-role users always use the cache. Multi-role users only when the cache
- * carries the role profile map — a pre-bundle cache would leave the role
- * switcher with placeholder avatars for the other roles.
+ * Single-role users always use the cache. Multi-role users only when the
+ * cache carries the full role profile resources — a pre-bundle cache or an
+ * old-shape cache (name/photoUrl only) is rejected so the profile page and
+ * the multi-role save flow never read stale or partial resources.
  */
 function isCacheUsable(
   cached: UserProfile | null,
@@ -101,7 +116,7 @@ function isCacheUsable(
   if (!cached.fullname && !cached.fhirId) return false;
   const isMultiRole =
     Array.isArray(superTokensRoles) && superTokensRoles.length > 1;
-  return !isMultiRole || Boolean(cached.roleProfiles);
+  return !isMultiRole || roleProfilesCarryResources(cached.roleProfiles);
 }
 
 // skipcq: JS-W1042 - createContext requires a default value per React API
@@ -379,6 +394,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Re-fetch the full profile bundle and refresh the cached auth payload. */
+  const refreshProfiles = useCallback(async (): Promise<void> => {
+    const existing = state.userInfo;
+    const userId = existing?.userId;
+    const activeRole = existing?.role_name;
+    if (!userId || !activeRole) return;
+    const roles =
+      existing?.roles && existing.roles.length > 0
+        ? existing.roles
+        : [activeRole];
+    try {
+      const { activeProfile: result, roleProfiles } =
+        await fetchUserProfilesBundle(userId, roles, activeRole);
+      if (!result) return; // keep the existing cache when the active profile vanished
+      const payload = buildLoginPayload(
+        userId,
+        activeRole as UserRole,
+        existing?.roles,
+        result,
+        roleProfiles
+      );
+      await dbSet(STORES.userProfile, {
+        ...payload,
+        cachedAt: Date.now()
+      });
+      dispatch({ type: 'auth-check', payload });
+
+      if (activeRole === Roles.ClinicAdmin && payload.organizationId) {
+        await persistClinicOrganization(payload.organizationId);
+      }
+    } catch (error) {
+      console.error('Auth: profile refresh failed', error);
+    }
+  }, [state.userInfo, dispatch]);
+
   /** Fetch profile and login, falling back to auth cookie on error. */
   const fetchProfileAndLogin = async () => {
     const userId = session.userId;
@@ -479,7 +529,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [session.doesSessionExist]);
 
   return (
-    <AuthContext.Provider value={{ isLoading, state, dispatch }}>
+    <AuthContext.Provider
+      value={{ isLoading, state, dispatch, refreshProfiles }}
+    >
       {children}
     </AuthContext.Provider>
   );
