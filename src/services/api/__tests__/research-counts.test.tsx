@@ -5,7 +5,7 @@ import {
   COMPLETION_COUNT_FLOOR,
   useStudyCompletionCounts,
   withKAnonymityFloor
-} from '../research';
+} from '../research-counts';
 
 vi.mock('@/services/api', () => ({
   getAPI: vi.fn()
