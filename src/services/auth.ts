@@ -20,6 +20,8 @@ export interface AuthCookieSession {
   fullname?: string;
   email?: string;
   profile_complete?: boolean;
+  /** SuperTokens st-active-role claim from the verified access token. */
+  active_role?: string;
 }
 
 /**

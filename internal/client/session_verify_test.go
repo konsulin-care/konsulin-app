@@ -2,6 +2,34 @@ package client
 
 import "testing"
 
+// testJWTWithActiveRoleClinic is a JWT whose payload carries
+// {"st-role":{"v":["Patient","Practitioner","Clinic Admin"]},"st-active-role":"Clinic Admin"}.
+const testJWTWithActiveRoleClinic = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJleHAiOjk5OTk5OTk5OTksInN0LXJvbGUiOnsidiI6WyJQYXRpZW50IiwiUHJhY3RpdGlvbmVyIiwiQ2xpbmljIEFkbWluIl19LCJzdC1hY3RpdmUtcm9sZSI6IkNsaW5pYyBBZG1pbiJ9.ZmFrZS1zaWc"
+
+// testJWTPatientNoActiveRole is a legacy JWT with roles but no st-active-role
+// claim (issued before the active-role claim existed).
+const testJWTPatientNoActiveRole = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJleHAiOjk5OTk5OTk5OTksInN0LXJvbGUiOnsidiI6WyJQYXRpZW50Il19fQ.ZmFrZS1zaWc"
+
+func TestVerifySessionExtractsActiveRole(t *testing.T) {
+	got, err := VerifySession(testJWTWithActiveRoleClinic)
+	if err != nil {
+		t.Fatalf("VerifySession: %v", err)
+	}
+	if got.ActiveRole != "Clinic Admin" {
+		t.Errorf("expected ActiveRole %q, got %q", "Clinic Admin", got.ActiveRole)
+	}
+}
+
+func TestVerifySessionActiveRoleEmptyWhenClaimAbsent(t *testing.T) {
+	got, err := VerifySession(testJWTPatientNoActiveRole)
+	if err != nil {
+		t.Fatalf("VerifySession: %v", err)
+	}
+	if got.ActiveRole != "" {
+		t.Errorf("expected empty ActiveRole for legacy token, got %q", got.ActiveRole)
+	}
+}
+
 func TestActiveRoleFrom(t *testing.T) {
 	tests := []struct {
 		name  string

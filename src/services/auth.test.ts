@@ -14,7 +14,7 @@ vi.mock('@/services/profile', () => ({
     mockGetProfileByIdentifier(args)
 }));
 
-import { restoreAuthCookie } from './auth';
+import { getAuthCookieSession, restoreAuthCookie } from './auth';
 
 function createFetchMock(
   handlers: Array<{
@@ -134,5 +134,40 @@ describe('restoreAuthCookie role resolution', () => {
 
     const result = await restoreAuthCookie(makeSession());
     expect(result).toBe(false);
+  });
+});
+
+describe('getAuthCookieSession', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('parses active_role alongside the cookie role', async () => {
+    createFetchMock([
+      {
+        match: url => url === '/auth/cookie',
+        response: {
+          authenticated: true,
+          role_name: 'Patient',
+          roles: ['Patient', 'Clinic Admin'],
+          active_role: 'Clinic Admin'
+        }
+      }
+    ]);
+    const session = await getAuthCookieSession();
+    expect(session?.active_role).toBe('Clinic Admin');
+    expect(session?.role_name).toBe('Patient');
+  });
+
+  it('returns null when the cookie endpoint is not ok', async () => {
+    createFetchMock([
+      {
+        match: url => url === '/auth/cookie',
+        response: { error: 'boom' },
+        ok: false
+      }
+    ]);
+    const session = await getAuthCookieSession();
+    expect(session).toBeNull();
   });
 });
