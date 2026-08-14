@@ -12,6 +12,7 @@ import {
 import { fetchCSRFToken } from '@/services/auth';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
+import { toast } from 'react-toastify';
 
 import { HeaderText } from '@/components/role-avatar-popup-header';
 import { AvatarInfo } from '@/components/role-avatar-popup-types';
@@ -30,9 +31,15 @@ async function switchRole(role: string): Promise<void> {
       },
       body: new URLSearchParams({ role })
     });
-    if (res.ok) globalThis.location.href = '/';
+    if (res.ok) {
+      globalThis.location.href = '/';
+      return;
+    }
+    // The BFF fails closed (502) when the backend claim sync fails; the
+    // cookie keeps the previous role, so the UI must stay put and surface it.
+    toast.error('Unable to switch role. Please try again.');
   } catch {
-    // role switch failed silently
+    toast.error('Unable to switch role. Please try again.');
   }
 }
 
