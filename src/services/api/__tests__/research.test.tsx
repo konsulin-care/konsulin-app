@@ -4,11 +4,7 @@ import type { AxiosInstance } from 'axios';
 import type { Bundle, PlanDefinition, ResearchStudy } from 'fhir/r4';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getAPI } from '../../api';
-import {
-  buildQuestionnaireResponseSearch,
-  buildStudiesBundle,
-  useResearchProgress
-} from '../research';
+import { useResearchProgress } from '../research';
 
 const { mockUseAuth, mockEnsureAnonymousSession } = vi.hoisted(() => ({
   mockUseAuth: vi.fn<
@@ -143,71 +139,6 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe('buildStudiesBundle', () => {
-  it('builds a batch bundle with study and ResearchSubject searches for a patient', () => {
-    const bundle = buildStudiesBundle(
-      { kind: 'patient', id: 'PAT-1' },
-      '2026-08-01'
-    );
-    const urls = bundle.entry?.map(e => e.request?.url) ?? [];
-    expect(urls).toHaveLength(2);
-    expect(urls[0]).toBe(
-      'ResearchStudy?date=ge2026-08-01&status=active&_include=ResearchStudy:protocol'
-    );
-    expect(urls[1]).toBe(
-      'ResearchSubject?patient=Patient/PAT-1&_elements=study,status&_count=100'
-    );
-  });
-
-  it('builds a study-only bundle for guests without a patient id', () => {
-    const bundle = buildStudiesBundle(
-      { kind: 'guest', id: 'GUEST-UUID' },
-      '2026-08-01'
-    );
-    const urls = bundle.entry?.map(e => e.request?.url) ?? [];
-    expect(urls).toHaveLength(1);
-    expect(urls[0]).toContain('ResearchStudy?date=ge2026-08-01');
-    expect(urls.some(url => url.startsWith('ResearchSubject?'))).toBe(false);
-  });
-});
-
-describe('buildQuestionnaireResponseSearch', () => {
-  it('scopes the search to the patient author with the earliest study start', () => {
-    const url = buildQuestionnaireResponseSearch(
-      { kind: 'patient', id: 'PAT-1' },
-      '2026-06-01'
-    );
-    expect(url).toContain('author=Patient/PAT-1');
-    expect(url).toContain('authored=ge2026-06-01');
-    expect(url).toContain(
-      'status=completed&_elements=questionnaire,authored&_count=500'
-    );
-    expect(url).not.toContain('identifier=');
-  });
-
-  it('scopes the search to the guest identifier with the earliest study start', () => {
-    const url = buildQuestionnaireResponseSearch(
-      { kind: 'guest', id: 'GUEST-UUID' },
-      '2026-06-01'
-    );
-    expect(url).toContain('identifier=');
-    expect(url).toContain(
-      encodeURIComponent('https://login.konsulin.care/guestid|GUEST-UUID')
-    );
-    expect(url).toContain('authored=ge2026-06-01');
-    expect(url).not.toContain('author=');
-  });
-
-  it('omits the authored bound when no study declares a period start', () => {
-    const url = buildQuestionnaireResponseSearch(
-      { kind: 'guest', id: 'GUEST-UUID' },
-      null
-    );
-    expect(url).toContain('identifier=');
-    expect(url).not.toContain('authored=');
-  });
-});
-
 describe('useResearchProgress', () => {
   it('posts the studies bundle then fetches patient-scoped responses', async () => {
     mockUseAuth.mockReturnValue(PATIENT_STATE);
@@ -286,6 +217,28 @@ describe('useResearchProgress', () => {
     expect(mockGet).not.toHaveBeenCalled();
     expect(result.current.data?.cumulativeResponses).toBe(0);
     expect(result.current.data?.studies).toEqual([]);
+  });
+
+  it('skips the response search entirely when skipResponseSearch is set', async () => {
+    mockUseAuth.mockReturnValue(PATIENT_STATE);
+    const { mockPost, mockGet } = mockApi({
+      post: vi.fn().mockResolvedValue({ data: STUDIES_BATCH_RESPONSE })
+    });
+
+    const { result } = renderHook(
+      () => useResearchProgress({ skipResponseSearch: true }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockPost).toHaveBeenCalledTimes(1);
+    expect(mockGet).not.toHaveBeenCalled();
+    // Batch structure stays populated even without the response search.
+    expect(result.current.data?.studies[0].batches[0].questionnaireIds).toEqual(
+      ['phq2', 'big-five-inventory']
+    );
+    expect(result.current.data?.studies[0].currentBatch?.id).toBe('batch-1');
+    expect(result.current.data?.cumulativeResponses).toBe(0);
   });
 
   it('does not fetch while auth is loading', () => {

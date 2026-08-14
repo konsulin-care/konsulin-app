@@ -28,6 +28,13 @@ import { useAuth } from '@/context/auth/authContext';
 import { dbGetAll } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 
+const CANONICAL_BASE = 'https://konsulin.care/fhir/Questionnaire';
+
+/** Expected comma-joined, per-canonical-encoded questionnaire filter. */
+function questionnaireParam(ids: string[]): string {
+  return ids.map(id => encodeURIComponent(`${CANONICAL_BASE}/${id}`)).join(',');
+}
+
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } }
@@ -60,6 +67,10 @@ function qr(
   };
 }
 
+function searchset(entry: Bundle['entry']): Bundle {
+  return { resourceType: 'Bundle', type: 'searchset', entry };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(ensureAnonymousSession).mockResolvedValue('guest-1');
@@ -70,35 +81,23 @@ afterEach(() => {
 });
 
 describe('useReportResponses', () => {
-  it('fetches full responses per questionnaire for authenticated patients and dedupes', async () => {
+  it('fetches all completed responses in a single author-scoped query for patients, deduped and guarded', async () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { isAuthenticated: true, userInfo: { fhirId: 'pat-1' } },
       isLoading: false,
       dispatch: vi.fn()
     });
 
-    const mockGet = vi
-      .fn()
-      .mockResolvedValueOnce({
-        data: {
-          resourceType: 'Bundle',
-          type: 'searchset',
-          entry: [
-            { resource: qr('r1', 'Questionnaire/phq2', '2026-08-15T10:00:00Z') }
-          ]
-        } as Bundle
-      })
-      .mockResolvedValueOnce({
-        data: {
-          resourceType: 'Bundle',
-          type: 'searchset',
-          entry: [
-            {
-              resource: qr('r2', 'Questionnaire/ocean', '2026-08-16T10:00:00Z')
-            }
-          ]
-        } as Bundle
-      });
+    const mockGet = vi.fn().mockResolvedValue({
+      data: searchset([
+        { resource: qr('r1', 'Questionnaire/phq2', '2026-08-15T10:00:00Z') },
+        { resource: qr('r2', 'Questionnaire/ocean', '2026-08-16T10:00:00Z') },
+        // Duplicate id: deduped by merge.
+        { resource: qr('r1', 'Questionnaire/phq2', '2026-08-15T10:00:00Z') },
+        // Not in the requested set: dropped by the client-side id guard.
+        { resource: qr('r3', 'Questionnaire/gad7', '2026-08-17T10:00:00Z') }
+      ])
+    });
     vi.mocked(getAPI).mockResolvedValue({
       get: mockGet
     } as unknown as AxiosInstance);
@@ -108,51 +107,60 @@ describe('useReportResponses', () => {
     });
 
     await waitFor(() => expect(result.current.data).toBeDefined());
-    expect(mockGet).toHaveBeenCalledTimes(2);
+    expect(mockGet).toHaveBeenCalledTimes(1);
     expect(ensureAnonymousSession).not.toHaveBeenCalled();
-    const urls = mockGet.mock.calls.map(call => call[0] as string);
-    expect(urls.some(url => url.includes('Questionnaire%2Fphq2'))).toBe(true);
-    expect(urls.some(url => url.includes('Questionnaire%2Focean'))).toBe(true);
-    expect(result.current.data).toHaveLength(2);
+    const url = mockGet.mock.calls[0][0] as string;
+    expect(url).toContain('author=Patient/pat-1');
+    expect(url).toContain(
+      `questionnaire=${questionnaireParam(['ocean', 'phq2'])}`
+    );
+    expect(url).toContain('status=completed&_count=500');
+    expect(url).not.toContain('identifier=');
+    expect(url).not.toContain('authored=');
+    expect(result.current.data?.map(r => r.id)).toEqual(['r1', 'r2']);
   });
 
-  it('fetches guest responses per questionnaire by anonymous identifier and merges drafts, server winning', async () => {
+  it('adds the authored=ge bound to the patient query when since is given', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: { isAuthenticated: true, userInfo: { fhirId: 'pat-1' } },
+      isLoading: false,
+      dispatch: vi.fn()
+    });
+
+    const mockGet = vi.fn().mockResolvedValue({ data: searchset([]) });
+    vi.mocked(getAPI).mockResolvedValue({
+      get: mockGet
+    } as unknown as AxiosInstance);
+
+    const { result } = renderHook(
+      () => useReportResponses(['phq2'], '2026-08-01'),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => expect(result.current.data).toBeDefined());
+    const url = mockGet.mock.calls[0][0] as string;
+    expect(url).toContain('&authored=ge2026-08-01');
+    expect(url).toContain(`questionnaire=${questionnaireParam(['phq2'])}`);
+  });
+
+  it('fetches guest responses in a single identifier-scoped query and merges drafts, server winning', async () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { isAuthenticated: false, userInfo: {} },
       isLoading: false,
       dispatch: vi.fn()
     });
 
-    const mockGet = vi.fn().mockImplementation((url: string) => {
-      const searchset = (entry: Bundle['entry']) => ({
-        data: { resourceType: 'Bundle', type: 'searchset', entry } as Bundle
-      });
-      if (url.includes('ocean')) {
-        return Promise.resolve(
-          searchset([
-            {
-              resource: qr('s2', 'Questionnaire/ocean', '2026-08-16T10:00:00Z')
-            }
-          ])
-        );
-      }
-      return Promise.resolve(
-        searchset([
-          { resource: qr('s1', 'Questionnaire/phq2', '2026-08-15T10:00:00Z') }
-        ])
-      );
+    const mockGet = vi.fn().mockResolvedValue({
+      data: searchset([
+        { resource: qr('s1', 'Questionnaire/phq2', '2026-08-15T10:00:00Z') },
+        { resource: qr('s2', 'Questionnaire/ocean', '2026-08-16T10:00:00Z') }
+      ])
     });
     vi.mocked(getAPI).mockResolvedValue({
       get: mockGet
     } as unknown as AxiosInstance);
 
     vi.mocked(dbGetAll).mockResolvedValue([
-      {
-        ownerId: '',
-        questionnaireId: 'phq2',
-        response: qr('s1', 'Questionnaire/phq2', ''),
-        updatedAt: 1
-      },
       {
         ownerId: '',
         questionnaireId: 'ocean',
@@ -173,18 +181,19 @@ describe('useReportResponses', () => {
 
     await waitFor(() => expect(result.current.data).toBeDefined());
     expect(ensureAnonymousSession).toHaveBeenCalledWith(false);
-    expect(mockGet).toHaveBeenCalledTimes(2);
-    const encodedScope = encodeURIComponent(
-      `${ANONYMOUS_SESSION_IDENTIFIER_SYSTEM}|guest-1`
+    expect(mockGet).toHaveBeenCalledTimes(1);
+    const url = mockGet.mock.calls[0][0] as string;
+    expect(url).toContain(
+      `identifier=${encodeURIComponent(
+        `${ANONYMOUS_SESSION_IDENTIFIER_SYSTEM}|guest-1`
+      )}`
     );
-    const urls = mockGet.mock.calls.map(call => call[0] as string);
-    for (const url of urls) {
-      expect(url).toContain(`identifier=${encodedScope}`);
-    }
-    expect(urls.some(url => url.includes('Questionnaire%2Fphq2'))).toBe(true);
-    expect(urls.some(url => url.includes('Questionnaire%2Focean'))).toBe(true);
-    expect(result.current.data).toHaveLength(3);
-    expect(result.current.data?.map(r => r.id)).toEqual(['s2', 's1', 'd2']);
+    expect(url).toContain(
+      `questionnaire=${questionnaireParam(['ocean', 'phq2'])}`
+    );
+    expect(url).toContain('status=completed&_count=500');
+    expect(url).not.toContain('author=');
+    expect(result.current.data?.map(r => r.id)).toEqual(['s1', 's2', 'd2']);
   });
 
   it('falls back to IndexedDB drafts when the guest server search fails', async () => {

@@ -116,7 +116,7 @@ function setupResponseInterceptor(instance: AxiosInstance) {
         /** Waits for the backoff delay, then re-issues the request with the retry counter bumped. */
         const retryAfterBackoff = async (): Promise<unknown> => {
           await new Promise(resolve =>
-            setTimeout(resolve, getRetryDelayMs(retryCount))
+            setTimeout(resolve, getRetryDelayMs(retryCount, error))
           );
           if (config) {
             config._retryCount = retryCount + 1;

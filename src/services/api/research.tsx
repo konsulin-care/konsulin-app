@@ -151,11 +151,18 @@ export function buildQuestionnaireResponseSearch(
  * Two sequential requests: the studies bundle first (so the earliest study
  * period start can bound the response search), then the completed-response
  * search scoped to the identity. Patients are matched by FHIR author, guests
- * by anonymous identifier.
+ * by anonymous identifier. With `skipResponseSearch`, the response search is
+ * omitted and the batch structure is returned with zero response-derived
+ * counts — used by surfaces that fetch full responses separately.
  *
+ * @param options - Optional. Set `{ skipResponseSearch: true }` to skip the
+ *   completed-response search and return structure-only progress.
  * @returns React Query result with ResearchProgress data.
  */
-export function useResearchProgress() {
+export function useResearchProgress(options?: {
+  skipResponseSearch?: boolean;
+}) {
+  const skipResponseSearch = options?.skipResponseSearch ?? false;
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [identity, setIdentity] = useState<ResearchIdentity | null>(null);
   const [identityFailed, setIdentityFailed] = useState(false);
@@ -200,7 +207,12 @@ export function useResearchProgress() {
   }, [isAuthLoading, isEligible, isAuthenticated, fhirId]);
 
   const query = useQuery({
-    queryKey: ['research', identity?.kind ?? 'none', identity?.id ?? 'none'],
+    queryKey: [
+      'research',
+      identity?.kind ?? 'none',
+      identity?.id ?? 'none',
+      skipResponseSearch ? 'structure' : 'full'
+    ],
     enabled: identity !== null,
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<ResearchProgress> => {
@@ -217,9 +229,11 @@ export function useResearchProgress() {
         today
       );
 
-      // Nothing to measure without active studies: skip the response search.
-      if (studyProgress.length === 0) {
-        return computeResearchProgress([], [], consentedStudyIds);
+      // Nothing to measure without active studies, or structure-only mode:
+      // keep batches populated and feed no responses (counts stay zero).
+      if (studyProgress.length === 0 || skipResponseSearch) {
+        const structure = recomputeStudyProgress(studyProgress, [], today);
+        return computeResearchProgress(structure, [], consentedStudyIds);
       }
 
       const earliest = earliestStudyStart(
@@ -361,9 +375,8 @@ export function useConsentToStudy(studyId: string) {
 
   return useMutation({
     mutationFn: (): Promise<Bundle> => {
-      if (!fhirId) {
+      if (!fhirId)
         throw new Error('Patient identity required for research consent');
-      }
       return submitFhirBundle(buildConsentBundle(fhirId, studyId));
     },
     onSuccess: () => {

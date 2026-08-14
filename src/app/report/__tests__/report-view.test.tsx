@@ -36,7 +36,9 @@ const {
   mockUseQuestionnaireTitles,
   mockUseReportResponses,
   mockFabDispatch,
-  mockPush
+  mockPush,
+  mockResearchProgressOptions,
+  mockReportResponsesArgs
 } = vi.hoisted(() => ({
   mockSearchParams: new URLSearchParams(),
   mockUseAuth: vi.fn<() => AuthState>(),
@@ -44,7 +46,11 @@ const {
   mockUseQuestionnaireTitles: vi.fn<() => TitlesHookResult>(),
   mockUseReportResponses: vi.fn<() => ResponsesHookResult>(),
   mockFabDispatch: vi.fn<Dispatch<FabAction>>(),
-  mockPush: vi.fn()
+  mockPush: vi.fn(),
+  mockResearchProgressOptions:
+    vi.fn<(options?: { skipResponseSearch?: boolean }) => void>(),
+  mockReportResponsesArgs:
+    vi.fn<(ids: string[], since?: string | null) => void>()
 }));
 
 vi.mock('next/navigation', () => ({
@@ -57,7 +63,10 @@ vi.mock('@/context/auth/authContext', () => ({
 }));
 
 vi.mock('@/services/api/research', () => ({
-  useResearchProgress: () => mockUseResearchProgress()
+  useResearchProgress: (options?: { skipResponseSearch?: boolean }) => {
+    mockResearchProgressOptions(options);
+    return mockUseResearchProgress();
+  }
 }));
 
 vi.mock('@/services/api/questionnaire-info', () => ({
@@ -65,7 +74,10 @@ vi.mock('@/services/api/questionnaire-info', () => ({
 }));
 
 vi.mock('@/services/api/report', () => ({
-  useReportResponses: () => mockUseReportResponses()
+  useReportResponses: (ids: string[], since?: string | null) => {
+    mockReportResponsesArgs(ids, since);
+    return mockUseReportResponses();
+  }
 }));
 
 vi.mock('@/context/fabContext', () => ({
@@ -259,6 +271,21 @@ describe('ReportView', () => {
     vi.clearAllMocks();
     mockSearchParams.delete('id');
     seedDefaultMocks();
+  });
+
+  it('requests structure-only progress and scopes responses to the study period', () => {
+    render(<ReportView />);
+    // Progress: only the batch structure is needed; responses come from the
+    // dedicated single-query hook below.
+    expect(mockResearchProgressOptions).toHaveBeenCalledWith({
+      skipResponseSearch: true
+    });
+    // Responses: one query over all batch questionnaires, bounded by the
+    // earliest batch start so pre-study responses are excluded.
+    expect(mockReportResponsesArgs).toHaveBeenCalledWith(
+      ['phq2', 'ocean'],
+      '2026-08-01'
+    );
   });
 
   it('shows a graceful empty state when the study id is unknown', () => {
