@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-misused-promises,
-    @typescript-eslint/no-unnecessary-type-assertion, unicorn/switch-case-braces,
+    @typescript-eslint/no-unnecessary-type-assertion,
     @typescript-eslint/require-await, @typescript-eslint/no-unused-vars */
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -61,12 +61,16 @@ vi.mock('@/lib/indexeddb', () => ({
 vi.mock('@/utils/role-fhir', () => ({
   roleToFhirResource: vi.fn((role: string) => {
     switch (role) {
-      case 'Practitioner':
+      case 'Practitioner': {
         return 'Practitioner';
+      }
       case 'Clinic Admin':
-        return 'Person';
-      default:
+      case 'Researcher': {
+        return 'Practitioner';
+      }
+      default: {
         return 'Patient';
+      }
     }
   })
 }));

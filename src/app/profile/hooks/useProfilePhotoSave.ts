@@ -24,15 +24,14 @@ import {
 
 const CHATWOOT_ID_SYSTEM = 'https://login.konsulin.care/chatwoot-id';
 
-/** Merge the uploaded photo into every resource with the per-type shape. */
+/** Merge the uploaded photo into every resource as an Attachment array. */
 function mergePhoto(
   resources: Record<string, ProfileResource>,
   url: string
 ): Record<string, ProfileResource> {
   const merged: Record<string, ProfileResource> = {};
   for (const [role, resource] of Object.entries(resources)) {
-    const photo = resource.resourceType === 'Person' ? { url } : [{ url }];
-    merged[role] = { ...resource, photo } as ProfileResource;
+    merged[role] = { ...resource, photo: [{ url }] };
   }
   return merged;
 }
@@ -64,7 +63,7 @@ type Params = {
   /** The active role's FHIR resource id. */
   fhirId: string;
   /** The FHIR resource type backing the active role. */
-  resourceType: 'Patient' | 'Practitioner' | 'Person';
+  resourceType: 'Patient' | 'Practitioner';
   /** The currently loaded active profile, used to read the chatwoot id. */
   profile?: ProfileResource;
   /** Identity fallbacks used to create a Chatwoot contact when no id exists. */
@@ -82,11 +81,11 @@ type Result = {
 
 /**
  * Immediate profile photo upload: process the picked file, upload it once via
- * Chatwoot, merge the returned URL into every cached role resource (Person
- * stores a single Attachment, Patient/Practitioner an array) and persist them
- * all-or-nothing — one transaction bundle for multi-role users, a direct PUT
- * for single-role users. On success the merged resources are recached into
- * the auth state + IndexedDB; no refetch happens.
+ * Chatwoot, merge the returned URL into every cached role resource as an
+ * Attachment array and persist them all-or-nothing — one transaction bundle
+ * for multi-role users, a direct PUT for single-role users. On success the
+ * merged resources are recached into the auth state + IndexedDB; no refetch
+ * happens.
  */
 export function useProfilePhotoSave({
   profile,

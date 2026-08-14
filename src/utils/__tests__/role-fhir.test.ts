@@ -11,12 +11,12 @@ describe('roleToFhirResource', () => {
     expect(roleToFhirResource(Roles.Practitioner)).toBe('Practitioner');
   });
 
-  it('maps Clinic Admin to the Person resource', () => {
-    expect(roleToFhirResource(Roles.ClinicAdmin)).toBe('Person');
+  it('maps Clinic Admin to the Practitioner resource', () => {
+    expect(roleToFhirResource(Roles.ClinicAdmin)).toBe('Practitioner');
   });
 
-  it('maps Researcher to the Person resource', () => {
-    expect(roleToFhirResource(Roles.Researcher)).toBe('Person');
+  it('maps Researcher to the Practitioner resource', () => {
+    expect(roleToFhirResource(Roles.Researcher)).toBe('Practitioner');
   });
 
   it('defaults unknown roles to the Patient resource', () => {

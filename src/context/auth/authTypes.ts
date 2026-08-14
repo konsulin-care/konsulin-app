@@ -1,5 +1,5 @@
 import type { RoleProfile } from '@/services/role-profiles';
-import type { Patient, Person, Practitioner } from 'fhir/r4';
+import type { Patient, Practitioner } from 'fhir/r4';
 
 export interface IStateAuth {
   isAuthenticated: boolean;
@@ -18,7 +18,7 @@ export interface IStateUserInfo {
   organizationId?: string;
   profile_complete?: boolean;
   roleProfiles?: Record<string, RoleProfile | null>;
-  fullProfile?: Patient | Practitioner | Person;
+  fullProfile?: Patient | Practitioner;
   /** When this profile cache was last fetched, in epoch ms. */
   cachedAt?: number;
 }

@@ -6,21 +6,20 @@ import { dbSet, STORES } from '@/lib/indexeddb';
 import { modifyProfile } from '@/services/profile';
 import type { RoleProfile } from '@/services/role-profiles';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
-import type { Patient, Person, Practitioner } from 'fhir/r4';
+import type { Patient, Practitioner } from 'fhir/r4';
 import { useCallback } from 'react';
 import { getClaimValue } from 'supertokens-auth-react/recipe/session';
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 
-type ProfileResource = Patient | Practitioner | Person;
+type ProfileResource = Patient | Practitioner;
 
 /** Read a telecom value (email/phone) from a FHIR profile. */
 function findTelecomValue(profile: ProfileResource, system: string): string {
   return profile.telecom?.find(t => t.system === system)?.value ?? '';
 }
 
-/** Read the photo URL — Person stores a single Attachment, others an array. */
+/** Read the photo URL from a FHIR profile (always an Attachment array). */
 function findPhotoUrl(profile: ProfileResource): string | undefined {
-  if (profile.resourceType === 'Person') return profile.photo?.url;
   return profile.photo?.[0]?.url;
 }
 

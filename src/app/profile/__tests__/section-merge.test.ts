@@ -1,4 +1,4 @@
-import type { Patient, Person, Practitioner } from 'fhir/r4';
+import type { Patient, Practitioner } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
 import {
   mergeAddress,
@@ -13,13 +13,6 @@ const patientFixture: Patient = {
   id: 'pat-1',
   active: true,
   name: [{ use: 'official', given: ['John'], family: 'Doe' }]
-};
-
-const personFixture: Person = {
-  resourceType: 'Person',
-  id: 'clinic-1',
-  active: true,
-  name: [{ use: 'official', given: ['Alex'], family: 'Brown' }]
 };
 
 describe('mergePersonalInfo', () => {
@@ -68,12 +61,10 @@ describe('mergePersonalInfo', () => {
     ]);
   });
 
-  it('never writes a language for Person-based resources', () => {
-    const merged = mergePersonalInfo(personFixture, {
+  it('never writes a language when none is provided', () => {
+    const merged = mergePersonalInfo(patientFixture, {
       gender: 'other',
-      birthDate: '1978-11-20',
-      languageCode: 'id',
-      languageLabel: 'Indonesian'
+      birthDate: '1978-11-20'
     });
     expect('communication' in merged).toBe(false);
     expect(merged.gender).toBe('other');
@@ -93,7 +84,7 @@ describe('mergePersonalInfoSync', () => {
     expect('communication' in merged).toBe(false);
   });
 
-  it('writes gender and birthDate only for Practitioner', () => {
+  it('writes gender and birthDate only (no language) for Practitioner', () => {
     const practitioner: Practitioner = {
       ...patientFixture,
       resourceType: 'Practitioner'
@@ -105,18 +96,6 @@ describe('mergePersonalInfoSync', () => {
       languageLabel: 'English'
     });
     expect(merged.gender).toBe('female');
-    expect('communication' in merged).toBe(false);
-  });
-
-  it('writes gender and birthDate only for Person', () => {
-    const merged = mergePersonalInfoSync(personFixture, {
-      gender: 'other',
-      birthDate: '1978-11-20',
-      languageCode: 'id',
-      languageLabel: 'Indonesian'
-    });
-    expect(merged.gender).toBe('other');
-    expect(merged.birthDate).toBe('1978-11-20');
     expect('communication' in merged).toBe(false);
   });
 });
@@ -134,7 +113,7 @@ describe('mergeContact', () => {
   });
 
   it('omits empty contact channels', () => {
-    const merged = mergeContact(personFixture, {
+    const merged = mergeContact(patientFixture, {
       email: '',
       phone: '  '
     });

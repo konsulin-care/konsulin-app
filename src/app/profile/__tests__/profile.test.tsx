@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import { fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -29,16 +28,11 @@ vi.mock('@/components/profile/ProfileActions', () => ({
 }));
 
 vi.mock('../extension-card', () => ({
-  default: ({ profile }: { profile: { resourceType: string } }) => {
-    if (profile.resourceType === 'Person') return null;
-    return (
-      <div data-testid='extension-card'>
-        {profile.resourceType === 'Practitioner'
-          ? 'Professional'
-          : 'Additional'}
-      </div>
-    );
-  }
+  default: ({ profile }: { profile: { resourceType: string } }) => (
+    <div data-testid='extension-card'>
+      {profile.resourceType === 'Practitioner' ? 'Professional' : 'Additional'}
+    </div>
+  )
 }));
 
 vi.mock('../hooks/useProfileData', () => ({
@@ -114,11 +108,8 @@ const identity = {
 
 type MockRoleProfile = RoleProfile;
 
-const ROLE_RESOURCE_TYPE: Record<
-  string,
-  'Patient' | 'Practitioner' | 'Person'
-> = {
-  'Clinic Admin': 'Person',
+const ROLE_RESOURCE_TYPE: Record<string, 'Patient' | 'Practitioner'> = {
+  'Clinic Admin': 'Practitioner',
   Practitioner: 'Practitioner'
 };
 
@@ -313,7 +304,7 @@ describe('Profile page', () => {
       expect(screen.queryByTestId('contact-drawer')).toBeNull();
     });
 
-    it('renders uniformly for a Person-based role (Clinic Admin)', () => {
+    it('renders uniformly for the Clinic Admin role', () => {
       mockAuth(vi.mocked(useAuth), {
         role_name: 'Clinic Admin',
         fhirId: 'clinic-1',
@@ -352,26 +343,6 @@ describe('Profile page', () => {
       expect(screen.getAllByTestId('extension-card')).toHaveLength(2);
       expect(screen.getByText('Professional')).toBeDefined();
       expect(screen.getByText('Additional')).toBeDefined();
-    });
-
-    it('renders no extension card for a Person-only role', () => {
-      mockAuth(vi.mocked(useAuth), {
-        role_name: 'Clinic Admin',
-        fhirId: 'clinic-1',
-        userId: 'u1',
-        roles: ['Clinic Admin'],
-        profile_complete: true
-      });
-      mockProfileHooks('Clinic Admin', {
-        'Clinic Admin': {
-          name: 'Alex Brown',
-          photoUrl: '',
-          resource: { resourceType: 'Person', id: 'clinic-1' }
-        }
-      });
-
-      render(<ProfileDisplay />);
-      expect(screen.queryByTestId('extension-card')).toBeNull();
     });
   });
 });

@@ -61,13 +61,13 @@ describe('PersonalInfoEditDrawer', () => {
     expect(screen.getByTestId('language-select')).toBeDefined();
   });
 
-  it('hides the language field for Person-based roles', () => {
+  it('hides the language field when supportsLanguage is false', () => {
     render(
       <PersonalInfoEditDrawer
         open
         onClose={onClose}
         fhirId='clinic-1'
-        resourceType='Person'
+        resourceType='Practitioner'
         gender='other'
         birthDate='1978-11-20'
         supportsLanguage={false}

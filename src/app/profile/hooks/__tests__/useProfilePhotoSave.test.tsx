@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
 import { renderHook, waitFor } from '@testing-library/react';
-import type { Bundle, Patient, Person, Practitioner } from 'fhir/r4';
+import type { Bundle, Patient, Practitioner } from 'fhir/r4';
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -62,14 +62,6 @@ const practitionerFixture: Practitioner = {
   active: true,
   name: [{ use: 'official', given: ['Jane'], family: 'Smith' }],
   identifier: [{ system: CHATWOOT_SYSTEM, value: 'cw-123' }]
-};
-
-const personFixture: Person = {
-  resourceType: 'Person',
-  id: 'clinic-1',
-  active: true,
-  name: [{ use: 'official', given: ['Alex'], family: 'Brown' }],
-  identifier: [{ system: CHATWOOT_SYSTEM, value: 'cw-456' }]
 };
 
 describe('useProfilePhotoSave', () => {
@@ -155,24 +147,24 @@ describe('useProfilePhotoSave', () => {
     expect(mockSubmit).not.toHaveBeenCalled();
   });
 
-  it('PUTs a single Attachment photo for Person (single role)', async () => {
+  it('PUTs an Attachment array photo for a single-role Clinic Admin', async () => {
     setupAuth({
       role_name: 'Clinic Admin',
       roles: ['Clinic Admin'],
       roleProfiles: {
         'Clinic Admin': {
-          name: 'Alex Brown',
+          name: 'Jane Smith',
           photoUrl: '',
-          resource: personFixture
+          resource: practitionerFixture
         }
       }
     });
 
     const { result } = renderHook(() =>
       useProfilePhotoSave({
-        fhirId: 'clinic-1',
-        resourceType: 'Person',
-        profile: personFixture
+        fhirId: 'prac-1',
+        resourceType: 'Practitioner',
+        profile: practitionerFixture
       })
     );
 
@@ -182,8 +174,8 @@ describe('useProfilePhotoSave', () => {
 
     expect(mockUpdate).toHaveBeenCalledWith({
       payload: {
-        ...personFixture,
-        photo: { url: 'https://cdn.example.com/avatar.jpg' }
+        ...practitionerFixture,
+        photo: [{ url: 'https://cdn.example.com/avatar.jpg' }]
       }
     });
   });
@@ -206,7 +198,10 @@ describe('useProfilePhotoSave', () => {
         'Clinic Admin': {
           name: 'Alex Brown',
           photoUrl: '',
-          resource: personFixture
+          resource: {
+            ...practitionerFixture,
+            id: 'clinic-1'
+          }
         }
       }
     });
@@ -251,7 +246,7 @@ describe('useProfilePhotoSave', () => {
       photo: [{ url: 'https://cdn.example.com/avatar.jpg' }]
     });
     expect(byUrl['clinic-1']).toMatchObject({
-      photo: { url: 'https://cdn.example.com/avatar.jpg' }
+      photo: [{ url: 'https://cdn.example.com/avatar.jpg' }]
     });
   });
 
@@ -281,8 +276,8 @@ describe('useProfilePhotoSave', () => {
   });
 
   it('falls back to modifyProfile when chatwoot id is missing', async () => {
-    const noChatwoot: Person = {
-      ...personFixture,
+    const noChatwoot: Practitioner = {
+      ...practitionerFixture,
       identifier: []
     };
     setupAuth({
@@ -290,7 +285,7 @@ describe('useProfilePhotoSave', () => {
       roles: ['Clinic Admin'],
       roleProfiles: {
         'Clinic Admin': {
-          name: 'Alex Brown',
+          name: 'Jane Smith',
           photoUrl: '',
           resource: noChatwoot
         }
@@ -302,10 +297,10 @@ describe('useProfilePhotoSave', () => {
 
     const { result } = renderHook(() =>
       useProfilePhotoSave({
-        fhirId: 'clinic-1',
-        resourceType: 'Person',
+        fhirId: 'prac-1',
+        resourceType: 'Practitioner',
         profile: noChatwoot,
-        fallbackName: 'Alex Brown'
+        fallbackName: 'Jane Smith'
       })
     );
 
@@ -314,7 +309,7 @@ describe('useProfilePhotoSave', () => {
     });
 
     expect(modifyProfile).toHaveBeenCalledWith({
-      name: 'Alex Brown',
+      name: 'Jane Smith',
       email: undefined,
       phoneNumber: undefined
     });

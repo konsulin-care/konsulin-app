@@ -64,8 +64,9 @@ vi.mock('@/utils/role-fhir', () => ({
       case 'Practitioner': {
         return 'Practitioner';
       }
-      case 'Clinic Admin': {
-        return 'Person';
+      case 'Clinic Admin':
+      case 'Researcher': {
+        return 'Practitioner';
       }
       default: {
         return 'Patient';
@@ -445,15 +446,21 @@ describe('Fix 4 - clinic admin managingOrganization stored as clinic_organizatio
         )
     ).toBeUndefined();
 
-  it('stores managingOrganization as clinic_organization when Person has it', async () => {
+  it('stores clinic_organization from the role profile organizationId when the PractitionerRole carries it', async () => {
     mockFetchBundle.mockResolvedValue({
       activeProfile: {
-        resourceType: 'Person',
-        id: 'person-123',
-        managingOrganization: { reference: 'Organization/org-456' },
+        resourceType: 'Practitioner',
+        id: 'prac-123',
         telecom: [{ system: 'email', value: 'admin@clinic.com' }]
       },
-      roleProfiles: {}
+      roleProfiles: {
+        'Clinic Admin': {
+          name: 'Admin User',
+          photoUrl: '',
+          resource: { resourceType: 'Practitioner', id: 'prac-123' },
+          organizationId: 'org-456'
+        }
+      }
     });
     renderWithAuthProvider();
     await waitFor(() => {
@@ -479,14 +486,20 @@ describe('Fix 4 - clinic admin managingOrganization stored as clinic_organizatio
     });
   });
 
-  it('does NOT store clinic_organization when Person has no managingOrganization', async () => {
+  it('does NOT store clinic_organization when the role profile has no organizationId', async () => {
     mockFetchBundle.mockResolvedValue({
       activeProfile: {
-        resourceType: 'Person',
-        id: 'person-123',
+        resourceType: 'Practitioner',
+        id: 'prac-123',
         telecom: [{ system: 'email', value: 'admin@clinic.com' }]
       },
-      roleProfiles: {}
+      roleProfiles: {
+        'Clinic Admin': {
+          name: 'Admin User',
+          photoUrl: '',
+          resource: { resourceType: 'Practitioner', id: 'prac-123' }
+        }
+      }
     });
     renderWithAuthProvider();
     await waitFor(() =>
@@ -547,11 +560,17 @@ describe('Fix 4 - clinic admin managingOrganization stored as clinic_organizatio
     });
     mockFetchBundle.mockResolvedValue({
       activeProfile: {
-        resourceType: 'Person',
-        id: 'person-123',
-        managingOrganization: { reference: 'Organization/org-789' }
+        resourceType: 'Practitioner',
+        id: 'prac-123'
       },
-      roleProfiles: {}
+      roleProfiles: {
+        'Clinic Admin': {
+          name: 'Admin User',
+          photoUrl: '',
+          resource: { resourceType: 'Practitioner', id: 'prac-123' },
+          organizationId: 'org-789'
+        }
+      }
     });
     mockGetClaimValue.mockResolvedValue(['Clinic Admin']);
     renderWithAuthProvider();
@@ -563,6 +582,45 @@ describe('Fix 4 - clinic admin managingOrganization stored as clinic_organizatio
         value: 'org-789'
       })
     );
+  });
+
+  it('rejects a stale Person cache for Clinic Admin and refetches from the API', async () => {
+    mockDbGet.mockResolvedValue({
+      userId: 'admin-user-1',
+      role_name: 'Clinic Admin',
+      fullname: 'Old Admin',
+      email: 'admin@clinic.com',
+      fhirId: 'person-123',
+      organizationId: 'org-stale',
+      profile_complete: true,
+      roleProfiles: {
+        'Clinic Admin': {
+          name: 'Old Admin',
+          photoUrl: '',
+          resource: { resourceType: 'Person', id: 'person-123' }
+        }
+      }
+    });
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: {
+        resourceType: 'Practitioner',
+        id: 'prac-123'
+      },
+      roleProfiles: {
+        'Clinic Admin': {
+          name: 'New Admin',
+          photoUrl: '',
+          resource: { resourceType: 'Practitioner', id: 'prac-123' },
+          organizationId: 'org-456'
+        }
+      }
+    });
+    mockGetClaimValue.mockResolvedValue(['Clinic Admin']);
+    renderWithAuthProvider();
+    await waitFor(() => expect(fetchUserProfilesBundle).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true');
+    });
   });
 
   it('uses cached profile for non-admin roles without extra fetch', async () => {

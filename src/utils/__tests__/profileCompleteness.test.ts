@@ -1,4 +1,4 @@
-import type { Patient, Person, Practitioner } from 'fhir/r4';
+import type { Patient, Practitioner } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
 import { isProfileCompleteFromFHIR } from '../profileCompleteness';
 
@@ -62,15 +62,21 @@ describe('isProfileCompleteFromFHIR', () => {
     expect(isProfileCompleteFromFHIR(practitioner)).toBe(true);
   });
 
-  it('never fails on language for Person-based profiles', () => {
-    const person: Person = {
-      resourceType: 'Person',
+  it('requires a communication language for Practitioner-backed roles (Clinic Admin/Researcher)', () => {
+    const practitioner: Practitioner = {
+      resourceType: 'Practitioner',
       id: 'clinic-1',
       active: true,
       name: [{ use: 'official', given: ['Alex'], family: 'Brown' }],
       gender: 'other',
       birthDate: '1978-11-20'
     };
-    expect(isProfileCompleteFromFHIR(person)).toBe(true);
+    expect(isProfileCompleteFromFHIR(practitioner)).toBe(false);
+
+    const withLanguage: Practitioner = {
+      ...practitioner,
+      communication: [{ coding: [{ code: 'id' }] }]
+    };
+    expect(isProfileCompleteFromFHIR(withLanguage)).toBe(true);
   });
 });

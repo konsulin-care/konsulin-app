@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import type { Patient, Person, Practitioner } from 'fhir/r4';
+import type { Patient, Practitioner } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
 import ExtensionCard from '../extension-card';
 
@@ -61,17 +61,6 @@ describe('ExtensionCard', () => {
       name: [{ use: 'official', given: ['John'] }]
     };
     const { container } = render(<ExtensionCard profile={patient} />);
-    expect(container.firstChild).toBeNull();
-  });
-
-  it('renders nothing for Person-based profiles', () => {
-    const person: Person = {
-      resourceType: 'Person',
-      id: 'clinic-1',
-      active: true,
-      name: [{ use: 'official', given: ['Alex'] }]
-    };
-    const { container } = render(<ExtensionCard profile={person} />);
     expect(container.firstChild).toBeNull();
   });
 });

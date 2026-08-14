@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import type { AxiosInstance } from 'axios';
-import type { Person } from 'fhir/r4';
+import type { Practitioner } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/services/api', () => ({
@@ -27,15 +27,15 @@ const mockAxiosInstance = {
   getUri: vi.fn()
 } as unknown as AxiosInstance;
 
-const personFixture: Person = {
-  resourceType: 'Person',
-  id: 'person-1',
+const practitionerFixture: Practitioner = {
+  resourceType: 'Practitioner',
+  id: 'practitioner-1',
   active: true,
   name: [{ use: 'official', given: ['Jane'], family: 'Doe' }],
   telecom: [{ system: 'email', value: 'jane@konsulin.care' }]
 };
 
-describe('profile service — Person resource support', () => {
+describe('profile service — Practitioner resource support', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -44,17 +44,20 @@ describe('profile service — Person resource support', () => {
     vi.restoreAllMocks();
   });
 
-  it('fetches a Person profile by FHIR id and type', async () => {
-    vi.mocked(apiRequest).mockResolvedValue(personFixture);
+  it('fetches a Practitioner profile by FHIR id and type', async () => {
+    vi.mocked(apiRequest).mockResolvedValue(practitionerFixture);
 
-    const result = await getProfileById('person-1', 'Person');
+    const result = await getProfileById('practitioner-1', 'Practitioner');
 
-    expect(apiRequest).toHaveBeenCalledWith('GET', '/fhir/Person/person-1');
-    expect(result).toEqual(personFixture);
+    expect(apiRequest).toHaveBeenCalledWith(
+      'GET',
+      '/fhir/Practitioner/practitioner-1'
+    );
+    expect(result).toEqual(practitionerFixture);
   });
 
-  it('PUTs a full Person resource via useUpdateProfile', async () => {
-    const mockPut = vi.fn().mockResolvedValue({ data: personFixture });
+  it('PUTs a full Practitioner resource via useUpdateProfile', async () => {
+    const mockPut = vi.fn().mockResolvedValue({ data: practitionerFixture });
     vi.mocked(getAPI).mockResolvedValue({
       ...mockAxiosInstance,
       put: mockPut
@@ -70,12 +73,12 @@ describe('profile service — Person resource support', () => {
     const { result } = renderHook(() => useUpdateProfile(), { wrapper });
 
     await act(async () => {
-      await result.current.mutateAsync({ payload: personFixture });
+      await result.current.mutateAsync({ payload: practitionerFixture });
     });
 
     expect(mockPut).toHaveBeenCalledWith(
-      '/fhir/Person/person-1',
-      personFixture
+      '/fhir/Practitioner/practitioner-1',
+      practitionerFixture
     );
   });
 });

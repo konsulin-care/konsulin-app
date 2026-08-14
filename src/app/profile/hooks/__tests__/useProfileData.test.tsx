@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import type { Patient, Person, Practitioner } from 'fhir/r4';
+import type { Patient, Practitioner } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/context/auth/authContext', () => ({
@@ -54,16 +54,6 @@ const practitionerFixture: Practitioner = {
   birthDate: '1985-07-01',
   telecom: [{ system: 'email', value: 'jane@konsulin.care' }],
   communication: [{ coding: [{ code: 'en', display: 'English' }] }]
-};
-
-const personFixture: Person = {
-  resourceType: 'Person',
-  id: 'clinic-1',
-  active: true,
-  name: [{ use: 'official', given: ['Alex'], family: 'Brown' }],
-  gender: 'other',
-  birthDate: '1978-11-20',
-  telecom: [{ system: 'phone', value: '+62811112222333' }]
 };
 
 describe('useProfileData', () => {
@@ -171,7 +161,7 @@ describe('useProfileData', () => {
     );
   });
 
-  it('includes the language row for Practitioner and omits it for Person', () => {
+  it('includes the language row for every Practitioner-backed role', () => {
     setupAuth({
       role_name: 'Practitioner',
       roleProfiles: {
@@ -195,20 +185,20 @@ describe('useProfileData', () => {
       role_name: 'Clinic Admin',
       roleProfiles: {
         'Clinic Admin': {
-          name: 'Alex Brown',
+          name: 'Jane Smith',
           photoUrl: '',
-          resource: personFixture
+          resource: practitionerFixture
         }
       }
     });
 
-    const { result: personResult } = renderHook(() =>
+    const { result: adminResult } = renderHook(() =>
       useProfileData('u1', ['Clinic Admin'], 'Clinic Admin')
     );
-    expect(personResult.current.resourceType).toBe('Person');
-    expect(personResult.current.sections[0].rows.map(r => r.id)).not.toContain(
-      'language'
-    );
+    expect(adminResult.current.resourceType).toBe('Practitioner');
+    expect(
+      adminResult.current.sections[0].rows.find(r => r.id === 'language')?.value
+    ).toBe('English');
   });
 
   it('exposes every role profile for the extension cards', () => {
@@ -235,9 +225,9 @@ describe('useProfileData', () => {
     );
   });
 
-  it('resolves an unnamed Person resource as the active profile (no fullProfile fallback)', () => {
-    const unnamedPerson: Person = {
-      resourceType: 'Person',
+  it('resolves an unnamed Practitioner resource as the active profile (no fullProfile fallback)', () => {
+    const unnamedPractitioner: Practitioner = {
+      resourceType: 'Practitioner',
       id: 'clinic-1',
       active: true
     };
@@ -245,10 +235,14 @@ describe('useProfileData', () => {
       role_name: 'Clinic Admin',
       roles: ['Patient', 'Clinic Admin'],
       roleProfiles: {
-        'Clinic Admin': { name: '-', photoUrl: '', resource: unnamedPerson },
+        'Clinic Admin': {
+          name: '-',
+          photoUrl: '',
+          resource: unnamedPractitioner
+        },
         Patient: { name: 'John Doe', photoUrl: '', resource: patientFixture }
       },
-      // A stale fallback that must NOT win over the cached Person resource.
+      // A stale fallback that must NOT win over the cached Practitioner.
       fullProfile: patientFixture
     });
 
@@ -256,8 +250,8 @@ describe('useProfileData', () => {
       useProfileData('u1', ['Patient', 'Clinic Admin'], 'Clinic Admin')
     );
 
-    expect(result.current.profileData).toEqual(unnamedPerson);
-    expect(result.current.resourceType).toBe('Person');
+    expect(result.current.profileData).toEqual(unnamedPractitioner);
+    expect(result.current.resourceType).toBe('Practitioner');
     // Sections render placeholder '-' values without crashing.
     const rows = result.current.sections.flatMap(section => section.rows);
     expect(rows.length).toBeGreaterThan(0);

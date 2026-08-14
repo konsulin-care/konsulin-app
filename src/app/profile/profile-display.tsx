@@ -9,7 +9,7 @@ import { settingMenus } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
 import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
 import type { RoleProfile } from '@/services/role-profiles';
-import type { Address, Patient, Person, Practitioner } from 'fhir/r4';
+import type { Address, Patient, Practitioner } from 'fhir/r4';
 import { useState } from 'react';
 import AddressEditDrawer from './address-edit-drawer';
 import ContactEditDrawer from './contact-edit-drawer';
@@ -21,7 +21,7 @@ import NameEditDrawer from './name-edit-drawer';
 import PersonalInfoEditDrawer from './personal-info-edit-drawer';
 import ProfileIdentity from './profile-identity';
 
-type ProfileResource = Patient | Practitioner | Person;
+type ProfileResource = Patient | Practitioner;
 type DrawerId = 'name' | 'personal-info' | 'contact' | 'address';
 
 /** Map a display section to its edit drawer. */
@@ -34,12 +34,12 @@ const SECTION_DRAWER: Record<string, DrawerId> = {
 /**
  * Read the raw BCP-47 language code. Patient wraps the language in
  * `PatientCommunication.language`; Practitioner stores the CodeableConcept
- * directly; Person has no language field.
+ * directly.
  */
 function readLanguageCode(
   profile: ProfileResource | undefined
 ): string | undefined {
-  if (!profile || profile.resourceType === 'Person') return undefined;
+  if (!profile) return undefined;
   if (profile.resourceType === 'Practitioner') {
     return profile.communication?.[0]?.coding?.[0]?.code;
   }
@@ -102,7 +102,7 @@ function ProfileDrawers({
   activeDrawer: DrawerId | null;
   onClose: () => void;
   fhirId: string;
-  resourceType: 'Patient' | 'Practitioner' | 'Person';
+  resourceType: 'Patient' | 'Practitioner';
   identity: ReturnType<typeof useProfileData>['identity'];
   gender: string;
   birthDate: string;
@@ -244,7 +244,7 @@ export default function ProfileDisplay() {
         gender={raw.gender}
         birthDate={raw.birthDate}
         languageCode={raw.languageCode}
-        supportsLanguage={resourceType !== 'Person'}
+        supportsLanguage={true}
         email={raw.email}
         phone={raw.phone}
         isEmailBased={isEmailBased}

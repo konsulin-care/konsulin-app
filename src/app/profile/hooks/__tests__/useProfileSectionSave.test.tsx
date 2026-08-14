@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
 import { renderHook } from '@testing-library/react';
-import type { Bundle, HumanName, Patient, Person, Practitioner } from 'fhir/r4';
+import type { Bundle, HumanName, Patient, Practitioner } from 'fhir/r4';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -74,16 +74,16 @@ const practitionerFixture: Practitioner = {
   ]
 };
 
-/** Never-filled-in Person backing the Clinic Admin role. */
-const unnamedClinicAdminPerson: Person = {
-  resourceType: 'Person',
+/** Never-filled-in Practitioner backing the Clinic Admin role. */
+const unnamedClinicAdminPractitioner: Practitioner = {
+  resourceType: 'Practitioner',
   id: 'clinic-1',
   active: true
 };
 
-/** Never-filled-in Person backing the Researcher role. */
-const unnamedResearcherPerson: Person = {
-  resourceType: 'Person',
+/** Never-filled-in Practitioner backing the Researcher role. */
+const unnamedResearcherPractitioner: Practitioner = {
+  resourceType: 'Practitioner',
   id: 'researcher-1',
   active: true
 };
@@ -227,7 +227,7 @@ describe('useProfileSectionSave', () => {
     expect((bundle.entry?.[1]?.resource as Practitioner).gender).toBe('female');
   });
 
-  it('PUTs every owned role resource — including unnamed Person roles — in one transaction bundle', async () => {
+  it('PUTs every owned role resource — including unnamed Practitioner roles — in one transaction bundle', async () => {
     setupAuth({
       role_name: 'Practitioner',
       roles: ['Patient', 'Practitioner', 'Clinic Admin', 'Researcher'],
@@ -245,12 +245,12 @@ describe('useProfileSectionSave', () => {
         'Clinic Admin': {
           name: '-',
           photoUrl: '',
-          resource: unnamedClinicAdminPerson
+          resource: unnamedClinicAdminPractitioner
         },
         Researcher: {
           name: '-',
           photoUrl: '',
-          resource: unnamedResearcherPerson
+          resource: unnamedResearcherPractitioner
         }
       }
     });
@@ -283,18 +283,18 @@ describe('useProfileSectionSave', () => {
     expect(putUrls).toEqual([
       'Patient/pat-1',
       'Practitioner/prac-1',
-      'Person/clinic-1',
-      'Person/researcher-1'
+      'Practitioner/clinic-1',
+      'Practitioner/researcher-1'
     ]);
-    // The merged section fields land on the unnamed Person resources too,
-    // and untouched fields on them are preserved.
+    // The merged section fields land on the unnamed Practitioner resources
+    // too, and untouched fields on them are preserved.
     const clinicEntry = bundle.entry?.[2];
     const researcherEntry = bundle.entry?.[3];
-    expect((clinicEntry?.resource as Person).gender).toBe('female');
-    expect((researcherEntry?.resource as Person).gender).toBe('female');
-    expect((clinicEntry?.resource as Person).active).toBe(true);
-    expect((researcherEntry?.resource as Person).active).toBe(true);
-    // The recached roleProfiles include the Person roles.
+    expect((clinicEntry?.resource as Practitioner).gender).toBe('female');
+    expect((researcherEntry?.resource as Practitioner).gender).toBe('female');
+    expect((clinicEntry?.resource as Practitioner).active).toBe(true);
+    expect((researcherEntry?.resource as Practitioner).active).toBe(true);
+    // The recached roleProfiles include the Practitioner roles.
     const action = mockDispatch.mock.calls[0]?.[0] as IActionLogin;
     expect(action.payload?.roleProfiles).toMatchObject({
       'Clinic Admin': { resource: { gender: 'female' } },

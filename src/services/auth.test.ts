@@ -92,7 +92,7 @@ describe('restoreAuthCookie role resolution', () => {
     await restoreAuthCookie(makeSession('ca-1'));
 
     expect(mockGetProfileByIdentifier).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'Person' })
+      expect.objectContaining({ type: 'Practitioner' })
     );
   });
 

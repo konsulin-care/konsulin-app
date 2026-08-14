@@ -13,6 +13,7 @@ import {
 } from '@/services/role-profiles';
 import { mergeNames } from '@/utils/helper';
 import { hasPendingAssessmentClaimIntent } from '@/utils/redirect-intent';
+import { roleToFhirResource } from '@/utils/role-fhir';
 import React, {
   createContext,
   ReactNode,
@@ -46,23 +47,9 @@ type UserRole =
   | typeof Roles.ClinicAdmin
   | typeof Roles.Patient;
 
-/** Extracts the Organization id from a managingOrganization reference. */
-function extractOrgId(result: unknown): string | undefined {
-  if (!result || typeof result !== 'object') return undefined;
-  const obj = result as Record<string, unknown>;
-  const mgmtOrg = obj.managingOrganization;
-  if (!mgmtOrg || typeof mgmtOrg !== 'object') return undefined;
-  const ref = (mgmtOrg as Record<string, unknown>).reference;
-  return typeof ref === 'string'
-    ? ref.replace('Organization/', '') || undefined
-    : undefined;
-}
-
-/** Extract the photo URL from a FHIR profile; Person stores a single Attachment. */
+/** Extract the photo URL from a FHIR profile (always an Attachment array). */
 function extractPhotoUrl(profile: ProfileResource | null): string {
-  if (!profile) return '';
-  if (profile.resourceType === 'Person') return profile.photo?.url ?? '';
-  return profile.photo?.[0]?.url ?? '';
+  return profile?.photo?.[0]?.url ?? '';
 }
 
 /** Build the login payload from the active profile resource. */
@@ -81,7 +68,7 @@ function buildLoginPayload(
     profile_picture: extractPhotoUrl(profile),
     fullname: mergeNames(profile.name),
     fhirId: profile.id ?? '',
-    organizationId: extractOrgId(profile),
+    organizationId: roleProfiles[role]?.organizationId,
     profile_complete: isProfileCompleteFromFHIR(profile),
     roleProfiles,
     fullProfile: profile,
@@ -99,12 +86,29 @@ function roleProfilesCarryResources(
   );
 }
 
+/**
+ * True when every non-null role profile's resource type matches the role's
+ * backing FHIR resource. Rejects Person-era caches (Clinic Admin/Researcher
+ * are now Practitioner) without a version-key migration.
+ */
+function roleProfilesCarryMatchingTypes(
+  roleProfiles: Record<string, RoleProfile | null> | undefined
+): boolean {
+  if (!roleProfiles) return true;
+  return Object.entries(roleProfiles).every(([role, profile]) => {
+    if (profile === null) return true;
+    if (!profile.resource) return false;
+    return profile.resource.resourceType === roleToFhirResource(role);
+  });
+}
+
 /** True when a cached profile can serve the session.
  *
  * Single-role users always use the cache. Multi-role users only when the
  * cache carries the full role profile resources — a pre-bundle cache or an
  * old-shape cache (name/photoUrl only) is rejected so the profile page and
- * the multi-role save flow never read stale or partial resources.
+ * the multi-role save flow never read stale or partial resources. A cache
+ * whose role resources carry a stale Person type is also rejected.
  */
 function isCacheUsable(
   cached: UserProfile | null,
@@ -116,7 +120,10 @@ function isCacheUsable(
   if (!cached.fullname && !cached.fhirId) return false;
   const isMultiRole =
     Array.isArray(superTokensRoles) && superTokensRoles.length > 1;
-  return !isMultiRole || roleProfilesCarryResources(cached.roleProfiles);
+  return (
+    roleProfilesCarryMatchingTypes(cached.roleProfiles) &&
+    (!isMultiRole || roleProfilesCarryResources(cached.roleProfiles))
+  );
 }
 
 // skipcq: JS-W1042 - createContext requires a default value per React API

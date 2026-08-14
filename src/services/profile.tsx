@@ -1,13 +1,13 @@
 import { validateEmail } from '@/utils/validation';
 import { useMutation } from '@tanstack/react-query';
-import { Bundle, Patient, Person, Practitioner } from 'fhir/r4';
+import { Bundle, Patient, Practitioner } from 'fhir/r4';
 import { apiRequest, getAPI } from './api';
 
 type IProfileRequest = {
-  payload: Patient | Practitioner | Person;
+  payload: Patient | Practitioner;
 };
 
-type ProfileResource = Patient | Practitioner | Person;
+type ProfileResource = Patient | Practitioner;
 
 type EmailExistenceResponse = {
   exists: boolean;
@@ -107,7 +107,7 @@ export const getProfileByIdentifier = async ({
 /** Fetch a FHIR profile by its resource ID and type. */
 export const getProfileById = async (
   id: string,
-  type: 'Patient' | 'Practitioner' | 'Person'
+  type: 'Patient' | 'Practitioner'
 ): Promise<ProfileResource> => {
   if (!id) throw new Error('Missing FHIR id');
 

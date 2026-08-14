@@ -4,12 +4,12 @@ import { PROFILE_CACHE_STALE_MS } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
 import { collapseHumanName } from '@/utils/fhir/human-name';
 import { generateAvatarPlaceholder } from '@/utils/helper';
-import { roleToFhirResource, type FhirResourceType } from '@/utils/role-fhir';
+import { roleToFhirResource } from '@/utils/role-fhir';
 import { format } from 'date-fns';
-import type { CodeableConcept, Patient, Person, Practitioner } from 'fhir/r4';
+import type { CodeableConcept, Patient, Practitioner } from 'fhir/r4';
 import { useEffect, useMemo } from 'react';
 
-type ProfileResource = Patient | Practitioner | Person;
+type ProfileResource = Patient | Practitioner;
 
 export type ProfileRow = { id: string; key: string; value: string };
 export type ProfileSection = { id: string; title: string; rows: ProfileRow[] };
@@ -35,16 +35,6 @@ function roleProfilesCarryResources(
   );
 }
 
-/** Narrow the profile union to Patient/Practitioner (both have communication). */
-function isPatientOrPractitioner(
-  profile: ProfileResource
-): profile is Patient | Practitioner {
-  return (
-    profile.resourceType === 'Patient' ||
-    profile.resourceType === 'Practitioner'
-  );
-}
-
 /** Read a telecom value (email/phone) from a FHIR profile. */
 function findTelecom(profile: ProfileResource | undefined, system: string) {
   if (!profile || !Array.isArray(profile.telecom)) return '-';
@@ -65,14 +55,9 @@ function formatBirthDate(birthDate?: string): string {
   return format(date, 'dd MMM yyyy');
 }
 
-/**
- * Photo shape differs per resource: Patient/Practitioner store `photo[]`
- * while Person stores a single Attachment.
- */
+/** Read the photo URL from a FHIR profile (always an Attachment array). */
 function getPhotoUrl(profile: ProfileResource | undefined): string | undefined {
-  if (!profile) return undefined;
-  if (isPatientOrPractitioner(profile)) return profile.photo?.[0]?.url;
-  return profile.photo?.url;
+  return profile?.photo?.[0]?.url;
 }
 
 /**
@@ -83,7 +68,7 @@ function getPhotoUrl(profile: ProfileResource | undefined): string | undefined {
 function getCommunicationLanguage(
   profile: ProfileResource | undefined
 ): string {
-  if (!profile || !isPatientOrPractitioner(profile)) return '-';
+  if (!profile) return '-';
   const concept =
     profile.resourceType === 'Practitioner'
       ? profile.communication?.[0]
@@ -124,7 +109,7 @@ function buildIdentity(
   };
 }
 
-/** Personal-info rows; Person-based roles omit the language row. */
+/** Personal-info rows; every role supports the language row. */
 function buildPersonalRows(
   profile: ProfileResource | undefined,
   supportsLanguage: boolean
@@ -168,17 +153,12 @@ function buildAddressRows(profile: ProfileResource | undefined): ProfileRow[] {
 }
 
 /** Build the uniform section list shared by every role. */
-function buildSections(
-  profile: ProfileResource | undefined,
-  resourceType: FhirResourceType
-): ProfileSection[] {
-  const supportsLanguage =
-    resourceType === 'Patient' || resourceType === 'Practitioner';
+function buildSections(profile: ProfileResource | undefined): ProfileSection[] {
   return [
     {
       id: 'personal-info',
       title: 'Personal Information',
-      rows: buildPersonalRows(profile, supportsLanguage)
+      rows: buildPersonalRows(profile, true)
     },
     { id: 'contact', title: 'Contact', rows: buildContactRows(profile) },
     { id: 'address', title: 'Address', rows: buildAddressRows(profile) }
@@ -233,10 +213,7 @@ export function useProfileData(
     () => buildIdentity(activeProfile, activeProfile?.id ?? userId),
     [activeProfile, userId]
   );
-  const sections = useMemo(
-    () => buildSections(activeProfile, resourceType),
-    [activeProfile, resourceType]
-  );
+  const sections = useMemo(() => buildSections(activeProfile), [activeProfile]);
 
   return {
     profileData: activeProfile,

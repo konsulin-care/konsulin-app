@@ -120,13 +120,9 @@ export function buildUpdatedRoleProfiles(
 ): Record<string, RoleProfile | null> {
   const updated: Record<string, RoleProfile | null> = { ...existing };
   for (const [role, resource] of Object.entries(merged)) {
-    const photoUrl =
-      resource.resourceType === 'Person'
-        ? (resource.photo?.url ?? '')
-        : (resource.photo?.[0]?.url ?? '');
     updated[role] = {
       name: mergeNames(resource.name) ?? '',
-      photoUrl,
+      photoUrl: resource.photo?.[0]?.url ?? '',
       resource
     };
   }

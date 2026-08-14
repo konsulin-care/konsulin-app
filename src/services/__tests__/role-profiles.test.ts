@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 
 import type { AxiosInstance } from 'axios';
-import type { Bundle, Patient, Person } from 'fhir/r4';
+import type { Bundle, Patient, Practitioner } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/services/api', () => ({
@@ -60,8 +60,7 @@ const fullPatientResource: Patient = {
   ],
   name: [{ use: 'official', given: ['John'], family: 'Doe' }],
   telecom: [{ system: 'email', value: 'john@example.com' }],
-  photo: [{ url: 'https://cdn.example.com/john.jpg' }],
-  managingOrganization: { reference: 'Organization/org-1' }
+  photo: [{ url: 'https://cdn.example.com/john.jpg' }]
 };
 
 const fullPatientSearchset: Bundle = {
@@ -71,35 +70,16 @@ const fullPatientSearchset: Bundle = {
   entry: [{ resource: fullPatientResource }]
 };
 
-const unnamedPersonResource: Person = {
-  resourceType: 'Person',
-  id: 'clinic-1',
-  identifier: [
-    {
-      system: 'https://login.konsulin.care/userid',
-      value: 'user-1'
-    }
-  ]
+const unnamedPractitionerResource: Practitioner = {
+  resourceType: 'Practitioner',
+  id: 'prac-2'
 };
 
-const unnamedPersonSearchset: Bundle = {
+const unnamedPractitionerSearchset: Bundle = {
   resourceType: 'Bundle',
   type: 'searchset',
   total: 1,
-  entry: [{ resource: unnamedPersonResource }]
-};
-
-const emptyNamePersonResource: Person = {
-  resourceType: 'Person',
-  id: 'clinic-2',
-  name: []
-};
-
-const emptyNamePersonSearchset: Bundle = {
-  resourceType: 'Bundle',
-  type: 'searchset',
-  total: 1,
-  entry: [{ resource: emptyNamePersonResource }]
+  entry: [{ resource: unnamedPractitionerResource }]
 };
 
 /** Build a batch-response entry for one search request. */
@@ -107,7 +87,7 @@ function batchResponseEntry(bundle: Bundle, status = '200 OK') {
   return { resource: bundle, response: { status } };
 }
 
-describe('fetchUserProfilesBundle', () => {
+describe('fetchUserProfilesBundle — plain profiles (Patient/Practitioner)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getAPI).mockResolvedValue(mockAxiosInstance);
@@ -117,57 +97,24 @@ describe('fetchUserProfilesBundle', () => {
     vi.resetAllMocks();
   });
 
-  it('fetches the FULL resource for every role (no _elements projection)', async () => {
+  it('fetches the FULL Patient and Practitioner resources (no _elements projection)', async () => {
     vi.mocked(mockAxiosInstance.post).mockResolvedValue({
       data: {
         resourceType: 'Bundle',
         type: 'batch-response',
         entry: [
           batchResponseEntry(fullPatientSearchset),
-          batchResponseEntry(practitionerSearchset),
-          batchResponseEntry(emptySearchset),
-          batchResponseEntry(emptySearchset)
+          batchResponseEntry(practitionerSearchset)
         ]
       }
     });
 
     const result = await fetchUserProfilesBundle(
       'user-1',
-      ['Patient', 'Practitioner', 'Clinic Admin', 'Researcher'],
+      ['Patient', 'Practitioner'],
       'Patient'
     );
 
-    expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1);
-    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/fhir', {
-      resourceType: 'Bundle',
-      type: 'batch',
-      entry: [
-        {
-          request: {
-            method: 'GET',
-            url: '/Patient?identifier=https://login.konsulin.care/userid|user-1'
-          }
-        },
-        {
-          request: {
-            method: 'GET',
-            url: '/Practitioner?identifier=https://login.konsulin.care/userid|user-1'
-          }
-        },
-        {
-          request: {
-            method: 'GET',
-            url: '/Person?identifier=https://login.konsulin.care/userid|user-1'
-          }
-        },
-        {
-          request: {
-            method: 'GET',
-            url: '/Person?identifier=https://login.konsulin.care/userid|user-1'
-          }
-        }
-      ]
-    });
     const postMock = mockAxiosInstance.post as ReturnType<typeof vi.fn>;
     const postedBundle = postMock.mock.calls[0]?.[1] as Bundle;
     expect(
@@ -187,53 +134,31 @@ describe('fetchUserProfilesBundle', () => {
         name: 'Jane Doe',
         photoUrl: 'https://cdn.example.com/jane.jpg',
         resource: practitionerSearchset.entry?.[0]?.resource
-      },
-      'Clinic Admin': null,
-      Researcher: null
+      }
     });
   });
 
-  it('caches an unnamed Person resource (no name) instead of returning null', async () => {
+  it('caches an unnamed Practitioner resource (no name) instead of returning null', async () => {
     vi.mocked(mockAxiosInstance.post).mockResolvedValue({
       data: {
         resourceType: 'Bundle',
         type: 'batch-response',
-        entry: [batchResponseEntry(unnamedPersonSearchset)]
+        entry: [batchResponseEntry(unnamedPractitionerSearchset)]
       }
     });
 
     const result = await fetchUserProfilesBundle(
       'user-1',
-      ['Clinic Admin'],
-      'Clinic Admin'
+      ['Practitioner'],
+      'Practitioner'
     );
 
-    expect(result.activeProfile).toEqual(unnamedPersonResource);
-    expect(result.roleProfiles['Clinic Admin']).toEqual({
+    expect(result.activeProfile).toEqual(unnamedPractitionerResource);
+    expect(result.roleProfiles.Practitioner).toEqual({
       name: '-',
       photoUrl: '',
-      resource: unnamedPersonResource
+      resource: unnamedPractitionerResource
     });
-  });
-
-  it('caches a Person with an empty name array', async () => {
-    vi.mocked(mockAxiosInstance.post).mockResolvedValue({
-      data: {
-        resourceType: 'Bundle',
-        type: 'batch-response',
-        entry: [batchResponseEntry(emptyNamePersonSearchset)]
-      }
-    });
-
-    const result = await fetchUserProfilesBundle(
-      'user-1',
-      ['Clinic Admin'],
-      'Clinic Admin'
-    );
-
-    expect(result.roleProfiles['Clinic Admin']?.resource).toEqual(
-      emptyNamePersonResource
-    );
   });
 
   it('returns null for a role whose entry has no resource', async () => {

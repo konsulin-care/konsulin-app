@@ -1,6 +1,6 @@
-import type { CodeableConcept, Patient, Person, Practitioner } from 'fhir/r4';
+import type { CodeableConcept, Patient, Practitioner } from 'fhir/r4';
 
-type ProfileResource = Patient | Practitioner | Person;
+type ProfileResource = Patient | Practitioner;
 
 export type PersonalInfoValues = {
   gender: string;
@@ -31,8 +31,7 @@ function buildLanguageConcept(code: string, label: string): CodeableConcept {
 
 /**
  * Merge personal-info fields into the latest resource. The communication
- * language is written only for Patient (wrapped) and Practitioner (direct);
- * Person has no language field and is left untouched.
+ * language is written only for Patient (wrapped) and Practitioner (direct).
  */
 export function mergePersonalInfo(
   latest: ProfileResource,
@@ -53,10 +52,7 @@ export function mergePersonalInfo(
   if (merged.resourceType === 'Practitioner') {
     return { ...merged, communication: [concept] };
   }
-  if (merged.resourceType === 'Patient') {
-    return { ...merged, communication: [{ language: concept }] };
-  }
-  return merged;
+  return { ...merged, communication: [{ language: concept }] };
 }
 
 /**
