@@ -29,6 +29,8 @@ const BASE = {
 };
 
 describe('CardStackContainer centering', () => {
+  const scrollToSpy = vi.spyOn(window, 'scrollTo').mockReturnValue();
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockF.mockReturnValue(BASE);
@@ -38,7 +40,6 @@ describe('CardStackContainer centering', () => {
       onTouchMove: vi.fn(),
       onTouchEnd: vi.fn()
     });
-    vi.spyOn(window, 'scrollTo').mockReturnValue();
   });
 
   function cards() {
@@ -103,7 +104,7 @@ describe('CardStackContainer centering', () => {
 
     // cardCenterY = 320 + 80/2 = 360
     // targetScrollY = 100 + 360 - 800/2 = 60
-    expect(window.scrollTo).toHaveBeenCalledWith({
+    expect(scrollToSpy).toHaveBeenCalledWith({
       top: 60,
       behavior: 'smooth'
     });
@@ -162,6 +163,6 @@ describe('CardStackContainer centering', () => {
     });
     render(cards());
 
-    expect(window.scrollTo).not.toHaveBeenCalled();
+    expect(scrollToSpy).not.toHaveBeenCalled();
   });
 });
