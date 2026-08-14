@@ -14,7 +14,11 @@ vi.mock('@/services/profile', () => ({
     mockGetProfileByIdentifier(args)
 }));
 
-import { getAuthCookieSession, restoreAuthCookie } from './auth';
+import {
+  getAuthCookieSession,
+  restoreAuthCookie,
+  syncActiveRoleWithCookie
+} from './auth';
 
 function createFetchMock(
   handlers: Array<{
@@ -169,5 +173,120 @@ describe('getAuthCookieSession', () => {
     ]);
     const session = await getAuthCookieSession();
     expect(session).toBeNull();
+  });
+});
+
+describe('syncActiveRoleWithCookie', () => {
+  /** Mock /auth/cookie, /auth/cookie/csrf-token and /auth/role/switch. */
+  function mockEndpoints(session: object, switchOk = true) {
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url === '/auth/cookie') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(session)
+        });
+      }
+      if (url === '/auth/cookie/csrf-token') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ token: 'csrf-1' })
+        });
+      }
+      if (url === '/auth/role/switch') {
+        return Promise.resolve({ ok: switchOk, status: switchOk ? 200 : 502 });
+      }
+      return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+    });
+    globalThis.fetch = fetchMock;
+    return fetchMock;
+  }
+
+  const switchCalls = (fetchMock: ReturnType<typeof vi.fn>) =>
+    fetchMock.mock.calls.filter(([url]) => url === '/auth/role/switch');
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('POSTs the cookie role to /auth/role/switch when claim and cookie diverge', async () => {
+    const fetchMock = mockEndpoints({
+      authenticated: true,
+      role_name: 'Patient',
+      roles: ['Patient', 'Clinic Admin'],
+      active_role: 'Clinic Admin'
+    });
+
+    const result = await syncActiveRoleWithCookie();
+    expect(result).toBe(true);
+
+    const calls = switchCalls(fetchMock);
+    expect(calls).toHaveLength(1);
+    const [, init] = calls[0] as [string, RequestInit];
+    expect(init.method).toBe('POST');
+    expect(init.headers).toMatchObject({ 'X-CSRF-Token': 'csrf-1' });
+    const body = init.body as URLSearchParams;
+    expect(body.get('role')).toBe('Patient');
+  });
+
+  it('does not POST when the claim matches the cookie role', async () => {
+    const fetchMock = mockEndpoints({
+      authenticated: true,
+      role_name: 'Patient',
+      roles: ['Patient'],
+      active_role: 'Patient'
+    });
+
+    const result = await syncActiveRoleWithCookie();
+    expect(result).toBe(false);
+    expect(switchCalls(fetchMock)).toHaveLength(0);
+  });
+
+  it('does not POST when the claim is missing (legacy token)', async () => {
+    const fetchMock = mockEndpoints({
+      authenticated: true,
+      role_name: 'Patient',
+      roles: ['Patient']
+    });
+
+    const result = await syncActiveRoleWithCookie();
+    expect(result).toBe(false);
+    expect(switchCalls(fetchMock)).toHaveLength(0);
+  });
+
+  it('does not POST when the cookie role is not among the session roles', async () => {
+    const fetchMock = mockEndpoints({
+      authenticated: true,
+      role_name: 'Practitioner',
+      roles: ['Patient', 'Clinic Admin'],
+      active_role: 'Clinic Admin'
+    });
+
+    const result = await syncActiveRoleWithCookie();
+    expect(result).toBe(false);
+    expect(switchCalls(fetchMock)).toHaveLength(0);
+  });
+
+  it('does not POST when the session is not authenticated', async () => {
+    const fetchMock = mockEndpoints({ authenticated: false });
+
+    const result = await syncActiveRoleWithCookie();
+    expect(result).toBe(false);
+    expect(switchCalls(fetchMock)).toHaveLength(0);
+  });
+
+  it('returns false when the switch request fails', async () => {
+    const fetchMock = mockEndpoints(
+      {
+        authenticated: true,
+        role_name: 'Patient',
+        roles: ['Patient', 'Clinic Admin'],
+        active_role: 'Clinic Admin'
+      },
+      false
+    );
+
+    const result = await syncActiveRoleWithCookie();
+    expect(result).toBe(false);
+    expect(switchCalls(fetchMock)).toHaveLength(1);
   });
 });

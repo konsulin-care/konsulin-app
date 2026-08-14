@@ -26,7 +26,8 @@ vi.mock('supertokens-web-js/recipe/userroles', () => ({
 // ---------------------------------------------------------------------------
 vi.mock('@/services/auth', () => ({
   getAuthCookieSession: vi.fn(),
-  restoreAuthCookie: vi.fn()
+  restoreAuthCookie: vi.fn(),
+  syncActiveRoleWithCookie: vi.fn()
 }));
 
 vi.mock('@/services/role-profiles', () => ({
@@ -87,7 +88,11 @@ vi.mock('@/utils/helper', () => ({
 // Import mocked modules
 // ---------------------------------------------------------------------------
 import { dbGet, dbSet, migrateLocalStorage } from '@/lib/indexeddb';
-import { getAuthCookieSession, restoreAuthCookie } from '@/services/auth';
+import {
+  getAuthCookieSession,
+  restoreAuthCookie,
+  syncActiveRoleWithCookie
+} from '@/services/auth';
 import { fetchUserProfilesBundle } from '@/services/role-profiles';
 
 // ---------------------------------------------------------------------------
@@ -95,6 +100,7 @@ import { fetchUserProfilesBundle } from '@/services/role-profiles';
 // ---------------------------------------------------------------------------
 const mockGetAuthSession = getAuthCookieSession as ReturnType<typeof vi.fn>;
 const mockRestoreCookie = restoreAuthCookie as ReturnType<typeof vi.fn>;
+const mockSyncActiveRole = syncActiveRoleWithCookie as ReturnType<typeof vi.fn>;
 const mockFetchBundle = fetchUserProfilesBundle as ReturnType<typeof vi.fn>;
 const mockDbGet = dbGet as ReturnType<typeof vi.fn>;
 const mockDbSet = dbSet as ReturnType<typeof vi.fn>;
@@ -410,6 +416,84 @@ describe('Task 2 - refresh before auth-cookie restore', () => {
     // THEN: the restore POST is still attempted and loading resolves
     await waitFor(() => {
       expect(mockRestoreCookie).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-loading').textContent).toBe('false');
+    });
+  });
+});
+
+// =========================================================================
+// Task 4: heal a divergent active-role claim on bootstrap
+// =========================================================================
+describe('Task 4 - sync active role with cookie on bootstrap', () => {
+  beforeEach(() => {
+    // GIVEN: an active SuperTokens session with a restored auth cookie
+    mockUseSessionContext.mockReturnValue({
+      doesSessionExist: true,
+      userId: 'user-1',
+      accessTokenPayload: {}
+    });
+    mockGetClaimValue.mockResolvedValue(['Patient']);
+    mockRestoreCookie.mockResolvedValue(true);
+    mockDbGet.mockResolvedValue(null);
+    mockSyncActiveRole.mockResolvedValue(true);
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: null,
+      roleProfiles: { Patient: null }
+    });
+  });
+
+  it('awaits the active-role sync before fetching the profile', async () => {
+    // GIVEN: the sync is pending until we resolve it
+    let resolveSync!: (value: boolean) => void;
+    mockSyncActiveRole.mockReturnValue(
+      new Promise<boolean>(resolve => {
+        resolveSync = resolve;
+      })
+    );
+
+    // WHEN: the auth provider mounts
+    renderWithAuthProvider();
+
+    // THEN: the sync starts, but the profile fetch has NOT run yet
+    await waitFor(() => {
+      expect(mockSyncActiveRole).toHaveBeenCalled();
+    });
+    expect(mockFetchBundle).not.toHaveBeenCalled();
+
+    // WHEN: the sync completes
+    resolveSync(true);
+
+    // THEN: the profile fetch runs and loading resolves
+    await waitFor(() => {
+      expect(mockFetchBundle).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-loading').textContent).toBe('false');
+    });
+  });
+
+  it('continues bootstrap when the sync reports no drift', async () => {
+    mockSyncActiveRole.mockResolvedValue(false);
+
+    renderWithAuthProvider();
+
+    await waitFor(() => {
+      expect(mockFetchBundle).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-loading').textContent).toBe('false');
+    });
+  });
+
+  it('continues bootstrap when the sync throws', async () => {
+    mockSyncActiveRole.mockRejectedValue(new Error('sync failure'));
+
+    renderWithAuthProvider();
+
+    await waitFor(() => {
+      expect(mockFetchBundle).toHaveBeenCalled();
     });
     await waitFor(() => {
       expect(screen.getByTestId('auth-loading').textContent).toBe('false');

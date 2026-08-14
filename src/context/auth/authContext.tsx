@@ -5,7 +5,11 @@ import { Roles } from '@/constants/roles';
 import { dbGet, dbSet, migrateLocalStorage, STORES } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { setCurrentUserId, UserProfile } from '@/services/api';
-import { getAuthCookieSession, restoreAuthCookie } from '@/services/auth';
+import {
+  getAuthCookieSession,
+  restoreAuthCookie,
+  syncActiveRoleWithCookie
+} from '@/services/auth';
 import {
   fetchUserProfilesBundle,
   type ProfileResource,
@@ -502,6 +506,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!restored) {
       setIsLoading(false);
       return;
+    }
+    // Heal sessions whose SuperTokens active-role claim diverges from the
+    // auth cookie role: push the cookie's role (the user's expressed choice)
+    // to the backend claim. Best-effort and reload-free — the frontend state
+    // already matches the cookie; only the token claim moves.
+    try {
+      await syncActiveRoleWithCookie();
+    } catch (error) {
+      console.error('Auth: active-role resync failed:', error);
     }
     try {
       await fetchProfileAndLogin();
