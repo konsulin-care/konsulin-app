@@ -70,16 +70,7 @@ export const createProfile = async ({
     ...(telecom.length > 0 && { telecom })
   };
 
-  try {
-    const response = await apiRequest<Patient | Practitioner>(
-      'POST',
-      `/fhir/${type}`,
-      payload
-    );
-    return response;
-  } catch (error) {
-    throw error;
-  }
+  return apiRequest<Patient | Practitioner>('POST', `/fhir/${type}`, payload);
 };
 
 /** Look up a FHIR profile by user ID and role type. */
