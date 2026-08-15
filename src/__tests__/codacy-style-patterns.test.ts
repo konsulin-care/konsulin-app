@@ -289,4 +289,38 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
       expect(content).not.toContain('roleProfiles[role] = profile');
     });
   });
+
+  describe('role-map.ts (guarded role-keyed accessors)', () => {
+    const { content, lines } = readFile('src/app/profile/role-map.ts');
+
+    it('reads via Reflect.get instead of map[role] bracket access', () => {
+      expect(content).toContain('Reflect.get(map, role)');
+      expect(lines.some(l => l.includes('return map[role]'))).toBe(false);
+    });
+
+    it('writes via Reflect.set instead of map[role] bracket assignment', () => {
+      expect(content).toContain('Reflect.set(map, role, value)');
+      expect(lines.some(l => l.includes('map[role] = value'))).toBe(false);
+    });
+
+    it('keeps the Object.hasOwn + isValidRoleKey guard before access', () => {
+      const readStart = lines.findIndex(l =>
+        l.includes('export function getRoleValue')
+      );
+      expect(readStart).toBeGreaterThanOrEqual(0);
+      const readBody = lines.slice(readStart, readStart + 10);
+      expect(readBody.some(l => l.includes('Object.hasOwn'))).toBe(true);
+      expect(readBody.some(l => l.includes('isValidRoleKey(role)'))).toBe(true);
+
+      const writeStart = lines.findIndex(l =>
+        l.includes('export function setRoleValue')
+      );
+      expect(writeStart).toBeGreaterThanOrEqual(0);
+      const writeBody = lines.slice(writeStart, writeStart + 10);
+      expect(writeBody.some(l => l.includes('Object.hasOwn'))).toBe(true);
+      expect(writeBody.some(l => l.includes('isValidRoleKey(role)'))).toBe(
+        true
+      );
+    });
+  });
 });

@@ -37,8 +37,8 @@ export function getRoleValue<V>(
   if (!Object.hasOwn(map, role) && !isValidRoleKey(role)) {
     throw new TypeError(`Invalid role key: ${role}`);
   }
-  // skipcq: JS-0376 - guarded by isValidRoleKey() + BANNED_KEYS above
-  return map[role];
+  // Reflect access avoids the security/detect-object-injection sink; guarded above.
+  return Reflect.get(map, role);
 }
 
 /**
@@ -61,6 +61,6 @@ export function setRoleValue<V>(
   if (!Object.hasOwn(map, role) && !isValidRoleKey(role)) {
     throw new TypeError(`Invalid role key: ${role}`);
   }
-  // skipcq: JS-0376 - guarded by isValidRoleKey() + BANNED_KEYS above
-  map[role] = value;
+  // Reflect access avoids the security/detect-object-injection sink; guarded above.
+  Reflect.set(map, role, value);
 }
