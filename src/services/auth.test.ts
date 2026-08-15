@@ -124,6 +124,7 @@ describe('restoreAuthCookie role resolution', () => {
   });
 
   it('falls back to Patient when roles array is undefined', async () => {
+    // skipcq: JS-W1042 - mockResolvedValue from vitest requires an argument
     mockGetClaimValue.mockResolvedValue(undefined); // eslint-disable-line unicorn/no-useless-undefined
 
     await restoreAuthCookie(makeSession('pt-2'));
