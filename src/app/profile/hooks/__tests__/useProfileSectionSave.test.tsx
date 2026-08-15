@@ -170,8 +170,9 @@ describe('useProfileSectionSave', () => {
       payload: { ...patientFixture, gender: 'female' }
     });
     expect(mockSubmit).not.toHaveBeenCalled();
+    expect(mockDispatch).toHaveBeenCalledTimes(1);
 
-    const action = mockDispatch.mock.calls[0]?.[0] as IActionLogin;
+    const action = mockDispatch.mock.calls[0][0] as IActionLogin;
     expect(action.type).toBe('auth-check');
     expect(action.payload?.roleProfiles?.Patient?.resource).toMatchObject({
       gender: 'female'
@@ -212,7 +213,7 @@ describe('useProfileSectionSave', () => {
     expect(mockUpdate).not.toHaveBeenCalled();
     expect(mockSubmit).toHaveBeenCalledTimes(1);
 
-    const bundle = mockSubmit.mock.calls[0]?.[0] as Bundle;
+    const bundle = mockSubmit.mock.calls[0][0] as Bundle;
     expect(bundle.type).toBe('transaction');
     expect(bundle.entry).toHaveLength(2);
     expect(bundle.entry?.[0]?.request).toEqual({
@@ -276,7 +277,7 @@ describe('useProfileSectionSave', () => {
     });
 
     expect(mockSubmit).toHaveBeenCalledTimes(1);
-    const bundle = mockSubmit.mock.calls[0]?.[0] as Bundle;
+    const bundle = mockSubmit.mock.calls[0][0] as Bundle;
     expect(bundle.type).toBe('transaction');
     expect(bundle.entry).toHaveLength(4);
     const putUrls = bundle.entry?.map(entry => entry.request?.url);
@@ -295,7 +296,8 @@ describe('useProfileSectionSave', () => {
     expect((clinicEntry?.resource as Practitioner).active).toBe(true);
     expect((researcherEntry?.resource as Practitioner).active).toBe(true);
     // The recached roleProfiles include the Practitioner roles.
-    const action = mockDispatch.mock.calls[0]?.[0] as IActionLogin;
+    expect(mockDispatch).toHaveBeenCalledTimes(1);
+    const action = mockDispatch.mock.calls[0][0] as IActionLogin;
     expect(action.payload?.roleProfiles).toMatchObject({
       'Clinic Admin': { resource: { gender: 'female' } },
       Researcher: { resource: { gender: 'female' } }
@@ -332,7 +334,8 @@ describe('useProfileSectionSave', () => {
       });
     });
 
-    const bundle = mockSubmit.mock.calls[0]?.[0] as Bundle;
+    expect(mockSubmit).toHaveBeenCalledTimes(1);
+    const bundle = mockSubmit.mock.calls[0][0] as Bundle;
     expect(bundle.entry).toHaveLength(2);
     expect(bundle.entry?.map(entry => entry.request?.url)).toEqual([
       'Patient/pat-1',
@@ -388,7 +391,8 @@ describe('useProfileSectionSave', () => {
       });
     });
 
-    const bundle = mockSubmit.mock.calls[0]?.[0] as Bundle;
+    expect(mockSubmit).toHaveBeenCalledTimes(1);
+    const bundle = mockSubmit.mock.calls[0][0] as Bundle;
     const patient = bundle.entry?.[0]?.resource as Patient;
     const practitioner = bundle.entry?.[1]?.resource as Practitioner;
     expect(patient.communication).toHaveLength(1);
@@ -427,7 +431,8 @@ describe('useProfileSectionSave', () => {
       });
     });
 
-    const action = mockDispatch.mock.calls[0]?.[0] as IActionLogin;
+    expect(mockDispatch).toHaveBeenCalledTimes(1);
+    const action = mockDispatch.mock.calls[0][0] as IActionLogin;
     expect(action.payload?.roleProfiles?.Patient?.resource).toMatchObject({
       gender: 'female'
     });
@@ -502,7 +507,8 @@ describe('useProfileSectionSave', () => {
       email: 'user@konsulin.care',
       phoneNumber: undefined
     });
-    const action = mockDispatch.mock.calls[0]?.[0] as IActionLogin;
+    expect(mockDispatch).toHaveBeenCalledTimes(1);
+    const action = mockDispatch.mock.calls[0][0] as IActionLogin;
     expect(action.type).toBe('auth-check');
     expect(action.payload?.fullname).toBe('John Magnificent Doe');
     expect(action.payload?.roleProfiles?.Patient).toMatchObject({
