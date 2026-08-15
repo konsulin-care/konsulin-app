@@ -31,13 +31,15 @@ describe('FhirExtensionUrls', () => {
 });
 
 describe('FhirSystems', () => {
-  it('defines the six canonical system URLs without duplication', () => {
+  it('defines the eight canonical system URLs without duplication', () => {
     expect(new Set(Object.keys(FhirSystems))).toEqual(
       new Set([
         'assessmentContext',
         'assessmentDomain',
         'lucide',
+        'practitionerRole',
         'researchReferral',
+        'snomedSct',
         'ucum',
         'usageContext'
       ])
