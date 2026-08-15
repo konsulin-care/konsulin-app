@@ -258,7 +258,7 @@ func assertSwitchFailsClosed(t *testing.T, opts RoleSwitchOptions) {
 	if resp.StatusCode != http.StatusBadGateway {
 		t.Errorf("expected 502, got %d", resp.StatusCode)
 	}
-	if c := findCookie(resp, "auth"); c != nil {
+	if findCookie(resp, "auth") != nil {
 		t.Error("expected auth cookie unchanged when claim sync fails")
 	}
 }
