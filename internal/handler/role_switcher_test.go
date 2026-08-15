@@ -264,7 +264,7 @@ func assertSwitchFailsClosed(t *testing.T, opts RoleSwitchOptions) {
 }
 
 func TestRoleSwitchBackendRejects(t *testing.T) {
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}))
 	defer backend.Close()
@@ -277,7 +277,7 @@ func TestRoleSwitchBackendRejects(t *testing.T) {
 }
 
 func TestRoleSwitchBackendUnreachable(t *testing.T) {
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	backend.Close()
