@@ -24,10 +24,10 @@ type stRoleClaim struct {
 }
 
 type jwtPayload struct {
-	Sub         string      `json:"sub"`
-	Exp         int64       `json:"exp"`
-	STRole      stRoleClaim `json:"st-role"`
-	STActiveRole string     `json:"st-active-role"`
+	Sub          string      `json:"sub"`
+	Exp          int64       `json:"exp"`
+	STRole       stRoleClaim `json:"st-role"`
+	STActiveRole string      `json:"st-active-role"`
 }
 
 // activeRoleFrom returns the highest-priority role from the list.

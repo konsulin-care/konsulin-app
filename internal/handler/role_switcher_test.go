@@ -206,7 +206,7 @@ func TestRoleSwitchRejectsInvalidRole(t *testing.T) {
 
 func TestRoleSwitchRejectsRoleNotInSession(t *testing.T) {
 	tests := []struct {
-		name     string
+		name      string
 		jwtCookie *http.Cookie
 	}{
 		{name: "with JWT claim present", jwtCookie: &http.Cookie{Name: "sAccessToken", Value: testJWTPatientOnly}},
