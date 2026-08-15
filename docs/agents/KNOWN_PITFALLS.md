@@ -16,6 +16,8 @@ date: 2026-05-26
 
 # FHIR Pitfalls
 
+- N+1 FHIR queries trigger 429 — scope by identity + server-side
+  `questionnaire=` filter in one query, never one request per questionnaire
 - N+1 queries when resolving referenced resources — batch in a single
   bundle or use `_include` parameter
 - Large Bundle responses overwhelm mobile memory — always paginate with

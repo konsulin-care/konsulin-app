@@ -20,6 +20,8 @@ export interface AuthCookieSession {
   fullname?: string;
   email?: string;
   profile_complete?: boolean;
+  /** SuperTokens st-active-role claim from the verified access token. */
+  active_role?: string;
 }
 
 /**
@@ -183,3 +185,41 @@ export const restoreAuthCookie = async (
 
   return postAuthCookieWithLogging(authPayload, logMessage);
 };
+
+/**
+ * Heals a session whose SuperTokens active-role claim diverges from the auth
+ * cookie role by pushing the cookie role (the user's expressed choice) to the
+ * backend claim via /auth/role/switch.
+ *
+ * Runs only when the session is authenticated, both roles are present, they
+ * differ, and the cookie role is among the user's roles. Returns true when a
+ * switch request succeeded, false otherwise (no drift, missing claim, or
+ * failed request — warn-logged).
+ */
+export async function syncActiveRoleWithCookie(): Promise<boolean> {
+  const cookieSession = await getAuthCookieSession();
+  if (!cookieSession?.authenticated) return false;
+  const { role_name, active_role, roles } = cookieSession;
+  if (!role_name || !active_role || role_name === active_role) return false;
+  if (!Array.isArray(roles) || !roles.includes(role_name)) return false;
+
+  const token = await fetchCSRFToken();
+  try {
+    const res = await fetch('/auth/role/switch', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...(token ? { 'X-CSRF-Token': token } : {})
+      },
+      body: new URLSearchParams({ role: role_name })
+    });
+    if (!res.ok) {
+      console.warn('[auth:resync] active role sync failed:', res.status);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[auth:resync] active role sync request failed:', err);
+    return false;
+  }
+}

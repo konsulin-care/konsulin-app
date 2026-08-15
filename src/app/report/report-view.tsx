@@ -37,7 +37,9 @@ export default function ReportView() {
   const { state: authState } = useAuth();
   const isGuest = !authState.isAuthenticated;
 
-  const { data: progress, isLoading: progressLoading } = useResearchProgress();
+  const { data: progress, isLoading: progressLoading } = useResearchProgress({
+    skipResponseSearch: true
+  });
   const study = useMemo(
     () => progress?.studies.find(item => item.study.id === studyId) ?? null,
     [progress, studyId]
@@ -50,10 +52,23 @@ export default function ReportView() {
         : [],
     [study]
   );
+  // Earliest batch start bounds the response search so pre-study responses
+  // authored under the same identity are excluded from the payload.
+  const since = useMemo(
+    () =>
+      study && study.batches.length > 0
+        ? study.batches
+            .map(batch => batch.start)
+            .toSorted((a, b) => a.localeCompare(b))[0]
+        : null,
+    [study]
+  );
   const { data: titleMap = EMPTY_QUESTIONNAIRE_INFO_MAP } =
     useQuestionnaireTitles(questionnaireIds);
-  const { data: responses, isLoading: responsesLoading } =
-    useReportResponses(questionnaireIds);
+  const { data: responses, isLoading: responsesLoading } = useReportResponses(
+    questionnaireIds,
+    since
+  );
 
   const buckets = useMemo(
     () =>

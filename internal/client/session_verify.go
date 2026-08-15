@@ -13,6 +13,9 @@ type VerifiedSessionResult struct {
 	UserID string
 	Roles  []string
 	Role   string
+	// ActiveRole is the SuperTokens st-active-role claim, empty when the
+	// token predates the claim (legacy sessions).
+	ActiveRole string
 }
 
 // stRoleClaim maps the SuperTokens UserRoleClaim format: {"v": ["Patient"]}.
@@ -21,9 +24,10 @@ type stRoleClaim struct {
 }
 
 type jwtPayload struct {
-	Sub    string      `json:"sub"`
-	Exp    int64       `json:"exp"`
-	STRole stRoleClaim `json:"st-role"`
+	Sub          string      `json:"sub"`
+	Exp          int64       `json:"exp"`
+	STRole       stRoleClaim `json:"st-role"`
+	STActiveRole string      `json:"st-active-role"`
 }
 
 // activeRoleFrom returns the highest-priority role from the list.
@@ -78,8 +82,9 @@ func VerifySession(accessToken string) (*VerifiedSessionResult, error) {
 	}
 
 	return &VerifiedSessionResult{
-		UserID: payload.Sub,
-		Roles:  roles,
-		Role:   activeRoleFrom(roles),
+		UserID:     payload.Sub,
+		Roles:      roles,
+		Role:       activeRoleFrom(roles),
+		ActiveRole: payload.STActiveRole,
 	}, nil
 }

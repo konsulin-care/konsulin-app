@@ -4,6 +4,9 @@ export const DRAWER_STATE = {
   SUCCESS: 'success'
 };
 
+/** Full-profile cache freshness window for the profile page. */
+export const PROFILE_CACHE_STALE_MS = 5 * 60 * 1000;
+
 export const subtitle_success_updated =
   'Your profile is updated, looking sharp!';
 
@@ -56,3 +59,8 @@ export const genderList = [
     code: 'female'
   }
 ];
+
+export const languageOptions = [
+  { code: 'id', label: 'Indonesian' },
+  { code: 'en', label: 'English' }
+] as const;

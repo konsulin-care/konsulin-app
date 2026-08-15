@@ -147,6 +147,7 @@ type getAuthCookieResponse struct {
 	Email           string   `json:"email,omitempty"`
 	PhoneNumber     string   `json:"phoneNumber,omitempty"`
 	ProfilePicture  string   `json:"profile_picture,omitempty"`
+	ActiveRole      string   `json:"active_role,omitempty"`
 }
 
 func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookieOptions) {
@@ -163,6 +164,17 @@ func handleGetAuthCookie(w http.ResponseWriter, r *http.Request, opts AuthCookie
 		resp.Email = sess.Email
 		resp.PhoneNumber = sess.PhoneNumber
 		resp.ProfilePicture = sess.ProfilePicture
+	}
+	// Surface the SuperTokens active-role claim so the frontend can detect
+	// drift between the auth cookie role and the backend session claim.
+	accessCookieName := opts.AccessCookieName
+	if accessCookieName == "" {
+		accessCookieName = "sAccessToken"
+	}
+	if accessCookie, err := r.Cookie(accessCookieName); err == nil {
+		if verified, err := client.VerifySession(accessCookie.Value); err == nil {
+			resp.ActiveRole = verified.ActiveRole
+		}
 	}
 	w.Header().Set("Cache-Control", "no-store, private")
 	w.Header().Set("Pragma", "no-cache")

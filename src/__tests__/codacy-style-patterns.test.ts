@@ -214,4 +214,113 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
       expect(readIdx).toBe(-1);
     });
   });
+
+  describe('profile edit drawers (void-expression)', () => {
+    const drawerFiles = [
+      'src/app/profile/address-edit-drawer.tsx',
+      'src/app/profile/contact-edit-drawer.tsx',
+      'src/app/profile/name-edit-drawer.tsx',
+      'src/app/profile/personal-info-edit-drawer.tsx'
+    ];
+
+    it.each(drawerFiles)(
+      '%s passes handleSave directly to onCtaClick',
+      file => {
+        const { content } = readFile(file);
+        expect(content).toContain('onCtaClick={handleSave}');
+        expect(content).not.toContain('onCtaClick={() => handleSave()}');
+      }
+    );
+
+    it.each(drawerFiles)('%s avoids void-returning arrow shorthands', file => {
+      const { content } = readFile(file);
+      expect(content).not.toMatch(/=>\s*\w+\(event\.target\.value\)/);
+      expect(content).not.toMatch(/=>\s*handleSave\(\)/);
+    });
+  });
+
+  describe('multi-role-sync.ts (role-keyed maps)', () => {
+    const { content } = readFile('src/app/profile/multi-role-sync.ts');
+
+    it('uses getRoleValue for dynamic property reads', () => {
+      expect(content).toContain('getRoleValue(userInfo?.roleProfiles, role)');
+      expect(content).toContain('getRoleValue(resources, activeRole)');
+    });
+
+    it('uses setRoleValue for dynamic property writes', () => {
+      expect(content).toContain(
+        'setRoleValue(resources, role, entry.resource)'
+      );
+      expect(content).toContain(
+        'setRoleValue(resources, activeRole, userInfo.fullProfile)'
+      );
+      expect(content).toContain('setRoleValue(merged, role, apply(resource))');
+      expect(content).toContain('setRoleValue(updated, role, {');
+    });
+
+    it('has no direct bracket writes with role keys', () => {
+      expect(content).not.toMatch(/resources\[role\]/);
+      expect(content).not.toMatch(/resources\[activeRole\]/);
+      expect(content).not.toMatch(/merged\[role\]/);
+      expect(content).not.toMatch(/updated\[role\]/);
+    });
+  });
+
+  describe('role-profiles.ts (role-keyed maps)', () => {
+    const { content } = readFile('src/services/role-profiles.ts');
+
+    it('types ROLE_CODES as Partial so undefined is explicit', () => {
+      expect(content).toContain('Partial<');
+      expect(content).not.toMatch(/const ROLE_CODES: Record<string/);
+    });
+
+    it('reads ROLE_CODES via getRoleValue', () => {
+      expect(content).toContain('getRoleValue(ROLE_CODES, role)');
+      expect(content).not.toContain('const roleCode = ROLE_CODES[role]');
+    });
+
+    it('reads responseEntries via .at()', () => {
+      expect(content).toContain('responseEntries.at(index)?.resource');
+      expect(content).not.toContain('responseEntries[index]');
+    });
+
+    it('writes roleProfiles via setRoleValue', () => {
+      expect(content).toContain('setRoleValue(roleProfiles, role, profile)');
+      expect(content).not.toContain('roleProfiles[role] = profile');
+    });
+  });
+
+  describe('role-map.ts (guarded role-keyed accessors)', () => {
+    const { content, lines } = readFile('src/app/profile/role-map.ts');
+
+    it('reads via Reflect.get instead of map[role] bracket access', () => {
+      expect(content).toContain('Reflect.get(map, role)');
+      expect(lines.some(l => l.includes('return map[role]'))).toBe(false);
+    });
+
+    it('writes via Reflect.set instead of map[role] bracket assignment', () => {
+      expect(content).toContain('Reflect.set(map, role, value)');
+      expect(lines.some(l => l.includes('map[role] = value'))).toBe(false);
+    });
+
+    it('keeps the Object.hasOwn + isValidRoleKey guard before access', () => {
+      const readStart = lines.findIndex(l =>
+        l.includes('export function getRoleValue')
+      );
+      expect(readStart).toBeGreaterThanOrEqual(0);
+      const readBody = lines.slice(readStart, readStart + 10);
+      expect(readBody.some(l => l.includes('Object.hasOwn'))).toBe(true);
+      expect(readBody.some(l => l.includes('isValidRoleKey(role)'))).toBe(true);
+
+      const writeStart = lines.findIndex(l =>
+        l.includes('export function setRoleValue')
+      );
+      expect(writeStart).toBeGreaterThanOrEqual(0);
+      const writeBody = lines.slice(writeStart, writeStart + 10);
+      expect(writeBody.some(l => l.includes('Object.hasOwn'))).toBe(true);
+      expect(writeBody.some(l => l.includes('isValidRoleKey(role)'))).toBe(
+        true
+      );
+    });
+  });
 });

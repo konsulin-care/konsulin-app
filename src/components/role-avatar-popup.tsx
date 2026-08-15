@@ -33,23 +33,13 @@ function getCurrentAvatar(
   };
 }
 
-/** Generates AvatarInfo for a given role name. */
-function avatarInfoForRole(role: string): AvatarInfo {
-  const displayName = roleLabel(role);
-  const placeholder = generateAvatarPlaceholder({
-    id: role,
-    name: displayName
-  });
-  return {
-    seed: placeholder.seed,
-    initials: placeholder.initials ?? '',
-    backgroundColor: placeholder.backgroundColor ?? '',
-    photoUrl: ''
-  };
-}
-
 /**
+ * Header avatar for the active user.
  *
+ * Single-role users keep a plain link to /profile. Multi-role users get a
+ * dropdown listing the other roles as icon + label — the role profile
+ * pictures are intentionally not shown since they are the same for every
+ * role of the account.
  */
 export default function RoleAvatarPopup({
   indicator,
@@ -63,6 +53,7 @@ export default function RoleAvatarPopup({
   const currentRole = authState.userInfo?.role_name;
   const userId = authState.userInfo?.userId ?? '';
   const currentAvatar = getCurrentAvatar(currentRole, userId, authState);
+  const otherRoles = roles.filter(role => role !== currentRole);
 
   if (roles.length <= 1) {
     return (
@@ -84,14 +75,8 @@ export default function RoleAvatarPopup({
 
   return (
     <RoleSwitchDropdown
-      otherRoleAvatars={roles
-        .filter(r => r !== currentRole)
-        .map(role => ({
-          role,
-          ...avatarInfoForRole(role)
-        }))}
+      otherRoles={otherRoles}
       currentAvatar={currentAvatar}
-      roles={roles}
       indicator={indicator}
       displayName={displayName}
       onOpenChange={undefined}

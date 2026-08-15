@@ -4,7 +4,7 @@ import {
   BaseRenderer,
   useRendererQueryClient
 } from '@aehrc/smart-forms-renderer';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 
 /**
  *
@@ -16,7 +16,7 @@ export function SmartFormShell({
   className: string;
   onChange?: React.ChangeEventHandler<HTMLDivElement>;
 }) {
-  const queryClient = useRendererQueryClient() as unknown as QueryClient;
+  const queryClient = useRendererQueryClient();
 
   return (
     <QueryClientProvider client={queryClient}>

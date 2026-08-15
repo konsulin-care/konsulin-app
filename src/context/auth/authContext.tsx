@@ -5,16 +5,26 @@ import { Roles } from '@/constants/roles';
 import { dbGet, dbSet, migrateLocalStorage, STORES } from '@/lib/indexeddb';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { setCurrentUserId, UserProfile } from '@/services/api';
-import { getAuthCookieSession, restoreAuthCookie } from '@/services/auth';
-import { getProfileByIdentifier } from '@/services/profile';
+import {
+  getAuthCookieSession,
+  restoreAuthCookie,
+  syncActiveRoleWithCookie
+} from '@/services/auth';
+import {
+  fetchUserProfilesBundle,
+  type ProfileResource,
+  type RoleProfile
+} from '@/services/role-profiles';
 import { mergeNames } from '@/utils/helper';
 import { hasPendingAssessmentClaimIntent } from '@/utils/redirect-intent';
 import { roleToFhirResource } from '@/utils/role-fhir';
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useReducer,
   useState
 } from 'react';
@@ -27,18 +37,99 @@ import {
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 import { isProfileCompleteFromFHIR } from '../../utils/profileCompleteness';
 import { initialState, reducer } from './authReducer';
-import { IActionAuth, IStateAuth } from './authTypes';
+import { IActionAuth, IStateAuth, IStateUserInfo } from './authTypes';
 
 interface ContextProps {
   isLoading: boolean;
   state: IStateAuth;
   dispatch: React.Dispatch<IActionAuth>;
+  /** Re-fetch the full profile bundle and refresh the cached auth payload. */
+  refreshProfiles?: () => Promise<void>;
 }
 
 type UserRole =
   | typeof Roles.Practitioner
   | typeof Roles.ClinicAdmin
   | typeof Roles.Patient;
+
+/** Extract the photo URL from a FHIR profile (always an Attachment array). */
+function extractPhotoUrl(profile: ProfileResource | null): string {
+  return profile?.photo?.[0]?.url ?? '';
+}
+
+/** Build the login payload from the active profile resource. */
+function buildLoginPayload(
+  userId: string,
+  role: UserRole,
+  superTokensRoles: string[] | undefined,
+  profile: ProfileResource,
+  roleProfiles: Record<string, RoleProfile | null>
+): IStateUserInfo {
+  return {
+    userId,
+    role_name: role,
+    roles: superTokensRoles,
+    email: profile.telecom?.find(item => item.system === 'email')?.value,
+    profile_picture: extractPhotoUrl(profile),
+    fullname: mergeNames(profile.name),
+    fhirId: profile.id ?? '',
+    organizationId: roleProfiles[role]?.organizationId,
+    profile_complete: isProfileCompleteFromFHIR(profile),
+    roleProfiles,
+    fullProfile: profile,
+    cachedAt: Date.now()
+  };
+}
+
+/** True when every non-null role profile carries its full resource. */
+function roleProfilesCarryResources(
+  roleProfiles: Record<string, RoleProfile | null> | undefined
+): boolean {
+  if (!roleProfiles) return false;
+  return Object.values(roleProfiles).every(
+    profile => profile === null || Boolean(profile.resource)
+  );
+}
+
+/**
+ * True when every non-null role profile's resource type matches the role's
+ * backing FHIR resource. Rejects Person-era caches (Clinic Admin/Researcher
+ * are now Practitioner) without a version-key migration.
+ */
+function roleProfilesCarryMatchingTypes(
+  roleProfiles: Record<string, RoleProfile | null> | undefined
+): boolean {
+  if (!roleProfiles) return true;
+  return Object.entries(roleProfiles).every(([role, profile]) => {
+    if (profile === null) return true;
+    if (!profile.resource) return false;
+    return profile.resource.resourceType === roleToFhirResource(role);
+  });
+}
+
+/** True when a cached profile can serve the session.
+ *
+ * Single-role users always use the cache. Multi-role users only when the
+ * cache carries the full role profile resources — a pre-bundle cache or an
+ * old-shape cache (name/photoUrl only) is rejected so the profile page and
+ * the multi-role save flow never read stale or partial resources. A cache
+ * whose role resources carry a stale Person type is also rejected.
+ */
+function isCacheUsable(
+  cached: UserProfile | null,
+  superTokensRoles: string[] | undefined
+): boolean {
+  if (!cached) return false;
+  // A cache without identity data is a broken payload from a failed fetch;
+  // never serve it — force a refetch so the profile self-heals.
+  if (!cached.fullname && !cached.fhirId) return false;
+  const isMultiRole =
+    Array.isArray(superTokensRoles) && superTokensRoles.length > 1;
+  return (
+    roleProfilesCarryMatchingTypes(cached.roleProfiles) &&
+    (!isMultiRole || roleProfilesCarryResources(cached.roleProfiles))
+  );
+}
 
 // skipcq: JS-W1042 - createContext requires a default value per React API
 const AuthContext = createContext<ContextProps | undefined>(undefined);
@@ -167,18 +258,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  /** Extracts the Organization id from a managingOrganization reference. */
-  const extractOrgId = (result: unknown): string | undefined => {
-    if (!result || typeof result !== 'object') return undefined;
-    const obj = result as Record<string, unknown>;
-    const mgmtOrg = obj.managingOrganization;
-    if (!mgmtOrg || typeof mgmtOrg !== 'object') return undefined;
-    const ref = (mgmtOrg as Record<string, unknown>).reference;
-    return typeof ref === 'string'
-      ? ref.replace('Organization/', '') || undefined
-      : undefined;
-  };
-
   /** Persists the selected clinic organization id in IndexedDB. */
   const persistClinicOrganization = (orgId: string) =>
     dbSet(STORES.uiPreferences, {
@@ -246,13 +325,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     role: UserRole,
     superTokensRoles: string[] | undefined
   ): Promise<void> => {
-    const result = await getProfileByIdentifier({
-      userId,
-      type: roleToFhirResource(role)
-    });
+    const { activeProfile: result, roleProfiles } =
+      await fetchUserProfilesBundle(userId, superTokensRoles ?? [role], role);
 
     if (!result) {
-      const payload = {
+      const payload: IStateUserInfo = {
         userId,
         role_name: role,
         roles: superTokensRoles,
@@ -260,29 +337,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         fullname: '',
         profile_picture: '',
         fhirId: '',
-        profile_complete: false
+        profile_complete: false,
+        roleProfiles,
+        fullProfile: undefined
       };
-      await dbSet(STORES.userProfile, { ...payload, cachedAt: Date.now() });
+      // Never persist an empty profile: caching it would poison the next
+      // load (isCacheUsable rejects empty caches and forces a refetch).
       dispatch({ type: 'login', payload });
       await persistFhirIdForRole(userId, role, '');
       return;
     }
 
-    const email = result.telecom?.find(item => item.system === 'email')?.value;
-    const profile_complete = isProfileCompleteFromFHIR(result);
-    const organizationId = extractOrgId(result);
-
-    const payload = {
+    const payload = buildLoginPayload(
       userId,
-      role_name: role,
-      roles: superTokensRoles,
-      email,
-      profile_picture: result?.photo?.[0]?.url ?? '',
-      fullname: mergeNames(result?.name),
-      fhirId: result?.id ?? '',
-      organizationId,
-      profile_complete
-    };
+      role,
+      superTokensRoles,
+      result,
+      roleProfiles
+    );
 
     await dbSet(STORES.userProfile, {
       ...payload,
@@ -290,11 +362,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       cachedAt: Date.now()
     });
     dispatch({ type: 'login', payload });
-    await persistFhirIdForRole(userId, role, result?.id ?? '');
+    await persistFhirIdForRole(userId, role, result.id ?? '');
 
     // Clinic admin: persist managingOrganization as clinic_organization
-    if (role === Roles.ClinicAdmin && organizationId) {
-      await persistClinicOrganization(organizationId);
+    if (role === Roles.ClinicAdmin && payload.organizationId) {
+      await persistClinicOrganization(payload.organizationId);
     }
   };
 
@@ -318,7 +390,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         fullname: fallbackCookie.fullname ?? '',
         profile_picture: fallbackCookie.profile_picture ?? '',
         fhirId: resolvedFhirId,
-        profile_complete: fallbackCookie.profile_complete ?? false
+        profile_complete: fallbackCookie.profile_complete ?? false,
+        roleProfiles: {},
+        fullProfile: undefined
       };
       dispatch({ type: 'login', payload });
     } else {
@@ -331,6 +405,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   };
+
+  /** Re-fetch the full profile bundle and refresh the cached auth payload. */
+  const refreshProfiles = useCallback(async (): Promise<void> => {
+    const existing = state.userInfo;
+    const userId = existing?.userId;
+    const activeRole = existing?.role_name;
+    if (!userId || !activeRole) return;
+    const roles =
+      existing?.roles && existing.roles.length > 0
+        ? existing.roles
+        : [activeRole];
+    try {
+      const { activeProfile: result, roleProfiles } =
+        await fetchUserProfilesBundle(userId, roles, activeRole);
+      if (!result) return; // keep the existing cache when the active profile vanished
+      const payload = buildLoginPayload(
+        userId,
+        activeRole as UserRole,
+        existing?.roles,
+        result,
+        roleProfiles
+      );
+      await dbSet(STORES.userProfile, {
+        ...payload,
+        cachedAt: Date.now()
+      });
+      dispatch({ type: 'auth-check', payload });
+
+      if (activeRole === Roles.ClinicAdmin && payload.organizationId) {
+        await persistClinicOrganization(payload.organizationId);
+      }
+    } catch (error) {
+      console.error('Auth: profile refresh failed', error);
+    }
+  }, [state.userInfo, dispatch]);
 
   /** Fetch profile and login, falling back to auth cookie on error. */
   const fetchProfileAndLogin = async () => {
@@ -359,7 +468,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       // IndexedDB unavailable — skip cache and fetch from API
     }
-    if (cached?.userId === userId && cached?.role_name === role) {
+    if (
+      cached?.userId === userId &&
+      cached?.role_name === role &&
+      isCacheUsable(cached, superTokensRoles)
+    ) {
       setCurrentUserId(userId);
       dispatch({ type: 'login', payload: cached });
 
@@ -395,6 +508,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
       return;
     }
+    // Heal sessions whose SuperTokens active-role claim diverges from the
+    // auth cookie role: push the cookie's role (the user's expressed choice)
+    // to the backend claim. Best-effort and reload-free — the frontend state
+    // already matches the cookie; only the token claim moves.
+    try {
+      await syncActiveRoleWithCookie();
+    } catch (error) {
+      console.error('Auth: active-role resync failed:', error);
+    }
     try {
       await fetchProfileAndLogin();
     } catch (error) {
@@ -427,10 +549,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.doesSessionExist]);
 
+  // Memoized so consumers keep a stable reference across re-renders
+  // while isLoading/state/refreshProfiles are unchanged (SonarQube S6481).
+  const contextValue = useMemo<ContextProps>(
+    () => ({ isLoading, state, dispatch, refreshProfiles }),
+    [isLoading, state, dispatch, refreshProfiles]
+  );
+
   return (
-    <AuthContext.Provider value={{ isLoading, state, dispatch }}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };
 

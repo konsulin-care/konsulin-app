@@ -10,14 +10,11 @@ import { AvatarInfo } from '@/components/role-avatar-popup-types';
  */
 export function StackedCircles({
   currentAvatar,
-  otherRoleAvatars
+  hasMultipleRoles
 }: Readonly<{
-  roles: string[];
   currentAvatar: AvatarInfo;
-  otherRoleAvatars: (AvatarInfo & { role: string })[];
+  hasMultipleRoles: boolean;
 }>) {
-  const hasMultipleRoles = otherRoleAvatars.length > 0;
-
   return (
     <div className='relative inline-flex'>
       {hasMultipleRoles && (

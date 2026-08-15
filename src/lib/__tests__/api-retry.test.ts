@@ -3,6 +3,7 @@ import {
   MAX_JITTER_MS,
   MAX_RETRY_COUNT,
   getRetryDelayMs,
+  isRateLimited,
   shouldRetryRequest
 } from '@/lib/api-retry';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -80,6 +81,30 @@ describe('shouldRetryRequest', () => {
     ).toBe(true);
   });
 
+  it('retries GET requests that fail with 429 (rate limited)', () => {
+    const error = makeError({ response: { status: 429 } });
+    expect(shouldRetryRequest(error, GET_CONFIG, 0)).toBe(true);
+  });
+
+  it('never retries 429 on non-GET requests', () => {
+    const error = makeError({ response: { status: 429 } });
+    expect(shouldRetryRequest(error, POST_CONFIG, 0)).toBe(false);
+  });
+
+  it('never retries 429 once the retry budget is exhausted', () => {
+    const error = makeError({ response: { status: 429 } });
+    expect(shouldRetryRequest(error, GET_CONFIG, MAX_RETRY_COUNT)).toBe(false);
+    expect(shouldRetryRequest(error, GET_CONFIG, MAX_RETRY_COUNT + 1)).toBe(
+      false
+    );
+  });
+
+  it('identifies 429 responses as rate-limited', () => {
+    expect(isRateLimited(makeError({ response: { status: 429 } }))).toBe(true);
+    expect(isRateLimited(makeError({ response: { status: 503 } }))).toBe(false);
+    expect(isRateLimited(makeError())).toBe(false);
+  });
+
   it('does not retry when the request config is missing', () => {
     expect(shouldRetryRequest(makeError(), undefined, 0)).toBe(false);
   });
@@ -119,5 +144,28 @@ describe('getRetryDelayMs', () => {
       BASE_RETRY_DELAY_MS + MAX_JITTER_MS
     );
     expect(getRetryDelayMs(0)).toBeGreaterThanOrEqual(BASE_RETRY_DELAY_MS);
+  });
+
+  it('honors the Retry-After seconds header over exponential backoff', () => {
+    const error = makeError({
+      response: { status: 429, headers: { 'retry-after': '5' } }
+    });
+    expect(getRetryDelayMs(0, error)).toBe(5000);
+  });
+
+  it('honors the Retry-After HTTP-date header', () => {
+    const future = new Date(Date.now() + 60_000).toUTCString();
+    const error = makeError({
+      response: { status: 429, headers: { 'retry-after': future } }
+    });
+    const delay = getRetryDelayMs(0, error);
+    expect(delay).toBeGreaterThan(55_000);
+    expect(delay).toBeLessThanOrEqual(61_000);
+  });
+
+  it('falls back to exponential backoff when a 429 carries no Retry-After header', () => {
+    mockRandomValue(0);
+    const error = makeError({ response: { status: 429 } });
+    expect(getRetryDelayMs(0, error)).toBe(BASE_RETRY_DELAY_MS);
   });
 });

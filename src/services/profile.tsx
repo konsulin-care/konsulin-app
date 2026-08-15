@@ -7,6 +7,8 @@ type IProfileRequest = {
   payload: Patient | Practitioner;
 };
 
+type ProfileResource = Patient | Practitioner;
+
 type EmailExistenceResponse = {
   exists: boolean;
   patientIds: string[];
@@ -68,16 +70,7 @@ export const createProfile = async ({
     ...(telecom.length > 0 && { telecom })
   };
 
-  try {
-    const response = await apiRequest<Patient | Practitioner>(
-      'POST',
-      `/fhir/${type}`,
-      payload
-    );
-    return response;
-  } catch (error) {
-    throw error;
-  }
+  return apiRequest<Patient | Practitioner>('POST', `/fhir/${type}`, payload);
 };
 
 /** Look up a FHIR profile by user ID and role type. */
@@ -106,10 +99,10 @@ export const getProfileByIdentifier = async ({
 export const getProfileById = async (
   id: string,
   type: 'Patient' | 'Practitioner'
-) => {
+): Promise<ProfileResource> => {
   if (!id) throw new Error('Missing FHIR id');
 
-  const response = await apiRequest<Patient | Practitioner>(
+  const response = await apiRequest<ProfileResource>(
     'GET',
     `/fhir/${type}/${id}`
   );
@@ -138,13 +131,13 @@ export const signupByEmail = (email: string) => {
 
 /** Mutation hook to update user profile via PATCH. */
 export const useUpdateProfile = () => {
-  return useMutation<Patient | Practitioner, Error, IProfileRequest>({
+  return useMutation<ProfileResource, Error, IProfileRequest>({
     mutationKey: ['update-profile'],
     mutationFn: async ({ payload }) => {
       const { id, resourceType } = payload;
       try {
         const API = await getAPI();
-        const response = await API.put<Patient | Practitioner>(
+        const response = await API.put<ProfileResource>(
           `/fhir/${resourceType}/${id}`,
           payload
         );

@@ -158,6 +158,22 @@ func TestRoleSwitchActiveRoleInCookie(t *testing.T) {
 	if !called {
 		t.Error("expected backend to be called for active-role claim update")
 	}
+	// Backend Set-Cookie headers (re-issued SuperTokens tokens) are forwarded.
+	if c := findCookie(resp, "sAccessToken"); c == nil || c.Value != "new-token" {
+		t.Errorf("expected forwarded sAccessToken cookie, got %+v", c)
+	}
+	if c := findCookie(resp, "sFrontToken"); c == nil || c.Value != "new-front" {
+		t.Errorf("expected forwarded sFrontToken cookie, got %+v", c)
+	}
+	// Auth cookie is committed to the new role only after the claim sync.
+	updated := findCookie(resp, "auth")
+	if updated == nil {
+		t.Fatal("expected updated auth cookie")
+	}
+	sess := extractSessionFromCookie(t, updated)
+	if sess.Role != "Clinic Admin" {
+		t.Errorf("expected cookie role Clinic Admin, got %q", sess.Role)
+	}
 }
 
 func TestRoleSwitchRejectsInvalidRole(t *testing.T) {
@@ -188,97 +204,96 @@ func TestRoleSwitchRejectsInvalidRole(t *testing.T) {
 	}
 }
 
-func TestRoleSwitchRejectsRoleNotInJWT(t *testing.T) {
-	srv := newRoleSwitchServer(t, RoleSwitchOptions{
-		CookieName:   "auth",
-		CookieSecure: false,
-		CookieSecret: cookieTestSecret,
-	})
+func TestRoleSwitchRejectsRoleNotInSession(t *testing.T) {
+	tests := []struct {
+		name      string
+		jwtCookie *http.Cookie
+	}{
+		{name: "with JWT claim present", jwtCookie: &http.Cookie{Name: "sAccessToken", Value: testJWTPatientOnly}},
+		{name: "without JWT cookie", jwtCookie: nil},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := newRoleSwitchServer(t, RoleSwitchOptions{
+				CookieName:   "auth",
+				CookieSecure: false,
+				CookieSecret: cookieTestSecret,
+			})
+			defer srv.Close()
+
+			cookieSession := &session.Session{
+				UserID: "test-user",
+				Roles:  []string{"Practitioner"},
+				Role:   "Practitioner",
+			}
+			authCookie := encodeAuthCookie(t, cookieSession)
+
+			var resp *http.Response
+			if tc.jwtCookie == nil {
+				resp = mustPostRoleSwitch(t, srv, "Clinic Admin", authCookie)
+			} else {
+				resp = mustPostRoleSwitch(t, srv, "Clinic Admin", authCookie, tc.jwtCookie)
+			}
+			if resp.StatusCode != http.StatusBadRequest {
+				t.Errorf("expected 400, got %d", resp.StatusCode)
+			}
+		})
+	}
+}
+
+// assertSwitchFailsClosed posts a role switch with the given options and
+// requires a 502 with no auth cookie write (fail-closed on claim sync failure).
+func assertSwitchFailsClosed(t *testing.T, opts RoleSwitchOptions) {
+	t.Helper()
+	srv := newRoleSwitchServer(t, opts)
 	defer srv.Close()
 
 	cookieSession := &session.Session{
 		UserID: "test-user",
-		Roles:  []string{"Practitioner"},
+		Roles:  []string{"Practitioner", "Clinic Admin"},
 		Role:   "Practitioner",
 	}
-	authCookie := encodeAuthCookie(t, cookieSession)
-	jwtCookie := &http.Cookie{
-		Name:  "sAccessToken",
-		Value: testJWTPatientOnly,
-	}
 
-	resp := mustPostRoleSwitch(t, srv, "Clinic Admin", authCookie, jwtCookie)
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("expected 400, got %d", resp.StatusCode)
+	resp := mustPostRoleSwitch(t, srv, "Clinic Admin", encodeAuthCookie(t, cookieSession))
+	if resp.StatusCode != http.StatusBadGateway {
+		t.Errorf("expected 502, got %d", resp.StatusCode)
+	}
+	if findCookie(resp, "auth") != nil {
+		t.Error("expected auth cookie unchanged when claim sync fails")
 	}
 }
 
-func TestRoleSwitchRejectsRoleNotInCookieNoJWT(t *testing.T) {
-	srv := newRoleSwitchServer(t, RoleSwitchOptions{
-		CookieName:   "auth",
-		CookieSecure: false,
-		CookieSecret: cookieTestSecret,
-	})
-	defer srv.Close()
-
-	cookieSession := &session.Session{
-		UserID: "test-user",
-		Roles:  []string{"Practitioner"},
-		Role:   "Practitioner",
-	}
-	authCookie := encodeAuthCookie(t, cookieSession)
-
-	resp := mustPostRoleSwitch(t, srv, "Clinic Admin", authCookie)
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("expected 400, got %d", resp.StatusCode)
-	}
-}
-
-func TestRoleSwitchBackendUnreachable(t *testing.T) {
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+func TestRoleSwitchBackendRejects(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
 	}))
-	backend.Close()
-
-	srv := newRoleSwitchServer(t, RoleSwitchOptions{
+	defer backend.Close()
+	assertSwitchFailsClosed(t, RoleSwitchOptions{
 		CookieName:     "auth",
 		CookieSecure:   false,
 		CookieSecret:   cookieTestSecret,
 		BackendBaseURL: backend.URL,
 	})
-	defer srv.Close()
+}
 
-	cookieSession := &session.Session{
-		UserID: "test-user",
-		Roles:  []string{"Practitioner", "Clinic Admin"},
-		Role:   "Practitioner",
-	}
-	authCookie := encodeAuthCookie(t, cookieSession)
-
-	resp := mustPostRoleSwitch(t, srv, "Clinic Admin", authCookie)
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected 200 OK even when backend is unreachable, got %d", resp.StatusCode)
-	}
+func TestRoleSwitchBackendUnreachable(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	backend.Close()
+	assertSwitchFailsClosed(t, RoleSwitchOptions{
+		CookieName:     "auth",
+		CookieSecure:   false,
+		CookieSecret:   cookieTestSecret,
+		BackendBaseURL: backend.URL,
+	})
 }
 
 func TestRoleSwitchNoBackendBaseURL(t *testing.T) {
-	srv := newRoleSwitchServer(t, RoleSwitchOptions{
+	assertSwitchFailsClosed(t, RoleSwitchOptions{
 		CookieName:     "auth",
 		CookieSecure:   false,
 		CookieSecret:   cookieTestSecret,
 		BackendBaseURL: "",
 	})
-	defer srv.Close()
-
-	cookieSession := &session.Session{
-		UserID: "test-user",
-		Roles:  []string{"Practitioner", "Clinic Admin"},
-		Role:   "Practitioner",
-	}
-	authCookie := encodeAuthCookie(t, cookieSession)
-
-	resp := mustPostRoleSwitch(t, srv, "Clinic Admin", authCookie)
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected 200 OK, got %d", resp.StatusCode)
-	}
 }

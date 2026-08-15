@@ -39,10 +39,12 @@ export default function RouteResponseCleaner() {
           const isOnAuthPage = pathname.includes('/auth');
           const isOnResultPage =
             pathname === '/record' && id && categoryParam === '1';
+          const isOnReportPage = pathname === '/report';
 
           return (
             !isOnQuestionnairePage &&
             !isOnResultPage &&
+            !isOnReportPage &&
             !isOnAuthPage &&
             !isSkipCleanup
           );

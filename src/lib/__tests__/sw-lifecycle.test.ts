@@ -486,10 +486,11 @@ describe('sw-register.js', () => {
 // ---------------------------------------------------------------------------
 describe('defense-in-depth URL validation', () => {
   it('networkFirst returns 503 for non-http URLs', async () => {
-    const patchedCode = SW_CODE.replace(
-      'async function networkFirst(request, cacheName, fallbackUrl) {',
-      'self.__testNetworkFirst = async function networkFirst(request, cacheName, fallbackUrl) {'
-    );
+    // Append a test hook: networkFirst is a top-level function declaration,
+    // so it is hoisted and in scope at the end of the evaluated body.
+    // Format-agnostic — unlike the previous literal string replace() which
+    // silently no-oped after the formatter added a space (see #8086b202).
+    const patchedCode = `${SW_CODE}\n;self.__testNetworkFirst = networkFirst;`;
 
     const captureSelf = createMockSelf() as MockSelf & {
       __testNetworkFirst?: (

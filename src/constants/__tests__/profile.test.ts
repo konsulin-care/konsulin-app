@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { settingMenus } from '../profile';
+import { languageOptions, settingMenus } from '../profile';
+
+describe('languageOptions', () => {
+  it('offers exactly Indonesian and English', () => {
+    expect(languageOptions).toEqual([
+      { code: 'id', label: 'Indonesian' },
+      { code: 'en', label: 'English' }
+    ]);
+  });
+});
 
 describe('settingMenus', () => {
   it('has exactly 2 items (Settings removed)', () => {

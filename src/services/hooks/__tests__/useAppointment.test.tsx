@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { Bundle, BundleEntry } from 'fhir/r4';
+import type { Bundle } from 'fhir/r4';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppointment } from '../useAppointment';
@@ -52,7 +52,7 @@ describe('useAppointment', () => {
               }
             ]
           }
-        } as BundleEntry
+        }
       ]
     };
 

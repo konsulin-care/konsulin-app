@@ -3,8 +3,10 @@ import { getRetryDelayMs, shouldRetryRequest } from '@/lib/api-retry';
 import { reportRequestOutcome } from '@/lib/connectivity';
 import { clearUserData } from '@/lib/indexeddb';
 import axios, { AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
+import type { Patient, Practitioner } from 'fhir/r4';
 import { toast } from 'react-toastify';
 import { parseAxiosError } from './api-error';
+import type { RoleProfile } from './role-profiles';
 
 export interface UserProfile {
   userId: string;
@@ -17,6 +19,8 @@ export interface UserProfile {
   fhirId?: string;
   organizationId?: string;
   profile_complete?: boolean;
+  roleProfiles?: Record<string, RoleProfile | null>;
+  fullProfile?: Patient | Practitioner;
   cachedAt?: number;
 }
 
@@ -112,7 +116,7 @@ function setupResponseInterceptor(instance: AxiosInstance) {
         /** Waits for the backoff delay, then re-issues the request with the retry counter bumped. */
         const retryAfterBackoff = async (): Promise<unknown> => {
           await new Promise(resolve =>
-            setTimeout(resolve, getRetryDelayMs(retryCount))
+            setTimeout(resolve, getRetryDelayMs(retryCount, error))
           );
           if (config) {
             config._retryCount = retryCount + 1;

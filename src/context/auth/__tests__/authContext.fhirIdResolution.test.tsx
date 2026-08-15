@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-misused-promises,
-    @typescript-eslint/no-unnecessary-type-assertion, unicorn/switch-case-braces,
-    @typescript-eslint/require-await, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-return,
+    @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unused-vars */
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuth } from '../authContext';
@@ -28,8 +27,8 @@ vi.mock('@/services/auth', () => ({
   restoreAuthCookie: vi.fn()
 }));
 
-vi.mock('@/services/profile', () => ({
-  getProfileByIdentifier: vi.fn()
+vi.mock('@/services/role-profiles', () => ({
+  fetchUserProfilesBundle: vi.fn()
 }));
 
 vi.mock('@/services/anonymous-session', () => ({
@@ -61,12 +60,16 @@ vi.mock('@/lib/indexeddb', () => ({
 vi.mock('@/utils/role-fhir', () => ({
   roleToFhirResource: vi.fn((role: string) => {
     switch (role) {
-      case 'Practitioner':
+      case 'Practitioner': {
         return 'Practitioner';
+      }
       case 'Clinic Admin':
-        return 'Person';
-      default:
+      case 'Researcher': {
+        return 'Practitioner';
+      }
+      default: {
         return 'Patient';
+      }
     }
   })
 }));
@@ -84,14 +87,14 @@ vi.mock('@/utils/helper', () => ({
 // ---------------------------------------------------------------------------
 import { dbGet, dbSet } from '@/lib/indexeddb';
 import { getAuthCookieSession, restoreAuthCookie } from '@/services/auth';
-import { getProfileByIdentifier } from '@/services/profile';
+import { fetchUserProfilesBundle } from '@/services/role-profiles';
 
 // ---------------------------------------------------------------------------
 // Type helpers
 // ---------------------------------------------------------------------------
 const mockGetAuthSession = getAuthCookieSession as ReturnType<typeof vi.fn>;
 const mockRestoreCookie = restoreAuthCookie as ReturnType<typeof vi.fn>;
-const mockGetProfile = getProfileByIdentifier as ReturnType<typeof vi.fn>;
+const mockFetchBundle = fetchUserProfilesBundle as ReturnType<typeof vi.fn>;
 const mockDbGet = dbGet as ReturnType<typeof vi.fn>;
 const mockDbSet = dbSet as ReturnType<typeof vi.fn>;
 
@@ -193,10 +196,13 @@ describe('fhirId per-role storage', () => {
     mockDbGet.mockResolvedValue(null);
 
     // AND: API returns a Patient profile
-    mockGetProfile.mockResolvedValue({
-      resourceType: 'Patient',
-      id: 'correct-patient-id',
-      name: [{ use: 'official', given: ['Test'], family: 'User' }]
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: {
+        resourceType: 'Patient',
+        id: 'correct-patient-id',
+        name: [{ use: 'official', given: ['Test'], family: 'User' }]
+      },
+      roleProfiles: {}
     });
 
     globalThis.fetch = setupFetchMock({ ok: true, status: 200 });
@@ -220,7 +226,10 @@ describe('fhirId per-role storage', () => {
   it('stores fhirId as empty when no profile is found for the role', async () => {
     // GIVEN: no cached profile, API returns null
     mockDbGet.mockResolvedValue(null);
-    mockGetProfile.mockResolvedValue(null);
+    mockFetchBundle.mockResolvedValue({
+      activeProfile: null,
+      roleProfiles: { Patient: null }
+    });
 
     globalThis.fetch = setupFetchMock({ ok: true, status: 200 });
 
@@ -233,6 +242,12 @@ describe('fhirId per-role storage', () => {
     const map = findFhirIdMapDbSetCall();
     expect(map).not.toBeNull();
     expect(map?.Patient).toBe('');
+
+    // AND: the empty profile is never persisted to the userProfile cache
+    const userProfileWrites = mockDbSet.mock.calls.filter(
+      (call: unknown[]) => call[0] === 'user_profile'
+    );
+    expect(userProfileWrites).toHaveLength(0);
   });
 });
 
@@ -270,7 +285,7 @@ describe('fallback uses stored fhirId per-role mapping', () => {
     // Make dbGet return a stored fhirId map when queried for uiPreferences
     // The real fhirIdMap.getFhirIdForRole calls dbGet(['', 'fhirId_map_...'])
     // We need the SECOND dbGet call to return the map (first is userProfile cache check)
-    mockDbGet.mockImplementation(async (storeOrKey: unknown, key?: unknown) => {
+    mockDbGet.mockImplementation((storeOrKey: unknown, key?: unknown) => {
       // userProfile cache check: storeName='user_profile', key='multi-role-user'
       if (storeOrKey === 'user_profile') return null;
       // uiPreferences lookup for fhirId map
@@ -282,7 +297,7 @@ describe('fallback uses stored fhirId per-role mapping', () => {
       return null;
     });
 
-    mockGetProfile.mockRejectedValue(new Error('API unavailable'));
+    mockFetchBundle.mockRejectedValue(new Error('API unavailable'));
 
     globalThis.fetch = setupFetchMock({ ok: true, status: 200 });
 
@@ -303,7 +318,7 @@ describe('fallback uses stored fhirId per-role mapping', () => {
     mockDbGet.mockResolvedValue(null);
 
     // AND: stored map exists but doesn't have Patient entry
-    mockDbGet.mockImplementation(async (storeOrKey: unknown, key?: unknown) => {
+    mockDbGet.mockImplementation((storeOrKey: unknown, key?: unknown) => {
       if (storeOrKey === 'user_profile') return null;
       if (storeOrKey === 'ui_preferences') {
         return {
@@ -314,7 +329,7 @@ describe('fallback uses stored fhirId per-role mapping', () => {
     });
 
     // AND: API fetch fails
-    mockGetProfile.mockRejectedValue(new Error('API unavailable'));
+    mockFetchBundle.mockRejectedValue(new Error('API unavailable'));
 
     globalThis.fetch = setupFetchMock({ ok: true, status: 200 });
 

@@ -1,7 +1,6 @@
 import { ANONYMOUS_SESSION_IDENTIFIER_SYSTEM } from '@/constants/anonymous-session';
 import { useAuth } from '@/context/auth/authContext';
 import { clearConsentFlag, readConsentFlag } from '@/utils/consent';
-import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
 import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
 import {
   computeResearchProgress,
@@ -15,7 +14,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { Bundle } from 'fhir/r4';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ensureAnonymousSession } from '../anonymous-session';
 import { getAPI } from '../api';
 import { submitFhirBundle } from './fhir-bundle';
@@ -26,55 +25,6 @@ export type { QuestionnaireInfo } from './questionnaire-info';
 export interface ResearchIdentity {
   kind: 'patient' | 'guest';
   id: string;
-}
-
-/** Minimum visible completion total to avoid re-identifying individuals. */
-export const COMPLETION_COUNT_FLOOR = 5;
-
-/** Aggregated completion counts across a set of questionnaires. */
-export interface StudyCompletionCounts {
-  /** Raw sum of completed responses across the questionnaires. */
-  total: number;
-  /** Total when at or above the k-anonymity floor, else null. */
-  visibleCount: number | null;
-}
-
-/**
- * Masks a completion total below the k-anonymity floor.
- *
- * @param total - Raw completion count.
- * @param floor - Minimum total worth showing.
- * @returns The total when it meets the floor, otherwise null.
- */
-export function withKAnonymityFloor(
-  total: number,
-  floor: number = COMPLETION_COUNT_FLOOR
-): number | null {
-  return total >= floor ? total : null;
-}
-
-/**
- * Sums the completed QuestionnaireResponse totals for a set of
- * questionnaires, one `_summary=count` query per questionnaire.
- *
- * @param API - Authenticated FHIR API instance.
- * @param questionnaireIds - Bare questionnaire ids to count.
- * @returns The summed completion total.
- */
-async function fetchCompletionTotal(
-  API: Awaited<ReturnType<typeof getAPI>>,
-  questionnaireIds: string[]
-): Promise<number> {
-  let total = 0;
-  for (const id of questionnaireIds) {
-    const canonical = toCanonicalQuestionnaireUrl(id);
-    if (!canonical) continue;
-    const response = await API.get<{ total?: number }>(
-      `/fhir/QuestionnaireResponse?_summary=count&questionnaire=${canonical}`
-    );
-    total += response.data?.total ?? 0;
-  }
-  return total;
 }
 
 /** Common search suffix: only completed responses, minimal fields. */
@@ -151,11 +101,18 @@ export function buildQuestionnaireResponseSearch(
  * Two sequential requests: the studies bundle first (so the earliest study
  * period start can bound the response search), then the completed-response
  * search scoped to the identity. Patients are matched by FHIR author, guests
- * by anonymous identifier.
+ * by anonymous identifier. With `skipResponseSearch`, the response search is
+ * omitted and the batch structure is returned with zero response-derived
+ * counts — used by surfaces that fetch full responses separately.
  *
+ * @param options - Optional. Set `{ skipResponseSearch: true }` to skip the
+ *   completed-response search and return structure-only progress.
  * @returns React Query result with ResearchProgress data.
  */
-export function useResearchProgress() {
+export function useResearchProgress(options?: {
+  skipResponseSearch?: boolean;
+}) {
+  const skipResponseSearch = options?.skipResponseSearch ?? false;
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [identity, setIdentity] = useState<ResearchIdentity | null>(null);
   const [identityFailed, setIdentityFailed] = useState(false);
@@ -200,7 +157,12 @@ export function useResearchProgress() {
   }, [isAuthLoading, isEligible, isAuthenticated, fhirId]);
 
   const query = useQuery({
-    queryKey: ['research', identity?.kind ?? 'none', identity?.id ?? 'none'],
+    queryKey: [
+      'research',
+      identity?.kind ?? 'none',
+      identity?.id ?? 'none',
+      skipResponseSearch ? 'structure' : 'full'
+    ],
     enabled: identity !== null,
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<ResearchProgress> => {
@@ -217,9 +179,11 @@ export function useResearchProgress() {
         today
       );
 
-      // Nothing to measure without active studies: skip the response search.
-      if (studyProgress.length === 0) {
-        return computeResearchProgress([], [], consentedStudyIds);
+      // Nothing to measure without active studies, or structure-only mode:
+      // keep batches populated and feed no responses (counts stay zero).
+      if (studyProgress.length === 0 || skipResponseSearch) {
+        const structure = recomputeStudyProgress(studyProgress, [], today);
+        return computeResearchProgress(structure, [], consentedStudyIds);
       }
 
       const earliest = earliestStudyStart(
@@ -252,34 +216,6 @@ export function useResearchProgress() {
     ...query,
     isLoading: query.isPending && isEligible && !identityFailed
   };
-}
-
-/**
- * Fetches the aggregate completion count for a study batch's questionnaires.
- *
- * Runs one `_summary=count&questionnaire=<canonical>` query per questionnaire
- * id and sums the totals. Results are cached for at least 15 minutes so
- * social-proof widgets do not hammer the FHIR server on every render.
- *
- * @param questionnaireIds - Bare questionnaire ids in the batch.
- * @returns React Query result with summed totals and k-anonymity masking.
- */
-export function useStudyCompletionCounts(questionnaireIds: string[]) {
-  const ids = useMemo(
-    () => [...new Set(questionnaireIds)].toSorted((a, b) => a.localeCompare(b)),
-    [questionnaireIds]
-  );
-
-  return useQuery({
-    queryKey: ['study-completion-counts', ids],
-    enabled: ids.length > 0,
-    staleTime: 15 * 60_000,
-    queryFn: async (): Promise<StudyCompletionCounts> => {
-      const API = await getAPI();
-      const total = await fetchCompletionTotal(API, ids);
-      return { total, visibleCount: withKAnonymityFloor(total) };
-    }
-  });
 }
 
 /**
@@ -361,9 +297,8 @@ export function useConsentToStudy(studyId: string) {
 
   return useMutation({
     mutationFn: (): Promise<Bundle> => {
-      if (!fhirId) {
+      if (!fhirId)
         throw new Error('Patient identity required for research consent');
-      }
       return submitFhirBundle(buildConsentBundle(fhirId, studyId));
     },
     onSuccess: () => {

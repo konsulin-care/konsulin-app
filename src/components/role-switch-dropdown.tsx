@@ -1,7 +1,6 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-misused-promises */
 
-import Avatar from '@/components/general/avatar';
 import { UserIcon } from '@/components/icons';
 import {
   DropdownMenu as Dropdown,
@@ -13,10 +12,11 @@ import {
 import { fetchCSRFToken } from '@/services/auth';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
+import { toast } from 'react-toastify';
 
 import { HeaderText } from '@/components/role-avatar-popup-header';
 import { AvatarInfo } from '@/components/role-avatar-popup-types';
-import { roleLabel } from '@/components/role-avatar-popup-utils';
+import { roleIcon, roleLabel } from '@/components/role-avatar-popup-utils';
 import { StackedCircles } from '@/components/stacked-circles';
 
 /** Switches the active user role via API call and reloads. */
@@ -31,63 +31,63 @@ async function switchRole(role: string): Promise<void> {
       },
       body: new URLSearchParams({ role })
     });
-    if (res.ok) globalThis.location.href = '/';
+    if (res.ok) {
+      globalThis.location.href = '/';
+      return;
+    }
+    // The BFF fails closed (502) when the backend claim sync fails; the
+    // cookie keeps the previous role, so the UI must stay put and surface it.
+    toast.error('Unable to switch role. Please try again.');
   } catch {
-    // role switch failed silently
+    toast.error('Unable to switch role. Please try again.');
   }
 }
 
 /** Renders dropdown menu items for switching to other roles. */
 function RoleSwitchMenuItems({
-  otherRoleAvatars
+  otherRoles
 }: Readonly<{
-  otherRoleAvatars: (AvatarInfo & { role: string })[];
+  otherRoles: string[];
 }>) {
-  if (otherRoleAvatars.length === 0) return null;
+  if (otherRoles.length === 0) return null;
   return (
     <>
       <DropdownSeparator />
-      {otherRoleAvatars.map(info => (
-        <DropdownItem
-          key={info.role}
-          className='cursor-pointer'
-          onClick={() => switchRole(info.role)}
-        >
-          <Avatar
-            seed={info.seed}
-            initials={info.initials}
-            backgroundColor={info.backgroundColor}
-            photoUrl={info.photoUrl}
-            height={24}
-            width={24}
-            className='mr-3 text-[10px]'
-            imageClassName='self-center'
-          />
-          <span className='text-sm font-medium text-[#2c2f35]'>
-            {roleLabel(info.role)}
-          </span>
-        </DropdownItem>
-      ))}
+      {otherRoles.map(role => {
+        const Icon = roleIcon(role);
+        return (
+          <DropdownItem
+            key={role}
+            className='cursor-pointer'
+            onClick={() => switchRole(role)}
+          >
+            <Icon className='mr-3 h-4 w-4 text-[#2c2f35]' />
+            <span className='text-sm font-medium text-[#2c2f35]'>
+              {roleLabel(role)}
+            </span>
+          </DropdownItem>
+        );
+      })}
     </>
   );
 }
 
 interface RoleSwitchDropdownProps {
-  otherRoleAvatars: (AvatarInfo & { role: string })[];
+  /** Roles other than the active one, shown as switch targets. */
+  otherRoles: string[];
   currentAvatar: AvatarInfo;
-  roles: string[];
   indicator?: string;
   displayName?: string;
   onOpenChange: (open: boolean) => void;
 }
 
 /**
- *
+ * Role switcher for multi-role users: current avatar + stacked depth cue in
+ * the trigger, and a dropdown listing the other roles as icon + label.
  */
 export function RoleSwitchDropdown({
-  otherRoleAvatars,
+  otherRoles,
   currentAvatar,
-  roles,
   indicator,
   displayName,
   onOpenChange
@@ -111,9 +111,8 @@ export function RoleSwitchDropdown({
         <div className='flex cursor-pointer items-center gap-2'>
           <HeaderText indicator={indicator} displayName={displayName} />
           <StackedCircles
-            roles={roles}
             currentAvatar={currentAvatar}
-            otherRoleAvatars={otherRoleAvatars}
+            hasMultipleRoles={otherRoles.length > 0}
           />
         </div>
       </DropdownTrigger>
@@ -122,7 +121,7 @@ export function RoleSwitchDropdown({
           <UserIcon className='mr-3 h-4 w-4 text-[#2c2f35]' />
           <span className='text-sm font-medium text-[#2c2f35]'>Profile</span>
         </DropdownItem>
-        <RoleSwitchMenuItems otherRoleAvatars={otherRoleAvatars} />
+        <RoleSwitchMenuItems otherRoles={otherRoles} />
       </DropdownContent>
     </Dropdown>
   );

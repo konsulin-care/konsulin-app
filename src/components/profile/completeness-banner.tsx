@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const DISMISS_KEY = 'profile_completeness_dismissed';
@@ -13,7 +12,6 @@ type Props = {
  *
  */
 export default function CompletenessBanner({ show }: Props) {
-  const router = useRouter();
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -38,14 +36,6 @@ export default function CompletenessBanner({ show }: Props) {
             Please update your information to complete registration.
           </p>
         </div>
-        <button
-          onClick={() => {
-            router.push('/profile?path=edit-profile');
-          }}
-          className='shrink-0 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700'
-        >
-          Edit Profile
-        </button>
         <button
           onClick={handleDismiss}
           className='shrink-0 text-amber-400 hover:text-amber-600'

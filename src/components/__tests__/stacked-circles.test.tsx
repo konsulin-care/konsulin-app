@@ -28,11 +28,7 @@ const baseAvatar: AvatarInfo = {
 describe('StackedCircles', () => {
   it('renders single avatar with no stack when there are no other roles', () => {
     render(
-      <StackedCircles
-        roles={['patient']}
-        currentAvatar={baseAvatar}
-        otherRoleAvatars={[]}
-      />
+      <StackedCircles currentAvatar={baseAvatar} hasMultipleRoles={false} />
     );
 
     expect(screen.getByText('JD')).toBeInTheDocument();
@@ -40,70 +36,21 @@ describe('StackedCircles', () => {
   });
 
   it('renders two stacked circles for 2+ roles (avatar on top, bg behind)', () => {
-    render(
-      <StackedCircles
-        roles={['patient', 'practitioner']}
-        currentAvatar={baseAvatar}
-        otherRoleAvatars={[
-          {
-            seed: '',
-            initials: 'PR',
-            backgroundColor: '#fff',
-            photoUrl: '',
-            role: 'practitioner'
-          }
-        ]}
-      />
-    );
+    render(<StackedCircles currentAvatar={baseAvatar} hasMultipleRoles />);
 
     expect(screen.getByText('JD')).toBeInTheDocument();
     expect(screen.getByTestId('stack-bg-circle')).toBeInTheDocument();
   });
 
   it('positions the background circle 8px right of the avatar', () => {
-    render(
-      <StackedCircles
-        roles={['patient', 'practitioner']}
-        currentAvatar={baseAvatar}
-        otherRoleAvatars={[
-          {
-            seed: '',
-            initials: 'PR',
-            backgroundColor: '#fff',
-            photoUrl: '',
-            role: 'practitioner'
-          }
-        ]}
-      />
-    );
+    render(<StackedCircles currentAvatar={baseAvatar} hasMultipleRoles />);
 
     const bg = screen.getByTestId('stack-bg-circle');
     expect(bg).toHaveStyle('left: 8px');
   });
 
   it('applies teal-grey gradient and 80% opacity to the background circle', () => {
-    render(
-      <StackedCircles
-        roles={['patient', 'practitioner', 'admin']}
-        currentAvatar={baseAvatar}
-        otherRoleAvatars={[
-          {
-            seed: '',
-            initials: 'PR',
-            backgroundColor: '#fff',
-            photoUrl: '',
-            role: 'practitioner'
-          },
-          {
-            seed: '',
-            initials: 'AD',
-            backgroundColor: '#fff',
-            photoUrl: '',
-            role: 'admin'
-          }
-        ]}
-      />
-    );
+    render(<StackedCircles currentAvatar={baseAvatar} hasMultipleRoles />);
 
     const bg = screen.getByTestId('stack-bg-circle');
     expect(bg).toHaveClass('opacity-80');
