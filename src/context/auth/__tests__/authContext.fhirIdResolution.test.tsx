@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-misused-promises,
-    @typescript-eslint/no-unnecessary-type-assertion,
-    @typescript-eslint/require-await, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-return,
+    @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unused-vars */
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuth } from '../authContext';
@@ -286,7 +285,7 @@ describe('fallback uses stored fhirId per-role mapping', () => {
     // Make dbGet return a stored fhirId map when queried for uiPreferences
     // The real fhirIdMap.getFhirIdForRole calls dbGet(['', 'fhirId_map_...'])
     // We need the SECOND dbGet call to return the map (first is userProfile cache check)
-    mockDbGet.mockImplementation(async (storeOrKey: unknown, key?: unknown) => {
+    mockDbGet.mockImplementation((storeOrKey: unknown, key?: unknown) => {
       // userProfile cache check: storeName='user_profile', key='multi-role-user'
       if (storeOrKey === 'user_profile') return null;
       // uiPreferences lookup for fhirId map
@@ -319,7 +318,7 @@ describe('fallback uses stored fhirId per-role mapping', () => {
     mockDbGet.mockResolvedValue(null);
 
     // AND: stored map exists but doesn't have Patient entry
-    mockDbGet.mockImplementation(async (storeOrKey: unknown, key?: unknown) => {
+    mockDbGet.mockImplementation((storeOrKey: unknown, key?: unknown) => {
       if (storeOrKey === 'user_profile') return null;
       if (storeOrKey === 'ui_preferences') {
         return {
