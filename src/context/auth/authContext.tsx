@@ -24,6 +24,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useReducer,
   useState
 } from 'react';
@@ -548,12 +549,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.doesSessionExist]);
 
+  // Memoized so consumers keep a stable reference across re-renders
+  // while isLoading/state/refreshProfiles are unchanged (SonarQube S6481).
+  const contextValue = useMemo<ContextProps>(
+    () => ({ isLoading, state, dispatch, refreshProfiles }),
+    [isLoading, state, dispatch, refreshProfiles]
+  );
+
   return (
-    <AuthContext.Provider
-      value={{ isLoading, state, dispatch, refreshProfiles }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };
 

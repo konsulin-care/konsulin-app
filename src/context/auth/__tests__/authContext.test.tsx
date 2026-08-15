@@ -1,6 +1,7 @@
 /* eslint-disable max-lines */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import fs from 'node:fs';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuth } from '../authContext';
 
@@ -1001,5 +1002,82 @@ describe('Fix 5 - empty profile cache is never served', () => {
     await waitFor(() =>
       expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
     );
+  });
+});
+
+// =========================================================================
+// SonarQube S6481: provider value must be memoized
+// =========================================================================
+describe('Fix 6 - provider value keeps a stable reference', () => {
+  const capturedRefs: unknown[] = [];
+
+  function ValueObserver() {
+    const auth = useAuth();
+    capturedRefs.push(auth);
+    return (
+      <div data-testid='auth-authenticated'>
+        {String(auth.state.isAuthenticated)}
+      </div>
+    );
+  }
+
+  function RenderProbe() {
+    const [, setTick] = useState(0);
+    return (
+      <div>
+        <button
+          type='button'
+          data-testid='rerender'
+          onClick={() => setTick(tick => tick + 1)}
+        >
+          rerender
+        </button>
+        <AuthProvider>
+          <ValueObserver />
+        </AuthProvider>
+      </div>
+    );
+  }
+
+  beforeEach(() => {
+    capturedRefs.length = 0;
+    mockUseSessionContext.mockReturnValue({
+      doesSessionExist: true,
+      userId: 'user-1',
+      accessTokenPayload: {}
+    });
+    mockGetClaimValue.mockResolvedValue(['Patient']);
+    mockRestoreCookie.mockResolvedValue(true);
+    mockGetAuthSession.mockResolvedValue({
+      authenticated: true,
+      role_name: 'Patient',
+      userId: 'user-1'
+    });
+    mockDbGet.mockResolvedValue({
+      userId: 'user-1',
+      role_name: 'Patient',
+      email: 'test@example.com',
+      fullname: 'Test User',
+      profile_complete: true
+    });
+  });
+
+  it('reuses the same context object when the provider re-renders with unchanged deps', async () => {
+    // WHEN: the provider mounts and the session bootstrap settles
+    render(<RenderProbe />);
+    await waitFor(() =>
+      expect(screen.getByTestId('auth-authenticated').textContent).toBe('true')
+    );
+    const settledRef = capturedRefs.at(-1);
+
+    // WHEN: the provider's parent re-renders (no context deps changed)
+    const rendersBefore = capturedRefs.length;
+    fireEvent.click(screen.getByTestId('rerender'));
+    await waitFor(() =>
+      expect(capturedRefs.length).toBeGreaterThan(rendersBefore)
+    );
+
+    // THEN: consumers keep the same context object reference
+    expect(capturedRefs.at(-1)).toBe(settledRef);
   });
 });
