@@ -218,7 +218,6 @@ export function useProfileData(
   return {
     profileData: activeProfile,
     roleProfiles,
-    isLoading: false,
     identity,
     sections,
     resourceType

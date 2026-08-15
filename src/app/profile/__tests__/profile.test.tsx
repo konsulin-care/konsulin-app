@@ -128,7 +128,6 @@ function mockProfileHooks(
   vi.mocked(useProfileData).mockReturnValue({
     profileData: resolved[roleName]?.resource,
     roleProfiles: resolved,
-    isLoading: false,
     identity,
     sections,
     resourceType

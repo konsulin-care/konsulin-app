@@ -121,7 +121,7 @@ export function buildUpdatedRoleProfiles(
   const updated: Record<string, RoleProfile | null> = { ...existing };
   for (const [role, resource] of Object.entries(merged)) {
     updated[role] = {
-      name: mergeNames(resource.name) ?? '',
+      name: mergeNames(resource.name),
       photoUrl: resource.photo?.[0]?.url ?? '',
       resource
     };

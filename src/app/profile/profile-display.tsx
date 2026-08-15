@@ -172,14 +172,8 @@ export default function ProfileDisplay() {
   const roles = resolveRoles(authState.userInfo);
   const isEmailBased = Boolean(authState.userInfo?.email);
 
-  const {
-    profileData,
-    roleProfiles,
-    isLoading,
-    identity,
-    sections,
-    resourceType
-  } = useProfileData(userId, roles, roleName);
+  const { profileData, roleProfiles, identity, sections, resourceType } =
+    useProfileData(userId, roles, roleName);
   const { showBanner } = useProfileCompleteness(profileData);
   const { isUploading, handleFileSelected } = useProfilePhotoSave({
     fhirId,
@@ -193,7 +187,7 @@ export default function ProfileDisplay() {
   const closeDrawer = () => setActiveDrawer(null);
 
   const raw = readRawValues(profileData);
-  const loading = isLoading || isAuthLoading;
+  const loading = isAuthLoading;
 
   return (
     <>
@@ -220,7 +214,7 @@ export default function ProfileDisplay() {
               onEditName={() => setActiveDrawer('name')}
             />
             <SectionCards sections={sections} onEdit={setActiveDrawer} />
-            {Object.values(roleProfiles ?? {})
+            {Object.values(roleProfiles)
               .filter((profile): profile is RoleProfile =>
                 Boolean(profile?.resource)
               )
