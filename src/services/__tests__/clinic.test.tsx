@@ -73,9 +73,7 @@ const sampleBundle: Bundle = {
 describe('usePractitionerRoleHealthcareServices', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(getAPI).mockResolvedValue(
-      mockAxiosInstance as unknown as AxiosInstance
-    );
+    vi.mocked(getAPI).mockResolvedValue(mockAxiosInstance);
   });
 
   afterEach(() => {
