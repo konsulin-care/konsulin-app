@@ -44,9 +44,7 @@ describe('ModalQr', () => {
   });
 
   it('renders QR code when controlled open is true', () => {
-    render(
-      <ModalQr value='https://example.com' open={true} onOpenChange={noop} />
-    );
+    render(<ModalQr value='https://example.com' open onOpenChange={noop} />);
     expect(screen.getByTestId('qr-code')).toBeInTheDocument();
     expect(screen.getByTestId('qr-code')).toHaveAttribute(
       'data-value',
@@ -64,11 +62,7 @@ describe('ModalQr', () => {
   it('calls onOpenChange(false) when Copy Link is clicked in controlled mode', async () => {
     const onOpenChange = vi.fn();
     render(
-      <ModalQr
-        value='https://example.com'
-        open={true}
-        onOpenChange={onOpenChange}
-      />
+      <ModalQr value='https://example.com' open onOpenChange={onOpenChange} />
     );
     const user = userEvent.setup();
     await user.click(screen.getByText('Copy Link'));

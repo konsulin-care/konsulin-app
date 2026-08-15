@@ -239,7 +239,7 @@ export default function ProfileDisplay() {
         gender={raw.gender}
         birthDate={raw.birthDate}
         languageCode={raw.languageCode}
-        supportsLanguage={true}
+        supportsLanguage
         email={raw.email}
         phone={raw.phone}
         isEmailBased={isEmailBased}
