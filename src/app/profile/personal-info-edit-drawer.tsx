@@ -5,7 +5,7 @@ import AppDrawer from '@/components/ui/app-drawer';
 import { genderList, languageOptions } from '@/constants/profile';
 import type { FhirResourceType } from '@/utils/role-fhir';
 import { format } from 'date-fns';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ChangeEvent, type ReactNode } from 'react';
 import { useProfileSectionSave } from './hooks/useProfileSectionSave';
 import { mergePersonalInfo, mergePersonalInfoSync } from './section-merge';
 
@@ -27,6 +27,47 @@ type Props = {
   /** False for Person-based roles, which have no language field. */
   supportsLanguage: boolean;
 };
+
+/** Labeled field wrapper used by every personal-info field. */
+function Field({
+  label,
+  children
+}: Readonly<{ label: string; children: ReactNode }>) {
+  return (
+    <div className='space-y-2'>
+      <p className='text-xs font-semibold text-[#2C2F35]'>{label}</p>
+      {children}
+    </div>
+  );
+}
+
+/** Labeled select control with shared styling. */
+function SelectField({
+  label,
+  value,
+  onChange,
+  testId,
+  children
+}: Readonly<{
+  label: string;
+  value: string;
+  onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
+  testId: string;
+  children: ReactNode;
+}>) {
+  return (
+    <Field label={label}>
+      <select
+        value={value}
+        onChange={onChange}
+        data-testid={testId}
+        className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
+      >
+        {children}
+      </select>
+    </Field>
+  );
+}
 
 /**
  * Personal information drawer: gender, date of birth and communication
@@ -106,52 +147,45 @@ export default function PersonalInfoEditDrawer({
       onCtaClick={() => handleSave()}
     >
       <div className='space-y-5 px-4 pb-4'>
-        <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>Gender</p>
-          <select
-            value={genderValue}
-            onChange={event => setGenderValue(event.target.value)}
-            data-testid='gender-select'
-            className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
-          >
-            <option value='' disabled>
-              Select gender
+        <SelectField
+          label='Gender'
+          value={genderValue}
+          testId='gender-select'
+          onChange={event => setGenderValue(event.target.value)}
+        >
+          <option value='' disabled>
+            Select gender
+          </option>
+          {genderList.map(option => (
+            <option key={option.code} value={option.code}>
+              {option.name}
             </option>
-            {genderList.map(option => (
-              <option key={option.code} value={option.code}>
-                {option.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          ))}
+        </SelectField>
 
-        <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>Date of Birth</p>
+        <Field label='Date of Birth'>
           <DobCalendar
             value={dobValue ? new Date(dobValue) : null}
             onChange={handleDobChange}
           />
-        </div>
+        </Field>
 
         {supportsLanguage && (
-          <div className='space-y-2'>
-            <p className='text-xs font-semibold text-[#2C2F35]'>Language</p>
-            <select
-              value={languageValue}
-              onChange={event => setLanguageValue(event.target.value)}
-              data-testid='language-select'
-              className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
-            >
-              <option value='' disabled>
-                Select language
+          <SelectField
+            label='Language'
+            value={languageValue}
+            testId='language-select'
+            onChange={event => setLanguageValue(event.target.value)}
+          >
+            <option value='' disabled>
+              Select language
+            </option>
+            {languageOptions.map(option => (
+              <option key={option.code} value={option.code}>
+                {option.label}
               </option>
-              {languageOptions.map(option => (
-                <option key={option.code} value={option.code}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+            ))}
+          </SelectField>
         )}
       </div>
     </AppDrawer>

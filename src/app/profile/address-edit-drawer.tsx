@@ -9,7 +9,13 @@ import {
 import type { IWilayahResponse } from '@/types/wilayah';
 import type { FhirResourceType } from '@/utils/role-fhir';
 import { Plus, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactNode
+} from 'react';
 import { useProfileSectionSave } from './hooks/useProfileSectionSave';
 import { mergeAddress } from './section-merge';
 
@@ -35,6 +41,97 @@ type Props = {
 };
 
 type LineRow = { id: number; value: string };
+
+/** Labeled field wrapper used by every address field. */
+function Field({
+  label,
+  children
+}: Readonly<{ label: string; children: ReactNode }>) {
+  return (
+    <div className='space-y-2'>
+      <p className='text-xs font-semibold text-[#2C2F35]'>{label}</p>
+      {children}
+    </div>
+  );
+}
+
+/** Labeled select control with shared styling. */
+function SelectField({
+  label,
+  value,
+  onChange,
+  testId,
+  children
+}: Readonly<{
+  label: string;
+  value: string;
+  onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
+  testId: string;
+  children: ReactNode;
+}>) {
+  return (
+    <Field label={label}>
+      <select
+        value={value}
+        onChange={onChange}
+        data-testid={testId}
+        className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
+      >
+        {children}
+      </select>
+    </Field>
+  );
+}
+
+/** Street lines editor: repeatable rows with add/remove. */
+function StreetLinesField({
+  lines,
+  onLineChange,
+  onAddLine,
+  onRemoveLine
+}: Readonly<{
+  lines: LineRow[];
+  onLineChange: (id: number, value: string) => void;
+  onAddLine: () => void;
+  onRemoveLine: (id: number) => void;
+}>) {
+  return (
+    <div className='space-y-2'>
+      <p className='text-xs font-semibold text-[#2C2F35]'>Street</p>
+      {lines.map(row => (
+        <div key={row.id} className='flex items-center gap-2'>
+          <input
+            value={row.value}
+            onChange={event => onLineChange(row.id, event.target.value)}
+            data-testid={`line-${row.id}`}
+            placeholder='Street address'
+            className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
+          />
+          {lines.length > 1 && (
+            <button
+              type='button'
+              onClick={() => onRemoveLine(row.id)}
+              data-testid={`remove-line-${row.id}`}
+              aria-label='Remove address line'
+              className='text-secondary shrink-0 cursor-pointer'
+            >
+              <Trash2 className='h-4 w-4' />
+            </button>
+          )}
+        </div>
+      ))}
+      <button
+        type='button'
+        onClick={onAddLine}
+        data-testid='add-line'
+        className='text-secondary flex cursor-pointer items-center gap-1 text-xs font-semibold'
+      >
+        <Plus className='h-4 w-4' />
+        Add address line
+      </button>
+    </div>
+  );
+}
 
 /**
  * Address drawer: street lines plus the province/city/district cascade.
@@ -156,115 +253,77 @@ export default function AddressEditDrawer({
       onCtaClick={() => handleSave()}
     >
       <div className='space-y-5 px-4 pb-4'>
-        <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>Street</p>
-          {lines.map(row => (
-            <div key={row.id} className='flex items-center gap-2'>
-              <input
-                value={row.value}
-                onChange={event => handleLineChange(row.id, event.target.value)}
-                data-testid={`line-${row.id}`}
-                placeholder='Street address'
-                className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
-              />
-              {lines.length > 1 && (
-                <button
-                  type='button'
-                  onClick={() => handleRemoveLine(row.id)}
-                  data-testid={`remove-line-${row.id}`}
-                  aria-label='Remove address line'
-                  className='text-secondary shrink-0 cursor-pointer'
-                >
-                  <Trash2 className='h-4 w-4' />
-                </button>
-              )}
-            </div>
+        <StreetLinesField
+          lines={lines}
+          onLineChange={handleLineChange}
+          onAddLine={handleAddLine}
+          onRemoveLine={handleRemoveLine}
+        />
+
+        <SelectField
+          label='Province'
+          value={provinceValue}
+          testId='province-select'
+          onChange={event => {
+            const selected = listProvinces?.find(
+              p => p.name === event.target.value
+            );
+            if (selected) handleProvinceSelect(selected);
+          }}
+        >
+          <option value='' disabled>
+            Select province
+          </option>
+          {(listProvinces ?? []).map(option => (
+            <option key={option.code} value={option.name}>
+              {option.name}
+            </option>
           ))}
-          <button
-            type='button'
-            onClick={handleAddLine}
-            data-testid='add-line'
-            className='text-secondary flex cursor-pointer items-center gap-1 text-xs font-semibold'
-          >
-            <Plus className='h-4 w-4' />
-            Add address line
-          </button>
-        </div>
+        </SelectField>
 
-        <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>Province</p>
-          <select
-            value={provinceValue}
-            onChange={event => {
-              const selected = listProvinces?.find(
-                p => p.name === event.target.value
-              );
-              if (selected) handleProvinceSelect(selected);
-            }}
-            data-testid='province-select'
-            className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
-          >
-            <option value='' disabled>
-              Select province
+        <SelectField
+          label='City'
+          value={cityValue}
+          testId='city-select'
+          onChange={event => {
+            const selected = listCities?.find(
+              c => c.name === event.target.value
+            );
+            if (selected) handleCitySelect(selected);
+          }}
+        >
+          <option value='' disabled>
+            Select city
+          </option>
+          {(listCities ?? []).map(option => (
+            <option key={option.code} value={option.name}>
+              {option.name}
             </option>
-            {(listProvinces ?? []).map(option => (
-              <option key={option.code} value={option.name}>
-                {option.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          ))}
+        </SelectField>
 
-        <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>City</p>
-          <select
-            value={cityValue}
-            onChange={event => {
-              const selected = listCities?.find(
-                c => c.name === event.target.value
-              );
-              if (selected) handleCitySelect(selected);
-            }}
-            data-testid='city-select'
-            className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
-          >
-            <option value='' disabled>
-              Select city
+        <SelectField
+          label='District'
+          value={districtValue}
+          testId='district-select'
+          onChange={event => {
+            const selected = listDistricts?.find(
+              d => d.name === event.target.value
+            );
+            if (selected) setDistrictValue(selected.name);
+          }}
+        >
+          <option value='' disabled>
+            Select district
+          </option>
+          {(listDistricts ?? []).map(option => (
+            <option key={option.code} value={option.name}>
+              {option.name}
             </option>
-            {(listCities ?? []).map(option => (
-              <option key={option.code} value={option.name}>
-                {option.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          ))}
+        </SelectField>
 
-        <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>District</p>
-          <select
-            value={districtValue}
-            onChange={event => {
-              const selected = listDistricts?.find(
-                d => d.name === event.target.value
-              );
-              if (selected) setDistrictValue(selected.name);
-            }}
-            data-testid='district-select'
-            className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
-          >
-            <option value='' disabled>
-              Select district
-            </option>
-            {(listDistricts ?? []).map(option => (
-              <option key={option.code} value={option.name}>
-                {option.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>Postal Code</p>
+        <Field label='Postal Code'>
           <input
             value={postalValue}
             onChange={event => setPostalValue(event.target.value)}
@@ -272,7 +331,7 @@ export default function AddressEditDrawer({
             placeholder='Postal code'
             className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
           />
-        </div>
+        </Field>
       </div>
     </AppDrawer>
   );
