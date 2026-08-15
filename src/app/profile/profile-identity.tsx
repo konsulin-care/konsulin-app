@@ -28,7 +28,7 @@ export default function ProfileIdentity({
   isUploading,
   onFileSelected,
   onEditName
-}: Props) {
+}: Readonly<Props>) {
   return (
     <div className='flex flex-col items-center px-4 py-6'>
       <div className='relative inline-block'>

@@ -31,7 +31,7 @@ export default function PhotoUploader({
   backgroundColor,
   isUploading,
   onFileSelected
-}: Props) {
+}: Readonly<Props>) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /** Open the hidden file input. */

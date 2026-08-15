@@ -42,7 +42,7 @@ export default function PersonalInfoEditDrawer({
   birthDate,
   languageCode,
   supportsLanguage
-}: Props) {
+}: Readonly<Props>) {
   const [genderValue, setGenderValue] = useState(gender);
   const [dobValue, setDobValue] = useState(birthDate);
   const [languageValue, setLanguageValue] = useState(languageCode ?? '');

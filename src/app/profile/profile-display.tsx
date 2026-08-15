@@ -62,10 +62,10 @@ function readRawValues(profile: ProfileResource | undefined) {
 function SectionCards({
   sections,
   onEdit
-}: {
+}: Readonly<{
   sections: ProfileSection[];
   onEdit: (drawerId: DrawerId) => void;
-}) {
+}>) {
   return (
     <>
       {sections.map(section => {
@@ -98,7 +98,7 @@ function ProfileDrawers({
   phone,
   isEmailBased,
   address
-}: {
+}: Readonly<{
   activeDrawer: DrawerId | null;
   onClose: () => void;
   fhirId: string;
@@ -112,7 +112,7 @@ function ProfileDrawers({
   phone: string;
   isEmailBased: boolean;
   address: Address | undefined;
-}) {
+}>) {
   return (
     <>
       <NameEditDrawer

@@ -35,7 +35,7 @@ export default function ContactEditDrawer({
   email,
   phone,
   isEmailBased
-}: Props) {
+}: Readonly<Props>) {
   const [emailValue, setEmailValue] = useState(email);
   const [phoneValue, setPhoneValue] = useState(phone);
   const { isSaving, saveSection } = useProfileSectionSave();

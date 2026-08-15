@@ -36,7 +36,7 @@ export default function NameEditDrawer({
   resourceType,
   given,
   family
-}: Props) {
+}: Readonly<Props>) {
   const [rows, setRows] = useState<NameRow[]>([{ id: 0, value: '' }]);
   const nextRowId = useRef(1);
   const [familyName, setFamilyName] = useState('');

@@ -50,7 +50,7 @@ export default function AddressEditDrawer({
   city,
   province,
   postalCode
-}: Props) {
+}: Readonly<Props>) {
   const [lines, setLines] = useState<LineRow[]>([{ id: 0, value: '' }]);
   const nextLineId = useRef(1);
   const [districtValue, setDistrictValue] = useState('');

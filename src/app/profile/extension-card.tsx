@@ -56,7 +56,7 @@ function buildMaritalRows(profile: Patient): DetailRow[] {
  * Role extension card (display-only): Practitioner qualifications and
  * Patient marital status. Renders nothing when the role has no extra data.
  */
-export default function ExtensionCard({ profile }: Props) {
+export default function ExtensionCard({ profile }: Readonly<Props>) {
   if (!profile) return null;
 
   let title = '';

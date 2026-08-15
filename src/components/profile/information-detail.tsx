@@ -15,7 +15,11 @@ type Props = {
  * Uniform profile section card: title with a pencil on the top-right and
  * label/value rows below. Shared by every role — no role-specific styling.
  */
-export default function InformationDetail({ title, rows, onEdit }: Props) {
+export default function InformationDetail({
+  title,
+  rows,
+  onEdit
+}: Readonly<Props>) {
   return (
     <div className='w-full rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
       <div className='flex w-full items-center justify-between'>
