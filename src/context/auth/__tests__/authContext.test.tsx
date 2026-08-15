@@ -914,6 +914,7 @@ describe('profile cache carries full resources and staleness', () => {
           <button
             type='button'
             onClick={() => {
+              // skipcq: JS-0098 - fire-and-forget refresh in test; click handler is sync
               void auth.refreshProfiles();
             }}
           >

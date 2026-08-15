@@ -72,6 +72,7 @@ export default function NameEditDrawer({
     const cleanFamily = familyName.trim();
     if (cleanGiven.length === 0 && !cleanFamily) return;
 
+    // skipcq: JS-0098 - fire-and-forget save; errors handled inside the hook
     void saveSection({
       fhirId,
       resourceType,

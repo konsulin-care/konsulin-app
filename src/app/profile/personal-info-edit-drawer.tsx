@@ -67,6 +67,7 @@ export default function PersonalInfoEditDrawer({
     const selected = languageOptions.find(
       option => option.code === languageValue
     );
+    // skipcq: JS-0098 - fire-and-forget save; errors handled inside the hook
     void saveSection({
       fhirId,
       resourceType,

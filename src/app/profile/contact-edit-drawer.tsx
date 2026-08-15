@@ -49,6 +49,7 @@ export default function ContactEditDrawer({
 
   /** Save email and phone into a fresh telecom array. */
   const handleSave = () => {
+    // skipcq: JS-0098 - fire-and-forget save; errors handled inside the hook
     void saveSection({
       fhirId,
       resourceType,

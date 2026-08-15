@@ -205,6 +205,7 @@ export function useProfileData(
       typeof userInfo?.cachedAt === 'number' &&
       Date.now() - userInfo.cachedAt <= PROFILE_CACHE_STALE_MS;
     if (!cacheIsFresh || !roleProfilesCarryResources(roleProfiles)) {
+      // skipcq: JS-0098 - fire-and-forget cache refresh; errors handled in auth context
       void refreshProfiles?.();
     }
   }, [userId, userInfo?.cachedAt, roleProfiles, refreshProfiles]);

@@ -128,6 +128,7 @@ export default function AddressEditDrawer({
 
   /** Save the address into the resource. */
   const handleSave = () => {
+    // skipcq: JS-0098 - fire-and-forget save; errors handled inside the hook
     void saveSection({
       fhirId,
       resourceType,

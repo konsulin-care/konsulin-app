@@ -209,6 +209,7 @@ export default function ProfileDisplay() {
               identity={identity}
               isUploading={isUploading}
               onFileSelected={file => {
+                // skipcq: JS-0098 - fire-and-forget upload; errors handled inside the hook
                 void handleFileSelected(file);
               }}
               onEditName={() => setActiveDrawer('name')}
