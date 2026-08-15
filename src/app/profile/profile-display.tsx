@@ -184,6 +184,7 @@ export default function ProfileDisplay() {
     fallbackPhone: authState.userInfo?.phoneNumber
   });
   const [activeDrawer, setActiveDrawer] = useState<DrawerId | null>(null);
+  /** Close the currently open drawer. */
   const closeDrawer = () => setActiveDrawer(null);
 
   const raw = readRawValues(profileData);
