@@ -21,6 +21,7 @@ import {
   buildUpdatedRoleProfiles,
   collectCachedResources
 } from '../multi-role-sync';
+import { getRoleValue, setRoleValue } from '../role-map';
 
 const CHATWOOT_ID_SYSTEM = 'https://login.konsulin.care/chatwoot-id';
 
@@ -31,7 +32,7 @@ function mergePhoto(
 ): Record<string, ProfileResource> {
   const merged: Record<string, ProfileResource> = {};
   for (const [role, resource] of Object.entries(resources)) {
-    merged[role] = { ...resource, photo: [{ url }] };
+    setRoleValue(merged, role, { ...resource, photo: [{ url }] });
   }
   return merged;
 }
@@ -136,7 +137,7 @@ export function useProfilePhotoSave({
         const activeRole = userInfo?.role_name ?? '';
 
         const resources = collectCachedResources(userInfo);
-        if (!resources[activeRole]) {
+        if (!getRoleValue(resources, activeRole)) {
           throw new Error('Missing active profile resource');
         }
         const merged = mergePhoto(resources, uploadedUrl);
@@ -147,7 +148,11 @@ export function useProfilePhotoSave({
           );
           assertBundleSuccess(response);
         } else {
-          const result = await updateProfile({ payload: merged[activeRole] });
+          const activeResource = getRoleValue(merged, activeRole);
+          if (!activeResource) {
+            throw new Error('Missing active profile resource');
+          }
+          const result = await updateProfile({ payload: activeResource });
           if (!result) throw new Error('Empty profile update response');
         }
 

@@ -8,6 +8,7 @@ import { roleToFhirResource } from '@/utils/role-fhir';
 import { format } from 'date-fns';
 import type { CodeableConcept, Patient, Practitioner } from 'fhir/r4';
 import { useEffect, useMemo } from 'react';
+import { getRoleValue } from '../role-map';
 
 type ProfileResource = Patient | Practitioner;
 
@@ -193,7 +194,8 @@ export function useProfileData(
   const resourceType = roleToFhirResource(activeRole);
 
   const activeProfile = useMemo(
-    () => roleProfiles[activeRole]?.resource ?? userInfo?.fullProfile,
+    () =>
+      getRoleValue(roleProfiles, activeRole)?.resource ?? userInfo?.fullProfile,
     [roleProfiles, activeRole, userInfo?.fullProfile]
   );
 

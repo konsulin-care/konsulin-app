@@ -17,6 +17,7 @@ import {
   collectCachedResources,
   mergeResources
 } from '../multi-role-sync';
+import { getRoleValue } from '../role-map';
 import { useIdentitySync } from './useIdentitySync';
 
 export type SectionSaveParams = {
@@ -67,7 +68,7 @@ export function useProfileSectionSave(): Result {
         const activeRole = userInfo?.role_name ?? '';
 
         const resources = collectCachedResources(userInfo);
-        if (!resources[activeRole]) {
+        if (!getRoleValue(resources, activeRole)) {
           throw new Error('Missing active profile resource');
         }
 
@@ -86,9 +87,17 @@ export function useProfileSectionSave(): Result {
             buildProfileTransactionBundle(Object.values(merged))
           );
           assertBundleSuccess(response);
-          savedActive = merged[activeRole];
+          const activeMerged = getRoleValue(merged, activeRole);
+          if (!activeMerged) {
+            throw new Error('Missing active profile resource');
+          }
+          savedActive = activeMerged;
         } else {
-          const result = await updateProfile({ payload: merged[activeRole] });
+          const activeResource = getRoleValue(merged, activeRole);
+          if (!activeResource) {
+            throw new Error('Missing active profile resource');
+          }
+          const result = await updateProfile({ payload: activeResource });
           if (!result) throw new Error('Empty profile update response');
           savedActive = result;
         }

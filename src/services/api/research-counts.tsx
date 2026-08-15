@@ -47,7 +47,7 @@ async function fetchCompletionTotal(
     const response = await API.get<{ total?: number }>(
       `/fhir/QuestionnaireResponse?_summary=count&questionnaire=${canonical}`
     );
-    total += response.data?.total ?? 0;
+    total += response.data.total ?? 0;
   }
   return total;
 }

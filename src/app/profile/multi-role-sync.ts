@@ -2,6 +2,7 @@ import type { IStateUserInfo } from '@/context/auth/authTypes';
 import type { ProfileResource, RoleProfile } from '@/services/role-profiles';
 import { mergeNames } from '@/utils/helper';
 import type { Bundle } from 'fhir/r4';
+import { getRoleValue, setRoleValue } from './role-map';
 
 /**
  * Resolve the roles to sync, falling back to the active role alone.
@@ -28,11 +29,11 @@ export function collectCachedResources(
   const resources: Record<string, ProfileResource> = {};
   const activeRole = userInfo?.role_name ?? '';
   for (const role of resolveRoles(userInfo)) {
-    const entry = userInfo?.roleProfiles?.[role];
-    if (entry?.resource) resources[role] = entry.resource;
+    const entry = getRoleValue(userInfo?.roleProfiles, role);
+    if (entry?.resource) setRoleValue(resources, role, entry.resource);
   }
-  if (!resources[activeRole] && userInfo?.fullProfile) {
-    resources[activeRole] = userInfo.fullProfile;
+  if (!getRoleValue(resources, activeRole) && userInfo?.fullProfile) {
+    setRoleValue(resources, activeRole, userInfo.fullProfile);
   }
   return resources;
 }
@@ -56,7 +57,7 @@ export function mergeResources(
   const merged: Record<string, ProfileResource> = {};
   for (const [role, resource] of Object.entries(resources)) {
     const apply = role === activeRole ? merge : mergeOtherRoles;
-    merged[role] = apply(resource);
+    setRoleValue(merged, role, apply(resource));
   }
   return merged;
 }
@@ -120,11 +121,11 @@ export function buildUpdatedRoleProfiles(
 ): Record<string, RoleProfile | null> {
   const updated: Record<string, RoleProfile | null> = { ...existing };
   for (const [role, resource] of Object.entries(merged)) {
-    updated[role] = {
+    setRoleValue(updated, role, {
       name: mergeNames(resource.name),
       photoUrl: resource.photo?.[0]?.url ?? '',
       resource
-    };
+    });
   }
   return updated;
 }

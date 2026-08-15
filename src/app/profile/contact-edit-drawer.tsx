@@ -69,14 +69,16 @@ export default function ContactEditDrawer({
       ctaLabel='Save'
       ctaDisabled={isSaving}
       ctaLoading={isSaving}
-      onCtaClick={() => handleSave()}
+      onCtaClick={handleSave}
     >
       <div className='space-y-5 px-4 pb-4'>
         <div className='space-y-2'>
           <p className='text-xs font-semibold text-[#2C2F35]'>Email</p>
           <input
             value={emailValue}
-            onChange={event => setEmailValue(event.target.value)}
+            onChange={event => {
+              setEmailValue(event.target.value);
+            }}
             readOnly={isEmailBased}
             data-testid='email-input'
             type='email'
@@ -88,7 +90,9 @@ export default function ContactEditDrawer({
           <p className='text-xs font-semibold text-[#2C2F35]'>Phone</p>
           <input
             value={phoneValue}
-            onChange={event => setPhoneValue(event.target.value)}
+            onChange={event => {
+              setPhoneValue(event.target.value);
+            }}
             data-testid='phone-input'
             type='tel'
             placeholder='Phone number'

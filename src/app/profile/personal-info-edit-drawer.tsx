@@ -144,14 +144,16 @@ export default function PersonalInfoEditDrawer({
       ctaLabel='Save'
       ctaDisabled={isSaving || !isValid}
       ctaLoading={isSaving}
-      onCtaClick={() => handleSave()}
+      onCtaClick={handleSave}
     >
       <div className='space-y-5 px-4 pb-4'>
         <SelectField
           label='Gender'
           value={genderValue}
           testId='gender-select'
-          onChange={event => setGenderValue(event.target.value)}
+          onChange={event => {
+            setGenderValue(event.target.value);
+          }}
         >
           <option value='' disabled>
             Select gender
@@ -175,7 +177,9 @@ export default function PersonalInfoEditDrawer({
             label='Language'
             value={languageValue}
             testId='language-select'
-            onChange={event => setLanguageValue(event.target.value)}
+            onChange={event => {
+              setLanguageValue(event.target.value);
+            }}
           >
             <option value='' disabled>
               Select language

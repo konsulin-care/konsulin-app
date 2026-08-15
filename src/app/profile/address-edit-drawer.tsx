@@ -102,7 +102,9 @@ function StreetLinesField({
         <div key={row.id} className='flex items-center gap-2'>
           <input
             value={row.value}
-            onChange={event => onLineChange(row.id, event.target.value)}
+            onChange={event => {
+              onLineChange(row.id, event.target.value);
+            }}
             data-testid={`line-${row.id}`}
             placeholder='Street address'
             className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
@@ -110,7 +112,9 @@ function StreetLinesField({
           {lines.length > 1 && (
             <button
               type='button'
-              onClick={() => onRemoveLine(row.id)}
+              onClick={() => {
+                onRemoveLine(row.id);
+              }}
               data-testid={`remove-line-${row.id}`}
               aria-label='Remove address line'
               className='text-secondary shrink-0 cursor-pointer'
@@ -250,7 +254,7 @@ export default function AddressEditDrawer({
       ctaLabel='Save'
       ctaDisabled={isSaving}
       ctaLoading={isSaving}
-      onCtaClick={() => handleSave()}
+      onCtaClick={handleSave}
     >
       <div className='space-y-5 px-4 pb-4'>
         <StreetLinesField
@@ -326,7 +330,9 @@ export default function AddressEditDrawer({
         <Field label='Postal Code'>
           <input
             value={postalValue}
-            onChange={event => setPostalValue(event.target.value)}
+            onChange={event => {
+              setPostalValue(event.target.value);
+            }}
             data-testid='postal-input'
             placeholder='Postal code'
             className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'

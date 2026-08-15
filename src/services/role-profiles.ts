@@ -1,3 +1,4 @@
+import { getRoleValue, setRoleValue } from '@/app/profile/role-map';
 import {
   ClinicAdminRoleCode,
   LoginIdentifierSystem,
@@ -31,7 +32,7 @@ export interface UserProfilesBundleResult {
 }
 
 /** Role-coded profiles are backed by a PractitionerRole search entry. */
-const ROLE_CODES: Record<string, { system: string; code: string }> = {
+const ROLE_CODES: Partial<Record<string, { system: string; code: string }>> = {
   [Roles.ClinicAdmin]: ClinicAdminRoleCode,
   [Roles.Researcher]: ResearcherRoleCode
 };
@@ -186,7 +187,7 @@ export async function fetchUserProfilesBundle(
     resourceType: 'Bundle',
     type: 'batch',
     entry: roleList.map(role => {
-      const roleCode = ROLE_CODES[role];
+      const roleCode = getRoleValue(ROLE_CODES, role);
       const url = roleCode
         ? buildPractitionerRoleUrl(roleCode, userId)
         : buildIdentifierUrl(roleToFhirResource(role), userId);
@@ -209,12 +210,12 @@ export async function fetchUserProfilesBundle(
   roleList.forEach((role, index) => {
     // For a search entry in a batch-response bundle the searchset is the
     // entry's `resource`; `response` only carries status/outcome.
-    const searchset = responseEntries[index]?.resource as Bundle | undefined;
+    const searchset = responseEntries.at(index)?.resource as Bundle | undefined;
     const profile = searchset ? parseRoleProfile(searchset, role) : null;
     if (role === activeRole) {
       activeProfile = profile?.resource ?? null;
     }
-    roleProfiles[role] = profile;
+    setRoleValue(roleProfiles, role, profile);
   });
 
   return { activeProfile, roleProfiles };

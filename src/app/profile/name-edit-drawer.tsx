@@ -97,7 +97,7 @@ export default function NameEditDrawer({
       ctaLabel='Save'
       ctaDisabled={isSaving || !hasNameParts}
       ctaLoading={isSaving}
-      onCtaClick={() => handleSave()}
+      onCtaClick={handleSave}
     >
       <div className='space-y-5 px-4 pb-4'>
         <div className='space-y-2'>
@@ -106,9 +106,9 @@ export default function NameEditDrawer({
             <div key={row.id} className='flex items-center gap-2'>
               <input
                 value={row.value}
-                onChange={event =>
-                  handleGivenChange(row.id, event.target.value)
-                }
+                onChange={event => {
+                  handleGivenChange(row.id, event.target.value);
+                }}
                 data-testid={`given-${row.id}`}
                 placeholder={`Given name ${row.id + 1}`}
                 className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
@@ -116,7 +116,9 @@ export default function NameEditDrawer({
               {rows.length > 1 && (
                 <button
                   type='button'
-                  onClick={() => handleRemoveGiven(row.id)}
+                  onClick={() => {
+                    handleRemoveGiven(row.id);
+                  }}
                   data-testid={`remove-given-${row.id}`}
                   aria-label={`Remove given name ${row.id + 1}`}
                   className='text-secondary shrink-0 cursor-pointer'
@@ -140,7 +142,9 @@ export default function NameEditDrawer({
           <p className='text-xs font-semibold text-[#2C2F35]'>Family name</p>
           <input
             value={familyName}
-            onChange={event => setFamilyName(event.target.value)}
+            onChange={event => {
+              setFamilyName(event.target.value);
+            }}
             data-testid='family-input'
             placeholder='Family name'
             className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
