@@ -15,21 +15,19 @@ ranks by nearest availability + proximity, and returns a pre-joined JSON
 payload. React Query fetches this endpoint and renders recommendation
 cards. No Go SSR. Aligned with ADR-015.
 
-Intent params: `specialty` (required), `modality` (optional: online/offline),
-`lat` (optional), `lon` (optional). lat/lon come from external service
-(e.g., WhatsApp link); use FHIR `?near` search param on Location for
-proximity. No custom distance calculation.
-
-When no intent params, show a specialty picker modal (required) with
-optional modality filter. Specialty and modality also available as
-inline filters on the results page.
+Intent params: `specialty` (required), `lat` (optional), `lon` (optional).
+lat/lon come from external service (e.g., WhatsApp link); use FHIR `?near`
+search param on Location for proximity — distances are read from Blaze's
+`location-distance` search extension (meters). No custom distance calculation.
+Modality is out of scope; matching is driven by the deterministic triage
+screening (answer code → specialty).
 
 # Goals
 
 - Go BFF `GET /api/recommendations?specialty=...` — FHIR aggregation server-side
-- React page `GET /recommendations` — fetches from BFF endpoint, renders cards
+- React page `GET /recommendation` — fetches from BFF endpoint, renders cards
 - Specialty picker modal when no params provided (React modal)
-- Inline filters for specialty and modality (React state)
+- Inline specialty filter (React state → refetch)
 - Ranking by nearest availability + proximity (Go BFF does the heavy work)
 - Recommendation cards: practitioner, service, fee, next slot, distance badge
 - Booking flow: card → select slot → confirm → appointment created
@@ -60,10 +58,13 @@ inline filters on the results page.
 
 # Reference
 
-@src/utils/intent-storage.ts:
+@src/utils/redirect-intent.ts:
 
-- Intent pattern: save intent before action, restore after auth
+- Intent pattern: saveIntent/getIntent before action, restore after auth
 - Keep: recommendation booking uses same intent pattern for guest → login → book
+
+> Note: the original plan referenced `src/utils/intent-storage.ts` which does
+> not exist; the live module is `redirect-intent.ts`.
 
 @src/app/practitioner/practitioner-availability.tsx:
 
@@ -97,11 +98,21 @@ inline filters on the results page.
 
 # UAT
 
-1. Visit `/recommendations?specialty=neurology` — ranked cards shown for neurology practitioners
-2. Visit `/recommendations?specialty=neurology&modality=online&lat=-6.2&lon=106.8` — filtered by online modality + proximity
-3. Visit `/recommendations` with no params — specialty picker modal appears
-4. Select specialty (required) and optionally modality → results load
+1. Visit `/recommendation?specialty=neurology` — ranked cards shown for neurology practitioners
+2. Visit `/recommendation?specialty=neurology&lat=-6.2&lon=106.8` — filtered by proximity (distance badge from valueDistance)
+3. Visit `/recommendation` with no params — specialty picker modal appears
+4. Select specialty (required) → results load
 5. Card shows practitioner name, specialty, nearest slot, final fee, distance badge
-6. Use inline filter to change specialty or modality — results update via refetch
+6. Use inline filter to change specialty — results update via refetch
 7. Click "Book" as patient — select slot → confirm → appointment created
 8. Click "Book" as guest — redirected to login; booking resumes after auth
+
+## Status
+
+- Seeding (prerequisite) complete against local Blaze 1.7.0: 3 orgs, 10
+  locations, 12 practitioners, 30 PractitionerRoles, 42 HealthcareServices,
+  30 Schedules, 1 triage questionnaire (`triage-screening`). Fee extension
+  URL: `http://konsulin.care/fhir/StructureDefinition/fee`.
+- BFF endpoints live: `GET /api/recommendations` (aggregate → rank → sample
+  5 random cards) and `GET /api/recommendations/specialties` (distinct list).
+- React: triage at `/screening`, results at `/recommendation`.
