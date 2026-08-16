@@ -43,7 +43,7 @@ export const patientPills: Pill[] = [
   },
   {
     label: 'Get Recommendation',
-    href: '/recommendation',
+    href: '/screening',
     icon: Sparkles,
     delay: 200,
     action: 'navigate'
