@@ -47,13 +47,28 @@ function SessionAvatarSection({
 function SessionDetailInfo({
   time,
   date,
-  appointmentType
-}: Readonly<{ time: string; date: string; appointmentType: string }>) {
+  appointmentType,
+  appointmentStatus
+}: Readonly<{
+  time: string;
+  date: string;
+  appointmentType: string | null;
+  appointmentStatus: string | null;
+}>) {
+  const isProcessing =
+    appointmentStatus === 'proposed' || appointmentStatus === 'pending';
   return (
     <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>
-      <div className='flex items-center'>
-        <HospitalIcon size={24} color='#13C2C2' className='mr-2' />
-        <span className='text-[12px] font-bold'>Detail Session</span>
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center'>
+          <HospitalIcon size={24} color='#13C2C2' className='mr-2' />
+          <span className='text-[12px] font-bold'>Detail Session</span>
+        </div>
+        {isProcessing && (
+          <span className='rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-medium text-black'>
+            Processing
+          </span>
+        )}
       </div>
       <div className='mt-4 flex flex-col space-y-2'>
         <div className='flex justify-between text-[12px]'>
@@ -67,7 +82,9 @@ function SessionDetailInfo({
         <div className='flex justify-between text-[12px]'>
           <span className='mr-2'>Session Type</span>
           <span className='font-bold'>
-            {capitalizeFirstLetter(appointmentType)}
+            {appointmentType
+              ? capitalizeFirstLetter(appointmentType)
+              : 'Session'}
           </span>
         </div>
       </div>
@@ -82,11 +99,7 @@ export default function ScheduleDetail() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id') ?? '';
 
-  const {
-    data: appointmentData,
-    isLoading,
-    isError
-  } = useAppointment(id);
+  const { data: appointmentData, isLoading, isError } = useAppointment(id);
 
   const { initials, backgroundColor, displayName, time, date, seed } =
     useMemo(() => {
@@ -166,6 +179,7 @@ export default function ScheduleDetail() {
           time={time}
           date={date}
           appointmentType={appointmentData.appointmentType}
+          appointmentStatus={appointmentData.appointmentStatus}
         />
       </>
     );

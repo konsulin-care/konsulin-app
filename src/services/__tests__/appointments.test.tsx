@@ -1,7 +1,7 @@
-import { renderHook } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, expect, it, vi } from 'vitest';
+import { renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../api', () => ({
   getAPI: vi.fn()
@@ -10,7 +10,11 @@ vi.mock('../api', () => ({
 import { getAPI } from '../api';
 import { usePayAppointment, useRelayBooking } from '../api/appointments';
 
-function createWrapper(): ({ children }: { children: ReactNode }) => React.JSX.Element {
+function createWrapper(): ({
+  children
+}: {
+  children: ReactNode;
+}) => React.JSX.Element {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } }
   });
@@ -27,6 +31,7 @@ describe('useRelayBooking', () => {
       data: {
         slotId: 'Slot/slot-789',
         invoiceId: 'Invoice/inv-012',
+        appointmentId: 'Appointment/appt-345',
         fee: { value: 150_000, currency: 'IDR' },
         healthcareServiceName: 'General Consultation'
       }
@@ -60,13 +65,14 @@ describe('useRelayBooking', () => {
     expect(getAPI).toHaveBeenCalledWith({ proxy: false });
     expect(response.slotId).toBe('Slot/slot-789');
     expect(response.invoiceId).toBe('Invoice/inv-012');
+    expect(response.appointmentId).toBe('Appointment/appt-345');
     expect(response.fee).toEqual({ value: 150_000, currency: 'IDR' });
     expect(response.healthcareServiceName).toBe('General Consultation');
   });
 });
 
 describe('usePayAppointment', () => {
-  it('includes healthcareServiceId in the POST payload', async () => {
+  it('includes appointmentId and omits useOnlinePayment in the POST payload', async () => {
     const mockPost = vi.fn().mockResolvedValue({
       data: { paymentUrl: 'https://payment.example.com/url' }
     });
@@ -82,7 +88,7 @@ describe('usePayAppointment', () => {
     const payload = {
       patientId: 'Patient/pat-1',
       invoiceId: 'Invoice/inv-1',
-      useOnlinePayment: true,
+      appointmentId: 'Appointment/appt-345',
       practitionerRoleId: 'PractitionerRole/pr-123',
       slotId: 'Slot/slot-789',
       condition: 'anxiety',
@@ -92,6 +98,7 @@ describe('usePayAppointment', () => {
     await result.current.mutateAsync(payload);
 
     expect(mockPost).toHaveBeenCalledWith('/api/v1/pay/appointment', payload);
+    expect(mockPost.mock.calls[0][1]).not.toHaveProperty('useOnlinePayment');
     expect(getAPI).toHaveBeenCalledWith();
   });
 });

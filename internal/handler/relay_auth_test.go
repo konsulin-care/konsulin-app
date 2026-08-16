@@ -40,6 +40,7 @@ func TestRelayBooking_forwardsAuthToken(t *testing.T) {
 			"entry": []map[string]any{
 				{"response": map[string]any{"status": "200 OK", "location": "http://localhost:8080/fhir/Slot/slot-789/_history/1"}},
 				{"response": map[string]any{"status": "200 OK", "location": "http://localhost:8080/fhir/Invoice/inv-012/_history/1"}},
+				{"response": map[string]any{"status": "200 OK", "location": "http://localhost:8080/fhir/Appointment/appt-345/_history/1"}},
 			},
 		}
 		w.Header().Set("Content-Type", "application/fhir+json")

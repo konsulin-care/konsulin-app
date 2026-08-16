@@ -170,6 +170,7 @@ export type RelayBookingPayload = {
 export type RelayBookingResponse = {
   readonly slotId: string;
   readonly invoiceId: string;
+  readonly appointmentId: string;
   readonly fee: { value: number; currency: string };
   readonly healthcareServiceName: string;
 };
@@ -194,14 +195,14 @@ export const useRelayBooking = () => {
   });
 };
 
-/** Pay for an appointment via online payment or offline booking. */
+/** Pay for an appointment via online payment. */
 export const usePayAppointment = () => {
   return useMutation({
     mutationKey: ['pay-appointment'],
     mutationFn: async (payload: {
       patientId: string; // e.g., "Patient/123"
       invoiceId: string; // e.g., "Invoice/456"
-      useOnlinePayment: boolean;
+      appointmentId: string; // e.g., "Appointment/abc"
       practitionerRoleId: string; // e.g., "PractitionerRole/789"
       slotId: string; // e.g., "Slot/abc"
       condition: string;

@@ -60,6 +60,9 @@ export function useBookingForm({
   });
   const [errorForm, setErrorForm] = useState<string[] | null>(null);
   const [relayInvoice, setRelayInvoice] = useState<Invoice | null>(null);
+  const [relayAppointmentId, setRelayAppointmentId] = useState<string | null>(
+    null
+  );
 
   /** Update a single booking information field (problem brief, etc.). */
   const handleBookingInformationChange = (key: string, value: string) => {
@@ -124,6 +127,7 @@ export function useBookingForm({
       const response = await relayBooking(payload);
 
       setSelectedSlotId(response.slotId.replace('Slot/', ''));
+      setRelayAppointmentId(response.appointmentId.replace('Appointment/', ''));
       setRelayInvoice({
         resourceType: 'Invoice',
         id: response.invoiceId.replace('Invoice/', ''),
@@ -161,6 +165,7 @@ export function useBookingForm({
     errorForm,
     setErrorForm,
     relayInvoice,
+    relayAppointmentId,
     handleBookingInformationChange,
     handleSubmitForm,
     handleSubmitFormRef

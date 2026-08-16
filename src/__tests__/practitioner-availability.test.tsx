@@ -126,6 +126,9 @@ vi.mock('@/components/ui/drawer', () => ({
   DrawerContent: ({ children }: any) => (
     <div data-testid='mock-drawer-content'>{children}</div>
   ),
+  DrawerHeader: ({ children }: any) => (
+    <div data-testid='mock-drawer-header'>{children}</div>
+  ),
   DrawerDescription: ({ children }: any) => (
     <div data-testid='mock-drawer-description'>{children}</div>
   ),

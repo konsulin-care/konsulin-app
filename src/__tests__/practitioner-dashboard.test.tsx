@@ -161,6 +161,7 @@ describe('PractitionerDashboard', () => {
     const mockSession = {
       appointmentId: 'day-appt-1',
       appointmentType: 'Follow-up',
+      appointmentStatus: 'booked',
       slotStart: '2026-07-15T02:00:00.000Z',
       slotEnd: '2026-07-15T02:30:00.000Z',
       slotStatus: 'free',

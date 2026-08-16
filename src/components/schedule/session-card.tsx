@@ -2,10 +2,7 @@
 
 import Avatar from '@/components/general/avatar';
 import type { MergedSession } from '@/types/appointment';
-import {
-  generateAvatarPlaceholder,
-  mergeNames
-} from '@/utils/helper';
+import { generateAvatarPlaceholder, mergeNames } from '@/utils/helper';
 import { capitalizeFirstLetter } from '@/utils/validation';
 import { format, parseISO } from 'date-fns';
 import Link from 'next/link';
@@ -36,6 +33,9 @@ export default function SessionCard({
     email: session.patientEmail
   });
   const photoUrl = session.patientPhoto?.[0]?.url;
+  const isProcessing =
+    session.appointmentStatus === 'proposed' ||
+    session.appointmentStatus === 'pending';
   const borderStyle = locationColor
     ? { borderLeftColor: locationColor, borderLeftWidth: 4 }
     : undefined;
@@ -43,18 +43,25 @@ export default function SessionCard({
   return (
     <Link
       href={`/record?patientId=${session.patientId}`}
-      className='card mt-4 flex flex-col gap-2 p-4 border-l-4'
+      className='card mt-4 flex flex-col gap-2 border-l-4 p-4'
       style={borderStyle}
     >
       <div className='flex items-center justify-between'>
         <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
           {sessionStartTime} - {sessionDate}
         </div>
-        {locationName && (
-          <div className='text-[10px] text-[hsla(220,9%,19%,0.5)]'>
-            {locationName}
-          </div>
-        )}
+        <div className='flex items-center gap-2'>
+          {isProcessing && (
+            <span className='rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-medium text-black'>
+              Processing
+            </span>
+          )}
+          {locationName && (
+            <div className='text-[10px] text-[hsla(220,9%,19%,0.5)]'>
+              {locationName}
+            </div>
+          )}
+        </div>
       </div>
 
       <hr className='w-full' />
@@ -71,7 +78,9 @@ export default function SessionCard({
         />
         <div className='mr-auto text-[12px] font-bold'>{displayName}</div>
         <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-          {capitalizeFirstLetter(session.appointmentType)} Session
+          {session.appointmentType
+            ? `${capitalizeFirstLetter(session.appointmentType)} Session`
+            : 'Session'}
         </div>
       </div>
     </Link>

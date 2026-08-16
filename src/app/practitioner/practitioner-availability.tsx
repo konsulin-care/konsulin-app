@@ -32,6 +32,7 @@ import { useBookingForm } from './hooks/use-booking-form';
 import { useBookingRestoration } from './hooks/use-booking-restoration';
 import { usePractitionerRole } from './hooks/usePractitionerRole';
 import PaymentDrawer from './payment-drawer';
+import PaymentPendingDrawer from './payment-pending-drawer';
 import TimeSlotsSection from './time-slots-section';
 import {
   type AppointmentPayload,
@@ -110,6 +111,7 @@ export default function PractitionerAvailability({
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [paymentPendingOpen, setPaymentPendingOpen] = useState(false);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const { state: bookingState, dispatch } = useBooking();
   const { state: authState } = useAuth();
@@ -146,6 +148,7 @@ export default function PractitionerAvailability({
     setBookingInformation,
     errorForm,
     relayInvoice,
+    relayAppointmentId,
     handleBookingInformationChange,
     handleSubmitForm,
     handleSubmitFormRef,
@@ -516,6 +519,7 @@ export default function PractitionerAvailability({
         <PaymentDrawer
           paymentOpen={paymentOpen}
           setPaymentOpen={setPaymentOpen}
+          setPaymentPendingOpen={setPaymentPendingOpen}
           practitionerAvatar={practitionerAvatar}
           practitionerOrganizationName={practitionerOrganizationName}
           practitionerName={practitionerName}
@@ -529,6 +533,7 @@ export default function PractitionerAvailability({
           isPaying={isPaying}
           patientId={patientId ?? ''}
           selectedSlotId={selectedSlotId}
+          appointmentId={relayAppointmentId ?? ''}
           bookingForm={bookingForm}
           practitionerRole={effectiveRole ?? ({} as PractitionerRole)}
           healthcareServiceId={propHealthcareServiceId ?? ''}
@@ -536,6 +541,19 @@ export default function PractitionerAvailability({
           queryClient={queryClient}
           handleFilterChange={effectiveHandleFilterChange}
           setIsOpen={setIsOpen}
+        />
+        <PaymentPendingDrawer
+          pendingOpen={paymentPendingOpen}
+          setPendingOpen={setPaymentPendingOpen}
+          practitionerAvatar={practitionerAvatar}
+          practitionerOrganizationName={practitionerOrganizationName}
+          practitionerName={practitionerName}
+          healthcareServiceName={
+            propHealthcareServiceName ??
+            healthcareServiceNames[0] ??
+            'Consultation'
+          }
+          bookingState={effectiveBookingState}
         />
       </>
     );
@@ -570,6 +588,7 @@ export default function PractitionerAvailability({
       <PaymentDrawer
         paymentOpen={paymentOpen}
         setPaymentOpen={setPaymentOpen}
+        setPaymentPendingOpen={setPaymentPendingOpen}
         practitionerAvatar={practitionerAvatar}
         practitionerOrganizationName={practitionerOrganizationName}
         practitionerName={practitionerName}
@@ -579,6 +598,7 @@ export default function PractitionerAvailability({
         isPaying={isPaying}
         patientId={patientId ?? ''}
         selectedSlotId={selectedSlotId}
+        appointmentId={relayAppointmentId ?? ''}
         bookingForm={bookingForm}
         practitionerRole={practitionerRole}
         healthcareServiceId={propHealthcareServiceId ?? ''}
@@ -586,6 +606,16 @@ export default function PractitionerAvailability({
         queryClient={queryClient}
         handleFilterChange={handleFilterChange}
         setIsOpen={setIsOpen}
+      />
+
+      <PaymentPendingDrawer
+        pendingOpen={paymentPendingOpen}
+        setPendingOpen={setPaymentPendingOpen}
+        practitionerAvatar={practitionerAvatar}
+        practitionerOrganizationName={practitionerOrganizationName}
+        practitionerName={practitionerName}
+        healthcareServiceName={healthcareServiceNames[0] ?? 'Consultation'}
+        bookingState={bookingState}
       />
     </>
   );

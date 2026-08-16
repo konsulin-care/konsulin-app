@@ -24,8 +24,8 @@ type SubmissionHandler = (payload: unknown) => Promise<void>;
 
 const handlers = new Map<string, SubmissionHandler>();
 
-/** Generates a unique id for a queued submission. */
-function generateId(): string {
+/** Generates a unique id for a queued submission, timestamped with createdAt. */
+function generateId(createdAt: number): string {
   if (
     typeof crypto !== 'undefined' &&
     typeof crypto.randomUUID === 'function'
@@ -38,9 +38,9 @@ function generateId(): string {
     typeof crypto.getRandomValues === 'function'
   ) {
     const buffer = crypto.getRandomValues(new Uint32Array(2));
-    return `pending-${Date.now()}-${buffer[0].toString(36)}${buffer[1].toString(36)}`;
+    return `pending-${createdAt}-${buffer[0].toString(36)}${buffer[1].toString(36)}`;
   }
-  return `pending-${Date.now()}`;
+  return `pending-${createdAt}`;
 }
 
 /**
@@ -52,12 +52,13 @@ export async function enqueueSubmission(
   payload: unknown,
   ownerId = ''
 ): Promise<PendingSubmission> {
+  const createdAt = Date.now();
   const entry: PendingSubmission = {
-    id: generateId(),
+    id: generateId(createdAt),
     ownerId,
     kind,
     payload,
-    createdAt: Date.now(),
+    createdAt,
     attempts: 0
   };
   await dbSet(STORES.pendingSubmissions, entry);

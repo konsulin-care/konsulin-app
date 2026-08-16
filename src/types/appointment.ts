@@ -5,6 +5,7 @@ export type MergedAppointment = {
   slotStart: string | null;
   slotEnd: string | null;
   slotStatus: string | null;
+  appointmentStatus: string | null;
   appointmentType: string | null;
   practitionerId: string | null;
   practitionerName: HumanName[] | null;
@@ -18,6 +19,7 @@ export type MergedSession = {
   slotStart: string | null;
   slotEnd: string | null;
   slotStatus: string | null;
+  appointmentStatus: string | null;
   appointmentType: string | null;
   patientId: string;
   patientName: HumanName[];
