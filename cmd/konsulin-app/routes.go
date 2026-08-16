@@ -232,6 +232,13 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		AccessCookieName: cfg.SessionCookieNameAccess,
 	}))
 
+	// Recommendation engine — BFF aggregation served as pre-joined JSON.
+	recHandler := handler.NewRecommendationsHandler(handler.RecommendationsOptions{
+		BackendBaseURL: cfg.APIURL,
+	})
+	r.Get("/api/recommendations", recHandler.Recommendations)
+	r.Get("/api/recommendations/specialties", recHandler.Specialties)
+
 	// Media upload — client sends image, BFF uploads to Cloudinary.
 	adminGuard := appmw.RequireRole(appmw.RequireRoleOptions{
 		RedirectIntentCookieName: cfg.RedirectIntentCookieName,

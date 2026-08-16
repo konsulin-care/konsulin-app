@@ -166,6 +166,19 @@ func (s *RecommendationService) Fetch(ctx context.Context, params FetchParams) (
 	return best, nil
 }
 
+// DistinctSpecialties returns the sorted distinct specialty names across all
+// active PractitionerRoles, derived from the FHIR `_elements` search.
+func (s *RecommendationService) DistinctSpecialties(ctx context.Context) ([]string, error) {
+	res := s.fetchBundle(ctx, "/fhir/PractitionerRole?active=true&_elements=specialty")
+	if res.err != nil {
+		return nil, res.err
+	}
+	if res.bundle == nil {
+		return nil, errors.New("specialty search returned no bundle")
+	}
+	return distinctSpecialtiesFromBundle(res.bundle), nil
+}
+
 // fetchResult carries one parallel FHIR search result.
 type fetchResult struct {
 	path   string

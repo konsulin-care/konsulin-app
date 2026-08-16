@@ -2,7 +2,7 @@ package service
 
 import (
 	"encoding/json"
-	"errors"
+	"sort"
 	"strings"
 )
 
@@ -19,9 +19,6 @@ func parseRoleBundle(bundle *searchset) (*logicalBundle, error) {
 		if err := logical.insert(&bundle.Entry[i]); err != nil {
 			return nil, err
 		}
-	}
-	if len(logical.Roles) == 0 {
-		return nil, errors.New("practitioner role search returned no PractitionerRole entries")
 	}
 	return logical, nil
 }
@@ -161,6 +158,31 @@ func makeRecommendation(logical *logicalBundle, role roleResource, pracID string
 		AvailableTime:         roleAvailableTime(role),
 		serviceTypeCodes:      svc.TypeCodes,
 	}
+}
+
+// distinctSpecialtiesFromBundle collects sorted unique specialty names.
+func distinctSpecialtiesFromBundle(bundle *searchset) []string {
+	seen := map[string]bool{}
+	var out []string
+	for i := range bundle.Entry {
+		rt, _, err := resourceMeta(bundle.Entry[i].Resource)
+		if err != nil || rt != "PractitionerRole" {
+			continue
+		}
+		var role roleResource
+		if err := json.Unmarshal(bundle.Entry[i].Resource, &role); err != nil {
+			continue
+		}
+		for _, s := range roleSpecialties(role) {
+			key := strings.ToLower(s)
+			if s != "" && !seen[key] {
+				seen[key] = true
+				out = append(out, s)
+			}
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // serviceIDs returns the bare HealthcareService ids referenced by the role.
