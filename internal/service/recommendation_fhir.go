@@ -64,16 +64,7 @@ type serviceResource struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	Type []codeableConcept `json:"type"`
-	Extension []struct {
-		URL           string `json:"url"`
-		ValueDuration struct {
-			Value int `json:"value"`
-		} `json:"valueDuration"`
-		ValueMoney struct {
-			Value    float64 `json:"value"`
-			Currency string  `json:"currency"`
-		} `json:"valueMoney"`
-	} `json:"extension"`
+	Extension []MoneyExtension `json:"extension"`
 }
 
 type roleResource struct {
@@ -156,21 +147,15 @@ func practitionerDisplayName(prac practitionerResource) string {
 // reduceService extracts card-relevant fields from a HealthcareService.
 func reduceService(svc serviceResource) parsedService {
 	out := parsedService{ID: svc.ID, Name: svc.Name, Currency: "IDR"}
-	hasFee := false
+	fee, feeErr := FeeFromExtensions(svc.Extension, feeExtensionURL)
+	if feeErr == nil {
+		out.Fee = fee.Value
+		out.Currency = fee.Currency
+	}
 	for _, ext := range svc.Extension {
-		switch ext.URL {
-		case feeExtensionURL:
-			out.Fee = int(ext.ValueMoney.Value)
-			if ext.ValueMoney.Currency != "" {
-				out.Currency = ext.ValueMoney.Currency
-			}
-			hasFee = true
-		case durationExtensionURL:
+		if ext.URL == durationExtensionURL {
 			out.DurMinutes = ext.ValueDuration.Value
 		}
-	}
-	if !hasFee {
-		out.Fee = 0
 	}
 	out.TypeCodes = serviceTypeCodes(svc.Type)
 	out.TypeText = serviceTypeText(svc.Type)
