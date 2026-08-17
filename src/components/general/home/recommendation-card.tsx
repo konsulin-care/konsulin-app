@@ -1,9 +1,9 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { Recommendation } from '@/constants/recommendations';
 import { formatCurrencyValue } from '@/utils/fhir/fee';
 import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
+import type { HomeRecommendationCard as Recommendation } from '@/utils/recommendation-card';
 import Image from 'next/image';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 

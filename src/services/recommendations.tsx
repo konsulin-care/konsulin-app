@@ -6,7 +6,12 @@ import { useQuery } from '@tanstack/react-query';
 import { getAPI } from './api';
 
 export interface RecommendationsParams {
+  /** Legacy BFF specialty code — drives `/api/recommendations?specialty=` today. */
   specialty: string;
+  /** Forward-contract HealthcareService code for the new BFF endpoint. */
+  serviceTypeCode?: string;
+  /** Forward-contract ICF domain code for the new BFF endpoint. */
+  icfDomain?: string;
   lat?: number;
   lon?: number;
 }

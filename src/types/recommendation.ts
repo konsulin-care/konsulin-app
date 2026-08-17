@@ -42,3 +42,17 @@ export interface RecommendationsResponse {
 export interface SpecialtiesResponse {
   specialties: string[];
 }
+
+/**
+ * Forward-contract query params for the recommendation endpoint.
+ *
+ * The current BFF consumes `specialty` (see RecommendationsParams); these
+ * fields are the agreed next-contract shape (`serviceTypeCode` plus ICF
+ * domain) and are already passed through harmlessly by the client.
+ */
+export interface RecommendationQueryParams {
+  serviceTypeCode: string;
+  icfDomain: string;
+  latitude?: number;
+  longitude?: number;
+}

@@ -1,0 +1,179 @@
+import { ASSESSMENT_CATEGORIES } from '@/constants/assessment-categories';
+import {
+  DECISION_TREE,
+  QUICK_COMPLAINT_IDS
+} from '@/constants/recommendation-decision-tree';
+import { describe, expect, it } from 'vitest';
+import {
+  buildRecommendationParams,
+  clearLastInterviewResult,
+  getQuickComplaints,
+  readLastInterviewResult,
+  resolveInterviewResult,
+  saveLastInterviewResult,
+  searchChiefComplaints
+} from '../recommendation-interview';
+
+const DOMAIN_CODES = ASSESSMENT_CATEGORIES.map(c => c.code) as string[];
+
+describe('decision tree data integrity', () => {
+  it('covers all 7 ICF domains from ASSESSMENT_CATEGORIES', () => {
+    const treeDomains = DECISION_TREE.map(d => d.code);
+    for (const code of DOMAIN_CODES) {
+      expect(treeDomains).toContain(code);
+    }
+    expect(treeDomains).toHaveLength(DOMAIN_CODES.length);
+  });
+
+  it('keeps complaint ids unique across the whole tree', () => {
+    const ids = DECISION_TREE.flatMap(d => d.complaints.map(c => c.id));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('keeps every complaint within 1..7 options with Other last when present', () => {
+    const complaints = DECISION_TREE.flatMap(d => d.complaints);
+    for (const complaint of complaints) {
+      expect(complaint.options.length).toBeGreaterThanOrEqual(1);
+      expect(complaint.options.length).toBeLessThanOrEqual(7);
+      const otherIndex = complaint.options.findIndex(o => o.isOther);
+      if (otherIndex !== -1) {
+        expect(otherIndex).toBe(complaint.options.length - 1);
+      }
+    }
+  });
+
+  it('gives every complaint a specialty, serviceTypeCode, icfDomain and red flag', () => {
+    const complaints = DECISION_TREE.flatMap(d => d.complaints);
+    for (const complaint of complaints) {
+      expect(complaint.specialty.length).toBeGreaterThan(0);
+      expect(complaint.serviceTypeCode.length).toBeGreaterThan(0);
+      expect(complaint.icfDomain).toBe(complaint.icfDomain);
+      expect(DOMAIN_CODES).toContain(complaint.icfDomain);
+      expect(complaint.redFlag.label.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides emergency resources for every flagged red flag', () => {
+    const complaints = DECISION_TREE.flatMap(d => d.complaints);
+    for (const complaint of complaints) {
+      if (complaint.redFlag.isEmergency) {
+        expect(complaint.redFlag.resources.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('maps the top-5 prevalence complaints into quick chips that exist in the tree', () => {
+    const complaintIds = new Set(
+      DECISION_TREE.flatMap(d => d.complaints.map(c => c.id))
+    );
+    expect(QUICK_COMPLAINT_IDS).toHaveLength(5);
+    for (const id of QUICK_COMPLAINT_IDS) {
+      expect(complaintIds.has(id)).toBe(true);
+    }
+  });
+});
+
+describe('searchChiefComplaints', () => {
+  it('returns the quick complaints for an empty query', () => {
+    expect(searchChiefComplaints('').map(c => c.id)).toEqual(
+      QUICK_COMPLAINT_IDS
+    );
+  });
+
+  it('matches complaint labels case-insensitively', () => {
+    const hits = searchChiefComplaints('low mood');
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].label.toLowerCase()).toContain('mood');
+  });
+
+  it('matches synonyms like the Indonesian word for anxious', () => {
+    const hits = searchChiefComplaints('cemas');
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].specialty).toBe('psychology');
+  });
+
+  it('returns an empty list for a dead-end query', () => {
+    expect(searchChiefComplaints('zzzz-not-a-complaint')).toEqual([]);
+  });
+});
+
+describe('getQuickComplaints', () => {
+  it('returns five complaints in the declared quick-chip order', () => {
+    const quick = getQuickComplaints();
+    expect(quick.map(c => c.id)).toEqual(QUICK_COMPLAINT_IDS);
+    expect(quick).toHaveLength(5);
+  });
+});
+
+describe('resolveInterviewResult', () => {
+  const pain = DECISION_TREE.flatMap(d => d.complaints).find(
+    c => c.id === 'pain-musculoskeletal'
+  );
+  const mood = DECISION_TREE.flatMap(d => d.complaints).find(
+    c => c.id === 'low-mood'
+  );
+
+  it('resolves a complaint and option to a deterministic result', () => {
+    if (!pain) throw new Error('low-mood complaint missing');
+    const optionId = pain.options[0].id;
+    const result = resolveInterviewResult('pain-musculoskeletal', optionId);
+    expect(result).not.toBeNull();
+    expect(result?.icfDomain).toBe('physical-health');
+    expect(result?.serviceTypeCode).toBe(pain.serviceTypeCode);
+    expect(result?.specialty).toBe(pain.specialty);
+  });
+
+  it('maps an Other answer to the generic other-{domain} service code', () => {
+    if (!mood) throw new Error('low-mood complaint missing');
+    const other = mood.options.find(o => o.isOther);
+    expect(other).toBeDefined();
+    const result = resolveInterviewResult('low-mood', other?.id ?? '');
+    expect(result?.serviceTypeCode).toBe('other-mental-emotional-health');
+    expect(result?.specialty).toBe(mood.specialty);
+  });
+
+  it('returns null for an unknown complaint', () => {
+    expect(resolveInterviewResult('not-a-complaint', 'x')).toBeNull();
+  });
+
+  it('returns null for an unknown option', () => {
+    expect(resolveInterviewResult('low-mood', 'not-an-option')).toBeNull();
+  });
+
+  it('resolves without an option to the base complaint result', () => {
+    const result = resolveInterviewResult('low-mood');
+    expect(result?.specialty).toBe('psychiatry');
+    expect(result?.serviceTypeCode).toBe('mood-disorder-care');
+  });
+});
+
+describe('buildRecommendationParams', () => {
+  it('maps an interview result onto the BFF query params', () => {
+    const result = resolveInterviewResult('low-mood');
+    if (!result) throw new Error('result missing');
+    const params = buildRecommendationParams(result, -6.2, 106.8);
+    expect(params).toEqual({ specialty: 'psychiatry', lat: -6.2, lon: 106.8 });
+  });
+
+  it('omits coordinates when not provided', () => {
+    const result = resolveInterviewResult('low-mood');
+    if (!result) throw new Error('result missing');
+    expect(buildRecommendationParams(result)).toEqual({
+      specialty: 'psychiatry'
+    });
+  });
+});
+
+describe('interview result persistence', () => {
+  it('persists and restores the last interview result', () => {
+    const result = resolveInterviewResult('low-mood');
+    if (!result) throw new Error('result missing');
+    saveLastInterviewResult(result);
+    expect(readLastInterviewResult()).toEqual(result);
+  });
+
+  it('returns null when nothing was stored', () => {
+    clearLastInterviewResult();
+    expect(readLastInterviewResult()).toBeNull();
+  });
+});
