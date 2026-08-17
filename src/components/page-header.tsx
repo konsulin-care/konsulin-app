@@ -18,6 +18,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
+import { generateGuestSeed } from '@/utils/guest-seed';
 import { generateAvatarPlaceholder } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeftIcon } from 'lucide-react';
@@ -155,7 +156,7 @@ export default function PageHeader({
   });
 
   const guestAvatar: GuestAvatar = useMemo(() => {
-    const seed = crypto.randomUUID();
+    const seed = generateGuestSeed();
     const placeholder = generateAvatarPlaceholder({ id: seed, name: 'Guest' });
     return {
       ...placeholder,
