@@ -171,16 +171,16 @@ func TestRecommendationService_Fetch_joinsAcrossResourceTypes(t *testing.T) {
 	}
 
 	prac1 := recs[0]
-	if prac1.PractitionerID != "Practitioner/prac-1" {
+	if prac1.PractitionerID != "prac-1" {
 		t.Errorf("expected practitioner prac-1, got %s", prac1.PractitionerID)
 	}
 	if prac1.PractitionerName != "dr. Rara Kusuma" {
 		t.Errorf("expected name dr. Rara Kusuma, got %s", prac1.PractitionerName)
 	}
-	if prac1.ScheduleID != "Schedule/sch-2" {
+	if prac1.ScheduleID != "sch-2" {
 		t.Errorf("expected schedule sch-2 (via _revinclude) for the deduped role, got %s", prac1.ScheduleID)
 	}
-	if prac1.HealthcareServiceID != "HealthcareService/hs-3" {
+	if prac1.HealthcareServiceID != "hs-3" {
 		t.Errorf("expected lowest-fee service hs-3, got %s", prac1.HealthcareServiceID)
 	}
 	if prac1.Fee != 300000 || prac1.Currency != "IDR" {
@@ -189,7 +189,7 @@ func TestRecommendationService_Fetch_joinsAcrossResourceTypes(t *testing.T) {
 	if prac1.DurationMinutes != 30 {
 		t.Errorf("expected duration 30 minutes, got %d", prac1.DurationMinutes)
 	}
-	if prac1.LocationID != "Location/loc-B" {
+	if prac1.LocationID != "loc-B" {
 		t.Errorf("expected location loc-B, got %s", prac1.LocationID)
 	}
 	if len(prac1.Specialties) != 1 || prac1.Specialties[0] != "Clinical Psychology" {
@@ -238,7 +238,7 @@ func TestRecommendationService_Fetch_proximityFiltersAndExtractsDistance(t *test
 		t.Fatalf("expected 1 recommendation after proximity filter, got %d", len(recs))
 	}
 	r := recs[0]
-	if r.PractitionerID != "Practitioner/prac-1" {
+	if r.PractitionerID != "prac-1" {
 		t.Errorf("expected prac-1, got %s", r.PractitionerID)
 	}
 	if r.DistanceKm == nil {

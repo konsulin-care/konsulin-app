@@ -145,18 +145,18 @@ func distanceFor(locID string, near map[string]float64, useNear bool) *float64 {
 // makeRecommendation assembles one card from joined entities.
 func makeRecommendation(logical *logicalBundle, role roleResource, pracID string, loc locationResource, locID string, distanceKm *float64, svc parsedService) Recommendation {
 	return Recommendation{
-		PractitionerRoleID:    "PractitionerRole/" + role.ID,
-		PractitionerID:        "Practitioner/" + pracID,
+		PractitionerRoleID:    role.ID,
+		PractitionerID:        pracID,
 		PractitionerName:      logical.Practitioners[pracID],
 		PractitionerPhoto:     logical.PractitionerPhotos[pracID],
 		Specialties:           roleSpecialties(role),
-		ScheduleID:            "Schedule/" + logical.SchedulesByRole[role.ID],
-		HealthcareServiceID:   "HealthcareService/" + svc.ID,
+		ScheduleID:            logical.SchedulesByRole[role.ID],
+		HealthcareServiceID:   svc.ID,
 		HealthcareServiceName: svc.Name,
 		DurationMinutes:       svc.DurMinutes,
 		Fee:                   svc.Fee,
 		Currency:              svc.Currency,
-		LocationID:            "Location/" + locID,
+		LocationID:            locID,
 		LocationName:          loc.Name,
 		LocationAddress:       loc.Address,
 		DistanceKm:            distanceKm,

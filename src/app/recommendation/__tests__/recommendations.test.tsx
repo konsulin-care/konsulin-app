@@ -58,18 +58,18 @@ vi.mock('@/components/screening-drawer', () => ({
 }));
 
 const recommendation: Recommendation = {
-  practitionerRoleId: 'PractitionerRole/role-01-01',
-  practitionerId: 'Practitioner/prc-01',
+  practitionerRoleId: 'role-01-01',
+  practitionerId: 'prc-01',
   practitionerName: 'dr. Rara Kusuma',
   specialties: ['Clinical Psychology'],
-  scheduleId: 'Schedule/sch-01-01',
-  healthcareServiceId: 'HealthcareService/hs-role-01-01-1',
+  scheduleId: 'sch-01-01',
+  healthcareServiceId: 'hs-role-01-01-1',
   healthcareServiceName: 'Konsultasi Psikologi Klinis',
   durationMinutes: 30,
   fee: 200_000,
   currency: 'IDR',
   nextSlot: { start: '2026-08-17T03:00:00Z', end: '2026-08-17T03:30:00Z' },
-  locationId: 'Location/loc-01',
+  locationId: 'loc-01',
   locationName: 'Cabang Senen',
   locationAddress: { line: ['Jl. Senen Raya No. 1'], city: 'Jakarta Pusat' },
   distanceKm: 5.4
@@ -186,7 +186,7 @@ describe('RecommendationPage', () => {
     });
     expect(link).toHaveAttribute(
       'href',
-      '/practitioner/availability?id=PractitionerRole/role-01-01&service=HealthcareService/hs-role-01-01-1'
+      '/practitioner/availability?id=role-01-01&service=hs-role-01-01-1'
     );
   });
 

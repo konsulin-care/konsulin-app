@@ -3,7 +3,6 @@ package handler
 import (
 	"errors"
 	"log/slog"
-	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,7 +12,7 @@ import (
 )
 
 const (
-	// maxRecommendations is the number of sampled cards returned per request.
+	// maxRecommendations is the number of recommendations returned per request.
 	maxRecommendations = 5
 	// specialtiesCacheTTL short-caches the distinct specialty list.
 	specialtiesCacheTTL = 60 * time.Second
@@ -88,16 +87,11 @@ func (h *RecommendationsHandler) Recommendations(w http.ResponseWriter, r *http.
 	}
 
 	h.enrich(r, recs)
-	ranked := service.RankByNextSlotDistanceFee(recs)
-	sampled := ranked
-	if len(ranked) > maxRecommendations {
-		// nolint:gosec // G404: sampling picks cards for UX variety, not security.
-		sampled = service.SampleRandom(ranked, maxRecommendations, rand.New(rand.NewSource(time.Now().UnixNano())))
-	}
+	narrowed := service.NarrowRecommendations(recs, maxRecommendations)
 
 	writeJSON(w, http.StatusOK, map[string]any{
 		"specialty":       specialty,
-		"recommendations": sampled,
+		"recommendations": narrowed,
 	})
 }
 

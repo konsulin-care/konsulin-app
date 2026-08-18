@@ -107,11 +107,7 @@ export default function RootLayout({
     <html lang='en'>
       <body className={inter.className}>
         <Script src='/js/pathname-init.js' strategy='beforeInteractive' />
-        <Script
-          src='/js/sw-register.js'
-          strategy='afterInteractive'
-          type='module'
-        />
+        <Script src='/js/sw-register.js' strategy='beforeInteractive' />
         <AppProviders>
           <AppChrome>{children}</AppChrome>
         </AppProviders>

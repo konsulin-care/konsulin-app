@@ -21,7 +21,7 @@ func NewReverseProxy(target *url.URL) *httputil.ReverseProxy {
 				KeepAlive: 30 * time.Second,
 			}).DialContext,
 			TLSHandshakeTimeout:   10 * time.Second,
-			ResponseHeaderTimeout: 15 * time.Second,
+			ResponseHeaderTimeout: 60 * time.Second,
 			IdleConnTimeout:       30 * time.Second,
 			MaxIdleConns:          100,
 		},

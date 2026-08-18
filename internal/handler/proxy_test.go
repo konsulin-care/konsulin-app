@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestReverseProxy_forwardsRequest(t *testing.T) {
@@ -118,6 +119,9 @@ func TestReverseProxy_hasTransportTimeout(t *testing.T) {
 	}
 	if tr.TLSHandshakeTimeout <= 0 {
 		t.Errorf("expected TLSHandshakeTimeout > 0, got %v", tr.TLSHandshakeTimeout)
+	}
+	if tr.ResponseHeaderTimeout != 60*time.Second {
+		t.Errorf("expected ResponseHeaderTimeout == 60s, got %v", tr.ResponseHeaderTimeout)
 	}
 	if tr.IdleConnTimeout <= 0 {
 		t.Errorf("expected IdleConnTimeout > 0, got %v", tr.IdleConnTimeout)

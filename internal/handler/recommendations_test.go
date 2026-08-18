@@ -152,9 +152,9 @@ func assertRecommendationCard(t *testing.T, card map[string]any) {
 	t.Helper()
 	for field, want := range map[string]string{
 		"practitionerName":      "",
-		"scheduleId":            "Schedule/",
-		"healthcareServiceId":   "HealthcareService/",
-		"locationId":            "Location/",
+		"scheduleId":            "sch-",
+		"healthcareServiceId":   "hs-",
+		"locationId":            "loc-",
 	} {
 		val, _ := card[field].(string)
 		if val == "" || (want != "" && !strings.HasPrefix(val, want)) {
@@ -224,5 +224,42 @@ func TestRecommendationsHandler_specialties(t *testing.T) {
 	}
 	if len(specs) != 2 || specs[0] != "Clinical Psychology" || specs[1] != "Psychiatry" {
 		t.Errorf("expected sorted distinct list, got %v", specs)
+	}
+}
+
+// TestRecommendationsHandler_deterministic verifies that two requests with
+// the same input return identical results (no random sampling).
+func TestRecommendationsHandler_deterministic(t *testing.T) {
+	h := recHandler(t, false)
+	server := httptest.NewServer(http.HandlerFunc(h.Recommendations))
+	t.Cleanup(server.Close)
+
+	fetchCards := func() []map[string]any {
+		t.Helper()
+		resp, err := http.Get(server.URL + "/api/recommendations?specialty=psychology")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		var body map[string]any
+		_ = json.NewDecoder(resp.Body).Decode(&body)
+		recs, _ := body["recommendations"].([]any)
+		cards := make([]map[string]any, 0, len(recs))
+		for _, r := range recs {
+			cards = append(cards, r.(map[string]any))
+		}
+		return cards
+	}
+
+	first := fetchCards()
+	second := fetchCards()
+
+	if len(first) != len(second) {
+		t.Fatalf("length mismatch: %d vs %d", len(first), len(second))
+	}
+	for i := range first {
+		if first[i]["practitionerRoleId"] != second[i]["practitionerRoleId"] {
+			t.Errorf("card %d: %v != %v", i, first[i]["practitionerRoleId"], second[i]["practitionerRoleId"])
+		}
 	}
 }

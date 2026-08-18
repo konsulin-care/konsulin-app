@@ -92,3 +92,66 @@ func TestJoinPractitionerPhotoFromFHIR(t *testing.T) {
 		t.Errorf("expected empty photo, got %q", recs2[0].PractitionerPhoto)
 	}
 }
+
+// TestBuildCandidates_bareIDs verifies that recommendation IDs do not include
+// FHIR resource type prefixes (e.g., "role-1" not "PractitionerRole/role-1").
+func TestBuildCandidates_bareIDs(t *testing.T) {
+	bundle := &searchset{
+		Entry: []searchEntry{
+			{Resource: []byte(`{
+				"resourceType": "PractitionerRole",
+				"id": "role-01-01",
+				"practitioner": {"reference": "Practitioner/prc-01"},
+				"location": [{"reference": "Location/loc-01"}],
+				"healthcareService": [{"reference": "HealthcareService/hs-01-01"}],
+				"specialty": [{"coding": [{"code": "psychology"}]}],
+				"availableTime": [{"daysOfWeek": ["mon"], "availableStartTime": "09:00", "availableEndTime": "17:00"}]
+			}`)},
+			{Resource: []byte(`{
+				"resourceType": "Practitioner",
+				"id": "prc-01",
+				"name": [{"given": ["Budi"]}]
+			}`)},
+			{Resource: []byte(`{
+				"resourceType": "HealthcareService",
+				"id": "hs-01-01",
+				"name": "Consultation",
+				"type": [{"coding": [{"code": "psychology"}]}],
+				"extension": [{"url": "http://konsulin.care/fhir/StructureDefinition/fee", "valueMoney": {"value": 100000, "currency": "IDR"}}]
+			}`)},
+			{Resource: []byte(`{
+				"resourceType": "Location",
+				"id": "loc-01",
+				"name": "Klinik Utama"
+			}`)},
+			{Resource: []byte(`{
+				"resourceType": "Schedule",
+				"id": "sch-01-01",
+				"actor": [{"reference": "PractitionerRole/role-01-01"}]
+			}`)},
+		},
+	}
+
+	logi, err := parseRoleBundle(bundle)
+	if err != nil {
+		t.Fatalf("parseRoleBundle: %v", err)
+	}
+	recs := buildCandidates(logi, nil, false)
+	if len(recs) == 0 {
+		t.Fatal("expected at least one recommendation")
+	}
+
+	r := recs[0]
+	assertBare(t, "PractitionerRoleID", r.PractitionerRoleID, "role-01-01")
+	assertBare(t, "PractitionerID", r.PractitionerID, "prc-01")
+	assertBare(t, "HealthcareServiceID", r.HealthcareServiceID, "hs-01-01")
+	assertBare(t, "LocationID", r.LocationID, "loc-01")
+	assertBare(t, "ScheduleID", r.ScheduleID, "sch-01-01")
+}
+
+func assertBare(t *testing.T, field, got, want string) {
+	t.Helper()
+	if got != want {
+		t.Errorf("%s: got %q, want %q (should be bare, no resource prefix)", field, got, want)
+	}
+}

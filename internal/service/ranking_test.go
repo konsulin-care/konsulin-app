@@ -103,3 +103,183 @@ func assertStringSlice(t *testing.T, got, want []string) {
 		}
 	}
 }
+
+// --- NarrowRecommendations tests ---
+
+func narrowRec(id string, distance *float64, slotStart string) Recommendation {
+	var s *TimeSlot
+	if slotStart != "" {
+		s = &TimeSlot{Start: slotStart, End: slotStart}
+	}
+	return Recommendation{
+		PractitionerRoleID: id,
+		Fee:                100000,
+		NextSlot:           s,
+		DistanceKm:         distance,
+	}
+}
+
+func TestNarrowRecommendations_returnsAllWhenUnderLimit(t *testing.T) {
+	recs := []Recommendation{
+		narrowRec("a", km(1.0), "2026-06-08T10:00:00Z"),
+		narrowRec("b", km(2.0), "2026-06-08T11:00:00Z"),
+		narrowRec("c", km(3.0), "2026-06-08T12:00:00Z"),
+	}
+	got := NarrowRecommendations(recs, 5)
+	if len(got) != 3 {
+		t.Fatalf("expected 3, got %d", len(got))
+	}
+}
+
+func TestNarrowRecommendations_returnsAllWhenExactlyLimit(t *testing.T) {
+	recs := make([]Recommendation, 5)
+	for i := range recs {
+		recs[i] = narrowRec(string(rune('a'+i)), km(float64(i+1)), "2026-06-08T10:00:00Z")
+	}
+	got := NarrowRecommendations(recs, 5)
+	if len(got) != 5 {
+		t.Fatalf("expected 5, got %d", len(got))
+	}
+}
+
+func TestNarrowRecommendations_returnsEmptyForEmptyInput(t *testing.T) {
+	got := NarrowRecommendations(nil, 5)
+	if len(got) != 0 {
+		t.Fatalf("expected 0, got %d", len(got))
+	}
+}
+
+func TestNarrowRecommendations_selectsClosestByDistance(t *testing.T) {
+	recs := []Recommendation{
+		narrowRec("far1", km(20.0), "2026-06-08T10:00:00Z"),
+		narrowRec("far2", km(15.0), "2026-06-08T10:00:00Z"),
+		narrowRec("near1", km(1.0), "2026-06-08T10:00:00Z"),
+		narrowRec("near2", km(3.0), "2026-06-08T10:00:00Z"),
+		narrowRec("mid", km(8.0), "2026-06-08T10:00:00Z"),
+		narrowRec("far3", km(25.0), "2026-06-08T10:00:00Z"),
+		narrowRec("far4", km(30.0), "2026-06-08T10:00:00Z"),
+	}
+	got := NarrowRecommendations(recs, 5)
+	if len(got) != 5 {
+		t.Fatalf("expected 5, got %d", len(got))
+	}
+	// Should have near1, near2, mid — the three closest
+	ids := make([]string, len(got))
+	for i, r := range got {
+		ids[i] = r.PractitionerRoleID
+	}
+	want := []string{"near1", "near2", "mid"}
+	for _, w := range want {
+		found := false
+		for _, id := range ids {
+			if id == w {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("expected %s in result, got %v", w, ids)
+		}
+	}
+}
+
+func TestNarrowRecommendations_nilDistanceSortsLast(t *testing.T) {
+	recs := []Recommendation{
+		narrowRec("nodist1", nil, "2026-06-08T10:00:00Z"),
+		narrowRec("far", km(20.0), "2026-06-08T10:00:00Z"),
+		narrowRec("near", km(1.0), "2026-06-08T10:00:00Z"),
+		narrowRec("nodist2", nil, "2026-06-08T10:00:00Z"),
+		narrowRec("mid", km(5.0), "2026-06-08T10:00:00Z"),
+		narrowRec("far2", km(10.0), "2026-06-08T10:00:00Z"),
+		narrowRec("far3", km(15.0), "2026-06-08T10:00:00Z"),
+	}
+	got := NarrowRecommendations(recs, 5)
+	if len(got) != 5 {
+		t.Fatalf("expected 5, got %d", len(got))
+	}
+	// nodist1 and nodist2 should NOT be in top 5
+	has := func(id string) bool {
+		for _, r := range got {
+			if r.PractitionerRoleID == id {
+				return true
+			}
+		}
+		return false
+	}
+	if has("nodist1") || has("nodist2") {
+		t.Errorf("nil-distance recs should sort last, got %v", ids(got))
+	}
+}
+
+func TestNarrowRecommendations_slotFiltering(t *testing.T) {
+	// Distance can't reduce (all same), so [:5] takes first 5 by input order.
+	// Slot sort reorders those 5: nil slots last.
+	tests := []struct {
+		name    string
+		recs    []Recommendation
+		wantOrd []string
+	}{
+		{
+			name: "nil slots sort last",
+			recs: []Recommendation{
+				narrowRec("noslot1", km(5.0), ""),
+				narrowRec("a", km(5.0), "2026-06-08T12:00:00Z"),
+				narrowRec("b", km(5.0), "2026-06-08T10:00:00Z"),
+				narrowRec("noslot2", km(5.0), ""),
+				narrowRec("c", km(5.0), "2026-06-08T11:00:00Z"),
+				narrowRec("d", km(5.0), "2026-06-08T13:00:00Z"),
+				narrowRec("e", km(5.0), "2026-06-08T14:00:00Z"),
+			},
+			wantOrd: []string{"b", "c", "a", "noslot1", "noslot2"},
+		},
+		{
+			name: "soonest slots first",
+			recs: []Recommendation{
+				narrowRec("a", km(5.0), "2026-06-08T14:00:00Z"),
+				narrowRec("b", km(5.0), "2026-06-08T10:00:00Z"),
+				narrowRec("c", km(5.0), "2026-06-08T12:00:00Z"),
+				narrowRec("d", km(5.0), "2026-06-08T11:00:00Z"),
+				narrowRec("e", km(5.0), "2026-06-08T13:00:00Z"),
+				narrowRec("f", km(5.0), "2026-06-08T15:00:00Z"),
+				narrowRec("g", km(5.0), "2026-06-08T16:00:00Z"),
+			},
+			wantOrd: []string{"b", "d", "c", "e", "a"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NarrowRecommendations(tt.recs, 5)
+			if len(got) != 5 {
+				t.Fatalf("expected 5, got %d", len(got))
+			}
+			gotOrd := make([]string, len(got))
+			for i, r := range got {
+				gotOrd[i] = r.PractitionerRoleID
+			}
+			assertStringSlice(t, gotOrd, tt.wantOrd)
+		})
+	}
+}
+
+func TestNarrowRecommendations_preservesInput(t *testing.T) {
+	recs := []Recommendation{
+		narrowRec("a", km(1.0), "2026-06-08T10:00:00Z"),
+		narrowRec("b", km(2.0), "2026-06-08T11:00:00Z"),
+	}
+	original := make([]Recommendation, len(recs))
+	copy(original, recs)
+	_ = NarrowRecommendations(recs, 5)
+	for i := range recs {
+		if recs[i].PractitionerRoleID != original[i].PractitionerRoleID {
+			t.Errorf("input modified at %d", i)
+		}
+	}
+}
+
+func ids(recs []Recommendation) []string {
+	out := make([]string, len(recs))
+	for i, r := range recs {
+		out[i] = r.PractitionerRoleID
+	}
+	return out
+}

@@ -84,3 +84,42 @@ func SampleRandom(recs []Recommendation, n int, rng *rand.Rand) []Recommendation
 	}
 	return out
 }
+
+// NarrowRecommendations applies cascading filters to produce ≤limit
+// recommendations. Stages: distance (closest first), then slot
+// (soonest NextSlot first). Returns all input when ≤ limit.
+func NarrowRecommendations(recs []Recommendation, limit int) []Recommendation {
+	if len(recs) <= limit {
+		return recs
+	}
+
+	// Stage 1: Distance filter — closest first.
+	candidates := sortByDistance(recs)
+
+	// Stage 2: Slot filter if still > limit — soonest first.
+	if len(candidates) > limit {
+		candidates = sortBySlot(candidates[:limit])
+	}
+
+	return candidates
+}
+
+// sortByDistance returns a copy sorted by DistanceKm ascending (nil last).
+func sortByDistance(recs []Recommendation) []Recommendation {
+	out := make([]Recommendation, len(recs))
+	copy(out, recs)
+	sort.SliceStable(out, func(i, j int) bool {
+		return compareDistance(out[i].DistanceKm, out[j].DistanceKm) < 0
+	})
+	return out
+}
+
+// sortBySlot returns a copy sorted by NextSlot ascending (nil last).
+func sortBySlot(recs []Recommendation) []Recommendation {
+	out := make([]Recommendation, len(recs))
+	copy(out, recs)
+	sort.SliceStable(out, func(i, j int) bool {
+		return compareSlot(out[i].NextSlot, out[j].NextSlot) < 0
+	})
+	return out
+}
