@@ -103,4 +103,24 @@ describe('InterviewAccordion', () => {
       expect(screen.queryByLabelText(/close/i)).not.toBeInTheDocument();
     });
   });
+
+  describe('Expandable layout', () => {
+    it('root container has h-full class for filling parent height', () => {
+      const { container } = render(
+        <InterviewAccordion options={ALL_COMPLAINTS} onComplete={vi.fn()} />
+      );
+      const rootDiv = container.firstElementChild as HTMLElement;
+      expect(rootDiv.className).toContain('h-full');
+    });
+
+    it('step 2 options list has flex-1 and overflow-y-auto classes when visible', () => {
+      render(
+        <InterviewAccordion options={ALL_COMPLAINTS} onComplete={vi.fn()} />
+      );
+      selectComplaintInCombobox(MOOD_COMPLAINT.label);
+      const optionsList = screen.getByRole('list');
+      expect(optionsList.className).toContain('flex-1');
+      expect(optionsList.className).toContain('overflow-y-auto');
+    });
+  });
 });

@@ -16,7 +16,7 @@ interface RecommendationCardStackProps {
    */
   recommendations?: Recommendation[];
   /** Navigates to booking for the tapped practitioner. */
-  onBook: (practitionerId: string) => void;
+  onBook: (practitionerRoleId: string, healthcareServiceId: string) => void;
 }
 
 /**
@@ -53,7 +53,9 @@ export default function RecommendationCardStack({
         {cards.map(card => (
           <SwiperSlide
             key={card.id}
-            onClick={() => onBook(card.id)}
+            onClick={() =>
+              onBook(card.practitionerRoleId, card.healthcareServiceId)
+            }
             className='aspect-square cursor-pointer !overflow-visible'
           >
             {({ isActive }) => (

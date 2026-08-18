@@ -20,6 +20,7 @@ export interface Recommendation {
   practitionerRoleId: string;
   practitionerId: string;
   practitionerName: string;
+  practitionerPhoto?: string;
   specialties: string[];
   scheduleId: string;
   healthcareServiceId: string;

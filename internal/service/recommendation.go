@@ -55,6 +55,7 @@ type Recommendation struct {
 	PractitionerRoleID    string                `json:"practitionerRoleId"`
 	PractitionerID        string                `json:"practitionerId"`
 	PractitionerName      string                `json:"practitionerName"`
+	PractitionerPhoto     string                `json:"practitionerPhoto"`
 	Specialties           []string              `json:"specialties"`
 	ScheduleID            string                `json:"scheduleId"`
 	HealthcareServiceID   string                `json:"healthcareServiceId"`

@@ -2,9 +2,12 @@
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
+import { PractitionerCard } from '@/components/practitioner/practitioner-card';
 import ScreeningDrawer from '@/components/screening-drawer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Roles } from '@/constants/roles';
+import { useAuth } from '@/context/auth/authContext';
 import { useRecommendations } from '@/services/recommendations';
 import type { InterviewResult } from '@/types/recommendation-interview';
 import {
@@ -12,8 +15,8 @@ import {
   readLastInterviewResult
 } from '@/utils/recommendation-interview';
 import { Sparkles } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import RecommendationCard from './recommendation-card';
 
 /**
  * Empty-state: prompt the user to complete a screening before
@@ -47,16 +50,29 @@ function NoRecommendationsPrompt({
 }
 
 /**
- * Recommendation results page (`/recommendation`).
- *
- * Reads the saved screening result from IndexedDB and fetches
- * matching practitioner recommendations from the BFF. No URL
- * parameters required — all state is persisted client-side.
+ * Allowed roles for the recommendation page.
+ * Only guests and patients should access recommendations.
+ */
+const ALLOWED_ROLES = new Set([Roles.Guest, Roles.Patient]);
+
+/**
+ * Recommendation page — shows practitioner matches for a completed screening.
+ * Only accessible by guest and patient roles.
  */
 export default function RecommendationPage() {
+  const router = useRouter();
+  const { state } = useAuth();
   const [savedResult, setSavedResult] = useState<InterviewResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Access control: redirect non-patient/non-guest users
+  useEffect(() => {
+    const role = state?.userInfo?.role_name;
+    if (role != null && !ALLOWED_ROLES.has(role as 'Patient' | 'Guest')) {
+      router.replace('/');
+    }
+  }, [state, router]);
 
   useEffect(() => {
     let active = true;
@@ -166,9 +182,15 @@ export default function RecommendationPage() {
     return (
       <div className='mt-4 flex flex-col gap-3 pb-6'>
         {recommendations.map(recommendation => (
-          <RecommendationCard
+          <PractitionerCard
             key={recommendation.practitionerRoleId}
-            recommendation={recommendation}
+            id={recommendation.practitionerId}
+            practitionerName={recommendation.practitionerName}
+            photoUrl={recommendation.practitionerPhoto}
+            specialties={recommendation.specialties}
+            healthcareServiceNames={[recommendation.healthcareServiceName]}
+            practitionerRoleId={recommendation.practitionerRoleId}
+            href={`/practitioner/availability?id=${recommendation.practitionerRoleId}&service=${recommendation.healthcareServiceId}`}
           />
         ))}
       </div>

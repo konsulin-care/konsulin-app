@@ -52,6 +52,9 @@ type practitionerResource struct {
 		Family string   `json:"family"`
 		Given  []string `json:"given"`
 	} `json:"name"`
+	Photo []struct {
+		URL string `json:"url"`
+	} `json:"photo"`
 }
 
 type locationResource struct {
@@ -106,11 +109,12 @@ type parsedService struct {
 
 // logicalBundle holds cross-referenced entities after the join.
 type logicalBundle struct {
-	Roles           []roleResource
-	Practitioners   map[string]string
-	Locations       map[string]locationResource
-	Services        map[string]parsedService
-	SchedulesByRole map[string]string
+	Roles              []roleResource
+	Practitioners      map[string]string
+	PractitionerPhotos map[string]string
+	Locations          map[string]locationResource
+	Services           map[string]parsedService
+	SchedulesByRole    map[string]string
 }
 
 // resourceMeta extracts resourceType and id from a raw resource.

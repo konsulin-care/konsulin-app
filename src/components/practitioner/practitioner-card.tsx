@@ -22,6 +22,7 @@ interface PractitionerCardProps {
   readonly specialties: string[];
   readonly healthcareServiceNames: string[];
   readonly practitionerRoleId: string;
+  readonly href?: string;
 }
 
 const HIDDEN_PLACEHOLDER = '___hidden___';
@@ -37,7 +38,8 @@ export function PractitionerCard({
   photoUrl,
   specialties,
   healthcareServiceNames,
-  practitionerRoleId
+  practitionerRoleId,
+  href
 }: PractitionerCardProps) {
   const cardRef = useRef<HTMLAnchorElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -168,7 +170,7 @@ export function PractitionerCard({
   return (
     <Link
       ref={cardRef}
-      href={`/practitioner?id=${practitionerRoleId}`}
+      href={href ?? `/practitioner?id=${practitionerRoleId}`}
       className='card flex h-[100px] items-stretch overflow-hidden bg-[#F9F9F9] p-0'
     >
       {/* Square avatar spanning full card height */}

@@ -9,10 +9,11 @@ import (
 // parseRoleBundle converts a searchset Bundle into cross-referenced entities.
 func parseRoleBundle(bundle *searchset) (*logicalBundle, error) {
 	logical := &logicalBundle{
-		Practitioners:   map[string]string{},
-		Locations:       map[string]locationResource{},
-		Services:        map[string]parsedService{},
-		SchedulesByRole: map[string]string{},
+		Practitioners:      map[string]string{},
+		PractitionerPhotos: map[string]string{},
+		Locations:          map[string]locationResource{},
+		Services:           map[string]parsedService{},
+		SchedulesByRole:    map[string]string{},
 	}
 
 	for i := range bundle.Entry {
@@ -42,6 +43,9 @@ func (l *logicalBundle) insert(entry *searchEntry) error {
 			return err
 		}
 		l.Practitioners[tailRef(prac.ID)] = practitionerDisplayName(prac)
+		if len(prac.Photo) > 0 {
+			l.PractitionerPhotos[tailRef(prac.ID)] = prac.Photo[0].URL
+		}
 	case "Location":
 		loc, err := decodeResource[locationResource](entry.Resource)
 		if err != nil {
@@ -144,6 +148,7 @@ func makeRecommendation(logical *logicalBundle, role roleResource, pracID string
 		PractitionerRoleID:    "PractitionerRole/" + role.ID,
 		PractitionerID:        "Practitioner/" + pracID,
 		PractitionerName:      logical.Practitioners[pracID],
+		PractitionerPhoto:     logical.PractitionerPhotos[pracID],
 		Specialties:           roleSpecialties(role),
 		ScheduleID:            "Schedule/" + logical.SchedulesByRole[role.ID],
 		HealthcareServiceID:   "HealthcareService/" + svc.ID,

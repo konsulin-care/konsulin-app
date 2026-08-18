@@ -62,7 +62,7 @@ export function InterviewAccordion({
   }, []);
 
   return (
-    <div className='flex flex-col gap-3 px-4 pb-4'>
+    <div className='flex h-full flex-col gap-3 px-4 pb-4'>
       {/* Step 1 — Chief Concern */}
       <div className='rounded-xl border border-gray-200'>
         <button
@@ -133,7 +133,7 @@ export function InterviewAccordion({
             <p className='mb-3 text-sm font-medium text-gray-700'>
               Which best describes your concern?
             </p>
-            <ul className='flex flex-col gap-2'>
+            <ul className='flex flex-1 flex-col gap-2 overflow-y-auto'>
               {complaint.options.map(option => (
                 <li key={option.id}>
                   <button

@@ -71,8 +71,13 @@ export default function HomeContentPatient() {
   } = usePatientRecords(patientId);
 
   /** Navigate to the practitioner booking page. */
-  const handleBook = (practitionerId: string) => {
-    router.push(`/appointment?practitioner=${practitionerId}`);
+  const handleBook = (
+    practitionerRoleId: string,
+    healthcareServiceId: string
+  ) => {
+    router.push(
+      `/practitioner/availability?id=${practitionerRoleId}&service=${healthcareServiceId}`
+    );
   };
 
   /** Renders the live recommendation stack, loading, or empty variants. */

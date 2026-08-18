@@ -16,6 +16,17 @@ vi.mock('next/navigation', () => ({
   useRouter: vi.fn(() => ({ replace: mockReplace, push: vi.fn() }))
 }));
 
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: vi.fn(() => ({
+    isLoading: false,
+    dispatch: vi.fn(),
+    state: {
+      isAuthenticated: false,
+      userInfo: { role_name: 'Guest' }
+    }
+  }))
+}));
+
 vi.mock('@/services/recommendations', () => ({
   useRecommendations: (params: unknown) => mockUseRecommendations(params),
   useSpecialties: vi.fn(() => ({ data: [], isLoading: false }))
@@ -125,9 +136,7 @@ describe('RecommendationPage', () => {
 
     expect(await screen.findByText('dr. Rara Kusuma')).toBeInTheDocument();
     expect(screen.getByText('Konsultasi Psikologi Klinis')).toBeInTheDocument();
-    expect(screen.getByText('IDR 200,000')).toBeInTheDocument();
-    expect(screen.getByText('5.4 km')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Book' }).length).toBe(1);
+    expect(screen.getByText('Clinical Psychology')).toBeInTheDocument();
     expect(mockUseRecommendations).toHaveBeenCalledWith({
       specialty: 'psychiatry'
     });
@@ -164,5 +173,36 @@ describe('RecommendationPage', () => {
       expect(mockUseRecommendations).toHaveBeenCalledWith(null)
     );
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('renders recommendation cards as links to availability booking page', async () => {
+    mockReadLastInterviewResult.mockResolvedValue(RESULT);
+    mockUseRecommendations.mockReturnValue(
+      baseQuery({ recommendations: [recommendation] })
+    );
+    render(<RecommendationPage />);
+    const link = await screen.findByRole('link', {
+      name: /dr\. Rara Kusuma/i
+    });
+    expect(link).toHaveAttribute(
+      'href',
+      '/practitioner/availability?id=PractitionerRole/role-01-01&service=HealthcareService/hs-role-01-01-1'
+    );
+  });
+
+  it('redirects non-patient/non-guest users away from recommendation', async () => {
+    const { useAuth } = await import('@/context/auth/authContext');
+    vi.mocked(useAuth).mockReturnValue({
+      isLoading: false,
+      dispatch: vi.fn(),
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'ClinicAdmin' }
+      }
+    });
+    render(<RecommendationPage />);
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/');
+    });
   });
 });

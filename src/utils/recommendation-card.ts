@@ -13,6 +13,8 @@ export interface HomeRecommendationCard {
   specialties: string[];
   fee: number;
   description: string;
+  practitionerRoleId: string;
+  healthcareServiceId: string;
 }
 
 /**
@@ -29,13 +31,15 @@ export function mapRecommendationToCard(
 ): HomeRecommendationCard {
   return {
     id: recommendation.practitionerId,
-    photoUrl: '',
+    photoUrl: recommendation.practitionerPhoto ?? '',
     name: recommendation.practitionerName,
     serviceName: recommendation.healthcareServiceName,
     specialties: recommendation.specialties,
     fee: recommendation.fee,
     description: recommendation.locationName
       ? `At ${recommendation.locationName}`
-      : ''
+      : '',
+    practitionerRoleId: recommendation.practitionerRoleId,
+    healthcareServiceId: recommendation.healthcareServiceId
   };
 }
