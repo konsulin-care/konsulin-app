@@ -1,48 +1,20 @@
 'use client';
 
 import ActionCard from '@/components/general/action-card';
-import { ComplaintSearch } from '@/components/general/home/interview/complaint-search';
-import { InterviewFlow } from '@/components/general/home/interview/interview-flow';
 import RecommendationCardStack from '@/components/general/home/recommendation-card-stack';
+import ScreeningDrawer from '@/components/screening-drawer';
 import RecordCard from '@/components/shared/record-card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { usePatientRecords } from '@/hooks/usePatientRecords';
+import { useSavedRecommendation } from '@/hooks/useSavedRecommendation';
 import { useRecommendations } from '@/services/recommendations';
-import type {
-  ChiefComplaint,
-  InterviewResult
-} from '@/types/recommendation-interview';
 import type { IRecord } from '@/types/record';
-import {
-  buildRecommendationParams,
-  readLastInterviewResult,
-  saveLastInterviewResult
-} from '@/utils/recommendation-interview';
+import { buildRecommendationParams } from '@/utils/recommendation-interview';
 import { Building2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-
-/** Top-level container for the patient-home interview drawer. */
-function InterviewLaunch({
-  onSelect
-}: Readonly<{ onSelect: (complaint: ChiefComplaint) => void }>) {
-  return (
-    <div className='fixed inset-x-0 bottom-0 z-40 flex justify-center'>
-      <div className='w-full max-w-md rounded-t-3xl bg-white p-5 pb-8 shadow-lg'>
-        <p className='mb-1 text-[12px] font-semibold text-[var(--secondary)]'>
-          Smart Assessment
-        </p>
-        <h2 className='mb-4 text-[16px] font-bold text-gray-900'>
-          What&apos;s bringing you in today?
-        </h2>
-        <ComplaintSearch onSelect={onSelect} />
-      </div>
-    </div>
-  );
-}
 
 /** Diamonds empty-state prompting the patient to start the interview. */
 function EmptyRecommendationState({
@@ -80,12 +52,8 @@ export default function HomeContentPatient() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const patientId = authState?.userInfo?.fhirId;
 
-  const [savedResult, setSavedResult] = useState<InterviewResult | null>(() =>
-    readLastInterviewResult()
-  );
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedComplaint, setSelectedComplaint] =
-    useState<ChiefComplaint | null>(null);
+  const { savedResult, drawerOpen, openDrawer, closeDrawer, handleComplete } =
+    useSavedRecommendation();
 
   const {
     data: recommendationsData,
@@ -107,18 +75,10 @@ export default function HomeContentPatient() {
     router.push(`/appointment?practitioner=${practitionerId}`);
   };
 
-  /** Persist the interview result and render live recommendations. */
-  const handleInterviewComplete = (result: InterviewResult) => {
-    saveLastInterviewResult(result);
-    setSavedResult(result);
-    setDrawerOpen(false);
-    setSelectedComplaint(null);
-  };
-
   /** Renders the live recommendation stack, loading, or empty variants. */
   const renderRecommendations = () => {
     if (!savedResult) {
-      return <EmptyRecommendationState onStart={() => setDrawerOpen(true)} />;
+      return <EmptyRecommendationState onStart={openDrawer} />;
     }
     if (isRecLoading) {
       return (
@@ -201,31 +161,12 @@ export default function HomeContentPatient() {
       {/* PRIMARY: Live Recommendation Cards */}
       {renderRecommendations()}
 
-      {/* INTERVIEW DRAWER */}
-      {drawerOpen && (
-        <>
-          <div
-            className='fixed inset-0 z-40 bg-black/40'
-            onClick={() => setDrawerOpen(false)}
-            aria-hidden='true'
-          />
-          {selectedComplaint ? (
-            <InterviewFlow
-              open
-              complaint={selectedComplaint}
-              onComplete={handleInterviewComplete}
-              onClose={() => {
-                setDrawerOpen(false);
-                setSelectedComplaint(null);
-              }}
-            />
-          ) : (
-            <InterviewLaunch
-              onSelect={complaint => setSelectedComplaint(complaint)}
-            />
-          )}
-        </>
-      )}
+      {/* UNIFIED SCREENING DRAWER */}
+      <ScreeningDrawer
+        open={drawerOpen}
+        onClose={closeDrawer}
+        onComplete={handleComplete}
+      />
 
       {/* SECONDARY: Quick Actions */}
       <div className='px-4 pb-4'>

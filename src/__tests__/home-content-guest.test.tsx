@@ -7,9 +7,7 @@ import type { InterviewResult } from '@/types/recommendation-interview';
 import { searchChiefComplaints } from '@/utils/recommendation-interview';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import HomeContentPatient from '../app/home-content-patient';
 
-/** Fields the patient home actually reads from the recommendations hook. */
 interface RecQueryStub {
   data?: RecommendationsResponse;
   isLoading: boolean;
@@ -50,16 +48,7 @@ const MOOD_RESULT: InterviewResult = {
 };
 
 vi.mock('next/navigation', () => ({
-  useRouter: vi.fn(() => ({ push: mockPush })),
-  default: { useRouter: vi.fn() }
-}));
-
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: vi.fn()
-}));
-
-vi.mock('@/hooks/usePatientRecords', () => ({
-  usePatientRecords: vi.fn()
+  useRouter: vi.fn(() => ({ push: mockPush }))
 }));
 
 vi.mock('@/services/recommendations', () => ({
@@ -103,16 +92,15 @@ vi.mock('@/components/general/action-card', () => ({
   default: () => <div data-testid='mock-action-card'>Action Card</div>
 }));
 
-vi.mock('@/components/shared/record-card', () => ({
-  default: () => <div data-testid='mock-record-card'>Record Card</div>
+vi.mock('@/components/general/home/guest-onboarding-section', () => ({
+  default: () => <div data-testid='mock-onboarding'>Onboarding</div>
 }));
 
 vi.mock('@/components/ui/skeleton', () => ({
   Skeleton: () => <div data-testid='mock-skeleton'>Skeleton</div>
 }));
 
-import { useAuth } from '@/context/auth/authContext';
-import { usePatientRecords } from '@/hooks/usePatientRecords';
+import HomeContentGuest from '../app/home-content-guest';
 
 const baseRecQuery: RecQueryStub = {
   data: { specialty: 'psychiatry', recommendations: [REC] },
@@ -125,88 +113,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockReadLastInterviewResult.mockResolvedValue(null);
   mockUseRecommendations.mockReturnValue(baseRecQuery);
-
-  vi.mocked(useAuth).mockReturnValue({
-    state: {
-      isAuthenticated: true,
-      userInfo: { fhirId: 'patient-1' }
-    },
-    isLoading: false,
-    dispatch: vi.fn()
-  });
-
-  vi.mocked(usePatientRecords).mockReturnValue({
-    records: [],
-    isLoading: false,
-    titlesLoading: false,
-    error: null,
-    fetchNextPage: vi.fn(),
-    hasNextPage: false,
-    isFetchingNextPage: false
-  });
 });
 
-describe('HomeContentPatient', () => {
-  it('renders quick action links', () => {
-    render(<HomeContentPatient />);
-
-    expect(screen.getByText('Action Card')).toBeInTheDocument();
-  });
-
-  it('renders previous records section', () => {
-    render(<HomeContentPatient />);
-
-    expect(screen.getByText('Previous Records')).toBeInTheDocument();
-    expect(screen.getByText('See All')).toBeInTheDocument();
-  });
-
-  it('shows at most 5 previous records', () => {
-    const records = Array.from({ length: 8 }, (_, i) => ({
-      id: `Encounter/enc-${i}`
-    }));
-
-    vi.mocked(usePatientRecords).mockReturnValue({
-      records,
-      isLoading: false,
-      titlesLoading: false,
-      error: null
-    } as never);
-
-    render(<HomeContentPatient />);
-
-    expect(screen.getAllByTestId('mock-record-card')).toHaveLength(5);
-  });
-
-  it('shows loading skeleton when auth is loading', () => {
-    vi.mocked(useAuth).mockReturnValue({
-      state: { isAuthenticated: false, userInfo: null },
-      isLoading: true,
-      dispatch: vi.fn()
-    });
-
-    render(<HomeContentPatient />);
-
-    expect(screen.getAllByTestId('mock-skeleton').length).toBeGreaterThan(0);
-  });
-
-  it('shows error banner with retry when records fetch fails', () => {
-    vi.mocked(usePatientRecords).mockReturnValue({
-      records: [],
-      isLoading: false,
-      titlesLoading: false,
-      error: new Error('Network error'),
-      fetchNextPage: vi.fn(),
-      hasNextPage: false,
-      isFetchingNextPage: false
-    });
-
-    render(<HomeContentPatient />);
-
-    expect(screen.getByText('Failed to load records.')).toBeInTheDocument();
-  });
-
-  it('prompts the patient to start a screening when no result is saved', () => {
-    render(<HomeContentPatient />);
+describe('HomeContentGuest', () => {
+  it('prompts the guest to start a screening when no result is saved', () => {
+    render(<HomeContentGuest />);
 
     expect(
       screen.getByRole('button', { name: 'Start Assessment' })
@@ -217,7 +128,7 @@ describe('HomeContentPatient', () => {
   it('fetches live recommendations for a saved interview result', async () => {
     mockReadLastInterviewResult.mockResolvedValue(MOOD_RESULT);
 
-    render(<HomeContentPatient />);
+    render(<HomeContentGuest />);
 
     await waitFor(() =>
       expect(mockUseRecommendations).toHaveBeenCalledWith({
@@ -228,7 +139,7 @@ describe('HomeContentPatient', () => {
   });
 
   it('opens the ScreeningDrawer and renders recommendations after completion', () => {
-    render(<HomeContentPatient />);
+    render(<HomeContentGuest />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Assessment' }));
     expect(screen.getByTestId('screening-drawer')).toBeInTheDocument();
@@ -238,5 +149,12 @@ describe('HomeContentPatient', () => {
       specialty: 'psychiatry'
     });
     expect(screen.getByTestId('mock-recommendations')).toBeInTheDocument();
+  });
+
+  it('renders onboarding and clinic quick actions', () => {
+    render(<HomeContentGuest />);
+
+    expect(screen.getByTestId('mock-onboarding')).toBeInTheDocument();
+    expect(screen.getByTestId('mock-action-card')).toBeInTheDocument();
   });
 });

@@ -1,30 +1,34 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import type { Recommendation } from '@/types/recommendation';
-import { fireEvent, render, screen } from '@testing-library/react';
+import type { InterviewResult } from '@/types/recommendation-interview';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import RecommendationPage from '../page';
 
-const {
-  mockUseRecommendations,
-  mockUseSpecialties,
-  mockReplace,
-  mockSearchParams
-} = vi.hoisted(() => ({
-  mockUseRecommendations: vi.fn(),
-  mockUseSpecialties: vi.fn(),
-  mockReplace: vi.fn(),
-  mockSearchParams: vi.fn(() => new URLSearchParams('specialty=psychology'))
-}));
+const { mockUseRecommendations, mockReadLastInterviewResult, mockReplace } =
+  vi.hoisted(() => ({
+    mockUseRecommendations: vi.fn(),
+    mockReadLastInterviewResult: vi.fn(),
+    mockReplace: vi.fn()
+  }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: vi.fn(() => ({ replace: mockReplace, push: vi.fn() })),
-  useSearchParams: () => mockSearchParams(),
-  usePathname: vi.fn(() => '/recommendation')
+  useRouter: vi.fn(() => ({ replace: mockReplace, push: vi.fn() }))
 }));
 
 vi.mock('@/services/recommendations', () => ({
-  useRecommendations: mockUseRecommendations,
-  useSpecialties: mockUseSpecialties
+  useRecommendations: (params: unknown) => mockUseRecommendations(params),
+  useSpecialties: vi.fn(() => ({ data: [], isLoading: false }))
 }));
+
+vi.mock('@/utils/recommendation-interview', async importOriginal => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+  const actual = (await importOriginal()) as Record<string, unknown>;
+  return {
+    ...actual,
+    readLastInterviewResult: () => mockReadLastInterviewResult()
+  };
+});
 
 // The booking drawer wraps the heavy PractitionerAvailability flow; render the
 // trigger through it so card layout is exercised without that dependency.
@@ -35,6 +39,11 @@ vi.mock('../recommendation-booking', () => ({
 // PageHeader pulls auth/indexeddb/web hooks — stub it in page-level tests.
 vi.mock('@/components/page-header', () => ({
   default: () => <div data-testid='page-header' />
+}));
+
+vi.mock('@/components/screening-drawer', () => ({
+  default: ({ open }: { open: boolean }) =>
+    open ? <div data-testid='mock-screening-drawer' /> : null
 }));
 
 const recommendation: Recommendation = {
@@ -55,6 +64,15 @@ const recommendation: Recommendation = {
   distanceKm: 5.4
 };
 
+const RESULT: InterviewResult = {
+  complaintId: 'anxiety',
+  complaintLabel: 'Anxiety',
+  specialty: 'psychiatry',
+  serviceTypeCode: 'anxiety-care',
+  icfDomain: 'mental-emotional-health',
+  redFlag: { isEmergency: false, label: 'Are you safe?', resources: [] }
+};
+
 const baseQuery = (
   data: { recommendations: Recommendation[] } | undefined,
   overrides: Record<string, unknown> = {}
@@ -67,11 +85,8 @@ const baseQuery = (
 });
 
 beforeEach(() => {
-  mockSearchParams.mockReturnValue(new URLSearchParams('specialty=psychology'));
-  mockUseSpecialties.mockReturnValue({
-    data: ['Clinical Psychology', 'Psychiatry'],
-    isLoading: false
-  });
+  mockReadLastInterviewResult.mockResolvedValue(null);
+  mockUseRecommendations.mockReturnValue(baseQuery({ recommendations: [] }));
 });
 
 afterEach(() => {
@@ -79,16 +94,29 @@ afterEach(() => {
 });
 
 describe('RecommendationPage', () => {
-  it('shows the specialty picker when no specialty param is present', async () => {
-    mockSearchParams.mockReturnValue(new URLSearchParams());
-    mockUseRecommendations.mockReturnValue(baseQuery({ recommendations: [] }));
-
+  it('prompts the user to start a screening when none has been completed', async () => {
     render(<RecommendationPage />);
 
-    expect(await screen.findByText('Pilih Spesialisasi')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Start a screening to see recommendations')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Start Screening' })
+    ).toBeInTheDocument();
+    expect(mockUseRecommendations).toHaveBeenCalledWith(null);
   });
 
-  it('renders recommendation cards with fee, slot, and distance', async () => {
+  it('opens the ScreeningDrawer from the empty state CTA', async () => {
+    render(<RecommendationPage />);
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Start Screening' })
+    );
+    expect(screen.getByTestId('mock-screening-drawer')).toBeInTheDocument();
+  });
+
+  it('renders recommendation cards for a saved interview result', async () => {
+    mockReadLastInterviewResult.mockResolvedValue(RESULT);
     mockUseRecommendations.mockReturnValue(
       baseQuery({ recommendations: [recommendation] })
     );
@@ -100,10 +128,13 @@ describe('RecommendationPage', () => {
     expect(screen.getByText('IDR 200,000')).toBeInTheDocument();
     expect(screen.getByText('5.4 km')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Book' }).length).toBe(1);
+    expect(mockUseRecommendations).toHaveBeenCalledWith({
+      specialty: 'psychiatry'
+    });
   });
 
   it('shows the empty state when no recommendations match', async () => {
-    mockUseRecommendations.mockReturnValue(baseQuery({ recommendations: [] }));
+    mockReadLastInterviewResult.mockResolvedValue(RESULT);
 
     render(<RecommendationPage />);
 
@@ -114,6 +145,7 @@ describe('RecommendationPage', () => {
 
   it('shows an error state with retry that refetches', async () => {
     const refetch = vi.fn();
+    mockReadLastInterviewResult.mockResolvedValue(RESULT);
     mockUseRecommendations.mockReturnValue(
       baseQuery(undefined, { isError: true, refetch })
     );
@@ -125,17 +157,12 @@ describe('RecommendationPage', () => {
     expect(refetch).toHaveBeenCalled();
   });
 
-  it('inline specialty filter navigates to the new specialty', async () => {
-    mockUseRecommendations.mockReturnValue(
-      baseQuery({ recommendations: [recommendation] })
-    );
-
+  it('never requires a specialty search param', async () => {
     render(<RecommendationPage />);
 
-    const select = await screen.findByLabelText('Ganti spesialisasi');
-    fireEvent.change(select, { target: { value: 'Psychiatry' } });
-    expect(mockReplace).toHaveBeenCalledWith(
-      '/recommendation?specialty=Psychiatry'
+    await waitFor(() =>
+      expect(mockUseRecommendations).toHaveBeenCalledWith(null)
     );
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 });

@@ -2,12 +2,14 @@ import {
   DECISION_TREE,
   QUICK_COMPLAINT_IDS
 } from '@/constants/recommendation-decision-tree';
+import { dbDelete, dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import type {
   ChiefComplaint,
   InterviewResult
 } from '@/types/recommendation-interview';
 
-const STORAGE_KEY = 'konsulin:last-interview-result';
+const RECOMMENDATION_OWNER = 'recommendation';
+const RECOMMENDATION_PREF_KEY = 'last-interview-result';
 
 const ALL_COMPLAINTS: ChiefComplaint[] = DECISION_TREE.flatMap(
   domain => domain.complaints
@@ -124,9 +126,15 @@ function isInterviewResult(value: unknown): value is InterviewResult {
  *
  * @param result - The interview result to store
  */
-export function saveLastInterviewResult(result: InterviewResult): void {
+export async function saveLastInterviewResult(
+  result: InterviewResult
+): Promise<void> {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
+    await dbSet(STORES.uiPreferences, {
+      ownerId: RECOMMENDATION_OWNER,
+      prefKey: RECOMMENDATION_PREF_KEY,
+      result
+    });
   } catch {
     // Storage unavailable — non-critical, ignore.
   }
@@ -137,12 +145,14 @@ export function saveLastInterviewResult(result: InterviewResult): void {
  *
  * @returns The stored result, or null when absent or malformed
  */
-export function readLastInterviewResult(): InterviewResult | null {
+export async function readLastInterviewResult(): Promise<InterviewResult | null> {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    return isInterviewResult(parsed) ? parsed : null;
+    const stored = await dbGet<{ result: InterviewResult }>(
+      STORES.uiPreferences,
+      [RECOMMENDATION_OWNER, RECOMMENDATION_PREF_KEY]
+    );
+    if (!stored) return null;
+    return isInterviewResult(stored.result) ? stored.result : null;
   } catch {
     return null;
   }
@@ -151,9 +161,12 @@ export function readLastInterviewResult(): InterviewResult | null {
 /**
  * Clear the persisted interview result (e.g., on explicit reset).
  */
-export function clearLastInterviewResult(): void {
+export async function clearLastInterviewResult(): Promise<void> {
   try {
-    window.localStorage.removeItem(STORAGE_KEY);
+    await dbDelete(STORES.uiPreferences, [
+      RECOMMENDATION_OWNER,
+      RECOMMENDATION_PREF_KEY
+    ]);
   } catch {
     // Storage unavailable — non-critical, ignore.
   }

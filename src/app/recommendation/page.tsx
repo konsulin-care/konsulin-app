@@ -2,75 +2,126 @@
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
+import ScreeningDrawer from '@/components/screening-drawer';
 import { Button } from '@/components/ui/button';
-import { useRecommendations, useSpecialties } from '@/services/recommendations';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useRecommendations } from '@/services/recommendations';
+import type { InterviewResult } from '@/types/recommendation-interview';
+import {
+  buildRecommendationParams,
+  readLastInterviewResult
+} from '@/utils/recommendation-interview';
+import { Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import RecommendationCard from './recommendation-card';
-import SpecialtyPickerModal from './specialty-picker-modal';
 
 /**
- * Results list body — split for Suspense around useSearchParams.
+ * Empty-state: prompt the user to complete a screening before
+ * any recommendations can be loaded.
  */
-function RecommendationResults() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const specialty = searchParams.get('specialty') ?? '';
+function NoRecommendationsPrompt({
+  onOpenDrawer
+}: Readonly<{ onOpenDrawer: () => void }>) {
+  return (
+    <div className='flex min-h-[300px] flex-col items-center justify-center gap-3 px-6 text-center'>
+      <Sparkles
+        className='h-6 w-6 text-[var(--secondary)]'
+        aria-hidden='true'
+      />
+      <p className='text-sm font-medium text-gray-800'>
+        Start a screening to see recommendations
+      </p>
+      <p className='text-xs text-gray-500'>
+        Complete a short assessment and we&apos;ll match you with the right
+        practitioner.
+      </p>
+      <Button
+        variant='default'
+        onClick={onOpenDrawer}
+        className='bg-[var(--secondary)] text-white'
+      >
+        Start Screening
+      </Button>
+    </div>
+  );
+}
 
-  const latRaw = searchParams.get('lat');
-  const lonRaw = searchParams.get('lon');
-  const lat = latRaw ? Number(latRaw) : undefined;
-  const lon = lonRaw ? Number(lonRaw) : undefined;
+/**
+ * Recommendation results page (`/recommendation`).
+ *
+ * Reads the saved screening result from IndexedDB and fetches
+ * matching practitioner recommendations from the BFF. No URL
+ * parameters required — all state is persisted client-side.
+ */
+export default function RecommendationPage() {
+  const [savedResult, setSavedResult] = useState<InterviewResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const params = specialty ? { specialty, lat, lon } : null;
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const result = await readLastInterviewResult();
+        if (active) {
+          setSavedResult(result);
+          setLoading(false);
+        }
+      } catch {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const params = savedResult ? buildRecommendationParams(savedResult) : null;
 
   const { data, isLoading, isError, refetch } = useRecommendations(params);
-  const { data: specialties = [], isLoading: isSpecialtiesLoading } =
-    useSpecialties();
-
-  /** Switch specialty (inline filter) and refetch via the new query key. */
-  const changeSpecialty = (code: string) => {
-    const prefix = `/recommendation?specialty=${encodeURIComponent(code)}`;
-    const suffix =
-      lat !== undefined && lon !== undefined ? `&lat=${lat}&lon=${lon}` : '';
-    router.replace(prefix + suffix);
-  };
-
-  // No intent params — show the specialty picker (required before results).
-  if (!specialty) {
-    return (
-      <SpecialtyPickerModal
-        specialties={specialties}
-        loading={isSpecialtiesLoading}
-      />
-    );
-  }
 
   const recommendations = data?.recommendations ?? [];
+  const specialty = savedResult?.specialty ?? '';
+
+  const handleComplete = useCallback((result: InterviewResult) => {
+    setSavedResult(result);
+    setDrawerOpen(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <>
+        <PageHeader pageIndicator='Rekomendasi' backRoute='/' />
+        <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
+          <Skeleton className='mb-4 h-6 w-40' />
+          <Skeleton className='h-[200px] w-full rounded-xl' />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
       <PageHeader pageIndicator='Rekomendasi' backRoute='/' />
 
       <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
-        <div className='flex items-center justify-between gap-3'>
-          <h1 className='text-lg font-semibold'>{specialty}</h1>
-          <select
-            aria-label='Ganti spesialisasi'
-            value={specialty}
-            onChange={e => changeSpecialty(e.target.value)}
-            className='border-input bg-background h-9 rounded-lg border px-2 text-sm'
-          >
-            {specialties.map(option => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!savedResult && (
+          <NoRecommendationsPrompt onOpenDrawer={() => setDrawerOpen(true)} />
+        )}
 
-        {renderBody()}
+        {savedResult && (
+          <>
+            <h1 className='text-lg font-semibold'>{specialty}</h1>
+            {renderBody()}
+          </>
+        )}
       </div>
+
+      <ScreeningDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onComplete={handleComplete}
+      />
     </>
   );
 
@@ -123,18 +174,4 @@ function RecommendationResults() {
       </div>
     );
   }
-}
-
-/**
- * Recommendation results page (`/recommendation`).
- *
- * Requires a `specialty` intent param; without it the specialty picker modal
- * appears. lat/lon optionally narrow results by proximity server-side.
- */
-export default function RecommendationPage() {
-  return (
-    <Suspense fallback={null}>
-      <RecommendationResults />
-    </Suspense>
-  );
 }

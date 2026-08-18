@@ -14,7 +14,8 @@ let enabledOnSave: () => void;
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({ state: { userInfo: { role_name: mockRole } } })
 }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mockPush }) }));
 vi.mock('@/lib/indexeddb', () => ({
   STORES: { uiPreferences: 'ui_preferences' },
   dbGet: vi.fn().mockResolvedValue(null)
@@ -22,6 +23,11 @@ vi.mock('@/lib/indexeddb', () => ({
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
 vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
+}));
+
+vi.mock('../screening-drawer', () => ({
+  default: ({ open }: { open: boolean }) =>
+    open ? <div data-testid='mock-screening-drawer' /> : null
 }));
 
 function TestHarness() {
@@ -168,6 +174,17 @@ describe('QuickActionFab', () => {
     expect(screen.queryAllByText(MENU_ITEMS).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByTestId('trigger-action'));
     expect(screen.queryAllByText(MENU_ITEMS)).toHaveLength(0);
+  });
+
+  it('opens the ScreeningDrawer from the Get Recommendation pill', () => {
+    renderFab();
+    const fabButton = document.querySelectorAll<HTMLButtonElement>(
+      'button[class*="rounded-full"]'
+    );
+    fireEvent.click(fabButton.item(fabButton.length - 1));
+    fireEvent.click(screen.getByText('Get Recommendation'));
+    expect(screen.getByTestId('mock-screening-drawer')).toBeInTheDocument();
+    expect(mockPush).not.toHaveBeenCalledWith('/screening');
   });
 
   describe('selection mode', () => {

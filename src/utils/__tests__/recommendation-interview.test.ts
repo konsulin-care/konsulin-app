@@ -3,7 +3,7 @@ import {
   DECISION_TREE,
   QUICK_COMPLAINT_IDS
 } from '@/constants/recommendation-decision-tree';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildRecommendationParams,
   clearLastInterviewResult,
@@ -15,6 +15,91 @@ import {
 } from '../recommendation-interview';
 
 const DOMAIN_CODES = ASSESSMENT_CATEGORIES.map(c => c.code) as string[];
+
+// Mock IndexedDB for persistence tests
+const mockIndexedDB = {
+  open: vi.fn(),
+  deleteDatabase: vi.fn()
+};
+
+vi.stubGlobal('indexedDB', mockIndexedDB);
+
+let mockDb: IDBDatabase;
+
+function createMockRequest(result?: unknown, error?: DOMException) {
+  const req = {
+    result: result ?? null,
+    error: error ?? null,
+    onsuccess: null as unknown as ((this: IDBRequest, ev: Event) => any) | null,
+    onerror: null as unknown as ((this: IDBRequest, ev: Event) => any) | null,
+    onupgradeneeded: null
+  };
+  return req;
+}
+
+function triggerRequest(req: ReturnType<typeof createMockRequest>) {
+  if (req.onsuccess) req.onsuccess.call(req, { target: req });
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.resetModules();
+
+  // Setup mock IndexedDB
+  mockDb = {
+    transaction: vi.fn(),
+    objectStoreNames: ['ui_preferences'],
+    version: 3,
+    close: vi.fn(),
+    addEventListener: vi.fn(),
+    onversionchange: null
+  } as unknown as IDBDatabase;
+
+  let storedValue: unknown = null;
+
+  /** Creates a request that auto-triggers onsuccess asynchronously. */
+  const createAsyncRequest = (result?: unknown) => {
+    const req = createMockRequest(result);
+    setTimeout(() => triggerRequest(req), 0);
+    return req;
+  };
+
+  const mockStore = {
+    get: vi.fn(() => createAsyncRequest(storedValue)),
+    put: vi.fn(value => {
+      storedValue = value;
+      return createAsyncRequest();
+    }),
+    delete: vi.fn(() => {
+      storedValue = null;
+      return createAsyncRequest();
+    }),
+    clear: vi.fn(),
+    getAll: vi.fn(),
+    getAllKeys: vi.fn(),
+    openCursor: vi.fn(),
+    index: vi.fn().mockReturnValue({
+      get: vi.fn(),
+      getAll: vi.fn(),
+      openCursor: vi.fn()
+    })
+  };
+
+  const mockTransaction = {
+    objectStore: vi.fn().mockReturnValue(mockStore),
+    oncomplete: null,
+    onerror: null,
+    onabort: null
+  };
+
+  mockDb.transaction = vi.fn().mockReturnValue(mockTransaction);
+
+  mockIndexedDB.open.mockImplementation(() => {
+    const req = createMockRequest(mockDb);
+    setTimeout(() => triggerRequest(req), 0);
+    return req;
+  });
+});
 
 describe('decision tree data integrity', () => {
   it('covers all 7 ICF domains from ASSESSMENT_CATEGORIES', () => {
@@ -165,15 +250,15 @@ describe('buildRecommendationParams', () => {
 });
 
 describe('interview result persistence', () => {
-  it('persists and restores the last interview result', () => {
+  it('persists and restores the last interview result', async () => {
     const result = resolveInterviewResult('low-mood');
     if (!result) throw new Error('result missing');
-    saveLastInterviewResult(result);
-    expect(readLastInterviewResult()).toEqual(result);
+    await saveLastInterviewResult(result);
+    expect(await readLastInterviewResult()).toEqual(result);
   });
 
-  it('returns null when nothing was stored', () => {
-    clearLastInterviewResult();
-    expect(readLastInterviewResult()).toBeNull();
+  it('returns null when nothing was stored', async () => {
+    await clearLastInterviewResult();
+    expect(await readLastInterviewResult()).toBeNull();
   });
 });

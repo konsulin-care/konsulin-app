@@ -36,6 +36,7 @@ export interface Pill {
 
 export type PillAction =
   | 'navigate'
+  | 'get-recommendation'
   | 'register-practitioner'
   | 'add-location'
   | 'add-assessment';

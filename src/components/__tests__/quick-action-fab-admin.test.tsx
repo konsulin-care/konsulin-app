@@ -12,7 +12,10 @@ let mockRole = 'Patient';
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({ state: { userInfo: { role_name: mockRole } } })
 }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => '/'
+}));
 vi.mock('@/lib/indexeddb', () => ({
   STORES: { uiPreferences: 'ui_preferences' },
   dbGet: vi.fn().mockResolvedValue(null)

@@ -230,6 +230,10 @@ export async function cursorDeleteAll(
 
 /** Clears all user data from all stores for a given owner ID. */
 export async function clearUserData(ownerId: string): Promise<void> {
+  // The last-interview-result record is owner-less (guest-shared); delete it
+  // explicitly since cursorDeleteAll on uiPreferences only matches by ownerId.
+  await dbDelete(STORES.uiPreferences, ['last-interview-result']);
+
   const allStores = Object.values(STORES);
   for (const storeName of allStores) {
     await cursorDeleteAll(storeName, (value: Record<string, unknown>) => {
