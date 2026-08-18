@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildRecommendationParams,
   clearLastInterviewResult,
+  getAllChiefComplaints,
   getQuickComplaints,
   readLastInterviewResult,
   resolveInterviewResult,
@@ -155,6 +156,24 @@ describe('decision tree data integrity', () => {
     for (const id of QUICK_COMPLAINT_IDS) {
       expect(complaintIds.has(id)).toBe(true);
     }
+  });
+});
+
+describe('getQuickComplaints and getAllChiefComplaints', () => {
+  it('returns quick complaints in exact specified order', () => {
+    const quickIds = getQuickComplaints().map(c => c.id);
+    expect(quickIds).toEqual([
+      'burnout',
+      'anxiety-stress',
+      'gastrointestinal',
+      'pain-musculoskeletal',
+      'fever-malaise'
+    ]);
+  });
+
+  it('getAllChiefComplaints returns all 41 complaints across all domains', () => {
+    const all = getAllChiefComplaints();
+    expect(all).toHaveLength(41);
   });
 });
 

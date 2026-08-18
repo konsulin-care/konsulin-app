@@ -4,7 +4,7 @@ import { InterviewAccordion } from '@/components/general/home/interview/intervie
 import AppDrawer from '@/components/ui/app-drawer';
 import type { InterviewResult } from '@/types/recommendation-interview';
 import {
-  getQuickComplaints,
+  getAllChiefComplaints,
   saveLastInterviewResult
 } from '@/utils/recommendation-interview';
 import { ShieldPlus } from 'lucide-react';
@@ -35,7 +35,7 @@ export default function ScreeningDrawer({
 }: Readonly<ScreeningDrawerProps>) {
   const router = useRouter();
   const pathname = usePathname();
-  const quickChips = useMemo(() => getQuickComplaints(), []);
+  const allComplaints = useMemo(() => getAllChiefComplaints(), []);
   const [pendingResult, setPendingResult] = useState<InterviewResult | null>(
     null
   );
@@ -98,7 +98,7 @@ export default function ScreeningDrawer({
       }
     >
       <InterviewAccordion
-        options={quickChips}
+        options={allComplaints}
         onComplete={handleAccordionComplete}
       />
     </AppDrawer>

@@ -28,9 +28,9 @@ export const DECISION_TREE: DecisionDomain[] = [
  * as one-tap quick chips in the complaint search entry point.
  */
 export const QUICK_COMPLAINT_IDS = [
-  'pain-musculoskeletal',
-  'respiratory-airway',
-  'low-mood',
+  'burnout',
+  'anxiety-stress',
   'gastrointestinal',
+  'pain-musculoskeletal',
   'fever-malaise'
 ] as const;

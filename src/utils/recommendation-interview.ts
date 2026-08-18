@@ -42,6 +42,15 @@ export function searchChiefComplaints(query: string): ChiefComplaint[] {
 }
 
 /**
+ * Return all 41 available chief complaints across all decision domains.
+ *
+ * @returns All chief complaints in decision tree order
+ */
+export function getAllChiefComplaints(): ChiefComplaint[] {
+  return ALL_COMPLAINTS;
+}
+
+/**
  * Return the top-5 prevalence complaints as one-tap quick chips.
  *
  * @returns The five quick-chip complaints in declared order

@@ -14,6 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger
 } from '@/components/ui/popover';
+import { QUICK_COMPLAINT_IDS } from '@/constants/recommendation-decision-tree';
 import { cn } from '@/lib/utils';
 import type { ChiefComplaint } from '@/types/recommendation-interview';
 import { Check, ChevronDown } from 'lucide-react';
@@ -51,24 +52,15 @@ export function ChiefComplaintCombobox({
     [onSelect]
   );
 
-  const sorted = useMemo(
-    () =>
-      [...options]
-        .filter(Boolean)
-        .toSorted((a, b) => a.label.localeCompare(b.label)),
-    [options]
-  );
-
   return (
     <div className='flex flex-col gap-3'>
       <ComplaintPopover
         open={open}
         onOpenChange={setOpen}
-        options={sorted}
+        options={options}
         value={value}
         onSelect={handleSelect}
       />
-      <QuickSelectionChips chips={sorted} onSelect={onSelect} />
     </div>
   );
 }
@@ -87,8 +79,29 @@ function ComplaintPopover({
   value: ChiefComplaint | null;
   onSelect: (complaint: ChiefComplaint) => void;
 }) {
+  const [searchValue, setSearchValue] = useState('');
+
+  const quickOptions = useMemo(() => {
+    const map = new Map(options.map(c => [c.id, c]));
+    return QUICK_COMPLAINT_IDS.map(id => map.get(id)).filter(
+      (c): c is ChiefComplaint => c !== undefined
+    );
+  }, [options]);
+
+  const displayedOptions = searchValue.trim() ? options : quickOptions;
+
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      onOpenChange(nextOpen);
+      if (!nextOpen) {
+        setSearchValue('');
+      }
+    },
+    [onOpenChange]
+  );
+
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           type='button'
@@ -107,11 +120,15 @@ function ComplaintPopover({
             cmdValue.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
           }
         >
-          <CommandInput placeholder='Search your concern (Indonesian or English)' />
+          <CommandInput
+            value={searchValue}
+            onValueChange={setSearchValue}
+            placeholder='Search your concern (Indonesian or English)'
+          />
           <CommandList>
             <CommandEmpty>No matching concern found.</CommandEmpty>
             <CommandGroup>
-              {options.map(complaint => (
+              {displayedOptions.map(complaint => (
                 <CommandItem
                   key={complaint.id}
                   value={`${complaint.label} ${complaint.synonyms.join(' ')}`}
@@ -131,35 +148,6 @@ function ComplaintPopover({
         </Command>
       </PopoverContent>
     </Popover>
-  );
-}
-
-/** Quick selection chip row below the combobox. */
-function QuickSelectionChips({
-  chips,
-  onSelect
-}: {
-  chips: readonly ChiefComplaint[];
-  onSelect: (complaint: ChiefComplaint) => void;
-}) {
-  return (
-    <div>
-      <p className='mb-2 text-xs font-semibold text-gray-500'>
-        Quick Selection
-      </p>
-      <div className='flex flex-wrap gap-2'>
-        {chips.map(complaint => (
-          <button
-            key={complaint.id}
-            type='button'
-            onClick={() => onSelect(complaint)}
-            className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 hover:border-[var(--secondary)] hover:text-[var(--secondary)]'
-          >
-            {complaint.label}
-          </button>
-        ))}
-      </div>
-    </div>
   );
 }
 
