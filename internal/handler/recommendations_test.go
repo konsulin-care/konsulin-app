@@ -76,18 +76,54 @@ func recStub(t *testing.T, emptyRoles bool) *httptest.Server {
 		packed{"resource": packed{"resourceType": "PractitionerRole", "id": "role-3", "specialty": []packed{{"coding": []packed{{"code": "psychology", "display": "Clinical Psychology"}}, "text": "Clinical Psychology"}}}},
 	}
 
+	// bundleForSearchURL returns the flat searchset bundle a GET to the given
+	// relative URL (e.g. "PractitionerRole?...") would produce.
+	bundleForSearchURL := func(entryURL string) packed {
+		switch {
+		case strings.Contains(entryURL, "Slot"):
+			return packed{"resourceType": "Bundle", "type": "searchset", "total": 0, "entry": []packed{}}
+		case strings.Contains(entryURL, "_elements=specialty"):
+			return packed{"resourceType": "Bundle", "type": "searchset", "total": 3, "entry": specialtyEntries}
+		case strings.Contains(entryURL, "Location") && strings.Contains(entryURL, "near="):
+			return packed{"resourceType": "Bundle", "type": "searchset", "total": 6, "entry": nearEntries}
+		default:
+			return packed{"resourceType": "Bundle", "type": "searchset", "total": len(entries), "entry": entries}
+		}
+	}
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/fhir+json")
-		switch {
-		case strings.Contains(r.URL.Path, "Slot"):
-			_ = json.NewEncoder(w).Encode(packed{"resourceType": "Bundle", "type": "searchset", "total": 0, "entry": []packed{}})
-		case strings.Contains(r.URL.RawQuery, "_elements=specialty"):
-			_ = json.NewEncoder(w).Encode(packed{"resourceType": "Bundle", "type": "searchset", "total": 3, "entry": specialtyEntries})
-		case strings.Contains(r.URL.Path, "Location") && strings.Contains(r.URL.RawQuery, "near="):
-			_ = json.NewEncoder(w).Encode(packed{"resourceType": "Bundle", "type": "searchset", "total": 6, "entry": nearEntries})
-		default:
-			_ = json.NewEncoder(w).Encode(packed{"resourceType": "Bundle", "type": "searchset", "total": len(entries), "entry": entries})
+
+		// FHIR batch POST — decode entry URLs and route each one.
+		if r.Method == http.MethodPost {
+			var batchReq struct {
+				Entry []struct {
+					Request struct {
+						URL string `json:"url"`
+					} `json:"request"`
+				} `json:"entry"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&batchReq); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			respEntries := make([]packed, 0, len(batchReq.Entry))
+			for _, e := range batchReq.Entry {
+				respEntries = append(respEntries, packed{
+					"resource": bundleForSearchURL(e.Request.URL),
+					"response": packed{"status": "200"},
+				})
+			}
+			_ = json.NewEncoder(w).Encode(packed{
+				"resourceType": "Bundle",
+				"type":         "batch-response",
+				"entry":        respEntries,
+			})
+			return
 		}
+
+		// Legacy GET fallback.
+		_ = json.NewEncoder(w).Encode(bundleForSearchURL(r.URL.Path+"?"+r.URL.RawQuery))
 	}))
 	t.Cleanup(srv.Close)
 	return srv

@@ -121,3 +121,45 @@ describe('useSpecialties', () => {
     ]);
   });
 });
+
+describe('useRecommendations staleTime', () => {
+  it('does not refetch within 5 minutes for the same params', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        specialty: 'psychology',
+        recommendations: [
+          {
+            practitionerRoleId: 'role-1',
+            practitionerId: 'prac-1',
+            practitionerName: 'dr. Test',
+            practitionerPhoto: '',
+            specialties: ['psychology'],
+            scheduleId: 'sch-1',
+            healthcareServiceId: 'hs-1',
+            locationId: 'loc-1',
+            nextSlot: null,
+            availableTime: [],
+            durationMinutes: 30,
+            fee: 200_000,
+            icfDomain: 'mental-emotional-health'
+          }
+        ]
+      }
+    });
+
+    const params = { specialty: 'psychology', lat: -6.2, lon: 106.8 };
+
+    // First render
+    const { result, rerender } = renderHook(() => useRecommendations(params), {
+      wrapper: createWrapper()
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockGet).toHaveBeenCalledTimes(1);
+
+    // Second render with the same params — should use cache
+    rerender();
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    // Still 1 call — staleTime prevents refetch
+    expect(mockGet).toHaveBeenCalledTimes(1);
+  });
+});

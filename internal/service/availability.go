@@ -35,10 +35,11 @@ type NextFreeSlotParams struct {
 	TZOffset string
 }
 
-// busySlot is one occupied interval parsed from a Slot resource.
-type busySlot struct {
-	start time.Time
-	end   time.Time
+// BusySlot is one occupied interval parsed from a Slot resource.
+// Exported so the handler can use batch-fetched busy slots with ComputeNextSlot.
+type BusySlot struct {
+	Start time.Time
+	End   time.Time
 }
 
 // NextFreeSlot returns the earliest bookable interval within the horizon,
@@ -65,7 +66,7 @@ func NextFreeSlot(ctx context.Context, params NextFreeSlotParams) (*TimeSlot, er
 }
 
 // fetchBusySlots queries busy Slot resources for a schedule within the horizon.
-func fetchBusySlots(ctx context.Context, client *http.Client, baseURL, scheduleID string, now time.Time) ([]busySlot, error) {
+func fetchBusySlots(ctx context.Context, client *http.Client, baseURL, scheduleID string, now time.Time) ([]BusySlot, error) {
 	startISO := now.UTC().Format(time.RFC3339)
 	endISO := now.AddDate(0, 0, availabilityHorizonDays).UTC().Format(time.RFC3339)
 	path := "/fhir/Slot?schedule=" + url.QueryEscape(scheduleID) +
@@ -100,20 +101,20 @@ func fetchBusySlots(ctx context.Context, client *http.Client, baseURL, scheduleI
 		return nil, fmt.Errorf("decode Slot bundle: %w", err)
 	}
 
-	var out []busySlot
+	var out []BusySlot
 	for _, e := range bundle.Entry {
 		start, errStart := time.Parse(time.RFC3339, e.Resource.Start)
 		end, errEnd := time.Parse(time.RFC3339, e.Resource.End)
 		if errStart != nil || errEnd != nil {
 			continue
 		}
-		out = append(out, busySlot{start: start, end: end})
+		out = append(out, BusySlot{Start: start, End: end})
 	}
 	return out, nil
 }
 
 // computeNextSlot scans the daily windows within the horizon for a free slot.
-func computeNextSlot(windows []AvailableTimeWindow, busy []busySlot, now time.Time, offset time.Duration, dur int) *TimeSlot {
+func computeNextSlot(windows []AvailableTimeWindow, busy []BusySlot, now time.Time, offset time.Duration, dur int) *TimeSlot {
 	localNow := now.UTC().Add(offset)
 	for i := 0; i < availabilityHorizonDays; i++ {
 		day := localNow.AddDate(0, 0, i)
@@ -128,7 +129,7 @@ func computeNextSlot(windows []AvailableTimeWindow, busy []busySlot, now time.Ti
 }
 
 // nextInWindow returns the first free interval inside one availableTime window.
-func nextInWindow(w AvailableTimeWindow, day time.Time, dayName string, busy []busySlot, now time.Time, offset time.Duration, dur int) (*TimeSlot, bool) {
+func nextInWindow(w AvailableTimeWindow, day time.Time, dayName string, busy []BusySlot, now time.Time, offset time.Duration, dur int) (*TimeSlot, bool) {
 	if !hasDay(w.DaysOfWeek, dayName) {
 		return nil, false
 	}
@@ -150,14 +151,14 @@ func nextInWindow(w AvailableTimeWindow, day time.Time, dayName string, busy []b
 }
 
 // slotAvailable reports whether the interval is in the future and conflict-free.
-func slotAvailable(slot TimeSlot, now time.Time, busy []busySlot) bool {
+func slotAvailable(slot TimeSlot, now time.Time, busy []BusySlot) bool {
 	start, errStart := time.Parse(time.RFC3339, slot.Start)
 	end, errEnd := time.Parse(time.RFC3339, slot.End)
 	if errStart != nil || errEnd != nil || !end.After(now) {
 		return false
 	}
 	for _, b := range busy {
-		if start.Before(b.end) && b.start.Before(end) {
+		if start.Before(b.End) && b.Start.Before(end) {
 			return false
 		}
 	}
@@ -227,4 +228,54 @@ func parseTZOffset(tz string) time.Duration {
 		return 0
 	}
 	return time.Duration(sign) * (time.Duration(hours)*time.Hour + time.Duration(minutes)*time.Minute)
+}
+
+// BusySlotPath returns the FHIR search URL for busy slots on a schedule.
+// Extracted so the handler can collect paths for batch fetching.
+func BusySlotPath(scheduleID string, now time.Time) string {
+	startISO := now.UTC().Format(time.RFC3339)
+	endISO := now.AddDate(0, 0, availabilityHorizonDays).UTC().Format(time.RFC3339)
+	return "/fhir/Slot?schedule=" + url.QueryEscape(scheduleID) +
+		"&status=" + busyStatusQuery +
+		"&start=ge" + startISO +
+		"&start=le" + endISO
+}
+
+// ParseBusySlotsBundle decodes one FHIR batch entry response into busy
+// intervals. Pure function — no HTTP, no side effects.
+func ParseBusySlotsBundle(data json.RawMessage) ([]BusySlot, error) {
+	var bundle struct {
+		Entry []struct {
+			Resource struct {
+				Start string `json:"start"`
+				End   string `json:"end"`
+			} `json:"resource"`
+		} `json:"entry"`
+	}
+	if err := json.Unmarshal(data, &bundle); err != nil {
+		return nil, fmt.Errorf("decode busy slot bundle: %w", err)
+	}
+	var out []BusySlot
+	for _, e := range bundle.Entry {
+		start, errStart := time.Parse(time.RFC3339, e.Resource.Start)
+		end, errEnd := time.Parse(time.RFC3339, e.Resource.End)
+		if errStart != nil || errEnd != nil {
+			continue
+		}
+		out = append(out, BusySlot{Start: start, End: end})
+	}
+	return out, nil
+}
+
+// ParseTZOffset converts a "+07:00" / "-05:30" / "Z" offset string to a
+// duration. Exported so the handler can compute the default offset.
+func ParseTZOffset(tz string) time.Duration {
+	return parseTZOffset(tz)
+}
+
+// ComputeNextSlot is the exported pure-function wrapper over computeNextSlot.
+// The handler calls this with batch-fetched busy slots after fetchBusySlots
+// is no longer needed.
+func ComputeNextSlot(windows []AvailableTimeWindow, busy []BusySlot, now time.Time, offset time.Duration, dur int) *TimeSlot {
+	return computeNextSlot(windows, busy, now, offset, dur)
 }

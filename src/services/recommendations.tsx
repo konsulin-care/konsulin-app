@@ -35,7 +35,8 @@ export const useRecommendations = (params: RecommendationsParams | null) => {
       );
       return response.data;
     },
-    enabled: Boolean(params?.specialty)
+    enabled: Boolean(params?.specialty),
+    staleTime: 5 * 60 * 1000
   });
 };
 

@@ -4,19 +4,19 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 	"strings"
-	"sync"
 )
 
 // defaultNearRadiusKM is the geographic radius used for Location?near searches
 // when the caller provides lat/lon without an explicit radius.
 const defaultNearRadiusKM = 50
+
+// maxRecommendations caps the number of cards returned by Fetch, including
+// related-specialty fill. Kept in the service so exact-first ordering survives
+// (the handler's NarrowRecommendations becomes a no-op safety net).
+const maxRecommendations = 5
 
 // distanceExtensionURL is the FHIR standard extension Blaze attaches to
 // Location search results carrying the distance in meters.
@@ -56,6 +56,7 @@ type Recommendation struct {
 	PractitionerID        string                `json:"practitionerId"`
 	PractitionerName      string                `json:"practitionerName"`
 	PractitionerPhoto     string                `json:"practitionerPhoto"`
+	MatchSource           string                `json:"matchSource,omitempty"`
 	Specialties           []string              `json:"specialties"`
 	ScheduleID            string                `json:"scheduleId"`
 	HealthcareServiceID   string                `json:"healthcareServiceId"`
@@ -72,7 +73,7 @@ type Recommendation struct {
 	serviceTypeCodes      []string              `json:"-"`
 }
 
-// FetchParams are the intent parameters accepted by the recommendations API.
+// FetchParams holds the input parameters for a recommendation fetch.
 type FetchParams struct {
 	Specialty string
 	Latitude  *float64
@@ -104,67 +105,82 @@ func NewRecommendationService(opts RecommendationOptions) *RecommendationService
 	}
 }
 
-// Fetch returns deduplicated recommendation cards for the requested specialty.
+// Fetch returns up to maxRecommendations recommendation cards for the
+// requested specialty. Exact-specialty matches are returned first; when fewer
+// than maxRecommendations, cards from semantically-nearby decision-tree
+// specialties fill the remainder. The whole fill is one FHIR batch request.
 // When lat/lon are provided, candidates whose Location falls outside the
 // ?near radius are dropped and distances are attached from the FHIR result.
 func (s *RecommendationService) Fetch(ctx context.Context, params FetchParams) ([]Recommendation, error) {
-	rolePath := practitionerRoleQuery(params.Specialty)
-
-	results := make(chan fetchResult, 2)
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		results <- s.fetchBundle(ctx, rolePath)
-	}()
-
-	var nearPath string
-	if params.Latitude != nil && params.Longitude != nil {
-		nearPath = locationNearQuery(*params.Latitude, *params.Longitude)
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			results <- s.fetchBundle(ctx, nearPath)
-		}()
-	}
-
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	var roleBundle, nearBundle *searchset
-	var firstErr error
-	for res := range results {
-		if res.err != nil {
-			if firstErr == nil {
-				firstErr = res.err
-			}
-			continue
-		}
-		if strings.Contains(res.path, "PractitionerRole") {
-			roleBundle = res.bundle
-		} else {
-			nearBundle = res.bundle
-		}
-	}
-	if firstErr != nil {
-		return nil, firstErr
-	}
-	if roleBundle == nil {
-		return nil, errors.New("practitioner role search returned no bundle")
-	}
-
-	logical, err := parseRoleBundle(roleBundle)
+	specialties, bundles, nearBundle, err := s.fetchRecommendationBundles(ctx, params)
 	if err != nil {
 		return nil, err
 	}
+	return buildRecommendations(specialties, bundles, nearBundle)
+}
 
+func (s *RecommendationService) fetchRecommendationBundles(ctx context.Context, params FetchParams) ([]string, []*searchset, *searchset, error) {
+	specialties := append([]string{params.Specialty}, nearbySpecialties(params.Specialty)...)
+	urls := make([]string, 0, len(specialties)+1)
+	for _, specialty := range specialties {
+		urls = append(urls, practitionerRoleQuery(specialty))
+	}
+	nearIdx := -1
+	if params.Latitude != nil && params.Longitude != nil {
+		nearIdx = len(urls)
+		urls = append(urls, locationNearQuery(*params.Latitude, *params.Longitude))
+	}
+	bundles, err := s.fetchBatch(ctx, urls)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if len(bundles) == 0 || bundles[0] == nil {
+		return nil, nil, nil, errors.New("practitioner role search returned no bundle")
+	}
+	var nearBundle *searchset
+	if nearIdx >= 0 && nearIdx < len(bundles) {
+		nearBundle = bundles[nearIdx]
+	}
+	return specialties, bundles, nearBundle, nil
+}
+
+func buildRecommendations(specialties []string, bundles []*searchset, nearBundle *searchset) ([]Recommendation, error) {
 	near := distanceMap(nearBundle)
-	candidates := buildCandidates(logical, near, nearBundle != nil)
-	best := dedupByPractitioner(candidates, params.Specialty)
-	return best, nil
+	out := make([]Recommendation, 0, maxRecommendations)
+	seen := map[string]bool{}
+	for i, specialty := range specialties {
+		if len(out) >= maxRecommendations || i >= len(bundles) || bundles[i] == nil {
+			continue
+		}
+		logical, err := parseRoleBundle(bundles[i])
+		if err != nil {
+			if i == 0 {
+				return nil, err
+			}
+			continue
+		}
+		source := "related"
+		if i == 0 {
+			source = "exact"
+		}
+		out = appendCandidates(out, seen, logical, near, nearBundle != nil, specialty, source)
+	}
+	return out, nil
+}
+
+func appendCandidates(out []Recommendation, seen map[string]bool, logical *logicalBundle, near map[string]float64, useNear bool, specialty, source string) []Recommendation {
+	for _, candidate := range dedupByPractitioner(buildCandidates(logical, near, useNear), specialty) {
+		if len(out) >= maxRecommendations {
+			break
+		}
+		if seen[candidate.PractitionerID] {
+			continue
+		}
+		seen[candidate.PractitionerID] = true
+		candidate.MatchSource = source
+		out = append(out, candidate)
+	}
+	return out
 }
 
 // DistinctSpecialties returns the sorted distinct specialty names across all
@@ -178,74 +194,4 @@ func (s *RecommendationService) DistinctSpecialties(ctx context.Context) ([]stri
 		return nil, errors.New("specialty search returned no bundle")
 	}
 	return distinctSpecialtiesFromBundle(res.bundle), nil
-}
-
-// fetchResult carries one parallel FHIR search result.
-type fetchResult struct {
-	path   string
-	bundle *searchset
-	err    error
-}
-
-// fetchBundle GETs a FHIR search path and decodes the searchset Bundle.
-func (s *RecommendationService) fetchBundle(ctx context.Context, path string) fetchResult {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.baseURL+path, http.NoBody)
-	if err != nil {
-		return fetchResult{path: path, err: fmt.Errorf("build request for %s: %w", path, err)}
-	}
-	req.Header.Set("Accept", "application/fhir+json")
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return fetchResult{path: path, err: fmt.Errorf("FETCH %s: %w", path, err)}
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode >= 400 {
-		return fetchResult{path: path, err: fmt.Errorf("FHIR backend returned %d for %s", resp.StatusCode, path)}
-	}
-
-	var bundle searchset
-	if err := json.NewDecoder(resp.Body).Decode(&bundle); err != nil {
-		return fetchResult{path: path, err: fmt.Errorf("decode bundle for %s: %w", path, err)}
-	}
-	return fetchResult{path: path, bundle: &bundle}
-}
-
-// distanceMap extracts Location id → distance-meters from a ?near search bundle.
-func distanceMap(bundle *searchset) map[string]float64 {
-	out := map[string]float64{}
-	if bundle == nil {
-		return out
-	}
-	for _, e := range bundle.Entry {
-		_, id, err := resourceMeta(e.Resource)
-		if err != nil || id == "" {
-			continue
-		}
-		out[tailRef(id)] = e.DistanceMeters()
-	}
-	return out
-}
-
-// practitionerRoleQuery builds the PractitionerRole search with includes and
-// the Schedule reverse include needed for next-slot computation.
-func practitionerRoleQuery(specialty string) string {
-	const inc = "&_include="
-	return "/fhir/PractitionerRole?specialty=" + url.QueryEscape(specialty) +
-		"&active=true" +
-		inc + "PractitionerRole:practitioner" +
-		inc + "PractitionerRole:organization" +
-		inc + "PractitionerRole:location" +
-		inc + "PractitionerRole:service" +
-		"&_revinclude=Schedule:actor"
-}
-
-// locationNearQuery builds the Location?near search with the default radius.
-func locationNearQuery(lat, lon float64) string {
-	value := fmt.Sprintf("%s|%s|%d|km",
-		strconv.FormatFloat(lat, 'f', -1, 64),
-		strconv.FormatFloat(lon, 'f', -1, 64),
-		defaultNearRadiusKM,
-	)
-	return "/fhir/Location?near=" + url.QueryEscape(value)
 }

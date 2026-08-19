@@ -86,8 +86,11 @@ func (h *RecommendationsHandler) Recommendations(w http.ResponseWriter, r *http.
 		return
 	}
 
-	h.enrich(r, recs)
+	h.enrichWithBatch(r, recs)
 	narrowed := service.NarrowRecommendations(recs, maxRecommendations)
+	if narrowed == nil {
+		narrowed = []service.Recommendation{}
+	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
 		"specialty":       specialty,
@@ -117,24 +120,46 @@ func (h *RecommendationsHandler) Specialties(w http.ResponseWriter, r *http.Requ
 	writeJSON(w, http.StatusOK, map[string]any{"specialties": list})
 }
 
-// enrich computes the next free slot for each recommendation card.
-func (h *RecommendationsHandler) enrich(r *http.Request, recs []service.Recommendation) {
+// enrichWithBatch computes the next free slot for each recommendation card
+// using a single FHIR batch POST for all Slot queries (instead of one GET
+// per recommendation).
+func (h *RecommendationsHandler) enrichWithBatch(r *http.Request, recs []service.Recommendation) {
 	now := time.Now()
+	offset := service.ParseTZOffset("")
+
+	// Collect paths and indices for recs that have a ScheduleID.
+	var paths []string
+	var indices []int
 	for i := range recs {
-		slot, err := service.NextFreeSlot(r.Context(), service.NextFreeSlotParams{
-			BackendBaseURL:  h.baseURL,
-			Client:          h.client,
-			ScheduleID:      recs[i].ScheduleID,
-			Windows:         recs[i].AvailableTime,
-			DurationMinutes: recs[i].DurationMinutes,
-			Now:             now,
-		})
-		if err != nil {
-			slog.Warn("recommendations: next slot unavailable",
-				"role", recs[i].PractitionerRoleID, "err", err)
+		if recs[i].ScheduleID == "" {
 			continue
 		}
-		recs[i].NextSlot = slot
+		paths = append(paths, service.BusySlotPath(recs[i].ScheduleID, now))
+		indices = append(indices, i)
+	}
+	if len(paths) == 0 {
+		return
+	}
+
+	resources, err := h.svc.FetchSlotBatch(r.Context(), paths)
+	if err != nil {
+		slog.Warn("recommendations: slot batch failed", "err", err)
+		return
+	}
+
+	for j, res := range resources {
+		if res == nil || j >= len(indices) {
+			continue
+		}
+		busy, bErr := service.ParseBusySlotsBundle(res)
+		if bErr != nil {
+			slog.Warn("recommendations: parse busy slots failed", "err", bErr)
+			continue
+		}
+		idx := indices[j]
+		recs[idx].NextSlot = service.ComputeNextSlot(
+			recs[idx].AvailableTime, busy, now, offset, recs[idx].DurationMinutes,
+		)
 	}
 }
 
