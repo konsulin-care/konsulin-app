@@ -5,6 +5,7 @@ import InstallButton from '@/components/pwa/install-button';
 import PendingSubmissionsBanner from '@/components/pwa/pending-submissions';
 import QuickActionFab from '@/components/quick-action-fab';
 import { FabProvider } from '@/context/fabContext';
+import { RecommendationProvider } from '@/context/recommendationContext';
 import { resolveCjsDefaultExport } from '@/lib/lazy-component';
 import SwUpdateDetector from '@/lib/sw-update';
 import dynamic from 'next/dynamic';
@@ -45,7 +46,11 @@ function PageContent({ children }: Readonly<{ children: ReactNode }>) {
 
 /** Wraps children in app-wide context providers. */
 function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
-  return <FabProvider>{children}</FabProvider>;
+  return (
+    <FabProvider>
+      <RecommendationProvider>{children}</RecommendationProvider>
+    </FabProvider>
+  );
 }
 
 /** Renders app chrome: top loader, toasts, modals, FAB, and page content. */

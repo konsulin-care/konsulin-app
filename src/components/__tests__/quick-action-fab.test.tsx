@@ -1,4 +1,8 @@
 import { FabProvider, useFab } from '@/context/fabContext';
+import {
+  RecommendationProvider,
+  useRecommendationResult
+} from '@/context/recommendationContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,6 +11,10 @@ import QuickActionFab from '../quick-action-fab';
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } }
 });
+
+vi.mock('../screening-drawer', () => ({
+  default: MockScreeningDrawer
+}));
 const mockRole = 'Patient';
 let disabledOnSave: () => void;
 let enabledOnSave: () => void;
@@ -25,10 +33,50 @@ vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));
 
-vi.mock('../screening-drawer', () => ({
-  default: ({ open }: { open: boolean }) =>
-    open ? <div data-testid='mock-screening-drawer' /> : null
-}));
+const { mockInvalidateQueries, MockScreeningDrawer } = vi.hoisted(() => {
+  const mockInvalidate = vi.fn();
+  return {
+    mockInvalidateQueries: mockInvalidate,
+    MockScreeningDrawer: vi.fn(
+      ({
+        open,
+        onComplete
+      }: {
+        open: boolean;
+        onComplete?: (result: unknown) => void;
+      }) =>
+        open ? (
+          <div
+            data-testid='mock-screening-drawer'
+            onClick={() =>
+              onComplete?.({
+                complaintId: 'anxiety',
+                specialty: 'psychiatry'
+              })
+            }
+          />
+        ) : null
+    )
+  };
+});
+
+vi.mock('@tanstack/react-query', async importOriginal => {
+  const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+  return {
+    ...actual,
+    useQueryClient: vi.fn(() => ({
+      invalidateQueries: mockInvalidateQueries
+    }))
+  };
+});
+
+/** Reads the recommendation context to observe FAB-driven updates. */
+function RecommendationObserver() {
+  const { result } = useRecommendationResult();
+  return (
+    <span data-testid='observed-result'>{result?.specialty ?? 'none'}</span>
+  );
+}
 
 function TestHarness() {
   const { dispatch } = useFab();
@@ -36,6 +84,7 @@ function TestHarness() {
     <QueryClientProvider client={queryClient}>
       <div>
         <QuickActionFab />
+        <RecommendationObserver />
         <button
           data-testid='trigger-action'
           onClick={() =>
@@ -119,7 +168,9 @@ function TestHarness() {
 function renderFab() {
   return render(
     <FabProvider>
-      <TestHarness />
+      <RecommendationProvider>
+        <TestHarness />
+      </RecommendationProvider>
     </FabProvider>
   );
 }
@@ -185,6 +236,40 @@ describe('QuickActionFab', () => {
     fireEvent.click(screen.getByText('Get Recommendation'));
     expect(screen.getByTestId('mock-screening-drawer')).toBeInTheDocument();
     expect(mockPush).not.toHaveBeenCalledWith('/screening');
+  });
+
+  it('invalidates recommendation queries when screening completes via FAB', () => {
+    renderFab();
+    const fabButton = document.querySelectorAll<HTMLButtonElement>(
+      'button[class*="rounded-full"]'
+    );
+    fireEvent.click(fabButton.item(fabButton.length - 1));
+    fireEvent.click(screen.getByText('Get Recommendation'));
+    expect(screen.getByTestId('mock-screening-drawer')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('mock-screening-drawer'));
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['recommendations']
+    });
+  });
+
+  it('publishes the completed screening result to the recommendation context', () => {
+    renderFab();
+    const fabButton = document.querySelectorAll<HTMLButtonElement>(
+      'button[class*="rounded-full"]'
+    );
+    fireEvent.click(fabButton.item(fabButton.length - 1));
+    fireEvent.click(screen.getByText('Get Recommendation'));
+
+    expect(screen.getByTestId('observed-result').textContent).toBe('none');
+
+    fireEvent.click(screen.getByTestId('mock-screening-drawer'));
+
+    expect(screen.getByTestId('observed-result').textContent).toBe(
+      'psychiatry'
+    );
+    expect(mockInvalidateQueries).toHaveBeenCalled();
   });
 
   describe('selection mode', () => {

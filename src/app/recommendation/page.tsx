@@ -8,15 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
+import { useRecommendationResult } from '@/context/recommendationContext';
 import { useRecommendations } from '@/services/recommendations';
 import type { InterviewResult } from '@/types/recommendation-interview';
 import {
   buildRecommendationParams,
   readLastInterviewResult
 } from '@/utils/recommendation-interview';
+import { useQueryClient } from '@tanstack/react-query';
 import { Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Empty-state: prompt the user to complete a screening before
@@ -62,9 +64,15 @@ const ALLOWED_ROLES = new Set([Roles.Guest, Roles.Patient]);
 export default function RecommendationPage() {
   const router = useRouter();
   const { state } = useAuth();
-  const [savedResult, setSavedResult] = useState<InterviewResult | null>(null);
+  const { result: savedResult, setResult } = useRecommendationResult();
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Track the latest published result so hydration never overwrites a value
+  // already set by the FAB while the async IndexedDB read is in flight.
+  const latestResultRef = useRef(savedResult);
+  latestResultRef.current = savedResult;
 
   // Access control: redirect non-patient/non-guest users
   useEffect(() => {
@@ -74,23 +82,24 @@ export default function RecommendationPage() {
     }
   }, [state, router]);
 
+  // Hydrate from IndexedDB once on mount for direct visits (never overwrites a
+  // result already published to the shared context by the FAB).
   useEffect(() => {
     let active = true;
     void (async () => {
       try {
-        const result = await readLastInterviewResult();
-        if (active) {
-          setSavedResult(result);
-          setLoading(false);
-        }
+        const stored = await readLastInterviewResult();
+        if (active && !latestResultRef.current && stored) setResult(stored);
       } catch {
+        /* ignore */
+      } finally {
         if (active) setLoading(false);
       }
     })();
     return () => {
       active = false;
     };
-  }, []);
+  }, [setResult]);
 
   const params = savedResult ? buildRecommendationParams(savedResult) : null;
 
@@ -99,10 +108,14 @@ export default function RecommendationPage() {
   const recommendations = data?.recommendations ?? [];
   const specialty = savedResult?.specialty ?? '';
 
-  const handleComplete = useCallback((result: InterviewResult) => {
-    setSavedResult(result);
-    setDrawerOpen(false);
-  }, []);
+  const handleComplete = useCallback(
+    (completedResult: InterviewResult) => {
+      setResult(completedResult);
+      setDrawerOpen(false);
+      void queryClient.invalidateQueries({ queryKey: ['recommendations'] });
+    },
+    [queryClient, setResult]
+  );
 
   if (loading) {
     return (

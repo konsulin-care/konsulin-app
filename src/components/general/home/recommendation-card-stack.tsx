@@ -47,8 +47,7 @@ export default function RecommendationCardStack({
         spaceBetween={16}
         slidesPerView={1.3}
         centeredSlides
-        loop={cards.length > 1}
-        onSlideChange={swiper => setActiveIndex(swiper.realIndex)}
+        onSlideChange={swiper => setActiveIndex(swiper.activeIndex)}
       >
         {cards.map(card => (
           <SwiperSlide
@@ -76,7 +75,7 @@ export default function RecommendationCardStack({
           <button
             key={card.id}
             type='button'
-            onClick={() => swiper?.slideToLoop(index)}
+            onClick={() => swiper?.slideTo(index)}
             aria-label={`Go to slide ${index + 1}`}
             className={`cursor-pointer rounded-full transition-all duration-300 ${
               index === activeIndex

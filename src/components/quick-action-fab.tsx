@@ -4,6 +4,9 @@
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { resolveMode, useFab } from '@/context/fabContext';
+import { useRecommendationResult } from '@/context/recommendationContext';
+import type { InterviewResult } from '@/types/recommendation-interview';
+import { useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
@@ -42,10 +45,20 @@ export default function QuickActionFab() {
   const router = useRouter();
   const { state: authState } = useAuth();
   const { state, dispatch } = useFab();
+  const queryClient = useQueryClient();
+  const { setResult } = useRecommendationResult();
   const [showRegisterPrac, setShowRegisterPrac] = useState(false);
   const [showAddLocation, setShowAddLocation] = useState(false);
   const [showAddAssessment, setShowAddAssessment] = useState(false);
   const [showScreening, setShowScreening] = useState(false);
+
+  const handleScreeningComplete = useCallback(
+    (result: InterviewResult) => {
+      setResult(result);
+      void queryClient.invalidateQueries({ queryKey: ['recommendations'] });
+    },
+    [queryClient, setResult]
+  );
 
   const mode = resolveMode(state);
   const roleName = authState?.userInfo?.role_name;
@@ -158,6 +171,7 @@ export default function QuickActionFab() {
           <ScreeningDrawer
             open={showScreening}
             onClose={() => setShowScreening(false)}
+            onComplete={handleScreeningComplete}
           />
         </>
       );
@@ -192,6 +206,7 @@ export default function QuickActionFab() {
           <ScreeningDrawer
             open={showScreening}
             onClose={() => setShowScreening(false)}
+            onComplete={handleScreeningComplete}
           />
         </>
       );
