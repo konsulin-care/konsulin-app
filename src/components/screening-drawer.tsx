@@ -2,6 +2,7 @@
 
 import { InterviewAccordion } from '@/components/general/home/interview/interview-accordion';
 import AppDrawer from '@/components/ui/app-drawer';
+import { useGeolocation } from '@/hooks/useGeolocation';
 import type { InterviewResult } from '@/types/recommendation-interview';
 import {
   getAllChiefComplaints,
@@ -10,6 +11,7 @@ import {
 import { ShieldPlus } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'react-toastify';
 
 interface ScreeningDrawerProps {
   /** Controls drawer visibility (controlled by the parent). */
@@ -17,7 +19,7 @@ interface ScreeningDrawerProps {
   /** Dismisses the drawer; also fires after a completed screening. */
   onClose: () => void;
   /** Emits the persisted result on completion (e.g. homepage refresh). */
-  onComplete?: (result: InterviewResult) => void;
+  onComplete?: (result: InterviewResult, lat?: number, lon?: number) => void;
 }
 
 /**
@@ -39,12 +41,13 @@ export default function ScreeningDrawer({
   const [pendingResult, setPendingResult] = useState<InterviewResult | null>(
     null
   );
+  const geolocation = useGeolocation();
 
   /** Persists the result, emits it, then routes off-page when needed. */
   const handleSubmit = useCallback(
-    (result: InterviewResult) => {
+    (result: InterviewResult, lat?: number, lon?: number) => {
       void saveLastInterviewResult(result);
-      onComplete?.(result);
+      onComplete?.(result, lat, lon);
       onClose();
       setPendingResult(null);
       // Homepage renders the stack inline; elsewhere go to results (unless
@@ -67,10 +70,36 @@ export default function ScreeningDrawer({
     setPendingResult(result);
   }, []);
 
-  /** Primary CTA click — submits the pending result. */
+  /** Primary CTA click — requests geolocation then submits. */
   const handleCtaClick = useCallback(() => {
-    if (pendingResult) handleSubmit(pendingResult);
-  }, [handleSubmit, pendingResult]);
+    if (!pendingResult) return;
+
+    // Request geolocation, then submit with or without coords
+    geolocation.request();
+
+    // Wait for geolocation result (max 3s), then submit
+    const checkGeo = () => {
+      if (geolocation.loading) {
+        // Still loading, wait a bit more
+        setTimeout(checkGeo, 100);
+        return;
+      }
+
+      if (geolocation.lat !== null && geolocation.lon !== null) {
+        // Success: submit with coords
+        handleSubmit(pendingResult, geolocation.lat, geolocation.lon);
+      } else {
+        // Error or timeout: show toast and submit without coords
+        if (geolocation.error) {
+          toast.info('Location unavailable, showing all results');
+        }
+        handleSubmit(pendingResult);
+      }
+    };
+
+    // Start checking after a brief delay to allow geolocation to complete
+    setTimeout(checkGeo, 100);
+  }, [pendingResult, geolocation, handleSubmit]);
 
   /** Always-enabled emergency line handler. */
   const handleEmergencyLine = useCallback(() => {

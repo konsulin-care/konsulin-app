@@ -52,15 +52,23 @@ export default function HomeContentPatient() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const patientId = authState?.userInfo?.fhirId;
 
-  const { savedResult, drawerOpen, openDrawer, closeDrawer, handleComplete } =
-    useSavedRecommendation();
+  const {
+    savedResult,
+    coords,
+    drawerOpen,
+    openDrawer,
+    closeDrawer,
+    handleComplete
+  } = useSavedRecommendation();
 
   const {
     data: recommendationsData,
     isLoading: isRecLoading,
     isError: isRecError
   } = useRecommendations(
-    savedResult ? buildRecommendationParams(savedResult) : null
+    savedResult
+      ? buildRecommendationParams(savedResult, coords?.lat, coords?.lon)
+      : null
   );
 
   const {

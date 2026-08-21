@@ -101,7 +101,13 @@ export default function RecommendationPage() {
     };
   }, [setResult]);
 
-  const params = savedResult ? buildRecommendationParams(savedResult) : null;
+  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(
+    null
+  );
+
+  const params = savedResult
+    ? buildRecommendationParams(savedResult, coords?.lat, coords?.lon)
+    : null;
 
   const { data, isLoading, isError, refetch } = useRecommendations(params);
 
@@ -109,8 +115,11 @@ export default function RecommendationPage() {
   const specialty = savedResult?.specialty ?? '';
 
   const handleComplete = useCallback(
-    (completedResult: InterviewResult) => {
+    (completedResult: InterviewResult, lat?: number, lon?: number) => {
       setResult(completedResult);
+      if (lat !== undefined && lon !== undefined) {
+        setCoords({ lat, lon });
+      }
       setDrawerOpen(false);
       void queryClient.invalidateQueries({ queryKey: ['recommendations'] });
     },

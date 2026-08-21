@@ -29,7 +29,7 @@ export interface ResearchIdentity {
 
 /** Common search suffix: only completed responses, minimal fields. */
 const QR_SEARCH_SUFFIX =
-  '&status=completed&_elements=questionnaire,authored&_count=500';
+  '&status=completed&_elements=questionnaire,authored,author&_count=500';
 
 /**
  * Builds a FHIR batch bundle that fetches the active studies (with their

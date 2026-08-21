@@ -34,11 +34,6 @@ type recBackend struct {
 	hits   int
 }
 
-// emptySearchset is a successful searchset with no entries.
-func emptySearchset() map[string]any {
-	return map[string]any{"resourceType": "Bundle", "type": "searchset", "total": 0, "entry": []any{}}
-}
-
 // batchResource wraps one searchset as a successful batch-response entry.
 func batchResource(bundle map[string]any) map[string]any {
 	return map[string]any{
@@ -47,30 +42,11 @@ func batchResource(bundle map[string]any) map[string]any {
 	}
 }
 
-// specialtyFromURL extracts the `specialty` query param from a FHIR search URL.
-func specialtyFromURL(rawURL string) string {
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return ""
-	}
-	return u.Query().Get("specialty")
-}
-
 // nearSearchset wraps the given location entries in a searchset bundle.
 func nearSearchset(entries []map[string]any) map[string]any {
 	return map[string]any{"resourceType": "Bundle", "type": "searchset", "total": len(entries), "entry": entries}
 }
 
-// nearEntry builds one Location search entry carrying a distance in meters.
-func nearEntry(locID, name string, meters float64) map[string]any {
-	return map[string]any{
-		"resource": map[string]any{"resourceType": "Location", "id": locID, "name": name},
-		"search": map[string]any{"extension": []map[string]any{{
-			"url":           "http://hl7.org/fhir/StructureDefinition/location-distance",
-			"valueDistance": map[string]any{"value": meters, "unit": "m", "code": "m"},
-		}}},
-	}
-}
 
 // newRecBackend serves FHIR batch bundles. PractitionerRole searches are routed
 // by their specialty param; Location?near routes to near; specialties in fail
@@ -98,17 +74,27 @@ func newRecBackend(t *testing.T, bundles map[string]map[string]any, near []map[s
 		}
 		entries := []map[string]any{}
 		for _, e := range req.Entry {
+			u, _ := url.Parse(e.Request.URL)
+			specialtyParam := u.Query().Get("specialty")
+			hasNear := strings.Contains(e.Request.URL, "near=")
+			isLocationQuery := strings.HasPrefix(e.Request.URL, "Location?")
+			t.Logf("URL: %s, specialty: %s, hasNear: %v, isLocation: %v", e.Request.URL, specialtyParam, hasNear, isLocationQuery)
+
 			switch {
-			case strings.Contains(e.Request.URL, "near="):
+			// Location?near query for distance extraction
+			case isLocationQuery && hasNear:
 				entries = append(entries, batchResource(nearSearchset(near)))
-			case fail[specialtyFromURL(e.Request.URL)]:
+			// Cascade URLs: has specialty AND near -> merge bundles for all specialties
+			case specialtyParam != "" && hasNear:
+				merged := mergeBundles(bundles, specialtyParam)
+				entries = append(entries, batchResource(merged))
+			case hasNear:
+				entries = append(entries, batchResource(nearSearchset(near)))
+			case fail[specialtyParam]:
 				entries = append(entries, map[string]any{"response": map[string]any{"status": "500"}})
 			default:
-				bnd, ok := bundles[specialtyFromURL(e.Request.URL)]
-				if !ok || bnd == nil {
-					bnd = emptySearchset()
-				}
-				entries = append(entries, batchResource(bnd))
+				merged := mergeBundles(bundles, specialtyParam)
+				entries = append(entries, batchResource(merged))
 			}
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -169,6 +155,26 @@ func multiRoleSearchset(spec, display string, pracIDs []string) map[string]any {
 		)
 	}
 	return map[string]any{"resourceType": "Bundle", "type": "searchset", "entry": entries}
+}
+
+// mergeBundles combines entries from multiple specialty bundles.
+func mergeBundles(bundles map[string]map[string]any, specialtyParam string) map[string]any {
+	specialties := strings.Split(specialtyParam, ",")
+	var allEntries []any
+	for _, spec := range specialties {
+		spec = strings.TrimSpace(spec)
+		if bnd, ok := bundles[spec]; ok && bnd != nil {
+			switch e := bnd["entry"].(type) {
+			case []any:
+				allEntries = append(allEntries, e...)
+			case []map[string]any:
+				for _, v := range e {
+					allEntries = append(allEntries, v)
+				}
+			}
+		}
+	}
+	return map[string]any{"resourceType": "Bundle", "type": "searchset", "total": len(allEntries), "entry": allEntries}
 }
 
 // psychologySearchset seeds prc-01 with two services so dedup picks the cheaper.

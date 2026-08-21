@@ -156,13 +156,13 @@ var hopByHopHeaders = map[string]bool{
 }
 
 // strippedHeaders are backend response headers that must not be forwarded to the
-// browser. These raw token headers would otherwise be read by the SuperTokens
-// frontend SDK and stored as JS-accessible cookies. The BFF converts them to
-// httpOnly Set-Cookie equivalents via CookieMappings instead.
+// browser. These token headers are converted to HttpOnly Set-Cookie equivalents
+// via CookieMappings instead. The front-token header is intentionally NOT
+// stripped because the SuperTokens SDK reads it from refresh responses to
+// update its internal session state.
 var strippedHeaders = map[string]bool{
 	"St-Access-Token":  true,
 	"St-Refresh-Token": true,
-	"Front-Token":      true,
 }
 
 // nolint:gosec // G101: cookie name, not a credential

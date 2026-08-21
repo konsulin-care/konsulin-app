@@ -75,7 +75,7 @@ func (h *RecommendationsHandler) Recommendations(w http.ResponseWriter, r *http.
 		return
 	}
 
-	recs, err := h.svc.Fetch(r.Context(), service.FetchParams{
+	recs, err := h.svc.FetchWithLocation(r.Context(), service.FetchParams{
 		Specialty: specialty,
 		Latitude:  lat,
 		Longitude: lon,

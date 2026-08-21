@@ -49,15 +49,23 @@ function EmptyRecommendationState({
 export default function HomeContentGuest() {
   const router = useRouter();
 
-  const { savedResult, drawerOpen, openDrawer, closeDrawer, handleComplete } =
-    useSavedRecommendation();
+  const {
+    savedResult,
+    coords,
+    drawerOpen,
+    openDrawer,
+    closeDrawer,
+    handleComplete
+  } = useSavedRecommendation();
 
   const {
     data: recommendationsData,
     isLoading: isRecLoading,
     isError: isRecError
   } = useRecommendations(
-    savedResult ? buildRecommendationParams(savedResult) : null
+    savedResult
+      ? buildRecommendationParams(savedResult, coords?.lat, coords?.lon)
+      : null
   );
 
   /** Redirect guest to auth page to book an appointment. */

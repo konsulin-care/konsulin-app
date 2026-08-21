@@ -133,7 +133,10 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const isBuilding = useBuildForm({
     questionnaire,
     questionnaireResponse: response,
-    rendererConfigOptions
+    rendererConfigOptions,
+    // Terminology server disabled: value sets and code displays are
+    // already embedded in questionnaires; external lookups add latency.
+    terminologyServerUrl: ''
   });
 
   const { mutateAsync: submitQuestionnaire } = useSubmitQuestionnaire(

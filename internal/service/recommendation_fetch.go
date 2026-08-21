@@ -201,6 +201,33 @@ func practitionerRoleQuery(specialty string) string {
 		"&_revinclude=Schedule:actor"
 }
 
+// practitionerRoleQueryWithNear builds a PractitionerRole search with
+// location.near filtering, _count=5, and _sort=-_lastUpdated. When
+// radiusKm is 0, the location.near parameter is omitted.
+func practitionerRoleQueryWithNear(specialties []string, lat, lon float64, radiusKm int) string {
+	specialtyParam := strings.Join(specialties, ",")
+	const inc = "&_include="
+
+	query := "/fhir/PractitionerRole?" +
+		"specialty=" + url.QueryEscape(specialtyParam) +
+		"&active=true" +
+		"&_count=5" +
+		"&_sort=-_lastUpdated" +
+		inc + "PractitionerRole:practitioner" +
+		inc + "PractitionerRole:location" +
+		inc + "PractitionerRole:service"
+
+	if radiusKm > 0 {
+		near := fmt.Sprintf("%s|%s|%d|km",
+			strconv.FormatFloat(lat, 'f', -1, 64),
+			strconv.FormatFloat(lon, 'f', -1, 64),
+			radiusKm)
+		query += "&location.near=" + url.QueryEscape(near)
+	}
+
+	return query
+}
+
 // locationNearQuery builds the Location?near search with the default radius.
 func locationNearQuery(lat, lon float64) string {
 	value := fmt.Sprintf("%s|%s|%d|km",

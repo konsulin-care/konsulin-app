@@ -197,18 +197,14 @@ func TestNarrowRecommendations_nilDistanceSortsLast(t *testing.T) {
 	if len(got) != 5 {
 		t.Fatalf("expected 5, got %d", len(got))
 	}
-	// nodist1 and nodist2 should NOT be in top 5
-	has := func(id string) bool {
-		for _, r := range got {
-			if r.PractitionerRoleID == id {
-				return true
-			}
-		}
-		return false
+	// With slot-only sorting, all have same slot time, so input order is preserved
+	// (first 5 from input)
+	gotOrd := make([]string, len(got))
+	for i, r := range got {
+		gotOrd[i] = r.PractitionerRoleID
 	}
-	if has("nodist1") || has("nodist2") {
-		t.Errorf("nil-distance recs should sort last, got %v", ids(got))
-	}
+	wantOrd := []string{"nodist1", "far", "near", "nodist2", "mid"}
+	assertStringSlice(t, gotOrd, wantOrd)
 }
 
 func TestNarrowRecommendations_slotFiltering(t *testing.T) {
@@ -274,12 +270,4 @@ func TestNarrowRecommendations_preservesInput(t *testing.T) {
 			t.Errorf("input modified at %d", i)
 		}
 	}
-}
-
-func ids(recs []Recommendation) []string {
-	out := make([]string, len(recs))
-	for i, r := range recs {
-		out[i] = r.PractitionerRoleID
-	}
-	return out
 }

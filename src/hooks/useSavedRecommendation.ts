@@ -19,6 +19,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export function useSavedRecommendation() {
   const { result, setResult } = useRecommendationResult();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(
+    null
+  );
 
   // Hydrate from IndexedDB once on mount — only when no result exists yet so
   // a FAB-set value is never overwritten by a stale async read.
@@ -46,8 +49,11 @@ export function useSavedRecommendation() {
   const queryClient = useQueryClient();
 
   const handleComplete = useCallback(
-    (completedResult: InterviewResult) => {
+    (completedResult: InterviewResult, lat?: number, lon?: number) => {
       setResult(completedResult);
+      if (lat !== undefined && lon !== undefined) {
+        setCoords({ lat, lon });
+      }
       setDrawerOpen(false);
       void queryClient.invalidateQueries({ queryKey: ['recommendations'] });
     },
@@ -56,6 +62,7 @@ export function useSavedRecommendation() {
 
   return {
     savedResult: result,
+    coords,
     drawerOpen,
     openDrawer,
     closeDrawer,

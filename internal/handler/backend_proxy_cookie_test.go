@@ -47,8 +47,8 @@ func TestBackendProxy_stripsRawTokenHeaders(t *testing.T) {
 	if v := resp.Header.Get("St-Refresh-Token"); v != "" {
 		t.Errorf("st-refresh-token response header must be stripped, got %q", v)
 	}
-	if v := resp.Header.Get("Front-Token"); v != "" {
-		t.Errorf("front-token response header must be stripped, got %q", v)
+	if v := resp.Header.Get("Front-Token"); v != "front-info" {
+		t.Errorf("front-token response header must pass through, got %q", v)
 	}
 	if v := resp.Header.Get("Anti-Csrf"); v != "csrf-token" {
 		t.Errorf("anti-csrf header should be forwarded, got %q", v)
@@ -223,6 +223,7 @@ func TestBackendProxy_mappedCookiesFallbackToSessionLifetime(t *testing.T) {
 	}
 	t.Fatal("expected Set-Cookie: sAccessToken")
 }
+
 
 func TestBackendProxy_noLastUpdateWhenNoMappings(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
