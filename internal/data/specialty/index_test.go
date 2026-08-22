@@ -2,6 +2,8 @@ package specialty
 
 import (
 	"testing"
+
+	"github.com/konsulin-care/konsulin-app/internal/data/specialty/proximity"
 )
 
 func TestSpecialtyIndex_LookupByNuccCode(t *testing.T) {
@@ -60,17 +62,19 @@ func TestSpecialtyIndex_LookupByKeyword(t *testing.T) {
 }
 
 func TestSpecialtyIndex_GetProximity(t *testing.T) {
-	idx := &SpecialtyIndex{
-		Proximity: ProximityTable{
-			"2211": {
-				"2212": 0.85,
-				"2634": 0.45,
-			},
-			"2212": {
-				"2211": 0.85,
-			},
+	// Populate the shared Generated map for testing
+	proximity.Generated = proximity.Table{
+		"2211": {
+			"2212": 0.85,
+			"2634": 0.45,
+		},
+		"2212": {
+			"2211": 0.85,
 		},
 	}
+	defer func() { proximity.Generated = proximity.Table{} }()
+
+	idx := &SpecialtyIndex{}
 
 	// Test existing proximity
 	score := idx.GetProximity("2211", "2212")

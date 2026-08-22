@@ -2,6 +2,8 @@ package specialty
 
 import (
 	"testing"
+
+	"github.com/konsulin-care/konsulin-app/internal/data/specialty/proximity"
 )
 
 func TestOntologyNode_Fields(t *testing.T) {
@@ -65,8 +67,8 @@ func TestSpecialtyMatch_Fields(t *testing.T) {
 }
 
 func TestProximityTable_Type(t *testing.T) {
-	// Test that ProximityTable can be instantiated
-	pt := ProximityTable{
+	// Test that proximity.Table can be instantiated
+	pt := proximity.Table{
 		"2211": {
 			"2212": 0.85,
 			"2634": 0.45,

@@ -23,5 +23,3 @@ type SpecialtyMatch struct {
 	Score    float64  `json:"score"`
 	Domains  []string `json:"domains"`
 }
-
-

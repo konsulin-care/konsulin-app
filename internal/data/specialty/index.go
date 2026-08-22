@@ -1,5 +1,7 @@
 package specialty
 
+import "github.com/konsulin-care/konsulin-app/internal/data/specialty/proximity"
+
 // SpecialtyIndex provides O(1) lookup for specialty data.
 type SpecialtyIndex struct {
 	// ByNuccCode maps NUCC code to SpecialtyNode.
@@ -9,7 +11,7 @@ type SpecialtyIndex struct {
 	ByKeyword map[string][]string
 
 	// Proximity stores pre-computed proximity scores.
-	Proximity ProximityTable
+	Proximity proximity.Table
 }
 
 // LookupByNuccCode returns the SpecialtyNode for the given NUCC code.
@@ -30,7 +32,7 @@ func (idx *SpecialtyIndex) GetProximity(specA, specB string) float64 {
 	if specA == specB {
 		return 1.0
 	}
-	if row, ok := idx.Proximity[specA]; ok {
+	if row, ok := proximity.Generated[specA]; ok {
 		if score, ok := row[specB]; ok {
 			return score
 		}

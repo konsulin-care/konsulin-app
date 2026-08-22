@@ -72,32 +72,33 @@ func TestWriteTSOutputFromRootDir(t *testing.T) {
 	assertFileExists(t, expected)
 }
 
-func TestWriteGoOutputFromPackageDir(t *testing.T) {
+func TestWriteProximityShardsFromPackageDir(t *testing.T) {
 	root := t.TempDir()
 	pkgDir := filepath.Join(root, "internal", "data", "specialty")
 	mustMkdirAll(t, filepath.Join(pkgDir, "config"))
 
 	chdir(t, pkgDir)
 
-	if err := writeGoOutput(testOutputData()); err != nil {
-		t.Fatalf("writeGoOutput: %v", err)
+	if err := writeProximityShards(testOutputData()); err != nil {
+		t.Fatalf("writeProximityShards: %v", err)
 	}
 
-	expected := filepath.Join(pkgDir, "data.go")
+	// go generate sets cwd to the package dir, so shards must land in the
+	// local proximity/ subdirectory.
+	expected := filepath.Join(pkgDir, "proximity", "shard_00.go")
 	assertFileExists(t, expected)
 }
 
-func TestWriteGoOutputFromRootDir(t *testing.T) {
+func TestWriteProximityShardsFromRootDir(t *testing.T) {
 	root := t.TempDir()
-	pkgDir := filepath.Join(root, "internal", "data", "specialty")
-	mustMkdirAll(t, pkgDir)
+	mustMkdirAll(t, filepath.Join(root, "internal", "data", "specialty"))
 
 	chdir(t, root)
 
-	if err := writeGoOutput(testOutputData()); err != nil {
-		t.Fatalf("writeGoOutput: %v", err)
+	if err := writeProximityShards(testOutputData()); err != nil {
+		t.Fatalf("writeProximityShards: %v", err)
 	}
 
-	expected := filepath.Join(pkgDir, "data.go")
+	expected := filepath.Join(root, "internal", "data", "specialty", "proximity", "shard_00.go")
 	assertFileExists(t, expected)
 }

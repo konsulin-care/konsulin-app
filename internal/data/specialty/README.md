@@ -27,11 +27,14 @@ internal/data/specialty/
 │   ├── domains.go           # Domain generation
 │   ├── signatures.go        # Domain signature computation
 │   ├── proximity.go         # Proximity calculation
-│   └── output.go            # Output generation
+│   └── output.go            # Output generation (sharded)
+├── proximity/                # Generated proximity data (DO NOT EDIT)
+│   ├── types.go             # Table type definition
+│   └── shard_00..49.go      # Proximity data shards
 ├── types.go                  # Ontology types
 ├── index.go                  # Runtime lookup struct
 ├── match.go                  # Runtime matching function
-└── data.go                   # Generated output (DO NOT EDIT)
+└── generate.go               # go:generate directive
 ```
 
 ## Usage
@@ -48,7 +51,14 @@ This will:
 2. Parse the source files
 3. Extract keywords and compute domain signatures
 4. Compute proximity table
-5. Generate `data.go` and TypeScript types
+5. Generate 50 shard files in `proximity/` subdirectory
+6. Generate TypeScript type definitions
+
+**Note:** The `proximity/` directory is auto-generated. Regenerate when:
+
+- ISCO-08 taxonomy updates
+- NUCC taxonomy updates
+- Domain signature logic changes
 
 ### Runtime Matching
 
@@ -92,7 +102,7 @@ Standard English stop words removed during tokenization.
 
 ### keyword-map.json
 
-Maps keywords to domain paths:
+Maps keywords to domain paths (overrides auto-derived mappings):
 
 ```json
 {
@@ -116,11 +126,15 @@ Where:
 - **clinical**: NUCC grouping/classification similarity
 - **domain**: Jaccard similarity of domain signatures
 
-## Adding New Specialties
+## Data Sharding
 
-1. The system automatically matches user-typed specialties to NUCC codes
-2. Domain signatures are derived from NUCC definitions
-3. Proximity is computed using the layered formula
+Proximity data is split into 50 shard files (`shard_00.go` through `shard_49.go`) for:
+
+- Faster code generation (buffered writes vs. string concatenation)
+- Manageable file sizes (~10K lines each)
+- Granular git diffs
+
+Each shard uses `init()` to populate the shared `Generated` map at package initialization.
 
 ## Testing
 
