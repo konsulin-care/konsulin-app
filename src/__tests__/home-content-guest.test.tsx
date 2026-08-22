@@ -1,3 +1,4 @@
+import { RecommendationProvider } from '@/context/recommendationContext';
 import type { RecommendationsParams } from '@/services/recommendations';
 import type {
   Recommendation,
@@ -5,8 +6,22 @@ import type {
 } from '@/types/recommendation';
 import type { InterviewResult } from '@/types/recommendation-interview';
 import { searchChiefComplaints } from '@/utils/recommendation-interview';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const queryClient = new QueryClient();
+
+/** Renders the guest home inside the providers it requires. */
+function renderGuest() {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <RecommendationProvider>
+        <HomeContentGuest />
+      </RecommendationProvider>
+    </QueryClientProvider>
+  );
+}
 
 interface RecQueryStub {
   data?: RecommendationsResponse;
@@ -41,7 +56,7 @@ const MOOD_COMPLAINT = searchChiefComplaints('low mood')[0];
 const MOOD_RESULT: InterviewResult = {
   complaintId: 'low-mood',
   complaintLabel: 'Low Mood & Sadness',
-  specialty: 'psychiatry',
+  specialty: '2084P0800X',
   serviceTypeCode: 'mood-disorder-care',
   icfDomain: 'mental-emotional-health',
   redFlag: MOOD_COMPLAINT.redFlag
@@ -103,7 +118,7 @@ vi.mock('@/components/ui/skeleton', () => ({
 import HomeContentGuest from '../app/home-content-guest';
 
 const baseRecQuery: RecQueryStub = {
-  data: { specialty: 'psychiatry', recommendations: [REC] },
+  data: { specialty: '2084P0800X', recommendations: [REC] },
   isLoading: false,
   isError: false,
   refetch: vi.fn()
@@ -117,7 +132,7 @@ beforeEach(() => {
 
 describe('HomeContentGuest', () => {
   it('prompts the guest to start a screening when no result is saved', () => {
-    render(<HomeContentGuest />);
+    renderGuest();
 
     expect(
       screen.getByRole('button', { name: 'Start Assessment' })
@@ -128,31 +143,31 @@ describe('HomeContentGuest', () => {
   it('fetches live recommendations for a saved interview result', async () => {
     mockReadLastInterviewResult.mockResolvedValue(MOOD_RESULT);
 
-    render(<HomeContentGuest />);
+    renderGuest();
 
     await waitFor(() =>
       expect(mockUseRecommendations).toHaveBeenCalledWith({
-        specialty: 'psychiatry'
+        specialty: '2084P0800X'
       })
     );
     expect(screen.getByTestId('mock-recommendations')).toBeInTheDocument();
   });
 
   it('opens the ScreeningDrawer and renders recommendations after completion', () => {
-    render(<HomeContentGuest />);
+    renderGuest();
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Assessment' }));
     expect(screen.getByTestId('screening-drawer')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Finish interview' }));
     expect(mockUseRecommendations).toHaveBeenCalledWith({
-      specialty: 'psychiatry'
+      specialty: '2084P0800X'
     });
     expect(screen.getByTestId('mock-recommendations')).toBeInTheDocument();
   });
 
   it('renders onboarding and clinic quick actions', () => {
-    render(<HomeContentGuest />);
+    renderGuest();
 
     expect(screen.getByTestId('mock-onboarding')).toBeInTheDocument();
     expect(screen.getByTestId('mock-action-card')).toBeInTheDocument();

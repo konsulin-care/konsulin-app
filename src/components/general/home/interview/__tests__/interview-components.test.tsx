@@ -103,7 +103,7 @@ describe('InterviewFlow', () => {
     fireEvent.click(screen.getByText("No, I'm safe"));
     expect(onComplete).toHaveBeenCalledTimes(1);
     expect(onComplete.mock.calls[0][0]).toMatchObject({
-      specialty: 'psychiatry',
+      specialty: '2084P0800X',
       serviceTypeCode: 'mood-disorder-care',
       icfDomain: 'mental-emotional-health'
     });

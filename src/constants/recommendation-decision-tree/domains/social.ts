@@ -18,7 +18,15 @@ const social: DecisionDomain = {
         'rumah tangga'
       ],
       icfDomain: 'social-health-relationships',
-      specialty: 'psychology',
+      keywords: [
+        'couple',
+        'marital',
+        'marriage',
+        'conflict',
+        'communication',
+        'family',
+        'therapy'
+      ],
       serviceTypeCode: 'couples-therapy',
       options: [
         { id: 'communication-breakdown', label: 'Constant arguments' },
@@ -42,7 +50,15 @@ const social: DecisionDomain = {
       label: 'Family & Parent-Child Conflict',
       synonyms: ['keluarga', 'anak', 'family', 'parent', 'orang tua'],
       icfDomain: 'social-health-relationships',
-      specialty: 'psychology',
+      keywords: [
+        'family',
+        'parent',
+        'parenting',
+        'conflict',
+        'communication',
+        'relationship',
+        'therapy'
+      ],
       serviceTypeCode: 'family-therapy',
       options: [
         { id: 'parent-child-conflict', label: 'Conflict with a child' },
@@ -61,7 +77,14 @@ const social: DecisionDomain = {
       label: 'Workplace Interpersonal Tension',
       synonyms: ['kerja', 'kantor', 'rekan', 'workplace', 'colleague', 'boss'],
       icfDomain: 'social-health-relationships',
-      specialty: 'psychology',
+      keywords: [
+        'workplace',
+        'conflict',
+        'communication',
+        'stress',
+        'employment',
+        'interpersonal'
+      ],
       serviceTypeCode: 'workplace-counseling',
       options: [
         { id: 'boss-conflict', label: 'Conflict with a supervisor' },
@@ -84,7 +107,14 @@ const social: DecisionDomain = {
       label: 'Loneliness & Social Isolation',
       synonyms: ['kesepian', 'sunyi', 'lonely', 'isolated', 'sendiri'],
       icfDomain: 'social-health-relationships',
-      specialty: 'psychology',
+      keywords: [
+        'loneliness',
+        'lonely',
+        'isolation',
+        'emotional',
+        'psychological',
+        'social'
+      ],
       serviceTypeCode: 'social-support',
       options: [
         { id: 'chronic-loneliness', label: 'Feeling lonely most of the time' },
@@ -107,7 +137,14 @@ const social: DecisionDomain = {
       label: 'Communication Barriers',
       synonyms: ['komunikasi', 'mengungkapkan', 'communication', 'express'],
       icfDomain: 'social-health-relationships',
-      specialty: 'psychology',
+      keywords: [
+        'communication',
+        'interaction',
+        'interpersonal',
+        'conflict',
+        'psychological',
+        'mental'
+      ],
       serviceTypeCode: 'interpersonal-counseling',
       options: [
         { id: 'assertiveness', label: 'Difficulty saying no' },
@@ -130,7 +167,7 @@ const social: DecisionDomain = {
       label: 'Other Relationship Concern',
       synonyms: ['hubungan', 'relationship', 'social'],
       icfDomain: 'social-health-relationships',
-      specialty: 'psychology',
+      keywords: ['relationship', 'social', 'psychological'],
       serviceTypeCode: 'other-social-health-relationships',
       options: [
         {

@@ -11,7 +11,16 @@ const meaning: DecisionDomain = {
       label: 'Career Crossroads & Direction',
       synonyms: ['karier', 'karir', 'career', 'arah hidup', 'buntu'],
       icfDomain: 'meaning-purpose-fulfilment',
-      specialty: 'psychology',
+      keywords: [
+        'career',
+        'direction',
+        'vocation',
+        'motivation',
+        'confidence',
+        'psychological',
+        'mental',
+        'behavioral'
+      ],
       serviceTypeCode: 'career-counseling',
       options: [
         { id: 'stuck-in-job', label: 'Feeling stuck in my job' },
@@ -36,7 +45,15 @@ const meaning: DecisionDomain = {
         'arti'
       ],
       icfDomain: 'meaning-purpose-fulfilment',
-      specialty: 'psychology',
+      keywords: [
+        'purpose',
+        'existential',
+        'life',
+        'identity',
+        'meaning',
+        'psychological',
+        'mental'
+      ],
       serviceTypeCode: 'existential-therapy',
       options: [
         { id: 'meaning-of-life', label: 'Questioning the meaning of life' },
@@ -66,7 +83,15 @@ const meaning: DecisionDomain = {
         'pindah'
       ],
       icfDomain: 'meaning-purpose-fulfilment',
-      specialty: 'psychology',
+      keywords: [
+        'transition',
+        'retirement',
+        'relocation',
+        'life',
+        'stress',
+        'emotional',
+        'psychological'
+      ],
       serviceTypeCode: 'transition-counseling',
       options: [
         { id: 'graduation', label: 'Graduating or starting work' },
@@ -99,7 +124,15 @@ const meaning: DecisionDomain = {
         'malas'
       ],
       icfDomain: 'meaning-purpose-fulfilment',
-      specialty: 'psychology',
+      keywords: [
+        'motivation',
+        'self-esteem',
+        'self-worth',
+        'confidence',
+        'impostor',
+        'worth',
+        'psychological'
+      ],
       serviceTypeCode: 'motivation-coaching',
       options: [
         { id: 'low-self-worth', label: 'Feeling not good enough' },
@@ -122,7 +155,7 @@ const meaning: DecisionDomain = {
       label: 'Other Purpose Concern',
       synonyms: ['meaning', 'purpose', 'lain'],
       icfDomain: 'meaning-purpose-fulfilment',
-      specialty: 'psychology',
+      keywords: ['purpose', 'meaning', 'goal'],
       serviceTypeCode: 'other-meaning-purpose-fulfilment',
       options: [
         { id: 'other-purpose', label: 'Another purpose concern', isOther: true }

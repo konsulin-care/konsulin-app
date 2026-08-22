@@ -2,6 +2,7 @@ import {
   DECISION_TREE,
   QUICK_COMPLAINT_IDS
 } from '@/constants/recommendation-decision-tree';
+import { SPECIALTY_RESOLUTIONS } from '@/data/specialty-resolution';
 import { dbDelete, dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import type {
   ChiefComplaint,
@@ -63,8 +64,10 @@ export function getQuickComplaints(): ChiefComplaint[] {
 /**
  * Deterministically resolve an answered branch to a recommendation intent.
  *
- * Selecting the "Other" option maps the service code to the generic
- * `other-{icfDomain}` code; the legacy specialty stays on the domain bucket.
+ * The canonical NUCC code comes from the generated ontology resolution map
+ * (SPECIALTY_RESOLUTIONS, produced by `make data-specialty`), so the decision
+ * tree no longer pins a specialty per complaint. Selecting the "Other" option
+ * maps the service code to the generic `other-{icfDomain}` code.
  *
  * @param complaintId - Selected chief complaint id
  * @param optionId - Optional selected symptom-focus option id
@@ -77,6 +80,8 @@ export function resolveInterviewResult(
   if (!complaintId) return null;
   const complaint = COMPLAINT_BY_ID.get(complaintId);
   if (!complaint) return null;
+  const resolution = SPECIALTY_RESOLUTIONS[complaintId];
+  if (!resolution) return null;
   let isOther = false;
   if (optionId !== undefined && optionId !== null) {
     const option = complaint.options.find(o => o.id === optionId);
@@ -86,7 +91,7 @@ export function resolveInterviewResult(
   return {
     complaintId: complaint.id,
     complaintLabel: complaint.label,
-    specialty: complaint.specialty,
+    specialty: resolution.nuccCode,
     serviceTypeCode: isOther
       ? `other-${complaint.icfDomain}`
       : complaint.serviceTypeCode,

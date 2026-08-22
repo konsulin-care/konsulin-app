@@ -17,7 +17,15 @@ const functional: DecisionDomain = {
         'konsentrasi'
       ],
       icfDomain: 'functional-capacity',
-      specialty: 'neuropsychology',
+      keywords: [
+        'attention',
+        'focus',
+        'concentration',
+        'behavior',
+        'cognitive',
+        'hyperactivity',
+        'functioning'
+      ],
       serviceTypeCode: 'cognitive-assessment',
       options: [
         { id: 'inattention', label: 'Hard to stay focused' },
@@ -36,7 +44,15 @@ const functional: DecisionDomain = {
       label: 'Memory Loss & Cognitive Decline',
       synonyms: ['memori', 'lupa', 'memory', 'pelupa', 'cognitive'],
       icfDomain: 'functional-capacity',
-      specialty: 'neuropsychology',
+      keywords: [
+        'memory',
+        'cognitive',
+        'brain',
+        'dementia',
+        'forgetting',
+        'functioning',
+        'neurological'
+      ],
       serviceTypeCode: 'neuro-assessment',
       options: [
         { id: 'short-term-memory', label: 'Forgetting recent things' },
@@ -60,7 +76,14 @@ const functional: DecisionDomain = {
         'daily activities'
       ],
       icfDomain: 'functional-capacity',
-      specialty: 'neuropsychology',
+      keywords: [
+        'daily',
+        'self-care',
+        'function',
+        'independence',
+        'mobility',
+        'rehabilitation'
+      ],
       serviceTypeCode: 'occupational-therapy',
       options: [
         { id: 'self-care', label: 'Struggling with self-care' },
@@ -90,7 +113,16 @@ const functional: DecisionDomain = {
         'deadline'
       ],
       icfDomain: 'functional-capacity',
-      specialty: 'psychology',
+      keywords: [
+        'performance',
+        'focus',
+        'concentration',
+        'motivation',
+        'confidence',
+        'stress',
+        'psychological',
+        'mental'
+      ],
       serviceTypeCode: 'performance-coaching',
       options: [
         { id: 'focus-difficulty', label: 'Trouble staying on task' },
@@ -113,7 +145,16 @@ const functional: DecisionDomain = {
       label: 'Mobility & Balance Limitations',
       synonyms: ['jalan', 'keseimbangan', 'mobility', 'balance', 'jatuh'],
       icfDomain: 'functional-capacity',
-      specialty: 'orthopedics',
+      keywords: [
+        'mobility',
+        'balance',
+        'walking',
+        'gait',
+        'falls',
+        'joint',
+        'spine',
+        'musculoskeletal'
+      ],
       serviceTypeCode: 'mobility-rehab',
       options: [
         { id: 'walking-difficulty', label: 'Difficulty walking' },
@@ -133,7 +174,7 @@ const functional: DecisionDomain = {
       label: 'Other Functional Concern',
       synonyms: ['fungsi', 'functional', 'lain'],
       icfDomain: 'functional-capacity',
-      specialty: 'general-practice',
+      keywords: ['function', 'daily', 'general'],
       serviceTypeCode: 'other-functional-capacity',
       options: [
         {

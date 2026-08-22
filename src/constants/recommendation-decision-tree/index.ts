@@ -9,9 +9,9 @@ import social from './domains/social';
 
 /**
  * Deterministic recommendation decision tree — single source of truth for
- * chief-complaint branches. Each complaint resolves to a legacy BFF
- * `specialty` code (drives `/api/recommendations?specialty=`) plus a
- * forward-contract `serviceTypeCode` for the future BFF endpoint.
+ * chief-complaint branches. Each complaint carries ICF-domain feature keywords;
+ * the canonical NUCC specialty is resolved from the generated ontology map
+ * (drives `/api/recommendations?specialty=`).
  */
 export const DECISION_TREE: DecisionDomain[] = [
   physical,

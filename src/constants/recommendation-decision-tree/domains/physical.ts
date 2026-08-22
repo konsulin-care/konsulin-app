@@ -11,7 +11,17 @@ const physical: DecisionDomain = {
       label: 'Musculoskeletal & Joint Pain',
       synonyms: ['nyeri', 'sakit', 'back pain', 'joint', 'otot', 'sendi'],
       icfDomain: 'physical-health',
-      specialty: 'orthopedics',
+      keywords: [
+        'musculoskeletal',
+        'joint',
+        'spine',
+        'bone',
+        'pain',
+        'orthopaedic',
+        'knee',
+        'shoulder',
+        'muscle'
+      ],
       serviceTypeCode: 'pain-management',
       options: [
         { id: 'low-back-pain', label: 'Low back pain' },
@@ -32,7 +42,14 @@ const physical: DecisionDomain = {
       label: 'Headache & Migraine',
       synonyms: ['sakit kepala', 'migrain', 'headache', 'migraine', 'pusing'],
       icfDomain: 'physical-health',
-      specialty: 'general-practice',
+      keywords: [
+        'headache',
+        'migraine',
+        'pain',
+        'neurological',
+        'throbbing',
+        'dizziness'
+      ],
       serviceTypeCode: 'headache-care',
       options: [
         { id: 'tension-headache', label: 'Throbbing tension headache' },
@@ -54,7 +71,16 @@ const physical: DecisionDomain = {
       label: 'Cough & Breathing Issues',
       synonyms: ['batuk', 'sesak', 'cough', 'breath', 'napas', 'tenggorokan'],
       icfDomain: 'physical-health',
-      specialty: 'general-practice',
+      keywords: [
+        'respiratory',
+        'breath',
+        'breathing',
+        'cough',
+        'lung',
+        'airway',
+        'chest',
+        'illness'
+      ],
       serviceTypeCode: 'respiratory-care',
       options: [
         { id: 'persistent-cough', label: 'Cough lasting more than a week' },
@@ -86,7 +112,14 @@ const physical: DecisionDomain = {
         'diare'
       ],
       icfDomain: 'physical-health',
-      specialty: 'general-practice',
+      keywords: [
+        'gastrointestinal',
+        'stomach',
+        'digestive',
+        'bowel',
+        'nausea',
+        'diarrhea'
+      ],
       serviceTypeCode: 'digestive-care',
       options: [
         { id: 'nausea-vomiting', label: 'Nausea or vomiting' },
@@ -111,7 +144,7 @@ const physical: DecisionDomain = {
       label: 'Sleep & Fatigue Problems',
       synonyms: ['tidur', 'insomnia', 'lelah', 'sleep', 'fatigue', 'lemas'],
       icfDomain: 'physical-health',
-      specialty: 'psychology',
+      keywords: ['sleep', 'insomnia', 'fatigue', 'exhaustion', 'tiredness'],
       serviceTypeCode: 'sleep-care',
       options: [
         { id: 'insomnia', label: 'Difficulty falling or staying asleep' },
@@ -131,7 +164,14 @@ const physical: DecisionDomain = {
       label: 'Fever & General Malaise',
       synonyms: ['demam', 'lemah', 'pusing', 'fever', 'weakness', 'dizziness'],
       icfDomain: 'physical-health',
-      specialty: 'general-practice',
+      keywords: [
+        'fever',
+        'weakness',
+        'dizziness',
+        'illness',
+        'acute',
+        'general'
+      ],
       serviceTypeCode: 'systemic-care',
       options: [
         { id: 'acute-fever', label: 'High or persistent fever' },
@@ -151,7 +191,7 @@ const physical: DecisionDomain = {
       label: 'Other Physical Concern',
       synonyms: ['physical', 'fisik', 'lain', 'other'],
       icfDomain: 'physical-health',
-      specialty: 'general-practice',
+      keywords: ['physical', 'general', 'illness'],
       serviceTypeCode: 'other-physical-health',
       options: [
         {

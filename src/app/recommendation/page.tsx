@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useRecommendationResult } from '@/context/recommendationContext';
+import { SPECIALTY_LABELS } from '@/data/specialty-resolution';
 import { useRecommendations } from '@/services/recommendations';
 import type { InterviewResult } from '@/types/recommendation-interview';
 import {
@@ -113,6 +114,7 @@ export default function RecommendationPage() {
 
   const recommendations = data?.recommendations ?? [];
   const specialty = savedResult?.specialty ?? '';
+  const specialtyLabel = SPECIALTY_LABELS[specialty] ?? specialty;
 
   const handleComplete = useCallback(
     (completedResult: InterviewResult, lat?: number, lon?: number) => {
@@ -149,7 +151,7 @@ export default function RecommendationPage() {
 
         {savedResult && (
           <>
-            <h1 className='text-lg font-semibold'>{specialty}</h1>
+            <h1 className='text-lg font-semibold'>{specialtyLabel}</h1>
             {renderBody()}
           </>
         )}

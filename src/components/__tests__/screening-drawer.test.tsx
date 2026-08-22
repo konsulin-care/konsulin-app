@@ -65,7 +65,7 @@ vi.mock('@/components/ui/app-drawer', () => ({
 const RESULT: InterviewResult = {
   complaintId: 'low-mood',
   complaintLabel: 'Low mood',
-  specialty: 'psychiatry',
+  specialty: '2084P0800X',
   serviceTypeCode: 'mood-disorder-care',
   icfDomain: 'mental-emotional-health' as const,
   redFlag: {
@@ -124,10 +124,12 @@ describe('ScreeningDrawer', () => {
     await waitFor(() => {
       expect(screen.getByTestId('primary-cta')).toBeEnabled();
     });
-    // Click CTA to submit
+    // Click CTA to submit (geolocation resolves asynchronously in jsdom)
     fireEvent.click(screen.getByTestId('primary-cta'));
-    expect(mockSave).toHaveBeenCalledWith(RESULT);
-    expect(mockOnComplete).toHaveBeenCalledWith(RESULT);
+    await waitFor(() => {
+      expect(mockSave).toHaveBeenCalledWith(RESULT);
+    });
+    expect(mockOnComplete).toHaveBeenCalledWith(RESULT, undefined, undefined);
     expect(mockOnClose).toHaveBeenCalled();
   });
 

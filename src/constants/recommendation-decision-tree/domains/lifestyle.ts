@@ -11,7 +11,15 @@ const lifestyle: DecisionDomain = {
       label: 'Quitting Smoking & Vaping',
       synonyms: ['merokok', 'rokok', 'vape', 'smoking', 'nicotine', 'berhenti'],
       icfDomain: 'health-behaviours-lifestyle',
-      specialty: 'psychology',
+      keywords: [
+        'smoking',
+        'tobacco',
+        'vaping',
+        'nicotine',
+        'cigarette',
+        'addiction',
+        'behavioral'
+      ],
       serviceTypeCode: 'smoking-cessation',
       options: [
         { id: 'daily-smoker', label: 'Smoke or vape every day' },
@@ -30,7 +38,16 @@ const lifestyle: DecisionDomain = {
       label: 'Alcohol or Substance Use',
       synonyms: ['alkohol', 'minuman keras', 'narkoba', 'alcohol', 'substance'],
       icfDomain: 'health-behaviours-lifestyle',
-      specialty: 'psychiatry',
+      keywords: [
+        'alcohol',
+        'drinking',
+        'substance',
+        'drug',
+        'opioid',
+        'addiction',
+        'psychiatrist',
+        'behavioral'
+      ],
       serviceTypeCode: 'substance-counseling',
       options: [
         { id: 'alcohol-dependence', label: 'Dependent on alcohol' },
@@ -60,7 +77,16 @@ const lifestyle: DecisionDomain = {
         'pola makan'
       ],
       icfDomain: 'health-behaviours-lifestyle',
-      specialty: 'psychology',
+      keywords: [
+        'eating',
+        'diet',
+        'nutrition',
+        'weight',
+        'obesity',
+        'appetite',
+        'emotional',
+        'psychological'
+      ],
       serviceTypeCode: 'nutrition-coaching',
       options: [
         { id: 'emotional-eating', label: 'Eating when stressed or sad' },
@@ -86,7 +112,15 @@ const lifestyle: DecisionDomain = {
         'habit'
       ],
       icfDomain: 'health-behaviours-lifestyle',
-      specialty: 'general-practice',
+      keywords: [
+        'sedentary',
+        'exercise',
+        'fitness',
+        'routine',
+        'physical',
+        'wellness',
+        'general'
+      ],
       serviceTypeCode: 'behavior-change-coaching',
       options: [
         { id: 'starting-exercise', label: 'Want to start moving more' },
@@ -105,7 +139,7 @@ const lifestyle: DecisionDomain = {
       label: 'Other Lifestyle Concern',
       synonyms: ['lifestyle', 'gaya hidup', 'lain'],
       icfDomain: 'health-behaviours-lifestyle',
-      specialty: 'general-practice',
+      keywords: ['lifestyle', 'routine', 'habits'],
       serviceTypeCode: 'other-health-behaviours-lifestyle',
       options: [
         {

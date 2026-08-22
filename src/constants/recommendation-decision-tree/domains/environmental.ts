@@ -11,7 +11,15 @@ const environmental: DecisionDomain = {
       label: 'Caregiver Stress & Strain',
       synonyms: ['perawat', 'mengurus', 'caregiver', 'merawat orang tua'],
       icfDomain: 'environmental-contextual',
-      specialty: 'psychology',
+      keywords: [
+        'caregiver',
+        'caregiving',
+        'caring',
+        'elderly',
+        'stress',
+        'emotional',
+        'exhaustion'
+      ],
       serviceTypeCode: 'caregiver-support',
       options: [
         { id: 'caring-for-parent', label: 'Caring for an ageing parent' },
@@ -40,7 +48,14 @@ const environmental: DecisionDomain = {
       label: 'Financial Stress & Worry',
       synonyms: ['keuangan', 'utang', 'finansial', 'financial', 'money'],
       icfDomain: 'environmental-contextual',
-      specialty: 'psychology',
+      keywords: [
+        'financial',
+        'debt',
+        'income',
+        'stress',
+        'anxiety',
+        'psychological'
+      ],
       serviceTypeCode: 'financial-wellbeing',
       options: [
         { id: 'debt-pressure', label: 'Pressure from debt' },
@@ -70,7 +85,14 @@ const environmental: DecisionDomain = {
         'adjustment'
       ],
       icfDomain: 'environmental-contextual',
-      specialty: 'psychology',
+      keywords: [
+        'relocation',
+        'moving',
+        'transition',
+        'stress',
+        'emotional',
+        'psychological'
+      ],
       serviceTypeCode: 'adjustment-counseling',
       options: [
         { id: 'moving-cities', label: 'Moved to a new city' },
@@ -93,7 +115,15 @@ const environmental: DecisionDomain = {
       label: 'Workplace & Ergonomic Strain',
       synonyms: ['ergonomi', 'postur', 'duduk', 'ergonomic', 'posture'],
       icfDomain: 'environmental-contextual',
-      specialty: 'orthopedics',
+      keywords: [
+        'ergonomic',
+        'posture',
+        'repetitive',
+        'screen',
+        'neck',
+        'spine',
+        'musculoskeletal'
+      ],
       serviceTypeCode: 'ergonomic-care',
       options: [
         { id: 'desk-posture', label: 'Pain from desk posture' },
@@ -116,7 +146,7 @@ const environmental: DecisionDomain = {
       label: 'Other Environmental Concern',
       synonyms: ['lingkungan', 'environmental', 'lain'],
       icfDomain: 'environmental-contextual',
-      specialty: 'general-practice',
+      keywords: ['environmental', 'workplace', 'general'],
       serviceTypeCode: 'other-environmental-contextual',
       options: [
         {

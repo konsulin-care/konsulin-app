@@ -18,7 +18,15 @@ const mental: DecisionDomain = {
         'murung'
       ],
       icfDomain: 'mental-emotional-health',
-      specialty: 'psychiatry',
+      keywords: [
+        'depression',
+        'depressive',
+        'mood',
+        'hopelessness',
+        'sad',
+        'psychological',
+        'stress'
+      ],
       serviceTypeCode: 'mood-disorder-care',
       options: [
         { id: 'persistent-low-mood', label: 'Low mood most of the day' },
@@ -38,7 +46,15 @@ const mental: DecisionDomain = {
       label: 'Anxiety, Stress & Panic',
       synonyms: ['cemas', 'khawatir', 'panik', 'anxiety', 'stress', 'panicky'],
       icfDomain: 'mental-emotional-health',
-      specialty: 'psychology',
+      keywords: [
+        'anxiety',
+        'anxious',
+        'stress',
+        'panic',
+        'phobia',
+        'psychological',
+        'mental'
+      ],
       serviceTypeCode: 'anxiety-care',
       options: [
         { id: 'general-worry', label: 'Constant worry or nervousness' },
@@ -58,7 +74,16 @@ const mental: DecisionDomain = {
       label: 'Grief, Trauma & Bereavement',
       synonyms: ['duka', 'kehilangan', 'grief', 'trauma', 'berduka'],
       icfDomain: 'mental-emotional-health',
-      specialty: 'psychology',
+      keywords: [
+        'grief',
+        'trauma',
+        'traumatic',
+        'crisis',
+        'abuse',
+        'bereavement',
+        'suicide',
+        'psychological'
+      ],
       serviceTypeCode: 'trauma-care',
       options: [
         { id: 'bereavement', label: 'Loss of a loved one' },
@@ -81,7 +106,14 @@ const mental: DecisionDomain = {
       label: 'Postpartum & Maternal Mood',
       synonyms: ['postpartum', 'melahirkan', 'baby blues', 'ibu baru'],
       icfDomain: 'mental-emotional-health',
-      specialty: 'psychology',
+      keywords: [
+        'mood',
+        'depression',
+        'depressive',
+        'stress',
+        'psychological',
+        'emotional'
+      ],
       serviceTypeCode: 'perinatal-care',
       options: [
         { id: 'baby-blues', label: 'Mood swings after childbirth' },
@@ -107,7 +139,14 @@ const mental: DecisionDomain = {
       label: 'Emotional Exhaustion & Burnout',
       synonyms: ['burnout', 'kelelahan emosional', 'jenuh', 'lelah batin'],
       icfDomain: 'mental-emotional-health',
-      specialty: 'psychology',
+      keywords: [
+        'burnout',
+        'stress',
+        'exhaustion',
+        'psychological',
+        'mental',
+        'emotional'
+      ],
       serviceTypeCode: 'burnout-care',
       options: [
         { id: 'work-burnout', label: 'Drained by work or study' },
@@ -130,7 +169,15 @@ const mental: DecisionDomain = {
       label: 'Mood Swings & Emotional Dysregulation',
       synonyms: ['emosi', 'meledak', 'mood swings', 'marah', 'irritable'],
       icfDomain: 'mental-emotional-health',
-      specialty: 'psychiatry',
+      keywords: [
+        'mood',
+        'irritable',
+        'bipolar',
+        'depression',
+        'psychological',
+        'stress',
+        'psychiatrist'
+      ],
       serviceTypeCode: 'mood-disorder-care',
       options: [
         { id: 'irritability', label: 'Quick to anger or irritability' },
@@ -153,7 +200,7 @@ const mental: DecisionDomain = {
       label: 'Other Mental Health Concern',
       synonyms: ['mental', 'jiwa', 'other mental'],
       icfDomain: 'mental-emotional-health',
-      specialty: 'psychology',
+      keywords: ['mental', 'psychological', 'emotional'],
       serviceTypeCode: 'other-mental-emotional-health',
       options: [
         {

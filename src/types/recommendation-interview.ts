@@ -39,9 +39,9 @@ export interface ChiefComplaint {
   label: string;
   /** Search tokens (English + Indonesian) matched by the complaint search. */
   synonyms: string[];
+  /** ICF domain feature keywords aligned with the ontology interview map. */
+  keywords: string[];
   icfDomain: DomainCode;
-  /** Legacy BFF specialty code consumed by `/api/recommendations?specialty=`. */
-  specialty: string;
   /** Forward-contract HealthcareService code emitted for the new endpoint. */
   serviceTypeCode: string;
   /** Symptom-focus options; at most 7, last one "Other" when present. */
@@ -60,7 +60,7 @@ export interface DecisionDomain {
 export interface InterviewResult {
   complaintId: string;
   complaintLabel: string;
-  /** Legacy BFF specialty code used to fetch live recommendations today. */
+  /** Canonical NUCC code used to fetch recommendations today. */
   specialty: string;
   /** Forward-contract HealthcareService code for the new BFF endpoint. */
   serviceTypeCode: string;

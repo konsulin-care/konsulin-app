@@ -1,3 +1,4 @@
+import { RecommendationProvider } from '@/context/recommendationContext';
 import type { RecommendationsParams } from '@/services/recommendations';
 import type {
   Recommendation,
@@ -5,9 +6,23 @@ import type {
 } from '@/types/recommendation';
 import type { InterviewResult } from '@/types/recommendation-interview';
 import { searchChiefComplaints } from '@/utils/recommendation-interview';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HomeContentPatient from '../app/home-content-patient';
+
+const queryClient = new QueryClient();
+
+/** Renders the patient home inside the providers it requires. */
+function renderPatient() {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <RecommendationProvider>
+        <HomeContentPatient />
+      </RecommendationProvider>
+    </QueryClientProvider>
+  );
+}
 
 /** Fields the patient home actually reads from the recommendations hook. */
 interface RecQueryStub {
@@ -43,7 +58,7 @@ const MOOD_COMPLAINT = searchChiefComplaints('low mood')[0];
 const MOOD_RESULT: InterviewResult = {
   complaintId: 'low-mood',
   complaintLabel: 'Low Mood & Sadness',
-  specialty: 'psychiatry',
+  specialty: '2084P0800X',
   serviceTypeCode: 'mood-disorder-care',
   icfDomain: 'mental-emotional-health',
   redFlag: MOOD_COMPLAINT.redFlag
@@ -115,7 +130,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { usePatientRecords } from '@/hooks/usePatientRecords';
 
 const baseRecQuery: RecQueryStub = {
-  data: { specialty: 'psychiatry', recommendations: [REC] },
+  data: { specialty: '2084P0800X', recommendations: [REC] },
   isLoading: false,
   isError: false,
   refetch: vi.fn()
@@ -148,13 +163,13 @@ beforeEach(() => {
 
 describe('HomeContentPatient', () => {
   it('renders quick action links', () => {
-    render(<HomeContentPatient />);
+    renderPatient();
 
     expect(screen.getByText('Action Card')).toBeInTheDocument();
   });
 
   it('renders previous records section', () => {
-    render(<HomeContentPatient />);
+    renderPatient();
 
     expect(screen.getByText('Previous Records')).toBeInTheDocument();
     expect(screen.getByText('See All')).toBeInTheDocument();
@@ -172,7 +187,7 @@ describe('HomeContentPatient', () => {
       error: null
     } as never);
 
-    render(<HomeContentPatient />);
+    renderPatient();
 
     expect(screen.getAllByTestId('mock-record-card')).toHaveLength(5);
   });
@@ -184,7 +199,7 @@ describe('HomeContentPatient', () => {
       dispatch: vi.fn()
     });
 
-    render(<HomeContentPatient />);
+    renderPatient();
 
     expect(screen.getAllByTestId('mock-skeleton').length).toBeGreaterThan(0);
   });
@@ -200,13 +215,13 @@ describe('HomeContentPatient', () => {
       isFetchingNextPage: false
     });
 
-    render(<HomeContentPatient />);
+    renderPatient();
 
     expect(screen.getByText('Failed to load records.')).toBeInTheDocument();
   });
 
   it('prompts the patient to start a screening when no result is saved', () => {
-    render(<HomeContentPatient />);
+    renderPatient();
 
     expect(
       screen.getByRole('button', { name: 'Start Assessment' })
@@ -217,25 +232,25 @@ describe('HomeContentPatient', () => {
   it('fetches live recommendations for a saved interview result', async () => {
     mockReadLastInterviewResult.mockResolvedValue(MOOD_RESULT);
 
-    render(<HomeContentPatient />);
+    renderPatient();
 
     await waitFor(() =>
       expect(mockUseRecommendations).toHaveBeenCalledWith({
-        specialty: 'psychiatry'
+        specialty: '2084P0800X'
       })
     );
     expect(screen.getByTestId('mock-recommendations')).toBeInTheDocument();
   });
 
   it('opens the ScreeningDrawer and renders recommendations after completion', () => {
-    render(<HomeContentPatient />);
+    renderPatient();
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Assessment' }));
     expect(screen.getByTestId('screening-drawer')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Finish interview' }));
     expect(mockUseRecommendations).toHaveBeenCalledWith({
-      specialty: 'psychiatry'
+      specialty: '2084P0800X'
     });
     expect(screen.getByTestId('mock-recommendations')).toBeInTheDocument();
   });

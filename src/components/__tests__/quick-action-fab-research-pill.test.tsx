@@ -1,4 +1,5 @@
 import { FabProvider } from '@/context/fabContext';
+import { RecommendationProvider } from '@/context/recommendationContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -29,9 +30,11 @@ vi.mock('react-toastify', () => ({
 function renderFab() {
   return render(
     <FabProvider>
-      <QueryClientProvider client={queryClient}>
-        <QuickActionFab />
-      </QueryClientProvider>
+      <RecommendationProvider>
+        <QueryClientProvider client={queryClient}>
+          <QuickActionFab />
+        </QueryClientProvider>
+      </RecommendationProvider>
     </FabProvider>
   );
 }

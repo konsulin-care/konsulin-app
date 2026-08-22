@@ -3,6 +3,10 @@ import {
   DECISION_TREE,
   QUICK_COMPLAINT_IDS
 } from '@/constants/recommendation-decision-tree';
+import {
+  SPECIALTY_LABELS,
+  SPECIALTY_RESOLUTIONS
+} from '@/data/specialty-resolution';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildRecommendationParams,
@@ -128,10 +132,10 @@ describe('decision tree data integrity', () => {
     }
   });
 
-  it('gives every complaint a specialty, serviceTypeCode, icfDomain and red flag', () => {
+  it('gives every complaint keywords, serviceTypeCode, icfDomain and red flag', () => {
     const complaints = DECISION_TREE.flatMap(d => d.complaints);
     for (const complaint of complaints) {
-      expect(complaint.specialty.length).toBeGreaterThan(0);
+      expect(complaint.keywords.length).toBeGreaterThan(0);
       expect(complaint.serviceTypeCode.length).toBeGreaterThan(0);
       expect(complaint.icfDomain).toBe(complaint.icfDomain);
       expect(DOMAIN_CODES).toContain(complaint.icfDomain);
@@ -193,7 +197,7 @@ describe('searchChiefComplaints', () => {
   it('matches synonyms like the Indonesian word for anxious', () => {
     const hits = searchChiefComplaints('cemas');
     expect(hits.length).toBeGreaterThan(0);
-    expect(hits[0].specialty).toBe('psychology');
+    expect(hits[0].keywords.length).toBeGreaterThan(0);
   });
 
   it('returns an empty list for a dead-end query', () => {
@@ -218,13 +222,15 @@ describe('resolveInterviewResult', () => {
   );
 
   it('resolves a complaint and option to a deterministic result', () => {
-    if (!pain) throw new Error('low-mood complaint missing');
+    if (!pain) throw new Error('pain-musculoskeletal complaint missing');
     const optionId = pain.options[0].id;
     const result = resolveInterviewResult('pain-musculoskeletal', optionId);
     expect(result).not.toBeNull();
     expect(result?.icfDomain).toBe('physical-health');
     expect(result?.serviceTypeCode).toBe(pain.serviceTypeCode);
-    expect(result?.specialty).toBe(pain.specialty);
+    expect(result?.specialty).toBe(
+      SPECIALTY_RESOLUTIONS['pain-musculoskeletal'].nuccCode
+    );
   });
 
   it('maps an Other answer to the generic other-{domain} service code', () => {
@@ -233,7 +239,7 @@ describe('resolveInterviewResult', () => {
     expect(other).toBeDefined();
     const result = resolveInterviewResult('low-mood', other?.id ?? '');
     expect(result?.serviceTypeCode).toBe('other-mental-emotional-health');
-    expect(result?.specialty).toBe(mood.specialty);
+    expect(result?.specialty).toBe(SPECIALTY_RESOLUTIONS['low-mood'].nuccCode);
   });
 
   it('returns null for an unknown complaint', () => {
@@ -246,8 +252,45 @@ describe('resolveInterviewResult', () => {
 
   it('resolves without an option to the base complaint result', () => {
     const result = resolveInterviewResult('low-mood');
-    expect(result?.specialty).toBe('psychiatry');
+    expect(result?.specialty).toBe(SPECIALTY_RESOLUTIONS['low-mood'].nuccCode);
     expect(result?.serviceTypeCode).toBe('mood-disorder-care');
+  });
+});
+
+describe('ontology resolution coverage', () => {
+  it('covers every decision-tree complaint id with a label', () => {
+    const ids = DECISION_TREE.flatMap(d => d.complaints).map(c => c.id);
+    expect(ids).toHaveLength(41);
+    for (const id of ids) {
+      const resolution = SPECIALTY_RESOLUTIONS[id];
+      expect(resolution, `missing resolution for ${id}`).toBeDefined();
+      expect(
+        SPECIALTY_LABELS[resolution.nuccCode],
+        `missing label for ${id}`
+      ).toBeTruthy();
+    }
+  });
+
+  it('every complaint carries authored keywords', () => {
+    for (const domain of DECISION_TREE) {
+      for (const complaint of domain.complaints) {
+        expect(complaint.keywords.length, complaint.id).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('resolves curated samples to the ontology codes', () => {
+    const samples: Record<string, string> = {
+      'pain-musculoskeletal': '207X00000X',
+      'low-mood': '2084P0800X',
+      burnout: '2084P0800X',
+      'couple-conflict': '106H00000X',
+      'alcohol-substance': '2084P0802X',
+      'eating-weight': '133VN1006X'
+    };
+    for (const [id, expected] of Object.entries(samples)) {
+      expect(SPECIALTY_RESOLUTIONS[id]?.nuccCode, id).toBe(expected);
+    }
   });
 });
 
@@ -256,14 +299,18 @@ describe('buildRecommendationParams', () => {
     const result = resolveInterviewResult('low-mood');
     if (!result) throw new Error('result missing');
     const params = buildRecommendationParams(result, -6.2, 106.8);
-    expect(params).toEqual({ specialty: 'psychiatry', lat: -6.2, lon: 106.8 });
+    expect(params).toEqual({
+      specialty: SPECIALTY_RESOLUTIONS['low-mood'].nuccCode,
+      lat: -6.2,
+      lon: 106.8
+    });
   });
 
   it('omits coordinates when not provided', () => {
     const result = resolveInterviewResult('low-mood');
     if (!result) throw new Error('result missing');
     expect(buildRecommendationParams(result)).toEqual({
-      specialty: 'psychiatry'
+      specialty: SPECIALTY_RESOLUTIONS['low-mood'].nuccCode
     });
   });
 });
