@@ -76,9 +76,11 @@ func (h *RecommendationsHandler) Recommendations(w http.ResponseWriter, r *http.
 	}
 
 	recs, err := h.svc.FetchWithLocation(r.Context(), service.FetchParams{
-		Specialty: specialty,
-		Latitude:  lat,
-		Longitude: lon,
+		Specialty:       specialty,
+		ServiceTypeCode: strings.TrimSpace(q.Get("serviceTypeCode")),
+		ICFDomain:       strings.TrimSpace(q.Get("icfDomain")),
+		Latitude:        lat,
+		Longitude:       lon,
 	})
 	if err != nil {
 		slog.Error("recommendations: aggregation failed", "err", err)

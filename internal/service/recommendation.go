@@ -78,9 +78,11 @@ type Recommendation struct {
 
 // FetchParams holds the input parameters for a recommendation fetch.
 type FetchParams struct {
-	Specialty string
-	Latitude  *float64
-	Longitude *float64
+	Specialty       string
+	ServiceTypeCode string
+	ICFDomain       string
+	Latitude        *float64
+	Longitude       *float64
 }
 
 // RecommendationOptions configures a RecommendationService.
@@ -198,10 +200,10 @@ func buildCascadeURLs(specialty string, lat, lon float64) []cascadeLevel {
 	allSpecialties := append([]string{specialty}, nearby...)
 
 	return []cascadeLevel{
-		{specialties: []string{specialty}, radiusKm: 10},       // Level 1: exact, 10km
-		{specialties: allSpecialties, radiusKm: 10},             // Level 2: exact + related, 10km
-		{specialties: []string{specialty}, radiusKm: 25},       // Level 3: exact, 25km
-		{specialties: allSpecialties, radiusKm: 0},              // Level 4: exact + related, no filter
+		{specialties: []string{specialty}, radiusKm: 10}, // Level 1: exact, 10km
+		{specialties: allSpecialties, radiusKm: 10},      // Level 2: exact + related, 10km
+		{specialties: []string{specialty}, radiusKm: 25}, // Level 3: exact, 25km
+		{specialties: allSpecialties, radiusKm: 0},       // Level 4: exact + related, no filter
 	}
 }
 

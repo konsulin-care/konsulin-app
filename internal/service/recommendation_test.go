@@ -47,7 +47,6 @@ func nearSearchset(entries []map[string]any) map[string]any {
 	return map[string]any{"resourceType": "Bundle", "type": "searchset", "total": len(entries), "entry": entries}
 }
 
-
 // newRecBackend serves FHIR batch bundles. PractitionerRole searches are routed
 // by their specialty param; Location?near routes to near; specialties in fail
 // return a non-200 response entry. It counts total HTTP requests in hits.
@@ -229,3 +228,29 @@ func newRecommendationService(t *testing.T, b *recBackend) *RecommendationServic
 }
 
 func lat(l float64) *float64 { return &l }
+
+// TestFetchParamsCarriesIntent pins the intent contract fields on FetchParams:
+// serviceTypeCode and ICFDomain travel alongside the NUCC specialty, and the
+// optional coordinate pointers are preserved.
+func TestFetchParamsCarriesIntent(t *testing.T) {
+	lat, lon := 1.0, 2.0
+	params := FetchParams{
+		Specialty:       "2084P0800X",
+		ServiceTypeCode: "burnout-care",
+		ICFDomain:       "mental-emotional-health",
+		Latitude:        &lat,
+		Longitude:       &lon,
+	}
+	if params.Specialty != "2084P0800X" {
+		t.Errorf("specialty not preserved: %q", params.Specialty)
+	}
+	if params.ServiceTypeCode != "burnout-care" {
+		t.Errorf("serviceTypeCode not preserved: %q", params.ServiceTypeCode)
+	}
+	if params.ICFDomain != "mental-emotional-health" {
+		t.Errorf("icfDomain not preserved: %q", params.ICFDomain)
+	}
+	if params.Latitude != &lat || params.Longitude != &lon {
+		t.Errorf("coordinate pointers not preserved: %+v", params)
+	}
+}

@@ -17,12 +17,12 @@ func recStub(t *testing.T, emptyRoles bool) *httptest.Server {
 		num := string(rune('1' + i))
 		return map[string]any{
 			"resource": map[string]any{
-				"resourceType": "PractitionerRole",
-				"id":           "role-" + num,
-				"active":       true,
-				"practitioner": map[string]any{"reference": "Practitioner/prac-" + num},
-				"organization": map[string]any{"reference": "Organization/org-1"},
-				"location":     []map[string]any{{"reference": "Location/loc-" + num}},
+				"resourceType":      "PractitionerRole",
+				"id":                "role-" + num,
+				"active":            true,
+				"practitioner":      map[string]any{"reference": "Practitioner/prac-" + num},
+				"organization":      map[string]any{"reference": "Organization/org-1"},
+				"location":          []map[string]any{{"reference": "Location/loc-" + num}},
 				"healthcareService": []map[string]any{{"reference": "HealthcareService/hs-" + num}},
 				"specialty": []map[string]any{{
 					"coding": []map[string]any{{"system": "http://snomed.info/sct", "code": "psychology", "display": "Clinical Psychology"}},
@@ -63,10 +63,8 @@ func recStub(t *testing.T, emptyRoles bool) *httptest.Server {
 		num := string(rune('1' + i))
 		nearEntries = append(nearEntries, packed{
 			"resource": packed{"resourceType": "Location", "id": "loc-" + num, "name": "Lokasi " + num},
-			"search": packed{"extension": []packed{{
-				"url":           "http://hl7.org/fhir/StructureDefinition/location-distance",
-				"valueDistance": packed{"value": 1000 + float64(i)*250, "unit": "m", "code": "m"},
-			}}},
+			"search": packed{"extension": []packed{{"url": "http://hl7.org/fhir/StructureDefinition/location-distance",
+				"valueDistance": packed{"value": 1000 + float64(i)*250, "unit": "m", "code": "m"}}}},
 		})
 	}
 
@@ -123,7 +121,7 @@ func recStub(t *testing.T, emptyRoles bool) *httptest.Server {
 		}
 
 		// Legacy GET fallback.
-		_ = json.NewEncoder(w).Encode(bundleForSearchURL(r.URL.Path+"?"+r.URL.RawQuery))
+		_ = json.NewEncoder(w).Encode(bundleForSearchURL(r.URL.Path + "?" + r.URL.RawQuery))
 	}))
 	t.Cleanup(srv.Close)
 	return srv
@@ -187,10 +185,10 @@ func TestRecommendationsHandler_returnsFiveCards(t *testing.T) {
 func assertRecommendationCard(t *testing.T, card map[string]any) {
 	t.Helper()
 	for field, want := range map[string]string{
-		"practitionerName":      "",
-		"scheduleId":            "sch-",
-		"healthcareServiceId":   "hs-",
-		"locationId":            "loc-",
+		"practitionerName":    "",
+		"scheduleId":          "sch-",
+		"healthcareServiceId": "hs-",
+		"locationId":          "loc-",
 	} {
 		val, _ := card[field].(string)
 		if val == "" || (want != "" && !strings.HasPrefix(val, want)) {
@@ -226,6 +224,15 @@ func TestRecommendationsHandler_emptyResults(t *testing.T) {
 	}
 }
 
+func TestRecommendationsHandler_acceptsIntentParams(t *testing.T) {
+	code, _ := getRecommendations(t, recHandler(t, false),
+		"/api/recommendations?specialty=psychology&serviceTypeCode=counseling-care&icfDomain=mental-emotional-health&lat=-6.2&lon=106.8")
+	if code != http.StatusOK {
+		t.Fatalf("expected 200 with intent params, got %d", code)
+	}
+}
+
+// TestRecommendationsHandler_methodNotAllowed verifies POST is rejected.
 func TestRecommendationsHandler_methodNotAllowed(t *testing.T) {
 	h := recHandler(t, false)
 	server := httptest.NewServer(http.HandlerFunc(h.Recommendations))
@@ -267,18 +274,10 @@ func TestRecommendationsHandler_specialties(t *testing.T) {
 // the same input return identical results (no random sampling).
 func TestRecommendationsHandler_deterministic(t *testing.T) {
 	h := recHandler(t, false)
-	server := httptest.NewServer(http.HandlerFunc(h.Recommendations))
-	t.Cleanup(server.Close)
 
 	fetchCards := func() []map[string]any {
 		t.Helper()
-		resp, err := http.Get(server.URL + "/api/recommendations?specialty=psychology")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer resp.Body.Close()
-		var body map[string]any
-		_ = json.NewDecoder(resp.Body).Decode(&body)
+		_, body := getRecommendations(t, h, "/api/recommendations?specialty=psychology")
 		recs, _ := body["recommendations"].([]any)
 		cards := make([]map[string]any, 0, len(recs))
 		for _, r := range recs {
