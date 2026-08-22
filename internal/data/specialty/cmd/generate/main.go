@@ -88,6 +88,11 @@ func run() error {
 	keywords := extractKeywords(definitions, stopWordSet, 3)
 	fmt.Printf("Extracted keywords for %d codes\n", len(keywords))
 
+	// Merge authored keyword-map.json overrides with the auto-derived map
+	autoKeywordMap := buildKeywordDomainMap(keywords, nuccNodes)
+	keywordMap = mergeKeywordDomainMaps(autoKeywordMap, keywordMap)
+	fmt.Printf("Mapped %d keywords to domains\n", len(keywordMap))
+
 	// Compute domain signatures
 	fmt.Println("Computing domain signatures...")
 	domainSignatures := computeDomainSignatures(keywords, keywordMap)
