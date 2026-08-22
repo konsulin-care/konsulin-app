@@ -1,0 +1,15 @@
+{
+  "physician": "practitioner",
+  "surgeon": "practitioner",
+  "surgeons": "practitioner",
+  "medicine": "medical",
+  "generalist": "general",
+  "counselling": "counseling",
+  "counsellor": "counseling",
+  "counselors": "counseling",
+  "counselor": "counseling",
+  "nurse": "nursing",
+  "psychotherapist": "therapist",
+  "physiotherapy": "physical-therapy",
+  "physiotherapists": "physical-therapy"
+}
