@@ -93,6 +93,13 @@ func singularize(tok string) string {
 	if strings.HasSuffix(tok, "ies") && len(tok) > 4 {
 		return tok[:len(tok)-3] + "y"
 	}
+	if strings.HasSuffix(tok, "es") &&
+		!strings.HasSuffix(tok, "ss") &&
+		!strings.HasSuffix(tok, "us") &&
+		!strings.HasSuffix(tok, "is") &&
+		len(tok) > 3 {
+		return tok[:len(tok)-2]
+	}
 	if strings.HasSuffix(tok, "s") &&
 		!strings.HasSuffix(tok, "ss") &&
 		!strings.HasSuffix(tok, "us") &&

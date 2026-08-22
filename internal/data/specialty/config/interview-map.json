@@ -33,7 +33,8 @@
       "cough",
       "lung",
       "airway",
-      "chest"
+      "chest",
+      "illness"
     ]
   },
   "gastrointestinal": {
@@ -49,14 +50,7 @@
   },
   "sleep-fatigue": {
     "icfDomain": "physical-health",
-    "keywords": [
-      "sleep",
-      "insomnia",
-      "fatigue",
-      "exhaustion",
-      "tiredness",
-      "stress"
-    ]
+    "keywords": ["sleep", "insomnia", "fatigue", "exhaustion", "tiredness"]
   },
   "fever-malaise": {
     "icfDomain": "physical-health",
@@ -94,7 +88,7 @@
       "panic",
       "phobia",
       "psychological",
-      "behavioral"
+      "mental"
     ]
   },
   "grief-trauma": {
@@ -105,6 +99,8 @@
       "traumatic",
       "crisis",
       "abuse",
+      "bereavement",
+      "suicide",
       "psychological"
     ]
   },
@@ -125,9 +121,8 @@
       "burnout",
       "stress",
       "exhaustion",
-      "fatigue",
-      "work",
       "psychological",
+      "mental",
       "emotional"
     ]
   },
@@ -153,10 +148,10 @@
       "couple",
       "marital",
       "marriage",
-      "relationship",
       "conflict",
       "communication",
-      "psychological"
+      "family",
+      "therapy"
     ]
   },
   "family-dynamics": {
@@ -165,21 +160,21 @@
       "family",
       "parent",
       "parenting",
-      "relationship",
       "conflict",
-      "psychological"
+      "communication",
+      "relationship",
+      "therapy"
     ]
   },
   "workplace-conflict": {
     "icfDomain": "social-health-relationships",
     "keywords": [
       "workplace",
-      "work",
       "conflict",
       "communication",
       "stress",
-      "psychological",
-      "employment"
+      "employment",
+      "interpersonal"
     ]
   },
   "loneliness-isolation": {
@@ -188,9 +183,9 @@
       "loneliness",
       "lonely",
       "isolation",
-      "relationship",
       "emotional",
-      "psychological"
+      "psychological",
+      "social"
     ]
   },
   "communication-barriers": {
@@ -199,9 +194,9 @@
       "communication",
       "interaction",
       "interpersonal",
-      "relationship",
       "conflict",
-      "psychological"
+      "psychological",
+      "mental"
     ]
   },
   "other-social": {
@@ -228,7 +223,8 @@
       "brain",
       "dementia",
       "forgetting",
-      "functioning"
+      "functioning",
+      "neurological"
     ]
   },
   "daily-activities": {
@@ -246,12 +242,13 @@
     "icfDomain": "functional-capacity",
     "keywords": [
       "performance",
-      "work",
       "focus",
       "concentration",
       "motivation",
       "confidence",
-      "stress"
+      "stress",
+      "psychological",
+      "mental"
     ]
   },
   "mobility-balance": {
@@ -276,11 +273,12 @@
     "keywords": [
       "career",
       "direction",
-      "goals",
       "vocation",
-      "work",
       "motivation",
-      "confidence"
+      "confidence",
+      "psychological",
+      "mental",
+      "behavioral"
     ]
   },
   "existential-purpose": {
@@ -291,7 +289,8 @@
       "life",
       "identity",
       "meaning",
-      "psychological"
+      "psychological",
+      "mental"
     ]
   },
   "life-transition": {
@@ -301,9 +300,9 @@
       "retirement",
       "relocation",
       "life",
-      "career",
       "stress",
-      "emotional"
+      "emotional",
+      "psychological"
     ]
   },
   "motivation-selfesteem": {
