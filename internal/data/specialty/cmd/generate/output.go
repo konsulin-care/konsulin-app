@@ -12,13 +12,17 @@ import (
 const (
 	// shardCount is the number of shard files to split proximity data into.
 	shardCount = 50
+	// goIndexFileName is the go:embed index file written by the generator.
+	goIndexFileName = "index_data.json"
 )
 
 // OutputData represents the data to be written to output files.
 type OutputData struct {
-	GeneratedAt string
-	Proximity   map[string]map[string]float64
-	Index       map[string]*SpecialtyNodeOutput
+	GeneratedAt   string
+	Proximity     map[string]map[string]float64
+	Index         map[string]*SpecialtyNodeOutput
+	InvertedIndex map[string][]string
+	Resolutions   map[string]ResolutionNode
 }
 
 // SpecialtyNodeOutput represents a specialty node for output.
@@ -36,9 +40,19 @@ func writeOutput(data *OutputData) error {
 		return fmt.Errorf("writing proximity shards: %w", err)
 	}
 
-	// Write TypeScript file
+	// Write the go:embed index JSON consumed by the runtime package
+	if err := writeGoIndexJSON(data); err != nil {
+		return fmt.Errorf("writing go index JSON: %w", err)
+	}
+
+	// Write TypeScript type definitions
 	if err := writeTSOutput(data); err != nil {
 		return fmt.Errorf("writing TypeScript output: %w", err)
+	}
+
+	// Write the frontend resolution map
+	if err := writeSpecialtyResolutionTS(data); err != nil {
+		return fmt.Errorf("writing TypeScript resolution output: %w", err)
 	}
 
 	return nil

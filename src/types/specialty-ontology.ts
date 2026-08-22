@@ -1,5 +1,5 @@
 // Code generated; DO NOT EDIT.
-// Generated at: 2026-08-22T11:56:11Z
+// Generated at: 2026-08-22T16:24:34Z
 
 export interface SpecialtyNode {
   nuccCode: string;
