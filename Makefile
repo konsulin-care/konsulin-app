@@ -107,3 +107,6 @@ run:
 data-wilayah:
 	go generate ./internal/data/wilayah/
 
+data-specialty:
+	go generate ./internal/data/specialty/
+
