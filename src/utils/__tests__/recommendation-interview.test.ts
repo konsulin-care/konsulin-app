@@ -301,6 +301,8 @@ describe('buildRecommendationParams', () => {
     const params = buildRecommendationParams(result, -6.2, 106.8);
     expect(params).toEqual({
       specialty: SPECIALTY_RESOLUTIONS['low-mood'].nuccCode,
+      serviceTypeCode: result.serviceTypeCode,
+      icfDomain: result.icfDomain,
       lat: -6.2,
       lon: 106.8
     });
@@ -310,7 +312,9 @@ describe('buildRecommendationParams', () => {
     const result = resolveInterviewResult('low-mood');
     if (!result) throw new Error('result missing');
     expect(buildRecommendationParams(result)).toEqual({
-      specialty: SPECIALTY_RESOLUTIONS['low-mood'].nuccCode
+      specialty: SPECIALTY_RESOLUTIONS['low-mood'].nuccCode,
+      serviceTypeCode: result.serviceTypeCode,
+      icfDomain: result.icfDomain
     });
   });
 });

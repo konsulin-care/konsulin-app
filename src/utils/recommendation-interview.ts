@@ -103,19 +103,31 @@ export function resolveInterviewResult(
 /**
  * Build BFF query params from a resolved interview result.
  *
+ * Carries the service intent (`serviceTypeCode`, `icfDomain`) alongside the
+ * canonical NUCC specialty so the BFF can rank by service relevance.
+ *
  * @param result - Resolved interview result
  * @param lat - Optional latitude for proximity ranking
  * @param lon - Optional longitude for proximity ranking
- * @returns Params accepted by the current recommendation endpoint
+ * @returns Params accepted by the recommendation endpoint
  */
 export function buildRecommendationParams(
   result: InterviewResult,
   lat?: number,
   lon?: number
-): { specialty: string; lat?: number; lon?: number } {
-  return lat !== undefined && lon !== undefined
-    ? { specialty: result.specialty, lat, lon }
-    : { specialty: result.specialty };
+): {
+  specialty: string;
+  serviceTypeCode: string;
+  icfDomain: string;
+  lat?: number;
+  lon?: number;
+} {
+  const base = {
+    specialty: result.specialty,
+    serviceTypeCode: result.serviceTypeCode,
+    icfDomain: result.icfDomain
+  };
+  return lat !== undefined && lon !== undefined ? { ...base, lat, lon } : base;
 }
 
 /** Static shape guard for persisted interview results. */
