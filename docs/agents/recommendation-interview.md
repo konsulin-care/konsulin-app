@@ -54,7 +54,7 @@ Relevance then closest slot decide ranking. Distance is the final tiebreak.
 
 - Red-flag copy is clinical. Amend only via clinical review, not ad-hoc.
 - Hotline numbers verified against Kemenkes guidance; re-verify on rotation.
-- The BFF (`GET /api/v1/recommendations`) is undefined here — this is the
+- The BFF (`GET /api/recommendations`) is undefined here — this is the
   frontend contract handoff. See `@src/types/recommendation.ts`.
 
 ## Status
