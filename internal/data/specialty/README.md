@@ -117,14 +117,14 @@ Maps keywords to domain paths (overrides auto-derived mappings):
 The proximity between two specialties is calculated as:
 
 ```
-distance = 0.3 * structural + 0.5 * clinical + 0.2 * domain
+distance = 0.6 * clinical + 0.3 * domain + 0.1 * structural
 ```
 
 Where:
 
-- **structural**: ISCO-08 hierarchical distance (inverse depth of LCA)
 - **clinical**: NUCC grouping/classification similarity
-- **domain**: Jaccard similarity of domain signatures
+- **domain**: Jaccard similarity of ICF domain signatures
+- **structural**: ISCO-08 hierarchical distance (inverse depth of LCA)
 
 ## Data Sharding
 

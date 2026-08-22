@@ -47,6 +47,7 @@ func TestComputeProximity(t *testing.T) {
 		"103G00000X": {"mental-health"},
 	}
 
+	// Compute proximity
 	proximity := computeProximity(iscoNodes, nuccNodes, nuccToIsco, domainSignatures)
 
 	// Check that proximity table is symmetric
@@ -59,20 +60,27 @@ func TestComputeProximity(t *testing.T) {
 		t.Errorf("expected 1.0 for same specialty, got %f", proximity["207Q00000X"]["207Q00000X"])
 	}
 
-	// Check proximity values exist
-	psychPsycho := proximity["2084P0800X"]["103G00000X"]
-	psychFM := proximity["2084P0800X"]["207Q00000X"]
-
-	// Psychiatry and Family Medicine are both medical doctors (same ISCO parent 221)
-	// so they should be closer structurally
-	if psychFM <= psychPsycho {
-		t.Logf("Psychiatry-FamilyMedicine: %f, Psychiatry-Psychology: %f", psychFM, psychPsycho)
-		// This is expected - both are medical doctors
+	// New weights 0.6 clinical + 0.3 domain + 0.1 structural, pinned exactly.
+	// 2084P0800X vs 207Q00000X: clinical 0.7 (same grouping), domain 0 (no
+	// overlap), structural 0.75 (LCA 221 at depth 3).
+	// -> 0.6*0.7 + 0.3*0 + 0.1*0.75 = 0.495
+	wantFM := 0.6*0.7 + 0.3*0.0 + 0.1*0.75
+	if diff := math.Abs(proximity["2084P0800X"]["207Q00000X"] - wantFM); diff > 1e-9 {
+		t.Errorf("expected %.3f for psychiatry-family medicine, got %f", wantFM, proximity["2084P0800X"]["207Q00000X"])
 	}
 
-	// Verify both have positive proximity
-	if psychPsycho <= 0 || psychFM <= 0 {
-		t.Error("expected positive proximity scores")
+	// 2084P0800X vs 103G00000X: clinical 0.3 (different grouping), domain 1.0
+	// (shared mental-health), structural 0.5 (LCA 2 at depth 1).
+	// -> 0.6*0.3 + 0.3*1.0 + 0.1*0.5 = 0.53
+	wantPsych := 0.6*0.3 + 0.3*1.0 + 0.1*0.5
+	if diff := math.Abs(proximity["2084P0800X"]["103G00000X"] - wantPsych); diff > 1e-9 {
+		t.Errorf("expected %.3f for psychiatry-psychology, got %f", wantPsych, proximity["2084P0800X"]["103G00000X"])
+	}
+
+	// Shared mental-health domain must outweigh the clinical-grouping gap:
+	// psychiatry-psychology must rank above psychiatry-family medicine.
+	if proximity["2084P0800X"]["103G00000X"] <= proximity["2084P0800X"]["207Q00000X"] {
+		t.Error("expected psychiatry-psychology proximity above psychiatry-family medicine")
 	}
 }
 

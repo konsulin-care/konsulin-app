@@ -47,8 +47,8 @@ func combinedProximity(
 	clinical := clinicalProximity(codeA, codeB, nuccNodes)
 	domain := domainProximity(codeA, codeB, domainSignatures)
 
-	// Weighted combination: 0.3 * structural + 0.5 * clinical + 0.2 * domain
-	return 0.3*structural + 0.5*clinical + 0.2*domain
+	// Weighted combination: 0.6 * clinical + 0.3 * domain + 0.1 * structural
+	return 0.6*clinical + 0.3*domain + 0.1*structural
 }
 
 // structuralProximity computes proximity based on ISCO-08 hierarchy.
