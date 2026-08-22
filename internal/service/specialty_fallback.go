@@ -1,21 +1,23 @@
 package service
 
-// nearbyBySpecialty is the decision-tree closeness map used to fill
-// recommendation slots when the exact-specialty match yields fewer than
-// maxRecommendations cards. The lists are ordered by semantic closeness to
-// the key specialty, derived from the decision-tree domains in
-// src/constants/recommendation-decision-tree.
-var nearbyBySpecialty = map[string][]string{
-	"psychology":       {"general-practice", "orthopedics", "psychiatry", "neuropsychology"},
-	"psychiatry":       {"psychology", "general-practice"},
-	"neuropsychology":  {"psychology", "orthopedics", "general-practice"},
-	"orthopedics":      {"general-practice", "psychology"},
-	"general-practice": {"psychology", "orthopedics", "psychiatry", "neuropsychology"},
-}
+import "github.com/konsulin-care/konsulin-app/internal/data/specialty"
 
-// nearbySpecialties returns the ordered list of decision-tree specialties
-// semantically close to the given specialty, used to fill recommendation
-// slots. Unknown or unmapped specialties yield an empty list (exact-only).
-func nearbySpecialties(specialty string) []string {
-	return nearbyBySpecialty[specialty]
+const (
+	// relatedSpecialtyLimit caps the number of proximity-expanded codes used
+	// to fill recommendation slots below the exact-match quota.
+	relatedSpecialtyLimit = 5
+	// relatedSpecialtyThreshold is the minimum ontology proximity for a code
+	// to count as a semantically related specialty.
+	relatedSpecialtyThreshold = 0.5
+)
+
+// nearbySpecialties expands a NUCC code to its semantically close specialty
+// codes using the generated ontology proximity table (0.6 clinical + 0.3
+// domain + 0.1 structural, normalized). Used to fill recommendation slots
+// when the exact-specialty match yields fewer than maxRecommendations cards.
+// Unknown or unseeded codes yield an empty list (exact-only).
+func nearbySpecialties(specialtyCode string) []string {
+	return specialty.LoadIndex().NearbyNuccCodes(
+		specialtyCode, relatedSpecialtyLimit, relatedSpecialtyThreshold,
+	)
 }

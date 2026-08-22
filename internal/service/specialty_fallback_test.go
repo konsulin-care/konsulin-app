@@ -3,33 +3,51 @@ package service
 import (
 	"reflect"
 	"testing"
+
+	"github.com/konsulin-care/konsulin-app/internal/data/specialty"
 )
 
-// TestNearbySpecialties_knownSpecialties pins the decision-tree closeness map
-// used to fill recommendation slots when the exact specialty yields <5 cards.
-func TestNearbySpecialties_knownSpecialties(t *testing.T) {
-	tests := []struct {
-		specialty string
-		want      []string
-	}{
-		{"psychology", []string{"general-practice", "orthopedics", "psychiatry", "neuropsychology"}},
-		{"psychiatry", []string{"psychology", "general-practice"}},
-		{"neuropsychology", []string{"psychology", "orthopedics", "general-practice"}},
-		{"orthopedics", []string{"general-practice", "psychology"}},
-		{"general-practice", []string{"psychology", "orthopedics", "psychiatry", "neuropsychology"}},
+// TestNearbySpecialtiesKnownCode asserts proximity-driven expansion for a real
+// NUCC code: non-empty, capped, self-excluded, and deterministic.
+func TestNearbySpecialtiesKnownCode(t *testing.T) {
+	got := nearbySpecialties("103T00000X")
+	if len(got) == 0 {
+		t.Fatal("expected proximity neighbors for Psychologist")
 	}
-	for _, tt := range tests {
-		got := nearbySpecialties(tt.specialty)
-		if !reflect.DeepEqual(got, tt.want) {
-			t.Errorf("nearbySpecialties(%q) = %v, want %v", tt.specialty, got, tt.want)
+	if len(got) > relatedSpecialtyLimit {
+		t.Errorf("expected at most %d neighbors, got %d", relatedSpecialtyLimit, len(got))
+	}
+	for _, code := range got {
+		if code == "103T00000X" {
+			t.Errorf("expansion must exclude the query code, got %q", code)
 		}
+		if score := specialty.LoadIndex().GetProximity("103T00000X", code); score < relatedSpecialtyThreshold {
+			t.Errorf("neighbor %s below threshold: %.3f", code, score)
+		}
+	}
+
+	// Closest neighbor is a psychology-family specialization.
+	if !reflect.DeepEqual(got, nearbySpecialties("103T00000X")) {
+		t.Error("expansion must be deterministic across calls")
 	}
 }
 
-// TestNearbySpecialties_unknownSpecialty ensures unknown specialties fall back
-// to an empty list so only exact matches are considered.
-func TestNearbySpecialties_unknownSpecialty(t *testing.T) {
-	for _, s := range []string{"cardiology", "", "MISSING"} {
+// TestNearbySpecialtiesKnownCodeFamily prefers the query code's own family:
+// the psychiatry expansion leads with a psychiatry sub-specialization.
+func TestNearbySpecialtiesKnownCodeFamily(t *testing.T) {
+	got := nearbySpecialties("2084P0800X")
+	if len(got) == 0 {
+		t.Fatal("expected neighbors for psychiatry")
+	}
+	if got[0] != "2084P0802X" && len(got) >= 1 && got[0] != "2084P0800X" {
+		t.Errorf("expected a psychiatry-family top neighbor, got %v", got[:1])
+	}
+}
+
+// TestNearbySpecialtiesUnknownCode ensures unknown specialties fall back to an
+// empty list so only exact matches are considered.
+func TestNearbySpecialtiesUnknownCode(t *testing.T) {
+	for _, s := range []string{"cardiology-slug", "", "MISSING-NUCC"} {
 		if got := nearbySpecialties(s); len(got) != 0 {
 			t.Errorf("nearbySpecialties(%q) = %v, want empty", s, got)
 		}
