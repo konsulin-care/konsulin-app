@@ -1,0 +1,429 @@
+{
+  "pain-musculoskeletal": {
+    "icfDomain": "physical-health",
+    "keywords": [
+      "musculoskeletal",
+      "joint",
+      "spine",
+      "bone",
+      "pain",
+      "orthopaedic",
+      "knee",
+      "shoulder",
+      "muscle"
+    ]
+  },
+  "headache-migraine": {
+    "icfDomain": "physical-health",
+    "keywords": [
+      "headache",
+      "migraine",
+      "pain",
+      "neurological",
+      "throbbing",
+      "dizziness"
+    ]
+  },
+  "respiratory-airway": {
+    "icfDomain": "physical-health",
+    "keywords": [
+      "respiratory",
+      "breath",
+      "breathing",
+      "cough",
+      "lung",
+      "airway",
+      "chest"
+    ]
+  },
+  "gastrointestinal": {
+    "icfDomain": "physical-health",
+    "keywords": [
+      "gastrointestinal",
+      "stomach",
+      "digestive",
+      "bowel",
+      "nausea",
+      "diarrhea"
+    ]
+  },
+  "sleep-fatigue": {
+    "icfDomain": "physical-health",
+    "keywords": [
+      "sleep",
+      "insomnia",
+      "fatigue",
+      "exhaustion",
+      "tiredness",
+      "stress"
+    ]
+  },
+  "fever-malaise": {
+    "icfDomain": "physical-health",
+    "keywords": [
+      "fever",
+      "weakness",
+      "dizziness",
+      "illness",
+      "acute",
+      "general"
+    ]
+  },
+  "other-physical": {
+    "icfDomain": "physical-health",
+    "keywords": ["physical", "general", "illness"]
+  },
+  "low-mood": {
+    "icfDomain": "mental-emotional-health",
+    "keywords": [
+      "depression",
+      "depressive",
+      "mood",
+      "hopelessness",
+      "sad",
+      "psychological",
+      "stress"
+    ]
+  },
+  "anxiety-stress": {
+    "icfDomain": "mental-emotional-health",
+    "keywords": [
+      "anxiety",
+      "anxious",
+      "stress",
+      "panic",
+      "phobia",
+      "psychological",
+      "behavioral"
+    ]
+  },
+  "grief-trauma": {
+    "icfDomain": "mental-emotional-health",
+    "keywords": [
+      "grief",
+      "trauma",
+      "traumatic",
+      "crisis",
+      "abuse",
+      "psychological"
+    ]
+  },
+  "postpartum-mood": {
+    "icfDomain": "mental-emotional-health",
+    "keywords": [
+      "mood",
+      "depression",
+      "depressive",
+      "stress",
+      "psychological",
+      "emotional"
+    ]
+  },
+  "burnout": {
+    "icfDomain": "mental-emotional-health",
+    "keywords": [
+      "burnout",
+      "stress",
+      "exhaustion",
+      "fatigue",
+      "work",
+      "psychological",
+      "emotional"
+    ]
+  },
+  "mood-swings": {
+    "icfDomain": "mental-emotional-health",
+    "keywords": [
+      "mood",
+      "irritable",
+      "bipolar",
+      "depression",
+      "psychological",
+      "stress",
+      "psychiatrist"
+    ]
+  },
+  "other-mental": {
+    "icfDomain": "mental-emotional-health",
+    "keywords": ["mental", "psychological", "emotional"]
+  },
+  "couple-conflict": {
+    "icfDomain": "social-health-relationships",
+    "keywords": [
+      "couple",
+      "marital",
+      "marriage",
+      "relationship",
+      "conflict",
+      "communication",
+      "psychological"
+    ]
+  },
+  "family-dynamics": {
+    "icfDomain": "social-health-relationships",
+    "keywords": [
+      "family",
+      "parent",
+      "parenting",
+      "relationship",
+      "conflict",
+      "psychological"
+    ]
+  },
+  "workplace-conflict": {
+    "icfDomain": "social-health-relationships",
+    "keywords": [
+      "workplace",
+      "work",
+      "conflict",
+      "communication",
+      "stress",
+      "psychological",
+      "employment"
+    ]
+  },
+  "loneliness-isolation": {
+    "icfDomain": "social-health-relationships",
+    "keywords": [
+      "loneliness",
+      "lonely",
+      "isolation",
+      "relationship",
+      "emotional",
+      "psychological"
+    ]
+  },
+  "communication-barriers": {
+    "icfDomain": "social-health-relationships",
+    "keywords": [
+      "communication",
+      "interaction",
+      "interpersonal",
+      "relationship",
+      "conflict",
+      "psychological"
+    ]
+  },
+  "other-social": {
+    "icfDomain": "social-health-relationships",
+    "keywords": ["relationship", "social", "psychological"]
+  },
+  "focus-attention": {
+    "icfDomain": "functional-capacity",
+    "keywords": [
+      "attention",
+      "focus",
+      "concentration",
+      "behavior",
+      "cognitive",
+      "hyperactivity",
+      "functioning"
+    ]
+  },
+  "memory-decline": {
+    "icfDomain": "functional-capacity",
+    "keywords": [
+      "memory",
+      "cognitive",
+      "brain",
+      "dementia",
+      "forgetting",
+      "functioning"
+    ]
+  },
+  "daily-activities": {
+    "icfDomain": "functional-capacity",
+    "keywords": [
+      "daily",
+      "self-care",
+      "function",
+      "independence",
+      "mobility",
+      "rehabilitation"
+    ]
+  },
+  "work-performance": {
+    "icfDomain": "functional-capacity",
+    "keywords": [
+      "performance",
+      "work",
+      "focus",
+      "concentration",
+      "motivation",
+      "confidence",
+      "stress"
+    ]
+  },
+  "mobility-balance": {
+    "icfDomain": "functional-capacity",
+    "keywords": [
+      "mobility",
+      "balance",
+      "walking",
+      "gait",
+      "falls",
+      "joint",
+      "spine",
+      "musculoskeletal"
+    ]
+  },
+  "other-functional": {
+    "icfDomain": "functional-capacity",
+    "keywords": ["function", "daily", "general"]
+  },
+  "career-direction": {
+    "icfDomain": "meaning-purpose-fulfilment",
+    "keywords": [
+      "career",
+      "direction",
+      "goals",
+      "vocation",
+      "work",
+      "motivation",
+      "confidence"
+    ]
+  },
+  "existential-purpose": {
+    "icfDomain": "meaning-purpose-fulfilment",
+    "keywords": [
+      "purpose",
+      "existential",
+      "life",
+      "identity",
+      "meaning",
+      "psychological"
+    ]
+  },
+  "life-transition": {
+    "icfDomain": "meaning-purpose-fulfilment",
+    "keywords": [
+      "transition",
+      "retirement",
+      "relocation",
+      "life",
+      "career",
+      "stress",
+      "emotional"
+    ]
+  },
+  "motivation-selfesteem": {
+    "icfDomain": "meaning-purpose-fulfilment",
+    "keywords": [
+      "motivation",
+      "self-esteem",
+      "self-worth",
+      "confidence",
+      "impostor",
+      "worth",
+      "psychological"
+    ]
+  },
+  "other-purpose": {
+    "icfDomain": "meaning-purpose-fulfilment",
+    "keywords": ["purpose", "meaning", "goal"]
+  },
+  "smoking-cessation": {
+    "icfDomain": "health-behaviours-lifestyle",
+    "keywords": [
+      "smoking",
+      "tobacco",
+      "vaping",
+      "nicotine",
+      "cigarette",
+      "addiction",
+      "behavioral"
+    ]
+  },
+  "alcohol-substance": {
+    "icfDomain": "health-behaviours-lifestyle",
+    "keywords": [
+      "alcohol",
+      "drinking",
+      "substance",
+      "drug",
+      "opioid",
+      "addiction",
+      "psychiatrist",
+      "behavioral"
+    ]
+  },
+  "eating-weight": {
+    "icfDomain": "health-behaviours-lifestyle",
+    "keywords": [
+      "eating",
+      "diet",
+      "nutrition",
+      "weight",
+      "obesity",
+      "appetite",
+      "emotional",
+      "psychological"
+    ]
+  },
+  "sedentary-habits": {
+    "icfDomain": "health-behaviours-lifestyle",
+    "keywords": [
+      "sedentary",
+      "exercise",
+      "fitness",
+      "routine",
+      "physical",
+      "wellness",
+      "general"
+    ]
+  },
+  "other-lifestyle": {
+    "icfDomain": "health-behaviours-lifestyle",
+    "keywords": ["lifestyle", "routine", "habits"]
+  },
+  "caregiver-strain": {
+    "icfDomain": "environmental-contextual",
+    "keywords": [
+      "caregiver",
+      "caregiving",
+      "caring",
+      "elderly",
+      "stress",
+      "emotional",
+      "exhaustion"
+    ]
+  },
+  "financial-stress": {
+    "icfDomain": "environmental-contextual",
+    "keywords": [
+      "financial",
+      "debt",
+      "income",
+      "stress",
+      "anxiety",
+      "psychological"
+    ]
+  },
+  "relocation-adjustment": {
+    "icfDomain": "environmental-contextual",
+    "keywords": [
+      "relocation",
+      "moving",
+      "transition",
+      "stress",
+      "emotional",
+      "psychological"
+    ]
+  },
+  "ergonomic-strain": {
+    "icfDomain": "environmental-contextual",
+    "keywords": [
+      "ergonomic",
+      "posture",
+      "repetitive",
+      "screen",
+      "neck",
+      "spine",
+      "musculoskeletal"
+    ]
+  },
+  "other-environmental": {
+    "icfDomain": "environmental-contextual",
+    "keywords": ["environmental", "workplace", "general"]
+  }
+}

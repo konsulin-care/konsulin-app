@@ -1,3 +1,78 @@
 {
-  "healthcare": {}
+  "physical-health": {
+    "fallbackNuccCode": "208D00000X",
+    "subdomains": {
+      "musculoskeletal": {},
+      "cardio-respiratory": {},
+      "digestive": {},
+      "neurological": {},
+      "sleep": {},
+      "dermatologic": {},
+      "sensory": {},
+      "general": {}
+    }
+  },
+  "mental-emotional-health": {
+    "fallbackNuccCode": "103T00000X",
+    "subdomains": {
+      "mood-disorders": {},
+      "anxiety-stress": {},
+      "trauma-grief": {},
+      "cognitive-behavioral": {},
+      "addiction": {},
+      "psychosis": {},
+      "general": {}
+    }
+  },
+  "social-health-relationships": {
+    "fallbackNuccCode": "103T00000X",
+    "subdomains": {
+      "couple-family": {},
+      "work-relations": {},
+      "communication": {},
+      "loneliness": {},
+      "general": {}
+    }
+  },
+  "functional-capacity": {
+    "fallbackNuccCode": "208D00000X",
+    "subdomains": {
+      "attention-cognition": {},
+      "memory": {},
+      "mobility": {},
+      "daily-living": {},
+      "work-capacity": {},
+      "general": {}
+    }
+  },
+  "meaning-purpose-fulfilment": {
+    "fallbackNuccCode": "103T00000X",
+    "subdomains": {
+      "career": {},
+      "existential": {},
+      "life-transitions": {},
+      "self-esteem": {},
+      "general": {}
+    }
+  },
+  "health-behaviours-lifestyle": {
+    "fallbackNuccCode": "208D00000X",
+    "subdomains": {
+      "substance-use": {},
+      "eating-weight": {},
+      "physical-activity": {},
+      "sleep-hygiene": {},
+      "general": {}
+    }
+  },
+  "environmental-contextual": {
+    "fallbackNuccCode": "208D00000X",
+    "subdomains": {
+      "caregiving": {},
+      "financial": {},
+      "relocation": {},
+      "ergonomics": {},
+      "general": {}
+    }
+  }
 }
