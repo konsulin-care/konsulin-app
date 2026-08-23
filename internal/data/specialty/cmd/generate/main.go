@@ -70,6 +70,7 @@ func run() error {
 		Index:         directIndex,
 		InvertedIndex: invertedIndex,
 		Resolutions:   resolutions,
+		NuccNodes:     nuccNodes,
 	}
 	if err := writeOutput(data); err != nil {
 		return fmt.Errorf("writing output: %w", err)

@@ -1,137 +1,163 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-
-import { render, screen } from '@testing-library/react';
-import type { PractitionerRole } from 'fhir/r4';
+import type { ActionConfig } from '@/components/fab/types';
+import type { FabAction } from '@/context/fabContext';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PractitionerRoleManagementShell from '../role-management-shell';
 
-let availEditorProps: Record<string, unknown> | null = null;
+const { availabilitySave, servicesSave, specialtySave } = vi.hoisted(() => ({
+  availabilitySave: vi.fn<() => Promise<void>>(),
+  servicesSave: vi.fn<() => Promise<void>>(),
+  specialtySave: vi.fn<() => Promise<void>>()
+}));
 
-vi.mock('@/components/ui/tabs', () => ({
-  Tabs: ({
-    children,
-    defaultValue,
-    onValueChange
-  }: {
-    children: React.ReactNode;
-    defaultValue: string;
-    onValueChange?: (value: string) => void;
-  }) => (
-    <div
-      data-testid='tabs'
-      data-default={defaultValue}
-      data-onchange={onValueChange ? 'yes' : 'no'}
-    >
-      {children}
-    </div>
-  ),
-  TabsList: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid='tabs-list'>{children}</div>
-  ),
-  TabsTrigger: ({
-    children,
-    value
-  }: {
-    children: React.ReactNode;
-    value: string;
-  }) => (
-    <button data-testid='tab-trigger' data-value={value}>
-      {children}
-    </button>
-  ),
-  TabsContent: ({
-    children,
-    value
-  }: {
-    children: React.ReactNode;
-    value: string;
-  }) => (
-    <div data-testid='tab-content' data-value={value}>
-      {children}
+const mockDispatch = vi.fn<(action: FabAction) => void>();
+const mockRefetch = vi.fn<() => Promise<unknown>>();
+
+vi.mock('@/context/fabContext', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/context/fabContext')>();
+  return { ...actual, useFab: () => ({ dispatch: mockDispatch }) };
+});
+
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: () => ({ state: { userInfo: { role_name: 'Clinic Admin' } } })
+}));
+
+vi.mock('@/services/clinic-practitioners', () => ({
+  useDetailPractitioner: () => ({
+    newData: { resource: { resourceType: 'PractitionerRole', id: 'pr-1' } },
+    refetch: mockRefetch
+  })
+}));
+
+/** Generic section stub contract shared by the mocked editor children. */
+type DirtyProps = {
+  onDirtyChange?: (
+    dirty: boolean,
+    save: () => Promise<void>,
+    saving: boolean
+  ) => void;
+};
+
+vi.mock('@/app/practitioner/practitioner-availability-editor', () => ({
+  default: ({ onDirtyChange }: DirtyProps) => (
+    <div data-testid='section-availability'>
+      <button
+        type='button'
+        data-testid='mark-availability'
+        onClick={() => onDirtyChange?.(true, () => availabilitySave(), false)}
+      >
+        mark availability dirty
+      </button>
     </div>
   )
 }));
 
-vi.mock('@/app/practitioner/practitioner-availability-editor', () => ({
-  default: (props: Record<string, unknown>) => {
-    availEditorProps = props;
-    return (
-      <div data-testid='practitioner-availability-editor'>
-        PractitionerAvailabilityEditor
-      </div>
-    );
-  }
-}));
-
 vi.mock('@/app/practitioner/services-tab', () => ({
-  default: () => <div data-testid='mock-services-tab'>Services Tab</div>
+  default: ({ onDirtyChange }: DirtyProps) => (
+    <div data-testid='section-services'>
+      <button
+        type='button'
+        data-testid='mark-services'
+        onClick={() => onDirtyChange?.(true, () => servicesSave(), false)}
+      >
+        mark services dirty
+      </button>
+    </div>
+  )
 }));
 
-vi.mock('@/services/clinic-practitioners', () => ({
-  useDetailPractitioner: vi.fn()
+vi.mock('@/app/practitioner/specialty-section', () => ({
+  default: ({ onDirtyChange }: DirtyProps) => (
+    <div data-testid='section-specialty'>
+      <button
+        type='button'
+        data-testid='mark-specialty'
+        onClick={() => onDirtyChange?.(true, () => specialtySave(), false)}
+      >
+        mark specialty dirty
+      </button>
+    </div>
+  )
 }));
 
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: vi.fn()
-}));
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
-import { useAuth } from '@/context/auth/authContext';
-import { useDetailPractitioner } from '@/services/clinic-practitioners';
-
-const mockRole: Partial<PractitionerRole> = {
-  resourceType: 'PractitionerRole',
-  id: 'role-1',
-  active: true,
-  availableTime: [],
-  organization: { reference: 'Organization/org-1' }
-};
+/** Extract the latest "Save Changes" FAB action config from dispatch calls. */
+function latestSaveAction(): ActionConfig | undefined {
+  const calls = mockDispatch.mock.calls
+    .map(call => call[0])
+    .filter((action): action is Extract<FabAction, { type: 'SET_ACTION' }> => {
+      return action.type === 'SET_ACTION';
+    });
+  const last = calls.at(-1)?.config;
+  return last ?? undefined;
+}
 
 describe('PractitionerRoleManagementShell', () => {
-  beforeEach(() => {
-    availEditorProps = null;
-    vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Clinic Admin' } }
-    } as any);
+  it('renders all three sections as accordion items', () => {
+    render(<PractitionerRoleManagementShell practitionerRoleId='pr-1' />);
+
+    expect(screen.getByTestId('section-availability')).toBeInTheDocument();
+    expect(screen.getByTestId('section-services')).toBeInTheDocument();
+    expect(screen.getByTestId('section-specialty')).toBeInTheDocument();
   });
 
-  it('renders both tabs with correct labels', () => {
-    vi.mocked(useDetailPractitioner).mockReturnValue({
-      newData: undefined,
-      isLoading: false,
-      isError: false,
-      isFetching: false
-    } as any);
+  it('aggregates dirty sections into a single Save Changes FAB action', async () => {
+    render(<PractitionerRoleManagementShell practitionerRoleId='pr-1' />);
 
-    render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
+    expect(latestSaveAction()).toBeUndefined();
 
-    const triggers = screen.getAllByTestId('tab-trigger');
-    expect(triggers).toHaveLength(2);
-    expect(triggers[0]).toHaveTextContent('Availability');
-    expect(triggers[1]).toHaveTextContent('Services');
+    fireEvent.click(screen.getByTestId('mark-availability'));
+    fireEvent.click(screen.getByTestId('mark-services'));
+
+    await waitFor(() => {
+      const config = latestSaveAction();
+      expect(config?.label).toBe('Save Changes');
+      expect(config?.isSaving).toBe(false);
+    });
+
+    // Dirty dots appear on both affected triggers
+    expect(screen.getByTestId('dirty-dot-availability')).toBeInTheDocument();
+    expect(screen.getByTestId('dirty-dot-services')).toBeInTheDocument();
   });
 
-  it('passes hideSaveButton to PractitionerAvailabilityEditor', () => {
-    vi.mocked(useDetailPractitioner).mockReturnValue({
-      newData: { resource: mockRole, organization: { name: 'Test' } },
-      isLoading: false,
-      isError: false,
-      isFetching: false
-    } as any);
+  it('runs every dirty section save then refetches on FAB save', async () => {
+    render(<PractitionerRoleManagementShell practitionerRoleId='pr-1' />);
 
-    render(<PractitionerRoleManagementShell practitionerRoleId='role-1' />);
+    fireEvent.click(screen.getByTestId('mark-availability'));
+    fireEvent.click(screen.getByTestId('mark-specialty'));
 
-    expect(availEditorProps?.hideSaveButton).toBe(true);
+    await waitFor(() => {
+      expect(latestSaveAction()?.label).toBe('Save Changes');
+    });
+
+    const onAction = latestSaveAction()?.onAction;
+    if (!onAction) throw new Error('expected a FAB onAction handler');
+
+    await onAction();
+
+    expect(availabilitySave).toHaveBeenCalledTimes(1);
+    expect(specialtySave).toHaveBeenCalledTimes(1);
+    expect(servicesSave).not.toHaveBeenCalled();
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
   });
 
-  it('renders nothing for non-ClinicAdmin roles', () => {
-    vi.mocked(useAuth).mockReturnValue({
-      state: { userInfo: { role_name: 'Patient' } }
-    } as any);
+  it('keeps sections mounted so unsaved edits survive switching', () => {
+    render(<PractitionerRoleManagementShell practitionerRoleId='pr-1' />);
 
-    const { container } = render(
-      <PractitionerRoleManagementShell practitionerRoleId='role-1' />
-    );
+    const markAvailability = screen.getByTestId('mark-availability');
+    fireEvent.click(markAvailability);
 
-    expect(container.innerHTML).toBe('');
+    // Open the services accordion item
+    fireEvent.click(screen.getByText('Services'));
+
+    // Availability is still mounted (state preserved), not unmounted
+    expect(screen.getByTestId('section-availability')).toBeInTheDocument();
+    expect(screen.getByTestId('mark-availability')).toBeInTheDocument();
+
+    // Specialty item (never opened) is also mounted via forceMount
+    expect(screen.getByTestId('section-specialty')).toBeInTheDocument();
   });
 });

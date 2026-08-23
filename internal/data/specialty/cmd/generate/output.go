@@ -23,6 +23,9 @@ type OutputData struct {
 	Index         map[string]*SpecialtyNodeOutput
 	InvertedIndex map[string][]string
 	Resolutions   map[string]ResolutionNode
+	// NuccNodes carries the full Individual-section NUCC parse, preserving
+	// grouping/classification/specialization for the frontend taxonomy module.
+	NuccNodes map[string]*nuccNode
 }
 
 // SpecialtyNodeOutput represents a specialty node for output.
@@ -53,6 +56,11 @@ func writeOutput(data *OutputData) error {
 	// Write the frontend resolution map
 	if err := writeSpecialtyResolutionTS(data); err != nil {
 		return fmt.Errorf("writing TypeScript resolution output: %w", err)
+	}
+
+	// Write the frontend NUCC taxonomy module (practitioner specialty picker)
+	if err := writeNuccTaxonomyTS(data); err != nil {
+		return fmt.Errorf("writing TypeScript taxonomy output: %w", err)
 	}
 
 	return nil

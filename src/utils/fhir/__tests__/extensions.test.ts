@@ -37,6 +37,7 @@ describe('FhirSystems', () => {
         'assessmentContext',
         'assessmentDomain',
         'lucide',
+        'nuccTaxonomy',
         'practitionerRole',
         'researchReferral',
         'snomedSct',
