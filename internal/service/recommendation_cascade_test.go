@@ -3,197 +3,205 @@ package service
 import (
 	"context"
 	"testing"
-
-	"github.com/konsulin-care/konsulin-app/internal/data/specialty"
 )
 
-// TestBuildCascadeURLs_returnsFourLevels verifies the cascade builds 4 levels
-// for a NUCC code and expands the related levels from ontology proximity.
-func TestBuildCascadeURLs_returnsFourLevels(t *testing.T) {
-	levels := buildCascadeURLs("207X00000X", -6.19, 106.8)
+// TestBuildCascadeLevels_threeTiers verifies the location cascade shape for a
+// mental complaint: exact near, then pool near + unlimited, then generalist
+// near + unlimited.
+func TestBuildCascadeLevels_threeTiers(t *testing.T) {
+	levels := buildCascadeLevels(FetchParams{
+		Specialty: "2084P0800X",
+		ICFDomain: "mental-emotional-health",
+	})
 
-	if len(levels) != 4 {
-		t.Fatalf("expected 4 cascade levels, got %d", len(levels))
+	if len(levels) != 5 {
+		t.Fatalf("expected 5 cascade levels (exact + 2x pool + 2x generalist), got %d", len(levels))
 	}
+	if levels[0].tier.label != "exact" || levels[0].radiusKm != 10 {
+		t.Errorf("level 1: expected exact@10, got %s@%d", levels[0].tier.label, levels[0].radiusKm)
+	}
+	if levels[0].tier.codes[0] != "2084P0800X" || len(levels[0].tier.codes) != 1 {
+		t.Errorf("level 1: expected exact [2084P0800X], got %v", levels[0].tier.codes)
+	}
+	if levels[1].tier.label != "related" || levels[1].radiusKm != 10 {
+		t.Errorf("level 2: expected related@10, got %s@%d", levels[1].tier.label, levels[1].radiusKm)
+	}
+	if !sliceContains(levels[1].tier.codes, "103T00000X") {
+		t.Errorf("level 2: psychology generalist missing from the mental pool (%d codes)", len(levels[1].tier.codes))
+	}
+	if levels[4].tier.label != "fallback" || levels[4].radiusKm != 0 {
+		t.Errorf("level 5: expected fallback@unlimited, got %s@%d", levels[4].tier.label, levels[4].radiusKm)
+	}
+	if levels[4].tier.codes[0] != "103T00000X" {
+		t.Errorf("level 5: expected psychologist generalist, got %v", levels[4].tier.codes)
+	}
+}
 
-	// Level 1: exact, 10km
-	if levels[0].radiusKm != 10 {
-		t.Errorf("level 1: expected radiusKm=10, got %d", levels[0].radiusKm)
-	}
-	if len(levels[0].specialties) != 1 || levels[0].specialties[0] != "207X00000X" {
-		t.Errorf("level 1: expected [207X00000X], got %v", levels[0].specialties)
-	}
-
-	// Level 2: exact + proximity-expanded neighbors, 10km
-	if levels[1].radiusKm != 10 {
-		t.Errorf("level 2: expected radiusKm=10, got %d", levels[1].radiusKm)
-	}
-	if levels[1].specialties[0] != "207X00000X" {
-		t.Errorf("level 2: expected first specialty 207X00000X, got %v", levels[1].specialties)
-	}
-	if len(levels[1].specialties) <= 1 {
-		t.Errorf("level 2: expected proximity-expanded specialties, got %d", len(levels[1].specialties))
-	}
-	for _, code := range levels[1].specialties[1:] {
-		if code == "207X00000X" {
-			t.Errorf("level 2: expansion must exclude the query code")
-		}
-	}
-
-	// Level 3: exact, 25km
-	if levels[2].radiusKm != 25 {
-		t.Errorf("level 3: expected radiusKm=25, got %d", levels[2].radiusKm)
-	}
-	if len(levels[2].specialties) != 1 || levels[2].specialties[0] != "207X00000X" {
-		t.Errorf("level 3: expected [207X00000X], got %v", levels[2].specialties)
-	}
-
-	// Level 4: exact + proximity, no location filter
-	if levels[3].radiusKm != 0 {
-		t.Errorf("level 4: expected radiusKm=0, got %d", levels[3].radiusKm)
+// TestBuildCascadeLevels_noDomain verifies a specialty-only request yields a
+// single near level.
+func TestBuildCascadeLevels_noDomain(t *testing.T) {
+	levels := buildCascadeLevels(FetchParams{Specialty: "207X00000X"})
+	if len(levels) != 1 || levels[0].tier.label != "exact" || levels[0].radiusKm != 10 {
+		t.Fatalf("expected [exact@10], got %+v", levels)
 	}
 }
 
 // TestFetchWithLocation_returnsLevel1WhenSufficient verifies the cascade
 // stops at level 1 when it has >= maxRecommendations results.
 func TestFetchWithLocation_returnsLevel1WhenSufficient(t *testing.T) {
-	// Level 1: orthopaedics at 10km -> 5 exact results, already sufficient.
-	pracIDs := []string{"p1", "p2", "p3", "p4", "p5"}
-	level1Bundle := multiRoleSearchset("207X00000X", "Orthopaedic Surgery Physician", pracIDs)
-
+	pracIDs := []string{"p1", "p2", "p3", "p4"}
 	bundles := map[string]map[string]any{
-		"207X00000X": level1Bundle,
+		"2084P0800X": multiRoleSearchset("2084P0800X", "Psychiatry Physician", pracIDs),
 	}
-
 	b := newRecBackend(t, bundles, nil, nil)
 	svc := newRecommendationService(t, b)
 
 	recs, err := svc.FetchWithLocation(context.Background(), FetchParams{
-		Specialty: "207X00000X",
+		Specialty: "2084P0800X",
+		ICFDomain: "mental-emotional-health",
 		Latitude:  lat(-6.19),
 		Longitude: lat(106.8),
 	})
 	if err != nil {
 		t.Fatalf("FetchWithLocation returned error: %v", err)
 	}
-
-	if len(recs) != 5 {
-		t.Fatalf("expected 5 recommendations from level 1, got %d", len(recs))
+	if len(recs) != maxRecommendations {
+		t.Fatalf("expected %d recommendations from level 1, got %d", maxRecommendations, len(recs))
+	}
+	for _, r := range recs {
+		if r.MatchSource != "exact" {
+			t.Errorf("expected all-exact level-1 cards, got %q", r.MatchSource)
+		}
 	}
 }
 
 // TestFetchWithLocation_cascadesWhenLevel1Insufficient verifies the cascade
-// moves through proximity-expanded levels when level 1 has < 5 results.
+// merges the domain pool when the exact tier has < maxRecommendations results.
 func TestFetchWithLocation_cascadesWhenLevel1Insufficient(t *testing.T) {
-	// Level 1: orthopaedics at 10km -> 1 result
-	// Level 2: orthopaedics + proximity neighbors -> 3 results
-	level1Bundle := roleSearchset("207X00000X", "Orthopaedic Surgery Physician", "prc-10", "role-10", "loc-10", "hs-10", "sch-10", 60000)
-	neighborBundle := multiRoleSearchset("207XS0117X", "Orthopaedic Surgery of the Spine Physician", []string{"p1", "p2"})
-
 	bundles := map[string]map[string]any{
-		"207X00000X": level1Bundle,
-		"207XS0117X": neighborBundle,
+		"2084P0800X": roleSearchset("2084P0800X", "Psychiatry Physician", "prc-02", "role-2", "loc-B", "hs-2", "sch-2", 70000),
+		"103TC1900X": multiRoleSearchset("103TC1900X", "Counseling Psychologist", []string{"p1", "p2"}),
 	}
-
 	b := newRecBackend(t, bundles, nil, nil)
 	svc := newRecommendationService(t, b)
 
 	recs, err := svc.FetchWithLocation(context.Background(), FetchParams{
-		Specialty: "207X00000X",
+		Specialty: "2084P0800X",
+		ICFDomain: "mental-emotional-health",
 		Latitude:  lat(-6.19),
 		Longitude: lat(106.8),
 	})
 	if err != nil {
 		t.Fatalf("FetchWithLocation returned error: %v", err)
 	}
-
 	across := map[string]bool{}
 	for _, r := range recs {
 		across[r.PractitionerID] = true
+		if r.MatchSource != "exact" && r.MatchSource != "related" {
+			t.Errorf("expected exact/related only from pool merge, got %q", r.MatchSource)
+		}
 	}
 	if len(across) < 2 {
-		t.Errorf("expected at least 2 distinct practitioners after cascade, got %d", len(across))
+		t.Errorf("expected >=2 distinct practitioners after cascade, got %d", len(across))
 	}
 }
 
-// TestFetchWithLocation_fallbackToNoFilter verifies the cascade falls back
-// to no location filter when all location-filtered levels have < 5 results.
-func TestFetchWithLocation_fallbackToNoFilter(t *testing.T) {
-	// Only 1 orthopaedics practitioner, no nearby specialties with location
-	level1Bundle := roleSearchset("207X00000X", "Orthopaedic Surgery Physician", "prc-10", "role-10", "loc-10", "hs-10", "sch-10", 60000)
-
+// TestFetchWithLocation_poolMergeCoversGeneralist verifies merging the
+// cascade levels surfaces only mental-pool practitioners (the psychologist
+// generalist is itself in the mental pool, so its cards arrive via the pool
+// tier), capped at maxRecommendations with the exact card first.
+func TestFetchWithLocation_poolMergeCoversGeneralist(t *testing.T) {
 	bundles := map[string]map[string]any{
-		"207X00000X": level1Bundle,
+		"2084P0800X": roleSearchset("2084P0800X", "Psychiatry Physician", "prc-02", "role-2", "loc-B", "hs-2", "sch-2", 70000),
+		"103T00000X": multiRoleSearchset("103T00000X", "Psychologist", []string{"g1", "g2", "g3"}),
 	}
-
 	b := newRecBackend(t, bundles, nil, nil)
 	svc := newRecommendationService(t, b)
 
 	recs, err := svc.FetchWithLocation(context.Background(), FetchParams{
-		Specialty: "207X00000X",
+		Specialty: "2084P0800X",
+		ICFDomain: "mental-emotional-health",
 		Latitude:  lat(-6.19),
 		Longitude: lat(106.8),
 	})
 	if err != nil {
 		t.Fatalf("FetchWithLocation returned error: %v", err)
 	}
-
-	// Should get at least 1 result (from fallback)
-	if len(recs) == 0 {
-		t.Error("expected at least 1 recommendation from fallback, got 0")
+	if len(recs) != maxRecommendations {
+		t.Fatalf("expected %d cards, got %d", maxRecommendations, len(recs))
+	}
+	if recs[0].MatchSource != "exact" {
+		t.Errorf("expected exact first, got %q", recs[0].MatchSource)
+	}
+	mental := domainCodes("mental-emotional-health", "")
+	mentalSet := make(map[string]bool, len(mental))
+	for _, c := range mental {
+		mentalSet[c] = true
+	}
+	for _, r := range recs {
+		for _, s := range r.Specialties {
+			if r.MatchSource == "exact" {
+				continue // exact tier is the requested psychiatric code
+			}
+			if s != "Psychologist" {
+				t.Errorf("expected a mental-pool card, got specialty %q", s)
+			}
+		}
 	}
 }
 
-// TestFetchWithLocation_usesLegacyWhenNoCoords verifies FetchWithLocation
-// delegates to legacy path when no lat/lon provided.
-func TestFetchWithLocation_usesLegacyWhenNoCoords(t *testing.T) {
-	// Exact psychologist (1 role) + a proximity-expanded psychology
-	// sub-specialization (4 roles) fill the legacy path to five.
-	neighbors := specialty.LoadIndex().NearbyNuccCodes("103T00000X", relatedSpecialtyLimit, relatedSpecialtyThreshold)
-	if len(neighbors) == 0 {
-		t.Fatal("expected proximity neighbors for Psychologist")
+// sliceContains reports whether items contains s.
+func sliceContains(items []string, s string) bool {
+	for _, it := range items {
+		if it == s {
+			return true
+		}
 	}
+	return false
+}
+
+// TestFetchWithLocation_usesFetchWhenNoCoords verifies FetchWithLocation
+// delegates to Fetch (no location cascade) when lat/lon are absent.
+func TestFetchWithLocation_usesFetchWhenNoCoords(t *testing.T) {
 	bundles := map[string]map[string]any{
 		"103T00000X": psychologySearchset(),
-		neighbors[0]:  multiRoleSearchset(neighbors[0], "Psychology specialization", []string{"p1", "p2", "p3", "p4"}),
 	}
 	b := newRecBackend(t, bundles, nil, nil)
 	svc := newRecommendationService(t, b)
 
-	// FetchWithLocation with no coords should use legacy path
 	recs, err := svc.FetchWithLocation(context.Background(), FetchParams{
 		Specialty: "103T00000X",
+		ICFDomain: "mental-emotional-health",
 	})
 	if err != nil {
 		t.Fatalf("FetchWithLocation returned error: %v", err)
 	}
-
-	// Legacy path returns 5 (exact + proximity fill)
-	if len(recs) != 5 {
-		t.Errorf("expected 5 recommendations from legacy path, got %d", len(recs))
+	if len(recs) != 1 {
+		t.Errorf("expected 1 exact card from Fetch, got %d", len(recs))
+	}
+	if recs[0].MatchSource != "exact" {
+		t.Errorf("expected exact source, got %q", recs[0].MatchSource)
 	}
 }
 
 // TestFetchWithLocation_singleBatchRequest verifies the cascade uses a single
-// FHIR batch request (not 4 sequential requests).
+// FHIR batch request and stays within the entry ceiling.
 func TestFetchWithLocation_singleBatchRequest(t *testing.T) {
 	bundles := map[string]map[string]any{
-		"207X00000X": multiRoleSearchset("207X00000X", "Orthopaedic Surgery Physician", []string{"p1", "p2", "p3", "p4", "p5"}),
+		"2084P0800X": multiRoleSearchset("2084P0800X", "Psychiatry Physician", []string{"p1", "p2", "p3", "p4"}),
 	}
-
 	b := newRecBackend(t, bundles, nil, nil)
 	svc := newRecommendationService(t, b)
 
 	_, err := svc.FetchWithLocation(context.Background(), FetchParams{
-		Specialty: "207X00000X",
+		Specialty: "2084P0800X",
+		ICFDomain: "mental-emotional-health",
 		Latitude:  lat(-6.19),
 		Longitude: lat(106.8),
 	})
 	if err != nil {
 		t.Fatalf("FetchWithLocation returned error: %v", err)
 	}
-
-	// Should be exactly 1 batch request
 	if b.hits != 1 {
 		t.Errorf("expected exactly 1 FHIR batch request, got %d", b.hits)
 	}

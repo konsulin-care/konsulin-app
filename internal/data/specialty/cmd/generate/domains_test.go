@@ -11,7 +11,7 @@ func TestApplyCompetenceSignaturesGroupingFallback(t *testing.T) {
 		"9999":       {Code: "9999", Grouping: "Unknown Group", Classification: "Unknown Class"},
 	}
 	groupingMap := map[string]string{
-		"Allopathic & Osteopathic Physicians":        "physical-health",
+		"Allopathic & Osteopathic Physicians":          "physical-health",
 		"Behavioral Health & Social Service Providers": "mental-emotional-health",
 	}
 	competenceMap := map[string][]string{

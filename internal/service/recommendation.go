@@ -9,14 +9,10 @@ import (
 	"strings"
 )
 
-// defaultNearRadiusKM is the geographic radius used for Location?near searches
-// when the caller provides lat/lon without an explicit radius.
-const defaultNearRadiusKM = 50
-
-// maxRecommendations caps the number of cards returned by Fetch, including
-// related-specialty fill. Kept in the service so exact-first ordering survives
-// (the handler's NarrowRecommendations becomes a no-op safety net).
-const maxRecommendations = 5
+// maxRecommendations caps the number of cards returned by Fetch and the
+// cascade. Fewer results are valid: the fill only draws from the complaint's
+// ICF-domain pool and its generalist, never from unrelated specialties.
+const maxRecommendations = 4
 
 // distanceExtensionURL is the FHIR standard extension Blaze attaches to
 // Location search results carrying the distance in meters.
@@ -107,103 +103,75 @@ func NewRecommendationService(opts RecommendationOptions) *RecommendationService
 	}
 }
 
-// Fetch returns up to maxRecommendations recommendation cards for the
-// requested specialty. Exact-specialty matches are returned first; when fewer
-// than maxRecommendations, cards from semantically-nearby decision-tree
-// specialties fill the remainder. The whole fill is one FHIR batch request.
-// When lat/lon are provided, candidates whose Location falls outside the
-// ?near radius are dropped and distances are attached from the FHIR result.
-func (s *RecommendationService) Fetch(ctx context.Context, params FetchParams) ([]Recommendation, error) {
-	specialties, bundles, nearBundle, err := s.fetchRecommendationBundles(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-	out, seen, err := buildRecommendations(specialties, bundles, nearBundle, params.ServiceTypeCode)
-	if err != nil {
-		return nil, err
-	}
-	if len(out) < maxRecommendations {
-		out = s.fillWithFallback(ctx, out, seen)
-	}
-	return out, nil
+// recommendationTier is one query level of the domain-gated cascade: a set of
+// NUCC codes and the matchSource label their cards carry.
+type recommendationTier struct {
+	label string
+	codes []string
 }
 
-func (s *RecommendationService) fetchRecommendationBundles(ctx context.Context, params FetchParams) ([]string, []*searchset, *searchset, error) {
-	specialties := append([]string{params.Specialty}, nearbySpecialties(params.Specialty)...)
-	urls := make([]string, 0, len(specialties)+1)
-	for _, specialty := range specialties {
-		urls = append(urls, practitionerRoleQuery(specialty))
+// buildTiers assembles the cascade tiers from the fetch params: exact code
+// first, then the complaint's ICF-domain competence pool, then the domain
+// generalist. Without a declared icfDomain only the exact tier exists.
+func buildTiers(params FetchParams) []recommendationTier {
+	exact := params.Specialty
+	if exact == "" {
+		exact = DomainGeneralist(params.ICFDomain)
 	}
-	nearIdx := -1
-	if params.Latitude != nil && params.Longitude != nil {
-		nearIdx = len(urls)
-		urls = append(urls, locationNearQuery(*params.Latitude, *params.Longitude))
+	tiers := []recommendationTier{{label: "exact", codes: []string{exact}}}
+	if params.ICFDomain == "" {
+		return tiers
+	}
+	pool := domainCodes(params.ICFDomain, exact)
+	if len(pool) > 0 {
+		tiers = append(tiers, recommendationTier{label: "related", codes: pool})
+	}
+	if generalist := DomainGeneralist(params.ICFDomain); generalist != exact {
+		tiers = append(tiers, recommendationTier{label: "fallback", codes: []string{generalist}})
+	}
+	return tiers
+}
+
+// Fetch returns up to maxRecommendations recommendation cards for the
+// requested intent. The exact-specialty tier is queried first, then the
+// complaint's ICF-domain competence pool, then the domain generalist; only
+// the declared domain's codes can ever surface. Fewer than maxRecommendations
+// results are valid. The whole fetch is one FHIR batch request.
+func (s *RecommendationService) Fetch(ctx context.Context, params FetchParams) ([]Recommendation, error) {
+	if params.Specialty == "" {
+		params.Specialty = DomainGeneralist(params.ICFDomain)
+	}
+	tiers := buildTiers(params)
+	urls := make([]string, len(tiers))
+	for i, tier := range tiers {
+		urls[i] = practitionerRoleQueryAll(tier.codes)
 	}
 	bundles, err := s.fetchBatch(ctx, urls)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	if len(bundles) == 0 || bundles[0] == nil {
-		return nil, nil, nil, errors.New("practitioner role search returned no bundle")
+		return nil, errors.New("practitioner role search returned no bundle")
 	}
-	var nearBundle *searchset
-	if nearIdx >= 0 && nearIdx < len(bundles) {
-		nearBundle = bundles[nearIdx]
-	}
-	return specialties, bundles, nearBundle, nil
+	return buildRecommendationTiers(tiers, bundles, params.ServiceTypeCode), nil
 }
 
-func buildRecommendations(specialties []string, bundles []*searchset, nearBundle *searchset, serviceTypeCode string) ([]Recommendation, map[string]bool, error) {
-	near := distanceMap(nearBundle)
+// buildRecommendationTiers merges per-tier bundles into up to
+// maxRecommendations cards, deduping by practitioner across tiers so the
+// exact tier's card wins over an identical related card.
+func buildRecommendationTiers(tiers []recommendationTier, bundles []*searchset, serviceTypeCode string) []Recommendation {
 	out := make([]Recommendation, 0, maxRecommendations)
 	seen := map[string]bool{}
-	for i, specialty := range specialties {
-		if len(out) >= maxRecommendations || i >= len(bundles) || bundles[i] == nil {
+	for i, tier := range tiers {
+		if i >= len(bundles) || bundles[i] == nil {
 			continue
 		}
 		logical, err := parseRoleBundle(bundles[i])
 		if err != nil {
-			if i == 0 {
-				return nil, nil, err
-			}
 			continue
 		}
-		source := "related"
-		if i == 0 {
-			source = "exact"
-		}
-		out = appendCandidates(out, seen, logical, near, nearBundle != nil, specialty, serviceTypeCode, source)
-	}
-	return out, seen, nil
-}
-
-// fillWithFallback tops a short candidate list up to maxRecommendations using
-// one extra FHIR batch POST that searches any active PractitionerRole, newest
-// first. Practitioners already in the pool are skipped and appended cards are
-// marked with matchSource fallback so the relevance ranking keeps them last.
-// Failures degrade gracefully to the current result.
-func (s *RecommendationService) fillWithFallback(ctx context.Context, out []Recommendation, seen map[string]bool) []Recommendation {
-	if len(out) >= maxRecommendations {
-		return out
-	}
-	bundles, err := s.fetchBatch(ctx, []string{anyPractitionerRoleQuery()})
-	if err != nil || bundles[0] == nil {
-		return out
-	}
-	logical, err := parseRoleBundle(bundles[0])
-	if err != nil {
-		return out
-	}
-	for _, candidate := range dedupByPractitioner(buildCandidates(logical, nil, false), "", "") {
-		if len(out) >= maxRecommendations {
-			break
-		}
-		if seen[candidate.PractitionerID] {
-			continue
-		}
-		seen[candidate.PractitionerID] = true
-		candidate.MatchSource = "fallback"
-		out = append(out, candidate)
+		out = appendCandidates(out, seen, logical, nil, false,
+			strings.Join(tier.codes, ","), serviceTypeCode, tier.label)
 	}
 	return out
 }

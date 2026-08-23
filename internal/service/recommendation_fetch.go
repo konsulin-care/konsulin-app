@@ -188,27 +188,13 @@ func distanceMap(bundle *searchset) map[string]float64 {
 	return out
 }
 
-// practitionerRoleQuery builds the PractitionerRole search with includes and
-// the Schedule reverse include needed for next-slot computation.
-func practitionerRoleQuery(specialty string) string {
+// practitionerRoleQueryAll builds the PractitionerRole search for a set of
+// NUCC codes (comma-joined OR), with includes and the Schedule reverse
+// include needed for next-slot computation.
+func practitionerRoleQueryAll(specialties []string) string {
 	const inc = "&_include="
-	return "/fhir/PractitionerRole?specialty=" + url.QueryEscape(specialty) +
+	return "/fhir/PractitionerRole?specialty=" + url.QueryEscape(strings.Join(specialties, ",")) +
 		"&active=true" +
-		inc + "PractitionerRole:practitioner" +
-		inc + "PractitionerRole:organization" +
-		inc + "PractitionerRole:location" +
-		inc + "PractitionerRole:service" +
-		"&_revinclude=Schedule:actor"
-}
-
-// anyPractitionerRoleQuery builds a PractitionerRole search that returns the
-// most recently updated active roles regardless of specialty, used to fill
-// recommendation slots when the exact+related pool is short.
-func anyPractitionerRoleQuery() string {
-	const inc = "&_include="
-	return "/fhir/PractitionerRole?active=true" +
-		"&_count=10" +
-		"&_sort=-_lastUpdated" +
 		inc + "PractitionerRole:practitioner" +
 		inc + "PractitionerRole:organization" +
 		inc + "PractitionerRole:location" +
@@ -241,14 +227,4 @@ func practitionerRoleQueryWithNear(specialties []string, lat, lon float64, radiu
 	}
 
 	return query
-}
-
-// locationNearQuery builds the Location?near search with the default radius.
-func locationNearQuery(lat, lon float64) string {
-	value := fmt.Sprintf("%s|%s|%d|km",
-		strconv.FormatFloat(lat, 'f', -1, 64),
-		strconv.FormatFloat(lon, 'f', -1, 64),
-		defaultNearRadiusKM,
-	)
-	return "/fhir/Location?near=" + url.QueryEscape(value)
 }

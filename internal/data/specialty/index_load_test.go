@@ -2,6 +2,7 @@ package specialty
 
 import (
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -76,19 +77,19 @@ func TestNearbyNuccCodes(t *testing.T) {
 	}
 
 	// Proximity-driven expansion must prefer the query specialty's own family:
-	// psychiatry's nearest neighbor is another psychiatry sub-specialty.
+	// psychiatry's neighbors above threshold are all Psychiatry & Neurology
+	// classification codes (identical competence signatures score 1.0).
 	psych := idx.NearbyNuccCodes("2084P0800X", 5, 0.5)
 	if len(psych) == 0 {
 		t.Fatal("expected psychiatry neighbors above threshold")
 	}
-	if !containsString(psych, "2084P0802X") && psych[0] != "2084P0800X" {
-		t.Errorf("expected a psychiatry sub-specialty neighbor, got %v", psych)
+	if !allStartWith(psych, "2084") {
+		t.Errorf("expected psychiatry-family neighbors, got %v", psych)
 	}
 
 	// Proximity must be symmetric: A in B's neighbors iff B in A's neighbors
 	// (score-equivalent pairs rank the same in both directions).
-	if score := idx.GetProximity("2084P0800X", "103T00000X");
-		score != idx.GetProximity("103T00000X", "2084P0800X") {
+	if score := idx.GetProximity("2084P0800X", "103T00000X"); score != idx.GetProximity("103T00000X", "2084P0800X") {
 		t.Errorf("proximity not symmetric: %.4f vs %.4f",
 			score, idx.GetProximity("103T00000X", "2084P0800X"))
 	}
@@ -119,11 +120,12 @@ func TestNearbyNuccCodesDeterministic(t *testing.T) {
 	}
 }
 
-func containsString(items []string, s string) bool {
+// allStartWith reports whether every item has the given prefix.
+func allStartWith(items []string, prefix string) bool {
 	for _, it := range items {
-		if it == s {
-			return true
+		if !strings.HasPrefix(it, prefix) {
+			return false
 		}
 	}
-	return false
+	return true
 }

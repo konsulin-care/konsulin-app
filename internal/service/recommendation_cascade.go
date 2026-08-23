@@ -2,94 +2,97 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
-// cascadeLevel defines one level in the recommendation cascade.
+// cascadeLevel couples one domain-gated tier with a location radius for the
+// location-aware cascade.
 type cascadeLevel struct {
-	specialties []string
-	radiusKm    int
+	tier     recommendationTier
+	radiusKm int
 }
 
-// buildCascadeURLs builds the 4 cascade levels for location-aware queries.
-func buildCascadeURLs(specialty string, lat, lon float64) []cascadeLevel {
-	nearby := nearbySpecialties(specialty)
-	allSpecialties := append([]string{specialty}, nearby...)
-
-	return []cascadeLevel{
-		{specialties: []string{specialty}, radiusKm: 10}, // Level 1: exact, 10km
-		{specialties: allSpecialties, radiusKm: 10},      // Level 2: exact + related, 10km
-		{specialties: []string{specialty}, radiusKm: 25}, // Level 3: exact, 25km
-		{specialties: allSpecialties, radiusKm: 0},       // Level 4: exact + related, no filter
+// buildCascadeLevels expands the fetch tiers into the location cascade: the
+// exact tier near, then each remaining tier near and unlimited, so broader
+// tiers only contribute when narrower ones fall short of the cap.
+func buildCascadeLevels(params FetchParams) []cascadeLevel {
+	tiers := buildTiers(params)
+	levels := []cascadeLevel{{tier: tiers[0], radiusKm: 10}}
+	for _, tier := range tiers[1:] {
+		levels = append(levels,
+			cascadeLevel{tier: tier, radiusKm: 10},
+			cascadeLevel{tier: tier, radiusKm: 0},
+		)
 	}
+	return levels
 }
 
 // FetchWithLocation returns up to maxRecommendations recommendation cards
 // using cascading queries. When lat/lon are provided, it sends a single
-// batch request with 4 cascade levels plus a Location?near query for
-// distance extraction. Picks the first level with >= maxRecommendations
-// results. Falls back to legacy path when no coordinates are provided.
+// batch request with one cascade level per URL plus a Location?near query for
+// distance extraction, preferring the first level with enough cards and
+// falling back to a merged, deduped union of every level (still only the
+// declared ICF domain's codes and its generalist). Falls back to Fetch when
+// no coordinates are provided.
 func (s *RecommendationService) FetchWithLocation(ctx context.Context, params FetchParams) ([]Recommendation, error) {
 	if params.Latitude == nil || params.Longitude == nil {
 		return s.Fetch(ctx, params)
 	}
-
-	levels := buildCascadeURLs(params.Specialty, *params.Latitude, *params.Longitude)
-	// Add Location?near query for distance extraction
-	urls := make([]string, len(levels)+1)
-	for i, level := range levels {
-		urls[i] = practitionerRoleQueryWithNear(level.specialties, *params.Latitude, *params.Longitude, level.radiusKm)
+	if params.Specialty == "" {
+		params.Specialty = DomainGeneralist(params.ICFDomain)
 	}
-	// Last entry is Location?near for distance extraction (use smallest radius)
-	urls[len(urls)-1] = locationNearQueryWithRadius(*params.Latitude, *params.Longitude, levels[0].radiusKm)
+
+	levels := buildCascadeLevels(params)
+	urls := make([]string, 0, len(levels)+1)
+	for _, level := range levels {
+		urls = append(urls, practitionerRoleQueryWithNear(level.tier.codes, *params.Latitude, *params.Longitude, level.radiusKm))
+	}
+	urls = append(urls, locationNearQueryWithRadius(*params.Latitude, *params.Longitude, levels[0].radiusKm))
 
 	bundles, err := s.fetchBatch(ctx, urls)
 	if err != nil {
 		return nil, err
 	}
 
-	// Last bundle is the near bundle for distance extraction
+	// Last bundle is the near bundle for distance extraction.
 	near := distanceMap(bundles[len(bundles)-1])
-	if recs, ok := pickCascadeLevel(bundles, near, params.ServiceTypeCode); ok {
-		return recs, nil
-	}
-	return s.fillCascadeFallback(ctx, bundles, near, params.ServiceTypeCode)
-}
-
-// pickCascadeLevel returns the first cascade level whose deduped candidates
-// reach maxRecommendations, capped at that many cards.
-func pickCascadeLevel(bundles []*searchset, near map[string]float64, serviceTypeCode string) ([]Recommendation, bool) {
-	for _, bundle := range bundles {
-		if bundle == nil || len(bundle.Entry) == 0 {
+	for i, level := range levels {
+		if i >= len(bundles) || bundles[i] == nil {
 			continue
 		}
-		recs := parseCascadeBundle(bundle, near, serviceTypeCode)
+		recs := parseCascadeBundle(bundles[i], near, params.ServiceTypeCode, level.tier.label)
 		if len(recs) >= maxRecommendations {
-			return recs[:maxRecommendations], true
+			return recs[:maxRecommendations], nil
 		}
 	}
-	return nil, false
+	return mergeCascadeLevels(bundles, levels, near, params.ServiceTypeCode), nil
 }
 
-// fillCascadeFallback returns the broadest cascade level's cards, topped up
-// to five with the any-active fallback fill when the pool is short.
-func (s *RecommendationService) fillCascadeFallback(ctx context.Context, bundles []*searchset, near map[string]float64, serviceTypeCode string) ([]Recommendation, error) {
-	lastLevel := bundles[len(bundles)-2] // -2 because last entry is near bundle
-	if lastLevel == nil {
-		return nil, errors.New("no recommendations found")
-	}
-	recs := parseCascadeBundle(lastLevel, near, serviceTypeCode)
-	if len(recs) > 0 && len(recs) < maxRecommendations {
-		seen := make(map[string]bool, len(recs))
-		for _, r := range recs {
-			seen[r.PractitionerID] = true
+// mergeCascadeLevels unions every cascade level, deduping by practitioner so
+// the earliest (narrower, higher-priority) tier's card wins, capped at
+// maxRecommendations. The union only contains codes from the declared ICF
+// domain pool and its generalist, so fewer-than-cap results are valid.
+func mergeCascadeLevels(bundles []*searchset, levels []cascadeLevel, near map[string]float64, serviceTypeCode string) []Recommendation {
+	out := make([]Recommendation, 0, maxRecommendations)
+	seen := map[string]bool{}
+	for i, level := range levels {
+		if i >= len(bundles) || bundles[i] == nil {
+			continue
 		}
-		recs = s.fillWithFallback(ctx, recs, seen)
+		logical, err := parseRoleBundle(bundles[i])
+		if err != nil {
+			continue
+		}
+		out = appendCandidates(out, seen, logical, near, len(near) > 0,
+			strings.Join(level.tier.codes, ","), serviceTypeCode, level.tier.label)
+		if len(out) >= maxRecommendations {
+			break
+		}
 	}
-	return recs, nil
+	return out
 }
 
 // locationNearQueryWithRadius builds the Location?near search with the given radius.
@@ -101,13 +104,18 @@ func locationNearQueryWithRadius(lat, lon float64, radiusKm int) string {
 	return "/fhir/Location?near=" + url.QueryEscape(value)
 }
 
-// parseCascadeBundle extracts recommendations from a cascade bundle.
-// Distance is attached from the near map when available.
-func parseCascadeBundle(bundle *searchset, near map[string]float64, serviceTypeCode string) []Recommendation {
+// parseCascadeBundle extracts recommendations from a cascade bundle, tagging
+// every card with the level's matchSource label. Distance is attached from
+// the near map when available.
+func parseCascadeBundle(bundle *searchset, near map[string]float64, serviceTypeCode, source string) []Recommendation {
 	logical, err := parseRoleBundle(bundle)
 	if err != nil {
 		return nil
 	}
 	candidates := buildCandidates(logical, near, len(near) > 0)
-	return dedupByPractitioner(candidates, "", serviceTypeCode)
+	out := dedupByPractitioner(candidates, "", serviceTypeCode)
+	for i := range out {
+		out[i].MatchSource = source
+	}
+	return out
 }

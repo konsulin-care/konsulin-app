@@ -13,7 +13,7 @@ import (
 
 const (
 	// maxRecommendations is the number of recommendations returned per request.
-	maxRecommendations = 5
+	maxRecommendations = 4
 	// specialtiesCacheTTL short-caches the distinct specialty list.
 	specialtiesCacheTTL = 60 * time.Second
 )
@@ -54,9 +54,9 @@ func NewRecommendationsHandler(opts RecommendationsOptions) *RecommendationsHand
 	}
 }
 
-// Recommendations handles GET /api/recommendations?specialty=&lat=&lon=.
-// It aggregates, enriches with the next free slot, ranks, and samples up to
-// five cards.
+// Recommendations handles GET /api/recommendations?specialty=&icfDomain=&lat=&lon=.
+// It aggregates, enriches with the next free slot, ranks, and returns up to
+// four cards. specialty is optional; when absent it derives from icfDomain.
 func (h *RecommendationsHandler) Recommendations(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		sendError(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -65,9 +65,13 @@ func (h *RecommendationsHandler) Recommendations(w http.ResponseWriter, r *http.
 
 	q := r.URL.Query()
 	specialty := strings.TrimSpace(q.Get("specialty"))
+	icfDomain := strings.TrimSpace(q.Get("icfDomain"))
 	if specialty == "" {
-		sendError(w, http.StatusBadRequest, "specialty is required")
-		return
+		if icfDomain == "" {
+			sendError(w, http.StatusBadRequest, "specialty or icfDomain is required")
+			return
+		}
+		specialty = service.DomainGeneralist(icfDomain)
 	}
 	lat, lon, err := parseCoordinates(q.Get("lat"), q.Get("lon"))
 	if err != nil {

@@ -51,7 +51,7 @@ func TestWriteGoIndexJSONFromPackageDir(t *testing.T) {
 
 	var idx struct {
 		Specialties map[string]*SpecialtyNodeOutput `json:"specialties"`
-		ByKeyword   map[string][]string            `json:"byKeyword"`
+		ByKeyword   map[string][]string             `json:"byKeyword"`
 		Resolutions map[string]struct {
 			NuccCode string  `json:"nuccCode"`
 			Label    string  `json:"label"`

@@ -8,8 +8,8 @@ import (
 )
 
 func TestDebugCascadeBundles(t *testing.T) {
-	// Setup: one specialty with 5 practitioners
-	pracIDs := []string{"p1", "p2", "p3", "p4", "p5"}
+	// Setup: one specialty with 4 practitioners.
+	pracIDs := []string{"p1", "p2", "p3", "p4"}
 	level1Bundle := multiRoleSearchset("orthopedics", "Orthopedics", pracIDs)
 
 	bundles := map[string]map[string]any{
@@ -19,10 +19,10 @@ func TestDebugCascadeBundles(t *testing.T) {
 	b := newRecBackend(t, bundles, nil, nil)
 	svc := newRecommendationService(t, b)
 
-	levels := buildCascadeURLs("orthopedics", -6.19, 106.8)
+	levels := buildCascadeLevels(FetchParams{Specialty: "orthopedics"})
 	urls := make([]string, len(levels))
 	for i, level := range levels {
-		urls[i] = practitionerRoleQueryWithNear(level.specialties, -6.19, 106.8, level.radiusKm)
+		urls[i] = practitionerRoleQueryWithNear(level.tier.codes, -6.19, 106.8, level.radiusKm)
 	}
 
 	fetched, err := svc.fetchBatch(context.Background(), urls)
@@ -47,7 +47,7 @@ func TestDebugCascadeBundles(t *testing.T) {
 				t.Logf("  Entry %d: %s/%s", j, meta.ResourceType, meta.ID)
 			}
 		}
-		recs := parseCascadeBundle(bundle, nil, "")
+		recs := parseCascadeBundle(bundle, nil, "", "exact")
 		fmt.Printf("Level %d: %d recs\n", i, len(recs))
 	}
 }

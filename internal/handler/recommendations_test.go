@@ -153,11 +153,11 @@ func getRecommendations(t *testing.T, h *RecommendationsHandler, query string) (
 func TestRecommendationsHandler_missingSpecialty(t *testing.T) {
 	code, _ := getRecommendations(t, recHandler(t, false), "")
 	if code != http.StatusBadRequest {
-		t.Errorf("expected 400 without specialty, got %d", code)
+		t.Errorf("expected 400 without specialty or icfDomain, got %d", code)
 	}
 }
 
-func TestRecommendationsHandler_returnsFiveCards(t *testing.T) {
+func TestRecommendationsHandler_returnsFourCards(t *testing.T) {
 	code, body := getRecommendations(t, recHandler(t, false), "/api/recommendations?specialty=psychology&lat=-6.2&lon=106.8")
 	if code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", code)
@@ -169,8 +169,8 @@ func TestRecommendationsHandler_returnsFiveCards(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected recommendations array, got %v", body["recommendations"])
 	}
-	if len(recs) != 5 {
-		t.Fatalf("expected 5 sampled cards from 6 candidates, got %d", len(recs))
+	if len(recs) != 4 {
+		t.Fatalf("expected 4 sampled cards from 6 candidates, got %d", len(recs))
 	}
 	for _, raw := range recs {
 		card, ok := raw.(map[string]any)

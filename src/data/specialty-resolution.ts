@@ -1,5 +1,5 @@
 // Code generated; DO NOT EDIT.
-// Generated at: 2026-08-22T16:24:34Z
+// Generated at: 2026-08-23T03:35:53Z
 /* eslint-disable max-lines */
 
 export interface SpecialtyResolution {
@@ -12,127 +12,123 @@ export const SPECIALTY_RESOLUTIONS: Record<string, SpecialtyResolution> = {
   'alcohol-substance': {
     nuccCode: '2084P0802X',
     label: 'Addiction Psychiatry Physician',
-    score: 0.517857
+    score: 0.5
   },
   'anxiety-stress': {
-    nuccCode: '2084P0800X',
-    label: 'Psychiatry Physician',
-    score: 0.316667
+    nuccCode: '103T00000X',
+    label: 'Psychologist',
+    score: 0.393333
   },
-  burnout: {
-    nuccCode: '2084P0800X',
-    label: 'Psychiatry Physician',
-    score: 0.271429
-  },
+  burnout: { nuccCode: '103T00000X', label: 'Psychologist', score: 0.3 },
   'career-direction': {
     nuccCode: '103T00000X',
     label: 'Psychologist',
-    score: 0.2625
+    score: 0.3875
   },
   'caregiver-strain': {
-    nuccCode: '2084P0805X',
-    label: 'Geriatric Psychiatry Physician',
-    score: 0.316667
+    nuccCode: '374J00000X',
+    label: 'Doula',
+    score: 0.11875
   },
   'communication-barriers': {
-    nuccCode: '103TC1900X',
-    label: 'Counseling Psychologist',
-    score: 0.333333
+    nuccCode: '103T00000X',
+    label: 'Psychologist',
+    score: 0.4
   },
   'couple-conflict': {
-    nuccCode: '106H00000X',
-    label: 'Marriage & Family Therapist',
-    score: 0.266667
+    nuccCode: '103TS0200X',
+    label: 'School Psychologist',
+    score: 0.34375
   },
   'daily-activities': {
-    nuccCode: '103TR0400X',
-    label: 'Rehabilitation Psychologist',
-    score: 0.571429
+    nuccCode: '208100000X',
+    label: 'Physical Medicine & Rehabilitation Physician',
+    score: 0.346667
   },
   'eating-weight': {
     nuccCode: '133VN1006X',
     label: 'Metabolic Nutrition Registered Dietitian',
-    score: 0.288462
+    score: 0.203846
   },
   'ergonomic-strain': {
     nuccCode: '207X00000X',
     label: 'Orthopaedic Surgery Physician',
-    score: 0.316667
+    score: 0.393333
   },
   'existential-purpose': {
-    nuccCode: '2084H0002X',
-    label: 'Hospice and Palliative Medicine (Psychiatry & Neurology) Physician',
-    score: 0.364583
+    nuccCode: '103T00000X',
+    label: 'Psychologist',
+    score: 0.393333
   },
   'family-dynamics': {
-    nuccCode: '106H00000X',
-    label: 'Marriage & Family Therapist',
-    score: 0.266667
+    nuccCode: '103TS0200X',
+    label: 'School Psychologist',
+    score: 0.34375
   },
   'fever-malaise': {
     nuccCode: '208D00000X',
     label: 'General Practice Physician',
-    score: 0.340909
+    score: 0.277273
   },
   'financial-stress': {
-    nuccCode: '2084P0800X',
-    label: 'Psychiatry Physician',
-    score: 0.271429
+    nuccCode: '104100000X',
+    label: 'Social Worker',
+    score: 0.1
   },
   'focus-attention': {
     nuccCode: '103G00000X',
     label: 'Clinical Neuropsychologist',
-    score: 0.266667
+    score: 0.318333
   },
   gastrointestinal: {
     nuccCode: '207RG0100X',
     label: 'Gastroenterology Physician',
-    score: 0.571429
+    score: 0.4
   },
   'grief-trauma': {
-    nuccCode: '2084P0800X',
-    label: 'Psychiatry Physician',
-    score: 0.229412
+    nuccCode: '103T00000X',
+    label: 'Psychologist',
+    score: 0.341176
   },
   'headache-migraine': {
-    nuccCode: '207T00000X',
-    label: 'Neurological Surgery Physician',
-    score: 0.533333
+    nuccCode: '208VP0000X',
+    label: 'Pain Medicine Physician',
+    score: 0.346667
   },
   'life-transition': {
-    nuccCode: '2084P0800X',
-    label: 'Psychiatry Physician',
-    score: 0.209524
+    nuccCode: '103T00000X',
+    label: 'Psychologist',
+    score: 0.28375
   },
   'loneliness-isolation': {
-    nuccCode: '103TC1900X',
-    label: 'Counseling Psychologist',
-    score: 0.366667
+    nuccCode: '103TC2200X',
+    label: 'Clinical Child & Adolescent Psychologist',
+    score: 0.4
   },
   'low-mood': {
     nuccCode: '2084P0800X',
     label: 'Psychiatry Physician',
-    score: 0.266667
+    score: 0.393333
   },
   'memory-decline': {
-    nuccCode: '2084A2900X',
-    label: 'Neurocritical Care Physician',
-    score: 0.197917
+    nuccCode: '103G00000X',
+    label: 'Clinical Neuropsychologist',
+    score: 0.24375
   },
   'mobility-balance': {
     nuccCode: '208100000X',
     label: 'Physical Medicine & Rehabilitation Physician',
-    score: 0.5
+    score: 0.3
   },
   'mood-swings': {
     nuccCode: '2084P0800X',
     label: 'Psychiatry Physician',
-    score: 0.307143
+    score: 0.45
   },
   'motivation-selfesteem': {
-    nuccCode: '103TF0200X',
-    label: 'Forensic Psychologist',
-    score: 0.28125
+    nuccCode: '103T00000X',
+    label: 'Psychologist',
+    score: 0.34375
   },
   'other-environmental': {
     nuccCode: '208D00000X',
@@ -160,47 +156,47 @@ export const SPECIALTY_RESOLUTIONS: Record<string, SpecialtyResolution> = {
   'pain-musculoskeletal': {
     nuccCode: '207X00000X',
     label: 'Orthopaedic Surgery Physician',
-    score: 0.633333
+    score: 0.486667
   },
   'postpartum-mood': {
     nuccCode: '2084P0800X',
     label: 'Psychiatry Physician',
-    score: 0.271429
+    score: 0.4
   },
   'relocation-adjustment': {
-    nuccCode: '2084P0800X',
-    label: 'Psychiatry Physician',
-    score: 0.238095
+    nuccCode: '104100000X',
+    label: 'Social Worker',
+    score: 0.075
   },
   'respiratory-airway': {
-    nuccCode: '2080P0214X',
-    label: 'Pediatric Pulmonology Physician',
-    score: 0.5625
+    nuccCode: '207RP1001X',
+    label: 'Pulmonary Disease Physician',
+    score: 0.341176
   },
   'sedentary-habits': {
-    nuccCode: '207QS0010X',
-    label: 'Sports Medicine (Family Medicine) Physician',
-    score: 0.366667
+    nuccCode: '171400000X',
+    label: 'Health & Wellness Coach',
+    score: 0.19375
   },
   'sleep-fatigue': {
-    nuccCode: '207QS1201X',
-    label: 'Sleep Medicine (Family Medicine) Physician',
-    score: 0.326923
+    nuccCode: '173F00000X',
+    label: 'Sleep Specialist (PhD)',
+    score: 0.35
   },
   'smoking-cessation': {
     nuccCode: '103TA0400X',
     label: 'Addiction (Substance Use Disorder) Psychologist',
-    score: 0.4
+    score: 0.393333
   },
   'work-performance': {
-    nuccCode: '2084F0202X',
-    label: 'Forensic Psychiatry Physician',
-    score: 0.229412
+    nuccCode: '225XE0001X',
+    label: 'Environmental Modification Occupational Therapist',
+    score: 0.101176
   },
   'workplace-conflict': {
-    nuccCode: '104100000X',
-    label: 'Social Worker',
-    score: 0.2
+    nuccCode: '101Y00000X',
+    label: 'Counselor',
+    score: 0.226667
   }
 };
 
