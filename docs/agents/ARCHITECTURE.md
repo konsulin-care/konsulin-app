@@ -52,6 +52,7 @@ Backend API (Go + SuperTokens Go SDK)
 
 | Decision                              | ADR                                                      |
 | ------------------------------------- | -------------------------------------------------------- |
+| Intent-aware recommendation selection | `@docs/ADR/022-intent-aware-recommendation-selection.md` |
 | BFF API path families                 | `@docs/ADR/021-bff-api-path-families.md`                 |
 | Rate-limit retry policy               | `@docs/ADR/019-rate-limit-retry.md`                      |
 | Batch slot enrichment                 | `@docs/ADR/020-batch-slot-enrichment.md`                 |

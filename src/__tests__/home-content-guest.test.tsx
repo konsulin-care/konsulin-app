@@ -147,7 +147,9 @@ describe('HomeContentGuest', () => {
 
     await waitFor(() =>
       expect(mockUseRecommendations).toHaveBeenCalledWith({
-        specialty: '2084P0800X'
+        specialty: '2084P0800X',
+        serviceTypeCode: 'mood-disorder-care',
+        icfDomain: 'mental-emotional-health'
       })
     );
     expect(screen.getByTestId('mock-recommendations')).toBeInTheDocument();
@@ -161,7 +163,9 @@ describe('HomeContentGuest', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Finish interview' }));
     expect(mockUseRecommendations).toHaveBeenCalledWith({
-      specialty: '2084P0800X'
+      specialty: '2084P0800X',
+      serviceTypeCode: 'mood-disorder-care',
+      icfDomain: 'mental-emotional-health'
     });
     expect(screen.getByTestId('mock-recommendations')).toBeInTheDocument();
   });
