@@ -283,8 +283,8 @@ describe('ontology resolution coverage', () => {
     const samples: Record<string, string> = {
       'pain-musculoskeletal': '207X00000X',
       'low-mood': '2084P0800X',
-      burnout: '2084P0800X',
-      'couple-conflict': '106H00000X',
+      burnout: '103T00000X',
+      'couple-conflict': '103TS0200X',
       'alcohol-substance': '2084P0802X',
       'eating-weight': '133VN1006X'
     };
