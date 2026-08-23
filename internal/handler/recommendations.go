@@ -74,10 +74,11 @@ func (h *RecommendationsHandler) Recommendations(w http.ResponseWriter, r *http.
 		sendError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	serviceTypeCode := strings.TrimSpace(q.Get("serviceTypeCode"))
 
 	recs, err := h.svc.FetchWithLocation(r.Context(), service.FetchParams{
 		Specialty:       specialty,
-		ServiceTypeCode: strings.TrimSpace(q.Get("serviceTypeCode")),
+		ServiceTypeCode: serviceTypeCode,
 		ICFDomain:       strings.TrimSpace(q.Get("icfDomain")),
 		Latitude:        lat,
 		Longitude:       lon,
@@ -89,14 +90,17 @@ func (h *RecommendationsHandler) Recommendations(w http.ResponseWriter, r *http.
 	}
 
 	h.enrichWithBatch(r, recs)
-	narrowed := service.NarrowRecommendations(recs, maxRecommendations)
-	if narrowed == nil {
-		narrowed = []service.Recommendation{}
+	ranked := service.RankRecommendations(recs, serviceTypeCode)
+	if len(ranked) > maxRecommendations {
+		ranked = ranked[:maxRecommendations]
+	}
+	if len(ranked) == 0 {
+		ranked = []service.Recommendation{}
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
 		"specialty":       specialty,
-		"recommendations": narrowed,
+		"recommendations": ranked,
 	})
 }
 
