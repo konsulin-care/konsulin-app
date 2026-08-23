@@ -47,7 +47,7 @@ func TestDebugCascadeBundles(t *testing.T) {
 				t.Logf("  Entry %d: %s/%s", j, meta.ResourceType, meta.ID)
 			}
 		}
-		recs := parseCascadeBundle(bundle, nil)
+		recs := parseCascadeBundle(bundle, nil, "")
 		fmt.Printf("Level %d: %d recs\n", i, len(recs))
 	}
 }

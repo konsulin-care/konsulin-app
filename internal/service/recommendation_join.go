@@ -230,9 +230,10 @@ func roleAvailableTime(role roleResource) []AvailableTimeWindow {
 }
 
 // dedupByPractitioner keeps the single best candidate per practitioner.
-// Preference: service type matching the requested specialty, then lowest fee,
+// Preference: service type matching the requested intent (serviceTypeCode,
+// falling back to the requested NUCC specialty), then lowest fee,
 // then the first encountered candidate.
-func dedupByPractitioner(candidates []Recommendation, specialty string) []Recommendation {
+func dedupByPractitioner(candidates []Recommendation, specialty, serviceTypeCode string) []Recommendation {
 	best := map[string]Recommendation{}
 	order := []string{}
 	for _, cand := range candidates {
@@ -243,7 +244,7 @@ func dedupByPractitioner(candidates []Recommendation, specialty string) []Recomm
 			order = append(order, key)
 			continue
 		}
-		if betterCandidate(cand, current, specialty) {
+		if betterCandidate(cand, current, specialty, serviceTypeCode) {
 			best[key] = cand
 		}
 	}
@@ -255,19 +256,22 @@ func dedupByPractitioner(candidates []Recommendation, specialty string) []Recomm
 }
 
 // betterCandidate reports whether candidate a beats candidate b.
-func betterCandidate(a, b Recommendation, specialty string) bool {
-	aMatch := candidateMatchesSpecialty(a, specialty)
-	bMatch := candidateMatchesSpecialty(b, specialty)
+func betterCandidate(a, b Recommendation, specialty, serviceTypeCode string) bool {
+	aMatch := candidateMatchesIntent(a, serviceTypeCode, specialty)
+	bMatch := candidateMatchesIntent(b, serviceTypeCode, specialty)
 	if aMatch != bMatch {
 		return aMatch
 	}
 	return a.Fee < b.Fee
 }
 
-// candidateMatchesSpecialty reports whether the service type matches specialty.
-func candidateMatchesSpecialty(r Recommendation, specialty string) bool {
+// candidateMatchesIntent reports whether the service type matches the request.
+// The requested serviceTypeCode is the primary signal; a service typed with
+// the NUCC specialty code remains the legacy fallback so callers without a
+// serviceTypeCode keep their behavior.
+func candidateMatchesIntent(r Recommendation, serviceTypeCode, specialty string) bool {
 	for _, code := range r.serviceTypeCodes {
-		if code == specialty || strings.EqualFold(code, specialty) {
+		if code == serviceTypeCode || code == specialty || strings.EqualFold(code, specialty) {
 			return true
 		}
 	}

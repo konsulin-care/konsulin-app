@@ -121,7 +121,7 @@ func (s *RecommendationService) Fetch(ctx context.Context, params FetchParams) (
 	if err != nil {
 		return nil, err
 	}
-	return buildRecommendations(specialties, bundles, nearBundle)
+	return buildRecommendations(specialties, bundles, nearBundle, params.ServiceTypeCode)
 }
 
 func (s *RecommendationService) fetchRecommendationBundles(ctx context.Context, params FetchParams) ([]string, []*searchset, *searchset, error) {
@@ -149,7 +149,7 @@ func (s *RecommendationService) fetchRecommendationBundles(ctx context.Context, 
 	return specialties, bundles, nearBundle, nil
 }
 
-func buildRecommendations(specialties []string, bundles []*searchset, nearBundle *searchset) ([]Recommendation, error) {
+func buildRecommendations(specialties []string, bundles []*searchset, nearBundle *searchset, serviceTypeCode string) ([]Recommendation, error) {
 	near := distanceMap(nearBundle)
 	out := make([]Recommendation, 0, maxRecommendations)
 	seen := map[string]bool{}
@@ -168,13 +168,13 @@ func buildRecommendations(specialties []string, bundles []*searchset, nearBundle
 		if i == 0 {
 			source = "exact"
 		}
-		out = appendCandidates(out, seen, logical, near, nearBundle != nil, specialty, source)
+		out = appendCandidates(out, seen, logical, near, nearBundle != nil, specialty, serviceTypeCode, source)
 	}
 	return out, nil
 }
 
-func appendCandidates(out []Recommendation, seen map[string]bool, logical *logicalBundle, near map[string]float64, useNear bool, specialty, source string) []Recommendation {
-	for _, candidate := range dedupByPractitioner(buildCandidates(logical, near, useNear), specialty) {
+func appendCandidates(out []Recommendation, seen map[string]bool, logical *logicalBundle, near map[string]float64, useNear bool, specialty, serviceTypeCode, source string) []Recommendation {
+	for _, candidate := range dedupByPractitioner(buildCandidates(logical, near, useNear), specialty, serviceTypeCode) {
 		if len(out) >= maxRecommendations {
 			break
 		}
@@ -240,7 +240,7 @@ func (s *RecommendationService) FetchWithLocation(ctx context.Context, params Fe
 		if bundle == nil || len(bundle.Entry) == 0 {
 			continue
 		}
-		recs := parseCascadeBundle(bundle, near)
+		recs := parseCascadeBundle(bundle, near, params.ServiceTypeCode)
 		if len(recs) >= maxRecommendations {
 			return recs[:maxRecommendations], nil
 		}
@@ -249,7 +249,7 @@ func (s *RecommendationService) FetchWithLocation(ctx context.Context, params Fe
 	// Fallback: return the last level's results
 	lastLevel := bundles[len(bundles)-2] // -2 because last entry is near bundle
 	if lastLevel != nil {
-		return parseCascadeBundle(lastLevel, near), nil
+		return parseCascadeBundle(lastLevel, near, params.ServiceTypeCode), nil
 	}
 	return nil, errors.New("no recommendations found")
 }
@@ -265,13 +265,13 @@ func locationNearQueryWithRadius(lat, lon float64, radiusKm int) string {
 
 // parseCascadeBundle extracts recommendations from a cascade bundle.
 // Distance is attached from the near map when available.
-func parseCascadeBundle(bundle *searchset, near map[string]float64) []Recommendation {
+func parseCascadeBundle(bundle *searchset, near map[string]float64, serviceTypeCode string) []Recommendation {
 	logical, err := parseRoleBundle(bundle)
 	if err != nil {
 		return nil
 	}
 	candidates := buildCandidates(logical, near, len(near) > 0)
-	return dedupByPractitioner(candidates, "")
+	return dedupByPractitioner(candidates, "", serviceTypeCode)
 }
 
 // DistinctSpecialties returns the sorted distinct specialty names across all

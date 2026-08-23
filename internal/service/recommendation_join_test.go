@@ -155,3 +155,43 @@ func assertBare(t *testing.T, field, got, want string) {
 		t.Errorf("%s: got %q, want %q (should be bare, no resource prefix)", field, got, want)
 	}
 }
+
+// TestDedupByPractitionerPrefersIntentMatch pins that per-practitioner dedup
+// keeps the service whose type matches the requested serviceTypeCode even
+// when a non-matching service is cheaper. Fee is the tiebreaker only when no
+// service matches the intent; the NUCC specialty code remains a fallback so
+// legacy callers without serviceTypeCode keep their behavior.
+func TestDedupByPractitionerPrefersIntentMatch(t *testing.T) {
+	// Intent match beats a cheaper non-matching service.
+	intent := []Recommendation{
+		{PractitionerID: "prc-1", PractitionerRoleID: "role-1", Fee: 350000, serviceTypeCodes: []string{"medication-management"}},
+		{PractitionerID: "prc-1", PractitionerRoleID: "role-1", Fee: 400000, serviceTypeCodes: []string{"burnout-care"}},
+	}
+	got := dedupByPractitioner(intent, "2084P0800X", "burnout-care")
+	if len(got) != 1 {
+		t.Fatalf("expected 1 candidate per practitioner, got %d", len(got))
+	}
+	if got[0].Fee != 400000 {
+		t.Errorf("expected intent-matching service (fee 400000), got fee %d", got[0].Fee)
+	}
+
+	// No service matches the intent → cheapest wins (fee tiebreak).
+	noMatch := []Recommendation{
+		{PractitionerID: "prc-2", PractitionerRoleID: "role-2", Fee: 350000, serviceTypeCodes: []string{"medication-management"}},
+		{PractitionerID: "prc-2", PractitionerRoleID: "role-2", Fee: 400000, serviceTypeCodes: []string{"medication-management"}},
+	}
+	gotNo := dedupByPractitioner(noMatch, "2084P0800X", "burnout-care")
+	if len(gotNo) != 1 || gotNo[0].Fee != 350000 {
+		t.Errorf("expected cheapest when no intent match, got %+v", gotNo)
+	}
+
+	// NUCC fallback preserves legacy matching when serviceTypeCode is empty.
+	nucc := []Recommendation{
+		{PractitionerID: "prc-3", PractitionerRoleID: "role-3", Fee: 350000, serviceTypeCodes: []string{"2084P0800X"}},
+		{PractitionerID: "prc-3", PractitionerRoleID: "role-3", Fee: 400000, serviceTypeCodes: []string{"burnout-care"}},
+	}
+	gotNucc := dedupByPractitioner(nucc, "2084P0800X", "")
+	if len(gotNucc) != 1 || gotNucc[0].Fee != 350000 {
+		t.Errorf("expected NUCC-typed service (fee 350000) to win, got %+v", gotNucc)
+	}
+}
