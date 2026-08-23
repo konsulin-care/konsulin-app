@@ -4,11 +4,13 @@ import "github.com/konsulin-care/konsulin-app/internal/data/specialty"
 
 const (
 	// relatedSpecialtyLimit caps the number of proximity-expanded codes used
-	// to fill recommendation slots below the exact-match quota.
-	relatedSpecialtyLimit = 5
+	// to fill recommendation slots below the exact-match quota. Kept small so
+	// the legacy batch A (1 exact + N nearby, plus an optional Location?near)
+	// stays within the documented Blaze batch-entry ceiling of ten.
+	relatedSpecialtyLimit = 8
 	// relatedSpecialtyThreshold is the minimum ontology proximity for a code
 	// to count as a semantically related specialty.
-	relatedSpecialtyThreshold = 0.5
+	relatedSpecialtyThreshold = 0.4
 )
 
 // nearbySpecialties expands a NUCC code to its semantically close specialty

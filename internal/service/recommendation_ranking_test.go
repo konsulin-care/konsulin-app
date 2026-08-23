@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -100,5 +101,60 @@ func TestRecommendationService_Fetch_backendError(t *testing.T) {
 	svc := NewRecommendationService(RecommendationOptions{BackendBaseURL: backend.URL, Client: backend.Client()})
 	if _, err := svc.Fetch(context.Background(), FetchParams{Specialty: "2084P0800X"}); err == nil {
 		t.Fatal("expected error when backend returns 500")
+	}
+}
+
+// TestRecommendationService_Fetch_widenedBatchStaysOnePost verifies the
+// widened nearby expansion stays inside a single FHIR batch POST whose entry
+// count never exceeds the documented Blaze ceiling of ten.
+func TestRecommendationService_Fetch_widenedBatchStaysOnePost(t *testing.T) {
+	neighbors := specialty.LoadIndex().NearbyNuccCodes("2084P0800X", relatedSpecialtyLimit, relatedSpecialtyThreshold)
+	if len(neighbors) < 2 {
+		t.Fatal("expected proximity neighbors for psychiatry")
+	}
+
+	// Record every batch request's entry count and total HTTP hits.
+	var batches []int
+	hits := 0
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		w.Header().Set("Content-Type", "application/fhir+json")
+		var req struct {
+			Entry []struct {
+				Request struct {
+					URL string `json:"url"`
+				} `json:"request"`
+			} `json:"entry"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		batches = append(batches, len(req.Entry))
+		entries := make([]map[string]any, 0, len(req.Entry))
+		for range req.Entry {
+			entries = append(entries, map[string]any{
+				"resource": map[string]any{"resourceType": "Bundle", "type": "searchset", "total": 0, "entry": []any{}},
+				"response": map[string]any{"status": "200"},
+			})
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"resourceType": "Bundle", "type": "batch-response", "entry": entries,
+		})
+	}))
+	t.Cleanup(backend.Close)
+	svc := NewRecommendationService(RecommendationOptions{BackendBaseURL: backend.URL, Client: backend.Client()})
+
+	if _, err := svc.Fetch(context.Background(), FetchParams{Specialty: "2084P0800X"}); err != nil {
+		t.Fatalf("Fetch returned error: %v", err)
+	}
+	if hits != 1 {
+		t.Errorf("expected 1 FHIR batch POST per load, got %d", hits)
+	}
+	if len(batches) != 1 {
+		t.Fatalf("expected one batch, got %d", len(batches))
+	}
+	if batches[0] > 10 {
+		t.Errorf("expected batch <= 10 entries, got %d", batches[0])
 	}
 }

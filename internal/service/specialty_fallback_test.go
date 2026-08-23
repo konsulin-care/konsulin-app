@@ -53,3 +53,25 @@ func TestNearbySpecialtiesUnknownCode(t *testing.T) {
 		}
 	}
 }
+
+// TestNearbySpecialtiesReturnsFullLimit pins the widened knob: the psychiatry
+// family has enough close neighbors that the expansion reaches at least eight
+// distinct codes (batch A stays within the Blaze entry ceiling).
+func TestNearbySpecialtiesReturnsFullLimit(t *testing.T) {
+	got := nearbySpecialties("2084P0800X")
+	if len(got) < 8 {
+		t.Fatalf("expected widened expansion of at least 8 neighbors, got %d (old limit was 5)", len(got))
+	}
+	if len(got) > relatedSpecialtyLimit {
+		t.Errorf("expected at most %d neighbors, got %d", relatedSpecialtyLimit, len(got))
+	}
+	for _, code := range got {
+		if score := specialty.LoadIndex().GetProximity("2084P0800X", code); score < relatedSpecialtyThreshold {
+			t.Errorf("neighbor %s below widened threshold: %.3f", code, score)
+		}
+	}
+	// Exact + expanded neighbors stays within the documented Blaze batch limit.
+	if len(got)+1 > 10 {
+		t.Errorf("batch A (exact + neighbors) exceeds 10 entries: %d", len(got)+1)
+	}
+}
