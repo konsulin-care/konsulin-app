@@ -201,6 +201,21 @@ func practitionerRoleQuery(specialty string) string {
 		"&_revinclude=Schedule:actor"
 }
 
+// anyPractitionerRoleQuery builds a PractitionerRole search that returns the
+// most recently updated active roles regardless of specialty, used to fill
+// recommendation slots when the exact+related pool is short.
+func anyPractitionerRoleQuery() string {
+	const inc = "&_include="
+	return "/fhir/PractitionerRole?active=true" +
+		"&_count=10" +
+		"&_sort=-_lastUpdated" +
+		inc + "PractitionerRole:practitioner" +
+		inc + "PractitionerRole:organization" +
+		inc + "PractitionerRole:location" +
+		inc + "PractitionerRole:service" +
+		"&_revinclude=Schedule:actor"
+}
+
 // practitionerRoleQueryWithNear builds a PractitionerRole search with
 // location.near filtering, _count=5, and _sort=-_lastUpdated. When
 // radiusKm is 0, the location.near parameter is omitted.

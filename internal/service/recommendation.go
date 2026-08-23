@@ -5,10 +5,7 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 	"strings"
 )
 
@@ -121,7 +118,14 @@ func (s *RecommendationService) Fetch(ctx context.Context, params FetchParams) (
 	if err != nil {
 		return nil, err
 	}
-	return buildRecommendations(specialties, bundles, nearBundle, params.ServiceTypeCode)
+	out, seen, err := buildRecommendations(specialties, bundles, nearBundle, params.ServiceTypeCode)
+	if err != nil {
+		return nil, err
+	}
+	if len(out) < maxRecommendations {
+		out = s.fillWithFallback(ctx, out, seen)
+	}
+	return out, nil
 }
 
 func (s *RecommendationService) fetchRecommendationBundles(ctx context.Context, params FetchParams) ([]string, []*searchset, *searchset, error) {
@@ -149,7 +153,7 @@ func (s *RecommendationService) fetchRecommendationBundles(ctx context.Context, 
 	return specialties, bundles, nearBundle, nil
 }
 
-func buildRecommendations(specialties []string, bundles []*searchset, nearBundle *searchset, serviceTypeCode string) ([]Recommendation, error) {
+func buildRecommendations(specialties []string, bundles []*searchset, nearBundle *searchset, serviceTypeCode string) ([]Recommendation, map[string]bool, error) {
 	near := distanceMap(nearBundle)
 	out := make([]Recommendation, 0, maxRecommendations)
 	seen := map[string]bool{}
@@ -160,7 +164,7 @@ func buildRecommendations(specialties []string, bundles []*searchset, nearBundle
 		logical, err := parseRoleBundle(bundles[i])
 		if err != nil {
 			if i == 0 {
-				return nil, err
+				return nil, nil, err
 			}
 			continue
 		}
@@ -170,7 +174,38 @@ func buildRecommendations(specialties []string, bundles []*searchset, nearBundle
 		}
 		out = appendCandidates(out, seen, logical, near, nearBundle != nil, specialty, serviceTypeCode, source)
 	}
-	return out, nil
+	return out, seen, nil
+}
+
+// fillWithFallback tops a short candidate list up to maxRecommendations using
+// one extra FHIR batch POST that searches any active PractitionerRole, newest
+// first. Practitioners already in the pool are skipped and appended cards are
+// marked with matchSource fallback so the relevance ranking keeps them last.
+// Failures degrade gracefully to the current result.
+func (s *RecommendationService) fillWithFallback(ctx context.Context, out []Recommendation, seen map[string]bool) []Recommendation {
+	if len(out) >= maxRecommendations {
+		return out
+	}
+	bundles, err := s.fetchBatch(ctx, []string{anyPractitionerRoleQuery()})
+	if err != nil || bundles[0] == nil {
+		return out
+	}
+	logical, err := parseRoleBundle(bundles[0])
+	if err != nil {
+		return out
+	}
+	for _, candidate := range dedupByPractitioner(buildCandidates(logical, nil, false), "", "") {
+		if len(out) >= maxRecommendations {
+			break
+		}
+		if seen[candidate.PractitionerID] {
+			continue
+		}
+		seen[candidate.PractitionerID] = true
+		candidate.MatchSource = "fallback"
+		out = append(out, candidate)
+	}
+	return out
 }
 
 func appendCandidates(out []Recommendation, seen map[string]bool, logical *logicalBundle, near map[string]float64, useNear bool, specialty, serviceTypeCode, source string) []Recommendation {
@@ -186,92 +221,6 @@ func appendCandidates(out []Recommendation, seen map[string]bool, logical *logic
 		out = append(out, candidate)
 	}
 	return out
-}
-
-// cascadeLevel defines one level in the recommendation cascade.
-type cascadeLevel struct {
-	specialties []string
-	radiusKm    int
-}
-
-// buildCascadeURLs builds the 4 cascade levels for location-aware queries.
-func buildCascadeURLs(specialty string, lat, lon float64) []cascadeLevel {
-	nearby := nearbySpecialties(specialty)
-	allSpecialties := append([]string{specialty}, nearby...)
-
-	return []cascadeLevel{
-		{specialties: []string{specialty}, radiusKm: 10}, // Level 1: exact, 10km
-		{specialties: allSpecialties, radiusKm: 10},      // Level 2: exact + related, 10km
-		{specialties: []string{specialty}, radiusKm: 25}, // Level 3: exact, 25km
-		{specialties: allSpecialties, radiusKm: 0},       // Level 4: exact + related, no filter
-	}
-}
-
-// FetchWithLocation returns up to maxRecommendations recommendation cards
-// using cascading queries. When lat/lon are provided, it sends a single
-// batch request with 4 cascade levels plus a Location?near query for
-// distance extraction. Picks the first level with >= maxRecommendations
-// results. Falls back to legacy path when no coordinates are provided.
-func (s *RecommendationService) FetchWithLocation(ctx context.Context, params FetchParams) ([]Recommendation, error) {
-	if params.Latitude == nil || params.Longitude == nil {
-		return s.Fetch(ctx, params)
-	}
-
-	levels := buildCascadeURLs(params.Specialty, *params.Latitude, *params.Longitude)
-	// Add Location?near query for distance extraction
-	urls := make([]string, len(levels)+1)
-	for i, level := range levels {
-		urls[i] = practitionerRoleQueryWithNear(level.specialties, *params.Latitude, *params.Longitude, level.radiusKm)
-	}
-	// Last entry is Location?near for distance extraction (use smallest radius)
-	urls[len(urls)-1] = locationNearQueryWithRadius(*params.Latitude, *params.Longitude, levels[0].radiusKm)
-
-	bundles, err := s.fetchBatch(ctx, urls)
-	if err != nil {
-		return nil, err
-	}
-
-	// Last bundle is the near bundle for distance extraction
-	nearBundle := bundles[len(bundles)-1]
-	near := distanceMap(nearBundle)
-
-	// Pick the first level with >= maxRecommendations results
-	for _, bundle := range bundles {
-		if bundle == nil || len(bundle.Entry) == 0 {
-			continue
-		}
-		recs := parseCascadeBundle(bundle, near, params.ServiceTypeCode)
-		if len(recs) >= maxRecommendations {
-			return recs[:maxRecommendations], nil
-		}
-	}
-
-	// Fallback: return the last level's results
-	lastLevel := bundles[len(bundles)-2] // -2 because last entry is near bundle
-	if lastLevel != nil {
-		return parseCascadeBundle(lastLevel, near, params.ServiceTypeCode), nil
-	}
-	return nil, errors.New("no recommendations found")
-}
-
-// locationNearQueryWithRadius builds the Location?near search with the given radius.
-func locationNearQueryWithRadius(lat, lon float64, radiusKm int) string {
-	value := fmt.Sprintf("%s|%s|%d|km",
-		strconv.FormatFloat(lat, 'f', -1, 64),
-		strconv.FormatFloat(lon, 'f', -1, 64),
-		radiusKm)
-	return "/fhir/Location?near=" + url.QueryEscape(value)
-}
-
-// parseCascadeBundle extracts recommendations from a cascade bundle.
-// Distance is attached from the near map when available.
-func parseCascadeBundle(bundle *searchset, near map[string]float64, serviceTypeCode string) []Recommendation {
-	logical, err := parseRoleBundle(bundle)
-	if err != nil {
-		return nil
-	}
-	candidates := buildCandidates(logical, near, len(near) > 0)
-	return dedupByPractitioner(candidates, "", serviceTypeCode)
 }
 
 // DistinctSpecialties returns the sorted distinct specialty names across all

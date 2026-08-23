@@ -94,10 +94,12 @@ func TestRecommendationsHandler_batchedEnrichment(t *testing.T) {
 		t.Error("expected nextSlot on first card")
 	}
 
-	// Exactly 2 POST /fhir: one batch for specialties, one batch for slots
+	// Budget: at most 3 POST /fhir per load — the specialties batch, the
+	// conditional fallback-fill batch (when the exact+related pool is short),
+	// and the slot-enrichment batch. A fully-populated load stays at 2.
 	mu.Lock()
 	defer mu.Unlock()
-	if postCount != 2 {
-		t.Errorf("expected 2 FHIR batch POSTs, got %d", postCount)
+	if postCount > 3 {
+		t.Errorf("expected at most 3 FHIR batch POSTs, got %d", postCount)
 	}
 }

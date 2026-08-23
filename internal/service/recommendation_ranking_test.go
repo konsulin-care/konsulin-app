@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/konsulin-care/konsulin-app/internal/data/specialty"
@@ -89,6 +90,93 @@ func TestRecommendationService_Fetch_skipsFailedNearbyEntry(t *testing.T) {
 	}
 }
 
+// fallbackFillStub builds a FHIR backend stub for fallback-fill tests: one
+// exact psychiatry role, four generic roles for the any-active fallback
+// query, and empty searchsets elsewhere. It exposes HTTP hit count and each
+// batch's entry count.
+func fallbackFillStub() (*httptest.Server, *int, *[]int) {
+	hits := 0
+	var entryCounts []int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		w.Header().Set("Content-Type", "application/fhir+json")
+		var req struct {
+			Entry []struct {
+				Request struct {
+					URL string `json:"url"`
+				} `json:"request"`
+			} `json:"entry"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		entryCounts = append(entryCounts, len(req.Entry))
+		entries := make([]map[string]any, 0, len(req.Entry))
+		for _, e := range req.Entry {
+			u, _ := url.Parse(e.Request.URL)
+			switch spec := u.Query().Get("specialty"); spec {
+			case "2084P0800X":
+				entries = append(entries, map[string]any{
+					"resource": roleSearchset("2084P0800X", "Psychiatry Physician", "prc-02", "role-2", "loc-B", "hs-2", "sch-2", 70000),
+					"response": map[string]any{"status": "200"},
+				})
+			case "": // any-active-role fallback query
+				entries = append(entries, map[string]any{
+					"resource": multiRoleSearchset("general-practice", "General Practice", []string{"p1", "p2", "p3", "p4"}),
+					"response": map[string]any{"status": "200"},
+				})
+			default:
+				entries = append(entries, map[string]any{
+					"resource": map[string]any{"resourceType": "Bundle", "type": "searchset", "total": 0, "entry": []any{}},
+					"response": map[string]any{"status": "200"},
+				})
+			}
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"resourceType": "Bundle", "type": "batch-response", "entry": entries,
+		})
+	}))
+	return srv, &hits, &entryCounts
+}
+
+// TestRecommendationService_Fetch_fallbackFillsToFive verifies a sparse
+// exact+related pool is topped up to five cards by one extra batch POST that
+// searches any active practitioner. Fallback cards rank last and the FHIR
+// budget stays at two HTTP requests with every batch <= 10 entries.
+func TestRecommendationService_Fetch_fallbackFillsToFive(t *testing.T) {
+	backend, hits, entryCounts := fallbackFillStub()
+	t.Cleanup(backend.Close)
+	svc := NewRecommendationService(RecommendationOptions{BackendBaseURL: backend.URL, Client: backend.Client()})
+
+	recs, err := svc.Fetch(context.Background(), FetchParams{
+		Specialty:      "2084P0800X",
+		ServiceTypeCode: "burnout-care",
+	})
+	if err != nil {
+		t.Fatalf("Fetch returned error: %v", err)
+	}
+	if len(recs) != 5 {
+		t.Fatalf("expected exactly 5 cards (1 exact + 4 fallback), got %d", len(recs))
+	}
+	if recs[0].MatchSource != "exact" {
+		t.Errorf("expected exact card first, got %q", recs[0].MatchSource)
+	}
+	for _, r := range recs[1:] {
+		if r.MatchSource != "fallback" {
+			t.Errorf("expected fallback cards last, got %q", r.MatchSource)
+		}
+	}
+	if *hits != 2 {
+		t.Errorf("expected 2 FHIR batch POSTs (specialties + fallback), got %d", *hits)
+	}
+	for i, n := range *entryCounts {
+		if n > 10 {
+			t.Errorf("batch %d exceeds 10 entries: %d", i, n)
+		}
+	}
+}
+
 // TestRecommendationService_Fetch_backendError verifies a 500 from the FHIR
 // backend surfaces as an error.
 func TestRecommendationService_Fetch_backendError(t *testing.T) {
@@ -106,7 +194,8 @@ func TestRecommendationService_Fetch_backendError(t *testing.T) {
 
 // TestRecommendationService_Fetch_widenedBatchStaysOnePost verifies the
 // widened nearby expansion stays inside a single FHIR batch POST whose entry
-// count never exceeds the documented Blaze ceiling of ten.
+// count never exceeds the documented Blaze ceiling of ten. The exact bundle
+// already yields five cards so the conditional fallback fill does not fire.
 func TestRecommendationService_Fetch_widenedBatchStaysOnePost(t *testing.T) {
 	neighbors := specialty.LoadIndex().NearbyNuccCodes("2084P0800X", relatedSpecialtyLimit, relatedSpecialtyThreshold)
 	if len(neighbors) < 2 {
@@ -132,9 +221,17 @@ func TestRecommendationService_Fetch_widenedBatchStaysOnePost(t *testing.T) {
 		}
 		batches = append(batches, len(req.Entry))
 		entries := make([]map[string]any, 0, len(req.Entry))
-		for range req.Entry {
+		for _, e := range req.Entry {
+			u, _ := url.Parse(e.Request.URL)
+			spec := u.Query().Get("specialty")
+			var bundle map[string]any
+			if spec == "2084P0800X" {
+				bundle = multiRoleSearchset("2084P0800X", "Psychiatry Physician", []string{"p1", "p2", "p3", "p4", "p5"})
+			} else {
+				bundle = map[string]any{"resourceType": "Bundle", "type": "searchset", "total": 0, "entry": []any{}}
+			}
 			entries = append(entries, map[string]any{
-				"resource": map[string]any{"resourceType": "Bundle", "type": "searchset", "total": 0, "entry": []any{}},
+				"resource": bundle,
 				"response": map[string]any{"status": "200"},
 			})
 		}
@@ -145,8 +242,12 @@ func TestRecommendationService_Fetch_widenedBatchStaysOnePost(t *testing.T) {
 	t.Cleanup(backend.Close)
 	svc := NewRecommendationService(RecommendationOptions{BackendBaseURL: backend.URL, Client: backend.Client()})
 
-	if _, err := svc.Fetch(context.Background(), FetchParams{Specialty: "2084P0800X"}); err != nil {
+	recs, err := svc.Fetch(context.Background(), FetchParams{Specialty: "2084P0800X"})
+	if err != nil {
 		t.Fatalf("Fetch returned error: %v", err)
+	}
+	if len(recs) != 5 {
+		t.Fatalf("expected 5 exact cards, got %d", len(recs))
 	}
 	if hits != 1 {
 		t.Errorf("expected 1 FHIR batch POST per load, got %d", hits)
