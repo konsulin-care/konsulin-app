@@ -18,6 +18,10 @@ type generatorConfig struct {
 	domainFallbacks      map[string]string
 	competenceMap        map[string][]string
 	competenceExceptions map[string][]string
+
+	// validDomainPaths holds every legal ICF path (bare core or
+	// core.subdomain) from domains.json, used to validate competence entries.
+	validDomainPaths map[string]bool
 }
 
 func main() {
@@ -44,6 +48,10 @@ func run() error {
 	iscoNodes, nuccNodes, err := parseSources(cache)
 	if err != nil {
 		return err
+	}
+
+	if err := validateCompetenceConfig(cfg, nuccNodes); err != nil {
+		return fmt.Errorf("validating competence config: %w", err)
 	}
 
 	keywords := refineKeywords(nuccNodes, cfg.stopWords)
@@ -115,15 +123,21 @@ func loadGeneratorConfig(configDir string) (*generatorConfig, error) {
 	}
 
 	type domainConfig struct {
-		FallbackNuccCode string `json:"fallbackNuccCode"`
+		FallbackNuccCode string                    `json:"fallbackNuccCode"`
+		Subdomains       map[string]map[string]any `json:"subdomains"`
 	}
 	domainsCfg, err := loadJSON[map[string]domainConfig](filepath.Join(configDir, "domains.json"))
 	if err != nil {
 		return nil, fmt.Errorf("loading domains config: %w", err)
 	}
 	fallbacks := make(map[string]string, len(domainsCfg))
+	validPaths := make(map[string]bool)
 	for core, dc := range domainsCfg {
 		fallbacks[core] = dc.FallbackNuccCode
+		validPaths[core] = true
+		for sub := range dc.Subdomains {
+			validPaths[core+"."+sub] = true
+		}
 	}
 
 	competenceMap, err := loadJSON[map[string][]string](filepath.Join(configDir, "specialty-competence.json"))
@@ -146,6 +160,7 @@ func loadGeneratorConfig(configDir string) (*generatorConfig, error) {
 		domainFallbacks:      fallbacks,
 		competenceMap:        competenceMap,
 		competenceExceptions: competenceExceptions,
+		validDomainPaths:     validPaths,
 	}, nil
 }
 

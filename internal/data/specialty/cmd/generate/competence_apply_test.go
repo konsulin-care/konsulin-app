@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -118,25 +117,20 @@ func TestCompetenceSignaturesFullCorpus(t *testing.T) {
 	}
 }
 
-// TestCompetenceExceptionPathsAreWellFormed validates the exceptions schema.
+// TestCompetenceExceptionPathsAreWellFormed validates the exceptions schema
+// through the production validator: codes must exist in the NUCC cache and
+// paths must stay within the domains.json taxonomy.
 func TestCompetenceExceptionPathsAreWellFormed(t *testing.T) {
 	exceptions := loadCompetenceExceptions(t)
 	if len(exceptions) == 0 {
 		t.Fatal("expected at least the forensic-psychologist exception")
 	}
-	nodes := loadNuccNodes(t)
-	valid := validDomainPaths(t)
-	for code, paths := range exceptions {
-		if _, ok := nodes[code]; !ok {
-			t.Errorf("exception code %q not found in NUCC cache", code)
-		}
-		for _, p := range paths {
-			if !valid[p] {
-				t.Errorf("exception %q references unknown path %q", code, p)
-			}
-			if parts := strings.Split(p, "."); len(parts) > 2 {
-				t.Errorf("exception %q path %q exceeds depth 2", code, p)
-			}
-		}
+	cfg := &generatorConfig{
+		competenceMap:        loadCompetenceMatrix(t),
+		competenceExceptions: exceptions,
+		validDomainPaths:     validDomainPaths(t),
+	}
+	if err := validateCompetenceConfig(cfg, loadNuccNodes(t)); err != nil {
+		t.Fatalf("committed exception overrides must validate: %v", err)
 	}
 }
