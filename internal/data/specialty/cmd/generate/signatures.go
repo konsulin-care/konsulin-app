@@ -1,30 +1,5 @@
 package main
 
-// computeDomainSignatures computes domain signatures for each NUCC code.
-func computeDomainSignatures(keywords map[string][]string, keywordMap map[string]string) map[string][]string {
-	signatures := make(map[string][]string)
-
-	for code, codeKeywords := range keywords {
-		domainSet := make(map[string]bool)
-		for _, kw := range codeKeywords {
-			if domain, ok := keywordMap[kw]; ok {
-				domainSet[domain] = true
-			}
-		}
-
-		// Convert set to slice
-		var domains []string
-		for d := range domainSet {
-			domains = append(domains, d)
-		}
-		if len(domains) > 0 {
-			signatures[code] = domains
-		}
-	}
-
-	return signatures
-}
-
 // jaccardSimilarity computes Jaccard similarity between two sets.
 func jaccardSimilarity(setA, setB []string) float64 {
 	if len(setA) == 0 && len(setB) == 0 {

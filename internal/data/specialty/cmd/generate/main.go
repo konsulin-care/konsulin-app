@@ -9,13 +9,15 @@ import (
 
 // generatorConfig bundles every authored configuration file.
 type generatorConfig struct {
-	stopWords         map[string]bool
-	keywordMap        map[string]string
-	groupingMap       map[string]string
-	iscoSynonyms      map[string]string
-	classificationMap map[string]string
-	interviewNodes    map[string]interviewNodeConfig
-	domainFallbacks   map[string]string
+	stopWords            map[string]bool
+	keywordMap           map[string]string
+	groupingMap          map[string]string
+	iscoSynonyms         map[string]string
+	classificationMap    map[string]string
+	interviewNodes       map[string]interviewNodeConfig
+	domainFallbacks      map[string]string
+	competenceMap        map[string][]string
+	competenceExceptions map[string][]string
 }
 
 func main() {
@@ -124,14 +126,26 @@ func loadGeneratorConfig(configDir string) (*generatorConfig, error) {
 		fallbacks[core] = dc.FallbackNuccCode
 	}
 
+	competenceMap, err := loadJSON[map[string][]string](filepath.Join(configDir, "specialty-competence.json"))
+	if err != nil {
+		return nil, fmt.Errorf("loading competence matrix: %w", err)
+	}
+	competenceExceptions, err := loadJSON[map[string][]string](filepath.Join(configDir, "specialty-competence-exceptions.json"))
+	if err != nil {
+		// An absent exceptions file is legal: no code-level overrides.
+		competenceExceptions = map[string][]string{}
+	}
+
 	return &generatorConfig{
-		stopWords:         stopWordSet,
-		keywordMap:        keywordMap,
-		groupingMap:       groupingMap,
-		iscoSynonyms:      iscoSynonyms,
-		classificationMap: classificationMap,
-		interviewNodes:    interviewNodes,
-		domainFallbacks:   fallbacks,
+		stopWords:            stopWordSet,
+		keywordMap:           keywordMap,
+		groupingMap:          groupingMap,
+		iscoSynonyms:         iscoSynonyms,
+		classificationMap:    classificationMap,
+		interviewNodes:       interviewNodes,
+		domainFallbacks:      fallbacks,
+		competenceMap:        competenceMap,
+		competenceExceptions: competenceExceptions,
 	}, nil
 }
 
@@ -187,8 +201,8 @@ func computePipelineStyles(
 	fmt.Printf("Mapped %d NUCC codes to ISCO\n", len(nuccToIsco))
 
 	fmt.Println("Computing domain signatures...")
-	domainSignatures := computeDomainSignatures(keywords, cfg.keywordMap)
-	domainSignatures = ensureDomainSignatures(domainSignatures, nuccNodes, cfg.groupingMap)
+	domainSignatures := applyCompetenceSignatures(nuccNodes, cfg.groupingMap, cfg.competenceMap, cfg.competenceExceptions)
+	printCompetenceReview(domainSignatures, nuccNodes, cfg.competenceMap)
 	fmt.Printf("Computed domain signatures for %d codes\n", len(domainSignatures))
 
 	fmt.Println("Computing proximity...")
