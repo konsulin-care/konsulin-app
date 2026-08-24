@@ -45,10 +45,8 @@ func (s *RecommendationService) fetchBundle(ctx context.Context, path string) fe
 	return fetchResult{path: path, bundle: &bundle}
 }
 
-// fetchBatch POSTs one FHIR batch bundle of GET requests to /fhir and returns
-// the per-request searchsets aligned positionally with urls. An entry whose
-// response status is not 200 maps to nil (and is skipped by the caller).
-func (s *RecommendationService) fetchBatch(ctx context.Context, urls []string) ([]*searchset, error) {
+// buildBatchRequest creates a FHIR batch bundle request for the given URLs.
+func buildBatchRequest(ctx context.Context, baseURL string, urls []string) (*http.Request, error) {
 	reqEntries := make([]map[string]any, 0, len(urls))
 	for _, u := range urls {
 		reqEntries = append(reqEntries, map[string]any{
@@ -64,16 +62,28 @@ func (s *RecommendationService) fetchBatch(ctx context.Context, urls []string) (
 		return nil, fmt.Errorf("marshal batch request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseURL+"/fhir", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/fhir", bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("build batch request: %w", err)
 	}
 	req.Header.Set("Content-Type", fhirContentType)
 	req.Header.Set("Accept", fhirContentType)
+	return req, nil
+}
 
-	resp, err := s.client.Do(req)
+// batchResponseEntry represents a single entry in a FHIR batch response.
+type batchResponseEntry struct {
+	Resource json.RawMessage `json:"resource"`
+	Response struct {
+		Status string `json:"status"`
+	} `json:"response"`
+}
+
+// doBatchRequest executes a FHIR batch request and returns the raw entries.
+func doBatchRequest(ctx context.Context, client *http.Client, req *http.Request) ([]batchResponseEntry, error) {
+	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("POST %s/fhir: %w", s.baseURL, err)
+		return nil, fmt.Errorf("execute batch request: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 400 {
@@ -81,27 +91,38 @@ func (s *RecommendationService) fetchBatch(ctx context.Context, urls []string) (
 	}
 
 	var batch struct {
-		Entry []struct {
-			Resource json.RawMessage `json:"resource"`
-			Response struct {
-				Status string `json:"status"`
-			} `json:"response"`
-		} `json:"entry"`
+		Entry []batchResponseEntry `json:"entry"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&batch); err != nil {
 		return nil, fmt.Errorf("decode batch response: %w", err)
 	}
+	return batch.Entry, nil
+}
+
+// fetchBatch POSTs one FHIR batch bundle of GET requests to /fhir and returns
+// the per-request searchsets aligned positionally with urls. An entry whose
+// response status is not 200 maps to nil (and is skipped by the caller).
+func (s *RecommendationService) fetchBatch(ctx context.Context, urls []string) ([]*searchset, error) {
+	req, err := buildBatchRequest(ctx, s.baseURL, urls)
+	if err != nil {
+		return nil, err
+	}
+
+	entries, err := doBatchRequest(ctx, s.client, req)
+	if err != nil {
+		return nil, err
+	}
 
 	out := make([]*searchset, len(urls))
 	for i := range urls {
-		if i >= len(batch.Entry) {
+		if i >= len(entries) {
 			break
 		}
-		if batch.Entry[i].Response.Status != "200" {
+		if entries[i].Response.Status != "200" {
 			continue
 		}
 		var ss searchset
-		if err := json.Unmarshal(batch.Entry[i].Resource, &ss); err != nil {
+		if err := json.Unmarshal(entries[i].Resource, &ss); err != nil {
 			continue
 		}
 		out[i] = &ss
@@ -113,58 +134,25 @@ func (s *RecommendationService) fetchBatch(ctx context.Context, urls []string) (
 // the raw resource JSON for each entry, aligned positionally with urls.
 // An entry whose response status is not 200 maps to nil.
 func (s *RecommendationService) FetchSlotBatch(ctx context.Context, urls []string) ([]json.RawMessage, error) {
-	reqEntries := make([]map[string]any, 0, len(urls))
-	for _, u := range urls {
-		reqEntries = append(reqEntries, map[string]any{
-			"request": map[string]any{"method": "GET", "url": batchEntryURL(u)},
-		})
-	}
-	body, err := json.Marshal(map[string]any{
-		"resourceType": "Bundle",
-		"type":         "batch",
-		"entry":        reqEntries,
-	})
+	req, err := buildBatchRequest(ctx, s.baseURL, urls)
 	if err != nil {
-		return nil, fmt.Errorf("marshal slot batch request: %w", err)
+		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseURL+"/fhir", bytes.NewReader(body))
+	entries, err := doBatchRequest(ctx, s.client, req)
 	if err != nil {
-		return nil, fmt.Errorf("build slot batch request: %w", err)
-	}
-	req.Header.Set("Content-Type", fhirContentType)
-	req.Header.Set("Accept", fhirContentType)
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("POST %s/fhir slot batch: %w", s.baseURL, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("FHIR backend returned %d for slot batch", resp.StatusCode)
-	}
-
-	var batch struct {
-		Entry []struct {
-			Resource json.RawMessage `json:"resource"`
-			Response struct {
-				Status string `json:"status"`
-			} `json:"response"`
-		} `json:"entry"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&batch); err != nil {
-		return nil, fmt.Errorf("decode slot batch response: %w", err)
+		return nil, err
 	}
 
 	out := make([]json.RawMessage, len(urls))
 	for i := range urls {
-		if i >= len(batch.Entry) {
+		if i >= len(entries) {
 			break
 		}
-		if batch.Entry[i].Response.Status != "200" {
+		if entries[i].Response.Status != "200" {
 			continue
 		}
-		out[i] = batch.Entry[i].Resource
+		out[i] = entries[i].Resource
 	}
 	return out, nil
 }

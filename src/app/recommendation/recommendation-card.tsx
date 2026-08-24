@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import type { Recommendation } from '@/types/recommendation';
 import { formatCurrencyValue } from '@/utils/fhir/fee';
 import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
+import { getInitials } from '@/utils/name';
 import Image from 'next/image';
 import { useMemo } from 'react';
 import RecommendationBooking from './recommendation-booking';
@@ -16,19 +17,6 @@ const NEXT_SLOT_FORMATTER = new Intl.DateTimeFormat('id-ID', {
   hour: '2-digit',
   minute: '2-digit'
 });
-
-/** Extracts initials from a name string, skipping the "dr." honorific. */
-function getInitials(name: string): string {
-  const parts = name.split(' ').filter(Boolean);
-  const meaningful = parts.filter(p => !/^dr\.?$/i.test(p));
-  if (meaningful.length >= 2) {
-    return (meaningful[0][0] + meaningful.at(-1)[0]).toUpperCase();
-  }
-  if (meaningful.length === 1) {
-    return meaningful[0].slice(0, 2).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
 
 /**
  * Format an ISO instant for the next-slot line.

@@ -1,4 +1,4 @@
-import Avatar from '@/components/general/avatar';
+import { PractitionerInfo } from '@/components/practitioner/practitioner-info';
 import AppDrawer from '@/components/ui/app-drawer';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { formatCurrencyValue } from '@/utils/fhir/fee';
@@ -56,37 +56,6 @@ type Props = {
   ) => void;
   setIsOpen: (open: boolean) => void;
 };
-
-/** Practitioner avatar, organization, and name in payment drawer. */
-function PractitionerInfo({
-  practitionerAvatar,
-  practitionerOrganizationName,
-  practitionerName
-}: Readonly<{
-  practitionerAvatar?: Props['practitionerAvatar'];
-  practitionerOrganizationName?: string;
-  practitionerName?: string;
-}>) {
-  return (
-    <div className='flex flex-col items-center'>
-      <Avatar
-        photoUrl={practitionerAvatar?.photoUrl}
-        initials={practitionerAvatar?.initials || ''}
-        backgroundColor={practitionerAvatar?.backgroundColor || '#999'}
-        height={72}
-        width={72}
-      />
-      {practitionerOrganizationName && (
-        <div className='mt-2 text-[12px] font-normal'>
-          {practitionerOrganizationName}
-        </div>
-      )}
-      <div className='mt-1 text-center text-[18px] font-bold'>
-        {practitionerName}
-      </div>
-    </div>
-  );
-}
 
 /** Payment drawer with invoice summary and a single Pay Now CTA. */
 export default function PaymentDrawer({

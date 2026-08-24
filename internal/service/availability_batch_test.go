@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/konsulin-care/konsulin-app/internal/testutil"
 )
 
 func TestBusySlotPath_containsAllParams(t *testing.T) {
@@ -13,16 +15,16 @@ func TestBusySlotPath_containsAllParams(t *testing.T) {
 	if path == "" {
 		t.Fatal("expected non-empty path")
 	}
-	if !contains(path, "/fhir/Slot") {
+	if !testutil.Contains(path, "/fhir/Slot") {
 		t.Errorf("expected /fhir/Slot prefix, got %s", path)
 	}
-	if !contains(path, "schedule=Schedule") {
+	if !testutil.Contains(path, "schedule=Schedule") {
 		t.Errorf("expected schedule param, got %s", path)
 	}
-	if !contains(path, "status=busy,busy-unavailable,busy-tentative") {
+	if !testutil.Contains(path, "status=busy,busy-unavailable,busy-tentative") {
 		t.Errorf("expected busy statuses, got %s", path)
 	}
-	if !contains(path, "start=ge") || !contains(path, "start=le") {
+	if !testutil.Contains(path, "start=ge") || !testutil.Contains(path, "start=le") {
 		t.Errorf("expected start bounds, got %s", path)
 	}
 }
@@ -32,7 +34,7 @@ func TestBusySlotPath_14DayHorizon(t *testing.T) {
 	path := BusySlotPath("Schedule/sch-1", now)
 
 	// end should be now + 14 days = 2026-06-22T01:00:00Z
-	if !contains(path, "2026-06-22") {
+	if !testutil.Contains(path, "2026-06-22") {
 		t.Errorf("expected 14-day horizon end date, got %s", path)
 	}
 }
@@ -173,15 +175,4 @@ func windowsMonFri() []AvailableTimeWindow {
 	}
 }
 
-func contains(s, sub string) bool {
-	return len(s) >= len(sub) && (s == sub || s != "" && containsSubstr(s, sub))
-}
 
-func containsSubstr(s, sub string) bool {
-	for i := 0; i+len(sub) <= len(s); i++ {
-		if s[i:i+len(sub)] == sub {
-			return true
-		}
-	}
-	return false
-}

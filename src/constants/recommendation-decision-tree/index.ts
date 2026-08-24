@@ -12,6 +12,10 @@ import social from './domains/social';
  * chief-complaint branches. Each complaint carries ICF-domain feature keywords;
  * the canonical NUCC specialty is resolved from the generated ontology map
  * (drives `/api/recommendations?specialty=`).
+ *
+ * NOTE: Each domain file (domains/*.ts) defines a DecisionDomain with the same
+ * schema but different data. This structural similarity is intentional for
+ * domain-driven design and is NOT copy-paste duplication.
  */
 export const DECISION_TREE: DecisionDomain[] = [
   physical,
