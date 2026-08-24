@@ -141,6 +141,7 @@ export default function HomeContentPatient() {
         <div className='rounded-lg bg-red-50 p-4 text-center'>
           <p className='text-[12px] text-red-600'>Failed to load records.</p>
           <button
+            type='button'
             onClick={() => window.location.reload()}
             className='mt-2 text-[12px] text-red-700 underline'
           >

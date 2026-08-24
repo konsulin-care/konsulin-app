@@ -170,14 +170,30 @@ func buildRecommendationTiers(tiers []recommendationTier, bundles []*searchset, 
 		if err != nil {
 			continue
 		}
-		out = appendCandidates(out, seen, logical, nil, false,
-			strings.Join(tier.codes, ","), serviceTypeCode, tier.label)
+		out = appendCandidates(out, seen, CandidateParams{
+			Logical:       logical,
+			Near:          nil,
+			UseNear:       false,
+			Specialty:     strings.Join(tier.codes, ","),
+			ServiceTypeCode: serviceTypeCode,
+			Source:        tier.label,
+		})
 	}
 	return out
 }
 
-func appendCandidates(out []Recommendation, seen map[string]bool, logical *logicalBundle, near map[string]float64, useNear bool, specialty, serviceTypeCode, source string) []Recommendation {
-	for _, candidate := range dedupByPractitioner(buildCandidates(logical, near, useNear), specialty, serviceTypeCode) {
+// CandidateParams groups parameters for appendCandidates.
+type CandidateParams struct {
+	Logical       *logicalBundle
+	Near          map[string]float64
+	UseNear       bool
+	Specialty     string
+	ServiceTypeCode string
+	Source        string
+}
+
+func appendCandidates(out []Recommendation, seen map[string]bool, params CandidateParams) []Recommendation {
+	for _, candidate := range dedupByPractitioner(buildCandidates(params.Logical, params.Near, params.UseNear), params.Specialty, params.ServiceTypeCode) {
 		if len(out) >= maxRecommendations {
 			break
 		}
@@ -185,7 +201,7 @@ func appendCandidates(out []Recommendation, seen map[string]bool, logical *logic
 			continue
 		}
 		seen[candidate.PractitionerID] = true
-		candidate.MatchSource = source
+		candidate.MatchSource = params.Source
 		out = append(out, candidate)
 	}
 	return out

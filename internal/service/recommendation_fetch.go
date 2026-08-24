@@ -11,6 +11,9 @@ import (
 	"strings"
 )
 
+// fhirContentType is the standard FHIR JSON media type.
+const fhirContentType = "application/fhir+json"
+
 // fetchResult carries one parallel FHIR search result.
 type fetchResult struct {
 	path   string
@@ -24,7 +27,7 @@ func (s *RecommendationService) fetchBundle(ctx context.Context, path string) fe
 	if err != nil {
 		return fetchResult{path: path, err: fmt.Errorf("build request for %s: %w", path, err)}
 	}
-	req.Header.Set("Accept", "application/fhir+json")
+	req.Header.Set("Accept", fhirContentType)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -65,8 +68,8 @@ func (s *RecommendationService) fetchBatch(ctx context.Context, urls []string) (
 	if err != nil {
 		return nil, fmt.Errorf("build batch request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/fhir+json")
-	req.Header.Set("Accept", "application/fhir+json")
+	req.Header.Set("Content-Type", fhirContentType)
+	req.Header.Set("Accept", fhirContentType)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -129,8 +132,8 @@ func (s *RecommendationService) FetchSlotBatch(ctx context.Context, urls []strin
 	if err != nil {
 		return nil, fmt.Errorf("build slot batch request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/fhir+json")
-	req.Header.Set("Accept", "application/fhir+json")
+	req.Header.Set("Content-Type", fhirContentType)
+	req.Header.Set("Accept", fhirContentType)
 
 	resp, err := s.client.Do(req)
 	if err != nil {

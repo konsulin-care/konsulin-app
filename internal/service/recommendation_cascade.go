@@ -86,8 +86,14 @@ func mergeCascadeLevels(bundles []*searchset, levels []cascadeLevel, near map[st
 		if err != nil {
 			continue
 		}
-		out = appendCandidates(out, seen, logical, near, len(near) > 0,
-			strings.Join(level.tier.codes, ","), serviceTypeCode, level.tier.label)
+		out = appendCandidates(out, seen, CandidateParams{
+			Logical:         logical,
+			Near:            near,
+			UseNear:         len(near) > 0,
+			Specialty:       strings.Join(level.tier.codes, ","),
+			ServiceTypeCode: serviceTypeCode,
+			Source:          level.tier.label,
+		})
 		if len(out) >= maxRecommendations {
 			break
 		}

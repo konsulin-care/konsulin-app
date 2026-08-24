@@ -49,9 +49,9 @@ function formatNextSlot(iso: string | null | undefined): string {
  */
 export default function RecommendationCard({
   recommendation
-}: {
+}: Readonly<{
   recommendation: Recommendation;
-}) {
+}>) {
   const { fee, currency, distanceKm, practitionerName } = recommendation;
   const avatar = useMemo(
     () =>

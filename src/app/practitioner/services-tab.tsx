@@ -258,6 +258,7 @@ export default function ServicesTab({
           No healthcare services configured.
           <br />
           <button
+            type='button'
             onClick={handleAddService}
             className='text-primary mt-2 underline'
           >

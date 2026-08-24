@@ -26,9 +26,8 @@ function buildTelHref(resource: EmergencyResource): string {
 export function EmergencyBanner({ resources }: Readonly<EmergencyBannerProps>) {
   if (resources.length === 0) return null;
   return (
-    <div
+    <output
       data-testid='emergency-banner'
-      role='status'
       className='mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3'
     >
       <p className='text-[12px] font-semibold text-amber-800'>
@@ -52,7 +51,7 @@ export function EmergencyBanner({ resources }: Readonly<EmergencyBannerProps>) {
           </li>
         ))}
       </ul>
-    </div>
+    </output>
   );
 }
 

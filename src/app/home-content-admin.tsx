@@ -178,6 +178,7 @@ export default function HomeContentAdmin() {
       {isCountError && (
         <div className='px-4 pb-4'>
           <button
+            type='button'
             onClick={handleRetryCount}
             className='text-secondary w-full rounded-lg border border-gray-200 py-2 text-[12px]'
           >

@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import { useQuestionFocus } from '@/hooks/useQuestionFocus';
 
 interface CardDomMapperProps {
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLElement>;
 }
 
 /**

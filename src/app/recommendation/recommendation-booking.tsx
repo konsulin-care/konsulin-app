@@ -50,10 +50,10 @@ function useBookingRole(recommendation: Recommendation) {
 export default function RecommendationBooking({
   recommendation,
   children
-}: {
+}: Readonly<{
   recommendation: Recommendation;
   children: ReactNode;
-}) {
+}>) {
   const { data, isLoading, isError } = useBookingRole(recommendation);
 
   if (isLoading || isError || !data?.role) {

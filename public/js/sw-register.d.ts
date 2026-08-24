@@ -6,5 +6,5 @@
  * TypeScript resolve the dynamic `import('../sw-register.js')` used by the
  * vitest suite while keeping the implementation export-free.
  */
-declare const swRegister: void;
+declare const swRegister: undefined;
 export default swRegister;

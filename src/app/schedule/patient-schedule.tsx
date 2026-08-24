@@ -41,9 +41,9 @@ function ProcessingPill() {
 /** Session type label with a plain "Session" fallback when the type is absent. */
 function AppointmentTypeLabel({
   appointmentType
-}: {
+}: Readonly<{
   appointmentType: string | null;
-}) {
+}>) {
   return (
     <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
       {appointmentType

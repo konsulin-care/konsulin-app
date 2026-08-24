@@ -1,7 +1,8 @@
 package service
 
 import (
-	"math/rand"
+	crand "crypto/rand"
+	"math/big"
 	"sort"
 )
 
@@ -128,15 +129,28 @@ func compareDistance(a, b *float64) int {
 	return 0
 }
 
-// SampleRandom draws up to n distinct recommendations using the given rng.
+// SampleRandom draws up to n distinct recommendations using crypto/rand.
 // Returns the input unchanged when it already fits the size limit.
-func SampleRandom(recs []Recommendation, n int, rng *rand.Rand) []Recommendation {
+func SampleRandom(recs []Recommendation, n int) []Recommendation {
 	if len(recs) <= n {
 		return recs
 	}
-	idx := rng.Perm(len(recs))[:n]
+	// Fisher-Yates partial shuffle with crypto/rand.
+	idx := make([]int, len(recs))
+	for i := range idx {
+		idx[i] = i
+	}
+	for i := 0; i < n; i++ {
+		j, err := crand.Int(crand.Reader, big.NewInt(int64(len(recs)-i)))
+		if err != nil {
+			// Fallback: return first n if crypto/rand fails (should never happen).
+			return recs[:n]
+		}
+		swap := i + int(j.Int64())
+		idx[i], idx[swap] = idx[swap], idx[i]
+	}
 	out := make([]Recommendation, 0, n)
-	for _, i := range idx {
+	for _, i := range idx[:n] {
 		out = append(out, recs[i])
 	}
 	return out

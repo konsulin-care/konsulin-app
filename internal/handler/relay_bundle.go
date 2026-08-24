@@ -6,6 +6,9 @@ import (
 	"time"
 )
 
+// participantNeedsAction is the FHIR Appointment participant status for pending participants.
+const participantNeedsAction = "needs-action"
+
 // parseRelayResponse extracts Slot ID, Invoice ID, and Appointment ID from the
 // FHIR transaction-response bundle.
 func parseRelayResponse(fhirResp map[string]any, fee feeObj) relayResponse {
@@ -137,25 +140,25 @@ func buildRelayBundle(req relayBookingRequest, fee feeObj) map[string]any {
 							"actor": map[string]any{
 								"reference": req.PatientID,
 							},
-							"status": "needs-action",
+							"status": participantNeedsAction,
 						},
 						{
 							"actor": map[string]any{
 								"reference": req.PractitionerID,
 							},
-							"status": "needs-action",
+							"status": participantNeedsAction,
 						},
 						{
 							"actor": map[string]any{
 								"reference": req.PractitionerRoleID,
 							},
-							"status": "needs-action",
+							"status": participantNeedsAction,
 						},
 						{
 							"actor": map[string]any{
 								"reference": req.HealthcareServiceID,
 							},
-							"status": "needs-action",
+							"status": participantNeedsAction,
 						},
 					},
 				},

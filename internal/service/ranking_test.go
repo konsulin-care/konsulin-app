@@ -1,7 +1,6 @@
 package service
 
 import (
-	"math/rand"
 	"testing"
 )
 
@@ -67,8 +66,7 @@ func TestSampleRandom_returnsFiveWhenEnough(t *testing.T) {
 	for i := range recs {
 		recs[i] = slotRec(string(rune('a'+i)), "", "", 0, nil)
 	}
-	rng := rand.New(rand.NewSource(42))
-	sampled := SampleRandom(recs, 5, rng)
+	sampled := SampleRandom(recs, 5)
 	if len(sampled) != 5 {
 		t.Fatalf("expected 5 samples, got %d", len(sampled))
 	}
@@ -83,8 +81,7 @@ func TestSampleRandom_returnsFiveWhenEnough(t *testing.T) {
 
 func TestSampleRandom_returnsAllWhenFewer(t *testing.T) {
 	recs := []Recommendation{slotRec("a", "", "", 0, nil), slotRec("b", "", "", 0, nil)}
-	rng := rand.New(rand.NewSource(7))
-	sampled := SampleRandom(recs, 5, rng)
+	sampled := SampleRandom(recs, 5)
 	if len(sampled) != 2 {
 		t.Fatalf("expected all 2 samples, got %d", len(sampled))
 	}
