@@ -224,7 +224,6 @@ func TestBackendProxy_mappedCookiesFallbackToSessionLifetime(t *testing.T) {
 	t.Fatal("expected Set-Cookie: sAccessToken")
 }
 
-
 func TestBackendProxy_noLastUpdateWhenNoMappings(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("st-access-token", "jwt-access")

@@ -64,10 +64,10 @@ type locationResource struct {
 }
 
 type serviceResource struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Type []codeableConcept `json:"type"`
-	Extension []MoneyExtension `json:"extension"`
+	ID        string            `json:"id"`
+	Name      string            `json:"name"`
+	Type      []codeableConcept `json:"type"`
+	Extension []MoneyExtension  `json:"extension"`
 }
 
 type roleResource struct {
@@ -98,13 +98,13 @@ type scheduleResource struct {
 
 // parsedService is a HealthcareService reduced to card fields.
 type parsedService struct {
-	ID        string
-	Name      string
+	ID         string
+	Name       string
 	DurMinutes int
-	Fee       int
-	Currency  string
-	TypeCodes []string
-	TypeText  string
+	Fee        int
+	Currency   string
+	TypeCodes  []string
+	TypeText   string
 }
 
 // logicalBundle holds cross-referenced entities after the join.

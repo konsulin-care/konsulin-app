@@ -35,9 +35,9 @@ func TestMatchSpecialty_ExactMatch(t *testing.T) {
 func TestMatchSpecialty_PartialMatch(t *testing.T) {
 	idx := &SpecialtyIndex{
 		ByKeyword: map[string][]string{
-			"family":    {"207Q00000X"},
-			"medicine":  {"207Q00000X", "2084P0800X"},
-			"therapy":   {"103G00000X"},
+			"family":   {"207Q00000X"},
+			"medicine": {"207Q00000X", "2084P0800X"},
+			"therapy":  {"103G00000X"},
 		},
 		ByNuccCode: map[string]*SpecialtyNode{
 			"207Q00000X": {

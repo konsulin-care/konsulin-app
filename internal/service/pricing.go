@@ -19,7 +19,7 @@ type moneyValue struct {
 
 // MoneyExtension is a FHIR extension that may carry valueMoney or valueDuration.
 type MoneyExtension struct {
-	URL           string `json:"url"`
+	URL           string     `json:"url"`
 	ValueMoney    moneyValue `json:"valueMoney"`
 	ValueDuration struct {
 		Value int `json:"value"`
