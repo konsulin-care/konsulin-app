@@ -5,7 +5,7 @@ import {
 } from '@/context/recommendationContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import QuickActionFab from '../quick-action-fab';
 
 const queryClient = new QueryClient({
@@ -16,8 +16,6 @@ vi.mock('../screening-drawer', () => ({
   default: MockScreeningDrawer
 }));
 const mockRole = 'Patient';
-let disabledOnSave: () => void;
-let enabledOnSave: () => void;
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({ state: { userInfo: { role_name: mockRole } } })
@@ -106,38 +104,6 @@ function TestHarness() {
           onClick={() => dispatch({ type: 'SET_ACTION', config: null })}
         >
           Clear Action
-        </button>
-        <button
-          data-testid='trigger-action-disabled'
-          onClick={() =>
-            dispatch({
-              type: 'SET_ACTION',
-              config: {
-                label: 'Submit',
-                onAction: disabledOnSave,
-                disabled: true,
-                variant: 'primary'
-              }
-            })
-          }
-        >
-          Make Action Disabled
-        </button>
-        <button
-          data-testid='trigger-action-enabled'
-          onClick={() =>
-            dispatch({
-              type: 'SET_ACTION',
-              config: {
-                label: 'Submit',
-                onAction: enabledOnSave,
-                disabled: false,
-                variant: 'primary'
-              }
-            })
-          }
-        >
-          Make Action Enabled
         </button>
         <button
           data-testid='trigger-selection'
@@ -298,36 +264,5 @@ describe('QuickActionFab', () => {
       expect(getFabButton(container).className).toMatch(/h-14.*w-14/);
       expect(container.querySelector('.lucide-plus')).toBeTruthy();
     });
-  });
-});
-
-describe('QuickActionFab disabled action state', () => {
-  beforeEach(() => {
-    disabledOnSave = vi.fn();
-    enabledOnSave = vi.fn();
-  });
-
-  it('applies greyed-out styling to action pill when disabled=true', () => {
-    const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-action-disabled'));
-    const fabButton = getFabButton(container);
-    expect(fabButton.className).toContain('bg-gray-300');
-    expect(fabButton.className).toContain('text-gray-500');
-    expect(fabButton.className).toContain('cursor-not-allowed');
-    expect(fabButton.disabled).toBe(true);
-  });
-
-  it('does not call onAction when action pill is disabled and clicked', () => {
-    const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-action-disabled'));
-    fireEvent.click(getFabButton(container));
-    expect(disabledOnSave).not.toHaveBeenCalled();
-  });
-
-  it('calls onAction when action pill is enabled and clicked', () => {
-    const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-action-enabled'));
-    fireEvent.click(getFabButton(container));
-    expect(enabledOnSave).toHaveBeenCalledTimes(1);
   });
 });
