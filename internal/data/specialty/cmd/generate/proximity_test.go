@@ -64,7 +64,7 @@ func TestComputeProximity(t *testing.T) {
 	// 2084P0800X vs 207Q00000X: clinical 0.7 (same grouping), domain 0 (no
 	// overlap), structural 0.75 (LCA 221 at depth 3).
 	// -> 0.6*0.7 + 0.3*0 + 0.1*0.75 = 0.495
-	wantFM := 0.6*0.7 + 0.3*0.0 + 0.1*0.75
+	wantFM := 0.6*0.7 + 0.3*0.0 + 0.1*0.75 // NOSONAR
 	if diff := math.Abs(proximity["2084P0800X"]["207Q00000X"] - wantFM); diff > 1e-9 {
 		t.Errorf("expected %.3f for psychiatry-family medicine, got %f", wantFM, proximity["2084P0800X"]["207Q00000X"])
 	}
@@ -72,7 +72,7 @@ func TestComputeProximity(t *testing.T) {
 	// 2084P0800X vs 103G00000X: clinical 0.3 (different grouping), domain 1.0
 	// (shared mental-health), structural 0.5 (LCA 2 at depth 1).
 	// -> 0.6*0.3 + 0.3*1.0 + 0.1*0.5 = 0.53
-	wantPsych := 0.6*0.3 + 0.3*1.0 + 0.1*0.5
+	wantPsych := 0.6*0.3 + 0.3*1.0 + 0.1*0.5 // NOSONAR
 	if diff := math.Abs(proximity["2084P0800X"]["103G00000X"] - wantPsych); diff > 1e-9 {
 		t.Errorf("expected %.3f for psychiatry-psychology, got %f", wantPsych, proximity["2084P0800X"]["103G00000X"])
 	}

@@ -37,6 +37,7 @@ export default function CompletenessBanner({ show }: Props) {
           </p>
         </div>
         <button
+          type='button'
           onClick={handleDismiss}
           className='shrink-0 text-amber-400 hover:text-amber-600'
           aria-label='Dismiss'

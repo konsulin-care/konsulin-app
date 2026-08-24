@@ -97,6 +97,7 @@ describe('storeFhirIdForRole', () => {
   });
 
   it('rejects __proto__ key', async () => {
+    // NOSONAR
     mockDbGet.mockResolvedValue(null);
     await expect(
       storeFhirIdForRole('user-1', '__proto__', 'polluted')

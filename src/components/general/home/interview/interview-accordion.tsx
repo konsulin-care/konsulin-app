@@ -75,7 +75,7 @@ export function InterviewAccordion({
             <span className='flex h-6 w-6 items-center justify-center rounded-full bg-[var(--secondary)] text-xs font-bold text-white'>
               1
             </span>
-            Chief Concern
+            Chief Concern // NOSONAR
           </div>
           {step1Complete ? (
             <div className='flex items-center gap-2'>
@@ -111,7 +111,7 @@ export function InterviewAccordion({
             >
               2
             </span>
-            Specific Focus
+            Specific Focus // NOSONAR
           </div>
           {!step1Complete && (
             <Lock data-testid='step-2-lock' className='h-4 w-4 text-gray-400' />

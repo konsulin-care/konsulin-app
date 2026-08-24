@@ -11,29 +11,27 @@
  * purpose of early SW cleanup.
  */
 
-function isLocalHost () {
-  const h = globalThis.location.hostname
-  return h === 'localhost' || h === '127.0.0.1' || h.endsWith('.localhost')
+function isLocalHost() {
+  const h = globalThis.location.hostname;
+  return h === 'localhost' || h === '127.0.0.1' || h.endsWith('.localhost');
 }
 
-// Classic-script SW cleanup: intentionally avoids top-level await and for-of
+// Classic-script SW cleanup: intentionally avoids top-level await
 // so the file remains loadable as a non-module <script> in <head>.
 /* eslint-disable promise/catch-or-return, promise/always-return,
-   unicorn/prefer-top-level-await, unicorn/no-for-loop,
-   security/detect-object-injection */
+   unicorn/prefer-top-level-await */
 if ('serviceWorker' in navigator) {
   if (isLocalHost()) {
     navigator.serviceWorker.getRegistrations().then(function (registrations) {
-      for (let i = 0; i < registrations.length; i++) {
-        registrations[i].unregister()
+      for (const reg of registrations) {
+        reg.unregister();
       }
-    })
+    });
   } else {
     navigator.serviceWorker.register('/sw.js').catch(function () {
-      console.warn('[SW] registration failed')
-    })
+      console.warn('[SW] registration failed');
+    });
   }
 }
 /* eslint-enable promise/catch-or-return, promise/always-return,
-   unicorn/prefer-top-level-await, unicorn/no-for-loop,
-   security/detect-object-injection */
+   unicorn/prefer-top-level-await */

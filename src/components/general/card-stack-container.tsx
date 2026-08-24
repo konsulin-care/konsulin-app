@@ -24,7 +24,7 @@ interface CardStackContainerProps {
 export function CardStackContainer({
   children
 }: Readonly<CardStackContainerProps>) {
-  const containerRef = useRef<HTMLFieldSetElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const {
     activeCardIndex,
@@ -225,7 +225,7 @@ export function CardStackContainer({
    * - ArrowDown/Right: next card; ArrowUp/Left: previous card
    */
   const handleCardKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLFieldSetElement>) => {
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
       const focused = document.activeElement as HTMLElement | null;
       const linkId = focused?.dataset.linkId;
       if (!linkId || !focusableLinkIds.includes(linkId)) return;
@@ -271,7 +271,7 @@ export function CardStackContainer({
    * Walks up from event.target to find an element with `data-link-id`.
    */
   const handleCardClick = useCallback(
-    (event: React.MouseEvent<HTMLFieldSetElement>) => {
+    (event: React.MouseEvent<HTMLDivElement>) => {
       let target = event.target as HTMLElement | null;
       while (target && target !== containerRef.current) {
         const linkId = target.dataset.linkId;
@@ -325,18 +325,21 @@ export function CardStackContainer({
     <div>
       <CardDomMapper containerRef={containerRef} />
 
-      <fieldset
+      <div
         ref={containerRef}
-        className='card-stack-viewport'
-        aria-label='Question navigation'
         onClick={handleCardClick}
         onKeyDown={handleCardKeyDown}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        {children}
-      </fieldset>
+        <fieldset
+          className='card-stack-viewport'
+          aria-label='Question navigation'
+        >
+          {children}
+        </fieldset>
+      </div>
 
       {/* Progress indicator */}
       <div className='mt-2 text-center text-sm text-gray-500'>

@@ -288,6 +288,7 @@ export default function ServicesTab({
           <h3 className='text-sm font-bold'>
             {selectedIds.size} selected —{' '}
             <button
+              type='button'
               onClick={handleSelectionCancel}
               className='text-primary underline'
             >
@@ -301,6 +302,7 @@ export default function ServicesTab({
         )}
         {!inSelectionMode && (
           <button
+            type='button'
             onClick={handleAddService}
             className='text-primary text-sm underline'
           >
