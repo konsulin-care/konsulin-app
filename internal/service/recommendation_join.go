@@ -235,7 +235,7 @@ func roleAvailableTime(role roleResource) []AvailableTimeWindow {
 // then the first encountered candidate.
 func dedupByPractitioner(candidates []Recommendation, specialty, serviceTypeCode string) []Recommendation {
 	best := map[string]Recommendation{}
-	order := []string{}
+	var order []string
 	for _, cand := range candidates {
 		key := cand.PractitionerID
 		current, ok := best[key]

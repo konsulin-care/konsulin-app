@@ -21,6 +21,7 @@ export default function SpecialtyPickerModal({
   const router = useRouter();
 
   const selectSpecialty = (code: string) => {
+    // skipcq: JS-D1001 — self-explanatory handler
     router.replace(`/recommendation?specialty=${encodeURIComponent(code)}`);
   };
 

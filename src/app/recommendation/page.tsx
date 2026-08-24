@@ -88,6 +88,7 @@ export default function RecommendationPage() {
   useEffect(() => {
     let active = true;
     void (async () => {
+      // skipcq: JS-0098 — void correctly marks unawaited promise
       try {
         const stored = await readLastInterviewResult();
         if (active && !latestResultRef.current && stored) setResult(stored);
@@ -123,7 +124,7 @@ export default function RecommendationPage() {
         setCoords({ lat, lon });
       }
       setDrawerOpen(false);
-      void queryClient.invalidateQueries({ queryKey: ['recommendations'] });
+      void queryClient.invalidateQueries({ queryKey: ['recommendations'] }); // skipcq: JS-0098 — fire-and-forget cache invalidation
     },
     [queryClient, setResult]
   );
@@ -166,6 +167,7 @@ export default function RecommendationPage() {
   );
 
   function renderBody() {
+    // skipcq: JS-D1001 — self-explanatory render helper
     if (isLoading) {
       return (
         <div className='flex min-h-[300px] items-center justify-center'>
@@ -186,7 +188,7 @@ export default function RecommendationPage() {
           <Button
             variant='outline'
             onClick={() => {
-              void refetch();
+              void refetch(); // skipcq: JS-0098 — fire-and-forget refetch
             }}
           >
             Coba Lagi

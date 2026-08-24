@@ -40,7 +40,7 @@ type Props = {
 
 /** Context for passing dayDots to DayButtonComp without nesting component definitions. */
 const DayDotsContext = createContext<Map<string, string[]> | undefined>(
-  undefined
+  undefined // skipcq: JS-W1042 — required by React createContext<T|undefined>(undefined)
 );
 
 /** DayButton wrapper that reads dayDots from context. */

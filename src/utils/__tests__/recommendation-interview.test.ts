@@ -35,15 +35,17 @@ function createMockRequest(result?: unknown, error?: DOMException) {
   const req = {
     result: result ?? null,
     error: error ?? null,
-    onsuccess: null as unknown as ((this: IDBRequest, ev: Event) => any) | null,
-    onerror: null as unknown as ((this: IDBRequest, ev: Event) => any) | null,
+    onsuccess: null as unknown as
+      | ((this: IDBRequest, ev: Event) => void)
+      | null,
+    onerror: null as unknown as ((this: IDBRequest, ev: Event) => void) | null,
     onupgradeneeded: null
   };
   return req;
 }
 
 function triggerRequest(req: ReturnType<typeof createMockRequest>) {
-  if (req.onsuccess) req.onsuccess.call(req, { target: req });
+  if (req.onsuccess) req.onsuccess.call(req, { target: req }); // skipcq: JS-0095 — simulates IDBRequest callback context
 }
 
 beforeEach(() => {

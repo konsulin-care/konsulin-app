@@ -51,9 +51,9 @@ func TestLoadIndex(t *testing.T) {
 // sorted by score descending, exclude the query code, stay above the
 // threshold, and unknown codes yield nothing.
 func TestNearbyNuccCodes(t *testing.T) {
-	idx := LoadIndex()
+	LoadIndex()
 
-	neighbors := idx.NearbyNuccCodes("103T00000X", 5, 0.6)
+	neighbors := NearbyNuccCodes("103T00000X", 5, 0.6)
 	if len(neighbors) == 0 {
 		t.Fatal("expected nearby codes for Psychologist")
 	}
@@ -65,7 +65,7 @@ func TestNearbyNuccCodes(t *testing.T) {
 		if code == "103T00000X" {
 			t.Errorf("neighbor %d must exclude the query code", i)
 		}
-		score := idx.GetProximity("103T00000X", code)
+		score := GetProximity("103T00000X", code)
 		if score < 0.6 {
 			t.Errorf("neighbor %s below threshold: %.3f", code, score)
 		}
@@ -79,7 +79,7 @@ func TestNearbyNuccCodes(t *testing.T) {
 	// Proximity-driven expansion must prefer the query specialty's own family:
 	// psychiatry's neighbors above threshold are all Psychiatry & Neurology
 	// classification codes (identical competence signatures score 1.0).
-	psych := idx.NearbyNuccCodes("2084P0800X", 5, 0.5)
+	psych := NearbyNuccCodes("2084P0800X", 5, 0.5)
 	if len(psych) == 0 {
 		t.Fatal("expected psychiatry neighbors above threshold")
 	}
@@ -89,24 +89,24 @@ func TestNearbyNuccCodes(t *testing.T) {
 
 	// Proximity must be symmetric: A in B's neighbors iff B in A's neighbors
 	// (score-equivalent pairs rank the same in both directions).
-	if score := idx.GetProximity("2084P0800X", "103T00000X"); score != idx.GetProximity("103T00000X", "2084P0800X") {
+	if score := GetProximity("2084P0800X", "103T00000X"); score != GetProximity("103T00000X", "2084P0800X") {
 		t.Errorf("proximity not symmetric: %.4f vs %.4f",
-			score, idx.GetProximity("103T00000X", "2084P0800X"))
+			score, GetProximity("103T00000X", "2084P0800X"))
 	}
 
-	if got := idx.NearbyNuccCodes("NOT-A-CODE", 5, 0.6); len(got) != 0 {
+	if got := NearbyNuccCodes("NOT-A-CODE", 5, 0.6); len(got) != 0 {
 		t.Errorf("expected empty result for unknown code, got %v", got)
 	}
-	if got := idx.NearbyNuccCodes("103T00000X", 0, 0.6); len(got) != 0 {
+	if got := NearbyNuccCodes("103T00000X", 0, 0.6); len(got) != 0 {
 		t.Errorf("expected empty result for maxK=0, got %v", got)
 	}
 }
 
 // TestNearbyNuccCodesDeterministic asserts tie-breaking is stable.
 func TestNearbyNuccCodesDeterministic(t *testing.T) {
-	idx := LoadIndex()
-	a := idx.NearbyNuccCodes("208D00000X", 10, 0.4)
-	b := idx.NearbyNuccCodes("208D00000X", 10, 0.4)
+	LoadIndex()
+	a := NearbyNuccCodes("208D00000X", 10, 0.4)
+	b := NearbyNuccCodes("208D00000X", 10, 0.4)
 	if len(a) != len(b) {
 		t.Fatalf("length mismatch: %d vs %d", len(a), len(b))
 	}

@@ -53,7 +53,7 @@ func printCompetenceReview(
 	competenceMap map[string][]string,
 ) {
 	inherited := map[string][]string{}
-	exceptions := []string{}
+	var exceptions []string
 	for code, node := range nodes {
 		if key := competenceKey(node); len(competenceMap[key]) > 0 {
 			if equalPaths(signatures[code], competenceMap[key]) {

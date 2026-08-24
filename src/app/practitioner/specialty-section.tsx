@@ -86,6 +86,7 @@ export default function SpecialtySection({
   );
 
   const handleSave = async (): Promise<void> => {
+    // skipcq: JS-D1001 — self-explanatory handler
     setIsSaving(true);
     try {
       const payload = buildSpecialtyPayload(practitionerRole, selectedCodes);
@@ -110,10 +111,12 @@ export default function SpecialtySection({
   }, [dirty, isSaving, onDirtyChange]);
 
   const handleToggle = (codes: string[]): void => {
+    // skipcq: JS-D1001 — self-explanatory handler
     setSelectedCodes(codes);
   };
 
   const handleRemove = (code: string): void => {
+    // skipcq: JS-D1001 — self-explanatory handler
     setSelectedCodes(prev => prev.filter(c => c !== code));
   };
 

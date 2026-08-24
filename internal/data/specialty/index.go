@@ -102,7 +102,7 @@ func (idx *SpecialtyIndex) LookupByKeyword(keyword string) []string {
 
 // GetProximity returns the proximity score between two specialties.
 // Returns 0 if not found. Proximity is symmetric.
-func (idx *SpecialtyIndex) GetProximity(specA, specB string) float64 {
+func GetProximity(specA, specB string) float64 {
 	if specA == specB {
 		return 1.0
 	}
@@ -123,7 +123,7 @@ func (idx *SpecialtyIndex) GetProximity(specA, specB string) float64 {
 // @param maxK - maximum number of neighbors to return
 // @param threshold - minimum proximity score to include a neighbor
 // @returns neighbor codes in descending proximity order
-func (idx *SpecialtyIndex) NearbyNuccCodes(code string, maxK int, threshold float64) []string {
+func NearbyNuccCodes(code string, maxK int, threshold float64) []string {
 	row, ok := proximity.Generated[code]
 	if !ok || maxK <= 0 {
 		return nil

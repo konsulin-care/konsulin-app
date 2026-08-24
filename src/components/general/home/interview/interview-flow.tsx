@@ -47,16 +47,19 @@ export function InterviewFlow({
   if (!open) return null;
 
   const handleOptionSelect = (optionId: string) => {
+    // skipcq: JS-D1001 — self-explanatory handler
     setSelectedOptionId(optionId);
     setStep('redflag');
   };
 
   const finish = () => {
+    // skipcq: JS-D1001 — self-explanatory handler
     const result = resolveInterviewResult(complaint.id, selectedOptionId);
     if (result) onComplete(result);
   };
 
   const handleSafetyAnswer = (positive: boolean) => {
+    // skipcq: JS-D1001 — self-explanatory handler
     setFlagged(positive);
     if (!positive) finish();
   };

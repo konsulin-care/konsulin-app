@@ -9,7 +9,7 @@ interface ContextProps {
   dispatch: React.Dispatch<IActionBooking>;
 }
 
-const BookingContext = createContext<ContextProps | undefined>(undefined);
+const BookingContext = createContext<ContextProps | undefined>(undefined); // skipcq: JS-W1042 — required by React createContext<T|undefined>(undefined)
 
 /** Booking context provider wrapping children with booking state. */
 export const BookingProvider = ({ children }: { children: ReactNode }) => {

@@ -38,7 +38,7 @@ func recStub(t *testing.T, emptyRoles bool) *httptest.Server {
 	}
 
 	type packed = map[string]any
-	entries := []packed{}
+	var entries []packed
 	if !emptyRoles {
 		for i := 0; i < 6; i++ {
 			num := string(rune('1' + i))
@@ -58,7 +58,7 @@ func recStub(t *testing.T, emptyRoles bool) *httptest.Server {
 		}
 	}
 
-	nearEntries := []packed{}
+	var nearEntries []packed
 	for i := 0; i < 6; i++ {
 		num := string(rune('1' + i))
 		nearEntries = append(nearEntries, packed{

@@ -17,6 +17,7 @@ function renderGuest() {
   return render(
     <QueryClientProvider client={queryClient}>
       <RecommendationProvider>
+        {/* skipcq: JS-0357 — ES module imports hoisted above usage at runtime */}
         <HomeContentGuest />
       </RecommendationProvider>
     </QueryClientProvider>

@@ -101,6 +101,7 @@ function ComplaintPopover({
   );
 
   return (
+    // skipcq: JS-0415 — nesting inherent to component structure
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button

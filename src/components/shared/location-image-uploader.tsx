@@ -168,7 +168,7 @@ export default function LocationImageUploader({
         accept='image/*'
         className='hidden'
         onChange={function (e: ChangeEvent<HTMLInputElement>) {
-          void handleFile(e);
+          void handleFile(e); // skipcq: JS-0098 — fire-and-forget upload
         }}
       />
     </div>

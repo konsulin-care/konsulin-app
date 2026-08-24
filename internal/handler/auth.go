@@ -58,7 +58,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 
 		// nolint:gosec // G124: Secure depends on runtime env; HttpOnly and SameSite are set
 		// nosemgrep — Secure follows runtime env (cfg.CookieSecure); always true on HTTPS production
-		http.SetCookie(w, &http.Cookie{ //NOSONAR
+		http.SetCookie(w, &http.Cookie{ // NOSONAR
 			Name:     opts.CookieName,
 			Value:    "",
 			Path:     "/",
@@ -70,7 +70,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 
 		// nolint:gosec // G124: same pattern, clearing access token
 		// nosemgrep — Secure follows runtime env (cfg.CookieSecure); always true on HTTPS production
-		http.SetCookie(w, &http.Cookie{ //NOSONAR
+		http.SetCookie(w, &http.Cookie{ // NOSONAR
 			Name:     opts.AccessCookieName,
 			Value:    "",
 			Path:     "/",
@@ -82,7 +82,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 
 		// nolint:gosec // G124: same pattern, clearing refresh token
 		// nosemgrep — Secure follows runtime env (cfg.CookieSecure); always true on HTTPS production
-		http.SetCookie(w, &http.Cookie{ //NOSONAR
+		http.SetCookie(w, &http.Cookie{ // NOSONAR
 			Name:     opts.RefreshCookieName,
 			Value:    "",
 			Path:     "/",
@@ -94,7 +94,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 
 		// nolint:gosec // G124: clearing id refresh token
 		// nosemgrep — Secure follows runtime env (cfg.CookieSecure); always true on HTTPS production
-		http.SetCookie(w, &http.Cookie{ //NOSONAR
+		http.SetCookie(w, &http.Cookie{ // NOSONAR
 			Name:     opts.IDRefreshCookieName,
 			Value:    "",
 			Path:     "/",
@@ -107,7 +107,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 		// Clear the SDK's session existence tracking cookie.
 		// nolint:gosec // G124: non-httpOnly also cleared the same way
 		// nosemgrep — must stay JS-readable for the SuperTokens SDK; holds a timestamp, not a credential
-		http.SetCookie(w, &http.Cookie{ //NOSONAR
+		http.SetCookie(w, &http.Cookie{ // NOSONAR
 			Name:     stLastAccessTokenUpdateCookie,
 			Value:    "",
 			Path:     "/",
@@ -120,7 +120,7 @@ func NewLogoutHandler(opts LogoutOptions) http.HandlerFunc {
 		// Clear the JS-visible front token set by the /api/v1/auth/* proxy.
 		// nolint:gosec // G124: non-httpOnly to match how the cookie is set
 		// nosemgrep — must stay JS-readable for the SuperTokens SDK
-		http.SetCookie(w, &http.Cookie{ //NOSONAR
+		http.SetCookie(w, &http.Cookie{ // NOSONAR
 			Name:     frontTokenCookie,
 			Value:    "",
 			Path:     "/",

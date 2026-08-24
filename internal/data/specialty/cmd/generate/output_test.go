@@ -14,7 +14,7 @@ func chdir(t *testing.T, dir string) {
 
 func mustMkdirAll(t *testing.T, dir string) {
 	t.Helper()
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil { // skipcq: GO-GSC-G301 — 0o755 is standard for test fixtures
 		t.Fatalf("mkdir %s: %v", dir, err)
 	}
 }

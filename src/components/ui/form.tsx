@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-conversion */
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
-import * as React from 'react';
+import * as React from 'react'; // skipcq: JS-C1003 — shadcn/ui convention; re-exports all primitives
 import {
   Controller,
   ControllerProps,

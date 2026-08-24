@@ -31,7 +31,7 @@ func (h *WilayahHandler) lookupRegency(w http.ResponseWriter, id string) {
 	}
 	r := h.index.Regencies[idx]
 	province := h.lookupParentProvince(r.ProvinceID)
-	parents := []parentEntry{}
+	var parents []parentEntry
 	if province != nil {
 		parents = append(parents, *province)
 	}
@@ -60,7 +60,7 @@ func (h *WilayahHandler) lookupDistrict(w http.ResponseWriter, id string) {
 }
 
 func (h *WilayahHandler) buildDistrictParents(d wilayah.District) []parentEntry {
-	parents := []parentEntry{}
+	var parents []parentEntry
 	if p := h.lookupParentProvince(d.RegencyID[:2]); p != nil {
 		parents = append(parents, *p)
 	}
@@ -87,7 +87,7 @@ func (h *WilayahHandler) lookupVillage(w http.ResponseWriter, id string) {
 }
 
 func (h *WilayahHandler) buildVillageParents(v wilayah.Village) []parentEntry {
-	parents := []parentEntry{}
+	var parents []parentEntry
 	if p := h.lookupParentProvince(v.DistrictID[:2]); p != nil {
 		parents = append(parents, *p)
 	}

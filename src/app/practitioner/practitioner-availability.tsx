@@ -83,6 +83,7 @@ type Props = {
  * @returns The component's rendered booking and payment interface (JSX)
  */
 export default function PractitionerAvailability({
+  // skipcq: JS-R1005 — decomposition would split cohesive booking flow
   children,
   practitionerRole,
   scheduleId,

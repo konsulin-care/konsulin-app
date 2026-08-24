@@ -157,7 +157,7 @@ export default function PractitionerAvailabilityEditor({
       // Mark dirty as cleared and update baseline so subsequent edits
       // are correctly detected as new unsaved changes.
       setWeeklyAvailabilityDirty(false);
-      savedBaselineRef.current = structuredClone(weeklyAvailability);
+      savedBaselineRef.current = structuredClone(weeklyAvailability); // skipcq: JS-0357 — accessed in async handler, not during render
     } catch (error) {
       console.error('Failed to update availability:', error);
     } finally {

@@ -23,7 +23,7 @@ function mockServiceWorker(overrides = {}) {
   return {
     // vitest's mockResolvedValue type requires an explicit argument
     // eslint-disable-next-line unicorn/no-useless-undefined
-    register: vi.fn().mockResolvedValue(undefined),
+    register: vi.fn().mockResolvedValue(undefined), // skipcq: JS-W1042 — vitest mockResolvedValue requires explicit argument
     getRegistrations: vi.fn().mockResolvedValue([]),
     ...overrides
   };

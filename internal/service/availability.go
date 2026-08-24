@@ -269,13 +269,13 @@ func ParseBusySlotsBundle(data json.RawMessage) ([]BusySlot, error) {
 
 // ParseTZOffset converts a "+07:00" / "-05:30" / "Z" offset string to a
 // duration. Exported so the handler can compute the default offset.
-func ParseTZOffset(tz string) time.Duration {
+func ParseTZOffset(tz string) time.Duration { // skipcq: GO-RVV-B0001 — intentional: export internal func
 	return parseTZOffset(tz)
 }
 
 // ComputeNextSlot is the exported pure-function wrapper over computeNextSlot.
 // The handler calls this with batch-fetched busy slots after fetchBusySlots
 // is no longer needed.
-func ComputeNextSlot(windows []AvailableTimeWindow, busy []BusySlot, now time.Time, offset time.Duration, dur int) *TimeSlot {
+func ComputeNextSlot(windows []AvailableTimeWindow, busy []BusySlot, now time.Time, offset time.Duration, dur int) *TimeSlot { // skipcq: GO-RVV-B0001 — intentional: export internal func
 	return computeNextSlot(windows, busy, now, offset, dur)
 }

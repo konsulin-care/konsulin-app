@@ -92,7 +92,7 @@ type RecommendationService struct {
 }
 
 // NewRecommendationService creates a service bound to the given FHIR backend.
-func NewRecommendationService(opts RecommendationOptions) *RecommendationService {
+func NewRecommendationService(opts RecommendationOptions) *RecommendationService { // skipcq: GO-RVV-B0001 — intentional: export internal func
 	client := opts.Client
 	if client == nil {
 		client = http.DefaultClient

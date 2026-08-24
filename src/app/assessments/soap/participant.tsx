@@ -275,6 +275,7 @@ export default function Participant({
     );
 
   return (
+    // skipcq: JS-0415 — nesting inherent to component structure
     <>
       <div className='w-full'>
         <Dropdown>

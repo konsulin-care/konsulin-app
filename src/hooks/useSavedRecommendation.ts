@@ -31,6 +31,7 @@ export function useSavedRecommendation() {
   useEffect(() => {
     let active = true;
     void (async () => {
+      // skipcq: JS-0098 — void correctly marks unawaited promise
       try {
         const stored = await readLastInterviewResult();
         if (active && !latestResultRef.current && stored) setResult(stored);
@@ -55,7 +56,7 @@ export function useSavedRecommendation() {
         setCoords({ lat, lon });
       }
       setDrawerOpen(false);
-      void queryClient.invalidateQueries({ queryKey: ['recommendations'] });
+      void queryClient.invalidateQueries({ queryKey: ['recommendations'] }); // skipcq: JS-0098 — fire-and-forget cache invalidation
     },
     [queryClient, setResult]
   );

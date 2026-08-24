@@ -46,7 +46,7 @@ export default function ScreeningDrawer({
   /** Persists the result, emits it, then routes off-page when needed. */
   const handleSubmit = useCallback(
     (result: InterviewResult, lat?: number, lon?: number) => {
-      void saveLastInterviewResult(result);
+      void saveLastInterviewResult(result); // skipcq: JS-0098 — fire-and-forget persistence
       onComplete?.(result, lat, lon);
       onClose();
       setPendingResult(null);

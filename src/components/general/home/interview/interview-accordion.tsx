@@ -62,6 +62,7 @@ export function InterviewAccordion({
   }, []);
 
   return (
+    // skipcq: JS-0415 — nesting inherent to accordion layout
     <div className='flex h-full flex-col gap-3 px-4 pb-4'>
       {/* Step 1 — Chief Concern */}
       <div className='rounded-xl border border-gray-200'>

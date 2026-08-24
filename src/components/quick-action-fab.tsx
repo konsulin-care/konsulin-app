@@ -55,7 +55,7 @@ export default function QuickActionFab() {
   const handleScreeningComplete = useCallback(
     (result: InterviewResult) => {
       setResult(result);
-      void queryClient.invalidateQueries({ queryKey: ['recommendations'] });
+      void queryClient.invalidateQueries({ queryKey: ['recommendations'] }); // skipcq: JS-0098 — fire-and-forget cache invalidation
     },
     [queryClient, setResult]
   );

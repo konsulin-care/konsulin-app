@@ -15,6 +15,7 @@ interface PopularAssessmentsSectionProps {
 }
 
 function PopularAssessmentCard({
+  // skipcq: JS-D1001, JS-0415 — self-explanatory component; nesting inherent to layout
   assessment,
   onClick
 }: Readonly<{

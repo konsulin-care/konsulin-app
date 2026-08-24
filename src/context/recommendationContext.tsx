@@ -19,7 +19,7 @@ interface RecommendationContextValue {
 
 const RecommendationContext = createContext<
   RecommendationContextValue | undefined
->(undefined);
+>(undefined); // skipcq: JS-W1042 — required by React createContext<T|undefined>(undefined)
 
 /**
  * Holds the latest screening result so the FAB writer and the home /

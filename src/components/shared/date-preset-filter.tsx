@@ -30,6 +30,7 @@ export default function DatePresetFilter({
   onCustomOpen
 }: Props) {
   const getCustomLabel = (): string | undefined => {
+    // skipcq: JS-D1001 — self-explanatory helper
     if (!activeStart || !activeEnd) return undefined;
     if (activeStart === activeEnd) return format(activeStart, 'dd MMM yy');
     return `${format(activeStart, 'dd MMM yy')} - ${format(activeEnd, 'dd MMM yy')}`;

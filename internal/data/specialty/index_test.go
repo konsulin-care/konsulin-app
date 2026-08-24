@@ -74,22 +74,20 @@ func TestSpecialtyIndex_GetProximity(t *testing.T) {
 	}
 	defer func() { proximity.Generated = proximity.Table{} }()
 
-	idx := &SpecialtyIndex{}
-
 	// Test existing proximity
-	score := idx.GetProximity("2211", "2212")
+	score := GetProximity("2211", "2212")
 	if score != 0.85 {
 		t.Errorf("expected 0.85, got %f", score)
 	}
 
 	// Test symmetric
-	score = idx.GetProximity("2212", "2211")
+	score = GetProximity("2212", "2211")
 	if score != 0.85 {
 		t.Errorf("expected symmetric 0.85, got %f", score)
 	}
 
 	// Test not found (should return 0)
-	score = idx.GetProximity("9999", "2211")
+	score = GetProximity("9999", "2211")
 	if score != 0 {
 		t.Errorf("expected 0 for nonexistent, got %f", score)
 	}

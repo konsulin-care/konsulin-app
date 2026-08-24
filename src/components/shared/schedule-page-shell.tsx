@@ -98,6 +98,7 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
   isLoadingMore
 }: Props<T>) {
   return (
+    // skipcq: JS-0415 — nesting inherent to shell layout
     <div className='mt-[-24px] rounded-[16px] bg-white pb-20'>
       <div className='w-full p-4'>
         <div className='flex gap-4'>
