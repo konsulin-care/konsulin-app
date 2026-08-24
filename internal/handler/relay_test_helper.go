@@ -11,6 +11,7 @@ import (
 )
 
 const statusCreated = "201 Created"
+
 // testAccessToken creates a valid-format sAccessToken JWT for testing.
 // VerifySession decodes the base64 payload without signature verification.
 func testAccessToken(sub string) string {
@@ -18,6 +19,7 @@ func testAccessToken(sub string) string {
 	p := base64.RawURLEncoding.EncodeToString([]byte(fmt.Sprintf(`{"sub":%q}`, sub)))
 	return h + "." + p + ".test-sig"
 }
+
 // testRelayBackend returns a test FHIR server that serves HealthcareService
 // and handles transaction bundles.
 func testRelayBackend() *httptest.Server {
