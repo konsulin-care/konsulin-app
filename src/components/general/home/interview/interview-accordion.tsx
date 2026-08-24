@@ -138,7 +138,9 @@ export function InterviewAccordion({
                 <li key={option.id}>
                   <button
                     type='button'
-                    onClick={() => handleOptionSelect(option.id)}
+                    onClick={() => {
+                      handleOptionSelect(option.id);
+                    }}
                     className={`w-full rounded-lg border px-4 py-3 text-left text-sm ${
                       selectedOptionId === option.id
                         ? 'border-[var(--secondary)] bg-[var(--secondary)]/5 text-[var(--secondary)]'

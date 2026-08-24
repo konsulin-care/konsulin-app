@@ -27,7 +27,9 @@ export default function SpecialtyPickerModal({
   return (
     <AppDrawer
       open
-      onClose={() => router.push('/')}
+      onClose={() => {
+        router.push('/');
+      }}
       title='Pilih Spesialisasi'
       description='Lihat rekomendasi layanan kesehatan sesuai kebutuhan Anda.'
     >
@@ -45,7 +47,9 @@ export default function SpecialtyPickerModal({
             <button
               key={specialty}
               type='button'
-              onClick={() => selectSpecialty(specialty)}
+              onClick={() => {
+                selectSpecialty(specialty);
+              }}
               className={cn(
                 'border-input rounded-xl border p-4 text-left text-sm transition-colors',
                 'hover:border-primary/40 active:bg-primary/5'

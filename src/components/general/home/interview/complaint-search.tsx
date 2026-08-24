@@ -48,7 +48,9 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
           <button
             type='button'
             aria-label='Clear search'
-            onClick={() => setQuery('')}
+            onClick={() => {
+              setQuery('');
+            }}
             className='absolute top-1/2 right-3 -translate-y-1/2 text-gray-400'
           >
             <X className='h-4 w-4' aria-hidden='true' />
@@ -69,7 +71,9 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
             <li key={complaint.id}>
               <button
                 type='button'
-                onClick={() => onSelect(complaint)}
+                onClick={() => {
+                  onSelect(complaint);
+                }}
                 className='w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-[14px] hover:border-[var(--secondary)]'
               >
                 {complaint.label}
@@ -89,7 +93,9 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
               <button
                 key={complaint.id}
                 type='button'
-                onClick={() => onSelect(complaint)}
+                onClick={() => {
+                  onSelect(complaint);
+                }}
                 className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[12px] text-gray-700 hover:border-[var(--secondary)] hover:text-[var(--secondary)]'
               >
                 {complaint.label}

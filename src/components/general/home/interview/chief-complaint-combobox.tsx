@@ -132,7 +132,9 @@ function ComplaintPopover({
                 <CommandItem
                   key={complaint.id}
                   value={`${complaint.label} ${complaint.synonyms.join(' ')}`}
-                  onSelect={() => onSelect(complaint)}
+                  onSelect={() => {
+                    onSelect(complaint);
+                  }}
                 >
                   <Check
                     className={cn(
