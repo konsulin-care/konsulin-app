@@ -327,18 +327,15 @@ export function CardStackContainer({
 
       <div
         ref={containerRef}
+        className='card-stack-viewport'
+        aria-label='Question navigation'
         onClick={handleCardClick}
         onKeyDown={handleCardKeyDown}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <fieldset
-          className='card-stack-viewport'
-          aria-label='Question navigation'
-        >
-          {children}
-        </fieldset>
+        {children}
       </div>
 
       {/* Progress indicator */}
