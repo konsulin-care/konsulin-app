@@ -99,8 +99,15 @@ describe('PractitionerRoleManagementShell', () => {
   it('renders all three sections as accordion items', () => {
     render(<PractitionerRoleManagementShell practitionerRoleId='pr-1' />);
 
+    // Availability is open by default
     expect(screen.getByTestId('section-availability')).toBeInTheDocument();
+
+    // Open services
+    fireEvent.click(screen.getByText('Services'));
     expect(screen.getByTestId('section-services')).toBeInTheDocument();
+
+    // Open specialty
+    fireEvent.click(screen.getByText('Specialty'));
     expect(screen.getByTestId('section-specialty')).toBeInTheDocument();
   });
 
@@ -109,7 +116,11 @@ describe('PractitionerRoleManagementShell', () => {
 
     expect(latestSaveAction()).toBeUndefined();
 
+    // Mark availability dirty (open by default)
     fireEvent.click(screen.getByTestId('mark-availability'));
+
+    // Open services and mark it dirty
+    fireEvent.click(screen.getByText('Services'));
     fireEvent.click(screen.getByTestId('mark-services'));
 
     await waitFor(() => {
@@ -126,7 +137,11 @@ describe('PractitionerRoleManagementShell', () => {
   it('runs every dirty section save then refetches on FAB save', async () => {
     render(<PractitionerRoleManagementShell practitionerRoleId='pr-1' />);
 
+    // Mark availability dirty (open by default)
     fireEvent.click(screen.getByTestId('mark-availability'));
+
+    // Open specialty and mark it dirty
+    fireEvent.click(screen.getByText('Specialty'));
     fireEvent.click(screen.getByTestId('mark-specialty'));
 
     await waitFor(() => {
@@ -144,20 +159,125 @@ describe('PractitionerRoleManagementShell', () => {
     expect(mockRefetch).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps sections mounted so unsaved edits survive switching', () => {
+  it('unmounts closed sections so content is not visible when collapsed', () => {
     render(<PractitionerRoleManagementShell practitionerRoleId='pr-1' />);
 
-    const markAvailability = screen.getByTestId('mark-availability');
-    fireEvent.click(markAvailability);
+    // Availability is open by default — its content is mounted
+    expect(screen.getByTestId('section-availability')).toBeInTheDocument();
 
     // Open the services accordion item
     fireEvent.click(screen.getByText('Services'));
 
-    // Availability is still mounted (state preserved), not unmounted
-    expect(screen.getByTestId('section-availability')).toBeInTheDocument();
-    expect(screen.getByTestId('mark-availability')).toBeInTheDocument();
+    // Availability content should be unmounted (Radix default behavior)
+    expect(
+      screen.queryByTestId('section-availability')
+    ).not.toBeInTheDocument();
 
-    // Specialty item (never opened) is also mounted via forceMount
-    expect(screen.getByTestId('section-specialty')).toBeInTheDocument();
+    // Services content should be mounted
+    expect(screen.getByTestId('section-services')).toBeInTheDocument();
+
+    // Specialty (never opened) should not be in the DOM
+    expect(screen.queryByTestId('section-specialty')).not.toBeInTheDocument();
+  });
+
+  it('does not render AccordionContent with forceMount or className', () => {
+    const { container } = render(
+      <PractitionerRoleManagementShell practitionerRoleId='pr-1' />
+    );
+
+    // No element should have the CSS workaround class
+    const hiddenWorkaround = container.querySelectorAll(
+      '[class*="[&[data-state=closed]]:hidden"]'
+    );
+    expect(hiddenWorkaround).toHaveLength(0);
+  });
+
+  describe('single-open accordion', () => {
+    it('opens availability by default and keeps others closed', () => {
+      render(<PractitionerRoleManagementShell practitionerRoleId='pr-1' />);
+
+      const availabilityItem = screen
+        .getByText('Availability')
+        .closest('[data-state]');
+      const servicesItem = screen.getByText('Services').closest('[data-state]');
+      const specialtyItem = screen
+        .getByText('Specialty')
+        .closest('[data-state]');
+
+      expect(availabilityItem).toHaveAttribute('data-state', 'open');
+      expect(servicesItem).toHaveAttribute('data-state', 'closed');
+      expect(specialtyItem).toHaveAttribute('data-state', 'closed');
+    });
+
+    it('closes availability when services is opened', () => {
+      render(<PractitionerRoleManagementShell practitionerRoleId='pr-1' />);
+
+      fireEvent.click(screen.getByText('Services'));
+
+      const availabilityItem = screen
+        .getByText('Availability')
+        .closest('[data-state]');
+      const servicesItem = screen.getByText('Services').closest('[data-state]');
+
+      expect(availabilityItem).toHaveAttribute('data-state', 'closed');
+      expect(servicesItem).toHaveAttribute('data-state', 'open');
+    });
+  });
+
+  describe('stale closure prevention', () => {
+    it('saves all dirty sections even when marked sequentially', async () => {
+      render(<PractitionerRoleManagementShell practitionerRoleId='pr-1' />);
+
+      // Mark availability dirty first
+      fireEvent.click(screen.getByTestId('mark-availability'));
+      await waitFor(() => {
+        expect(latestSaveAction()?.label).toBe('Save Changes');
+      });
+
+      // Switch to services accordion and mark it dirty
+      fireEvent.click(screen.getByText('Services'));
+      fireEvent.click(screen.getByTestId('mark-services'));
+      await waitFor(() => {
+        expect(screen.getByTestId('dirty-dot-services')).toBeInTheDocument();
+      });
+
+      // Click the FAB save - should save both availability and services
+      const onAction = latestSaveAction()?.onAction;
+      if (!onAction) throw new Error('expected a FAB onAction handler');
+
+      await onAction();
+
+      expect(availabilitySave).toHaveBeenCalledTimes(1);
+      expect(servicesSave).toHaveBeenCalledTimes(1);
+      expect(mockRefetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('captures sections at call time, not at effect dispatch time', async () => {
+      render(<PractitionerRoleManagementShell practitionerRoleId='pr-1' />);
+
+      // Mark only availability dirty -- FAB config is dispatched
+      fireEvent.click(screen.getByTestId('mark-availability'));
+      await waitFor(() => {
+        expect(latestSaveAction()?.label).toBe('Save Changes');
+      });
+
+      // Grab the onAction handler that was dispatched at this point
+      const onAction = latestSaveAction()?.onAction;
+      if (!onAction) throw new Error('expected a FAB onAction handler');
+
+      // Now mark services dirty (simulates editing after FAB was configured)
+      fireEvent.click(screen.getByText('Services'));
+      fireEvent.click(screen.getByTestId('mark-services'));
+      await waitFor(() => {
+        expect(screen.getByTestId('dirty-dot-services')).toBeInTheDocument();
+      });
+
+      // The captured onAction must still see both dirty sections
+      // This validates the ref-based read prevents stale closures
+      await onAction();
+
+      expect(availabilitySave).toHaveBeenCalledTimes(1);
+      expect(servicesSave).toHaveBeenCalledTimes(1);
+    });
   });
 });

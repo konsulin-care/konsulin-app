@@ -11,7 +11,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
 import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import { PractitionerRole } from 'fhir/r4';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PractitionerAvailabilityEditor from './practitioner-availability-editor';
 import ServicesTab from './services-tab';
 import SpecialtySection from './specialty-section';
@@ -90,8 +90,8 @@ function SectionTrigger({
 }
 
 /**
- * Accordion markup. Every section is force-mounted (closed content hidden
- * via CSS), so switching sections preserves unsaved edits in all editors.
+ * Accordion markup. Radix unmounts closed section content automatically,
+ * so switching sections resets each editor's local state.
  */
 function RoleAccordion({
   practitionerRoleId,
@@ -108,12 +108,13 @@ function RoleAccordion({
 
   return (
     <Accordion
-      type='multiple'
-      defaultValue={['availability']}
-      className='w-full'
+      type='single'
+      defaultValue='availability'
+      collapsible
+      className='w-full space-y-2'
       data-role-id={practitionerRoleId}
     >
-      <AccordionItem value='availability'>
+      <AccordionItem value='availability' className='border-b-0'>
         <AccordionTrigger>
           <SectionTrigger
             label='Availability'
@@ -121,7 +122,7 @@ function RoleAccordion({
             dirty={availabilityDirty}
           />
         </AccordionTrigger>
-        <AccordionContent forceMount className='[&[data-state=closed]]:hidden'>
+        <AccordionContent>
           {enhancedRole ? (
             <PractitionerAvailabilityEditor
               practitionerRole={enhancedRole}
@@ -132,7 +133,7 @@ function RoleAccordion({
         </AccordionContent>
       </AccordionItem>
 
-      <AccordionItem value='services'>
+      <AccordionItem value='services' className='border-b-0'>
         <AccordionTrigger>
           <SectionTrigger
             label='Services'
@@ -140,7 +141,7 @@ function RoleAccordion({
             dirty={servicesDirty}
           />
         </AccordionTrigger>
-        <AccordionContent forceMount className='[&[data-state=closed]]:hidden'>
+        <AccordionContent>
           <ServicesTab
             practitionerRoleId={practitionerRoleId}
             practitionerRole={resource}
@@ -149,7 +150,7 @@ function RoleAccordion({
         </AccordionContent>
       </AccordionItem>
 
-      <AccordionItem value='specialty'>
+      <AccordionItem value='specialty' className='border-b-0'>
         <AccordionTrigger>
           <SectionTrigger
             label='Specialty'
@@ -157,7 +158,7 @@ function RoleAccordion({
             dirty={specialtyDirty}
           />
         </AccordionTrigger>
-        <AccordionContent forceMount className='[&[data-state=closed]]:hidden'>
+        <AccordionContent>
           {resource ? (
             <SpecialtySection
               practitionerRole={resource}
@@ -166,6 +167,9 @@ function RoleAccordion({
           ) : null}
         </AccordionContent>
       </AccordionItem>
+
+      {/* Spacer reserves room for the fixed-position FAB */}
+      <div className='h-24' aria-hidden />
     </Accordion>
   );
 }
@@ -216,14 +220,18 @@ export default function PractitionerRoleManagementShell(props: Props) {
   const anyDirty = Object.values(sections).some(section => section.dirty);
   const anySaving = Object.values(sections).some(section => section.saving);
 
+  // Ref always holds the latest sections so the save handler never goes stale.
+  const sectionsRef = useRef(sections);
+  sectionsRef.current = sections;
+
   /** Run every dirty section's save, then refetch the role for a round-trip. */
   const handleFabSave = useCallback(async () => {
-    const dirtySections = Object.values(sections).filter(
+    const dirtySections = Object.values(sectionsRef.current).filter(
       section => section.dirty
     );
     await Promise.all(dirtySections.map(section => section.save()));
     await refetch();
-  }, [sections, refetch]);
+  }, [refetch]);
 
   // Aggregate the FAB action: one "Save Changes" button for all dirty
   // sections, mirroring the previous single-tab FAB wiring.
