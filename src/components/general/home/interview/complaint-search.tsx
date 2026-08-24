@@ -39,7 +39,9 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
         <input
           type='search'
           value={query}
-          onChange={event => setQuery(event.target.value)}
+          onChange={event => {
+            setQuery(event.target.value);
+          }}
           placeholder='Search your concern (Indonesian or English)'
           aria-label='Search concern'
           className='w-full rounded-full border border-gray-200 bg-white py-2.5 pr-10 pl-10 text-[14px] outline-none focus:border-[var(--secondary)]'

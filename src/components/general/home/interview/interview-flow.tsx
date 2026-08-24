@@ -93,7 +93,9 @@ export function InterviewFlow({
                 <li key={option.id}>
                   <button
                     type='button'
-                    onClick={() => handleOptionSelect(option.id)}
+                    onClick={() => {
+                      handleOptionSelect(option.id);
+                    }}
                     className='w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-[14px] text-gray-800 hover:border-[var(--secondary)]'
                   >
                     {option.label}
@@ -108,7 +110,9 @@ export function InterviewFlow({
           <>
             <button
               type='button'
-              onClick={() => setStep('options')}
+              onClick={() => {
+                setStep('options');
+              }}
               aria-label='Back'
               className='mb-3 flex items-center gap-1 text-[12px] text-gray-500'
             >
@@ -121,14 +125,18 @@ export function InterviewFlow({
             <div className='flex flex-col gap-2'>
               <button
                 type='button'
-                onClick={() => handleSafetyAnswer(false)}
+                onClick={() => {
+                  handleSafetyAnswer(false);
+                }}
                 className='w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-[14px] text-gray-800 hover:border-[var(--secondary)]'
               >
                 No, I&apos;m safe
               </button>
               <button
                 type='button'
-                onClick={() => handleSafetyAnswer(true)}
+                onClick={() => {
+                  handleSafetyAnswer(true);
+                }}
                 className='w-full rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-left text-[14px] text-amber-900 hover:border-amber-400'
               >
                 Yes, that&apos;s me
