@@ -120,14 +120,12 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
         <div className='mb-4 flex gap-4'>
           {sessionsFilter.start_date && sessionsFilter.end_date && (
             <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
-              {format(new Date(sessionsFilter.start_date), 'dd MMM yy') +
-                ' - ' +
-                format(new Date(sessionsFilter.end_date), 'dd MMM yy')}
+              {`${format(new Date(sessionsFilter.start_date), 'dd MMM yy')} - ${format(new Date(sessionsFilter.end_date), 'dd MMM yy')}`}
             </Badge>
           )}
           {sessionsFilter.start_time && sessionsFilter.end_time && (
             <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
-              {sessionsFilter.start_time + ' - ' + sessionsFilter.end_time}
+              {`${sessionsFilter.start_time} - ${sessionsFilter.end_time}`}
             </Badge>
           )}
         </div>

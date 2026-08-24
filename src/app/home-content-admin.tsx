@@ -54,7 +54,7 @@ function BookedAppointmentsTodayCard() {
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get(
-        `/fhir/Appointment?location=Location/&date=today&status=booked&_summary=count`
+        '/fhir/Appointment?location=Location/&date=today&status=booked&_summary=count'
       );
       return response.data?.total ?? 0;
     },

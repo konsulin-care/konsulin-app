@@ -69,11 +69,9 @@ func tokenizeInput(input string) []string {
 	for _, r := range strings.ToLower(input) {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			current.WriteRune(r)
-		} else {
-			if current.Len() > 0 {
-				tokens = append(tokens, current.String())
-				current.Reset()
-			}
+		} else if current.Len() > 0 {
+			tokens = append(tokens, current.String())
+			current.Reset()
 		}
 	}
 	if current.Len() > 0 {

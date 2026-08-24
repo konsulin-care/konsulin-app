@@ -174,7 +174,7 @@ func windowsMonFri() []AvailableTimeWindow {
 }
 
 func contains(s, sub string) bool {
-	return len(s) >= len(sub) && (s == sub || len(s) > 0 && containsSubstr(s, sub))
+	return len(s) >= len(sub) && (s == sub || s != "" && containsSubstr(s, sub))
 }
 
 func containsSubstr(s, sub string) bool {

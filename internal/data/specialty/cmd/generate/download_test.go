@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -29,7 +30,7 @@ func TestEnsureDownload_FileExists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(data) != string(content) {
+	if !bytes.Equal(data, content) {
 		t.Errorf("file was modified unexpectedly")
 	}
 }
@@ -56,7 +57,7 @@ func TestEnsureDownload_FileExpired(t *testing.T) {
 	}
 }
 
-func TestDownloadSources(t *testing.T) {
+func TestDownloadSources(_ *testing.T) {
 	// This test verifies the function signature
 	// Actual download testing would require network access
 }

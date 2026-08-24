@@ -20,7 +20,7 @@ func NewWilayahHandler(index *wilayah.WilayahIndex) *WilayahHandler {
 }
 
 // Provinces returns all provinces as a JSON array.
-func (h *WilayahHandler) Provinces(w http.ResponseWriter, r *http.Request) {
+func (h *WilayahHandler) Provinces(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, h.index.Provinces)
 }
 

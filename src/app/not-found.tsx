@@ -23,7 +23,7 @@ export default function Notfound() {
         Oops! Page Not Found
       </h2>
       <p className='text-sm opacity-50'>
-        Sorry, we can't find the page you're looking for.
+        Sorry, we can&apos;t find the page you&apos;re looking for.
       </p>
 
       <button
