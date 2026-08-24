@@ -7,7 +7,7 @@
  * @param system - The coding system URL (or null/undefined)
  * @returns true if the system is LOINC (loinc.org)
  */
-export function isLoincSystem(system: string | undefined | null): boolean {
+export function isLoincSystem(system?: string | null): boolean {
   if (!system) return false;
   return system.replace(/^https?:\/\//i, '').toLowerCase() === 'loinc.org';
 }
