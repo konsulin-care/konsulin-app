@@ -171,12 +171,12 @@ func buildRecommendationTiers(tiers []recommendationTier, bundles []*searchset, 
 			continue
 		}
 		out = appendCandidates(out, seen, CandidateParams{
-			Logical:       logical,
-			Near:          nil,
-			UseNear:       false,
-			Specialty:     strings.Join(tier.codes, ","),
+			Logical:         logical,
+			Near:            nil,
+			UseNear:         false,
+			Specialty:       strings.Join(tier.codes, ","),
 			ServiceTypeCode: serviceTypeCode,
-			Source:        tier.label,
+			Source:          tier.label,
 		})
 	}
 	return out
@@ -184,12 +184,12 @@ func buildRecommendationTiers(tiers []recommendationTier, bundles []*searchset, 
 
 // CandidateParams groups parameters for appendCandidates.
 type CandidateParams struct {
-	Logical       *logicalBundle
-	Near          map[string]float64
-	UseNear       bool
-	Specialty     string
+	Logical         *logicalBundle
+	Near            map[string]float64
+	UseNear         bool
+	Specialty       string
 	ServiceTypeCode string
-	Source        string
+	Source          string
 }
 
 func appendCandidates(out []Recommendation, seen map[string]bool, params CandidateParams) []Recommendation {
