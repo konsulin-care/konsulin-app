@@ -52,7 +52,7 @@ func NextFreeSlot(ctx context.Context, params NextFreeSlotParams) (*TimeSlot, er
 		client = http.DefaultClient
 	}
 	baseURL := strings.TrimRight(params.BackendBaseURL, "/")
-	offset := parseTZOffset(params.TZOffset)
+	offset := parseOffsetToDuration(params.TZOffset)
 	dur := params.DurationMinutes
 	if dur <= 0 {
 		dur = defaultDurationMinutes
@@ -62,7 +62,7 @@ func NextFreeSlot(ctx context.Context, params NextFreeSlotParams) (*TimeSlot, er
 	if err != nil {
 		return nil, err
 	}
-	return computeNextSlot(params.Windows, busy, params.Now, offset, dur), nil
+	return findNextSlot(params.Windows, busy, params.Now, offset, dur), nil
 }
 
 // fetchBusySlots queries busy Slot resources for a schedule within the horizon.
@@ -113,8 +113,8 @@ func fetchBusySlots(ctx context.Context, client *http.Client, baseURL, scheduleI
 	return out, nil
 }
 
-// computeNextSlot scans the daily windows within the horizon for a free slot.
-func computeNextSlot(windows []AvailableTimeWindow, busy []BusySlot, now time.Time, offset time.Duration, dur int) *TimeSlot {
+// findNextSlot scans the daily windows within the horizon for a free slot.
+func findNextSlot(windows []AvailableTimeWindow, busy []BusySlot, now time.Time, offset time.Duration, dur int) *TimeSlot {
 	localNow := now.UTC().Add(offset)
 	for i := 0; i < availabilityHorizonDays; i++ {
 		day := localNow.AddDate(0, 0, i)
@@ -203,9 +203,9 @@ func parseHHMM(value string) (int, bool) {
 	return hours*60 + minutes, true
 }
 
-// parseTZOffset converts a "+07:00" / "-05:30" / "Z" offset to a duration.
+// parseOffsetToDuration converts a "+07:00" / "-05:30" / "Z" offset to a duration.
 // Empty or "Z" values resolve to UTC; empty falls back to the WIB default.
-func parseTZOffset(tz string) time.Duration {
+func parseOffsetToDuration(tz string) time.Duration {
 	tz = strings.TrimSpace(tz)
 	if tz == "" {
 		tz = defaultTZOffset
@@ -269,13 +269,13 @@ func ParseBusySlotsBundle(data json.RawMessage) ([]BusySlot, error) {
 
 // ParseTZOffset converts a "+07:00" / "-05:30" / "Z" offset string to a
 // duration. Exported so the handler can compute the default offset.
-func ParseTZOffset(tz string) time.Duration { // skipcq: GO-RVV-B0001 — intentional: export internal func
-	return parseTZOffset(tz)
+func ParseTZOffset(tz string) time.Duration {
+	return parseOffsetToDuration(tz)
 }
 
-// ComputeNextSlot is the exported pure-function wrapper over computeNextSlot.
+// ComputeNextSlot is the exported pure-function wrapper over findNextSlot.
 // The handler calls this with batch-fetched busy slots after fetchBusySlots
 // is no longer needed.
-func ComputeNextSlot(windows []AvailableTimeWindow, busy []BusySlot, now time.Time, offset time.Duration, dur int) *TimeSlot { // skipcq: GO-RVV-B0001 — intentional: export internal func
-	return computeNextSlot(windows, busy, now, offset, dur)
+func ComputeNextSlot(windows []AvailableTimeWindow, busy []BusySlot, now time.Time, offset time.Duration, dur int) *TimeSlot {
+	return findNextSlot(windows, busy, now, offset, dur)
 }
