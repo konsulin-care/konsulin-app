@@ -62,15 +62,7 @@ export default function PatientRecordSoap({
     const fetchProfile = async () => {
       try {
         const profile = await getProfileById(practitionerId, 'Practitioner');
-        const name = formatPractitionerName(
-          profile as {
-            name?: Array<{
-              prefix?: string[];
-              given?: string[];
-              family?: string;
-            }>;
-          }
-        );
+        const name = formatPractitionerName(profile);
         onPractitionerNameChange?.(name);
       } catch {
         onPractitionerNameChange?.('Practitioner');

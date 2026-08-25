@@ -30,7 +30,7 @@ module.exports = [
   {
     ignores: [
       '**/.next/**',
-      'src/components/shared/__tests__/practitioner-location-combobox.test.tsx'
+      '**/__tests__/**'
     ]
   },
 

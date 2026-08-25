@@ -7,7 +7,7 @@ import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
 import { useRecordDetail } from '@/hooks/useRecordDetail';
-import type { Money, Observation, QuestionnaireResponse } from 'fhir/r4';
+import type { Money, Observation } from 'fhir/r4';
 import { PenLine, Repeat2, Sparkles, UsersIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -115,7 +115,7 @@ export default function RecordDetail({
       isPatientJournal(data as unknown as Observation);
     const isPaidAssessment =
       data?.resourceType === 'QuestionnaireResponse' &&
-      !isSoapNote(data as unknown as QuestionnaireResponse) &&
+      !isSoapNote(data) &&
       authState.isAuthenticated &&
       reportFee !== null;
 

@@ -17,7 +17,7 @@ function makeObservation(
       : undefined,
     id: overrides.id,
     ...overrides
-  } as Observation;
+  };
 }
 
 function makeBundle(observations: Observation[]): IBundleResponse {
@@ -71,7 +71,7 @@ describe('parseRecordBundles', () => {
     });
     const obsB = makeObservation({
       id: '2',
-      lastUpdated: undefined as unknown as string
+      lastUpdated: undefined
     });
     const obsC = makeObservation({
       id: '3',
@@ -88,11 +88,11 @@ describe('parseRecordBundles', () => {
   it('handles all undefined lastUpdated stably', () => {
     const obsA = makeObservation({
       id: '1',
-      lastUpdated: undefined as unknown as string
+      lastUpdated: undefined
     });
     const obsB = makeObservation({
       id: '2',
-      lastUpdated: undefined as unknown as string
+      lastUpdated: undefined
     });
 
     const result = parseRecordBundles([makeBundle([obsA, obsB])]);
