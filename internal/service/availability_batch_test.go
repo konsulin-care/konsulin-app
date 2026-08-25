@@ -174,5 +174,3 @@ func windowsMonFri() []AvailableTimeWindow {
 		},
 	}
 }
-
-
