@@ -65,7 +65,7 @@ func codeTermCounts(definitions map[string]string, stopWords map[string]bool) (m
 // top-K tokens ordered by score descending (alphabetical tie-break). Tokens
 // with df < 2 (singleton noise) or a non-positive score (idf 0, i.e. present
 // in every document of the corpus) are dropped.
-func rankKeywords(counts map[string]int, df map[string]int, n, topK int) []string {
+func rankKeywords(counts, df map[string]int, n, topK int) []string {
 	type scored struct {
 		token string
 		score float64

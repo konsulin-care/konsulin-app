@@ -71,7 +71,7 @@ func newRecBackend(t *testing.T, bundles map[string]map[string]any, near []map[s
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		entries := []map[string]any{}
+		var entries []map[string]any
 		for _, e := range req.Entry {
 			u, _ := url.Parse(e.Request.URL)
 			specialtyParam := u.Query().Get("specialty")
@@ -108,7 +108,7 @@ func newRecBackend(t *testing.T, bundles map[string]map[string]any, near []map[s
 
 // roleSearchset builds a searchset for one practitioner with one role, one
 // location, one service, and one schedule.
-func roleSearchset(spec, display string, pracID, roleID, locID, hsID, schID string, fee int) map[string]any { // NOSONAR
+func roleSearchset(spec, display, pracID, roleID, locID, hsID, schID string, fee int) map[string]any { // NOSONAR
 	return map[string]any{
 		"resourceType": "Bundle",
 		"type":         "searchset",

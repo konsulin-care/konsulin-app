@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func slotRec(id string, start, end string, fee int, distance *float64) Recommendation {
+func slotRec(id, start, end string, fee int, distance *float64) Recommendation {
 	var s *TimeSlot
 	if start != "" {
 		s = &TimeSlot{Start: start, End: end}

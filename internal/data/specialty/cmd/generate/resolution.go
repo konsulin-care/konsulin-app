@@ -173,7 +173,7 @@ func domainPool(domain string, codeSignatures map[string][]string) []string {
 }
 
 // fallbackResolution pins an unresolved node to its core domain generalist.
-func fallbackResolution(domain string, domainFallbacks map[string]string, codeLabels map[string]string) ResolutionNode {
+func fallbackResolution(domain string, domainFallbacks, codeLabels map[string]string) ResolutionNode {
 	code := domainFallbacks[domain]
 	return ResolutionNode{NuccCode: code, Label: codeLabels[code], Score: 1.0}
 }
