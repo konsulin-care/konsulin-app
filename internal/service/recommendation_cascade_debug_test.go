@@ -17,7 +17,7 @@ func TestDebugCascadeBundles(t *testing.T) {
 	}
 
 	b := newRecBackend(t, bundles, nil, nil)
-	svc := newRecommendationService(t, b)
+	svc := newRecService(t, b)
 
 	levels := buildCascadeLevels(FetchParams{Specialty: "orthopedics"})
 	urls := make([]string, len(levels))

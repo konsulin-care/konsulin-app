@@ -54,7 +54,7 @@ func TestFetchWithLocation_returnsLevel1WhenSufficient(t *testing.T) {
 		"2084P0800X": multiRoleSearchset("2084P0800X", "Psychiatry Physician", pracIDs),
 	}
 	b := newRecBackend(t, bundles, nil, nil)
-	svc := newRecommendationService(t, b)
+	svc := newRecService(t, b)
 
 	recs, err := svc.FetchWithLocation(context.Background(), FetchParams{
 		Specialty: "2084P0800X",
@@ -83,7 +83,7 @@ func TestFetchWithLocation_cascadesWhenLevel1Insufficient(t *testing.T) {
 		"103TC1900X": multiRoleSearchset("103TC1900X", "Counseling Psychologist", []string{"p1", "p2"}),
 	}
 	b := newRecBackend(t, bundles, nil, nil)
-	svc := newRecommendationService(t, b)
+	svc := newRecService(t, b)
 
 	recs, err := svc.FetchWithLocation(context.Background(), FetchParams{
 		Specialty: "2084P0800X",
@@ -116,7 +116,7 @@ func TestFetchWithLocation_poolMergeCoversGeneralist(t *testing.T) {
 		"103T00000X": multiRoleSearchset("103T00000X", "Psychologist", []string{"g1", "g2", "g3"}),
 	}
 	b := newRecBackend(t, bundles, nil, nil)
-	svc := newRecommendationService(t, b)
+	svc := newRecService(t, b)
 
 	recs, err := svc.FetchWithLocation(context.Background(), FetchParams{
 		Specialty: "2084P0800X",
@@ -167,7 +167,7 @@ func TestFetchWithLocation_usesFetchWhenNoCoords(t *testing.T) {
 		"103T00000X": psychologySearchset(),
 	}
 	b := newRecBackend(t, bundles, nil, nil)
-	svc := newRecommendationService(t, b)
+	svc := newRecService(t, b)
 
 	recs, err := svc.FetchWithLocation(context.Background(), FetchParams{
 		Specialty: "103T00000X",
@@ -191,7 +191,7 @@ func TestFetchWithLocation_singleBatchRequest(t *testing.T) {
 		"2084P0800X": multiRoleSearchset("2084P0800X", "Psychiatry Physician", []string{"p1", "p2", "p3", "p4"}),
 	}
 	b := newRecBackend(t, bundles, nil, nil)
-	svc := newRecommendationService(t, b)
+	svc := newRecService(t, b)
 
 	_, err := svc.FetchWithLocation(context.Background(), FetchParams{
 		Specialty: "2084P0800X",

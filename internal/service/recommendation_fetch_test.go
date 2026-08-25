@@ -160,7 +160,7 @@ func TestPractitionerRoleQueryWithNear_integration(t *testing.T) {
 	}
 
 	b := newRecBackend(t, defaultBundles(), nil, nil)
-	svc := newRecommendationService(t, b)
+	svc := newRecService(t, b)
 
 	// Test with location - should use cascade query
 	query := practitionerRoleQueryWithNear([]string{"orthopedics"}, -6.19, 106.8, 10)

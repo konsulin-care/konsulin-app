@@ -17,7 +17,7 @@ func TestRecommendationService_Fetch_capsAtFour(t *testing.T) {
 		"2084P0800X": multiRoleSearchset("2084P0800X", "Psychiatry Physician", []string{"p1", "p2", "p3", "p4", "p5", "p6"}),
 	}
 	b := newRecBackend(t, bundles, nil, nil)
-	svc := newRecommendationService(t, b)
+	svc := newRecService(t, b)
 
 	recs, err := svc.Fetch(context.Background(), FetchParams{Specialty: "2084P0800X"})
 	if err != nil {
@@ -45,7 +45,7 @@ func TestRecommendationService_Fetch_globalDedupAcrossTiers(t *testing.T) {
 		"2084P0802X": multiRoleSearchset("2084P0802X", "Addiction Psychiatry Physician", []string{"prc-02", "prc-05"}),
 	}
 	b := newRecBackend(t, bundles, nil, nil)
-	svc := newRecommendationService(t, b)
+	svc := newRecService(t, b)
 
 	recs, err := svc.Fetch(context.Background(), FetchParams{
 		Specialty: "2084P0800X",
@@ -76,7 +76,7 @@ func TestRecommendationService_Fetch_burnoutOnlyMentalPool(t *testing.T) {
 		"207WX0107X": roleSearchset("207WX0107X", "Ophthalmology Physician", "eye-1", "role-eye", "loc-E", "hs-E", "sch-E", 300000),
 	}
 	b := newRecBackend(t, bundles, nil, nil)
-	svc := newRecommendationService(t, b)
+	svc := newRecService(t, b)
 
 	recs, err := svc.Fetch(context.Background(), FetchParams{
 		Specialty:       "2084P0800X",
@@ -107,7 +107,7 @@ func TestRecommendationService_Fetch_skipsFailedPoolEntry(t *testing.T) {
 		"2084P0800X": roleSearchset("2084P0800X", "Psychiatry Physician", "prc-02", "role-2", "loc-B", "hs-2", "sch-2", 70000),
 	}
 	b := newRecBackend(t, bundles, nil, map[string]bool{poolParam: true})
-	svc := newRecommendationService(t, b)
+	svc := newRecService(t, b)
 
 	recs, err := svc.Fetch(context.Background(), FetchParams{
 		Specialty: "2084P0800X",
@@ -134,7 +134,7 @@ func TestRecommendationService_Fetch_fillStaysInDomain(t *testing.T) {
 		"103T00000X": multiRoleSearchset("103T00000X", "Psychologist", []string{"g1", "g2", "g3", "g4", "g5"}),
 	}
 	b := newRecBackend(t, bundles, nil, nil)
-	svc := newRecommendationService(t, b)
+	svc := newRecService(t, b)
 
 	recs, err := svc.Fetch(context.Background(), FetchParams{
 		Specialty: "2084P0800X",

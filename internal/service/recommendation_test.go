@@ -218,8 +218,8 @@ func defaultBundles() map[string]map[string]any {
 	}
 }
 
-// newRecommendationService builds a service bound to the given backing stub.
-func newRecommendationService(t *testing.T, b *recBackend) *RecommendationService {
+// newRecService builds a service bound to the given backing stub.
+func newRecService(t *testing.T, b *recBackend) *RecommendationService {
 	t.Helper()
 	return NewRecommendationService(RecommendationOptions{
 		BackendBaseURL: b.server.URL,
