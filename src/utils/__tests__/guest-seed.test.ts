@@ -3,7 +3,7 @@ import { generateGuestSeed } from '../guest-seed';
 
 /** Fixed 8 bytes so the derived seed is deterministic in tests. */
 const FIXED_BYTES = new Uint8Array([
-  0xde, 0xad, 0xbe, 0xef, 0x00, 0x0f, 0xff, 0x01
+  0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x0F, 0xFF, 0x01
 ]);
 
 describe('generateGuestSeed', () => {
