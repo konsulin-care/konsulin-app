@@ -37,7 +37,12 @@ jobs:
         run: npm ci
 
       - name: Lint JS/TS
-        run: npm exec -- eslint src --max-warnings 5
+        uses: reviewdog/action-eslint@2fee6dd72a5419ff4113f694e2068d2a03bb35dd # v1.33.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-check
+          eslint_flags: "src/"
+          fail_level: error
 
       - name: Run Next.js build
         run: npm run build
