@@ -41,7 +41,7 @@ describe('buildQuestionnaireResponseSearch', () => {
     expect(url).toContain('author=Patient/PAT-1');
     expect(url).toContain('authored=ge2026-06-01');
     expect(url).toContain(
-      'status=completed&_elements=questionnaire,authored&_count=500'
+      'status=completed&_elements=questionnaire,authored,author&_count=500'
     );
     expect(url).not.toContain('identifier=');
   });

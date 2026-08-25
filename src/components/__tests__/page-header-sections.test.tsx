@@ -20,6 +20,7 @@ function makeAppointment(slotStart: string | null): MergedAppointment {
     slotStart,
     slotEnd: null,
     slotStatus: null,
+    appointmentStatus: null,
     appointmentType: null,
     practitionerId: null,
     practitionerName: null,

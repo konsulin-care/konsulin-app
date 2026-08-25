@@ -4,6 +4,9 @@
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { resolveMode, useFab } from '@/context/fabContext';
+import { useRecommendationResult } from '@/context/recommendationContext';
+import type { InterviewResult } from '@/types/recommendation-interview';
+import { useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
@@ -18,6 +21,7 @@ import { FabToggleShell } from './fab/toggle-shell';
 import type { MenuAction, Pill } from './fab/types';
 import { useScrollHide } from './fab/use-scroll-hide';
 import RegisterPractitionerDrawer from './register-practitioner-drawer';
+import ScreeningDrawer from './screening-drawer';
 
 /** Get the appropriate set of pills for the user's role. */
 function getRolePills(roleName: string | undefined): Pill[] {
@@ -41,9 +45,20 @@ export default function QuickActionFab() {
   const router = useRouter();
   const { state: authState } = useAuth();
   const { state, dispatch } = useFab();
+  const queryClient = useQueryClient();
+  const { setResult } = useRecommendationResult();
   const [showRegisterPrac, setShowRegisterPrac] = useState(false);
   const [showAddLocation, setShowAddLocation] = useState(false);
   const [showAddAssessment, setShowAddAssessment] = useState(false);
+  const [showScreening, setShowScreening] = useState(false);
+
+  const handleScreeningComplete = useCallback(
+    (result: InterviewResult) => {
+      setResult(result);
+      void queryClient.invalidateQueries({ queryKey: ['recommendations'] }); // skipcq: JS-0098 — fire-and-forget cache invalidation
+    },
+    [queryClient, setResult]
+  );
 
   const mode = resolveMode(state);
   const roleName = authState?.userInfo?.role_name;
@@ -73,6 +88,10 @@ export default function QuickActionFab() {
       }
       if (pill.action === 'add-assessment') {
         setShowAddAssessment(true);
+        return;
+      }
+      if (pill.action === 'get-recommendation') {
+        setShowScreening(true);
         return;
       }
       if (redirectGuestIfNeeded(pill, isGuest)) {
@@ -149,6 +168,11 @@ export default function QuickActionFab() {
             open={showAddAssessment}
             onClose={() => setShowAddAssessment(false)}
           />
+          <ScreeningDrawer
+            open={showScreening}
+            onClose={() => setShowScreening(false)}
+            onComplete={handleScreeningComplete}
+          />
         </>
       );
     }
@@ -178,6 +202,11 @@ export default function QuickActionFab() {
           <AddAssessmentDrawer
             open={showAddAssessment}
             onClose={() => setShowAddAssessment(false)}
+          />
+          <ScreeningDrawer
+            open={showScreening}
+            onClose={() => setShowScreening(false)}
+            onComplete={handleScreeningComplete}
           />
         </>
       );

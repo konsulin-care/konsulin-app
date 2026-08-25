@@ -19,6 +19,10 @@ import LocationComboboxList from './location-combobox/command-list';
 export type ComboboxOption = {
   code: string;
   name: string;
+  /** Optional group heading rendered as a cmdk group label. */
+  group?: string;
+  /** Optional text added to the item filter value (e.g. code + classification). */
+  searchText?: string;
 };
 
 type BaseProps = {

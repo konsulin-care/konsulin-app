@@ -1,0 +1,222 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"time"
+)
+
+const (
+	// shardCount is the number of shard files to split proximity data into.
+	shardCount = 50
+	// goIndexFileName is the go:embed index file written by the generator.
+	goIndexFileName = "index_data.json"
+)
+
+// OutputData represents the data to be written to output files.
+type OutputData struct {
+	GeneratedAt   string
+	Proximity     map[string]map[string]float64
+	Index         map[string]*SpecialtyNodeOutput
+	InvertedIndex map[string][]string
+	Resolutions   map[string]ResolutionNode
+	// NuccNodes carries the full Individual-section NUCC parse, preserving
+	// grouping/classification/specialization for the frontend taxonomy module.
+	NuccNodes map[string]*nuccNode
+}
+
+// SpecialtyNodeOutput represents a specialty node for output.
+type SpecialtyNodeOutput struct {
+	NuccCode        string   `json:"nuccCode"`
+	IscoCode        string   `json:"iscoCode"`
+	Label           string   `json:"label"`
+	DomainSignature []string `json:"domainSignature"`
+}
+
+// writeOutput writes the generated data to files.
+func writeOutput(data *OutputData) error {
+	// Write proximity shards to subdirectory
+	if err := writeProximityShards(data); err != nil {
+		return fmt.Errorf("writing proximity shards: %w", err)
+	}
+
+	// Write the go:embed index JSON consumed by the runtime package
+	if err := writeGoIndexJSON(data); err != nil {
+		return fmt.Errorf("writing go index JSON: %w", err)
+	}
+
+	// Write TypeScript type definitions
+	if err := writeTSOutput(data); err != nil {
+		return fmt.Errorf("writing TypeScript output: %w", err)
+	}
+
+	// Write the frontend resolution map
+	if err := writeSpecialtyResolutionTS(data); err != nil {
+		return fmt.Errorf("writing TypeScript resolution output: %w", err)
+	}
+
+	// Write the frontend NUCC taxonomy module (practitioner specialty picker)
+	if err := writeNuccTaxonomyTS(data); err != nil {
+		return fmt.Errorf("writing TypeScript taxonomy output: %w", err)
+	}
+
+	return nil
+}
+
+// fromPackageDir reports whether the generator runs with the package directory
+// as the working directory (true when invoked via `go generate`, which sets cwd
+// to the package directory). It mirrors the existing os.Stat("config") detection.
+func fromPackageDir() bool {
+	_, err := os.Stat("config")
+	return !os.IsNotExist(err)
+}
+
+// proximityDir returns the path to the proximity subdirectory.
+func proximityDir() string {
+	if fromPackageDir() {
+		return "proximity"
+	}
+	return "internal/data/specialty/proximity"
+}
+
+// writeProximityShards splits proximity data into shard files.
+func writeProximityShards(data *OutputData) error {
+	proxDir := proximityDir()
+
+	// Create directory if it doesn't exist
+	if err := os.MkdirAll(proxDir, 0o750); err != nil {
+		return fmt.Errorf("creating proximity dir: %w", err)
+	}
+
+	// Sort codes for deterministic output
+	codes := make([]string, 0, len(data.Proximity))
+	for code := range data.Proximity {
+		codes = append(codes, code)
+	}
+	sort.Strings(codes)
+
+	// Split into shards
+	total := len(codes)
+	shardSize := (total + shardCount - 1) / shardCount // ceiling division
+
+	for i := 0; i < shardCount; i++ {
+		start := i * shardSize
+		if start >= total {
+			break
+		}
+		end := start + shardSize
+		if end > total {
+			end = total
+		}
+
+		shardCodes := codes[start:end]
+		if err := writeProximityShard(proxDir, i, shardCodes, data.Proximity); err != nil {
+			return fmt.Errorf("writing shard %d: %w", i, err)
+		}
+
+		fmt.Printf("\rWriting shards (%d/%d)...", i+1, shardCount)
+	}
+	fmt.Println()
+
+	return nil
+}
+
+// writeProximityShard writes a single shard file containing proximity data
+// for the given codes. The shard uses init() to populate the Generated map.
+func writeProximityShard(proxDir string, shardIndex int, codes []string, proximity map[string]map[string]float64) error {
+	fileName := fmt.Sprintf("shard_%02d.go", shardIndex)
+	filePath := filepath.Join(proxDir, fileName)
+
+	// nolint:gosec // G306: generated shard files must stay group-readable
+	f, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("creating %s: %w", fileName, err)
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	w := bufio.NewWriter(f)
+
+	if err := writeShardHeader(w); err != nil {
+		return fmt.Errorf("writing shard %s header: %w", fileName, err)
+	}
+
+	// Write entries
+	for _, code := range codes {
+		row := proximity[code]
+
+		// Sort row keys for deterministic output
+		codesB := make([]string, 0, len(row))
+		for codeB := range row {
+			codesB = append(codesB, codeB)
+		}
+		sort.Strings(codesB)
+
+		if _, err := fmt.Fprintf(w, "\tGenerated[%q] = map[string]float64{\n", code); err != nil {
+			return fmt.Errorf("writing shard %s entry for %s: %w", fileName, code, err)
+		}
+		for _, codeB := range codesB {
+			if _, err := fmt.Fprintf(w, "\t\t%q: %f,\n", codeB, row[codeB]); err != nil {
+				return fmt.Errorf("writing shard %s score for %s/%s: %w", fileName, code, codeB, err)
+			}
+		}
+		if _, err := fmt.Fprint(w, "\t}\n"); err != nil {
+			return fmt.Errorf("writing shard %s entry close for %s: %w", fileName, code, err)
+		}
+	}
+
+	if _, err := fmt.Fprint(w, "}\n"); err != nil {
+		return fmt.Errorf("writing shard %s tail: %w", fileName, err)
+	}
+
+	return w.Flush()
+}
+
+// writeShardHeader writes the generated-file header for a proximity shard.
+func writeShardHeader(w *bufio.Writer) error {
+	_, err := fmt.Fprint(w, `// Code generated by go:generate; DO NOT EDIT.
+
+package proximity
+
+func init() {
+`)
+	return err
+}
+
+func writeTSOutput(data *OutputData) error {
+	content := fmt.Sprintf(`// Code generated; DO NOT EDIT.
+// Generated at: %s
+
+export interface SpecialtyNode {
+  nuccCode: string;
+  iscoCode: string;
+  label: string;
+  domainSignature: string[];
+}
+
+export type ProximityTable = Record<string, Record<string, number>>;
+
+export interface SpecialtyIndex {
+  proximity: ProximityTable;
+  specialties: Record<string, SpecialtyNode>;
+}
+`, data.GeneratedAt)
+
+	// Determine TypeScript output path based on current directory
+	tsPath := "src/types/specialty-ontology.ts"
+	if fromPackageDir() {
+		// Running from the package dir (go generate cwd) -> project root is three levels up
+		tsPath = "../../../src/types/specialty-ontology.ts"
+	}
+	// nolint:gosec // G306: generated specialty-ontology.ts must stay group-readable for the repo
+	return os.WriteFile(tsPath, []byte(content), 0644)
+}
+
+// now returns current time in ISO format.
+func now() string {
+	return time.Now().UTC().Format(time.RFC3339)
+}

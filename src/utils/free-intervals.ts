@@ -26,6 +26,7 @@ export interface BookableInterval {
 type DayName = (typeof DAY_NAMES)[number];
 
 function dateToDayIndex(date: Date): number {
+  // skipcq: JS-D1001 — self-explanatory helper
   return (date.getDay() + 6) % 7;
 }
 
@@ -34,8 +35,8 @@ function dateToDayIndex(date: Date): number {
  */
 function parseTimeToMinutes(time: string): number {
   const parts = time.split(':');
-  const h = Number(parts[0]) || 0;
-  const m = Number(parts[1]) || 0;
+  const h = Number(parts[0]) || 0; // skipcq: JS-C1002 — standard hour abbreviation
+  const m = Number(parts[1]) || 0; // skipcq: JS-C1002 — standard minute abbreviation
   return h * 60 + m;
 }
 
@@ -43,8 +44,8 @@ function parseTimeToMinutes(time: string): number {
  * Format minutes since midnight back to HH:mm.
  */
 function minutesToTime(totalMinutes: number): string {
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
+  const h = Math.floor(totalMinutes / 60); // skipcq: JS-C1002 — standard hour abbreviation
+  const m = totalMinutes % 60; // skipcq: JS-C1002 — standard minute abbreviation
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
@@ -52,9 +53,9 @@ function minutesToTime(totalMinutes: number): string {
  * Format a date object to YYYY-MM-DD.
  */
 function formatDateStr(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
+  const y = date.getFullYear(); // skipcq: JS-C1002 — standard year abbreviation
+  const m = String(date.getMonth() + 1).padStart(2, '0'); // skipcq: JS-C1002 — standard month abbreviation
+  const d = String(date.getDate()).padStart(2, '0'); // skipcq: JS-C1002 — standard day abbreviation
   return `${y}-${m}-${d}`;
 }
 

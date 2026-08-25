@@ -136,6 +136,7 @@ describe('HomeContentAdmin', () => {
   });
 
   it('renders practitioner count when data loads', async () => {
+    // NOSONAR
     mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
 
     render(<HomeContentAdmin />, { wrapper });

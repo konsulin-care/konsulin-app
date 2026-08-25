@@ -97,6 +97,7 @@ describe('storeFhirIdForRole', () => {
   });
 
   it('rejects __proto__ key', async () => {
+    // NOSONAR
     mockDbGet.mockResolvedValue(null);
     await expect(
       storeFhirIdForRole('user-1', '__proto__', 'polluted')
@@ -166,42 +167,29 @@ describe('getFhirIdForRole', () => {
     expect(await getFhirIdForRole('user-1', 'Patient')).toBeUndefined();
   });
 
-  it('rejects __proto__ key', async () => {
-    mockDbGet.mockResolvedValue(null);
-    await expect(
-      getFhirIdForRole('user-1', '__proto__')
-    ).rejects.toThrow(TypeError);
-  });
-
-  it('rejects constructor key', async () => {
-    mockDbGet.mockResolvedValue(null);
-    await expect(
-      getFhirIdForRole('user-1', 'constructor')
-    ).rejects.toThrow(TypeError);
-  });
-
-  it('rejects prototype key', async () => {
-    mockDbGet.mockResolvedValue(null);
-    await expect(
-      getFhirIdForRole('user-1', 'prototype')
-    ).rejects.toThrow(TypeError);
-  });
+  it.each(['__proto__', 'constructor', 'prototype'])(
+    'rejects %s key',
+    async role => {
+      mockDbGet.mockResolvedValue(null);
+      await expect(getFhirIdForRole('user-1', role)).rejects.toThrow(TypeError);
+    }
+  );
 
   it('allows a legitimate role key', async () => {
     mockDbGet.mockResolvedValue({
       value: { Practitioner: 'prac-456' }
     });
-    await expect(
-      getFhirIdForRole('user-1', 'Practitioner')
-    ).resolves.toBe('prac-456');
+    await expect(getFhirIdForRole('user-1', 'Practitioner')).resolves.toBe(
+      'prac-456'
+    );
   });
 
   it('allows retrieving a banned key if already stored', async () => {
     mockDbGet.mockResolvedValue({
       value: { constructor: 'ct-999' }
     });
-    await expect(
-      getFhirIdForRole('user-1', 'constructor')
-    ).resolves.toBe('ct-999');
+    await expect(getFhirIdForRole('user-1', 'constructor')).resolves.toBe(
+      'ct-999'
+    );
   });
 });

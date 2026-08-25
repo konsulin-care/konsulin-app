@@ -56,7 +56,7 @@ export function useReferralWrite(progress?: ResearchProgress): void {
         : null;
 
     let cancelled = false;
-    const isCancelled = (): boolean => cancelled;
+    const isCancelled = (): boolean => cancelled; // skipcq: JS-D1001 — self-explanatory helper
 
     if (batch && referrer) {
       // skipcq: JS-0098 - fire-and-forget referral write; cancellation flag guards the effect

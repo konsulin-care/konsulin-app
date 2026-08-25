@@ -285,7 +285,8 @@ describe('PatientDetail', () => {
       newData: undefined,
       isLoading: true,
       isError: false,
-      isFetching: false
+      isFetching: false,
+      refetch: vi.fn()
     });
 
     render(<PatientDetail practitionerRoleId='role-123' />);
@@ -297,7 +298,8 @@ describe('PatientDetail', () => {
       newData: undefined,
       isLoading: false,
       isError: false,
-      isFetching: false
+      isFetching: false,
+      refetch: vi.fn()
     });
 
     const { container } = render(

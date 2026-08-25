@@ -328,7 +328,6 @@ export function CardStackContainer({
       <div
         ref={containerRef}
         className='card-stack-viewport'
-        role='group'
         aria-label='Question navigation'
         onClick={handleCardClick}
         onKeyDown={handleCardKeyDown}

@@ -36,18 +36,13 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Lint changed JS/TS files
-        run: |
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          git fetch origin "$BASE_SHA" --depth=1
-          CHANGED="$(git diff --name-only "$BASE_SHA" HEAD --diff-filter=ACMR | grep -E '\.(js|jsx|ts|tsx)$' || true)"
-          if [ -n "$CHANGED" ]; then
-            echo "Linting changed files:"
-            printf '%s\n' "$CHANGED"
-            printf '%s\n' "$CHANGED" | xargs npx eslint --max-warnings 5
-          else
-            echo "No changed JS/TS files to lint"
-          fi
+      - name: Lint JS/TS
+        uses: reviewdog/action-eslint@2fee6dd72a5419ff4113f694e2068d2a03bb35dd # v1.33.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-check
+          eslint_flags: "src/"
+          fail_level: error
 
       - name: Run Next.js build
         run: npm run build

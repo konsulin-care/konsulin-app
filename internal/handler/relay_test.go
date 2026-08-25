@@ -52,6 +52,9 @@ func TestRelayBooking_createsSlotAndInvoice(t *testing.T) {
 	if result["invoiceId"] != "Invoice/inv-012" {
 		t.Errorf("expected invoiceId=Invoice/inv-012, got %v", result["invoiceId"])
 	}
+	if result["appointmentId"] != "Appointment/appt-345" {
+		t.Errorf("expected appointmentId=Appointment/appt-345, got %v", result["appointmentId"])
+	}
 	if result["healthcareServiceName"] != "Konsultasi Umum" {
 		t.Errorf("expected healthcareServiceName=Konsultasi Umum, got %v", result["healthcareServiceName"])
 	}
@@ -170,6 +173,7 @@ func TestRelayBooking_bundleHasCorrectResources(t *testing.T) {
 			"entry": []map[string]any{
 				{"response": map[string]any{"status": "201 Created", "location": "http://localhost:8080/fhir/Slot/slot-789/_history/1"}},
 				{"response": map[string]any{"status": "201 Created", "location": "http://localhost:8080/fhir/Invoice/inv-012/_history/1"}},
+				{"response": map[string]any{"status": "201 Created", "location": "http://localhost:8080/fhir/Appointment/appt-345/_history/1"}},
 			},
 		}
 		w.Header().Set("Content-Type", "application/fhir+json")

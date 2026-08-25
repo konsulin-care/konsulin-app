@@ -98,6 +98,7 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
   isLoadingMore
 }: Props<T>) {
   return (
+    // skipcq: JS-0415 — nesting inherent to shell layout
     <div className='mt-[-24px] rounded-[16px] bg-white pb-20'>
       <div className='w-full p-4'>
         <div className='flex gap-4'>
@@ -120,14 +121,12 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
         <div className='mb-4 flex gap-4'>
           {sessionsFilter.start_date && sessionsFilter.end_date && (
             <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
-              {format(new Date(sessionsFilter.start_date), 'dd MMM yy') +
-                ' - ' +
-                format(new Date(sessionsFilter.end_date), 'dd MMM yy')}
+              {`${format(new Date(sessionsFilter.start_date), 'dd MMM yy')} - ${format(new Date(sessionsFilter.end_date), 'dd MMM yy')}`}
             </Badge>
           )}
           {sessionsFilter.start_time && sessionsFilter.end_time && (
             <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
-              {sessionsFilter.start_time + ' - ' + sessionsFilter.end_time}
+              {`${sessionsFilter.start_time} - ${sessionsFilter.end_time}`}
             </Badge>
           )}
         </div>

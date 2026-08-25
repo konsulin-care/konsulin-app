@@ -4,7 +4,6 @@ import BookingCalendar from '@/app/practitioner/booking-calendar';
 import SessionCard from '@/components/schedule/session-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
-import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { usePractitionerDashboard } from '@/services/hooks/usePractitionerDashboard';
 import type { MergedSession } from '@/types/appointment';
 import { endOfMonth, format, startOfDay, startOfMonth } from 'date-fns';
@@ -108,14 +107,12 @@ export default function PractitionerDashboard() {
 
       <BookingCalendar
         parentOnMonthChange={handleMonthChange}
-        bookingState={
-          {
-            date: selectedDate ?? today,
-            startTime: null,
-            hasUserChosenDate: Boolean(selectedDate),
-            isBookingSubmitted: false
-          } as IStateBooking
-        }
+        bookingState={{
+          date: selectedDate ?? today,
+          startTime: null,
+          hasUserChosenDate: Boolean(selectedDate),
+          isBookingSubmitted: false
+        }}
         handleFilterChange={(_label, value) => {
           if (value instanceof Date) handleDateSelect(value);
         }}

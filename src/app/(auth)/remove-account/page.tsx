@@ -5,6 +5,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useProfile } from '@/context/profile/profileContext';
 import { clearUserData } from '@/lib/indexeddb';
 import { purgeResearchData } from '@/services/api/privacy';
+import { clearLastInterviewResult } from '@/utils/recommendation-interview';
 import { clearReferralLocalState } from '@/utils/referral';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
@@ -35,6 +36,7 @@ export default function RemoveAccount() {
         await purgeResearchData();
         clearReferralLocalState(window.localStorage);
         await clearUserData(ownerId);
+        await clearLastInterviewResult();
         // Account is already deleted server-side; local sign-out is best-effort.
         await Session.signOut().catch((err: unknown) => {
           console.error('[remove-account] session sign-out failed', err);

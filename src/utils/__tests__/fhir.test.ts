@@ -19,7 +19,7 @@ describe('isLoincSystem', () => {
   });
 
   it('returns false for undefined', () => {
-    expect(isLoincSystem(undefined)).toBe(false);
+    expect(isLoincSystem()).toBe(false); // skipcq: JS-W1042 — explicit undefined for test clarity
   });
 
   it('returns false for null', () => {

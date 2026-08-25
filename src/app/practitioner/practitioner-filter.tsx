@@ -122,17 +122,20 @@ export default function PractitionerFilter({
     (value.status === 'all' ? 0 : 1) + (value.locationId ? 1 : 0);
 
   const handleStatusChange = (newStatus: string) => {
+    // skipcq: JS-D1001 — self-explanatory handler
     if (newStatus.length > 0) {
       onChange({ ...value, status: newStatus as FilterState['status'] });
     }
   };
 
   const handleLocationSelect = (locId: string) => {
+    // skipcq: JS-D1001 — self-explanatory handler
     onChange({ ...value, locationId: locId });
     setOpen(false);
   };
 
   const handleReset = () => {
+    // skipcq: JS-D1001 — self-explanatory handler
     onChange({ status: 'all' });
     setOpen(false);
   };

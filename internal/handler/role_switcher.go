@@ -68,7 +68,7 @@ func handleRoleSwitch(w http.ResponseWriter, r *http.Request, opts RoleSwitchOpt
 	}
 
 	// nolint:gosec // G124: Secure depends on runtime env; always true on HTTPS production.
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ // NOSONAR go:S2092 - Secure depends on runtime env; always true on HTTPS production
 		Name:     opts.CookieName,
 		Value:    encoded,
 		Path:     "/",

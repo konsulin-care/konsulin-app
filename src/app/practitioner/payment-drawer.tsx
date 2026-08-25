@@ -1,4 +1,4 @@
-import Avatar from '@/components/general/avatar';
+import { PractitionerInfo } from '@/components/practitioner/practitioner-info';
 import AppDrawer from '@/components/ui/app-drawer';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { formatCurrencyValue } from '@/utils/fhir/fee';
@@ -9,7 +9,7 @@ import type { Invoice, PractitionerRole } from 'fhir/r4';
 type PayAppointmentPayload = {
   readonly patientId: string;
   readonly invoiceId: string;
-  readonly useOnlinePayment: boolean;
+  readonly appointmentId: string;
   readonly practitionerRoleId: string;
   readonly slotId: string;
   readonly condition: string;
@@ -29,6 +29,7 @@ type PayAppointmentFn = (
 type Props = {
   paymentOpen: boolean;
   setPaymentOpen: (open: boolean) => void;
+  setPaymentPendingOpen: (open: boolean) => void;
   practitionerAvatar?: {
     photoUrl?: string;
     initials?: string;
@@ -43,6 +44,7 @@ type Props = {
   isPaying: boolean;
   patientId: string;
   selectedSlotId: string | null;
+  appointmentId: string;
   bookingForm: { session_type: string; problem_brief: string };
   practitionerRole: PractitionerRole;
   healthcareServiceId?: string;
@@ -55,41 +57,11 @@ type Props = {
   setIsOpen: (open: boolean) => void;
 };
 
-/** Practitioner avatar, organization, and name in payment drawer. */
-function PractitionerInfo({
-  practitionerAvatar,
-  practitionerOrganizationName,
-  practitionerName
-}: Readonly<{
-  practitionerAvatar?: Props['practitionerAvatar'];
-  practitionerOrganizationName?: string;
-  practitionerName?: string;
-}>) {
-  return (
-    <div className='flex flex-col items-center'>
-      <Avatar
-        photoUrl={practitionerAvatar?.photoUrl}
-        initials={practitionerAvatar?.initials || ''}
-        backgroundColor={practitionerAvatar?.backgroundColor || '#999'}
-        height={72}
-        width={72}
-      />
-      {practitionerOrganizationName && (
-        <div className='mt-2 text-[12px] font-normal'>
-          {practitionerOrganizationName}
-        </div>
-      )}
-      <div className='mt-1 text-center text-[18px] font-bold'>
-        {practitionerName}
-      </div>
-    </div>
-  );
-}
-
 /** Payment drawer with invoice summary and a single Pay Now CTA. */
 export default function PaymentDrawer({
   paymentOpen,
   setPaymentOpen,
+  setPaymentPendingOpen,
   practitionerAvatar,
   practitionerOrganizationName,
   practitionerName,
@@ -99,6 +71,7 @@ export default function PaymentDrawer({
   isPaying,
   patientId,
   selectedSlotId,
+  appointmentId,
   bookingForm,
   practitionerRole,
   healthcareServiceId,
@@ -112,15 +85,16 @@ export default function PaymentDrawer({
     !patientId ||
     !invoice?.id ||
     !selectedSlotId ||
+    !appointmentId ||
     !bookingForm.problem_brief?.trim();
 
-  /** Pays for the appointment online, opens the payment URL, and refreshes the busy-slots cache. */
+  /** Pays for the appointment online, opens the payment URL, and shows the payment-pending drawer. */
   const handlePayOnline = async () => {
     try {
       const response = await payAppointment({
         patientId: `Patient/${patientId}`,
         invoiceId: `Invoice/${invoice.id}`,
-        useOnlinePayment: true,
+        appointmentId: `Appointment/${appointmentId}`,
         practitionerRoleId: `PractitionerRole/${practitionerRole.id}`,
         slotId: `Slot/${selectedSlotId}`,
         condition: bookingForm.problem_brief,
@@ -141,6 +115,7 @@ export default function PaymentDrawer({
       handleFilterChange('isBookingSubmitted', true);
       setPaymentOpen(false);
       setIsOpen(false);
+      setPaymentPendingOpen(true);
     } catch {
       // Errors toasted by interceptor
     }

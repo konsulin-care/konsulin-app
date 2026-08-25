@@ -40,7 +40,7 @@ describe('useBookingForm', () => {
     vi.mocked(useBooking).mockReturnValue({
       state: mockBookingState,
       dispatch: vi.fn()
-    } as ReturnType<typeof useBooking>);
+    });
     vi.mocked(useRelayBooking).mockReturnValue({
       mutateAsync: mockRelayBooking
     } as unknown as ReturnType<typeof useRelayBooking>);
@@ -89,6 +89,7 @@ describe('useBookingForm', () => {
     mockRelayBooking.mockResolvedValue({
       slotId: 'Slot/slot-1',
       invoiceId: 'Invoice/inv-1',
+      appointmentId: 'Appointment/appt-1',
       fee: { value: 150_000, currency: 'IDR' }
     });
 
@@ -124,6 +125,7 @@ describe('useBookingForm', () => {
       status: 'issued',
       totalNet: { value: 150_000, currency: 'IDR' }
     });
+    expect(result.current.relayAppointmentId).toBe('appt-1');
   });
 
   it('clears errorForm when all fields become filled', () => {
@@ -131,7 +133,7 @@ describe('useBookingForm', () => {
     vi.mocked(useBooking).mockReturnValue({
       state: { date: null, startTime: null },
       dispatch: vi.fn()
-    } as ReturnType<typeof useBooking>);
+    });
 
     const { result, rerender } = renderHook(() =>
       useBookingForm({
@@ -150,7 +152,7 @@ describe('useBookingForm', () => {
     vi.mocked(useBooking).mockReturnValue({
       state: { date: new Date('2026-07-10'), startTime: '09:00' },
       dispatch: vi.fn()
-    } as ReturnType<typeof useBooking>);
+    });
 
     rerender();
 

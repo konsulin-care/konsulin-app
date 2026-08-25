@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-conversion */
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
-import * as React from 'react';
+import * as React from 'react'; // skipcq: JS-C1003 — shadcn/ui convention; re-exports all primitives
 import {
   Controller,
   ControllerProps,
@@ -27,6 +27,18 @@ const FormFieldContext = React.createContext<FormFieldContextValue>(
   {} as FormFieldContextValue
 );
 
+type FormItemContextValue = {
+  id: string;
+};
+
+const FormItemContext = React.createContext<FormItemContextValue>(
+  {} as FormItemContextValue
+);
+
+/**
+ * FormField binds a react-hook-form Controller to a named field and publishes
+ * the field context for descendent form primitives (label, control, message).
+ */
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
@@ -40,6 +52,11 @@ const FormField = <
   );
 };
 
+/**
+ * useFormField exposes the field state and ID bindings (formItemId, formMessageId)
+ * for the nearest FormItem, letting primitives render error/description affordances.
+ * Must be called within a <FormItem>.
+ */
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
@@ -62,14 +79,6 @@ const useFormField = () => {
     ...fieldState
   };
 };
-
-type FormItemContextValue = {
-  id: string;
-};
-
-const FormItemContext = React.createContext<FormItemContextValue>(
-  {} as FormItemContextValue
-);
 
 const FormItem = React.forwardRef<
   HTMLDivElement,

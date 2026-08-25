@@ -1,7 +1,7 @@
+import type { MergedSession } from '@/types/appointment';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import SessionCard from '../session-card';
-import type { MergedSession } from '@/types/appointment';
 
 vi.mock('@/utils/gradientAvatar', () => ({
   generateAvatarSvgDataUrl: vi.fn(() => 'data:image/svg+xml;base64,test')
@@ -12,6 +12,7 @@ const baseSession: MergedSession = {
   slotStart: '2026-07-04T02:00:00.000Z',
   slotEnd: '2026-07-04T02:30:00.000Z',
   slotStatus: 'free',
+  appointmentStatus: 'booked',
   appointmentType: 'follow-up',
   patientId: 'pat-1',
   patientName: [{ given: ['John'], family: 'Doe' }],
@@ -56,9 +57,7 @@ describe('SessionCard', () => {
   });
 
   it('renders location name when provided', () => {
-    render(
-      <SessionCard session={baseSession} locationName='Clinic A' />
-    );
+    render(<SessionCard session={baseSession} locationName='Clinic A' />);
     expect(screen.getByText('Clinic A')).toBeDefined();
   });
 
@@ -67,5 +66,31 @@ describe('SessionCard', () => {
     const link = container.querySelector('a');
     expect(link).toBeDefined();
     expect(screen.getByText('John Doe')).toBeDefined();
+  });
+
+  it('renders the Processing pill for pending appointments', () => {
+    render(
+      <SessionCard session={{ ...baseSession, appointmentStatus: 'pending' }} />
+    );
+    expect(screen.getByText('Processing')).toBeDefined();
+  });
+
+  it('renders the Processing pill for proposed appointments', () => {
+    render(
+      <SessionCard
+        session={{ ...baseSession, appointmentStatus: 'proposed' }}
+      />
+    );
+    expect(screen.getByText('Processing')).toBeDefined();
+  });
+
+  it('does not render the Processing pill for booked appointments', () => {
+    render(<SessionCard session={baseSession} />);
+    expect(screen.queryByText('Processing')).toBeNull();
+  });
+
+  it('renders Session fallback when appointment type is missing', () => {
+    render(<SessionCard session={{ ...baseSession, appointmentType: '' }} />);
+    expect(screen.getByText('Session')).toBeDefined();
   });
 });

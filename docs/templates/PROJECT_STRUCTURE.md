@@ -16,7 +16,6 @@ Brief description of the project layout and organizational philosophy.
 ├── tests/      Test suites
 ├── docs/       Documentation
 ├── config/     Configuration files
-└── scripts/    Build and helper scripts
 ```
 
 # Key Files

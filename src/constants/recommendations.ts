@@ -6,6 +6,8 @@ export interface Recommendation {
   specialties: string[];
   fee: number;
   description: string;
+  practitionerRoleId: string;
+  healthcareServiceId: string;
 }
 
 export const MOCK_RECOMMENDATIONS: Recommendation[] = [
@@ -17,7 +19,9 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
     specialties: ['addiction', 'substance use'],
     fee: 500_000,
     description:
-      'Professional counselling to help overcome smoking addiction through evidence-based techniques and personalized support.'
+      'Professional counselling to help overcome smoking addiction through evidence-based techniques and personalized support.',
+    practitionerRoleId: 'PractitionerRole/pr-1',
+    healthcareServiceId: 'HealthcareService/hs-1'
   },
   {
     id: 'practitioner-2',
@@ -27,7 +31,9 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
     specialties: ['anxiety', 'depression', 'stress'],
     fee: 400_000,
     description:
-      'Structured therapy sessions focused on identifying and changing negative thought patterns and behaviors.'
+      'Structured therapy sessions focused on identifying and changing negative thought patterns and behaviors.',
+    practitionerRoleId: 'PractitionerRole/pr-2',
+    healthcareServiceId: 'HealthcareService/hs-2'
   },
   {
     id: 'practitioner-3',
@@ -37,7 +43,9 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
     specialties: ['pediatric', 'developmental'],
     fee: 450_000,
     description:
-      'Specialized psychological support for children and adolescents addressing developmental and emotional challenges.'
+      'Specialized psychological support for children and adolescents addressing developmental and emotional challenges.',
+    practitionerRoleId: 'PractitionerRole/pr-3',
+    healthcareServiceId: 'HealthcareService/hs-3'
   },
   {
     id: 'practitioner-4',
@@ -47,7 +55,9 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
     specialties: ['neurology', 'cognitive'],
     fee: 600_000,
     description:
-      'Comprehensive assessment of cognitive function to evaluate memory, attention, and other neurological processes.'
+      'Comprehensive assessment of cognitive function to evaluate memory, attention, and other neurological processes.',
+    practitionerRoleId: 'PractitionerRole/pr-4',
+    healthcareServiceId: 'HealthcareService/hs-4'
   },
   {
     id: 'practitioner-5',
@@ -57,6 +67,8 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
     specialties: ['relationship', 'family', 'couples'],
     fee: 350_000,
     description:
-      'Therapeutic approach that helps couples and families improve communication and resolve conflicts.'
+      'Therapeutic approach that helps couples and families improve communication and resolve conflicts.',
+    practitionerRoleId: 'PractitionerRole/pr-5',
+    healthcareServiceId: 'HealthcareService/hs-5'
   }
 ];

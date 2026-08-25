@@ -1,4 +1,4 @@
-/* eslint-disable react/display-name, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-deprecated */
+/* eslint-disable react/display-name, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 
 import {
   QueryClient,
@@ -160,7 +160,7 @@ beforeEach(() => {
       hasUserChosenDate: false
     },
     dispatch: vi.fn()
-  } as any);
+  });
 
   vi.mocked(useQuery).mockReturnValue({
     data: null,
@@ -170,7 +170,7 @@ beforeEach(() => {
   vi.mocked(useFab).mockReturnValue({
     state: { action: null, selection: null, menu: null, panelOpen: false },
     dispatch: vi.fn()
-  } as any);
+  });
 });
 
 describe('PractitionerAvailability page variant', () => {
@@ -272,7 +272,8 @@ describe('PractitionerAvailability page variant', () => {
       },
       isLoading: false,
       isError: false,
-      isFetching: false
+      isFetching: false,
+      refetch: vi.fn()
     });
 
     render(

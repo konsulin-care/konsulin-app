@@ -153,7 +153,7 @@ describe('SchedulePageShell - infinite scroll', () => {
         onFilterChange={vi.fn()}
         selectedTab='upcoming'
         onTabChange={vi.fn()}
-        isLoading={true}
+        isLoading
         upcoming={[]}
         past={[]}
         renderCard={item => <div key={item.appointmentId}>Card</div>}
@@ -201,8 +201,8 @@ describe('SchedulePageShell - infinite scroll', () => {
         past={[]}
         renderCard={item => <div key={item.appointmentId}>Card</div>}
         onLoadMore={onLoadMore}
-        hasMore={true}
-        isLoadingMore={true}
+        hasMore
+        isLoadingMore
       />,
       { wrapper: createWrapper(queryClient) }
     );
@@ -226,7 +226,7 @@ describe('SchedulePageShell - infinite scroll', () => {
         past={[]}
         renderCard={item => <div key={item.appointmentId}>Card</div>}
         onLoadMore={onLoadMore}
-        hasMore={true}
+        hasMore
         isLoadingMore={false}
       />,
       { wrapper: createWrapper(queryClient) }
@@ -287,7 +287,7 @@ describe('ScheduleDetail - useAppointment', () => {
         past={[]}
         renderCard={item => <div key={item.appointmentId}>Card</div>}
         onLoadMore={onLoadMore}
-        hasMore={true}
+        hasMore
         isLoadingMore={false}
       />,
       { wrapper: createWrapper(queryClient) }

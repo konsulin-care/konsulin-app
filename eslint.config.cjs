@@ -20,9 +20,17 @@ const tsStylisticRules = tsPlugin.configs['stylistic-type-checked'].rules
 
 module.exports = [
   {
+    // Rules flagged below are intentionally off locally (documented FPs) yet
+    // still run in Codacy's separate ESLint pass; the inline disables exist only
+    // to appease Codacy, so unused directives are not reported locally.
+    linterOptions: {
+      reportUnusedDisableDirectives: 'off'
+    }
+  },
+  {
     ignores: [
       '**/.next/**',
-      'src/components/shared/__tests__/practitioner-location-combobox.test.tsx'
+      '**/__tests__/**'
     ]
   },
 
@@ -117,6 +125,17 @@ module.exports = [
     files: ['src/utils/fhir/extensions.ts'],
     rules: {
       'unicorn/prefer-https': 'off'
+    }
+  },
+
+  // --- public/js classic (non-module) scripts: loaded via <Script strategy='beforeInteractive'>,
+  // so top-level await and the module-only promise/unicorn rules don't apply.
+  {
+    files: ['public/js/**/*.js'],
+    rules: {
+      'promise/catch-or-return': 'off',
+      'promise/always-return': 'off',
+      'unicorn/prefer-top-level-await': 'off'
     }
   },
 

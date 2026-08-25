@@ -1,4 +1,5 @@
 import { FabProvider, useFab } from '@/context/fabContext';
+import { RecommendationProvider } from '@/context/recommendationContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,7 +13,10 @@ let mockRole = 'Patient';
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({ state: { userInfo: { role_name: mockRole } } })
 }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => '/'
+}));
 vi.mock('@/lib/indexeddb', () => ({
   STORES: { uiPreferences: 'ui_preferences' },
   dbGet: vi.fn().mockResolvedValue(null)
@@ -73,7 +77,9 @@ function TestHarness() {
 function renderFab() {
   return render(
     <FabProvider>
-      <TestHarness />
+      <RecommendationProvider>
+        <TestHarness />
+      </RecommendationProvider>
     </FabProvider>
   );
 }

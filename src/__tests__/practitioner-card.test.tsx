@@ -166,4 +166,24 @@ describe('PractitionerCard', () => {
     const link = screen.getByText('Height Test').closest('a');
     expect(link?.className).toContain('h-[100px]');
   });
+
+  it('uses custom href when provided', () => {
+    render(
+      <PractitionerCard
+        id='prac-9'
+        practitionerName='Href Test'
+        photoUrl={undefined}
+        specialties={[]}
+        healthcareServiceNames={[]}
+        practitionerRoleId='role-9'
+        href='/practitioner/availability?id=role-9&service=svc-1'
+      />
+    );
+
+    const link = screen.getByText('Href Test').closest('a');
+    expect(link).toHaveAttribute(
+      'href',
+      '/practitioner/availability?id=role-9&service=svc-1'
+    );
+  });
 });

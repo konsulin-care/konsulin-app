@@ -23,7 +23,7 @@ type ModifyProfileResponseItem = {
 };
 
 /** Create a new FHIR profile for the given user and role type. */
-export const createProfile = async ({
+export const createProfile = ({
   userId,
   email,
   phoneNumber,

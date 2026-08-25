@@ -38,6 +38,7 @@ export const FhirSystems = {
   usageContext: 'http://terminology.hl7.org/CodeSystem/usage-context', //NOSONAR
   lucide: 'https://lucide.dev/icons',
   ucum: 'https://unitsofmeasure.org',
+  nuccTaxonomy: 'http://nucc.org/taxonomy', //NOSONAR
   practitionerRole: 'http://terminology.hl7.org/CodeSystem/practitioner-role', //NOSONAR
   snomedSct: 'http://snomed.info/sct', //NOSONAR
   researchReferral: 'http://konsulin.care/fhir/CodeSystem/research-referral' //NOSONAR

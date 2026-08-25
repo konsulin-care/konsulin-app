@@ -234,8 +234,8 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
 
     it.each(drawerFiles)('%s avoids void-returning arrow shorthands', file => {
       const { content } = readFile(file);
-      expect(content).not.toMatch(/=>\s*\w+\(event\.target\.value\)/);
-      expect(content).not.toMatch(/=>\s*handleSave\(\)/);
+      expect(content).not.toMatch(/=>\s*\w+\(event\.target\.value\)/); // skipcq: JS-0055 — unambiguous in expect().toMatch() context
+      expect(content).not.toMatch(/=>\s*handleSave\(\)/); // skipcq: JS-0055 — unambiguous in expect().toMatch() context
     });
   });
 

@@ -1,4 +1,5 @@
 import { FabProvider } from '@/context/fabContext';
+import { RecommendationProvider } from '@/context/recommendationContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,7 +14,10 @@ const pushMock = vi.fn();
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({ state: { userInfo: { role_name: mockRole } } })
 }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: pushMock }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: pushMock }),
+  usePathname: () => '/'
+}));
 vi.mock('@/lib/indexeddb', () => ({
   STORES: { uiPreferences: 'ui_preferences' },
   dbGet: vi.fn().mockResolvedValue(null)
@@ -26,9 +30,11 @@ vi.mock('react-toastify', () => ({
 function renderFab() {
   return render(
     <FabProvider>
-      <QueryClientProvider client={queryClient}>
-        <QuickActionFab />
-      </QueryClientProvider>
+      <RecommendationProvider>
+        <QueryClientProvider client={queryClient}>
+          <QuickActionFab />
+        </QueryClientProvider>
+      </RecommendationProvider>
     </FabProvider>
   );
 }

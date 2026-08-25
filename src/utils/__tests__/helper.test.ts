@@ -202,9 +202,56 @@ describe('parseMergedSessions', () => {
 
     const result = parseMergedSessions(bundle);
     expect(result).toHaveLength(1);
+    expect(result[0].appointmentStatus).toBe('booked');
     expect(result[0].locationId).toBe('loc-1');
     expect(result[0].locationName).toBe('Clinic A');
     expect(result[0].healthcareServiceName).toBe('General Consultation');
+  });
+
+  it('propagates pending status from the appointment resource', () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: [
+        {
+          resource: {
+            resourceType: 'Appointment',
+            id: 'appt-pending',
+            status: 'pending',
+            start: '2026-07-04T09:00:00+07:00',
+            slot: [{ reference: 'Slot/slot-1' }],
+            participant: [
+              {
+                actor: { reference: 'Patient/pat-1' },
+                status: 'accepted'
+              }
+            ]
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Slot',
+            id: 'slot-1',
+            schedule: { reference: 'Schedule/sched-1' },
+            start: '2026-07-04T09:00:00+07:00',
+            end: '2026-07-04T09:30:00+07:00',
+            status: 'busy-tentative'
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Patient',
+            id: 'pat-1',
+            name: [{ given: ['John'], family: 'Doe' }],
+            telecom: [{ system: 'email', value: 'john@test.com' }]
+          }
+        }
+      ]
+    };
+
+    const result = parseMergedSessions(bundle);
+    expect(result).toHaveLength(1);
+    expect(result[0].appointmentStatus).toBe('pending');
   });
 
   it('handles bundle with no location or healthcare service', () => {

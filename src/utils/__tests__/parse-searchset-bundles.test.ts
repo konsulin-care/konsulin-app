@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 import type { Bundle, Condition } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
 import { parseConditionBundle } from '../parse-searchset-bundles';
@@ -42,7 +40,7 @@ describe('parseConditionBundle', () => {
 
   it('handles evidence entry with no code field without crashing', () => {
     const bundle = makeConditionBundle({
-      evidence: [{ detail: [{ reference: 'Observation/obs-1' }] } as any]
+      evidence: [{ detail: [{ reference: 'Observation/obs-1' }] }]
     });
 
     const records = parseConditionBundle(bundle);

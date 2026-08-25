@@ -23,6 +23,7 @@ RUN templ generate && CGO_ENABLED=0 go build -o /app/server ./cmd/konsulin-app
 # Stage 3: Runtime
 FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
+USER nonroot:nonroot
 COPY --from=go-builder /app/server /app/server
 COPY --from=next-builder /build/out ./out
 EXPOSE 8080

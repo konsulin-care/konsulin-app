@@ -116,6 +116,72 @@ describe('LocationCombobox', () => {
     expect(screen.getByText('Jakarta')).toBeInTheDocument();
   });
 
+  it('renders group headings when options provide a group', async () => {
+    render(
+      <LocationCombobox
+        multiple
+        options={[
+          { code: 'a', name: 'Option A', group: 'Group One' },
+          { code: 'b', name: 'Option B', group: 'Group One' },
+          { code: 'c', name: 'Option C', group: 'Group Two' },
+          { code: 'd', name: 'Option D' }
+        ]}
+        value={[]}
+        onSelect={vi.fn()}
+        placeholder='Select items'
+      />
+    );
+
+    const trigger = screen.getByRole('combobox');
+    fireEvent.click(trigger);
+
+    await waitFor(() => {
+      expect(screen.getByText('Group One')).toBeInTheDocument();
+      expect(screen.getByText('Group Two')).toBeInTheDocument();
+      expect(screen.getByText('Option A')).toBeInTheDocument();
+      expect(screen.getByText('Option C')).toBeInTheDocument();
+      expect(screen.getByText('Option D')).toBeInTheDocument();
+    });
+  });
+
+  it('filters by searchText (e.g. code) when provided', async () => {
+    render(
+      <LocationCombobox
+        options={[
+          {
+            code: '103T00000X',
+            name: 'Psychologist',
+            searchText: '103T00000X Psychologist'
+          },
+          {
+            code: '2084P0800X',
+            name: 'Psychiatry Physician',
+            searchText: '2084P0800X Psychiatry Physician'
+          }
+        ]}
+        value=''
+        onSelect={vi.fn()}
+        placeholder='Select specialty'
+      />
+    );
+
+    const trigger = screen.getByRole('combobox');
+    fireEvent.click(trigger);
+
+    await waitFor(() => {
+      expect(screen.getByText('Psychologist')).toBeInTheDocument();
+    });
+
+    // Typing the NUCC code matches via searchText — not the display name
+    const input = screen.getByPlaceholderText('Select specialty');
+    fireEvent.change(input, { target: { value: '103T' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Psychologist')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Psychiatry Physician')).not.toBeInTheDocument();
+  });
+
   describe('multi-select mode', () => {
     it('renders checkboxes when multiple=true', async () => {
       render(

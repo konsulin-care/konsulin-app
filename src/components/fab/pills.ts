@@ -43,10 +43,9 @@ export const patientPills: Pill[] = [
   },
   {
     label: 'Get Recommendation',
-    href: '/recommendation',
     icon: Sparkles,
     delay: 200,
-    action: 'navigate'
+    action: 'get-recommendation'
   }
 ];
 

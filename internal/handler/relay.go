@@ -35,6 +35,7 @@ type relayBookingRequest struct {
 type relayResponse struct {
 	SlotID                string `json:"slotId"`
 	InvoiceID             string `json:"invoiceId"`
+	AppointmentID         string `json:"appointmentId"`
 	Fee                   feeObj `json:"fee"`
 	HealthcareServiceName string `json:"healthcareServiceName"`
 }
@@ -165,9 +166,9 @@ func relayBundleAndParse(baseURL string, req relayBookingRequest, fee feeObj, au
 	}
 
 	result := parseRelayResponse(fhirResp, fee)
-	if result.SlotID == "" || result.InvoiceID == "" {
+	if result.SlotID == "" || result.InvoiceID == "" || result.AppointmentID == "" {
 		slog.Error("relay/booking: backend returned incomplete response",
-			"slotId", result.SlotID, "invoiceId", result.InvoiceID)
+			"slotId", result.SlotID, "invoiceId", result.InvoiceID, "appointmentId", result.AppointmentID)
 		return relayResponse{}, errors.New("backend returned incomplete response")
 	}
 	return result, nil

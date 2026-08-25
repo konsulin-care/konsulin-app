@@ -24,8 +24,37 @@ type Props = {
   readonly fhirId: string;
 };
 
+/** True while the appointment awaits payment confirmation. */
+function isProcessingStatus(status: string | null): boolean {
+  return status === 'proposed' || status === 'pending';
+}
+
+/** Pill shown while a proposed/pending appointment awaits payment. */
+function ProcessingPill() {
+  return (
+    <span className='rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-medium text-black'>
+      Processing
+    </span>
+  );
+}
+
+/** Session type label with a plain "Session" fallback when the type is absent. */
+function AppointmentTypeLabel({
+  appointmentType
+}: Readonly<{
+  appointmentType: string | null;
+}>) {
+  return (
+    <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+      {appointmentType
+        ? `${capitalizeFirstLetter(appointmentType)} Session`
+        : 'Session'}
+    </div>
+  );
+}
+
 /** Card displaying a single appointment entry. */
-const AppointmentCard = ({
+export const AppointmentCard = ({
   appointment
 }: {
   appointment: MergedAppointment;
@@ -56,8 +85,13 @@ const AppointmentCard = ({
       href={`/schedule?id=${appointment.appointmentId}`}
       className='card mt-4 flex flex-col gap-2 p-4'
     >
-      <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-        {appointmentStartTime} - {appointmentDate}
+      <div className='flex items-center justify-between'>
+        <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+          {appointmentStartTime} - {appointmentDate}
+        </div>
+        {isProcessingStatus(appointment.appointmentStatus) && (
+          <ProcessingPill />
+        )}
       </div>
 
       <hr className='w-full' />
@@ -73,9 +107,7 @@ const AppointmentCard = ({
           width={32}
         />
         <div className='mr-auto text-[12px] font-bold'>{displayName}</div>
-        <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-          {capitalizeFirstLetter(appointment.appointmentType ?? '')} Session
-        </div>
+        <AppointmentTypeLabel appointmentType={appointment.appointmentType} />
       </div>
     </Link>
   );

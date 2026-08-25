@@ -1,9 +1,9 @@
 @import 'tailwindcss';
+@import './phone-input.css';
 @theme {
   --color-primary: #2c2f35;
   --color-secondary: #13c2c2;
 }
-@import './phone-input.css';
 
 /* Stretch carousel slides to the tallest slide so every card is equal
    height. Swiper sizes slides to their content otherwise, which makes the

@@ -4,6 +4,7 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import { useAuth } from '@/context/auth/authContext';
 import { useProfile } from '@/context/profile/profileContext';
 import { clearUserData } from '@/lib/indexeddb';
+import { clearLastInterviewResult } from '@/utils/recommendation-interview';
 import { useEffect } from 'react';
 import Session from 'supertokens-auth-react/recipe/session';
 
@@ -20,6 +21,7 @@ export default function Logout() {
       const ownerId = state.userInfo?.userId ?? '';
       await Session.signOut();
       await clearUserData(ownerId);
+      await clearLastInterviewResult();
       const csrfRes = await fetch('/auth/cookie/csrf-token');
       const csrfToken = csrfRes.ok
         ? (((await csrfRes.json()) as { token?: string }).token ?? '')

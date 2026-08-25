@@ -1,24 +1,43 @@
 'use client';
 
 import { MOCK_RECOMMENDATIONS } from '@/constants/recommendations';
+import type { Recommendation } from '@/types/recommendation';
+import type { HomeRecommendationCard } from '@/utils/recommendation-card';
+import { mapRecommendationToCard } from '@/utils/recommendation-card';
 import { useState } from 'react';
 import 'swiper/css';
 import { Swiper, SwiperSlide, type SwiperClass } from 'swiper/react';
 import RecommendationCard from './recommendation-card';
 
 interface RecommendationCardStackProps {
-  onBook: (practitionerId: string) => void;
+  /**
+   * Live BFF recommendations. Omitting falls back to mock cards for
+   * guest/practitioner preview surfaces before live wiring.
+   */
+  recommendations?: Recommendation[];
+  /** Navigates to booking for the tapped practitioner. */
+  onBook: (practitionerRoleId: string, healthcareServiceId: string) => void;
 }
 
 /**
+ * Horizontal swipe stack of live recommendation cards.
  *
+ * Renders nothing when the list is empty — the parent owns the empty state.
+ *
+ * @param props.recommendations - BFF recommendations to display
+ * @param props.onBook - Fired with the practitioner id on card tap
  */
 export default function RecommendationCardStack({
+  recommendations,
   onBook
 }: Readonly<RecommendationCardStackProps>) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [swiper, setSwiper] = useState<SwiperClass | null>(null);
-  const cards = MOCK_RECOMMENDATIONS;
+  const cards: HomeRecommendationCard[] = recommendations
+    ? recommendations.map(rec => mapRecommendationToCard(rec))
+    : MOCK_RECOMMENDATIONS;
+
+  if (cards.length === 0) return null;
 
   return (
     <div className='w-full'>
@@ -28,13 +47,14 @@ export default function RecommendationCardStack({
         spaceBetween={16}
         slidesPerView={1.3}
         centeredSlides
-        loop
-        onSlideChange={swiper => setActiveIndex(swiper.realIndex)}
+        onSlideChange={swiper => setActiveIndex(swiper.activeIndex)}
       >
         {cards.map(card => (
           <SwiperSlide
             key={card.id}
-            onClick={() => onBook(card.id)}
+            onClick={() =>
+              onBook(card.practitionerRoleId, card.healthcareServiceId)
+            }
             className='aspect-square cursor-pointer !overflow-visible'
           >
             {({ isActive }) => (
@@ -55,7 +75,7 @@ export default function RecommendationCardStack({
           <button
             key={card.id}
             type='button'
-            onClick={() => swiper?.slideToLoop(index)}
+            onClick={() => swiper?.slideTo(index)}
             aria-label={`Go to slide ${index + 1}`}
             className={`cursor-pointer rounded-full transition-all duration-300 ${
               index === activeIndex

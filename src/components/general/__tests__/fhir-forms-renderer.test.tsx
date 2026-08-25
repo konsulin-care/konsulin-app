@@ -216,6 +216,18 @@ describe('FhirFormsRenderer - loading state', () => {
     expect(cfg?.itemResponsive?.fieldBreakpoints).toEqual({ xs: 12, md: 12 });
   });
 
+  it('passes empty terminologyServerUrl to disable terminology server calls', () => {
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated
+        patientId='pat-1'
+      />
+    );
+    const params = vi.mocked(useBuildForm).mock.calls[0][0];
+    expect(params.terminologyServerUrl).toBe('');
+  });
+
   it('renders CardStackContainer wrapping the form', () => {
     render(
       <FhirFormsRenderer

@@ -1,26 +1,75 @@
 'use client';
 
 import ActionCard from '@/components/general/action-card';
+import RecommendationCardStack from '@/components/general/home/recommendation-card-stack';
+import ScreeningDrawer from '@/components/screening-drawer';
 import RecordCard from '@/components/shared/record-card';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { usePatientRecords } from '@/hooks/usePatientRecords';
+import { useSavedRecommendation } from '@/hooks/useSavedRecommendation';
+import { useRecommendations } from '@/services/recommendations';
 import type { IRecord } from '@/types/record';
-import { Building2 } from 'lucide-react';
-import dynamic from 'next/dynamic';
+import { buildRecommendationParams } from '@/utils/recommendation-interview';
+import { Building2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-const RecommendationCardStack = dynamic(
-  () => import('@/components/general/home/recommendation-card-stack'),
-  { ssr: false }
-);
+/** Diamonds empty-state prompting the patient to start the interview. */
+function EmptyRecommendationState({
+  onStart
+}: Readonly<{ onStart: () => void }>) {
+  return (
+    <div className='px-4 pt-4'>
+      <div className='rounded-2xl border border-dashed border-gray-300 bg-[#F9F9F9] p-6 text-center'>
+        <Sparkles
+          className='mx-auto mb-3 h-6 w-6 text-[var(--secondary)]'
+          aria-hidden='true'
+        />
+        <p className='mb-1 text-[14px] font-bold text-gray-800'>
+          Get matched to the right care
+        </p>
+        <p className='mb-4 text-[12px] text-gray-500'>
+          Answer a few quick questions and we&apos;ll recommend practitioners
+          for your concern.
+        </p>
+        <Button
+          variant='default'
+          onClick={onStart}
+          className='bg-[var(--secondary)] text-white'
+        >
+          Start Assessment
+        </Button>
+      </div>
+    </div>
+  );
+}
 
-/** Patient home page with recommendations, clinic quick link, and records. */
+/** Patient home page with live recommendations, clinic link, and records. */
 export default function HomeContentPatient() {
   const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const patientId = authState?.userInfo?.fhirId;
+
+  const {
+    savedResult,
+    coords,
+    drawerOpen,
+    openDrawer,
+    closeDrawer,
+    handleComplete
+  } = useSavedRecommendation();
+
+  const {
+    data: recommendationsData,
+    isLoading: isRecLoading,
+    isError: isRecError
+  } = useRecommendations(
+    savedResult
+      ? buildRecommendationParams(savedResult, coords?.lat, coords?.lon)
+      : null
+  );
 
   const {
     records,
@@ -30,8 +79,51 @@ export default function HomeContentPatient() {
   } = usePatientRecords(patientId);
 
   /** Navigate to the practitioner booking page. */
-  const handleBook = (practitionerId: string) => {
-    router.push(`/appointment?practitioner=${practitionerId}`);
+  const handleBook = (
+    practitionerRoleId: string,
+    healthcareServiceId: string
+  ) => {
+    router.push(
+      `/practitioner/availability?id=${practitionerRoleId}&service=${healthcareServiceId}`
+    );
+  };
+
+  /** Renders the live recommendation stack, loading, or empty variants. */
+  const renderRecommendations = () => {
+    if (!savedResult) {
+      return <EmptyRecommendationState onStart={openDrawer} />;
+    }
+    if (isRecLoading) {
+      return (
+        <div className='px-4 pt-4'>
+          <Skeleton className='aspect-square w-full rounded-2xl' />
+        </div>
+      );
+    }
+    if (
+      isRecError ||
+      (recommendationsData?.recommendations.length ?? 0) === 0
+    ) {
+      return (
+        <div className='px-4 pt-4'>
+          <div className='rounded-2xl border border-dashed border-gray-300 bg-[#F9F9F9] p-6 text-center'>
+            <p className='text-[12px] text-gray-500'>
+              {isRecError
+                ? 'Could not load recommendations right now.'
+                : 'No practitioners found for this concern yet.'}
+            </p>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className='overflow-x-hidden px-0 pt-4'>
+        <RecommendationCardStack
+          recommendations={recommendationsData?.recommendations ?? []}
+          onBook={handleBook}
+        />
+      </div>
+    );
   };
 
   /** Renders records list, loading, or empty states. */
@@ -49,6 +141,7 @@ export default function HomeContentPatient() {
         <div className='rounded-lg bg-red-50 p-4 text-center'>
           <p className='text-[12px] text-red-600'>Failed to load records.</p>
           <button
+            type='button'
             onClick={() => window.location.reload()}
             className='mt-2 text-[12px] text-red-700 underline'
           >
@@ -79,10 +172,15 @@ export default function HomeContentPatient() {
 
   return (
     <>
-      {/* PRIMARY: Recommendation Card Stack */}
-      <div className='overflow-x-hidden px-0 pt-4'>
-        <RecommendationCardStack onBook={handleBook} />
-      </div>
+      {/* PRIMARY: Live Recommendation Cards */}
+      {renderRecommendations()}
+
+      {/* UNIFIED SCREENING DRAWER */}
+      <ScreeningDrawer
+        open={drawerOpen}
+        onClose={closeDrawer}
+        onComplete={handleComplete}
+      />
 
       {/* SECONDARY: Quick Actions */}
       <div className='px-4 pb-4'>

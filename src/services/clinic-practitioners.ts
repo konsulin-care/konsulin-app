@@ -24,7 +24,7 @@ export type DetailPractitionerData = Omit<BundleEntry, 'resource'> & {
 
 /** Fetch practitioner detail including schedule, services, and location. */
 export const useDetailPractitioner = (practitionerRoleId: string) => {
-  const { data, isLoading, isError, isFetching } = useQuery({
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ['practitioner-detail', practitionerRoleId],
     queryFn: async () => {
       const API = await getAPI();
@@ -78,7 +78,7 @@ export const useDetailPractitioner = (practitionerRoleId: string) => {
     } as DetailPractitionerData;
   }
 
-  return { newData, isLoading, isError, isFetching };
+  return { newData, isLoading, isError, isFetching, refetch };
 };
 
 /** Return type for usePractitionerListing. */

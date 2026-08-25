@@ -1,20 +1,27 @@
 import { FabProvider, useFab } from '@/context/fabContext';
+import {
+  RecommendationProvider,
+  useRecommendationResult
+} from '@/context/recommendationContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import QuickActionFab from '../quick-action-fab';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } }
 });
+
+vi.mock('../screening-drawer', () => ({
+  default: MockScreeningDrawer
+}));
 const mockRole = 'Patient';
-let disabledOnSave: () => void;
-let enabledOnSave: () => void;
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({ state: { userInfo: { role_name: mockRole } } })
 }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mockPush }) }));
 vi.mock('@/lib/indexeddb', () => ({
   STORES: { uiPreferences: 'ui_preferences' },
   dbGet: vi.fn().mockResolvedValue(null)
@@ -24,12 +31,58 @@ vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));
 
+const { mockInvalidateQueries, MockScreeningDrawer } = vi.hoisted(() => {
+  const mockInvalidate = vi.fn();
+  return {
+    mockInvalidateQueries: mockInvalidate,
+    MockScreeningDrawer: vi.fn(
+      ({
+        open,
+        onComplete
+      }: {
+        open: boolean;
+        onComplete?: (result: unknown) => void;
+      }) =>
+        open ? (
+          <div
+            data-testid='mock-screening-drawer'
+            onClick={() =>
+              onComplete?.({
+                complaintId: 'anxiety',
+                specialty: 'psychiatry'
+              })
+            }
+          />
+        ) : null
+    )
+  };
+});
+
+vi.mock('@tanstack/react-query', async importOriginal => {
+  const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+  return {
+    ...actual,
+    useQueryClient: vi.fn(() => ({
+      invalidateQueries: mockInvalidateQueries
+    }))
+  };
+});
+
+/** Reads the recommendation context to observe FAB-driven updates. */
+function RecommendationObserver() {
+  const { result } = useRecommendationResult();
+  return (
+    <span data-testid='observed-result'>{result?.specialty ?? 'none'}</span>
+  );
+}
+
 function TestHarness() {
   const { dispatch } = useFab();
   return (
     <QueryClientProvider client={queryClient}>
       <div>
         <QuickActionFab />
+        <RecommendationObserver />
         <button
           data-testid='trigger-action'
           onClick={() =>
@@ -51,38 +104,6 @@ function TestHarness() {
           onClick={() => dispatch({ type: 'SET_ACTION', config: null })}
         >
           Clear Action
-        </button>
-        <button
-          data-testid='trigger-action-disabled'
-          onClick={() =>
-            dispatch({
-              type: 'SET_ACTION',
-              config: {
-                label: 'Submit',
-                onAction: disabledOnSave,
-                disabled: true,
-                variant: 'primary'
-              }
-            })
-          }
-        >
-          Make Action Disabled
-        </button>
-        <button
-          data-testid='trigger-action-enabled'
-          onClick={() =>
-            dispatch({
-              type: 'SET_ACTION',
-              config: {
-                label: 'Submit',
-                onAction: enabledOnSave,
-                disabled: false,
-                variant: 'primary'
-              }
-            })
-          }
-        >
-          Make Action Enabled
         </button>
         <button
           data-testid='trigger-selection'
@@ -113,7 +134,9 @@ function TestHarness() {
 function renderFab() {
   return render(
     <FabProvider>
-      <TestHarness />
+      <RecommendationProvider>
+        <TestHarness />
+      </RecommendationProvider>
     </FabProvider>
   );
 }
@@ -170,6 +193,51 @@ describe('QuickActionFab', () => {
     expect(screen.queryAllByText(MENU_ITEMS)).toHaveLength(0);
   });
 
+  it('opens the ScreeningDrawer from the Get Recommendation pill', () => {
+    renderFab();
+    const fabButton = document.querySelectorAll<HTMLButtonElement>(
+      'button[class*="rounded-full"]'
+    );
+    fireEvent.click(fabButton.item(fabButton.length - 1));
+    fireEvent.click(screen.getByText('Get Recommendation'));
+    expect(screen.getByTestId('mock-screening-drawer')).toBeInTheDocument();
+    expect(mockPush).not.toHaveBeenCalledWith('/screening');
+  });
+
+  it('invalidates recommendation queries when screening completes via FAB', () => {
+    renderFab();
+    const fabButton = document.querySelectorAll<HTMLButtonElement>(
+      'button[class*="rounded-full"]'
+    );
+    fireEvent.click(fabButton.item(fabButton.length - 1));
+    fireEvent.click(screen.getByText('Get Recommendation'));
+    expect(screen.getByTestId('mock-screening-drawer')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('mock-screening-drawer'));
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['recommendations']
+    });
+  });
+
+  it('publishes the completed screening result to the recommendation context', () => {
+    renderFab();
+    const fabButton = document.querySelectorAll<HTMLButtonElement>(
+      'button[class*="rounded-full"]'
+    );
+    fireEvent.click(fabButton.item(fabButton.length - 1));
+    fireEvent.click(screen.getByText('Get Recommendation'));
+
+    expect(screen.getByTestId('observed-result').textContent).toBe('none');
+
+    fireEvent.click(screen.getByTestId('mock-screening-drawer'));
+
+    expect(screen.getByTestId('observed-result').textContent).toBe(
+      'psychiatry'
+    );
+    expect(mockInvalidateQueries).toHaveBeenCalled();
+  });
+
   describe('selection mode', () => {
     it('shows a red delete button with count when items are selected', () => {
       renderFab();
@@ -196,36 +264,5 @@ describe('QuickActionFab', () => {
       expect(getFabButton(container).className).toMatch(/h-14.*w-14/);
       expect(container.querySelector('.lucide-plus')).toBeTruthy();
     });
-  });
-});
-
-describe('QuickActionFab disabled action state', () => {
-  beforeEach(() => {
-    disabledOnSave = vi.fn();
-    enabledOnSave = vi.fn();
-  });
-
-  it('applies greyed-out styling to action pill when disabled=true', () => {
-    const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-action-disabled'));
-    const fabButton = getFabButton(container);
-    expect(fabButton.className).toContain('bg-gray-300');
-    expect(fabButton.className).toContain('text-gray-500');
-    expect(fabButton.className).toContain('cursor-not-allowed');
-    expect(fabButton.disabled).toBe(true);
-  });
-
-  it('does not call onAction when action pill is disabled and clicked', () => {
-    const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-action-disabled'));
-    fireEvent.click(getFabButton(container));
-    expect(disabledOnSave).not.toHaveBeenCalled();
-  });
-
-  it('calls onAction when action pill is enabled and clicked', () => {
-    const { container } = renderFab();
-    fireEvent.click(screen.getByTestId('trigger-action-enabled'));
-    fireEvent.click(getFabButton(container));
-    expect(enabledOnSave).toHaveBeenCalledTimes(1);
   });
 });

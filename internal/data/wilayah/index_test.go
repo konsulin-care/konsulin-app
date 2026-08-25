@@ -60,7 +60,7 @@ func TestIndexHierarchicalLookup(t *testing.T) {
 	}
 }
 
-func TestIndexEmptyLookupReturnsNil(t *testing.T) {
+func TestIndexEmptyLookupReturnsNil(_ *testing.T) {
 	// A zero-value WilayahIndex has nil maps — lookups should not panic
 	idx := WilayahIndex{}
 
