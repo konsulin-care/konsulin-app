@@ -80,7 +80,7 @@ type batchResponseEntry struct {
 }
 
 // doBatchRequest executes a FHIR batch request and returns the raw entries.
-func doBatchRequest(ctx context.Context, client *http.Client, req *http.Request) ([]batchResponseEntry, error) {
+func doBatchRequest(client *http.Client, req *http.Request) ([]batchResponseEntry, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("execute batch request: %w", err)
@@ -108,7 +108,7 @@ func (s *RecommendationService) fetchBatch(ctx context.Context, urls []string) (
 		return nil, err
 	}
 
-	entries, err := doBatchRequest(ctx, s.client, req)
+	entries, err := doBatchRequest(s.client, req)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (s *RecommendationService) FetchSlotBatch(ctx context.Context, urls []strin
 		return nil, err
 	}
 
-	entries, err := doBatchRequest(ctx, s.client, req)
+	entries, err := doBatchRequest(s.client, req)
 	if err != nil {
 		return nil, err
 	}
