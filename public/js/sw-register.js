@@ -11,13 +11,13 @@
  * purpose of early SW cleanup.
  */
 
-function isLocalHost () {
-  const hostname = globalThis.location.hostname
+function isLocalHost() {
+  const hostname = globalThis.location.hostname;
   return (
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
     hostname.endsWith('.localhost')
-  )
+  );
 }
 
 // Classic-script SW cleanup: intentionally avoids top-level await
@@ -25,13 +25,15 @@ function isLocalHost () {
 if ('serviceWorker' in navigator) {
   if (isLocalHost()) {
     navigator.serviceWorker.getRegistrations().then(function (registrations) {
+      // NOSONAR — classic script; top-level await requires module
       for (const reg of registrations) {
-        reg.unregister()
+        reg.unregister();
       }
-    })
+    });
   } else {
     navigator.serviceWorker.register('/sw.js').catch(function () {
-      console.warn('[SW] registration failed')
-    })
+      // NOSONAR — classic script; top-level await requires module
+      console.warn('[SW] registration failed');
+    });
   }
 }
