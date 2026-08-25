@@ -3,7 +3,7 @@ import { generateGuestSeed } from '../guest-seed';
 
 /** Fixed 8 bytes so the derived seed is deterministic in tests. */
 const FIXED_BYTES = new Uint8Array([
-  0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x0F, 0xFF, 0x01
+  0xde, 0xad, 0xbe, 0xef, 0x00, 0x0f, 0xff, 0x01
 ]);
 
 describe('generateGuestSeed', () => {
@@ -39,7 +39,7 @@ describe('generateGuestSeed', () => {
 
     const arg = getRandomValues.mock.calls[0][0] as Uint8Array;
     expect(arg).toBeInstanceOf(Uint8Array);
-    expect(arg.length).toBe(8);
+    expect(arg).toHaveLength(8);
   });
 
   it('does not depend on crypto.randomUUID (unavailable on insecure contexts)', () => {

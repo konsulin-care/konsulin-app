@@ -17,7 +17,7 @@ interface SpecialtyPickerModalProps {
 export default function SpecialtyPickerModal({
   specialties,
   loading
-}: SpecialtyPickerModalProps) {
+}: Readonly<SpecialtyPickerModalProps>) {
   const router = useRouter();
 
   const selectSpecialty = (code: string) => {

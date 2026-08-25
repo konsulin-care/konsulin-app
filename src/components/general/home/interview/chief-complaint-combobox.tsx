@@ -72,13 +72,13 @@ function ComplaintPopover({
   options,
   value,
   onSelect
-}: {
+}: Readonly<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
   options: readonly ChiefComplaint[];
   value: ChiefComplaint | null;
   onSelect: (complaint: ChiefComplaint) => void;
-}) {
+}>) {
   const [searchValue, setSearchValue] = useState('');
 
   const quickOptions = useMemo(() => {
