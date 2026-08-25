@@ -10,6 +10,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import HomeContentGuest from '../app/home-content-guest';
+
 const queryClient = new QueryClient();
 
 /** Renders the guest home inside the providers it requires. */
@@ -17,7 +19,6 @@ function renderGuest() {
   return render(
     <QueryClientProvider client={queryClient}>
       <RecommendationProvider>
-        {/* skipcq: JS-0357 — ES module imports hoisted above usage at runtime */}
         <HomeContentGuest />
       </RecommendationProvider>
     </QueryClientProvider>
@@ -115,8 +116,6 @@ vi.mock('@/components/general/home/guest-onboarding-section', () => ({
 vi.mock('@/components/ui/skeleton', () => ({
   Skeleton: () => <div data-testid='mock-skeleton'>Skeleton</div>
 }));
-
-import HomeContentGuest from '../app/home-content-guest';
 
 const baseRecQuery: RecQueryStub = {
   data: { specialty: '2084P0800X', recommendations: [REC] },

@@ -11,9 +11,13 @@
  * purpose of early SW cleanup.
  */
 
-function isLocalHost () {
-  const h = globalThis.location.hostname
-  return h === 'localhost' || h === '127.0.0.1' || h.endsWith('.localhost')
+function isLocalHost() {
+  const hostname = globalThis.location.hostname;
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.endsWith('.localhost')
+  );
 }
 
 // Classic-script SW cleanup: intentionally avoids top-level await
@@ -24,13 +28,13 @@ if ('serviceWorker' in navigator) {
   if (isLocalHost()) {
     navigator.serviceWorker.getRegistrations().then(function (registrations) {
       for (const reg of registrations) {
-        reg.unregister()
+        reg.unregister();
       }
-    })
+    });
   } else {
     navigator.serviceWorker.register('/sw.js').catch(function () {
-      console.warn('[SW] registration failed')
-    })
+      console.warn('[SW] registration failed');
+    });
   }
 }
 /* eslint-enable promise/catch-or-return, promise/always-return,
