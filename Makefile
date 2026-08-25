@@ -1,6 +1,6 @@
 .PHONY: deps test-go test-js test fmt-go check-fmt-go check-file-length
 .PHONY: lint-go-cognitive lint-go check-go dev dev-go dev-next serve build-next
-.PHONY: build-go run docker-check
+.PHONY: build-go build run docker docker-check
 
 # Dependencies
 deps:
@@ -53,6 +53,11 @@ lint-go:
 check-go: check-file-length lint-go-cognitive check-fmt-go lint-go
 	go vet ./...
 
+# Docker
+docker:
+	docker build --no-cache --progress=plain -t konsulin-app .
+	docker run --rm --network host --env-file .env konsulin-app
+
 # Dockerfile linting
 docker-check:
 	if command -v hadolint >/dev/null 2>&1; then \
@@ -98,6 +103,8 @@ clean:
 	@rm -rf .next out
 
 # Build
+build: build-next build-go
+
 build-go:
 	go build -o konsulin-app ./cmd/konsulin-app
 
