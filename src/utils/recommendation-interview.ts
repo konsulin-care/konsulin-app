@@ -80,6 +80,7 @@ export function resolveInterviewResult(
   if (!complaintId) return null;
   const complaint = COMPLAINT_BY_ID.get(complaintId);
   if (!complaint) return null;
+  // nosemgrep: complaintId validated against the closed DECISION_TREE set above; read-only map lookup
   const resolution = SPECIALTY_RESOLUTIONS[complaintId];
   if (!resolution) return null;
   let isOther = false;
@@ -155,6 +156,7 @@ function isInterviewResult(value: unknown): value is InterviewResult {
 export async function saveLastInterviewResult(
   result: InterviewResult
 ): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises -- Codacy FP: errors are handled by the try/catch that follows
   try {
     await dbSet(STORES.uiPreferences, {
       ownerId: RECOMMENDATION_OWNER,

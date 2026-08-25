@@ -40,15 +40,17 @@ export default function PaymentPendingDrawer({
   };
 
   const serviceNames = healthcareServiceName ?? 'Consultation';
-  const dateFormatted = bookingState?.date
+  const dateFormatted = bookingState.date
     ? format(bookingState.date, 'dd MMMM yyyy')
     : '-/-/-';
-  const timeFormatted = bookingState?.startTime || '-:-';
+  const timeFormatted = bookingState.startTime || '-:-';
 
   return (
     <AppDrawer
       open={pendingOpen}
-      onClose={() => setPendingOpen(false)}
+      onClose={() => {
+        setPendingOpen(false);
+      }}
       title='Payment in process'
       description='Your payment is being processed in the opened tab. You will see this session in your schedule once it is confirmed.'
       ctaLabel='View Schedule'

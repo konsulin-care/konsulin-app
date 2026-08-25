@@ -26,6 +26,7 @@ export function useGeolocation(): GeolocationState & { request: () => void } {
   });
 
   const request = useCallback(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Codacy FP: guard for non-secure contexts where navigator.geolocation may be absent
     if (!navigator.geolocation) {
       setState(prev => ({ ...prev, error: 'Geolocation not supported' }));
       return;

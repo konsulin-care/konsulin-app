@@ -101,11 +101,6 @@ export default function ScreeningDrawer({
     setTimeout(checkGeo, 100);
   }, [pendingResult, geolocation, handleSubmit]);
 
-  /** Always-enabled emergency line handler. */
-  const handleEmergencyLine = useCallback(() => {
-    window.location.href = 'tel:119';
-  }, []);
-
   return (
     <AppDrawer
       open={open}
@@ -116,14 +111,13 @@ export default function ScreeningDrawer({
       ctaDisabled={!pendingResult}
       onCtaClick={handleCtaClick}
       footerContent={
-        <button
-          type='button'
-          onClick={handleEmergencyLine}
+        <a
+          href='tel:119'
           className='mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-sm font-medium text-gray-700 hover:bg-gray-50'
         >
           <ShieldPlus className='h-4 w-4' />
           Emergency Line
-        </button>
+        </a>
       }
     >
       <InterviewAccordion

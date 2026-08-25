@@ -34,6 +34,7 @@ export function useSavedRecommendation() {
       // skipcq: JS-0098 — void correctly marks unawaited promise
       try {
         const stored = await readLastInterviewResult();
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Codacy FP: guard prevents a stale async mount read from overwriting a FAB-set result
         if (active && !latestResultRef.current && stored) setResult(stored);
       } catch {
         /* ignore */
@@ -44,8 +45,12 @@ export function useSavedRecommendation() {
     };
   }, [setResult]);
 
-  const openDrawer = useCallback(() => setDrawerOpen(true), []);
-  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+  const openDrawer = useCallback(() => {
+    setDrawerOpen(true);
+  }, []);
+  const closeDrawer = useCallback(() => {
+    setDrawerOpen(false);
+  }, []);
 
   const queryClient = useQueryClient();
 

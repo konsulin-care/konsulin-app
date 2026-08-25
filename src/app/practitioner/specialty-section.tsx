@@ -34,6 +34,7 @@ const NUCC_OPTIONS: ComboboxOption[] = NUCC_TAXONOMY.map(entry => ({
 
 /** Compare two code arrays by membership and order. */
 function sameCodes(a: string[], b: string[]): boolean {
+  // nosemgrep: numeric array index on string[], not an object-injection sink
   return a.length === b.length && a.every((code, index) => code === b[index]);
 }
 
@@ -148,8 +149,11 @@ export default function SpecialtySection({
               <span className='text-muted-foreground text-xs'>{code}</span>
               <button
                 type='button'
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-base-to-string -- Codacy FP: its TS model types Map.get() as {}, but label is string
                 aria-label={`Remove ${label}`}
-                onClick={() => handleRemove(code)}
+                onClick={() => {
+                  handleRemove(code);
+                }}
                 className='text-muted-foreground hover:text-foreground ml-0.5 rounded-full p-0.5'
               >
                 <X className='h-3.5 w-3.5' />
