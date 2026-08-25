@@ -14,8 +14,28 @@ interface PopularAssessmentsSectionProps {
   onAssessmentClick: (assessment: Questionnaire) => void;
 }
 
+/**
+ * Static award and label badges rendered on each popular assessment card.
+ */
+function AssessmentBadges() {
+  return (
+    <div className='flex min-w-[192px] justify-end gap-2'>
+      <Badge className='bg-secondary flex items-center rounded-[8px] px-[10px] py-[4px]'>
+        <AwardIcon size={16} color='white' fill='white' />
+        <div className='text-[10px] text-white'>Best Impact</div>
+      </Badge>
+      <Badge className='bg-secondary rounded-[8px] px-[10px] py-[4px]'>
+        <BookmarkIcon size={16} color='white' fill='white' />
+      </Badge>
+    </div>
+  );
+}
+
+/**
+ * PopularAssessmentCard renders one clickable assessment card: an icon, static
+ * badges, and the questionnaire title/description. Clicking invokes onClick.
+ */
 function PopularAssessmentCard({
-  // skipcq: JS-D1001, JS-0415 — self-explanatory component; nesting inherent to layout
   assessment,
   onClick
 }: Readonly<{
@@ -38,15 +58,7 @@ function PopularAssessmentCard({
           width={40}
           alt='exercise'
         />
-        <div className='flex min-w-[192px] justify-end gap-2'>
-          <Badge className='bg-secondary flex items-center rounded-[8px] px-[10px] py-[4px]'>
-            <AwardIcon size={16} color='white' fill='white' />
-            <div className='text-[10px] text-white'>Best Impact</div>
-          </Badge>
-          <Badge className='bg-secondary rounded-[8px] px-[10px] py-[4px]'>
-            <BookmarkIcon size={16} color='white' fill='white' />
-          </Badge>
-        </div>
+        <AssessmentBadges />
       </div>
       <div className='flex flex-col items-start'>
         <span className='text-[12px] font-bold'>
