@@ -37,7 +37,7 @@ jobs:
         run: npm ci
 
       - name: Lint JS/TS
-        run: npx eslint src --max-warnings 5
+        run: npm exec -- eslint src --max-warnings 5
 
       - name: Run Next.js build
         run: npm run build
