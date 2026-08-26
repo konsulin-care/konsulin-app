@@ -106,7 +106,11 @@ vi.mock('@/components/general/home/recommendation-card-stack', () => ({
 }));
 
 vi.mock('@/components/general/action-card', () => ({
-  default: () => <div data-testid='mock-action-card'>Action Card</div>
+  default: ({ href, title }: { href: string; title: string }) => (
+    <div data-testid='mock-action-card' data-href={href}>
+      {title}
+    </div>
+  )
 }));
 
 vi.mock('@/components/general/home/guest-onboarding-section', () => ({
@@ -175,5 +179,13 @@ describe('HomeContentGuest', () => {
 
     expect(screen.getByTestId('mock-onboarding')).toBeInTheDocument();
     expect(screen.getByTestId('mock-action-card')).toBeInTheDocument();
+  });
+
+  it('links Show All Clinics to /clinic', () => {
+    renderGuest();
+
+    const clinicCard = screen.getByTestId('mock-action-card');
+    expect(clinicCard).toHaveAttribute('data-href', '/clinic');
+    expect(clinicCard).toHaveTextContent('Show All Clinics');
   });
 });
