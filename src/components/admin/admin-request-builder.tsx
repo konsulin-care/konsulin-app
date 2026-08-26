@@ -1,7 +1,15 @@
 'use client';
 
+import { EndpointCombobox } from '@/components/admin/endpoint-combobox';
 import {
-  getEndpointsForMethod,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import {
+  getEndpointOptionsGrouped,
   resourceTypeFromPath,
   type HttpMethod
 } from '@/lib/admin/endpoints';
@@ -17,6 +25,51 @@ import { adminRequest, parseAdminKeyError } from '@/services/admin-api';
 import { useState } from 'react';
 
 const METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'DELETE'];
+
+/** Tailwind color classes per HTTP method. */
+const METHOD_COLORS: Record<HttpMethod, string> = {
+  GET: 'bg-blue-100 text-blue-700',
+  POST: 'bg-green-100 text-green-700',
+  PUT: 'bg-amber-100 text-amber-700',
+  DELETE: 'bg-red-100 text-red-700'
+};
+
+/** Colored badge for an HTTP method. */
+function MethodBadge({ method }: Readonly<{ method: HttpMethod }>) {
+  return (
+    <span
+      className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${METHOD_COLORS[method]}`}
+    >
+      {method}
+    </span>
+  );
+}
+
+/** Method dropdown with colored background. */
+function MethodDropdown({
+  value,
+  onChange
+}: Readonly<{ value: HttpMethod; onChange: (m: HttpMethod) => void }>) {
+  return (
+    <Select value={value} onValueChange={v => onChange(v as HttpMethod)}>
+      <SelectTrigger
+        aria-label='Method'
+        className={`w-full rounded-r-none border-none ${METHOD_COLORS[value]}`}
+      >
+        <SelectValue>
+          <span className='text-xs font-medium'>{value}</span>
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {METHODS.map(m => (
+          <SelectItem key={m} value={m}>
+            <MethodBadge method={m} />
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 /** One editable field row bound to a dynamic schema field. */
 function FieldRow({
@@ -108,9 +161,10 @@ export function AdminRequestBuilder() {
     ? buildResourcePayload(resourceType ?? '', fieldValues, rawJson)
     : null;
 
-  const previewText = needsPayload
-    ? JSON.stringify(payload, null, 2)
-    : endpoint + buildQueryString(params);
+  const requestUrl = endpoint + buildQueryString(params);
+
+  const payloadPreview =
+    needsPayload && payload ? JSON.stringify(payload, null, 2) : '';
 
   const handleSend = async () => {
     setSending(true);
@@ -128,44 +182,28 @@ export function AdminRequestBuilder() {
     }
   };
 
-  const endpointOptions = getEndpointsForMethod(method);
+  const groupedEndpoints = getEndpointOptionsGrouped(method);
 
   return (
     <div className='flex flex-col gap-5'>
-      <div className='flex flex-wrap items-end gap-3'>
-        <label className='flex flex-col gap-1 text-sm'>
-          <span className='font-medium'>Method</span>
-          <select
-            aria-label='Method'
+      {/* URL-bar style: method fixed left, endpoint fills rest */}
+      <div className='flex items-center gap-0 rounded-md border border-slate-300 bg-white'>
+        <div className='shrink-0'>
+          <MethodDropdown
             value={method}
-            onChange={e => {
-              setMethod(e.target.value as HttpMethod);
+            onChange={m => {
+              setMethod(m);
               setResult(null);
             }}
-            className='rounded-md border border-slate-300 px-3 py-1.5'
-          >
-            {METHODS.map(m => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className='flex min-w-[18rem] grow flex-col gap-1 text-sm'>
-          <span className='font-medium'>Endpoint</span>
-          <input
-            aria-label='Endpoint'
-            list='admin-endpoints'
-            value={endpoint}
-            onChange={e => changeEndpoint(e.target.value)}
-            className='rounded-md border border-slate-300 px-3 py-1.5 font-mono text-xs'
           />
-          <datalist id='admin-endpoints'>
-            {endpointOptions.map(opt => (
-              <option key={opt.path} value={opt.path} />
-            ))}
-          </datalist>
-        </label>
+        </div>
+        <div className='flex-1'>
+          <EndpointCombobox
+            value={endpoint}
+            onSelect={changeEndpoint}
+            groupedEndpoints={groupedEndpoints}
+          />
+        </div>
       </div>
 
       {needsPayload && schema.length > 0 && (
@@ -212,16 +250,32 @@ export function AdminRequestBuilder() {
       )}
 
       <label className='flex flex-col gap-1 text-sm'>
-        <span className='font-medium'>Payload preview (read-only)</span>
+        <span className='font-medium'>Request URL (read-only)</span>
         <textarea
-          aria-label='Payload preview'
+          aria-label='Request URL'
           readOnly
           wrap='off'
-          value={previewText}
-          rows={Math.max(3, previewText.split('\n').length)}
+          value={requestUrl}
+          rows={Math.max(1, requestUrl.split('\n').length)}
           className='overflow-x-auto rounded-md border border-slate-300 bg-slate-100 px-3 py-1.5 font-mono text-xs whitespace-pre'
         />
       </label>
+
+      {needsPayload && (
+        <details className='flex flex-col gap-1 text-sm'>
+          <summary className='cursor-pointer font-medium'>
+            Payload preview (click to expand)
+          </summary>
+          <textarea
+            aria-label='Payload preview'
+            readOnly
+            wrap='off'
+            value={payloadPreview}
+            rows={Math.max(3, payloadPreview.split('\n').length)}
+            className='overflow-x-auto rounded-md border border-slate-300 bg-slate-100 px-3 py-1.5 font-mono text-xs whitespace-pre'
+          />
+        </details>
+      )}
 
       {error && <p className='text-sm text-red-600'>{error}</p>}
       {result && (

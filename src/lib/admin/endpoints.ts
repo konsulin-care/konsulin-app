@@ -128,6 +128,31 @@ export function getEndpointsForMethod(method: HttpMethod): AdminEndpoint[] {
 }
 
 /**
+ * Groups the method-filtered endpoints by resource type.
+ *
+ * FHIR resource endpoints are keyed by their resource type (e.g. "Organization").
+ * Non-FHIR endpoints (metadata, /api/v1/tx, etc.) are grouped under "Special".
+ *
+ * @param method - HTTP method to filter by
+ * @returns Map of resource type name → endpoints supporting that method
+ */
+export function getEndpointOptionsGrouped(
+  method: HttpMethod
+): Map<string, AdminEndpoint[]> {
+  const grouped = new Map<string, AdminEndpoint[]>();
+  for (const endpoint of getEndpointsForMethod(method)) {
+    const key = endpoint.resourceType ?? 'Special';
+    const list = grouped.get(key);
+    if (list) {
+      list.push(endpoint);
+    } else {
+      grouped.set(key, [endpoint]);
+    }
+  }
+  return grouped;
+}
+
+/**
  * Extracts the FHIR resource type from a proxy path.
  *
  * @param path - request path (e.g. /fhir/Organization or /fhir/Slot/{id})

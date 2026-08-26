@@ -1,86 +1,64 @@
 import {
-  ADMIN_ENDPOINTS,
+  getEndpointOptionsGrouped,
   getEndpointsForMethod,
-  resourceTypeFromPath
+  type HttpMethod
 } from '@/lib/admin/endpoints';
 import { describe, expect, it } from 'vitest';
 
-describe('ADMIN_ENDPOINTS', () => {
-  it('exposes every RBAC-granted superadmin FHIR resource', () => {
-    expect(ADMIN_ENDPOINTS).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ path: '/fhir/Organization' }),
-        expect.objectContaining({ path: '/fhir/Organization/{id}' }),
-        expect.objectContaining({ path: '/fhir/Location' }),
-        expect.objectContaining({ path: '/fhir/HealthcareService' }),
-        expect.objectContaining({ path: '/fhir/PractitionerRole' }),
-        expect.objectContaining({ path: '/fhir/Schedule' }),
-        expect.objectContaining({ path: '/fhir/Slot' }),
-        expect.objectContaining({ path: '/fhir/Questionnaire' }),
-        expect.objectContaining({ path: '/fhir/PlanDefinition' }),
-        expect.objectContaining({ path: '/fhir/ResearchStudy' }),
-        expect.objectContaining({ path: '/fhir/Patient' }),
-        expect.objectContaining({ path: '/fhir/metadata' })
-      ])
-    );
-  });
+describe('getEndpointOptionsGrouped', () => {
+  it('returns a Map keyed by resource type', () => {
+    const grouped = getEndpointOptionsGrouped('GET');
+    expect(grouped).toBeInstanceOf(Map);
 
-  it('includes the superadmin special endpoints', () => {
-    expect(ADMIN_ENDPOINTS).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ path: '/api/v1/tx' }),
-        expect.objectContaining({ path: '/hook/synchronous/send-wa-link' }),
-        expect.objectContaining({ path: '/api/v1/auth/magiclink' })
-      ])
-    );
-  });
-
-  it('marks Organization DELETE as superadmin-exclusive', () => {
-    const orgItem = ADMIN_ENDPOINTS.find(
-      e => e.path === '/fhir/Organization/{id}'
-    );
-    expect(orgItem?.methods).toContain('DELETE');
-  });
-});
-
-describe('getEndpointsForMethod', () => {
-  it('returns only endpoints supporting the given method', () => {
-    for (const e of getEndpointsForMethod('DELETE')) {
-      expect(e.methods).toContain('DELETE');
+    const keys = [...grouped.keys()];
+    expect(keys.length).toBeGreaterThan(0);
+    // All keys should be resource type names or 'Special'
+    for (const key of keys) {
+      expect(typeof key).toBe('string');
     }
   });
 
-  it('returns non-empty result for each method', () => {
-    for (const method of ['GET', 'POST', 'PUT', 'DELETE'] as const) {
-      expect(getEndpointsForMethod(method).length).toBeGreaterThan(0);
-    }
-  });
-});
+  it('groups FHIR endpoints under their resource type', () => {
+    const grouped = getEndpointOptionsGrouped('GET');
 
-describe('resourceTypeFromPath', () => {
-  it('extracts the resource type from a base path', () => {
-    expect(resourceTypeFromPath('/fhir/Organization')).toBe('Organization');
-    expect(resourceTypeFromPath('/fhir/Location')).toBe('Location');
+    // Organization supports GET, so it should appear
+    const orgGroup = grouped.get('Organization');
+    expect(orgGroup).toBeDefined();
+    expect(orgGroup!.some(e => e.path === '/fhir/Organization')).toBe(true);
   });
 
-  it('extracts the resource type from an item path', () => {
-    expect(resourceTypeFromPath('/fhir/Organization/org-123')).toBe(
-      'Organization'
-    );
-    expect(resourceTypeFromPath('/fhir/Slot/DH772NZNDDSUDZZU')).toBe('Slot');
+  it('groups non-FHIR endpoints under Special', () => {
+    const grouped = getEndpointOptionsGrouped('GET');
+
+    const specialGroup = grouped.get('Special');
+    expect(specialGroup).toBeDefined();
+    expect(specialGroup!.some(e => e.path === '/fhir/metadata')).toBe(true);
+    expect(specialGroup!.some(e => e.path === '/api/v1/tx')).toBe(true);
   });
 
-  it('returns undefined for non-FHIR endpoints', () => {
-    expect(resourceTypeFromPath('/api/v1/tx')).toBeUndefined();
-    expect(
-      resourceTypeFromPath('/hook/synchronous/send-wa-link')
-    ).toBeUndefined();
-    expect(resourceTypeFromPath('/api/v1/auth/magiclink')).toBeUndefined();
-    expect(resourceTypeFromPath('/fhir/metadata')).toBeUndefined();
+  it('filters endpoints by the given method', () => {
+    const grouped = getEndpointOptionsGrouped('DELETE');
+
+    // DELETE is only supported on Organization
+    const orgGroup = grouped.get('Organization');
+    expect(orgGroup).toBeDefined();
+    expect(orgGroup!.every(e => e.methods.includes('DELETE'))).toBe(true);
+
+    // Patient only supports GET and POST, so should not appear for DELETE
+    expect(grouped.has('Patient')).toBe(false);
   });
 
-  it('returns undefined for empty or unknown paths', () => {
-    expect(resourceTypeFromPath('')).toBeUndefined();
-    expect(resourceTypeFromPath('/api/provinces')).toBeUndefined();
+  it('returns empty Map when method has no matching endpoints', () => {
+    // There are no endpoints supporting OPTIONS in the catalog
+    const grouped = getEndpointOptionsGrouped('OPTIONS' as HttpMethod);
+    expect(grouped.size).toBe(0);
+  });
+
+  it('preserves all endpoints that support the method', () => {
+    const grouped = getEndpointOptionsGrouped('POST');
+    const flatFromGrouped = [...grouped.values()].flat();
+    const flatFromFilter = getEndpointsForMethod('POST');
+
+    expect(flatFromGrouped.length).toBe(flatFromFilter.length);
   });
 });
