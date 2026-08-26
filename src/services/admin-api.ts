@@ -1,18 +1,6 @@
 import type { HttpMethod } from '@/lib/admin/endpoints';
-import axios, { AxiosRequestConfig } from 'axios';
-
-/**
- * Superadmin API client. Requests go through the BFF /proxy base URL with
- * same-origin credentials — the browser sends the HttpOnly superadmin key
- * cookie automatically, so JS never reads or sets the X-API-Key header.
- * The BFF injects the header server-side (lazy backend enforcement).
- */
-
-// eslint-disable-next-line import/no-named-as-default-member
-const adminClient = axios.create({
-  baseURL: '/proxy',
-  withCredentials: true
-});
+import { getAPI } from '@/services/api';
+import type { AxiosRequestConfig } from 'axios';
 
 /**
  * Issues a superadmin API request through the BFF proxy.
@@ -29,10 +17,11 @@ export async function adminRequest<T>(
   body?: Record<string, unknown>,
   params?: Record<string, unknown>
 ): Promise<T> {
+  const API = await getAPI();
   const config: AxiosRequestConfig = { method, url: path };
   if (body !== undefined) config.data = body;
   if (params !== undefined) config.params = params;
-  const response = await adminClient.request<T>(config);
+  const response = await API.request<T>(config);
   return response.data;
 }
 
@@ -43,7 +32,8 @@ export async function adminRequest<T>(
  * @param apiKey - superadmin API key
  */
 export async function setAdminKey(apiKey: string): Promise<void> {
-  await adminClient.request({
+  const API = await getAPI({ proxy: false });
+  await API.request({
     method: 'POST',
     url: '/api/admin/key',
     data: { apiKey }
@@ -54,7 +44,8 @@ export async function setAdminKey(apiKey: string): Promise<void> {
  * Clears the BFF-held superadmin key cookie (lock button).
  */
 export async function clearAdminKey(): Promise<void> {
-  await adminClient.request({
+  const API = await getAPI({ proxy: false });
+  await API.request({
     method: 'DELETE',
     url: '/api/admin/key'
   });

@@ -1,28 +1,13 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock axios before importing admin-api (inline factory hoisted by vitest).
-// admin-api creates its client once at module load, so the factory returns a
-// stable instance whose request() spy is shared across tests.
-vi.mock('axios', () => {
-  const mockRequest = vi.fn();
-  const mockInstance = {
-    request: mockRequest,
-    interceptors: {
-      request: { use: vi.fn() },
-      response: { use: vi.fn() }
-    },
-    defaults: { baseURL: '/proxy', withCredentials: true }
-  };
-  const mockCreate = vi.fn(() => mockInstance);
-  return {
-    default: { create: mockCreate, isAxiosError: vi.fn() },
-    create: mockCreate
-  };
-});
+const { mockRequest, mockGetAPI } = vi.hoisted(() => ({
+  mockRequest: vi.fn(),
+  mockGetAPI: vi.fn()
+}));
 
-// eslint-disable-next-line import/first
-import axios from 'axios';
+vi.mock('@/services/api', () => ({
+  getAPI: mockGetAPI
+}));
 
 // eslint-disable-next-line import/first
 import {
@@ -32,22 +17,18 @@ import {
   setAdminKey
 } from '@/services/admin-api';
 
-const mockCreate = vi.mocked(axios.create);
-// admin-api creates its client once at module load; reuse that instance.
-const mockRequest = mockCreate.mock.results[0].value.request as ReturnType<
-  typeof vi.fn
->;
-
 describe('admin-api', () => {
   beforeEach(() => {
     mockRequest.mockReset();
+    mockGetAPI.mockReset();
+    mockGetAPI.mockResolvedValue({ request: mockRequest });
   });
 
-  it('uses the /proxy base URL with withCredentials (cookie rides along)', () => {
-    expect(mockCreate).toHaveBeenCalledWith({
-      baseURL: '/proxy',
-      withCredentials: true
-    });
+  it('adminRequest calls getAPI() with default proxy', async () => {
+    mockRequest.mockResolvedValue({ data: { total: 1 } });
+    await adminRequest('GET', '/fhir/Organization');
+
+    expect(mockGetAPI).toHaveBeenCalledWith();
   });
 
   it('never sets X-API-Key from JS (cookie custody only)', async () => {
@@ -78,11 +59,12 @@ describe('admin-api', () => {
     expect(result).toEqual({ id: 'o1' });
   });
 
-  it('setAdminKey posts the key to /api/admin/key', async () => {
+  it('setAdminKey calls getAPI({ proxy: false }) for BFF-only route', async () => {
     mockRequest.mockResolvedValue({ data: { success: true } });
 
     await setAdminKey('sa-secret');
 
+    expect(mockGetAPI).toHaveBeenCalledWith({ proxy: false });
     expect(mockRequest).toHaveBeenCalledWith({
       method: 'POST',
       url: '/api/admin/key',
@@ -90,11 +72,12 @@ describe('admin-api', () => {
     });
   });
 
-  it('clearAdminKey deletes /api/admin/key', async () => {
+  it('clearAdminKey calls getAPI({ proxy: false }) for BFF-only route', async () => {
     mockRequest.mockResolvedValue({ data: { success: true } });
 
     await clearAdminKey();
 
+    expect(mockGetAPI).toHaveBeenCalledWith({ proxy: false });
     expect(mockRequest).toHaveBeenCalledWith({
       method: 'DELETE',
       url: '/api/admin/key'
