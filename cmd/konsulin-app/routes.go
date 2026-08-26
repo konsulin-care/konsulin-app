@@ -72,6 +72,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 			"/health",
 			"/api/v1/auth/",
 			"/api/v1/relay/",
+			"/api/admin/",
 		},
 	})
 	r.Use(csrfMw)
@@ -158,15 +159,28 @@ func routes(cfg *config.Config) (http.Handler, error) {
 
 	// Backend API proxy — adds Bearer token from SuperTokens cookie.
 	r.Handle("/proxy/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
-		BackendBaseURL:   cfg.APIURL,
-		AccessCookieName: cfg.SessionCookieNameAccess,
+		BackendBaseURL:          cfg.APIURL,
+		AccessCookieName:        cfg.SessionCookieNameAccess,
+		SuperadminKeyCookieName: cfg.SuperadminKeyCookieName,
 	}))
 
 	// Questionnaire create — new assessments must enter the catalog as drafts.
 	// Exact-path match wins over the /proxy/* catch-all above.
 	r.Post("/proxy/fhir/Questionnaire", handler.NewQuestionnaireCreateHandler(handler.QuestionnaireCreateOptions{
-		BackendBaseURL:   cfg.APIURL,
-		AccessCookieName: cfg.SessionCookieNameAccess,
+		BackendBaseURL:          cfg.APIURL,
+		AccessCookieName:        cfg.SessionCookieNameAccess,
+		SuperadminKeyCookieName: cfg.SuperadminKeyCookieName,
+	}))
+
+	// Superadmin key custody — BFF stores the submitted key in an HttpOnly
+	// cookie; the backend validates it on each request (lazy enforcement).
+	r.Post("/api/admin/key", handler.NewAdminKeyHandler(handler.AdminKeyOptions{
+		CookieName:   cfg.SuperadminKeyCookieName,
+		CookieSecure: cfg.CookieSecure,
+	}))
+	r.Delete("/api/admin/key", handler.NewAdminKeyHandler(handler.AdminKeyOptions{
+		CookieName:   cfg.SuperadminKeyCookieName,
+		CookieSecure: cfg.CookieSecure,
 	}))
 
 	// SuperTokens API proxy — converts backend response headers to Set-Cookie.
@@ -177,7 +191,8 @@ func routes(cfg *config.Config) (http.Handler, error) {
 			{HeaderName: "st-refresh-token", CookieName: "sRefreshToken", HTTPOnly: true},
 			{HeaderName: "front-token", CookieName: "sFrontToken", HTTPOnly: false},
 		},
-		CookieSecure: cfg.CookieSecure,
+		CookieSecure:            cfg.CookieSecure,
+		SuperadminKeyCookieName: cfg.SuperadminKeyCookieName,
 	}))
 
 	// Role switcher — GET returns partial, POST updates session cookie.

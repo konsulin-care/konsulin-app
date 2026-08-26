@@ -30,6 +30,7 @@ type Config struct {
 
 	AnonSessionCookieName    string `json:"anon_session_cookie_name"`
 	RedirectIntentCookieName string `json:"redirect_intent_cookie_name"`
+	SuperadminKeyCookieName  string `json:"superadmin_key_cookie_name"`
 
 	NextjsURL                  string `json:"nextjs_url"`
 	CookieSecure               bool   `json:"cookie_secure"`
@@ -121,6 +122,7 @@ func Load() (*Config, error) {
 
 		AnonSessionCookieName:    env("ANON_SESSION_COOKIE_NAME", "anon_session"),
 		RedirectIntentCookieName: env("REDIRECT_INTENT_COOKIE_NAME", "redirect_intent"),
+		SuperadminKeyCookieName:  env("SUPERADMIN_KEY_COOKIE_NAME", "superadmin_key"),
 
 		NextjsURL:                  env("NEXTJS_URL", "http://localhost:8080"),
 		CookieSecure:               strings.HasPrefix(appURL, "https://"),

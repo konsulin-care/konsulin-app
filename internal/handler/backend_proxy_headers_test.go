@@ -83,6 +83,83 @@ func TestBackendProxy_forwardsSuperTokensHeaders(t *testing.T) {
 	}
 }
 
+// TestBackendProxy_forwardsSuperadminKeyFromCookie verifies that a BFF-held
+// superadmin key cookie (set by POST /api/admin/key) is forwarded to the
+// backend as the X-API-Key header on /proxy/* requests. The key must travel
+// server-side only — the browser never sees the header.
+func TestBackendProxy_forwardsSuperadminKeyFromCookie(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"x_api_key": r.Header.Get("X-API-Key"),
+		})
+	}))
+	t.Cleanup(backend.Close)
+
+	proxy := NewBackendProxyHandler(BackendProxyOptions{
+		BackendBaseURL:         backend.URL,
+		SuperadminKeyCookieName: "superadmin_key",
+	})
+	srv := httptest.NewServer(proxy)
+	t.Cleanup(srv.Close)
+
+	req, err := http.NewRequest(http.MethodGet, srv.URL+"/proxy/fhir/Organization", http.NoBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Cookie", "superadmin_key=sa-secret-123")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	var got map[string]string
+	if err := json.NewDecoder(resp.Body).Decode(&got); err != nil {
+		t.Fatal(err)
+	}
+	if got["x_api_key"] != "sa-secret-123" {
+		t.Errorf("expected backend to receive X-API-Key=sa-secret-123, got %q", got["x_api_key"])
+	}
+}
+
+// TestBackendProxy_omitsSuperadminKeyWithoutCookie verifies that a request
+// without the superadmin key cookie never carries an X-API-Key header.
+func TestBackendProxy_omitsSuperadminKeyWithoutCookie(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"x_api_key": r.Header.Get("X-API-Key"),
+		})
+	}))
+	t.Cleanup(backend.Close)
+
+	proxy := NewBackendProxyHandler(BackendProxyOptions{
+		BackendBaseURL:         backend.URL,
+		SuperadminKeyCookieName: "superadmin_key",
+	})
+	srv := httptest.NewServer(proxy)
+	t.Cleanup(srv.Close)
+
+	req, err := http.NewRequest(http.MethodGet, srv.URL+"/proxy/fhir/Organization", http.NoBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	var got map[string]string
+	if err := json.NewDecoder(resp.Body).Decode(&got); err != nil {
+		t.Fatal(err)
+	}
+	if got["x_api_key"] != "" {
+		t.Errorf("expected no X-API-Key header, got %q", got["x_api_key"])
+	}
+}
+
 // TestBackendProxy_frontTokenPassesThrough verifies that the front-token
 // response header is NOT stripped by the proxy. The SuperTokens frontend SDK
 // reads this header from refresh responses to update its internal session

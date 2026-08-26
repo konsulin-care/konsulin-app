@@ -1,16 +1,10 @@
-import AppChrome from '@/components/app-chrome';
-import QueryProvider from '@/components/general/query-provider';
-import { RuntimeConfigProvider } from '@/components/general/runtime-config-provider';
-import { SuperTokensProviders } from '@/components/supertokensProvider';
-import { AuthProvider } from '@/context/auth/authContext';
-import { BookingProvider } from '@/context/booking/bookingContext';
-import { ProfileProvider } from '@/context/profile/profileContext';
+import { RouteGate } from '@/components/route-gate';
 import '@/styles/globals.css';
 import '@/styles/index.scss';
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
-import React, { Suspense } from 'react';
+import React from 'react';
 import 'react-toastify/dist/ReactToastify.css';
 
 const inter = Plus_Jakarta_Sans({ subsets: ['latin'] });
@@ -59,43 +53,10 @@ export const viewport: Viewport = {
   themeColor: '#FFFFFF'
 };
 
-/** Wraps children in auth, booking, and query providers. */
-function AuthProvidersLayer({
-  children
-}: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <AuthProvider>
-      <BookingProvider>
-        <QueryProvider>
-          <Suspense fallback={null}>{children}</Suspense>
-        </QueryProvider>
-      </BookingProvider>
-    </AuthProvider>
-  );
-}
-
-/** Wraps children in runtime config, SuperTokens, and profile providers. */
-function OuterProviders({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <RuntimeConfigProvider>
-      <SuperTokensProviders>
-        <ProfileProvider>{children}</ProfileProvider>
-      </SuperTokensProviders>
-    </RuntimeConfigProvider>
-  );
-}
-
-/** Composes all app-level providers. */
-function AppProviders({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <OuterProviders>
-      <AuthProvidersLayer>{children}</AuthProvidersLayer>
-    </OuterProviders>
-  );
-}
-
 /**
- *
+ * Root layout. The route gate chooses between the full app provider stack and
+ * a minimal admin shell for /admin — SuperTokens session bootstrap never runs
+ * inside the superadmin console.
  */
 export default function RootLayout({
   children
@@ -104,12 +65,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en'>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <Script src='/js/pathname-init.js' strategy='beforeInteractive' />
         <Script src='/js/sw-register.js' strategy='beforeInteractive' />
-        <AppProviders>
-          <AppChrome>{children}</AppChrome>
-        </AppProviders>
+        <RouteGate>{children}</RouteGate>
       </body>
     </html>
   );
