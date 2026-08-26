@@ -106,7 +106,8 @@ export default function AuthPageComponent() {
     }
 
     if (!isRootAuth) {
-      setUiComponent(getRoutingComponent(preBuiltUIList));
+      // @type {supertokens-auth-react} returns a poorly-typed ReactElement in React 19
+      setUiComponent(getRoutingComponent(preBuiltUIList) as ReactElement);
       return;
     }
 

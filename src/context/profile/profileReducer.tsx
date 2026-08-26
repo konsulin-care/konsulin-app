@@ -16,15 +16,15 @@ import { ActionProfile, IProfile } from './profileTypes';
 //   }
 // }
 
-export const initialState = {
-  resourceType: null,
-  id: null,
-  active: null,
-  birthDate: null,
-  gender: null,
+export const initialState: IProfile = {
+  resourceType: 'Patient',
+  id: undefined,
+  active: undefined,
+  birthDate: undefined,
+  gender: undefined,
   photo: [],
   identifier: [],
-  name: null,
+  name: undefined,
   address: [],
   telecom: []
 };

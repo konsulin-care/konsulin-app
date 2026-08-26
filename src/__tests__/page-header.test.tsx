@@ -205,7 +205,8 @@ describe('PageHeader - back navigation', () => {
       forward: vi.fn(),
       refresh: vi.fn(),
       replace: vi.fn(),
-      prefetch: vi.fn()
+      prefetch: vi.fn(),
+      bfcacheId: '0'
     };
     vi.mocked(useRouter).mockReturnValue(router);
     return router;

@@ -53,7 +53,8 @@ describe('AppChrome', () => {
       prefetch: vi.fn(),
       back: vi.fn(),
       forward: vi.fn(),
-      refresh: vi.fn()
+      refresh: vi.fn(),
+      bfcacheId: '0'
     });
     vi.mocked(usePathname).mockReturnValue('/');
     vi.mocked(useSearchParams).mockReturnValue(

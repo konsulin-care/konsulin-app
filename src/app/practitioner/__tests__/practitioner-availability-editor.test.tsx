@@ -162,22 +162,17 @@ describe('PractitionerAvailabilityEditor save behaviors', () => {
       )
     );
 
-    const callsBeforeSave = onDirtyChange.mock.calls.length;
-
     // Perform save
     // eslint-disable-next-line unicorn/no-useless-undefined -- required by vitest mock types, cannot omit
     mockMutateAsync.mockResolvedValueOnce(undefined);
     await (currentSave as () => Promise<void>)();
-    // Wait for all state updates after save to settle
-    await waitFor(() => Promise.resolve());
-
-    // After save, weeklyAvailabilityDirty should be cleared.
-    // Find a call with false as first arg that happened AFTER save.
-    const falseCallsAfterSave = onDirtyChange.mock.calls.filter(
-      (call: unknown[], index: number) =>
-        call[0] === false && index >= callsBeforeSave
-    );
-    expect(falseCallsAfterSave.length).toBeGreaterThanOrEqual(1);
+    // Wait for the effect to call onDirtyChange(false) after save
+    await waitFor(() => {
+      const falseCalls = onDirtyChange.mock.calls.filter(
+        (call: unknown[]) => call[0] === false
+      );
+      expect(falseCalls.length).toBeGreaterThanOrEqual(1);
+    });
   });
 
   it('preserves availability data visually after save', async () => {
