@@ -11,7 +11,6 @@ import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
 import React, { Suspense } from 'react';
-import 'react-international-phone/style.css';
 import 'react-toastify/dist/ReactToastify.css';
 
 const inter = Plus_Jakarta_Sans({ subsets: ['latin'] });

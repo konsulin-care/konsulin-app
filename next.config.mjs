@@ -13,8 +13,6 @@ const nextConfig = {
       'lucide-react',
       'date-fns',
       'swiper',
-      '@mui/icons-material',
-      '@mui/material',
       '@radix-ui/react-accordion',
       '@radix-ui/react-alert-dialog',
       '@radix-ui/react-avatar',
