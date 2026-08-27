@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
@@ -50,22 +51,9 @@ func (f *spaFS) Open(name string) (http.File, error) {
 	return file, nil
 }
 
-// staticOrProxy serves a static HTML file from outDir when it exists,
-// otherwise falls back to the provided proxy handler. This lets the Go
-// BFF serve the static Next.js export in Docker (no dev server) while
-// still proxying to the dev server when the export is absent.
-//
-// nolint:gosec // G703: path is cleaned and resolved within outDir
-func staticOrProxy(outDir string, proxy http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		cleanPath := path.Clean(r.URL.Path)
-		filePath := filepath.Join(outDir, cleanPath) + ".html"
-		if _, err := os.Stat(filePath); err == nil {
-			http.ServeFile(w, r, filePath)
-			return
-		}
-		proxy.ServeHTTP(w, r)
-	}
+// isRSCPayload returns true for Next.js RSC routing payloads (__next.*.txt).
+func isRSCPayload(p string) bool {
+	return strings.HasPrefix(filepath.Base(p), "__next.") && strings.HasSuffix(filepath.Base(p), ".txt")
 }
 
 func routes(cfg *config.Config) (http.Handler, error) {
@@ -122,6 +110,10 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		return nil, err
 	}
 	outDir := filepath.Join(wd, "out")
+
+	// Create the static file server for the Next.js export.
+	// deepsource:ignore GO-S1034 — spaFS rejects non-root directory opens, so FileServer can never list the export dir.
+	outFS := http.FileServer(&spaFS{http.Dir(outDir)})
 
 	r.Post("/auth/logout", handler.NewLogoutHandler(handler.LogoutOptions{
 		AuthPath:                   cfg.AuthPath,
@@ -231,12 +223,23 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		UnauthorizedPath:  unauthorizedPath,
 		AppURL:            cfg.AppURL,
 	})
+	// Protected pages — guard HTML routes, skip RSC payloads (__next.*.txt).
 	protectedRoutes := []string{"/journal", "/record", "/profile", "/remove-account"}
 	for _, p := range protectedRoutes {
 		p := p
-		handler := staticOrProxy(outDir, proxy)
-		r.With(authGuard).Handle(p, handler)
-		r.With(authGuard).Handle(p+"/*", handler)
+		r.With(authGuard).Get(p, func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, filepath.Join(outDir, path.Clean(strings.TrimPrefix(r.URL.Path, "/"))+".html")) // nolint:gosec
+		})
+		r.Handle(p+"/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if isRSCPayload(r.URL.Path) {
+				outFS.ServeHTTP(w, r)
+				return
+			}
+			authGuard(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// nolint:gosec // G703: path is cleaned and resolved within outDir
+				http.ServeFile(w, r, filepath.Join(outDir, path.Clean(strings.TrimPrefix(r.URL.Path, "/"))+".html"))
+			})).ServeHTTP(w, r)
+		}))
 	}
 
 	// Clinician-only routes.
@@ -289,8 +292,6 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	// Serve Next.js static export (out/) directly when it exists.
 	// Uses spaFS to handle clean URLs (/clinic → out/clinic.html).
 	if stat, err := os.Stat(outDir); err == nil && stat.IsDir() {
-		// deepsource:ignore GO-S1034 — spaFS rejects non-root directory opens, so FileServer can never list the export dir.
-		outFS := http.FileServer(&spaFS{http.Dir(outDir)})
 		r.NotFound(outFS.ServeHTTP)
 	} else {
 		r.NotFound(proxy.ServeHTTP)
