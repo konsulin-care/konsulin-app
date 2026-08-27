@@ -50,6 +50,24 @@ func (f *spaFS) Open(name string) (http.File, error) {
 	return file, nil
 }
 
+// staticOrProxy serves a static HTML file from outDir when it exists,
+// otherwise falls back to the provided proxy handler. This lets the Go
+// BFF serve the static Next.js export in Docker (no dev server) while
+// still proxying to the dev server when the export is absent.
+//
+// nolint:gosec // G703: path is cleaned and resolved within outDir
+func staticOrProxy(outDir string, proxy http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cleanPath := path.Clean(r.URL.Path)
+		filePath := filepath.Join(outDir, cleanPath) + ".html"
+		if _, err := os.Stat(filePath); err == nil {
+			http.ServeFile(w, r, filePath)
+			return
+		}
+		proxy.ServeHTTP(w, r)
+	}
+}
+
 func routes(cfg *config.Config) (http.Handler, error) {
 	const unauthorizedPath = "/unauthorized"
 	r := chi.NewRouter()
@@ -216,8 +234,9 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	protectedRoutes := []string{"/journal", "/record", "/profile", "/remove-account"}
 	for _, p := range protectedRoutes {
 		p := p
-		r.With(authGuard).Handle(p, proxy)
-		r.With(authGuard).Handle(p+"/*", proxy)
+		handler := staticOrProxy(outDir, proxy)
+		r.With(authGuard).Handle(p, handler)
+		r.With(authGuard).Handle(p+"/*", handler)
 	}
 
 	// Clinician-only routes.
