@@ -83,6 +83,7 @@ const ITEM_PATHS = new Set([
   'Slot'
 ]);
 
+/** Builds the list of FHIR admin endpoints from the static catalog. */
 function buildFhirEndpoints(): AdminEndpoint[] {
   const endpoints: AdminEndpoint[] = [];
   for (const resource of FHIR_PATHS) {

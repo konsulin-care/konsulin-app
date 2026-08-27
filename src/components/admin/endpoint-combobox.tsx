@@ -67,6 +67,7 @@ export function EndpointCombobox({
     }
   }, [query, onSelect]);
 
+  /** Handles arrow-key navigation, Enter selection, and Escape close. */
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!open) {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {

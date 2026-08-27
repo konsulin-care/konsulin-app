@@ -236,8 +236,8 @@ describe('AdminRequestBuilder', () => {
       // Method combobox and endpoint input should be inside this container
       const methodCombobox = screen.getByRole('combobox', { name: /method/i });
       const endpointInput = screen.getByRole('textbox', { name: /endpoint/i });
-      expect(borderedContainer!.contains(methodCombobox)).toBe(true);
-      expect(borderedContainer!.contains(endpointInput)).toBe(true);
+      expect(borderedContainer?.contains(methodCombobox)).toBe(true);
+      expect(borderedContainer?.contains(endpointInput)).toBe(true);
     });
 
     it('does not render a vertical divider between method and endpoint', () => {
@@ -247,7 +247,7 @@ describe('AdminRequestBuilder', () => {
         .getByRole('combobox', { name: /method/i })
         .closest('[class*="shrink-0"]');
       expect(methodWrapper).not.toBeNull();
-      expect(methodWrapper!.className).not.toContain('border-r');
+      expect(methodWrapper?.className).not.toContain('border-r');
     });
 
     it('renders method trigger with colored background matching the method', () => {
@@ -272,11 +272,11 @@ describe('AdminRequestBuilder', () => {
       );
       expect(borderedContainer).not.toBeNull();
       // Container should have flex layout (not flex-wrap)
-      const classList = borderedContainer!.className;
+      const classList = borderedContainer?.className;
       expect(classList).toContain('flex');
       expect(classList).not.toContain('flex-wrap');
       // Both children should be direct children of the flex container
-      const children = borderedContainer!.children;
+      const children = borderedContainer?.children;
       expect(children.length).toBe(2);
     });
   });

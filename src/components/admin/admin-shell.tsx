@@ -16,7 +16,9 @@ interface AdminShellProps {
  * button that clears the BFF-held key cookie and the session flag.
  */
 export function AdminShell({ children }: Readonly<AdminShellProps>) {
+  /** Clears the BFF-held key cookie and reloads the page. */
   const handleLock = () => {
+    // deepsource:ignore JS-0098 — void discards promise rejection in event handler
     void (async () => {
       try {
         await clearAdminKey();

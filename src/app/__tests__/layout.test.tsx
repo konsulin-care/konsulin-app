@@ -1,4 +1,6 @@
 import { render } from '@testing-library/react';
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 // Mock every import that layout.tsx pulls in
@@ -48,7 +50,7 @@ vi.mock('@/components/supertokensProvider', () => ({
 
 vi.mock('@/components/app-chrome', () => {
   return {
-    default: ({ children }: { children: React.ReactNode }) => <>{children}</>
+    default: ({ children }: { children: React.ReactNode }) => children
   };
 });
 
@@ -104,7 +106,7 @@ import RootLayout from '../layout';
 
 describe('RootLayout', () => {
   it('renders html and body wrappers', () => {
-    const { container } = render(<RootLayout>test content</RootLayout>);
+    render(<RootLayout>test content</RootLayout>);
     // React 19 renders <html>/<body> into the document, not inside the container div
     expect(document.querySelector('html')).toBeInTheDocument();
     expect(document.querySelector('body')).toBeInTheDocument();
@@ -121,7 +123,7 @@ describe('RootLayout', () => {
   });
 
   it('renders font class on body', () => {
-    const { container } = render(<RootLayout>test</RootLayout>);
+    render(<RootLayout>test</RootLayout>);
     // React 19 renders <html>/<body> into the document, not inside the container div
     expect(document.querySelector('body.mock-font')).toBeInTheDocument();
   });
@@ -131,8 +133,6 @@ describe('RootLayout', () => {
     // serialized as a DOM attribute in jsdom or renderToString. We verify the
     // prop is present by reading the source file, since no runtime assertion
     // is possible in the test environment.
-    const fs = require('fs');
-    const path = require('path');
     const layoutSrc = fs.readFileSync(
       path.resolve(__dirname, '../layout.tsx'),
       'utf-8'

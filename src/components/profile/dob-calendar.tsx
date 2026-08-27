@@ -14,6 +14,7 @@ export default function DobCalendar({
   const today = startOfDay(new Date());
   const maxDate = addDays(today, -1);
 
+  /** Updates the selected date and propagates it to the parent. */
   const handleSelect = (date: Date | undefined) => {
     if (!date) return;
     onChange(date);

@@ -20,6 +20,7 @@ export function AdminKeyGate({ onUnlocked }: Readonly<AdminKeyGateProps>) {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  /** Submits the API key to the BFF and marks the session on success. */
   const handleSubmit = async () => {
     if (!apiKey.trim() || submitting) return;
     setSubmitting(true);
@@ -39,6 +40,7 @@ export function AdminKeyGate({ onUnlocked }: Readonly<AdminKeyGateProps>) {
       className='mx-auto mt-16 flex max-w-md flex-col gap-3'
       onSubmit={e => {
         e.preventDefault();
+        // deepsource:ignore JS-0098 — void discards promise rejection in event handler
         void handleSubmit();
       }}
     >

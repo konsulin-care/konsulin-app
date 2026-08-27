@@ -30,6 +30,7 @@ export const initialState: IProfile = {
 };
 
 /** Profile state reducer handling authentication update actions. */
+// deepsource:ignore JS-0302 — idiomatic Redux reducer convention
 export const reducer = (
   state = initialState,
   action: ActionProfile

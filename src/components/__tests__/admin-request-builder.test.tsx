@@ -39,7 +39,7 @@ describe('AdminRequestBuilder preview layout', () => {
     // The textarea inside the accordion should not be visible when closed
     const details = screen.getByText(/Payload preview/).closest('details');
     expect(details).not.toBeNull();
-    expect(details!.open).toBe(false);
+    expect(details?.open).toBe(false);
   });
 
   it('payload accordion opens on click', () => {
@@ -52,6 +52,6 @@ describe('AdminRequestBuilder preview layout', () => {
     fireEvent.click(summary);
 
     const details = summary.closest('details');
-    expect(details!.open).toBe(true);
+    expect(details?.open).toBe(true);
   });
 });

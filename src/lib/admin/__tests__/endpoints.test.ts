@@ -24,7 +24,7 @@ describe('getEndpointOptionsGrouped', () => {
     // Organization supports GET, so it should appear
     const orgGroup = grouped.get('Organization');
     expect(orgGroup).toBeDefined();
-    expect(orgGroup!.some(e => e.path === '/fhir/Organization')).toBe(true);
+    expect(orgGroup?.some(e => e.path === '/fhir/Organization')).toBe(true);
   });
 
   it('groups non-FHIR endpoints under Special', () => {
@@ -32,8 +32,8 @@ describe('getEndpointOptionsGrouped', () => {
 
     const specialGroup = grouped.get('Special');
     expect(specialGroup).toBeDefined();
-    expect(specialGroup!.some(e => e.path === '/fhir/metadata')).toBe(true);
-    expect(specialGroup!.some(e => e.path === '/api/v1/tx')).toBe(true);
+    expect(specialGroup?.some(e => e.path === '/fhir/metadata')).toBe(true);
+    expect(specialGroup?.some(e => e.path === '/api/v1/tx')).toBe(true);
   });
 
   it('filters endpoints by the given method', () => {
@@ -42,7 +42,7 @@ describe('getEndpointOptionsGrouped', () => {
     // DELETE is only supported on Organization
     const orgGroup = grouped.get('Organization');
     expect(orgGroup).toBeDefined();
-    expect(orgGroup!.every(e => e.methods.includes('DELETE'))).toBe(true);
+    expect(orgGroup?.every(e => e.methods.includes('DELETE'))).toBe(true);
 
     // Patient only supports GET and POST, so should not appear for DELETE
     expect(grouped.has('Patient')).toBe(false);

@@ -103,6 +103,7 @@ function QueryParamRows({
   rows: QueryParamRow[];
   onChange: (rows: QueryParamRow[]) => void;
 }>) {
+  /** Applies a partial patch to the row with the given id. */
   const update = (id: string, patch: Partial<QueryParamRow>) => {
     onChange(rows.map(row => (row.id === id ? { ...row, ...patch } : row)));
   };
@@ -168,6 +169,7 @@ export function AdminRequestBuilder() {
   const payloadPreview =
     needsPayload && payload ? JSON.stringify(payload, null, 2) : '';
 
+  /** Sends the constructed request to the backend via the admin proxy. */
   const handleSend = async () => {
     setSending(true);
     setError('');
@@ -288,6 +290,7 @@ export function AdminRequestBuilder() {
 
       <button
         type='button'
+        // deepsource:ignore JS-0098 — void discards promise rejection in event handler
         onClick={() => void handleSend()}
         disabled={sending || !endpoint.trim()}
         className='self-start rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50'

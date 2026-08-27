@@ -5,7 +5,7 @@ vi.mock('@/services/admin-api', () => ({
   adminRequest: vi.fn(),
   clearAdminKey: vi.fn(),
   setAdminKey: vi.fn(),
-  parseAdminKeyError: vi.fn((err: unknown) => 'An unexpected error occurred')
+  parseAdminKeyError: vi.fn((_err: unknown) => `Error: ${_err}`)
 }));
 
 vi.mock('@/lib/admin/session', () => ({
@@ -57,7 +57,7 @@ describe('AdminKeyGate', () => {
     await waitFor(() => {
       expect(markKeySet).not.toHaveBeenCalled();
     });
-    expect(screen.getByText('An unexpected error occurred')).toBeDefined();
+    expect(screen.getByText(/Error:/)).toBeDefined();
   });
 
   it('does not submit an empty key', () => {

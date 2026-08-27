@@ -185,6 +185,7 @@ function ClinicHero({
   imageUrl: string;
 }>) {
   const isLongPress = useRef(false);
+  // deepsource:ignore JS-W1042 — explicit undefined for readability
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const copyAddress = useCallback(() => {
     if (fullAddress)
