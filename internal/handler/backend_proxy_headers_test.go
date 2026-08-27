@@ -96,7 +96,7 @@ func TestBackendProxy_forwardsSuperadminKeyFromCookie(t *testing.T) {
 	t.Cleanup(backend.Close)
 
 	proxy := NewBackendProxyHandler(BackendProxyOptions{
-		BackendBaseURL:         backend.URL,
+		BackendBaseURL:          backend.URL,
 		SuperadminKeyCookieName: "superadmin_key",
 	})
 	srv := httptest.NewServer(proxy)
@@ -134,7 +134,7 @@ func TestBackendProxy_omitsSuperadminKeyWithoutCookie(t *testing.T) {
 	t.Cleanup(backend.Close)
 
 	proxy := NewBackendProxyHandler(BackendProxyOptions{
-		BackendBaseURL:         backend.URL,
+		BackendBaseURL:          backend.URL,
 		SuperadminKeyCookieName: "superadmin_key",
 	})
 	srv := httptest.NewServer(proxy)

@@ -28,9 +28,9 @@ func TestRoutes_protectedPage_servesRscPayloadWithoutAuth(t *testing.T) {
 
 	// Create RSC payloads (should be served without auth)
 	rscPayloads := map[string]string{
-		"__next._tree.txt":                      "route tree data",
-		"__next.record.__PAGE__.txt":            "page payload",
-		"__next._full.txt":                      "full payload",
+		"__next._tree.txt":           "route tree data",
+		"__next.record.__PAGE__.txt": "page payload",
+		"__next._full.txt":           "full payload",
 	}
 	for name, content := range rscPayloads {
 		if err := os.WriteFile(filepath.Join(recordDir, name), []byte(content), 0644); err != nil {
@@ -50,10 +50,10 @@ func TestRoutes_protectedPage_servesRscPayloadWithoutAuth(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		path       string
-		wantCode   int
-		wantBody   string
+		name     string
+		path     string
+		wantCode int
+		wantBody string
 	}{
 		{
 			name:     "rsc tree payload served without auth",

@@ -38,7 +38,7 @@ func newQuestionnaireCreateTestHandler(t *testing.T) (http.Handler, *strings.Bui
 	t.Helper()
 	backend, captured := testQuestionnaireBackend(t)
 	handler := NewQuestionnaireCreateHandler(QuestionnaireCreateOptions{
-		BackendBaseURL:           backend.URL,
+		BackendBaseURL:          backend.URL,
 		SuperadminKeyCookieName: "superadmin_key",
 	})
 	return handler, captured
@@ -58,7 +58,7 @@ func TestQuestionnaireCreateHandler_forwardsSuperadminKey(t *testing.T) {
 	t.Cleanup(backend.Close)
 
 	handler := NewQuestionnaireCreateHandler(QuestionnaireCreateOptions{
-		BackendBaseURL:           backend.URL,
+		BackendBaseURL:          backend.URL,
 		SuperadminKeyCookieName: "superadmin_key",
 	})
 
