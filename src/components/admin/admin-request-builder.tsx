@@ -149,6 +149,8 @@ export function AdminRequestBuilder() {
   const needsPayload = method === 'POST' || method === 'PUT';
 
   const changeEndpoint = (value: string) => {
+    // Re-selecting the current endpoint keeps the filled form.
+    if (value.trim() === endpoint.trim()) return;
     setEndpoint(value);
     setFieldValues({});
     setRawJson('');

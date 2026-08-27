@@ -1,7 +1,8 @@
 import { AdminRequestBuilder } from '@/components/admin/admin-request-builder';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { adminRequest } from '@/services/admin-api';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Polyfill pointer capture methods for Radix UI in jsdom
 beforeAll(() => {
@@ -14,6 +15,10 @@ vi.mock('@/services/admin-api', () => ({
   adminRequest: vi.fn().mockResolvedValue({}),
   parseAdminKeyError: vi.fn().mockReturnValue('error')
 }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe('AdminRequestBuilder', () => {
   describe('Method dropdown', () => {
@@ -273,6 +278,90 @@ describe('AdminRequestBuilder', () => {
       // Both children should be direct children of the flex container
       const children = borderedContainer!.children;
       expect(children.length).toBe(2);
+    });
+  });
+
+  describe('Endpoint reselect form preservation', () => {
+    it('keeps the filled form when the current endpoint is re-selected', async () => {
+      const user = userEvent.setup();
+      render(<AdminRequestBuilder />);
+
+      // Switch to POST so the Organization payload fields appear.
+      await user.click(screen.getByRole('combobox', { name: /method/i }));
+      await user.click(screen.getAllByText('POST')[0]);
+
+      // Fill in the Organization fields.
+      fireEvent.change(screen.getByLabelText('Name'), {
+        target: { value: 'Acme Clinic' }
+      });
+      fireEvent.change(screen.getByLabelText('Active'), {
+        target: { value: 'true' }
+      });
+
+      // Re-select the same endpoint from the dropdown suggestions.
+      const endpointInput = screen.getByRole('textbox', {
+        name: /endpoint/i
+      });
+      fireEvent.focus(endpointInput);
+      const suggestion = screen.getByRole('button', {
+        name: '/fhir/Organization'
+      });
+      fireEvent.mouseDown(suggestion);
+      fireEvent.mouseUp(suggestion);
+      fireEvent.click(suggestion);
+
+      // The form must still hold the entered values.
+      expect(screen.getByLabelText('Name')).toHaveValue('Acme Clinic');
+      expect(screen.getByLabelText('Active')).toHaveValue('true');
+
+      await user.click(screen.getByRole('button', { name: /send/i }));
+
+      await waitFor(() => {
+        expect(vi.mocked(adminRequest)).toHaveBeenCalledWith(
+          'POST',
+          '/fhir/Organization',
+          { resourceType: 'Organization', active: true, name: 'Acme Clinic' }
+        );
+      });
+    });
+
+    it('resets the form when a different endpoint is selected', async () => {
+      const user = userEvent.setup();
+      render(<AdminRequestBuilder />);
+
+      await user.click(screen.getByRole('combobox', { name: /method/i }));
+      await user.click(screen.getAllByText('POST')[0]);
+
+      fireEvent.change(screen.getByLabelText('Name'), {
+        target: { value: 'Acme Clinic' }
+      });
+
+      // Select Location — the Organization values must be wiped.
+      const endpointInput = screen.getByRole('textbox', {
+        name: /endpoint/i
+      });
+      fireEvent.focus(endpointInput);
+      fireEvent.change(endpointInput, {
+        target: { value: '/fhir/Location' }
+      });
+      const suggestion = screen.getByRole('button', {
+        name: '/fhir/Location'
+      });
+      fireEvent.mouseDown(suggestion);
+      fireEvent.mouseUp(suggestion);
+      fireEvent.click(suggestion);
+
+      expect(screen.getByLabelText('Name')).toHaveValue('');
+
+      await user.click(screen.getByRole('button', { name: /send/i }));
+
+      await waitFor(() => {
+        expect(vi.mocked(adminRequest)).toHaveBeenCalledWith(
+          'POST',
+          '/fhir/Location',
+          { resourceType: 'Location' }
+        );
+      });
     });
   });
 });
