@@ -20,9 +20,7 @@ import (
 )
 
 // spaFS wraps http.Dir to support clean URLs for static HTML export.
-// If opening a path fails and the path has no file extension, it retries
-// with ".html" appended. This lets /clinic serve out/clinic.html.
-// Directories (e.g. _next/) are opened normally for FileServer's subfile handling.
+// Retries with ".html" appended when a path without extension is not found.
 type spaFS struct {
 	http.Dir
 }
@@ -54,6 +52,20 @@ func (f *spaFS) Open(name string) (http.File, error) {
 // isRSCPayload returns true for Next.js RSC routing payloads (__next.*.txt).
 func isRSCPayload(p string) bool {
 	return strings.HasPrefix(filepath.Base(p), "__next.") && strings.HasSuffix(filepath.Base(p), ".txt")
+}
+
+// protectedPageHandler serves static HTML for protected routes, bypassing auth for RSC payloads.
+func protectedPageHandler(authGuard func(http.Handler) http.Handler, outDir string, outFS http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if isRSCPayload(r.URL.Path) {
+			outFS.ServeHTTP(w, r)
+			return
+		}
+		authGuard(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// nolint:gosec // G703: path is cleaned and resolved within outDir
+			http.ServeFile(w, r, filepath.Join(outDir, path.Clean(strings.TrimPrefix(r.URL.Path, "/"))+".html"))
+		})).ServeHTTP(w, r)
+	}
 }
 
 func routes(cfg *config.Config) (http.Handler, error) {
@@ -125,7 +137,6 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		SecureCookie:               cfg.CookieSecure,
 		AllowInsecureBackendLogout: cfg.AllowInsecureBackendLogout,
 	}))
-
 	r.HandleFunc("/auth/cookie", handler.NewAuthCookieHandler(handler.AuthCookieOptions{
 		CookieName: cfg.AuthCookieName, CookieSecure: cfg.CookieSecure,
 		CookieSecret: cfg.SessionCookieSecret, AccessCookieName: cfg.SessionCookieNameAccess,
@@ -137,7 +148,6 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]string{"token": appmw.CSRFToken(r)})
 	})
-
 	r.Get("/api/config", handler.NewClientConfigHandler(handler.ClientConfigOptions{
 		AppName:     cfg.AppName,
 		APIURL:      cfg.APIURL,
@@ -148,10 +158,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	}))
 
 	// /auth/* — serve Next.js auth page (static export or dev proxy).
-	// In dev mode, rewrites the path to /auth so the Next.js dev server
-	// serves the auth SPA regardless of the sub-path (e.g. /auth/verify).
-	// The SuperTokens SDK reads the original path from window.location
-	// and handles routing via getRoutingComponent().
+	// In dev mode, rewrites to /auth so the dev server serves the auth SPA.
 	authPageHandler := func(w http.ResponseWriter, r *http.Request) {
 		authHTML := filepath.Join(outDir, "auth.html")
 		if _, err := os.Stat(authHTML); err == nil {
@@ -163,10 +170,11 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	}
 	r.Route("/auth", func(r chi.Router) {
 		r.Use(appmw.RedirectAuthenticated(cfg.AuthCookieName, cfg.SessionCookieSecret, "/"))
-		r.Get("/", authPageHandler)
-		r.Get("/*", authPageHandler)
+		for _, m := range []string{http.MethodGet, http.MethodHead} {
+			r.MethodFunc(m, "/", authPageHandler)
+			r.MethodFunc(m, "/*", authPageHandler)
+		}
 	})
-
 	// Backend API proxy — adds Bearer token from SuperTokens cookie.
 	r.Handle("/proxy/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
 		BackendBaseURL:          cfg.APIURL,
@@ -212,8 +220,8 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		CookieSecret:   cfg.SessionCookieSecret,
 		BackendBaseURL: cfg.APIURL,
 	}))
-
 	// Protected Next.js pages (mirrors old middleware.ts route list).
+	// Guard HTML routes, skip RSC payloads (__next.*.txt).
 	authGuard := appmw.AuthGuard(appmw.AuthGuardOptions{
 		AuthPath:          cfg.AuthPath,
 		CookieName:        cfg.AuthCookieName,
@@ -223,23 +231,15 @@ func routes(cfg *config.Config) (http.Handler, error) {
 		UnauthorizedPath:  unauthorizedPath,
 		AppURL:            cfg.AppURL,
 	})
-	// Protected pages — guard HTML routes, skip RSC payloads (__next.*.txt).
 	protectedRoutes := []string{"/journal", "/record", "/profile", "/remove-account"}
 	for _, p := range protectedRoutes {
 		p := p
-		r.With(authGuard).Get(p, func(w http.ResponseWriter, r *http.Request) {
+		handler := func(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, filepath.Join(outDir, path.Clean(strings.TrimPrefix(r.URL.Path, "/"))+".html")) // nolint:gosec
-		})
-		r.Handle(p+"/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if isRSCPayload(r.URL.Path) {
-				outFS.ServeHTTP(w, r)
-				return
-			}
-			authGuard(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// nolint:gosec // G703: path is cleaned and resolved within outDir
-				http.ServeFile(w, r, filepath.Join(outDir, path.Clean(strings.TrimPrefix(r.URL.Path, "/"))+".html"))
-			})).ServeHTTP(w, r)
-		}))
+		}
+		r.With(authGuard).MethodFunc(http.MethodGet, p, handler)
+		r.With(authGuard).MethodFunc(http.MethodHead, p, handler)
+		r.Handle(p+"/*", protectedPageHandler(authGuard, outDir, outFS))
 	}
 
 	// Clinician-only routes.
