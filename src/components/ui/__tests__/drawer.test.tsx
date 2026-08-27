@@ -4,7 +4,13 @@ import {
   DrawerDescription,
   DrawerTitle
 } from '@/components/ui/drawer';
-import { render, screen } from '@testing-library/react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { useState as ReactUseState } from 'react';
 import { describe, expect, it } from 'vitest';
 
 describe('DrawerContent', () => {
@@ -35,5 +41,66 @@ describe('DrawerContent', () => {
     // (Vaul's ::after pseudo-element on the outer element would otherwise create blank space)
     const innerWrapper = drawerEl?.lastElementChild;
     expect(innerWrapper).toHaveClass('overflow-y-auto');
+  });
+
+  it('portals a nested Popover content into the drawer content node', async () => {
+    render(
+      <Drawer open>
+        <DrawerContent>
+          <Popover open>
+            <PopoverTrigger>Open</PopoverTrigger>
+            <PopoverContent>Popover Body</PopoverContent>
+          </Popover>
+        </DrawerContent>
+      </Drawer>
+    );
+
+    const drawerEl = document.querySelector('[data-vaul-drawer]');
+    expect(drawerEl).not.toBeNull();
+
+    // The popover content must land inside the drawer content node (not body),
+    // so it participates in the drawer's modal interaction model.
+    const popoverContent = await screen.findByText('Popover Body');
+    expect(drawerEl?.contains(popoverContent)).toBe(true);
+  });
+
+  it('registers a combobox item selection inside a drawer mount', async () => {
+    const selections: string[] = [];
+
+    function DrawerCombobox() {
+      const [open, setOpen] = ReactUseState(true);
+      return (
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger>Select</PopoverTrigger>
+          <PopoverContent>
+            {['Option A', 'Option B'].map(option => (
+              <button
+                key={option}
+                type='button'
+                onClick={() => {
+                  selections.push(option);
+                  setOpen(false);
+                }}
+              >
+                {option}
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
+      );
+    }
+
+    render(
+      <Drawer open>
+        <DrawerContent>
+          <DrawerCombobox />
+        </DrawerContent>
+      </Drawer>
+    );
+
+    const option = await screen.findByText('Option A');
+    fireEvent.click(option);
+
+    expect(selections).toEqual(['Option A']);
   });
 });

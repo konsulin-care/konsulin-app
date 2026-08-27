@@ -16,10 +16,8 @@ RUN apk add --no-cache git
 COPY go.mod go.sum ./
 RUN go mod download
 COPY mise.toml ./
-RUN TEMPL_VERSION=$(awk -F'"' '/templ\/cmd\/templ/{print $4}' mise.toml) && \
-    GOPROXY=direct go install "github.com/a-h/templ/cmd/templ@v${TEMPL_VERSION}"
 COPY . .
-RUN templ generate && CGO_ENABLED=0 go build -o /app/server ./cmd/konsulin-app
+RUN CGO_ENABLED=0 go build -o /app/server ./cmd/konsulin-app
 
 # Stage 3: Runtime
 FROM alpine:3.20

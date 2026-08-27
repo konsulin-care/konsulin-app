@@ -1,3 +1,4 @@
+import { DrawerContentContext } from '@/components/ui/drawer';
 import {
   Popover,
   PopoverContent,
@@ -32,5 +33,45 @@ describe('PopoverContent', () => {
     );
 
     expect(screen.getByText('Hello World')).toBeInTheDocument();
+  });
+
+  it('portals into the drawer content node when DrawerContentContext is present', () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-testid', 'drawer-container');
+    document.body.appendChild(container);
+
+    render(
+      <DrawerContentContext.Provider value={container}>
+        <Popover open>
+          <PopoverTrigger>Open</PopoverTrigger>
+          <PopoverContent>Inside Drawer</PopoverContent>
+        </Popover>
+      </DrawerContentContext.Provider>
+    );
+
+    // The popover content must be mounted inside the drawer container, not body.
+    expect(container.querySelector('[data-side]')).not.toBeNull();
+
+    document.body.removeChild(container);
+  });
+
+  it('falls back to document.body when no DrawerContentContext is present', () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-testid', 'drawer-container');
+    document.body.appendChild(container);
+
+    render(
+      <DrawerContentContext.Provider value={null}>
+        <Popover open>
+          <PopoverTrigger>Open</PopoverTrigger>
+          <PopoverContent>Standalone</PopoverContent>
+        </Popover>
+      </DrawerContentContext.Provider>
+    );
+
+    // Without a container, content portals to body and must NOT be inside container.
+    expect(container.querySelector('[data-side]')).toBeNull();
+
+    document.body.removeChild(container);
   });
 });
