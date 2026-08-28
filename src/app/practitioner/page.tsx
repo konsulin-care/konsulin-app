@@ -7,7 +7,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useGetPractitionerRoleWorkingLocations } from '@/services/clinicians';
 import { storeOwnedRoleIds } from '@/utils/practitioner-ownership';
 import dynamic from 'next/dynamic';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
 import AdminListing from './admin-listing';
 import PatientDetail from './patient-detail';
@@ -22,6 +22,7 @@ const RecommendationCardStack = dynamic(
 /** Practitioner page — role-aware listing and detail dispatch. */
 export default function Practitioner() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const id = searchParams.get('id') ?? '';
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const role = authState?.userInfo?.role_name;
@@ -90,7 +91,7 @@ export default function Practitioner() {
   /** Handle click on recommendation card (patient booking). */
   const handleBook = (practitionerId: string) => {
     // Placeholder: plan 017 will integrate booking flow
-    globalThis.location.href = `/practitioner?id=${practitionerId}`;
+    router.push(`/practitioner?id=${practitionerId}`);
   };
 
   /** Render content for the listing mode (no id param). */

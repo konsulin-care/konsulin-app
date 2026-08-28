@@ -5,8 +5,19 @@ import { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PractitionerPage from '../page';
 
+const { routerPush } = vi.hoisted(() => ({ routerPush: vi.fn() }));
+
 vi.mock('next/navigation', () => ({
-  useSearchParams: vi.fn()
+  useSearchParams: vi.fn(),
+  useRouter: () => ({ push: routerPush })
+}));
+
+vi.mock('@/components/general/home/recommendation-card-stack', () => ({
+  default: ({ onBook }: { onBook: (id: string) => void }) => (
+    <button data-testid='recommendation-book' onClick={() => onBook('prac-1')}>
+      Book
+    </button>
+  )
 }));
 
 vi.mock('@/context/auth/authContext', () => ({
@@ -366,6 +377,34 @@ describe('Practitioner page — search bar', () => {
       expect(screen.getByTestId('empty-state')).toHaveTextContent(
         'No Practitioners Match Your Filters'
       );
+    });
+  });
+});
+
+describe('Practitioner page — patient booking navigation', () => {
+  it('navigates to the practitioner detail page via router on booking', async () => {
+    // GIVEN: the current user is a Patient in listing mode
+    mockUseAuth.mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: Roles.Patient, fhirId: '' }
+      },
+      dispatch: vi.fn()
+    });
+    mockUseSearchParams.mockReturnValue({
+      get: vi.fn().mockReturnValue(null)
+    } as unknown as ReturnType<typeof useSearchParams>);
+
+    render(<PractitionerPage />, { wrapper: Wrapper });
+
+    // WHEN: the user clicks the book action on a recommendation card
+    const book = await screen.findByTestId('recommendation-book');
+    fireEvent.click(book);
+
+    // THEN: the router navigates to the practitioner detail page
+    await waitFor(() => {
+      expect(routerPush).toHaveBeenCalledWith('/practitioner?id=prac-1');
     });
   });
 });
