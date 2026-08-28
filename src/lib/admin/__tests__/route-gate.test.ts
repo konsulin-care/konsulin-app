@@ -22,7 +22,7 @@ describe('isAdminPath', () => {
   });
 
   it('handles undefined pathname', () => {
-    // deepsource:ignore JS-W1042 — tests the undefined branch of string | undefined
+    // skipcq: JS-W1042 — tests the undefined branch of string | undefined
     expect(isAdminPath(undefined)).toBe(false);
   });
 });

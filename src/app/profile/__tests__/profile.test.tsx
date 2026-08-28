@@ -368,7 +368,7 @@ describe('Profile page', () => {
 
       const consoleSpy = vi
         .spyOn(console, 'error')
-        // deepsource:ignore JS-0321 — intentional: suppress console noise in test
+        // skipcq: JS-0321 — intentional: suppress console noise in test
         .mockImplementation(() => {});
       render(<ProfileDisplay />);
       // Two cards should render (one per role)

@@ -16,7 +16,7 @@ describe('GuestOnboardingSection', () => {
   });
 
   it('has no duplicate React keys (no console error)', () => {
-    // deepsource:ignore JS-0321 — intentional: suppress console noise in test
+    // skipcq: JS-0321 — intentional: suppress console noise in test
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(<GuestOnboardingSection />);

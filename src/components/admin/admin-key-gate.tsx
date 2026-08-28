@@ -40,7 +40,7 @@ export function AdminKeyGate({ onUnlocked }: Readonly<AdminKeyGateProps>) {
       className='mx-auto mt-16 flex max-w-md flex-col gap-3'
       onSubmit={e => {
         e.preventDefault();
-        // deepsource:ignore JS-0098 — void discards promise rejection in event handler
+        // skipcq: JS-0098 — void discards promise rejection in event handler
         void handleSubmit();
       }}
     >

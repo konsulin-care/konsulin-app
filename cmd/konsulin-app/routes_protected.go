@@ -12,7 +12,7 @@ import (
 )
 
 // registerProtectedPages sets up auth-guarded Next.js static pages.
-func registerProtectedPages(r chi.Router, cfg *config.Config, outDir string, outFS http.Handler, proxy http.Handler) {
+func registerProtectedPages(r chi.Router, cfg *config.Config, outDir string, outFS, proxy http.Handler) {
 	const unauthorizedPath = "/unauthorized"
 
 	authGuard := appmw.AuthGuard(appmw.AuthGuardOptions{

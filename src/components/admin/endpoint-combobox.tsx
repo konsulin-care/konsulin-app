@@ -96,7 +96,7 @@ export function EndpointCombobox({
         e.preventDefault();
         if (highlightedIndex >= 0 && highlightedIndex < filteredFlat.length) {
           handleSelect(
-            // deepsource:ignore JS-0017 — controlled constant string, not user input
+            // skipcq: JS-0017
             filteredFlat[highlightedIndex].path
           );
         } else {
@@ -122,7 +122,7 @@ export function EndpointCombobox({
   useEffect(() => {
     if (highlightedIndex < 0 || !listRef.current) return;
     const items = listRef.current.querySelectorAll('[data-suggestion]');
-    // deepsource:ignore JS-0072 — querySelectorAll index may be out of bounds at runtime
+    // skipcq: JS-0072
     items[highlightedIndex]?.scrollIntoView({ block: 'nearest' });
   }, [highlightedIndex]);
 

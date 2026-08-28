@@ -39,7 +39,7 @@ function MethodBadge({ method }: Readonly<{ method: HttpMethod }>) {
   return (
     <span
       className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${
-        // deepsource:ignore JS-0017 — controlled constant string, not user input
+        // skipcq: JS-0017
         METHOD_COLORS[method]
       }`}
     >
@@ -225,7 +225,7 @@ export function AdminRequestBuilder() {
               key={field.key}
               field={field}
               value={
-                // deepsource:ignore JS-0017 — controlled constant string, not user input
+                // skipcq: JS-0017
                 fieldValues[field.key] ?? ''
               }
               onChange={v =>
@@ -303,7 +303,7 @@ export function AdminRequestBuilder() {
 
       <button
         type='button'
-        // deepsource:ignore JS-0098 — void discards promise rejection in event handler
+        // skipcq: JS-0098 — void discards promise rejection in event handler
         onClick={() => {
           void handleSend();
         }}
