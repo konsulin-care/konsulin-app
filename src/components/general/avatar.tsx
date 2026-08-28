@@ -10,7 +10,8 @@ type Props = {
   height?: number;
   width?: number;
   initials: string;
-  backgroundColor: string;
+  // NOSONAR — prop accepted for backwards compat; fallback uses hardcoded color
+  backgroundColor?: string;
   className?: string;
   imageClassName?: string;
   isRadiusIcon?: boolean;

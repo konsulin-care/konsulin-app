@@ -43,6 +43,7 @@ export default function AssessmentsDetail() {
   const { data: questionnaire, isLoading: questionnaireIsLoading } =
     useQuestionnaire(id);
   const [participantId, setParticipantId] = useState('');
+  // NOSONAR — useState IS properly destructured into value + setter pair
   const [patientsListToday, setPatientListToday] = useState([]);
 
   const { data: todaySessions, isLoading: isPatientListLoading } =

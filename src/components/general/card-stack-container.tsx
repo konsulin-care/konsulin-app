@@ -329,6 +329,8 @@ export function CardStackContainer({
         ref={containerRef}
         className='card-stack-viewport'
         aria-label='Question navigation'
+        role='button'
+        tabIndex={0}
         onClick={handleCardClick}
         onKeyDown={handleCardKeyDown}
         onTouchStart={onTouchStart}

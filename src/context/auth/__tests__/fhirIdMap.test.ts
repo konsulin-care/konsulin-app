@@ -96,46 +96,16 @@ describe('storeFhirIdForRole', () => {
     });
   });
 
-  it('rejects __proto__ key', async () => {
-    // NOSONAR
-    mockDbGet.mockResolvedValue(null);
-    await expect(
-      storeFhirIdForRole('user-1', '__proto__', 'polluted')
-    ).rejects.toThrow(TypeError);
-    expect(mockDbSet).not.toHaveBeenCalled();
-  });
-
-  it('rejects constructor key', async () => {
-    mockDbGet.mockResolvedValue(null);
-    await expect(
-      storeFhirIdForRole('user-1', 'constructor', 'polluted')
-    ).rejects.toThrow(TypeError);
-    expect(mockDbSet).not.toHaveBeenCalled();
-  });
-
-  it('rejects prototype key', async () => {
-    mockDbGet.mockResolvedValue(null);
-    await expect(
-      storeFhirIdForRole('user-1', 'prototype', 'polluted')
-    ).rejects.toThrow(TypeError);
-    expect(mockDbSet).not.toHaveBeenCalled();
-  });
-
-  it('rejects toString key', async () => {
-    mockDbGet.mockResolvedValue(null);
-    await expect(
-      storeFhirIdForRole('user-1', 'toString', 'polluted')
-    ).rejects.toThrow(TypeError);
-    expect(mockDbSet).not.toHaveBeenCalled();
-  });
-
-  it('rejects __-prefixed custom key', async () => {
-    mockDbGet.mockResolvedValue(null);
-    await expect(
-      storeFhirIdForRole('user-1', '__custom', 'polluted')
-    ).rejects.toThrow(TypeError);
-    expect(mockDbSet).not.toHaveBeenCalled();
-  });
+  it.each(['__proto__', 'constructor', 'prototype', 'toString', '__custom'])(
+    'rejects %s key',
+    async key => {
+      mockDbGet.mockResolvedValue(null);
+      await expect(
+        storeFhirIdForRole('user-1', key, 'polluted')
+      ).rejects.toThrow(TypeError);
+      expect(mockDbSet).not.toHaveBeenCalled();
+    }
+  );
 
   it('allows a role already present even if it is a banned key', async () => {
     mockDbGet.mockResolvedValue({
