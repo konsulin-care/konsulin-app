@@ -19,8 +19,11 @@ import { AvatarInfo } from '@/components/role-avatar-popup-types';
 import { roleIcon, roleLabel } from '@/components/role-avatar-popup-utils';
 import { StackedCircles } from '@/components/stacked-circles';
 
-/** Switches the active user role via API call and reloads. */
-async function switchRole(role: string): Promise<void> {
+/** Switches the active user role via API call and navigates home. */
+async function switchRole(
+  role: string,
+  router: ReturnType<typeof useRouter>
+): Promise<void> {
   try {
     const token = await fetchCSRFToken();
     const res = await fetch('/auth/role/switch', {
@@ -32,7 +35,7 @@ async function switchRole(role: string): Promise<void> {
       body: new URLSearchParams({ role })
     });
     if (res.ok) {
-      globalThis.location.href = '/';
+      router.push('/');
       return;
     }
     // The BFF fails closed (502) when the backend claim sync fails; the
@@ -45,9 +48,11 @@ async function switchRole(role: string): Promise<void> {
 
 /** Renders dropdown menu items for switching to other roles. */
 function RoleSwitchMenuItems({
-  otherRoles
+  otherRoles,
+  router
 }: Readonly<{
   otherRoles: string[];
+  router: ReturnType<typeof useRouter>;
 }>) {
   if (otherRoles.length === 0) return null;
   return (
@@ -59,7 +64,7 @@ function RoleSwitchMenuItems({
           <DropdownItem
             key={role}
             className='cursor-pointer'
-            onClick={() => switchRole(role)}
+            onClick={() => switchRole(role, router)}
           >
             <Icon className='mr-3 h-4 w-4 text-[#2c2f35]' />
             <span className='text-sm font-medium text-[#2c2f35]'>
@@ -121,7 +126,7 @@ export function RoleSwitchDropdown({
           <UserIcon className='mr-3 h-4 w-4 text-[#2c2f35]' />
           <span className='text-sm font-medium text-[#2c2f35]'>Profile</span>
         </DropdownItem>
-        <RoleSwitchMenuItems otherRoles={otherRoles} />
+        <RoleSwitchMenuItems otherRoles={otherRoles} router={router} />
       </DropdownContent>
     </Dropdown>
   );

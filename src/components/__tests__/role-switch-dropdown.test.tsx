@@ -8,8 +8,10 @@ import {
 import { toast } from 'react-toastify';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { routerPush } = vi.hoisted(() => ({ routerPush: vi.fn() }));
+
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() })
+  useRouter: () => ({ push: routerPush })
 }));
 
 vi.mock('@/services/auth', () => ({
@@ -126,14 +128,9 @@ describe('RoleSwitchDropdown switchRole', () => {
 
   it('reloads to the root on a successful switch without a toast', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({ ok: true });
-    Object.defineProperty(window, 'location', {
-      value: { href: '' },
-      writable: true,
-      configurable: true
-    });
     await clickRoleSwitch('Practitioner');
 
-    await waitFor(() => expect(window.location.href).toBe('/'));
+    await waitFor(() => expect(routerPush).toHaveBeenCalledWith('/'));
     expect(toast.error).not.toHaveBeenCalled();
   });
 });
