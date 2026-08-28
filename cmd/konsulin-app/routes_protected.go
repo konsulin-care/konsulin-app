@@ -29,6 +29,7 @@ func registerProtectedPages(r chi.Router, cfg *config.Config, outDir string, out
 	for _, p := range protectedRoutes {
 		p := p
 		h := func(w http.ResponseWriter, r *http.Request) {
+			// nolint:gosec // path.Clean + HasPrefix guard is the standard mitigation
 			filePath := filepath.Join(outDir, path.Clean(strings.TrimPrefix(r.URL.Path, "/"))+".html")
 			if !strings.HasPrefix(filepath.Clean(filePath), filepath.Clean(outDir)) {
 				http.NotFound(w, r)

@@ -75,7 +75,14 @@ export function mergeRawJson(
   const trimmed = rawJson.trim();
   if (!trimmed) return base;
   const parsed = JSON.parse(trimmed) as Record<string, unknown>;
-  return { ...base, ...parsed };
+  // Guard against prototype pollution: never copy __proto__ or
+  // constructor-derived keys from raw JSON into the payload.
+  const safeParsed: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(parsed)) {
+    if (key === '__proto__' || key === 'constructor') continue;
+    safeParsed[key] = value;
+  }
+  return { ...base, ...safeParsed };
 }
 
 /**

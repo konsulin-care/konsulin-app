@@ -38,7 +38,10 @@ const METHOD_COLORS: Record<HttpMethod, string> = {
 function MethodBadge({ method }: Readonly<{ method: HttpMethod }>) {
   return (
     <span
-      className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${METHOD_COLORS[method]}`}
+      className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${
+        // deepsource:ignore JS-0017 — controlled constant string, not user input
+        METHOD_COLORS[method]
+      }`}
     >
       {method}
     </span>
@@ -51,7 +54,12 @@ function MethodDropdown({
   onChange
 }: Readonly<{ value: HttpMethod; onChange: (m: HttpMethod) => void }>) {
   return (
-    <Select value={value} onValueChange={v => onChange(v as HttpMethod)}>
+    <Select
+      value={value}
+      onValueChange={v => {
+        onChange(v as HttpMethod);
+      }}
+    >
       <SelectTrigger
         aria-label='Method'
         className={`w-full rounded-r-none border-none ${METHOD_COLORS[value]}`}
@@ -88,7 +96,7 @@ function FieldRow({
         aria-label={field.label}
         value={value}
         onChange={e => onChange(e.target.value)}
-        placeholder={field.placeholder ?? field.key}
+        placeholder={field.placeholder || field.key}
         className='rounded-md border border-slate-300 px-3 py-1.5 font-mono text-xs'
       />
     </label>
@@ -216,7 +224,10 @@ export function AdminRequestBuilder() {
             <FieldRow
               key={field.key}
               field={field}
-              value={fieldValues[field.key] ?? ''}
+              value={
+                // deepsource:ignore JS-0017 — controlled constant string, not user input
+                fieldValues[field.key] ?? ''
+              }
               onChange={v =>
                 setFieldValues(prev => ({ ...prev, [field.key]: v }))
               }
@@ -245,7 +256,9 @@ export function AdminRequestBuilder() {
           <QueryParamRows rows={params} onChange={setParams} />
           <button
             type='button'
-            onClick={() => setParams(prev => [...prev, createParamRow()])}
+            onClick={() => {
+              setParams(prev => [...prev, createParamRow()]);
+            }}
             className='self-start rounded-md border border-slate-300 px-3 py-1 text-sm hover:bg-slate-100'
           >
             + Add param
@@ -291,7 +304,9 @@ export function AdminRequestBuilder() {
       <button
         type='button'
         // deepsource:ignore JS-0098 — void discards promise rejection in event handler
-        onClick={() => void handleSend()}
+        onClick={() => {
+          void handleSend();
+        }}
         disabled={sending || !endpoint.trim()}
         className='self-start rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50'
       >

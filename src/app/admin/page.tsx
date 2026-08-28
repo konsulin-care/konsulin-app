@@ -21,7 +21,13 @@ export default function AdminPage() {
   }, []);
 
   if (!unlocked) {
-    return <AdminKeyGate onUnlocked={() => setUnlocked(true)} />;
+    return (
+      <AdminKeyGate
+        onUnlocked={() => {
+          setUnlocked(true);
+        }}
+      />
+    );
   }
   return <AdminRequestBuilder />;
 }

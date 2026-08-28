@@ -52,7 +52,9 @@ export function AdminKeyGate({ onUnlocked }: Readonly<AdminKeyGateProps>) {
         type='password'
         aria-label='API key'
         value={apiKey}
-        onChange={e => setApiKey(e.target.value)}
+        onChange={e => {
+          setApiKey(e.target.value);
+        }}
         placeholder='superadmin API key'
         className='rounded-md border border-slate-300 px-3 py-2'
         autoComplete='off'

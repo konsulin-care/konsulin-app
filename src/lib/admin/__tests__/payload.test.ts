@@ -115,6 +115,27 @@ describe('mergeRawJson', () => {
   it('throws on invalid raw JSON', () => {
     expect(() => mergeRawJson({ a: 1 }, '{oops')).toThrow();
   });
+
+  it('strips __proto__ and constructor keys from raw JSON', () => {
+    const merged = mergeRawJson(
+      { resourceType: 'Questionnaire' },
+      JSON.stringify({ status: 'active', __proto__: { polluted: true } })
+    );
+    expect(merged).toEqual({ resourceType: 'Questionnaire', status: 'active' });
+    expect(Object.keys(merged)).not.toContain('__proto__');
+    expect(Object.getPrototypeOf(merged)).toBe(Object.prototype);
+    // Ensure no shared prototype mutation leaked.
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+  });
+
+  it('strips constructor key from raw JSON', () => {
+    const merged = mergeRawJson(
+      { resourceType: 'Questionnaire' },
+      JSON.stringify({ constructor: { prototype: { polluted: true } } })
+    );
+    expect(merged).toEqual({ resourceType: 'Questionnaire' });
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+  });
 });
 
 describe('buildQueryString', () => {
