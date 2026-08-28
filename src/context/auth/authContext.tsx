@@ -10,14 +10,7 @@ import {
   restoreAuthCookie,
   syncActiveRoleWithCookie
 } from '@/services/auth';
-import {
-  fetchUserProfilesBundle,
-  type ProfileResource,
-  type RoleProfile
-} from '@/services/role-profiles';
-import { mergeNames } from '@/utils/helper';
-import { hasPendingAssessmentClaimIntent } from '@/utils/redirect-intent';
-import { roleToFhirResource } from '@/utils/role-fhir';
+import { fetchUserProfilesBundle } from '@/services/role-profiles';
 import React, {
   createContext,
   ReactNode,
@@ -35,7 +28,11 @@ import {
   useSessionContext
 } from 'supertokens-auth-react/recipe/session';
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
-import { isProfileCompleteFromFHIR } from '../../utils/profileCompleteness';
+import {
+  buildLoginPayload,
+  isCacheUsable,
+  resolveActiveRole as resolveActiveRoleHelper
+} from './auth-helpers';
 import { initialState, reducer } from './authReducer';
 import { IActionAuth, IStateAuth, IStateUserInfo } from './authTypes';
 
@@ -52,85 +49,6 @@ type UserRole =
   | typeof Roles.ClinicAdmin
   | typeof Roles.Patient;
 
-/** Extract the photo URL from a FHIR profile (always an Attachment array). */
-function extractPhotoUrl(profile: ProfileResource | null): string {
-  return profile?.photo?.[0]?.url ?? '';
-}
-
-/** Build the login payload from the active profile resource. */
-function buildLoginPayload(
-  userId: string,
-  role: UserRole,
-  superTokensRoles: string[] | undefined,
-  profile: ProfileResource,
-  roleProfiles: Record<string, RoleProfile | null>
-): IStateUserInfo {
-  return {
-    userId,
-    role_name: role,
-    roles: superTokensRoles,
-    email: profile.telecom?.find(item => item.system === 'email')?.value,
-    profile_picture: extractPhotoUrl(profile),
-    fullname: mergeNames(profile.name),
-    fhirId: profile.id ?? '',
-    organizationId: roleProfiles[role]?.organizationId,
-    profile_complete: isProfileCompleteFromFHIR(profile),
-    roleProfiles,
-    fullProfile: profile,
-    cachedAt: Date.now()
-  };
-}
-
-/** True when every non-null role profile carries its full resource. */
-function roleProfilesCarryResources(
-  roleProfiles: Record<string, RoleProfile | null> | undefined
-): boolean {
-  if (!roleProfiles) return false;
-  return Object.values(roleProfiles).every(
-    profile => profile === null || Boolean(profile.resource)
-  );
-}
-
-/**
- * True when every non-null role profile's resource type matches the role's
- * backing FHIR resource. Rejects Person-era caches (Clinic Admin/Researcher
- * are now Practitioner) without a version-key migration.
- */
-function roleProfilesCarryMatchingTypes(
-  roleProfiles: Record<string, RoleProfile | null> | undefined
-): boolean {
-  if (!roleProfiles) return true;
-  return Object.entries(roleProfiles).every(([role, profile]) => {
-    if (profile === null) return true;
-    if (!profile.resource) return false;
-    return profile.resource.resourceType === roleToFhirResource(role);
-  });
-}
-
-/** True when a cached profile can serve the session.
- *
- * Single-role users always use the cache. Multi-role users only when the
- * cache carries the full role profile resources — a pre-bundle cache or an
- * old-shape cache (name/photoUrl only) is rejected so the profile page and
- * the multi-role save flow never read stale or partial resources. A cache
- * whose role resources carry a stale Person type is also rejected.
- */
-function isCacheUsable(
-  cached: UserProfile | null,
-  superTokensRoles: string[] | undefined
-): boolean {
-  if (!cached) return false;
-  // A cache without identity data is a broken payload from a failed fetch;
-  // never serve it — force a refetch so the profile self-heals.
-  if (!cached.fullname && !cached.fhirId) return false;
-  const isMultiRole =
-    Array.isArray(superTokensRoles) && superTokensRoles.length > 1;
-  return (
-    roleProfilesCarryMatchingTypes(cached.roleProfiles) &&
-    (!isMultiRole || roleProfilesCarryResources(cached.roleProfiles))
-  );
-}
-
 // skipcq: JS-W1042 - createContext requires a default value per React API
 const AuthContext = createContext<ContextProps | undefined>(undefined);
 
@@ -141,21 +59,7 @@ export function resolveActiveRole(
   cookieRole: string | undefined,
   superTokensRoles: string[] | undefined
 ): UserRole {
-  if (cookieRole) return cookieRole as UserRole;
-  if (Array.isArray(superTokensRoles)) {
-    // A guest claiming an assessment result must be linked to the Patient
-    // resource, even when the default priority would pick another role.
-    if (
-      superTokensRoles.includes(Roles.Patient) &&
-      hasPendingAssessmentClaimIntent()
-    ) {
-      return Roles.Patient;
-    }
-    if (superTokensRoles.includes(Roles.Practitioner))
-      return Roles.Practitioner;
-    if (superTokensRoles.includes(Roles.ClinicAdmin)) return Roles.ClinicAdmin;
-  }
-  return Roles.Patient;
+  return resolveActiveRoleHelper(cookieRole, superTokensRoles);
 }
 
 /** Auth provider wrapping the app with session bootstrap and auth state. */
