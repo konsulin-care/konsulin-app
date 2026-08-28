@@ -1,34 +1,19 @@
 import { getAvailableDays } from '@/app/practitioner/utils';
 import { getAPI } from '@/services/api';
 import type { MergedSession } from '@/types/appointment';
+import {
+  extractAppointmentLocations,
+  extractResources
+} from '@/utils/fhir/appointment-extract';
 import { parseMergedSessions } from '@/utils/helper';
+import { getLocationColor } from '@/utils/location-color';
 import {
   keepPreviousData,
   useQuery,
   useQueryClient
 } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import type {
-  Appointment,
-  Bundle,
-  BundleEntry,
-  Location,
-  PractitionerRole
-} from 'fhir/r4';
+import type { Bundle, BundleEntry, Location, PractitionerRole } from 'fhir/r4';
 import { useEffect, useMemo } from 'react';
-
-type ColorEntry = { color: string; name: string };
-
-const LOCATION_COLORS = [
-  '#13C2C2',
-  '#F5222D',
-  '#1890FF',
-  '#FA8C16',
-  '#722ED1',
-  '#52C41A',
-  '#EB2F96',
-  '#FADB14'
-];
 
 type UsePractitionerDashboardParams = {
   practitionerId: string | undefined;
@@ -42,62 +27,22 @@ type UsePractitionerDashboardReturn = {
   daySessions: MergedSession[];
   isDayLoading: boolean;
   dayDots: Map<string, string[]>;
-  colorLegend: ColorEntry[];
+  colorLegend: Array<{ color: string; name: string }>;
   availableTime: PractitionerRole['availableTime'];
   listAvailableDate: Date[];
   isLoading: boolean;
 };
 
-/** Deterministically pick a color from a palette for a location ID. */
-function getLocationColor(locationId: string | null): string {
-  if (!locationId) return '#D9D9D9';
-  let hash = 0;
-  for (let i = 0; i < locationId.length; i++) {
-    hash = (locationId.codePointAt(i) ?? 0) + ((hash << 5) - hash);
-  }
-  return LOCATION_COLORS[Math.abs(hash) % LOCATION_COLORS.length];
-}
-
-/** Extract all resources of a given type from a FHIR Bundle. */
-function extractResources<T extends { resourceType: string }>(
-  bundle: Bundle | undefined,
-  resourceType: string
-): T[] {
-  return (
-    (bundle?.entry ?? [])
-      .filter(
-        (e): e is BundleEntry & { resource: T } =>
-          e.resource?.resourceType === resourceType
-      )
-      .map(e => e.resource) ?? []
-  );
-}
-
-type AppointmentLocation = {
-  date: string | null;
-  locationRef: string | undefined;
-};
-
-/** Extract date and location reference from each appointment in the bundle. */
-function extractAppointmentLocations(
-  bundle: Bundle | undefined
-): AppointmentLocation[] {
-  return extractResources<Appointment>(bundle, 'Appointment').map(a => ({
-    date: a.start ? format(new Date(a.start), 'yyyy-MM-dd') : null,
-    locationRef: (a.participant ?? []).find(
-      (p: Appointment['participant'][number]) =>
-        p.actor?.reference?.startsWith('Location/')
-    )?.actor?.reference
-  }));
-}
-
 /** Build day dots map and color legend from month data. */
 function computeDayVisuals(
-  appointments: AppointmentLocation[],
+  appointments: Array<{ date: string | null; locationRef: string | undefined }>,
   locations: Location[]
-): { dayDots: Map<string, string[]>; colorLegend: ColorEntry[] } {
+): {
+  dayDots: Map<string, string[]>;
+  colorLegend: Array<{ color: string; name: string }>;
+} {
   const dayDots = new Map<string, string[]>();
-  const legendMap = new Map<string, ColorEntry>();
+  const legendMap = new Map<string, { color: string; name: string }>();
   const seenLocations = new Set<string>();
 
   for (const { date, locationRef } of appointments) {
@@ -240,11 +185,6 @@ function useRoleQuery(
     },
     staleTime: Infinity,
     gcTime: 30 * 60 * 1000,
-    // The month query already pulls PractitionerRole entries via
-    // `_include=Appointment:actor:PractitionerRole`; skip the dedicated fetch
-    // when they are present (the seeding effect above serves them from the
-    // cache). When the month query errored, fetch roles anyway so calendar
-    // availability still loads.
     enabled:
       Boolean(practitionerId) &&
       (monthQuery.isError || (Boolean(monthData) && !hasRolesInMonth))
@@ -253,10 +193,6 @@ function useRoleQuery(
 
 /**
  * Orchestrate Query M (month-scoped appointments) and Query D (single-day cards).
- *
- * Uses a lightweight month query to derive day dots, color legend, and
- * calendar availability from PractitionerRole + Location resources.
- * Full appointment data is fetched per selected day for card rendering.
  *
  * @param practitionerId - FHIR Practitioner ID
  * @param monthStart - Start of visible month
@@ -277,20 +213,15 @@ export function usePractitionerDashboard({
 
   const { data: roles } = useRoleQuery(practitionerId, monthQuery);
 
-  // Query D: full day data when a day is selected
   const dayQuery = useDayQuery(practitionerId, selectedDate);
   const daySessions = dayQuery.data ? parseMergedSessions(dayQuery.data) : [];
 
-  // Compute available days from aggregated PractitionerRole availableTime
   const availableTime = ((roles ?? []) as PractitionerRole[]).flatMap(
     r => r.availableTime ?? []
   );
   const listAvailableDate = getAvailableDays(availableTime, monthStart);
 
-  // Extract locations from month data
   const locations = extractResources<Location>(monthData, 'Location');
-
-  // Compute day dots and color legend
   const appointmentLocations = extractAppointmentLocations(monthData);
   const { dayDots, colorLegend } = computeDayVisuals(
     appointmentLocations,
