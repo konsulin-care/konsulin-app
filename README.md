@@ -49,13 +49,29 @@ npm run dev
 
 ## Available Scripts
 
-| Command | Description |
-|---|---|
-| `make test` | Run all tests (Go + JS) |
-| `make check-go` | Run all Go lint checks |
+| Command          | Description                     |
+| ---------------- | ------------------------------- |
+| `make test`      | Run all tests (Go + JS)         |
+| `make check-go`  | Run all Go lint checks          |
 | `make css-templ` | Generate Tailwind CSS for templ |
-| `npm run dev` | Start Next.js dev server |
-| `npm run lint` | Run ESLint |
+| `make docker`    | Build and run Docker image      |
+| `npm run dev`    | Start Next.js dev server        |
+| `npm run lint`   | Run ESLint                      |
+
+## Docker
+
+Build and run the app in a container using `.env` for configuration:
+
+```sh
+make docker
+```
+
+Or run the commands directly:
+
+```sh
+docker build --no-cache --progress=plain -t konsulin-app .
+docker run --rm --network host --env-file .env konsulin-app
+```
 
 ## Stack
 
@@ -64,6 +80,7 @@ npm run dev
 - **CSS**: Tailwind CSS v4
 - **Auth**: SuperTokens
 - **FHIR**: Blaze (R4)
+- **Docker**: Multi-stage build with `--network host`
 
 ## License
 

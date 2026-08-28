@@ -132,7 +132,7 @@ export default function HomeContentGuest() {
           icon={<Building2 className='h-5 w-5 text-gray-600' />}
           title='Show All Clinics'
           description='Login to browse clinics'
-          href='/auth'
+          href='/clinic'
         />
       </div>
     </>

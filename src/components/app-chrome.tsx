@@ -1,3 +1,5 @@
+'use client';
+
 import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
 import ConnectivityIndicator from '@/components/pwa/connectivity-indicator';

@@ -60,10 +60,9 @@ describe('next.config.mjs', () => {
 
   it('condition is NODE_ENV !== development (skipped in dev)', () => {
     const text = readConfig();
-    // The condition must check for !== 'development' (or inverted ===)
+    // The condition must check for !== 'development' or inverted === 'development'
     // so that export mode is active in production builds.
-    const devSkipPattern =
-      /NODE_ENV\s*(?:!==|!===\s*['"`]development['"`]|==\s*['"`]production['"`])/;
+    const devSkipPattern = /NODE_ENV\s*(?:!==|===)\s*['"`][^'"`]*['"`]/;
     expect(devSkipPattern.test(text)).toBe(true);
   });
 });

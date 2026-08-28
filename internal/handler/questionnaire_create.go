@@ -10,8 +10,9 @@ import (
 
 // QuestionnaireCreateOptions configures the questionnaire create handler.
 type QuestionnaireCreateOptions struct {
-	BackendBaseURL   string
-	AccessCookieName string
+	BackendBaseURL          string
+	AccessCookieName        string
+	SuperadminKeyCookieName string
 }
 
 // maxQuestionnaireBodyBytes bounds the accepted questionnaire payload size.
@@ -37,6 +38,7 @@ func forwardQuestionnaire(
 	baseURL string,
 	body []byte,
 	accessCookieName string,
+	superadminKeyCookieName string,
 ) {
 	targetURL := baseURL + "/fhir/Questionnaire"
 	// nosemgrep — target host is fixed config (cfg.APIURL); path is a literal; no user input
@@ -50,6 +52,7 @@ func forwardQuestionnaire(
 		proxyReq.Header.Set("Content-Type", contentType)
 	}
 	setAuthorizationFromRequest(proxyReq, r, targetURL, accessCookieName)
+	injectSuperadminKeyFromCookie(proxyReq, r, superadminKeyCookieName)
 	proxyReq = proxyReq.WithContext(r.Context())
 
 	// nolint:gosec // G704: intentional proxy — forwards to trusted backend
@@ -98,6 +101,6 @@ func NewQuestionnaireCreateHandler(opts QuestionnaireCreateOptions) http.Handler
 			return
 		}
 
-		forwardQuestionnaire(w, r, baseURL, body, opts.AccessCookieName)
+		forwardQuestionnaire(w, r, baseURL, body, opts.AccessCookieName, opts.SuperadminKeyCookieName)
 	}
 }

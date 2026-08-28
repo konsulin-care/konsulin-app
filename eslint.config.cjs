@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { FlatCompat } = require('@eslint/eslintrc')
 const sonarjs = require('eslint-plugin-sonarjs')
 const jsdoc = require('eslint-plugin-jsdoc')
 const unicorn = require('eslint-plugin-unicorn').default
@@ -10,19 +9,12 @@ const promisePlugin = require('eslint-plugin-promise')
 const reactHooks = require('eslint-plugin-react-hooks')
 const tsPlugin = require('@typescript-eslint/eslint-plugin')
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname
-})
-
 /** Rules from strict-type-checked + stylistic-type-checked configs */
 const tsStrictRules = tsPlugin.configs['strict-type-checked'].rules
 const tsStylisticRules = tsPlugin.configs['stylistic-type-checked'].rules
 
 module.exports = [
   {
-    // Rules flagged below are intentionally off locally (documented FPs) yet
-    // still run in Codacy's separate ESLint pass; the inline disables exist only
-    // to appease Codacy, so unused directives are not reported locally.
     linterOptions: {
       reportUnusedDisableDirectives: 'off'
     }
@@ -34,25 +26,50 @@ module.exports = [
     ]
   },
 
-  // --- Base: Next.js (loads import, react, jsx-a11y plugins internally) ---
-  ...compat.extends('next/core-web-vitals'),
+  // --- Base: Next.js core-web-vitals (declares react, react-hooks, import, jsx-a11y, @next/next plugins) ---
+  // Augment with react and jsx-a11y rules that rely on these plugins being in scope.
+  {
+    ...require('eslint-config-next/core-web-vitals')[0],
+    rules: {
+      ...require('eslint-config-next/core-web-vitals')[0].rules,
+      // React overrides (needs react plugin from above)
+      'react/no-unescaped-entities': 'off',
+      'react/jsx-no-useless-fragment': 'error',
+      'react/jsx-max-depth': ['error', { max: 4 }],
+      'react/no-array-index-key': 'error',
+      'react/self-closing-comp': 'error',
+      // Next.js overrides
+      '@next/next/no-img-element': 'off'
+    }
+  },
+  // Spread remaining core-web-vitals configs (TS, ignores, @next/next rules)
+  ...require('eslint-config-next/core-web-vitals').slice(1),
 
-  // --- TS base recommended (non-type-aware, no project required) ---
-  ...compat.extends('plugin:@typescript-eslint/recommended'),
+  // --- TS base recommended ---
+  ...require('typescript-eslint').configs.recommended,
 
   // --- React hooks recommended ---
   {
     plugins: { 'react-hooks': reactHooks },
-    rules: reactHooks.configs.recommended.rules
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      // Disable new rules from react-hooks v5+ that flag pre-existing patterns
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/static-components': 'off',
+      'react-hooks/refs': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/globals': 'off'
+    }
   },
 
-  // --- SonarJS recommended (160+ rules) ---
+  // --- SonarJS recommended ---
   {
     plugins: { sonarjs },
     rules: sonarjs.configs.recommended.rules
   },
 
-  // --- Unicorn recommended (178 rules) ---
+  // --- Unicorn recommended ---
   {
     plugins: { unicorn },
     rules: unicorn.configs['flat/recommended'].rules,
@@ -65,8 +82,9 @@ module.exports = [
   // --- Promise recommended ---
   promisePlugin.configs['flat/recommended'],
 
-  // --- Import: recommended rules + TypeScript settings (plugin loaded by Next.js) ---
+  // --- Import: recommended rules + TypeScript settings ---
   {
+    plugins: { import: importPlugin },
     rules: {
       ...importPlugin.flatConfigs.recommended.rules,
       ...importPlugin.flatConfigs.typescript.rules
@@ -90,9 +108,6 @@ module.exports = [
       'sonarjs/no-duplicate-string': 'off',
       'sonarjs/no-hardcoded-passwords': 'off',
 
-      // Next.js overrides
-      'react/no-unescaped-entities': 'off',
-
       // Maintain existing custom rules
       'sonarjs/cognitive-complexity': ['error', 15],
       'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
@@ -103,10 +118,6 @@ module.exports = [
       'no-implicit-coercion': 'error',
       'consistent-return': 'error',
       'no-negated-condition': 'error',
-      'react/jsx-no-useless-fragment': 'error',
-      'react/jsx-max-depth': ['error', { max: 4 }],
-      'react/no-array-index-key': 'error',
-      'react/self-closing-comp': 'error',
       'sonarjs/no-nested-functions': 'error',
       'jsdoc/require-jsdoc': 'off',
       'unicorn/prefer-at': 'error'
@@ -119,8 +130,7 @@ module.exports = [
     }
   },
 
-  // --- FHIR canonical URLs: identifier locators, never fetched; http:// is intentional.
-  // Scoped override replaces the inline eslint-disable blocks in extensions.ts.
+  // --- FHIR canonical URLs ---
   {
     files: ['src/utils/fhir/extensions.ts'],
     rules: {
@@ -128,8 +138,7 @@ module.exports = [
     }
   },
 
-  // --- public/js classic (non-module) scripts: loaded via <Script strategy='beforeInteractive'>,
-  // so top-level await and the module-only promise/unicorn rules don't apply.
+  // --- public/js classic scripts ---
   {
     files: ['public/js/**/*.js'],
     rules: {
@@ -139,7 +148,7 @@ module.exports = [
     }
   },
 
-  // --- TypeScript-aware rules (strict + stylistic) for TS files only ---
+  // --- TypeScript-aware rules for TS files only ---
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     languageOptions: {
@@ -152,25 +161,21 @@ module.exports = [
     rules: {
       ...tsStrictRules,
       ...tsStylisticRules,
-      // ── Always-on (error): real bugs that external tools flag too ──
       '@typescript-eslint/prefer-optional-chain': 'error',
       '@typescript-eslint/no-base-to-string': 'error',
-      '@typescript-eslint/no-floating-promises': 'error', // Codacy: Promise Rejection
-      '@typescript-eslint/no-misused-promises': 'error', // DeepSource: async-as-handler
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/no-unnecessary-condition': 'off',
       '@typescript-eslint/no-useless-default-assignment': 'off',
-      // Requires strictNullChecks in tsconfig, which is off
       '@typescript-eslint/no-unnecessary-type-conversion': 'error',
-      '@typescript-eslint/no-unused-vars': 'error', // DeepScan: unused variable
+      '@typescript-eslint/no-unused-vars': 'error',
       'consistent-return': 'error',
-      'promise/catch-or-return': 'error', // Codacy: Promise Rejection
-      'promise/no-nesting': 'error', // SonarQube: nested callbacks
-      'sonarjs/no-unused-vars': 'error', // DeepScan: unused variable
-      'max-depth': ['error', { max: 4 }], // DeepScan: excessive nesting
-      'max-params': ['error', { max: 5 }], // SonarQube S107: too many params
-      'security/detect-unsafe-regex': 'error', // DeepSource: regex-dos
-
-      // ── Progressive (warn → error as debt is paid) ──
+      'promise/catch-or-return': 'error',
+      'promise/no-nesting': 'error',
+      'sonarjs/no-unused-vars': 'error',
+      'max-depth': ['error', { max: 4 }],
+      'max-params': ['error', { max: 5 }],
+      'security/detect-unsafe-regex': 'error',
       'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
       complexity: ['error', 15],
       '@typescript-eslint/no-unsafe-member-access': 'error',
@@ -186,19 +191,15 @@ module.exports = [
       'sonarjs/slow-regex': 'error',
       'sonarjs/function-return-type': 'error',
       'sonarjs/no-dead-store': 'error',
-      'sonarjs/deprecation': 'off', // duplicates @typescript-eslint/no-deprecated (set to error above)
+      'sonarjs/deprecation': 'off',
 
-      // ── Hard-off: FHIR domain patterns (not fixable without breaking FHIR) ──
+      // --- Hard-off: FHIR domain patterns ---
       '@typescript-eslint/no-non-null-assertion': 'off',
-      // FHIR bundles: item.resource!.practitioner!.reference!
       '@typescript-eslint/restrict-template-expressions': 'off',
-      // Phone numbers, FHIR IDs, dates in templates — all legitimate numbers
       'security/detect-object-injection': 'off',
-      // Every form handler triggers this; data is from controlled inputs
       'sonarjs/no-clear-text-protocols': 'off',
-      // FHIR canonical URLs: https://loinc.org, https://snomed.info — not fixable
 
-      // ── Hard-off: stylistic noise (no bug-safety value) ──
+      // --- Hard-off: stylistic noise ---
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-confusing-void-expression': 'off',
       '@typescript-eslint/consistent-type-definitions': 'off',
@@ -207,7 +208,6 @@ module.exports = [
       '@typescript-eslint/no-unnecessary-template-expression': 'off',
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
       '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'off',
-      // Note: consistent-return is set to 'error' above as Tier 1
       'import/no-named-as-default': 'off',
       'jsdoc/require-jsdoc': ['error', {
         publicOnly: true,
@@ -218,7 +218,7 @@ module.exports = [
         }
       }],
 
-      // ── Unicorn: noise reduction (stylistic, not bug-catching) ──
+      // --- Unicorn: noise reduction ---
       'unicorn/no-null': 'off',
       'unicorn/filename-case': 'off',
       'unicorn/prevent-abbreviations': 'off',
@@ -238,11 +238,9 @@ module.exports = [
       'unicorn/prefer-code-point': 'off',
       'unicorn/consistent-compound-words': 'off',
 
-      // ── SonarJS: noise reduction (duplicates or false positives) ──
-      // Leakage from plugin defaults — tracked here for graduation
+      // --- SonarJS: noise reduction ---
       'security/detect-non-literal-regexp': 'error',
       'import/no-named-as-default-member': 'error',
-
       'sonarjs/prefer-read-only-props': 'off',
       'sonarjs/no-duplicate-string': 'off',
       'sonarjs/no-hardcoded-passwords': 'off',
@@ -250,13 +248,10 @@ module.exports = [
       'sonarjs/no-identical-expressions': 'error',
       'sonarjs/pseudo-random': 'off',
       'sonarjs/prefer-regexp-exec': 'off'
-
-      // ── Security: false positives for this codebase ──
-
     }
   },
 
-  // --- PWA status live-regions: prefer <output> over role="status" (SonarQube) ---
+  // --- PWA status live-regions ---
   {
     files: ['src/components/pwa/**/*.tsx'],
     rules: {
@@ -264,7 +259,7 @@ module.exports = [
     }
   },
 
-  // --- Test & third-party UI: no JSDoc required (auto-generated or test helpers) ---
+  // --- Test & third-party UI: no JSDoc required ---
   {
     files: [
       'src/components/ui/**/*.ts',

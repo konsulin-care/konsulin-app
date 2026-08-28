@@ -21,10 +21,11 @@ type HeaderCookieMapping struct {
 }
 
 type BackendProxyOptions struct {
-	BackendBaseURL   string
-	AccessCookieName string
-	CookieMappings   []HeaderCookieMapping
-	CookieSecure     bool
+	BackendBaseURL          string
+	AccessCookieName        string
+	SuperadminKeyCookieName string
+	CookieMappings          []HeaderCookieMapping
+	CookieSecure            bool
 }
 
 var backendProxyClient = &http.Client{Timeout: 30 * time.Second}
@@ -45,6 +46,7 @@ func NewBackendProxyHandler(opts BackendProxyOptions) http.HandlerFunc {
 
 		setProxyRequestHeaders(proxyReq, r)
 		setAuthorizationFromRequest(proxyReq, r, targetURL, opts.AccessCookieName)
+		injectSuperadminKeyFromCookie(proxyReq, r, opts.SuperadminKeyCookieName)
 		proxyReq = proxyReq.WithContext(r.Context())
 
 		// nolint:gosec // G704: intentional proxy — forwards to trusted backend
@@ -140,6 +142,21 @@ func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL, accessCoo
 // hopByHopHeaders are headers that must be stripped per RFC 2616 §13.5.1
 // when forwarding responses.  Go's HTTP server sets its own Transfer-Encoding
 // and Content-Length, so we skip those to avoid conflicts.
+// injectSuperadminKeyFromCookie forwards the BFF-held superadmin API key as
+// the X-API-Key header when the superadmin key cookie is present. The key is
+// stored in an HttpOnly cookie (see admin_key.go) so only the BFF can read it;
+// the backend validates the value (lazy enforcement).
+func injectSuperadminKeyFromCookie(proxyReq, r *http.Request, cookieName string) {
+	if cookieName == "" {
+		return
+	}
+	c, err := r.Cookie(cookieName)
+	if err != nil || c.Value == "" {
+		return
+	}
+	proxyReq.Header.Set("X-API-Key", c.Value)
+}
+
 // hopByHopHeaders are headers that must be stripped per RFC 2616 §13.5.1
 // when forwarding responses.  Go's HTTP server sets its own Transfer-Encoding
 // and Content-Length, so we skip those to avoid conflicts.

@@ -171,21 +171,16 @@ func TestRoutes_authVerify_pathRewrite_whenOutMissing(t *testing.T) {
 func TestRoutes_authVerify_proxiesWhenOutMissing(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Chdir(tmpDir)
-
-	csrfKey := "01234567890123456789012345678901"
-	cfg := newTestConfig(t, csrfKey)
+	cfg := newTestConfig(t, "01234567890123456789012345678901")
 	cfg.NextjsURL = "http://127.0.0.1:19999"
 	cfg.AppURL = "http://test:3000"
-
 	handler, err := routes(cfg)
 	if err != nil {
 		t.Fatalf("routes() failed: %v", err)
 	}
-
 	req := httptest.NewRequest(http.MethodGet, "/auth/verify?preAuthSessionId=test", http.NoBody)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
-
 	if rec.Code != http.StatusBadGateway {
 		t.Errorf("expected 502 on unreachable proxy, got %d", rec.Code)
 	}
@@ -240,23 +235,62 @@ func TestRoutes_removeAccount_redirectsUnauthenticated(t *testing.T) {
 	}
 }
 
-func TestRoutes_outDirMissing_fallsBackToProxy(t *testing.T) {
+func TestRoutes_protectedRoutes_acceptHEAD(t *testing.T) {
 	tmpDir := t.TempDir()
+	outDir := filepath.Join(tmpDir, "out")
+	if err := os.MkdirAll(outDir, 0700); err != nil {
+		t.Fatalf("mkdir out: %v", err)
+	}
+	for _, name := range []string{"record", "journal", "profile", "remove-account"} {
+		if err := os.WriteFile(filepath.Join(outDir, name+".html"), []byte("page"), 0644); err != nil {
+			t.Fatalf("write %s.html: %v", name, err)
+		}
+	}
 	t.Chdir(tmpDir)
-
-	csrfKey := "01234567890123456789012345678901"
-	cfg := newTestConfig(t, csrfKey)
-	cfg.NextjsURL = "http://127.0.0.1:19999"
-
+	cfg := newTestConfig(t, "01234567890123456789012345678901")
+	cfg.NextjsURL = "http://localhost:9999"
 	handler, err := routes(cfg)
 	if err != nil {
 		t.Fatalf("routes() failed: %v", err)
 	}
+	for _, path := range []string{"/record", "/journal", "/profile", "/remove-account"} {
+		t.Run(path, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodHead, path, http.NoBody)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, req)
+			if rec.Code == http.StatusMethodNotAllowed {
+				t.Errorf("HEAD %s returned 405; expected not-405", path)
+			}
+		})
+	}
+}
 
+func TestRoutes_authRoutes_acceptHEAD(t *testing.T) {
+	handler := setupAuthTest(t, "<html>auth</html>")
+	for _, path := range []string{"/auth", "/auth/verify"} {
+		t.Run(path, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodHead, path, http.NoBody)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, req)
+			if rec.Code == http.StatusMethodNotAllowed {
+				t.Errorf("HEAD %s returned 405; expected not-405", path)
+			}
+		})
+	}
+}
+
+func TestRoutes_outDirMissing_fallsBackToProxy(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Chdir(tmpDir)
+	cfg := newTestConfig(t, "01234567890123456789012345678901")
+	cfg.NextjsURL = "http://127.0.0.1:19999"
+	handler, err := routes(cfg)
+	if err != nil {
+		t.Fatalf("routes() failed: %v", err)
+	}
 	req := httptest.NewRequest(http.MethodGet, "/some-page", http.NoBody)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
-
 	if rec.Code != http.StatusBadGateway {
 		t.Errorf("expected 502 on unreachable proxy, got %d", rec.Code)
 	}

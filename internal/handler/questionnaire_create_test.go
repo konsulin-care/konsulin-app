@@ -38,9 +38,43 @@ func newQuestionnaireCreateTestHandler(t *testing.T) (http.Handler, *strings.Bui
 	t.Helper()
 	backend, captured := testQuestionnaireBackend(t)
 	handler := NewQuestionnaireCreateHandler(QuestionnaireCreateOptions{
-		BackendBaseURL: backend.URL,
+		BackendBaseURL:          backend.URL,
+		SuperadminKeyCookieName: "superadmin_key",
 	})
 	return handler, captured
+}
+
+// TestQuestionnaireCreateHandler_forwardsSuperadminKey verifies that when the
+// BFF-held superadmin key cookie is present, the X-API-Key header is forwarded
+// to the backend so superadmin requests (e.g. draft creation) authenticate.
+func TestQuestionnaireCreateHandler_forwardsSuperadminKey(t *testing.T) {
+	var gotKey string
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotKey = r.Header.Get("X-API-Key")
+		w.Header().Set("Content-Type", "application/fhir+json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"resourceType":"Questionnaire","id":"q-1","status":"draft"}`))
+	}))
+	t.Cleanup(backend.Close)
+
+	handler := NewQuestionnaireCreateHandler(QuestionnaireCreateOptions{
+		BackendBaseURL:          backend.URL,
+		SuperadminKeyCookieName: "superadmin_key",
+	})
+
+	body := `{"resourceType":"Questionnaire","id":"q-1","status":"draft","title":"Demo"}`
+	req := httptest.NewRequest(http.MethodPost, "/proxy/fhir/Questionnaire", strings.NewReader(body))
+	req.Header.Set("Cookie", "superadmin_key=sa-secret-123")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Errorf("expected 201, got %d", rec.Code)
+	}
+	if gotKey != "sa-secret-123" {
+		t.Errorf("expected backend to receive X-API-Key=sa-secret-123, got %q", gotKey)
+	}
 }
 
 func TestQuestionnaireCreateHandler_acceptsDraftAndForwards(t *testing.T) {

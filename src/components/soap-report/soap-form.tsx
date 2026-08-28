@@ -109,8 +109,7 @@ export default function SoapForm({
         await buildForm({
           questionnaire,
           questionnaireResponse: finalResponse,
-          readOnly: mode === 'view',
-          terminologyServerUrl: process.env.NEXT_PUBLIC_TX_URL
+          readOnly: mode === 'view'
         });
       } catch (err) {
         setIsBuilding(false);

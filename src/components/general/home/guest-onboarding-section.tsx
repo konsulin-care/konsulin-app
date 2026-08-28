@@ -5,6 +5,7 @@ import { BookText, Calendar, HeartPulse } from 'lucide-react';
 
 const FEATURES = [
   {
+    id: 'checkups',
     icon: <HeartPulse className='h-5 w-5 text-gray-600' />,
     title: 'Mental Health Checkups',
     description:
@@ -12,16 +13,18 @@ const FEATURES = [
     href: '/assessments'
   },
   {
+    id: 'journal',
     icon: <BookText className='h-5 w-5 text-gray-600' />,
     title: 'Personal Journal',
     description: 'Track your thoughts and progress over time',
-    href: '/auth'
+    href: '/auth?redirectToPath=/journal'
   },
   {
+    id: 'sessions',
     icon: <Calendar className='h-5 w-5 text-gray-600' />,
     title: 'Expert Sessions',
     description: 'Book appointments with licensed professionals',
-    href: '/auth'
+    href: '/recommendation'
   }
 ];
 
@@ -36,7 +39,7 @@ export default function GuestOnboardingSection() {
       </h2>
       <div className='flex flex-col gap-3'>
         {FEATURES.map(feature => (
-          <ActionCard key={feature.href} {...feature} />
+          <ActionCard key={feature.id} {...feature} />
         ))}
       </div>
     </div>

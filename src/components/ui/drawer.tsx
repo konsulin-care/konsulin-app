@@ -16,6 +16,14 @@ const Drawer = ({
 );
 Drawer.displayName = 'Drawer';
 
+/**
+ * The DOM node of the currently-open drawer content, or null when outside
+ * a drawer. Popovers (comboboxes) rendered inside a drawer portal into this
+ * node so they participate in the drawer's modal interaction model instead
+ * of losing pointer events to Radix's modal Dialog layer.
+ */
+const DrawerContentContext = React.createContext<HTMLElement | null>(null);
+
 const DrawerTrigger = DrawerPrimitive.Trigger;
 
 const DrawerPortal = DrawerPrimitive.Portal;
@@ -23,7 +31,7 @@ const DrawerPortal = DrawerPrimitive.Portal;
 const DrawerClose = DrawerPrimitive.Close;
 
 const DrawerOverlay = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Overlay>,
+  React.ComponentRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Overlay
@@ -35,24 +43,45 @@ const DrawerOverlay = React.forwardRef<
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
 const DrawerContent = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Content>,
+  React.ComponentRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DrawerPortal>
-    <DrawerOverlay />
-    <DrawerPrimitive.Content
-      ref={ref}
-      className={cn(
-        'fixed inset-x-0 bottom-0 z-50 mx-auto mt-24 flex max-h-[85dvh] w-full max-w-screen-sm flex-col rounded-t-[10px] border bg-white',
-        className
-      )}
-      {...props}
-    >
-      <div className='bg-muted mx-auto mt-4 h-2 w-[100px] rounded-full' />
-      <div className='flex-1 overflow-y-auto'>{children}</div>
-    </DrawerPrimitive.Content>
-  </DrawerPortal>
-));
+>(({ className, children, ...props }, ref) => {
+  const [contentNode, setContentNode] = React.useState<HTMLElement | null>(
+    null
+  );
+  /** Compose the forwarded ref with a capture of the content node. */
+  const composeRefs = React.useCallback(
+    (node: React.ComponentRef<typeof DrawerPrimitive.Content> | null) => {
+      if (node) setContentNode(node);
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (ref) {
+        ref.current = node;
+      }
+    },
+    [ref]
+  );
+  return (
+    <DrawerPortal>
+      <DrawerOverlay />
+      <DrawerPrimitive.Content
+        ref={composeRefs}
+        className={cn(
+          'fixed inset-x-0 bottom-0 z-50 mx-auto mt-24 flex max-h-[85dvh] w-full max-w-screen-sm flex-col rounded-t-[10px] border bg-white',
+          className
+        )}
+        {...props}
+      >
+        <div className='bg-muted mx-auto mt-4 h-2 w-[100px] rounded-full' />
+        <div className='flex-1 overflow-y-auto'>
+          <DrawerContentContext.Provider value={contentNode}>
+            {children}
+          </DrawerContentContext.Provider>
+        </div>
+      </DrawerPrimitive.Content>
+    </DrawerPortal>
+  );
+});
 DrawerContent.displayName = 'DrawerContent';
 
 const DrawerHeader = ({
@@ -78,7 +107,7 @@ const DrawerFooter = ({
 DrawerFooter.displayName = 'DrawerFooter';
 
 const DrawerTitle = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Title>,
+  React.ComponentRef<typeof DrawerPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Title>
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Title
@@ -93,7 +122,7 @@ const DrawerTitle = React.forwardRef<
 DrawerTitle.displayName = DrawerPrimitive.Title.displayName;
 
 const DrawerDescription = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Description>,
+  React.ComponentRef<typeof DrawerPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Description>
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Description
@@ -108,6 +137,7 @@ export {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerContentContext,
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,

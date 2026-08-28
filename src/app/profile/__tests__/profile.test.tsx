@@ -343,5 +343,42 @@ describe('Profile page', () => {
       expect(screen.getByText('Professional')).toBeDefined();
       expect(screen.getByText('Additional')).toBeDefined();
     });
+
+    it('renders unique keys when two roles share the same resource ID', () => {
+      mockAuth(vi.mocked(useAuth), {
+        role_name: 'Practitioner',
+        fhirId: 'DG5CY3QAKEOXE2Y6',
+        userId: 'u1',
+        roles: ['Practitioner', 'Clinic Admin'],
+        profile_complete: true
+      });
+      // Both roles resolve to the same Practitioner resource
+      mockProfileHooks('Practitioner', {
+        Practitioner: {
+          name: 'John Doe',
+          photoUrl: '',
+          resource: { resourceType: 'Practitioner', id: 'DG5CY3QAKEOXE2Y6' }
+        },
+        'Clinic Admin': {
+          name: 'John Doe',
+          photoUrl: '',
+          resource: { resourceType: 'Practitioner', id: 'DG5CY3QAKEOXE2Y6' }
+        }
+      });
+
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        // skipcq: JS-0321 — intentional: suppress console noise in test
+        .mockImplementation(() => {});
+      render(<ProfileDisplay />);
+      // Two cards should render (one per role)
+      expect(screen.getAllByTestId('extension-card')).toHaveLength(2);
+      // No duplicate key warning should have been emitted
+      const duplicateKeyCall = consoleSpy.mock.calls.find(
+        ([msg]) => typeof msg === 'string' && msg.includes('same key')
+      );
+      expect(duplicateKeyCall).toBeUndefined();
+      consoleSpy.mockRestore();
+    });
   });
 });

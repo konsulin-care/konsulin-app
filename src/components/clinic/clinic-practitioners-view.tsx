@@ -185,7 +185,8 @@ function ClinicHero({
   imageUrl: string;
 }>) {
   const isLongPress = useRef(false);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
+  // skipcq: JS-W1042 — explicit undefined for readability
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const copyAddress = useCallback(() => {
     if (fullAddress)
       navigator.clipboard.writeText(fullAddress).catch((e: unknown) => {

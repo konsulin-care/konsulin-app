@@ -216,13 +216,13 @@ export default function ProfileDisplay() {
               onEditName={() => setActiveDrawer('name')}
             />
             <SectionCards sections={sections} onEdit={setActiveDrawer} />
-            {Object.values(roleProfiles)
-              .filter((profile): profile is RoleProfile =>
-                Boolean(profile?.resource)
+            {Object.entries(roleProfiles)
+              .filter((entry): entry is [string, RoleProfile] =>
+                Boolean(entry[1]?.resource)
               )
-              .map(profile => (
+              .map(([role, profile]) => (
                 <ExtensionCard
-                  key={profile.resource.id}
+                  key={`${role}-${profile.resource.id}`}
                   profile={profile.resource}
                 />
               ))}
