@@ -39,7 +39,7 @@ function MethodBadge({ method }: Readonly<{ method: HttpMethod }>) {
   return (
     <span
       className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${
-        // skipcq: JS-0017
+        // skipcq: JS-0017 — method is a constrained HttpMethod enum
         METHOD_COLORS[method]
       }`}
     >
@@ -122,14 +122,18 @@ function QueryParamRows({
           <input
             aria-label={`param key ${i + 1}`}
             value={row.key}
-            onChange={e => update(row.id, { key: e.target.value })}
+            onChange={e => {
+              update(row.id, { key: e.target.value });
+            }}
             placeholder='key'
             className='w-1/2 rounded-md border border-slate-300 px-3 py-1.5 font-mono text-xs'
           />
           <input
             aria-label={`param value ${i + 1}`}
             value={row.value}
-            onChange={e => update(row.id, { value: e.target.value })}
+            onChange={e => {
+              update(row.id, { value: e.target.value });
+            }}
             placeholder='value'
             className='w-1/2 rounded-md border border-slate-300 px-3 py-1.5 font-mono text-xs'
           />
@@ -225,7 +229,7 @@ export function AdminRequestBuilder() {
               key={field.key}
               field={field}
               value={
-                // skipcq: JS-0017
+                // skipcq: JS-0017 — key comes from controlled FHIR schema
                 fieldValues[field.key] ?? ''
               }
               onChange={v => {

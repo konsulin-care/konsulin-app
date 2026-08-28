@@ -96,7 +96,7 @@ export function EndpointCombobox({
         e.preventDefault();
         if (highlightedIndex >= 0 && highlightedIndex < filteredFlat.length) {
           handleSelect(
-            // skipcq: JS-0017
+            // skipcq: JS-0017 — index bounded by filteredFlat.length check
             filteredFlat[highlightedIndex].path
           );
         } else {
@@ -164,7 +164,7 @@ export function EndpointCombobox({
                 {group}
               </div>
               {endpoints.map(ep => {
-                // skipcq: JS-0017
+                // skipcq: JS-0017 — array index lookup, not object injection
                 const index = filteredFlat.indexOf(ep);
                 return (
                   <button
