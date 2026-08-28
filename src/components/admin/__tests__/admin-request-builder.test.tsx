@@ -129,7 +129,7 @@ describe('AdminRequestBuilder', () => {
       const orgSuggestions = screen.queryAllByText('/fhir/Organization');
       // The preview textarea still has /fhir/Organization, so filter by button elements
       const orgButtons = orgSuggestions.filter(el => el.tagName === 'BUTTON');
-      expect(orgButtons.length).toBe(0);
+      expect(orgButtons).toHaveLength(0);
     });
 
     it('selects an endpoint when clicking a suggestion', async () => {
@@ -277,7 +277,7 @@ describe('AdminRequestBuilder', () => {
       expect(classList).not.toContain('flex-wrap');
       // Both children should be direct children of the flex container
       const children = borderedContainer?.children;
-      expect(children.length).toBe(2);
+      expect(children).toHaveLength(2);
     });
   });
 

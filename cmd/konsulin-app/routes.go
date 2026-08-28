@@ -14,40 +14,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/konsulin-care/konsulin-app/internal/config"
-	"github.com/konsulin-care/konsulin-app/internal/data/wilayah"
 	"github.com/konsulin-care/konsulin-app/internal/handler"
 	appmw "github.com/konsulin-care/konsulin-app/internal/middleware"
 )
-
-// spaFS wraps http.Dir to support clean URLs for static HTML export.
-// Retries with ".html" appended when a path without extension is not found.
-type spaFS struct {
-	http.Dir
-}
-
-func (f *spaFS) Open(name string) (http.File, error) {
-	file, err := f.Dir.Open(name)
-	if err != nil {
-		if os.IsNotExist(err) && filepath.Ext(name) == "" {
-			if file, err := f.Dir.Open(name + ".html"); err == nil {
-				return file, nil
-			}
-		}
-		return nil, err
-	}
-	// Flat HTML export uses files like clinic.html, so a directory at the
-	// clean URL path (e.g. /clinic) is unexpected — prefer the .html variant.
-	if path.Clean("/"+name) != "/" {
-		if stat, _ := file.Stat(); stat != nil && stat.IsDir() {
-			_ = file.Close()
-			if file, err := f.Dir.Open(name + ".html"); err == nil {
-				return file, nil
-			}
-			return nil, os.ErrNotExist
-		}
-	}
-	return file, nil
-}
 
 // isRSCPayload returns true for Next.js RSC routing payloads (__next.*.txt).
 func isRSCPayload(p string) bool {
@@ -62,14 +31,17 @@ func protectedPageHandler(authGuard func(http.Handler) http.Handler, outDir stri
 			return
 		}
 		authGuard(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// nolint:gosec // G703: path is cleaned and resolved within outDir
-			http.ServeFile(w, r, filepath.Join(outDir, path.Clean(strings.TrimPrefix(r.URL.Path, "/"))+".html"))
+			filePath := filepath.Join(outDir, path.Clean(strings.TrimPrefix(r.URL.Path, "/"))+".html")
+			if !strings.HasPrefix(filepath.Clean(filePath), filepath.Clean(outDir)) {
+				http.NotFound(w, r)
+				return
+			}
+			http.ServeFile(w, r, filePath)
 		})).ServeHTTP(w, r)
 	}
 }
 
 func routes(cfg *config.Config) (http.Handler, error) {
-	const unauthorizedPath = "/unauthorized"
 	r := chi.NewRouter()
 
 	r.Use(chimw.RequestID)
@@ -127,167 +99,11 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	// deepsource:ignore GO-S1034 — spaFS rejects non-root directory opens, so FileServer can never list the export dir.
 	outFS := http.FileServer(&spaFS{http.Dir(outDir)})
 
-	r.Post("/auth/logout", handler.NewLogoutHandler(handler.LogoutOptions{
-		AuthPath:                   cfg.AuthPath,
-		CookieName:                 cfg.AuthCookieName,
-		AccessCookieName:           cfg.SessionCookieNameAccess,
-		RefreshCookieName:          cfg.SessionCookieNameRefresh,
-		IDRefreshCookieName:        cfg.SessionCookieNameIDRefresh,
-		BackendBaseURL:             cfg.APIURL,
-		SecureCookie:               cfg.CookieSecure,
-		AllowInsecureBackendLogout: cfg.AllowInsecureBackendLogout,
-	}))
-	r.HandleFunc("/auth/cookie", handler.NewAuthCookieHandler(handler.AuthCookieOptions{
-		CookieName: cfg.AuthCookieName, CookieSecure: cfg.CookieSecure,
-		CookieSecret: cfg.SessionCookieSecret, AccessCookieName: cfg.SessionCookieNameAccess,
-		RefreshCookieName: cfg.SessionCookieNameRefresh, IDRefreshCookieName: cfg.SessionCookieNameIDRefresh,
-	}))
-
-	// CSRF token endpoint for POST /auth/cookie.
-	r.Get("/auth/cookie/csrf-token", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{"token": appmw.CSRFToken(r)})
-	})
-	r.Get("/api/config", handler.NewClientConfigHandler(handler.ClientConfigOptions{
-		AppName:     cfg.AppName,
-		APIURL:      cfg.APIURL,
-		APIBasePath: cfg.APIBasePath,
-		AuthPath:    cfg.AuthPath,
-		AppURL:      cfg.AppURL,
-		TXURL:       cfg.TXURL,
-	}))
-
-	// /auth/* — serve Next.js auth page (static export or dev proxy).
-	// In dev mode, rewrites to /auth so the dev server serves the auth SPA.
-	authPageHandler := func(w http.ResponseWriter, r *http.Request) {
-		authHTML := filepath.Join(outDir, "auth.html")
-		if _, err := os.Stat(authHTML); err == nil {
-			http.ServeFile(w, r, authHTML)
-			return
-		}
-		r.URL.Path = "/auth"
-		proxy.ServeHTTP(w, r)
-	}
-	r.Route("/auth", func(r chi.Router) {
-		r.Use(appmw.RedirectAuthenticated(cfg.AuthCookieName, cfg.SessionCookieSecret, "/"))
-		for _, m := range []string{http.MethodGet, http.MethodHead} {
-			r.MethodFunc(m, "/", authPageHandler)
-			r.MethodFunc(m, "/*", authPageHandler)
-		}
-	})
-	// Backend API proxy — adds Bearer token from SuperTokens cookie.
-	r.Handle("/proxy/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
-		BackendBaseURL:          cfg.APIURL,
-		AccessCookieName:        cfg.SessionCookieNameAccess,
-		SuperadminKeyCookieName: cfg.SuperadminKeyCookieName,
-	}))
-
-	// Questionnaire create — new assessments must enter the catalog as drafts.
-	// Exact-path match wins over the /proxy/* catch-all above.
-	r.Post("/proxy/fhir/Questionnaire", handler.NewQuestionnaireCreateHandler(handler.QuestionnaireCreateOptions{
-		BackendBaseURL:          cfg.APIURL,
-		AccessCookieName:        cfg.SessionCookieNameAccess,
-		SuperadminKeyCookieName: cfg.SuperadminKeyCookieName,
-	}))
-
-	// Superadmin key custody — BFF stores the submitted key in an HttpOnly
-	// cookie; the backend validates it on each request (lazy enforcement).
-	r.Post("/api/admin/key", handler.NewAdminKeyHandler(handler.AdminKeyOptions{
-		CookieName:   cfg.SuperadminKeyCookieName,
-		CookieSecure: cfg.CookieSecure,
-	}))
-	r.Delete("/api/admin/key", handler.NewAdminKeyHandler(handler.AdminKeyOptions{
-		CookieName:   cfg.SuperadminKeyCookieName,
-		CookieSecure: cfg.CookieSecure,
-	}))
-
-	// SuperTokens API proxy — converts backend response headers to Set-Cookie.
-	r.Handle("/api/v1/auth/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
-		BackendBaseURL: cfg.APIURL,
-		CookieMappings: []handler.HeaderCookieMapping{
-			{HeaderName: "st-access-token", CookieName: "sAccessToken", HTTPOnly: true},
-			{HeaderName: "st-refresh-token", CookieName: "sRefreshToken", HTTPOnly: true},
-			{HeaderName: "front-token", CookieName: "sFrontToken", HTTPOnly: false},
-		},
-		CookieSecure:            cfg.CookieSecure,
-		SuperadminKeyCookieName: cfg.SuperadminKeyCookieName,
-	}))
-
-	// Role switcher — GET returns partial, POST updates session cookie.
-	r.HandleFunc("/auth/role/switch", handler.NewRoleSwitchHandler(handler.RoleSwitchOptions{
-		CookieName:     cfg.AuthCookieName,
-		CookieSecure:   cfg.CookieSecure,
-		CookieSecret:   cfg.SessionCookieSecret,
-		BackendBaseURL: cfg.APIURL,
-	}))
-	// Protected Next.js pages (mirrors old middleware.ts route list).
-	// Guard HTML routes, skip RSC payloads (__next.*.txt).
-	authGuard := appmw.AuthGuard(appmw.AuthGuardOptions{
-		AuthPath:          cfg.AuthPath,
-		CookieName:        cfg.AuthCookieName,
-		CookieSecret:      cfg.SessionCookieSecret,
-		AccessCookieName:  cfg.SessionCookieNameAccess,
-		RefreshCookieName: cfg.SessionCookieNameRefresh,
-		UnauthorizedPath:  unauthorizedPath,
-		AppURL:            cfg.AppURL,
-	})
-	protectedRoutes := []string{"/journal", "/record", "/profile", "/remove-account"}
-	for _, p := range protectedRoutes {
-		p := p
-		handler := func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, filepath.Join(outDir, path.Clean(strings.TrimPrefix(r.URL.Path, "/"))+".html")) // nolint:gosec
-		}
-		r.With(authGuard).MethodFunc(http.MethodGet, p, handler)
-		r.With(authGuard).MethodFunc(http.MethodHead, p, handler)
-		r.Handle(p+"/*", protectedPageHandler(authGuard, outDir, outFS))
-	}
-
-	// Clinician-only routes.
-	roleGuard := appmw.RequireRole(appmw.RequireRoleOptions{
-		RedirectIntentCookieName: cfg.RedirectIntentCookieName,
-		AuthPath:                 cfg.AuthPath,
-		UnauthorizedPath:         unauthorizedPath,
-		CookieSecure:             cfg.CookieSecure,
-		AppURL:                   cfg.AppURL,
-	}, "Practitioner")
-	r.With(authGuard, roleGuard).Handle("/assessments/soap", proxy)
-	r.With(authGuard, roleGuard).Handle("/assessments/soap/*", proxy)
-
-	// Wilayah region data — serve from pre-built index, skip proxy.
-	wh := handler.NewWilayahHandler(&wilayah.WilayahData)
-	r.Get("/api/provinces", wh.Provinces)
-	r.Get("/api/provinces/search", wh.ProvinceSearch)
-	r.Get("/api/regencies/{provinceId}", wh.Regencies)
-	r.Get("/api/regencies/search", wh.RegencySearch)
-	r.Get("/api/districts/{regencyId}", wh.Districts)
-	r.Get("/api/villages/{districtId}", wh.Villages)
-	r.Get("/api/lookup/{id}", wh.Lookup)
-
-	// Relay routes — BFF handles FHIR orchestration, not proxied.
-	r.Post("/api/v1/relay/booking", handler.NewRelayBookingHandler(handler.RelayBookingOptions{
-		BackendBaseURL:   cfg.APIURL,
-		AccessCookieName: cfg.SessionCookieNameAccess,
-	}))
-
-	// Recommendation engine — BFF aggregation served as pre-joined JSON.
-	recHandler := handler.NewRecommendationsHandler(handler.RecommendationsOptions{
-		BackendBaseURL: cfg.APIURL,
-	})
-	r.Get("/api/recommendations", recHandler.Recommendations)
-	r.Get("/api/recommendations/specialties", recHandler.Specialties)
-
-	// Media upload — client sends image, BFF uploads to Cloudinary.
-	adminGuard := appmw.RequireRole(appmw.RequireRoleOptions{
-		RedirectIntentCookieName: cfg.RedirectIntentCookieName,
-		AuthPath:                 cfg.AuthPath,
-		UnauthorizedPath:         unauthorizedPath,
-		CookieSecure:             cfg.CookieSecure,
-		AppURL:                   cfg.AppURL,
-	}, "Clinic Admin")
-	r.With(authGuard, adminGuard).Post("/api/media/location", handler.NewUploadHandler(handler.UploadOptions{
-		CloudinaryCloudName:    cfg.CloudinaryCloudName,
-		CloudinaryUploadPreset: cfg.CloudinaryUploadPreset,
-	}))
+	// Register route groups.
+	registerAuthRoutes(r, cfg, outDir, proxy)
+	registerAPIRoutes(r, cfg)
+	registerProxyRoutes(r, cfg)
+	registerProtectedPages(r, cfg, outDir, outFS, proxy)
 
 	// Serve Next.js static export (out/) directly when it exists.
 	// Uses spaFS to handle clean URLs (/clinic → out/clinic.html).

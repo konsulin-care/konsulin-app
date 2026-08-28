@@ -59,6 +59,6 @@ describe('getEndpointOptionsGrouped', () => {
     const flatFromGrouped = [...grouped.values()].flat();
     const flatFromFilter = getEndpointsForMethod('POST');
 
-    expect(flatFromGrouped.length).toBe(flatFromFilter.length);
+    expect(flatFromGrouped).toHaveLength(flatFromFilter.length);
   });
 });

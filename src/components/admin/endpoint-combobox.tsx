@@ -127,7 +127,6 @@ export function EndpointCombobox({
       <input
         ref={inputRef}
         type='text'
-        role='textbox'
         aria-label='Endpoint'
         value={query}
         onChange={e => {

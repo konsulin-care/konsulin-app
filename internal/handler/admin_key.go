@@ -58,6 +58,7 @@ func setAdminKeyCookie(w http.ResponseWriter, r *http.Request, cookieName string
 	}
 	// nolint:gosec // G124: Secure and HttpOnly are set explicitly here.
 	// nosemgrep — HttpOnly/Secure follow CookieSecure from runtime env (routes.go).
+	// NOSONAR — Secure flag is intentionally configurable via CookieSecure env var.
 	http.SetCookie(w, &http.Cookie{
 		Name:     cookieName,
 		Value:    payload.APIKey,
@@ -73,6 +74,7 @@ func setAdminKeyCookie(w http.ResponseWriter, r *http.Request, cookieName string
 func clearAdminKeyCookie(w http.ResponseWriter, cookieName string, secure bool) {
 	// nolint:gosec // G124: Secure and HttpOnly are set explicitly here.
 	// nosemgrep — HttpOnly/Secure follow CookieSecure from runtime env (routes.go).
+	// NOSONAR — Secure flag is intentionally configurable via CookieSecure env var.
 	http.SetCookie(w, &http.Cookie{
 		Name:     cookieName,
 		Value:    "",

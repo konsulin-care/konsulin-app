@@ -295,3 +295,4 @@ func TestRoutes_outDirMissing_fallsBackToProxy(t *testing.T) {
 		t.Errorf("expected 502 on unreachable proxy, got %d", rec.Code)
 	}
 }
+
