@@ -110,6 +110,8 @@ module.exports = [
 
       // Maintain existing custom rules
       'sonarjs/cognitive-complexity': ['error', 15],
+      // Internal navigation must go through router/redirect, never location.href
+      '@next/next/no-location-assign-relative-destination': 'error',
       'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
       'default-case': 'error',
       'no-empty': ['error', { allowEmptyCatch: false }],
