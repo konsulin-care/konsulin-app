@@ -5,7 +5,7 @@ import {
   parseObservationBundle,
   parseQRBundle,
   resolveQuestionnaireTitle
-} from '@/utils/parse-searchset-bundles';
+} from '@/utils/fhir/searchset-bundle';
 import { resolveQuestionnaireTitles } from '@/utils/resolve-questionnaire-titles';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Patient, Person, Practitioner } from 'fhir/r4';

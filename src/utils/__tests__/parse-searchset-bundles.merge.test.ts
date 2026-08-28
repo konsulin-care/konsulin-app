@@ -1,6 +1,6 @@
 import type { IRecord } from '@/types/record';
 import { describe, expect, it } from 'vitest';
-import { mergeRecords } from '../parse-searchset-bundles';
+import { mergeRecords } from '../fhir/searchset-bundle';
 
 describe('mergeRecords', () => {
   it('merges multiple arrays and sorts by lastUpdated desc', () => {

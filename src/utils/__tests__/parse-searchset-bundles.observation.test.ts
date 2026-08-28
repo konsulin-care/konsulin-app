@@ -1,6 +1,6 @@
 import type { Bundle, Observation } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
-import { parseObservationBundle } from '../parse-searchset-bundles';
+import { parseObservationBundle } from '../fhir/searchset-bundle';
 
 /** Helper: build a minimal Observation searchset Bundle. */
 function obsBundle(

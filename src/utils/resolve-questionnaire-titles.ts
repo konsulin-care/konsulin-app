@@ -2,7 +2,7 @@ import { getAPI } from '@/services/api';
 import type { IRecord } from '@/types/record';
 import type { QueryClient } from '@tanstack/react-query';
 import type { Bundle, Questionnaire } from 'fhir/r4';
-import { resolveQuestionnaireTitle } from './parse-searchset-bundles';
+import { resolveQuestionnaireTitle } from './fhir/searchset-bundle';
 
 export type ResolveTitleOptions = {
   queryClient: QueryClient;

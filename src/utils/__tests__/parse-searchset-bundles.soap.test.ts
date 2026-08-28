@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   parseQRBundle,
   resolveQuestionnaireTitle
-} from '../parse-searchset-bundles';
+} from '../fhir/searchset-bundle';
 
 function soapBundle(questionnaire: string): Bundle {
   const qr = {

@@ -9,12 +9,12 @@ import {
   isQuestionnaireReference,
   questionnaireIdLabel
 } from '@/utils/fhir/questionnaire-url';
+import { resolveQuestionnaireTitle } from '@/utils/fhir/searchset-bundle';
 import {
   customMarkdownComponents,
   formatTitle,
   generateAvatarPlaceholder
 } from '@/utils/helper';
-import { resolveQuestionnaireTitle } from '@/utils/parse-searchset-bundles';
 import { format } from 'date-fns';
 import type { Patient, Practitioner } from 'fhir/r4';
 import { FileText, HeartPulse, Microscope } from 'lucide-react';

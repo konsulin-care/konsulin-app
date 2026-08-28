@@ -1,6 +1,6 @@
 import type { Bundle, Condition } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
-import { parseConditionBundle } from '../parse-searchset-bundles';
+import { parseConditionBundle } from '../fhir/searchset-bundle';
 
 /** Build a minimal Condition bundle with evidence. */
 function makeConditionBundle(overrides: Partial<Condition> = {}): Bundle {

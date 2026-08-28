@@ -4,10 +4,10 @@ import {
   parseConditionBundle,
   parseObservationBundle,
   parseQRBundle
-} from '../parse-searchset-bundles';
+} from '../parse-compartment-bundles';
 
-describe('parse-compartment-bundles (redirect)', () => {
-  it('re-exports from parse-searchset-bundles', () => {
+describe('parse-compartment-bundles (deprecated redirect)', () => {
+  it('re-exports from fhir/searchset-bundle via parse-searchset-bundles shim', () => {
     expect(parseQRBundle).toBeDefined();
     expect(parseConditionBundle).toBeDefined();
     expect(parseObservationBundle).toBeDefined();

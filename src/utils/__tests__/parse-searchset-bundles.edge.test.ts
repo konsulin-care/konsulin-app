@@ -9,7 +9,7 @@ import {
   parseConditionBundle,
   parseObservationBundle,
   parseQRBundle
-} from '../parse-searchset-bundles';
+} from '../fhir/searchset-bundle';
 
 describe('parseQRBundle edge cases', () => {
   it('returns a record even for QR with empty items', () => {

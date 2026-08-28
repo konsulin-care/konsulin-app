@@ -7,4 +7,4 @@ export {
   parseConditionBundle,
   parseObservationBundle,
   parseQRBundle
-} from './parse-searchset-bundles';
+} from './fhir/searchset-bundle';
