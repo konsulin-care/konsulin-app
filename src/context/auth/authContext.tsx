@@ -11,6 +11,7 @@ import {
   syncActiveRoleWithCookie
 } from '@/services/auth';
 import { fetchUserProfilesBundle } from '@/services/role-profiles';
+import { useRouter } from 'next/navigation';
 import React, {
   createContext,
   ReactNode,
@@ -67,6 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [state, dispatch] = useReducer(reducer, initialState);
   const session = useSessionContext() as SessionContextUpdate;
+  const router = useRouter();
 
   // Record pathname at first paint (full page load) so homepage can tell "reload of /" vs "navigated to /"
   useEffect(() => {
@@ -122,7 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
         return;
       }
-      globalThis.location.href = '/auth';
+      router.push('/auth');
       return;
     }
 

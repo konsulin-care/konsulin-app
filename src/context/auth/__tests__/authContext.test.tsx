@@ -5,6 +5,12 @@ import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuth } from '../authContext';
 
+const { routerPush } = vi.hoisted(() => ({ routerPush: vi.fn() }));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: routerPush })
+}));
+
 // ---------------------------------------------------------------------------
 // Mock SuperTokens
 // ---------------------------------------------------------------------------
@@ -180,8 +186,6 @@ describe('Fix 1 - stale cookie deletion short-circuit', () => {
     // AND: the DELETE request fails (404)
     globalThis.fetch = setupFetchMock({ ok: false, status: 404 });
 
-    const initialHref = globalThis.location.href;
-
     // WHEN: the auth provider mounts
     renderWithAuthProvider();
 
@@ -192,8 +196,8 @@ describe('Fix 1 - stale cookie deletion short-circuit', () => {
       });
     });
 
-    // AND: location.href was NOT changed (redirect NOT attempted)
-    expect(globalThis.location.href).toBe(initialHref);
+    // AND: no navigation to /auth was attempted
+    expect(routerPush).not.toHaveBeenCalled();
 
     // AND: loading resolved to false (graceful degradation, not stuck)
     await waitFor(() => {
@@ -213,8 +217,6 @@ describe('Fix 1 - stale cookie deletion short-circuit', () => {
     // AND: the DELETE request throws (network error)
     globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network failure'));
 
-    const initialHref = globalThis.location.href;
-
     // WHEN: the auth provider mounts
     renderWithAuthProvider();
 
@@ -225,14 +227,32 @@ describe('Fix 1 - stale cookie deletion short-circuit', () => {
       });
     });
 
-    // AND: location.href was NOT changed
-    expect(globalThis.location.href).toBe(initialHref);
+    // AND: no navigation to /auth was attempted
+    expect(routerPush).not.toHaveBeenCalled();
 
     // AND: loading resolved
     await waitFor(() => {
       const loading = screen.getByTestId('auth-loading');
       expect(loading.textContent).toBe('false');
     });
+  });
+
+  it('navigates to /auth via router after the stale cookie DELETE succeeds', async () => {
+    // GIVEN: stale auth cookie exists but SuperTokens session is gone
+    mockGetAuthSession.mockResolvedValue({
+      authenticated: true,
+      role_name: 'Patient',
+      email: 'test@example.com'
+    });
+
+    // AND: the DELETE request succeeds
+    globalThis.fetch = setupFetchMock({ ok: true, status: 200 });
+
+    // WHEN: the auth provider mounts
+    renderWithAuthProvider();
+
+    // THEN: the router navigates to /auth so re-login is unblocked
+    await waitFor(() => expect(routerPush).toHaveBeenCalledWith('/auth'));
   });
 });
 
