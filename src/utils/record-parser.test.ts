@@ -1,7 +1,7 @@
 import type { IBundleResponse } from '@/types/record';
 import type { Bundle, Observation } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
-import { parseRecordBundles } from './record-parser';
+import { parseRecordBundles } from './fhir/record-bundle';
 
 function makeObservation(
   overrides: Partial<Observation> & { id: string; lastUpdated?: string }

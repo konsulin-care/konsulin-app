@@ -1,6 +1,6 @@
 import type { Bundle, QuestionnaireResponse } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
-import { parseRecordBundlePractitioner } from './record-parser';
+import { parseRecordBundlePractitioner } from './fhir/record-bundle';
 
 type SoapRecord = { type: string };
 
