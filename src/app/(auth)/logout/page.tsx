@@ -5,6 +5,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useProfile } from '@/context/profile/profileContext';
 import { clearUserData } from '@/lib/indexeddb';
 import { clearLastInterviewResult } from '@/utils/recommendation-interview';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Session from 'supertokens-auth-react/recipe/session';
 
@@ -14,6 +15,7 @@ import Session from 'supertokens-auth-react/recipe/session';
 export default function Logout() {
   const { state, dispatch } = useAuth();
   const { dispatch: dispatchProfile } = useProfile();
+  const router = useRouter();
 
   useEffect(() => {
     /** Handles user logout and data cleanup. */
@@ -34,7 +36,7 @@ export default function Logout() {
       );
       dispatch({ type: 'logout' });
       dispatchProfile({ type: 'reset' });
-      window.location.href = '/';
+      router.push('/');
     };
 
     handleLogout().catch(console.error);

@@ -155,7 +155,10 @@ function setupResponseInterceptor(instance: AxiosInstance) {
       if ((isExpiredToken || isMissingToken) && isAuthEndpoint) {
         setTimeout(() => {
           try {
-            window.location.href = '/';
+            // Hard navigation on token expiry: the router is not reachable
+            // from this module-scope interceptor, and replace() avoids
+            // leaving a dead-session page in the history stack.
+            window.location.replace('/');
           } catch (err) {
             console.error('Failed to redirect to home:', err);
           }
