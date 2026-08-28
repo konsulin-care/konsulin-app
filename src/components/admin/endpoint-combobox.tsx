@@ -138,7 +138,9 @@ export function EndpointCombobox({
           setOpen(true);
           setHighlightedIndex(-1);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          setOpen(true);
+        }}
         onBlur={() => {
           // Delay to allow click on suggestion
           setTimeout(() => {
@@ -162,6 +164,7 @@ export function EndpointCombobox({
                 {group}
               </div>
               {endpoints.map(ep => {
+                // skipcq: JS-0017
                 const index = filteredFlat.indexOf(ep);
                 return (
                   <button

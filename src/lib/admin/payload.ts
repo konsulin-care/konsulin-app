@@ -62,6 +62,38 @@ function setNested(obj: Record<string, unknown>, key: string, value: unknown) {
 }
 
 /**
+ * Recursively removes `__proto__` and `constructor` keys from an object
+ * tree to prevent prototype pollution.
+ *
+ * @param obj - the value to sanitize (mutated in place)
+ * @returns the sanitized value
+ */
+function sanitizeKeys(
+  obj: Record<string, unknown> | unknown[]
+): Record<string, unknown> | unknown[] {
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      if (item !== null && typeof item === 'object') {
+        sanitizeKeys(item as Record<string, unknown>);
+      }
+    }
+    return obj;
+  }
+  for (const key of Object.keys(obj)) {
+    if (key === '__proto__' || key === 'constructor') {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete obj[key];
+      continue;
+    }
+    const value = obj[key];
+    if (value !== null && typeof value === 'object') {
+      sanitizeKeys(value as Record<string, unknown>);
+    }
+  }
+  return obj;
+}
+
+/**
  * Deep-merges raw JSON over the base payload.
  *
  * @param base - payload built from curated fields
@@ -75,14 +107,10 @@ export function mergeRawJson(
   const trimmed = rawJson.trim();
   if (!trimmed) return base;
   const parsed = JSON.parse(trimmed) as Record<string, unknown>;
-  // Guard against prototype pollution: never copy __proto__ or
-  // constructor-derived keys from raw JSON into the payload.
-  const safeParsed: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(parsed)) {
-    if (key === '__proto__' || key === 'constructor') continue;
-    safeParsed[key] = value;
-  }
-  return { ...base, ...safeParsed };
+  // Guard against prototype pollution: recursively strip __proto__ and
+  // constructor keys at every nesting level before merging.
+  sanitizeKeys(parsed);
+  return { ...base, ...parsed };
 }
 
 /**

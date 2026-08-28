@@ -228,9 +228,9 @@ export function AdminRequestBuilder() {
                 // skipcq: JS-0017
                 fieldValues[field.key] ?? ''
               }
-              onChange={v =>
-                setFieldValues(prev => ({ ...prev, [field.key]: v }))
-              }
+              onChange={v => {
+                setFieldValues(prev => ({ ...prev, [field.key]: v }));
+              }}
             />
           ))}
         </div>

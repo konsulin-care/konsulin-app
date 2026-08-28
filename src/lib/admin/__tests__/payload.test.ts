@@ -136,6 +136,54 @@ describe('mergeRawJson', () => {
     expect(merged).toEqual({ resourceType: 'Questionnaire' });
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
   });
+
+  it('strips __proto__ keys from nested objects in raw JSON', () => {
+    const merged = mergeRawJson(
+      { resourceType: 'Questionnaire' },
+      JSON.stringify({
+        org: { __proto__: { polluted: true }, name: 'Test' },
+        meta: { nested: { __proto__: { hacked: true } } }
+      })
+    );
+    expect(merged).toEqual({
+      resourceType: 'Questionnaire',
+      org: { name: 'Test' },
+      meta: { nested: {} }
+    });
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    expect(({} as Record<string, unknown>).hacked).toBeUndefined();
+  });
+
+  it('strips constructor keys from nested objects in raw JSON', () => {
+    const merged = mergeRawJson(
+      { resourceType: 'Questionnaire' },
+      JSON.stringify({
+        data: { constructor: { prototype: { polluted: true } }, value: 42 }
+      })
+    );
+    expect(merged).toEqual({
+      resourceType: 'Questionnaire',
+      data: { value: 42 }
+    });
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+  });
+
+  it('handles arrays containing objects with dangerous keys', () => {
+    const merged = mergeRawJson(
+      { resourceType: 'Questionnaire' },
+      JSON.stringify({
+        item: [
+          { __proto__: { polluted: true }, linkId: 'a' },
+          { constructor: { prototype: { x: 1 } }, linkId: 'b' }
+        ]
+      })
+    );
+    expect(merged).toEqual({
+      resourceType: 'Questionnaire',
+      item: [{ linkId: 'a' }, { linkId: 'b' }]
+    });
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+  });
 });
 
 describe('buildQueryString', () => {
