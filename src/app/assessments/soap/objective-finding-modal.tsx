@@ -61,7 +61,10 @@ export default function ObjectiveFindingModal({
               />
             </div>
             <div className='mr-auto'>{item.name}</div>
-            <div
+            <button
+              type='button'
+              aria-label={`Toggle ${item.name}`}
+              aria-pressed={selectedTest[index]}
               onClick={() => {
                 handleSelectedTest(index);
               }}
@@ -71,7 +74,7 @@ export default function ObjectiveFindingModal({
               ) : (
                 <SquareIcon color='hsla(240,6%,83%,1)' />
               )}
-            </div>
+            </button>
           </div>
         ))}
         <DrawerClose>

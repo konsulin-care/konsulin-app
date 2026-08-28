@@ -135,30 +135,37 @@ describe('HomeContentAdmin', () => {
     });
   });
 
-  it('renders practitioner count when data loads', async () => {
-    // NOSONAR
-    mockAxiosInstance.get.mockResolvedValue({ data: { total: 12 } });
+  it.each([
+    {
+      total: 12,
+      verify: () =>
+        expect(screen.getByText('Active Practitioners')).toBeDefined()
+    },
+    {
+      total: 8,
+      verify: () => {
+        const link = screen.getByText('Active Practitioners').closest('a');
+        expect(link).toHaveAttribute('href', '/practitioner');
+      }
+    },
+    {
+      total: 5,
+      verify: () => expect(screen.queryByText('Clinic Overview')).toBeNull()
+    }
+  ])(
+    'renders practitioner count stat for total $total',
+    async ({ total, verify }) => {
+      mockAxiosInstance.get.mockResolvedValue({ data: { total } });
 
-    render(<HomeContentAdmin />, { wrapper });
+      render(<HomeContentAdmin />, { wrapper });
 
-    await waitFor(() => {
-      expect(screen.getByText('12')).toBeDefined();
-    });
-    expect(screen.getByText('Active Practitioners')).toBeDefined();
-  });
+      await waitFor(() => {
+        expect(screen.getByText(String(total))).toBeDefined();
+      });
 
-  it('links Active Practitioners stat to /practitioner', async () => {
-    mockAxiosInstance.get.mockResolvedValue({ data: { total: 8 } });
-
-    render(<HomeContentAdmin />, { wrapper });
-
-    await waitFor(() => {
-      expect(screen.getByText('8')).toBeDefined();
-    });
-
-    const link = screen.getByText('Active Practitioners').closest('a');
-    expect(link).toHaveAttribute('href', '/practitioner');
-  });
+      verify();
+    }
+  );
 
   it('shows retry button on error', async () => {
     mockAxiosInstance.get.mockRejectedValue(new Error('API error'));
@@ -170,17 +177,6 @@ describe('HomeContentAdmin', () => {
         screen.getByText('Failed to load practitioner data. Tap to retry.')
       ).toBeDefined();
     });
-  });
-
-  it('does NOT render Clinic Overview title', async () => {
-    mockAxiosInstance.get.mockResolvedValue({ data: { total: 5 } });
-
-    render(<HomeContentAdmin />, { wrapper });
-
-    await waitFor(() => {
-      expect(screen.getByText('5')).toBeDefined();
-    });
-    expect(screen.queryByText('Clinic Overview')).toBeNull();
   });
 
   it('does NOT render Clinic Context section', async () => {

@@ -54,8 +54,8 @@ export function useBookingForm({
 }: UseBookingFormOptions) {
   const { state: bookingState } = useBooking();
   const { mutateAsync: relayBooking } = useRelayBooking();
-  // NOSONAR — useState IS properly destructured into value + setter pair
   const [bookingForm, setBookingInformation] = useState<BookingFormState>({
+    // NOSONAR: already destructured value+setter pair; over-eager finding
     session_type: 'offline',
     problem_brief: ''
   });

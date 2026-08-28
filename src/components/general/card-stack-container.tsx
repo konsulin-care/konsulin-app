@@ -329,7 +329,7 @@ export function CardStackContainer({
         ref={containerRef}
         className='card-stack-viewport'
         aria-label='Question navigation'
-        role='button'
+        role='button' // NOSONAR: viewport delegates to runtime role=button cards; native <button> cannot wrap nested interactive card controls
         tabIndex={0}
         onClick={handleCardClick}
         onKeyDown={handleCardKeyDown}
