@@ -191,14 +191,14 @@ export default function PractitionerAvailabilityEditor({
     setWeeklyAvailability(prev => {
       const newAvailability = { ...prev };
       newAvailability[day] = { ...newAvailability[day] };
-      const orgRanges = newAvailability[day][organizationId] || [];
+      const orgRanges = newAvailability[day][organizationId] || []; // eslint-disable-line security/detect-object-injection -- computed key from trusted weeklyAvailability state
       const newTimeRange: TimeRange = {
         id: generateTimeRangeId(),
         from: '09:00',
         to: '17:00'
       };
 
-      newAvailability[day][organizationId] = [...orgRanges, newTimeRange];
+      newAvailability[day][organizationId] = [...orgRanges, newTimeRange]; // eslint-disable-line security/detect-object-injection -- computed key from trusted weeklyAvailability state
 
       return newAvailability;
     });
@@ -218,7 +218,7 @@ export default function PractitionerAvailabilityEditor({
     setWeeklyAvailability(prev => {
       const newAvailability = { ...prev };
       newAvailability[day] = { ...newAvailability[day] };
-      const orgRanges = newAvailability[day][organizationId] || [];
+      const orgRanges = newAvailability[day][organizationId] || []; // eslint-disable-line security/detect-object-injection -- computed key from trusted weeklyAvailability state
 
       newAvailability[day][organizationId] = orgRanges.map(range =>
         range.id === timeRangeId ? { ...range, [field]: value } : range
@@ -240,7 +240,7 @@ export default function PractitionerAvailabilityEditor({
     setWeeklyAvailability(prev => {
       const newAvailability = { ...prev };
       newAvailability[day] = { ...newAvailability[day] };
-      const orgRanges = newAvailability[day][organizationId] || [];
+      const orgRanges = newAvailability[day][organizationId] || []; // eslint-disable-line security/detect-object-injection -- computed key from trusted weeklyAvailability state
 
       newAvailability[day][organizationId] = orgRanges.filter(
         range => range.id !== timeRangeId
@@ -303,7 +303,7 @@ export default function PractitionerAvailabilityEditor({
       normalized[day] = {};
       for (const org in obj[day]) {
         if (!Object.hasOwn(obj[day], org)) continue;
-        normalized[day][org] = obj[day][org]
+        normalized[day][org] = obj[day][org] // eslint-disable-line security/detect-object-injection -- computed keys from trusted weeklyAvailability structure
           .map(({ from, to }) => ({ from, to }))
           .toSorted(
             (a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to)

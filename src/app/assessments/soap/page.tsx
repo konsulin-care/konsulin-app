@@ -48,7 +48,9 @@ export default function Soap() {
                 list={patientsListToday}
                 value={participantId}
                 placeholder='Select patient'
-                onSelect={value => setParticipantId(value.patientId)}
+                onSelect={value => {
+                  setParticipantId(value.patientId);
+                }}
               />
               <SoapForm
                 questionnaire={questionnaireData}

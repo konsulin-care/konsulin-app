@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, complexity, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
+/* eslint-disable max-lines, complexity */
 import AppDrawer from '@/components/ui/app-drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { useBooking } from '@/context/booking/bookingContext';
@@ -14,7 +14,7 @@ import { computeFreeSlots, useBusySlotsByPractitioner } from '@/services/slots';
 import { saveIntent } from '@/utils/redirect-intent';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { addDays, format, parseISO, startOfDay } from 'date-fns';
-import { Invoice, PractitionerRole } from 'fhir/r4';
+import { Invoice, PractitionerRole, Schedule } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ReactNode,
@@ -182,7 +182,7 @@ export default function PractitionerAvailability({
     dispatch({
       type: 'UPDATE_BOOKING_INFO',
       payload: {
-        [label]: value
+        [label]: value // eslint-disable-line security/detect-object-injection -- computed key from trusted form state
       }
     });
   };
@@ -245,7 +245,7 @@ export default function PractitionerAvailability({
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get(`/fhir/Schedule/${effectiveScheduleId}`);
-      return response.data || null;
+      return response.data as Schedule | undefined;
     },
     enabled: Boolean(effectiveScheduleId) && (isAuthenticated ?? false),
     staleTime: 5 * 60 * 1000,

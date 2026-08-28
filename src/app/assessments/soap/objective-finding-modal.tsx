@@ -33,9 +33,9 @@ export default function ObjectiveFindingModal({
   /** Toggle selection state for a test item at the given index. */
   const handleSelectedTest = (index: number) => {
     const newTest = [...selectedTest];
-    newTest[index] = !newTest[index];
+    newTest[index] = !newTest[index]; // eslint-disable-line security/detect-object-injection -- computed key from trusted testItems map
     setSelectedTest(newTest);
-    onChange(testItems.filter((_item, index) => newTest[index]));
+    onChange(testItems.filter((_item, index) => newTest[index])); // eslint-disable-line security/detect-object-injection -- computed key from trusted testItems map
   };
 
   return (
@@ -61,7 +61,11 @@ export default function ObjectiveFindingModal({
               />
             </div>
             <div className='mr-auto'>{item.name}</div>
-            <div onClick={() => handleSelectedTest(index)}>
+            <div
+              onClick={() => {
+                handleSelectedTest(index);
+              }}
+            >
               {selectedTest[index] ? (
                 <SquareCheckIcon fill='#13c2c2' color='white' />
               ) : (

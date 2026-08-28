@@ -90,7 +90,7 @@ export default function PopularAssessmentsSection({
           <CardLoader item={2} />
         ) : (
           <div className='flex w-max space-x-4 pb-4'>
-            {(popularAssessments ?? []).map(
+            {popularAssessments.map(
               (assessment: BundleEntry<Questionnaire>) => (
                 <PopularAssessmentCard
                   key={assessment.resource.id}

@@ -64,9 +64,9 @@ export default function BookingFormSection({
       <div className='mt-2 mb-4'>
         <Textarea
           value={bookingForm.problem_brief}
-          onChange={e =>
-            handleBookingInformationChange('problem_brief', e.target.value)
-          }
+          onChange={e => {
+            handleBookingInformationChange('problem_brief', e.target.value);
+          }}
           placeholder='e.g., anxiety attacks for 1 week, persistent low mood since last month, trouble sleeping with racing thoughts'
           className='w-full resize-none bg-white text-[12px] text-[#2C2F35]'
         />
@@ -89,7 +89,7 @@ export default function BookingFormSection({
                 isPaying ||
                 !scheduleId ||
                 !bookingState.startTime ||
-                !bookingForm.problem_brief?.trim()
+                !bookingForm.problem_brief.trim()
               }
             >
               {isCreateAppointmentLoading || isPaying ? (
@@ -136,7 +136,9 @@ export default function BookingFormSection({
             </Button>
           )}
           <Button
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              setIsOpen(false);
+            }}
             variant='outline'
             className={cn(
               buttonVariants({ variant: 'outline' }),

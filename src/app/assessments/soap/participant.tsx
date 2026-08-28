@@ -254,14 +254,13 @@ export default function Participant({
       className='w-full animate-spin'
     />
   ) : (
-    (options &&
-      options.length > 0 &&
+    (options.length > 0 &&
       options.find(option => option.patientId === value)?.patientName) ||
     placeholder
   );
 
   const dropdownItems =
-    options && options.length > 0 ? (
+    options.length > 0 ? (
       options.map(item => (
         <PatientOptionItem
           key={item.patientId}
