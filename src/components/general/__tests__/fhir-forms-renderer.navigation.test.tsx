@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, react/jsx-no-useless-fragment, @next/next/no-img-element, jsx-a11y/alt-text, max-lines */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within
+} from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockSearchParams } = vi.hoisted(() => ({
@@ -425,7 +431,10 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     );
 
     // Standalone: only the CTA renders — no secondary footer link.
-    expect(screen.getAllByRole('button')).toHaveLength(1);
+    // Count buttons inside the drawer so the card-stack viewport
+    // (role="button") is excluded while still catching any footer CTA.
+    const drawer = screen.getByTestId('mock-drawer-content');
+    expect(within(drawer).getAllByRole('button')).toHaveLength(1);
 
     clickCta('See Results');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
