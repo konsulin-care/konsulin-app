@@ -97,7 +97,7 @@ func routes(cfg *config.Config) (http.Handler, error) {
 	outDir := filepath.Join(wd, "out")
 
 	// Create the static file server for the Next.js export.
-	// deepsource:ignore GO-S1034 — spaFS rejects non-root directory opens, so FileServer can never list the export dir.
+	// skipcq: GO-S1034 — spaFS rejects non-root directory opens, so FileServer can never list the export dir.
 	outFS := http.FileServer(&spaFS{http.Dir(outDir)})
 
 	// Register route groups.

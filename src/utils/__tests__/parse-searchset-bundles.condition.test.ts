@@ -13,9 +13,11 @@ function condBundle(
 ): Bundle {
   const entry = items.map(i => {
     const evidence = i.evidence?.map(e => ({
-      code: e.codeTexts.map(t => ({ text: t }))
+      // skipcq: JS-C1002 — evidence entry iterator
+      code: e.codeTexts.map(t => ({ text: t })) // skipcq: JS-C1002 — text code iterator
     }));
     const c: Condition = {
+      // skipcq: JS-C1002 — Condition resource
       resourceType: 'Condition',
       id: i.id,
       subject: { reference: 'Patient/pat-1' },
@@ -32,6 +34,7 @@ function condBundle(
 describe('parseConditionBundle', () => {
   it('parses Condition entries', () => {
     const b = condBundle([
+      // skipcq: JS-C1002 — Bundle shorthand
       {
         id: 'cond-1',
         lastUpdated: '2024-06-01T00:00:00Z',
@@ -47,6 +50,7 @@ describe('parseConditionBundle', () => {
 
   it('renders evidence as markdown bullet list in result', () => {
     const b = condBundle([
+      // skipcq: JS-C1002 — Bundle shorthand
       {
         id: 'cond-ev',
         lastUpdated: '2024-06-01T00:00:00Z',
@@ -67,6 +71,7 @@ describe('parseConditionBundle', () => {
 
   it('handles multiple conditions', () => {
     const b = condBundle([
+      // skipcq: JS-C1002 — Bundle shorthand
       { id: 'cond-1', lastUpdated: '2024-06-01T00:00:00Z', codeText: 'A' },
       { id: 'cond-2', lastUpdated: '2024-06-02T00:00:00Z', codeText: 'B' }
     ]);

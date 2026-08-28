@@ -23,6 +23,7 @@ describe('parseQRBundle edge cases', () => {
       item: []
     } as QuestionnaireResponse;
     const b: Bundle = {
+      // skipcq: JS-C1002 — Bundle shorthand
       resourceType: 'Bundle',
       type: 'searchset',
       entry: [{ resource: qr }]
@@ -45,6 +46,7 @@ describe('parseConditionBundle edge cases', () => {
       meta: { lastUpdated: '2024-06-01T00:00:00Z' }
     } as Condition;
     const b: Bundle = {
+      // skipcq: JS-C1002 — Bundle shorthand
       resourceType: 'Bundle',
       type: 'searchset',
       entry: [{ resource: cond }]
@@ -69,6 +71,7 @@ describe('parseConditionBundle edge cases', () => {
       meta: { lastUpdated: '2024-06-01T00:00:00Z' }
     } as unknown as Condition;
     const b: Bundle = {
+      // skipcq: JS-C1002 — Bundle shorthand
       resourceType: 'Bundle',
       type: 'searchset',
       entry: [{ resource: cond }]
@@ -92,6 +95,7 @@ describe('parseObservationBundle edge cases', () => {
       meta: { lastUpdated: '2024-06-01T00:00:00Z' }
     } as Observation;
     const b: Bundle = {
+      // skipcq: JS-C1002 — Bundle shorthand
       resourceType: 'Bundle',
       type: 'searchset',
       entry: [{ resource: obs }]

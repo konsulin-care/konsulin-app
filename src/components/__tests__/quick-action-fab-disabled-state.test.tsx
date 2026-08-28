@@ -13,6 +13,7 @@ const queryClient = new QueryClient({
 });
 
 vi.mock('../screening-drawer', () => ({
+  // skipcq: JS-0357 — vi.hoisted defines MockScreeningDrawer before mock factories execute
   default: MockScreeningDrawer
 }));
 const mockRole = 'Patient';
