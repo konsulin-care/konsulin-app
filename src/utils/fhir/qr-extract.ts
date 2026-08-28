@@ -153,3 +153,55 @@ export function extractQuestionnaireResponse(
   }
   return extractBriefQuestionnaire(resource);
 }
+
+/**
+ * Extract the trimmed result brief string from a QuestionnaireResponse.
+ *
+ * @param qr - The QuestionnaireResponse to extract from.
+ * @returns The trimmed result brief, or empty string if not found.
+ */
+export function extractResultBrief(qr: QuestionnaireResponse): string {
+  return (
+    qr.item
+      ?.find(i => i.linkId === 'interpretation')
+      ?.item?.find(ii => ii.linkId === 'result-brief')
+      ?.answer?.[0]?.valueString?.trim() ?? ''
+  );
+}
+
+/**
+ * Update the interpretation item in a QuestionnaireResponse with a new
+ * result-brief value. Preserves existing non-result-brief sub-items.
+ *
+ * @param qr - The original QuestionnaireResponse.
+ * @param resultBrief - The new result brief value to set.
+ * @returns A new QuestionnaireResponse with the updated interpretation item.
+ */
+export function updateQRInterpretationItem(
+  qr: QuestionnaireResponse,
+  resultBrief: string
+): QuestionnaireResponse {
+  const interpretationItem = qr.item.find(
+    (i: QuestionnaireResponseItem) => i.linkId === 'interpretation'
+  );
+
+  const updatedInterpretationItem = {
+    ...interpretationItem,
+    item: [
+      ...(interpretationItem?.item ?? []).filter(
+        (i: QuestionnaireResponseItem) => i.linkId !== 'result-brief'
+      ),
+      {
+        linkId: 'result-brief',
+        answer: [{ valueString: resultBrief }]
+      }
+    ]
+  };
+
+  return {
+    ...qr,
+    item: qr.item.map((item: QuestionnaireResponseItem) =>
+      item.linkId === 'interpretation' ? updatedInterpretationItem : item
+    )
+  };
+}
