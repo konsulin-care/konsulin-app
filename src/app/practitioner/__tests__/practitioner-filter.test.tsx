@@ -24,7 +24,7 @@ vi.mock('@/components/ui/popover', () => ({
   ),
   PopoverTrigger: ({ children, asChild }: any) =>
     asChild ? (
-      (children as ReactNode)
+      children as ReactNode
     ) : (
       <div data-testid='popover-trigger'>{children}</div>
     )
