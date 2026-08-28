@@ -22,6 +22,12 @@ if ! npx tsc --noEmit; then
   exit 1
 fi
 
+# Lint the whole src tree — fail push on any warning (mirrors CI's eslint "src/" scope)
+if ! npx eslint src/ --max-warnings 0; then
+  echo "  [FAIL] ESLint reported problems in src/. Fix them and try again."
+  exit 1
+fi
+
 # Run JS/TS tests — fail push on test failure
 if ! npx vitest run; then
   echo "  [FAIL] Tests failed. Fix them and try again."
