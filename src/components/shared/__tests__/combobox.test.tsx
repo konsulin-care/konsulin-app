@@ -365,6 +365,25 @@ describe('Combobox (mobile sheet)', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('floors the sheet height so short option lists sit mid-screen', async () => {
+    render(
+      <Combobox
+        options={TWO_OPTIONS}
+        value=''
+        onSelect={vi.fn()}
+        placeholder='Select province'
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox'));
+
+    await waitFor(() => {
+      const panel = document.querySelector('[data-vaul-drawer]');
+      expect(panel).not.toBeNull();
+      expect((panel as HTMLElement).className).toContain('min-h-[40dvh]');
+    });
+  });
+
   it('suspends the host AppDrawer while the sheet is open and restores it on close', async () => {
     render(
       <AppDrawer open onClose={vi.fn()} title='Address' description='Edit'>

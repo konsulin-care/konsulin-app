@@ -334,7 +334,7 @@ export default function Combobox(props: ComboboxProps) {
           <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
         </Button>
         <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerContent>
+          <DrawerContent className='min-h-[40dvh]'>
             <OptionList
               {...listProps}
               listClassName='max-h-[55dvh] overflow-y-auto'
