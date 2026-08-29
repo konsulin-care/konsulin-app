@@ -10,6 +10,21 @@ import {
 } from '../research-copy';
 
 describe('research-copy', () => {
+  it('never uses em-dashes or en-dashes in any copy', () => {
+    const allCopy = [
+      ...MID_BATCH_MESSAGES,
+      LAST_MID_BATCH_MESSAGE,
+      MID_BATCH_FALLBACK_MESSAGE,
+      FINAL_BATCH_MESSAGE,
+      STANDALONE_MESSAGE,
+      STANDALONE_RESEARCH_MESSAGE
+    ];
+    for (const message of allCopy) {
+      expect(message.title).not.toMatch(/[—–]/);
+      expect(message.body).not.toMatch(/[—–]/);
+    }
+  });
+
   it('defines five mid-batch variations with progress placeholders', () => {
     expect(MID_BATCH_MESSAGES).toHaveLength(5);
     for (const message of MID_BATCH_MESSAGES) {

@@ -26,6 +26,7 @@ import Image from 'next/image';
 import { AssessmentThemeProvider } from '@/components/general/assessment-theme-provider';
 import { CardStackContainer } from '@/components/general/card-stack-container';
 import AppDrawer from '@/components/ui/app-drawer';
+import CircularProgress from '@/components/ui/circular-progress';
 import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import type { RendererConfig } from '@aehrc/smart-forms-renderer';
 import { getResponse, useBuildForm } from '@aehrc/smart-forms-renderer';
@@ -479,12 +480,22 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         open={isOpen}
         onClose={() => setIsOpen(false)}
         title={drawerTitleText}
-        description={drawerDescriptionText}
+        description={hasNextQuestionnaire ? undefined : drawerDescriptionText}
         ctaLabel={ctaLabel}
         onCtaClick={handlePrimaryAction}
         ctaLoading={isSubmitting || isPending}
         footerContent={footerContent}
       >
+        {hasNextQuestionnaire && batchProgress && (
+          <div className='flex flex-col items-center gap-4 px-4'>
+            <CircularProgress
+              value={batchProgress.completed / batchProgress.total}
+              size={120}
+              className='text-primary'
+            />
+            <p className='text-center text-sm opacity-50'>{drawerCopy.body}</p>
+          </div>
+        )}
         {!hasNextQuestionnaire && (
           <div className='flex flex-col items-center gap-4'>
             <Image

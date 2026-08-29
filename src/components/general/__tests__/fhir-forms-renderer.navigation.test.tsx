@@ -44,6 +44,12 @@ vi.mock('@/hooks/useCardSwipe', () => ({
     onTouchEnd: vi.fn()
   })
 }));
+vi.mock('@/components/general/runtime-config-provider', () => ({
+  useRuntimeConfig: () => ({
+    appInfo: {},
+    terminologyServer: ''
+  })
+}));
 vi.mock('@aehrc/smart-forms-renderer', () => ({
   getResponse: vi.fn(),
   RendererThemeProvider: ({ children }: any) => <>{children}</>,
@@ -291,9 +297,13 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
       />
     );
 
-    // Mid-batch: motivational copy only — no celebration image or share CTA.
+    // Mid-batch: circular progress ring with the batch percentage drives the
+    // drawer instead of a celebration image or share CTA.
     expect(screen.queryByTestId('mock-image')).toBeNull();
     expect(screen.getByText(/1 of 3/)).toBeTruthy();
+    const midBatchRing = screen.getByRole('progressbar');
+    expect(midBatchRing).toHaveAttribute('aria-valuenow', '33');
+    expect(screen.getByText('33%')).toBeInTheDocument();
 
     clickCta('Continue');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
@@ -342,6 +352,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     // Final drawer: completion title, celebration image, and share footer.
     expect(screen.getByText("You've completed this batch!")).toBeTruthy();
     expect(screen.getByTestId('mock-image')).toBeTruthy();
+    expect(screen.queryByRole('progressbar')).toBeNull();
     expect(screen.getByTestId('share-research-footer')).toBeTruthy();
     expect(screen.getByTestId('share-research-footer')).toHaveTextContent(
       'Tap to share this survey'
@@ -435,6 +446,8 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     // (role="button") is excluded while still catching any footer CTA.
     const drawer = screen.getByTestId('mock-drawer-content');
     expect(within(drawer).getAllByRole('button')).toHaveLength(1);
+    expect(screen.getByTestId('mock-image')).toBeTruthy();
+    expect(screen.queryByRole('progressbar')).toBeNull();
 
     clickCta('See Results');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());

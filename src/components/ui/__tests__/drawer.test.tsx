@@ -2,6 +2,7 @@ import {
   Drawer,
   DrawerContent,
   DrawerDescription,
+  DrawerHeader,
   DrawerTitle
 } from '@/components/ui/drawer';
 import {
@@ -12,6 +13,25 @@ import {
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState as ReactUseState } from 'react';
 import { describe, expect, it } from 'vitest';
+
+describe('DrawerHeader', () => {
+  it('centers title and description text on all screen sizes', () => {
+    render(
+      <Drawer open>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Centered Title</DrawerTitle>
+            <DrawerDescription>Centered Description</DrawerDescription>
+          </DrawerHeader>
+        </DrawerContent>
+      </Drawer>
+    );
+
+    const header = screen.getByText('Centered Title').parentElement;
+    expect(header?.className).toContain('text-center');
+    expect(header?.className).not.toContain('sm:text-left');
+  });
+});
 
 describe('DrawerContent', () => {
   it('renders children within a scrollable container capped at 85dvh', () => {
