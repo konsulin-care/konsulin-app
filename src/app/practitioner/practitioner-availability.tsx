@@ -11,6 +11,7 @@ import {
   usePayAppointment
 } from '@/services/api/appointments';
 import { computeFreeSlots, useBusySlotsByPractitioner } from '@/services/slots';
+import { getInitials } from '@/utils/name';
 import { saveIntent } from '@/utils/redirect-intent';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { addDays, format, parseISO, startOfDay } from 'date-fns';
@@ -53,6 +54,7 @@ type Props = {
     photoUrl?: string;
     initials?: string;
     backgroundColor?: string;
+    seed?: string;
   };
   // Page mode props
   variant?: 'drawer' | 'page';
@@ -130,6 +132,8 @@ export default function PractitionerAvailability({
     isDetailLoading,
     practitionerId,
     practitionerGivenName,
+    practitionerDisplayName,
+    practitionerPhotoUrl,
     healthcareServiceNames,
     effectiveRole,
     effectiveAvailableTime,
@@ -143,6 +147,24 @@ export default function PractitionerAvailability({
   );
 
   const [pageDate, setPageDate] = useState<Date>(startOfDay(new Date()));
+
+  // Practitioner identity for the payment drawers: the internally fetched
+  // (page mode) or passed (drawer mode) identity wins over bare props.
+  const effectivePractitionerName = practitionerDisplayName ?? practitionerName;
+
+  const effectivePractitionerAvatar: {
+    photoUrl?: string;
+    initials?: string;
+    backgroundColor?: string;
+    seed?: string;
+  } = {
+    photoUrl: practitionerPhotoUrl ?? practitionerAvatar?.photoUrl,
+    seed: effectivePractitionerName ?? practitionerAvatar?.seed,
+    initials: effectivePractitionerName
+      ? getInitials(effectivePractitionerName)
+      : practitionerAvatar?.initials,
+    backgroundColor: practitionerAvatar?.backgroundColor
+  };
 
   const {
     bookingForm,
@@ -521,9 +543,9 @@ export default function PractitionerAvailability({
           paymentOpen={paymentOpen}
           setPaymentOpen={setPaymentOpen}
           setPaymentPendingOpen={setPaymentPendingOpen}
-          practitionerAvatar={practitionerAvatar}
+          practitionerAvatar={effectivePractitionerAvatar}
           practitionerOrganizationName={practitionerOrganizationName}
-          practitionerName={practitionerName}
+          practitionerName={effectivePractitionerName}
           healthcareServiceName={
             propHealthcareServiceName ??
             healthcareServiceNames[0] ??
@@ -546,9 +568,9 @@ export default function PractitionerAvailability({
         <PaymentPendingDrawer
           pendingOpen={paymentPendingOpen}
           setPendingOpen={setPaymentPendingOpen}
-          practitionerAvatar={practitionerAvatar}
+          practitionerAvatar={effectivePractitionerAvatar}
           practitionerOrganizationName={practitionerOrganizationName}
-          practitionerName={practitionerName}
+          practitionerName={effectivePractitionerName}
           healthcareServiceName={
             propHealthcareServiceName ??
             healthcareServiceNames[0] ??
@@ -591,9 +613,9 @@ export default function PractitionerAvailability({
         paymentOpen={paymentOpen}
         setPaymentOpen={setPaymentOpen}
         setPaymentPendingOpen={setPaymentPendingOpen}
-        practitionerAvatar={practitionerAvatar}
+        practitionerAvatar={effectivePractitionerAvatar}
         practitionerOrganizationName={practitionerOrganizationName}
-        practitionerName={practitionerName}
+        practitionerName={effectivePractitionerName}
         healthcareServiceName={healthcareServiceNames[0] ?? 'Consultation'}
         bookingState={bookingState}
         invoice={invoice}
@@ -613,9 +635,9 @@ export default function PractitionerAvailability({
       <PaymentPendingDrawer
         pendingOpen={paymentPendingOpen}
         setPendingOpen={setPaymentPendingOpen}
-        practitionerAvatar={practitionerAvatar}
+        practitionerAvatar={effectivePractitionerAvatar}
         practitionerOrganizationName={practitionerOrganizationName}
-        practitionerName={practitionerName}
+        practitionerName={effectivePractitionerName}
         healthcareServiceName={healthcareServiceNames[0] ?? 'Consultation'}
         bookingState={bookingState}
         invoice={invoice}

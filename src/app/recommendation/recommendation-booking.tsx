@@ -4,6 +4,7 @@ import PractitionerAvailability from '@/app/practitioner/practitioner-availabili
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { getAPI } from '@/services/api';
 import type { Recommendation } from '@/types/recommendation';
+import { getInitials } from '@/utils/name';
 import { useQuery } from '@tanstack/react-query';
 import type { Bundle, Organization, PractitionerRole } from 'fhir/r4';
 import { ReactNode } from 'react';
@@ -78,6 +79,11 @@ export default function RecommendationBooking({
       practitionerRole={data.role}
       scheduleId={recommendation.scheduleId}
       practitionerName={recommendation.practitionerName}
+      practitionerAvatar={{
+        photoUrl: recommendation.practitionerPhoto,
+        seed: recommendation.practitionerName,
+        initials: getInitials(recommendation.practitionerName)
+      }}
       practitionerOrganizationName={data.orgName ?? ''}
       healthcareServiceId={recommendation.healthcareServiceId}
       healthcareServiceName={recommendation.healthcareServiceName}

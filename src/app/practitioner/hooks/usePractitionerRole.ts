@@ -1,4 +1,8 @@
 import { useDetailPractitioner } from '@/services/clinic-practitioners';
+import {
+  getPhotoUrl,
+  getPractitionerName
+} from '@/utils/fhir/practitioner-format';
 import type { PractitionerRole } from 'fhir/r4';
 import { useMemo } from 'react';
 
@@ -7,6 +11,10 @@ export interface PractitionerRoleResult {
   isDetailLoading: boolean;
   practitionerId: string;
   practitionerGivenName: string | undefined;
+  /** Full practitioner display name (page mode only). */
+  practitionerDisplayName: string | undefined;
+  /** Practitioner photo URL (page mode only). */
+  practitionerPhotoUrl: string | undefined;
   healthcareServiceNames: string[];
   effectiveRole: PractitionerRole | undefined;
   effectiveAvailableTime: PractitionerRole['availableTime'];
@@ -45,6 +53,18 @@ export function usePractitionerRole(
     ? detail?.practitioner?.name?.[0]?.given?.[0]
     : undefined;
 
+  const practitionerDisplayName = ((): string | undefined => {
+    if (!isPageMode || !detail?.practitioner) return undefined;
+    const name = getPractitionerName(detail.practitioner);
+    // getPractitionerName falls back to '-' — treat it as absent.
+    return name === '-' ? undefined : name;
+  })();
+
+  const practitionerPhotoUrl = ((): string | undefined => {
+    if (!isPageMode || !detail?.practitioner) return undefined;
+    return getPhotoUrl(detail.practitioner);
+  })();
+
   const healthcareServiceNames = useMemo(() => {
     if (isPageMode) {
       return detail?.healthcareServices?.map(s => s.name).filter(Boolean) ?? [];
@@ -78,6 +98,8 @@ export function usePractitionerRole(
     isDetailLoading,
     practitionerId,
     practitionerGivenName,
+    practitionerDisplayName,
+    practitionerPhotoUrl,
     healthcareServiceNames,
     effectiveRole,
     effectiveAvailableTime,

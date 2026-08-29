@@ -11,6 +11,7 @@ type Props = {
     photoUrl?: string;
     initials?: string;
     backgroundColor?: string;
+    seed?: string;
   };
   practitionerOrganizationName?: string;
   practitionerName?: string;

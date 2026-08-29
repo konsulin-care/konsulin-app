@@ -8,6 +8,7 @@ type AppointmentSummaryProps = {
     photoUrl?: string;
     initials?: string;
     backgroundColor?: string;
+    seed?: string;
   };
   practitionerOrganizationName?: string;
   practitionerName?: string;
