@@ -263,9 +263,9 @@ describe('AddressEditDrawer', () => {
     await waitFor(() => {
       expect(screen.getByTestId('line-0')).toHaveValue('Jl. Merdeka 12');
     });
-    expect(screen.getByTestId('province-select')).toBeDefined();
-    expect(screen.getByTestId('city-select')).toBeDefined();
-    expect(screen.getByTestId('district-select')).toBeDefined();
+    // LocationCombobox uses role='combobox'
+    const comboboxes = screen.getAllByRole('combobox');
+    expect(comboboxes).toHaveLength(3);
     expect(screen.getByTestId('postal-input')).toHaveValue('12120');
   });
 
@@ -305,5 +305,57 @@ describe('AddressEditDrawer', () => {
         country: 'ID'
       }
     ]);
+  });
+
+  it('uses LocationCombobox components for province, city, and district selection', async () => {
+    render(
+      <AddressEditDrawer
+        open
+        onClose={onClose}
+        fhirId='pat-1'
+        resourceType='Patient'
+        line={['Jl. Merdeka 12']}
+        district='Kebayoran Baru'
+        city='Jakarta Selatan'
+        province='DKI Jakarta'
+        postalCode='12120'
+      />
+    );
+
+    await waitFor(() => {
+      // Should have combobox role elements (LocationCombobox uses role='combobox')
+      const comboboxes = screen.getAllByRole('combobox');
+      expect(comboboxes.length).toBeGreaterThanOrEqual(3);
+    });
+
+    // Province combobox should show the selected province name
+    expect(screen.getByText('DKI Jakarta')).toBeInTheDocument();
+    expect(screen.getByText('Jakarta Selatan')).toBeInTheDocument();
+    expect(screen.getByText('Kebayoran Baru')).toBeInTheDocument();
+
+    // Native select elements should NOT exist
+    expect(screen.queryByTestId('province-select')).toBeNull();
+    expect(screen.queryByTestId('city-select')).toBeNull();
+    expect(screen.queryByTestId('district-select')).toBeNull();
+  });
+
+  it('hides city and district comboboxes when province is not selected', () => {
+    render(
+      <AddressEditDrawer
+        open
+        onClose={onClose}
+        fhirId='pat-1'
+        resourceType='Patient'
+        line={[]}
+        district=''
+        city=''
+        province=''
+        postalCode=''
+      />
+    );
+
+    // Only province combobox should be visible (city and district are hidden)
+    const comboboxes = screen.getAllByRole('combobox');
+    expect(comboboxes).toHaveLength(1);
   });
 });

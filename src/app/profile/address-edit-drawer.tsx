@@ -1,5 +1,6 @@
 'use client';
 
+import LocationCombobox from '@/components/shared/location-combobox';
 import AppDrawer from '@/components/ui/app-drawer';
 import {
   useGetCities,
@@ -9,13 +10,7 @@ import {
 import type { IWilayahResponse } from '@/types/wilayah';
 import type { FhirResourceType } from '@/utils/role-fhir';
 import { Plus, Trash2 } from 'lucide-react';
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ChangeEvent,
-  type ReactNode
-} from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useProfileSectionSave } from './hooks/useProfileSectionSave';
 import { mergeAddress } from './section-merge';
 
@@ -52,34 +47,6 @@ function Field({
       <p className='text-xs font-semibold text-[#2C2F35]'>{label}</p>
       {children}
     </div>
-  );
-}
-
-/** Labeled select control with shared styling. */
-function SelectField({
-  label,
-  value,
-  onChange,
-  testId,
-  children
-}: Readonly<{
-  label: string;
-  value: string;
-  onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
-  testId: string;
-  children: ReactNode;
-}>) {
-  return (
-    <Field label={label}>
-      <select
-        value={value}
-        onChange={onChange}
-        data-testid={testId}
-        className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
-      >
-        {children}
-      </select>
-    </Field>
   );
 }
 
@@ -155,6 +122,7 @@ export default function AddressEditDrawer({
   const [lines, setLines] = useState<LineRow[]>([{ id: 0, value: '' }]);
   const nextLineId = useRef(1);
   const [districtValue, setDistrictValue] = useState('');
+  const [districtCode, setDistrictCode] = useState('');
   const [cityValue, setCityValue] = useState('');
   const [provinceValue, setProvinceValue] = useState('');
   const [postalValue, setPostalValue] = useState('');
@@ -172,6 +140,7 @@ export default function AddressEditDrawer({
       setLines(initial.map((value, index) => ({ id: index, value })));
       nextLineId.current = initial.length;
       setDistrictValue(district);
+      setDistrictCode('');
       setCityValue(city);
       setProvinceValue(province);
       setPostalValue(postalCode);
@@ -193,6 +162,13 @@ export default function AddressEditDrawer({
     const matched = listCities.find(c => c.name === cityValue);
     if (matched) setCityCode(matched.code);
   }, [open, cityCode, listCities, cityValue]);
+
+  /** Match the stored district name to its code once the list loads. */
+  useEffect(() => {
+    if (!open || districtCode || !listDistricts?.length) return;
+    const matched = listDistricts.find(d => d.name === districtValue);
+    if (matched) setDistrictCode(matched.code);
+  }, [open, districtCode, listDistricts, districtValue]);
 
   /** Update one address line. */
   const handleLineChange = (id: number, value: string) => {
@@ -225,6 +201,7 @@ export default function AddressEditDrawer({
     setCityCode(value.code);
     setCityValue(value.name);
     setDistrictValue('');
+    setDistrictCode('');
   };
 
   /** Save the address into the resource. */
@@ -264,68 +241,33 @@ export default function AddressEditDrawer({
           onRemoveLine={handleRemoveLine}
         />
 
-        <SelectField
-          label='Province'
-          value={provinceValue}
-          testId='province-select'
-          onChange={event => {
-            const selected = listProvinces?.find(
-              p => p.name === event.target.value
-            );
-            if (selected) handleProvinceSelect(selected);
-          }}
-        >
-          <option value='' disabled>
-            Select province
-          </option>
-          {(listProvinces ?? []).map(option => (
-            <option key={option.code} value={option.name}>
-              {option.name}
-            </option>
-          ))}
-        </SelectField>
+        <LocationCombobox
+          options={listProvinces ?? []}
+          value={provinceCode}
+          onSelect={handleProvinceSelect}
+          placeholder='Select province'
+        />
 
-        <SelectField
-          label='City'
-          value={cityValue}
-          testId='city-select'
-          onChange={event => {
-            const selected = listCities?.find(
-              c => c.name === event.target.value
-            );
-            if (selected) handleCitySelect(selected);
-          }}
-        >
-          <option value='' disabled>
-            Select city
-          </option>
-          {(listCities ?? []).map(option => (
-            <option key={option.code} value={option.name}>
-              {option.name}
-            </option>
-          ))}
-        </SelectField>
+        {provinceCode && (
+          <LocationCombobox
+            options={listCities ?? []}
+            value={cityCode}
+            onSelect={handleCitySelect}
+            placeholder='Select city'
+          />
+        )}
 
-        <SelectField
-          label='District'
-          value={districtValue}
-          testId='district-select'
-          onChange={event => {
-            const selected = listDistricts?.find(
-              d => d.name === event.target.value
-            );
-            if (selected) setDistrictValue(selected.name);
-          }}
-        >
-          <option value='' disabled>
-            Select district
-          </option>
-          {(listDistricts ?? []).map(option => (
-            <option key={option.code} value={option.name}>
-              {option.name}
-            </option>
-          ))}
-        </SelectField>
+        {cityCode && (
+          <LocationCombobox
+            options={listDistricts ?? []}
+            value={districtCode}
+            onSelect={(option: { code: string; name: string }) => {
+              setDistrictCode(option.code);
+              setDistrictValue(option.name);
+            }}
+            placeholder='Select district'
+          />
+        )}
 
         <Field label='Postal Code'>
           <input
