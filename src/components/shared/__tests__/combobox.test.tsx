@@ -365,7 +365,7 @@ describe('Combobox (mobile sheet)', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('does not close a parent AppDrawer when the sheet opens', async () => {
+  it('suspends the host AppDrawer while the sheet is open and restores it on close', async () => {
     render(
       <AppDrawer open onClose={vi.fn()} title='Address' description='Edit'>
         <Combobox
@@ -378,13 +378,44 @@ describe('Combobox (mobile sheet)', () => {
     );
 
     expect(screen.getByText('Address')).toBeInTheDocument();
+    expect(document.querySelector('[data-suspended="true"]')).toBeNull();
+
     fireEvent.click(screen.getByRole('combobox'));
 
     await waitFor(() => {
       expect(
         screen.getByTestId('combobox-sheet-input-header')
       ).toBeInTheDocument();
+      // The host panel is hidden but its children stay mounted.
+      expect(document.querySelector('[data-suspended="true"]')).not.toBeNull();
       expect(screen.getByText('Address')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('DKI Jakarta'));
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-suspended="true"]')).toBeNull();
+      expect(screen.getByText('Address')).toBeInTheDocument();
+    });
+  });
+
+  it('suspends nothing when the sheet has no host AppDrawer', async () => {
+    render(
+      <Combobox
+        options={PROVINCES}
+        value=''
+        onSelect={vi.fn()}
+        placeholder='Select province'
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox'));
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('combobox-sheet-input-header')
+      ).toBeInTheDocument();
+      expect(document.querySelector('[data-suspended]')).toBeNull();
     });
   });
 });

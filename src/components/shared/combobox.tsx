@@ -1,5 +1,6 @@
 'use client';
 
+import { useAppDrawerHost } from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -19,7 +20,13 @@ import {
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import { Check, ChevronDown, Loader2 } from 'lucide-react';
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode
+} from 'react';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -223,7 +230,9 @@ function OptionList({
  * Desktop (`min-width: 640px`): shadcn Popover + cmdk, unchanged styling.
  * Mobile: a bare vaul `Drawer` sheet with the search input pinned at the top —
  * deliberately NOT `AppDrawer`, so the one-open-at-a-time drawer registry is
- * never triggered and a parent drawer (profile/clinic/record) stays open.
+ * never triggered. While the sheet is open the host AppDrawer is suspended
+ * (visually hidden, children stay mounted) via the drawer host context, and
+ * restored on close.
  *
  * Single-select closes on pick in both modes; multi-select stays open.
  */
@@ -231,6 +240,16 @@ export default function Combobox(props: ComboboxProps) {
   const { multiple = false, options = [], placeholder, loading } = props;
   const [open, setOpen] = useState(false);
   const isMobile = useMediaQuery(MOBILE_QUERY);
+  const host = useAppDrawerHost();
+
+  // Suspend the host AppDrawer while a mobile sheet is open above it. Every
+  // close path (pick, drag, Escape, backdrop) funnels through `setOpen`, so
+  // one effect covers them all. Outside an AppDrawer the host is a no-op.
+  useEffect(() => {
+    if (!isMobile) return;
+    if (open) host.suspend();
+    else host.resume();
+  }, [isMobile, open, host]);
   const listMaxHeight =
     (props.maxVisibleOptions ?? DEFAULT_VISIBLE_ROWS) * ROW_HEIGHT_PX;
 
