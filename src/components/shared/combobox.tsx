@@ -47,6 +47,11 @@ type BaseProps = {
   readonly emptyMessage?: string;
   /** Subset shown while the search input is empty (quick picks). */
   readonly quickOptions?: readonly ComboboxOption[];
+  /**
+   * Override the cmdk filter value per option; defaults to `searchText ?? name`.
+   * Lets callers keep code-based filtering (e.g. practitioner locations).
+   */
+  readonly itemFilterValue?: (option: ComboboxOption) => string;
   /** testid passthrough for the floating content. */
   readonly contentTestId?: string;
   /** ARIA role of the trigger: combobox (default) or plain button. */
@@ -96,6 +101,7 @@ function OptionList({
   listStyle,
   listClassName,
   inputHeaderTestId,
+  itemFilterValue,
   onSelect,
   onPick
 }: Readonly<{
@@ -108,6 +114,7 @@ function OptionList({
   listStyle?: CSSProperties;
   listClassName?: string;
   inputHeaderTestId?: string;
+  itemFilterValue: (option: ComboboxOption) => string;
   onSelect: (option: ComboboxOption) => void;
   onPick: () => void;
 }>) {
@@ -118,10 +125,10 @@ function OptionList({
   const optionByFilterValue = useMemo(() => {
     const byValue = new Map<string, ComboboxOption>();
     for (const option of options) {
-      byValue.set(option.searchText ?? option.name, option);
+      byValue.set(itemFilterValue(option), option);
     }
     return byValue;
-  }, [options]);
+  }, [itemFilterValue, options]);
 
   /** cmdk filter: quick picks while empty, name/synonym match while typing. */
   const filter = (itemValue: string, search: string): number => {
@@ -170,7 +177,7 @@ function OptionList({
             {groupOptions.map(option => (
               <CommandItem
                 key={option.code}
-                value={option.searchText ?? option.name}
+                value={itemFilterValue(option)}
                 onSelect={() => {
                   onSelect(option);
                   onPick();
@@ -256,6 +263,9 @@ export default function Combobox(props: ComboboxProps) {
     multiple,
     options,
     quickOptions: props.quickOptions,
+    itemFilterValue:
+      props.itemFilterValue ??
+      ((option: ComboboxOption) => option.searchText ?? option.name),
     value: multiple ? multiValue : singleValue,
     placeholder: props.searchPlaceholder ?? placeholder,
     emptyMessage: props.emptyMessage ?? 'No results found.',

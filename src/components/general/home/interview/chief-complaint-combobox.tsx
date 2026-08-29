@@ -1,24 +1,9 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from '@/components/ui/popover';
+import Combobox, { type ComboboxOption } from '@/components/shared/combobox';
 import { QUICK_COMPLAINT_IDS } from '@/constants/recommendation-decision-tree';
-import { cn } from '@/lib/utils';
 import type { ChiefComplaint } from '@/types/recommendation-interview';
-import { Check, ChevronDown } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 const COMBOBOX_PLACEHOLDER = 'Select or search concern';
 
@@ -31,126 +16,51 @@ interface ChiefComplaintComboboxProps {
   onSelect: (complaint: ChiefComplaint) => void;
 }
 
+/** Map a complaint to a generic option; synonyms join the search text. */
+const toComboboxOption = (complaint: ChiefComplaint): ComboboxOption => ({
+  code: complaint.id,
+  name: complaint.label,
+  searchText: [complaint.label, ...complaint.synonyms].join(' ')
+});
+
 /**
  * Searchable combobox for chief-complaint selection.
  *
- * Filters against both label and synonyms (English + Indonesian).
- * Follows the LocationCombobox / cmdk pattern used app-wide.
+ * Wraps the generic responsive combobox: complaints map to `{code, name,
+ * searchText}` options (synonyms keep EN/ID search working) and the quick
+ * picks appear while the search input is empty. The trigger keeps a plain
+ * button role to preserve the existing accessible tree.
  */
 export function ChiefComplaintCombobox({
   options,
   value,
   onSelect
 }: Readonly<ChiefComplaintComboboxProps>) {
-  const [open, setOpen] = useState(false);
-
-  const handleSelect = useCallback(
-    (complaint: ChiefComplaint) => {
-      onSelect(complaint);
-      setOpen(false);
-    },
-    [onSelect]
+  const comboboxOptions = useMemo(
+    () => options.map(complaint => toComboboxOption(complaint)),
+    [options]
   );
-
-  return (
-    <div className='flex flex-col gap-3'>
-      <ComplaintPopover
-        open={open}
-        onOpenChange={setOpen}
-        options={options}
-        value={value}
-        onSelect={handleSelect}
-      />
-    </div>
-  );
-}
-
-/** Popover containing the command list for complaint search. */
-function ComplaintPopover({
-  open,
-  onOpenChange,
-  options,
-  value,
-  onSelect
-}: Readonly<{
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  options: readonly ChiefComplaint[];
-  value: ChiefComplaint | null;
-  onSelect: (complaint: ChiefComplaint) => void;
-}>) {
-  const [searchValue, setSearchValue] = useState('');
-
   const quickOptions = useMemo(() => {
-    const map = new Map(options.map(c => [c.id, c]));
-    return QUICK_COMPLAINT_IDS.map(id => map.get(id)).filter(
-      (c): c is ChiefComplaint => c !== undefined
+    const byId = new Map(comboboxOptions.map(option => [option.code, option]));
+    return QUICK_COMPLAINT_IDS.map(id => byId.get(id)).filter(
+      (option): option is ComboboxOption => option !== undefined
     );
-  }, [options]);
-
-  const displayedOptions = searchValue.trim() ? options : quickOptions;
-
-  const handleOpenChange = useCallback(
-    (nextOpen: boolean) => {
-      onOpenChange(nextOpen);
-      if (!nextOpen) {
-        setSearchValue('');
-      }
-    },
-    [onOpenChange]
-  );
+  }, [comboboxOptions]);
 
   return (
-    // skipcq: JS-0415 — nesting inherent to component structure
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <Button
-          type='button'
-          variant='outline'
-          className='h-[56px] w-full justify-between bg-white px-3 text-sm font-normal'
-        >
-          <span className={cn(!value && 'text-muted-foreground', 'truncate')}>
-            {value?.label ?? COMBOBOX_PLACEHOLDER}
-          </span>
-          <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className='w-[var(--radix-popover-trigger-width)] overflow-hidden p-0'>
-        <Command
-          filter={(cmdValue, search) =>
-            cmdValue.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
-          }
-        >
-          <CommandInput
-            value={searchValue}
-            onValueChange={setSearchValue}
-            placeholder='Search your concern (Indonesian or English)'
-          />
-          <CommandList>
-            <CommandEmpty>No matching concern found.</CommandEmpty>
-            <CommandGroup>
-              {displayedOptions.map(complaint => (
-                <CommandItem
-                  key={complaint.id}
-                  value={`${complaint.label} ${complaint.synonyms.join(' ')}`}
-                  onSelect={() => {
-                    onSelect(complaint);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      value?.id === complaint.id ? 'opacity-100' : 'opacity-0'
-                    )}
-                  />
-                  {complaint.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <Combobox
+      options={comboboxOptions}
+      quickOptions={quickOptions}
+      value={value?.id ?? ''}
+      onSelect={(option: ComboboxOption) => {
+        const complaint = options.find(item => item.id === option.code);
+        if (complaint) onSelect(complaint);
+      }}
+      placeholder={COMBOBOX_PLACEHOLDER}
+      searchPlaceholder='Search your concern (Indonesian or English)'
+      emptyMessage='No matching concern found.'
+      triggerRole='button'
+    />
   );
 }
 

@@ -1,4 +1,4 @@
-import { EndpointCombobox } from '@/components/admin/endpoint-combobox';
+import { EndpointUrlInput } from '@/components/admin/endpoint-url-input';
 import { getEndpointOptionsGrouped } from '@/lib/admin/endpoints';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -8,7 +8,7 @@ const groupedEndpoints = getEndpointOptionsGrouped('GET');
 function setup() {
   const onSelect = vi.fn();
   render(
-    <EndpointCombobox
+    <EndpointUrlInput
       value='/fhir/Organization'
       onSelect={onSelect}
       groupedEndpoints={groupedEndpoints}
@@ -17,7 +17,7 @@ function setup() {
   return { onSelect };
 }
 
-describe('EndpointCombobox', () => {
+describe('EndpointUrlInput', () => {
   it('commits free-form value on Enter when no suggestion is highlighted', () => {
     const { onSelect } = setup();
     const input = screen.getByRole('textbox', { name: 'Endpoint' });

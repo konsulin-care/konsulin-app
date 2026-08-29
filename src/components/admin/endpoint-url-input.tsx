@@ -3,8 +3,14 @@
 import type { AdminEndpoint } from '@/lib/admin/endpoints';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-/** Endpoint input with autocomplete suggestions grouped by resource type. */
-export function EndpointCombobox({
+/**
+ * Endpoint URL input with autocomplete suggestions grouped by resource type.
+ *
+ * Editable autocomplete: the user can type and commit a free-form value that
+ * is not in the suggestion list. Intentionally NOT part of the combobox picker
+ * family (`@/components/shared/combobox`) — keep it separate.
+ */
+export function EndpointUrlInput({
   value,
   onSelect,
   groupedEndpoints
