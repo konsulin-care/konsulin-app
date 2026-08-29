@@ -1,11 +1,9 @@
-import { PractitionerInfo } from '@/components/practitioner/practitioner-info';
 import AppDrawer from '@/components/ui/app-drawer';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
-import { formatCurrencyValue } from '@/utils/fhir/fee';
 import type { QueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { Invoice, PractitionerRole } from 'fhir/r4';
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import AppointmentSummary from './appointment-summary';
 
 type PayAppointmentPayload = {
   readonly patientId: string;
@@ -57,37 +55,6 @@ type Props = {
   ) => void;
   setIsOpen: (open: boolean) => void;
 };
-
-type ServiceDetailsProps = {
-  dateFormatted: string;
-  timeFormatted: string;
-  locationName?: string;
-};
-
-function ServiceDetails({
-  dateFormatted,
-  timeFormatted,
-  locationName
-}: Readonly<ServiceDetailsProps>) {
-  return (
-    <div className='flex flex-col gap-2 rounded-[14px] border border-[#E3E3E3] p-3'>
-      <div className='flex items-center gap-2'>
-        <Calendar size={14} className='text-[#666]' />
-        <span className='text-[12px] text-[#2C2F35]'>{dateFormatted}</span>
-      </div>
-      <div className='flex items-center gap-2'>
-        <Clock size={14} className='text-[#666]' />
-        <span className='text-[12px] text-[#2C2F35]'>{timeFormatted}</span>
-      </div>
-      {locationName && (
-        <div className='flex items-center gap-2'>
-          <MapPin size={14} className='text-[#666]' />
-          <span className='text-[12px] text-[#2C2F35]'>{locationName}</span>
-        </div>
-      )}
-    </div>
-  );
-}
 
 /** Payment drawer with invoice summary and a single Pay Now CTA. */
 export default function PaymentDrawer({
@@ -153,10 +120,6 @@ export default function PaymentDrawer({
     }
   };
 
-  const serviceNames = healthcareServiceName ?? 'Consultation';
-  const formattedPrice = invoice?.totalNet
-    ? formatCurrencyValue(invoice.totalNet.value, invoice.totalNet.currency)
-    : '-';
   const dateFormatted = bookingState?.date
     ? format(bookingState.date, 'dd MMMM yyyy')
     : '-/-/-';
@@ -173,28 +136,15 @@ export default function PaymentDrawer({
       ctaDisabled={isPaymentDisabled}
       ctaLoading={isPaying}
     >
-      <div className='flex flex-col gap-4'>
-        <PractitionerInfo
-          practitionerAvatar={practitionerAvatar}
-          practitionerOrganizationName={practitionerOrganizationName}
-          practitionerName={practitionerName}
-        />
-
-        <div className='text-center text-[14px] font-medium text-[#2C2F35]'>
-          {serviceNames}
-        </div>
-
-        <ServiceDetails
-          dateFormatted={dateFormatted}
-          timeFormatted={timeFormatted}
-          locationName={practitionerOrganizationName}
-        />
-
-        <div className='mt-2 flex items-center justify-between rounded-[12px] bg-[#F9F9F9] p-3'>
-          <span className='text-[12px] text-[#666]'>Total</span>
-          <span className='text-[16px] font-bold'>{formattedPrice}</span>
-        </div>
-      </div>
+      <AppointmentSummary
+        practitionerAvatar={practitionerAvatar}
+        practitionerOrganizationName={practitionerOrganizationName}
+        practitionerName={practitionerName}
+        healthcareServiceName={healthcareServiceName}
+        dateFormatted={dateFormatted}
+        timeFormatted={timeFormatted}
+        invoice={invoice}
+      />
     </AppDrawer>
   );
 }
