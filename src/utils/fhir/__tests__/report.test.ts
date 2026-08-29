@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   bucketResponsesByBatch,
   computeParticipationStats,
+  deduplicateBuckets,
   trendForQuestionnaire
 } from '../report';
 import type { ResearchBatch, StudyProgress } from '../research';
@@ -89,6 +90,92 @@ describe('bucketResponsesByBatch', () => {
       BATCHES
     );
     expect(buckets.get('b1')).toHaveLength(2);
+  });
+});
+
+describe('deduplicateBuckets', () => {
+  it('keeps the most recent response per questionnaire within a batch', () => {
+    const buckets = new Map([
+      [
+        'b1',
+        [
+          resp('old', 'phq2', '2026-08-10T10:00:00Z'),
+          resp('new', 'phq2', '2026-08-20T10:00:00Z')
+        ]
+      ]
+    ]);
+    const deduped = deduplicateBuckets(buckets);
+    const b1 = deduped.get('b1');
+    expect(b1).toHaveLength(1);
+    expect(b1?.[0]?.id).toBe('new');
+  });
+
+  it('keeps different questionnaires in the same batch', () => {
+    const buckets = new Map([
+      [
+        'b1',
+        [
+          resp('r1', 'phq2', '2026-08-10T10:00:00Z'),
+          resp('r2', 'ocean', '2026-08-12T10:00:00Z')
+        ]
+      ]
+    ]);
+    const deduped = deduplicateBuckets(buckets);
+    expect(deduped.get('b1')).toHaveLength(2);
+  });
+
+  it('treats missing authored as oldest', () => {
+    const buckets = new Map([
+      [
+        'b1',
+        [resp('no-date', 'phq2'), resp('dated', 'phq2', '2026-08-20T10:00:00Z')]
+      ]
+    ]);
+    const deduped = deduplicateBuckets(buckets);
+    expect(deduped.get('b1')?.[0]?.id).toBe('dated');
+  });
+
+  it('preserves empty buckets', () => {
+    const buckets = new Map([['b1', []]]);
+    const deduped = deduplicateBuckets(buckets);
+    expect(deduped.get('b1')).toHaveLength(0);
+  });
+
+  it('prevents duplicate trend rows when combined with trendForQuestionnaire', () => {
+    const batches: ResearchBatch[] = [
+      {
+        id: 'b1',
+        start: '2026-08-01',
+        end: '2026-08-31',
+        questionnaireIds: ['phq2']
+      },
+      {
+        id: 'b2',
+        start: '2026-09-01',
+        end: '2026-09-30',
+        questionnaireIds: ['phq2']
+      }
+    ];
+    // Two phq2 responses in b2, one in b1
+    const buckets = bucketResponsesByBatch(
+      [
+        resp('r1', 'phq2', '2026-08-15T10:00:00Z'),
+        resp('r2', 'phq2', '2026-09-10T10:00:00Z'),
+        resp('r3', 'phq2', '2026-09-20T10:00:00Z')
+      ],
+      batches
+    );
+    // Without dedup: 3 rows (b1:1, b2:2) => trend with duplicate labels
+    expect(buckets.get('b2')).toHaveLength(2);
+    const deduped = deduplicateBuckets(buckets);
+    expect(deduped.get('b2')).toHaveLength(1);
+    // Trend should now have exactly 2 rows from distinct batches
+    const trend = trendForQuestionnaire('phq2', deduped, batches);
+    expect(trend.kind).toBe('trend');
+    if (trend.kind !== 'trend') return;
+    expect(trend.rows).toHaveLength(2);
+    const labels = trend.rows.map(row => row.batchId);
+    expect(new Set(labels).size).toBe(2);
   });
 });
 

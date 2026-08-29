@@ -60,6 +60,32 @@ export function bucketResponsesByBatch<T extends ReportResponse>(
   return buckets;
 }
 
+/**
+ * Deduplicates responses within each batch, keeping only the most recent
+ * response per questionnaire ID (by authored date).
+ *
+ * @param buckets - Responses already bucketed per batch.
+ * @returns New map with at most one response per (batch, questionnaire).
+ */
+export function deduplicateBuckets<T extends ReportResponse>(
+  buckets: ReadonlyMap<string, readonly T[]>
+): Map<string, T[]> {
+  const deduped = new Map<string, T[]>();
+  for (const [batchId, responses] of buckets) {
+    const byQuestionnaire = new Map<string, T>();
+    for (const response of responses) {
+      const qId = extractQuestionnaireId(response.questionnaire);
+      if (!qId) continue;
+      const existing = byQuestionnaire.get(qId);
+      if (!existing || (response.authored ?? '') > (existing.authored ?? '')) {
+        byQuestionnaire.set(qId, response);
+      }
+    }
+    deduped.set(batchId, [...byQuestionnaire.values()]);
+  }
+  return deduped;
+}
+
 /** One time row of a questionnaire trend: a single response on a batch. */
 export interface TrendRow {
   batchId: string;
