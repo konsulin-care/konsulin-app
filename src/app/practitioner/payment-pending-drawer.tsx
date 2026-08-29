@@ -1,7 +1,8 @@
-import { PractitionerInfo } from '@/components/practitioner/practitioner-info';
 import AppDrawer from '@/components/ui/app-drawer';
 import { format } from 'date-fns';
+import type { Invoice } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
+import AppointmentSummary from './appointment-summary';
 
 type Props = {
   pendingOpen: boolean;
@@ -16,6 +17,8 @@ type Props = {
   /** Name of the healthcare service being booked. */
   healthcareServiceName?: string;
   bookingState: { date?: Date | null; startTime?: string | null };
+  /** Invoice — shows the Total row when totalNet exists. */
+  invoice?: Invoice;
 };
 
 /**
@@ -29,7 +32,8 @@ export default function PaymentPendingDrawer({
   practitionerOrganizationName,
   practitionerName,
   healthcareServiceName,
-  bookingState
+  bookingState,
+  invoice
 }: Readonly<Props>) {
   const router = useRouter();
 
@@ -39,7 +43,6 @@ export default function PaymentPendingDrawer({
     setPendingOpen(false);
   };
 
-  const serviceNames = healthcareServiceName ?? 'Consultation';
   const dateFormatted = bookingState.date
     ? format(bookingState.date, 'dd MMMM yyyy')
     : '-/-/-';
@@ -56,19 +59,15 @@ export default function PaymentPendingDrawer({
       ctaLabel='View Schedule'
       onCtaClick={handleViewSchedule}
     >
-      <div className='flex flex-col gap-4'>
-        <PractitionerInfo
-          practitionerAvatar={practitionerAvatar}
-          practitionerOrganizationName={practitionerOrganizationName}
-          practitionerName={practitionerName}
-        />
-
-        <div className='flex w-full items-center justify-center rounded-[14px] border border-[#E3E3E3] p-2'>
-          <span className='text-[12px] text-[#2C2F35]'>
-            {serviceNames} &bull; {dateFormatted} &bull; {timeFormatted}
-          </span>
-        </div>
-      </div>
+      <AppointmentSummary
+        practitionerAvatar={practitionerAvatar}
+        practitionerOrganizationName={practitionerOrganizationName}
+        practitionerName={practitionerName}
+        healthcareServiceName={healthcareServiceName}
+        dateFormatted={dateFormatted}
+        timeFormatted={timeFormatted}
+        invoice={invoice}
+      />
     </AppDrawer>
   );
 }

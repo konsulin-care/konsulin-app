@@ -555,6 +555,7 @@ export default function PractitionerAvailability({
             'Consultation'
           }
           bookingState={effectiveBookingState}
+          invoice={relayInvoice ?? invoice}
         />
       </>
     );
@@ -617,6 +618,7 @@ export default function PractitionerAvailability({
         practitionerName={practitionerName}
         healthcareServiceName={healthcareServiceNames[0] ?? 'Consultation'}
         bookingState={bookingState}
+        invoice={invoice}
       />
     </>
   );
