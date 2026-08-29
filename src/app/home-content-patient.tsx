@@ -183,7 +183,7 @@ export default function HomeContentPatient() {
       />
 
       {/* SECONDARY: Quick Actions */}
-      <div className='px-4 pb-4'>
+      <div className='px-4 py-4'>
         <ActionCard
           icon={<Building2 className='h-5 w-5 text-gray-600' />}
           title='Show All Clinics'
