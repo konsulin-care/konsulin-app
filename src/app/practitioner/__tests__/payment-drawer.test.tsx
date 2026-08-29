@@ -139,6 +139,37 @@ describe('PaymentDrawer', () => {
     expect(screen.getByText(/10:00/)).toBeInTheDocument();
   });
 
+  it('renders date with Calendar icon', () => {
+    render(<PaymentDrawer {...baseProps} />, { wrapper: createWrapper() });
+    const dateRow = screen.getByText(/15 July 2026/).closest('div');
+    expect(dateRow).toBeInTheDocument();
+    // Calendar icon renders as an SVG with data-lucide attribute or aria-label
+    const svg = dateRow?.querySelector('svg');
+    expect(svg).toBeInTheDocument();
+  });
+
+  it('renders time with Clock icon', () => {
+    render(<PaymentDrawer {...baseProps} />, { wrapper: createWrapper() });
+    const timeRow = screen.getByText(/10:00/).closest('div');
+    expect(timeRow).toBeInTheDocument();
+    const svg = timeRow?.querySelector('svg');
+    expect(svg).toBeInTheDocument();
+  });
+
+  it('renders organization name with MapPin icon', () => {
+    render(
+      <PaymentDrawer
+        {...baseProps}
+        practitionerOrganizationName='Konsulin Clinic'
+      />,
+      { wrapper: createWrapper() }
+    );
+    const locationRow = screen.getByText('Konsulin Clinic').closest('div');
+    expect(locationRow).toBeInTheDocument();
+    const svg = locationRow?.querySelector('svg');
+    expect(svg).toBeInTheDocument();
+  });
+
   it('renders total charge from invoice', () => {
     const invoice = {
       id: 'inv-1',

@@ -16,7 +16,7 @@ interface PractitionerInfoProps {
  */
 export function PractitionerInfo({
   practitionerAvatar,
-  practitionerOrganizationName,
+  practitionerOrganizationName: _practitionerOrganizationName, // eslint-disable-line @typescript-eslint/no-unused-vars -- kept for backward compat
   practitionerName
 }: Readonly<PractitionerInfoProps>) {
   return (
@@ -28,11 +28,6 @@ export function PractitionerInfo({
         height={72}
         width={72}
       />
-      {practitionerOrganizationName && (
-        <div className='mt-2 text-[12px] font-normal'>
-          {practitionerOrganizationName}
-        </div>
-      )}
       <div className='mt-1 text-center text-[18px] font-bold'>
         {practitionerName}
       </div>

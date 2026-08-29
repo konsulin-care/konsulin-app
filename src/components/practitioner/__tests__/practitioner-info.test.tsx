@@ -8,14 +8,14 @@ describe('PractitionerInfo', () => {
     expect(screen.getByText('Dr. John Doe')).toBeInTheDocument();
   });
 
-  it('renders organization name when provided', () => {
+  it('does NOT render organization name even when provided (moved to parent)', () => {
     render(
       <PractitionerInfo
         practitionerName='Dr. John Doe'
         practitionerOrganizationName='Konsulin Clinic'
       />
     );
-    expect(screen.getByText('Konsulin Clinic')).toBeInTheDocument();
+    expect(screen.queryByText('Konsulin Clinic')).not.toBeInTheDocument();
   });
 
   it('does not render organization name when not provided', () => {
