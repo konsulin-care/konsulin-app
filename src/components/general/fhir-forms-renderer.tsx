@@ -45,6 +45,8 @@ import {
 } from 'react';
 import { toast } from 'react-toastify';
 
+import { useRuntimeConfig } from '@/components/general/runtime-config-provider';
+
 interface FhirFormsRendererProps {
   questionnaire: Questionnaire;
   isAuthenticated: boolean;
@@ -117,6 +119,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { dispatch } = useFab();
   const draftOwnerId = props.ownerId || practitionerId || patientId || '';
+  const { terminologyServer } = useRuntimeConfig();
 
   const rendererConfigOptions: RendererConfig = useMemo(
     () => ({
@@ -134,9 +137,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     questionnaire,
     questionnaireResponse: response,
     rendererConfigOptions,
-    // Terminology server disabled: value sets and code displays are
-    // already embedded in questionnaires; external lookups add latency.
-    terminologyServerUrl: ''
+    // Terminology server URL from runtime config.
+    // Empty string when TX_URL is not set — disables terminology lookups.
+    terminologyServerUrl: terminologyServer
   });
 
   const { mutateAsync: submitQuestionnaire } = useSubmitQuestionnaire(

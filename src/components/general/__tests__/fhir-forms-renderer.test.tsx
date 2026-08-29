@@ -40,6 +40,12 @@ vi.mock('@/hooks/useCardSwipe', () => ({
     onTouchEnd: vi.fn()
   })
 }));
+vi.mock('@/components/general/runtime-config-provider', () => ({
+  useRuntimeConfig: () => ({
+    appInfo: {},
+    terminologyServer: ''
+  })
+}));
 vi.mock('@aehrc/smart-forms-renderer', () => ({
   getResponse: vi.fn(),
   RendererThemeProvider: ({ children }: any) => <>{children}</>,
@@ -216,7 +222,7 @@ describe('FhirFormsRenderer - loading state', () => {
     expect(cfg?.itemResponsive?.fieldBreakpoints).toEqual({ xs: 12, md: 12 });
   });
 
-  it('passes empty terminologyServerUrl to disable terminology server calls', () => {
+  it('passes terminologyServerUrl from runtime config', () => {
     render(
       <FhirFormsRenderer
         questionnaire={mockQuestionnaire}

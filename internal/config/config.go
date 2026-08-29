@@ -88,10 +88,7 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	txURL, err := MustEnv("TX_URL")
-	if err != nil {
-		return nil, err
-	}
+	txURL := env("TX_URL", "")
 	sessionSecret, err := MustEnv("SESSION_COOKIE_SECRET")
 	if err != nil {
 		return nil, err
@@ -106,7 +103,7 @@ func Load() (*Config, error) {
 	}
 
 	cfg := &Config{
-		Port:        env("PORT", "8080"),
+		Port:        env("PORT", "3000"),
 		AppName:     env("APP_NAME", "Konsulin"),
 		APIURL:      apiURL,
 		APIBasePath: env("API_BASE_PATH", "/api/v1"),
