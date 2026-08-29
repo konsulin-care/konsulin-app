@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-commented-code, sonarjs/no-duplicated-branches */
 import { ActionProfile, IProfile } from './profileTypes';
 
 // export const initialState: StateProfile = {
@@ -15,38 +16,44 @@ import { ActionProfile, IProfile } from './profileTypes';
 //   }
 // }
 
-export const initialState = {
-  resourceType: null,
-  id: null,
-  active: null,
-  birthDate: null,
-  gender: null,
+export const initialState: IProfile = {
+  resourceType: 'Patient',
+  id: undefined,
+  active: undefined,
+  birthDate: undefined,
+  gender: undefined,
   photo: [],
   identifier: [],
-  name: null,
+  name: undefined,
   address: [],
   telecom: []
 };
 
+/** Profile state reducer handling authentication update actions. */
+// skipcq: JS-0302 — idiomatic Redux reducer convention
 export const reducer = (
   state = initialState,
   action: ActionProfile
 ): IProfile => {
   switch (action.type) {
-    case 'updated':
+    case 'updated': {
       return {
         ...state,
         ...action.payload
       };
-    case 'getProfile':
+    }
+    case 'getProfile': {
       return {
         ...state,
         ...action.payload
       };
-    case 'reset':
+    }
+    case 'reset': {
       return initialState;
-    default:
+    }
+    default: {
       return state;
+    }
   }
 };
 

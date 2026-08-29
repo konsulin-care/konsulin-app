@@ -1,5 +1,5 @@
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import { Button } from '@/components/ui/button';
+import { CalendarBase } from '@/components/ui/calendar-base';
 import {
   Drawer,
   DrawerClose,
@@ -12,15 +12,20 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 
-const today = new Date();
+type Props = {
+  readonly value?: Date;
+  readonly onChange: (date: Date) => void;
+};
 
-export default function CalendarJournal({ onChange, value }) {
+/** Calendar picker for journal date selection, renders trigger button and drawer. */
+export default function CalendarJournal({ onChange, value }: Props) {
   const [date, setDate] = useState<Date | undefined>(value);
 
   useEffect(() => {
     setDate(value);
   }, [value]);
 
+  /** Handle date selection from calendar, update local and parent state. */
   const handeDateChange = (date: Date) => {
     if (!date) return;
     setDate(date);
@@ -36,7 +41,7 @@ export default function CalendarJournal({ onChange, value }) {
             'flex flex-col items-center justify-center rounded-lg border-0 p-4'
           )}
         >
-          <div className='font-bold text-secondary'>
+          <div className='text-secondary font-bold'>
             {date ? format(date, 'EEEE') : '-'}
           </div>
           <div className='text-muted'>
@@ -49,29 +54,14 @@ export default function CalendarJournal({ onChange, value }) {
         <DrawerDescription />
         <div className='mt-4 flex flex-col'>
           <div className='mt-4 flex w-full flex-col justify-center'>
-            <Calendar
+            <CalendarBase
               mode='single'
               selected={date}
               onSelect={date => handeDateChange(date)}
-              disabled={{ before: today }}
               className='w-full p-0'
-              classNames={{
-                month: 'space-y-8 w-full',
-                head_row: 'flex w-full',
-                head_cell:
-                  'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] w-full',
-                cell: 'w-full h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
-                day: cn(
-                  buttonVariants({ variant: 'ghost' }),
-                  'h-9 p-0 font-normal aria-selected:opacity-100 w-full'
-                ),
-                day_selected:
-                  'bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground focus:bg-secondary focus:text-secondary-foreground',
-                day_today: 'bg-accent text-accent-foreground font-extrabold'
-              }}
             />
           </div>
-          <DrawerClose className='mt-4 w-full rounded-xl bg-secondary p-4 text-center text-white'>
+          <DrawerClose className='bg-secondary mt-4 w-full rounded-xl p-4 text-center text-white'>
             Kembali
           </DrawerClose>
         </div>

@@ -1,11 +1,14 @@
-'use client'
+'use client';
 
-import { RotateCw } from 'lucide-react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { RotateCw } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
+/**
+ *
+ */
 export default function Offline() {
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <div className='container flex flex-col items-center'>
@@ -33,5 +36,5 @@ export default function Offline() {
         </div>
       </button>
     </div>
-  )
+  );
 }

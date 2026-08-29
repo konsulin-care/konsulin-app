@@ -1,25 +1,29 @@
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import Image from 'next/image'
-import Link from 'next/link'
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import Image from 'next/image';
+import Link from 'next/link';
 
+/**
+ *
+ */
 export default function MedalCollection({ medals, isDisabled = false }) {
   return (
     <div
       className={`transition duration-300 ${isDisabled ? 'pointer-events-none opacity-50 blur-sm filter' : ''}`}
     >
-      <div className='flex justify-between py-4 text-muted'>
+      <div className='text-muted flex justify-between py-4'>
         <span className='text-[14px] font-bold'> Medal Collection</span>
         <Link className='text-[12px]' href={'/'}>
           See All
         </Link>
       </div>
-      <ScrollArea className='w-full whitespace-nowrap pb-4'>
+      <ScrollArea className='w-full pb-4 whitespace-nowrap'>
         <div className='flex w-max space-x-4'>
-          {medals.map((medal, index) => (
+          {medals.map(medal => (
             <Link
-              key={index}
+              key={medal.title}
               href={'/'}
-              className='card flex w-[250px] shrink-0 items-center gap-2 text-wrap bg-white'
+              className='card flex w-[250px] shrink-0 items-center gap-2 bg-white text-wrap'
             >
               <Image
                 src={'/icons/survivor.svg'}
@@ -31,7 +35,7 @@ export default function MedalCollection({ medals, isDisabled = false }) {
                 <span className='text-left text-[12px] font-bold'>
                   {medal.title}
                 </span>
-                <span className='text-left text-[10px] text-muted'>
+                <span className='text-muted text-left text-[10px]'>
                   {medal.description}
                 </span>
               </div>
@@ -41,5 +45,5 @@ export default function MedalCollection({ medals, isDisabled = false }) {
         <ScrollBar orientation='horizontal' />
       </ScrollArea>
     </div>
-  )
+  );
 }

@@ -1,26 +1,23 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 
+import PageLoader from '@/components/general/page-loader';
+import { SmartFormShell } from '@/components/general/smart-form-shell';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
-import { getFromLocalStorage } from '@/lib/utils';
+import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
+import { useRequiredValidation } from '@/hooks/useRequiredValidation';
+import { dbDelete, dbGet, STORES } from '@/lib/indexeddb';
 import { useSubmitSoapBundle } from '@/services/api/assessment';
+import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
 import {
-  BaseRenderer,
   buildForm,
+  destroyForm,
   extractObservationBased,
   getResponse,
-  RendererThemeProvider,
-  useQuestionnaireResponseStore,
-  useRendererQueryClient
+  RendererThemeProvider
 } from '@aehrc/smart-forms-renderer';
-import { QueryClientProvider } from '@tanstack/react-query';
-import {
-  Bundle,
-  BundleEntryRequest,
-  Observation,
-  Questionnaire,
-  QuestionnaireResponse
-} from 'fhir/r4';
+import { Bundle, Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -34,6 +31,40 @@ type Props = {
   isAuthorSame?: boolean;
 };
 
+/**
+ * Builds the QuestionnaireResponse resource submitted for a SOAP note.
+ *
+ * Uses the canonical questionnaire url so the note stays searchable by Blaze's
+ * `questionnaire` search parameter.
+ *
+ * @param questionnaireResponse - The in-progress response from the form.
+ * @param author - Practitioner author reference.
+ * @param subject - Patient subject reference.
+ * @param timestamp - Authored ISO timestamp.
+ * @returns The completed QuestionnaireResponse resource.
+ */
+export function buildSoapResponseResource(
+  questionnaireResponse: QuestionnaireResponse,
+  author: { reference: string },
+  subject: { reference: string },
+  timestamp: string
+): QuestionnaireResponse {
+  const { id, item, resourceType } = questionnaireResponse;
+  return {
+    id,
+    item,
+    resourceType,
+    status: 'completed',
+    authored: timestamp,
+    author,
+    subject,
+    questionnaire: toCanonicalQuestionnaireUrl('soap')
+  };
+}
+
+/**
+ *
+ */
 export default function SoapForm({
   questionnaire,
   patientId,
@@ -42,25 +73,23 @@ export default function SoapForm({
   questionnaireResponse,
   isAuthorSame
 }: Props) {
-  const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0);
   const [isBuilding, setIsBuilding] = useState<boolean>(false);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const titleParam = searchParams?.get('title');
   const categoryParam = searchParams?.get('category');
-  const localKey = `soap_${patientId}`;
 
-  const queryClient = useRendererQueryClient();
-
-  const { mutateAsync: submitSoapBundle, isLoading: isSubmitSoapLoading } =
+  const { mutateAsync: submitSoapBundle, isPending: isSubmitSoapLoading } =
     useSubmitSoapBundle();
 
-  const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
+  const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =
+    useRequiredValidation();
 
   useEffect(() => {
     if (!questionnaire) return;
 
+    /** Loads draft or existing response and builds the smart form. */
     const runBuildForm = async () => {
       setIsBuilding(true);
       try {
@@ -68,18 +97,20 @@ export default function SoapForm({
         if (mode === 'view') {
           finalResponse = questionnaireResponse;
         } else {
-          const savedResponses = getFromLocalStorage(localKey);
-          finalResponse = savedResponses
-            ? JSON.parse(savedResponses)
-            : (questionnaireResponse ?? null);
+          const ownerId = practitionerId;
+          const saved = await dbGet<{ draft: QuestionnaireResponse }>(
+            STORES.soapDrafts,
+            [ownerId, patientId]
+          );
+          finalResponse = saved?.draft ?? questionnaireResponse ?? null;
         }
 
-        await buildForm(
+        destroyForm();
+        await buildForm({
           questionnaire,
-          finalResponse,
-          mode === 'view',
-          process.env.NEXT_PUBLIC_TERMINOLOGY_SERVER
-        );
+          questionnaireResponse: finalResponse,
+          readOnly: mode === 'view'
+        });
       } catch (err) {
         setIsBuilding(false);
         toast.error(err);
@@ -88,35 +119,24 @@ export default function SoapForm({
       }
     };
 
-    runBuildForm();
-  }, [questionnaire, mode, questionnaireResponse, patientId]);
+    runBuildForm().catch(console.error);
+  }, [questionnaire, mode, questionnaireResponse, patientId, practitionerId]);
 
-  // add some delay to fetch the latest response after input settles
-  const handleResponseChange = () => {
-    setTimeout(() => {
-      const questionnaireResponse = getResponse();
-      localStorage.setItem(localKey, JSON.stringify(questionnaireResponse));
-    }, 300);
-  };
+  const handleResponseChange = useDraftAutoSave(STORES.soapDrafts, qr => ({
+    practitionerId: practitionerId || '',
+    patientId,
+    draft: qr,
+    updatedAt: Date.now()
+  }));
 
-  const checkRequiredIsEmpty = () => {
-    const required = Object.values(invalidItems).flatMap(item =>
-      item.issue
-        .filter(issue => issue.code === 'required')
-        .map(issue => ({
-          expression: issue.expression[0],
-          message: issue.details.text
-        }))
-    );
-    setRequiredItemEmpty(required.length);
-  };
-
+  /** Validates required SOAP fields and returns whether form is valid. */
   const handleValidation = () => {
     checkRequiredIsEmpty();
 
     return Object.keys(invalidItems).length === 0;
   };
 
+  /** Submits the SOAP bundle and cleans up drafts on success. */
   const handleSubmitSoap = async () => {
     const questionnaireResponse = getResponse();
     const author = { reference: `Practitioner/${practitionerId}` };
@@ -130,39 +150,35 @@ export default function SoapForm({
         questionnaireResponse
       );
 
-      const { item, resourceType, id } = questionnaireResponse;
-
       const timestamp = new Date().toISOString();
 
-      const qrResource = {
-        id,
-        item,
-        resourceType,
-        status: 'completed',
-        authored: timestamp,
+      const qrResource = buildSoapResponseResource(
+        questionnaireResponse,
         author,
         subject,
-        questionnaire: 'Questionnaire/soap'
-      };
+        timestamp
+      );
+
+      const { id } = questionnaireResponse;
 
       const bundle: Bundle = {
         resourceType: 'Bundle',
         type: 'transaction',
         entry: [
           {
-            resource: qrResource as QuestionnaireResponse,
+            resource: qrResource,
             request: {
               method: 'PUT',
               url: `QuestionnaireResponse/${id}`
             }
           },
           ...observations.map(obs => {
-            // ensure all coding.system is set to "http://loinc.org"
+            // ensure all coding.system is set to loinc.org
             const fixedCode = {
               ...obs.code,
               coding: obs.code.coding?.map(coding => ({
                 ...coding,
-                system: 'http://loinc.org'
+                system: 'https://loinc.org'
               }))
             };
 
@@ -172,11 +188,11 @@ export default function SoapForm({
                 code: fixedCode,
                 subject,
                 performer: [author]
-              } as Observation,
+              },
               request: {
-                method: 'POST',
+                method: 'POST' as const,
                 url: 'Observation'
-              } as BundleEntryRequest
+              }
             };
           })
         ]
@@ -188,43 +204,31 @@ export default function SoapForm({
         toast.success(
           `SOAP berhasil ${mode === 'create' ? 'dikirim' : 'diupdate'}`
         );
-        localStorage.removeItem(localKey);
+        dbDelete(STORES.soapDrafts, [practitionerId, patientId]).catch(
+          (err: unknown) => console.warn('[IndexedDB]', err)
+        );
         router.push('/');
       }
     } catch (error) {
       toast.error('SOAP gagal dikirim');
-      console.log('Error message :', error);
+      console.error('Error message :', error);
       toast.error('An error occurred while submitting the SOAP');
     }
   };
 
-  useEffect(() => {
-    if (Object.keys(invalidItems).length === 0) setRequiredItemEmpty(0);
-    if (requiredItemEmpty > 0) checkRequiredIsEmpty();
-  }, [invalidItems]);
-
   if (isBuilding) {
-    return (
-      <div className='flex min-h-screen min-w-full items-center justify-center'>
-        <LoadingSpinnerIcon
-          width={56}
-          height={56}
-          className='w-full animate-spin'
-        />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (
     <RendererThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <div className='custom-soap-form' onChange={handleResponseChange}>
-          <BaseRenderer />
-        </div>
-      </QueryClientProvider>
+      <SmartFormShell
+        className='custom-soap-form'
+        onChange={handleResponseChange}
+      />
       <div className='flex-flex-col px-2'>
         {requiredItemEmpty > 0 || !patientId ? (
-          <div className='mb-2 w-full text-sm text-destructive'>
+          <div className='text-destructive mb-2 w-full text-sm'>
             Masih ada kolom wajib yang belum terisi, yuk dilengkapi dulu!
           </div>
         ) : (
@@ -233,11 +237,11 @@ export default function SoapForm({
         {mode !== 'view' && (
           <Button
             disabled={isSubmitSoapLoading || requiredItemEmpty > 0}
-            className='w-full bg-secondary text-white'
+            className='bg-secondary w-full text-white'
             onClick={() => {
               const isValid = handleValidation();
               if (isValid) {
-                handleSubmitSoap();
+                handleSubmitSoap().catch(console.error);
               }
             }}
           >
@@ -251,7 +255,7 @@ export default function SoapForm({
 
         {mode === 'view' && (
           <Button
-            className='w-full bg-secondary text-white'
+            className='bg-secondary w-full text-white'
             disabled={!isAuthorSame}
             onClick={() => {
               const queryParams = new URLSearchParams({

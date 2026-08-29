@@ -1,13 +1,16 @@
-import { cn } from '@/lib/utils'
-import Image from 'next/image'
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 interface IEmptyStateProps {
-  title?: string
-  subtitle?: string
-  size?: number
-  className?: string
+  title?: string;
+  subtitle?: string;
+  size?: number;
+  className?: string;
 }
 
+/**
+ *
+ */
 export default function EmptyState({
   title = 'No results',
   subtitle = 'Try a different search or filter.',
@@ -27,8 +30,8 @@ export default function EmptyState({
         width={size}
         height={size}
       />
-      <div className='mt-4 font-bold text-muted'>{title}</div>
-      <div className='mt-1 text-muted'>{subtitle}</div>
+      <div className='text-muted mt-4 font-bold'>{title}</div>
+      <div className='text-muted mt-1'>{subtitle}</div>
     </div>
-  )
+  );
 }

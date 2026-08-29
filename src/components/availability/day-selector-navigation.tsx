@@ -4,6 +4,9 @@ import { cn } from '@/lib/utils';
 import { DayOfWeek, DaySelectorNavigationProps } from '@/types/availability';
 import { getDayShortName, hasAvailabilityForDay } from '@/utils/availability';
 
+/**
+ *
+ */
 export default function DaySelectorNavigation({
   selectedDay,
   weeklyAvailability,
@@ -12,7 +15,7 @@ export default function DaySelectorNavigation({
   const days: DayOfWeek[] = [0, 1, 2, 3, 4, 5, 6];
 
   return (
-    <div className='flex w-full justify-center gap-3 pb-6'>
+    <div className='flex w-full justify-center gap-2 pb-6 sm:gap-3'>
       {days.map(day => {
         const hasAvailability = hasAvailabilityForDay(day, weeklyAvailability);
         const isSelected = day === selectedDay;
@@ -27,7 +30,7 @@ export default function DaySelectorNavigation({
           >
             <div
               className={cn(
-                'flex h-12 w-12 items-center justify-center rounded-full text-sm font-medium transition-colors',
+                'flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium transition-colors sm:h-12 sm:w-12',
                 hasAvailability
                   ? 'bg-secondary text-white'
                   : 'bg-[#F9F9F9] text-black'

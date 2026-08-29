@@ -1,0 +1,287 @@
+// Package session provides cookie-based auth session parsing and context helpers.
+package session
+
+import (
+	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/gorilla/securecookie"
+)
+
+type Session struct {
+	UserID          string   `json:"userId"`
+	Roles           []string `json:"roles"`
+	Role            string   `json:"role_name"`
+	FHIRID          string   `json:"fhirId"`
+	ProfileComplete bool     `json:"profile_complete"`
+	FullName        string   `json:"fullname"`
+	Email           string   `json:"email"`
+	PhoneNumber     string   `json:"phoneNumber"`
+	ProfilePicture  string   `json:"profile_picture"`
+	Exp             int64    `json:"exp"`
+	GuestID         string   `json:"-"`
+	Token           string   `json:"-"` // guest JWT, never serialized to cookie
+}
+
+var (
+	sc            *securecookie.SecureCookie
+	scOnce        sync.Once
+	AllowUnsigned bool
+	// stored separately for Gob fallback (unexported in securecookie)
+	scHashKey  []byte
+	scBlockKey []byte
+)
+
+// deriveKeys derives 32-byte hash and block keys from a single secret using SHA-256.
+func deriveKeys(secret string) (hashKey, blockKey []byte) {
+	h := sha256.Sum256([]byte(secret))
+	// Use first 32 bytes as hash key, next 32 bytes as block key.
+	// SHA-256 produces 32 bytes, so we derive block key by hashing again.
+	h2 := sha256.Sum256(h[:])
+	return h[:], h2[:]
+}
+
+// InitSecureCookie initializes the package-level securecookie instance.
+// Must be called once at startup before any cookie operations.
+// Uses JSONEncoder so encoding/json tags (json:"...") on Session are respected.
+func InitSecureCookie(secret string) {
+	scOnce.Do(func() {
+		hashKey, blockKey := deriveKeys(secret)
+		scHashKey = hashKey
+		scBlockKey = blockKey
+		sc = securecookie.New(hashKey, blockKey)
+		sc.SetSerializer(securecookie.JSONEncoder{})
+	})
+}
+
+type contextKey struct{}
+
+var sessionKey contextKey
+
+// verifySignedValue splits a signed cookie value, verifies the HMAC, and returns the original value.
+// Kept as fallback for cookies signed with the old HMAC scheme (~2h TTL).
+func verifySignedValue(signed, secret string) (string, bool) {
+	dot := strings.LastIndex(signed, ".")
+	if dot < 0 {
+		return "", false
+	}
+	enc, sigStr := signed[:dot], signed[dot+1:]
+	if enc == "" || sigStr == "" {
+		return "", false
+	}
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(enc))
+	expected := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	if !hmac.Equal([]byte(sigStr), []byte(expected)) {
+		return "", false
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(enc)
+	if err != nil {
+		return "", false
+	}
+	return string(raw), true
+}
+
+func ExtractFromRequest(r *http.Request, cookieName, secret string) (*Session, error) {
+	c, err := r.Cookie(cookieName)
+	if err != nil {
+		return nil, fmt.Errorf("session cookie %q: %w", cookieName, err)
+	}
+	if c.Value == "" {
+		return nil, errors.New("session cookie is empty")
+	}
+	// Use raw cookie value first (securecookie base64). Only try URL-unescaped
+	// as fallback — url.QueryUnescape converts "+" to space, corrupting base64.
+	raw := c.Value
+	if s, ok := decodeSecureCookie(cookieName, raw); ok {
+		return s, nil
+	}
+	decoded, unescapeErr := url.QueryUnescape(raw)
+	if unescapeErr != nil || decoded == raw {
+		decoded = raw
+	}
+	// Tiers 2–3: HMAC or unsigned fallback.
+	s, err := decodeFallback(decoded, secret)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkExpiry(s); err != nil {
+		return nil, err
+	}
+	if s.UserID == "" {
+		return nil, errors.New("session cookie missing userId")
+	}
+	if s.Role == "" {
+		s.Role = "Guest"
+	}
+	return s, nil
+}
+
+func decodeSecureCookie(cookieName, decoded string) (*Session, bool) {
+	if sc == nil {
+		return nil, false
+	}
+	// Try JSON decode first (current serializer).
+	var s Session
+	if err := sc.Decode(cookieName, decoded, &s); err == nil && s.UserID != "" {
+		if err := checkExpiry(&s); err == nil {
+			return &s, true
+		}
+	}
+	// Fallback: Gob-encoded cookies from before JSONEncoder migration.
+	if len(scHashKey) == 0 || len(scBlockKey) == 0 {
+		return nil, false
+	}
+	gobSC := securecookie.New(scHashKey, scBlockKey)
+	gobSC.SetSerializer(securecookie.GobEncoder{})
+	var gobS Session
+	if err := gobSC.Decode(cookieName, decoded, &gobS); err != nil || gobS.UserID == "" {
+		return nil, false
+	}
+	if err := checkExpiry(&gobS); err != nil {
+		return nil, false
+	}
+	return &gobS, true
+}
+
+func decodeFallback(decoded, secret string) (*Session, error) {
+	var s Session
+	plain, ok := verifySignedValue(decoded, secret)
+	if ok {
+		if err := json.Unmarshal([]byte(plain), &s); err != nil {
+			return nil, fmt.Errorf("parse session cookie: %w", err)
+		}
+		return &s, nil
+	}
+	if AllowUnsigned {
+		if err := json.Unmarshal([]byte(decoded), &s); err != nil {
+			return nil, errors.New("session cookie: invalid format")
+		}
+		return &s, nil
+	}
+	return nil, errors.New("session cookie: unsigned format rejected")
+}
+
+// checkExpiry returns an error if the session has an Exp field set and it is in the past.
+// Sessions without Exp (zero value) are treated as valid (backward-compatible).
+func checkExpiry(s *Session) error {
+	if s.Exp > 0 && time.Now().Unix() > s.Exp {
+		return errors.New("session expired")
+	}
+	return nil
+}
+
+// signValue returns base64url(value) + "." + base64url(hmac-sha256(base64url(value), secret)).
+// Kept as fallback when securecookie is not initialized (e.g., tests).
+func signValue(value, secret string) string {
+	enc := base64.RawURLEncoding.EncodeToString([]byte(value))
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(enc))
+	sig := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	return enc + "." + sig
+}
+
+// EncodeSession encodes a Session into a signed cookie value using securecookie.
+// Returns the cookie value or an error. Caller must call InitSecureCookie first.
+func EncodeSession(s *Session, cookieName string) (string, error) {
+	if sc == nil {
+		return "", errors.New("securecookie not initialized, call InitSecureCookie")
+	}
+	return sc.Encode(cookieName, s)
+}
+
+// SignCookieValue signs a JSON session payload for cookie storage (HMAC fallback).
+// Deprecated: use EncodeSession for new code.
+func SignCookieValue(value, secret string) string {
+	return signValue(value, secret)
+}
+
+func ContextWithSession(ctx context.Context, s *Session) context.Context {
+	return context.WithValue(ctx, sessionKey, s)
+}
+
+func SessionFromContext(ctx context.Context) (*Session, bool) {
+	s, ok := ctx.Value(sessionKey).(*Session)
+	return s, ok
+}
+
+const redirectPathMaxLength = 256
+
+func validateRedirectFormat(path string) (string, bool) {
+	raw := strings.TrimSpace(path)
+	if raw == "" {
+		return "", false
+	}
+	if len(raw) > redirectPathMaxLength {
+		return "", false
+	}
+	if strings.Contains(raw, "\\") {
+		return "", false
+	}
+	if strings.ContainsAny(raw, "\r\n\t") {
+		return "", false
+	}
+	if strings.Contains(raw, "://") {
+		return "", false
+	}
+	if strings.HasPrefix(raw, "//") {
+		return "", false
+	}
+	if !strings.HasPrefix(raw, "/") {
+		return "", false
+	}
+	decoded, err := url.QueryUnescape(raw)
+	if err != nil {
+		return "", false
+	}
+	if strings.Contains(decoded, "\\") {
+		return "", false
+	}
+	if strings.ContainsAny(decoded, "\r\n\t") {
+		return "", false
+	}
+	if strings.Contains(decoded, "://") {
+		return "", false
+	}
+	if strings.HasPrefix(decoded, "//") {
+		return "", false
+	}
+	return decoded, true
+}
+
+func validateRedirectOrigin(decoded, baseURL string) bool {
+	if baseURL == "" {
+		return true
+	}
+	base, err := url.Parse(baseURL)
+	if err != nil || base.Scheme == "" || base.Host == "" {
+		return false
+	}
+	parsed, err := url.Parse(decoded)
+	if err != nil {
+		return false
+	}
+	resolved := base.ResolveReference(parsed)
+	return resolved.Scheme == base.Scheme && resolved.Host == base.Host
+}
+
+func ValidateRedirectPath(path, baseURL string) (string, bool) {
+	decoded, ok := validateRedirectFormat(path)
+	if !ok {
+		return "", false
+	}
+	if !validateRedirectOrigin(decoded, baseURL) {
+		return "", false
+	}
+	return decoded, true
+}

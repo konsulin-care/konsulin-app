@@ -1,0 +1,271 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
+import { act, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { mockUseQuery } = vi.hoisted(() => ({
+  mockUseQuery: vi.fn().mockReturnValue({ data: undefined, isLoading: false })
+}));
+
+// Mock heavy dependencies
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: vi.fn()
+}));
+
+vi.mock('@/services/api/assessment', () => ({
+  useQuestionnaireResponse: vi.fn(),
+  RESULT_BRIEF_LOGIN_REQUIRED: 'Login required',
+  RESULT_BRIEF_PLACEHOLDER: 'Waiting...'
+}));
+
+vi.mock('@/services/api', () => ({
+  getAPI: vi.fn()
+}));
+
+vi.mock('@/lib/indexeddb', () => ({
+  STORES: {
+    uiPreferences: 'uiPreferences',
+    serviceRequests: 'serviceRequests'
+  },
+  // eslint-disable-next-line unicorn/no-useless-undefined
+  dbGet: vi.fn().mockResolvedValue(undefined),
+  dbSet: vi.fn(),
+  dbDelete: vi.fn()
+}));
+
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: mockUseQuery,
+  useQueryClient: vi.fn(() => ({ setQueryData: vi.fn() }))
+}));
+
+vi.mock('@/components/ui/progress', () => ({
+  Progress: () => <div />
+}));
+
+vi.mock('@/components/ui/skeleton', () => ({
+  Skeleton: () => <div />
+}));
+
+vi.mock('lucide-react', () => ({
+  NotepadTextIcon: () => <div data-testid='notepad-icon' />
+}));
+
+vi.mock('react-markdown', () => ({
+  default: ({ children }: { children: string }) => (
+    <div data-testid='markdown'>{children}</div>
+  )
+}));
+
+import { useAuth } from '@/context/auth/authContext';
+import { dbGet } from '@/lib/indexeddb';
+import { getAPI } from '@/services/api';
+import { useQuestionnaireResponse } from '@/services/api/assessment';
+import { FhirExtensionUrls } from '@/utils/fhir/extensions';
+import { useQueryClient } from '@tanstack/react-query';
+import RecordAssessment from '../record-assessment';
+
+/** Build a minimal QuestionnaireResponse with score-dimension items. */
+function buildMockQR(
+  scores: { name: string; score: number; ref: number }[],
+  questionnaire = 'Questionnaire/test-q'
+): Record<string, unknown> {
+  const scoreItems = scores.map(({ name, score }) => ({
+    linkId: `score-${name}`,
+    text: name,
+    answer: [{ valueInteger: score }]
+  }));
+
+  return {
+    resourceType: 'QuestionnaireResponse',
+    id: 'qr-1',
+    questionnaire,
+    status: 'completed',
+    item: [
+      {
+        linkId: 'interpretation',
+        item: [
+          {
+            linkId: 'score-dimension',
+            item: [
+              {
+                linkId: 'reference',
+                answer: [{ valueInteger: scores[0]?.ref ?? 1 }]
+              },
+              ...scoreItems
+            ]
+          }
+        ]
+      }
+    ]
+  };
+}
+
+describe('RecordAssessment', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    vi.mocked(useAuth).mockReturnValue({
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'Patient', userId: 'patient-1' }
+      },
+      isLoading: false
+    } as any);
+
+    vi.mocked(useQuestionnaireResponse).mockReturnValue({
+      data: null,
+      isLoading: false
+    } as any);
+  });
+
+  it('shows nothing when no QR data and not loading', () => {
+    const { container } = render(<RecordAssessment recordId='qr-1' />);
+    expect(container.textContent?.trim()).toBe('');
+  });
+
+  it('passes loading state to ScoreDisplay', () => {
+    vi.mocked(useQuestionnaireResponse).mockReturnValue({
+      data: null,
+      isLoading: true
+    } as any);
+
+    const { container } = render(<RecordAssessment recordId='qr-1' />);
+    // Shows a loading container with skeleton
+    expect(container.querySelector('.flex')).toBeInTheDocument();
+  });
+
+  it('renders score dimensions from QR data', () => {
+    const qrData = buildMockQR([
+      { name: 'Anxiety', score: 3, ref: 5 },
+      { name: 'Depression', score: 4, ref: 5 }
+    ]);
+
+    vi.mocked(useQuestionnaireResponse).mockReturnValue({
+      data: qrData,
+      isLoading: false
+    } as any);
+
+    render(<RecordAssessment recordId='qr-1' />);
+
+    expect(screen.getByText('Anxiety')).toBeInTheDocument();
+    expect(screen.getByText('Depression')).toBeInTheDocument();
+  });
+
+  it('renders result brief section', () => {
+    vi.mocked(useQuestionnaireResponse).mockReturnValue({
+      data: buildMockQR([{ name: 'Stress', score: 2, ref: 4 }]),
+      isLoading: false
+    } as any);
+
+    render(<RecordAssessment recordId='qr-1' />);
+
+    expect(screen.getByText('Result Brief')).toBeInTheDocument();
+    expect(screen.getByText('Result Tables')).toBeInTheDocument();
+  });
+
+  it('reports the questionnaire fee via onFeeChange', () => {
+    const onFeeChange = vi.fn();
+    mockUseQuery.mockReturnValue({
+      data: {
+        resourceType: 'Questionnaire',
+        id: 'test-q',
+        title: 'PSS-10',
+        extension: [
+          {
+            url: FhirExtensionUrls.fee,
+            valueMoney: { value: 50_000, currency: 'IDR' }
+          }
+        ]
+      },
+      isLoading: false
+    });
+    vi.mocked(useQuestionnaireResponse).mockReturnValue({
+      data: buildMockQR([{ name: 'Stress', score: 2, ref: 4 }]),
+      isLoading: false
+    } as any);
+
+    render(<RecordAssessment recordId='qr-1' onFeeChange={onFeeChange} />);
+
+    expect(onFeeChange).toHaveBeenCalledWith({
+      value: 50_000,
+      currency: 'IDR'
+    });
+  });
+
+  it('reports null when the questionnaire has no fee extension', () => {
+    const onFeeChange = vi.fn();
+    mockUseQuery.mockReturnValue({
+      data: {
+        resourceType: 'Questionnaire',
+        id: 'test-q',
+        title: 'PSS-10'
+      },
+      isLoading: false
+    });
+    vi.mocked(useQuestionnaireResponse).mockReturnValue({
+      data: buildMockQR([{ name: 'Stress', score: 2, ref: 4 }]),
+      isLoading: false
+    } as any);
+
+    render(<RecordAssessment recordId='qr-1' onFeeChange={onFeeChange} />);
+
+    expect(onFeeChange).toHaveBeenCalledWith(null);
+  });
+
+  it('passes the resolved questionnaire title and seeds the shared title cache', () => {
+    const setQueryData = vi.fn();
+    vi.mocked(useQueryClient).mockReturnValue({ setQueryData } as any);
+    mockUseQuery.mockReturnValue({
+      data: {
+        resourceType: 'Questionnaire',
+        id: 'test-q',
+        title: 'PSS-10'
+      },
+      isLoading: false
+    });
+    vi.mocked(useQuestionnaireResponse).mockReturnValue({
+      data: buildMockQR([{ name: 'Stress', score: 2, ref: 4 }]),
+      isLoading: false
+    } as any);
+
+    render(<RecordAssessment recordId='qr-1' />);
+
+    expect(screen.getByText('PSS-10')).toBeInTheDocument();
+    expect(setQueryData).toHaveBeenCalledWith(
+      ['questionnaire', 'test-q', 'title'],
+      'PSS-10'
+    );
+  });
+
+  it('picks up a service request id that lands shortly after mount', async () => {
+    vi.useFakeTimers();
+    try {
+      const apiGet = vi.fn().mockResolvedValue({
+        data: { data: { note: 'Interpreted' } }
+      });
+      const apiPut = vi.fn().mockResolvedValue({ data: {} });
+      vi.mocked(getAPI).mockResolvedValue({ get: apiGet, put: apiPut } as any);
+      vi.mocked(dbGet)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ serviceRequestId: 'sr-1' });
+
+      vi.mocked(useQuestionnaireResponse).mockReturnValue({
+        data: buildMockQR([{ name: 'Stress', score: 2, ref: 4 }]),
+        isLoading: false
+      } as any);
+
+      render(<RecordAssessment recordId='qr-1' />);
+
+      // First IndexedDB read misses; the retry after 1s finds the id and polls.
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+
+      expect(apiGet).toHaveBeenCalledWith(
+        '/api/v1/service-request/sr-1/result'
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

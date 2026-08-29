@@ -1,42 +1,96 @@
-import { LoadingSpinnerIcon } from '@/components/icons';
-import { Button } from '@/components/ui/button';
+/* eslint-disable sonarjs/cognitive-complexity, max-lines, complexity, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
+import PageLoader from '@/components/general/page-loader';
+import { SmartFormShell } from '@/components/general/smart-form-shell';
+import ShareResearchButton from '@/components/research/share-research-button';
+import type { DrawerCopy } from '@/constants/research-copy';
+import {
+  fillProgress,
+  FINAL_BATCH_MESSAGE,
+  LAST_MID_BATCH_MESSAGE,
+  MID_BATCH_FALLBACK_MESSAGE,
+  MID_BATCH_MESSAGES,
+  STANDALONE_MESSAGE,
+  STANDALONE_RESEARCH_MESSAGE
+} from '@/constants/research-copy';
 import { Roles } from '@/constants/roles';
+import { useFab } from '@/context/fabContext';
+import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
+import { useRequiredValidation } from '@/hooks/useRequiredValidation';
 import { getAPI } from '@/services/api';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
+import { useResearchProgress } from '@/services/api/research';
+import { nextAssessmentInStudy } from '@/utils/fhir/research';
+import { BookCheck } from 'lucide-react';
 import Image from 'next/image';
 
+import { AssessmentThemeProvider } from '@/components/general/assessment-theme-provider';
+import { CardStackContainer } from '@/components/general/card-stack-container';
+import AppDrawer from '@/components/ui/app-drawer';
+import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
+import type { RendererConfig } from '@aehrc/smart-forms-renderer';
+import { getResponse, useBuildForm } from '@aehrc/smart-forms-renderer';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle
-} from '@/components/ui/drawer';
-import { getFromLocalStorage } from '@/lib/utils';
+  Questionnaire,
+  QuestionnaireResponse,
+  QuestionnaireResponseItem
+} from 'fhir/r4';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  BaseRenderer,
-  getResponse,
-  RendererThemeProvider,
-  useBuildForm,
-  useQuestionnaireResponseStore,
-  useRendererQueryClient
-} from '@aehrc/smart-forms-renderer';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type ReactNode
+} from 'react';
 import { toast } from 'react-toastify';
 
 interface FhirFormsRendererProps {
   questionnaire: Questionnaire;
-  isAuthenticated: Boolean;
+  isAuthenticated: boolean;
   patientId?: string;
   formType?: string;
   role?: string;
   practitionerId?: string;
+  ownerId?: string; // for scoping IndexedDB drafts per user/guest
 }
 
+/**
+ * Posts the interpretation item to the async interpret webhook and records
+ * the returned service request id in IndexedDB for later result polling.
+ * Fire-and-forget: failures are logged and never block form submission.
+ *
+ * @param opts - Response id, draft owner, and the interpret payload.
+ */
+async function triggerInterpretWebhook(opts: {
+  responseId: string;
+  ownerId: string;
+  payload: {
+    questionnaire?: string;
+    description?: string;
+    item: QuestionnaireResponseItem[];
+  };
+}): Promise<void> {
+  try {
+    const API = await getAPI();
+    const hookRes = await API.post('/api/v1/hook/interpret', opts.payload);
+    const serviceRequestId =
+      hookRes?.data?.data?.asyncServiceResultId?.trim?.() ?? '';
+    if (!serviceRequestId) return;
+    await dbSet(STORES.serviceRequests, {
+      id: opts.responseId,
+      ownerId: opts.ownerId,
+      serviceRequestId,
+      updatedAt: Date.now()
+    });
+  } catch (err) {
+    console.error('[interpret] webhook failed', err);
+  }
+}
+
+/**
+ *
+ */
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const {
     questionnaire,
@@ -49,82 +103,196 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const [isPending, startTransition] = useTransition();
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null);
-  const [requiredItemEmpty, setRequiredItemEmpty] = useState<number>(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const studyId = searchParams.get('study');
+  const isResearchFlow = Boolean(studyId);
+  const doneIds = useMemo(
+    () => (searchParams.get('done') ?? '').split(',').filter(Boolean),
+    [searchParams]
+  );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { dispatch } = useFab();
+  const draftOwnerId = props.ownerId || practitionerId || patientId || '';
 
-  const queryClient = useRendererQueryClient();
-  const isBuilding = useBuildForm(questionnaire, response);
+  const rendererConfigOptions: RendererConfig = useMemo(
+    () => ({
+      itemResponsive: {
+        labelBreakpoints: { xs: 12, md: 12 },
+        fieldBreakpoints: { xs: 12, md: 12 },
+        columnGapPixels: 24,
+        rowGapPixels: 4
+      }
+    }),
+    []
+  );
 
-  const {
-    mutateAsync: submitQuestionnaire,
-    isLoading: submitQuestionnaireIsLoading
-  } = useSubmitQuestionnaire(questionnaire.id, isAuthenticated);
+  const isBuilding = useBuildForm({
+    questionnaire,
+    questionnaireResponse: response,
+    rendererConfigOptions,
+    // Terminology server disabled: value sets and code displays are
+    // already embedded in questionnaires; external lookups add latency.
+    terminologyServerUrl: ''
+  });
 
-  const invalidItems = useQuestionnaireResponseStore.use.invalidItems();
+  const { mutateAsync: submitQuestionnaire } = useSubmitQuestionnaire(
+    questionnaire.id,
+    isAuthenticated
+  );
+
+  const { data: researchProgress } = useResearchProgress();
+
+  /** Next questionnaire after submitting this one: the current batch of the
+   * study the chain came from, or the shortest current batch that deploys it
+   * when no study is in play. Null when it is not part of any research batch. */
+  const continuation = useMemo(
+    () =>
+      nextAssessmentInStudy(
+        researchProgress?.studies ?? [],
+        questionnaire.id,
+        isResearchFlow ? (studyId ?? undefined) : undefined,
+        isResearchFlow ? doneIds : []
+      ),
+    [researchProgress, questionnaire.id, isResearchFlow, studyId, doneIds]
+  );
+
+  /** True when the batch has another questionnaire after the current one. */
+  const hasNextQuestionnaire =
+    isResearchFlow && Boolean(continuation?.nextQuestionnaireId);
+
+  /** True when the current questionnaire finishes the current batch. */
+  const isBatchComplete =
+    isResearchFlow &&
+    Boolean(continuation) &&
+    !continuation?.nextQuestionnaireId;
+
+  /** Title of the study the completed batch belongs to, for the share invite. */
+  const studyTitle =
+    researchProgress?.studies.find(
+      item => item.study.id === continuation?.studyId
+    )?.study.title ?? '';
+
+  /**
+   * Progress within the continuation study's current batch: server-known
+   * completions, chain-done ids, and the current questionnaire unioned and
+   * intersected with the batch ids. Null when the batch cannot be resolved.
+   */
+  const batchProgress = useMemo(() => {
+    const study = researchProgress?.studies.find(
+      item => item.study.id === continuation?.studyId
+    );
+    const batchIds = study?.currentBatch?.questionnaireIds ?? [];
+    if (batchIds.length === 0) return null;
+    const completedSet = new Set([
+      ...(study?.completedQuestionnaireIds ?? []),
+      ...doneIds,
+      questionnaire.id
+    ]);
+    const completed = batchIds.filter(id => completedSet.has(id)).length;
+    return { completed, total: batchIds.length };
+  }, [researchProgress, continuation?.studyId, doneIds, questionnaire.id]);
+
+  /**
+   * Motivational copy for the mid-batch drawer: the dedicated last-one
+   * message when a single questionnaire remains, otherwise a pick from the
+   * pool seeded by the questionnaire id so each one shows a fresh variation
+   * while staying stable across re-renders.
+   */
+  const midBatchMessage = useMemo(() => {
+    if (batchProgress === null) return MID_BATCH_FALLBACK_MESSAGE;
+    if (batchProgress.total - batchProgress.completed === 1) {
+      return LAST_MID_BATCH_MESSAGE;
+    }
+    let seed = 0;
+    for (const ch of questionnaire.id) {
+      seed = (seed * 31 + (ch.codePointAt(0) ?? 0)) >>> 0;
+    }
+    return MID_BATCH_MESSAGES[seed % MID_BATCH_MESSAGES.length];
+  }, [batchProgress, questionnaire.id]);
+
+  /** Title/body for the submission drawer, keyed on the flow state. */
+  const drawerCopy: DrawerCopy = (() => {
+    if (hasNextQuestionnaire) {
+      return {
+        title: midBatchMessage.title,
+        body: fillProgress(
+          midBatchMessage.body,
+          batchProgress?.completed ?? 0,
+          batchProgress?.total ?? 0
+        )
+      };
+    }
+    if (isBatchComplete) return FINAL_BATCH_MESSAGE;
+    return formType === 'research'
+      ? STANDALONE_RESEARCH_MESSAGE
+      : STANDALONE_MESSAGE;
+  })();
+
+  const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =
+    useRequiredValidation();
 
   useEffect(() => {
-    const savedResponses = getFromLocalStorage(`response_${questionnaire.id}`);
-    if (savedResponses) {
-      setResponse(JSON.parse(savedResponses));
-    }
-  }, []);
+    dbGet<{ response: QuestionnaireResponse }>(STORES.assessmentDrafts, [
+      draftOwnerId,
+      questionnaire.id
+    ])
+      .then(saved => {
+        if (saved?.response) {
+          setResponse(saved.response);
+        }
+        return saved;
+      })
+      .catch((err: unknown) => console.warn('[IndexedDB]', err));
+  }, [draftOwnerId, questionnaire.id]);
 
-  // add some delay to fetch the latest response after input settles
-  const handleResponseChange = () => {
-    setTimeout(() => {
-      const questionnaireResponse = getResponse();
-      localStorage.setItem(
-        `response_${questionnaire.id}`,
-        JSON.stringify(questionnaireResponse)
-      );
-    }, 300);
-  };
+  const autoSave = useDraftAutoSave(STORES.assessmentDrafts, qr => ({
+    ownerId: draftOwnerId,
+    questionnaireId: questionnaire.id,
+    response: qr,
+    updatedAt: Date.now()
+  }));
 
-  const checkRequiredIsEmpty = () => {
-    const required = Object.values(invalidItems).flatMap(item =>
-      item.issue
-        .filter(issue => issue.code === 'required')
-        .map(issue => ({
-          expression: issue.expression[0],
-          message: issue.details.text
-        }))
-    );
-    setRequiredItemEmpty(required.length);
-  };
-
-  const handleValidation = () => {
-    if (Object.keys(invalidItems).length !== 0) {
-      checkRequiredIsEmpty();
-    } else {
+  /** Validates required fields before submission. */
+  const handleValidation = useCallback(() => {
+    if (Object.keys(invalidItems).length === 0) {
       setIsOpen(true);
+    } else {
+      checkRequiredIsEmpty();
     }
-  };
+  }, [invalidItems, checkRequiredIsEmpty]);
 
+  /** Navigates after form submission based on button label. */
   const handleNavigate = (buttonLabel: string, responseId?: string) => {
     startTransition(() => {
-      if (buttonLabel === 'result') {
-        const query = new URLSearchParams({
-          category: '1',
-          title: questionnaire.title
-        }).toString();
-
-        router.push(`/record/${responseId}?${query}`);
+      if (buttonLabel === 'result' || !continuation?.nextQuestionnaireId) {
+        // Final questionnaire of a batch: both roles land on the study report.
+        if (isBatchComplete && continuation?.studyId) {
+          router.replace(`/report?id=${continuation.studyId}`);
+        } else if (isAuthenticated) {
+          const basePath = patientId
+            ? `/record?id=${patientId}&view=QuestionnaireResponse/${responseId}`
+            : `/record?view=QuestionnaireResponse/${responseId}`;
+          router.replace(basePath);
+        } else {
+          router.replace(`/result?id=${responseId}`);
+        }
         setIsSubmitting(false);
       } else {
-        router.push('/assessments');
+        const nextDone = [...doneIds, questionnaire.id];
+        router.push(
+          `/assessments?id=${continuation.nextQuestionnaireId}&study=${continuation.studyId}&done=${nextDone.join(',')}`
+        );
+        setIsSubmitting(false);
       }
     });
   };
 
+  /** Submits the questionnaire response and triggers post-submit actions. */
   const handleSubmitQuestionnaire = async (buttonLabel: string) => {
-    if (buttonLabel === 'close') {
-      handleNavigate(buttonLabel);
-      return;
-    }
-
     setIsSubmitting(true);
 
     const questionnaireResponse = getResponse();
@@ -133,11 +301,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     let author;
     let subject;
 
-    // Guest
-    if (!isAuthenticated) {
-      author = undefined;
-      subject = undefined;
-    } else {
+    if (isAuthenticated) {
       // Authenticated
       if (role === Roles.Practitioner) {
         if (!practitionerId || !patientId) {
@@ -156,204 +320,182 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         author = { reference: `Patient/${patientId}` };
         subject = { reference: `Patient/${patientId}` };
       }
+    } else {
+      author = undefined;
+      subject = undefined;
     }
 
-    /* Check if the questionnaire response contains an item with linkId = 'interpretation'.
-     * If it does, extract the item and send it to the webhook. */
     const interpretationItem = questionnaireResponse.item.find(
       item => item.linkId === 'interpretation'
     );
 
     try {
-      if (!interpretationItem) {
-        const result = await submitQuestionnaire({
-          ...questionnaireResponse,
-          author,
-          subject
-        });
-
-        handleNavigate(buttonLabel, result.id);
-        return;
-      }
-
       const submitResult = await submitQuestionnaire({
         ...questionnaireResponse,
         author,
         subject
       });
 
-      // Authenticated users only: trigger webhook AFTER QR is saved
+      // Authenticated users only: fire-and-forget the interpret webhook so
+      // navigation is never blocked on the async interpretation. The record
+      // page polls the result via the stored service request id.
       if (
         isAuthenticated &&
         interpretationItem?.item?.length &&
         submitResult?.id
       ) {
-        const payload = {
-          questionnaire: questionnaireResponse.questionnaire,
-          description: questionnaire.description,
-          item: interpretationItem.item
-        };
-
-        const API = await getAPI();
-        const hookRes = await API.post('/api/v1/hook/interpret', payload);
-
-        const serviceRequestId =
-          hookRes?.data?.data?.asyncServiceResultId?.trim?.() ?? '';
-
-        if (serviceRequestId) {
-          localStorage.setItem(
-            `serviceRequest_${submitResult.id}`,
-            serviceRequestId
-          );
-        }
+        // skipcq: JS-0098 - fire-and-forget interpret webhook; record page polls the result
+        void triggerInterpretWebhook({
+          responseId: submitResult.id,
+          ownerId: draftOwnerId,
+          payload: {
+            questionnaire: questionnaireResponse.questionnaire,
+            description: questionnaire.description,
+            item: interpretationItem.item
+          }
+        });
       }
 
-      /* save questionnaire response to localStorage for guest (if not closing) */
-      if (buttonLabel !== 'close' && !isAuthenticated) {
-        localStorage.setItem(
-          `response_${questionnaire.id}`,
-          JSON.stringify({ ...questionnaireResponse, id: submitResult.id })
-        );
+      /* save questionnaire response to IndexedDB for guest */
+      if (!isAuthenticated) {
+        dbSet(STORES.assessmentDrafts, {
+          ownerId: draftOwnerId,
+          questionnaireId: questionnaire.id,
+          response: { ...questionnaireResponse, id: submitResult.id },
+          updatedAt: Date.now()
+        }).catch((err: unknown) => console.warn('[IndexedDB]', err));
       }
 
       handleNavigate(buttonLabel, submitResult.id);
     } catch (error) {
-      console.log('Error message :', error);
+      console.error('Error message :', error);
       toast.error('An error occurred while submitting the questionnaire');
       setIsSubmitting(false);
     }
   };
 
-  useEffect(() => {
-    if (Object.keys(invalidItems).length === 0) setRequiredItemEmpty(0);
-    if (requiredItemEmpty > 0) checkRequiredIsEmpty();
-  }, [invalidItems]);
-
-  const renderDrawerContent = (
-    <>
-      <DrawerHeader className='mx-auto flex flex-col items-center gap-4 pb-0 text-[20px]'>
-        <Image
-          className='rounded-[8px] object-cover'
-          src={'/images/submit-questionnaire.png'}
-          height={0}
-          width={200}
-          style={{ width: '200', height: 'auto' }}
-          alt='success'
-        />
-        <DrawerTitle className='text-center'>
-          {formType === 'research' ? (
-            <div className='mb-2 text-2xl font-bold'>
-              Terima Kasih Karena Telah Berpatisipasi Dalam Research
-            </div>
-          ) : (
-            <div className='mb-2 text-2xl font-bold'>
-              Selamat Anda Menyelesaikan Test
-            </div>
-          )}
-        </DrawerTitle>
-      </DrawerHeader>
-
-      <DrawerDescription className='text-center'>
-        {formType === 'research' ? (
-          <span className='text-sm opacity-50'>
-            Partisipasi Anda sangat berharga bagi kami dan akan membantu kami
-            dalam mengembangkan solusi yg lebih baik untuk kebutuhan Anda.
-          </span>
-        ) : (
-          <span className='text-sm opacity-50'>
-            Hasil test ini akan memberikan wawasan berharga tentang kesehatan
-            mental Anda
-          </span>
-        )}
-      </DrawerDescription>
-
-      <DrawerFooter className='mt-2 flex flex-col gap-4 text-gray-600'>
-        {formType !== 'research' && (
-          <Button
-            className='bg-secondary h-full w-full rounded-xl p-4 text-white'
-            onClick={() => handleSubmitQuestionnaire('result')}
-            disabled={isSubmitting || isPending}
-          >
-            {isSubmitting || isPending ? (
-              <LoadingSpinnerIcon
-                width={20}
-                height={20}
-                stroke='white'
-                className='w-full animate-spin'
-              />
-            ) : (
-              'See result'
-            )}
-          </Button>
-        )}
-        <Button
-          className={`focus:ring-opacity-50 h-full w-full rounded-xl border border-solid p-4 transition-all focus:ring-2 focus:ring-gray-300 focus:outline-none ${
-            formType !== 'research'
-              ? 'border-secondary text-secondary bg-transparent hover:bg-gray-100'
-              : 'hover:bg-secondary/90 bg-secondary border-transparent text-white'
-          }`}
-          onClick={() => {
-            handleSubmitQuestionnaire('close');
-          }}
-        >
-          Close
-        </Button>
-      </DrawerFooter>
-    </>
+  const drawerTitleText = (
+    <div className='mb-2 text-2xl font-bold'>{drawerCopy.title}</div>
   );
 
-  if (isBuilding) {
-    return (
-      <div className='flex min-h-screen min-w-full items-center justify-center'>
-        <LoadingSpinnerIcon
-          width={56}
-          height={56}
-          className='w-full animate-spin'
-        />
-      </div>
+  const drawerDescriptionText = (
+    <span className='text-sm opacity-50'>{drawerCopy.body}</span>
+  );
+
+  const ctaLabel =
+    isResearchFlow && continuation?.nextQuestionnaireId
+      ? 'Continue'
+      : 'See Results';
+
+  /** Submits and navigates to the next questionnaire, or the result page.
+   * The destination mirrors the CTA label: only research flows continue. */
+  const handlePrimaryAction = () => {
+    const destination =
+      isResearchFlow && continuation?.nextQuestionnaireId
+        ? 'continue'
+        : 'result';
+    handleSubmitQuestionnaire(destination).catch(console.error);
+  };
+
+  let footerContent: ReactNode = null;
+  if (hasNextQuestionnaire) {
+    footerContent = (
+      <button
+        type='button'
+        className='mt-2 w-full text-center text-sm text-gray-500 underline underline-offset-4'
+        onClick={() => {
+          handleSubmitQuestionnaire('result').catch(console.error);
+        }}
+      >
+        See Results
+      </button>
+    );
+  } else if (isBatchComplete) {
+    footerContent = (
+      <ShareResearchButton
+        title={studyTitle}
+        isPatient={isAuthenticated && Boolean(patientId)}
+        fhirId={patientId}
+        studyId={continuation?.studyId}
+        className='mt-2 w-full text-center text-sm text-gray-500 underline underline-offset-4'
+      />
     );
   }
 
-  return (
-    <RendererThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <div className='custom-smart-form' onChange={handleResponseChange}>
-          <BaseRenderer />
-        </div>
-      </QueryClientProvider>
-      <div className='flex-flex-col mt-4 px-2'>
-        {requiredItemEmpty > 0 ? (
-          <div className='text-destructive mb-2 w-full text-sm'>
-            Terdapat {requiredItemEmpty} pertanyaan wajib yang belum terisi, yuk
-            dilengkapi dulu!
-          </div>
-        ) : (
-          ''
-        )}
-        <Button
-          disabled={
-            submitQuestionnaireIsLoading ||
+  // Sync FAB action state when user has interacted with the form
+  useEffect(() => {
+    if (hasInteracted) {
+      dispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Submit',
+          icon: BookCheck,
+          onAction: handleValidation,
+          isSaving: isSubmitting,
+          disabled:
             requiredItemEmpty > 0 ||
-            (role === Roles.Practitioner && !patientId)
-          }
-          className='bg-secondary w-full text-white'
-          onClick={handleValidation}
-        >
-          {submitQuestionnaireIsLoading ? (
-            <LoadingSpinnerIcon stroke='white' />
-          ) : (
-            'Kirim'
-          )}
-        </Button>
-      </div>
+            (role === Roles.Practitioner && !patientId),
+          variant: 'primary'
+        }
+      });
+    } else {
+      dispatch({ type: 'SET_ACTION', config: null });
+    }
+  }, [
+    hasInteracted,
+    requiredItemEmpty,
+    role,
+    patientId,
+    isSubmitting,
+    handleValidation,
+    dispatch
+  ]);
 
-      <Drawer onClose={() => setIsOpen(false)} open={isOpen}>
-        <DrawerContent className='mx-auto max-w-screen-sm p-4'>
-          {renderDrawerContent}
-        </DrawerContent>
-      </Drawer>
-    </RendererThemeProvider>
+  // Clean up action state on unmount
+  useEffect(() => {
+    return () => dispatch({ type: 'SET_ACTION', config: null });
+  }, [dispatch]);
+
+  if (isBuilding) {
+    return <PageLoader />;
+  }
+
+  return (
+    <AssessmentThemeProvider>
+      <CardStackContainer>
+        <SmartFormShell
+          className='custom-smart-form'
+          onChange={() => {
+            autoSave();
+            if (!hasInteracted) setHasInteracted(true);
+          }}
+        />
+      </CardStackContainer>
+
+      <AppDrawer
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        title={drawerTitleText}
+        description={drawerDescriptionText}
+        ctaLabel={ctaLabel}
+        onCtaClick={handlePrimaryAction}
+        ctaLoading={isSubmitting || isPending}
+        footerContent={footerContent}
+      >
+        {!hasNextQuestionnaire && (
+          <div className='flex flex-col items-center gap-4'>
+            <Image
+              className='rounded-[8px] object-cover'
+              src={'/images/submit-questionnaire.png'}
+              height={0}
+              width={200}
+              style={{ width: '200', height: 'auto' }}
+              alt='success'
+            />
+          </div>
+        )}
+      </AppDrawer>
+    </AssessmentThemeProvider>
   );
 }
-
 export default FhirFormsRenderer;

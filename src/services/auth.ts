@@ -1,112 +1,225 @@
-import { setCookies } from '@/app/actions';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, no-console, complexity */
 import { Roles } from '@/constants/roles';
 import { mergeNames } from '@/utils/helper';
 import { isProfileCompleteFromFHIR } from '@/utils/profileCompleteness';
+import { hasPendingAssessmentClaimIntent } from '@/utils/redirect-intent';
+import { roleToFhirResource } from '@/utils/role-fhir';
 import { Patient, Practitioner } from 'fhir/r4';
 import { SessionContextUpdate } from 'supertokens-auth-react/lib/build/recipe/session/types';
 import { getClaimValue } from 'supertokens-auth-react/recipe/session';
 import { UserRoleClaim } from 'supertokens-web-js/recipe/userroles';
 import { getProfileByIdentifier } from './profile';
 
+export interface AuthCookieSession {
+  authenticated: boolean;
+  userId?: string;
+  role_name?: string;
+  roles?: string[];
+  fhirId?: string;
+  profile_picture?: string;
+  fullname?: string;
+  email?: string;
+  profile_complete?: boolean;
+  /** SuperTokens st-active-role claim from the verified access token. */
+  active_role?: string;
+}
+
 /**
- * Restores the auth cookie when SuperTokens session is valid but auth cookie is missing
- * This function fetches user data from SuperTokens session and profile service,
- * then recreates the auth cookie using the existing cookie setting mechanism
+ * Reads the current auth cookie session from the Go BFF.
+ * Returns the session data or null if the request fails.
+ */
+export async function getAuthCookieSession(): Promise<AuthCookieSession | null> {
+  try {
+    const res = await fetch('/auth/cookie');
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error('Failed to fetch auth cookie session:', err);
+    return null;
+  }
+}
+
+/**
+ * Fetches CSRF token from the server for use in POST /auth/cookie requests.
+ * Returns the token string or null if the endpoint is unavailable.
+ */
+export async function fetchCSRFToken(): Promise<string | null> {
+  try {
+    const res = await fetch('/auth/cookie/csrf-token');
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Posts auth cookie data to the server. */
+async function postAuthCookie(
+  body: Record<string, unknown>
+): Promise<Response> {
+  const token = await fetchCSRFToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  if (token) headers['X-CSRF-Token'] = token;
+  return fetch('/auth/cookie', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+}
+
+/** Post auth payload and log the result. */
+async function postAuthCookieWithLogging(
+  authPayload: Record<string, unknown>,
+  logMessage: string
+): Promise<boolean> {
+  try {
+    const res = await postAuthCookie(authPayload);
+    if (!res.ok) {
+      console.error('Failed to set auth cookie:', res.status);
+      return false;
+    }
+    console.log(logMessage);
+    return true;
+  } catch (cookieError) {
+    console.error('Failed to set auth cookie:', cookieError);
+    return false;
+  }
+}
+
+/** Build the auth cookie payload from user and profile data. */
+function buildAuthPayload(
+  userId: string,
+  roles: string[] | undefined,
+  role: string,
+  profile: Patient | Practitioner | null
+): Record<string, unknown> {
+  const email =
+    profile?.telecom?.find(item => item.system === 'email')?.value || '';
+  const profile_complete = profile ? isProfileCompleteFromFHIR(profile) : false;
+
+  return {
+    userId,
+    roles: Array.isArray(roles) ? roles : [role],
+    role_name: role,
+    email: email || '',
+    profile_picture: profile?.photo?.[0]?.url ?? '',
+    fullname: profile?.name ? mergeNames(profile?.name) : '',
+    fhirId: profile?.id ?? '',
+    profile_complete
+  };
+}
+
+/** Attempt to fetch the FHIR profile for a user. */
+async function attemptProfileFetch(
+  userId: string,
+  role: string
+): Promise<Patient | Practitioner | null> {
+  try {
+    return await getProfileByIdentifier({ userId, type: role });
+  } catch (profileError) {
+    console.error('Failed to fetch profile data:', profileError);
+    return null;
+  }
+}
+
+/** Resolve the highest-priority role from SuperTokens role claims. */
+export function resolveRole(roles: string[] | undefined): string {
+  if (Array.isArray(roles)) {
+    // A guest claiming an assessment result must be linked to the Patient
+    // resource, even when the default priority would pick another role.
+    if (roles.includes(Roles.Patient) && hasPendingAssessmentClaimIntent()) {
+      return Roles.Patient;
+    }
+    if (roles.includes(Roles.Practitioner)) return Roles.Practitioner;
+    if (roles.includes(Roles.ClinicAdmin)) return Roles.ClinicAdmin;
+  }
+  return Roles.Patient;
+}
+
+/**
+ * Restores the auth cookie when SuperTokens session is valid but auth cookie is missing.
+ * Skips if the cookie already exists with a valid role_name (idempotent).
  */
 export const restoreAuthCookie = async (
   sessionContext: SessionContextUpdate
 ): Promise<boolean> => {
-  try {
-    // Check if SuperTokens session exists
-    if (!sessionContext?.doesSessionExist) {
-      console.log(
-        'SuperTokens session does not exist, skipping auth cookie restoration'
-      );
-      return false;
-    }
-
-    // Get user roles and userId from SuperTokens
-    let roles;
-    let userId;
-    try {
-      roles = await getClaimValue({ claim: UserRoleClaim });
-      userId = sessionContext.userId;
-    } catch (claimError) {
-      console.error('Failed to get user claims from SuperTokens:', claimError);
-      return false;
-    }
-
-    if (!userId) {
-      console.error('User ID not found in SuperTokens session');
-      return false;
-    }
-
-    // Determine user role with fallback
-    const role =
-      Array.isArray(roles) && roles.includes(Roles.Practitioner)
-        ? Roles.Practitioner
-        : Roles.Patient;
-
-    // Fetch profile data from FHIR service with error handling
-    let result;
-    try {
-      result = (await getProfileByIdentifier({
-        userId,
-        type: role
-      })) as Patient | Practitioner;
-    } catch (profileError) {
-      console.error('Failed to fetch profile data:', profileError);
-
-      // If profile fetch fails, create minimal auth payload with available data
-      const authPayload = {
-        userId,
-        role_name: role,
-        email: '',
-        profile_picture: '',
-        fullname: '',
-        fhirId: '',
-        profile_complete: false
-      };
-
-      try {
-        await setCookies('auth', JSON.stringify(authPayload));
-        console.log(
-          'Auth cookie restored with minimal data (profile fetch failed)'
-        );
-        return true;
-      } catch (cookieError) {
-        console.error('Failed to set auth cookie:', cookieError);
-        return false;
-      }
-    }
-
-    // Prepare auth payload with proper fallback values
-    const email =
-      result?.telecom?.find(item => item.system === 'email')?.value || '';
-
-    const profile_complete = result ? isProfileCompleteFromFHIR(result) : false;
-
-    const authPayload = {
-      userId,
-      role_name: role,
-      email: email || '',
-      profile_picture: result?.photo?.[0]?.url ?? '',
-      fullname: result?.name ? mergeNames(result?.name) : '',
-      fhirId: result?.id ?? '',
-      profile_complete
-    };
-
-    // Set the auth cookie using the existing mechanism
-    try {
-      await setCookies('auth', JSON.stringify(authPayload));
-      console.log('Auth cookie successfully restored');
-      return true;
-    } catch (cookieError) {
-      console.error('Failed to set auth cookie:', cookieError);
-      return false;
-    }
-  } catch (error) {
-    console.error('Unexpected error restoring auth cookie:', error);
+  if (!sessionContext?.doesSessionExist) {
+    console.log(
+      'SuperTokens session does not exist, skipping auth cookie restoration'
+    );
     return false;
   }
+
+  // If auth cookie already has a valid role, skip restore.
+  const existing = await getAuthCookieSession();
+  if (existing?.authenticated && existing?.role_name) {
+    return true;
+  }
+
+  let roles: string[] | undefined;
+  let userId: string;
+  try {
+    roles = await getClaimValue({ claim: UserRoleClaim });
+    userId = sessionContext.userId;
+  } catch (claimError) {
+    console.error('Failed to get user claims from SuperTokens:', claimError);
+    return false;
+  }
+
+  if (!userId) {
+    console.error('User ID not found in SuperTokens session');
+    return false;
+  }
+
+  const role = resolveRole(roles);
+
+  const profile = await attemptProfileFetch(userId, roleToFhirResource(role));
+  const authPayload = buildAuthPayload(userId, roles, role, profile);
+
+  const logMessage = profile
+    ? 'Auth cookie successfully restored'
+    : 'Auth cookie restored with minimal data (profile fetch failed)';
+
+  return postAuthCookieWithLogging(authPayload, logMessage);
 };
+
+/**
+ * Heals a session whose SuperTokens active-role claim diverges from the auth
+ * cookie role by pushing the cookie role (the user's expressed choice) to the
+ * backend claim via /auth/role/switch.
+ *
+ * Runs only when the session is authenticated, both roles are present, they
+ * differ, and the cookie role is among the user's roles. Returns true when a
+ * switch request succeeded, false otherwise (no drift, missing claim, or
+ * failed request — warn-logged).
+ */
+export async function syncActiveRoleWithCookie(): Promise<boolean> {
+  const cookieSession = await getAuthCookieSession();
+  if (!cookieSession?.authenticated) return false;
+  const { role_name, active_role, roles } = cookieSession;
+  if (!role_name || !active_role || role_name === active_role) return false;
+  if (!Array.isArray(roles) || !roles.includes(role_name)) return false;
+
+  const token = await fetchCSRFToken();
+  try {
+    const res = await fetch('/auth/role/switch', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...(token ? { 'X-CSRF-Token': token } : {})
+      },
+      body: new URLSearchParams({ role: role_name })
+    });
+    if (!res.ok) {
+      console.warn('[auth:resync] active role sync failed:', res.status);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[auth:resync] active role sync request failed:', err);
+    return false;
+  }
+}

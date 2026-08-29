@@ -1,5 +1,6 @@
-import { redirect } from 'next/navigation'
+import { redirect } from 'next/navigation';
 
-export async function navigate(url: string) {
-  redirect(url)
+/** Navigate to a URL using Next.js redirect. */
+export function navigate(url: string) {
+  redirect(url);
 }

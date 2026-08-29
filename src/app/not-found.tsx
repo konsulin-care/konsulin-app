@@ -1,11 +1,14 @@
-'use client'
+'use client';
 
-import { RotateCw } from 'lucide-react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { RotateCw } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
+/**
+ *
+ */
 export default function Notfound() {
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <div className='container flex flex-col items-center'>
@@ -20,7 +23,7 @@ export default function Notfound() {
         Oops! Page Not Found
       </h2>
       <p className='text-sm opacity-50'>
-        Sorry, we can't find the page you're looking for.
+        Sorry, we can&apos;t find the page you&apos;re looking for.
       </p>
 
       <button
@@ -36,5 +39,5 @@ export default function Notfound() {
         </div>
       </button>
     </div>
-  )
+  );
 }

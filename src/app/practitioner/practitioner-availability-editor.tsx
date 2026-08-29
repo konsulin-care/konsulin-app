@@ -1,10 +1,10 @@
 import AvailabilityEditor from '@/components/availability/availability-editor';
 import DaySelectorNavigation from '@/components/availability/day-selector-navigation';
 import FloatingSaveButton from '@/components/availability/floating-save-button';
-import { useAuth } from '@/context/auth/authContext';
 import { useUpdateAvailability } from '@/services/api/schedule';
 import {
   DayOfWeek,
+  OrganizationTimeRanges,
   TimeRange,
   UIOrganization,
   WeeklyAvailability
@@ -17,13 +17,21 @@ import {
   initializeWeeklyAvailabilityFromRoles
 } from '@/utils/availability';
 import { PractitionerRole } from 'fhir/r4';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Props = {
   practitionerRoles?: (PractitionerRole | IPractitionerRoleDetail)[];
   practitionerRole?: PractitionerRole | IPractitionerRoleDetail;
   onSuccess?: () => void;
   onCancel?: () => void;
+  /** When true, skips rendering the internal FloatingSaveButton — used when parent manages save. */
+  hideSaveButton?: boolean;
+  /** Reports dirty state and save handler to parent (for external FAB management). */
+  onDirtyChange?: (
+    dirty: boolean,
+    save: () => Promise<void>,
+    saving: boolean
+  ) => void;
 };
 
 /**
@@ -52,11 +60,10 @@ export default function PractitionerAvailabilityEditor({
   practitionerRoles,
   practitionerRole,
   onSuccess,
-  onCancel
+  onCancel,
+  hideSaveButton = false,
+  onDirtyChange
 }: Props) {
-  const { state: authState } = useAuth();
-  const practitionerId = authState?.userInfo?.fhirId;
-
   // Convert single practitionerRole to array for backward compatibility
   const memoizedRolesToUse = useMemo(
     () => practitionerRoles || (practitionerRole ? [practitionerRole] : []),
@@ -81,9 +88,20 @@ export default function PractitionerAvailabilityEditor({
     getInitialSelectedDay(stableInitialWeeklyAvailability)
   );
 
-  // Update state when stableInitialWeeklyAvailability changes
+  // Compute a stable data key from stableInitialWeeklyAvailability for deep comparison.
+  // Uses JSON.stringify(weeklyAvailability) via normalizeAvailability to ignore IDs.
+  const initialDataKeyRef = useRef(
+    JSON.stringify(normalizeAvailability(stableInitialWeeklyAvailability))
+  );
+
   useEffect(() => {
-    if (!weeklyAvailabilityDirty) {
+    const dataKey = JSON.stringify(
+      normalizeAvailability(stableInitialWeeklyAvailability)
+    );
+    const prevDataKey = initialDataKeyRef.current;
+    initialDataKeyRef.current = dataKey;
+
+    if (!weeklyAvailabilityDirty && dataKey !== prevDataKey) {
       setWeeklyAvailability(stableInitialWeeklyAvailability);
       setSelectedDay(getInitialSelectedDay(stableInitialWeeklyAvailability));
     }
@@ -103,77 +121,10 @@ export default function PractitionerAvailabilityEditor({
   const { mutateAsync: updateAvailability } = useUpdateAvailability();
 
   /**
-   * Handle adding a time range for a specific organization and day
-   */
-  const handleAddTimeRange = (organizationId: string, day: DayOfWeek) => {
-    setWeeklyAvailability(prev => {
-      const newAvailability = { ...prev };
-      newAvailability[day] = { ...(newAvailability[day] || {}) };
-      const orgRanges = newAvailability[day][organizationId] || [];
-      const newTimeRange: TimeRange = {
-        id: generateTimeRangeId(),
-        from: '09:00',
-        to: '17:00'
-      };
-
-      newAvailability[day][organizationId] = [...orgRanges, newTimeRange];
-
-      return newAvailability;
-    });
-    setWeeklyAvailabilityDirty(true);
-  };
-
-  /**
-   * Handle updating a time range
-   */
-  const handleUpdateTimeRange = (
-    organizationId: string,
-    day: DayOfWeek,
-    timeRangeId: string,
-    field: 'from' | 'to',
-    value: string
-  ) => {
-    setWeeklyAvailability(prev => {
-      const newAvailability = { ...prev };
-      newAvailability[day] = { ...(newAvailability[day] || {}) };
-      const orgRanges = newAvailability[day][organizationId] || [];
-
-      newAvailability[day][organizationId] = orgRanges.map(range =>
-        range.id === timeRangeId ? { ...range, [field]: value } : range
-      );
-
-      return newAvailability;
-    });
-    setWeeklyAvailabilityDirty(true);
-  };
-
-  /**
-   * Handle deleting a time range
-   */
-  const handleDeleteTimeRange = (
-    organizationId: string,
-    day: DayOfWeek,
-    timeRangeId: string
-  ) => {
-    setWeeklyAvailability(prev => {
-      const newAvailability = { ...prev };
-      newAvailability[day] = { ...(newAvailability[day] || {}) };
-      const orgRanges = newAvailability[day][organizationId] || [];
-
-      newAvailability[day][organizationId] = orgRanges.filter(
-        range => range.id !== timeRangeId
-      );
-
-      return newAvailability;
-    });
-    setWeeklyAvailabilityDirty(true);
-  };
-
-  /**
    * Handle saving all availability changes
    */
   const handleSave = async () => {
-    if (!memoizedRolesToUse || memoizedRolesToUse.length === 0) {
+    if (memoizedRolesToUse.length === 0) {
       console.error('At least one PractitionerRole is required');
       return;
     }
@@ -202,11 +153,102 @@ export default function PractitionerAvailabilityEditor({
       if (onSuccess) {
         onSuccess();
       }
+
+      // Mark dirty as cleared and update baseline so subsequent edits
+      // are correctly detected as new unsaved changes.
+      setWeeklyAvailabilityDirty(false);
+      savedBaselineRef.current = structuredClone(weeklyAvailability); // skipcq: JS-0357 — accessed in async handler, not during render
     } catch (error) {
       console.error('Failed to update availability:', error);
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Stable ref to avoid effect loops from inline handleSave
+  const saveRef = useRef(handleSave);
+  saveRef.current = handleSave;
+
+  // Track the last-saved availability so dirty detection works correctly after save.
+  const savedBaselineRef = useRef<WeeklyAvailability>(
+    stableInitialWeeklyAvailability
+  );
+
+  // Report dirty state to parent via onDirtyChange callback.
+  // Pass a wrapper that reads saveRef.current at call time to avoid stale closures
+  // when the user modifies multiple days before saving (the effect deps don't include
+  // weeklyAvailability, so it won't re-fire when dirty is already true).
+  useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(weeklyAvailabilityDirty, () => saveRef.current(), isSaving);
+    }
+  }, [weeklyAvailabilityDirty, isSaving, onDirtyChange]);
+
+  /**
+   * Handle adding a time range for a specific organization and day
+   */
+  const handleAddTimeRange = (organizationId: string, day: DayOfWeek) => {
+    setWeeklyAvailability(prev => {
+      const newAvailability = { ...prev };
+      newAvailability[day] = { ...newAvailability[day] };
+      const orgRanges = newAvailability[day][organizationId] || []; // eslint-disable-line security/detect-object-injection -- computed key from trusted weeklyAvailability state
+      const newTimeRange: TimeRange = {
+        id: generateTimeRangeId(),
+        from: '09:00',
+        to: '17:00'
+      };
+
+      newAvailability[day][organizationId] = [...orgRanges, newTimeRange]; // eslint-disable-line security/detect-object-injection -- computed key from trusted weeklyAvailability state
+
+      return newAvailability;
+    });
+    setWeeklyAvailabilityDirty(true);
+  };
+
+  /**
+   * Handle updating a time range
+   */
+  const handleUpdateTimeRange = (
+    organizationId: string,
+    day: DayOfWeek,
+    timeRangeId: string,
+    field: 'from' | 'to',
+    value: string
+  ) => {
+    setWeeklyAvailability(prev => {
+      const newAvailability = { ...prev };
+      newAvailability[day] = { ...newAvailability[day] };
+      const orgRanges = newAvailability[day][organizationId] || []; // eslint-disable-line security/detect-object-injection -- computed key from trusted weeklyAvailability state
+
+      newAvailability[day][organizationId] = orgRanges.map(range =>
+        range.id === timeRangeId ? { ...range, [field]: value } : range
+      );
+
+      return newAvailability;
+    });
+    setWeeklyAvailabilityDirty(true);
+  };
+
+  /**
+   * Handle deleting a time range
+   */
+  const handleDeleteTimeRange = (
+    organizationId: string,
+    day: DayOfWeek,
+    timeRangeId: string
+  ) => {
+    setWeeklyAvailability(prev => {
+      const newAvailability = { ...prev };
+      newAvailability[day] = { ...newAvailability[day] };
+      const orgRanges = newAvailability[day][organizationId] || []; // eslint-disable-line security/detect-object-injection -- computed key from trusted weeklyAvailability state
+
+      newAvailability[day][organizationId] = orgRanges.filter(
+        range => range.id !== timeRangeId
+      );
+
+      return newAvailability;
+    });
+    setWeeklyAvailabilityDirty(true);
   };
 
   // Get organizations from practitioner roles
@@ -250,35 +292,36 @@ export default function PractitionerAvailabilityEditor({
   }, [memoizedRolesToUse]);
 
   // Function to normalize availability for comparison (ignoring IDs)
-  const normalizeAvailability = (avail: WeeklyAvailability) => {
+  function normalizeAvailability(avail: WeeklyAvailability) {
+    const obj = avail as Record<string, OrganizationTimeRanges>;
     const normalized: Record<
       string,
       Record<string, { from: string; to: string }[]>
     > = {};
     for (const day in avail) {
+      if (!Object.hasOwn(obj, day)) continue;
       normalized[day] = {};
-      for (const org in avail[day]) {
-        normalized[day][org] = avail[day][org]
+      for (const org in obj[day]) {
+        if (!Object.hasOwn(obj[day], org)) continue;
+        normalized[day][org] = obj[day][org] // eslint-disable-line security/detect-object-injection -- computed keys from trusted weeklyAvailability structure
           .map(({ from, to }) => ({ from, to }))
-          .sort(
+          .toSorted(
             (a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to)
           );
       }
     }
     return normalized;
-  };
+  }
 
-  // Check if there are any changes to save
+  // Check if there are any changes to save (against the last-saved baseline)
   const hasChanges = useMemo(() => {
-    // Compare current state with initial state, ignoring generated IDs
+    // Compare current state with last-saved baseline, ignoring generated IDs
     const normalizedCurrent = normalizeAvailability(weeklyAvailability);
-    const normalizedInitial = normalizeAvailability(
-      stableInitialWeeklyAvailability
-    );
+    const normalizedInitial = normalizeAvailability(savedBaselineRef.current);
     return (
       JSON.stringify(normalizedCurrent) !== JSON.stringify(normalizedInitial)
     );
-  }, [weeklyAvailability, stableInitialWeeklyAvailability]);
+  }, [weeklyAvailability]);
 
   return (
     <div className='flex h-full flex-col pb-24 sm:pb-28 md:pb-32'>
@@ -311,13 +354,17 @@ export default function PractitionerAvailabilityEditor({
         />
       </div>
 
-      {/* Floating Save Button */}
-      <FloatingSaveButton
-        onSave={handleSave}
-        onCancel={onCancel}
-        isSaving={isSaving}
-        hasChanges={hasChanges}
-      />
+      {/* Floating Save Button — hidden when parent manages its own FAB (admin shell) */}
+      {!hideSaveButton && (
+        <FloatingSaveButton
+          onSave={() => {
+            handleSave().catch(console.error);
+          }}
+          onCancel={onCancel}
+          isSaving={isSaving}
+          hasChanges={hasChanges}
+        />
+      )}
     </div>
   );
 }

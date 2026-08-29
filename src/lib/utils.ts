@@ -1,53 +1,74 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+/**
+ *
+ */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ *
+ */
 export function getFromLocalStorage(key: string): string | null {
   if (typeof window !== 'undefined') return window.localStorage.getItem(key);
 
   return null;
 }
 
-export function setToLocalStorage(key: string, value: any): void {
+/**
+ *
+ */
+export function setToLocalStorage(key: string, value: unknown): void {
   if (typeof window !== 'undefined')
-    return window.localStorage.setItem(key, JSON.stringify(value));
-
-  return null;
+    window.localStorage.setItem(key, JSON.stringify(value));
 }
 
-export function toQueryString(obj: Record<string, any>): string {
+/**
+ *
+ */
+export function toQueryString(obj: Record<string, unknown>): string {
   const filteredParams = Object.entries(obj)
-    .filter(([_, value]) => value !== '' && value != null)
-    .map(
-      ([key, value]) =>
-        `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-    )
+    .filter(([, value]) => value !== '' && value != null)
+    .map(([key, value]) => {
+      const str = typeof value === 'string' ? value : JSON.stringify(value);
+      return `${encodeURIComponent(key)}=${encodeURIComponent(str)}`;
+    })
     .join('&');
 
   return filteredParams;
 }
 
-export function createUniqueRandomRange(min, max) {
+/**
+ *
+ */
+export function createUniqueRandomRange(
+  min: number,
+  max: number
+): () => number | undefined {
   const numbers = Array.from({ length: max - min + 1 }, (_, i) => i + min);
 
   return function () {
-    if (numbers.length === 0) return;
+    if (numbers.length === 0) return undefined; // eslint-disable-line unicorn/no-useless-undefined
 
     const randomIndex = Math.floor(Math.random() * numbers.length);
     return numbers.splice(randomIndex, 1)[0];
   };
 }
 
-export function getDaysInRange(startDate, endDate) {
+/** Get abbreviated weekday names for each day in a date range. */
+export function getDaysInRange(
+  startDate: string,
+  endDate: string
+): string[] | null {
   const start = new Date(startDate);
   const end = new Date(endDate);
+  const endTime = end.getTime();
 
-  const daysInRange = [];
+  const daysInRange: string[] = [];
 
-  while (start <= end) {
+  while (start.getTime() <= endTime) {
     daysInRange.push(start.toLocaleDateString('en-US', { weekday: 'short' }));
     start.setDate(start.getDate() + 1);
   }
@@ -60,6 +81,10 @@ const formatter = new Intl.ListFormat('id', {
   type: 'conjunction'
 });
 
-export function conjunction(param) {
+/**
+ *
+ */
+export function conjunction(param: string[]): string | undefined {
   if (param) return formatter.format(param);
+  return undefined;
 }

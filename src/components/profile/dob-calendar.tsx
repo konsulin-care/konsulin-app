@@ -1,63 +1,35 @@
-import { addDays } from 'date-fns'
-import { useState } from 'react'
-import Calendar from 'react-calendar'
-import 'react-calendar/dist/Calendar.css'
-import styles from './dob-calendar.module.css'
+'use client';
 
-export default function DobCalendar({ value, onChange }) {
-  const [selectedDate, setSelectedDate] = useState(value)
+import { CalendarBase } from '@/components/ui/calendar-base';
+import { addDays, startOfDay } from 'date-fns';
+import { useState } from 'react';
 
-  const handleDateChange = (date: any) => {
-    onChange(date)
-    setSelectedDate(date)
-  }
+/** Date-of-birth calendar picker with future-date restriction. */
+export default function DobCalendar({
+  value,
+  onChange
+}: Readonly<{ value: Date | null; onChange: (date: Date) => void }>) {
+  const [selected, setSelected] = useState(value);
 
-  const tileDisabled = ({ date, view }) => {
-    if (view === 'month') {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const tomorrow = addDays(today, 1)
-      return date >= tomorrow
-    }
-  }
+  const today = startOfDay(new Date());
+  const maxDate = addDays(today, -1);
 
-  const getTileClassName = ({ date, view }) => {
-    const classes = [styles['custom-tile']]
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    if (view === 'month') {
-      if (
-        date instanceof Date &&
-        date.toDateString() === today.toDateString()
-      ) {
-        classes.push(styles['custom-today'])
-      }
-      if (tileDisabled({ date, view })) {
-        classes.push(styles['custom-disabled'])
-      }
-      if (
-        selectedDate instanceof Date &&
-        date instanceof Date &&
-        date.toDateString() === selectedDate.toDateString()
-      ) {
-        classes.push(styles['custom-selected'])
-      }
-    }
-    return classes.join(' ')
-  }
+  /** Updates the selected date and propagates it to the parent. */
+  const handleSelect = (date: Date | undefined) => {
+    if (!date) return;
+    onChange(date);
+    setSelected(date);
+  };
 
   return (
     <div className='p-4'>
-      <Calendar
-        onChange={value => handleDateChange(value)}
-        value={selectedDate}
-        prev2Label={null}
-        next2Label={null}
-        tileDisabled={tileDisabled}
-        className={`${styles['custom-calendar']}`}
-        tileClassName={getTileClassName}
+      <CalendarBase
+        mode='single'
+        selected={selected ?? undefined}
+        onSelect={handleSelect}
+        disabled={{ after: maxDate }}
+        numberOfMonths={1}
       />
     </div>
-  )
+  );
 }

@@ -1,11 +1,24 @@
+/* eslint-disable max-lines */
+import { dbDelete, STORES } from '@/lib/indexeddb';
+import { enqueueSubmission } from '@/lib/submission-queue';
+import {
+  isNetworkError,
+  QUESTIONNAIRE_RESPONSE_KIND,
+  SOAP_BUNDLE_KIND
+} from '@/lib/submission-replay';
 import { IQuestionnaireResponse } from '@/types/assessment';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {
   Bundle,
   BundleEntry,
+  PlanDefinition,
+  Questionnaire,
   QuestionnaireResponse,
-  QuestionnaireResponseItem
+  QuestionnaireResponseItem,
+  Reference,
+  ResearchStudy
 } from 'fhir/r4';
 import { useMemo } from 'react';
 import {
@@ -14,19 +27,20 @@ import {
 } from '../anonymous-session';
 import { getAPI } from '../api';
 
+/** Parse a canonical URL or reference to extract the resource ID. */
 function parseCanonicalOrReference(
   value?: string,
   expectedType?: string
 ): string | null {
   if (!value) return null;
 
-  const withoutVersion = String(value).split('|')[0];
+  const withoutVersion = value.split('|')[0];
   try {
     const url = new URL(withoutVersion);
     if (expectedType === 'Questionnaire') {
       const segments = url.pathname.split('/').filter(Boolean);
       if (segments.length > 0) {
-        return segments[segments.length - 1];
+        return segments.at(-1);
       }
     }
   } catch {
@@ -36,11 +50,11 @@ function parseCanonicalOrReference(
   const parts = withoutVersion.split('/');
 
   if (!expectedType) {
-    return parts.length > 1 ? parts[parts.length - 1] || null : withoutVersion;
+    return parts.length > 1 ? parts.at(-1) || null : withoutVersion;
   }
 
-  const typeIndex = parts.findIndex(part => part === expectedType);
-  if (typeIndex >= 0 && parts[typeIndex + 1]) {
+  const typeIndex = parts.indexOf(expectedType);
+  if (typeIndex !== -1 && parts[typeIndex + 1]) {
     return parts[typeIndex + 1];
   }
 
@@ -67,6 +81,13 @@ export const RESULT_BRIEF_PLACEHOLDER =
 export const RESULT_BRIEF_LOGIN_REQUIRED =
   'Kindly log in to generate the result brief.';
 
+/**
+ * Returned by submission mutations when the response was queued for
+ * offline replay instead of being sent. Kept opaque so callers can
+ * detect the queued state without changing the mutation's public type.
+ */
+export const OFFLINE_QUEUED = { queued: true } as const;
+
 const POLL_INTERVAL_MS = 1000; // 1 request per second
 const MAX_WAIT_MS = 3000; // max 3 seconds total
 
@@ -87,6 +108,7 @@ type ServiceRequestResultResponse = {
   };
 };
 
+/** Fetch ongoing active research studies with linked questionnaires. */
 export const useOngoingResearch = () => {
   return useQuery({
     queryKey: ['research'],
@@ -94,52 +116,48 @@ export const useOngoingResearch = () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       const API = await getAPI();
 
-      const response = await API.get(
+      const response = await API.get<Bundle>(
         `/fhir/ResearchStudy?date=ge${today}&status=active&_include=ResearchStudy:protocol`
       );
-
-      // Return the response as-is - do not fall back to previous survey periods
-      // This ensures only current and future research studies are displayed
       return response.data;
     },
     select: data => {
-      const entries = Array.isArray(data?.entry)
-        ? data.entry
-        : Array.isArray(data)
-          ? data
-          : [];
+      let entries: unknown[];
+      if (Array.isArray(data?.entry)) {
+        entries = data.entry;
+      } else if (Array.isArray(data)) {
+        entries = data;
+      } else {
+        entries = [];
+      }
 
-      const resources = entries.map((e: any) => e?.resource ?? e);
+      const resources = (entries as BundleEntry[]).map(e => e.resource);
 
       const researchStudies = resources.filter(
-        (resource: any) => resource?.resourceType === 'ResearchStudy'
+        (resource): resource is ResearchStudy =>
+          resource?.resourceType === 'ResearchStudy'
       );
 
       const planDefinitions = resources.filter(
-        (resource: any) => resource?.resourceType === 'PlanDefinition'
+        (resource): resource is PlanDefinition =>
+          resource?.resourceType === 'PlanDefinition'
       );
 
-      if (!researchStudies.length) return [];
+      if (researchStudies.length === 0) return [];
 
       const planToQuestionnaires: Record<string, string[]> = {};
 
-      planDefinitions.forEach((plan: any) => {
+      planDefinitions.forEach((plan: PlanDefinition) => {
         if (!plan?.id) return;
 
         const questionnaireIds: string[] =
-          plan.action?.flatMap((action: any) => {
+          plan.action?.flatMap(action => {
             const canId = parseCanonicalOrReference(
               action.definitionCanonical,
               'Questionnaire'
             );
-            if (canId) return [canId];
 
-            const refId = parseCanonicalOrReference(
-              action.definitionReference?.reference,
-              'Questionnaire'
-            );
-
-            return refId ? [refId] : [];
+            return canId ? [canId] : [];
           }) || [];
 
         const planId: string = plan.id;
@@ -147,18 +165,14 @@ export const useOngoingResearch = () => {
         planToQuestionnaires[planId] = [...new Set(questionnaireIds)];
       });
 
-      return researchStudies.map((study: any) => {
-        const protocolRefs = Array.isArray(study.protocol)
-          ? study.protocol
-          : [study.protocol].filter(Boolean);
+      return researchStudies.map((study: ResearchStudy) => {
+        const protocolRefs: Reference[] = study.protocol ?? [];
 
         const planIds = protocolRefs
-          .map((protocol: any) => {
-            const ref = protocol?.reference ?? protocol?.canonical ?? protocol;
-
-            return parseCanonicalOrReference(ref, 'PlanDefinition');
-          })
-          .filter(Boolean) as string[];
+          .map((protocol: Reference) =>
+            parseCanonicalOrReference(protocol.reference, 'PlanDefinition')
+          )
+          .filter((x): x is string => x !== null);
 
         const questionnaireIds = planIds.flatMap(
           planId => planToQuestionnaires[planId] || []
@@ -173,28 +187,32 @@ export const useOngoingResearch = () => {
   });
 };
 
+/** Fetch a single questionnaire by ID. */
 export const useQuestionnaire = (questionnaireId: number | string) => {
   return useQuery({
     queryKey: ['assessments', questionnaireId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle<Questionnaire>>(
         `/fhir/Questionnaire?_id=${questionnaireId}`
       );
       return response;
     },
+    staleTime: 30_000,
+    retry: 1,
     select: response => {
-      return response.data.entry || null;
+      return response.data.entry ?? null;
     }
   });
 };
 
+/** Fetch the SOAP questionnaire. */
 export const useQuestionnaireSoap = () => {
   return useQuery({
     queryKey: ['SOAP'],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get('/fhir/Questionnaire/soap');
+      const response = await API.get<Questionnaire>('/fhir/Questionnaire/soap');
       return response;
     },
     select: response => {
@@ -203,21 +221,33 @@ export const useQuestionnaireSoap = () => {
   });
 };
 
+/** Submit a SOAP questionnaire response bundle. */
 export const useSubmitSoapBundle = () => {
   return useMutation({
     mutationKey: ['soap-response'],
     mutationFn: async (bundle: Bundle) => {
       const API = await getAPI();
-      const response = await API.post('/fhir', bundle);
-      return response.data;
+      try {
+        const response = await API.post<Bundle>('/fhir', bundle);
+        return response.data;
+      } catch (error) {
+        if (isNetworkError(error)) {
+          await enqueueSubmission(SOAP_BUNDLE_KIND, bundle);
+          return OFFLINE_QUEUED as unknown as Bundle;
+        }
+        throw error;
+      }
     }
   });
 };
 
+/** Submit a completed questionnaire response. */
 export const useSubmitQuestionnaire = (
   questionnaireId: string,
-  isAuthenticated: Boolean
+  isAuthenticated: boolean
 ) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
     mutationFn: async (questionnaireResponse: QuestionnaireResponse) => {
@@ -225,37 +255,76 @@ export const useSubmitQuestionnaire = (
 
       const timestamp = new Date().toISOString();
 
-      if (isAuthenticated) {
-        localStorage.removeItem(`response_${questionnaireId}`);
-      }
-
       const API = await getAPI();
 
       let identifier = questionnaireResponse.identifier;
+      let ownerId = '';
       if (!isAuthenticated) {
-        const guestId = await ensureAnonymousSession(false);
-        identifier = buildAnonymousIdentifier(guestId);
+        try {
+          const guestId = await ensureAnonymousSession(false);
+          identifier = buildAnonymousIdentifier(guestId);
+          ownerId = guestId;
+        } catch (error) {
+          // Offline anonymous: keep any existing identifier and let the
+          // queue replay the fully-prepared payload once back online.
+          if (!isNetworkError(error)) throw error;
+        }
       }
 
-      const response = await API.post('/fhir/QuestionnaireResponse', {
+      const payload = {
         author,
         item,
         identifier,
         resourceType,
-        questionnaire: `Questionnaire/${questionnaireId}`,
+        questionnaire: toCanonicalQuestionnaireUrl(questionnaireId),
         status: 'completed',
         authored: timestamp,
         subject
-      });
-      return response.data;
+      };
+
+      try {
+        const response = await API.post<QuestionnaireResponse>(
+          '/fhir/QuestionnaireResponse',
+          payload
+        );
+
+        // Only delete draft after successful server submission.
+        if (isAuthenticated) {
+          dbDelete(STORES.assessmentDrafts, ['', questionnaireId]).catch(
+            (err: unknown) => console.warn('[IndexedDB]', err)
+          );
+        }
+
+        return response.data;
+      } catch (error) {
+        // Network-level failure: queue for replay instead of failing the
+        // submission. The marker keeps the mutation's public type stable.
+        if (isNetworkError(error)) {
+          await enqueueSubmission(
+            QUESTIONNAIRE_RESPONSE_KIND,
+            payload,
+            ownerId
+          );
+          return OFFLINE_QUEUED as unknown as QuestionnaireResponse;
+        }
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      // Reflect the new contribution in research progress widgets.
+      // skipcq: JS-0098 - fire-and-forget query invalidation
+      void queryClient.invalidateQueries({ queryKey: ['research'] });
     }
   });
 };
 
+/** Update an existing submitted questionnaire response. */
 export const useUpdateSubmitQuestionnaire = (
   questionnaireId: string,
   isAuthenticated: boolean
 ) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: ['assessment-responses', questionnaireId],
     mutationFn: async (questionnaireResponse: QuestionnaireResponse) => {
@@ -275,24 +344,34 @@ export const useUpdateSubmitQuestionnaire = (
         identifier = buildAnonymousIdentifier(guestId);
       }
 
-      const response = await API.put(`/fhir/QuestionnaireResponse/${id}`, {
-        id,
-        author,
-        item,
-        identifier,
-        resourceType,
-        questionnaire: `Questionnaire/${questionnaireId}`,
-        status: 'completed',
-        authored: timestamp,
-        subject
-      });
+      const response = await API.put<QuestionnaireResponse>(
+        `/fhir/QuestionnaireResponse/${id}`,
+        {
+          id,
+          author,
+          item,
+          identifier,
+          resourceType,
+          questionnaire: toCanonicalQuestionnaireUrl(questionnaireId),
+          status: 'completed',
+          authored: timestamp,
+          subject
+        }
+      );
       return response.data;
+    },
+    onSuccess: () => {
+      // Reflect the updated contribution in research progress widgets.
+      // skipcq: JS-0098 - fire-and-forget query invalidation
+      void queryClient.invalidateQueries({ queryKey: ['research'] });
     }
   });
 };
 
+/** Sleep for a given number of milliseconds. */
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+/** Poll for a service request result note until timeout. */
 async function pollServiceRequestNote(
   API: Awaited<ReturnType<typeof getAPI>>,
   serviceRequestId: string
@@ -316,6 +395,7 @@ async function pollServiceRequestNote(
   return '';
 }
 
+/** Trigger interpretation hook and poll for result brief. */
 export const useResultBrief = (questionnaireId: string) => {
   type ResultBriefResponse = { note: string; serviceRequestId: string };
 
@@ -328,7 +408,7 @@ export const useResultBrief = (questionnaireId: string) => {
 
       // 1) Trigger async webhook through backend
       const hookRes = await API.post<HookInterpretResponse>(
-        `/api/v1/hook/interpret`,
+        '/api/v1/hook/interpret',
         payload
       );
 
@@ -355,6 +435,7 @@ export const useResultBrief = (questionnaireId: string) => {
   });
 };
 
+/** Fetch questionnaire response for a patient. */
 export const useQuestionnaireResponse = ({
   questionnaireId,
   patientId,
@@ -367,18 +448,23 @@ export const useQuestionnaireResponse = ({
       return `${baseUrl}/${questionnaireId}`;
     }
 
-    return `${baseUrl}?questionnaire=Questionnaire/big-five-inventory&patient=${patientId}&_elements=item&_sort=-_lastUpdated`;
+    const canonical = questionnaireId
+      ? toCanonicalQuestionnaireUrl(questionnaireId)
+      : '';
+    const questionnaireParam = canonical ? `&questionnaire=${canonical}` : '';
+
+    return `${baseUrl}?patient=${patientId}${questionnaireParam}&_elements=item&_sort=-_lastUpdated`;
   }, [patientId, questionnaireId]);
 
   return useQuery({
     queryKey: ['questionnaire-response', questionnaireId, patientId],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(url);
+      const response = await API.get<Bundle>(url);
       return response;
     },
     select: response => response.data || null,
-    enabled: enabled
+    enabled
   });
 };
 
@@ -394,7 +480,8 @@ export const searchQuestionnaires = async (
 ): Promise<BundleEntry[]> => {
   try {
     const API = await getAPI();
-    let url = `/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient`;
+    let url =
+      '/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient';
 
     if (context) {
       url += `&context=${context}`;
@@ -412,17 +499,18 @@ export const searchQuestionnaires = async (
       for (const strategy of searchStrategies) {
         try {
           const testUrl = url + strategy;
-          const response = await API.get(testUrl);
+          const response = await API.get<Bundle<Questionnaire>>(testUrl);
 
           // If we get results, return them
+          // eslint-disable-next-line max-depth
           if (response.data.entry && response.data.entry.length > 0) {
-            return response.data.entry || [];
+            return response.data.entry ?? [];
           }
         } catch (strategyError) {
           console.warn(
             'Search strategy failed, trying next:',
             strategy,
-            strategyError.message
+            (strategyError as Error).message
           );
           // Continue to next strategy
         }
@@ -432,8 +520,8 @@ export const searchQuestionnaires = async (
       return [];
     }
 
-    const response = await API.get(url);
-    return response.data.entry || [];
+    const response = await API.get<Bundle<Questionnaire>>(url);
+    return response.data.entry ?? [];
   } catch (error) {
     console.error('Error searching questionnaires:', error);
     // Return empty array instead of throwing to maintain consistent behavior
@@ -449,7 +537,8 @@ export const searchQuestionnaires = async (
  */
 export const useSearchQuestionnaire = (query: string, context?: string) => {
   const url = useMemo(() => {
-    let url = `/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient`;
+    let url =
+      '/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient';
 
     if (query) {
       url += `&_text=${encodeURIComponent(query)}`;
@@ -466,38 +555,69 @@ export const useSearchQuestionnaire = (query: string, context?: string) => {
     queryKey: ['search-questionnaire', query, context],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(url);
+      const response = await API.get<Bundle<Questionnaire>>(url);
       return response;
     },
-    select: response => response.data.entry || [],
-    enabled: !!query && query.length >= 3 // Only enable if query is meaningful
+    select: response => response.data.entry ?? [],
+    enabled: Boolean(query) && query.length >= 3 // Only enable if query is meaningful
   });
 };
 
-export const useRegularAssessments = () => {
+/**
+ * Fetch the curated 100 questionnaires (context=regular) with all needed fields.
+ *
+ * Returns Questionnaire resources directly (not BundleEntries).
+ */
+export const useCuratedAssessments = () => {
   return useQuery({
-    queryKey: ['regular-assessments'],
+    queryKey: ['curated-assessments'],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
-        '/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient&status=active&context=regular'
+      const response = await API.get<Bundle<Questionnaire>>(
+        '/fhir/Questionnaire?context=regular&status=active&_elements=id,title,description,extension,useContext,code'
       );
       return response;
     },
-    select: response => response.data.entry || null
+    select: response =>
+      (response.data.entry ?? [])
+        .map(e => e.resource)
+        .filter((r): r is Questionnaire => r?.resourceType === 'Questionnaire')
   });
 };
 
+/**
+ * Fetch featured (popular) questionnaires with all needed fields.
+ *
+ * Returns Questionnaire resources directly (not BundleEntries).
+ */
+export const useFeaturedAssessments = () => {
+  return useQuery({
+    queryKey: ['featured-assessments'],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.get<Bundle<Questionnaire>>(
+        '/fhir/Questionnaire?context=popular&_elements=id,title,description,extension,useContext,code'
+      );
+      return response;
+    },
+    select: response =>
+      (response.data.entry ?? [])
+        .map(e => e.resource)
+        .filter((r): r is Questionnaire => r?.resourceType === 'Questionnaire')
+  });
+};
+
+/** Fetch popular assessments (legacy — returns BundleEntries). */
 export const usePopularAssessments = () => {
   return useQuery({
     queryKey: ['popular-assessments'],
     queryFn: async () => {
       const API = await getAPI();
-      const response = await API.get(
+      const response = await API.get<Bundle<Questionnaire>>(
         '/fhir/Questionnaire?_elements=title,description&subject-type=Person,Patient&context=popular'
       );
       return response;
     },
-    select: response => response.data.entry || null
+    select: response => response.data.entry ?? null
   });
 };

@@ -1,5 +1,22 @@
 @import 'tailwindcss';
 @import './phone-input.css';
+@theme {
+  --color-primary: #2c2f35;
+  --color-secondary: #13c2c2;
+}
+
+/* Stretch carousel slides to the tallest slide so every card is equal
+   height. Swiper sizes slides to their content otherwise, which makes the
+   carousel height jump between studies. */
+.research-carousel .swiper-slide {
+  height: auto;
+}
+
+/* Same equal-height behavior for the header session/research carousel.
+   Slides stretch via flexbox, so no JS height measurement is needed. */
+.header-carousel .swiper-slide {
+  height: auto;
+}
 
 * {
   border-color: var(--border);
@@ -10,22 +27,11 @@ body {
   color: hsl(var(--foreground));
 }
 
-.swiper-pagination {
-  position: relative !important;
-  max-width: 95px !important;
-}
-
-.swiper-pagination-bullets {
-  left: auto !important;
-  transform: none !important;
-  margin-left: auto;
-}
-
-.swiper-pagination-bullet-active {
-  background: #0abdc3 !important;
-  width: 24px !important;
-  height: 6px !important;
-  border-radius: 4px !important;
+/* Reserve the vertical scrollbar gutter on classic-scrollbar platforms so
+   the centered page column does not jump sideways when the scrollbar
+   appears/disappears between routes. No-op for overlay scrollbars. */
+html {
+  scrollbar-gutter: stable;
 }
 
 @layer utilities {
@@ -44,6 +50,7 @@ body {
   .tab-active[data-state='active'] {
     background-color: var(--secondary) !important;
     color: white !important;
+    font-weight: 700 !important;
   }
 
   .btn-soft-gray {
@@ -103,35 +110,5 @@ body {
     --ring: 180, 82%, 42%;
 
     --radius: 1rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
   }
 }

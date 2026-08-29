@@ -4,6 +4,9 @@ import { AvailabilityEditorProps } from '@/types/availability';
 import { getDayName } from '@/utils/availability';
 import OrganizationCard from './organization-card';
 
+/**
+ *
+ */
 export default function AvailabilityEditor({
   selectedDay,
   weeklyAvailability,

@@ -24,6 +24,7 @@ type DropdownProps = {
   onSelect: (value: DropdownOption) => void;
 };
 
+/** Profile dropdown selector with search and keyboard navigation. */
 const DropdownProfile: React.FC<DropdownProps> = ({
   options,
   value,
@@ -59,8 +60,7 @@ const DropdownProfile: React.FC<DropdownProps> = ({
                   className='w-full animate-spin'
                 />
               ) : (
-                (options &&
-                  options.find(option => option.code === value)?.name) ||
+                options?.find(option => option.code === value)?.name ||
                 (!value && labelPlaceholder) ||
                 placeholder ||
                 'Select Option'
@@ -76,23 +76,22 @@ const DropdownProfile: React.FC<DropdownProps> = ({
           style={{ minWidth: triggerWidth }}
           className='max-h-60 overflow-y-auto bg-white'
         >
-          {options &&
-            options.map(item => (
-              <DropdownItem
-                key={item.code}
-                onSelect={() => onSelect(item)}
-                className={`w-full bg-white hover:bg-gray-50 focus:bg-gray-100 ${
-                  value === item.code ? 'bg-secondary text-white' : ''
-                }`}
-              >
-                <div className='flex w-full items-center justify-between px-4 py-2'>
-                  <span>{item.name}</span>
-                  {value === item.code && (
-                    <Check className='text-accent-foreground ml-2 h-4 w-4 text-white' />
-                  )}
-                </div>
-              </DropdownItem>
-            ))}
+          {options?.map(item => (
+            <DropdownItem
+              key={item.code}
+              onSelect={() => onSelect(item)}
+              className={`w-full bg-white hover:bg-gray-50 focus:bg-gray-100 ${
+                value === item.code ? 'bg-secondary text-white' : ''
+              }`}
+            >
+              <div className='flex w-full items-center justify-between px-4 py-2'>
+                <span>{item.name}</span>
+                {value === item.code && (
+                  <Check className='text-accent-foreground ml-2 h-4 w-4 text-white' />
+                )}
+              </div>
+            </DropdownItem>
+          ))}
         </DropdownContent>
       </Dropdown>
     </div>

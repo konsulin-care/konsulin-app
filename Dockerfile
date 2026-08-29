@@ -1,76 +1,31 @@
-# =========================
-# Base image with metadata
-# =========================
-FROM node:26-slim AS base
-WORKDIR /app
-
-# Build metadata arguments
-ARG VERSION=latest
-ARG GIT_COMMIT=unknown
-ARG TAG=v0.0.1
-ARG BUILD_TIME="unknown"
-ARG AUTHOR="CI/CD"
-
-# Capture build metadata
-RUN echo "author=${AUTHOR} \
-version=${VERSION} \
-commit=${GIT_COMMIT} \
-tag=${TAG} \
-build time=${BUILD_TIME}" > /app/RELEASE
-
-# Disable Next.js telemetry globally
-ENV NEXT_TELEMETRY_DISABLED=1
-
-# =========================
-# Dependencies stage
-# =========================
-FROM base AS deps
-WORKDIR /app
-
-# Copy only package manifests to leverage cache
+# Stage 1: Build Next.js static export
+FROM node:24-alpine AS next-builder
+WORKDIR /build
 COPY package.json package-lock.json ./
-
-# Ensure deterministic installation
+COPY next.config.mjs tsconfig.json postcss.config.mjs ./  
 RUN npm ci
-
-# =========================
-# Builder stage
-# =========================
-FROM deps AS builder
-WORKDIR /app
-
-# Copy installed node_modules
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy source code
-COPY . .
-
-# Build the Next.js app
+COPY next.config.mjs tsconfig.json ./
+COPY public ./public
+COPY src ./src
 RUN npm run build
 
-# =========================
-# Production runner
-# =========================
-FROM base AS runner
+# Stage 2: Build Go binary
+FROM golang:1.26-alpine AS go-builder
+WORKDIR /build
+RUN apk add --no-cache git
+COPY go.mod go.sum ./
+RUN go mod download
+COPY mise.toml ./
+COPY . .
+RUN CGO_ENABLED=0 go build -o /app/server ./cmd/konsulin-app
+
+# Stage 3: Runtime
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates
 WORKDIR /app
-ENV NODE_ENV=production
+USER nobody:nobody
+COPY --from=go-builder /app/server /app/server
+COPY --from=next-builder /build/out ./out
 ENV PORT=3000
-
-# Create unprivileged user
-RUN addgroup --system --gid 1001 nodejs \
- && adduser --system --uid 1001 nextjs
-
-# Copy build artifacts
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=base --chown=nextjs:nodejs /app/RELEASE ./RELEASE
-
-# Prepare prerender cache with correct permissions
-RUN mkdir -p .next
-
-USER nextjs
 EXPOSE 3000
-
-# Recommended JSON CMD
-CMD ["node", "server.js"]
+CMD ["/app/server"]

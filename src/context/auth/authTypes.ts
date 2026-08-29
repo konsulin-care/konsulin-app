@@ -1,3 +1,6 @@
+import type { RoleProfile } from '@/services/role-profiles';
+import type { Patient, Practitioner } from 'fhir/r4';
+
 export interface IStateAuth {
   isAuthenticated: boolean;
   userInfo: IStateUserInfo;
@@ -5,12 +8,19 @@ export interface IStateAuth {
 
 export interface IStateUserInfo {
   role_name?: string;
+  roles?: string[];
   fullname?: string;
   userId?: string;
   email?: string;
+  phoneNumber?: string;
   profile_picture?: string;
   fhirId?: string;
+  organizationId?: string;
   profile_complete?: boolean;
+  roleProfiles?: Record<string, RoleProfile | null>;
+  fullProfile?: Patient | Practitioner;
+  /** When this profile cache was last fetched, in epoch ms. */
+  cachedAt?: number;
 }
 
 export type IActionAuth = IActionLogin | IActionLogout;

@@ -1,51 +1,60 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unnecessary-type-conversion */
 
 import Avatar from '@/components/general/avatar';
-
-import BackButton from '@/components/general/back-button';
-import EmptyState from '@/components/general/empty-state';
-import Header from '@/components/header';
-import NavigationBar from '@/components/navigation-bar';
-import UpcomingSession from '@/components/schedule/upcoming-session';
-import { Badge } from '@/components/ui/badge';
-import { InputWithIcon } from '@/components/ui/input-with-icon';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import PageHeader from '@/components/page-header';
+import { useScheduleFilter } from '@/components/shared/hooks/useScheduleFilter';
+import SchedulePageShell from '@/components/shared/schedule-page-shell';
 import { useAuth } from '@/context/auth/authContext';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useGetAllAppointments } from '@/services/api/appointments';
 import { IUseClinicParams } from '@/services/clinic';
+import { useAppointments } from '@/services/hooks/useAppointments';
 import { MergedAppointment } from '@/types/appointment';
 import {
   generateAvatarPlaceholder,
   mergeNames,
-  parseMergedAppointments,
-  parseTime
+  parseMergedAppointments
 } from '@/utils/helper';
 import { capitalizeFirstLetter } from '@/utils/validation';
-import {
-  endOfDay,
-  format,
-  isAfter,
-  isBefore,
-  parse,
-  parseISO,
-  setHours,
-  setMinutes,
-  startOfDay
-} from 'date-fns';
-import { SearchIcon } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import SessionFilter from './session-filter';
-
-const now = new Date();
 
 type Props = {
-  fhirId: string;
+  readonly fhirId: string;
 };
 
-const AppointmentCard = ({
+/** True while the appointment awaits payment confirmation. */
+function isProcessingStatus(status: string | null): boolean {
+  return status === 'proposed' || status === 'pending';
+}
+
+/** Pill shown while a proposed/pending appointment awaits payment. */
+function ProcessingPill() {
+  return (
+    <span className='rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-medium text-black'>
+      Processing
+    </span>
+  );
+}
+
+/** Session type label with a plain "Session" fallback when the type is absent. */
+function AppointmentTypeLabel({
+  appointmentType
+}: Readonly<{
+  appointmentType: string | null;
+}>) {
+  return (
+    <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+      {appointmentType
+        ? `${capitalizeFirstLetter(appointmentType)} Session`
+        : 'Session'}
+    </div>
+  );
+}
+
+/** Card displaying a single appointment entry. */
+export const AppointmentCard = ({
   appointment
 }: {
   appointment: MergedAppointment;
@@ -57,32 +66,40 @@ const AppointmentCard = ({
     ? format(parseISO(appointment.slotStart), 'dd/MM/yyyy')
     : '-/-/-';
   const fullName = mergeNames(
-    appointment.practitionerName,
-    appointment.practitionerQualification
+    appointment.practitionerName ?? [],
+    appointment.practitionerQualification ?? undefined
   );
   const displayName =
     fullName.trim() === '-' ? appointment.practitionerEmail : fullName;
-  const { initials, backgroundColor } = generateAvatarPlaceholder({
-    id: appointment.practitionerId,
-    name: displayName,
-    email: appointment.practitionerEmail
+  const { initials, backgroundColor, seed } = generateAvatarPlaceholder({
+    id: appointment.practitionerId ?? undefined,
+    name: displayName ?? undefined,
+    email: appointment.practitionerEmail ?? undefined
   });
+  const placeholderInitials = initials ?? '';
+  const placeholderBg = backgroundColor ?? '';
   const photoUrl = appointment.practitionerPhoto?.[0]?.url;
 
   return (
     <Link
-      href={`/schedule/${appointment.appointmentId}`}
+      href={`/schedule?id=${appointment.appointmentId}`}
       className='card mt-4 flex flex-col gap-2 p-4'
     >
-      <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-        {appointmentStartTime} - {appointmentDate}
+      <div className='flex items-center justify-between'>
+        <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+          {appointmentStartTime} - {appointmentDate}
+        </div>
+        {isProcessingStatus(appointment.appointmentStatus) && (
+          <ProcessingPill />
+        )}
       </div>
 
       <hr className='w-full' />
       <div className='flex items-center'>
         <Avatar
-          initials={initials}
-          backgroundColor={backgroundColor}
+          seed={seed}
+          initials={placeholderInitials}
+          backgroundColor={placeholderBg}
           photoUrl={photoUrl}
           className='mr-2 text-xs'
           imageClassName='mr-2 self-center'
@@ -90,284 +107,98 @@ const AppointmentCard = ({
           width={32}
         />
         <div className='mr-auto text-[12px] font-bold'>{displayName}</div>
-        <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
-          {capitalizeFirstLetter(appointment.appointmentType)} Session
-        </div>
+        <AppointmentTypeLabel appointmentType={appointment.appointmentType} />
       </div>
     </Link>
   );
 };
 
+/**
+ *
+ */
 export default function PatientSchedule({ fhirId }: Props) {
   const { state: authState } = useAuth();
   const [keyword, setKeyword] = useState<string>('');
   const [sessionsFilter, setSessionsFilter] = useState<IUseClinicParams>({});
   const [selectedTab, setSelectedTab] = useState('upcoming');
 
-  const { data: upcomingData, isLoading: isUpcomingLoading } =
-    useGetAllAppointments({
-      patientId: fhirId
-    });
+  const {
+    data: pagesData,
+    isLoading: isAppointmentsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useAppointments('Patient', fhirId);
 
   const debouncedKeyword = useDebounce(keyword, 500);
 
   const parsedAppointmentsData = useMemo(() => {
     if (
-      !upcomingData ||
-      upcomingData?.total === 0 ||
+      !pagesData?.pages ||
+      pagesData.pages.length === 0 ||
       !authState.isAuthenticated
     )
       return null;
 
-    const parsed = parseMergedAppointments(upcomingData);
-    return parsed;
-  }, [upcomingData, authState]);
+    const combined: import('fhir/r4').Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      total: pagesData.pages[0]?.total,
+      entry: pagesData.pages.flatMap(p => p.entry ?? [])
+    };
 
-  const unfilteredAppointmentsData = useMemo(() => {
-    if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
-      return null;
+    return parseMergedAppointments(combined);
+  }, [pagesData, authState]);
 
-    const filtered = parsedAppointmentsData.filter(session => {
-      const slotStart = parseISO(session.slotStart);
-      return isAfter(slotStart, now);
-    });
-
-    return filtered;
-  }, [parsedAppointmentsData]);
-
-  const filteredAppointmentsData = useMemo(() => {
-    if (!parsedAppointmentsData || parsedAppointmentsData.length === 0)
-      return null;
-
-    const { start_date, end_date, start_time, end_time } = sessionsFilter;
-
-    const hasDateFilter = !!start_date && !!end_date;
-    const hasTimeFilter = !!start_time || !!end_time;
-
-    const filterStartDate = start_date;
-    const filterEndDate = end_date;
-
-    const filterStartTime = start_time
-      ? parseTime(start_time, 'HH:mm')
-      : setHours(setMinutes(new Date(), 0), 0); // 00:00
-
-    const filterEndTime = end_time
-      ? parseTime(end_time, 'HH:mm')
-      : setHours(setMinutes(new Date(), 59), 23); // 23:59
-
-    return parsedAppointmentsData.filter(session => {
-      if (!session.slotStart) return false;
-
-      // parse full datetime from slotStart
-      const sessionDate = parseISO(session.slotStart);
-
-      // filter by date range
-      if (
-        hasDateFilter &&
-        (isBefore(sessionDate, startOfDay(filterStartDate!)) ||
-          isAfter(sessionDate, endOfDay(filterEndDate!)))
-      ) {
-        return false;
-      }
-
-      // filter by time range (extract only the time part)
-      if (hasTimeFilter) {
-        const sessionTimeOnly = parse(
-          format(sessionDate, 'HH:mm'),
-          'HH:mm',
-          new Date()
-        );
-
-        if (
-          isBefore(sessionTimeOnly, filterStartTime) ||
-          isAfter(sessionTimeOnly, filterEndTime)
-        ) {
-          return false;
-        }
-      }
-
-      // filter by practitioner's name and qualification, or email
+  const { upcoming, past } = useScheduleFilter({
+    data: parsedAppointmentsData,
+    sessionsFilter,
+    keyword: debouncedKeyword,
+    keywordMatcher: (
+      appointment: MergedAppointment,
+      query: string
+    ): boolean => {
       const fullName = mergeNames(
-        session.practitionerName,
-        session.practitionerQualification
+        appointment.practitionerName ?? [],
+        appointment.practitionerQualification ?? undefined
       )?.toLowerCase();
-      const email = session.practitionerEmail?.toLowerCase();
-
-      if (
-        debouncedKeyword &&
-        !fullName.includes(debouncedKeyword.toLowerCase()) &&
-        !email.includes(debouncedKeyword.toLowerCase())
-      ) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [parsedAppointmentsData, sessionsFilter, selectedTab, debouncedKeyword]);
-
-  const listUpcomingAppointments = useMemo(() => {
-    if (!filteredAppointmentsData || filteredAppointmentsData.length === 0)
-      return [];
-
-    return filteredAppointmentsData
-      .filter(s => s.slotStart && new Date(s.slotStart) >= now)
-      .sort(
-        (a, b) =>
-          new Date(a.slotStart!).getTime() - new Date(b.slotStart!).getTime() // soonest first
+      const email = appointment.practitionerEmail?.toLowerCase();
+      return Boolean(
+        fullName?.includes(query.toLowerCase()) ||
+        email?.includes(query.toLowerCase())
       );
-  }, [filteredAppointmentsData]);
-
-  const listPastAppointments = useMemo(() => {
-    if (!filteredAppointmentsData || filteredAppointmentsData.length === 0)
-      return [];
-
-    return filteredAppointmentsData
-      .filter(s => s.slotStart && new Date(s.slotStart) < now)
-      .sort(
-        (a, b) =>
-          new Date(b.slotStart!).getTime() - new Date(a.slotStart!).getTime() // most-recent first
-      );
-  }, [filteredAppointmentsData]);
-
-  const TabUpcomingSession = () => {
-    return (
-      <>
-        {!listUpcomingAppointments || listUpcomingAppointments.length === 0 ? (
-          <EmptyState
-            className='py-16'
-            title='No Upcoming Sessions'
-            subtitle='You have no scheduled sessions at the moment'
-          />
-        ) : (
-          listUpcomingAppointments.map((appointment: MergedAppointment) => (
-            <AppointmentCard
-              key={appointment.appointmentId}
-              appointment={appointment}
-            />
-          ))
-        )}
-      </>
-    );
-  };
-
-  const TabPastSession = () => {
-    return (
-      <>
-        {!listPastAppointments || listPastAppointments.length === 0 ? (
-          <EmptyState
-            className='py-16'
-            title='No Past Sessions'
-            subtitle='You haven’t completed any sessions yet'
-          />
-        ) : (
-          listPastAppointments.map((appointment: MergedAppointment) => (
-            <AppointmentCard
-              key={appointment.appointmentId}
-              appointment={appointment}
-            />
-          ))
-        )}
-      </>
-    );
-  };
+    }
+  });
 
   return (
     <>
-      <NavigationBar />
-      <Header>
-        <div className='flex w-full flex-col'>
-          <div className='flex items-center'>
-            <BackButton />
-            <span className='text-[14px] font-bold text-white'>
-              Scheduled Session
-            </span>
-          </div>
-
-          {authState &&
-            unfilteredAppointmentsData &&
-            unfilteredAppointmentsData.length > 0 && (
-              <UpcomingSession
-                data={unfilteredAppointmentsData}
-                role={authState.userInfo.role_name}
-              />
-            )}
-        </div>
-      </Header>
-      <div className='mt-[-24px] rounded-[16px] bg-white pb-[100px]'>
-        <div className='w-full p-4'>
-          <div className='flex gap-4'>
-            <InputWithIcon
-              value={keyword}
-              onChange={event => setKeyword(event.target.value)}
-              placeholder='Search'
-              className='mr-4 h-[50px] w-full border-0 bg-[#F9F9F9] text-primary'
-              startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
-            />
-            <SessionFilter
-              onChange={(filter: IUseClinicParams) => {
-                setSessionsFilter(prevState => ({
-                  ...prevState,
-                  ...filter
-                }));
-              }}
-              type={selectedTab}
-              initialFilter={sessionsFilter}
-            />
-          </div>
-
-          <div className='mb-4 flex gap-4'>
-            {sessionsFilter.start_date && sessionsFilter.end_date && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-                {format(new Date(sessionsFilter.start_date), 'dd MMM yy') +
-                  ' - ' +
-                  format(new Date(sessionsFilter.end_date), 'dd MMM yy')}
-              </Badge>
-            )}
-            {sessionsFilter.start_time && sessionsFilter.end_time && (
-              <Badge className='mt-4 rounded-md bg-secondary px-4 py-[3px] font-normal text-white'>
-                {sessionsFilter.start_time + ' - ' + sessionsFilter.end_time}
-              </Badge>
-            )}
-          </div>
-
-          <Tabs
-            defaultValue='upcoming'
-            className='w-full'
-            value={selectedTab}
-            onValueChange={value => setSelectedTab(value)}
-          >
-            <TabsList className='grid w-full grid-cols-2 bg-transparent'>
-              <TabsTrigger
-                className='rounded-none border-secondary data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:text-secondary data-[state=active]:shadow-none'
-                value='upcoming'
-              >
-                Upcoming Session
-              </TabsTrigger>
-              <TabsTrigger
-                className='rounded-none border-secondary data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:text-secondary data-[state=active]:shadow-none'
-                value='past'
-              >
-                Past Session
-              </TabsTrigger>
-            </TabsList>
-            {isUpcomingLoading ? (
-              <Skeleton
-                count={4}
-                className='mt-4 h-[100px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
-              />
-            ) : (
-              <>
-                <TabsContent value='upcoming'>
-                  <TabUpcomingSession />
-                </TabsContent>
-                <TabsContent value='past'>
-                  <TabPastSession />
-                </TabsContent>
-              </>
-            )}
-          </Tabs>
-        </div>
-      </div>
+      <PageHeader />
+      <SchedulePageShell
+        keyword={keyword}
+        onKeywordChange={setKeyword}
+        sessionsFilter={sessionsFilter}
+        onFilterChange={(filter: IUseClinicParams) => {
+          setSessionsFilter(prevState => ({
+            ...prevState,
+            ...filter
+          }));
+        }}
+        selectedTab={selectedTab}
+        onTabChange={setSelectedTab}
+        isLoading={isAppointmentsLoading}
+        upcoming={upcoming}
+        past={past}
+        renderCard={(appointment: MergedAppointment) => (
+          <AppointmentCard appointment={appointment} />
+        )}
+        onLoadMore={() => {
+          fetchNextPage().catch(() => {
+            /* handled by react-query internally */
+          });
+        }}
+        hasMore={hasNextPage}
+        isLoadingMore={isFetchingNextPage}
+      />
     </>
   );
 }

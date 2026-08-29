@@ -1,6 +1,21 @@
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
-function Collapsible({ day, isOpen, onToggle, children, hasSchedules }) {
+/**
+ *
+ */
+function Collapsible({
+  day,
+  isOpen,
+  onToggle,
+  children,
+  hasSchedules
+}: Readonly<{
+  day: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+  hasSchedules?: boolean;
+}>) {
   return (
     <div className='collapsible m-2 rounded-[25px] border bg-gray-50'>
       <button
@@ -35,7 +50,7 @@ function Collapsible({ day, isOpen, onToggle, children, hasSchedules }) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default Collapsible
+export default Collapsible;

@@ -1,41 +1,54 @@
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 import {
   Drawer,
   DrawerClose,
   DrawerContent,
   DrawerTrigger
-} from '@/components/ui/drawer'
-import { SquareCheckIcon, SquareIcon } from 'lucide-react'
-import Image from 'next/image'
-import { useState } from 'react'
+} from '@/components/ui/drawer';
+import { SquareCheckIcon, SquareIcon } from 'lucide-react';
+import Image from 'next/image';
+import { useState } from 'react';
 
-const testItems = [
+type TestItem = {
+  readonly id: number;
+  readonly name: string;
+};
+
+const testItems: readonly TestItem[] = [
   { id: 1, name: 'BIG 5 Personality Test' },
   { id: 2, name: 'BIG 4 Personality Test' },
   { id: 3, name: 'BIG 3 Personality Test' }
-]
+];
 
-export default function ObjectiveFindingModal({ objectiveFinding, onChange }) {
-  const [selectedTest, setSelectedTest] = useState(objectiveFinding)
+/** Objective-finding drawer for selecting psychological test batteries. */
+export default function ObjectiveFindingModal({
+  objectiveFinding,
+  onChange
+}: {
+  readonly objectiveFinding: readonly boolean[];
+  readonly onChange: (items: readonly TestItem[]) => void;
+}) {
+  const [selectedTest, setSelectedTest] = useState(objectiveFinding);
 
+  /** Toggle selection state for a test item at the given index. */
   const handleSelectedTest = (index: number) => {
-    const newTest = [...selectedTest]
-    newTest[index] = !newTest[index]
-    setSelectedTest(newTest)
-    onChange(testItems.filter((item, index) => item && newTest[index]))
-  }
+    const newTest = [...selectedTest];
+    newTest[index] = !newTest[index]; // eslint-disable-line security/detect-object-injection -- computed key from trusted testItems map
+    setSelectedTest(newTest);
+    onChange(testItems.filter((_item, index) => newTest[index])); // eslint-disable-line security/detect-object-injection -- computed key from trusted testItems map
+  };
 
   return (
     <Drawer>
       <DrawerTrigger className='flex' asChild>
-        <Button className='rounded-xl bg-secondary text-[14px] text-white'>
+        <Button className='bg-secondary rounded-xl text-[14px] text-white'>
           Add Test
         </Button>
       </DrawerTrigger>
       <DrawerContent className='mx-auto max-w-screen-sm p-4'>
         {testItems.map((item, index) => (
           <div
-            key={index}
+            key={item.id}
             className='card my-4 flex items-center justify-evenly border'
           >
             <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
@@ -48,24 +61,31 @@ export default function ObjectiveFindingModal({ objectiveFinding, onChange }) {
               />
             </div>
             <div className='mr-auto'>{item.name}</div>
-            <div onClick={() => handleSelectedTest(index)}>
+            <button
+              type='button'
+              aria-label={`Toggle ${item.name}`}
+              aria-pressed={selectedTest[index]}
+              onClick={() => {
+                handleSelectedTest(index);
+              }}
+            >
               {selectedTest[index] ? (
                 <SquareCheckIcon fill='#13c2c2' color='white' />
               ) : (
                 <SquareIcon color='hsla(240,6%,83%,1)' />
               )}
-            </div>
+            </button>
           </div>
         ))}
         <DrawerClose>
-          <Button className='w-full rounded-xl bg-secondary p-4 text-[14px] text-white'>
+          <Button className='bg-secondary w-full rounded-xl p-4 text-[14px] text-white'>
             Save Test
           </Button>
-          <Button className='w-full rounded-xl bg-white p-4 text-[14px] text-secondary'>
+          <Button className='text-secondary w-full rounded-xl bg-white p-4 text-[14px]'>
             Close
           </Button>
         </DrawerClose>
       </DrawerContent>
     </Drawer>
-  )
+  );
 }

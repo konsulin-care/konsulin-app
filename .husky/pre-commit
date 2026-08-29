@@ -1,4 +1,35 @@
 #!/usr/bin/env sh
 #. "$(dirname -- "$0")/_/husky.sh" # Removed: Will fail in v10.0.0
 
-npm run lint-staged
+# mise manages Go, templ, golangci-lint — ensure shims are on PATH
+export PATH="$HOME/.local/share/mise/shims:$PATH"
+
+# Only run Go checks if Go files are staged
+if git diff --cached --name-only --diff-filter=ACMR | grep -q '\.go$'; then
+  make check-go && make test-go && make docker-check || exit 1
+else
+  echo "  No Go files staged — skipping Go checks"
+fi
+
+# Type-check TypeScript — fail commit on any error
+if ! npm run typecheck; then
+  echo "  TypeScript errors found. Fix them and try again."
+  exit 1
+fi
+
+# Lint staged JS/TS files — fail commit on any error
+if ! npx --no-install lint-staged; then
+  echo "  Lint-staged failed, do npm install and try again"
+  exit 1
+fi
+
+# Run tests for staged test files last — run only after all cheap checks pass
+STAGED_TESTS=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.test\.(ts|tsx)$' || true)
+if [ -n "$STAGED_TESTS" ]; then
+  if ! npx vitest run $STAGED_TESTS; then
+    echo "  Tests failed. Fix them and try again."
+    exit 1
+  fi
+else
+  echo "  No test files staged — skipping tests"
+fi
