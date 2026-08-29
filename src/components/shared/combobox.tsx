@@ -165,10 +165,17 @@ function OptionList({
         className={cn(
           'shrink-0',
           inputHeaderTestId !== undefined &&
-            'bg-background sticky top-0 z-10 border-b'
+            'sticky top-0 z-10 border-b bg-white p-3'
         )}
       >
-        <CommandInput placeholder={placeholder} />
+        <CommandInput
+          placeholder={placeholder}
+          wrapperClassName={
+            inputHeaderTestId === undefined
+              ? undefined
+              : 'rounded-xl border-0 bg-[#efefef]'
+          }
+        />
       </div>
       <CommandList style={listStyle} className={listClassName}>
         <CommandEmpty>{emptyMessage}</CommandEmpty>

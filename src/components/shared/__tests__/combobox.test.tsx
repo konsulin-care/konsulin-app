@@ -277,6 +277,30 @@ describe('Combobox (mobile sheet)', () => {
     });
   });
 
+  it('insets the search field as a rounded chip on a padded white header', async () => {
+    render(
+      <Combobox
+        options={PROVINCES}
+        value=''
+        onSelect={vi.fn()}
+        placeholder='Select province'
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox'));
+
+    await waitFor(() => {
+      const header = screen.getByTestId('combobox-sheet-input-header');
+      expect(header.className).toContain('p-3');
+      expect(header.className).toContain('bg-white');
+
+      const wrapper = header.querySelector('[data-cmdk-input-wrapper]');
+      expect(wrapper).not.toBeNull();
+      expect(wrapper?.className).toContain('rounded-xl');
+      expect(wrapper?.className).toContain('bg-[#efefef]');
+    });
+  });
+
   it('keeps role=combobox and aria-expanded on the trigger in sheet mode', async () => {
     render(
       <Combobox
