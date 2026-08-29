@@ -1,10 +1,9 @@
 'use client';
 
-import DobCalendar from '@/components/profile/dob-calendar';
+import DobInput from '@/components/profile/dob-input';
 import AppDrawer from '@/components/ui/app-drawer';
 import { genderList, languageOptions } from '@/constants/profile';
 import type { FhirResourceType } from '@/utils/role-fhir';
-import { format } from 'date-fns';
 import { useEffect, useState, type ChangeEvent, type ReactNode } from 'react';
 import { useProfileSectionSave } from './hooks/useProfileSectionSave';
 import { mergePersonalInfo, mergePersonalInfoSync } from './section-merge';
@@ -97,11 +96,6 @@ export default function PersonalInfoEditDrawer({
     }
   }, [open, gender, birthDate, languageCode]);
 
-  /** Handle date selection from the calendar. */
-  const handleDobChange = (date: Date) => {
-    setDobValue(format(date, 'yyyy-MM-dd'));
-  };
-
   /** Save gender, DOB and (when supported) language. */
   const handleSave = () => {
     if (!genderValue || !dobValue) return;
@@ -166,10 +160,7 @@ export default function PersonalInfoEditDrawer({
         </SelectField>
 
         <Field label='Date of Birth'>
-          <DobCalendar
-            value={dobValue ? new Date(dobValue) : null}
-            onChange={handleDobChange}
-          />
+          <DobInput value={dobValue} onChange={setDobValue} />
         </Field>
 
         {supportsLanguage && (
