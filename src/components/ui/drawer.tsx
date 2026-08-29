@@ -44,8 +44,11 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
 const DrawerContent = React.forwardRef<
   React.ComponentRef<typeof DrawerPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & {
+    /** Skip the modal overlay (e.g. when a nested sheet has taken over). */
+    hideOverlay?: boolean;
+  }
+>(({ className, children, hideOverlay = false, ...props }, ref) => {
   const [contentNode, setContentNode] = React.useState<HTMLElement | null>(
     null
   );
@@ -63,7 +66,7 @@ const DrawerContent = React.forwardRef<
   );
   return (
     <DrawerPortal>
-      <DrawerOverlay />
+      {!hideOverlay && <DrawerOverlay />}
       <DrawerPrimitive.Content
         ref={composeRefs}
         className={cn(

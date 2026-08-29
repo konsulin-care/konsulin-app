@@ -15,7 +15,9 @@ vi.mock('@/components/ui/drawer', () => ({
     <div
       data-testid='drawer-root'
       data-open={open}
-      onClick={() => onOpenChange?.(false)}
+      onClick={event => {
+        if (event.target === event.currentTarget) onOpenChange?.(false);
+      }}
     >
       {children}
     </div>
@@ -23,8 +25,22 @@ vi.mock('@/components/ui/drawer', () => ({
   DrawerTrigger: ({ children }: { children: ReactNode }) => (
     <div data-testid='drawer-trigger'>{children}</div>
   ),
-  DrawerContent: ({ children }: { children: ReactNode }) => (
-    <div data-testid='drawer-content'>{children}</div>
+  DrawerContent: ({
+    children,
+    'data-suspended': dataSuspended,
+    hideOverlay
+  }: {
+    children: ReactNode;
+    'data-suspended'?: boolean;
+    hideOverlay?: boolean;
+  }) => (
+    <div
+      data-testid='drawer-content'
+      data-suspended={dataSuspended ?? false}
+      data-hide-overlay={hideOverlay ?? false}
+    >
+      {children}
+    </div>
   ),
   DrawerHeader: ({ children }: { children: ReactNode }) => (
     <div data-testid='drawer-header'>{children}</div>
@@ -37,7 +53,7 @@ vi.mock('@/components/ui/drawer', () => ({
   )
 }));
 
-import AppDrawer from '@/components/ui/app-drawer';
+import AppDrawer, { useAppDrawerHost } from '@/components/ui/app-drawer';
 
 describe('AppDrawer', () => {
   it('renders title, description, and body children', () => {
@@ -221,5 +237,84 @@ describe('AppDrawer exclusive enforcement', () => {
 
     const roots = drawerRoots();
     expect(roots[1]).toHaveAttribute('data-open', 'true');
+  });
+});
+
+/** Child of AppDrawer that drives the host suspension via context. */
+function SuspendControls() {
+  const host = useAppDrawerHost();
+  return (
+    <div>
+      <button type='button' onClick={() => host.suspend()}>
+        suspend
+      </button>
+      <button type='button' onClick={() => host.resume()}>
+        resume
+      </button>
+      <p>Host children stay mounted</p>
+    </div>
+  );
+}
+
+function SuspendHarness() {
+  const [open, setOpen] = useState(true);
+  return (
+    <AppDrawer open={open} onClose={() => setOpen(false)} title='Host'>
+      <SuspendControls />
+    </AppDrawer>
+  );
+}
+
+describe('AppDrawer suspension', () => {
+  it('hides the suspended drawer without unmounting its children', () => {
+    render(<SuspendHarness />);
+
+    expect(screen.getByTestId('drawer-content')).toHaveAttribute(
+      'data-suspended',
+      'false'
+    );
+    expect(screen.getByText('Host children stay mounted')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'suspend' }));
+    expect(screen.getByTestId('drawer-content')).toHaveAttribute(
+      'data-suspended',
+      'true'
+    );
+    expect(screen.getByTestId('drawer-content')).toHaveAttribute(
+      'data-hide-overlay',
+      'true'
+    );
+    expect(screen.getByText('Host children stay mounted')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'resume' }));
+    expect(screen.getByTestId('drawer-content')).toHaveAttribute(
+      'data-suspended',
+      'false'
+    );
+    expect(screen.getByTestId('drawer-content')).toHaveAttribute(
+      'data-hide-overlay',
+      'false'
+    );
+    expect(screen.getByText('Host children stay mounted')).toBeInTheDocument();
+  });
+
+  it('clears the suspension when the drawer closes', () => {
+    render(<SuspendHarness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'suspend' }));
+    expect(screen.getByTestId('drawer-content')).toHaveAttribute(
+      'data-suspended',
+      'true'
+    );
+
+    fireEvent.click(screen.getByTestId('drawer-root'));
+    expect(screen.getByTestId('drawer-root')).toHaveAttribute(
+      'data-open',
+      'false'
+    );
+    expect(screen.getByTestId('drawer-content')).toHaveAttribute(
+      'data-suspended',
+      'false'
+    );
   });
 });
