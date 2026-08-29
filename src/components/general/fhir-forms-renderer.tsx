@@ -487,7 +487,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         footerContent={footerContent}
       >
         {hasNextQuestionnaire && batchProgress && (
-          <div className='flex flex-col items-center gap-4 px-4'>
+          <div className='flex flex-col items-center gap-4'>
             <CircularProgress
               value={batchProgress.completed / batchProgress.total}
               size={120}

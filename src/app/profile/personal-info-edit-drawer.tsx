@@ -140,7 +140,7 @@ export default function PersonalInfoEditDrawer({
       ctaLoading={isSaving}
       onCtaClick={handleSave}
     >
-      <div className='space-y-5 px-4 pb-4'>
+      <div className='space-y-5'>
         <SelectField
           label='Gender'
           value={genderValue}

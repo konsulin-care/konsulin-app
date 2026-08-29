@@ -233,7 +233,7 @@ export default function AddressEditDrawer({
       ctaLoading={isSaving}
       onCtaClick={handleSave}
     >
-      <div className='space-y-5 px-4 pb-4'>
+      <div className='space-y-5'>
         <StreetLinesField
           lines={lines}
           onLineChange={handleLineChange}

@@ -242,7 +242,7 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     isLoading || !isDataLoaded ? (
       <div className='p-4 text-center'>Loading...</div>
     ) : (
-      <div className='space-y-4 px-4'>
+      <div className='space-y-4'>
         <LocationFormFields
           status={status}
           name={name}

@@ -52,6 +52,18 @@ describe('AppDrawer', () => {
     expect(screen.getByText('Body content')).toBeInTheDocument();
   });
 
+  it('applies the standard 16px inset to the body content wrapper', () => {
+    render(
+      <AppDrawer open onClose={vi.fn()} title='My Title'>
+        <p>Body content</p>
+      </AppDrawer>
+    );
+
+    const body = screen.getByText('Body content').parentElement;
+    expect(body?.className).toContain('px-4');
+    expect(body?.className).toContain('pb-4');
+  });
+
   it('renders the CTA label and calls onCtaClick on click', () => {
     const onCtaClick = vi.fn();
     render(

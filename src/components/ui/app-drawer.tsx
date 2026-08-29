@@ -123,7 +123,7 @@ export default function AppDrawer({
               )}
             </DrawerHeader>
           )}
-          <div className='flex-1'>{children}</div>
+          <div className='flex-1 px-4 pb-4'>{children}</div>
           {hasCta && (
             <div className='sticky bottom-0 mt-auto border-t bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]'>
               <Button

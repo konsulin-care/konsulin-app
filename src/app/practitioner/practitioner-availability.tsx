@@ -604,7 +604,7 @@ export default function PractitionerAvailability({
           </button>
         }
       >
-        <div className='scrollbar-hide mt-4 h-full overflow-y-auto px-1'>
+        <div className='scrollbar-hide mt-4 h-full overflow-y-auto'>
           {bookingContent}
         </div>
       </AppDrawer>
