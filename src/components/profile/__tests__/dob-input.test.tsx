@@ -38,92 +38,75 @@ describe('DobInput', () => {
   // Selection and onChange emission
   // ---------------------------------------------------------------------------
 
-  it('emits yyyy-MM-dd when a day is selected', () => {
-    const onChange = vi.fn();
-    render(<DobInput value='1990-03-01' onChange={onChange} />);
+  it.each([
+    { field: 'Day', initial: '1990-03-01', next: '5', expected: '1990-03-05' },
+    {
+      field: 'Month',
+      initial: '1990-01-12',
+      next: 'June',
+      expected: '1990-06-12'
+    },
+    {
+      field: 'Year',
+      initial: '2000-03-12',
+      next: '1995',
+      expected: '1995-03-12'
+    }
+  ])(
+    'emits yyyy-MM-dd when $field is selected',
+    ({ field, initial, next, expected }) => {
+      const onChange = vi.fn();
+      render(<DobInput value={initial} onChange={onChange} />);
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Day' }), {
-      target: { value: '5' }
-    });
+      fireEvent.change(screen.getByRole('combobox', { name: field }), {
+        target: { value: next }
+      });
 
-    expect(onChange).toHaveBeenCalledWith('1990-03-05');
-  });
-
-  it('emits yyyy-MM-dd when a month is selected', () => {
-    const onChange = vi.fn();
-    render(<DobInput value='1990-01-12' onChange={onChange} />);
-
-    fireEvent.change(screen.getByRole('combobox', { name: 'Month' }), {
-      target: { value: 'June' }
-    });
-
-    expect(onChange).toHaveBeenCalledWith('1990-06-12');
-  });
-
-  it('emits yyyy-MM-dd when a year is selected', () => {
-    const onChange = vi.fn();
-    render(<DobInput value='2000-03-12' onChange={onChange} />);
-
-    fireEvent.change(screen.getByRole('combobox', { name: 'Year' }), {
-      target: { value: '1995' }
-    });
-
-    expect(onChange).toHaveBeenCalledWith('1995-03-12');
-  });
+      expect(onChange).toHaveBeenCalledWith(expected);
+    }
+  );
 
   // ---------------------------------------------------------------------------
-  // Day clamping when month changes
+  // Day clamping when month or year changes
   // ---------------------------------------------------------------------------
 
-  it('clamps day from 31 to 28 when switching Jan -> Feb (non-leap year)', () => {
+  it.each([
+    {
+      note: 'Jan 31 -> Feb in 2023 (non-leap) clamps to 28',
+      initial: '2023-01-31',
+      field: 'Month',
+      next: 'February',
+      expected: '2023-02-28'
+    },
+    {
+      note: 'Jan 31 -> Feb in 2024 (leap) clamps to 29',
+      initial: '2024-01-31',
+      field: 'Month',
+      next: 'February',
+      expected: '2024-02-29'
+    },
+    {
+      note: 'Feb 29 in 2024 -> 2023 (non-leap) clamps to 28',
+      initial: '2024-02-29',
+      field: 'Year',
+      next: '2023',
+      expected: '2023-02-28'
+    },
+    {
+      note: 'day 15 survives switching to March (31 days)',
+      initial: '2023-01-15',
+      field: 'Month',
+      next: 'March',
+      expected: '2023-03-15'
+    }
+  ])('clamps day: $note', ({ initial, field, next, expected }) => {
     const onChange = vi.fn();
-    render(<DobInput value='2023-01-31' onChange={onChange} />);
+    render(<DobInput value={initial} onChange={onChange} />);
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Month' }), {
-      target: { value: 'February' }
+    fireEvent.change(screen.getByRole('combobox', { name: field }), {
+      target: { value: next }
     });
 
-    // 2023 is not a leap year, so Feb has 28 days -> clamped to 28
-    expect(onChange).toHaveBeenCalledWith('2023-02-28');
-  });
-
-  it('clamps day from 31 to 29 when switching Jan -> Feb (leap year)', () => {
-    const onChange = vi.fn();
-    render(<DobInput value='2024-01-31' onChange={onChange} />);
-
-    fireEvent.change(screen.getByRole('combobox', { name: 'Month' }), {
-      target: { value: 'February' }
-    });
-
-    // 2024 is a leap year, so Feb has 29 days -> clamped to 29
-    expect(onChange).toHaveBeenCalledWith('2024-02-29');
-  });
-
-  // ---------------------------------------------------------------------------
-  // Day clamping when year changes
-  // ---------------------------------------------------------------------------
-
-  it('clamps day from 29 to 28 when switching 2024 (leap) -> 2023 (non-leap) for Feb', () => {
-    const onChange = vi.fn();
-    render(<DobInput value='2024-02-29' onChange={onChange} />);
-
-    fireEvent.change(screen.getByRole('combobox', { name: 'Year' }), {
-      target: { value: '2023' }
-    });
-
-    // 2023 Feb has 28 days -> clamped to 28
-    expect(onChange).toHaveBeenCalledWith('2023-02-28');
-  });
-
-  it('does not clamp day when new month has enough days', () => {
-    const onChange = vi.fn();
-    render(<DobInput value='2023-01-15' onChange={onChange} />);
-
-    fireEvent.change(screen.getByRole('combobox', { name: 'Month' }), {
-      target: { value: 'March' }
-    });
-
-    // Mar has 31 days, day 15 is fine
-    expect(onChange).toHaveBeenCalledWith('2023-03-15');
+    expect(onChange).toHaveBeenCalledWith(expected);
   });
 });
