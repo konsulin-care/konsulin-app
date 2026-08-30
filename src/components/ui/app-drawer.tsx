@@ -109,8 +109,12 @@ export default function AppDrawer({
   const [suspended, setSuspended] = useState(false);
   const host = useMemo<AppDrawerHost>(
     () => ({
-      suspend: () => setSuspended(true),
-      resume: () => setSuspended(false)
+      suspend: () => {
+        setSuspended(true);
+      },
+      resume: () => {
+        setSuspended(false);
+      }
     }),
     []
   );
