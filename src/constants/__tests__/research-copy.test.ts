@@ -20,8 +20,8 @@ describe('research-copy', () => {
       STANDALONE_RESEARCH_MESSAGE
     ];
     for (const message of allCopy) {
-      expect(message.title).not.toMatch(/[—–]/);
-      expect(message.body).not.toMatch(/[—–]/);
+      expect(message.title).not.toMatch(/[—–]/u);
+      expect(message.body).not.toMatch(/[—–]/u);
     }
   });
 
