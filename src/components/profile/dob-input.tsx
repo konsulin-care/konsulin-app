@@ -83,11 +83,11 @@ export default function DobInput({ value, onChange }: DobInputProps) {
 
   // Sync from external value on mount / prop change.
   useEffect(() => {
-    const p = parseDob(value);
-    if (p) {
-      setDay(p.day);
-      setMonth(p.month);
-      setYear(p.year);
+    const parsedDob = parseDob(value);
+    if (parsedDob) {
+      setDay(parsedDob.day);
+      setMonth(parsedDob.month);
+      setYear(parsedDob.year);
     }
   }, [value]);
 
@@ -114,18 +114,21 @@ export default function DobInput({ value, onChange }: DobInputProps) {
     [onChange]
   );
 
+  /** Emit the date when the day select changes. */
   const handleDayChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const next = Number(e.target.value);
     setDay(next);
     if (month >= 0 && year > 0) emit(next, month, year);
   };
 
+  /** Emit the date when the month select changes. */
   const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const next = MONTH_INDEX.get(e.target.value) ?? -1;
     setMonth(next);
     if (next >= 0 && year > 0) emit(day, next, year);
   };
 
+  /** Emit the date when the year select changes. */
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const next = Number(e.target.value);
     setYear(next);
