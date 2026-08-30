@@ -43,16 +43,23 @@ describe('resourceKey', () => {
 
 describe('dedupeProfileResources', () => {
   it('keeps a single copy of identical resources', () => {
-    const a = practitioner('2026-08-13T08:04:41.761Z');
-    const b = practitioner('2026-08-13T08:04:41.761Z');
-    const result = dedupeProfileResources([a, b, b]);
+    const firstResource = practitioner('2026-08-13T08:04:41.761Z');
+    const duplicateResource = practitioner('2026-08-13T08:04:41.761Z');
+    const result = dedupeProfileResources([
+      firstResource,
+      duplicateResource,
+      duplicateResource
+    ]);
     expect(result).toHaveLength(1);
-    expect(result[0]).toBe(a);
+    expect(result[0]).toBe(firstResource);
   });
 
   it('keeps distinct resources separate', () => {
-    const p = practitioner('2026-08-13T08:04:41.761Z');
-    expect(dedupeProfileResources([patient, p])).toEqual([patient, p]);
+    const practitionerResource = practitioner('2026-08-13T08:04:41.761Z');
+    expect(dedupeProfileResources([patient, practitionerResource])).toEqual([
+      patient,
+      practitionerResource
+    ]);
   });
 
   it('keeps the preferred (active role) copy even when another copy is newer', () => {
