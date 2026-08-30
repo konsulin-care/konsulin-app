@@ -70,6 +70,30 @@ describe('DobInput', () => {
   // Day clamping when month or year changes
   // ---------------------------------------------------------------------------
 
+  // ---------------------------------------------------------------------------
+  // Syncing from external value
+  // ---------------------------------------------------------------------------
+
+  it('clears selects when value changes from valid date to empty string', () => {
+    const { rerender } = render(
+      <DobInput value='1990-03-12' onChange={vi.fn()} />
+    );
+    expect(screen.getByRole('combobox', { name: 'Day' })).toHaveValue('12');
+
+    rerender(<DobInput value='' onChange={vi.fn()} />);
+
+    expect(screen.getByRole('combobox', { name: 'Day' })).toHaveValue('');
+    expect(screen.getByRole('option', { name: 'DD' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Month' })).toHaveValue('');
+    expect(screen.getByRole('option', { name: 'Month' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Year' })).toHaveValue('');
+    expect(screen.getByRole('option', { name: 'YYYY' })).toBeInTheDocument();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Day clamping when month or year changes
+  // ---------------------------------------------------------------------------
+
   it.each([
     {
       note: 'Jan 31 -> Feb in 2023 (non-leap) clamps to 28',

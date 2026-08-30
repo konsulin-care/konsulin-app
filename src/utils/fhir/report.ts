@@ -60,6 +60,7 @@ export function bucketResponsesByBatch<T extends ReportResponse>(
   return buckets;
 }
 
+// Pure function with no get/set concerns; extraction unnecessary
 /**
  * Deduplicates responses within each batch, keeping only the most recent
  * response per questionnaire ID (by authored date).

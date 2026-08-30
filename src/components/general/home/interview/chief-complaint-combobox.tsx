@@ -48,6 +48,7 @@ export function ChiefComplaintCombobox({
   }, [comboboxOptions]);
 
   return (
+    // No itemFilterValue override; whitespace issue does not apply
     <Combobox
       options={comboboxOptions}
       quickOptions={quickOptions}

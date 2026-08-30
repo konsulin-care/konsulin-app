@@ -88,6 +88,10 @@ export default function DobInput({ value, onChange }: DobInputProps) {
       setDay(parsedDob.day);
       setMonth(parsedDob.month);
       setYear(parsedDob.year);
+    } else {
+      setDay(0);
+      setMonth(-1);
+      setYear(0);
     }
   }, [value]);
 

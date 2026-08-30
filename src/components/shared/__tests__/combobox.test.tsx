@@ -438,3 +438,54 @@ describe('Combobox (mobile sheet)', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Quick-pick whitespace edge case (cmdk trims values before filter)
+// ---------------------------------------------------------------------------
+
+describe('Combobox quick-pick filter with whitespace', () => {
+  it('shows quick picks even when itemFilterValue returns values with trailing whitespace', async () => {
+    // cmdk trims values before calling filter, so if itemFilterValue returns
+    // 'PHQ-2 ', the filter receives 'PHQ-2'. The map must also store trimmed
+    // keys to match.
+    const options: readonly ComboboxOption[] = [
+      { code: 'phq2', name: 'PHQ-2', searchText: 'PHQ-2 depression ' },
+      { code: 'gad7', name: 'GAD-7', searchText: 'GAD-7 anxiety ' }
+    ];
+    const quickOptions = [options[0]]; // PHQ-2 as quick pick
+
+    // itemFilterValue returns searchText with trailing whitespace
+    const itemFilterValue = (option: ComboboxOption) =>
+      option.searchText ?? option.name;
+
+    render(
+      <Combobox
+        options={options}
+        quickOptions={quickOptions}
+        value=''
+        onSelect={vi.fn()}
+        placeholder='Select questionnaire'
+        itemFilterValue={itemFilterValue}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox'));
+
+    await waitFor(() => {
+      // PHQ-2 should appear as a quick pick (empty search)
+      expect(screen.getByText('PHQ-2')).toBeInTheDocument();
+      // GAD-7 should also render (all items show when search is empty)
+      expect(screen.getByText('GAD-7')).toBeInTheDocument();
+    });
+
+    // Type a search term to trigger filtering (cmdk calls filter here)
+    const input = screen.getByPlaceholderText('Select questionnaire');
+    fireEvent.change(input, { target: { value: 'PHQ' } });
+
+    await waitFor(() => {
+      // PHQ-2 matches the search; GAD-7 does not
+      expect(screen.getByText('PHQ-2')).toBeInTheDocument();
+      expect(screen.queryByText('GAD-7')).not.toBeInTheDocument();
+    });
+  });
+});

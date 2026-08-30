@@ -132,7 +132,7 @@ function OptionList({
   const optionByFilterValue = useMemo(() => {
     const byValue = new Map<string, ComboboxOption>();
     for (const option of options) {
-      byValue.set(itemFilterValue(option), option);
+      byValue.set(itemFilterValue(option).trim(), option);
     }
     return byValue;
   }, [itemFilterValue, options]);
@@ -141,7 +141,7 @@ function OptionList({
   const filter = (itemValue: string, search: string): number => {
     if (search === '') {
       if (quickCodes.size > 0) {
-        const option = optionByFilterValue.get(itemValue);
+        const option = optionByFilterValue.get(itemValue.trim());
         return option && quickCodes.has(option.code) ? 1 : 0;
       }
       return 1;

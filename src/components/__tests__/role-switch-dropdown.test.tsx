@@ -102,7 +102,7 @@ describe('RoleSwitchDropdown switchRole', () => {
     vi.clearAllMocks();
     vi.mocked(fetchCSRFToken).mockResolvedValue('csrf-1');
     locationHref = '';
-    // Mock window.location.href setter in jsdom
+    // jsdom workaround: window.location is non-configurable by default
     Object.defineProperty(window, 'location', {
       value: { ...originalLocation, href: '' },
       writable: true,

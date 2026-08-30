@@ -156,6 +156,7 @@ export function useReportResponses(
           response: QuestionnaireResponse;
           updatedAt: number;
         }>(STORES.assessmentDrafts);
+        // Drafts use updatedAt, not authored; date bounds would discard valid work
         draftResponses = drafts
           .filter(draft => idSet.has(draft.questionnaireId))
           .map(draft => draft.response);

@@ -43,6 +43,7 @@ export default function PractitionerLocationCombobox({
     <Combobox
       options={options}
       value={selectedId ?? ''}
+      // Intentional: filters by ID, not display name
       itemFilterValue={(option: ComboboxOption) => option.code}
       onSelect={(option: ComboboxOption) => {
         onSelect(option.code);
