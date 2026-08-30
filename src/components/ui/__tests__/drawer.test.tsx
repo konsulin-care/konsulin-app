@@ -123,4 +123,56 @@ describe('DrawerContent', () => {
 
     expect(selections).toEqual(['Option A']);
   });
+
+  it('keeps the overlay mounted below the content across hideOverlay toggles', () => {
+    function OverlayToggleHarness() {
+      const [hideOverlay, setHideOverlay] = ReactUseState(false);
+      return (
+        <div>
+          <Drawer open>
+            <DrawerContent hideOverlay={hideOverlay}>
+              <DrawerTitle>Toggle Title</DrawerTitle>
+            </DrawerContent>
+          </Drawer>
+          <button
+            type='button'
+            data-testid='toggle-overlay'
+            onClick={() => {
+              setHideOverlay(value => !value);
+            }}
+          >
+            toggle-overlay
+          </button>
+        </div>
+      );
+    }
+
+    const overlayNode = () => document.querySelector('[data-vaul-overlay]');
+    const contentNode = () => document.querySelector('[data-vaul-drawer]');
+    const bodyChildIndex = (element: Element | null): number => {
+      if (!element) return -1;
+      return Array.from(document.body.children).indexOf(element);
+    };
+
+    render(<OverlayToggleHarness />);
+
+    expect(overlayNode()).not.toBeNull();
+    expect(bodyChildIndex(overlayNode())).toBeLessThan(
+      bodyChildIndex(contentNode())
+    );
+
+    fireEvent.click(screen.getByTestId('toggle-overlay'));
+    expect(overlayNode()).not.toBeNull();
+    expect(overlayNode()).toHaveClass('invisible');
+    expect(bodyChildIndex(overlayNode())).toBeLessThan(
+      bodyChildIndex(contentNode())
+    );
+
+    fireEvent.click(screen.getByTestId('toggle-overlay'));
+    expect(overlayNode()).not.toBeNull();
+    expect(overlayNode()).not.toHaveClass('invisible');
+    expect(bodyChildIndex(overlayNode())).toBeLessThan(
+      bodyChildIndex(contentNode())
+    );
+  });
 });

@@ -45,7 +45,11 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 const DrawerContent = React.forwardRef<
   React.ComponentRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & {
-    /** Skip the modal overlay (e.g. when a nested sheet has taken over). */
+    /**
+     * Visually hide the modal overlay instead of unmounting it (e.g. while a
+     * nested sheet has taken over). Keeping the node mounted preserves the
+     * portal DOM order, so a restore can never land above the drawer content.
+     */
     hideOverlay?: boolean;
   }
 >(({ className, children, hideOverlay = false, ...props }, ref) => {
@@ -66,7 +70,7 @@ const DrawerContent = React.forwardRef<
   );
   return (
     <DrawerPortal>
-      {!hideOverlay && <DrawerOverlay />}
+      <DrawerOverlay className={hideOverlay ? 'invisible' : undefined} />
       <DrawerPrimitive.Content
         ref={composeRefs}
         className={cn(
