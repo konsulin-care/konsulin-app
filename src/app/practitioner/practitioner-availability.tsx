@@ -180,6 +180,7 @@ export default function PractitionerAvailability({
     isPageMode ? pageDate : bookingState.date
   );
 
+  /** Update a single field in booking state via dispatch. */
   const handleFilterChange = (
     label: string,
     value: string | Date | boolean | undefined
@@ -192,6 +193,7 @@ export default function PractitionerAvailability({
     });
   };
 
+  /** Reset start time and clear any form validation error. */
   const resetData = () => {
     handleFilterChange('startTime', null);
     setErrorForm(null);
