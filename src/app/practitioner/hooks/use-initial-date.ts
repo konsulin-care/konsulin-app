@@ -41,7 +41,7 @@ export function useInitialDate({
     pageDateInitialized.current = true;
     const initialDate = pickInitialDate(today, listAvailableDate);
     // Avoid unnecessary state update if pageDate already matches.
-    if (pageDate?.getTime() === initialDate.getTime()) return;
+    if (pageDate.getTime() === initialDate.getTime()) return;
     setPageDate(initialDate);
     // pageDate is intentionally excluded from deps to prevent re-initialization
     // when the user changes the selection.

@@ -22,7 +22,9 @@ export function useFabActionSync({
         type: 'SET_ACTION',
         config: {
           label: 'Book Now',
-          onAction: () => handleSubmitFormRef.current(),
+          onAction: () => {
+            handleSubmitFormRef.current();
+          },
           isSaving: false,
           variant: 'primary'
         }

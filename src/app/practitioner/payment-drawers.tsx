@@ -25,33 +25,8 @@ type Avatar = {
   seed?: string;
 };
 
-/** Shared payment and payment-pending drawers. Resolved props only — no mode logic. */
-export default function PaymentDrawers({
-  // PaymentDrawer props
-  paymentOpen,
-  setPaymentOpen,
-  setPaymentPendingOpen,
-  practitionerAvatar,
-  practitionerOrganizationName,
-  practitionerName,
-  healthcareServiceName,
-  bookingState,
-  invoice,
-  isPaying,
-  patientId,
-  selectedSlotId,
-  appointmentId,
-  bookingForm,
-  practitionerRole,
-  healthcareServiceId,
-  payAppointment,
-  queryClient,
-  handleFilterChange,
-  setIsOpen,
-  // PaymentPendingDrawer props
-  pendingOpen,
-  setPendingOpen
-}: {
+/** Props for the shared payment and payment-pending drawers. */
+type PaymentDrawersProps = {
   /** Whether the payment drawer is open. */
   paymentOpen: boolean;
   setPaymentOpen: (open: boolean) => void;
@@ -82,7 +57,35 @@ export default function PaymentDrawers({
   /** Whether the payment-pending drawer is open. */
   pendingOpen: boolean;
   setPendingOpen: (open: boolean) => void;
-}) {
+};
+
+/** Shared payment and payment-pending drawers. Resolved props only — no mode logic. */
+export default function PaymentDrawers({
+  // PaymentDrawer props
+  paymentOpen,
+  setPaymentOpen,
+  setPaymentPendingOpen,
+  practitionerAvatar,
+  practitionerOrganizationName,
+  practitionerName,
+  healthcareServiceName,
+  bookingState,
+  invoice,
+  isPaying,
+  patientId,
+  selectedSlotId,
+  appointmentId,
+  bookingForm,
+  practitionerRole,
+  healthcareServiceId,
+  payAppointment,
+  queryClient,
+  handleFilterChange,
+  setIsOpen,
+  // PaymentPendingDrawer props
+  pendingOpen,
+  setPendingOpen
+}: Readonly<PaymentDrawersProps>) {
   return (
     <>
       <PaymentDrawer
