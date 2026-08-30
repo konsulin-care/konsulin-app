@@ -39,8 +39,8 @@ export type AppDrawerHost = {
 
 /** Fallback for nested sheets rendered outside an AppDrawer. */
 const NOOP_HOST: AppDrawerHost = {
-  suspend: () => void 0,
-  resume: () => void 0
+  suspend: (): void => undefined,
+  resume: (): void => undefined
 };
 
 const AppDrawerHostContext = createContext<AppDrawerHost>(NOOP_HOST);
