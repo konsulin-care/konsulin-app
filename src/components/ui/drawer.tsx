@@ -91,6 +91,7 @@ const DrawerContent = React.forwardRef<
 });
 DrawerContent.displayName = 'DrawerContent';
 
+/** Standardized drawer header (title + description) grid. */
 const DrawerHeader = ({
   className,
   ...props
@@ -99,6 +100,7 @@ const DrawerHeader = ({
 );
 DrawerHeader.displayName = 'DrawerHeader';
 
+/** Standardized drawer footer slot for action buttons. */
 const DrawerFooter = ({
   className,
   ...props
