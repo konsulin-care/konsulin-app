@@ -143,8 +143,14 @@ export function useProfilePhotoSave({
         const merged = mergePhoto(resources, uploadedUrl);
 
         if (Object.keys(merged).length > 1) {
+          const activeMerged = getRoleValue(merged, activeRole);
+          if (!activeMerged) {
+            throw new Error('Missing active profile resource');
+          }
+          // Multi-role: one all-or-nothing transaction bundle. Prefer the
+          // active role's copy when several roles share one FHIR resource.
           const response = await submitFhirBundle(
-            buildProfileTransactionBundle(Object.values(merged))
+            buildProfileTransactionBundle(Object.values(merged), activeMerged)
           );
           assertBundleSuccess(response);
         } else {
