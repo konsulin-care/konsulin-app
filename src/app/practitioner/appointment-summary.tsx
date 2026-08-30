@@ -26,6 +26,7 @@ type ServiceDetailsProps = {
   locationName?: string;
 };
 
+/** Date, time, and optional location rows for the appointment summary card. */
 function ServiceDetails({
   dateFormatted,
   timeFormatted,
