@@ -2,7 +2,11 @@
 import type { IActionBooking } from '@/context/booking/bookingTypes';
 import { getInitials } from '@/utils/name';
 import { addMinutes, format, parse } from 'date-fns';
-import type { PractitionerRoleAvailableTime } from 'fhir/r4';
+import type {
+  Invoice,
+  PractitionerRole,
+  PractitionerRoleAvailableTime
+} from 'fhir/r4';
 
 /** Returns all available appointment days for a given month. */
 export const getAvailableDays = (
@@ -169,6 +173,42 @@ export function buildPractitionerAvatar(input: {
       : input.practitionerAvatar?.initials,
     backgroundColor: input.practitionerAvatar?.backgroundColor
   };
+}
+
+/** Resolved props for PaymentDrawers (both modes). */
+export type ResolvedPaymentProps = {
+  healthcareServiceName: string;
+  invoice: Invoice | undefined;
+  patientId: string;
+  practitionerRole: PractitionerRole;
+  healthcareServiceId: string;
+};
+
+/** Resolve payment-drawer fallback props for page mode. */
+export function resolvePagePaymentProps(params: {
+  propHealthcareServiceName: string | undefined;
+  healthcareServiceNames: string[];
+  relayInvoice: Invoice | null;
+  invoice: Invoice | undefined;
+  patientId: string | undefined;
+  effectiveRole: PractitionerRole | undefined;
+  propHealthcareServiceId: string | undefined;
+}): ResolvedPaymentProps {
+  const fallbackName = params.healthcareServiceNames[0] ?? 'Consultation';
+  return {
+    healthcareServiceName: params.propHealthcareServiceName ?? fallbackName,
+    invoice: params.relayInvoice ?? params.invoice,
+    patientId: params.patientId ?? '',
+    practitionerRole: params.effectiveRole ?? ({} as PractitionerRole),
+    healthcareServiceId: params.propHealthcareServiceId ?? ''
+  };
+}
+
+/** Resolve the drawer-mode healthcare service display name. */
+export function resolveDrawerServiceName(
+  healthcareServiceNames: string[]
+): string {
+  return healthcareServiceNames[0] ?? 'Consultation';
 }
 
 /** Create a mode-aware filter-change handler. */
