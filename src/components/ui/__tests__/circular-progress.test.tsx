@@ -16,12 +16,11 @@ describe('CircularProgress', () => {
     expect(screen.getByText('0%')).toBeInTheDocument();
   });
 
-  it('exposes progress via the aria-valuenow attribute', () => {
+  it('exposes progress via a native <progress>', () => {
     render(<CircularProgress value={0.5} />);
     const ring = screen.getByRole('progressbar');
-    expect(ring).toHaveAttribute('aria-valuenow', '50');
-    expect(ring).toHaveAttribute('aria-valuemin', '0');
-    expect(ring).toHaveAttribute('aria-valuemax', '100');
+    expect(ring).toHaveAttribute('value', '50');
+    expect(ring).toHaveAttribute('max', '100');
   });
 
   it('drives the foreground arc with stroke-dashoffset from the value', () => {
@@ -30,7 +29,7 @@ describe('CircularProgress', () => {
     const radius = (120 - 8) / 2;
     const circumference = 2 * Math.PI * radius;
     const circles = container.querySelectorAll('circle');
-    expect(circles.length).toBe(2);
+    expect(circles).toHaveLength(2);
     // Foreground arc: full circumference minus the completed fraction.
     expect(circles[1]).toHaveAttribute(
       'stroke-dashoffset',
@@ -41,18 +40,23 @@ describe('CircularProgress', () => {
   });
 
   it('applies a passed className to the wrapper', () => {
-    render(<CircularProgress value={0.5} className='mx-auto' />);
-    expect(screen.getByRole('progressbar').getAttribute('class')).toContain(
-      'mx-auto'
+    const { container } = render(
+      <CircularProgress value={0.5} className='mx-auto' />
     );
+    expect(container.querySelector('div.mx-auto')).not.toBeNull();
   });
 
   it('honors custom size and strokeWidth', () => {
-    render(<CircularProgress value={0.5} size={160} strokeWidth={12} />);
-    const ring = screen.getByRole('progressbar');
-    expect(ring).toHaveAttribute('width', '160');
-    expect(ring).toHaveAttribute('height', '160');
-    const circles = ring.querySelectorAll('circle');
+    const { container } = render(
+      <CircularProgress value={0.5} size={160} strokeWidth={12} />
+    );
+    const svg = container.querySelector('svg');
+    const circles = container.querySelectorAll('circle');
+
+    expect(svg).not.toBeNull();
+    expect(svg).toHaveAttribute('width', '160');
+    expect(svg).toHaveAttribute('height', '160');
+    expect(circles).toHaveLength(2);
     expect(circles[0]).toHaveAttribute('stroke-width', '12');
   });
 });

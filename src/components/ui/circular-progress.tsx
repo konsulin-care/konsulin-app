@@ -9,7 +9,7 @@ interface CircularProgressProps {
   size?: number;
   /** Ring stroke width in pixels. Defaults to 8. */
   strokeWidth?: number;
-  /** Tailwind class forwarded to the SVG wrapper. */
+  /** Tailwind class forwarded to the outer wrapper. */
   className?: string;
 }
 
@@ -21,8 +21,9 @@ interface CircularProgressProps {
  * @param value - Completed fraction 0-1 (clamped).
  * @param size - Ring diameter in pixels.
  * @param strokeWidth - Ring stroke width in pixels.
- * @param className - Tailwind class forwarded to the SVG wrapper.
- * @returns A progressbar SVG with a centered percentage label.
+ * @param className - Tailwind class forwarded to the outer wrapper.
+ * @returns A native <progress> plus a decorative ring SVG with a centered
+ * percentage label.
  */
 export default function CircularProgress({
   value,
@@ -36,47 +37,52 @@ export default function CircularProgress({
   const percentage = Math.round(clamped * 100);
 
   return (
-    <svg
-      role='progressbar'
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={percentage}
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      className={cn('shrink-0', className)}
-    >
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill='none'
-        stroke='#E5E7EB'
-        strokeWidth={strokeWidth}
+    <div className={cn('relative shrink-0', className)}>
+      <progress
+        aria-label='Questionnaire completion'
+        max={100}
+        value={percentage}
+        className='sr-only'
       />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill='none'
-        strokeWidth={strokeWidth}
-        strokeDasharray={circumference}
-        strokeDashoffset={circumference * (1 - clamped)}
-        strokeLinecap='round'
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        // Palette-driven arc color; inline style because SVG stroke
-        // attributes cannot resolve CSS custom properties.
-        style={{ stroke: 'var(--secondary)' }}
-      />
-      <text
-        x='50%'
-        y='50%'
-        dominantBaseline='central'
-        textAnchor='middle'
-        className='fill-current text-xl font-bold'
+      <svg
+        aria-hidden='true'
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className='shrink-0'
       >
-        {percentage}%
-      </text>
-    </svg>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill='none'
+          stroke='#E5E7EB'
+          strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill='none'
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - clamped)}
+          strokeLinecap='round'
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          // Palette-driven arc color; inline style because SVG stroke
+          // attributes cannot resolve CSS custom properties.
+          style={{ stroke: 'var(--secondary)' }}
+        />
+        <text
+          x='50%'
+          y='50%'
+          dominantBaseline='central'
+          textAnchor='middle'
+          className='fill-current text-xl font-bold'
+        >
+          {percentage}%
+        </text>
+      </svg>
+    </div>
   );
 }

@@ -302,7 +302,8 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     expect(screen.queryByTestId('mock-image')).toBeNull();
     expect(screen.getByText(/1 of 3/)).toBeTruthy();
     const midBatchRing = screen.getByRole('progressbar');
-    expect(midBatchRing).toHaveAttribute('aria-valuenow', '33');
+    expect(midBatchRing).toHaveAttribute('value', '33');
+    expect(midBatchRing).toHaveAttribute('max', '100');
     expect(screen.getByText('33%')).toBeInTheDocument();
 
     clickCta('Continue');
