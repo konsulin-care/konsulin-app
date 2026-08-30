@@ -31,15 +31,13 @@ const baseProps = {
 };
 
 describe('AppointmentSummary', () => {
-  it('renders practitioner name', () => {
-    render(<AppointmentSummary {...baseProps} />);
-    expect(screen.getByText('Dr. John Doe')).toBeInTheDocument();
-  });
-
-  it('renders healthcare service name', () => {
-    render(<AppointmentSummary {...baseProps} />);
-    expect(screen.getByText('General Checkup')).toBeInTheDocument();
-  });
+  it.each(['Dr. John Doe', 'General Checkup', 'Konsulin Clinic'])(
+    'renders %s',
+    text => {
+      render(<AppointmentSummary {...baseProps} />);
+      expect(screen.getByText(text)).toBeInTheDocument();
+    }
+  );
 
   it('defaults service name to Consultation', () => {
     const { healthcareServiceName: _omitted, ...props } = baseProps;
@@ -51,11 +49,6 @@ describe('AppointmentSummary', () => {
     render(<AppointmentSummary {...baseProps} />);
     expect(screen.getByText('15 July 2026')).toBeInTheDocument();
     expect(screen.getByText('10:00')).toBeInTheDocument();
-  });
-
-  it('renders location name', () => {
-    render(<AppointmentSummary {...baseProps} />);
-    expect(screen.getByText('Konsulin Clinic')).toBeInTheDocument();
   });
 
   it('passes avatar photo and initials through', () => {
