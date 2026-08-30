@@ -53,6 +53,61 @@ export function useAppDrawerHost(): AppDrawerHost {
   return useContext(AppDrawerHostContext);
 }
 
+/** Optional title/description row rendered inside the standardized DrawerHeader. */
+function DrawerHeaderBlock({
+  title,
+  description
+}: Readonly<{ title?: ReactNode; description?: ReactNode }>) {
+  return (
+    <DrawerHeader>
+      {title && <DrawerTitle>{title}</DrawerTitle>}
+      {description && <DrawerDescription>{description}</DrawerDescription>}
+    </DrawerHeader>
+  );
+}
+
+/** Sticky CTA footer with the single action button and optional footnote. */
+function DrawerFooterBlock({
+  ctaLabel,
+  onCtaClick,
+  ctaDisabled,
+  ctaLoading,
+  footerContent
+}: Readonly<{
+  ctaLabel?: ReactNode;
+  onCtaClick?: () => void | Promise<void>;
+  ctaDisabled: boolean;
+  ctaLoading: boolean;
+  footerContent?: ReactNode;
+}>) {
+  return (
+    <div className='sticky bottom-0 mt-auto border-t bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]'>
+      <Button
+        type='button'
+        variant='secondary'
+        className='w-full rounded-xl py-4 text-white'
+        disabled={ctaDisabled || ctaLoading}
+        onClick={() => {
+          // skipcq: JS-0098 - fire-and-forget CTA action
+          void onCtaClick?.();
+        }}
+      >
+        {ctaLoading ? (
+          <LoadingSpinnerIcon
+            width={20}
+            height={20}
+            stroke='white'
+            className='animate-spin'
+          />
+        ) : (
+          ctaLabel
+        )}
+      </Button>
+      {footerContent}
+    </div>
+  );
+}
+
 type AppDrawerProps = {
   open: boolean;
   onClose: () => void;
@@ -173,47 +228,23 @@ export default function AppDrawer({
           className
         )}
       >
-        <div className='flex min-h-full flex-col'>
-          {(title || description) && (
-            <DrawerHeader>
-              {title && <DrawerTitle>{title}</DrawerTitle>}
-              {description && (
-                <DrawerDescription>{description}</DrawerDescription>
-              )}
-            </DrawerHeader>
-          )}
-          <div className='flex-1 px-4 pb-4'>
-            <AppDrawerHostContext.Provider value={host}>
-              {children}
-            </AppDrawerHostContext.Provider>
-          </div>
-          {hasCta && (
-            <div className='sticky bottom-0 mt-auto border-t bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]'>
-              <Button
-                type='button'
-                variant='secondary'
-                className='w-full rounded-xl py-4 text-white'
-                disabled={ctaDisabled || ctaLoading}
-                onClick={() => {
-                  // skipcq: JS-0098 - fire-and-forget CTA action
-                  void onCtaClick?.();
-                }}
-              >
-                {ctaLoading ? (
-                  <LoadingSpinnerIcon
-                    width={20}
-                    height={20}
-                    stroke='white'
-                    className='animate-spin'
-                  />
-                ) : (
-                  ctaLabel
-                )}
-              </Button>
-              {footerContent}
-            </div>
-          )}
+        {(title || description) && (
+          <DrawerHeaderBlock title={title} description={description} />
+        )}
+        <div className='flex-1 px-4 pb-4'>
+          <AppDrawerHostContext.Provider value={host}>
+            {children}
+          </AppDrawerHostContext.Provider>
         </div>
+        {hasCta && (
+          <DrawerFooterBlock
+            ctaLabel={ctaLabel}
+            onCtaClick={onCtaClick}
+            ctaDisabled={ctaDisabled}
+            ctaLoading={ctaLoading}
+            footerContent={footerContent}
+          />
+        )}
       </DrawerContent>
     </Drawer>
   );
