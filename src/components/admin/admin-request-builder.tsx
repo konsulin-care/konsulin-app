@@ -307,8 +307,8 @@ export function AdminRequestBuilder() {
 
       <button
         type='button'
-        // skipcq: JS-0098 — void discards promise rejection in event handler
         onClick={() => {
+          // skipcq: JS-0098 — void discards promise rejection in event handler
           void handleSend();
         }}
         disabled={sending || !endpoint.trim()}
