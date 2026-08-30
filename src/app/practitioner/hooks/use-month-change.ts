@@ -26,6 +26,6 @@ export function useMonthChange({
         .toSorted((a, b) => a.getTime() - b.getTime())[0];
       if (earliest) setPageDate(earliest);
     },
-    [isPageMode, effectiveAvailableTime, today]
+    [isPageMode, effectiveAvailableTime, today, setPageDate]
   );
 }

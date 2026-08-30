@@ -47,7 +47,8 @@ export function useComputedSlots({
     busySlots,
     effectiveAvailableTime,
     durationMinutes,
-    practitionerTzOffset
+    practitionerTzOffset,
+    computeFreeSlots
   ]);
 
   const slotPills = useMemo(() => {
