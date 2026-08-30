@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+import type { IActionBooking } from '@/context/booking/bookingTypes';
+import { getInitials } from '@/utils/name';
 import { addMinutes, format, parse } from 'date-fns';
 import type { PractitionerRoleAvailableTime } from 'fhir/r4';
 
@@ -143,4 +145,53 @@ export function getSlotMinutesText(schedule: unknown): string {
   } catch {
     return '';
   }
+}
+
+/** Merged practitioner avatar data from fetched props and fallback avatar. */
+export type PractitionerAvatar = {
+  photoUrl?: string;
+  initials?: string;
+  backgroundColor?: string;
+  seed?: string;
+};
+
+/** Build practitioner avatar with display-name fallbacks. */
+export function buildPractitionerAvatar(input: {
+  practitionerPhotoUrl?: string;
+  practitionerDisplayName?: string;
+  practitionerAvatar?: PractitionerAvatar;
+}): PractitionerAvatar {
+  return {
+    photoUrl: input.practitionerPhotoUrl ?? input.practitionerAvatar?.photoUrl,
+    seed: input.practitionerDisplayName ?? input.practitionerAvatar?.seed,
+    initials: input.practitionerDisplayName
+      ? getInitials(input.practitionerDisplayName)
+      : input.practitionerAvatar?.initials,
+    backgroundColor: input.practitionerAvatar?.backgroundColor
+  };
+}
+
+/** Create a mode-aware filter-change handler. */
+export function createPageModeFilter(params: {
+  isPageMode: boolean;
+  handleFilterChange: (
+    label: string,
+    value: string | Date | boolean | undefined
+  ) => void;
+  dispatch: (action: IActionBooking) => void;
+  setPageDate: (date: Date) => void;
+}): (label: string, value: string | Date | boolean | undefined) => void {
+  const { isPageMode, handleFilterChange, dispatch, setPageDate } = params;
+  if (!isPageMode) return handleFilterChange;
+  return (label, value) => {
+    if (label === 'date' && value instanceof Date) {
+      setPageDate(value);
+    }
+    if (label === 'startTime' && typeof value === 'string') {
+      dispatch({
+        type: 'UPDATE_BOOKING_INFO',
+        payload: { startTime: value }
+      });
+    }
+  };
 }
