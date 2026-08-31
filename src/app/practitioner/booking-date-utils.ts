@@ -50,3 +50,10 @@ export function getNextAvailableDate(
 
   return date;
 }
+
+/** Earliest usable date: today if available, otherwise the next available date. */
+export function pickInitialDate(today: Date, availableDays: Date[]): Date {
+  return isDateAvailable(today, availableDays)
+    ? today
+    : getNextAvailableDate(today, availableDays);
+}

@@ -11,7 +11,8 @@ import { useReportResponses } from '@/services/api/report';
 import { useResearchProgress } from '@/services/api/research';
 import {
   bucketResponsesByBatch,
-  computeParticipationStats
+  computeParticipationStats,
+  deduplicateBuckets
 } from '@/utils/fhir/report';
 import { extractQuestionnaireId, sortBatches } from '@/utils/fhir/research';
 import type { QuestionnaireResponse } from 'fhir/r4';
@@ -63,17 +64,29 @@ export default function ReportView() {
         : null,
     [study]
   );
+  // Latest batch end caps the response search so post-study responses
+  // are excluded from the payload.
+  const until = useMemo(
+    () =>
+      study && study.batches.length > 0
+        ? study.batches
+            .map(batch => batch.end)
+            .toSorted((a, b) => b.localeCompare(a))[0]
+        : null,
+    [study]
+  );
   const { data: titleMap = EMPTY_QUESTIONNAIRE_INFO_MAP } =
     useQuestionnaireTitles(questionnaireIds);
   const { data: responses, isLoading: responsesLoading } = useReportResponses(
     questionnaireIds,
-    since
+    since,
+    until
   );
 
   const buckets = useMemo(
     () =>
       study && responses
-        ? bucketResponsesByBatch(responses, study.batches)
+        ? deduplicateBuckets(bucketResponsesByBatch(responses, study.batches))
         : new Map<string, QuestionnaireResponse[]>(),
     [study, responses]
   );

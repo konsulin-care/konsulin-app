@@ -25,7 +25,6 @@ func setRequiredEnv(t *testing.T) {
 	t.Helper()
 	t.Setenv("API_URL", "http://test:3200")
 	t.Setenv("APP_URL", "http://test:3000")
-	t.Setenv("TX_URL", "http://test:3300")
 	t.Setenv("SESSION_COOKIE_SECRET", "test-secret-value")
 }
 
@@ -46,8 +45,8 @@ func TestLoad_defaultPort(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() returned error: %v", err)
 	}
-	if cfg.Port != "8080" {
-		t.Errorf("expected default port 8080, got %q", cfg.Port)
+	if cfg.Port != "3000" {
+		t.Errorf("expected default port 3000, got %q", cfg.Port)
 	}
 }
 
@@ -169,19 +168,15 @@ func TestAuthFullPath(t *testing.T) {
 func TestEnvUnset_clearsRequiredVars(t *testing.T) {
 	saveEnv(t, "API_URL")
 	saveEnv(t, "APP_URL")
-	saveEnv(t, "TX_URL")
 	if err := os.Unsetenv("API_URL"); err != nil {
 		t.Fatalf("unset API_URL: %v", err)
 	}
 	if err := os.Unsetenv("APP_URL"); err != nil {
 		t.Fatalf("unset APP_URL: %v", err)
 	}
-	if err := os.Unsetenv("TX_URL"); err != nil {
-		t.Fatalf("unset TX_URL: %v", err)
-	}
 
 	// nolint:usetesting // os.Getenv used for env var cleanup verification, not test isolation
-	if os.Getenv("API_URL") != "" || os.Getenv("APP_URL") != "" || os.Getenv("TX_URL") != "" {
+	if os.Getenv("API_URL") != "" || os.Getenv("APP_URL") != "" {
 		t.Fatal("required env vars not properly unset")
 	}
 }

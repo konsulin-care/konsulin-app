@@ -1,6 +1,6 @@
 'use client';
 
-import { EndpointCombobox } from '@/components/admin/endpoint-combobox';
+import { EndpointUrlInput } from '@/components/admin/endpoint-url-input';
 import {
   Select,
   SelectContent,
@@ -214,7 +214,7 @@ export function AdminRequestBuilder() {
           />
         </div>
         <div className='flex-1'>
-          <EndpointCombobox
+          <EndpointUrlInput
             value={endpoint}
             onSelect={changeEndpoint}
             groupedEndpoints={groupedEndpoints}
@@ -307,8 +307,8 @@ export function AdminRequestBuilder() {
 
       <button
         type='button'
-        // skipcq: JS-0098 — void discards promise rejection in event handler
         onClick={() => {
+          // skipcq: JS-0098 — void discards promise rejection in event handler
           void handleSend();
         }}
         disabled={sending || !endpoint.trim()}

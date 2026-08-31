@@ -11,7 +11,16 @@ import {
   DrawerTrigger
 } from '@/components/ui/drawer';
 import { cn } from '@/lib/utils';
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode
+} from 'react';
 
 /**
  * Drawers currently open, keyed by instance id → close callback. Powers the
@@ -19,6 +28,85 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
  * other drawer that is already open.
  */
 const openDrawers = new Map<string, () => void>();
+
+/** Host drawer controls exposed to nested sheets (e.g. mobile comboboxes). */
+export type AppDrawerHost = {
+  /** Visually hide the drawer (slide down) while keeping children mounted. */
+  suspend: () => void;
+  /** Restore a suspended drawer to its visible state. */
+  resume: () => void;
+};
+
+/** Fallback for nested sheets rendered outside an AppDrawer. */
+const NOOP_HOST: AppDrawerHost = {
+  suspend: (): void => undefined,
+  resume: (): void => undefined
+};
+
+const AppDrawerHostContext = createContext<AppDrawerHost>(NOOP_HOST);
+
+/**
+ * Lets a nested sheet temporarily take over the drawer's screen real estate
+ * without unmounting its body state. No-op outside an AppDrawer.
+ */
+export function useAppDrawerHost(): AppDrawerHost {
+  return useContext(AppDrawerHostContext);
+}
+
+/** Optional title/description row rendered inside the standardized DrawerHeader. */
+function DrawerHeaderBlock({
+  title,
+  description
+}: Readonly<{ title?: ReactNode; description?: ReactNode }>) {
+  return (
+    <DrawerHeader>
+      {title && <DrawerTitle>{title}</DrawerTitle>}
+      {description && <DrawerDescription>{description}</DrawerDescription>}
+    </DrawerHeader>
+  );
+}
+
+/** Sticky CTA footer with the single action button and optional footnote. */
+function DrawerFooterBlock({
+  ctaLabel,
+  onCtaClick,
+  ctaDisabled,
+  ctaLoading,
+  footerContent
+}: Readonly<{
+  ctaLabel?: ReactNode;
+  onCtaClick?: () => void | Promise<void>;
+  ctaDisabled: boolean;
+  ctaLoading: boolean;
+  footerContent?: ReactNode;
+}>) {
+  return (
+    <div className='sticky bottom-0 mt-auto border-t bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]'>
+      <Button
+        type='button'
+        variant='secondary'
+        className='w-full rounded-xl py-4 text-white'
+        disabled={ctaDisabled || ctaLoading}
+        onClick={() => {
+          // skipcq: JS-0098 - fire-and-forget CTA action
+          void onCtaClick?.();
+        }}
+      >
+        {ctaLoading ? (
+          <LoadingSpinnerIcon
+            width={20}
+            height={20}
+            stroke='white'
+            className='animate-spin'
+          />
+        ) : (
+          ctaLabel
+        )}
+      </Button>
+      {footerContent}
+    </div>
+  );
+}
 
 type AppDrawerProps = {
   open: boolean;
@@ -71,6 +159,20 @@ export default function AppDrawer({
   // Latest onClose, read by the registry at call time so the register
   // effect never has to re-run (and re-clean) on identity changes.
   const onCloseRef = useRef(onClose);
+  // Hidden while a nested sheet (e.g. a mobile combobox sheet) is open on
+  // top; children stay mounted so their state survives the round trip.
+  const [suspended, setSuspended] = useState(false);
+  const host = useMemo<AppDrawerHost>(
+    () => ({
+      suspend: () => {
+        setSuspended(true);
+      },
+      resume: () => {
+        setSuspended(false);
+      }
+    }),
+    []
+  );
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -102,6 +204,12 @@ export default function AppDrawer({
     wasOpen.current = open;
   }, [instanceId, open]);
 
+  // Suspension only makes sense while the drawer is open; a real close must
+  // never leave a stale hidden state on the next open.
+  useEffect(() => {
+    if (!open) setSuspended(false);
+  }, [open]);
+
   return (
     <Drawer
       open={open}
@@ -112,45 +220,31 @@ export default function AppDrawer({
       {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent
         data-open={open}
-        className={cn('mx-auto max-w-screen-sm', className)}
+        data-suspended={suspended}
+        hideOverlay={suspended}
+        className={cn(
+          'mx-auto max-w-screen-sm',
+          suspended && 'pointer-events-none translate-y-full',
+          className
+        )}
       >
-        <div className='flex min-h-full flex-col'>
-          {(title || description) && (
-            <DrawerHeader>
-              {title && <DrawerTitle>{title}</DrawerTitle>}
-              {description && (
-                <DrawerDescription>{description}</DrawerDescription>
-              )}
-            </DrawerHeader>
-          )}
-          <div className='flex-1'>{children}</div>
-          {hasCta && (
-            <div className='sticky bottom-0 mt-auto border-t bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]'>
-              <Button
-                type='button'
-                variant='secondary'
-                className='w-full rounded-xl py-4 text-white'
-                disabled={ctaDisabled || ctaLoading}
-                onClick={() => {
-                  // skipcq: JS-0098 - fire-and-forget CTA action
-                  void onCtaClick?.();
-                }}
-              >
-                {ctaLoading ? (
-                  <LoadingSpinnerIcon
-                    width={20}
-                    height={20}
-                    stroke='white'
-                    className='animate-spin'
-                  />
-                ) : (
-                  ctaLabel
-                )}
-              </Button>
-              {footerContent}
-            </div>
-          )}
+        {(title || description) && (
+          <DrawerHeaderBlock title={title} description={description} />
+        )}
+        <div className='flex-1 px-4 pb-4'>
+          <AppDrawerHostContext.Provider value={host}>
+            {children}
+          </AppDrawerHostContext.Provider>
         </div>
+        {hasCta && (
+          <DrawerFooterBlock
+            ctaLabel={ctaLabel}
+            onCtaClick={onCtaClick}
+            ctaDisabled={ctaDisabled}
+            ctaLoading={ctaLoading}
+            footerContent={footerContent}
+          />
+        )}
       </DrawerContent>
     </Drawer>
   );

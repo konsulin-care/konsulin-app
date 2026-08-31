@@ -26,6 +26,7 @@ import Image from 'next/image';
 import { AssessmentThemeProvider } from '@/components/general/assessment-theme-provider';
 import { CardStackContainer } from '@/components/general/card-stack-container';
 import AppDrawer from '@/components/ui/app-drawer';
+import CircularProgress from '@/components/ui/circular-progress';
 import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import type { RendererConfig } from '@aehrc/smart-forms-renderer';
 import { getResponse, useBuildForm } from '@aehrc/smart-forms-renderer';
@@ -44,6 +45,8 @@ import {
   type ReactNode
 } from 'react';
 import { toast } from 'react-toastify';
+
+import { useRuntimeConfig } from '@/components/general/runtime-config-provider';
 
 interface FhirFormsRendererProps {
   questionnaire: Questionnaire;
@@ -117,6 +120,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { dispatch } = useFab();
   const draftOwnerId = props.ownerId || practitionerId || patientId || '';
+  const { terminologyServer } = useRuntimeConfig();
 
   const rendererConfigOptions: RendererConfig = useMemo(
     () => ({
@@ -134,9 +138,9 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     questionnaire,
     questionnaireResponse: response,
     rendererConfigOptions,
-    // Terminology server disabled: value sets and code displays are
-    // already embedded in questionnaires; external lookups add latency.
-    terminologyServerUrl: ''
+    // Terminology server URL from runtime config.
+    // Empty string when TX_URL is not set — disables terminology lookups.
+    terminologyServerUrl: terminologyServer
   });
 
   const { mutateAsync: submitQuestionnaire } = useSubmitQuestionnaire(
@@ -476,12 +480,22 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         open={isOpen}
         onClose={() => setIsOpen(false)}
         title={drawerTitleText}
-        description={drawerDescriptionText}
+        description={hasNextQuestionnaire ? undefined : drawerDescriptionText}
         ctaLabel={ctaLabel}
         onCtaClick={handlePrimaryAction}
         ctaLoading={isSubmitting || isPending}
         footerContent={footerContent}
       >
+        {hasNextQuestionnaire && batchProgress && (
+          <div className='flex flex-col items-center gap-4'>
+            <CircularProgress
+              value={batchProgress.completed / batchProgress.total}
+              size={120}
+              className='text-primary'
+            />
+            <p className='text-center text-sm opacity-50'>{drawerCopy.body}</p>
+          </div>
+        )}
         {!hasNextQuestionnaire && (
           <div className='flex flex-col items-center gap-4'>
             <Image

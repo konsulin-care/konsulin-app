@@ -1,5 +1,10 @@
 'use client';
 
+// Select dropdown built on Radix Select (DOB day/month/year, admin method
+// selects). This is a select, NOT a combobox: no search input, no free-text
+// filtering. Intentionally excluded from the combobox-picker family
+// (`@/components/shared/combobox`).
+
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import * as React from 'react';

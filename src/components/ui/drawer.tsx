@@ -44,8 +44,15 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
 const DrawerContent = React.forwardRef<
   React.ComponentRef<typeof DrawerPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & {
+    /**
+     * Visually hide the modal overlay instead of unmounting it (e.g. while a
+     * nested sheet has taken over). Keeping the node mounted preserves the
+     * portal DOM order, so a restore can never land above the drawer content.
+     */
+    hideOverlay?: boolean;
+  }
+>(({ className, children, hideOverlay = false, ...props }, ref) => {
   const [contentNode, setContentNode] = React.useState<HTMLElement | null>(
     null
   );
@@ -63,7 +70,7 @@ const DrawerContent = React.forwardRef<
   );
   return (
     <DrawerPortal>
-      <DrawerOverlay />
+      <DrawerOverlay className={hideOverlay ? 'invisible' : undefined} />
       <DrawerPrimitive.Content
         ref={composeRefs}
         className={cn(
@@ -84,17 +91,16 @@ const DrawerContent = React.forwardRef<
 });
 DrawerContent.displayName = 'DrawerContent';
 
+/** Standardized drawer header (title + description) grid. */
 const DrawerHeader = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn('grid gap-1.5 p-4 text-center sm:text-left', className)}
-    {...props}
-  />
+  <div className={cn('grid gap-1.5 p-4 text-center', className)} {...props} />
 );
 DrawerHeader.displayName = 'DrawerHeader';
 
+/** Standardized drawer footer slot for action buttons. */
 const DrawerFooter = ({
   className,
   ...props

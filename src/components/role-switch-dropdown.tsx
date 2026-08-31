@@ -20,10 +20,7 @@ import { roleIcon, roleLabel } from '@/components/role-avatar-popup-utils';
 import { StackedCircles } from '@/components/stacked-circles';
 
 /** Switches the active user role via API call and navigates home. */
-async function switchRole(
-  role: string,
-  router: ReturnType<typeof useRouter>
-): Promise<void> {
+async function switchRole(role: string): Promise<void> {
   try {
     const token = await fetchCSRFToken();
     const res = await fetch('/auth/role/switch', {
@@ -35,7 +32,12 @@ async function switchRole(
       body: new URLSearchParams({ role })
     });
     if (res.ok) {
-      router.push('/');
+      // Full page reload required: the auth cookie was updated server-side
+      // but React context (role_name, profile) won't re-resolve via
+      // router.push because the AuthProvider useEffect dependency
+      // (session.doesSessionExist) doesn't change.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = '/';
       return;
     }
     // The BFF fails closed (502) when the backend claim sync fails; the
@@ -48,11 +50,9 @@ async function switchRole(
 
 /** Renders dropdown menu items for switching to other roles. */
 function RoleSwitchMenuItems({
-  otherRoles,
-  router
+  otherRoles
 }: Readonly<{
   otherRoles: string[];
-  router: ReturnType<typeof useRouter>;
 }>) {
   if (otherRoles.length === 0) return null;
   return (
@@ -64,7 +64,7 @@ function RoleSwitchMenuItems({
           <DropdownItem
             key={role}
             className='cursor-pointer'
-            onClick={() => switchRole(role, router)}
+            onClick={() => switchRole(role)}
           >
             <Icon className='mr-3 h-4 w-4 text-[#2c2f35]' />
             <span className='text-sm font-medium text-[#2c2f35]'>
@@ -126,7 +126,7 @@ export function RoleSwitchDropdown({
           <UserIcon className='mr-3 h-4 w-4 text-[#2c2f35]' />
           <span className='text-sm font-medium text-[#2c2f35]'>Profile</span>
         </DropdownItem>
-        <RoleSwitchMenuItems otherRoles={otherRoles} router={router} />
+        <RoleSwitchMenuItems otherRoles={otherRoles} />
       </DropdownContent>
     </Dropdown>
   );

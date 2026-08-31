@@ -3,7 +3,7 @@
 /** Informed consent copy of the consent drawer (body content only). */
 export default function ConsentDrawerContent() {
   return (
-    <div className='space-y-3 px-4 text-xs leading-5 text-gray-600'>
+    <div className='space-y-3 text-xs leading-5 text-gray-600'>
       <p>
         Participation is voluntary. Your data is processed in pseudonymized
         form: you are assigned a random participant ID so you can track your

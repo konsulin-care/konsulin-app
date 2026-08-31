@@ -57,6 +57,7 @@ Backend API (Go + SuperTokens Go SDK)
 | BFF API path families                 | `@docs/ADR/021-bff-api-path-families.md`                 |
 | Rate-limit retry policy               | `@docs/ADR/019-rate-limit-retry.md`                      |
 | Batch slot enrichment                 | `@docs/ADR/020-batch-slot-enrichment.md`                 |
+| Combobox sheet suspends host drawer   | `@docs/ADR/025-combobox-sheet-suspends-host-drawer.md`   |
 | AppDrawer standardization             | `@docs/ADR/018-app-drawer-standard.md`                   |
 | Go BFF + Next.js static frontend      | `@docs/ADR/015-go-bff-static-nextjs.md`                  |
 | Anonymous session consolidation       | `@docs/ADR/016-anon-session-consolidation.md`            |

@@ -298,7 +298,7 @@ export default function AddAssessmentDrawer({ open, onClose }: Props) {
       ctaDisabled={!isValid || isSubmitting}
       ctaLoading={isSubmitting}
     >
-      <div className='px-4'>
+      <div>
         <AssessmentFormFields
           state={form}
           onChange={patch => {

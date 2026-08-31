@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+import type { IActionBooking } from '@/context/booking/bookingTypes';
+import { getInitials } from '@/utils/name';
 import { addMinutes, format, parse } from 'date-fns';
-import type { PractitionerRoleAvailableTime } from 'fhir/r4';
+import type {
+  Invoice,
+  PractitionerRole,
+  PractitionerRoleAvailableTime
+} from 'fhir/r4';
 
 /** Returns all available appointment days for a given month. */
 export const getAvailableDays = (
@@ -143,4 +149,89 @@ export function getSlotMinutesText(schedule: unknown): string {
   } catch {
     return '';
   }
+}
+
+/** Merged practitioner avatar data from fetched props and fallback avatar. */
+export type PractitionerAvatar = {
+  photoUrl?: string;
+  initials?: string;
+  backgroundColor?: string;
+  seed?: string;
+};
+
+/** Build practitioner avatar with display-name fallbacks. */
+export function buildPractitionerAvatar(input: {
+  practitionerPhotoUrl?: string;
+  practitionerDisplayName?: string;
+  practitionerAvatar?: PractitionerAvatar;
+}): PractitionerAvatar {
+  return {
+    photoUrl: input.practitionerPhotoUrl ?? input.practitionerAvatar?.photoUrl,
+    seed: input.practitionerDisplayName ?? input.practitionerAvatar?.seed,
+    initials: input.practitionerDisplayName
+      ? getInitials(input.practitionerDisplayName)
+      : input.practitionerAvatar?.initials,
+    backgroundColor: input.practitionerAvatar?.backgroundColor
+  };
+}
+
+/** Resolved props for PaymentDrawers (both modes). */
+export type ResolvedPaymentProps = {
+  healthcareServiceName: string;
+  invoice: Invoice | undefined;
+  patientId: string;
+  practitionerRole: PractitionerRole;
+  healthcareServiceId: string;
+};
+
+/** Resolve payment-drawer fallback props for page mode. */
+export function resolvePagePaymentProps(params: {
+  propHealthcareServiceName: string | undefined;
+  healthcareServiceNames: string[];
+  relayInvoice: Invoice | null;
+  invoice: Invoice | undefined;
+  patientId: string | undefined;
+  effectiveRole: PractitionerRole | undefined;
+  propHealthcareServiceId: string | undefined;
+}): ResolvedPaymentProps {
+  const fallbackName = params.healthcareServiceNames[0] ?? 'Consultation';
+  return {
+    healthcareServiceName: params.propHealthcareServiceName ?? fallbackName,
+    invoice: params.relayInvoice ?? params.invoice,
+    patientId: params.patientId ?? '',
+    practitionerRole: params.effectiveRole ?? ({} as PractitionerRole),
+    healthcareServiceId: params.propHealthcareServiceId ?? ''
+  };
+}
+
+/** Resolve the drawer-mode healthcare service display name. */
+export function resolveDrawerServiceName(
+  healthcareServiceNames: string[]
+): string {
+  return healthcareServiceNames[0] ?? 'Consultation';
+}
+
+/** Create a mode-aware filter-change handler. */
+export function createPageModeFilter(params: {
+  isPageMode: boolean;
+  handleFilterChange: (
+    label: string,
+    value: string | Date | boolean | undefined
+  ) => void;
+  dispatch: (action: IActionBooking) => void;
+  setPageDate: (date: Date) => void;
+}): (label: string, value: string | Date | boolean | undefined) => void {
+  const { isPageMode, handleFilterChange, dispatch, setPageDate } = params;
+  if (!isPageMode) return handleFilterChange;
+  return (label, value) => {
+    if (label === 'date' && value instanceof Date) {
+      setPageDate(value);
+    }
+    if (label === 'startTime' && typeof value === 'string') {
+      dispatch({
+        type: 'UPDATE_BOOKING_INFO',
+        payload: { startTime: value }
+      });
+    }
+  };
 }

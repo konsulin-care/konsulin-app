@@ -22,7 +22,7 @@ export interface DrawerCopy {
 export const MID_BATCH_MESSAGES: readonly DrawerCopy[] = [
   {
     title: 'Great progress!',
-    body: "You've completed {completed} of {total} assessments in this batch. Every response counts toward the research — keep going."
+    body: "You've completed {completed} of {total} assessments in this batch. Every response counts toward the research, so keep going."
   },
   {
     title: "You're on a roll!",
@@ -38,7 +38,7 @@ export const MID_BATCH_MESSAGES: readonly DrawerCopy[] = [
   },
   {
     title: 'One step closer!',
-    body: "{completed} of {total} complete. Thank you for sticking with the research — we're nearly there."
+    body: "{completed} of {total} complete. Thank you for sticking with the research, so we're nearly there."
   }
 ];
 
@@ -51,13 +51,13 @@ export const LAST_MID_BATCH_MESSAGE: DrawerCopy = {
 /** Count-less fallback for when batch progress is unavailable. */
 export const MID_BATCH_FALLBACK_MESSAGE: DrawerCopy = {
   title: "You're doing great!",
-  body: 'Keep going — every response counts toward the research.'
+  body: 'Every response counts toward the research, so keep going.'
 };
 
 /** Confirmation shown when the whole batch is complete. */
 export const FINAL_BATCH_MESSAGE: DrawerCopy = {
   title: "You've completed this batch!",
-  body: "That's every assessment in this batch. Thank you for participating — your responses help improve mental health care for everyone."
+  body: "That's every assessment in this batch. Thank you for participating, your responses help improve mental health care for everyone."
 };
 
 /** Completion message for a standalone (non-research) test. */

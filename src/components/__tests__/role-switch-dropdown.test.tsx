@@ -95,9 +95,26 @@ async function clickRoleSwitch(role: string) {
 }
 
 describe('RoleSwitchDropdown switchRole', () => {
+  let locationHref = '';
+  const originalLocation = window.location;
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(fetchCSRFToken).mockResolvedValue('csrf-1');
+    locationHref = '';
+    // jsdom workaround: window.location is non-configurable by default
+    Object.defineProperty(window, 'location', {
+      value: { ...originalLocation, href: '' },
+      writable: true,
+      configurable: true
+    });
+    Object.defineProperty(window.location, 'href', {
+      get: () => locationHref,
+      set: (v: string) => {
+        locationHref = v;
+      },
+      configurable: true
+    });
   });
 
   it('shows an error toast and does not reload when the switch fails', async () => {
@@ -130,7 +147,7 @@ describe('RoleSwitchDropdown switchRole', () => {
     globalThis.fetch = vi.fn().mockResolvedValue({ ok: true });
     await clickRoleSwitch('Practitioner');
 
-    await waitFor(() => expect(routerPush).toHaveBeenCalledWith('/'));
+    await waitFor(() => expect(locationHref).toBe('/'));
     expect(toast.error).not.toHaveBeenCalled();
   });
 });
