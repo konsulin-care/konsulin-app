@@ -1,29 +1,11 @@
 import type { IStateBooking } from '@/context/booking/bookingTypes';
 import type { QueryClient } from '@tanstack/react-query';
 import type { Invoice, PractitionerRole } from 'fhir/r4';
-import PaymentDrawer from './payment-drawer';
+import PaymentDrawer, {
+  type PayAppointmentFn,
+  type PractitionerAvatar
+} from './payment-drawer';
 import PaymentPendingDrawer from './payment-pending-drawer';
-
-/** Pay appointment function signature (mirrors PaymentDrawer's prop type). */
-type PayAppointmentFn = (
-  payload: Readonly<{
-    patientId: string;
-    invoiceId: string;
-    appointmentId: string;
-    practitionerRoleId: string;
-    slotId: string;
-    condition: string;
-    healthcareServiceId: string;
-  }>
-) => Promise<{ readonly data?: { readonly paymentUrl?: string } }>;
-
-/** Avatar data for practitioner display. */
-type Avatar = {
-  photoUrl?: string;
-  initials?: string;
-  backgroundColor?: string;
-  seed?: string;
-};
 
 /** Props for the shared payment and payment-pending drawers. */
 type PaymentDrawersProps = {
@@ -31,7 +13,7 @@ type PaymentDrawersProps = {
   paymentOpen: boolean;
   setPaymentOpen: (open: boolean) => void;
   setPaymentPendingOpen: (open: boolean) => void;
-  practitionerAvatar?: Avatar;
+  practitionerAvatar?: PractitionerAvatar;
   practitionerOrganizationName?: string;
   practitionerName?: string;
   /** Resolved healthcare service name (no fallbacks needed). */

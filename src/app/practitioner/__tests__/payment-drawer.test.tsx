@@ -261,4 +261,38 @@ describe('PaymentDrawer', () => {
     expect(setPaymentPendingOpen).toHaveBeenCalledWith(true);
     openSpy.mockRestore();
   });
+
+  it('disables Pay Now when practitionerRole.id is missing', () => {
+    render(
+      <PaymentDrawer
+        {...baseProps}
+        practitionerRole={{} as PractitionerRole}
+      />,
+      { wrapper: createWrapper() }
+    );
+    const buttons = screen.getAllByTestId('mock-button');
+    buttons.forEach(button => {
+      expect(button).toBeDisabled();
+    });
+  });
+
+  it('does not call payAppointment when practitionerRole.id is missing', () => {
+    const payAppointment = vi.fn().mockResolvedValue({ data: {} });
+    render(
+      <PaymentDrawer
+        {...baseProps}
+        practitionerRole={{} as PractitionerRole}
+        payAppointment={payAppointment}
+        invoice={
+          {
+            id: 'inv-1',
+            totalNet: { value: 150_000, currency: 'IDR' }
+          } as Invoice
+        }
+      />,
+      { wrapper: createWrapper() }
+    );
+    fireEvent.click(screen.getByText('Pay Now'));
+    expect(payAppointment).not.toHaveBeenCalled();
+  });
 });

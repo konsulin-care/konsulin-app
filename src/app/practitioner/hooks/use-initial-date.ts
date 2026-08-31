@@ -38,13 +38,20 @@ export function useInitialDate({
   useEffect(() => {
     if (!isPageMode) return;
     if (pageDateInitialized.current) return;
+    // Wait for availability data before finalizing initialization.
+    if (listAvailableDate.length === 0) return;
+    // Preserve user-selected date — only apply computed initial date otherwise.
+    if (hasUserChosenDate) {
+      pageDateInitialized.current = true;
+      return;
+    }
     pageDateInitialized.current = true;
     const initialDate = pickInitialDate(today, listAvailableDate);
     // Avoid unnecessary state update if pageDate already matches.
     if (pageDate.getTime() === initialDate.getTime()) return;
     setPageDate(initialDate);
-    // pageDate is intentionally excluded from deps to prevent re-initialization
-    // when the user changes the selection.
+    // pageDate, hasUserChosenDate intentionally excluded from deps to prevent
+    // re-initialization when the user changes the selection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPageMode, today, listAvailableDate]);
 

@@ -21,20 +21,24 @@ type PayAppointmentResponse = {
   };
 };
 
-type PayAppointmentFn = (
+/** Pay appointment function signature. */
+export type PayAppointmentFn = (
   payload: PayAppointmentPayload
 ) => Promise<PayAppointmentResponse>;
+
+/** Avatar data for practitioner display. */
+export type PractitionerAvatar = {
+  photoUrl?: string;
+  initials?: string;
+  backgroundColor?: string;
+  seed?: string;
+};
 
 type Props = {
   paymentOpen: boolean;
   setPaymentOpen: (open: boolean) => void;
   setPaymentPendingOpen: (open: boolean) => void;
-  practitionerAvatar?: {
-    photoUrl?: string;
-    initials?: string;
-    backgroundColor?: string;
-    seed?: string;
-  };
+  practitionerAvatar?: PractitionerAvatar;
   practitionerOrganizationName?: string;
   practitionerName?: string;
   /** Name of the healthcare service being booked. */
@@ -86,7 +90,8 @@ export default function PaymentDrawer({
     !invoice?.id ||
     !selectedSlotId ||
     !appointmentId ||
-    !bookingForm.problem_brief?.trim();
+    !bookingForm.problem_brief?.trim() ||
+    !practitionerRole?.id;
 
   /** Pays for the appointment online, opens the payment URL, and shows the payment-pending drawer. */
   const handlePayOnline = async () => {

@@ -213,8 +213,11 @@ export default function PractitionerAvailability({
     [selectedDate]
   );
 
-  const { data: busySlots, isLoading: isBusySlotsLoading } =
-    useBusySlotsByPractitioner(practitionerId, dateStr);
+  const {
+    data: busySlots,
+    isLoading: isBusySlotsLoading,
+    isError: isBusySlotsError
+  } = useBusySlotsByPractitioner(practitionerId, dateStr);
 
   const { slotPills } = useComputedSlots({
     selectedDate,
@@ -351,7 +354,7 @@ export default function PractitionerAvailability({
       <TimeSlotsSection
         bookingState={effectiveBookingState}
         isLoading={slotLoading}
-        isError={false}
+        isError={isBusySlotsError}
         slotPills={slotPills}
         scheduleId={effectiveScheduleId}
         handleFilterChange={effectiveHandleFilterChange}
