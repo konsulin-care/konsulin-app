@@ -1,5 +1,5 @@
 # Stage 1: Build Next.js static export
-FROM node:24-alpine AS next-builder
+FROM node:26-alpine AS next-builder
 WORKDIR /build
 COPY package.json package-lock.json ./
 COPY next.config.mjs tsconfig.json postcss.config.mjs ./  
@@ -10,7 +10,7 @@ COPY src ./src
 RUN npm run build
 
 # Stage 2: Build Go binary
-FROM golang:1.26-alpine AS go-builder
+FROM golang:1.27-alpine AS go-builder
 WORKDIR /build
 RUN apk add --no-cache git
 COPY go.mod go.sum ./
@@ -20,7 +20,7 @@ COPY . .
 RUN CGO_ENABLED=0 go build -o /app/server ./cmd/konsulin-app
 
 # Stage 3: Runtime
-FROM alpine:3.20
+FROM alpine:3.24
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 USER nobody:nobody

@@ -30,7 +30,7 @@ export default function RegisterPractitionerDrawerContent({
   onLocationSelect
 }: RegisterPractitionerDrawerContentProps) {
   return (
-    <div className='space-y-4 px-4'>
+    <div className='space-y-4'>
       <div>
         <Label>Location</Label>
         <PractitionerLocationCombobox

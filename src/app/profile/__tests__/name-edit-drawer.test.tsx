@@ -51,6 +51,22 @@ describe('NameEditDrawer', () => {
     expect(screen.getByTestId('family-input')).toHaveValue('Doe');
   });
 
+  it('delegates body padding to AppDrawer (no duplicate px-4/pb-4 wrapper)', () => {
+    renderDrawer();
+    const input = screen.getByTestId('given-0');
+    let node: HTMLElement | null = input.parentElement;
+    let container: HTMLElement | null = null;
+    while (node) {
+      if (/\bspace-y-5\b/.test(node.className)) {
+        container = node;
+        break;
+      }
+      node = node.parentElement;
+    }
+    expect(container).not.toBeNull();
+    expect(container?.className).not.toMatch(/px-4|pb-4/);
+  });
+
   it('adds and removes repeatable given name rows', () => {
     renderDrawer();
     fireEvent.click(screen.getByTestId('add-given'));

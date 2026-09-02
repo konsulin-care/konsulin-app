@@ -50,7 +50,9 @@ const {
   mockResearchProgressOptions:
     vi.fn<(options?: { skipResponseSearch?: boolean }) => void>(),
   mockReportResponsesArgs:
-    vi.fn<(ids: string[], since?: string | null) => void>()
+    vi.fn<
+      (ids: string[], since?: string | null, until?: string | null) => void
+    >()
 }));
 
 vi.mock('next/navigation', () => ({
@@ -74,8 +76,12 @@ vi.mock('@/services/api/questionnaire-info', () => ({
 }));
 
 vi.mock('@/services/api/report', () => ({
-  useReportResponses: (ids: string[], since?: string | null) => {
-    mockReportResponsesArgs(ids, since);
+  useReportResponses: (
+    ids: string[],
+    since?: string | null,
+    until?: string | null
+  ) => {
+    mockReportResponsesArgs(ids, since, until);
     return mockUseReportResponses();
   }
 }));
@@ -281,10 +287,12 @@ describe('ReportView', () => {
       skipResponseSearch: true
     });
     // Responses: one query over all batch questionnaires, bounded by the
-    // earliest batch start so pre-study responses are excluded.
+    // earliest batch start and latest batch end so only relevant responses
+    // are fetched.
     expect(mockReportResponsesArgs).toHaveBeenCalledWith(
       ['phq2', 'ocean'],
-      '2026-08-01'
+      '2026-08-01',
+      '2026-09-30'
     );
   });
 
@@ -538,6 +546,39 @@ describe('ReportView', () => {
       screen.queryByText('Claim this report to unlock score history record')
     ).toBeNull();
     expect(findClaimAction(mockFabDispatch.mock.calls)).toBeUndefined();
+  });
+
+  it('deduplicates multiple responses for the same questionnaire within a batch', async () => {
+    // Two phq2 responses in batch 1, one in batch 2
+    const phq2Aug1 = makeQr(
+      'dup-1',
+      'phq2',
+      '2026-08-10T10:00:00Z',
+      [{ name: 'Total', raw: 4 }],
+      6
+    );
+    const phq2Aug2 = makeQr(
+      'dup-2',
+      'phq2',
+      '2026-08-20T10:00:00Z',
+      [{ name: 'Total', raw: 5 }],
+      6
+    );
+    mockUseReportResponses.mockReturnValue({
+      data: [phq2Aug1, phq2Aug2, PHQ2_SEP],
+      isLoading: false
+    });
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    // Stats still count all responses
+    expect(screen.getByTestId('report-stat-assessments')).toHaveTextContent(
+      '3'
+    );
+    // Trend should show exactly 2 rows (not 3)
+    const trendRows = screen.getAllByTestId('report-trend-row');
+    expect(trendRows).toHaveLength(2);
+    const batchIds = trendRows.map(row => row.getAttribute('data-batch-id'));
+    expect(new Set(batchIds).size).toBe(2);
   });
 
   it('routes the claim FAB back to the report after auth', async () => {

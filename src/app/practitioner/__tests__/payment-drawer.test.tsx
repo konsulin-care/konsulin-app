@@ -139,6 +139,37 @@ describe('PaymentDrawer', () => {
     expect(screen.getByText(/10:00/)).toBeInTheDocument();
   });
 
+  it('renders date with Calendar icon', () => {
+    render(<PaymentDrawer {...baseProps} />, { wrapper: createWrapper() });
+    const dateRow = screen.getByText(/15 July 2026/).closest('div');
+    expect(dateRow).toBeInTheDocument();
+    // Calendar icon renders as an SVG with data-lucide attribute or aria-label
+    const svg = dateRow?.querySelector('svg');
+    expect(svg).toBeInTheDocument();
+  });
+
+  it('renders time with Clock icon', () => {
+    render(<PaymentDrawer {...baseProps} />, { wrapper: createWrapper() });
+    const timeRow = screen.getByText(/10:00/).closest('div');
+    expect(timeRow).toBeInTheDocument();
+    const svg = timeRow?.querySelector('svg');
+    expect(svg).toBeInTheDocument();
+  });
+
+  it('renders organization name with MapPin icon', () => {
+    render(
+      <PaymentDrawer
+        {...baseProps}
+        practitionerOrganizationName='Konsulin Clinic'
+      />,
+      { wrapper: createWrapper() }
+    );
+    const locationRow = screen.getByText('Konsulin Clinic').closest('div');
+    expect(locationRow).toBeInTheDocument();
+    const svg = locationRow?.querySelector('svg');
+    expect(svg).toBeInTheDocument();
+  });
+
   it('renders total charge from invoice', () => {
     const invoice = {
       id: 'inv-1',
@@ -229,5 +260,39 @@ describe('PaymentDrawer', () => {
     expect(setIsOpen).toHaveBeenCalledWith(false);
     expect(setPaymentPendingOpen).toHaveBeenCalledWith(true);
     openSpy.mockRestore();
+  });
+
+  it('disables Pay Now when practitionerRole.id is missing', () => {
+    render(
+      <PaymentDrawer
+        {...baseProps}
+        practitionerRole={{} as PractitionerRole}
+      />,
+      { wrapper: createWrapper() }
+    );
+    const buttons = screen.getAllByTestId('mock-button');
+    buttons.forEach(button => {
+      expect(button).toBeDisabled();
+    });
+  });
+
+  it('does not call payAppointment when practitionerRole.id is missing', () => {
+    const payAppointment = vi.fn().mockResolvedValue({ data: {} });
+    render(
+      <PaymentDrawer
+        {...baseProps}
+        practitionerRole={{} as PractitionerRole}
+        payAppointment={payAppointment}
+        invoice={
+          {
+            id: 'inv-1',
+            totalNet: { value: 150_000, currency: 'IDR' }
+          } as Invoice
+        }
+      />,
+      { wrapper: createWrapper() }
+    );
+    fireEvent.click(screen.getByText('Pay Now'));
+    expect(payAppointment).not.toHaveBeenCalled();
   });
 });

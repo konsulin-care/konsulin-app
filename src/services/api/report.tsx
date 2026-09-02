@@ -80,18 +80,20 @@ function scopedTo(
  * id, guests by their anonymous session identifier (the scope used when
  * submitting and by research progress). The query is narrowed server-side to
  * the requested questionnaires via a comma-joined canonical filter and
- * optionally bounded below by `since` (authored=ge). Guests fall back to the
- * local IndexedDB drafts for offline or queued submissions; both sources are
- * merged so server copies win on id overlap, and any server or storage
- * failure degrades to the other source.
+ * bounded by `since` (authored=ge) and `until` (authored=le). Guests fall
+ * back to the local IndexedDB drafts for offline or queued submissions; both
+ * sources are merged so server copies win on id overlap, and any server or
+ * storage failure degrades to the other source.
  *
  * @param questionnaireIds - Bare questionnaire ids to collect responses for.
  * @param since - Optional earliest authored date (yyyy-mm-dd) to bound the search.
+ * @param until - Optional latest authored date (yyyy-mm-dd) to bound the search.
  * @returns React Query result with the merged full responses.
  */
 export function useReportResponses(
   questionnaireIds: string[],
-  since?: string | null
+  since?: string | null,
+  until?: string | null
 ) {
   const { state: authState, isLoading: authLoading } = useAuth();
   const isAuthenticated = authState?.isAuthenticated ?? false;
@@ -108,14 +110,16 @@ export function useReportResponses(
       isAuthenticated ? 'patient' : 'guest',
       isAuthenticated ? (fhirId ?? '') : 'local',
       uniqueIds,
-      since ?? null
+      since ?? null,
+      until ?? null
     ],
     enabled: uniqueIds.length > 0 && !authLoading,
     queryFn: async (): Promise<QuestionnaireResponse[]> => {
       const idSet = new Set(uniqueIds);
       const questionnaires = questionnaireFilter(uniqueIds);
-      const bound = since ? `&authored=ge${since}` : '';
-      const commonSuffix = `&questionnaire=${questionnaires}&status=completed&_count=500${bound}`;
+      const lowerBound = since ? `&authored=ge${since}` : '';
+      const upperBound = until ? `&authored=le${until}` : '';
+      const commonSuffix = `&questionnaire=${questionnaires}&status=completed&_count=500${lowerBound}${upperBound}`;
 
       if (isAuthenticated && fhirId) {
         const API = await getAPI();
@@ -152,6 +156,7 @@ export function useReportResponses(
           response: QuestionnaireResponse;
           updatedAt: number;
         }>(STORES.assessmentDrafts);
+        // Drafts use updatedAt, not authored; date bounds would discard valid work
         draftResponses = drafts
           .filter(draft => idSet.has(draft.questionnaireId))
           .map(draft => draft.response);

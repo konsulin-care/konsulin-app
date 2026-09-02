@@ -2,6 +2,7 @@ import {
   Drawer,
   DrawerContent,
   DrawerDescription,
+  DrawerHeader,
   DrawerTitle
 } from '@/components/ui/drawer';
 import {
@@ -12,6 +13,25 @@ import {
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState as ReactUseState } from 'react';
 import { describe, expect, it } from 'vitest';
+
+describe('DrawerHeader', () => {
+  it('centers title and description text on all screen sizes', () => {
+    render(
+      <Drawer open>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Centered Title</DrawerTitle>
+            <DrawerDescription>Centered Description</DrawerDescription>
+          </DrawerHeader>
+        </DrawerContent>
+      </Drawer>
+    );
+
+    const header = screen.getByText('Centered Title').parentElement;
+    expect(header?.className).toContain('text-center');
+    expect(header?.className).not.toContain('sm:text-left');
+  });
+});
 
 describe('DrawerContent', () => {
   it('renders children within a scrollable container capped at 85dvh', () => {
@@ -102,5 +122,57 @@ describe('DrawerContent', () => {
     fireEvent.click(option);
 
     expect(selections).toEqual(['Option A']);
+  });
+
+  it('keeps the overlay mounted below the content across hideOverlay toggles', () => {
+    function OverlayToggleHarness() {
+      const [hideOverlay, setHideOverlay] = ReactUseState(false);
+      return (
+        <div>
+          <Drawer open>
+            <DrawerContent hideOverlay={hideOverlay}>
+              <DrawerTitle>Toggle Title</DrawerTitle>
+            </DrawerContent>
+          </Drawer>
+          <button
+            type='button'
+            data-testid='toggle-overlay'
+            onClick={() => {
+              setHideOverlay(value => !value);
+            }}
+          >
+            toggle-overlay
+          </button>
+        </div>
+      );
+    }
+
+    const overlayNode = () => document.querySelector('[data-vaul-overlay]');
+    const contentNode = () => document.querySelector('[data-vaul-drawer]');
+    const bodyChildIndex = (element: Element | null): number => {
+      if (!element) return -1;
+      return Array.from(document.body.children).indexOf(element);
+    };
+
+    render(<OverlayToggleHarness />);
+
+    expect(overlayNode()).not.toBeNull();
+    expect(bodyChildIndex(overlayNode())).toBeLessThan(
+      bodyChildIndex(contentNode())
+    );
+
+    fireEvent.click(screen.getByTestId('toggle-overlay'));
+    expect(overlayNode()).not.toBeNull();
+    expect(overlayNode()).toHaveClass('invisible');
+    expect(bodyChildIndex(overlayNode())).toBeLessThan(
+      bodyChildIndex(contentNode())
+    );
+
+    fireEvent.click(screen.getByTestId('toggle-overlay'));
+    expect(overlayNode()).not.toBeNull();
+    expect(overlayNode()).not.toHaveClass('invisible');
+    expect(bodyChildIndex(overlayNode())).toBeLessThan(
+      bodyChildIndex(contentNode())
+    );
   });
 });

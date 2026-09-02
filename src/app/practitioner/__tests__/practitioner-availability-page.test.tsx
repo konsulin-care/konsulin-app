@@ -95,7 +95,30 @@ vi.mock('../booking-form-section', () => ({
 }));
 
 vi.mock('../payment-drawer', () => ({
-  default: () => <div data-testid='payment-drawer'>Payment Drawer</div>
+  default: (props: any) => (
+    <div
+      data-testid='payment-drawer'
+      data-practitioner-name={props.practitionerName ?? ''}
+      data-avatar-photo={props.practitionerAvatar?.photoUrl ?? ''}
+      data-avatar-initials={props.practitionerAvatar?.initials ?? ''}
+    >
+      Payment Drawer
+    </div>
+  )
+}));
+
+vi.mock('../payment-pending-drawer', () => ({
+  default: (props: any) => (
+    <div
+      data-testid='payment-pending-drawer'
+      data-practitioner-name={props.practitionerName ?? ''}
+      data-avatar-photo={props.practitionerAvatar?.photoUrl ?? ''}
+      data-avatar-initials={props.practitionerAvatar?.initials ?? ''}
+      data-invoice={props.invoice?.id ?? ''}
+    >
+      Payment Pending Drawer
+    </div>
+  )
 }));
 
 vi.mock('@/services/clinicians', () => ({
@@ -247,6 +270,51 @@ describe('PractitionerAvailability page variant', () => {
 
     const bookingFormSection = screen.getByTestId('booking-form-section');
     expect(bookingFormSection.dataset.practitionerGivenName).toBe('Test');
+  });
+
+  it('passes practitioner identity to the payment drawers in page mode', () => {
+    render(
+      <PractitionerAvailability
+        variant='page'
+        practitionerRoleId='role-123'
+        invoice={
+          { id: 'inv-1', totalNet: { value: 150_000, currency: 'IDR' } } as any
+        }
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    const paymentDrawer = screen.getByTestId('payment-drawer');
+    expect(paymentDrawer.dataset.practitionerName).toBe('Test');
+    expect(paymentDrawer.dataset.avatarInitials).toBe('TE');
+
+    const pendingDrawer = screen.getByTestId('payment-pending-drawer');
+    expect(pendingDrawer.dataset.practitionerName).toBe('Test');
+    expect(pendingDrawer.dataset.avatarInitials).toBe('TE');
+    expect(pendingDrawer.dataset.invoice).toBe('inv-1');
+  });
+
+  it('falls back to prop identity for payment drawers in drawer mode', () => {
+    render(
+      <PractitionerAvailability
+        practitionerRole={{ id: 'role-123', availableTime: [] } as any}
+        scheduleId='sched-1'
+        practitionerName='Dr. Jane Smith'
+        practitionerAvatar={{
+          photoUrl: 'https://example.com/photo.jpg'
+        }}
+      >
+        <div data-testid='trigger-content'>Trigger</div>
+      </PractitionerAvailability>,
+      { wrapper: createWrapper() }
+    );
+
+    const paymentDrawer = screen.getByTestId('payment-drawer');
+    expect(paymentDrawer.dataset.practitionerName).toBe('Dr. Jane Smith');
+    expect(paymentDrawer.dataset.avatarPhoto).toBe(
+      'https://example.com/photo.jpg'
+    );
+    expect(paymentDrawer.dataset.avatarInitials).toBe('JS');
   });
 
   it('passes empty practitionerGivenName when practitioner has no given name', () => {

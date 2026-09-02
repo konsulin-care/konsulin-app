@@ -23,6 +23,29 @@ vi.mock('@/services/clinicians', () => ({
   useUpdatePractitionerInfo: () => ({ mutateAsync: mockMutateAsync })
 }));
 
+// The real NUCC_TAXONOMY has 699 entries; opening the cmdk picker in jsdom
+// does O(n²) mount work, which times out under parallel load. A 2-entry
+// fixture keeps this component test fast; full-dataset coverage lives in
+// src/utils/fhir/__tests__/specialty.test.ts.
+vi.mock('@/data/nucc-taxonomy', () => ({
+  NUCC_TAXONOMY: [
+    {
+      code: '103T00000X',
+      grouping: 'Behavioral Health & Social Service Providers',
+      classification: 'Psychologist',
+      specialization: '',
+      label: 'Psychologist'
+    },
+    {
+      code: '2084P0800X',
+      grouping: 'Allopathic & Osteopathic Physicians',
+      classification: 'Psychiatry & Neurology',
+      specialization: 'Psychiatry',
+      label: 'Psychiatry Physician'
+    }
+  ]
+}));
+
 const NUCC_PSYCHOLOGIST = {
   coding: [
     {

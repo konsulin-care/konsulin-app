@@ -47,7 +47,7 @@ function FormFields({
   readonly onActiveChange: (v: boolean) => void;
 }) {
   return (
-    <div className='space-y-4 px-4'>
+    <div className='space-y-4'>
       <SwitchField
         checked={active}
         onCheckedChange={onActiveChange}

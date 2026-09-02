@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  buildPractitionerAvatar,
+  createPageModeFilter,
   getAvailableDays,
   getSlotMinutesText,
   getTimeSlots,
@@ -10,19 +12,13 @@ import {
 describe('matchesPractitionerFromPath', () => {
   it('returns true when path has matching id', () => {
     expect(
-      matchesPractitionerFromPath(
-        '/practitioner?id=role-123',
-        'role-123'
-      )
+      matchesPractitionerFromPath('/practitioner?id=role-123', 'role-123')
     ).toBe(true);
   });
 
   it('returns false when id differs', () => {
     expect(
-      matchesPractitionerFromPath(
-        '/practitioner?id=role-456',
-        'role-123'
-      )
+      matchesPractitionerFromPath('/practitioner?id=role-456', 'role-123')
     ).toBe(false);
   });
 
@@ -47,10 +43,7 @@ describe('matchesPractitionerFromPath', () => {
 
   it('handles relative paths without origin', () => {
     expect(
-      matchesPractitionerFromPath(
-        '/practitioner?id=role-abc',
-        'role-abc'
-      )
+      matchesPractitionerFromPath('/practitioner?id=role-abc', 'role-abc')
     ).toBe(true);
   });
 
@@ -220,5 +213,133 @@ describe('isAppointmentPayload', () => {
       formData: { session_type: 'offline', problem_brief: 'test' }
     };
     expect(isAppointmentPayload(withoutSlotId)).toBe(true);
+  });
+});
+
+describe('buildPractitionerAvatar', () => {
+  it('uses practitionerPhotoUrl over avatar photoUrl', () => {
+    const result = buildPractitionerAvatar({
+      practitionerPhotoUrl: 'https://example.com/photo.jpg',
+      practitionerAvatar: { photoUrl: 'https://example.com/other.jpg' }
+    });
+    expect(result.photoUrl).toBe('https://example.com/photo.jpg');
+  });
+
+  it('falls back to avatar photoUrl when practitionerPhotoUrl is absent', () => {
+    const result = buildPractitionerAvatar({
+      practitionerAvatar: { photoUrl: 'https://example.com/avatar.jpg' }
+    });
+    expect(result.photoUrl).toBe('https://example.com/avatar.jpg');
+  });
+
+  it('derives initials and seed from practitionerDisplayName', () => {
+    const result = buildPractitionerAvatar({
+      practitionerDisplayName: 'Jane Smith'
+    });
+    expect(result.initials).toBe('JS');
+    expect(result.seed).toBe('Jane Smith');
+  });
+
+  it('falls back to avatar initials and seed when displayName is absent', () => {
+    const result = buildPractitionerAvatar({
+      practitionerAvatar: { initials: 'AB', seed: 'fallback' }
+    });
+    expect(result.initials).toBe('AB');
+    expect(result.seed).toBe('fallback');
+  });
+
+  it('passes backgroundColor through from avatar', () => {
+    const result = buildPractitionerAvatar({
+      practitionerAvatar: { backgroundColor: '#FF0000' }
+    });
+    expect(result.backgroundColor).toBe('#FF0000');
+  });
+
+  it('returns all undefined when no inputs provided', () => {
+    const result = buildPractitionerAvatar({});
+    expect(result.photoUrl).toBeUndefined();
+    expect(result.initials).toBeUndefined();
+    expect(result.seed).toBeUndefined();
+    expect(result.backgroundColor).toBeUndefined();
+  });
+});
+
+describe('createPageModeFilter', () => {
+  it('returns handleFilterChange unchanged in drawer mode', () => {
+    const handleFilterChange = vi.fn();
+    const dispatch = vi.fn();
+    const setPageDate = vi.fn();
+
+    const result = createPageModeFilter({
+      isPageMode: false,
+      handleFilterChange,
+      dispatch,
+      setPageDate
+    });
+
+    result('date', new Date('2026-07-06'));
+    expect(handleFilterChange).toHaveBeenCalledTimes(1);
+    expect(handleFilterChange).toHaveBeenCalledWith(
+      'date',
+      new Date('2026-07-06')
+    );
+    expect(setPageDate).not.toHaveBeenCalled();
+  });
+
+  it('calls setPageDate when label is date in page mode', () => {
+    const handleFilterChange = vi.fn();
+    const dispatch = vi.fn();
+    const setPageDate = vi.fn();
+    const date = new Date('2026-07-08');
+
+    const result = createPageModeFilter({
+      isPageMode: true,
+      handleFilterChange,
+      dispatch,
+      setPageDate
+    });
+
+    result('date', date);
+    expect(setPageDate).toHaveBeenCalledWith(date);
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(handleFilterChange).not.toHaveBeenCalled();
+  });
+
+  it('dispatches UPDATE_BOOKING_INFO when label is startTime in page mode', () => {
+    const handleFilterChange = vi.fn();
+    const dispatch = vi.fn();
+    const setPageDate = vi.fn();
+
+    const result = createPageModeFilter({
+      isPageMode: true,
+      handleFilterChange,
+      dispatch,
+      setPageDate
+    });
+
+    result('startTime', '10:00');
+    expect(dispatch).toHaveBeenCalledWith({
+      type: 'UPDATE_BOOKING_INFO',
+      payload: { startTime: '10:00' }
+    });
+    expect(setPageDate).not.toHaveBeenCalled();
+  });
+
+  it('no-ops for other labels in page mode', () => {
+    const handleFilterChange = vi.fn();
+    const dispatch = vi.fn();
+    const setPageDate = vi.fn();
+
+    const result = createPageModeFilter({
+      isPageMode: true,
+      handleFilterChange,
+      dispatch,
+      setPageDate
+    });
+
+    result('session_type', 'online');
+    expect(setPageDate).not.toHaveBeenCalled();
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(handleFilterChange).not.toHaveBeenCalled();
   });
 });

@@ -38,7 +38,11 @@ const mockDetail = {
     ],
     period: { start: '2026-06-01T00:00:00Z' }
   },
-  practitioner: { id: 'prac-detail-1', name: [{ given: ['John'] }] },
+  practitioner: {
+    id: 'prac-detail-1',
+    name: [{ given: ['John'] }],
+    photo: [{ url: 'https://example.com/photo.jpg' }]
+  },
   healthcareServices: [{ name: 'Specialist Consult' }],
   schedule: { id: 'schedule-detail-1' }
 };
@@ -59,6 +63,8 @@ describe('usePractitionerRole', () => {
 
     expect(result.current.practitionerId).toBe('prac-1');
     expect(result.current.practitionerGivenName).toBeUndefined();
+    expect(result.current.practitionerDisplayName).toBeUndefined();
+    expect(result.current.practitionerPhotoUrl).toBeUndefined();
     expect(result.current.healthcareServiceNames).toEqual([
       'General Checkup',
       'Dental Exam'
@@ -82,6 +88,10 @@ describe('usePractitionerRole', () => {
     expect(useDetailPractitioner).toHaveBeenCalledWith('role-detail-1');
     expect(result.current.practitionerId).toBe('prac-detail-1');
     expect(result.current.practitionerGivenName).toBe('John');
+    expect(result.current.practitionerDisplayName).toBe('John');
+    expect(result.current.practitionerPhotoUrl).toBe(
+      'https://example.com/photo.jpg'
+    );
     expect(result.current.healthcareServiceNames).toEqual([
       'Specialist Consult'
     ]);
@@ -113,5 +123,7 @@ describe('usePractitionerRole', () => {
 
     expect(result.current.practitionerId).toBe('');
     expect(result.current.healthcareServiceNames).toEqual([]);
+    expect(result.current.practitionerDisplayName).toBeUndefined();
+    expect(result.current.practitionerPhotoUrl).toBeUndefined();
   });
 });

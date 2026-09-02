@@ -99,7 +99,7 @@ export default function NameEditDrawer({
       ctaLoading={isSaving}
       onCtaClick={handleSave}
     >
-      <div className='space-y-5 px-4 pb-4'>
+      <div className='space-y-5'>
         <div className='space-y-2'>
           <p className='text-xs font-semibold text-[#2C2F35]'>Given names</p>
           {rows.map(row => (

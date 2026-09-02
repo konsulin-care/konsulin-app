@@ -179,7 +179,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
       ctaDisabled={!isValid || isSubmitting}
       ctaLoading={isSubmitting}
     >
-      <div className='space-y-4 px-4'>
+      <div className='space-y-4'>
         <LocationFormFields
           status={status}
           name={name}

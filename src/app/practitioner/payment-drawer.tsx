@@ -1,10 +1,9 @@
-import { PractitionerInfo } from '@/components/practitioner/practitioner-info';
 import AppDrawer from '@/components/ui/app-drawer';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
-import { formatCurrencyValue } from '@/utils/fhir/fee';
 import type { QueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { Invoice, PractitionerRole } from 'fhir/r4';
+import AppointmentSummary from './appointment-summary';
 
 type PayAppointmentPayload = {
   readonly patientId: string;
@@ -22,19 +21,24 @@ type PayAppointmentResponse = {
   };
 };
 
-type PayAppointmentFn = (
+/** Pay appointment function signature. */
+export type PayAppointmentFn = (
   payload: PayAppointmentPayload
 ) => Promise<PayAppointmentResponse>;
+
+/** Avatar data for practitioner display. */
+export type PractitionerAvatar = {
+  photoUrl?: string;
+  initials?: string;
+  backgroundColor?: string;
+  seed?: string;
+};
 
 type Props = {
   paymentOpen: boolean;
   setPaymentOpen: (open: boolean) => void;
   setPaymentPendingOpen: (open: boolean) => void;
-  practitionerAvatar?: {
-    photoUrl?: string;
-    initials?: string;
-    backgroundColor?: string;
-  };
+  practitionerAvatar?: PractitionerAvatar;
   practitionerOrganizationName?: string;
   practitionerName?: string;
   /** Name of the healthcare service being booked. */
@@ -86,7 +90,8 @@ export default function PaymentDrawer({
     !invoice?.id ||
     !selectedSlotId ||
     !appointmentId ||
-    !bookingForm.problem_brief?.trim();
+    !bookingForm.problem_brief?.trim() ||
+    !practitionerRole?.id;
 
   /** Pays for the appointment online, opens the payment URL, and shows the payment-pending drawer. */
   const handlePayOnline = async () => {
@@ -121,19 +126,10 @@ export default function PaymentDrawer({
     }
   };
 
-  const serviceNames = healthcareServiceName ?? 'Consultation';
   const dateFormatted = bookingState?.date
     ? format(bookingState.date, 'dd MMMM yyyy')
     : '-/-/-';
-  const timeFormatted = bookingState?.startTime || '-:-';
-
-  const serviceInfoLine = (
-    <div className='flex w-full items-center justify-center rounded-[14px] border border-[#E3E3E3] p-2'>
-      <span className='text-[12px] text-[#2C2F35]'>
-        {serviceNames} &bull; {dateFormatted} &bull; {timeFormatted}
-      </span>
-    </div>
-  );
+  const timeFormatted = bookingState?.startTime ?? '-:-';
 
   return (
     <AppDrawer
@@ -146,27 +142,15 @@ export default function PaymentDrawer({
       ctaDisabled={isPaymentDisabled}
       ctaLoading={isPaying}
     >
-      <div className='flex flex-col gap-4'>
-        <PractitionerInfo
-          practitionerAvatar={practitionerAvatar}
-          practitionerOrganizationName={practitionerOrganizationName}
-          practitionerName={practitionerName}
-        />
-
-        {serviceInfoLine}
-
-        <div className='mt-2 flex items-center justify-between rounded-[12px] bg-[#F9F9F9] p-3'>
-          <span className='text-[12px] text-[#666]'>Total</span>
-          <span className='text-[16px] font-bold'>
-            {invoice?.totalNet
-              ? formatCurrencyValue(
-                  invoice.totalNet.value,
-                  invoice.totalNet.currency
-                )
-              : '-'}
-          </span>
-        </div>
-      </div>
+      <AppointmentSummary
+        practitionerAvatar={practitionerAvatar}
+        practitionerOrganizationName={practitionerOrganizationName}
+        practitionerName={practitionerName}
+        healthcareServiceName={healthcareServiceName}
+        dateFormatted={dateFormatted}
+        timeFormatted={timeFormatted}
+        invoice={invoice}
+      />
     </AppDrawer>
   );
 }

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { isDateAvailable, getNextAvailableDate } from '../booking-date-utils';
+import {
+  getNextAvailableDate,
+  isDateAvailable,
+  pickInitialDate
+} from '../booking-date-utils';
 
 describe('isDateAvailable', () => {
   const availableDays = [
@@ -18,6 +22,33 @@ describe('isDateAvailable', () => {
 
   it('returns false for empty available days', () => {
     expect(isDateAvailable(new Date('2026-07-06'), [])).toBe(false);
+  });
+});
+
+describe('pickInitialDate', () => {
+  const availableDays = [
+    new Date('2026-07-06'),
+    new Date('2026-07-08'),
+    new Date('2026-07-10')
+  ];
+
+  it('returns today when today is available', () => {
+    const today = new Date('2026-07-06');
+    expect(pickInitialDate(today, availableDays).getTime()).toBe(
+      today.getTime()
+    );
+  });
+
+  it('returns the next available date when today is unavailable', () => {
+    const today = new Date('2026-07-07');
+    expect(pickInitialDate(today, availableDays).getTime()).toBe(
+      new Date('2026-07-08').getTime()
+    );
+  });
+
+  it('returns today unchanged when the available list is empty', () => {
+    const today = new Date('2026-07-06');
+    expect(pickInitialDate(today, []).getTime()).toBe(today.getTime());
   });
 });
 

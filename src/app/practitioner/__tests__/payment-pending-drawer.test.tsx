@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { Invoice } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/components/general/avatar', () => ({
@@ -109,12 +110,27 @@ describe('PaymentPendingDrawer', () => {
     expect(screen.getByText('Dr. John Doe')).toBeInTheDocument();
   });
 
-  it('renders the session summary line', () => {
+  it('renders the session summary with separate date and time rows', () => {
     render(<PaymentPendingDrawer {...baseProps} />);
 
-    expect(screen.getByText(/General Checkup/)).toBeInTheDocument();
-    expect(screen.getByText(/15 July 2026/)).toBeInTheDocument();
-    expect(screen.getByText(/10:00/)).toBeInTheDocument();
+    expect(screen.getByText('General Checkup')).toBeInTheDocument();
+    const dateRow = screen.getByText('15 July 2026').closest('div');
+    expect(dateRow).toBeInTheDocument();
+    expect(dateRow?.querySelector('svg')).toBeInTheDocument();
+    const timeRow = screen.getByText('10:00').closest('div');
+    expect(timeRow).toBeInTheDocument();
+    expect(timeRow?.querySelector('svg')).toBeInTheDocument();
+  });
+
+  it('renders the Total row from the invoice', () => {
+    const invoice = {
+      id: 'inv-1',
+      totalNet: { value: 150_000, currency: 'IDR' }
+    } as Invoice;
+    render(<PaymentPendingDrawer {...baseProps} invoice={invoice} />);
+
+    expect(screen.getByText('Total')).toBeInTheDocument();
+    expect(screen.getByText(/150,000/)).toBeInTheDocument();
   });
 
   it('renders the View Schedule CTA', () => {
