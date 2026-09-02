@@ -1,5 +1,5 @@
 # Stage 1: Build Next.js static export
-FROM node:24-alpine AS next-builder
+FROM node:26-alpine AS next-builder
 WORKDIR /build
 COPY package.json package-lock.json ./
 COPY next.config.mjs tsconfig.json postcss.config.mjs ./  
