@@ -1,4 +1,5 @@
 import { ANONYMOUS_SESSION_IDENTIFIER_SYSTEM } from '@/constants/anonymous-session';
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { clearConsentFlag, readConsentFlag } from '@/utils/consent';
 import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
@@ -109,19 +110,21 @@ export function buildQuestionnaireResponseSearch(
  *   completed-response search and return structure-only progress.
  * @returns React Query result with ResearchProgress data.
  */
-export function useResearchProgress(options?: {
-  skipResponseSearch?: boolean;
-}) {
-  const skipResponseSearch = options?.skipResponseSearch ?? false;
+function useResearchIdentity() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [identity, setIdentity] = useState<ResearchIdentity | null>(null);
   const [identityFailed, setIdentityFailed] = useState(false);
 
   const isAuthenticated = authState?.isAuthenticated ?? false;
   const fhirId = authState?.userInfo?.fhirId;
-  // Patients and guests only: practitioners/admins have no fhirId and are
-  // not eligible for research participation.
-  const isEligible = !isAuthenticated || Boolean(fhirId);
+  const roleName = authState?.userInfo?.role_name;
+  // Only patients and guests participate in research.  Practitioners,
+  // researchers, and clinic admins have a Practitioner fhirId that must
+  // not be mistaken for a Patient id.
+  const isResearchParticipant =
+    !roleName || roleName === Roles.Patient || roleName === Roles.Guest;
+  const isEligible =
+    isResearchParticipant && (!isAuthenticated || Boolean(fhirId));
 
   useEffect(() => {
     let cancelled = false;
@@ -156,6 +159,72 @@ export function useResearchProgress(options?: {
     };
   }, [isAuthLoading, isEligible, isAuthenticated, fhirId]);
 
+  return { identity, identityFailed, isEligible };
+}
+
+async function fetchResearchProgress(
+  identity: ResearchIdentity,
+  skipResponseSearch: boolean
+): Promise<ResearchProgress> {
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const API = await getAPI();
+
+  const studiesResponse = await API.post<Bundle>(
+    '/fhir',
+    buildStudiesBundle(identity, today)
+  );
+  const { studyProgress, consentedStudyIds } = parseStudiesBundle(
+    studiesResponse.data,
+    today
+  );
+
+  // Nothing to measure without active studies, or structure-only mode:
+  // keep batches populated and feed no responses (counts stay zero).
+  if (studyProgress.length === 0 || skipResponseSearch) {
+    const structure = recomputeStudyProgress(studyProgress, [], today);
+    return computeResearchProgress(structure, [], consentedStudyIds);
+  }
+
+  const earliest = earliestStudyStart(studyProgress.map(study => study.study));
+  const qrResponse = await API.get<Bundle>(
+    buildQuestionnaireResponseSearch(identity, earliest)
+  );
+  const responses = parseQuestionnaireResponseSearchset(qrResponse.data);
+  const finalStudyProgress = recomputeStudyProgress(
+    studyProgress,
+    responses,
+    today
+  );
+
+  return computeResearchProgress(
+    finalStudyProgress,
+    responses,
+    consentedStudyIds
+  );
+}
+
+/**
+ * Fetches the research progress for the current user: active studies, their
+ * current batch, and the user's completed responses, aggregated into a
+ * typed ResearchProgress object.
+ *
+ * Two sequential requests: the studies bundle first (so the earliest study
+ * period start can bound the response search), then the completed-response
+ * search scoped to the identity. Patients are matched by FHIR author, guests
+ * by anonymous identifier. With `skipResponseSearch`, the response search is
+ * omitted and the batch structure is returned with zero response-derived
+ * counts — used by surfaces that fetch full responses separately.
+ *
+ * @param options - Optional. Set `{ skipResponseSearch: true }` to skip the
+ *   completed-response search and return structure-only progress.
+ * @returns React Query result with ResearchProgress data.
+ */
+export function useResearchProgress(options?: {
+  skipResponseSearch?: boolean;
+}) {
+  const skipResponseSearch = options?.skipResponseSearch ?? false;
+  const { identity, identityFailed, isEligible } = useResearchIdentity();
+
   const query = useQuery({
     queryKey: [
       'research',
@@ -165,46 +234,7 @@ export function useResearchProgress(options?: {
     ],
     enabled: identity !== null,
     staleTime: 5 * 60_000,
-    queryFn: async (): Promise<ResearchProgress> => {
-      if (!identity) throw new Error('Research identity not resolved');
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const API = await getAPI();
-
-      const studiesResponse = await API.post<Bundle>(
-        '/fhir',
-        buildStudiesBundle(identity, today)
-      );
-      const { studyProgress, consentedStudyIds } = parseStudiesBundle(
-        studiesResponse.data,
-        today
-      );
-
-      // Nothing to measure without active studies, or structure-only mode:
-      // keep batches populated and feed no responses (counts stay zero).
-      if (studyProgress.length === 0 || skipResponseSearch) {
-        const structure = recomputeStudyProgress(studyProgress, [], today);
-        return computeResearchProgress(structure, [], consentedStudyIds);
-      }
-
-      const earliest = earliestStudyStart(
-        studyProgress.map(study => study.study)
-      );
-      const qrResponse = await API.get<Bundle>(
-        buildQuestionnaireResponseSearch(identity, earliest)
-      );
-      const responses = parseQuestionnaireResponseSearchset(qrResponse.data);
-      const finalStudyProgress = recomputeStudyProgress(
-        studyProgress,
-        responses,
-        today
-      );
-
-      return computeResearchProgress(
-        finalStudyProgress,
-        responses,
-        consentedStudyIds
-      );
-    }
+    queryFn: () => fetchResearchProgress(identity, skipResponseSearch)
   });
 
   // v5's isLoading (isPending && isFetching) is false while the query is

@@ -4,6 +4,7 @@ import ContentWraper from '@/components/general/content-wraper';
 import EmptyState from '@/components/general/empty-state';
 import PageHeader from '@/components/page-header';
 import ReferralNotice from '@/components/research/referral-notice';
+import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
 import { useReferralWrite } from '@/hooks/useReferralWrite';
@@ -16,6 +17,7 @@ import {
   useConsentToStudy,
   useResearchProgress
 } from '@/services/api/research';
+import { usePerQuestionnaireCounts } from '@/services/api/research-counts';
 import { readConsentFlag, writeConsentFlag } from '@/utils/consent';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { FlaskConical } from 'lucide-react';
@@ -77,6 +79,9 @@ export default function ResearchPage() {
     isPending: titlesPending
   } = useQuestionnaireTitles(questionnaireIds);
 
+  const roleName = authState?.userInfo?.role_name;
+  const isResearcher = roleName === Roles.Researcher;
+
   const detailStudy = studies.find(s => s.study.id === detailStudyId) ?? null;
   // Mirrors the focused slide for the no-param focus fallback without making
   // the URL-sync effect react to local state changes.
@@ -119,6 +124,14 @@ export default function ResearchPage() {
     // Drawer mirrors the URL in both directions: open iff `view` is present.
     setDetailStudyId(knownView?.study.id ?? null);
   }, [searchParams, studies, router]);
+
+  const detailStudyQuestionnaireIds = useMemo(
+    () => detailStudy?.currentBatch?.questionnaireIds ?? [],
+    [detailStudy]
+  );
+  const { data: completionCounts } = usePerQuestionnaireCounts(
+    isResearcher ? detailStudyQuestionnaireIds : []
+  );
 
   const activeStudy = studies.find(s => s.study.id === activeStudyId) ?? null;
 
@@ -329,6 +342,8 @@ export default function ResearchPage() {
         fhirId={fhirId}
         titleMap={titleMap}
         isTitlesLoading={titlesPending}
+        completionCounts={completionCounts}
+        roleName={roleName}
       />
       <ConsentDrawer
         open={pendingConsent !== null}

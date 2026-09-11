@@ -60,7 +60,7 @@ const batchPlan = (id: string): PlanDefinition => ({
   resourceType: 'PlanDefinition',
   id,
   status: 'active',
-  effectivePeriod: { start: '2026-08-01', end: '2026-08-31' },
+  effectivePeriod: { start: '2026-09-01', end: '2026-09-30' },
   action: [
     { definitionCanonical: 'Questionnaire/phq2' },
     { definitionCanonical: 'Questionnaire/big-five-inventory' }
@@ -98,7 +98,7 @@ const QR_SEARCHSET: Bundle = {
         id: 'QR-1',
         questionnaire: 'Questionnaire/phq2',
         status: 'completed',
-        authored: '2026-08-10T00:00:00Z'
+        authored: '2026-09-10T00:00:00Z'
       }
     }
   ]
@@ -300,5 +300,49 @@ describe('useResearchProgress', () => {
     });
 
     expect(result.current.isLoading).toBe(false);
+  });
+
+  it('returns no data and no loading for a researcher with a fhir id', () => {
+    mockUseAuth.mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { fhirId: 'PRAC-1', role_name: 'Researcher' }
+      }
+    });
+    const mockPost = vi.fn();
+    vi.mocked(getAPI).mockResolvedValue({
+      post: mockPost
+    } as unknown as AxiosInstance);
+
+    const { result } = renderHook(() => useResearchProgress(), {
+      wrapper: createWrapper()
+    });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.data).toBeUndefined();
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  it('returns no data and no loading for a clinic admin with a fhir id', () => {
+    mockUseAuth.mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { fhirId: 'ADMIN-1', role_name: 'Clinic Admin' }
+      }
+    });
+    const mockPost = vi.fn();
+    vi.mocked(getAPI).mockResolvedValue({
+      post: mockPost
+    } as unknown as AxiosInstance);
+
+    const { result } = renderHook(() => useResearchProgress(), {
+      wrapper: createWrapper()
+    });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.data).toBeUndefined();
+    expect(mockPost).not.toHaveBeenCalled();
   });
 });

@@ -16,6 +16,7 @@ const {
   mockUseResearchProgress,
   mockUseConsentToStudy,
   mockUseQuestionnaireTitles,
+  mockUsePerQuestionnaireCounts,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -34,6 +35,7 @@ const {
     mockUseResearchProgress: vi.fn(),
     mockUseConsentToStudy: vi.fn(),
     mockUseQuestionnaireTitles: vi.fn(),
+    mockUsePerQuestionnaireCounts: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -73,6 +75,11 @@ vi.mock('react-toastify', () => ({
   toast: { error: vi.fn(), success: vi.fn() }
 }));
 
+vi.mock('@/services/api/research-counts', () => ({
+  usePerQuestionnaireCounts: mockUsePerQuestionnaireCounts,
+  COMPLETION_COUNT_FLOOR: 5
+}));
+
 /** Mutation mock whose mutate resolves with the given outcome. */
 function consentMutationMock(
   opts: {
@@ -107,6 +114,8 @@ beforeEach(() => {
     data: TITLE_MAP,
     isPending: false
   });
+  mockUsePerQuestionnaireCounts.mockReset();
+  mockUsePerQuestionnaireCounts.mockReturnValue({ data: new Map() });
   mockPush.mockReset();
   mockReplace.mockReset();
   mockFabDispatch.mockReset();

@@ -13,7 +13,7 @@ import {
 
 /** Auth hook state shape consumed by the research page. */
 interface AuthState {
-  state: { userInfo: { fhirId?: string } };
+  state: { userInfo: { fhirId?: string; role_name?: string } };
   isLoading: boolean;
 }
 
@@ -23,6 +23,7 @@ const {
   mockUseConsentToStudy,
   mockUseQuestionnaireTitles,
   mockUseCircleStats,
+  mockUsePerQuestionnaireCounts,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -37,6 +38,7 @@ const {
     mockUseConsentToStudy: vi.fn(),
     mockUseQuestionnaireTitles: vi.fn(),
     mockUseCircleStats: vi.fn(),
+    mockUsePerQuestionnaireCounts: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -60,6 +62,11 @@ vi.mock('@/services/api/questionnaire-info', () => ({
 
 vi.mock('@/services/api/circle', () => ({
   useCircleStats: mockUseCircleStats
+}));
+
+vi.mock('@/services/api/research-counts', () => ({
+  usePerQuestionnaireCounts: mockUsePerQuestionnaireCounts,
+  COMPLETION_COUNT_FLOOR: 5
 }));
 
 vi.mock('@/context/auth/authContext', () => ({
@@ -92,6 +99,8 @@ beforeEach(() => {
   });
   mockUseCircleStats.mockReset();
   mockUseCircleStats.mockReturnValue({ data: { converted: 0, joined: 0 } });
+  mockUsePerQuestionnaireCounts.mockReset();
+  mockUsePerQuestionnaireCounts.mockReturnValue({ data: new Map() });
   mockPush.mockReset();
   mockReplace.mockReset();
   mockFabDispatch.mockReset();
@@ -602,5 +611,58 @@ describe('ResearchPage', () => {
     expect(screen.getAllByText('PHQ-2').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Big Five Inventory').length).toBeGreaterThan(0);
     expect(screen.queryByText(/Also counts toward/)).toBeNull();
+  });
+
+  it('passes completion counts to StudyDetailView for researcher', async () => {
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { role_name: 'Researcher' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+    mockUsePerQuestionnaireCounts.mockReturnValue({
+      data: new Map([
+        ['phq2', 12],
+        ['big-five-inventory', 3]
+      ])
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    // Open the detail drawer
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open study Konsulin Mental Health Survey'
+      })
+    );
+
+    // Verify counts are displayed
+    expect(await screen.findByText('12 completions')).toBeInTheDocument();
+    expect(screen.getByText('< 5 completions')).toBeInTheDocument();
+  });
+
+  it('does not fetch completion counts for patient role', () => {
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { fhirId: 'patient-123', role_name: 'Patient' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    // Open the detail drawer
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open study Konsulin Mental Health Survey'
+      })
+    );
+
+    // Counts should not be fetched
+    expect(mockUsePerQuestionnaireCounts).toHaveBeenCalledWith([]);
   });
 });

@@ -157,4 +157,23 @@ describe('StudyDetailView - Role Prop', () => {
       screen.getByText(/individual participant data/i)
     ).toBeInTheDocument();
   });
+
+  it('passes completionCounts to QuestionnaireList for researcher', () => {
+    const completionCounts = new Map([['phq2', 10]]);
+    renderWithQuery(
+      <StudyDetailView
+        progress={mockProgress}
+        overlapMap={new Map()}
+        open={true}
+        onClose={vi.fn()}
+        onParticipate={vi.fn()}
+        onSeeReport={vi.fn()}
+        onQuestionnaireClick={vi.fn()}
+        isPatient={false}
+        roleName='Researcher'
+        completionCounts={completionCounts}
+      />
+    );
+    expect(screen.getByText('10 completions')).toBeInTheDocument();
+  });
 });

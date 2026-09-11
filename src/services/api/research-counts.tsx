@@ -79,3 +79,42 @@ export function useStudyCompletionCounts(questionnaireIds: string[]) {
     }
   });
 }
+
+/** Per-questionnaire completion counts map. */
+export type PerQuestionnaireCounts = Map<string, number>;
+
+/**
+ * Fetches completion counts per questionnaire for researcher view.
+ *
+ * Runs one `_summary=count&questionnaire=<canonical>` query per questionnaire
+ * id and returns a map of questionnaire id to count. Results are cached for
+ * at least 15 minutes.
+ *
+ * @param questionnaireIds - Bare questionnaire ids in the batch.
+ * @returns React Query result with a Map of questionnaire id to count.
+ */
+export function usePerQuestionnaireCounts(questionnaireIds: string[]) {
+  const ids = useMemo(
+    () => [...new Set(questionnaireIds)].toSorted((a, b) => a.localeCompare(b)),
+    [questionnaireIds]
+  );
+
+  return useQuery({
+    queryKey: ['per-questionnaire-counts', ids],
+    enabled: ids.length > 0,
+    staleTime: 15 * 60_000,
+    queryFn: async (): Promise<PerQuestionnaireCounts> => {
+      const API = await getAPI();
+      const map = new Map<string, number>();
+      for (const id of ids) {
+        const canonical = toCanonicalQuestionnaireUrl(id);
+        if (!canonical) continue;
+        const response = await API.get<{ total?: number }>(
+          `/fhir/QuestionnaireResponse?_summary=count&questionnaire=${canonical}`
+        );
+        map.set(id, response.data.total ?? 0);
+      }
+      return map;
+    }
+  });
+}

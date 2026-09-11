@@ -25,6 +25,8 @@ function renderList(
     titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
     isTitlesLoading?: boolean;
     showOverlapHints?: boolean;
+    roleName?: string;
+    completionCounts?: Map<string, number>;
   } = {}
 ) {
   const progress = makeStudyProgress();
@@ -193,5 +195,45 @@ describe('QuestionnaireList', () => {
     expect(
       screen.getAllByText(/Also counts toward Sleep Quality Study/).length
     ).toBeGreaterThan(0);
+  });
+
+  it('shows completion counts for researcher role', () => {
+    const completionCounts = new Map([
+      ['phq2', 12],
+      ['big-five-inventory', 3]
+    ]);
+    renderList({
+      titleMap: TITLE_MAP,
+      roleName: 'Researcher',
+      completionCounts
+    });
+
+    expect(screen.getByText('12 completions')).toBeTruthy();
+    expect(screen.getByText('< 5 completions')).toBeTruthy();
+  });
+
+  it('does not show completion counts for patient role', () => {
+    const completionCounts = new Map([
+      ['phq2', 12],
+      ['big-five-inventory', 3]
+    ]);
+    renderList({
+      titleMap: TITLE_MAP,
+      roleName: 'Patient',
+      completionCounts
+    });
+
+    expect(screen.queryByText('12 completions')).toBeNull();
+    expect(screen.queryByText('< 5 completions')).toBeNull();
+  });
+
+  it('does not show completion counts when roleName is undefined', () => {
+    const completionCounts = new Map([['phq2', 12]]);
+    renderList({
+      titleMap: TITLE_MAP,
+      completionCounts
+    });
+
+    expect(screen.queryByText('12 completions')).toBeNull();
   });
 });

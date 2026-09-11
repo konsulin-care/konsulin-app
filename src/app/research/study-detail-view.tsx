@@ -28,6 +28,8 @@ interface StudyDetailViewProps {
   titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
   /** True while questionnaire titles are being fetched. */
   isTitlesLoading?: boolean;
+  /** Per-questionnaire completion counts for researcher view. */
+  completionCounts?: Map<string, number>;
 }
 
 /**
@@ -48,7 +50,8 @@ export default function StudyDetailView({
   fhirId,
   roleName,
   titleMap,
-  isTitlesLoading
+  isTitlesLoading,
+  completionCounts
 }: Readonly<StudyDetailViewProps>) {
   const isResearcher = roleName === Roles.Researcher;
   const isComplete = progress?.isComplete ?? false;
@@ -98,6 +101,8 @@ export default function StudyDetailView({
             titleMap={titleMap}
             isTitlesLoading={isTitlesLoading}
             showOverlapHints
+            completionCounts={completionCounts}
+            roleName={roleName}
           />
           {roleName === Roles.Researcher && (
             <div className='rounded-lg bg-gray-50 p-3 text-xs text-gray-600'>
