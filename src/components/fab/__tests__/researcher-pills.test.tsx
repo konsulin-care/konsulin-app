@@ -14,12 +14,12 @@ describe('researcherPills', () => {
     expect(registerPill.icon).toBeDefined();
   });
 
-  it('has My Studies pill with correct properties', () => {
-    const studiesPill = researcherPills[1];
-    expect(studiesPill.label).toBe('My Studies');
-    expect(studiesPill.action).toBe('navigate');
-    expect(studiesPill.href).toBe('/');
-    expect(studiesPill.delay).toBe(50);
-    expect(studiesPill.icon).toBeDefined();
+  it('has My Research pill with correct properties', () => {
+    const researchPill = researcherPills[1];
+    expect(researchPill.label).toBe('My Research');
+    expect(researchPill.action).toBe('navigate');
+    expect(researchPill.href).toBe('/research');
+    expect(researchPill.delay).toBe(50);
+    expect(researchPill.icon).toBeDefined();
   });
 });

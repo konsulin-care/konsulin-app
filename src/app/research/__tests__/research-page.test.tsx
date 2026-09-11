@@ -24,6 +24,7 @@ const {
   mockUseQuestionnaireTitles,
   mockUseCircleStats,
   mockUsePerQuestionnaireCounts,
+  mockUseResearcherDashboard,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -39,6 +40,7 @@ const {
     mockUseQuestionnaireTitles: vi.fn(),
     mockUseCircleStats: vi.fn(),
     mockUsePerQuestionnaireCounts: vi.fn(),
+    mockUseResearcherDashboard: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -54,6 +56,10 @@ vi.mock('@/services/api/research', () => ({
   useResearchProgress: mockUseResearchProgress,
   useConsentToStudy: mockUseConsentToStudy,
   useClaimLocalConsents: vi.fn()
+}));
+
+vi.mock('@/services/api/researcher', () => ({
+  useResearcherDashboard: mockUseResearcherDashboard
 }));
 
 vi.mock('@/services/api/questionnaire-info', () => ({
@@ -101,6 +107,11 @@ beforeEach(() => {
   mockUseCircleStats.mockReturnValue({ data: { converted: 0, joined: 0 } });
   mockUsePerQuestionnaireCounts.mockReset();
   mockUsePerQuestionnaireCounts.mockReturnValue({ data: new Map() });
+  mockUseResearcherDashboard.mockReset();
+  mockUseResearcherDashboard.mockReturnValue({
+    data: undefined,
+    isLoading: true
+  });
   mockPush.mockReset();
   mockReplace.mockReset();
   mockFabDispatch.mockReset();
@@ -622,6 +633,37 @@ describe('ResearchPage', () => {
       data: makeProgress(),
       isLoading: false
     });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: {
+        studies: [
+          {
+            study: {
+              id: 'study-1',
+              title: 'Mental Health Survey',
+              status: 'active',
+              description: 'A study about mental health'
+            },
+            batches: [
+              {
+                id: 'batch-1',
+                start: '2026-01-01',
+                end: '2026-12-31',
+                questionnaireIds: ['phq2', 'big-five-inventory']
+              }
+            ],
+            currentBatch: {
+              id: 'batch-1',
+              start: '2026-01-01',
+              end: '2026-12-31',
+              questionnaireIds: ['phq2', 'big-five-inventory']
+            },
+            daysRemaining: 100
+          }
+        ],
+        totalParticipants: 42
+      },
+      isLoading: false
+    });
     mockUsePerQuestionnaireCounts.mockReturnValue({
       data: new Map([
         ['phq2', 12],
@@ -634,7 +676,7 @@ describe('ResearchPage', () => {
     // Open the detail drawer
     fireEvent.click(
       screen.getByRole('button', {
-        name: 'Open study Konsulin Mental Health Survey'
+        name: 'Open study Mental Health Survey'
       })
     );
 
@@ -664,5 +706,145 @@ describe('ResearchPage', () => {
 
     // Counts should not be fetched
     expect(mockUsePerQuestionnaireCounts).toHaveBeenCalledWith([]);
+  });
+
+  it('renders researcher carousel for researcher role', () => {
+    mockUseAuth.mockReturnValue({
+      state: {
+        userInfo: {
+          fhirId: 'practitioner-1',
+          role_name: 'Researcher'
+        }
+      },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: {
+        studies: [
+          {
+            study: {
+              id: 'study-1',
+              title: 'Mental Health Survey',
+              status: 'active',
+              description: 'A study about mental health'
+            },
+            batches: [
+              {
+                id: 'batch-1',
+                start: '2026-01-01',
+                end: '2026-12-31',
+                questionnaireIds: ['phq2']
+              }
+            ],
+            currentBatch: {
+              id: 'batch-1',
+              start: '2026-01-01',
+              end: '2026-12-31',
+              questionnaireIds: ['phq2']
+            },
+            daysRemaining: 100
+          }
+        ],
+        totalParticipants: 42
+      },
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('Mental Health Survey')).toBeInTheDocument();
+  });
+
+  it('dispatches Register Research FAB action for researcher', () => {
+    mockUseAuth.mockReturnValue({
+      state: {
+        userInfo: {
+          fhirId: 'practitioner-1',
+          role_name: 'Researcher'
+        }
+      },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: { studies: [], totalParticipants: 0 },
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    const registerAction = dispatchedActions.find(
+      (action): action is Extract<FabAction, { type: 'SET_ACTION' }> =>
+        action.type === 'SET_ACTION' &&
+        action.config?.label === 'Register Research'
+    );
+    expect(registerAction).toBeDefined();
+  });
+
+  it('opens StudyDetailView when researcher card is clicked', () => {
+    mockUseAuth.mockReturnValue({
+      state: {
+        userInfo: {
+          fhirId: 'practitioner-1',
+          role_name: 'Researcher'
+        }
+      },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: {
+        studies: [
+          {
+            study: {
+              id: 'study-1',
+              title: 'Mental Health Survey',
+              status: 'active',
+              description: 'A study about mental health'
+            },
+            batches: [
+              {
+                id: 'batch-1',
+                start: '2026-01-01',
+                end: '2026-12-31',
+                questionnaireIds: ['phq2']
+              }
+            ],
+            currentBatch: {
+              id: 'batch-1',
+              start: '2026-01-01',
+              end: '2026-12-31',
+              questionnaireIds: ['phq2']
+            },
+            daysRemaining: 100
+          }
+        ],
+        totalParticipants: 42
+      },
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    // Click on the study card
+    const button = screen.getByRole('button', {
+      name: /open study mental health survey/i
+    });
+    fireEvent.click(button);
+
+    // Verify URL is updated
+    expect(mockReplace).toHaveBeenCalledWith(
+      expect.stringContaining('view=study-1')
+    );
   });
 });

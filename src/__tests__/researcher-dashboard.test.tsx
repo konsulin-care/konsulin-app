@@ -89,7 +89,7 @@ describe('ResearcherDashboard', () => {
     expect(statCards.some(el => el.textContent === '1')).toBe(true);
   });
 
-  it('renders study list with study title', () => {
+  it('does not render study list on dashboard', () => {
     mockReturnValue = {
       data: mockDashboardData,
       isLoading: false,
@@ -97,8 +97,8 @@ describe('ResearcherDashboard', () => {
     };
     renderWithQuery(<ResearcherDashboard />);
 
-    expect(screen.getByText('My Research')).toBeInTheDocument();
-    expect(screen.getByText('Mental Health Survey')).toBeInTheDocument();
+    expect(screen.queryByText('My Research')).not.toBeInTheDocument();
+    expect(screen.queryByText('Mental Health Survey')).not.toBeInTheDocument();
   });
 
   it('renders empty state when no studies', () => {
@@ -109,7 +109,10 @@ describe('ResearcherDashboard', () => {
     };
     renderWithQuery(<ResearcherDashboard />);
 
-    expect(screen.getByText('No research studies yet')).toBeInTheDocument();
+    // Empty state should not show on dashboard since study list is removed
+    expect(
+      screen.queryByText('No research studies yet')
+    ).not.toBeInTheDocument();
   });
 
   it('shows loading skeleton while fetching', () => {

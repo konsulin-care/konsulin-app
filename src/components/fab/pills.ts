@@ -20,8 +20,8 @@ export const researcherPills: Pill[] = [
     action: 'register-research'
   },
   {
-    label: 'My Studies',
-    href: '/',
+    label: 'My Research',
+    href: '/research',
     icon: BookText,
     delay: 50,
     action: 'navigate'
