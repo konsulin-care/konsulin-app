@@ -39,7 +39,8 @@ export type PillAction =
   | 'get-recommendation'
   | 'register-practitioner'
   | 'add-location'
-  | 'add-assessment';
+  | 'add-assessment'
+  | 'register-research';
 
 export type FabVariant = 'primary' | 'danger' | 'secondary' | 'ghost';
 

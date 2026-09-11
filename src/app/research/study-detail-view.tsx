@@ -2,6 +2,7 @@
 
 import ShareResearchButton from '@/components/research/share-research-button';
 import AppDrawer from '@/components/ui/app-drawer';
+import { Roles } from '@/constants/roles';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { FlaskConical } from 'lucide-react';
@@ -21,6 +22,8 @@ interface StudyDetailViewProps {
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
   isPatient: boolean;
   fhirId?: string;
+  /** User's role name for conditional rendering. */
+  roleName?: string;
   /** Resolved id → questionnaire info map (title + estimated duration). */
   titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
   /** True while questionnaire titles are being fetched. */
@@ -43,9 +46,16 @@ export default function StudyDetailView({
   onQuestionnaireClick,
   isPatient,
   fhirId,
+  roleName,
   titleMap,
   isTitlesLoading
 }: Readonly<StudyDetailViewProps>) {
+  const isResearcher = roleName === Roles.Researcher;
+  const isComplete = progress?.isComplete ?? false;
+  let ctaLabel = 'Participate';
+  if (isResearcher) ctaLabel = 'Manage Study';
+  else if (isComplete) ctaLabel = 'See Report';
+
   return (
     <AppDrawer
       open={open}
@@ -65,16 +75,17 @@ export default function StudyDetailView({
           </span>
         ) : undefined
       }
-      ctaLabel={progress?.isComplete ? 'See Report' : 'Participate'}
+      ctaLabel={ctaLabel}
       onCtaClick={() => {
         if (!progress) return;
+        if (isResearcher) return;
         if (progress.isComplete) {
           onSeeReport(progress.study.id);
         } else {
           onParticipate(progress);
         }
       }}
-      ctaDisabled={!progress}
+      ctaDisabled={!progress || roleName === Roles.Researcher}
     >
       {progress && (
         <div className='flex flex-col gap-4'>
@@ -88,6 +99,15 @@ export default function StudyDetailView({
             isTitlesLoading={isTitlesLoading}
             showOverlapHints
           />
+          {roleName === Roles.Researcher && (
+            <div className='rounded-lg bg-gray-50 p-3 text-xs text-gray-600'>
+              <p className='font-medium text-gray-700'>Researcher View</p>
+              <p className='mt-1'>
+                Individual participant data will be available after
+                anonymization upon study completion.
+              </p>
+            </div>
+          )}
           <ShareResearchButton
             title={progress.study.title}
             isPatient={isPatient}
