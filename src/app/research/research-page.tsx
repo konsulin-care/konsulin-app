@@ -17,6 +17,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import ConsentDrawer from './consent-drawer';
 import ResearchContent from './research-content';
+import { mapResearcherStudyToProgress } from './researcher-content';
 import StudyDetailView from './study-detail-view';
 import { buildOverlapMap } from './study-sections';
 import { useConsent } from './use-consent';
@@ -52,27 +53,16 @@ export default function ResearchPage() {
   );
   const overlapMap = useMemo(() => buildOverlapMap(studies), [studies]);
 
-  const questionnaireIds = useMemo(
-    () => [
-      ...new Set([
-        ...studies.flatMap(s => s.currentBatch?.questionnaireIds ?? []),
-        ...(progress?.completedQuestionnaireIds ?? [])
-      ])
-    ],
-    [studies, progress?.completedQuestionnaireIds]
-  );
-  const {
-    data: titleMap = EMPTY_QUESTIONNAIRE_INFO_MAP,
-    isPending: titlesPending
-  } = useQuestionnaireTitles(questionnaireIds);
-
   const roleName = authState?.userInfo?.role_name;
   const isResearcher = roleName === Roles.Researcher;
   const practitionerId = authState?.userInfo?.fhirId;
 
   const { data: researcherData, isLoading: researcherLoading } =
     useResearcherDashboard(isResearcher ? practitionerId : undefined);
-  const researcherStudies = researcherData?.studies ?? [];
+  const researcherStudies = useMemo(
+    () => researcherData?.studies ?? [],
+    [researcherData]
+  );
 
   const detailStudy = useDetailStudy({
     isResearcher,
@@ -81,9 +71,37 @@ export default function ResearchPage() {
     researcherStudies
   });
 
+  const resolvedStudies = useMemo(() => {
+    if (!isResearcher) return studies;
+    const converted = researcherStudies.map(s =>
+      mapResearcherStudyToProgress(s)
+    );
+    const knownIds = new Set(studies.map(s => s.study.id));
+    return [
+      ...studies,
+      ...converted.filter(
+        (s): s is StudyProgress => s !== null && !knownIds.has(s.study.id)
+      )
+    ];
+  }, [studies, researcherStudies, isResearcher]);
+
+  const questionnaireIds = useMemo(
+    () => [
+      ...new Set([
+        ...resolvedStudies.flatMap(s => s.currentBatch?.questionnaireIds ?? []),
+        ...(progress?.completedQuestionnaireIds ?? [])
+      ])
+    ],
+    [resolvedStudies, progress?.completedQuestionnaireIds]
+  );
+  const {
+    data: titleMap = EMPTY_QUESTIONNAIRE_INFO_MAP,
+    isPending: titlesPending
+  } = useQuestionnaireTitles(questionnaireIds);
+
   useUrlSync({
     searchParams,
-    studies,
+    studies: resolvedStudies,
     activeStudyId,
     setActiveStudyId,
     setDetailStudyId,
@@ -138,9 +156,15 @@ export default function ResearchPage() {
     setActiveStudyId,
     setDetailStudyId,
     setPendingConsent,
-    router,
-    searchParams
+    router
   });
+
+  const handleManageStudy = useCallback(
+    (studyId: string) => {
+      router.push(`/research/edit?id=${studyId}`);
+    },
+    [router]
+  );
 
   const handleQuestionnaireClick = useCallback(
     (studyId: string, questionnaireId: string) => {
@@ -182,6 +206,7 @@ export default function ResearchPage() {
         onParticipate={participate}
         onSeeReport={handleSeeReport}
         onQuestionnaireClick={handleQuestionnaireClick}
+        onManageStudy={handleManageStudy}
         isPatient={isPatient}
         fhirId={fhirId}
         titleMap={titleMap}

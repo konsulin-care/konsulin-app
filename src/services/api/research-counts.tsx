@@ -1,5 +1,6 @@
 import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
 import { useQuery } from '@tanstack/react-query';
+import type { Bundle } from 'fhir/r4';
 import { useMemo } from 'react';
 import { getAPI } from '../api';
 
@@ -76,6 +77,27 @@ export function useStudyCompletionCounts(questionnaireIds: string[]) {
       const API = await getAPI();
       const total = await fetchCompletionTotal(API, ids);
       return { total, visibleCount: withKAnonymityFloor(total) };
+    }
+  });
+}
+
+/**
+ * Fetches the participant count for a single study.
+ *
+ * @param studyId - ResearchStudy id, or undefined to skip the query.
+ * @returns React Query result whose data is the participant count.
+ */
+export function useStudyParticipantCount(studyId: string | undefined) {
+  return useQuery({
+    queryKey: ['study-participant-count', studyId],
+    enabled: Boolean(studyId),
+    staleTime: 15 * 60_000,
+    queryFn: async (): Promise<number> => {
+      const API = await getAPI();
+      const { data } = await API.get<Bundle>(
+        `/fhir/ResearchSubject?study=ResearchStudy/${studyId}&_summary=count`
+      );
+      return data.total ?? 0;
     }
   });
 }

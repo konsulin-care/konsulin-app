@@ -1,6 +1,6 @@
 import type { StudyProgress } from '@/utils/fhir/research';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import StudyDetailView from '../study-detail-view';
 
@@ -9,17 +9,23 @@ vi.mock('@/components/ui/app-drawer', () => ({
     children,
     open,
     ctaLabel,
-    ctaDisabled
+    ctaDisabled,
+    onCtaClick
   }: {
     children: React.ReactNode;
     open: boolean;
     ctaLabel?: string;
     ctaDisabled?: boolean;
+    onCtaClick?: () => void;
   }) =>
     open ? (
       <div data-testid='drawer'>
         {children}
-        {ctaLabel && <button disabled={ctaDisabled}>{ctaLabel}</button>}
+        {ctaLabel && (
+          <button disabled={ctaDisabled} onClick={onCtaClick}>
+            {ctaLabel}
+          </button>
+        )}
       </div>
     ) : null
 }));
@@ -175,5 +181,43 @@ describe('StudyDetailView - Role Prop', () => {
       />
     );
     expect(screen.getByText('10 completions')).toBeInTheDocument();
+  });
+
+  it('enables Manage Study button for researcher', () => {
+    renderWithQuery(
+      <StudyDetailView
+        progress={mockProgress}
+        overlapMap={new Map()}
+        open={true}
+        onClose={vi.fn()}
+        onParticipate={vi.fn()}
+        onSeeReport={vi.fn()}
+        onQuestionnaireClick={vi.fn()}
+        isPatient={false}
+        roleName='Researcher'
+      />
+    );
+    const button = screen.getByText('Manage Study');
+    expect(button).not.toBeDisabled();
+  });
+
+  it('calls onManageStudy when researcher clicks Manage Study', () => {
+    const onManageStudy = vi.fn();
+    renderWithQuery(
+      <StudyDetailView
+        progress={mockProgress}
+        overlapMap={new Map()}
+        open={true}
+        onClose={vi.fn()}
+        onParticipate={vi.fn()}
+        onSeeReport={vi.fn()}
+        onQuestionnaireClick={vi.fn()}
+        isPatient={false}
+        roleName='Researcher'
+        onManageStudy={onManageStudy}
+      />
+    );
+    fireEvent.click(screen.getByText('Manage Study'));
+    expect(onManageStudy).toHaveBeenCalledWith('study-1');
   });
 });

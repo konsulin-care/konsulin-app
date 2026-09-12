@@ -20,6 +20,7 @@ interface StudyDetailViewProps {
   onParticipate: (progress: StudyProgress) => void;
   onSeeReport: (studyId: string) => void;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
+  onManageStudy?: (studyId: string) => void;
   isPatient: boolean;
   fhirId?: string;
   /** User's role name for conditional rendering. */
@@ -46,6 +47,7 @@ export default function StudyDetailView({
   onParticipate,
   onSeeReport,
   onQuestionnaireClick,
+  onManageStudy,
   isPatient,
   fhirId,
   roleName,
@@ -81,14 +83,17 @@ export default function StudyDetailView({
       ctaLabel={ctaLabel}
       onCtaClick={() => {
         if (!progress) return;
-        if (isResearcher) return;
+        if (isResearcher) {
+          onManageStudy?.(progress.study.id);
+          return;
+        }
         if (progress.isComplete) {
           onSeeReport(progress.study.id);
         } else {
           onParticipate(progress);
         }
       }}
-      ctaDisabled={!progress || roleName === Roles.Researcher}
+      ctaDisabled={!progress}
     >
       {progress && (
         <div className='flex flex-col gap-4'>

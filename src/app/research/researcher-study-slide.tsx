@@ -8,13 +8,16 @@ export interface ResearcherStudySlideProps {
   study: ResearchStudyWithBatches;
   isActive: boolean;
   onClick: (studyId: string) => void;
+  /** Per-study participant count, or undefined while loading. */
+  participantCount?: number;
 }
 
 /** Researcher carousel slide card showing management-relevant study info. */
 export default function ResearcherStudySlide({
   study,
   isActive,
-  onClick
+  onClick,
+  participantCount
 }: Readonly<ResearcherStudySlideProps>) {
   const { study: studyResource, currentBatch, daysRemaining } = study;
   const batchCount = study.batches.length;
@@ -70,7 +73,11 @@ export default function ResearcherStudySlide({
 
         {/* Stats row */}
         <div className='flex items-center gap-3 text-[11px] text-gray-600'>
-          <span>12 participants</span>
+          <span>
+            {participantCount === undefined ? '—' : participantCount}{' '}
+            participant
+            {participantCount === 1 ? '' : 's'}
+          </span>
           <span>&middot;</span>
           <span>
             {questionnaireCount} questionnaire

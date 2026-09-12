@@ -14,13 +14,13 @@ import type { Pill } from './types';
 /** Speed-dial pills for researcher role. */
 export const researcherPills: Pill[] = [
   {
-    label: 'Register Research',
+    label: 'Register Survey',
     icon: FlaskConical,
     delay: 0,
     action: 'register-research'
   },
   {
-    label: 'My Research',
+    label: 'My Survey',
     href: '/research',
     icon: BookText,
     delay: 50,

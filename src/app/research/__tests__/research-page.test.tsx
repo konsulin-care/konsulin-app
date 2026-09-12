@@ -25,6 +25,7 @@ const {
   mockUseCircleStats,
   mockUsePerQuestionnaireCounts,
   mockUseResearcherDashboard,
+  mockUseStudyParticipantCount,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -41,6 +42,7 @@ const {
     mockUseCircleStats: vi.fn(),
     mockUsePerQuestionnaireCounts: vi.fn(),
     mockUseResearcherDashboard: vi.fn(),
+    mockUseStudyParticipantCount: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -72,6 +74,7 @@ vi.mock('@/services/api/circle', () => ({
 
 vi.mock('@/services/api/research-counts', () => ({
   usePerQuestionnaireCounts: mockUsePerQuestionnaireCounts,
+  useStudyParticipantCount: mockUseStudyParticipantCount,
   COMPLETION_COUNT_FLOOR: 5
 }));
 
@@ -107,6 +110,8 @@ beforeEach(() => {
   mockUseCircleStats.mockReturnValue({ data: { converted: 0, joined: 0 } });
   mockUsePerQuestionnaireCounts.mockReset();
   mockUsePerQuestionnaireCounts.mockReturnValue({ data: new Map() });
+  mockUseStudyParticipantCount.mockReset();
+  mockUseStudyParticipantCount.mockReturnValue({ data: undefined });
   mockUseResearcherDashboard.mockReset();
   mockUseResearcherDashboard.mockReturnValue({
     data: undefined,
@@ -394,6 +399,33 @@ describe('ResearchPage', () => {
     // A focus change cannot coexist with an open drawer: view is dropped.
     expect(mockReplace).toHaveBeenCalledWith('/research?id=research');
     expect(document.querySelector('[data-open="true"]')).toBeNull();
+  });
+
+  it('keeps the drawer open when the slide changes to the study shown in detail', async () => {
+    mockSearchParams.set('view', 'research');
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    await screen.findByRole('button', { name: 'Participate' });
+    // Click the same card that is already shown in detail (research is the
+    // active slide). handleSlideChange fires for the same studyId that is
+    // already in detailStudyId — the drawer must not close.
+    const cardButton = document.querySelector<HTMLElement>(
+      '[aria-label="Open study Konsulin Mental Health Survey"]'
+    );
+    expect(cardButton).not.toBeNull();
+    if (cardButton) {
+      fireEvent.click(cardButton);
+    }
+
+    // Drawer stays open.
+    expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();
+    // URL was not rewritten to drop the view param.
+    expect(mockReplace).not.toHaveBeenCalledWith('/research?id=research');
   });
 
   it('replaces the id param with the view param when a focused slide is tapped', async () => {
@@ -759,7 +791,7 @@ describe('ResearchPage', () => {
     expect(screen.getByText('Mental Health Survey')).toBeInTheDocument();
   });
 
-  it('dispatches Register Research FAB action for researcher', () => {
+  it('dispatches Register Survey FAB action for researcher', () => {
     mockUseAuth.mockReturnValue({
       state: {
         userInfo: {
@@ -783,7 +815,7 @@ describe('ResearchPage', () => {
     const registerAction = dispatchedActions.find(
       (action): action is Extract<FabAction, { type: 'SET_ACTION' }> =>
         action.type === 'SET_ACTION' &&
-        action.config?.label === 'Register Research'
+        action.config?.label === 'Register Survey'
     );
     expect(registerAction).toBeDefined();
   });
@@ -846,5 +878,210 @@ describe('ResearchPage', () => {
     expect(mockReplace).toHaveBeenCalledWith(
       expect.stringContaining('view=study-1')
     );
+  });
+
+  it('does not strip ?id= for a researcher study (deep-link persistence)', () => {
+    mockSearchParams.set('id', 'study-1');
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { role_name: 'Researcher' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: {
+        studies: [
+          {
+            study: {
+              id: 'study-1',
+              title: 'Mental Health Survey',
+              status: 'active',
+              description: 'A study about mental health'
+            },
+            batches: [
+              {
+                id: 'batch-1',
+                start: '2026-01-01',
+                end: '2026-12-31',
+                questionnaireIds: ['phq2']
+              }
+            ],
+            currentBatch: {
+              id: 'batch-1',
+              start: '2026-01-01',
+              end: '2026-12-31',
+              questionnaireIds: ['phq2']
+            },
+            daysRemaining: 100
+          }
+        ],
+        totalParticipants: 42
+      },
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    // Valid deep link: URL must NOT be stripped.
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(screen.getByText('Mental Health Survey')).toBeInTheDocument();
+  });
+
+  it('does not strip ?view= for a researcher study (deep-link persistence)', async () => {
+    mockSearchParams.set('view', 'study-1');
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { role_name: 'Researcher' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: {
+        studies: [
+          {
+            study: {
+              id: 'study-1',
+              title: 'Mental Health Survey',
+              status: 'active',
+              description: 'A study about mental health'
+            },
+            batches: [
+              {
+                id: 'batch-1',
+                start: '2026-01-01',
+                end: '2026-12-31',
+                questionnaireIds: ['phq2']
+              }
+            ],
+            currentBatch: {
+              id: 'batch-1',
+              start: '2026-01-01',
+              end: '2026-12-31',
+              questionnaireIds: ['phq2']
+            },
+            daysRemaining: 100
+          }
+        ],
+        totalParticipants: 42
+      },
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    // Valid deep link: URL must NOT be stripped, drawer must open.
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(
+      await screen.findByRole('button', { name: 'Manage Study' })
+    ).toBeTruthy();
+  });
+
+  it('navigates to /research/edit when Manage Study is clicked', async () => {
+    mockSearchParams.set('view', 'study-1');
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { role_name: 'Researcher' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: {
+        studies: [
+          {
+            study: {
+              id: 'study-1',
+              title: 'Mental Health Survey',
+              status: 'active',
+              description: 'A study about mental health'
+            },
+            batches: [
+              {
+                id: 'batch-1',
+                start: '2026-01-01',
+                end: '2026-12-31',
+                questionnaireIds: ['phq2']
+              }
+            ],
+            currentBatch: {
+              id: 'batch-1',
+              start: '2026-01-01',
+              end: '2026-12-31',
+              questionnaireIds: ['phq2']
+            },
+            daysRemaining: 100
+          }
+        ],
+        totalParticipants: 42
+      },
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    const manageButton = await screen.findByRole('button', {
+      name: 'Manage Study'
+    });
+    fireEvent.click(manageButton);
+
+    expect(mockPush).toHaveBeenCalledWith('/research/edit?id=study-1');
+  });
+
+  it('passes researcher study questionnaire IDs to useQuestionnaireTitles', async () => {
+    mockSearchParams.set('view', 'study-1');
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { role_name: 'Researcher' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: {
+        studies: [
+          {
+            study: {
+              id: 'study-1',
+              title: 'Mental Health Survey',
+              status: 'active',
+              description: 'A study about mental health'
+            },
+            batches: [
+              {
+                id: 'batch-1',
+                start: '2026-01-01',
+                end: '2026-12-31',
+                questionnaireIds: ['phq2', 'big-five-inventory']
+              }
+            ],
+            currentBatch: {
+              id: 'batch-1',
+              start: '2026-01-01',
+              end: '2026-12-31',
+              questionnaireIds: ['phq2', 'big-five-inventory']
+            },
+            daysRemaining: 100
+          }
+        ],
+        totalParticipants: 42
+      },
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+
+    await screen.findByRole('button', { name: 'Manage Study' });
+
+    // The hook must receive questionnaire IDs from researcher studies,
+    // not an empty array. An empty array means titles are never fetched.
+    const lastCall = mockUseQuestionnaireTitles.mock.calls.at(-1)?.[0];
+    expect(lastCall).toContain('phq2');
+    expect(lastCall).toContain('big-five-inventory');
   });
 });

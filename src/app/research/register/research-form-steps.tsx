@@ -140,7 +140,8 @@ export function Step3({
   onBack,
   onSubmit,
   onAddBatch,
-  onRemoveBatch
+  onRemoveBatch,
+  lockedBatchIndices = []
 }: {
   fields: UseFieldArrayReturn<FormData, 'batches'>['fields'];
   errors: FieldErrors<FormData>;
@@ -149,56 +150,20 @@ export function Step3({
   onSubmit: () => void;
   onAddBatch: () => void;
   onRemoveBatch: (index: number) => void;
+  lockedBatchIndices?: number[];
 }) {
   return (
     <div className='space-y-4'>
       <h2 className='text-md font-bold'>Batch Configuration</h2>
       {fields.map((field, index) => (
-        <div key={field.id} className='space-y-2 rounded-lg border p-4'>
-          <div className='flex items-center justify-between'>
-            <h3 className='text-sm font-medium'>Batch {index + 1}</h3>
-            {index > 0 && (
-              <Button
-                type='button'
-                variant='ghost'
-                size='sm'
-                onClick={() => onRemoveBatch(index)}
-              >
-                Remove
-              </Button>
-            )}
-          </div>
-          <div className='grid grid-cols-2 gap-2'>
-            <div className='space-y-1'>
-              <Label htmlFor={`batches.${index}.startDate`}>Start Date</Label>
-              <Input
-                id={`batches.${index}.startDate`}
-                type='date'
-                {...register(`batches.${index}.startDate`)}
-                className='bg-white'
-              />
-              {errors.batches?.[index]?.startDate && (
-                <p className='text-xs text-red-500'>
-                  {errors.batches?.[index]?.startDate?.message}
-                </p>
-              )}
-            </div>
-            <div className='space-y-1'>
-              <Label htmlFor={`batches.${index}.endDate`}>End Date</Label>
-              <Input
-                id={`batches.${index}.endDate`}
-                type='date'
-                {...register(`batches.${index}.endDate`)}
-                className='bg-white'
-              />
-              {errors.batches?.[index]?.endDate && (
-                <p className='text-xs text-red-500'>
-                  {errors.batches?.[index]?.endDate?.message}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
+        <BatchItem
+          key={field.id}
+          index={index}
+          errors={errors}
+          register={register}
+          onRemoveBatch={onRemoveBatch}
+          isLocked={lockedBatchIndices.includes(index)}
+        />
       ))}
       <Button type='button' variant='outline' onClick={onAddBatch}>
         Add Batch
@@ -210,6 +175,89 @@ export function Step3({
         <Button type='button' onClick={onSubmit}>
           Submit
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function BatchDateField({
+  index,
+  field,
+  errors,
+  register,
+  isLocked
+}: {
+  index: number;
+  field: 'startDate' | 'endDate';
+  errors: FieldErrors<FormData>;
+  register: UseFormReturn<FormData>['register'];
+  isLocked: boolean;
+}) {
+  const label = field === 'startDate' ? 'Start Date' : 'End Date';
+  const error = errors.batches?.[index]?.[field];
+  return (
+    <div className='space-y-1'>
+      <Label htmlFor={`batches.${index}.${field}`}>{label}</Label>
+      <Input
+        id={`batches.${index}.${field}`}
+        type='date'
+        {...register(`batches.${index}.${field}`)}
+        className='bg-white'
+        disabled={isLocked}
+      />
+      {error && <p className='text-xs text-red-500'>{error.message}</p>}
+    </div>
+  );
+}
+
+function BatchItem({
+  index,
+  errors,
+  register,
+  onRemoveBatch,
+  isLocked
+}: {
+  index: number;
+  errors: FieldErrors<FormData>;
+  register: UseFormReturn<FormData>['register'];
+  onRemoveBatch: (index: number) => void;
+  isLocked: boolean;
+}) {
+  return (
+    <div className='space-y-2 rounded-lg border p-4'>
+      <div className='flex items-center justify-between'>
+        <h3 className='text-sm font-medium'>
+          Batch {index + 1}
+          {isLocked && (
+            <span className='ml-2 text-xs text-gray-500'>(locked)</span>
+          )}
+        </h3>
+        {index > 0 && !isLocked && (
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            onClick={() => onRemoveBatch(index)}
+          >
+            Remove
+          </Button>
+        )}
+      </div>
+      <div className='grid grid-cols-2 gap-2'>
+        <BatchDateField
+          index={index}
+          field='startDate'
+          errors={errors}
+          register={register}
+          isLocked={isLocked}
+        />
+        <BatchDateField
+          index={index}
+          field='endDate'
+          errors={errors}
+          register={register}
+          isLocked={isLocked}
+        />
       </div>
     </div>
   );

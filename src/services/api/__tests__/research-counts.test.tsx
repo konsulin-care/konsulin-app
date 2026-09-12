@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   COMPLETION_COUNT_FLOOR,
   useStudyCompletionCounts,
+  useStudyParticipantCount,
   withKAnonymityFloor
 } from '../research-counts';
 
@@ -164,6 +165,40 @@ describe('useStudyCompletionCounts', () => {
 
   it('does not query when no questionnaire ids are given', () => {
     const { result } = renderHook(() => useStudyCompletionCounts([]), {
+      wrapper: makeWrapper(makeQueryClient())
+    });
+
+    expect(result.current.isPending).toBe(true);
+    expect(mockAxios.get).not.toHaveBeenCalled();
+  });
+});
+
+describe('useStudyParticipantCount', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getAPI).mockResolvedValue(
+      mockAxios as unknown as Awaited<ReturnType<typeof getAPI>>
+    );
+  });
+
+  it('returns participant count for a study', async () => {
+    mockAxios.get.mockResolvedValue({ data: { total: 7 } });
+
+    const { result } = renderHook(() => useStudyParticipantCount('study-1'), {
+      wrapper: makeWrapper(makeQueryClient())
+    });
+
+    await waitFor(() => {
+      expect(result.current.data).toBe(7);
+    });
+
+    expect(mockAxios.get).toHaveBeenCalledWith(
+      '/fhir/ResearchSubject?study=ResearchStudy/study-1&_summary=count'
+    );
+  });
+
+  it('does not query when studyId is undefined', () => {
+    const { result } = renderHook(() => useStudyParticipantCount(undefined), {
       wrapper: makeWrapper(makeQueryClient())
     });
 

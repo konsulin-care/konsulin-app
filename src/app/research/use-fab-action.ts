@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 
 /**
  * Sets up the FAB action for the research page.
- * Researchers see "Register Research", patients see "Participate".
+ * Researchers see "Register Survey", patients see "Participate".
  */
 export function useResearchFabAction({
   isResearcher,
@@ -27,7 +27,7 @@ export function useResearchFabAction({
       dispatch({
         type: 'SET_ACTION',
         config: {
-          label: 'Register Research',
+          label: 'Register Survey',
           icon: FlaskConical,
           onAction: () => router.push('/research/register')
         }

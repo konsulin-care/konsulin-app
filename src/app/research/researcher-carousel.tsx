@@ -1,5 +1,6 @@
 'use client';
 
+import { useStudyParticipantCount } from '@/services/api/research-counts';
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import { useEffect, useState } from 'react';
 import 'swiper/css';
@@ -11,6 +12,29 @@ export interface ResearcherCarouselProps {
   activeId: string;
   onSlideChange: (studyId: string) => void;
   onStudyClick: (studyId: string) => void;
+}
+
+/** Wrapper that fetches participant count for a single slide. */
+function ResearcherSlideWithData({
+  study,
+  isActive,
+  onClick
+}: Readonly<{
+  study: ResearchStudyWithBatches;
+  isActive: boolean;
+  onClick: (studyId: string) => void;
+}>) {
+  const { data: participantCount } = useStudyParticipantCount(
+    isActive ? study.study.id : undefined
+  );
+  return (
+    <ResearcherStudySlide
+      study={study}
+      isActive={isActive}
+      onClick={onClick}
+      participantCount={participantCount}
+    />
+  );
 }
 
 /** Swiper carousel with one researcher study card per slide. */
@@ -51,7 +75,7 @@ export default function ResearcherCarousel({
         {studies.map(study => (
           <SwiperSlide key={study.study.id} className='!overflow-visible'>
             {({ isActive }) => (
-              <ResearcherStudySlide
+              <ResearcherSlideWithData
                 study={study}
                 isActive={isActive}
                 onClick={onStudyClick}

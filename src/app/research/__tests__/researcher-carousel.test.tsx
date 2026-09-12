@@ -1,7 +1,15 @@
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearcherCarousel from '../researcher-carousel';
+
+const { mockUseStudyParticipantCount } = vi.hoisted(() => ({
+  mockUseStudyParticipantCount: vi.fn()
+}));
+
+vi.mock('@/services/api/research-counts', () => ({
+  useStudyParticipantCount: mockUseStudyParticipantCount
+}));
 
 const mockStudies: ResearchStudyWithBatches[] = [
   {
@@ -43,6 +51,11 @@ const mockStudies: ResearchStudyWithBatches[] = [
 ];
 
 describe('ResearcherCarousel', () => {
+  beforeEach(() => {
+    mockUseStudyParticipantCount.mockReset();
+    mockUseStudyParticipantCount.mockReturnValue({ data: undefined });
+  });
+
   it('renders all study cards', () => {
     render(
       <ResearcherCarousel
@@ -88,5 +101,24 @@ describe('ResearcherCarousel', () => {
     fireEvent.click(button);
 
     expect(onStudyClick).toHaveBeenCalledWith('study-1');
+  });
+
+  it('passes participant count from hook to slide', () => {
+    mockUseStudyParticipantCount.mockImplementation(
+      (studyId: string | undefined) => ({
+        data: studyId === 'study-1' ? 7 : undefined
+      })
+    );
+
+    render(
+      <ResearcherCarousel
+        studies={mockStudies}
+        activeId='study-1'
+        onSlideChange={vi.fn()}
+        onStudyClick={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('7 participants')).toBeInTheDocument();
   });
 });

@@ -127,4 +127,30 @@ describe('ResearcherStudySlide', () => {
 
     expect(onClick).toHaveBeenCalledWith('study-1');
   });
+
+  it('displays participantCount prop instead of hardcoded value', () => {
+    render(
+      <ResearcherStudySlide
+        study={mockStudy}
+        isActive={true}
+        onClick={vi.fn()}
+        participantCount={7}
+      />
+    );
+
+    expect(screen.getByText('7 participants')).toBeInTheDocument();
+    expect(screen.queryByText('12 participants')).not.toBeInTheDocument();
+  });
+
+  it('shows dash when participantCount is undefined', () => {
+    render(
+      <ResearcherStudySlide
+        study={mockStudy}
+        isActive={true}
+        onClick={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/— participants/)).toBeInTheDocument();
+  });
 });
