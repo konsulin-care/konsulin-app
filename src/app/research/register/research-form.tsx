@@ -215,7 +215,8 @@ export default function ResearchForm() {
         <Step3
           fields={fields}
           errors={errors}
-          register={register}
+          batches={formValues.batches}
+          setValue={setValue}
           onBack={() => setStep(2)}
           onSubmit={() => void handleSubmit(onSubmitForm)()}
           onAddBatch={() => append(createBatch())}

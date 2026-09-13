@@ -79,11 +79,24 @@ async function navigateToStep3(user: ReturnType<typeof userEvent.setup>) {
   });
 }
 
-async function fillBatchDates(user: ReturnType<typeof userEvent.setup>) {
-  const startDate = screen.getByLabelText(/start date/i);
-  const endDate = screen.getByLabelText(/end date/i);
-  await user.type(startDate, '2026-01-01');
-  await user.type(endDate, '2026-12-31');
+/** Pre-fill localStorage with valid batch data and render directly to step 3. */
+function renderWithPrefilledData() {
+  localStorage.setItem(
+    'research-form-test-practitioner-id',
+    JSON.stringify({
+      title: 'My Research Study',
+      description: '',
+      batches: [
+        {
+          startDate: '2026-01-01',
+          endDate: '2026-12-31',
+          questionnaireIds: ['phq2']
+        }
+      ],
+      step: 3
+    })
+  );
+  renderWithQuery(<ResearchForm />);
 }
 
 describe('ResearchForm - Basic Steps', () => {
@@ -163,18 +176,25 @@ describe('ResearchForm - Batch Configuration', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders one batch by default with start and end date inputs', async () => {
+  it('renders one batch by default with date picker buttons', async () => {
     const user = userEvent.setup();
     await navigateToStep3(user);
-    expect(screen.getByLabelText(/start date/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/end date/i)).toBeInTheDocument();
+    // DatePickerButton renders buttons with placeholder text
+    expect(
+      screen.getByRole('button', { name: /select start date/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /select end date/i })
+    ).toBeInTheDocument();
   });
 
   it('can add a new batch', async () => {
     const user = userEvent.setup();
     await navigateToStep3(user);
     await user.click(screen.getByRole('button', { name: /add batch/i }));
-    const startDates = screen.getAllByLabelText(/start date/i);
+    const startDates = screen.getAllByRole('button', {
+      name: /select start date/i
+    });
     expect(startDates).toHaveLength(2);
   });
 
@@ -185,7 +205,9 @@ describe('ResearchForm - Batch Configuration', () => {
     const removeButtons = screen.getAllByRole('button', { name: /remove/i });
     expect(removeButtons).toHaveLength(1);
     await user.click(removeButtons[0]);
-    const startDates = screen.getAllByLabelText(/start date/i);
+    const startDates = screen.getAllByRole('button', {
+      name: /select start date/i
+    });
     expect(startDates).toHaveLength(1);
   });
 
@@ -220,8 +242,10 @@ describe('ResearchForm - Batch Configuration', () => {
 
   it('clears localStorage after successful submission', async () => {
     const user = userEvent.setup();
-    await navigateToStep3(user);
-    await fillBatchDates(user);
+    renderWithPrefilledData();
+    await waitFor(() => {
+      expect(screen.getByText(/batch configuration/i)).toBeInTheDocument();
+    });
     await user.click(screen.getByRole('button', { name: /submit/i }));
     await waitFor(() => {
       expect(
@@ -234,8 +258,10 @@ describe('ResearchForm - Batch Configuration', () => {
 describe('ResearchForm - Submission', () => {
   it('creates PlanDefinition and ResearchStudy on submit', async () => {
     const user = userEvent.setup();
-    await navigateToStep3(user);
-    await fillBatchDates(user);
+    renderWithPrefilledData();
+    await waitFor(() => {
+      expect(screen.getByText(/batch configuration/i)).toBeInTheDocument();
+    });
     await user.click(screen.getByRole('button', { name: /submit/i }));
     await waitFor(() => {
       expect(mockPost).toHaveBeenCalled();
@@ -244,8 +270,10 @@ describe('ResearchForm - Submission', () => {
 
   it('navigates to / on successful submission', async () => {
     const user = userEvent.setup();
-    await navigateToStep3(user);
-    await fillBatchDates(user);
+    renderWithPrefilledData();
+    await waitFor(() => {
+      expect(screen.getByText(/batch configuration/i)).toBeInTheDocument();
+    });
     await user.click(screen.getByRole('button', { name: /submit/i }));
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/');

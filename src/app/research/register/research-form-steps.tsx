@@ -1,6 +1,7 @@
 'use client';
 
 import Combobox from '@/components/shared/combobox';
+import DatePickerButton from '@/components/shared/date-picker-button';
 import QuestionnaireUploader from '@/components/shared/questionnaire-uploader';
 import {
   Accordion,
@@ -136,7 +137,8 @@ export function Step2({
 export function Step3({
   fields,
   errors,
-  register,
+  batches,
+  setValue,
   onBack,
   onSubmit,
   onAddBatch,
@@ -145,7 +147,8 @@ export function Step3({
 }: {
   fields: UseFieldArrayReturn<FormData, 'batches'>['fields'];
   errors: FieldErrors<FormData>;
-  register: UseFormReturn<FormData>['register'];
+  batches: FormData['batches'];
+  setValue: UseFormReturn<FormData>['setValue'];
   onBack: () => void;
   onSubmit: () => void;
   onAddBatch: () => void;
@@ -160,7 +163,8 @@ export function Step3({
           key={field.id}
           index={index}
           errors={errors}
-          register={register}
+          batchValues={batches[index]}
+          setValue={setValue}
           onRemoveBatch={onRemoveBatch}
           isLocked={lockedBatchIndices.includes(index)}
         />
@@ -184,25 +188,37 @@ function BatchDateField({
   index,
   field,
   errors,
-  register,
+  currentValue,
+  setValue,
   isLocked
 }: {
   index: number;
   field: 'startDate' | 'endDate';
   errors: FieldErrors<FormData>;
-  register: UseFormReturn<FormData>['register'];
+  currentValue: string;
+  setValue: UseFormReturn<FormData>['setValue'];
   isLocked: boolean;
 }) {
   const label = field === 'startDate' ? 'Start Date' : 'End Date';
   const error = errors.batches?.[index]?.[field];
+
+  const dateValue = currentValue ? new Date(currentValue) : undefined;
+
+  const handleChange = (date: Date) => {
+    const yyyyMMdd = date.toISOString().slice(0, 10);
+    // skipcq: JS-0098 - fire-and-forget validation
+    setValue(`batches.${index}.${field}`, yyyyMMdd, {
+      shouldValidate: true
+    });
+  };
+
   return (
     <div className='space-y-1'>
-      <Label htmlFor={`batches.${index}.${field}`}>{label}</Label>
-      <Input
-        id={`batches.${index}.${field}`}
-        type='date'
-        {...register(`batches.${index}.${field}`)}
-        className='bg-white'
+      <Label>{label}</Label>
+      <DatePickerButton
+        value={dateValue}
+        onChange={handleChange}
+        placeholder={`Select ${label.toLowerCase()}`}
         disabled={isLocked}
       />
       {error && <p className='text-xs text-red-500'>{error.message}</p>}
@@ -213,13 +229,15 @@ function BatchDateField({
 function BatchItem({
   index,
   errors,
-  register,
+  batchValues,
+  setValue,
   onRemoveBatch,
   isLocked
 }: {
   index: number;
   errors: FieldErrors<FormData>;
-  register: UseFormReturn<FormData>['register'];
+  batchValues: FormData['batches'][number];
+  setValue: UseFormReturn<FormData>['setValue'];
   onRemoveBatch: (index: number) => void;
   isLocked: boolean;
 }) {
@@ -248,14 +266,16 @@ function BatchItem({
           index={index}
           field='startDate'
           errors={errors}
-          register={register}
+          currentValue={batchValues.startDate}
+          setValue={setValue}
           isLocked={isLocked}
         />
         <BatchDateField
           index={index}
           field='endDate'
           errors={errors}
-          register={register}
+          currentValue={batchValues.endDate}
+          setValue={setValue}
           isLocked={isLocked}
         />
       </div>
