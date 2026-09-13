@@ -116,7 +116,9 @@ export function Step3({
   setValue,
   onAddBatch,
   onRemoveBatch,
-  lockedBatchIndices = []
+  lockedBatchIndices = [],
+  availableQuestionnaires = [],
+  selectedQuestionnaireIds = []
 }: {
   fields: UseFieldArrayReturn<FormData, 'batches'>['fields'];
   errors: FieldErrors<FormData>;
@@ -125,10 +127,33 @@ export function Step3({
   onAddBatch: () => void;
   onRemoveBatch: (index: number) => void;
   lockedBatchIndices?: number[];
+  availableQuestionnaires?: { code: string; name: string }[];
+  selectedQuestionnaireIds?: string[];
 }) {
+  const hasQuestionnaires = availableQuestionnaires.length > 0;
+
+  const handleSelectAll = () => {
+    for (const [index] of fields.entries()) {
+      if (!lockedBatchIndices.includes(index)) {
+        setValue(
+          `batches.${index}.questionnaireIds`,
+          selectedQuestionnaireIds,
+          {
+            shouldValidate: true
+          }
+        );
+      }
+    }
+  };
+
   return (
     <div className='space-y-4'>
       <h2 className='text-md font-bold'>Batch Configuration</h2>
+      {hasQuestionnaires && (
+        <Button type='button' variant='outline' onClick={handleSelectAll}>
+          Select all
+        </Button>
+      )}
       {fields.map((field, index) => (
         <BatchItem
           key={field.id}
@@ -138,6 +163,7 @@ export function Step3({
           setValue={setValue}
           onRemoveBatch={onRemoveBatch}
           isLocked={lockedBatchIndices.includes(index)}
+          availableQuestionnaires={availableQuestionnaires}
         />
       ))}
       <Button type='button' variant='outline' onClick={onAddBatch}>
@@ -195,7 +221,8 @@ function BatchItem({
   batchValues,
   setValue,
   onRemoveBatch,
-  isLocked
+  isLocked,
+  availableQuestionnaires = []
 }: {
   index: number;
   errors: FieldErrors<FormData>;
@@ -203,7 +230,22 @@ function BatchItem({
   setValue: UseFormReturn<FormData>['setValue'];
   onRemoveBatch: (index: number) => void;
   isLocked: boolean;
+  availableQuestionnaires?: { code: string; name: string }[];
 }) {
+  const hasQuestionnaires = availableQuestionnaires.length > 0;
+
+  const handleQuestionnaireSelect = (ids: string[]) => {
+    // skipcq: JS-0098 - fire-and-forget validation
+    setValue(`batches.${index}.questionnaireIds`, ids, {
+      shouldValidate: true
+    });
+  };
+
+  // Find names for the selected questionnaire IDs
+  const selectedNames = batchValues.questionnaireIds
+    .map(id => availableQuestionnaires.find(q => q.code === id)?.name ?? id)
+    .join(', ');
+
   return (
     <div className='space-y-2 rounded-lg border p-4'>
       <div className='flex items-center justify-between'>
@@ -242,6 +284,26 @@ function BatchItem({
           isLocked={isLocked}
         />
       </div>
+      {hasQuestionnaires && (
+        <div className='space-y-1'>
+          <Label>Questionnaires</Label>
+          {isLocked ? (
+            <p className='text-sm text-gray-700'>
+              {selectedNames || 'None assigned'}
+            </p>
+          ) : (
+            <Combobox
+              multiple
+              options={availableQuestionnaires}
+              value={batchValues.questionnaireIds}
+              onSelect={handleQuestionnaireSelect}
+              placeholder='Select questionnaires'
+              searchPlaceholder='Search...'
+              emptyMessage='No questionnaires found.'
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }
