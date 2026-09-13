@@ -100,6 +100,7 @@ export default function EditResearchForm({
     [initialData.batches]
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars, sonarjs/no-dead-store
   const [step, setStep] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -110,10 +111,8 @@ export default function EditResearchForm({
 
   const {
     register,
-    handleSubmit,
     control,
     setValue,
-    trigger,
     formState: { errors }
   } = form;
   const { fields, append, remove } = useFieldArray<FormData>({
@@ -216,6 +215,7 @@ export default function EditResearchForm({
       ];
     });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars, sonarjs/no-dead-store -- will be used by FAB in Task 9
   const onSubmitForm = async (data: FormData) => {
     try {
       const API = await getAPI();
@@ -235,23 +235,12 @@ export default function EditResearchForm({
   return (
     <div className='space-y-4'>
       <h1 className='text-lg font-bold'>Edit Research</h1>
-      {step === 1 && (
-        <Step1
-          onNext={valid => {
-            if (valid) setStep(2);
-          }}
-          trigger={trigger}
-          register={register}
-          errors={errors}
-        />
-      )}
+      {step === 1 && <Step1 register={register} errors={errors} />}
       {step === 2 && (
         <Step2
           libraryOptions={libraryOptions}
           selectedIds={selectedIds}
           onSelect={handleSelectLibrary}
-          onBack={() => setStep(1)}
-          onNext={() => setStep(3)}
           onCustomUpload={handleCustomUpload}
         />
       )}
@@ -261,8 +250,6 @@ export default function EditResearchForm({
           errors={errors}
           batches={form.getValues('batches')}
           setValue={setValue}
-          onBack={() => setStep(2)}
-          onSubmit={() => void handleSubmit(onSubmitForm)()}
           onAddBatch={() =>
             append({ startDate: '', endDate: '', questionnaireIds: [] })
           }

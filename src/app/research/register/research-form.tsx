@@ -50,6 +50,7 @@ const createBatch = (date = ''): FormData['batches'][number] => ({
   questionnaireIds: []
 });
 
+/* eslint-disable @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars -- will be used by FAB in Task 9 */
 const submitStudy = async (
   API: Awaited<ReturnType<typeof getAPI>>,
   data: FormData,
@@ -100,11 +101,13 @@ const submitStudy = async (
  *
  */
 export default function ResearchForm() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars, sonarjs/no-dead-store
   const router = useRouter();
   const { state: authState } = useAuth();
   const userId = authState?.userInfo?.fhirId;
   const storageKey = getStorageKey(userId);
   const storedData = useRef(loadFromStorage(storageKey));
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars, sonarjs/no-dead-store
   const [step, setStep] = useState(storedData.current?.step ?? 1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [, setCustomQs] = useState<Questionnaire[]>([]);
@@ -121,11 +124,9 @@ export default function ResearchForm() {
 
   const {
     register,
-    handleSubmit,
     control,
     watch,
     setValue,
-    trigger,
     formState: { errors }
   } = form;
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -179,35 +180,15 @@ export default function ResearchForm() {
     handleSelectLibrary([...selectedIds, q.id]);
   };
 
-  const onSubmitForm = async (data: FormData) => {
-    try {
-      const API = await getAPI();
-      await submitStudy(API, data, userId, storageKey, router);
-    } catch {
-      toast.error('Failed to create research study. Please try again.');
-    }
-  };
-
   return (
     <div className='space-y-4'>
       <h1 className='text-lg font-bold'>Register New Research</h1>
-      {step === 1 && (
-        <Step1
-          onNext={valid => {
-            if (valid) setStep(2);
-          }}
-          trigger={trigger}
-          register={register}
-          errors={errors}
-        />
-      )}
+      {step === 1 && <Step1 register={register} errors={errors} />}
       {step === 2 && (
         <Step2
           libraryOptions={libraryOptions}
           selectedIds={selectedIds}
           onSelect={handleSelectLibrary}
-          onBack={() => setStep(1)}
-          onNext={() => setStep(3)}
           onCustomUpload={handleCustomUpload}
         />
       )}
@@ -217,8 +198,6 @@ export default function ResearchForm() {
           errors={errors}
           batches={formValues.batches}
           setValue={setValue}
-          onBack={() => setStep(2)}
-          onSubmit={() => void handleSubmit(onSubmitForm)()}
           onAddBatch={() => append(createBatch())}
           onRemoveBatch={remove}
         />

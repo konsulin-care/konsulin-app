@@ -24,24 +24,14 @@ import type { FormData } from './research-form';
  *
  */
 export function Step1({
-  onNext,
-  trigger,
   register,
   errors
 }: {
-  onNext: (valid: boolean) => void;
-  trigger: UseFormReturn<FormData>['trigger'];
   register: UseFormReturn<FormData>['register'];
   errors: FieldErrors<FormData>;
 }) {
   return (
-    <form
-      onSubmit={e => {
-        e.preventDefault();
-        void trigger(['title', 'description']).then(onNext);
-      }}
-      className='space-y-4'
-    >
+    <div className='space-y-4'>
       <div className='space-y-2'>
         <Label htmlFor='title'>Title</Label>
         <Input
@@ -64,10 +54,7 @@ export function Step1({
           rows={3}
         />
       </div>
-      <Button type='submit' className='w-full'>
-        Next
-      </Button>
-    </form>
+    </div>
   );
 }
 
@@ -78,15 +65,11 @@ export function Step2({
   libraryOptions,
   selectedIds,
   onSelect,
-  onBack,
-  onNext,
   onCustomUpload
 }: {
   libraryOptions: { code: string; name: string }[];
   selectedIds: string[];
   onSelect: (ids: string[]) => void;
-  onBack: () => void;
-  onNext: () => void;
   onCustomUpload: (q: Questionnaire | null) => void;
 }) {
   return (
@@ -119,14 +102,6 @@ export function Step2({
           {selectedIds.length} questionnaire(s) selected
         </p>
       )}
-      <div className='flex gap-2'>
-        <Button variant='outline' onClick={onBack}>
-          Back
-        </Button>
-        <Button onClick={onNext} disabled={selectedIds.length === 0}>
-          Next
-        </Button>
-      </div>
     </div>
   );
 }
@@ -139,8 +114,6 @@ export function Step3({
   errors,
   batches,
   setValue,
-  onBack,
-  onSubmit,
   onAddBatch,
   onRemoveBatch,
   lockedBatchIndices = []
@@ -149,8 +122,6 @@ export function Step3({
   errors: FieldErrors<FormData>;
   batches: FormData['batches'];
   setValue: UseFormReturn<FormData>['setValue'];
-  onBack: () => void;
-  onSubmit: () => void;
   onAddBatch: () => void;
   onRemoveBatch: (index: number) => void;
   lockedBatchIndices?: number[];
@@ -172,14 +143,6 @@ export function Step3({
       <Button type='button' variant='outline' onClick={onAddBatch}>
         Add Batch
       </Button>
-      <div className='flex gap-2'>
-        <Button variant='outline' onClick={onBack}>
-          Back
-        </Button>
-        <Button type='button' onClick={onSubmit}>
-          Submit
-        </Button>
-      </div>
     </div>
   );
 }
