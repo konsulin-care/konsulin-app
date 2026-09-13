@@ -6,7 +6,8 @@ import PractitionerAvailabilityEditor from '../practitioner-availability-editor'
 const mockMutateAsync = vi.fn();
 
 vi.mock('@/services/api/schedule', () => ({
-  useUpdateAvailability: () => ({ mutateAsync: mockMutateAsync })
+  useUpdateAvailability: () => ({ mutateAsync: mockMutateAsync }),
+  useUpdateAvailabilityBundle: () => ({ mutateAsync: mockMutateAsync })
 }));
 
 vi.mock('@/components/availability/availability-editor', () => ({
@@ -124,15 +125,18 @@ describe('PractitionerAvailabilityEditor save behaviors', () => {
     mockMutateAsync.mockResolvedValueOnce(undefined);
     await (currentSave as () => Promise<void>)();
 
-    // Step 4: Verify what was sent to updateAvailability
+    // Step 4: Verify what was sent in the FHIR Bundle transaction
     // Expecting data for BOTH Mon (0) and Tue (1) if the save function
     // reads the latest weeklyAvailability at call time
     expect(mockMutateAsync).toHaveBeenCalledTimes(1);
-    const sentData = mockMutateAsync.mock.calls[0][0] as {
+    const sentUpdates = mockMutateAsync.mock.calls[0][0] as {
+      practitionerRoleId: string;
       availableTime: string[];
-    };
-    expect(sentData.availableTime).toContain('0'); // Mon
-    expect(sentData.availableTime).toContain('1'); // Tue
+    }[];
+    expect(sentUpdates).toHaveLength(1);
+    expect(sentUpdates[0].practitionerRoleId).toBe('role-1');
+    expect(sentUpdates[0].availableTime).toContain('0'); // Mon
+    expect(sentUpdates[0].availableTime).toContain('1'); // Tue
   });
 
   it('calls onDirtyChange with false after successful save', async () => {

@@ -1,7 +1,7 @@
 import AvailabilityEditor from '@/components/availability/availability-editor';
 import DaySelectorNavigation from '@/components/availability/day-selector-navigation';
 import FloatingSaveButton from '@/components/availability/floating-save-button';
-import { useUpdateAvailability } from '@/services/api/schedule';
+import { useUpdateAvailabilityBundle } from '@/services/api/schedule';
 import {
   DayOfWeek,
   OrganizationTimeRanges,
@@ -32,6 +32,10 @@ type Props = {
     save: () => Promise<void>,
     saving: boolean
   ) => void;
+};
+
+type PractitionerRoleWithId = (PractitionerRole | IPractitionerRoleDetail) & {
+  id: string;
 };
 
 /**
@@ -117,11 +121,13 @@ export default function PractitionerAvailabilityEditor({
   // Loading state for save operation
   const [isSaving, setIsSaving] = useState(false);
 
-  // Mutation for updating availability
-  const { mutateAsync: updateAvailability } = useUpdateAvailability();
+  // Mutation for updating availability using FHIR Bundle transaction
+  const { mutateAsync: updateAvailabilityBundle } =
+    useUpdateAvailabilityBundle();
 
   /**
-   * Handle saving all availability changes
+   * Handle saving all availability changes using FHIR Bundle transaction
+   * This ensures atomic updates - all updates succeed or all fail together
    */
   const handleSave = async () => {
     if (memoizedRolesToUse.length === 0) {
@@ -132,22 +138,36 @@ export default function PractitionerAvailabilityEditor({
     setIsSaving(true);
 
     try {
-      // Update each practitioner role with its organization-specific availability
-      for (const role of memoizedRolesToUse) {
-        // Get the organization ID for this role
-        const orgId = role.organization?.reference || role.id;
+      // Build array of updates for FHIR Bundle transaction
+      const updates = memoizedRolesToUse
+        .filter(
+          (role): role is PractitionerRoleWithId =>
+            typeof role.id === 'string' && role.id.length > 0
+        )
+        .map(role => {
+          // Get the organization ID for this role
+          const orgId = role.organization?.reference || role.id;
 
-        // Convert weekly availability to FHIR availableTime format for this specific organization
-        const availableTime = convertToFhirAvailableTimeForOrganization(
-          weeklyAvailability,
-          orgId
-        );
+          // Convert weekly availability to FHIR availableTime format for this specific organization
+          const availableTime = convertToFhirAvailableTimeForOrganization(
+            weeklyAvailability,
+            orgId
+          );
 
-        await updateAvailability({
-          practitionerRoleId: role.id,
-          availableTime
+          return {
+            practitionerRoleId: role.id,
+            availableTime
+          };
         });
+
+      // Check if there are any updates to send
+      if (updates.length === 0) {
+        console.warn('No valid PractitionerRoles to update');
+        return;
       }
+
+      // Execute all updates atomically using FHIR Bundle transaction
+      await updateAvailabilityBundle(updates);
 
       // Call success callback if provided
       if (onSuccess) {
@@ -160,6 +180,8 @@ export default function PractitionerAvailabilityEditor({
       savedBaselineRef.current = structuredClone(weeklyAvailability); // skipcq: JS-0357 — accessed in async handler, not during render
     } catch (error) {
       console.error('Failed to update availability:', error);
+      // All updates are rolled back automatically by the FHIR server
+      // if any single update fails in the bundle transaction
     } finally {
       setIsSaving(false);
     }
