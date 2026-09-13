@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { useSearchParams } from 'next/navigation';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchForm from '../research-form';
 
 vi.mock('@/context/auth/authContext', () => ({
@@ -30,9 +30,10 @@ vi.mock('@/services/api', () => ({
     })
 }));
 
-const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush })
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/research/register',
+  useSearchParams: vi.fn()
 }));
 
 function createQueryClient() {
@@ -48,6 +49,14 @@ function renderWithQuery(ui: React.ReactElement) {
 }
 
 describe('Step buttons removed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>
+    );
+  });
+
   it('Step1 has no Back, Next, or Submit buttons', () => {
     renderWithQuery(<ResearchForm />);
     expect(
@@ -72,12 +81,26 @@ describe('Step buttons removed', () => {
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
   });
 
-  it('Step2 has no Back or Next buttons', async () => {
-    const user = userEvent.setup();
+  it('Step2 has no Back or Next buttons', () => {
+    // Render with ?page=questionnaire and valid title in localStorage
+    localStorage.setItem(
+      'research-form-test-practitioner-id',
+      JSON.stringify({
+        title: 'Test',
+        description: '',
+        batches: [],
+        page: 'questionnaire'
+      })
+    );
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('page=questionnaire') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
     renderWithQuery(<ResearchForm />);
-    await user.type(screen.getByLabelText(/title/i), 'Test');
-    // Navigate to step 2 via URL would normally happen via FAB
-    // For now, just verify step 1 has no buttons
+    expect(
+      screen.queryByRole('button', { name: /back/i })
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /next/i })
     ).not.toBeInTheDocument();

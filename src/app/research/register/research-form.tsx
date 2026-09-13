@@ -5,8 +5,8 @@ import { getAPI } from '@/services/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import type { Bundle, Questionnaire } from 'fhir/r4';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
@@ -30,6 +30,10 @@ export const schema = z.object({
 
 export type FormData = z.infer<typeof schema>;
 
+type Page = 'title' | 'questionnaire' | 'batch';
+
+const VALID_PAGES = new Set<Page>(['title', 'questionnaire', 'batch']);
+
 const getStorageKey = (userId: string | undefined) =>
   `research-form-${userId ?? 'anonymous'}`;
 
@@ -37,7 +41,7 @@ const loadFromStorage = (key: string) => {
   try {
     const stored = localStorage.getItem(key);
     if (stored)
-      return JSON.parse(stored) as Partial<FormData> & { step?: number };
+      return JSON.parse(stored) as Partial<FormData> & { page?: string };
   } catch {
     /* corrupt data */
   }
@@ -97,21 +101,100 @@ const submitStudy = async (
   router.push('/');
 };
 
+/** Fetches questionnaire library from FHIR API. */
+async function fetchLibraryQuestionnaires() {
+  const API = await getAPI();
+  const res = await API.get<Bundle>(
+    '/fhir/Questionnaire?context=popular,regular&status=active&_elements=id,title,description,extension'
+  );
+  return (res.data.entry ?? []).map(e => e.resource as Questionnaire);
+}
+
+/** Maps raw questionnaires to combobox options. */
+function libraryOptionsFromQuery(qs: Questionnaire[]) {
+  return qs.map(q => ({
+    code: q.id ?? '',
+    name: q.title ?? q.id ?? ''
+  }));
+}
+
+/** Renders the appropriate step based on effective page. */
+function renderStep({
+  effectivePage,
+  register,
+  errors,
+  libraryOptions,
+  selectedIds,
+  handleSelectLibrary,
+  handleCustomUpload,
+  fields,
+  formValues,
+  setValue,
+  append,
+  remove
+}: {
+  effectivePage: Page;
+  register: ReturnType<typeof useForm<FormData>>['register'];
+  errors: ReturnType<typeof useForm<FormData>>['formState']['errors'];
+  libraryOptions: { code: string; name: string }[];
+  selectedIds: string[];
+  handleSelectLibrary: (ids: string[]) => void;
+  handleCustomUpload: (q: Questionnaire | null) => void;
+  fields: ReturnType<typeof useFieldArray<FormData, 'batches'>>['fields'];
+  formValues: FormData;
+  setValue: ReturnType<typeof useForm<FormData>>['setValue'];
+  append: ReturnType<typeof useFieldArray<FormData, 'batches'>>['append'];
+  remove: ReturnType<typeof useFieldArray<FormData, 'batches'>>['remove'];
+}) {
+  return (
+    <div className='space-y-4'>
+      <h1 className='text-lg font-bold'>Register New Research</h1>
+      {effectivePage === 'title' && (
+        <Step1 register={register} errors={errors} />
+      )}
+      {effectivePage === 'questionnaire' && (
+        <Step2
+          libraryOptions={libraryOptions}
+          selectedIds={selectedIds}
+          onSelect={handleSelectLibrary}
+          onCustomUpload={handleCustomUpload}
+        />
+      )}
+      {effectivePage === 'batch' && (
+        <Step3
+          fields={fields}
+          errors={errors}
+          batches={formValues.batches}
+          setValue={setValue}
+          onAddBatch={() => append(createBatch())}
+          onRemoveBatch={remove}
+          availableQuestionnaires={libraryOptions}
+          selectedQuestionnaireIds={selectedIds}
+        />
+      )}
+    </div>
+  );
+}
+
 /**
  *
  */
 export default function ResearchForm() {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars, sonarjs/no-dead-store
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { state: authState } = useAuth();
   const userId = authState?.userInfo?.fhirId;
   const storageKey = getStorageKey(userId);
   const storedData = useRef(loadFromStorage(storageKey));
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars, sonarjs/no-dead-store
-  const [step, setStep] = useState(storedData.current?.step ?? 1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [, setCustomQs] = useState<Questionnaire[]>([]);
   const isInitialMount = useRef(true);
+
+  // Derive page from URL params with guard
+  const rawPage = searchParams.get('page');
+  const page: Page = VALID_PAGES.has(rawPage as Page)
+    ? (rawPage as Page)
+    : 'title';
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -136,9 +219,18 @@ export default function ResearchForm() {
     name: 'batches'
   });
 
+  // Deep link guard: if page is ahead of valid data, redirect to title
+  const shouldRedirect = page !== 'title' && !formValues.title;
+  useEffect(() => {
+    if (shouldRedirect) {
+      router.replace('/research/register?page=title');
+    }
+  }, [shouldRedirect, router]);
+
+  // Persist to localStorage
   useEffect(() => {
     const persist = () => {
-      localStorage.setItem(storageKey, JSON.stringify({ ...formValues, step }));
+      localStorage.setItem(storageKey, JSON.stringify({ ...formValues, page }));
     };
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -148,60 +240,53 @@ export default function ResearchForm() {
     }
     const id = setTimeout(persist, 500);
     return () => clearTimeout(id);
-  }, [formValues, step, storageKey]);
+  }, [formValues, page, storageKey]);
 
   const { data: libraryQs = [] } = useQuery({
     queryKey: ['questionnaire-library'],
-    queryFn: async () => {
-      const API = await getAPI();
-      const res = await API.get<Bundle>(
-        '/fhir/Questionnaire?context=popular,regular&status=active&_elements=id,title,description,extension'
-      );
-      return (res.data.entry ?? []).map(e => e.resource as Questionnaire);
-    },
-    enabled: step === 2
+    queryFn: fetchLibraryQuestionnaires,
+    enabled: page === 'questionnaire'
   });
 
-  const libraryOptions = libraryQs.map(q => ({
-    code: q.id ?? '',
-    name: q.title ?? q.id ?? ''
-  }));
-
-  const handleSelectLibrary = (ids: string[]) => {
-    setSelectedIds(ids);
-    for (const [index] of fields.entries()) {
-      setValue(`batches.${index}.questionnaireIds`, ids);
-    }
-  };
-
-  const handleCustomUpload = (q: Questionnaire | null) => {
-    if (!q?.id) return;
-    setCustomQs(prev => [...prev, q]);
-    handleSelectLibrary([...selectedIds, q.id]);
-  };
-
-  return (
-    <div className='space-y-4'>
-      <h1 className='text-lg font-bold'>Register New Research</h1>
-      {step === 1 && <Step1 register={register} errors={errors} />}
-      {step === 2 && (
-        <Step2
-          libraryOptions={libraryOptions}
-          selectedIds={selectedIds}
-          onSelect={handleSelectLibrary}
-          onCustomUpload={handleCustomUpload}
-        />
-      )}
-      {step === 3 && (
-        <Step3
-          fields={fields}
-          errors={errors}
-          batches={formValues.batches}
-          setValue={setValue}
-          onAddBatch={() => append(createBatch())}
-          onRemoveBatch={remove}
-        />
-      )}
-    </div>
+  const libraryOptions = useMemo(
+    () => libraryOptionsFromQuery(libraryQs),
+    [libraryQs]
   );
+
+  const handleSelectLibrary = useCallback(
+    (ids: string[]) => {
+      setSelectedIds(ids);
+      for (const [index] of fields.entries()) {
+        setValue(`batches.${index}.questionnaireIds`, ids);
+      }
+    },
+    [fields, setValue]
+  );
+
+  const handleCustomUpload = useCallback(
+    (q: Questionnaire | null) => {
+      if (!q?.id) return;
+      setCustomQs(prev => [...prev, q]);
+      handleSelectLibrary([...selectedIds, q.id]);
+    },
+    [handleSelectLibrary, selectedIds]
+  );
+
+  // Don't render wrong page while redirecting
+  const effectivePage = shouldRedirect ? 'title' : page;
+
+  return renderStep({
+    effectivePage,
+    register,
+    errors,
+    libraryOptions,
+    selectedIds,
+    handleSelectLibrary,
+    handleCustomUpload,
+    fields,
+    formValues,
+    setValue,
+    append,
+    remove
+  });
 }
