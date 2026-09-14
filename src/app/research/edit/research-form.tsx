@@ -15,9 +15,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { canAdvanceOnTitlePage } from '../can-advance';
 import { schema } from '../register/research-form';
 import { Step1, Step2, Step3 } from '../register/research-form-steps';
 import { ResearchFormActionsProvider } from '../research-form-actions-context';
+import { ResearchFormFabBridge } from '../research-form-fab-bridge';
 import { submitEditStudy } from './submit-helpers';
 
 export type FormData = z.infer<typeof schema>;
@@ -91,28 +93,11 @@ async function fetchLibraryQuestionnaires() {
 
 /** Maps raw questionnaires to combobox options. */
 function libraryOptionsFromQuery(qs: Questionnaire[]) {
-  return qs.map(q => ({
-    code: q.id ?? '',
-    name: q.title ?? q.id ?? ''
-  }));
+  return qs.map(q => ({ code: q.id ?? '', name: q.title ?? q.id ?? '' }));
 }
 
 /** Renders the appropriate step based on effective page. */
-function renderStep({
-  effectivePage,
-  register,
-  errors,
-  libraryOptions,
-  selectedIds,
-  handleSelectLibrary,
-  handleCustomUpload,
-  fields,
-  formValues,
-  setValue,
-  append,
-  remove,
-  lockedBatchIndices
-}: {
+function renderStep(props: {
   effectivePage: Page;
   register: ReturnType<typeof useForm<FormData>>['register'];
   errors: ReturnType<typeof useForm<FormData>>['formState']['errors'];
@@ -127,6 +112,21 @@ function renderStep({
   remove: ReturnType<typeof useFieldArray<FormData, 'batches'>>['remove'];
   lockedBatchIndices: number[];
 }) {
+  const {
+    effectivePage,
+    register,
+    errors,
+    libraryOptions,
+    selectedIds,
+    handleSelectLibrary,
+    handleCustomUpload,
+    fields,
+    formValues,
+    setValue,
+    append,
+    remove,
+    lockedBatchIndices
+  } = props;
   return (
     <div className='space-y-4'>
       <h1 className='text-lg font-bold'>Edit Research</h1>
@@ -192,6 +192,18 @@ export default function EditResearchForm({
     ? (rawPage as Page)
     : 'title';
 
+  // Canonicalize: add ?page=title when missing or invalid, preserving id
+  useEffect(() => {
+    if (rawPage !== 'title') {
+      const params = new URLSearchParams(searchParams.toString());
+      const id = params.get('id');
+      params.delete('id');
+      params.set('page', 'title');
+      const qs = id ? `id=${id}&page=title` : 'page=title';
+      router.replace(`/research/edit?${qs}`);
+    }
+  }, [rawPage, router, searchParams]);
+
   // Fix questionnaire bug: initialize selectedIds from existing batches
   const [selectedIds, setSelectedIds] = useState<string[]>(() =>
     initialData.batches.flatMap(b => b.questionnaireIds)
@@ -219,11 +231,8 @@ export default function EditResearchForm({
 
   // Deep link guard
   const shouldRedirect = page !== 'title' && !formValues.title;
-
   useEffect(() => {
-    if (shouldRedirect) {
-      router.replace('/research/edit?page=title');
-    }
+    if (shouldRedirect) router.replace('/research/edit?page=title');
   }, [shouldRedirect, router]);
 
   const { data: libraryQs = [] } = useQuery({
@@ -257,41 +266,57 @@ export default function EditResearchForm({
     [handleSelectLibrary, selectedIds]
   );
 
-  const onSubmitForm = (data: FormData) => {
-    void submitEditStudy({
-      study,
-      planIds,
-      lockedBatchIndices,
-      planDefinitions,
-      data,
-      router
-    });
-  };
+  const onSubmitForm = useCallback(
+    (data: FormData) => {
+      void submitEditStudy({
+        study,
+        planIds,
+        lockedBatchIndices,
+        planDefinitions,
+        data,
+        router
+      });
+    },
+    [study, planIds, lockedBatchIndices, planDefinitions, router]
+  );
 
   // Don't render wrong page while redirecting
   const effectivePage = shouldRedirect ? 'title' : page;
 
-  // Actions for the FAB
-  const formActions = {
-    canAdvance:
-      effectivePage === 'title'
-        ? Boolean(formValues.title)
-        : selectedIds.length > 0,
-    onAdvance: () => {
-      if (effectivePage === 'title') {
-        void trigger(['title', 'description']).then(valid => {
-          if (valid) router.push('/research/edit?page=questionnaire');
-          return valid;
-        });
-      } else if (effectivePage === 'questionnaire') {
-        router.push('/research/edit?page=batch');
-      }
-    },
-    onSubmit: () => void handleSubmit(onSubmitForm)()
-  };
+  // Actions for the FAB (memoized to prevent infinite re-render in bridge)
+  const formActions = useMemo(
+    () => ({
+      canAdvance:
+        effectivePage === 'title'
+          ? canAdvanceOnTitlePage(formValues.title, formValues.description)
+          : selectedIds.length > 0,
+      onAdvance: () => {
+        if (effectivePage === 'title') {
+          void trigger(['title', 'description']).then(valid => {
+            if (valid) router.push('/research/edit?page=questionnaire');
+            return valid;
+          });
+        } else if (effectivePage === 'questionnaire') {
+          router.push('/research/edit?page=batch');
+        }
+      },
+      onSubmit: () => void handleSubmit(onSubmitForm)()
+    }),
+    [
+      effectivePage,
+      formValues.title,
+      formValues.description,
+      selectedIds.length,
+      trigger,
+      router,
+      handleSubmit,
+      onSubmitForm
+    ]
+  );
 
   return (
     <ResearchFormActionsProvider value={formActions}>
+      <ResearchFormFabBridge />
       {renderStep({
         effectivePage,
         register,

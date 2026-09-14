@@ -218,103 +218,95 @@ describe('PageHeader - back navigation', () => {
     return chevron !== null;
   }
 
-  it('calls router.push for cross-route back navigation (/clinic → /)', () => {
-    const router = setupMockRouter();
+  it('renders anchor with correct href for cross-route back (/clinic → /)', () => {
+    setupMockRouter();
 
     render(<PageHeader />, { wrapper });
 
-    expect(clickChevron()).not.toBeNull();
-
-    expect(router.push).toHaveBeenCalledTimes(1);
-    expect(router.push).toHaveBeenCalledWith('/');
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).not.toBeNull();
+    expect(link).toHaveAttribute('href', '/');
   });
 
-  it('calls router.push for same-route back navigation (/clinic?id=xxx → /clinic)', () => {
-    const router = setupMockRouter();
-    // Simulate clinic detail view with backRoute override
+  it('renders anchor for same-route back (/clinic?id=xxx → /clinic)', () => {
+    setupMockRouter();
     render(
       <PageHeader pageIndicator='Check Out Clinic' backRoute='/clinic' />,
       { wrapper }
     );
 
-    expect(clickChevron()).not.toBeNull();
-
-    expect(router.push).toHaveBeenCalledTimes(1);
-    expect(router.push).toHaveBeenCalledWith('/clinic');
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).not.toBeNull();
+    expect(link).toHaveAttribute('href', '/clinic');
   });
 
   it('calls router.back when no backAction is available', () => {
     const router = setupMockRouter();
-    // Use a path not in MAIN_ROUTES to get backAction=undefined
     vi.mocked(usePathname).mockReturnValue('/some-unknown-page');
 
     render(<PageHeader />, { wrapper });
 
-    expect(clickChevron()).not.toBeNull();
+    // No anchor for unknown routes
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toBeNull();
 
+    // Button calls router.back
+    const button = document.querySelector('button[aria-label="Go back"]');
+    expect(button).not.toBeNull();
+    fireEvent.click(button!);
     expect(router.back).toHaveBeenCalledTimes(1);
     expect(router.push).not.toHaveBeenCalled();
   });
 
-  it('handles trailing slash in pathname — /clinic/ triggers router.push("/") not router.back()', () => {
-    // Simulate trailingSlash:true config — usePathname returns /clinic/
+  it('handles trailing slash — /clinic/ renders anchor to /', () => {
     vi.mocked(usePathname).mockReturnValue('/clinic/');
-    const router = setupMockRouter();
+    setupMockRouter();
 
     render(<PageHeader />, { wrapper });
 
-    expect(clickChevron()).not.toBeNull();
-
-    expect(router.push).toHaveBeenCalledTimes(1);
-    expect(router.push).toHaveBeenCalledWith('/');
-    expect(router.back).not.toHaveBeenCalled();
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute('href', '/');
   });
 
-  it('calls router.push("/") for /record (no params)', () => {
+  it('renders anchor href / for /record (no params)', () => {
     vi.mocked(usePathname).mockReturnValue('/record');
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>
     );
-    const router = setupMockRouter();
+    setupMockRouter();
 
     render(<PageHeader />, { wrapper });
 
-    expect(clickChevron()).not.toBeNull();
-
-    expect(router.push).toHaveBeenCalledWith('/');
-    expect(router.back).not.toHaveBeenCalled();
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute('href', '/');
   });
 
-  it('calls router.push("/record") for /record?edit=xxx', () => {
+  it('renders anchor href /record for /record?edit=xxx', () => {
     vi.mocked(usePathname).mockReturnValue('/record');
     const params = new URLSearchParams('edit=Observation/test-id-123');
     vi.mocked(useSearchParams).mockReturnValue(
       params as unknown as ReturnType<typeof useSearchParams>
     );
-    const router = setupMockRouter();
+    setupMockRouter();
 
     render(<PageHeader />, { wrapper });
 
-    expect(clickChevron()).not.toBeNull();
-
-    expect(router.push).toHaveBeenCalledTimes(1);
-    expect(router.push).toHaveBeenCalledWith('/record');
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute('href', '/record');
   });
 
-  it('calls router.push("/assessments") for /assessments?id=phq2', () => {
+  it('renders anchor href /assessments for /assessments?id=phq2', () => {
     vi.mocked(usePathname).mockReturnValue('/assessments');
     const params = new URLSearchParams('id=phq2');
     vi.mocked(useSearchParams).mockReturnValue(
       params as unknown as ReturnType<typeof useSearchParams>
     );
-    const router = setupMockRouter();
+    setupMockRouter();
 
     render(<PageHeader />, { wrapper });
 
-    expect(clickChevron()).not.toBeNull();
-
-    expect(router.push).toHaveBeenCalledTimes(1);
-    expect(router.push).toHaveBeenCalledWith('/assessments');
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute('href', '/assessments');
   });
 
   it('does not render back chevron on the home page', () => {

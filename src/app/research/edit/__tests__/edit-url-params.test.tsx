@@ -89,6 +89,49 @@ describe('EditResearchForm - URL param navigation', () => {
     expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
   });
 
+  it('canonicalizes missing ?page to ?page=title preserving id', () => {
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('id=study-1') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+    renderWithQuery(
+      <EditResearchForm study={mockStudy} planDefinitions={[mockPlanWithQs]} />
+    );
+
+    expect(mockReplace).toHaveBeenCalledWith(
+      '/research/edit?id=study-1&page=title'
+    );
+  });
+
+  it('canonicalizes invalid ?page value preserving id', () => {
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('id=study-1&page=garbage') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+    renderWithQuery(
+      <EditResearchForm study={mockStudy} planDefinitions={[mockPlanWithQs]} />
+    );
+
+    expect(mockReplace).toHaveBeenCalledWith(
+      '/research/edit?id=study-1&page=title'
+    );
+  });
+
+  it('does not canonicalize when ?page=title is present', () => {
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('id=study-1&page=title') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+    renderWithQuery(
+      <EditResearchForm study={mockStudy} planDefinitions={[mockPlanWithQs]} />
+    );
+
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
   it('pre-selects questionnaires from existing batches', () => {
     // Render on questionnaire page
     vi.mocked(useSearchParams).mockReturnValue(

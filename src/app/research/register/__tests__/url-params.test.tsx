@@ -68,6 +68,34 @@ describe('ResearchForm - URL param navigation', () => {
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
   });
 
+  it('canonicalizes missing ?page to ?page=title', () => {
+    renderWithQuery(<ResearchForm />);
+
+    expect(mockReplace).toHaveBeenCalledWith('/research/register?page=title');
+  });
+
+  it('canonicalizes invalid ?page value to ?page=title', () => {
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('page=invalid') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+    renderWithQuery(<ResearchForm />);
+
+    expect(mockReplace).toHaveBeenCalledWith('/research/register?page=title');
+  });
+
+  it('does not canonicalize when ?page=title is present', () => {
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('page=title') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+    renderWithQuery(<ResearchForm />);
+
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
   it('renders title page when ?page=title', () => {
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams('page=title') as unknown as ReturnType<

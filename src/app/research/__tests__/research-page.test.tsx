@@ -1029,7 +1029,9 @@ describe('ResearchPage', () => {
     });
     fireEvent.click(manageButton);
 
-    expect(mockPush).toHaveBeenCalledWith('/research/edit?id=study-1');
+    expect(mockPush).toHaveBeenCalledWith(
+      '/research/edit?id=study-1&page=title'
+    );
   });
 
   it('passes researcher study questionnaire IDs to useQuestionnaireTitles', async () => {

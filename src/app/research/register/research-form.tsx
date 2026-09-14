@@ -10,7 +10,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
+import { canAdvanceOnTitlePage } from '../can-advance';
 import { ResearchFormActionsProvider } from '../research-form-actions-context';
+import { ResearchFormFabBridge } from '../research-form-fab-bridge';
 import { Step1, Step2, Step3 } from './research-form-steps';
 
 export const schema = z.object({
@@ -38,7 +40,9 @@ const VALID_PAGES = new Set<Page>(['title', 'questionnaire', 'batch']);
 const getStorageKey = (userId: string | undefined) =>
   `research-form-${userId ?? 'anonymous'}`;
 
-const loadFromStorage = (key: string) => {
+const loadFromStorage = (
+  key: string
+): (Partial<FormData> & { page?: string }) | null => {
   try {
     const stored = localStorage.getItem(key);
     if (stored)
@@ -55,7 +59,7 @@ const createBatch = (date = ''): FormData['batches'][number] => ({
   questionnaireIds: []
 });
 
-/* eslint-disable @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars -- will be used by FAB in Task 9 */
+/* eslint-disable @typescript-eslint/no-unused-vars -- used by ResearchForm */
 const submitStudy = async (
   API: Awaited<ReturnType<typeof getAPI>>,
   data: FormData,
@@ -113,27 +117,11 @@ async function fetchLibraryQuestionnaires() {
 
 /** Maps raw questionnaires to combobox options. */
 function libraryOptionsFromQuery(qs: Questionnaire[]) {
-  return qs.map(q => ({
-    code: q.id ?? '',
-    name: q.title ?? q.id ?? ''
-  }));
+  return qs.map(q => ({ code: q.id ?? '', name: q.title ?? q.id ?? '' }));
 }
 
 /** Renders the appropriate step based on effective page. */
-function renderStep({
-  effectivePage,
-  register,
-  errors,
-  libraryOptions,
-  selectedIds,
-  handleSelectLibrary,
-  handleCustomUpload,
-  fields,
-  formValues,
-  setValue,
-  append,
-  remove
-}: {
+interface StepProps {
   effectivePage: Page;
   register: ReturnType<typeof useForm<FormData>>['register'];
   errors: ReturnType<typeof useForm<FormData>>['formState']['errors'];
@@ -146,7 +134,23 @@ function renderStep({
   setValue: ReturnType<typeof useForm<FormData>>['setValue'];
   append: ReturnType<typeof useFieldArray<FormData, 'batches'>>['append'];
   remove: ReturnType<typeof useFieldArray<FormData, 'batches'>>['remove'];
-}) {
+}
+
+function renderStep(props: StepProps) {
+  const {
+    effectivePage,
+    register,
+    errors,
+    libraryOptions,
+    selectedIds,
+    handleSelectLibrary,
+    handleCustomUpload,
+    fields,
+    formValues,
+    setValue,
+    append,
+    remove
+  } = props;
   return (
     <div className='space-y-4'>
       <h1 className='text-lg font-bold'>Register New Research</h1>
@@ -197,6 +201,13 @@ export default function ResearchForm() {
     ? (rawPage as Page)
     : 'title';
 
+  // Canonicalize: add ?page=title when missing or invalid
+  useEffect(() => {
+    if (rawPage !== 'title') {
+      router.replace('/research/register?page=title');
+    }
+  }, [rawPage, router]);
+
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -225,23 +236,20 @@ export default function ResearchForm() {
   // Deep link guard: if page is ahead of valid data, redirect to title
   const shouldRedirect = page !== 'title' && !formValues.title;
   useEffect(() => {
-    if (shouldRedirect) {
-      router.replace('/research/register?page=title');
-    }
+    if (shouldRedirect) router.replace('/research/register?page=title');
   }, [shouldRedirect, router]);
 
   // Persist to localStorage
   useEffect(() => {
-    const persist = () => {
-      localStorage.setItem(storageKey, JSON.stringify({ ...formValues, page }));
-    };
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return () => {
-        /* noop */
+        /* noop: skip first render */
       };
     }
-    const id = setTimeout(persist, 500);
+    const id = setTimeout(() => {
+      localStorage.setItem(storageKey, JSON.stringify({ ...formValues, page }));
+    }, 500);
     return () => clearTimeout(id);
   }, [formValues, page, storageKey]);
 
@@ -278,36 +286,52 @@ export default function ResearchForm() {
   // Don't render wrong page while redirecting
   const effectivePage = shouldRedirect ? 'title' : page;
 
-  const onSubmitForm = async (data: FormData) => {
-    try {
-      const API = await getAPI();
-      await submitStudy(API, data, userId, storageKey, router);
-    } catch {
-      toast.error('Failed to create research study. Please try again.');
-    }
-  };
-
-  // Actions for the FAB
-  const formActions = {
-    canAdvance:
-      effectivePage === 'title'
-        ? Boolean(formValues.title)
-        : selectedIds.length > 0,
-    onAdvance: () => {
-      if (effectivePage === 'title') {
-        void trigger(['title', 'description']).then(valid => {
-          if (valid) router.push('/research/register?page=questionnaire');
-          return valid;
-        });
-      } else if (effectivePage === 'questionnaire') {
-        router.push('/research/register?page=batch');
+  const onSubmitForm = useCallback(
+    async (data: FormData) => {
+      try {
+        const API = await getAPI();
+        await submitStudy(API, data, userId, storageKey, router);
+      } catch {
+        toast.error('Failed to create research study. Please try again.');
       }
     },
-    onSubmit: () => void handleSubmit(onSubmitForm)()
-  };
+    [userId, storageKey, router]
+  );
+
+  // Actions for the FAB (memoized to prevent infinite re-render in bridge)
+  const formActions = useMemo(
+    () => ({
+      canAdvance:
+        effectivePage === 'title'
+          ? canAdvanceOnTitlePage(formValues.title, formValues.description)
+          : selectedIds.length > 0,
+      onAdvance: () => {
+        if (effectivePage === 'title') {
+          void trigger(['title', 'description']).then(valid => {
+            if (valid) router.push('/research/register?page=questionnaire');
+            return valid;
+          });
+        } else if (effectivePage === 'questionnaire') {
+          router.push('/research/register?page=batch');
+        }
+      },
+      onSubmit: () => void handleSubmit(onSubmitForm)()
+    }),
+    [
+      effectivePage,
+      formValues.title,
+      formValues.description,
+      selectedIds.length,
+      trigger,
+      router,
+      handleSubmit,
+      onSubmitForm
+    ]
+  );
 
   return (
     <ResearchFormActionsProvider value={formActions}>
+      <ResearchFormFabBridge />
       {renderStep({
         effectivePage,
         register,

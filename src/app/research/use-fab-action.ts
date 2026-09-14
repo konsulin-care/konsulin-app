@@ -4,7 +4,7 @@ import { useFab } from '@/context/fabContext';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { ArrowRight, Check, FlaskConical } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   useResearchFormActions,
   type ResearchFormActions
@@ -57,18 +57,25 @@ export function useResearchFabAction({
 
   // Get form actions from context (returns null if not inside provider)
   const formActions = useResearchFormActionsOrNull();
+  const canAdvance = formActions?.canAdvance ?? false;
+  const onAdvance = formActions?.onAdvance;
+  const onSubmit = formActions?.onSubmit;
+
+  // Stable ref for router to avoid infinite effect loops
+  const routerRef = useRef(router);
+  routerRef.current = router;
 
   useEffect(() => {
     // Research form pages: use page-level FAB
-    if (isResearchFormPage && formActions) {
+    if (isResearchFormPage && onAdvance && onSubmit) {
       if (page === 'title' || page === 'questionnaire') {
         dispatch({
           type: 'SET_ACTION',
           config: {
             label: 'Next',
             icon: ArrowRight,
-            onAction: formActions.onAdvance,
-            disabled: !formActions.canAdvance
+            onAction: onAdvance,
+            disabled: !canAdvance
           }
         });
         return () => dispatch({ type: 'SET_ACTION', config: null });
@@ -80,7 +87,7 @@ export function useResearchFabAction({
           config: {
             label: 'Submit',
             icon: Check,
-            onAction: formActions.onSubmit
+            onAction: onSubmit
           }
         });
         return () => dispatch({ type: 'SET_ACTION', config: null });
@@ -94,7 +101,8 @@ export function useResearchFabAction({
         config: {
           label: 'Register Survey',
           icon: FlaskConical,
-          onAction: () => router.push('/research/register')
+          onAction: () =>
+            routerRef.current.push('/research/register?page=title')
         }
       });
       return () => dispatch({ type: 'SET_ACTION', config: null });
@@ -122,8 +130,9 @@ export function useResearchFabAction({
     isResearcher,
     isResearchFormPage,
     page,
-    formActions,
-    participate,
-    router
+    canAdvance,
+    onAdvance,
+    onSubmit,
+    participate
   ]);
 }

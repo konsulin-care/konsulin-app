@@ -161,7 +161,7 @@ export default function ResearchPage() {
 
   const handleManageStudy = useCallback(
     (studyId: string) => {
-      router.push(`/research/edit?id=${studyId}`);
+      router.push(`/research/edit?id=${studyId}&page=title`);
     },
     [router]
   );

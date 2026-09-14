@@ -108,7 +108,7 @@ export default function QuickActionFab() {
           );
           return;
         }
-        router.push('/research/register');
+        router.push('/research/register?page=title');
         return;
       }
       if (redirectGuestIfNeeded(pill, isGuest)) {

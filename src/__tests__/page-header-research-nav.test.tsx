@@ -40,10 +40,10 @@ vi.mock('@/components/general/avatar', () => ({
   default: () => <div>Avatar</div>
 }));
 
-function clickChevron() {
-  const chevron = document.querySelector('.lucide-chevron-left');
-  if (chevron) fireEvent.click(chevron);
-  return chevron !== null;
+function clickBack() {
+  const target = document.querySelector('[aria-label="Go back"]');
+  if (target) fireEvent.click(target);
+  return target !== null;
 }
 
 describe('PageHeader - research form page navigation', () => {
@@ -77,8 +77,8 @@ describe('PageHeader - research form page navigation', () => {
     return router;
   }
 
-  it('navigates from ?page=batch to ?page=questionnaire', () => {
-    const router = setupMockRouter();
+  it('navigates from ?page=batch to ?page=questionnaire via anchor href', () => {
+    setupMockRouter();
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams('page=batch') as unknown as ReturnType<
         typeof useSearchParams
@@ -86,15 +86,16 @@ describe('PageHeader - research form page navigation', () => {
     );
 
     render(<PageHeader />, { wrapper });
-    clickChevron();
 
-    expect(router.push).toHaveBeenCalledWith(
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute(
+      'href',
       '/research/register?page=questionnaire'
     );
   });
 
-  it('navigates from ?page=questionnaire to ?page=title', () => {
-    const router = setupMockRouter();
+  it('navigates from ?page=questionnaire to ?page=title via anchor href', () => {
+    setupMockRouter();
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams('page=questionnaire') as unknown as ReturnType<
         typeof useSearchParams
@@ -102,13 +103,13 @@ describe('PageHeader - research form page navigation', () => {
     );
 
     render(<PageHeader />, { wrapper });
-    clickChevron();
 
-    expect(router.push).toHaveBeenCalledWith('/research/register?page=title');
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute('href', '/research/register?page=title');
   });
 
-  it('navigates from ?page=title to /research', () => {
-    const router = setupMockRouter();
+  it('navigates from ?page=title to /research via anchor href', () => {
+    setupMockRouter();
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams('page=title') as unknown as ReturnType<
         typeof useSearchParams
@@ -116,13 +117,13 @@ describe('PageHeader - research form page navigation', () => {
     );
 
     render(<PageHeader />, { wrapper });
-    clickChevron();
 
-    expect(router.push).toHaveBeenCalledWith('/research');
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute('href', '/research');
   });
 
-  it('preserves id param in edit form when navigating between pages', () => {
-    const router = setupMockRouter();
+  it('preserves id param in edit form via anchor href', () => {
+    setupMockRouter();
     vi.mocked(usePathname).mockReturnValue('/research/edit');
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams('id=study-123&page=batch') as unknown as ReturnType<
@@ -131,10 +132,126 @@ describe('PageHeader - research form page navigation', () => {
     );
 
     render(<PageHeader />, { wrapper });
-    clickChevron();
 
-    expect(router.push).toHaveBeenCalledWith(
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute(
+      'href',
       '/research/edit?id=study-123&page=questionnaire'
     );
+  });
+
+  // --- Semantic navigation tests ---
+
+  it('renders an anchor with href for resolved backAction', () => {
+    setupMockRouter();
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('page=title') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+
+    render(<PageHeader />, { wrapper });
+
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).not.toBeNull();
+    expect(link).toHaveAttribute('href', '/research');
+  });
+
+  it('renders anchor targeting questionnaire when batch', () => {
+    setupMockRouter();
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('page=batch') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+
+    render(<PageHeader />, { wrapper });
+
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute(
+      'href',
+      '/research/register?page=questionnaire'
+    );
+  });
+
+  it('renders anchor targeting title when questionnaire', () => {
+    setupMockRouter();
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('page=questionnaire') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+
+    render(<PageHeader />, { wrapper });
+
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute('href', '/research/register?page=title');
+  });
+
+  it('renders anchor preserving id for edit batch step', () => {
+    setupMockRouter();
+    vi.mocked(usePathname).mockReturnValue('/research/edit');
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('id=study-123&page=batch') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+
+    render(<PageHeader />, { wrapper });
+
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute(
+      'href',
+      '/research/edit?id=study-123&page=questionnaire'
+    );
+  });
+
+  it('renders anchor preserving id for edit questionnaire step', () => {
+    setupMockRouter();
+    vi.mocked(usePathname).mockReturnValue('/research/edit');
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams(
+        'id=study-456&page=questionnaire'
+      ) as unknown as ReturnType<typeof useSearchParams>
+    );
+
+    render(<PageHeader />, { wrapper });
+
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute(
+      'href',
+      '/research/edit?id=study-456&page=title'
+    );
+  });
+
+  it('falls back to router.back button for unknown routes', () => {
+    const router = setupMockRouter();
+    vi.mocked(usePathname).mockReturnValue('/some-unknown-page');
+
+    render(<PageHeader />, { wrapper });
+
+    // No anchor should exist for unknown routes
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toBeNull();
+
+    // Button should exist and call router.back
+    const button = document.querySelector('button[aria-label="Go back"]');
+    expect(button).not.toBeNull();
+    fireEvent.click(button!);
+    expect(router.back).toHaveBeenCalledTimes(1);
+  });
+
+  it('chevron icon is hidden from assistive technology', () => {
+    setupMockRouter();
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('page=title') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+
+    render(<PageHeader />, { wrapper });
+
+    const icon = document.querySelector('.lucide-chevron-left');
+    expect(icon).toHaveAttribute('aria-hidden', 'true');
   });
 });
