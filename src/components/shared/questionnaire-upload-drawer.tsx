@@ -58,6 +58,7 @@ async function submitQuestionnaire(params: {
   categoryLabel: string;
   publisher: string;
   contact: { name?: string; email?: string; phone?: string };
+  context: 'assessment' | 'research';
 }): Promise<Questionnaire> {
   const API = await getAPI();
 
@@ -67,10 +68,13 @@ async function submitQuestionnaire(params: {
   }
   payload = setQuestionnaireDuration(payload, params.duration);
   if (params.fee > 0) payload = setFee(payload, params.fee);
+  const contextCode =
+    params.context === 'assessment' ? 'regular' : params.context;
   payload = setQuestionnaireCategory(
     payload,
     params.categoryCode,
-    params.categoryLabel
+    params.categoryLabel,
+    contextCode
   );
   payload = setQuestionnairePublisherDate(
     payload,
@@ -158,7 +162,8 @@ export default function QuestionnaireUploadDrawer({
           name: user?.fullname,
           email: user?.email,
           phone: user?.phoneNumber
-        }
+        },
+        context
       });
 
       toast.success(
