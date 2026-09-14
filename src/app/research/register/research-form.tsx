@@ -4,7 +4,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { getAPI } from '@/services/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import type { Bundle, Questionnaire } from 'fhir/r4';
+import type { Questionnaire } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -13,7 +13,8 @@ import { z } from 'zod';
 import { canAdvanceOnTitlePage } from '../can-advance';
 import { ResearchFormActionsProvider } from '../research-form-actions-context';
 import { ResearchFormFabBridge } from '../research-form-fab-bridge';
-import { Step1, Step2, Step3 } from './research-form-steps';
+import { fetchLibraryQuestionnaires } from '../shared';
+import { RenderStep } from './render-step';
 
 export const schema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -103,75 +104,6 @@ const submitStudy = async (
   toast.success('Research study created successfully');
   router.push('/');
 };
-/** Fetches questionnaire library from FHIR API. */
-async function fetchLibraryQuestionnaires() {
-  const API = await getAPI();
-  const res = await API.get<Bundle>(
-    '/fhir/Questionnaire?context=popular,regular&status=active&_elements=id,title,description,extension'
-  );
-  return (res.data.entry ?? []).map(e => e.resource as Questionnaire);
-}
-
-/** Renders the appropriate step based on effective page. */
-interface StepProps {
-  effectivePage: Page;
-  register: ReturnType<typeof useForm<FormData>>['register'];
-  errors: ReturnType<typeof useForm<FormData>>['formState']['errors'];
-  libraryOptions: { code: string; name: string }[];
-  selectedIds: string[];
-  handleSelectLibrary: (ids: string[]) => void;
-  handleCustomUpload: (q: Questionnaire | null) => void;
-  fields: ReturnType<typeof useFieldArray<FormData, 'batches'>>['fields'];
-  formValues: FormData;
-  setValue: ReturnType<typeof useForm<FormData>>['setValue'];
-  append: ReturnType<typeof useFieldArray<FormData, 'batches'>>['append'];
-  remove: ReturnType<typeof useFieldArray<FormData, 'batches'>>['remove'];
-}
-
-function renderStep(props: StepProps) {
-  const {
-    effectivePage,
-    register,
-    errors,
-    libraryOptions,
-    selectedIds,
-    handleSelectLibrary,
-    handleCustomUpload,
-    fields,
-    formValues,
-    setValue,
-    append,
-    remove
-  } = props;
-  return (
-    <div className='space-y-4'>
-      <h1 className='text-lg font-bold'>Register New Research</h1>
-      {effectivePage === 'title' && (
-        <Step1 register={register} errors={errors} />
-      )}
-      {effectivePage === 'questionnaire' && (
-        <Step2
-          libraryOptions={libraryOptions}
-          selectedIds={selectedIds}
-          onSelect={handleSelectLibrary}
-          onCustomUpload={handleCustomUpload}
-        />
-      )}
-      {effectivePage === 'batch' && (
-        <Step3
-          fields={fields}
-          errors={errors}
-          batches={formValues.batches}
-          setValue={setValue}
-          onAddBatch={() => append(createBatch())}
-          onRemoveBatch={remove}
-          availableQuestionnaires={libraryOptions}
-          selectedQuestionnaireIds={selectedIds}
-        />
-      )}
-    </div>
-  );
-}
 
 /**
  *
@@ -184,7 +116,9 @@ export default function ResearchForm() {
   const storageKey = getStorageKey(userId);
   const storedData = useRef(loadFromStorage(storageKey));
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [, setCustomQs] = useState<Questionnaire[]>([]);
+  const [customQuestionnaires, setCustomQuestionnaires] = useState<
+    { code: string; name: string }[]
+  >([]);
   const isInitialMount = useRef(true);
 
   // Derive page from URL params with guard
@@ -193,12 +127,13 @@ export default function ResearchForm() {
     ? (rawPage as Page)
     : 'title';
 
-  // Canonicalize: add ?page=title when missing
+  // Canonicalize: redirect to ?page=title when missing or invalid
+  const needsCanonicalize = !rawPage || !VALID_PAGES.has(rawPage as Page);
   useEffect(() => {
-    if (!rawPage) {
+    if (needsCanonicalize) {
       router.replace('/research/register?page=title');
     }
-  }, [rawPage, router]);
+  }, [needsCanonicalize, router]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -247,14 +182,19 @@ export default function ResearchForm() {
 
   const { data: libraryQs = [] } = useQuery({
     queryKey: ['questionnaire-library'],
-    queryFn: fetchLibraryQuestionnaires,
-    enabled: page === 'questionnaire'
+    queryFn: fetchLibraryQuestionnaires
   });
 
   const libraryOptions = useMemo(
     () =>
       libraryQs.map(q => ({ code: q.id ?? '', name: q.title ?? q.id ?? '' })),
     [libraryQs]
+  );
+
+  // Merge library and custom questionnaires for batch step
+  const allQuestionnaireOptions = useMemo(
+    () => [...libraryOptions, ...customQuestionnaires],
+    [libraryOptions, customQuestionnaires]
   );
 
   const handleSelectLibrary = useCallback(
@@ -270,7 +210,8 @@ export default function ResearchForm() {
   const handleCustomUpload = useCallback(
     (q: Questionnaire | null) => {
       if (!q?.id) return;
-      setCustomQs(prev => [...prev, q]);
+      const option = { code: q.id, name: q.title ?? q.id };
+      setCustomQuestionnaires(prev => [...prev, option]);
       handleSelectLibrary([...selectedIds, q.id]);
     },
     [handleSelectLibrary, selectedIds]
@@ -325,11 +266,12 @@ export default function ResearchForm() {
   return (
     <ResearchFormActionsProvider value={formActions}>
       <ResearchFormFabBridge />
-      {renderStep({
+      {RenderStep({
         effectivePage,
         register,
         errors,
         libraryOptions,
+        availableQuestionnaires: allQuestionnaireOptions,
         selectedIds,
         handleSelectLibrary,
         handleCustomUpload,

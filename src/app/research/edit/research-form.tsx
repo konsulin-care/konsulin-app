@@ -1,26 +1,21 @@
 'use client';
 
 import { useAuth } from '@/context/auth/authContext';
-import { getAPI } from '@/services/api';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import type {
-  Bundle,
-  PlanDefinition,
-  Questionnaire,
-  ResearchStudy
-} from 'fhir/r4';
+import type { PlanDefinition, Questionnaire, ResearchStudy } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { canAdvanceOnTitlePage } from '../can-advance';
 import { schema } from '../register/research-form';
-import { Step1, Step2, Step3 } from '../register/research-form-steps';
 import { ResearchFormActionsProvider } from '../research-form-actions-context';
 import { ResearchFormFabBridge } from '../research-form-fab-bridge';
+import { fetchLibraryQuestionnaires, libraryOptionsFromQuery } from '../shared';
 import { buildEditUrl } from './build-edit-url';
+import { RenderStep } from './render-step';
 import { submitEditStudy } from './submit-helpers';
 
 export type FormData = z.infer<typeof schema>;
@@ -82,84 +77,6 @@ const computeLockedBatchIndices = (batches: FormData['batches']): number[] => {
     )
     .map(({ i }) => i);
 };
-
-/** Fetches questionnaire library from FHIR API. */
-async function fetchLibraryQuestionnaires() {
-  const API = await getAPI();
-  const res = await API.get<Bundle>(
-    '/fhir/Questionnaire?context=popular,regular&status=active&_elements=id,title,description,extension'
-  );
-  return (res.data.entry ?? []).map(e => e.resource as Questionnaire);
-}
-
-/** Maps raw questionnaires to combobox options. */
-function libraryOptionsFromQuery(qs: Questionnaire[]) {
-  return qs.map(q => ({ code: q.id ?? '', name: q.title ?? q.id ?? '' }));
-}
-
-/** Renders the appropriate step based on effective page. */
-function renderStep(props: {
-  effectivePage: Page;
-  register: ReturnType<typeof useForm<FormData>>['register'];
-  errors: ReturnType<typeof useForm<FormData>>['formState']['errors'];
-  libraryOptions: { code: string; name: string }[];
-  selectedIds: string[];
-  handleSelectLibrary: (ids: string[]) => void;
-  handleCustomUpload: (q: Questionnaire | null) => void;
-  fields: ReturnType<typeof useFieldArray<FormData, 'batches'>>['fields'];
-  formValues: FormData;
-  setValue: ReturnType<typeof useForm<FormData>>['setValue'];
-  append: ReturnType<typeof useFieldArray<FormData, 'batches'>>['append'];
-  remove: ReturnType<typeof useFieldArray<FormData, 'batches'>>['remove'];
-  lockedBatchIndices: number[];
-}) {
-  const {
-    effectivePage,
-    register,
-    errors,
-    libraryOptions,
-    selectedIds,
-    handleSelectLibrary,
-    handleCustomUpload,
-    fields,
-    formValues,
-    setValue,
-    append,
-    remove,
-    lockedBatchIndices
-  } = props;
-  return (
-    <div className='space-y-4'>
-      <h1 className='text-lg font-bold'>Edit Research</h1>
-      {effectivePage === 'title' && (
-        <Step1 register={register} errors={errors} />
-      )}
-      {effectivePage === 'questionnaire' && (
-        <Step2
-          libraryOptions={libraryOptions}
-          selectedIds={selectedIds}
-          onSelect={handleSelectLibrary}
-          onCustomUpload={handleCustomUpload}
-        />
-      )}
-      {effectivePage === 'batch' && (
-        <Step3
-          fields={fields}
-          errors={errors}
-          batches={formValues.batches}
-          setValue={setValue}
-          onAddBatch={() =>
-            append({ startDate: '', endDate: '', questionnaireIds: [] })
-          }
-          onRemoveBatch={remove}
-          lockedBatchIndices={lockedBatchIndices}
-          availableQuestionnaires={libraryOptions}
-          selectedQuestionnaireIds={selectedIds}
-        />
-      )}
-    </div>
-  );
-}
 
 /**
  * Edit form for an existing research study.
@@ -232,15 +149,24 @@ export default function EditResearchForm({
     if (shouldRedirect) router.replace(buildEditUrl(searchParams, 'title'));
   }, [shouldRedirect, router, searchParams]);
 
+  const [customQuestionnaires, setCustomQuestionnaires] = useState<
+    { code: string; name: string }[]
+  >([]);
+
   const { data: libraryQs = [] } = useQuery({
     queryKey: ['questionnaire-library'],
-    queryFn: fetchLibraryQuestionnaires,
-    enabled: page === 'questionnaire'
+    queryFn: fetchLibraryQuestionnaires
   });
 
   const libraryOptions = useMemo(
     () => libraryOptionsFromQuery(libraryQs),
     [libraryQs]
+  );
+
+  // Merge library and custom questionnaires for batch step
+  const allQuestionnaireOptions = useMemo(
+    () => [...libraryOptions, ...customQuestionnaires],
+    [libraryOptions, customQuestionnaires]
   );
 
   const handleSelectLibrary = useCallback(
@@ -258,6 +184,8 @@ export default function EditResearchForm({
   const handleCustomUpload = useCallback(
     (q: Questionnaire | null) => {
       if (!q?.id) return;
+      const option = { code: q.id, name: q.title ?? q.id };
+      setCustomQuestionnaires(prev => [...prev, option]);
       handleSelectLibrary([...selectedIds, q.id]);
     },
     [handleSelectLibrary, selectedIds]
@@ -315,11 +243,12 @@ export default function EditResearchForm({
   return (
     <ResearchFormActionsProvider value={formActions}>
       <ResearchFormFabBridge />
-      {renderStep({
+      {RenderStep({
         effectivePage,
         register,
         errors,
         libraryOptions,
+        availableQuestionnaires: allQuestionnaireOptions,
         selectedIds,
         handleSelectLibrary,
         handleCustomUpload,
