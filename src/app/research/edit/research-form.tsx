@@ -11,15 +11,19 @@ import type {
   Questionnaire,
   ResearchStudy
 } from 'fhir/r4';
-import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
-import { toast } from 'react-toastify';
 import { z } from 'zod';
 import { schema } from '../register/research-form';
 import { Step1, Step2, Step3 } from '../register/research-form-steps';
+import { submitEditStudy } from './submit-helpers';
 
 export type FormData = z.infer<typeof schema>;
+
+type Page = 'title' | 'questionnaire' | 'batch';
+
+const VALID_PAGES = new Set<Page>(['title', 'questionnaire', 'batch']);
 
 interface EditResearchFormProps {
   study: ResearchStudy;
@@ -75,6 +79,86 @@ const computeLockedBatchIndices = (batches: FormData['batches']): number[] => {
     .map(({ i }) => i);
 };
 
+/** Fetches questionnaire library from FHIR API. */
+async function fetchLibraryQuestionnaires() {
+  const API = await getAPI();
+  const res = await API.get<Bundle>(
+    '/fhir/Questionnaire?context=popular,regular&status=active&_elements=id,title,description,extension'
+  );
+  return (res.data.entry ?? []).map(e => e.resource as Questionnaire);
+}
+
+/** Maps raw questionnaires to combobox options. */
+function libraryOptionsFromQuery(qs: Questionnaire[]) {
+  return qs.map(q => ({
+    code: q.id ?? '',
+    name: q.title ?? q.id ?? ''
+  }));
+}
+
+/** Renders the appropriate step based on effective page. */
+function renderStep({
+  effectivePage,
+  register,
+  errors,
+  libraryOptions,
+  selectedIds,
+  handleSelectLibrary,
+  handleCustomUpload,
+  fields,
+  formValues,
+  setValue,
+  append,
+  remove,
+  lockedBatchIndices
+}: {
+  effectivePage: Page;
+  register: ReturnType<typeof useForm<FormData>>['register'];
+  errors: ReturnType<typeof useForm<FormData>>['formState']['errors'];
+  libraryOptions: { code: string; name: string }[];
+  selectedIds: string[];
+  handleSelectLibrary: (ids: string[]) => void;
+  handleCustomUpload: (q: Questionnaire | null) => void;
+  fields: ReturnType<typeof useFieldArray<FormData, 'batches'>>['fields'];
+  formValues: FormData;
+  setValue: ReturnType<typeof useForm<FormData>>['setValue'];
+  append: ReturnType<typeof useFieldArray<FormData, 'batches'>>['append'];
+  remove: ReturnType<typeof useFieldArray<FormData, 'batches'>>['remove'];
+  lockedBatchIndices: number[];
+}) {
+  return (
+    <div className='space-y-4'>
+      <h1 className='text-lg font-bold'>Edit Research</h1>
+      {effectivePage === 'title' && (
+        <Step1 register={register} errors={errors} />
+      )}
+      {effectivePage === 'questionnaire' && (
+        <Step2
+          libraryOptions={libraryOptions}
+          selectedIds={selectedIds}
+          onSelect={handleSelectLibrary}
+          onCustomUpload={handleCustomUpload}
+        />
+      )}
+      {effectivePage === 'batch' && (
+        <Step3
+          fields={fields}
+          errors={errors}
+          batches={formValues.batches}
+          setValue={setValue}
+          onAddBatch={() =>
+            append({ startDate: '', endDate: '', questionnaireIds: [] })
+          }
+          onRemoveBatch={remove}
+          lockedBatchIndices={lockedBatchIndices}
+          availableQuestionnaires={libraryOptions}
+          selectedQuestionnaireIds={selectedIds}
+        />
+      )}
+    </div>
+  );
+}
+
 /**
  * Edit form for an existing research study.
  *
@@ -86,6 +170,7 @@ export default function EditResearchForm({
   planDefinitions
 }: Readonly<EditResearchFormProps>) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   useAuth();
   const initialData = useMemo(
     () => mapToFormData(study, planDefinitions),
@@ -100,9 +185,16 @@ export default function EditResearchForm({
     [initialData.batches]
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars, sonarjs/no-dead-store
-  const [step, setStep] = useState(1);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // Derive page from URL params
+  const rawPage = searchParams.get('page');
+  const page: Page = VALID_PAGES.has(rawPage as Page)
+    ? (rawPage as Page)
+    : 'title';
+
+  // Fix questionnaire bug: initialize selectedIds from existing batches
+  const [selectedIds, setSelectedIds] = useState<string[]>(() =>
+    initialData.batches.flatMap(b => b.questionnaireIds)
+  );
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -120,143 +212,79 @@ export default function EditResearchForm({
     name: 'batches'
   });
 
+  const formValues = form.watch();
+
+  // Deep link guard
+  const shouldRedirect = page !== 'title' && !formValues.title;
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      router.replace('/research/edit?page=title');
+    }
+  }, [shouldRedirect, router]);
+
   const { data: libraryQs = [] } = useQuery({
     queryKey: ['questionnaire-library'],
-    queryFn: async () => {
-      const API = await getAPI();
-      const res = await API.get<Bundle>(
-        '/fhir/Questionnaire?context=popular,regular&status=active&_elements=id,title,description,extension'
-      );
-      return (res.data.entry ?? []).map(e => e.resource as Questionnaire);
-    },
-    enabled: step === 2
+    queryFn: fetchLibraryQuestionnaires,
+    enabled: page === 'questionnaire'
   });
 
-  const libraryOptions = libraryQs.map(q => ({
-    code: q.id ?? '',
-    name: q.title ?? q.id ?? ''
-  }));
-
-  const handleSelectLibrary = (ids: string[]) => {
-    setSelectedIds(ids);
-    for (const [index] of fields.entries()) {
-      if (!lockedBatchIndices.includes(index)) {
-        setValue(`batches.${index}.questionnaireIds`, ids);
-      }
-    }
-  };
-
-  const handleCustomUpload = (q: Questionnaire | null) => {
-    if (!q?.id) return;
-    handleSelectLibrary([...selectedIds, q.id]);
-  };
-
-  const buildStudyEntry = (data: FormData) => {
-    const starts = data.batches
-      .map(b => b.startDate)
-      .toSorted((a, b) => a.localeCompare(b));
-    const ends = data.batches
-      .map(b => b.endDate)
-      .toSorted((a, b) => a.localeCompare(b));
-    return {
-      resource: {
-        resourceType: 'ResearchStudy' as const,
-        id: study.id,
-        title: data.title,
-        description: data.description,
-        status: study.status,
-        principalInvestigator: study.principalInvestigator,
-        protocol: planIds.map(id => ({ reference: `PlanDefinition/${id}` })),
-        period: { start: starts[0], end: ends.at(-1) }
-      },
-      request: { method: 'PUT' as const, url: `ResearchStudy/${study.id}` }
-    };
-  };
-
-  const isBatchModified = (
-    batch: FormData['batches'][number],
-    planId: string
-  ): boolean => {
-    const original = planDefinitions.find(p => p.id === planId);
-    if (!original) return true;
-    const originalQs = (original.action ?? [])
-      .map(a => extractQuestionnaireId(a.definitionCanonical))
-      .filter((id): id is string => id !== null);
-    const datesChanged =
-      batch.startDate !== (original.effectivePeriod?.start ?? '') ||
-      batch.endDate !== (original.effectivePeriod?.end ?? '');
-    const qIdsChanged =
-      JSON.stringify(
-        batch.questionnaireIds.toSorted((a, b) => a.localeCompare(b))
-      ) !== JSON.stringify(originalQs.toSorted((a, b) => a.localeCompare(b)));
-    return datesChanged || qIdsChanged;
-  };
-
-  const buildPlanEntries = (data: FormData) =>
-    data.batches.flatMap((batch, i) => {
-      if (lockedBatchIndices.includes(i)) return [];
-      const planId = planIds[i];
-      if (!planId || !isBatchModified(batch, planId)) return [];
-      const original = planDefinitions.find(p => p.id === planId);
-      return [
-        {
-          resource: {
-            resourceType: 'PlanDefinition' as const,
-            id: planId,
-            title: original?.title ?? `Batch ${i + 1}`,
-            status: 'active' as const,
-            effectivePeriod: { start: batch.startDate, end: batch.endDate },
-            action: batch.questionnaireIds.map(qId => ({
-              definitionCanonical: `Questionnaire/${qId}`
-            }))
-          },
-          request: { method: 'PUT' as const, url: `PlanDefinition/${planId}` }
-        }
-      ];
-    });
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars, sonarjs/no-dead-store -- will be used by FAB in Task 9
-  const onSubmitForm = async (data: FormData) => {
-    try {
-      const API = await getAPI();
-      const entries = [buildStudyEntry(data), ...buildPlanEntries(data)];
-      await API.post('/fhir', {
-        resourceType: 'Bundle',
-        type: 'transaction',
-        entry: entries
-      });
-      toast.success('Study updated successfully');
-      router.push('/research');
-    } catch {
-      toast.error('Failed to update study. Please try again.');
-    }
-  };
-
-  return (
-    <div className='space-y-4'>
-      <h1 className='text-lg font-bold'>Edit Research</h1>
-      {step === 1 && <Step1 register={register} errors={errors} />}
-      {step === 2 && (
-        <Step2
-          libraryOptions={libraryOptions}
-          selectedIds={selectedIds}
-          onSelect={handleSelectLibrary}
-          onCustomUpload={handleCustomUpload}
-        />
-      )}
-      {step === 3 && (
-        <Step3
-          fields={fields}
-          errors={errors}
-          batches={form.getValues('batches')}
-          setValue={setValue}
-          onAddBatch={() =>
-            append({ startDate: '', endDate: '', questionnaireIds: [] })
-          }
-          onRemoveBatch={remove}
-          lockedBatchIndices={lockedBatchIndices}
-        />
-      )}
-    </div>
+  const libraryOptions = useMemo(
+    () => libraryOptionsFromQuery(libraryQs),
+    [libraryQs]
   );
+
+  const handleSelectLibrary = useCallback(
+    (ids: string[]) => {
+      setSelectedIds(ids);
+      for (const [index] of fields.entries()) {
+        if (!lockedBatchIndices.includes(index)) {
+          setValue(`batches.${index}.questionnaireIds`, ids);
+        }
+      }
+    },
+    [fields, lockedBatchIndices, setValue]
+  );
+
+  const handleCustomUpload = useCallback(
+    (q: Questionnaire | null) => {
+      if (!q?.id) return;
+      handleSelectLibrary([...selectedIds, q.id]);
+    },
+    [handleSelectLibrary, selectedIds]
+  );
+
+  // skipcq: JS-0098 - will be used by FAB in Task 9
+  const onSubmitForm = (data: FormData) => {
+    void submitEditStudy({
+      study,
+      planIds,
+      lockedBatchIndices,
+      planDefinitions,
+      data,
+      router
+    });
+  };
+  // Keep onSubmitForm defined but unused for now — it will be wired to FAB in Task 9
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars
+  const _unused = onSubmitForm;
+
+  // Don't render wrong page while redirecting
+  const effectivePage = shouldRedirect ? 'title' : page;
+
+  return renderStep({
+    effectivePage,
+    register,
+    errors,
+    libraryOptions,
+    selectedIds,
+    handleSelectLibrary,
+    handleCustomUpload,
+    fields,
+    formValues,
+    setValue,
+    append,
+    remove,
+    lockedBatchIndices
+  });
 }
