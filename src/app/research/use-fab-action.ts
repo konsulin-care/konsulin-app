@@ -2,12 +2,33 @@
 
 import { useFab } from '@/context/fabContext';
 import type { StudyProgress } from '@/utils/fhir/research';
-import { FlaskConical } from 'lucide-react';
+import { ArrowRight, Check, FlaskConical } from 'lucide-react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
+import {
+  useResearchFormActions,
+  type ResearchFormActions
+} from './research-form-actions-context';
+
+/** Returns form actions if inside a provider, null otherwise. */
+function useResearchFormActionsOrNull(): ResearchFormActions | null {
+  try {
+    return useResearchFormActions();
+  } catch {
+    return null;
+  }
+}
+
+type Page = 'title' | 'questionnaire' | 'batch';
+
+const VALID_PAGES = new Set<Page>(['title', 'questionnaire', 'batch']);
 
 /**
- * Sets up the FAB action for the research page.
- * Researchers see "Register Survey", patients see "Participate".
+ * Sets up the FAB action for research pages.
+ *
+ * On research form pages (/research/register, /research/edit), the FAB
+ * acts as the page CTA (Next/Submit). On the research list page, it
+ * shows "Register Survey" for researchers or "Participate" for patients.
  */
 export function useResearchFabAction({
   isResearcher,
@@ -21,8 +42,52 @@ export function useResearchFabAction({
   router: { push: (url: string) => void };
 }) {
   const { dispatch } = useFab();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Check if on a research form page
+  const isResearchFormPage =
+    pathname === '/research/register' || pathname === '/research/edit';
+
+  // Get page from URL params
+  const rawPage = searchParams.get('page');
+  const page: Page = VALID_PAGES.has(rawPage as Page)
+    ? (rawPage as Page)
+    : 'title';
+
+  // Get form actions from context (returns null if not inside provider)
+  const formActions = useResearchFormActionsOrNull();
 
   useEffect(() => {
+    // Research form pages: use page-level FAB
+    if (isResearchFormPage && formActions) {
+      if (page === 'title' || page === 'questionnaire') {
+        dispatch({
+          type: 'SET_ACTION',
+          config: {
+            label: 'Next',
+            icon: ArrowRight,
+            onAction: formActions.onAdvance,
+            disabled: !formActions.canAdvance
+          }
+        });
+        return () => dispatch({ type: 'SET_ACTION', config: null });
+      }
+
+      if (page === 'batch') {
+        dispatch({
+          type: 'SET_ACTION',
+          config: {
+            label: 'Submit',
+            icon: Check,
+            onAction: formActions.onSubmit
+          }
+        });
+        return () => dispatch({ type: 'SET_ACTION', config: null });
+      }
+    }
+
+    // Research list page: show role-based action
     if (isResearcher) {
       dispatch({
         type: 'SET_ACTION',
@@ -51,5 +116,14 @@ export function useResearchFabAction({
     }
 
     return () => dispatch({ type: 'SET_ACTION', config: null });
-  }, [activeStudy, dispatch, isResearcher, participate, router]);
+  }, [
+    activeStudy,
+    dispatch,
+    isResearcher,
+    isResearchFormPage,
+    page,
+    formActions,
+    participate,
+    router
+  ]);
 }

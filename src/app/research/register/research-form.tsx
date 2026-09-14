@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
+import { ResearchFormActionsProvider } from '../research-form-actions-context';
 import { Step1, Step2, Step3 } from './research-form-steps';
 
 export const schema = z.object({
@@ -210,6 +211,8 @@ export default function ResearchForm() {
     control,
     watch,
     setValue,
+    trigger,
+    handleSubmit,
     formState: { errors }
   } = form;
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -275,18 +278,50 @@ export default function ResearchForm() {
   // Don't render wrong page while redirecting
   const effectivePage = shouldRedirect ? 'title' : page;
 
-  return renderStep({
-    effectivePage,
-    register,
-    errors,
-    libraryOptions,
-    selectedIds,
-    handleSelectLibrary,
-    handleCustomUpload,
-    fields,
-    formValues,
-    setValue,
-    append,
-    remove
-  });
+  const onSubmitForm = async (data: FormData) => {
+    try {
+      const API = await getAPI();
+      await submitStudy(API, data, userId, storageKey, router);
+    } catch {
+      toast.error('Failed to create research study. Please try again.');
+    }
+  };
+
+  // Actions for the FAB
+  const formActions = {
+    canAdvance:
+      effectivePage === 'title'
+        ? Boolean(formValues.title)
+        : selectedIds.length > 0,
+    onAdvance: () => {
+      if (effectivePage === 'title') {
+        void trigger(['title', 'description']).then(valid => {
+          if (valid) router.push('/research/register?page=questionnaire');
+          return valid;
+        });
+      } else if (effectivePage === 'questionnaire') {
+        router.push('/research/register?page=batch');
+      }
+    },
+    onSubmit: () => void handleSubmit(onSubmitForm)()
+  };
+
+  return (
+    <ResearchFormActionsProvider value={formActions}>
+      {renderStep({
+        effectivePage,
+        register,
+        errors,
+        libraryOptions,
+        selectedIds,
+        handleSelectLibrary,
+        handleCustomUpload,
+        fields,
+        formValues,
+        setValue,
+        append,
+        remove
+      })}
+    </ResearchFormActionsProvider>
+  );
 }

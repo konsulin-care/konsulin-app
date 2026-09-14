@@ -17,6 +17,7 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { schema } from '../register/research-form';
 import { Step1, Step2, Step3 } from '../register/research-form-steps';
+import { ResearchFormActionsProvider } from '../research-form-actions-context';
 import { submitEditStudy } from './submit-helpers';
 
 export type FormData = z.infer<typeof schema>;
@@ -205,6 +206,8 @@ export default function EditResearchForm({
     register,
     control,
     setValue,
+    trigger,
+    handleSubmit,
     formState: { errors }
   } = form;
   const { fields, append, remove } = useFieldArray<FormData>({
@@ -254,7 +257,6 @@ export default function EditResearchForm({
     [handleSelectLibrary, selectedIds]
   );
 
-  // skipcq: JS-0098 - will be used by FAB in Task 9
   const onSubmitForm = (data: FormData) => {
     void submitEditStudy({
       study,
@@ -265,26 +267,46 @@ export default function EditResearchForm({
       router
     });
   };
-  // Keep onSubmitForm defined but unused for now — it will be wired to FAB in Task 9
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars
-  const _unused = onSubmitForm;
 
   // Don't render wrong page while redirecting
   const effectivePage = shouldRedirect ? 'title' : page;
 
-  return renderStep({
-    effectivePage,
-    register,
-    errors,
-    libraryOptions,
-    selectedIds,
-    handleSelectLibrary,
-    handleCustomUpload,
-    fields,
-    formValues,
-    setValue,
-    append,
-    remove,
-    lockedBatchIndices
-  });
+  // Actions for the FAB
+  const formActions = {
+    canAdvance:
+      effectivePage === 'title'
+        ? Boolean(formValues.title)
+        : selectedIds.length > 0,
+    onAdvance: () => {
+      if (effectivePage === 'title') {
+        void trigger(['title', 'description']).then(valid => {
+          if (valid) router.push('/research/edit?page=questionnaire');
+          return valid;
+        });
+      } else if (effectivePage === 'questionnaire') {
+        router.push('/research/edit?page=batch');
+      }
+    },
+    onSubmit: () => void handleSubmit(onSubmitForm)()
+  };
+
+  return (
+    <ResearchFormActionsProvider value={formActions}>
+      {renderStep({
+        effectivePage,
+        register,
+        errors,
+        libraryOptions,
+        selectedIds,
+        handleSelectLibrary,
+        handleCustomUpload,
+        fields,
+        formValues,
+        setValue,
+        append,
+        remove,
+        lockedBatchIndices
+      })}
+    </ResearchFormActionsProvider>
+  );
 }
