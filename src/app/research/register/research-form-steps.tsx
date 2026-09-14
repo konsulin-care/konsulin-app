@@ -2,7 +2,6 @@
 
 import Combobox from '@/components/shared/combobox';
 import DatePickerButton from '@/components/shared/date-picker-button';
-import QuestionnaireUploader from '@/components/shared/questionnaire-uploader';
 import {
   Accordion,
   AccordionContent,
@@ -12,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { Questionnaire } from 'fhir/r4';
 import type {
   FieldErrors,
   UseFieldArrayReturn,
@@ -65,12 +63,12 @@ export function Step2({
   libraryOptions,
   selectedIds,
   onSelect,
-  onCustomUpload
+  onOpenUploadDrawer
 }: {
   libraryOptions: { code: string; name: string }[];
   selectedIds: string[];
   onSelect: (ids: string[]) => void;
-  onCustomUpload: (q: Questionnaire | null) => void;
+  onOpenUploadDrawer: () => void;
 }) {
   return (
     <div className='space-y-4'>
@@ -90,13 +88,10 @@ export function Step2({
             />
           </AccordionContent>
         </AccordionItem>
-        <AccordionItem value='custom'>
-          <AccordionTrigger>Upload Custom</AccordionTrigger>
-          <AccordionContent>
-            <QuestionnaireUploader value={null} onChange={onCustomUpload} />
-          </AccordionContent>
-        </AccordionItem>
       </Accordion>
+      <Button type='button' variant='outline' onClick={onOpenUploadDrawer}>
+        Upload Custom Questionnaire
+      </Button>
       {selectedIds.length > 0 && (
         <p className='text-sm text-gray-500'>
           {selectedIds.length} questionnaire(s) selected

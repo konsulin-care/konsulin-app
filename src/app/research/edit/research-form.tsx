@@ -1,5 +1,6 @@
 'use client';
 
+import QuestionnaireUploadDrawer from '@/components/shared/questionnaire-upload-drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -90,7 +91,7 @@ export default function EditResearchForm({
 }: Readonly<EditResearchFormProps>) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  useAuth();
+  const { state: authState } = useAuth();
   const initialData = useMemo(
     () => mapToFormData(study, planDefinitions),
     [study, planDefinitions]
@@ -122,6 +123,7 @@ export default function EditResearchForm({
   const [selectedIds, setSelectedIds] = useState<string[]>(() =>
     initialData.batches.flatMap(b => b.questionnaireIds)
   );
+  const [isUploadDrawerOpen, setIsUploadDrawerOpen] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -181,12 +183,11 @@ export default function EditResearchForm({
     [fields, lockedBatchIndices, setValue]
   );
 
-  const handleCustomUpload = useCallback(
-    (q: Questionnaire | null) => {
-      if (!q?.id) return;
-      const option = { code: q.id, name: q.title ?? q.id };
+  const handleUploaded = useCallback(
+    (q: Questionnaire) => {
+      const option = { code: q.id ?? '', name: q.title ?? q.id ?? '' };
       setCustomQuestionnaires(prev => [...prev, option]);
-      handleSelectLibrary([...selectedIds, q.id]);
+      handleSelectLibrary([...selectedIds, q.id ?? '']);
     },
     [handleSelectLibrary, selectedIds]
   );
@@ -203,6 +204,11 @@ export default function EditResearchForm({
       });
     },
     [study, planIds, lockedBatchIndices, planDefinitions, router]
+  );
+
+  const handleOpenUploadDrawer = useCallback(
+    () => setIsUploadDrawerOpen(true),
+    []
   );
 
   // Don't render wrong page while redirecting
@@ -251,7 +257,7 @@ export default function EditResearchForm({
         availableQuestionnaires: allQuestionnaireOptions,
         selectedIds,
         handleSelectLibrary,
-        handleCustomUpload,
+        handleOpenUploadDrawer,
         fields,
         formValues,
         setValue,
@@ -259,6 +265,18 @@ export default function EditResearchForm({
         remove,
         lockedBatchIndices
       })}
+      <QuestionnaireUploadDrawer
+        open={isUploadDrawerOpen}
+        onClose={() => setIsUploadDrawerOpen(false)}
+        onUploaded={handleUploaded}
+        showFee={false}
+        showImage={false}
+        context='research'
+        resolvePublisher={() => {
+          const user = authState?.userInfo;
+          return user?.fullname ?? 'Researcher';
+        }}
+      />
     </ResearchFormActionsProvider>
   );
 }

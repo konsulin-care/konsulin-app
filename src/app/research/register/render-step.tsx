@@ -19,7 +19,7 @@ export function RenderStep(props: {
   availableQuestionnaires: { code: string; name: string }[];
   selectedIds: string[];
   handleSelectLibrary: (ids: string[]) => void;
-  handleCustomUpload: (q: import('fhir/r4').Questionnaire | null) => void;
+  handleOpenUploadDrawer: () => void;
   fields: UseFieldArrayReturn<FormData, 'batches'>['fields'];
   formValues: FormData;
   setValue: UseFormReturn<FormData>['setValue'];
@@ -34,7 +34,7 @@ export function RenderStep(props: {
     availableQuestionnaires,
     selectedIds,
     handleSelectLibrary,
-    handleCustomUpload,
+    handleOpenUploadDrawer,
     fields,
     formValues,
     setValue,
@@ -59,7 +59,7 @@ export function RenderStep(props: {
           libraryOptions={libraryOptions}
           selectedIds={selectedIds}
           onSelect={handleSelectLibrary}
-          onCustomUpload={handleCustomUpload}
+          onOpenUploadDrawer={handleOpenUploadDrawer}
         />
       )}
       {effectivePage === 'batch' && (

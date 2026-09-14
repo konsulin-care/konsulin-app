@@ -1,5 +1,6 @@
 'use client';
 
+import QuestionnaireUploadDrawer from '@/components/shared/questionnaire-upload-drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { getAPI } from '@/services/api';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -119,6 +120,7 @@ export default function ResearchForm() {
   const [customQuestionnaires, setCustomQuestionnaires] = useState<
     { code: string; name: string }[]
   >([]);
+  const [isUploadDrawerOpen, setIsUploadDrawerOpen] = useState(false);
   const isInitialMount = useRef(true);
 
   // Derive page from URL params with guard
@@ -207,14 +209,18 @@ export default function ResearchForm() {
     [fields, setValue]
   );
 
-  const handleCustomUpload = useCallback(
-    (q: Questionnaire | null) => {
-      if (!q?.id) return;
-      const option = { code: q.id, name: q.title ?? q.id };
+  const handleUploaded = useCallback(
+    (q: Questionnaire) => {
+      const option = { code: q.id ?? '', name: q.title ?? q.id ?? '' };
       setCustomQuestionnaires(prev => [...prev, option]);
-      handleSelectLibrary([...selectedIds, q.id]);
+      handleSelectLibrary([...selectedIds, q.id ?? '']);
     },
     [handleSelectLibrary, selectedIds]
+  );
+
+  const handleOpenUploadDrawer = useCallback(
+    () => setIsUploadDrawerOpen(true),
+    []
   );
 
   // Don't render wrong page while redirecting
@@ -274,13 +280,25 @@ export default function ResearchForm() {
         availableQuestionnaires: allQuestionnaireOptions,
         selectedIds,
         handleSelectLibrary,
-        handleCustomUpload,
+        handleOpenUploadDrawer,
         fields,
         formValues,
         setValue,
         append,
         remove
       })}
+      <QuestionnaireUploadDrawer
+        open={isUploadDrawerOpen}
+        onClose={() => setIsUploadDrawerOpen(false)}
+        onUploaded={handleUploaded}
+        showFee={false}
+        showImage={false}
+        context='research'
+        resolvePublisher={() => {
+          const user = authState?.userInfo;
+          return user?.fullname ?? 'Researcher';
+        }}
+      />
     </ResearchFormActionsProvider>
   );
 }

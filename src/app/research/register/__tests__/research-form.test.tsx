@@ -84,36 +84,39 @@ describe('Step1 - Title & Description', () => {
 });
 
 describe('Step2 - Questionnaire Selection', () => {
-  it('renders accordion with From Library and Upload Custom sections', () => {
+  it('renders From Library section and Upload Custom button', () => {
     renderWithQuery(
       <Step2
         libraryOptions={[]}
         selectedIds={[]}
         onSelect={vi.fn()}
-        onCustomUpload={vi.fn()}
+        onOpenUploadDrawer={vi.fn()}
       />
     );
 
     expect(screen.getByText(/from library/i)).toBeInTheDocument();
-    expect(screen.getByText(/upload custom/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /upload custom questionnaire/i })
+    ).toBeInTheDocument();
   });
 
-  it('has no Back or Next buttons', () => {
+  it('calls onOpenUploadDrawer when button is clicked', async () => {
+    const onOpenUploadDrawer = vi.fn();
     renderWithQuery(
       <Step2
         libraryOptions={[]}
         selectedIds={[]}
         onSelect={vi.fn()}
-        onCustomUpload={vi.fn()}
+        onOpenUploadDrawer={onOpenUploadDrawer}
       />
     );
 
-    expect(
-      screen.queryByRole('button', { name: /back/i })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: /next/i })
-    ).not.toBeInTheDocument();
+    const button = screen.getByRole('button', {
+      name: /upload custom questionnaire/i
+    });
+    button.click();
+
+    expect(onOpenUploadDrawer).toHaveBeenCalledTimes(1);
   });
 
   it('shows selected count when questionnaires are selected', () => {
@@ -122,7 +125,7 @@ describe('Step2 - Questionnaire Selection', () => {
         libraryOptions={[{ code: 'phq2', name: 'PHQ-2' }]}
         selectedIds={['phq2']}
         onSelect={vi.fn()}
-        onCustomUpload={vi.fn()}
+        onOpenUploadDrawer={vi.fn()}
       />
     );
 
