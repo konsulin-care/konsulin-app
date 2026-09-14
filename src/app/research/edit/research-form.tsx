@@ -20,6 +20,7 @@ import { schema } from '../register/research-form';
 import { Step1, Step2, Step3 } from '../register/research-form-steps';
 import { ResearchFormActionsProvider } from '../research-form-actions-context';
 import { ResearchFormFabBridge } from '../research-form-fab-bridge';
+import { buildEditUrl } from './build-edit-url';
 import { submitEditStudy } from './submit-helpers';
 
 export type FormData = z.infer<typeof schema>;
@@ -192,17 +193,13 @@ export default function EditResearchForm({
     ? (rawPage as Page)
     : 'title';
 
-  // Canonicalize: add ?page=title when missing, preserving id
+  // Canonicalize: redirect to ?page=title when missing or invalid, preserving id
+  const needsCanonicalize = !rawPage || !VALID_PAGES.has(rawPage as Page);
   useEffect(() => {
-    if (!rawPage) {
-      const params = new URLSearchParams(searchParams.toString());
-      const id = params.get('id');
-      params.delete('id');
-      params.set('page', 'title');
-      const qs = id ? `id=${id}&page=title` : 'page=title';
-      router.replace(`/research/edit?${qs}`);
+    if (needsCanonicalize) {
+      router.replace(buildEditUrl(searchParams, 'title'));
     }
-  }, [rawPage, router, searchParams]);
+  }, [needsCanonicalize, router, searchParams]);
 
   // Fix questionnaire bug: initialize selectedIds from existing batches
   const [selectedIds, setSelectedIds] = useState<string[]>(() =>
@@ -232,8 +229,8 @@ export default function EditResearchForm({
   // Deep link guard
   const shouldRedirect = page !== 'title' && !formValues.title;
   useEffect(() => {
-    if (shouldRedirect) router.replace('/research/edit?page=title');
-  }, [shouldRedirect, router]);
+    if (shouldRedirect) router.replace(buildEditUrl(searchParams, 'title'));
+  }, [shouldRedirect, router, searchParams]);
 
   const { data: libraryQs = [] } = useQuery({
     queryKey: ['questionnaire-library'],
@@ -293,11 +290,11 @@ export default function EditResearchForm({
       onAdvance: () => {
         if (effectivePage === 'title') {
           void trigger(['title', 'description']).then(valid => {
-            if (valid) router.push('/research/edit?page=questionnaire');
+            if (valid) router.push(buildEditUrl(searchParams, 'questionnaire'));
             return valid;
           });
         } else if (effectivePage === 'questionnaire') {
-          router.push('/research/edit?page=batch');
+          router.push(buildEditUrl(searchParams, 'batch'));
         }
       },
       onSubmit: () => void handleSubmit(onSubmitForm)()
@@ -309,6 +306,7 @@ export default function EditResearchForm({
       selectedIds.length,
       trigger,
       router,
+      searchParams,
       handleSubmit,
       onSubmitForm
     ]

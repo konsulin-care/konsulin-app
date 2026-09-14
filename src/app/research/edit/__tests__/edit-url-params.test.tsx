@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import EditResearchForm from '../research-form';
 
+const mockPush = vi.fn();
 const mockReplace = vi.fn();
 
 vi.mock('@/context/auth/authContext', () => ({
@@ -34,7 +35,7 @@ vi.mock('@/services/api', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: mockReplace }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
   usePathname: () => '/research/edit',
   useSearchParams: vi.fn()
 }));
@@ -78,6 +79,27 @@ describe('EditResearchForm - URL param navigation', () => {
     localStorage.clear();
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>
+    );
+  });
+
+  it('deep-link guard preserves id when redirecting to title page', () => {
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('id=study-1&page=batch') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+
+    const emptyStudy: ResearchStudy = {
+      ...mockStudy,
+      title: ''
+    };
+
+    renderWithQuery(
+      <EditResearchForm study={emptyStudy} planDefinitions={[]} />
+    );
+
+    expect(mockReplace).toHaveBeenCalledWith(
+      '/research/edit?id=study-1&page=title'
     );
   });
 
