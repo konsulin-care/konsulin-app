@@ -192,9 +192,9 @@ export default function EditResearchForm({
     ? (rawPage as Page)
     : 'title';
 
-  // Canonicalize: add ?page=title when missing or invalid, preserving id
+  // Canonicalize: add ?page=title when missing, preserving id
   useEffect(() => {
-    if (rawPage !== 'title') {
+    if (!rawPage) {
       const params = new URLSearchParams(searchParams.toString());
       const id = params.get('id');
       params.delete('id');

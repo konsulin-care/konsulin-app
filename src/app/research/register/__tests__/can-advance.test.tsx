@@ -75,11 +75,11 @@ function renderWithFab(ui: React.ReactElement) {
 }
 
 describe('Register page FAB canAdvance', () => {
-  it('shows Next button disabled by default on title page', async () => {
+  it('shows icon-only ChevronRight FAB disabled by default on title page', async () => {
     renderWithFab(<RegisterPage />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
+      expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
     });
 
     expect(screen.getByTestId('fab-disabled')).toHaveTextContent('true');
@@ -90,7 +90,7 @@ describe('Register page FAB canAdvance', () => {
     renderWithFab(<RegisterPage />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
+      expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
     });
 
     await user.type(screen.getByLabelText(/title/i), 'My Study');
@@ -103,7 +103,7 @@ describe('Register page FAB canAdvance', () => {
     renderWithFab(<RegisterPage />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
+      expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
     });
 
     await user.type(screen.getByLabelText(/title/i), 'My Study');

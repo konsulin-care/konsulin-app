@@ -58,8 +58,6 @@ const createBatch = (date = ''): FormData['batches'][number] => ({
   endDate: date,
   questionnaireIds: []
 });
-
-/* eslint-disable @typescript-eslint/no-unused-vars -- used by ResearchForm */
 const submitStudy = async (
   API: Awaited<ReturnType<typeof getAPI>>,
   data: FormData,
@@ -105,7 +103,6 @@ const submitStudy = async (
   toast.success('Research study created successfully');
   router.push('/');
 };
-
 /** Fetches questionnaire library from FHIR API. */
 async function fetchLibraryQuestionnaires() {
   const API = await getAPI();
@@ -113,11 +110,6 @@ async function fetchLibraryQuestionnaires() {
     '/fhir/Questionnaire?context=popular,regular&status=active&_elements=id,title,description,extension'
   );
   return (res.data.entry ?? []).map(e => e.resource as Questionnaire);
-}
-
-/** Maps raw questionnaires to combobox options. */
-function libraryOptionsFromQuery(qs: Questionnaire[]) {
-  return qs.map(q => ({ code: q.id ?? '', name: q.title ?? q.id ?? '' }));
 }
 
 /** Renders the appropriate step based on effective page. */
@@ -201,9 +193,9 @@ export default function ResearchForm() {
     ? (rawPage as Page)
     : 'title';
 
-  // Canonicalize: add ?page=title when missing or invalid
+  // Canonicalize: add ?page=title when missing
   useEffect(() => {
-    if (rawPage !== 'title') {
+    if (!rawPage) {
       router.replace('/research/register?page=title');
     }
   }, [rawPage, router]);
@@ -260,7 +252,8 @@ export default function ResearchForm() {
   });
 
   const libraryOptions = useMemo(
-    () => libraryOptionsFromQuery(libraryQs),
+    () =>
+      libraryQs.map(q => ({ code: q.id ?? '', name: q.title ?? q.id ?? '' })),
     [libraryQs]
   );
 

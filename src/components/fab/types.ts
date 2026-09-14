@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 
 export interface ActionConfig {
-  label: string;
+  label?: string;
   onAction: () => void | Promise<void>;
   icon?: ComponentType<{ className?: string }>;
   disabled?: boolean;

@@ -21,12 +21,14 @@ vi.mock('next/navigation', () => ({
 function FabStateReader() {
   const { state } = useFab();
   const action = state.action;
+  const iconName = action?.icon?.displayName ?? action?.icon?.name ?? 'unknown';
   return (
     <div>
       <span data-testid='fab-label'>{action?.label ?? 'none'}</span>
       <span data-testid='fab-disabled'>
         {String(action?.disabled ?? false)}
       </span>
+      <span data-testid='fab-icon'>{iconName}</span>
     </div>
   );
 }
@@ -51,7 +53,7 @@ function renderWithFab(ui: React.ReactElement) {
 }
 
 describe('useResearchFabAction on research form pages', () => {
-  it('dispatches Next disabled=true when canAdvance is false', async () => {
+  it('dispatches icon-only ChevronRight disabled=true when canAdvance is false', async () => {
     renderWithFab(
       <ResearchFormActionsProvider
         value={{
@@ -65,13 +67,13 @@ describe('useResearchFabAction on research form pages', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
+      expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
     });
 
     expect(screen.getByTestId('fab-disabled')).toHaveTextContent('true');
   });
 
-  it('dispatches Next disabled=false when canAdvance is true', async () => {
+  it('dispatches icon-only ChevronRight disabled=false when canAdvance is true', async () => {
     renderWithFab(
       <ResearchFormActionsProvider
         value={{
@@ -85,13 +87,13 @@ describe('useResearchFabAction on research form pages', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
+      expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
     });
 
     expect(screen.getByTestId('fab-disabled')).toHaveTextContent('false');
   });
 
-  it('dispatches Submit when page=batch', async () => {
+  it('dispatches Submit with label when page=batch', async () => {
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams('page=batch') as unknown as ReturnType<
         typeof useSearchParams
@@ -115,7 +117,7 @@ describe('useResearchFabAction on research form pages', () => {
     });
   });
 
-  it('dispatches Next when page=questionnaire', async () => {
+  it('dispatches icon-only ChevronRight when page=questionnaire', async () => {
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams('page=questionnaire') as unknown as ReturnType<
         typeof useSearchParams
@@ -135,7 +137,7 @@ describe('useResearchFabAction on research form pages', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
+      expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
     });
   });
 });

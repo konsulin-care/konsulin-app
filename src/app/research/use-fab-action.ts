@@ -2,7 +2,7 @@
 
 import { useFab } from '@/context/fabContext';
 import type { StudyProgress } from '@/utils/fhir/research';
-import { ArrowRight, Check, FlaskConical } from 'lucide-react';
+import { Check, ChevronRight, FlaskConical } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import {
@@ -72,8 +72,7 @@ export function useResearchFabAction({
         dispatch({
           type: 'SET_ACTION',
           config: {
-            label: 'Next',
-            icon: ArrowRight,
+            icon: ChevronRight,
             onAction: onAdvance,
             disabled: !canAdvance
           }

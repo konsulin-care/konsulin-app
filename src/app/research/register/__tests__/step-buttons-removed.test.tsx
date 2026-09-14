@@ -30,8 +30,10 @@ vi.mock('@/services/api', () => ({
     })
 }));
 
+const mockReplace = vi.fn();
+
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: mockReplace }),
   usePathname: () => '/research/register',
   useSearchParams: vi.fn()
 }));
@@ -104,5 +106,51 @@ describe('Step buttons removed', () => {
     expect(
       screen.queryByRole('button', { name: /next/i })
     ).not.toBeInTheDocument();
+  });
+
+  it('does not redirect back to title when page=questionnaire', () => {
+    localStorage.setItem(
+      'research-form-test-practitioner-id',
+      JSON.stringify({
+        title: 'Test',
+        description: '',
+        batches: [],
+        page: 'questionnaire'
+      })
+    );
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('page=questionnaire') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+    renderWithQuery(<ResearchForm />);
+    // Should NOT call router.replace when page is already a valid page
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('does not redirect back to title when page=batch', () => {
+    localStorage.setItem(
+      'research-form-test-practitioner-id',
+      JSON.stringify({
+        title: 'Test',
+        description: 'Desc',
+        batches: [
+          {
+            startDate: '2024-01-01',
+            endDate: '2024-12-31',
+            questionnaireIds: ['q1']
+          }
+        ],
+        page: 'batch'
+      })
+    );
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('page=batch') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+    renderWithQuery(<ResearchForm />);
+    // Should NOT call router.replace when page is already a valid page
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 });
