@@ -79,6 +79,25 @@ function getDefaultBackRoute(
   searchParams: URLSearchParams
 ): string | undefined {
   if (pathname === '/') return undefined;
+
+  // Research form pages: navigate between pages
+  if (pathname === '/research/register' || pathname === '/research/edit') {
+    const page = searchParams.get('page');
+    if (page === 'batch') {
+      // Preserve id param for edit
+      const params = new URLSearchParams(searchParams);
+      params.set('page', 'questionnaire');
+      return `${pathname}?${params.toString()}`;
+    }
+    if (page === 'questionnaire') {
+      const params = new URLSearchParams(searchParams);
+      params.set('page', 'title');
+      return `${pathname}?${params.toString()}`;
+    }
+    // ?page=title or no param → /research
+    return '/research';
+  }
+
   if (MAIN_ROUTES.has(pathname)) {
     if (searchParams.toString()) return pathname;
     return '/';
