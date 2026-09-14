@@ -27,7 +27,7 @@ interface QuestionnaireUploadDrawerProps {
   readonly showFee?: boolean;
   readonly showImage?: boolean;
   readonly context?: 'assessment' | 'research';
-  readonly resolvePublisher: () => Promise<string>;
+  readonly resolvePublisher: () => PromiseLike<string> | string;
 }
 
 type FormState = {
