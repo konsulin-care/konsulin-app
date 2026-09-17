@@ -94,7 +94,7 @@ describe('Step2 - Questionnaire Selection', () => {
       />
     );
 
-    expect(screen.getByText(/from library/i)).toBeInTheDocument();
+    expect(screen.getByText('Questionnaire Selection')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /upload custom questionnaire/i })
     ).toBeInTheDocument();
@@ -122,14 +122,16 @@ describe('Step2 - Questionnaire Selection', () => {
   it('shows selected count when questionnaires are selected', () => {
     renderWithQuery(
       <Step2
-        libraryOptions={[{ code: 'phq2', name: 'PHQ-2' }]}
+        libraryOptions={[
+          { code: 'phq2', name: 'PHQ-2', duration: null, category: null }
+        ]}
         selectedIds={['phq2']}
         onSelect={vi.fn()}
         onOpenUploadDrawer={vi.fn()}
       />
     );
 
-    expect(screen.getByText(/1 questionnaire/i)).toBeInTheDocument();
+    expect(screen.getByText('Selected (1)')).toBeInTheDocument();
   });
 });
 

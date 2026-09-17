@@ -166,7 +166,7 @@ describe('EditResearchForm - URL param navigation', () => {
     );
 
     // Should show questionnaire selection with pre-selected count
-    expect(screen.getByText(/2 questionnaire/i)).toBeInTheDocument();
+    expect(screen.getByText('Selected (2)')).toBeInTheDocument();
   });
 
   it('redirects to ?page=title when ?page=batch with empty title', () => {

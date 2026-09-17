@@ -14,7 +14,11 @@ import { z } from 'zod';
 import { canAdvanceOnTitlePage } from '../can-advance';
 import { ResearchFormActionsProvider } from '../research-form-actions-context';
 import { ResearchFormFabBridge } from '../research-form-fab-bridge';
-import { fetchLibraryQuestionnaires } from '../shared';
+import {
+  fetchLibraryQuestionnaires,
+  libraryOptionsFromQuery,
+  type QuestionnaireOption
+} from '../shared';
 import { RenderStep } from './render-step';
 
 export const schema = z.object({
@@ -118,7 +122,7 @@ export default function ResearchForm() {
   const storedData = useRef(loadFromStorage(storageKey));
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [customQuestionnaires, setCustomQuestionnaires] = useState<
-    { code: string; name: string }[]
+    QuestionnaireOption[]
   >([]);
   const [isUploadDrawerOpen, setIsUploadDrawerOpen] = useState(false);
   const isInitialMount = useRef(true);
@@ -188,8 +192,7 @@ export default function ResearchForm() {
   });
 
   const libraryOptions = useMemo(
-    () =>
-      libraryQs.map(q => ({ code: q.id ?? '', name: q.title ?? q.id ?? '' })),
+    () => libraryOptionsFromQuery(libraryQs),
     [libraryQs]
   );
 
@@ -211,7 +214,12 @@ export default function ResearchForm() {
 
   const handleUploaded = useCallback(
     (q: Questionnaire) => {
-      const option = { code: q.id ?? '', name: q.title ?? q.id ?? '' };
+      const option: QuestionnaireOption = {
+        code: q.id ?? '',
+        name: q.title ?? q.id ?? '',
+        duration: null,
+        category: null
+      };
       setCustomQuestionnaires(prev => [...prev, option]);
       handleSelectLibrary([...selectedIds, q.id ?? '']);
     },

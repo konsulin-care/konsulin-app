@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { QuestionnaireOption } from '../../shared';
 import { Step3 } from '../research-form-steps';
 
 vi.mock('@/context/auth/authContext', () => ({
@@ -38,9 +39,9 @@ const mockField = {
   ...mockBatch
 };
 
-const availableQuestionnaires = [
-  { code: 'phq2', name: 'PHQ-2' },
-  { code: 'gad7', name: 'GAD-7' }
+const availableQuestionnaires: QuestionnaireOption[] = [
+  { code: 'phq2', name: 'PHQ-2', duration: null, category: null },
+  { code: 'gad7', name: 'GAD-7', duration: null, category: null }
 ];
 
 describe('Step3 - Questionnaire per batch assignment', () => {

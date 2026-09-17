@@ -6,6 +6,7 @@ import type {
   UseFormReturn
 } from 'react-hook-form';
 import { Step1, Step2, Step3 } from '../register/research-form-steps';
+import type { QuestionnaireOption } from '../shared';
 import type { FormData } from './research-form';
 
 type Page = 'title' | 'questionnaire' | 'batch';
@@ -15,8 +16,8 @@ export function RenderStep(props: {
   effectivePage: Page;
   register: UseFormReturn<FormData>['register'];
   errors: FieldErrors<FormData>;
-  libraryOptions: { code: string; name: string }[];
-  availableQuestionnaires: { code: string; name: string }[];
+  libraryOptions: QuestionnaireOption[];
+  availableQuestionnaires: QuestionnaireOption[];
   selectedIds: string[];
   handleSelectLibrary: (ids: string[]) => void;
   handleOpenUploadDrawer: () => void;

@@ -14,7 +14,11 @@ import { canAdvanceOnTitlePage } from '../can-advance';
 import { schema } from '../register/research-form';
 import { ResearchFormActionsProvider } from '../research-form-actions-context';
 import { ResearchFormFabBridge } from '../research-form-fab-bridge';
-import { fetchLibraryQuestionnaires, libraryOptionsFromQuery } from '../shared';
+import {
+  fetchLibraryQuestionnaires,
+  libraryOptionsFromQuery,
+  type QuestionnaireOption
+} from '../shared';
 import { buildEditUrl } from './build-edit-url';
 import { RenderStep } from './render-step';
 import { submitEditStudy } from './submit-helpers';
@@ -152,7 +156,7 @@ export default function EditResearchForm({
   }, [shouldRedirect, router, searchParams]);
 
   const [customQuestionnaires, setCustomQuestionnaires] = useState<
-    { code: string; name: string }[]
+    QuestionnaireOption[]
   >([]);
 
   const { data: libraryQs = [] } = useQuery({
@@ -185,7 +189,12 @@ export default function EditResearchForm({
 
   const handleUploaded = useCallback(
     (q: Questionnaire) => {
-      const option = { code: q.id ?? '', name: q.title ?? q.id ?? '' };
+      const option: QuestionnaireOption = {
+        code: q.id ?? '',
+        name: q.title ?? q.id ?? '',
+        duration: null,
+        category: null
+      };
       setCustomQuestionnaires(prev => [...prev, option]);
       handleSelectLibrary([...selectedIds, q.id ?? '']);
     },
