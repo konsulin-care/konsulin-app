@@ -139,9 +139,6 @@ func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL, accessCoo
 		"prefix", truncated, "target", targetURL)
 }
 
-// hopByHopHeaders are headers that must be stripped per RFC 2616 §13.5.1
-// when forwarding responses.  Go's HTTP server sets its own Transfer-Encoding
-// and Content-Length, so we skip those to avoid conflicts.
 // injectSuperadminKeyFromCookie forwards the BFF-held superadmin API key as
 // the X-API-Key header when the superadmin key cookie is present. The key is
 // stored in an HttpOnly cookie (see admin_key.go) so only the BFF can read it;
@@ -277,6 +274,11 @@ func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappin
 			SameSite: http.SameSiteLaxMode,
 		})
 	}
+
+	// Prevent browser from caching API responses. Without this, the browser
+	// applies heuristic caching when the upstream sends ETag/Last-Modified
+	// without Cache-Control (e.g. HAPI FHIR direct resource reads).
+	w.Header().Set("Cache-Control", "no-store, private")
 
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
