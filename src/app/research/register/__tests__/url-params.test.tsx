@@ -162,7 +162,7 @@ describe('ResearchForm - URL param navigation', () => {
     });
   });
 
-  it('shows questionnaire combobox on batch page when library is loaded', async () => {
+  it('does not show questionnaire combobox when no questionnaires were selected', async () => {
     localStorage.setItem(
       'research-form-test-practitioner-id',
       JSON.stringify({
@@ -185,11 +185,11 @@ describe('ResearchForm - URL param navigation', () => {
     );
     renderWithQuery(<ResearchForm />);
 
-    // Wait for library query to load and combobox to appear
-    await waitFor(() => {
-      const comboboxes = screen.getAllByRole('combobox');
-      expect(comboboxes.length).toBeGreaterThanOrEqual(1);
-    });
+    // After fix: no combobox when no questionnaires were selected
+    // Before fix: combobox appears with all library questionnaires
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const comboboxes = screen.queryAllByRole('combobox');
+    expect(comboboxes).toHaveLength(0);
   });
 
   it('fetches library questionnaires even when starting on title page', async () => {

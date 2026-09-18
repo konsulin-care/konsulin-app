@@ -263,7 +263,9 @@ export default function EditResearchForm({
         register,
         errors,
         libraryOptions,
-        availableQuestionnaires: allQuestionnaireOptions,
+        availableQuestionnaires: allQuestionnaireOptions.filter(q =>
+          selectedIds.includes(q.code)
+        ),
         selectedIds,
         handleSelectLibrary,
         handleOpenUploadDrawer,
