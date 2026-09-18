@@ -1,10 +1,8 @@
-import { xpForDuration } from '@/constants/research';
-import { Roles } from '@/constants/roles';
 import type { QuestionnaireInfo } from '@/services/api/research';
-import { COMPLETION_COUNT_FLOOR } from '@/services/api/research-counts';
 import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { daysUntilBatch } from '@/utils/fhir/research';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { CheckCircle2, Circle } from 'lucide-react';
 
 /**
@@ -23,17 +21,34 @@ export function truncateDescription(
   return `${description.slice(0, maxLength).trimEnd()}…`;
 }
 
-/** Current batch index, closing deadline, progress bar, and counts. */
+/** Current batch index, closing deadline, progress bar, and participant counts. */
 export function BatchProgress({
-  progress
-}: Readonly<{ progress: StudyProgress }>) {
+  progress,
+  completionCounts
+}: Readonly<{
+  progress: StudyProgress;
+  completionCounts?: Map<string, number>;
+}>) {
   const { currentBatch } = progress;
   if (!currentBatch) return null;
 
+  const totalDays = differenceInCalendarDays(
+    parseISO(currentBatch.end),
+    parseISO(currentBatch.start)
+  );
+  const elapsedDays = differenceInCalendarDays(
+    new Date(),
+    parseISO(currentBatch.start)
+  );
   const completedPercent =
-    progress.totalCount === 0
-      ? 0
-      : (progress.completedCount / progress.totalCount) * 100;
+    totalDays > 0
+      ? Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100))
+      : 0;
+
+  const maxParticipants =
+    completionCounts && completionCounts.size > 0
+      ? Math.max(...completionCounts.values())
+      : 0;
 
   return (
     <div className='flex flex-col gap-1 text-[11px] text-gray-600'>
@@ -46,14 +61,13 @@ export function BatchProgress({
       </div>
       <div className='h-1.5 w-full overflow-hidden rounded-full bg-gray-200'>
         <div
+          data-testid='batch-progress-bar'
           className='h-full rounded-full bg-[#13c2c2]'
           style={{ width: `${completedPercent}%` }}
         />
       </div>
       <div className='flex items-center justify-between'>
-        <span>
-          {progress.completedCount}/{progress.totalCount} questionnaires
-        </span>
+        <span>Total participants: {maxParticipants}</span>
       </div>
     </div>
   );
@@ -108,18 +122,6 @@ export function buildOverlapMap(
   return map;
 }
 
-/**
- * Formats a completion count with k-anonymity floor applied.
- *
- * @param count - Raw completion count.
- * @returns Formatted string like "12 completions" or "< 5 completions".
- */
-function formatCompletionCount(count: number): string {
-  return count >= COMPLETION_COUNT_FLOOR
-    ? `${count} completions`
-    : `< ${COMPLETION_COUNT_FLOOR} completions`;
-}
-
 /** Questionnaire list for one study with done states and overlap hints. */
 interface QuestionnaireRowProps {
   id: string;
@@ -129,8 +131,6 @@ interface QuestionnaireRowProps {
   info?: QuestionnaireInfo;
   isTitlesLoading: boolean;
   showOverlapHints: boolean;
-  completionCount?: number;
-  isResearcher: boolean;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
 }
 
@@ -142,8 +142,6 @@ function QuestionnaireRow({
   info,
   isTitlesLoading,
   showOverlapHints,
-  completionCount,
-  isResearcher,
   onQuestionnaireClick
 }: Readonly<QuestionnaireRowProps>) {
   const title =
@@ -174,16 +172,6 @@ function QuestionnaireRow({
             className='h-3.5 w-24 animate-pulse rounded bg-gray-200'
           />
         )}
-        {info?.durationMinutes != null && (
-          <span className='text-[10px] font-bold text-[#13c2c2]'>
-            +{xpForDuration(info.durationMinutes)} XP
-          </span>
-        )}
-        {isResearcher && completionCount != null && (
-          <span className='text-[10px] text-gray-500'>
-            {formatCompletionCount(completionCount)}
-          </span>
-        )}
       </div>
       {showOverlapHints && otherStudies.length > 0 && (
         <span className='pl-6 text-[10px] text-gray-500'>
@@ -201,9 +189,7 @@ export function QuestionnaireList({
   onQuestionnaireClick,
   titleMap,
   isTitlesLoading = false,
-  showOverlapHints = false,
-  completionCounts,
-  roleName
+  showOverlapHints = false
 }: Readonly<{
   progress: StudyProgress;
   overlapMap: Map<string, string[]>;
@@ -214,17 +200,12 @@ export function QuestionnaireList({
   isTitlesLoading?: boolean;
   /** Expanded views render the "Also counts toward" overlap hint. */
   showOverlapHints?: boolean;
-  /** Per-questionnaire completion counts for researcher view. */
-  completionCounts?: Map<string, number>;
-  /** User's role name for conditional rendering. */
-  roleName?: string;
 }>) {
   const batch = progress.currentBatch;
   if (!batch) return null;
 
   const completed = new Set(progress.completedQuestionnaireIds);
   const studyTitle = progress.study.title ?? progress.study.id;
-  const isResearcher = roleName === Roles.Researcher;
 
   return (
     <ul className='flex flex-col gap-2'>
@@ -240,8 +221,6 @@ export function QuestionnaireList({
           info={titleMap?.get(id)}
           isTitlesLoading={isTitlesLoading}
           showOverlapHints={showOverlapHints}
-          completionCount={completionCounts?.get(id)}
-          isResearcher={isResearcher}
           onQuestionnaireClick={onQuestionnaireClick}
         />
       ))}

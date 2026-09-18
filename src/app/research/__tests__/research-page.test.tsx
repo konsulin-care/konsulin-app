@@ -619,7 +619,7 @@ describe('ResearchPage', () => {
     expect(screen.queryByTestId('circle-upsell')).not.toBeInTheDocument();
   });
 
-  it('shows the XP value on carousel questionnaire rows from the info map', () => {
+  it('does not show XP value on carousel questionnaire rows', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
@@ -627,8 +627,14 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    expect(screen.getAllByText('+40 XP').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('+75 XP').length).toBeGreaterThan(0);
+    // Questionnaire rows should not show XP (dashboard may still show XP)
+    const questionnaireButtons = screen.getAllByRole('button', {
+      name: /PHQ-2|Big Five Inventory/
+    });
+    for (const button of questionnaireButtons) {
+      const row = button.closest('li');
+      expect(row?.textContent).not.toMatch(/\+\d+ XP/);
+    }
   });
 
   it('hides overlap hints across studies in the carousel', () => {
@@ -712,9 +718,10 @@ describe('ResearchPage', () => {
       })
     );
 
-    // Verify counts are displayed
-    expect(await screen.findByText('12 completions')).toBeInTheDocument();
-    expect(screen.getByText('< 5 completions')).toBeInTheDocument();
+    // Verify total participants is displayed (max of 12, 3 = 12)
+    expect(
+      await screen.findByText('Total participants: 12')
+    ).toBeInTheDocument();
   });
 
   it('does not fetch completion counts for patient role', () => {

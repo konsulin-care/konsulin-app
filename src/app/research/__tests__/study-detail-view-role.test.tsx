@@ -164,7 +164,7 @@ describe('StudyDetailView - Role Prop', () => {
     ).toBeInTheDocument();
   });
 
-  it('passes completionCounts to QuestionnaireList for researcher', () => {
+  it('passes completionCounts to BatchProgress for researcher', () => {
     const completionCounts = new Map([['phq2', 10]]);
     renderWithQuery(
       <StudyDetailView
@@ -180,7 +180,7 @@ describe('StudyDetailView - Role Prop', () => {
         completionCounts={completionCounts}
       />
     );
-    expect(screen.getByText('10 completions')).toBeInTheDocument();
+    expect(screen.getByText('Total participants: 10')).toBeInTheDocument();
   });
 
   it('enables Manage Study button for researcher', () => {

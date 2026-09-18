@@ -97,7 +97,10 @@ export default function StudyDetailView({
     >
       {progress && (
         <div className='flex flex-col gap-4'>
-          <BatchProgress progress={progress} />
+          <BatchProgress
+            progress={progress}
+            completionCounts={completionCounts}
+          />
           <TimelineStrip progress={progress} />
           <QuestionnaireList
             progress={progress}
@@ -106,8 +109,6 @@ export default function StudyDetailView({
             titleMap={titleMap}
             isTitlesLoading={isTitlesLoading}
             showOverlapHints
-            completionCounts={completionCounts}
-            roleName={roleName}
           />
           {roleName === Roles.Researcher && (
             <div className='rounded-lg bg-gray-50 p-3 text-xs text-gray-600'>
