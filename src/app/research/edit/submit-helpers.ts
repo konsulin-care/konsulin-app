@@ -2,7 +2,7 @@ import { getAPI } from '@/services/api';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
 import type { PlanDefinition, ResearchStudy } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
-import { randomUUID } from 'node:crypto';
+
 import { toast } from 'react-toastify';
 import type { FormData } from './research-form';
 
@@ -126,7 +126,7 @@ export function buildPlanEntries(
     }
 
     // New batch: create with temporary UUID
-    const tempId = randomUUID();
+    const tempId = crypto.randomUUID();
     newPlanTempIds.set(i, tempId);
     return [
       {

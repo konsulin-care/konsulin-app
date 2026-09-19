@@ -123,10 +123,6 @@ export default function EditResearchForm({
     }
   }, [needsCanonicalize, router, searchParams]);
 
-  // Fix questionnaire bug: initialize selectedIds from existing batches
-  const [selectedIds, setSelectedIds] = useState<string[]>(() =>
-    initialData.batches.flatMap(b => b.questionnaireIds)
-  );
   const [isUploadDrawerOpen, setIsUploadDrawerOpen] = useState(false);
 
   const form = useForm<FormData>({
@@ -175,9 +171,14 @@ export default function EditResearchForm({
     [libraryOptions, customQuestionnaires]
   );
 
+  // Derive selectedIds from form state (single source of truth)
+  const selectedIds = useMemo(
+    () => formValues.batches.flatMap(b => b.questionnaireIds),
+    [formValues.batches]
+  );
+
   const handleSelectLibrary = useCallback(
     (ids: string[]) => {
-      setSelectedIds(ids);
       for (const [index] of fields.entries()) {
         if (!lockedBatchIndices.includes(index)) {
           setValue(`batches.${index}.questionnaireIds`, ids);
